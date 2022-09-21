@@ -4,7 +4,7 @@ from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.structures.balance import AssetBalance, Balance
 from rotkehlchen.accounting.structures.defi import DefiEvent, DefiEventType
-from rotkehlchen.assets.asset import Asset, CryptoAsset, EvmToken
+from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.chain.ethereum.constants import ZERO_ADDRESS
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.constants.assets import (
@@ -142,210 +142,14 @@ if TYPE_CHECKING:
 BLOCKS_PER_YEAR = 2425846
 
 
-YEARN_VAULTS = {
-    'yyDAI+yUSDC+yUSDT+yTUSD': YearnVault(
-        name='YCRV Vault',
-        contract=YEARN_YCRV_VAULT,
-        underlying_token=A_CRVP_DAIUSDCTTUSD,
-        token=A_YV1_DAIUSDCTTUSD,
-    ),
-    'yDAI': YearnVault(
-        name='YDAI Vault',
-        contract=YEARN_DAI_VAULT,
-        underlying_token=A_DAI,
-        token=A_YV1_DAI,
-    ),
-    'yWETH': YearnVault(
-        name='YWETH Vault',
-        contract=YEARN_WETH_VAULT,
-        underlying_token=A_WETH,
-        token=A_YV1_WETH,
-    ),
-    'yYFI': YearnVault(
-        name='YYFI Vault',
-        contract=YEARN_YFI_VAULT,
-        underlying_token=A_YFI,
-        token=A_YV1_YFI,
-    ),
-    'yaLINK': YearnVault(
-        name='YALINK Vault',
-        contract=YEARN_ALINK_VAULT,
-        underlying_token=A_ALINK_V1,
-        token=A_YV1_ALINK,
-    ),
-    'yUSDT': YearnVault(
-        name='YUSDT Vault',
-        contract=YEARN_USDT_VAULT,
-        underlying_token=A_USDT,
-        token=A_YV1_USDT,
-    ),
-    'yUSDC': YearnVault(
-        name='YUSDC Vault',
-        contract=YEARN_USDC_VAULT,
-        underlying_token=A_USDC,
-        token=A_YV1_USDC,
-    ),
-    'yTUSD': YearnVault(
-        name='YTUSD Vault',
-        contract=YEARN_TUSD_VAULT,
-        underlying_token=A_TUSD,
-        token=A_YV1_TUSD,
-    ),
-    'yGUSD': YearnVault(
-        name='GUSD Vault',
-        contract=YEARN_GUSD_VAULT,
-        underlying_token=A_GUSD,
-        token=A_YV1_GUSD,
-    ),
-    'yyDAI+yUSDC+yUSDT+yBUSD': YearnVault(
-        name='YBCURVE Vault',
-        contract=YEARN_BCURVE_VAULT,
-        underlying_token=A_CRVP_DAIUSDCTBUSD,
-        token=A_YV1_DAIUSDCTBUSD,
-    ),
-    'ycrvRenWSBTC': YearnVault(
-        name='YSRENCURVE Vault',
-        contract=YEARN_SRENCURVE_VAULT,
-        underlying_token=A_CRVP_RENWSBTC,
-        token=A_YV1_RENWSBTC,
-    ),
-    'y3Crv': YearnVault(
-        name='Y3CRV Vault',
-        contract=YEARN_3CRV_VAULT,
-        underlying_token=A_CRV_3CRV,
-        token=A_YV1_3CRV,
-    ),
-    'pSLP': YearnVault(
-        name='pickling SushiSwap LP Token Vault',
-        contract=YEARN_PSLP_VAULT,
-        underlying_token=A_PSLP,
-        token=A_YV1_PSLP,
-    ),
-    'yvcDAI+cUSDC': YearnVault(
-        name='curve.fi/compound Vault',
-        contract=YEARN_CDAI_CUSDC_VAULT,
-        underlying_token=CRV_CDAI_CUSDC,
-        token=A_YV1_CDAI_CUSD,
-    ),
-    'yvmusd3CRV': YearnVault(
-        name='curve.fi/musd Vault',
-        contract=YEARN_MUSD_3CRV_VAULT,
-        underlying_token=CRV_MUSD,
-        token=A_YV1_MSUD_CRV,
-    ),
-    'yvgusd3CRV': YearnVault(
-        name='curve.fi/gusd Vault',
-        contract=YEARN_GUSD_3CRV_VAULT,
-        underlying_token=A_CRV_GUSD,
-        token=A_YV1_GUSD_CRV,
-    ),
-    'yveursCRV': YearnVault(
-        name='curve.fi/eurs Vault',
-        contract=YEARN_EURS_VAULT,
-        underlying_token=CRV_EURS,
-        token=A_YV1_EURS_CRV,
-    ),
-    'yvmUSD': YearnVault(
-        name='mUSD Vault',
-        contract=YEARN_MUSD_VAULT,
-        underlying_token=A_MUSD,
-        token=A_YV1_MUSD_VAULT,
-    ),
-    'yvcrvRenWBTC': YearnVault(
-        name='curve.fi/renbtc Vault',
-        contract=YEARN_RENBTC_WBTC_VAULT,
-        underlying_token=A_CRV_RENWBTC,
-        token=A_YV1_RENBT_CRV,
-    ),
-    'yvusdn3CRV': YearnVault(
-        name='curve.fi/usdn Vault',
-        contract=YEARN_USDN_3CRV_VAULT,
-        underlying_token=CRV_USDN,
-        token=A_YV1_USDN_CRV,
-    ),
-    'yvust3CRV': YearnVault(
-        name='curve.fi/ust Vault',
-        contract=YEARN_UST_3CRV_VAULT,
-        underlying_token=CRV_UST,
-        token=A_YV1_UST_CRV,
-    ),
-    'yvbBTC/sbtcCRV': YearnVault(
-        name='curve.fi/bbtc Vault',
-        contract=YEARN_BBTC_SBTC_VAULT,
-        underlying_token=CRV_BBTC_SBTC,
-        token=A_YV1_BBTC_CRV,
-    ),
-    'yvtbtc/sbtcCrv': YearnVault(
-        name='curve.fi/tbtc Vault',
-        contract=YEARN_TBTC_SBTC_VAULT,
-        underlying_token=CRV_TBTC_SBTC,
-        token=A_YV1_TBTC_CRV,
-    ),
-    'yvoBTC/sbtcCRV': YearnVault(
-        name='curve.fi/obtc Vault',
-        contract=YEARN_OBTC_SBTC_VAULT,
-        underlying_token=CRV_OBTC_SBTC,
-        token=A_YV1_OBTC_CRV,
-    ),
-    'yvhCRV': YearnVault(
-        name='curve.fi/hbtc Vault',
-        contract=YEARN_HBTC_WBTC_VAULT,
-        underlying_token=CRV_HBTC,
-        token=A_YV1_HBTC_CRV,
-    ),
-    'yvcrvPlain3andSUSD': YearnVault(
-        name='curve.fi/susd Vault',
-        contract=YEARN_SUSD_3CRV_VAULT,
-        underlying_token=A_CRV_3CRVSUSD,
-        token=A_YV1_SUSD_CRV,
-    ),
-    'yvhusd3CRV': YearnVault(
-        name='curve.fi/husd Vault',
-        contract=YEARN_HUSD_3CRV_VAULT,
-        underlying_token=CRV_HUSD,
-        token=A_YV1_HUSD_CRV,
-    ),
-    'yvdusd3CRV': YearnVault(
-        name='curve.fi/dusd Vault',
-        contract=YEARN_DUSD_3CRV_VAULT,
-        underlying_token=CRV_DUSD,
-        token=A_YV1_DUSD_3CRV,
-    ),
-    'yva3CRV': YearnVault(
-        name='curve.fi/aave Vault',
-        contract=YEARN_A3CRV_VAULT,
-        underlying_token=A_CRV_3CRV,
-        token=A_YV1_A3CRV,
-    ),
-    'yvankrCRV': YearnVault(
-        name='curve.fi/ankreth Vault',
-        contract=YEARN_ETH_ANKER_VAULT,
-        underlying_token=CRV_AETH,
-        token=A_YV1_ETH_ANKER,
-    ),
-    'yvsaCRV': YearnVault(
-        name='curve.fi/saave Vault',
-        contract=YEARN_ASUSD_VAULT,
-        underlying_token=CRV_ADAI_ASUSD,
-        token=A_YV1_ASUSD_CRV,
-    ),
-    'yvusdp3CRV': YearnVault(
-        name='curve.fi/usdp Vault',
-        contract=YEARN_USDP_3CRV_VAULT,
-        underlying_token=CRV_USDP,
-        token=A_YV1_USDP_CRV,
-    ),
-}
-
-
 class YearnVaultHistory(NamedTuple):
     events: List[YearnVaultEvent]
     profit_loss: Balance
 
 
 class YearnVaultBalance(NamedTuple):
-    underlying_token: Asset
-    vault_token: Asset
+    underlying_token: CryptoAsset
+    vault_token: CryptoAsset
     underlying_value: Balance
     vault_value: Balance
     roi: FVal
@@ -400,6 +204,200 @@ class YearnVaults(EthereumModule):
         self.msg_aggregator = msg_aggregator
         self.premium = premium
         self.history_lock = Semaphore()
+        self.yearn_vaults = {
+            'yyDAI+yUSDC+yUSDT+yTUSD': YearnVault(
+                name='YCRV Vault',
+                contract=YEARN_YCRV_VAULT,
+                underlying_token=A_CRVP_DAIUSDCTTUSD.resolve_to_evm_token(),
+                token=A_YV1_DAIUSDCTTUSD.resolve_to_evm_token(),
+            ),
+            'yDAI': YearnVault(
+                name='YDAI Vault',
+                contract=YEARN_DAI_VAULT,
+                underlying_token=A_DAI.resolve_to_evm_token(),
+                token=A_YV1_DAI.resolve_to_evm_token(),
+            ),
+            'yWETH': YearnVault(
+                name='YWETH Vault',
+                contract=YEARN_WETH_VAULT,
+                underlying_token=A_WETH.resolve_to_evm_token(),
+                token=A_YV1_WETH.resolve_to_evm_token(),
+            ),
+            'yYFI': YearnVault(
+                name='YYFI Vault',
+                contract=YEARN_YFI_VAULT,
+                underlying_token=A_YFI.resolve_to_evm_token(),
+                token=A_YV1_YFI.resolve_to_evm_token(),
+            ),
+            'yaLINK': YearnVault(
+                name='YALINK Vault',
+                contract=YEARN_ALINK_VAULT,
+                underlying_token=A_ALINK_V1.resolve_to_evm_token(),
+                token=A_YV1_ALINK.resolve_to_evm_token(),
+            ),
+            'yUSDT': YearnVault(
+                name='YUSDT Vault',
+                contract=YEARN_USDT_VAULT,
+                underlying_token=A_USDT.resolve_to_evm_token(),
+                token=A_YV1_USDT.resolve_to_evm_token(),
+            ),
+            'yUSDC': YearnVault(
+                name='YUSDC Vault',
+                contract=YEARN_USDC_VAULT,
+                underlying_token=A_USDC.resolve_to_evm_token(),
+                token=A_YV1_USDC.resolve_to_evm_token(),
+            ),
+            'yTUSD': YearnVault(
+                name='YTUSD Vault',
+                contract=YEARN_TUSD_VAULT,
+                underlying_token=A_TUSD.resolve_to_evm_token(),
+                token=A_YV1_TUSD.resolve_to_evm_token(),
+            ),
+            'yGUSD': YearnVault(
+                name='GUSD Vault',
+                contract=YEARN_GUSD_VAULT,
+                underlying_token=A_GUSD.resolve_to_evm_token(),
+                token=A_YV1_GUSD.resolve_to_evm_token(),
+            ),
+            'yyDAI+yUSDC+yUSDT+yBUSD': YearnVault(
+                name='YBCURVE Vault',
+                contract=YEARN_BCURVE_VAULT,
+                underlying_token=A_CRVP_DAIUSDCTBUSD.resolve_to_evm_token(),
+                token=A_YV1_DAIUSDCTBUSD.resolve_to_evm_token(),
+            ),
+            'ycrvRenWSBTC': YearnVault(
+                name='YSRENCURVE Vault',
+                contract=YEARN_SRENCURVE_VAULT,
+                underlying_token=A_CRVP_RENWSBTC.resolve_to_evm_token(),
+                token=A_YV1_RENWSBTC.resolve_to_evm_token(),
+            ),
+            'y3Crv': YearnVault(
+                name='Y3CRV Vault',
+                contract=YEARN_3CRV_VAULT,
+                underlying_token=A_CRV_3CRV.resolve_to_evm_token(),
+                token=A_YV1_3CRV.resolve_to_evm_token(),
+            ),
+            'pSLP': YearnVault(
+                name='pickling SushiSwap LP Token Vault',
+                contract=YEARN_PSLP_VAULT,
+                underlying_token=A_PSLP.resolve_to_evm_token(),
+                token=A_YV1_PSLP.resolve_to_evm_token(),
+            ),
+            'yvcDAI+cUSDC': YearnVault(
+                name='curve.fi/compound Vault',
+                contract=YEARN_CDAI_CUSDC_VAULT,
+                underlying_token=CRV_CDAI_CUSDC.resolve_to_evm_token(),
+                token=A_YV1_CDAI_CUSD.resolve_to_evm_token(),
+            ),
+            'yvmusd3CRV': YearnVault(
+                name='curve.fi/musd Vault',
+                contract=YEARN_MUSD_3CRV_VAULT,
+                underlying_token=CRV_MUSD.resolve_to_evm_token(),
+                token=A_YV1_MSUD_CRV.resolve_to_evm_token(),
+            ),
+            'yvgusd3CRV': YearnVault(
+                name='curve.fi/gusd Vault',
+                contract=YEARN_GUSD_3CRV_VAULT,
+                underlying_token=A_CRV_GUSD.resolve_to_evm_token(),
+                token=A_YV1_GUSD_CRV.resolve_to_evm_token(),
+            ),
+            'yveursCRV': YearnVault(
+                name='curve.fi/eurs Vault',
+                contract=YEARN_EURS_VAULT,
+                underlying_token=CRV_EURS.resolve_to_evm_token(),
+                token=A_YV1_EURS_CRV.resolve_to_evm_token(),
+            ),
+            'yvmUSD': YearnVault(
+                name='mUSD Vault',
+                contract=YEARN_MUSD_VAULT,
+                underlying_token=A_MUSD.resolve_to_evm_token(),
+                token=A_YV1_MUSD_VAULT.resolve_to_evm_token(),
+            ),
+            'yvcrvRenWBTC': YearnVault(
+                name='curve.fi/renbtc Vault',
+                contract=YEARN_RENBTC_WBTC_VAULT,
+                underlying_token=A_CRV_RENWBTC.resolve_to_evm_token(),
+                token=A_YV1_RENBT_CRV.resolve_to_evm_token(),
+            ),
+            'yvusdn3CRV': YearnVault(
+                name='curve.fi/usdn Vault',
+                contract=YEARN_USDN_3CRV_VAULT,
+                underlying_token=CRV_USDN.resolve_to_evm_token(),
+                token=A_YV1_USDN_CRV.resolve_to_evm_token(),
+            ),
+            'yvust3CRV': YearnVault(
+                name='curve.fi/ust Vault',
+                contract=YEARN_UST_3CRV_VAULT,
+                underlying_token=CRV_UST.resolve_to_evm_token(),
+                token=A_YV1_UST_CRV.resolve_to_evm_token(),
+            ),
+            'yvbBTC/sbtcCRV': YearnVault(
+                name='curve.fi/bbtc Vault',
+                contract=YEARN_BBTC_SBTC_VAULT,
+                underlying_token=CRV_BBTC_SBTC.resolve_to_evm_token(),
+                token=A_YV1_BBTC_CRV.resolve_to_evm_token(),
+            ),
+            'yvtbtc/sbtcCrv': YearnVault(
+                name='curve.fi/tbtc Vault',
+                contract=YEARN_TBTC_SBTC_VAULT,
+                underlying_token=CRV_TBTC_SBTC.resolve_to_evm_token(),
+                token=A_YV1_TBTC_CRV.resolve_to_evm_token(),
+            ),
+            'yvoBTC/sbtcCRV': YearnVault(
+                name='curve.fi/obtc Vault',
+                contract=YEARN_OBTC_SBTC_VAULT,
+                underlying_token=CRV_OBTC_SBTC.resolve_to_evm_token(),
+                token=A_YV1_OBTC_CRV.resolve_to_evm_token(),
+            ),
+            'yvhCRV': YearnVault(
+                name='curve.fi/hbtc Vault',
+                contract=YEARN_HBTC_WBTC_VAULT,
+                underlying_token=CRV_HBTC.resolve_to_evm_token(),
+                token=A_YV1_HBTC_CRV.resolve_to_evm_token(),
+            ),
+            'yvcrvPlain3andSUSD': YearnVault(
+                name='curve.fi/susd Vault',
+                contract=YEARN_SUSD_3CRV_VAULT,
+                underlying_token=A_CRV_3CRVSUSD.resolve_to_evm_token(),
+                token=A_YV1_SUSD_CRV.resolve_to_evm_token(),
+            ),
+            'yvhusd3CRV': YearnVault(
+                name='curve.fi/husd Vault',
+                contract=YEARN_HUSD_3CRV_VAULT,
+                underlying_token=CRV_HUSD.resolve_to_evm_token(),
+                token=A_YV1_HUSD_CRV.resolve_to_evm_token(),
+            ),
+            'yvdusd3CRV': YearnVault(
+                name='curve.fi/dusd Vault',
+                contract=YEARN_DUSD_3CRV_VAULT,
+                underlying_token=CRV_DUSD.resolve_to_evm_token(),
+                token=A_YV1_DUSD_3CRV.resolve_to_evm_token(),
+            ),
+            'yva3CRV': YearnVault(
+                name='curve.fi/aave Vault',
+                contract=YEARN_A3CRV_VAULT,
+                underlying_token=A_CRV_3CRV.resolve_to_evm_token(),
+                token=A_YV1_A3CRV.resolve_to_evm_token(),
+            ),
+            'yvankrCRV': YearnVault(
+                name='curve.fi/ankreth Vault',
+                contract=YEARN_ETH_ANKER_VAULT,
+                underlying_token=CRV_AETH.resolve_to_evm_token(),
+                token=A_YV1_ETH_ANKER.resolve_to_evm_token(),
+            ),
+            'yvsaCRV': YearnVault(
+                name='curve.fi/saave Vault',
+                contract=YEARN_ASUSD_VAULT,
+                underlying_token=CRV_ADAI_ASUSD.resolve_to_evm_token(),
+                token=A_YV1_ASUSD_CRV.resolve_to_evm_token(),
+            ),
+            'yvusdp3CRV': YearnVault(
+                name='curve.fi/usdp Vault',
+                contract=YEARN_USDP_3CRV_VAULT,
+                underlying_token=CRV_USDP.resolve_to_evm_token(),
+                token=A_YV1_USDP_CRV.resolve_to_evm_token(),
+            ),
+        }
 
     def _calculate_vault_roi(self, vault: YearnVault) -> FVal:
         """
@@ -432,7 +430,7 @@ class YearnVaults(EthereumModule):
                 underlying_address = balance.underlying_balances[0].token_address
                 vault_symbol = balance.base_balance.token_symbol
                 vault_address = balance.base_balance.token_address
-                vault = YEARN_VAULTS.get(vault_symbol, None)
+                vault = self.yearn_vaults.get(vault_symbol, None)
                 if vault is None:
                     self.msg_aggregator.add_warning(
                         f'Found balance for unsupported yearn vault {vault_symbol}',
@@ -784,7 +782,7 @@ class YearnVaults(EthereumModule):
 
                 for address in addresses:
                     history[address] = {}
-                    for _, vault in YEARN_VAULTS.items():
+                    for _, vault in self.yearn_vaults.items():
                         vault_history = self.get_vault_history(
                             write_cursor=cursor,
                             defi_balances=defi_balances.get(address, []),
@@ -819,7 +817,7 @@ class YearnVaults(EthereumModule):
 
         events = []
         for address in addresses:
-            for _, vault in YEARN_VAULTS.items():
+            for _, vault in self.yearn_vaults.items():
                 with self.database.user_write() as cursor:
                     vault_history = self.get_vault_history(
                         write_cursor=cursor,

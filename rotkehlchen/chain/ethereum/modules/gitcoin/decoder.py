@@ -44,13 +44,13 @@ class GitcoinDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                 '0x7d655c57f71464B6f83811C55D84009Cd9f5221C',
         ):
             return False
-
+        crypto_asset = event.asset.resolve_to_crypto_asset()
         if event.event_type == HistoryEventType.SPEND:
             to_address = event.counterparty
-            event.notes = f'Donate {event.balance.amount} {event.asset.symbol} to {to_address} via gitcoin'  # noqa: E501
+            event.notes = f'Donate {event.balance.amount} {crypto_asset.symbol} to {to_address} via gitcoin'  # noqa: E501
         else:  # can only be RECEIVE
             from_address = event.counterparty
-            event.notes = f'Receive donation of {event.balance.amount} {event.asset.symbol} from {from_address} via gitcoin'  # noqa: E501
+            event.notes = f'Receive donation of {event.balance.amount} {crypto_asset.symbol} from {from_address} via gitcoin'  # noqa: E501
 
         event.event_subtype = HistoryEventSubType.DONATE
         event.counterparty = CPT_GITCOIN

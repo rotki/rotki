@@ -1,15 +1,22 @@
-from typing import Dict, Optional
+from typing import TYPE_CHECKING, Dict, Optional, Type, TypeVar
 
-from rotkehlchen.errors.asset import UnknownAsset
-from rotkehlchen.globaldb import GlobalDBHandler
+from rotkehlchen.assets.types import AssetType
+from rotkehlchen.errors.asset import WrongAssetType
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 
-from .types import AssetData
+if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import Asset
+
+
+T = TypeVar('T')
 
 
 class AssetResolver():
     __instance: Optional['AssetResolver'] = None
     # A cache so that the DB is not hit every time
-    assets_cache: Dict[str, AssetData] = {}
+    # the cache maps identifier -> deepest representation of the asset
+    assets_cache: Dict[str, 'Asset'] = {}
+    types_cache: Dict[str, AssetType] = {}
 
     def __new__(cls) -> 'AssetResolver':
         """Lazily initializes AssetResolver
@@ -33,26 +40,44 @@ class AssetResolver():
             AssetResolver.__instance.assets_cache.pop(identifier.lower(), None)
 
     @staticmethod
-    def get_asset_data(
-            asset_identifier: str,
-            form_with_incomplete_data: bool = False,
-    ) -> AssetData:
+    def resolve_asset(identifier: str) -> 'Asset':  # returns any subclass
         """Get all asset data for a valid asset identifier
 
         Raises UnknownAsset if no data can be found
         """
+        # This is ugly here but is here to avoid a cyclic import in the Assets file
+        # Couldn't find a reorg that solves this cyclic import
+        from rotkehlchen.globaldb.handler import GlobalDBHandler
+
         instance = AssetResolver()
         # attempt read from memory cache -- always lower
-        cached_data = instance.assets_cache.get(asset_identifier.lower(), None)
+        cached_data = instance.assets_cache.get(identifier.lower(), None)
         if cached_data is not None:
             return cached_data
 
-        dbinstance = GlobalDBHandler()
-        # At this point we can use the global DB
-        asset_data = dbinstance.get_asset_data(asset_identifier, form_with_incomplete_data)
-        if asset_data is None:
-            raise UnknownAsset(asset_identifier)
+        # If was not found in the cache try querying it in the globaldb
+        asset = GlobalDBHandler().resolve_asset(identifier)
+        instance.assets_cache[identifier.lower()] = asset
+        return asset
 
-        # save in the memory cache -- always lower
-        instance.assets_cache[asset_identifier.lower()] = asset_data
-        return asset_data
+    @staticmethod
+    def get_asset_type(identifier: str) -> AssetType:
+        instance = AssetResolver()
+        cached_data = instance.types_cache.get(identifier)
+        if cached_data is not None:
+            return cached_data
+
+        type_in_db = GlobalDBHandler().get_asset_type(identifier)
+        instance.types_cache[identifier] = type_in_db
+        return type_in_db
+
+    @staticmethod
+    def resolve_asset_to_class(identifier: str, expected_type: Type[T]) -> T:
+        resolved_asset = AssetResolver().resolve_asset(identifier)
+        if isinstance(resolved_asset, expected_type) is False:
+            raise WrongAssetType(
+                identifier=identifier,
+                expected_type=expected_type,
+                real_type=type(resolved_asset),
+            )
+        return resolved_asset

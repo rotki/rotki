@@ -155,8 +155,8 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
 
             # Add current pool balances by looking up the pool
             if pool in pool_balance:
-                token0 = pool_balance[pool].assets[0].asset
-                token1 = pool_balance[pool].assets[1].asset
+                token0 = pool_balance[pool].assets[0].token
+                token1 = pool_balance[pool].assets[1].token
                 profit_loss0 += pool_balance[pool].assets[0].user_balance.amount
                 profit_loss1 += pool_balance[pool].assets[1].user_balance.amount
                 usd_profit_loss += pool_balance[pool].user_balance.usd_value
@@ -535,7 +535,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
                     )
 
                     liquidity_pool_asset = LiquidityPoolAsset(
-                        asset=asset,
+                        token=asset,
                         total_amount=asset_total_amount,
                         user_balance=Balance(amount=user_asset_balance),
                     )

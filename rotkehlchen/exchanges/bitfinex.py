@@ -31,7 +31,7 @@ from requests.adapters import Response
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import AssetWithSymbol
+from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import (
     BITFINEX_EXCHANGE_TEST_ASSETS,
     BITFINEX_TO_WORLD,
@@ -891,7 +891,7 @@ class Bitfinex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         # Wallet items indices
         currency_index = 1
         balance_index = 2
-        assets_balance: DefaultDict[AssetWithSymbol, Balance] = defaultdict(Balance)
+        assets_balance: DefaultDict[AssetWithOracles, Balance] = defaultdict(Balance)
         for wallet in response_list:
             if len(wallet) < API_WALLET_MIN_RESULT_LENGTH:
                 log.error(

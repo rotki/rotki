@@ -2,7 +2,7 @@ from typing import Dict, NamedTuple, Optional, Tuple
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.fval import FVal
 
 
@@ -12,7 +12,7 @@ class ActionItem(NamedTuple):
     sequence_index: int
     from_event_type: HistoryEventType
     from_event_subtype: HistoryEventSubType
-    asset: Asset
+    asset: EvmToken
     amount: FVal
     to_event_type: Optional[HistoryEventType] = None
     to_event_subtype: Optional[HistoryEventSubType] = None

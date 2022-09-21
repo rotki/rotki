@@ -113,7 +113,10 @@ class YearnVaultsV2(EthereumModule):
         globaldb = GlobalDBHandler()
         with globaldb.conn.read_ctx() as cursor:
             for asset, balance in defi_balances.items():
-                if isinstance(asset, EvmToken) and asset.protocol == YEARN_VAULTS_V2_PROTOCOL:
+                if asset.is_evm_token() is False:
+                    continue
+                asset = asset.resolve_to_evm_token()
+                if asset.protocol == YEARN_VAULTS_V2_PROTOCOL:
                     underlying = globaldb.fetch_underlying_tokens(cursor, ethaddress_to_identifier(asset.evm_address))  # noqa: E501
                     if underlying is None:
                         log.error(f'Found yearn asset {asset} without underlying asset')

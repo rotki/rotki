@@ -10,7 +10,7 @@ from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
 from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
 from rotkehlchen.accounting.transactions import TransactionsAccountant
-from rotkehlchen.assets.asset import Asset, AssetWithSymbol
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_KFEE
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.db.reports import DBAccountingReports
@@ -46,7 +46,7 @@ class AccountingPot(CustomizableDateMixin):
             msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(database=database)
-        self.profit_currency = self.settings.main_currency
+        self.profit_currency = self.settings.main_currency.resolve_to_asset_with_oracles()
         self.cost_basis = CostBasisCalculator(
             database=database,
             msg_aggregator=msg_aggregator,
@@ -105,7 +105,7 @@ class AccountingPot(CustomizableDateMixin):
     ) -> None:
         self.settings = settings
         self.report_id = report_id
-        self.profit_currency = self.settings.main_currency
+        self.profit_currency = self.settings.main_currency.resolve_to_asset_with_oracles()
         self.query_start_ts = start_ts
         self.query_end_ts = end_ts
         self.pnls.reset()
@@ -119,7 +119,7 @@ class AccountingPot(CustomizableDateMixin):
             notes: str,
             location: Location,
             timestamp: Timestamp,
-            asset: AssetWithSymbol,
+            asset: Asset,
             amount: FVal,
             taxable: bool,
             given_price: Optional[Price] = None,
@@ -184,7 +184,7 @@ class AccountingPot(CustomizableDateMixin):
             notes: str,
             location: Location,
             timestamp: Timestamp,
-            asset: AssetWithSymbol,
+            asset: Asset,
             amount: FVal,
             taxable: bool,
             given_price: Optional[Price] = None,

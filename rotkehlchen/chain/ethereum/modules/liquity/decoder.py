@@ -27,28 +27,30 @@ class LiquityDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
     ) -> Tuple[Optional[HistoryBaseEntry], Optional[ActionItem]]:
         if tx_log.topics[0] != BALANCE_UPDATE:
             return None, None
+        resolved_lusd = A_LUSD.resolve_to_crypto_asset()
 
         for event in decoded_events:
+            crypto_asset = event.asset.resolve_to_crypto_asset()
             if event.event_type == HistoryEventType.RECEIVE and event.asset == A_LUSD:
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.GENERATE_DEBT
                 event.counterparty = CPT_LIQUITY
-                event.notes = f'Generate {event.balance.amount} {A_LUSD.symbol} from liquity'
+                event.notes = f'Generate {event.balance.amount} {resolved_lusd.symbol} from liquity'  # noqa: E501
             elif event.event_type == HistoryEventType.SPEND and event.asset == A_LUSD:
                 event.event_type = HistoryEventType.SPEND
                 event.event_subtype = HistoryEventSubType.PAYBACK_DEBT
                 event.counterparty = CPT_LIQUITY
-                event.notes = f'Return {event.balance.amount} {A_LUSD.symbol} to liquity'
+                event.notes = f'Return {event.balance.amount} {resolved_lusd.symbol} to liquity'
             elif event.event_type == HistoryEventType.SPEND and event.event_subtype == HistoryEventSubType.NONE and event.asset == A_ETH:  # noqa: E501
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                 event.counterparty = CPT_LIQUITY
-                event.notes = f'Deposit {event.balance.amount} {event.asset.symbol} as collateral for liquity'  # noqa: E501
+                event.notes = f'Deposit {event.balance.amount} {crypto_asset.symbol} as collateral for liquity'  # noqa: E501
             elif event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE and event.asset == A_ETH:  # noqa: E501
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.REMOVE_ASSET
                 event.counterparty = CPT_LIQUITY
-                event.notes = f'Withdraw {event.balance.amount} {event.asset.symbol} collateral from liquity'  # noqa: E501
+                event.notes = f'Withdraw {event.balance.amount} {crypto_asset.symbol} collateral from liquity'  # noqa: E501
         return None, None
 
     # -- DecoderInterface methods

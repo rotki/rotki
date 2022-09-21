@@ -15,7 +15,6 @@ from rotkehlchen.chain.substrate.types import (
     NodeNameAttributes,
     SubstrateChain,
 )
-from rotkehlchen.constants.assets import A_KSM
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
@@ -41,8 +40,7 @@ KUSAMA_TEST_NODES = (
 
 KUSAMA_SS58_FORMAT = 2
 POLKADOT_SS58_FORMAT = 2
-KUSAMA_TOKEN = A_KSM
-KUSAMA_TOKEN_DECIMALS = FVal(12)
+KUSAMA_MAIN_ASSET_DECIMALS = FVal(12)
 KUSAMA_DEFAULT_OWN_RPC_ENDPOINT = 'http://localhost:9933'
 
 

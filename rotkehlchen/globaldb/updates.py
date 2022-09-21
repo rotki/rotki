@@ -306,6 +306,9 @@ class AssetsUpdater():
             text: str,
             conflicts: Optional[Dict[Asset, Literal['remote', 'local']]],
     ) -> None:
+        # TODO: don't forget to think about asset updates. We probably need here a method smth like
+        # resolve_to_its_instance which will automatically pick the correct type and create the
+        # corresponding instance. But need to think and check how it works.
         lines = text.splitlines()
         for action, full_insert in zip(*[iter(lines)] * 2):
             if full_insert == '*':
@@ -359,7 +362,11 @@ class AssetsUpdater():
                     continue  # fail or succeed continue to next entry
 
                 # else can't resolve. Mark it for the user to resolve.
-                local_data = AssetResolver().get_asset_data(local_asset.identifier, False)
+                # TODO: After the Asset refactor has finished remove the usage of AssetData here
+                local_data = GlobalDBHandler().get_all_asset_data(
+                    mapping=False,
+                    specific_ids=[local_asset.identifier],
+                )[0]
                 self.conflicts.append((local_data, remote_asset_data))
 
         # at the very end update the current version in the DB

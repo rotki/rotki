@@ -6,13 +6,13 @@ from urllib.parse import urlencode
 import gevent
 import requests
 
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, DEFAULT_TIMEOUT_TUPLE
-from rotkehlchen.errors.asset import UnsupportedAsset
+from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.errors.price import NoPriceForGivenTimestamp
+from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
@@ -422,7 +422,7 @@ class Coingecko(HistoricalPriceOracleInterface):
 
         return decoded_json
 
-    def asset_data(self, asset: Asset) -> CoingeckoAssetData:
+    def asset_data(self, asset: AssetWithOracles) -> CoingeckoAssetData:
         """
 
         May raise:
@@ -489,7 +489,11 @@ class Coingecko(HistoricalPriceOracleInterface):
         return self.all_coins_cache
 
     @staticmethod
-    def check_vs_currencies(from_asset: Asset, to_asset: Asset, location: str) -> Optional[str]:
+    def check_vs_currencies(
+            from_asset: AssetWithOracles,
+            to_asset: AssetWithOracles,
+            location: str,
+    ) -> Optional[str]:
         vs_currency = to_asset.identifier.lower()
         if vs_currency not in COINGECKO_SIMPLE_VS_CURRENCIES:
             log.warning(
@@ -510,6 +514,11 @@ class Coingecko(HistoricalPriceOracleInterface):
         May raise:
         - RemoteError if there is a problem querying coingecko
         """
+        try:
+            from_asset = from_asset.resolve_to_asset_with_oracles()
+            to_asset = to_asset.resolve_to_asset_with_oracles()
+        except UnknownAsset as e:
+            raise PriceQueryUnsupportedAsset(e.asset_name) from e
         vs_currency = Coingecko.check_vs_currencies(
             from_asset=from_asset,
             to_asset=to_asset,
@@ -566,6 +575,15 @@ class Coingecko(HistoricalPriceOracleInterface):
             to_asset: Asset,
             timestamp: Timestamp,
     ) -> Price:
+        """
+        May raise:
+        - PriceQueryUnsupportedAsset if either from_asset or to_asset are not supported
+        """
+        try:
+            from_asset = from_asset.resolve_to_asset_with_oracles()
+            to_asset = to_asset.resolve_to_asset_with_oracles()
+        except UnknownAsset as e:
+            raise PriceQueryUnsupportedAsset(e.asset_name) from e
         vs_currency = Coingecko.check_vs_currencies(
             from_asset=from_asset,
             to_asset=to_asset,

@@ -78,6 +78,7 @@ def decode_uniswap_v2_like_swap(
         # When we look for the spend event we have to take into consideration the case
         # where not all the ETH is converted. The ETH that is not converted is returned
         # in an internal transaction to the user.
+        crypto_asset = event.asset.resolve_to_crypto_asset()
         if (
             event.event_type == HistoryEventType.SPEND and
             (
@@ -88,7 +89,7 @@ def decode_uniswap_v2_like_swap(
             event.event_type = HistoryEventType.TRADE
             event.event_subtype = HistoryEventSubType.SPEND
             event.counterparty = counterparty
-            event.notes = f'Swap {event.balance.amount} {event.asset.symbol} in {counterparty} from {event.location_label}'  # noqa: E501
+            event.notes = f'Swap {event.balance.amount} {crypto_asset.symbol} in {counterparty} from {event.location_label}'  # noqa: E501
             out_event = event
         elif (
             (maybe_buyer == transaction.from_address or event.asset == A_ETH) and
@@ -98,7 +99,7 @@ def decode_uniswap_v2_like_swap(
             event.event_type = HistoryEventType.TRADE
             event.event_subtype = HistoryEventSubType.RECEIVE
             event.counterparty = counterparty
-            event.notes = f'Receive {event.balance.amount} {event.asset.symbol} in {counterparty} from {event.location_label}'  # noqa: E501
+            event.notes = f'Receive {event.balance.amount} {crypto_asset.symbol} in {counterparty} from {event.location_label}'  # noqa: E501
             in_event = event
         elif (
             event.event_type == HistoryEventType.RECEIVE and
@@ -108,6 +109,6 @@ def decode_uniswap_v2_like_swap(
             # Those are assets returned due to a change in the swap price
             event.event_type = HistoryEventType.TRANSFER
             event.counterparty = counterparty
-            event.notes = f'Refund of {event.balance.amount} {event.asset.symbol} in {counterparty} due to price change'  # noqa: E501
+            event.notes = f'Refund of {event.balance.amount} {crypto_asset.symbol} in {counterparty} due to price change'  # noqa: E501
 
     maybe_reshuffle_events(out_event=out_event, in_event=in_event)

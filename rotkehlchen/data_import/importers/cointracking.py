@@ -2,6 +2,7 @@ import csv
 from itertools import count
 from pathlib import Path
 from typing import Any, Dict, List
+from rotkehlchen.assets.asset import AssetWithOracles
 
 from rotkehlchen.assets.converters import LOCATION_TO_ASSET_MAPPING
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
@@ -99,7 +100,8 @@ class CointrackingImporter(BaseExchangeImporter):
             notes += f'. Data from -{csv_row["Exchange"]}- not known by rotki.'
 
         fee = Fee(ZERO)
-        fee_currency = A_USD  # whatever (used only if there is no fee)
+        # whatever (used only if there is no fee)
+        fee_currency: AssetWithOracles = A_USD.resolve_to_asset_with_oracles()
         if csv_row['Fee'] != '':
             fee = deserialize_fee(csv_row['Fee'])
             fee_currency = asset_resolver(csv_row['Cur.Fee'])
@@ -112,7 +114,7 @@ class CointrackingImporter(BaseExchangeImporter):
 
             if quote_asset is None:
                 # Really makes no difference as this is just a gift and the amount is zero
-                quote_asset = A_USD
+                quote_asset = A_USD.resolve_to_asset_with_oracles()
             base_amount_bought = deserialize_asset_amount(csv_row['Buy'])
             if base_amount_bought == ZERO:
                 raise DeserializationError('Bought amount in trade is zero')

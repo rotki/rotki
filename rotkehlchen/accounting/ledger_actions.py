@@ -4,8 +4,7 @@ from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.accounting.structures.base import ActionType
-from rotkehlchen.assets.asset import Asset, AssetWithSymbol
-from rotkehlchen.assets.utils import get_asset_by_identifier
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -79,9 +78,9 @@ class LedgerAction(AccountingEventMixin):
     action_type: LedgerActionType
     location: Location
     amount: AssetAmount
-    asset: AssetWithSymbol
+    asset: Asset
     rate: Optional[Price] = None
-    rate_asset: Optional[AssetWithSymbol] = None
+    rate_asset: Optional[Asset] = None
     link: Optional[str] = None
     notes: Optional[str] = None
 
@@ -125,12 +124,12 @@ class LedgerAction(AccountingEventMixin):
             timestamp=deserialize_timestamp(data['timestamp']),
             action_type=LedgerActionType.deserialize(data['action_type']),
             location=Location.deserialize(data['location']),
-            asset=get_asset_by_identifier(data['asset']),
+            asset=Asset(data['asset']),
             amount=deserialize_asset_amount(data['amount']),
             rate=deserialize_optional(data['rate'], deserialize_price),
             link=deserialize_optional(data['link'], str),
             notes=deserialize_optional(data['notes'], str),
-            rate_asset=get_asset_by_identifier(data['rate_asset']) if data.get('rate_asset') is not None else None,  # noqa:E501
+            rate_asset=Asset(data['rate_asset']) if data.get('rate_asset') is not None else None,  # noqa:E501
         )
 
     def serialize_for_db(self) -> LedgerActionDBTuple:
@@ -163,9 +162,9 @@ class LedgerAction(AccountingEventMixin):
             action_type=LedgerActionType.deserialize_from_db(data[2]),
             location=Location.deserialize_from_db(data[3]),
             amount=deserialize_asset_amount(data[4]),
-            asset=get_asset_by_identifier(data[5]),
+            asset=Asset(data[5]),
             rate=deserialize_optional(data[6], deserialize_price),
-            rate_asset=deserialize_optional(data[7], get_asset_by_identifier),
+            rate_asset=deserialize_optional(data[7], Asset),
             link=data[8],
             notes=data[9],
         )

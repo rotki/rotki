@@ -4,7 +4,7 @@ from typing import Optional
 from eth_utils import to_checksum_address
 from web3 import Web3
 
-from rotkehlchen.assets.asset import Asset, CryptoAsset, EvmToken
+from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.ethereum import ETH_SPECIAL_ADDRESS
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
@@ -68,40 +68,37 @@ def token_normalized_value(
     return token_normalized_value_decimals(token_amount, token.decimals)
 
 
-def asset_normalized_value(amount: int, asset: Asset) -> FVal:
+def get_decimals(asset: CryptoAsset) -> int:
+    """
+    May raise:
+    - UnsupportedAsset if the given asset is not ETH or an ethereum token
+    """
+    if asset.identifier == 'ETH':
+        return 18
+    try:
+        token = asset.resolve_to_evm_token()
+    except UnknownAsset as e:
+        raise UnsupportedAsset(asset.identifier) from e
+
+    return token.decimals
+
+
+def asset_normalized_value(amount: int, asset: CryptoAsset) -> FVal:
     """Takes in an amount and an asset and returns its normalized value
 
     May raise:
     - UnsupportedAsset if the given asset is not ETH or an ethereum token
     """
-    if asset.identifier == 'ETH':
-        decimals = 18
-    else:
-        try:
-            token = EvmToken(asset.identifier)
-        except UnknownAsset as e:
-            raise UnsupportedAsset(asset.identifier) from e
-        decimals = token.decimals
-
-    return token_normalized_value_decimals(amount, decimals)
+    return token_normalized_value_decimals(amount, get_decimals(asset))
 
 
-def asset_raw_value(amount: FVal, asset: Asset) -> int:
+def asset_raw_value(amount: FVal, asset: CryptoAsset) -> int:
     """Takes in an amount and an asset and returns its raw(wei equivalent) value
 
     May raise:
     - UnsupportedAsset if the given asset is not ETH or an ethereum token
     """
-    if asset.identifier == 'ETH':
-        decimals = 18
-    else:
-        try:
-            token = EvmToken(asset.identifier)
-        except UnknownAsset as e:
-            raise UnsupportedAsset(asset.identifier) from e
-        decimals = token.decimals
-
-    return token_raw_value_decimals(amount, decimals)
+    return token_raw_value_decimals(amount, get_decimals(asset))
 
 
 def generate_address_via_create2(
@@ -138,7 +135,7 @@ def ethaddress_to_asset(address: ChecksumEvmAddress) -> Optional[CryptoAsset]:
     Checks for special cases like the special ETH address used in some protocols
     """
     if address == ETH_SPECIAL_ADDRESS:
-        return A_ETH
+        return A_ETH.resolve_to_crypto_asset()
 
     try:
         asset = EvmToken(ethaddress_to_identifier(address))

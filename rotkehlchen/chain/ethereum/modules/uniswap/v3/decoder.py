@@ -63,6 +63,7 @@ class Uniswapv3Decoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                 # When swapping token for ETH the WETH contract is called by the router and the
                 # swap is not executed with the user in the topic but the router. This is when
                 # tx_log.topics[1] == tx_log.topics[2]
+                crypto_asset = event.asset.resolve_to_crypto_asset()
                 if (
                     event.event_type == HistoryEventType.SPEND and
                     (event.location_label == buyer or tx_log.topics[1] == tx_log.topics[2]) and
@@ -74,7 +75,7 @@ class Uniswapv3Decoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                     event.event_type = HistoryEventType.TRADE
                     event.event_subtype = HistoryEventSubType.SPEND
                     event.counterparty = CPT_UNISWAP_V3
-                    event.notes = f'Swap {event.balance.amount} {event.asset.symbol} in uniswap-v3 from {event.location_label}'  # noqa: E501
+                    event.notes = f'Swap {event.balance.amount} {crypto_asset.symbol} in uniswap-v3 from {event.location_label}'  # noqa: E501
                     out_event = event
                 elif (
                     (
@@ -90,7 +91,7 @@ class Uniswapv3Decoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                     event.event_type = HistoryEventType.TRADE
                     event.event_subtype = HistoryEventSubType.RECEIVE
                     event.counterparty = CPT_UNISWAP_V3
-                    event.notes = f'Receive {event.balance.amount} {event.asset.symbol} in uniswap-v3 from {event.location_label}'  # noqa: E501
+                    event.notes = f'Receive {event.balance.amount} {crypto_asset.symbol} in uniswap-v3 from {event.location_label}'  # noqa: E501
                     in_event = event
                 elif (
                     event.event_type == HistoryEventType.RECEIVE and
@@ -99,7 +100,7 @@ class Uniswapv3Decoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                     # Those are assets returned due to a change in the swap price
                     event.event_type = HistoryEventType.TRANSFER
                     event.counterparty = CPT_UNISWAP_V3
-                    event.notes = f'Refund of {event.balance.amount} {event.asset.symbol} in uniswap-v3 due to price change'  # noqa: E501
+                    event.notes = f'Refund of {event.balance.amount} {crypto_asset.symbol} in uniswap-v3 due to price change'  # noqa: E501
 
         maybe_reshuffle_events(out_event=out_event, in_event=in_event)
 

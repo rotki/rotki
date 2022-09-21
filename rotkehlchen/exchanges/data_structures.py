@@ -5,9 +5,8 @@ from typing import TYPE_CHECKING, Any, Dict, Iterator, List, NamedTuple, Optiona
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.accounting.structures.types import ActionType
-from rotkehlchen.assets.asset import Asset, AssetWithSymbol
+from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_binance
-from rotkehlchen.assets.utils import get_asset_by_identifier
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.crypto import sha3
 from rotkehlchen.errors.asset import UnknownAsset
@@ -70,11 +69,11 @@ class AssetMovement(AccountingEventMixin):
     # The source address if this is a deposit and the destination address if withdrawal
     address: Optional[str]
     transaction_id: Optional[str]
-    asset: AssetWithSymbol
+    asset: Asset
     # Amount is the original amount removed from the account
     amount: FVal
     # The asset that is kept as fee for the deposit/withdrawal
-    fee_asset: AssetWithSymbol
+    fee_asset: Asset
     # Fee is the amount of fee_currency that is kept for the deposit/withdrawal. Can be zero
     fee: Fee
     # For exchange asset movements this should be the exchange unique identifier
@@ -132,9 +131,9 @@ class AssetMovement(AccountingEventMixin):
             timestamp=deserialize_timestamp(data['timestamp']),
             address=deserialize_optional(data['address'], str),
             transaction_id=deserialize_optional(data['transaction_id'], str),
-            asset=get_asset_by_identifier(data['asset']),
+            asset=Asset(data['asset']),
             amount=deserialize_fval(data['amount'], name='amount', location='data structure'),
-            fee_asset=get_asset_by_identifier(data['fee_asset']),
+            fee_asset=Asset(data['fee_asset']),
             fee=deserialize_fee(data['fee']),
             link=str(data['link']),
         )
@@ -151,9 +150,9 @@ class AssetMovement(AccountingEventMixin):
             address=entry[3],
             transaction_id=entry[4],
             timestamp=Timestamp(entry[5]),
-            asset=get_asset_by_identifier(entry[6]),
+            asset=Asset(entry[6]),
             amount=deserialize_asset_amount(entry[7]),
-            fee_asset=AssetWithSymbol(entry[8]),
+            fee_asset=Asset(entry[8]),
             fee=deserialize_fee(entry[9]),
             link=entry[10],
         )
@@ -239,15 +238,15 @@ class Trade(AccountingEventMixin):
     """
     timestamp: Timestamp
     location: Location
-    base_asset: AssetWithSymbol
-    quote_asset: AssetWithSymbol
+    base_asset: Asset
+    quote_asset: Asset
     trade_type: TradeType
     # The amount represents the amount bought if it's a buy or or the amount
     # sold if it's a sell. Should NOT include fees
     amount: AssetAmount
     rate: Price
     fee: Optional[Fee] = None
-    fee_currency: Optional[AssetWithSymbol] = None
+    fee_currency: Optional[Asset] = None
     # For external trades this is optional and is a link to the trade in an explorer
     # For exchange trades this should be the exchange unique trade identifer
     # For trades imported from third parties we should generate a unique id for this.
@@ -258,7 +257,8 @@ class Trade(AccountingEventMixin):
 
     @property
     def identifier(self) -> TradeID:
-        """Formulates a unique identifier for the trade to become the DB primary key
+        """
+        Formulates a unique identifier for the trade to become the DB primary key
         """
         string = (
             str(self.location) +
@@ -290,7 +290,8 @@ class Trade(AccountingEventMixin):
 
     @classmethod
     def deserialize(cls, data: Dict[str, Any]) -> 'Trade':
-        """Deserializes a trade dict to a Trade object.
+        """
+        Deserializes a trade dict to a Trade object.
         May raise:
             - UnknownAsset
             - DeserializationError
@@ -301,26 +302,27 @@ class Trade(AccountingEventMixin):
         return (
             f'trade at {str(self.location)} location and date '
             f'{datetime.fromtimestamp(self.timestamp)} '
-            f'of type {str(self.trade_type)} with base asset: {self.base_asset.name} '
-            f'and quote asset: {self.quote_asset.name}'
+            f'of type {str(self.trade_type)} with base asset: {self.base_asset.resolve_to_asset_with_name_and_type().name} '  # noqa: E501
+            f'and quote asset: {self.quote_asset.resolve_to_asset_with_name_and_type().name}'
         )
 
     @classmethod
     def deserialize_from_db(cls, entry: TradeDBTuple) -> 'Trade':
-        """May raise:
-            - DeserializationError
-            - UnknownAsset
+        """
+        May raise:
+        - DeserializationError
+        - UnknownAsset
         """
         return Trade(
             timestamp=deserialize_timestamp(entry[1]),
             location=Location.deserialize_from_db(entry[2]),
-            base_asset=get_asset_by_identifier(entry[3]),
-            quote_asset=get_asset_by_identifier(entry[4]),
+            base_asset=Asset(entry[3]),
+            quote_asset=Asset(entry[4]),
             trade_type=TradeType.deserialize_from_db(entry[5]),
             amount=deserialize_asset_amount(entry[6]),
             rate=deserialize_price(entry[7]),
             fee=deserialize_optional(entry[8], deserialize_fee),
-            fee_currency=deserialize_optional(entry[9], get_asset_by_identifier),
+            fee_currency=deserialize_optional(entry[9], Asset),
             link=entry[10],
             notes=entry[11],
         )
@@ -380,7 +382,14 @@ class Trade(AccountingEventMixin):
             return 1
 
         group_id = self.identifier
-        taxable = accounting.settings.include_crypto2crypto or asset_in.is_fiat()
+        taxable = accounting.settings.include_crypto2crypto
+        if taxable is False:
+            try:
+                asset_in.resolve_to_fiat_asset()
+                taxable = True  # if asset_in is fiat
+            except UnknownAsset:
+                pass
+
         _, trade_taxable_amount = accounting.add_spend(
             event_type=AccountingEventType.TRADE,
             notes=notes + ' Amount out',
@@ -449,11 +458,11 @@ class MarginPosition(AccountingEventMixin):
     # Profit loss in pl_currency (does not include fees)
     profit_loss: AssetAmount
     # The asset gained or lost
-    pl_currency: AssetWithSymbol
+    pl_currency: Asset
     # Amount of fees paid
     fee: Fee
     # The asset in which fees were paid
-    fee_currency: AssetWithSymbol
+    fee_currency: Asset
     # For exchange margins this should be the exchange unique identifer
     # For margins imported from third parties we should generate a unique id for this.
     # If margins are both imported from third parties like cointracking.info and from
@@ -509,9 +518,9 @@ class MarginPosition(AccountingEventMixin):
             open_time=deserialize_timestamp(data['open_time']),
             close_time=deserialize_timestamp(data['close_time']),
             profit_loss=deserialize_asset_amount(data['profit_loss']),
-            pl_currency=get_asset_by_identifier(data['pl_currency']),
+            pl_currency=Asset(data['pl_currency']),
             fee=deserialize_fee(data['fee']),
-            fee_currency=get_asset_by_identifier(data['fee_currency']),
+            fee_currency=Asset(data['fee_currency']),
             link=str(data['link']),
             notes=str(data['notes']),
         )
@@ -531,9 +540,9 @@ class MarginPosition(AccountingEventMixin):
             open_time=open_time,
             close_time=deserialize_timestamp(entry[3]),
             profit_loss=deserialize_asset_amount(entry[4]),
-            pl_currency=get_asset_by_identifier(entry[5]),
+            pl_currency=Asset(entry[5]),
             fee=deserialize_fee(entry[6]),
-            fee_currency=get_asset_by_identifier(entry[7]),
+            fee_currency=Asset(entry[7]),
             link=entry[8],
             notes=entry[9],
         )
@@ -598,7 +607,7 @@ class Loan(AccountingEventMixin):
     location: Location
     open_time: Timestamp
     close_time: Timestamp
-    currency: AssetWithSymbol
+    currency: Asset
     fee: Fee
     earned: AssetAmount
     amount_lent: AssetAmount
@@ -632,7 +641,7 @@ class Loan(AccountingEventMixin):
             location=Location.deserialize(data['location']),
             open_time=deserialize_timestamp(data['open_time']),
             close_time=deserialize_timestamp(data['close_time']),
-            currency=get_asset_by_identifier(data['currency']),
+            currency=Asset(data['currency']),
             fee=deserialize_fee(data['fee']),
             earned=deserialize_asset_amount(data['earned']),
             amount_lent=deserialize_asset_amount(data['amount_lent']),
@@ -668,7 +677,7 @@ class Loan(AccountingEventMixin):
         return 1
 
 
-def trade_pair_from_assets(base: AssetWithSymbol, quote: AssetWithSymbol) -> TradePair:
+def trade_pair_from_assets(base: AssetWithOracles, quote: AssetWithOracles) -> TradePair:
     return TradePair(f'{base.identifier}_{quote.identifier}')
 
 
@@ -696,13 +705,13 @@ def deserialize_trade(data: Dict[str, Any]) -> Trade:
     return Trade(
         timestamp=data['timestamp'],
         location=location,
-        base_asset=get_asset_by_identifier(data['base_asset']),
-        quote_asset=get_asset_by_identifier(data['quote_asset']),
+        base_asset=Asset(data['base_asset']),
+        quote_asset=Asset(data['quote_asset']),
         trade_type=trade_type,
         amount=amount,
         rate=rate,
         fee=deserialize_optional(data['fee'], deserialize_fee),
-        fee_currency=get_asset_by_identifier(data['fee_currency']) if data['fee_currency'] is not None else None,  # noqa: E501
+        fee_currency=Asset(data['fee_currency']) if data['fee_currency'] is not None else None,  # noqa: E501
         link=trade_link,
         notes=trade_notes,
     )
@@ -749,8 +758,8 @@ class BinancePair(NamedTuple):
     the base and quote assets of that symbol as parsed from exchangeinfo endpoint
     result"""
     symbol: str
-    base_asset: AssetWithSymbol
-    quote_asset: AssetWithSymbol
+    base_asset: AssetWithOracles
+    quote_asset: AssetWithOracles
     location: Location  # Should only be binance or binanceus
 
     def serialize_for_db(self) -> BINANCE_PAIR_DB_TUPLE:

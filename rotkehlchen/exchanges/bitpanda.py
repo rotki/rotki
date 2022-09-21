@@ -21,7 +21,7 @@ import requests
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import AssetWithSymbol
+from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_bitpanda
 from rotkehlchen.constants.assets import A_BEST
 from rotkehlchen.constants.misc import ZERO
@@ -76,8 +76,9 @@ class Bitpanda(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         self.uri = 'https://api.bitpanda.com/v1'
         self.session.headers.update({'X-API-KEY': self.api_key})
         self.msg_aggregator = msg_aggregator
-        self.cryptocoin_map: Dict[str, AssetWithSymbol] = {}
-        self.fiat_map: Dict[str, AssetWithSymbol] = {}
+        self.cryptocoin_map: Dict[str, AssetWithOracles] = {}
+        # AssetWithOracles instead of FiatAsset to comply with cryptocoin_map
+        self.fiat_map: Dict[str, AssetWithOracles] = {}
 
     def first_connection(self) -> None:
         if self.first_connection_made:
@@ -481,7 +482,7 @@ class Bitpanda(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             msg = f'Failed to query Bitpanda balances. {str(e)}'
             return None, msg
 
-        assets_balance: DefaultDict[AssetWithSymbol, Balance] = defaultdict(Balance)
+        assets_balance: DefaultDict[AssetWithOracles, Balance] = defaultdict(Balance)
         wallets_len = len(wallets)
         for idx, entry in enumerate(wallets + fiat_wallets):
 

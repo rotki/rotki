@@ -15,8 +15,8 @@ from typing import (
 from eth_utils import to_checksum_address
 
 from rotkehlchen.accounting.structures.types import HistoryEventType
-from rotkehlchen.assets.asset import AssetWithSymbol, EvmToken
-from rotkehlchen.assets.utils import get_asset_by_symbol
+from rotkehlchen.assets.asset import AssetWithOracles, EvmToken
+from rotkehlchen.assets.utils import get_crypto_asset_by_symbol
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair
 from rotkehlchen.errors.serialization import ConversionError, DeserializationError
@@ -290,7 +290,7 @@ def _split_pair(pair: TradePair) -> Tuple[str, str]:
     return assets[0], assets[1]
 
 
-def pair_get_assets(pair: TradePair) -> Tuple[AssetWithSymbol, AssetWithSymbol]:
+def pair_get_assets(pair: TradePair) -> Tuple[AssetWithOracles, AssetWithOracles]:
     """Returns a tuple with the (base, quote) assets
 
     May raise:
@@ -298,10 +298,10 @@ def pair_get_assets(pair: TradePair) -> Tuple[AssetWithSymbol, AssetWithSymbol]:
     - UnknownAsset
     """
     base_str, quote_str = _split_pair(pair)
-    base_asset = get_asset_by_symbol(base_str)
+    base_asset = get_crypto_asset_by_symbol(base_str)
     if base_asset is None:
         raise UnknownAsset(base_str)
-    quote_asset = get_asset_by_symbol(quote_str)
+    quote_asset = get_crypto_asset_by_symbol(quote_str)
     if quote_asset is None:
         raise UnknownAsset(quote_str)
     return base_asset, quote_asset

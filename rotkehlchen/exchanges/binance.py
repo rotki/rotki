@@ -23,7 +23,7 @@ import requests
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import AssetWithSymbol
+from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
@@ -475,8 +475,8 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
     def _query_spot_balances(
             self,
-            balances: DefaultDict[AssetWithSymbol, Balance],
-    ) -> DefaultDict[AssetWithSymbol, Balance]:
+            balances: DefaultDict[AssetWithOracles, Balance],
+    ) -> DefaultDict[AssetWithOracles, Balance]:
         account_data = self.api_query_dict('api', 'account')
         binance_balances = account_data.get('balances', None)
         if not binance_balances:
@@ -541,8 +541,8 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
     def _query_lending_balances(
             self,
-            balances: DefaultDict[AssetWithSymbol, Balance],
-    ) -> DefaultDict[AssetWithSymbol, Balance]:
+            balances: DefaultDict[AssetWithOracles, Balance],
+    ) -> DefaultDict[AssetWithOracles, Balance]:
         """Queries binance lending balances and if any found adds them to `balances`
 
         May raise:
@@ -603,8 +603,8 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
     def _query_cross_collateral_futures_balances(
             self,
-            balances: DefaultDict[AssetWithSymbol, Balance],
-    ) -> DefaultDict[AssetWithSymbol, Balance]:
+            balances: DefaultDict[AssetWithOracles, Balance],
+    ) -> DefaultDict[AssetWithOracles, Balance]:
         """Queries binance collateral future balances and if any found adds them to `balances`
 
         May raise:
@@ -661,19 +661,19 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
         return balances
 
-    def _query_margined_fapi(self, balances: DefaultDict[AssetWithSymbol, Balance]) -> DefaultDict[AssetWithSymbol, Balance]:  # noqa: E501
+    def _query_margined_fapi(self, balances: DefaultDict[AssetWithOracles, Balance]) -> DefaultDict[AssetWithOracles, Balance]:  # noqa: E501
         """Only a convenience function to give same interface as other query methods"""
         return self._query_margined_futures_balances('fapi', balances)
 
-    def _query_margined_dapi(self, balances: DefaultDict[AssetWithSymbol, Balance]) -> DefaultDict[AssetWithSymbol, Balance]:  # noqa: E501
+    def _query_margined_dapi(self, balances: DefaultDict[AssetWithOracles, Balance]) -> DefaultDict[AssetWithOracles, Balance]:  # noqa: E501
         """Only a convenience function to give same interface as other query methods"""
         return self._query_margined_futures_balances('dapi', balances)
 
     def _query_margined_futures_balances(
             self,
             api_type: Literal['fapi', 'dapi'],
-            balances: DefaultDict[AssetWithSymbol, Balance],
-    ) -> DefaultDict[AssetWithSymbol, Balance]:
+            balances: DefaultDict[AssetWithOracles, Balance],
+    ) -> DefaultDict[AssetWithOracles, Balance]:
         """Queries binance margined future balances and if any found adds them to `balances`
 
         May raise:
@@ -739,8 +739,8 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
     def _query_pools_balances(
             self,
-            balances: DefaultDict[AssetWithSymbol, Balance],
-    ) -> DefaultDict[AssetWithSymbol, Balance]:
+            balances: DefaultDict[AssetWithOracles, Balance],
+    ) -> DefaultDict[AssetWithOracles, Balance]:
         """Queries binance pool balances and if any found adds them to `balances`
 
         May raise:
@@ -821,7 +821,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     def query_balances(self) -> ExchangeQueryBalances:
         try:
             self.first_connection()
-            returned_balances: DefaultDict[AssetWithSymbol, Balance] = defaultdict(Balance)
+            returned_balances: DefaultDict[AssetWithOracles, Balance] = defaultdict(Balance)
             returned_balances = self._query_spot_balances(returned_balances)
             if self.location != Location.BINANCEUS:
                 for method in (

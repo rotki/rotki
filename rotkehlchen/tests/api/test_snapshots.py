@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Optional
 
 import requests
 
-from rotkehlchen.assets.asset import AssetWithSymbol
+from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.constants.assets import A_AVAX, A_BTC, A_ETH, A_EUR, A_USD
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.db.snapshots import (
@@ -280,7 +280,7 @@ def _create_snapshot_with_invalid_headers(directory: str, timestamp: Timestamp) 
 def assert_csv_export_response(
         response,
         csv_dir,
-        main_currency: AssetWithSymbol,
+        main_currency: AssetWithOracles,
         is_download=False,
         expected_entries=2,
 ):

@@ -6,7 +6,7 @@ from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.structures.balance import AssetBalance, Balance
 from rotkehlchen.accounting.structures.defi import DefiEvent, DefiEventType
-from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.chain.ethereum.defi.structures import GIVEN_DEFI_BALANCES
 from rotkehlchen.chain.ethereum.modules.makerdao.constants import RAY
 from rotkehlchen.constants.ethereum import AAVE_V1_LENDING_POOL, AAVE_V2_LENDING_POOL
@@ -232,11 +232,11 @@ class Aave(EthereumModule):
         )
         events = []
         for _, history in mapping.items():
-            total_borrow: Dict[Asset, Balance] = defaultdict(Balance)
-            realized_borrow_loss: Dict[Asset, Balance] = defaultdict(Balance)
+            total_borrow: Dict[CryptoAsset, Balance] = defaultdict(Balance)
+            realized_borrow_loss: Dict[CryptoAsset, Balance] = defaultdict(Balance)
             for event in history.events:
-                got_asset: Optional[Asset]
-                spent_asset: Optional[Asset]
+                got_asset: Optional[CryptoAsset]
+                spent_asset: Optional[CryptoAsset]
                 pnl = got_asset = got_balance = spent_asset = spent_balance = None  # noqa: E501
                 if event.event_type == 'deposit':
                     event = cast(AaveDepositWithdrawalEvent, event)

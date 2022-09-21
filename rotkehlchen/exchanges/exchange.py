@@ -5,7 +5,7 @@ import requests
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import AssetWithSymbol
+from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
     LedgerActionsFilterQuery,
@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-ExchangeQueryBalances = Tuple[Optional[Dict[AssetWithSymbol, Balance]], str]
+ExchangeQueryBalances = Tuple[Optional[Dict[AssetWithOracles, Balance]], str]
 ExchangeHistorySuccessCallback = Callable[
     [List[Trade], List[MarginPosition], List[AssetMovement], Any],
     None,

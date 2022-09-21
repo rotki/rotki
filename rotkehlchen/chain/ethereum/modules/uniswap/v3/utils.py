@@ -507,7 +507,7 @@ def _decode_uniswap_v3_result(
         else:
             price_unknown_assets.add(asset)
         assets.append(LiquidityPoolAsset(
-            asset=asset,
+            token=asset,
             total_amount=total_amounts_of_tokens[token.address],
             user_balance=Balance(amount=asset_balance),
         ))

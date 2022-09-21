@@ -61,7 +61,8 @@ class ZksyncDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.BRIDGE
                 event.counterparty = CPT_ZKSYNC
-                event.notes = f'Deposit {event.balance.amount} {event.asset.symbol} to zksync'  # noqa: E501
+                crypto_asset = event.asset.resolve_to_crypto_asset()
+                event.notes = f'Deposit {event.balance.amount} {crypto_asset.symbol} to zksync'  # noqa: E501
                 break
 
         return None, None

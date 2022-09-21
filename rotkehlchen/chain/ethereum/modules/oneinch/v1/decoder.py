@@ -109,9 +109,10 @@ class Oneinchv1Decoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
         sender_address = None
         for event in decoded_events:
             # Edit the full amount in the swap's receive event
+            crypto_asset = event.asset.resolve_to_crypto_asset()
             if event.event_type == HistoryEventType.TRADE and event.event_subtype == HistoryEventSubType.RECEIVE and event.counterparty == CPT_ONEINCH_V1:  # noqa: E501
                 event.balance.amount = full_amount
-                event.notes = f'Receive {full_amount} {event.asset.symbol} from {CPT_ONEINCH_V1} swap in {event.location_label}'  # noqa: E501
+                event.notes = f'Receive {full_amount} {crypto_asset.symbol} from {CPT_ONEINCH_V1} swap in {event.location_label}'  # noqa: E501
                 sender_address = event.location_label
                 break
 

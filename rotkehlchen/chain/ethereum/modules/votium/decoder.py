@@ -42,7 +42,8 @@ class VotiumDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             if event.event_type == HistoryEventType.RECEIVE and event.location_label == receiver and event.balance.amount == amount and claimed_token == event.asset:  # noqa: E501
                 event.event_subtype = HistoryEventSubType.REWARD
                 event.counterparty = CPT_VOTIUM
-                event.notes = f'Receive {event.balance.amount} {event.asset.symbol} from votium bribe'  # noqa: E501
+                crypto_asset = event.asset.resolve_to_crypto_asset()
+                event.notes = f'Receive {event.balance.amount} {crypto_asset.symbol} from votium bribe'  # noqa: E501
 
         return None, None
 

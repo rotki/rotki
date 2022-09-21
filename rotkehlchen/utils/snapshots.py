@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Dict, List, Tuple
 
 from rotkehlchen.accounting.structures.balance import BalanceType
-from rotkehlchen.assets.asset import Asset, AssetWithSymbol
+from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.dbhandler import DBHandler
@@ -135,7 +135,7 @@ def get_main_currency_price(
         db: DBHandler,
         timestamp: Timestamp,
         msg_aggregator: MessagesAggregator,
-) -> Tuple[AssetWithSymbol, Price]:
+) -> Tuple[AssetWithOracles, Price]:
     """Gets the main currency and its equivalent price at a particular timestamp."""
     main_currency = db.get_setting(cursor, name='main_currency')
     main_currency_price = None

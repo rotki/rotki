@@ -55,6 +55,7 @@ class CurveDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
     ) -> Tuple[Optional[HistoryBaseEntry], Optional[ActionItem]]:
         """Decode information related to withdrawing assets from curve pools"""
         for event in decoded_events:
+            crypto_asset = event.asset.resolve_to_crypto_asset()
             if (  # Withdraw eth
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
@@ -64,7 +65,7 @@ class CurveDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.REMOVE_ASSET
                 event.counterparty = CPT_CURVE
-                event.notes = f'Remove {event.balance.amount} {event.asset.symbol} from the curve pool'  # noqa: E501
+                event.notes = f'Remove {event.balance.amount} {crypto_asset.symbol} from the curve pool'  # noqa: E501
             elif (  # Withdraw send wrapped
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.NONE and
@@ -77,7 +78,7 @@ class CurveDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                 event.event_type = HistoryEventType.SPEND
                 event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
                 event.counterparty = CPT_CURVE
-                event.notes = f'Return {event.balance.amount} {event.asset.symbol}'  # noqa: E501
+                event.notes = f'Return {event.balance.amount} {crypto_asset.symbol}'  # noqa: E501
             elif (  # Withdraw receive asset
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
@@ -88,7 +89,7 @@ class CurveDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.REMOVE_ASSET
                 event.counterparty = CPT_CURVE
-                event.notes = f'Remove {event.balance.amount} {event.asset.symbol} from the curve pool {tx_log.address}'  # noqa: E501
+                event.notes = f'Remove {event.balance.amount} {crypto_asset.symbol} from the curve pool {tx_log.address}'  # noqa: E501
         return None, None
 
     def _decode_curve_deposit_events(
@@ -99,6 +100,7 @@ class CurveDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
     ) -> Tuple[Optional[HistoryBaseEntry], Optional[ActionItem]]:
         """Decode information related to depositing assets in curve pools"""
         for event in decoded_events:
+            crypto_asset = event.asset.resolve_to_crypto_asset()
             if (  # Deposit ETH
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.NONE and
@@ -108,7 +110,7 @@ class CurveDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                 event.counterparty = CPT_CURVE
-                event.notes = f'Deposit {event.balance.amount} {event.asset.symbol} in curve pool'  # noqa: E501
+                event.notes = f'Deposit {event.balance.amount} {crypto_asset.symbol} in curve pool'  # noqa: E501
             elif (  # deposit give asset
                 (
                     event.event_type == HistoryEventType.SPEND and
@@ -125,7 +127,7 @@ class CurveDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                 event.counterparty = CPT_CURVE
-                event.notes = f'Deposit {event.balance.amount} {event.asset.symbol} in curve pool'  # noqa: E501
+                event.notes = f'Deposit {event.balance.amount} {crypto_asset.symbol} in curve pool'  # noqa: E501
                 if tx_log.address in self.curve_pools:
                     event.notes += f' {tx_log.address}'
             elif (  # Deposit receive pool token
@@ -137,7 +139,7 @@ class CurveDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                 event.event_type = HistoryEventType.RECEIVE
                 event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
                 event.counterparty = CPT_CURVE
-                event.notes = f'Receive {event.balance.amount} {event.asset.symbol} after depositing in curve pool {tx_log.address}'  # noqa: E501
+                event.notes = f'Receive {event.balance.amount} {crypto_asset.symbol} after depositing in curve pool {tx_log.address}'  # noqa: E501
             elif (  # deposit give asset
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.NONE and
@@ -147,7 +149,7 @@ class CurveDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                 event.counterparty = CPT_CURVE
-                event.notes = f'Deposit {event.balance.amount} {event.asset.symbol} in curve pool {tx_log.address}'  # noqa: E501
+                event.notes = f'Deposit {event.balance.amount} {crypto_asset.symbol} in curve pool {tx_log.address}'  # noqa: E501
 
         return None, None
 
@@ -206,7 +208,8 @@ class CurveDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             event.event_type = HistoryEventType.WITHDRAWAL
             event.event_subtype = HistoryEventSubType.REMOVE_ASSET
             event.counterparty = CPT_CURVE
-            event.notes = f'Receive {event.balance.amount} {event.asset.symbol} from the curve pool {CURVE_Y_DEPOSIT}'  # noqa: E501
+            crypto_asset = event.asset.resolve_to_crypto_asset()
+            event.notes = f'Receive {event.balance.amount} {crypto_asset.symbol} from the curve pool {CURVE_Y_DEPOSIT}'  # noqa: E501
             return True
         return False
 

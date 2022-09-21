@@ -5,7 +5,7 @@ from typing import Any, Callable, Dict, Optional, Type, TypeVar
 from rotkehlchen.accounting.cost_basis import CostBasisInfo
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL
-from rotkehlchen.assets.asset import AssetWithSymbol
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
@@ -28,7 +28,7 @@ class ProcessedAccountingEvent:
     notes: str
     location: Location
     timestamp: Timestamp
-    asset: AssetWithSymbol
+    asset: Asset
     free_amount: FVal
     taxable_amount: FVal
     price: Price
@@ -44,7 +44,7 @@ class ProcessedAccountingEvent:
     count_cost_basis_pnl: bool = field(init=False, default=False)
 
     def to_string(self, ts_converter: Callable[[Timestamp], str]) -> str:
-        desc = f'{self.type.name} for {self.free_amount}/{self.taxable_amount} {self.asset.symbol} with price: {self.price} and PNL: {self.pnl}.'  # noqa: E501
+        desc = f'{self.type.name} for {self.free_amount}/{self.taxable_amount} {self.asset.resolve_to_asset_with_symbol().symbol} with price: {self.price} and PNL: {self.pnl}.'  # noqa: E501
         if self.cost_basis:
             taxable, free = self.cost_basis.to_string(ts_converter)
             desc += f'Cost basis. Taxable {taxable}. Free: {free}'
@@ -139,7 +139,7 @@ class ProcessedAccountingEvent:
             self.pnl -= PNL(taxable=taxable_value + free_value, free=ZERO)
 
         if self.asset.is_fiat() or count_cost_basis_pnl is False:
-            return self.pnl  # no need to calculate spending pnl if asset is fiat
+            return self.pnl
 
         if self.cost_basis is not None:
             taxable_bought_cost = self.cost_basis.taxable_bought_cost
@@ -191,7 +191,7 @@ class ProcessedAccountingEvent:
                 notes=data['notes'],
                 location=Location.deserialize(data['location']),
                 timestamp=timestamp,
-                asset=AssetWithSymbol(data['asset']),
+                asset=Asset(data['asset']),
                 free_amount=deserialize_fval(data['free_amount'], name='free_amount', location='processed event decoding'),  # noqa: E501
                 taxable_amount=deserialize_fval(data['taxable_amount'], name='taxable_amount', location='processed event decoding'),  # noqa: E501
                 price=deserialize_price(data['price']),

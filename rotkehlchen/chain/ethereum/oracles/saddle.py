@@ -3,11 +3,11 @@ from typing import TYPE_CHECKING, Optional
 
 from web3.types import BlockIdentifier
 
-from rotkehlchen.assets.asset import Asset, AssetWithSymbol
-from rotkehlchen.assets.utils import get_asset_by_identifier
+from rotkehlchen.assets.asset import Asset, CryptoAsset
 from rotkehlchen.constants.assets import A_ALETH, A_ETH, A_WETH
 from rotkehlchen.constants.ethereum import SADDLE_ALETH_POOL
 from rotkehlchen.constants.misc import EXP18
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.price import PriceQueryUnsupportedAsset
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.interfaces import CurrentPriceOracleInterface
@@ -38,8 +38,8 @@ class SaddleOracle(CurrentPriceOracleInterface):
 
     def get_price(
         self,
-        from_asset: AssetWithSymbol,
-        to_asset: AssetWithSymbol,
+        from_asset: CryptoAsset,
+        to_asset: CryptoAsset,
         block_identifier: BlockIdentifier,
     ) -> Price:
         """
@@ -73,10 +73,12 @@ class SaddleOracle(CurrentPriceOracleInterface):
         """At the moment until more pools get implemented this function is limited to ALETH
         Refer to the docstring of `get_price`.
         """
-        from_asset = get_asset_by_identifier(from_asset.identifier)
-        to_asset = get_asset_by_identifier(to_asset.identifier)
-        return self.get_price(
-            from_asset=from_asset,
-            to_asset=to_asset,
-            block_identifier='latest',
-        )
+        try:
+            return self.get_price(
+                from_asset=from_asset.resolve_to_crypto_asset(),
+                to_asset=to_asset.resolve_to_crypto_asset(),
+                block_identifier='latest',
+            )
+        except UnknownAsset as e:
+            # Means that either from_asset or to_asset is not a crypto asset
+            raise PriceQueryUnsupportedAsset(e.asset_name) from e

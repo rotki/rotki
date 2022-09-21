@@ -447,11 +447,11 @@ class MakerdaoDsr(HasDSProxy):
                     usd_value=movement.amount_usd_value,
                 )
                 if movement.movement_type == 'deposit':
-                    spent_asset = A_DAI
+                    spent_asset = A_DAI.resolve_to_evm_token()
                     spent_balance = balance
                     total_balance -= balance
                 else:
-                    got_asset = A_DAI
+                    got_asset = A_DAI.resolve_to_evm_token()
                     got_balance = balance
                     total_balance += balance
                     if total_balance.amount - counted_profit.amount > ZERO:

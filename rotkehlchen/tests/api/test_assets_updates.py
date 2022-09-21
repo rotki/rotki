@@ -183,7 +183,7 @@ INSERT INTO assets(identifier, name, type) VALUES("EUR", "Ευρώ", "A"); INSER
         assert new_asset.coingecko == ''
         assert new_asset.cryptocompare == ''
 
-        assert Asset('EUR').name == 'Ευρώ'
+        assert Asset('EUR').resolve_to_asset_with_name_and_type().name == 'Ευρώ'
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])

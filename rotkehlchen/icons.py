@@ -9,10 +9,9 @@ from typing import Optional, Set
 import gevent
 import requests
 
-from rotkehlchen.assets.asset import Asset
-from rotkehlchen.assets.types import AssetType
+from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
-from rotkehlchen.errors.asset import UnsupportedAsset
+from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.coingecko import DELISTED_ASSETS, Coingecko
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -70,7 +69,7 @@ class IconManager():
 
         return file_md5(path)
 
-    def query_coingecko_for_icon(self, asset: Asset) -> bool:
+    def query_coingecko_for_icon(self, asset: AssetWithOracles) -> bool:
         """Queries coingecko for icons of an asset
 
         If query was okay it returns True, else False
@@ -127,7 +126,9 @@ class IconManager():
             return image_data
 
         # Then our only chance is coingecko
-        if not asset.has_coingecko():
+        try:
+            asset = asset.resolve_to_asset_with_oracles()
+        except UnknownAsset:
             return None
 
         needed_path = self.iconfile_path(asset)
@@ -152,7 +153,7 @@ class IconManager():
 
         Returns true if there is more icons left to cache after this batch.
         """
-        coingecko_integrated_asset_ids = GlobalDBHandler().assets_with_coingecko_id()
+        coingecko_integrated_asset_ids = GlobalDBHandler().assets_with_coingecko_icon()
         cached_asset_ids = [
             str(x.name)[:-10] for x in self.icons_dir.glob('*_small.png') if x.is_file()
         ]
@@ -163,8 +164,9 @@ class IconManager():
             f'Periodic task to query coingecko for {batch_size} uncached asset icons. '
             f'Uncached assets: {len(uncached_asset_ids)}. Cached assets: {len(cached_asset_ids)}',
         )
-        for asset_name in itertools.islice(uncached_asset_ids, batch_size):
-            self.query_coingecko_for_icon(Asset(asset_name))
+        for asset_identifier in itertools.islice(uncached_asset_ids, batch_size):
+            # asset with oracles should be found since identifiers come from assets_with_coingecko_icon  # noqa: E501
+            self.query_coingecko_for_icon(Asset(asset_identifier).resolve_to_asset_with_oracles())
 
         return len(uncached_asset_ids) > batch_size
 

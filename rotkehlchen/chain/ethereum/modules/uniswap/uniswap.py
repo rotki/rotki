@@ -331,7 +331,7 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
                 for lp in lps:
                     lp.total_supply = None
                     lp.assets = [
-                        LiquidityPoolAsset(asset=lp_asset.asset, total_amount=None, user_balance=Balance())  # noqa: E501
+                        LiquidityPoolAsset(token=lp_asset.token, total_amount=None, user_balance=Balance())  # noqa: E501
                         for lp_asset in lp.assets
                     ]
         return address_balances

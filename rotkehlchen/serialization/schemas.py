@@ -4,7 +4,7 @@ from marshmallow import Schema, fields, post_load
 
 from rotkehlchen.api.v1.fields import AssetField, AssetTypeField, TimestampField
 from rotkehlchen.api.v1.schemas import OptionalEvmTokenInformationSchema, UnderlyingTokenInfoSchema
-from rotkehlchen.assets.asset import EvmToken, UnderlyingToken
+from rotkehlchen.assets.asset import CryptoAsset, EvmToken, UnderlyingToken
 from rotkehlchen.assets.types import AssetType
 
 
@@ -13,8 +13,8 @@ class AssetDataSchema(OptionalEvmTokenInformationSchema):
     name = fields.String(required=True)
     symbol = fields.String(required=True)
     asset_type = AssetTypeField(required=True)
-    forked = AssetField(required=True, allow_none=True)
-    swapped_for = AssetField(required=True, allow_none=True)
+    forked = AssetField(expected_type=CryptoAsset, required=True, allow_none=True)
+    swapped_for = AssetField(expected_type=CryptoAsset, required=True, allow_none=True)
     cryptocompare = fields.String(required=True, allow_none=True)
     coingecko = fields.String(required=True, allow_none=True)
     decimals = fields.Integer(required=False)

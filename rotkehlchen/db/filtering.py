@@ -5,8 +5,8 @@ from typing import Any, List, Literal, NamedTuple, Optional, Tuple, Union, cast
 from rotkehlchen.accounting.ledger_actions import LedgerActionType
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.accounting.types import SchemaEventType
-from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.types import AssetType
+from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -331,7 +331,7 @@ class ETHTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
             to_ts: Optional[Timestamp] = None,
             tx_hash: Optional[EVMTxHash] = None,
             protocols: Optional[List[str]] = None,
-            asset: Optional[Asset] = None,
+            asset: Optional[EvmToken] = None,
             exclude_ignored_assets: bool = False,
     ) -> 'ETHTransactionsFilterQuery':
         if order_by_rules is None:

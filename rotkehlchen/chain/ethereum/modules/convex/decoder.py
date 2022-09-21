@@ -43,6 +43,7 @@ class ConvexDecoder(DecoderInterface):
 
         for event in decoded_events:
             amount = asset_normalized_value(amount_raw, event.asset)
+            crypto_asset = event.asset.resolve_to_crypto_asset()
             if (
                 event.location_label == transaction.from_address == interacted_address is False or
                 (event.counterparty != ZERO_ADDRESS and event.balance.amount != amount)
@@ -56,16 +57,16 @@ class ConvexDecoder(DecoderInterface):
                     event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
                     event.counterparty = CPT_CONVEX
                     if tx_log.address in CONVEX_POOLS:
-                        event.notes = f'Return {event.balance.amount} {event.asset.symbol} to convex {CONVEX_POOLS[tx_log.address]} pool'  # noqa: E501
+                        event.notes = f'Return {event.balance.amount} {crypto_asset.symbol} to convex {CONVEX_POOLS[tx_log.address]} pool'  # noqa: E501
                     else:
-                        event.notes = f'Return {event.balance.amount} {event.asset.symbol} to convex'  # noqa: E501
+                        event.notes = f'Return {event.balance.amount} {crypto_asset.symbol} to convex'  # noqa: E501
                 else:
                     event.event_type = HistoryEventType.DEPOSIT
                     event.counterparty = CPT_CONVEX
                     if tx_log.address in CONVEX_POOLS:
-                        event.notes = f'Deposit {event.balance.amount} {event.asset.symbol} into convex {CONVEX_POOLS[tx_log.address]} pool'  # noqa: E501
+                        event.notes = f'Deposit {event.balance.amount} {crypto_asset.symbol} into convex {CONVEX_POOLS[tx_log.address]} pool'  # noqa: E501
                     else:
-                        event.notes = f'Deposit {event.balance.amount} {event.asset.symbol} into convex'  # noqa: E501
+                        event.notes = f'Deposit {event.balance.amount} {crypto_asset.symbol} into convex'  # noqa: E501
             elif (
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE
@@ -73,17 +74,17 @@ class ConvexDecoder(DecoderInterface):
                 if tx_log.topics[0] in WITHDRAWAL_TOPICS:
                     event.event_type = HistoryEventType.WITHDRAWAL
                     if tx_log.address in CONVEX_POOLS:
-                        event.notes = f'Withdraw {event.balance.amount} {event.asset.symbol} from convex {CONVEX_POOLS[tx_log.address]} pool'  # noqa: E501
+                        event.notes = f'Withdraw {event.balance.amount} {crypto_asset.symbol} from convex {CONVEX_POOLS[tx_log.address]} pool'  # noqa: E501
                     else:
-                        event.notes = f'Withdraw {event.balance.amount} {event.asset.symbol} from convex'  # noqa: E501
+                        event.notes = f'Withdraw {event.balance.amount} {crypto_asset.symbol} from convex'  # noqa: E501
                     event.counterparty = CPT_CONVEX
                 elif tx_log.topics[0] in REWARD_TOPICS:
                     event.event_subtype = HistoryEventSubType.REWARD
                     event.counterparty = CPT_CONVEX
                     if tx_log.address in CONVEX_POOLS:
-                        event.notes = f'Claim {event.balance.amount} {event.asset.symbol} reward from convex {CONVEX_POOLS[tx_log.address]} pool'  # noqa: E501
+                        event.notes = f'Claim {event.balance.amount} {crypto_asset.symbol} reward from convex {CONVEX_POOLS[tx_log.address]} pool'  # noqa: E501
                     else:
-                        event.notes = f'Claim {event.balance.amount} {event.asset.symbol} reward from convex'  # noqa: E501
+                        event.notes = f'Claim {event.balance.amount} {crypto_asset.symbol} reward from convex'  # noqa: E501
         return None, None
 
     @staticmethod
@@ -105,10 +106,11 @@ class ConvexDecoder(DecoderInterface):
             event.event_subtype == HistoryEventSubType.NONE
         ):
             event.event_subtype = HistoryEventSubType.REWARD
+            crypto_asset = event.asset.resolve_to_crypto_asset()
             if tx_log.address in CONVEX_POOLS:
-                event.notes = f'Claim {event.balance.amount} {event.asset.symbol} reward from convex {CONVEX_POOLS[tx_log.address]} pool'  # noqa: E501
+                event.notes = f'Claim {event.balance.amount} {crypto_asset.symbol} reward from convex {CONVEX_POOLS[tx_log.address]} pool'  # noqa: E501
             else:
-                event.notes = f'Claim {event.balance.amount} {event.asset.symbol} reward from convex'  # noqa: E501
+                event.notes = f'Claim {event.balance.amount} {crypto_asset.symbol} reward from convex'  # noqa: E501
             event.counterparty = CPT_CONVEX
             return True
         return False

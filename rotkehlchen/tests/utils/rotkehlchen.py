@@ -5,7 +5,7 @@ from unittest.mock import _patch, patch
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
-from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.assets.asset import Asset, AssetWithOracles, EvmToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.ethereum.defi.structures import DefiProtocolBalances
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
@@ -38,8 +38,8 @@ class BalancesTestSetup(NamedTuple):
     eth_balances: List[str]
     btc_balances: List[str]
     token_balances: Dict[EvmToken, List[str]]
-    binance_balances: Dict[Asset, FVal]
-    poloniex_balances: Dict[Asset, FVal]
+    binance_balances: Dict[AssetWithOracles, FVal]
+    poloniex_balances: Dict[AssetWithOracles, FVal]
     manually_tracked_balances: List[ManuallyTrackedBalance]
     poloniex_patch: _patch
     binance_patch: _patch
@@ -233,12 +233,15 @@ def setup_balances(
         original_requests_get=requests.get,
     )
     # Taken from BINANCE_BALANCES_RESPONSE from tests.utils.exchanges
-    binance_balances: Dict[Asset, FVal] = {
-        A_ETH: FVal('4763368.68006011'),
-        A_BTC: FVal('4723846.89208129'),
+    binance_balances: Dict[AssetWithOracles, FVal] = {
+        A_ETH.resolve_to_asset_with_oracles(): FVal('4763368.68006011'),
+        A_BTC.resolve_to_asset_with_oracles(): FVal('4723846.89208129'),
     }
     # Taken from POLONIEX_BALANCES_RESPONSE from tests.utils.exchanges
-    poloniex_balances: Dict[Asset, FVal] = {A_ETH: FVal('11.0'), A_BTC: FVal('5.5')}
+    poloniex_balances: Dict[AssetWithOracles, FVal] = {
+        A_ETH.resolve_to_asset_with_oracles(): FVal('11.0'),
+        A_BTC.resolve_to_asset_with_oracles(): FVal('5.5'),
+    }
 
     if manually_tracked_balances is None:
         manually_tracked_balances = []
