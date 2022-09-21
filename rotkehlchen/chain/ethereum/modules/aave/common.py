@@ -76,9 +76,9 @@ def asset_to_aave_reserve_address(asset: CryptoAsset) -> Optional[ChecksumEvmAdd
 
 def atoken_to_asset(atoken: EvmToken) -> Optional[CryptoAsset]:
     if atoken == A_AETH_V1:
-        return A_ETH
+        return A_ETH.resolve_to_crypto_asset()
     if atoken == A_AREP_V1:
-        return A_REP
+        return A_REP.resolve_to_crypto_asset()
 
     asset_symbol = atoken.symbol[1:]
     with GlobalDBHandler().conn.read_ctx() as cursor:
@@ -96,7 +96,7 @@ def atoken_to_asset(atoken: EvmToken) -> Optional[CryptoAsset]:
 
 def asset_to_atoken(asset: CryptoAsset, version: int) -> Optional[EvmToken]:
     if asset == A_ETH:
-        return A_AETH_V1
+        return A_AETH_V1.resolve_to_evm_token()
 
     protocol = 'aave' if version == 1 else 'aave-v2'
     with GlobalDBHandler().conn.read_ctx() as cursor:

@@ -17,9 +17,10 @@ from rotkehlchen.assets.asset import (
     WORLD_TO_NEXO,
     WORLD_TO_POLONIEX,
     WORLD_TO_UPHOLD,
-    AssetWithSymbol,
+    Asset,
+    AssetWithOracles,
 )
-from rotkehlchen.assets.utils import get_asset_by_identifier, symbol_to_asset_or_token
+from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.constants.assets import A_DAI, A_SAI
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.errors.asset import UnsupportedAsset
@@ -794,7 +795,7 @@ RENAMED_BINANCE_ASSETS = {
 }
 
 
-def asset_from_kraken(kraken_name: str) -> AssetWithSymbol:
+def asset_from_kraken(kraken_name: str) -> AssetWithOracles:
     """May raise:
     - DeserializationError
     - UnknownAsset
@@ -827,7 +828,7 @@ def asset_from_kraken(kraken_name: str) -> AssetWithSymbol:
     return symbol_to_asset_or_token(name)
 
 
-def asset_from_poloniex(poloniex_name: str) -> AssetWithSymbol:
+def asset_from_poloniex(poloniex_name: str) -> AssetWithOracles:
     """May raise:
     - DeserializationError
     - UnsupportedAsset
@@ -847,7 +848,7 @@ def asset_from_bitfinex(
         bitfinex_name: str,
         currency_map: Dict[str, str],
         is_currency_map_updated: bool = True,
-) -> AssetWithSymbol:
+) -> AssetWithOracles:
     """May raise:
     - DeserializationError
     - UnsupportedAsset
@@ -869,7 +870,7 @@ def asset_from_bitfinex(
     return symbol_to_asset_or_token(symbol)
 
 
-def asset_from_bitstamp(bitstamp_name: str) -> AssetWithSymbol:
+def asset_from_bitstamp(bitstamp_name: str) -> AssetWithOracles:
     """May raise:
     - DeserializationError
     - UnsupportedAsset
@@ -882,7 +883,7 @@ def asset_from_bitstamp(bitstamp_name: str) -> AssetWithSymbol:
     return symbol_to_asset_or_token(name)
 
 
-def asset_from_bittrex(bittrex_name: str) -> AssetWithSymbol:
+def asset_from_bittrex(bittrex_name: str) -> AssetWithOracles:
     """May raise:
     - DeserializationError
     - UnsupportedAsset
@@ -898,7 +899,7 @@ def asset_from_bittrex(bittrex_name: str) -> AssetWithSymbol:
     return symbol_to_asset_or_token(name)
 
 
-def asset_from_coinbasepro(coinbase_pro_name: str) -> AssetWithSymbol:
+def asset_from_coinbasepro(coinbase_pro_name: str) -> AssetWithOracles:
     """May raise:
     - DeserializationError
     - UnsupportedAsset
@@ -913,7 +914,7 @@ def asset_from_coinbasepro(coinbase_pro_name: str) -> AssetWithSymbol:
     return symbol_to_asset_or_token(name)
 
 
-def asset_from_binance(binance_name: str) -> AssetWithSymbol:
+def asset_from_binance(binance_name: str) -> AssetWithOracles:
     """May raise:
     - DeserializationError
     - UnsupportedAsset
@@ -926,13 +927,13 @@ def asset_from_binance(binance_name: str) -> AssetWithSymbol:
         raise UnsupportedAsset(binance_name)
 
     if binance_name in RENAMED_BINANCE_ASSETS:
-        return get_asset_by_identifier(RENAMED_BINANCE_ASSETS[binance_name])
+        return Asset(RENAMED_BINANCE_ASSETS[binance_name]).resolve_to_asset_with_oracles()
 
     name = BINANCE_TO_WORLD.get(binance_name, binance_name)
     return symbol_to_asset_or_token(name)
 
 
-def asset_from_coinbase(cb_name: str, time: Optional[Timestamp] = None) -> AssetWithSymbol:
+def asset_from_coinbase(cb_name: str, time: Optional[Timestamp] = None) -> AssetWithOracles:
     """May raise:
     - DeserializationError
     - UnknownAsset
@@ -941,15 +942,15 @@ def asset_from_coinbase(cb_name: str, time: Optional[Timestamp] = None) -> Asset
     # wallet for the new DAI during the transition period. We should be able to handle this
     # https://support.coinbase.com/customer/portal/articles/2982947
     if cb_name == 'MCDAI':
-        return A_DAI
+        return A_DAI.resolve_to_asset_with_oracles()
     if cb_name == 'DAI':
         # If it's dai and it's queried from the exchange before the end of the upgrade
         if not time:
             time = ts_now()
         if time < COINBASE_DAI_UPGRADE_END_TS:
             # Then it should be the single collateral version
-            return A_SAI
-        return A_DAI
+            return A_SAI.resolve_to_asset_with_oracles()
+        return A_DAI.resolve_to_asset_with_oracles()
 
     if not isinstance(cb_name, str):
         raise DeserializationError(f'Got non-string type {type(cb_name)} for coinbase asset')
@@ -958,7 +959,7 @@ def asset_from_coinbase(cb_name: str, time: Optional[Timestamp] = None) -> Asset
     return symbol_to_asset_or_token(name)
 
 
-def asset_from_ftx(ftx_name: str) -> AssetWithSymbol:
+def asset_from_ftx(ftx_name: str) -> AssetWithOracles:
     """May raise:
     - DeserializationError
     - UnsupportedAsset
@@ -977,7 +978,7 @@ def asset_from_ftx(ftx_name: str) -> AssetWithSymbol:
     return symbol_to_asset_or_token(name)
 
 
-def asset_from_kucoin(kucoin_name: str) -> AssetWithSymbol:
+def asset_from_kucoin(kucoin_name: str) -> AssetWithOracles:
     """May raise:
     - DeserializationError
     - UnsupportedAsset
@@ -993,7 +994,7 @@ def asset_from_kucoin(kucoin_name: str) -> AssetWithSymbol:
     return symbol_to_asset_or_token(name)
 
 
-def asset_from_gemini(symbol: str) -> AssetWithSymbol:
+def asset_from_gemini(symbol: str) -> AssetWithOracles:
     """May raise:
     - DeserializationError
     - UnsupportedAsset
@@ -1009,7 +1010,7 @@ def asset_from_gemini(symbol: str) -> AssetWithSymbol:
     return symbol_to_asset_or_token(name)
 
 
-def asset_from_iconomi(symbol: str) -> AssetWithSymbol:
+def asset_from_iconomi(symbol: str) -> AssetWithOracles:
     """May raise:
     - DeserializationError
     - UnsupportedAsset
@@ -1024,7 +1025,7 @@ def asset_from_iconomi(symbol: str) -> AssetWithSymbol:
     return symbol_to_asset_or_token(name)
 
 
-def asset_from_uphold(symbol: str) -> AssetWithSymbol:
+def asset_from_uphold(symbol: str) -> AssetWithOracles:
     """May raise:
     - DeserializationError
     - UnsupportedAsset
@@ -1037,7 +1038,7 @@ def asset_from_uphold(symbol: str) -> AssetWithSymbol:
     return symbol_to_asset_or_token(name)
 
 
-def asset_from_nexo(nexo_name: str) -> AssetWithSymbol:
+def asset_from_nexo(nexo_name: str) -> AssetWithOracles:
     """May raise:
     - DeserializationError
     - UnsupportedAsset
@@ -1050,7 +1051,7 @@ def asset_from_nexo(nexo_name: str) -> AssetWithSymbol:
     return symbol_to_asset_or_token(our_name)
 
 
-def asset_from_bitpanda(bitpanda_name: str) -> AssetWithSymbol:
+def asset_from_bitpanda(bitpanda_name: str) -> AssetWithOracles:
     """May raise:
     - DeserializationError
     - UnsupportedAsset
@@ -1063,7 +1064,7 @@ def asset_from_bitpanda(bitpanda_name: str) -> AssetWithSymbol:
     return symbol_to_asset_or_token(our_name)
 
 
-def asset_from_cryptocom(cryptocom_name: str) -> AssetWithSymbol:
+def asset_from_cryptocom(cryptocom_name: str) -> AssetWithOracles:
     """May raise:
     - DeserializationError
     - UnsupportedAsset
@@ -1078,7 +1079,7 @@ def asset_from_cryptocom(cryptocom_name: str) -> AssetWithSymbol:
     return symbol_to_asset_or_token(symbol)
 
 
-LOCATION_TO_ASSET_MAPPING: Dict[Location, Callable[[str], AssetWithSymbol]] = {
+LOCATION_TO_ASSET_MAPPING: Dict[Location, Callable[[str], AssetWithOracles]] = {
     Location.BINANCE: asset_from_binance,
     Location.CRYPTOCOM: asset_from_cryptocom,
     Location.BITPANDA: asset_from_bitpanda,

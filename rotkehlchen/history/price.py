@@ -2,9 +2,10 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional
 
-from rotkehlchen.assets.asset import Asset, AssetWithSymbol
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_KFEE, A_USD
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.fval import FVal
@@ -182,9 +183,9 @@ class PriceHistorian():
 
         # Querying historical forex data is attempted first via the external apis
         # and then via any price oracle that has fiat to fiat.
-        if from_asset.is_fiat() and to_asset.is_fiat():
-            from_asset = AssetWithSymbol(from_asset.identifier)
-            to_asset = AssetWithSymbol(from_asset.identifier)
+        try:
+            from_asset = from_asset.resolve_to_fiat_asset()
+            to_asset = from_asset.resolve_to_fiat_asset()
             price = Inquirer().query_historical_fiat_exchange_rates(
                 from_fiat_currency=from_asset,
                 to_fiat_currency=to_asset,
@@ -192,6 +193,8 @@ class PriceHistorian():
             )
             if price is not None:
                 return price
+        except UnknownAsset:
+            pass
             # else cryptocompare also has historical fiat to fiat data
 
         instance = PriceHistorian()
@@ -215,7 +218,12 @@ class PriceHistorian():
                     to_asset=to_asset,
                     timestamp=timestamp,
                 )
-            except (PriceQueryUnsupportedAsset, NoPriceForGivenTimestamp, RemoteError):
+            except (
+                PriceQueryUnsupportedAsset,
+                NoPriceForGivenTimestamp,
+                RemoteError,
+                UnknownAsset,
+            ):
                 continue
 
             log.debug(

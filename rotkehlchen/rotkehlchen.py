@@ -57,6 +57,7 @@ from rotkehlchen.data_import.manager import CSVDataImporter
 from rotkehlchen.data_migrations.manager import DataMigrationManager
 from rotkehlchen.db.settings import DBSettings, ModifiableDBSettings
 from rotkehlchen.errors.api import PremiumAuthenticationError
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import EthSyncError, InputError, RemoteError, SystemPermissionError
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.externalapis.beaconchain import BeaconChain
@@ -701,7 +702,6 @@ class Rotkehlchen():
             else:
                 location_str = str(exchange.location)
                 if location_str not in balances:
-                    # `AssetWithSymbol` is a subclass of `Asset` mypy error is strange
                     balances[location_str] = exchange_balances  # type: ignore
                 else:  # multiple exchange of same type. Combine balances
                     balances[location_str] = combine_dicts(
@@ -972,7 +972,14 @@ class Rotkehlchen():
         if oracle != HistoricalPriceOracle.CRYPTOCOMPARE:
             return  # only for cryptocompare for now
 
-        self.cryptocompare.create_cache(from_asset, to_asset, purge_old)
+        try:
+            self.cryptocompare.create_cache(
+                from_asset=from_asset.resolve_to_asset_with_oracles(),
+                to_asset=to_asset.resolve_to_asset_with_oracles(),
+                purge_old=purge_old,
+            )
+        except UnknownAsset:
+            pass  # means that assets are not crypto or fiat, so we can't wuery cryptocompare
 
     def update_curve_pools_cache(self) -> None:
         """Updates curve pools cache.

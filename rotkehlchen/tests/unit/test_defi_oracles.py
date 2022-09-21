@@ -68,29 +68,31 @@ def test_uniswap_no_decimals(inquirer_defi):
     """Test that if a token has no information about the number of decimals a proper error
     is raised"""
     asset_resolver = AssetResolver()
-    original_getter = asset_resolver.get_asset_data
+    original_getter = asset_resolver.get_asset_data  # TODO: Yabir, please fix this
 
     def fake_weth_token():
         """Make sure that the weth token has no decimals fields and any other token
         is loaded properly
         """
+        resolved_weth = A_WETH.resolve_to_evm_token()
+
         def mocked_asset_getter(asset_identifier: str, form_with_incomplete_data: bool = False):
-            if asset_identifier == A_WETH.identifier:
+            if asset_identifier == resolved_weth.identifier:
                 fake_weth = AssetData(
-                    identifier=A_WETH.identifier,
-                    asset_type=A_WETH.asset_type,
-                    address=A_WETH.evm_address,
-                    chain=A_WETH.chain,
-                    token_kind=A_WETH.token_kind,
+                    identifier=resolved_weth.identifier,
+                    asset_type=resolved_weth.asset_type,
+                    address=resolved_weth.evm_address,
+                    chain=resolved_weth.chain,
+                    token_kind=resolved_weth.token_kind,
                     decimals=None,
-                    name=A_WETH.name,
-                    symbol=A_WETH.symbol,
-                    started=A_WETH.started,
-                    forked=A_WETH.forked.identifier if A_WETH.forked is not None else None,
-                    swapped_for=A_WETH.swapped_for.identifier if A_WETH.swapped_for is not None else None,  # noqa: E501
-                    coingecko=A_WETH.coingecko,
-                    cryptocompare=A_WETH.cryptocompare,
-                    protocol=A_WETH.protocol,
+                    name=resolved_weth.name,
+                    symbol=resolved_weth.symbol,
+                    started=resolved_weth.started,
+                    forked=resolved_weth.forked.identifier if resolved_weth.forked is not None else None,  # noqa: E501
+                    swapped_for=resolved_weth.swapped_for.identifier if resolved_weth.swapped_for is not None else None,  # noqa: E501
+                    coingecko=resolved_weth.coingecko,
+                    cryptocompare=resolved_weth.cryptocompare,
+                    protocol=resolved_weth.protocol,
                 )
                 return fake_weth
             return original_getter(asset_identifier, form_with_incomplete_data)

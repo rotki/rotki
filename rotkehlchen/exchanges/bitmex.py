@@ -11,8 +11,7 @@ import requests
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import AssetWithSymbol
-from rotkehlchen.assets.utils import get_asset_by_identifier
+from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
@@ -46,10 +45,11 @@ BITMEX_PRIVATE_ENDPOINTS = (
 )
 
 
-def bitmex_to_world(symbol: str) -> AssetWithSymbol:
+def bitmex_to_world(symbol: str) -> AssetWithOracles:
     if symbol == 'XBt':
-        return A_BTC
-    return get_asset_by_identifier(symbol)
+        return A_BTC.resolve_to_asset_with_oracles()
+    # TODO: Investigate. Is it also broken right now due to evm tokens' identifier change?
+    return Asset(symbol).resolve_to_asset_with_oracles()
 
 
 def trade_from_bitmex(bitmex_trade: Dict) -> MarginPosition:
@@ -238,7 +238,7 @@ class Bitmex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     @protect_with_lock()
     @cache_response_timewise()
     def query_balances(self) -> ExchangeQueryBalances:
-        returned_balances: Dict[AssetWithSymbol, Balance] = {}
+        returned_balances: Dict[AssetWithOracles, Balance] = {}
         try:
             resp = self._api_query_dict('get', 'user/wallet', {'currency': 'XBt'})
             # Bitmex shows only BTC balance
@@ -257,7 +257,7 @@ class Bitmex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             return None, msg
 
         usd_value = amount * usd_price
-        returned_balances[A_BTC] = Balance(
+        returned_balances[A_BTC.resolve_to_asset_with_oracles()] = Balance(
             amount=amount,
             usd_value=usd_value,
         )

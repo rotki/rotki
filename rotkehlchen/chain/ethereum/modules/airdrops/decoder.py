@@ -78,7 +78,7 @@ class AirdropsDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
 
         user_address = hex_or_bytes_to_address(tx_log.data[32:64])
         raw_amount = hex_or_bytes_to_int(tx_log.data[64:96])
-        amount = asset_normalized_value(amount=raw_amount, asset=A_UNI)
+        amount = asset_normalized_value(amount=raw_amount, asset=A_UNI.resolve_to_crypto_asset())
 
         for event in decoded_events:
             if event.event_type == HistoryEventType.RECEIVE and event.location_label == user_address and amount == event.balance.amount and A_UNI == event.asset:  # noqa: E501
@@ -103,7 +103,7 @@ class AirdropsDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
 
         user_address = hex_or_bytes_to_address(tx_log.topics[1])
         raw_amount = hex_or_bytes_to_int(tx_log.data[64:96])
-        amount = asset_normalized_value(amount=raw_amount, asset=A_FOX)
+        amount = asset_normalized_value(amount=raw_amount, asset=A_FOX.resolve_to_crypto_asset())
 
         for event in decoded_events:
             if event.event_type == HistoryEventType.RECEIVE and event.location_label == user_address and amount == event.balance.amount and A_FOX == event.asset:  # noqa: E501
@@ -128,7 +128,10 @@ class AirdropsDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
 
         user_address = hex_or_bytes_to_address(tx_log.topics[1])
         raw_amount = hex_or_bytes_to_int(tx_log.data[32:64])
-        amount = asset_normalized_value(amount=raw_amount, asset=A_BADGER)
+        amount = asset_normalized_value(
+            amount=raw_amount,
+            asset=A_BADGER.resolve_to_crypto_asset(),
+        )
 
         for event in decoded_events:
             if event.event_type == HistoryEventType.RECEIVE and event.location_label == user_address and amount == event.balance.amount and A_BADGER == event.asset:  # noqa: E501
@@ -153,7 +156,7 @@ class AirdropsDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
 
         user_address = hex_or_bytes_to_address(tx_log.data[32:64])
         raw_amount = hex_or_bytes_to_int(tx_log.data[64:96])
-        amount = asset_normalized_value(amount=raw_amount, asset=A_1INCH)
+        amount = asset_normalized_value(amount=raw_amount, asset=A_1INCH.resolve_to_crypto_asset())
 
         for event in decoded_events:
             if event.event_type == HistoryEventType.RECEIVE and event.location_label == user_address and amount == event.balance.amount and A_1INCH == event.asset:  # noqa: E501
@@ -180,11 +183,17 @@ class AirdropsDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
         user_address = hex_or_bytes_to_address(tx_log.data[0:32])
         raw_amount = hex_or_bytes_to_int(tx_log.data[32:64])
         if airdrop == CPT_CONVEX:
-            amount = asset_normalized_value(amount=raw_amount, asset=A_CVX)
+            amount = asset_normalized_value(
+                amount=raw_amount,
+                asset=A_CVX.resolve_to_crypto_asset(),
+            )
             note_location = 'from convex airdrop'
             counterparty = CPT_CONVEX
         else:
-            amount = asset_normalized_value(amount=raw_amount, asset=A_FPIS)
+            amount = asset_normalized_value(
+                amount=raw_amount,
+                asset=A_FPIS.resolve_to_crypto_asset(),
+            )
             note_location = 'from FPIS airdrop'
             counterparty = CPT_FRAX
 
@@ -193,7 +202,8 @@ class AirdropsDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                 event.event_type = HistoryEventType.RECEIVE
                 event.event_subtype = HistoryEventSubType.AIRDROP
                 event.counterparty = counterparty
-                event.notes = f'Claim {amount} {event.asset.symbol} {note_location}'  # noqa: E501
+                crypto_asset = event.asset.resolve_to_crypto_asset()
+                event.notes = f'Claim {amount} {crypto_asset.symbol} {note_location}'  # noqa: E501
                 break
 
         return None, None
@@ -215,7 +225,7 @@ class AirdropsDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
         user_address = hex_or_bytes_to_address(tx_log.topics[1])
         delegate_address = hex_or_bytes_to_address(tx_log.topics[2])
         raw_amount = hex_or_bytes_to_int(tx_log.data[0:32])
-        amount = asset_normalized_value(amount=raw_amount, asset=A_ELFI)
+        amount = asset_normalized_value(amount=raw_amount, asset=A_ELFI.resolve_to_crypto_asset())
 
         # now we need to find the transfer, but can't use decoded events
         # since the transfer is from one of at least 2 airdrop contracts to
@@ -227,7 +237,10 @@ class AirdropsDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                 continue
 
             transfer_raw = hex_or_bytes_to_int(other_log.data[0:32])
-            if other_log.address == A_ELFI.evm_address and transfer_raw == raw_amount:
+            if (
+                other_log.address == A_ELFI.resolve_to_evm_token().evm_address and
+                transfer_raw == raw_amount
+            ):
                 delegate_str = 'self-delegate' if user_address == delegate_address else f'delegate it to {delegate_address}'  # noqa: E501
                 event = HistoryBaseEntry(
                     event_identifier=transaction.tx_hash,

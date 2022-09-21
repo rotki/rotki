@@ -5,10 +5,10 @@ from web3 import Web3
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.chain.ethereum.modules.makerdao.vaults import (
-    COLLATERAL_TYPE_MAPPING,
     GEMJOIN_MAPPING,
     MakerdaoVault,
     MakerdaoVaults,
+    const_collateral_type_mapping,
 )
 from rotkehlchen.constants.assets import A_BAT, A_DAI, A_ETH
 from rotkehlchen.constants.misc import ZERO
@@ -50,7 +50,7 @@ def fixture_makerdao_test_data(
         owner=user_address,
         urn=make_ethereum_address(),
         collateral_type='ETH-A',
-        collateral_asset=A_ETH,
+        collateral_asset=A_ETH.resolve_to_crypto_asset(),
         collateral=Balance(FVal('3.1'), FVal('850.1')),
         debt=Balance(FVal('635.1'), FVal('952.65')),
         collateralization_ratio='133.85%',
@@ -63,7 +63,7 @@ def fixture_makerdao_test_data(
         owner=user_address,
         urn=make_ethereum_address(),
         collateral_type='BAT-A',
-        collateral_asset=A_BAT,
+        collateral_asset=A_BAT.resolve_to_crypto_asset(),
         collateral=Balance(FVal('255.1'), FVal('0.09055272442179537436299490395')),
         debt=Balance(FVal('15.4'), FVal('23.1')),
         collateralization_ratio='0.59%',
@@ -150,9 +150,10 @@ def test_get_vault_balance(
 
 
 def test_vault_types():
-    assert len(COLLATERAL_TYPE_MAPPING) == len(GEMJOIN_MAPPING)
-    assert set(COLLATERAL_TYPE_MAPPING.keys()) == set(GEMJOIN_MAPPING.keys())
-    for collateral_type, asset in COLLATERAL_TYPE_MAPPING.items():
+    collateral_type_mapping = const_collateral_type_mapping()
+    assert len(collateral_type_mapping) == len(GEMJOIN_MAPPING)
+    assert set(collateral_type_mapping.keys()) == set(GEMJOIN_MAPPING.keys())
+    for collateral_type, asset in collateral_type_mapping.items():
         if collateral_type == 'PAXUSD-A':
             assert asset.identifier == ethaddress_to_identifier('0x8E870D67F660D95d5be530380D0eC0bd388289E1')  # PAX # noqa: E501
             continue

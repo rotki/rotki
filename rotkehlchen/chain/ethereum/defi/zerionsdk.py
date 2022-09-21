@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, List, Optional, Tuple
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.assets.utils import get_asset_by_symbol
+from rotkehlchen.assets.utils import get_crypto_asset_by_symbol
 from rotkehlchen.chain.ethereum.defi.price import handle_defi_price_query
 from rotkehlchen.chain.ethereum.defi.structures import (
     DefiBalance,
@@ -409,7 +409,7 @@ class ZerionSDK():
             if result is not None:
                 return result
 
-        asset = get_asset_by_symbol(token_symbol)
+        asset = get_crypto_asset_by_symbol(token_symbol)
         if asset is None:
             return None
 

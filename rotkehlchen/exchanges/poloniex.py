@@ -12,7 +12,7 @@ import requests
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import AssetWithSymbol
+from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_poloniex
 from rotkehlchen.constants.assets import A_LEND
 from rotkehlchen.constants.misc import ZERO
@@ -371,7 +371,7 @@ class Poloniex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             log.error(msg)
             return None, msg
 
-        assets_balance: Dict[AssetWithSymbol, Balance] = {}
+        assets_balance: Dict[AssetWithOracles, Balance] = {}
         for account_info in resp:
             try:
                 balances = account_info['balances']

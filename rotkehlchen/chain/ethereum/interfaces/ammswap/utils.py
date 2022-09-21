@@ -77,7 +77,7 @@ def _decode_result(
         else:
             unknown_assets.add(asset)
         assets.append(LiquidityPoolAsset(
-            asset=asset,
+            token=asset,
             total_amount=None,
             user_balance=Balance(amount=token.amount),
         ))
@@ -105,7 +105,7 @@ def update_asset_price_in_lp_balances(
             # Otherwise keep existing price (zero)
             total_user_balance = ZERO
             for asset in lp.assets:
-                asset_ethereum_address = asset.asset.evm_address
+                asset_ethereum_address = asset.token.evm_address
                 asset_usd_price = known_asset_price.get(
                     asset_ethereum_address,
                     unknown_asset_price.get(asset_ethereum_address, Price(ZERO)),

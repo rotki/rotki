@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Any, Callable, Dict, Iterator, List, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, Iterator, List, Optional, Set
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, CryptoAsset
 from rotkehlchen.types import EVMTxHash, Timestamp
 
 if TYPE_CHECKING:
@@ -49,9 +49,9 @@ class DefiEvent(AccountingEventMixin):
     timestamp: Timestamp
     wrapped_event: Any
     event_type: DefiEventType
-    got_asset: Optional['Asset']
+    got_asset: Optional[CryptoAsset]
     got_balance: Optional['Balance']
-    spent_asset: Optional['Asset']
+    spent_asset: Optional[CryptoAsset]
     spent_balance: Optional['Balance']
     pnl: Optional[List['AssetBalance']]
     # If this is true then both got and spent asset count in cost basis
@@ -87,7 +87,7 @@ class DefiEvent(AccountingEventMixin):
         return self.__str__()
 
     def get_assets(self) -> List[Asset]:
-        assets = set()
+        assets: Set[Asset] = set()
         if self.got_asset is not None:
             assets.add(self.got_asset)
         if self.spent_asset is not None:

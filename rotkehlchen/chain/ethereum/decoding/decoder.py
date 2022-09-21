@@ -318,6 +318,7 @@ class EVMTransactionDecoder():
                         event_identifier=transaction.tx_hash,
                     ),
                     has_premium=True,  # for this function we don't limit anything
+                    only_crypto=True,
                 )
                 return events
 
@@ -601,8 +602,9 @@ class EVMTransactionDecoder():
                     event.event_type = HistoryEventType.TRANSFER
                     event.event_subtype = HistoryEventSubType.BRIDGE
                     event.counterparty = CPT_GNOSIS_CHAIN
+                    crypto_asset = event.asset.resolve_to_crypto_asset()
                     event.notes = (
-                        f'Bridge {event.balance.amount} {event.asset.symbol} from gnosis chain'
+                        f'Bridge {event.balance.amount} {crypto_asset.symbol} from gnosis chain'
                     )
 
         return None

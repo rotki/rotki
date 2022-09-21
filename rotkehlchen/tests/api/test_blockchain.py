@@ -1453,7 +1453,7 @@ def _remove_blockchain_accounts_test_start(
                 ),
                 balance_type='Debt',
                 base_balance=DefiBalance(
-                    token_address=A_USDT.evm_address,
+                    token_address=A_USDT.resolve_to_evm_token().evm_address,
                     token_name='USDT',
                     token_symbol='USDT',
                     balance=Balance(
@@ -1474,7 +1474,7 @@ def _remove_blockchain_accounts_test_start(
                 ),
                 balance_type='Debt',
                 base_balance=DefiBalance(
-                    token_address=A_USDT.evm_address,
+                    token_address=A_USDT.resolve_to_evm_token().evm_address,
                     token_name='USDT',
                     token_symbol='USDT',
                     balance=Balance(

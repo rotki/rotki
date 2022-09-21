@@ -34,6 +34,11 @@ class AssetType(DBEnumMixIn):
     AVALANCHE_TOKEN = 24
     SOLANA_TOKEN = 25
     NFT = 26
+    CUSTOM_ASSET = 27
+
+
+ASSETS_WITH_NO_CRYPTO_ORACLES = {AssetType.NFT, AssetType.OTHER, AssetType.CUSTOM_ASSET}
+NON_CRYPTO_ASSETS = ASSETS_WITH_NO_CRYPTO_ORACLES | {AssetType.FIAT}
 
     @staticmethod
     def is_crypto_asset(asset_type: 'AssetType') -> bool:

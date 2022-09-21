@@ -10,9 +10,9 @@ from rotkehlchen.chain.ethereum.modules.yearn.db import (
     add_yearn_vaults_events,
     get_yearn_vaults_events,
 )
-from rotkehlchen.chain.ethereum.modules.yearn.structures import YearnVaultEvent
-from rotkehlchen.chain.ethereum.modules.yearn.vaults import YEARN_VAULTS
+from rotkehlchen.chain.ethereum.modules.yearn.structures import YearnVault, YearnVaultEvent
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_MANA, A_WBTC, A_YV1_DAI
+from rotkehlchen.constants.ethereum import YEARN_DAI_VAULT
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.fval import FVal
@@ -238,7 +238,13 @@ def test_add_and_get_yearn_vault_events(data_dir, username, sql_vm_instructions_
         )]
         add_yearn_vaults_events(write_cursor=cursor, address=addr2, events=addr2_events)
 
-        events = get_yearn_vaults_events(cursor=cursor, address=addr1, vault=YEARN_VAULTS['yDAI'], msg_aggregator=data.msg_aggregator)  # noqa: E501
+        ydai_vault = YearnVault(
+            name='YDAI Vault',
+            contract=YEARN_DAI_VAULT,
+            underlying_token=A_DAI,
+            token=A_YV1_DAI,
+        )
+        events = get_yearn_vaults_events(cursor=cursor, address=addr1, vault=ydai_vault, msg_aggregator=data.msg_aggregator)  # noqa: E501
         assert events == addr1_events
-        events = get_yearn_vaults_events(cursor=cursor, address=addr2, vault=YEARN_VAULTS['yDAI'], msg_aggregator=data.msg_aggregator)  # noqa: E501
+        events = get_yearn_vaults_events(cursor=cursor, address=addr2, vault=ydai_vault, msg_aggregator=data.msg_aggregator)  # noqa: E501
         assert events == addr2_events

@@ -153,18 +153,19 @@ def test_add_edit_token_with_wrong_swapped_for(globaldb):
         )
 
     # now edit a new token with swapped_for pointing to a non existing token in the DB
-    bat_custom = globaldb.get_evm_token(address=A_BAT.evm_address, chain=ChainID.ETHEREUM)
+    resolved_bat = A_BAT.resolve_to_evm_token()
+    bat_custom = globaldb.get_evm_token(address=resolved_bat.evm_address, chain=ChainID.ETHEREUM)
     bat_custom = EvmToken.initialize(
-        address=A_BAT.evm_address,
+        address=resolved_bat.evm_address,
         chain=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
-        decimals=A_BAT.decimals,
-        name=A_BAT.name,
-        symbol=A_BAT.symbol,
-        started=A_BAT.started,
+        decimals=resolved_bat.decimals,
+        name=resolved_bat.name,
+        symbol=resolved_bat.symbol,
+        started=resolved_bat.started,
         swapped_for=asset_to_delete,
-        coingecko=A_BAT.coingecko,
-        cryptocompare=A_BAT.cryptocompare,
+        coingecko=resolved_bat.coingecko,
+        cryptocompare=resolved_bat.cryptocompare,
         protocol=None,
         underlying_tokens=None,
     )

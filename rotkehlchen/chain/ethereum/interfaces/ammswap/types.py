@@ -32,14 +32,14 @@ log = RotkehlchenLogsAdapter(logger)
 # Get balances
 @dataclass(init=True, repr=True)
 class LiquidityPoolAsset:
-    asset: EvmToken
+    token: EvmToken
     total_amount: Optional[FVal]
     user_balance: Balance
     usd_price: Price = Price(ZERO)
 
     def serialize(self) -> Dict[str, Any]:
         return {
-            'asset': self.asset.serialize(),
+            'asset': self.token.serialize(),
             'total_amount': self.total_amount,
             'user_balance': self.user_balance.serialize(),
             'usd_price': self.usd_price,

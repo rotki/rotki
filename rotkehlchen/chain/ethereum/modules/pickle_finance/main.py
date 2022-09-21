@@ -97,11 +97,11 @@ class PickleFinance(EthereumModule):
                     )
                     dill_rewards = token_normalized_value_decimals(
                         token_amount=rewards[0],  # pylint: disable=unsubscriptable-object
-                        token_decimals=A_PICKLE.decimals,
+                        token_decimals=A_PICKLE.resolve_to_evm_token().decimals,
                     )
                     dill_locked = token_normalized_value_decimals(
                         token_amount=dill_amounts[0],  # pylint: disable=unsubscriptable-object
-                        token_decimals=A_PICKLE.decimals,
+                        token_decimals=A_PICKLE.resolve_to_evm_token().decimals,
                     )
                     balance = DillBalance(
                         dill_amount=AssetBalance(

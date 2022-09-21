@@ -298,10 +298,12 @@ class Adex(EthereumModule):
                 'Failed to deserialize an AdEx channel withdraw event. Check logs for more details',  # noqa: E501
             )
 
-        if token_address == A_ADX.evm_address:
-            token = A_ADX
-        elif token_address == A_DAI.evm_address:
-            token = A_DAI
+        resolved_adx = A_ADX.resolve_to_evm_token()
+        resolved_dai = A_DAI.resolve_to_evm_token()
+        if token_address == resolved_adx.evm_address:
+            token = resolved_adx
+        elif token_address == resolved_dai.evm_address:
+            token = resolved_dai
         else:
             log.error(
                 'Failed to deserialize an AdEx channel withdraw event',
@@ -925,10 +927,10 @@ class Adex(EthereumModule):
             for event in history.events:
                 pnl = got_asset = got_balance = spent_asset = spent_balance = None  # noqa: E501
                 if isinstance(event, Bond):
-                    spent_asset = A_ADX
+                    spent_asset = A_ADX.resolve_to_evm_token()
                     spent_balance = event.value
                 elif isinstance(event, Unbond):
-                    got_asset = A_ADX
+                    got_asset = A_ADX.resolve_to_evm_token()
                     got_balance = event.value
                 elif isinstance(event, UnbondRequest):
                     continue  # just ignore those for accounting purposes

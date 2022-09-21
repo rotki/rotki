@@ -1,4 +1,4 @@
-from rotkehlchen.assets.asset import AssetWithSymbol, CryptoAsset, EvmToken
+from rotkehlchen.assets.asset import AssetWithOracles, CryptoAsset, EvmToken
 from rotkehlchen.chain.ethereum.types import NodeName, string_to_evm_address
 from rotkehlchen.constants.assets import A_EUR
 from rotkehlchen.types import SupportedBlockchain, deserialize_evm_tx_hash
@@ -40,14 +40,14 @@ A_EWT = CryptoAsset('EWT')
 A_XTZ = CryptoAsset('XTZ')
 A_BSV = CryptoAsset('BSV')
 A_BCH = CryptoAsset('BCH')
-A_CNY = AssetWithSymbol('CNY')
-A_JPY = AssetWithSymbol('JPY')
+A_CNY = AssetWithOracles('CNY')
+A_JPY = AssetWithOracles('JPY')
 A_ZEC = CryptoAsset('ZEC')
-A_GBP = AssetWithSymbol('GBP')
-A_CHF = AssetWithSymbol('CHF')
-A_AUD = AssetWithSymbol('AUD')
-A_CAD = AssetWithSymbol('CAD')
-A_TRY = AssetWithSymbol('TRY')
+A_GBP = AssetWithOracles('GBP')
+A_CHF = AssetWithOracles('CHF')
+A_AUD = AssetWithOracles('AUD')
+A_CAD = AssetWithOracles('CAD')
+A_TRY = AssetWithOracles('TRY')
 
 ETH_ADDRESS1 = string_to_evm_address('0x5153493bB1E1642A63A098A65dD3913daBB6AE24')
 ETH_ADDRESS2 = string_to_evm_address('0x4FED1fC4144c223aE3C1553be203cDFcbD38C581')

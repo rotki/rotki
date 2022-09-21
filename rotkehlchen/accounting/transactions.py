@@ -64,6 +64,7 @@ class TransactionsAccountant():
                     f'non history base entry event',
                 )
                 return counter
+
             other_events.append(next_event)
             counter += 1
 

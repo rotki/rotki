@@ -29,7 +29,6 @@ from rotkehlchen.api.v1.schemas import (
     AssetIconUploadSchema,
     AssetMovementsQuerySchema,
     AssetResetRequestSchema,
-    AssetSchema,
     AssetsImportingFromFormSchema,
     AssetsImportingSchema,
     AssetsMappingSchema,
@@ -51,6 +50,7 @@ from rotkehlchen.api.v1.schemas import (
     BlockchainAccountsPatchSchema,
     BlockchainAccountsPutSchema,
     BlockchainBalanceQuerySchema,
+    CryptoAssetSchema,
     CurrentAssetsPriceSchema,
     DataImportSchema,
     DetectTokensSchema,
@@ -103,6 +103,7 @@ from rotkehlchen.api.v1.schemas import (
     RequiredEthereumAddressSchema,
     ReverseEnsSchema,
     SingleAssetIdentifierSchema,
+    SingleAssetWithOraclesIdentifierSchema,
     SingleFileSchema,
     SnapshotEditingSchema,
     SnapshotImportingSchema,
@@ -136,7 +137,7 @@ from rotkehlchen.api.v1.schemas import (
     XpubAddSchema,
     XpubPatchSchema,
 )
-from rotkehlchen.assets.asset import Asset, AssetWithSymbol, EvmToken
+from rotkehlchen.assets.asset import Asset, AssetWithOracles, EvmToken
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.xpub import XpubData
@@ -360,7 +361,7 @@ class ExchangeRatesResource(BaseMethodView):
     get_schema = ExchangeRatesSchema()
 
     @use_kwargs(get_schema, location='json_and_query')
-    def get(self, currencies: List[Optional[Asset]], async_query: bool) -> Response:
+    def get(self, currencies: List[Optional[AssetWithOracles]], async_query: bool) -> Response:
         valid_currencies = [currency for currency in currencies if currency is not None]
         return self.rest_api.get_exchange_rates(given_currencies=valid_currencies, async_query=async_query)  # noqa: E501
 
@@ -666,15 +667,15 @@ class AllAssetsResource(BaseMethodView):
             db=self.rest_api.rotkehlchen.data.db,
         )
 
-    def make_add_schema(self) -> AssetSchema:
-        return AssetSchema(
+    def make_add_schema(self) -> CryptoAssetSchema:
+        return CryptoAssetSchema(
             identifier_required=False,
             coingecko=self.rest_api.rotkehlchen.coingecko,
             cryptocompare=self.rest_api.rotkehlchen.cryptocompare,
         )
 
-    def make_edit_schema(self) -> AssetSchema:
-        return AssetSchema(
+    def make_edit_schema(self) -> CryptoAssetSchema:
+        return CryptoAssetSchema(
             identifier_required=True,
             coingecko=self.rest_api.rotkehlchen.coingecko,
             cryptocompare=self.rest_api.rotkehlchen.cryptocompare,
@@ -887,13 +888,13 @@ class TradesResource(BaseMethodView):
             self,
             timestamp: Timestamp,
             location: Location,
-            base_asset: AssetWithSymbol,
-            quote_asset: AssetWithSymbol,
+            base_asset: Asset,
+            quote_asset: Asset,
             trade_type: TradeType,
             amount: AssetAmount,
             rate: Price,
             fee: Optional[Fee],
-            fee_currency: Optional[AssetWithSymbol],
+            fee_currency: Optional[Asset],
             link: Optional[str],
             notes: Optional[str],
     ) -> Response:
@@ -918,13 +919,13 @@ class TradesResource(BaseMethodView):
             trade_id: str,
             timestamp: Timestamp,
             location: Location,
-            base_asset: AssetWithSymbol,
-            quote_asset: AssetWithSymbol,
+            base_asset: Asset,
+            quote_asset: Asset,
             trade_type: TradeType,
             amount: AssetAmount,
             rate: Price,
             fee: Optional[Fee],
-            fee_currency: Optional[AssetWithSymbol],
+            fee_currency: Optional[Asset],
             link: Optional[str],
             notes: Optional[str],
     ) -> Response:
@@ -2156,7 +2157,7 @@ class AssetIconFileResource(BaseMethodView):
 
 class AssetIconsResource(BaseMethodView):
 
-    patch_schema = SingleAssetIdentifierSchema()
+    patch_schema = SingleAssetWithOraclesIdentifierSchema()
     upload_schema = AssetIconUploadSchema()
 
     @use_kwargs(upload_schema, location='json')
@@ -2178,7 +2179,7 @@ class AssetIconsResource(BaseMethodView):
         return response
 
     @use_kwargs(patch_schema, location='json')
-    def patch(self, asset: Asset) -> Response:
+    def patch(self, asset: AssetWithOracles) -> Response:
         return self.rest_api.refresh_asset_icon(asset)
 
 

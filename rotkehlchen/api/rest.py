@@ -45,7 +45,7 @@ from rotkehlchen.accounting.structures.types import (
     HistoryEventType,
 )
 from rotkehlchen.api.v1.schemas import TradeSchema
-from rotkehlchen.assets.asset import Asset, AssetWithSymbol, EvmToken
+from rotkehlchen.assets.asset import Asset, AssetWithOracles, EvmToken, FiatAsset
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.spam_assets import update_spam_assets
 from rotkehlchen.assets.types import AssetType
@@ -387,13 +387,13 @@ class RestAPI():
         }
         return api_response(result=result_dict, status_code=HTTPStatus.NOT_FOUND)
 
-    def _get_exchange_rates(self, given_currencies: List[Asset]) -> Dict[str, Any]:
+    def _get_exchange_rates(self, given_currencies: List[AssetWithOracles]) -> Dict[str, Any]:
         currencies = given_currencies
-        fiat_currencies: List[AssetWithSymbol] = []
+        fiat_currencies: List[FiatAsset] = []
         asset_rates = {}
         for asset in currencies:
             if asset.is_fiat():
-                fiat_currencies.append(AssetWithSymbol(asset.identifier))
+                fiat_currencies.append(FiatAsset(asset.identifier))
                 continue
 
             usd_price = Inquirer().find_usd_price(asset)
@@ -417,7 +417,11 @@ class RestAPI():
 
         return _wrap_in_ok_result(process_result(asset_rates))
 
-    def get_exchange_rates(self, given_currencies: List[Asset], async_query: bool) -> Response:
+    def get_exchange_rates(
+            self,
+            given_currencies: List[AssetWithOracles],
+            async_query: bool,
+    ) -> Response:
         if len(given_currencies) == 0:
             return api_response(
                 wrap_in_fail_result('Empty list of currencies provided'),
@@ -613,7 +617,7 @@ class RestAPI():
                 'status_code': HTTPStatus.CONFLICT,
             }
 
-        balances: Dict[AssetWithSymbol, Balance] = {}
+        balances: Dict[AssetWithOracles, Balance] = {}
         for exchange in exchanges_list:
             result, msg = exchange.query_balances(ignore_cache=ignore_cache)
             if result is None:
@@ -784,13 +788,13 @@ class RestAPI():
             self,
             timestamp: Timestamp,
             location: Location,
-            base_asset: AssetWithSymbol,
-            quote_asset: AssetWithSymbol,
+            base_asset: Asset,
+            quote_asset: Asset,
             trade_type: TradeType,
             amount: AssetAmount,
             rate: Price,
             fee: Optional[Fee],
-            fee_currency: Optional[AssetWithSymbol],
+            fee_currency: Optional[Asset],
             link: Optional[str],
             notes: Optional[str],
     ) -> Response:
@@ -820,13 +824,13 @@ class RestAPI():
             trade_id: str,
             timestamp: Timestamp,
             location: Location,
-            base_asset: AssetWithSymbol,
-            quote_asset: AssetWithSymbol,
+            base_asset: Asset,
+            quote_asset: Asset,
             trade_type: TradeType,
             amount: AssetAmount,
             rate: Price,
             fee: Optional[Fee],
-            fee_currency: Optional[AssetWithSymbol],
+            fee_currency: Optional[Asset],
             link: Optional[str],
             notes: Optional[str],
     ) -> Response:
@@ -3293,7 +3297,7 @@ class RestAPI():
             status_code=HTTPStatus.OK,
         )
 
-    def refresh_asset_icon(self, asset: Asset) -> Response:
+    def refresh_asset_icon(self, asset: AssetWithOracles) -> Response:
         """Deletes an asset's icon from the cache and requeries it."""
         self.rotkehlchen.icon_manager.delete_icon(asset)
         is_success = self.rotkehlchen.icon_manager.query_coingecko_for_icon(asset)
@@ -3867,7 +3871,7 @@ class RestAPI():
             to_asset: Asset,
             price: Price,
     ) -> Response:
-        if from_asset.asset_type == AssetType.NFT:
+        if from_asset.is_nft():
             return self._api_query_for_eth_module(
                 async_query=False,
                 module_name='nfts',
@@ -3896,7 +3900,7 @@ class RestAPI():
             self,
             asset: Asset,
     ) -> Response:
-        if asset.asset_type == AssetType.NFT:
+        if asset.is_nft():
             return self._api_query_for_eth_module(
                 async_query=False,
                 module_name='nfts',

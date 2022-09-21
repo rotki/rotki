@@ -72,9 +72,9 @@ Trade from ShapeShift with ShapeShift Deposit Address:
         # Assuming that before launch of multi collateral dai everything was SAI.
         # Converting DAI to SAI in buy_asset and sell_asset.
         if buy_asset == A_DAI and timestamp <= SAI_TIMESTAMP:
-            buy_asset = A_SAI
+            buy_asset = A_SAI.resolve_to_asset_with_oracles()
         if sold_asset == A_DAI and timestamp <= SAI_TIMESTAMP:
-            sold_asset = A_SAI
+            sold_asset = A_SAI.resolve_to_asset_with_oracles()
         if rate <= ZERO:
             log.warning(f'shapeshift csv entry has negative or zero rate. Ignoring. {csv_row}')
             return

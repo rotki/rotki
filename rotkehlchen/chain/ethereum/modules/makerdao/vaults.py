@@ -7,7 +7,7 @@ from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.structures.balance import AssetBalance, Balance, BalanceSheet
 from rotkehlchen.accounting.structures.defi import DefiEvent, DefiEventType
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import CryptoAsset
 from rotkehlchen.chain.ethereum.defi.defisaver_proxy import HasDSProxy
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_normalized_value
 from rotkehlchen.constants import ONE, ZERO
@@ -119,33 +119,36 @@ GEMJOIN_MAPPING = {
     'AAVE-A': MAKERDAO_AAVE_A_JOIN,
     'MATIC-A': MAKERDAO_MATIC_A_JOIN,
 }
-COLLATERAL_TYPE_MAPPING = {
-    'BAT-A': A_BAT,
-    'ETH-A': A_ETH,
-    'ETH-B': A_ETH,
-    'ETH-C': A_ETH,
-    'KNC-A': A_KNC,
-    'TUSD-A': A_TUSD,
-    'USDC-A': A_USDC,
-    'USDC-B': A_USDC,
-    'USDT-A': A_USDT,
-    'WBTC-A': A_WBTC,
-    'WBTC-B': A_WBTC,
-    'WBTC-C': A_WBTC,
-    'ZRX-A': A_ZRX,
-    'MANA-A': A_MANA,
-    'PAXUSD-A': A_PAX,
-    'COMP-A': A_COMP,
-    'LRC-A': A_LRC,
-    'LINK-A': A_LINK,
-    'BAL-A': A_BAL,
-    'YFI-A': A_YFI,
-    'GUSD-A': A_GUSD,
-    'UNI-A': A_UNI,
-    'RENBTC-A': A_RENBTC,
-    'AAVE-A': A_AAVE,
-    'MATIC-A': A_MATIC,
-}
+
+
+def const_collateral_type_mapping() -> Dict[str, CryptoAsset]:
+    return {
+        'BAT-A': A_BAT.resolve_to_crypto_asset(),
+        'ETH-A': A_ETH.resolve_to_crypto_asset(),
+        'ETH-B': A_ETH.resolve_to_crypto_asset(),
+        'ETH-C': A_ETH.resolve_to_crypto_asset(),
+        'KNC-A': A_KNC.resolve_to_crypto_asset(),
+        'TUSD-A': A_TUSD.resolve_to_crypto_asset(),
+        'USDC-A': A_USDC.resolve_to_crypto_asset(),
+        'USDC-B': A_USDC.resolve_to_crypto_asset(),
+        'USDT-A': A_USDT.resolve_to_crypto_asset(),
+        'WBTC-A': A_WBTC.resolve_to_crypto_asset(),
+        'WBTC-B': A_WBTC.resolve_to_crypto_asset(),
+        'WBTC-C': A_WBTC.resolve_to_crypto_asset(),
+        'ZRX-A': A_ZRX.resolve_to_crypto_asset(),
+        'MANA-A': A_MANA.resolve_to_crypto_asset(),
+        'PAXUSD-A': A_PAX.resolve_to_crypto_asset(),
+        'COMP-A': A_COMP.resolve_to_crypto_asset(),
+        'LRC-A': A_LRC.resolve_to_crypto_asset(),
+        'LINK-A': A_LINK.resolve_to_crypto_asset(),
+        'BAL-A': A_BAL.resolve_to_crypto_asset(),
+        'YFI-A': A_YFI.resolve_to_crypto_asset(),
+        'GUSD-A': A_GUSD.resolve_to_crypto_asset(),
+        'UNI-A': A_UNI.resolve_to_crypto_asset(),
+        'RENBTC-A': A_RENBTC.resolve_to_crypto_asset(),
+        'AAVE-A': A_AAVE.resolve_to_crypto_asset(),
+        'MATIC-A': A_MATIC.resolve_to_crypto_asset(),
+    }
 
 
 class VaultEventType(Enum):
@@ -190,7 +193,7 @@ class MakerdaoVault(NamedTuple):
     # e.g. ETH-A. Various types can be seen here: https://catflip.co/
     collateral_type: str
     owner: ChecksumEvmAddress
-    collateral_asset: Asset
+    collateral_asset: CryptoAsset
     # The amount/usd_value of collateral tokens locked
     collateral: Balance
     # amount/usd value of DAI drawn
@@ -229,13 +232,13 @@ class MakerdaoVault(NamedTuple):
         starting_liabilities = {A_DAI: self.debt} if self.debt.amount != ZERO else {}
         return BalanceSheet(
             assets=defaultdict(Balance, starting_assets),
-            liabilities=defaultdict(Balance, starting_liabilities),  # type: ignore
+            liabilities=defaultdict(Balance, starting_liabilities),
         )
 
 
 class MakerdaoVaultDetails(NamedTuple):
     identifier: int
-    collateral_asset: Asset  # the vault's collateral asset
+    collateral_asset: CryptoAsset  # the vault's collateral asset
     creation_ts: Timestamp
     # Total amount of DAI owed to the vault, past and future as interest rate
     # Will be negative if vault has been liquidated. If it's negative then this
@@ -268,6 +271,7 @@ class MakerdaoVaults(HasDSProxy):
         self.vault_mappings: Dict[ChecksumEvmAddress, List[MakerdaoVault]] = defaultdict(list)
         self.ilk_to_stability_fee: Dict[bytes, FVal] = {}
         self.vault_details: List[MakerdaoVaultDetails] = []
+        self.collateral_type_mapping = const_collateral_type_mapping()
 
     def reset_last_query_ts(self) -> None:
         """Reset the last query timestamps, effectively cleaning the caches"""
@@ -293,7 +297,7 @@ class MakerdaoVaults(HasDSProxy):
             ilk: bytes,
     ) -> Optional[MakerdaoVault]:
         collateral_type = ilk.split(b'\0', 1)[0].decode()
-        asset = COLLATERAL_TYPE_MAPPING.get(collateral_type, None)
+        asset = self.collateral_type_mapping.get(collateral_type, None)
         if asset is None:
             self.msg_aggregator.add_warning(
                 f'Detected vault with collateral_type {collateral_type}. That '
@@ -520,7 +524,7 @@ class MakerdaoVaults(HasDSProxy):
             total_dai_wei += given_amount
             amount = token_normalized_value(
                 token_amount=given_amount,
-                token=A_DAI,
+                token=A_DAI.resolve_to_evm_token(),
             )
             timestamp = self.ethereum.get_event_timestamp(event)
             usd_price = query_usd_price_or_use_default(
@@ -554,7 +558,7 @@ class MakerdaoVaults(HasDSProxy):
             total_dai_wei -= given_amount
             amount = token_normalized_value(
                 token_amount=given_amount,
-                token=A_DAI,
+                token=A_DAI.resolve_to_evm_token(),
             )
             if amount == ZERO:
                 # it seems there is a zero DAI value transfer from the urn when
@@ -615,7 +619,7 @@ class MakerdaoVaults(HasDSProxy):
 
         total_interest_owed = vault.debt.amount - token_normalized_value(
             token_amount=total_dai_wei,
-            token=A_DAI,
+            token=A_DAI.resolve_to_evm_token(),
         )
         # sort vault events by timestamp
         vault_events.sort(key=lambda event: event.timestamp)
@@ -758,18 +762,18 @@ class MakerdaoVaults(HasDSProxy):
                 if timestamp > to_timestamp:
                     break
 
-                got_asset: Optional[Asset]
-                spent_asset: Optional[Asset]
+                got_asset: Optional[CryptoAsset]
+                spent_asset: Optional[CryptoAsset]
                 pnl = got_asset = got_balance = spent_asset = spent_balance = None  # noqa: E501
                 count_spent_got_cost_basis = False
                 if event.event_type == VaultEventType.GENERATE_DEBT:
                     count_spent_got_cost_basis = True
-                    got_asset = A_DAI
+                    got_asset = A_DAI.resolve_to_crypto_asset()
                     got_balance = event.value
                     total_vault_dai_balance += event.value
                 elif event.event_type == VaultEventType.PAYBACK_DEBT:
                     count_spent_got_cost_basis = True
-                    spent_asset = A_DAI
+                    spent_asset = A_DAI.resolve_to_crypto_asset()
                     spent_balance = event.value
                     total_vault_dai_balance -= event.value
                     if total_vault_dai_balance.amount + realized_vault_dai_loss.amount < ZERO:

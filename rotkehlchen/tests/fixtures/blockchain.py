@@ -9,7 +9,7 @@ from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.chain.manager import ChainManager
 from rotkehlchen.chain.substrate.manager import SubstrateChainProperties, SubstrateManager
 from rotkehlchen.chain.substrate.types import KusamaAddress, PolkadotAddress, SubstrateChain
-from rotkehlchen.constants.assets import A_DOT
+from rotkehlchen.constants.assets import A_DOT, A_KSM
 from rotkehlchen.db.settings import DEFAULT_BTC_DERIVATION_GAP_LIMIT
 from rotkehlchen.db.utils import BlockchainAccounts
 from rotkehlchen.externalapis.beaconchain import BeaconChain
@@ -20,9 +20,8 @@ from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.tests.utils.substrate import (
     KUSAMA_DEFAULT_OWN_RPC_ENDPOINT,
+    KUSAMA_MAIN_ASSET_DECIMALS,
     KUSAMA_SS58_FORMAT,
-    KUSAMA_TOKEN,
-    KUSAMA_TOKEN_DECIMALS,
     POLKADOT_SS58_FORMAT,
     wait_until_all_substrate_nodes_connected,
 )
@@ -222,8 +221,8 @@ def _make_substrate_manager(
         if chain_type == SubstrateChain.KUSAMA:
             substrate_manager.chain_properties = SubstrateChainProperties(
                 ss58_format=KUSAMA_SS58_FORMAT,
-                token=KUSAMA_TOKEN,
-                token_decimals=KUSAMA_TOKEN_DECIMALS,
+                token=A_KSM,
+                token_decimals=KUSAMA_MAIN_ASSET_DECIMALS,
             )
         else:
             substrate_manager.chain_properties = SubstrateChainProperties(

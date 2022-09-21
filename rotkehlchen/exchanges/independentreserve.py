@@ -12,7 +12,7 @@ import requests
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import AssetWithSymbol
+from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.constants.assets import (
     A_AAVE,
     A_ADA,
@@ -127,7 +127,7 @@ IR_TO_WORLD = {
 }
 
 
-def independentreserve_asset(symbol: str) -> AssetWithSymbol:
+def independentreserve_asset(symbol: str) -> AssetWithOracles:
     """Returns the asset corresponding to the independentreserve symbol
 
     May raise UnknownAsset
@@ -135,7 +135,7 @@ def independentreserve_asset(symbol: str) -> AssetWithSymbol:
     asset = IR_TO_WORLD.get(symbol, None)
     if asset is None:
         raise UnknownAsset(symbol)
-    return asset
+    return asset.resolve_to_asset_with_oracles()
 
 
 def _trade_from_independentreserve(raw_trade: Dict) -> Trade:
@@ -353,7 +353,7 @@ class Independentreserve(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             return False, str(e)
 
     def query_balances(self, **kwargs: Any) -> ExchangeQueryBalances:
-        assets_balance: Dict[AssetWithSymbol, Balance] = {}
+        assets_balance: Dict[AssetWithOracles, Balance] = {}
         try:
             response = self._api_query(verb='post', method_type='Private', path='GetAccounts')
         except RemoteError as e:

@@ -23,7 +23,7 @@ from rotkehlchen.accounting.structures.base import (
     HistoryEventSubType,
     HistoryEventType,
 )
-from rotkehlchen.assets.asset import AssetWithSymbol
+from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.assets.converters import KRAKEN_TO_WORLD, asset_from_kraken
 from rotkehlchen.constants import KRAKEN_API_VERSION, KRAKEN_BASE_URL
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_ETH2, A_KFEE, A_USD
@@ -107,7 +107,7 @@ def kraken_ledger_entry_type_to_ours(value: str) -> HistoryEventType:
     return HistoryEventType.INFORMATIONAL  # returned for kraken's unknown events
 
 
-def kraken_to_world_pair(pair: str) -> Tuple[AssetWithSymbol, AssetWithSymbol]:
+def kraken_to_world_pair(pair: str) -> Tuple[AssetWithOracles, AssetWithOracles]:
     """Turns a pair from kraken to our base/quote asset tuple
 
     Can throw:
@@ -125,9 +125,9 @@ def kraken_to_world_pair(pair: str) -> Tuple[AssetWithSymbol, AssetWithSymbol]:
         base_asset_str = pair[0:3]
         quote_asset_str = pair[3:]
     elif pair == 'ETHDAI':
-        return A_ETH, A_DAI
+        return A_ETH.resolve_to_asset_with_oracles(), A_DAI.resolve_to_asset_with_oracles()
     elif pair == 'ETH2.SETH':
-        return A_ETH2, A_ETH
+        return A_ETH2.resolve_to_asset_with_oracles(), A_ETH.resolve_to_asset_with_oracles()
     elif pair[0:2] in KRAKEN_TO_WORLD:
         base_asset_str = pair[0:2]
         quote_asset_str = pair[2:]
@@ -576,7 +576,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 log.error(msg)
                 return None, msg
 
-        assets_balance: DefaultDict[AssetWithSymbol, Balance] = defaultdict(Balance)
+        assets_balance: DefaultDict[AssetWithOracles, Balance] = defaultdict(Balance)
         for kraken_name, amount_ in kraken_balances.items():
             try:
                 amount = deserialize_asset_amount(amount_)
@@ -991,7 +991,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
         # If kfee was found we use it as the fee for the trade
         fee: Optional[Fee] = None
-        fee_asset: Optional[AssetWithSymbol] = None
+        fee_asset: Optional[Asset] = None
         if kfee_part is not None and fee_part is None:
             fee = Fee(kfee_part.balance.amount)
             fee_asset = A_KFEE

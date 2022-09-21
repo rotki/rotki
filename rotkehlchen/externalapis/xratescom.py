@@ -4,7 +4,7 @@ from typing import Dict
 import requests
 from bs4 import BeautifulSoup, SoupStrainer
 
-from rotkehlchen.assets.asset import AssetWithSymbol
+from rotkehlchen.assets.asset import FiatAsset
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def _scrape_xratescom_exchange_rates(url: str) -> Dict[AssetWithSymbol, Price]:
+def _scrape_xratescom_exchange_rates(url: str) -> Dict[FiatAsset, Price]:
     """
     Scrapes x-rates.com website for the exchange rates tables
 
@@ -62,10 +62,8 @@ def _scrape_xratescom_exchange_rates(url: str) -> Dict[AssetWithSymbol, Price]:
             raise RemoteError(f'Could not find to= in {href} while parsing x-rates.com page')
 
         try:
-            to_asset = AssetWithSymbol(parts[1])
-            if not to_asset.is_fiat():
-                raise ValueError
-        except (UnknownAsset, ValueError):
+            to_asset = FiatAsset(parts[1])
+        except UnknownAsset:
             log.debug(f'Skipping {parts[1]} asset because its not a known fiat asset while parsing x-rates.com page')  # noqa: E501
             tr = tr.find_next_sibling()
             continue
@@ -83,7 +81,7 @@ def _scrape_xratescom_exchange_rates(url: str) -> Dict[AssetWithSymbol, Price]:
     return prices
 
 
-def get_current_xratescom_exchange_rates(from_currency: AssetWithSymbol) -> Dict[AssetWithSymbol, Price]:  # noqa: E501
+def get_current_xratescom_exchange_rates(from_currency: FiatAsset) -> Dict[FiatAsset, Price]:  # noqa: E501
     """
     Get the current exchanges rates of currency from x-rates.com
 
@@ -94,7 +92,7 @@ def get_current_xratescom_exchange_rates(from_currency: AssetWithSymbol) -> Dict
     return _scrape_xratescom_exchange_rates(url)
 
 
-def get_historical_xratescom_exchange_rates(from_asset: AssetWithSymbol, time: Timestamp) -> Dict[AssetWithSymbol, Price]:  # noqa: E501
+def get_historical_xratescom_exchange_rates(from_asset: FiatAsset, time: Timestamp) -> Dict[FiatAsset, Price]:  # noqa: E501
     """
     Get the historical exchanges rates of a currency from x-rates.com
 

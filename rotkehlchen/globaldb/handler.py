@@ -1,4 +1,3 @@
-from ast import Global
 import logging
 import shutil
 import sqlite3
@@ -17,12 +16,21 @@ from typing import (
     cast,
     overload,
 )
-from unicodedata import decimal
 
 from polyleven import levenshtein
 
-from rotkehlchen.assets.asset import Asset, CryptoAsset, EvmToken, FiatAsset, UnderlyingToken
 from rotkehlchen.assets.types import AssetData, AssetType
+from rotkehlchen.assets.asset import (
+    Asset,
+    AssetWithNameAndType,
+    AssetWithOracles,
+    CryptoAsset,
+    CustomAsset,
+    EvmToken,
+    FiatAsset,
+    UnderlyingToken,
+)
+from rotkehlchen.assets.types import NON_CRYPTO_ASSETS, AssetData, AssetType
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_ETH2, CONSTANT_ASSETS
 from rotkehlchen.constants.misc import NFT_DIRECTIVE
@@ -124,7 +132,6 @@ class GlobalDBHandler():
         GlobalDBHandler.__instance = object.__new__(cls)
         GlobalDBHandler.__instance._data_directory = data_dir
         GlobalDBHandler.__instance.conn = _initialize_global_db_directory(data_dir, sql_vm_instructions_cb)  # noqa: E501
-        _reload_constant_assets(GlobalDBHandler.__instance)
         return GlobalDBHandler.__instance
 
     @staticmethod
@@ -393,10 +400,12 @@ class GlobalDBHandler():
         """
         query = parent_query + query
         return query, bindings
-    def assets_with_coingecko_id() -> List[Asset]:
+
+    def assets_with_coingecko_icon() -> List[str]:
         with GlobalDBHandler().conn.read_ctx() as cursor:
             cursor.execute(
-                'SELECT A.identifier from common_asset_details AS A JOIN assets AS B ON A.identifier=B.identifer '
+                'SELECT A.identifier from common_asset_details AS A JOIN '
+                'assets AS B ON A.identifier=B.identifer '
                 'WHERE coingecko IS NOT NULL AND coingecko != "" and asset_type !=?',
                 (AssetType.FIAT.serialize_for_db()),
             )
@@ -1045,7 +1054,7 @@ class GlobalDBHandler():
             symbol: str,
             asset_type: Optional[AssetType] = None,
             chain: Optional[ChainID] = None,
-    ) -> List[Asset]:
+    ) -> List[AssetWithOracles]:
         """Find all asset entries that have the given symbol"""
         eth_token_type = AssetType.EVM_TOKEN.serialize_for_db()    # pylint: disable=no-member
         extra_check_evm = ''
@@ -1071,7 +1080,7 @@ class GlobalDBHandler():
             cursor.execute(querystr, evm_query_list + common_query_list)
             assets = []
             for entry in cursor:
-                assets.append(Asset.initialize(identifier=entry[0]))
+                assets.append(Asset(entry[0]).resolve_to_asset_with_oracles())
 
         return assets
 
@@ -1641,7 +1650,7 @@ class GlobalDBHandler():
         ON B.identifier = A.identifier JOIN common_asset_details AS C ON C.identifier = B.identifier WHERE A.identifier=?
         """  # noqa: E501
         with GlobalDBHandler().conn.read_ctx() as cursor:
-            cursor.execute(querystr, (identifier, identifier))
+            cursor.execute(querystr, (identifier,))
             asset_data = cursor.fetchone()
 
             if asset_data is None:
@@ -1657,19 +1666,8 @@ class GlobalDBHandler():
                 parent_token_identifier=identifier,
             )
 
-        return EvmToken.initialize(
-            address=string_to_evm_address(asset_data[2]),
-            chain=ChainID.deserialize_from_db(asset_data[3]),
-            token_kind=EvmTokenKind.deserialize_from_db(asset_data[4]),
-            decimals=asset_data[5],
-            name=asset_data[6],
-            symbol=asset_data[7],
-            started=asset_data[8],
-            forked=asset_data[9],
-            swapped_for=asset_data[10],
-            coingecko=asset_data[11],
-            cryptocompare=asset_data[12],
-            protocol=asset_data[13],
+        return EvmToken.deserialize_from_db(
+            entry=asset_data,
             underlying_tokens=underlying_tokens,
         )
 
@@ -1678,7 +1676,7 @@ class GlobalDBHandler():
         """
         Resolve an asset identifier to a crypto asset.
         May raise:
-        - UnknownAsset: If the identifier is not found
+        - UnknownAsset: If the identifier is not found or type is not a crypto asset
         """
         querystr = """
         SELECT A.identifier, A.type, A.name, B.symbol, B.started, B.forked, B.swapped_for,
@@ -1686,12 +1684,17 @@ class GlobalDBHandler():
         ON B.identifier = A.identifier WHERE A.identifier=?;
         """
         with GlobalDBHandler().conn.read_ctx() as cursor:
-            cursor.execute(querystr, (identifier, identifier))
+            cursor.execute(querystr, (identifier,))
             asset_data = cursor.fetchone()
         if asset_data is None:
             raise UnknownAsset(f"Couldn't find asset with identifier {identifier}")
 
         asset_type = AssetType.deserialize_from_db(asset_data[1])
+        if asset_type in NON_CRYPTO_ASSETS:
+            raise UnknownAsset(
+                f'Asset with identifier {identifier} has type {asset_type} which is '
+                'not a crypto asset.',
+            )
         return CryptoAsset.initialize(
             identifier=asset_data[0],
             asset_type=asset_type,
@@ -1717,7 +1720,7 @@ class GlobalDBHandler():
         ON B.identifier = A.identifier WHERE A.identifier=?;
         """
         with GlobalDBHandler().conn.read_ctx() as cursor:
-            cursor.execute(querystr, (identifier, identifier))
+            cursor.execute(querystr, (identifier,))
             asset_data = cursor.fetchone()
         if asset_data is None:
             raise UnknownAsset(f"Couldn't find asset with identifier {identifier}")
@@ -1728,65 +1731,118 @@ class GlobalDBHandler():
 
         return FiatAsset.initialize(
             identifier=identifier,
-            asset_type=asset_type,
             name=asset_data[2],
             symbol=asset_data[3],
+            coingecko=asset_data[4],
+            cryptocompare=asset_data[5],
         )
 
+    @staticmethod
+    def custom_asset_from_identifier(identifier: str) -> CustomAsset:
+        querystr = """
+        SELECT A.identifier, A.type, A.name, B.type,
+        B.notes from assets as A JOIN custom_assets as B
+        ON B.identifier = A.identifier WHERE A.identifier=?;
+        """
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            cursor.execute(querystr, (identifier,))
+            asset_data = cursor.fetchone()
+        if asset_data is None:
+            raise UnknownAsset(f"Couldn't find asset with identifier {identifier}")
 
-def _reload_constant_assets(globaldb: GlobalDBHandler) -> None:
-    """Reloads the details of the constant declared assets after reading from the DB"""
-    if len(CONSTANT_ASSETS) != 0:
-        identifiers = [x.identifier for x in CONSTANT_ASSETS]
-    else:
-        identifiers = None
-    db_data = globaldb.get_all_asset_data(mapping=True, serialized=False, specific_ids=identifiers)  # type: ignore  # noqa: E501
+        asset_type = AssetType.deserialize_from_db(asset_data[1])
+        if asset_type != AssetType.CUSTOM_ASSET:
+            raise UnknownAsset(f'Tried to resolve to fiat asset an asset of type {asset_type}')
 
-    for entry in CONSTANT_ASSETS:
-        db_entry = db_data.get(entry.identifier)
-        if db_entry is None:
-            log.critical(
-                f'Constant declared asset with id {entry.identifier} has no corresponding DB entry'
-                f'. Skipping reload this asset from DB. Either old global DB or user deleted it.',
+        return CustomAsset.initialize(
+            identifier=identifier,
+            name=asset_data[2],
+            custom_asset_type=asset_data[3],
+            notes=asset_data[4],
+        )
+
+    @staticmethod
+    def resolve_asset(identifier: str) -> AssetWithNameAndType:
+        """
+        Resolve asset in only one query to the database
+        May raise:
+        - UnknownAsset if the asset is not found in the database
+        """
+        query = """
+        SELECT A.identifier, A.type, B.address, B.decimals, A.name, C.symbol, C.started, null, C.swapped_for, C.coingecko, C.cryptocompare, B.protocol, B.chain, B.token_kind, null, null FROM assets as A JOIN evm_tokens as B
+        ON B.identifier = A.identifier JOIN common_asset_details AS C ON C.identifier = B.identifier WHERE A.type = ? AND A.identifier = ?
+        UNION ALL
+        SELECT A.identifier, A.type, null, null, A.name, B.symbol,  B.started, B.forked, B.swapped_for, B.coingecko, B.cryptocompare, null, null, null, null, null from assets as A JOIN common_asset_details as B
+        ON B.identifier = A.identifier WHERE A.type != ? AND A.type != ? AND A.identifier = ?
+        UNION ALL
+        SELECT A.identifier, A.type, null, null, A.name, null, null, null, null, null, null, null, null, null, null, B.notes, B.type FROM assets AS A JOIN custom_assets AS B on A.identifier=B.identifier WHERE A.identifier = ?
+        """  # noqa: E501
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            cursor.execute(
+                query,
+                (
+                    AssetType.EVM_TOKEN.serialize_for_db(),
+                    identifier,
+                    AssetType.EVM_TOKEN.serialize_for_db(),
+                    AssetType.CUSTOM_ASSET.serialize_for_db(),
+                    identifier,
+                    identifier,
+                ),
             )
-            continue
 
-        # TODO: Perhaps don't use frozen dataclasses? This setattr everywhere is ugly
-        if entry.asset_type == AssetType.EVM_TOKEN:
-            if db_entry.asset_type != AssetType.EVM_TOKEN:
-                log.critical(
-                    f'Constant declared token with id {entry.identifier} has a '
-                    f'different type in the DB {db_entry.asset_type}. This should never happen. '
-                    f'Skipping reloading this asset from DB. Did user mess with the DB?',
+            asset_data = cursor.fetchone()
+            if asset_data is None:
+                raise UnknownAsset(
+                    f'Could not find any asset with identifier {identifier} when'
+                    f'trying to resolve',
                 )
-                continue
-            swapped_for = Asset(db_entry.swapped_for) if db_entry.swapped_for else None
-            object.__setattr__(entry, 'name', db_entry.name)
-            object.__setattr__(entry, 'symbol', db_entry.symbol)
-            object.__setattr__(entry, 'started', db_entry.started)
-            object.__setattr__(entry, 'swapped_for', swapped_for)
-            object.__setattr__(entry, 'cryptocompare', db_entry.cryptocompare)
-            object.__setattr__(entry, 'coingecko', db_entry.coingecko)
-            object.__setattr__(entry, 'evm_address', db_entry.address)
-            object.__setattr__(entry, 'decimals', db_entry.decimals)
-            object.__setattr__(entry, 'protocol', db_entry.protocol)
-            # TODO: Not changing underlying tokens at the moment since none
-            # of the constant ones have but perhaps in the future we should?
-        else:
-            if db_entry.asset_type == AssetType.EVM_TOKEN:
-                log.critical(
-                    f'Constant declared asset with id {entry.identifier} has an ethereum '
-                    f'token type in the DB {db_entry.asset_type}. This should never happen. '
-                    f'Skipping reloading this asset from DB. Did user mess with the DB?',
+            asset_type = AssetType.deserialize_from_db(asset_data[0])
+            if asset_type == AssetType.EVM_TOKEN:
+                underlying_tokens = GlobalDBHandler().fetch_underlying_tokens(
+                    cursor=cursor,
+                    parent_token_identifier=identifier,
                 )
-                continue
-            swapped_for = Asset(db_entry.swapped_for) if db_entry.swapped_for else None
-            forked = Asset(db_entry.forked) if db_entry.forked else None
-            object.__setattr__(entry, 'name', db_entry.name)
-            object.__setattr__(entry, 'symbol', db_entry.symbol)
-            object.__setattr__(entry, 'asset_type', db_entry.asset_type)
-            object.__setattr__(entry, 'started', db_entry.started)
-            object.__setattr__(entry, 'forked', forked)
-            object.__setattr__(entry, 'swapped_for', swapped_for)
-            object.__setattr__(entry, 'cryptocompare', db_entry.cryptocompare)
-            object.__setattr__(entry, 'coingecko', db_entry.coingecko)
+                return EvmToken.deserialize_from_db(
+                    entry=asset_data,
+                    underlying_tokens=underlying_tokens,
+                )
+            if asset_type == AssetType.FIAT:
+                return FiatAsset.initialize(
+                    identifier=identifier,
+                    name=asset_data[4],
+                    symbol=asset_data[5],
+                    coingecko=asset_data[9],
+                    cryptocompare=asset_data[10],
+                )
+            if asset_type == AssetType.CUSTOM_ASSET:
+                return CustomAsset.initialize(
+                    identifier=identifier,
+                    name=asset_data[4],
+                    custom_asset_type=asset_data[15],
+                    notes=asset_data[14],
+                )
+
+            return CryptoAsset.initialize(
+                identifier=asset_data[0],
+                asset_type=asset_type,
+                name=asset_data[4],
+                symbol=asset_data[5],
+                started=asset_data[6],
+                forked=asset_data[7],
+                swapped_for=asset_data[8],
+                coingecko=asset_data[9],
+                cryptocompare=asset_data[10],
+            )
+
+    @staticmethod
+    def get_asset_type(identifier: str) -> AssetType:
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            type_in_db = cursor.execute(
+                'SELECT type FROM assets WHERE identifier=?',
+                (identifier,),
+            ).fetchone()
+
+        if type_in_db is None:  # should not happen
+            raise UnknownAsset(identifier)
+
+        return AssetType.deserialize_from_db(type_in_db[0])

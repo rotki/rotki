@@ -340,7 +340,7 @@ def test_query_transactions(rotkehlchen_api_server):
                 has_premium=True,  # for this function we don't limit. We only limit txs.
             )
             assert len(events) == 1
-            assert events[0].identifier in event_ids
+            assert events[0].identifier in event_ids  # pylint: disable=unsubscritable-object
 
     # Check that force re-requesting the events works
     assert_force_redecode_txns_works(rotkehlchen_api_server, hashes)
@@ -1091,8 +1091,8 @@ def test_query_transactions_check_decoded_events(
             assert cursor.execute(f'SELECT COUNT(*) from {name}').fetchone()[0] == count
         dbevents = DBHistoryEvents(rotki.data.db)
         customized_events = dbevents.get_history_events(cursor, HistoryEventFilterQuery.make(), True)  # noqa: E501
-        assert customized_events[0].serialize() == tx4_events[0]['entry']
-        assert customized_events[1].serialize() == tx2_events[1]['entry']
+        assert customized_events[0].serialize() == tx4_events[0]['entry']  # pylint: disable=unsubscriptable-object  # noqa: E501
+        assert customized_events[1].serialize() == tx2_events[1]['entry']  # pylint: disable=unsubscriptable-object  # noqa: E501
 
         # requery all transactions and events. Assert they are the same (different event id though)
         result = query_transactions(rotki)

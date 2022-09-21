@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Callable, DefaultDict, List, NamedTuple, Set, 
 import gevent
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.chain.manager import ChainManager
 from rotkehlchen.constants import WEEK_IN_SECONDS
 from rotkehlchen.constants.assets import A_USD
@@ -16,6 +16,7 @@ from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import DBEqualsFilter, DBIgnoreValuesFilter, HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.api import PremiumAuthenticationError
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.exchanges.manager import ExchangeManager
@@ -69,8 +70,8 @@ def exchange_fail_cb(error: str) -> None:
 
 
 class CCHistoQuery(NamedTuple):
-    from_asset: Asset
-    to_asset: Asset
+    from_asset: AssetWithOracles
+    to_asset: AssetWithOracles
 
 
 class TaskManager():
@@ -157,6 +158,10 @@ class TaskManager():
             assets = self.database.query_owned_assets(cursor)
             main_currency = self.database.get_setting(cursor=cursor, name='main_currency')
         for asset in assets:
+            try:
+                asset = asset.resolve_to_asset_with_oracles()
+            except UnknownAsset:
+                continue  # cryptocompare does not work with non-symbol assets
 
             if asset.is_fiat() and main_currency.is_fiat():
                 continue  # ignore fiat to fiat

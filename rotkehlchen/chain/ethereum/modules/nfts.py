@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, Any, DefaultDict, Dict, List, NamedTuple, Opti
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.assets.utils import get_asset_by_identifier
 from rotkehlchen.chain.ethereum.modules.uniswap.v3.types import AddressToUniswapV3LPBalances
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.misc import ZERO

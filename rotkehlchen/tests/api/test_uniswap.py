@@ -157,47 +157,6 @@ def test_get_balances(
 # Get events history tests
 
 TEST_EVENTS_ADDRESS_1 = '0x6C0F75eb3D69B9Ea2fB88dbC37fc086a12bBC93F'
-EXPECTED_EVENTS_BALANCES_1 = [
-    UniswapPoolEventsBalance(
-        address=string_to_evm_address(TEST_EVENTS_ADDRESS_1),
-        pool_address=string_to_evm_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),
-        token0=A_DOLLAR_BASED,
-        token1=A_WETH,
-        events=[
-            UniswapPoolEvent(
-                tx_hash=TXHASH_HEX_TO_BYTES['0xa9ce328d0e2d2fa8932890bfd4bc61411abd34a4aaa48fc8b853c873a55ea824'],  # noqa: 501
-                log_index=263,
-                address=string_to_evm_address(TEST_EVENTS_ADDRESS_1),
-                timestamp=Timestamp(1604273256),
-                event_type=EventType.MINT_UNISWAP,
-                pool_address=string_to_evm_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),  # noqa: E501
-                token0=A_DOLLAR_BASED,
-                token1=A_WETH,
-                amount0=AssetAmount(FVal('605.773209925184996494')),
-                amount1=AssetAmount(FVal('1.106631443395672732')),
-                usd_price=Price(FVal('872.4689300619698095220125311431804')),
-                lp_amount=AssetAmount(FVal('1.220680531244355402')),
-            ),
-            UniswapPoolEvent(
-                tx_hash=TXHASH_HEX_TO_BYTES['0x27ddad4f187e965a3ee37257b75d297ff79b2663fd0a2d8d15f7efaccf1238fa'],  # noqa: 501
-                log_index=66,
-                address=string_to_evm_address(TEST_EVENTS_ADDRESS_1),
-                timestamp=Timestamp(1604283808),
-                event_type=EventType.BURN_UNISWAP,
-                pool_address=string_to_evm_address('0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89'),  # noqa: E501
-                token0=A_DOLLAR_BASED,
-                token1=A_WETH,
-                amount0=AssetAmount(FVal('641.26289347330654345')),
-                amount1=AssetAmount(FVal('1.046665027131675546')),
-                usd_price=Price(FVal('837.2737746532695970921908229899852')),
-                lp_amount=AssetAmount(FVal('1.220680531244355402')),
-            ),
-        ],
-        profit_loss0=AssetAmount(FVal('35.489683548121546956')),
-        profit_loss1=AssetAmount(FVal('-0.059966416263997186')),
-        usd_profit_loss=Price(FVal('-35.19515540870021242982170811')),
-    ),
-]
 
 
 def get_expected_events_balances_2():
@@ -303,6 +262,48 @@ def test_get_events_history_filtering_by_timestamp_case1(
       - The events balances do not factorise the current balances in the
       protocol (meaning the response amounts should be assertable).
     """
+    expected_events_balances_1 = [
+        UniswapPoolEventsBalance(
+            address=string_to_evm_address(TEST_EVENTS_ADDRESS_1),
+            pool_address=string_to_evm_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),
+            token0=A_DOLLAR_BASED.resolve_to_evm_token(),
+            token1=A_WETH.resolve_to_evm_token(),
+            events=[
+                UniswapPoolEvent(
+                    tx_hash=TXHASH_HEX_TO_BYTES['0xa9ce328d0e2d2fa8932890bfd4bc61411abd34a4aaa48fc8b853c873a55ea824'],  # noqa: 501
+                    log_index=263,
+                    address=string_to_evm_address(TEST_EVENTS_ADDRESS_1),
+                    timestamp=Timestamp(1604273256),
+                    event_type=EventType.MINT_UNISWAP,
+                    pool_address=string_to_evm_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),  # noqa: E501
+                    token0=A_DOLLAR_BASED.resolve_to_evm_token(),
+                    token1=A_WETH.resolve_to_evm_token(),
+                    amount0=AssetAmount(FVal('605.773209925184996494')),
+                    amount1=AssetAmount(FVal('1.106631443395672732')),
+                    usd_price=Price(FVal('872.4689300619698095220125311431804')),
+                    lp_amount=AssetAmount(FVal('1.220680531244355402')),
+                ),
+                UniswapPoolEvent(
+                    tx_hash=TXHASH_HEX_TO_BYTES['0x27ddad4f187e965a3ee37257b75d297ff79b2663fd0a2d8d15f7efaccf1238fa'],  # noqa: 501
+                    log_index=66,
+                    address=string_to_evm_address(TEST_EVENTS_ADDRESS_1),
+                    timestamp=Timestamp(1604283808),
+                    event_type=EventType.BURN_UNISWAP,
+                    pool_address=string_to_evm_address('0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89'),  # noqa: E501
+                    token0=A_DOLLAR_BASED.resolve_to_evm_token(),
+                    token1=A_WETH.resolve_to_evm_token(),
+                    amount0=AssetAmount(FVal('641.26289347330654345')),
+                    amount1=AssetAmount(FVal('1.046665027131675546')),
+                    usd_price=Price(FVal('837.2737746532695970921908229899852')),
+                    lp_amount=AssetAmount(FVal('1.220680531244355402')),
+                ),
+            ],
+            profit_loss0=AssetAmount(FVal('35.489683548121546956')),
+            profit_loss1=AssetAmount(FVal('-0.059966416263997186')),
+            usd_profit_loss=Price(FVal('-35.19515540870021242982170811')),
+        ),
+    ]
+
     # Call time range
     from_timestamp = 1604273256
     to_timestamp = 1604283808
@@ -350,7 +351,7 @@ def test_get_events_history_filtering_by_timestamp_case1(
         events_balances = result[TEST_EVENTS_ADDRESS_1]
 
         assert len(events_balances) == 1
-        assert EXPECTED_EVENTS_BALANCES_1[0].serialize() == events_balances[0]
+        assert expected_events_balances_1[0].serialize() == events_balances[0]
 
         # Make sure they end up in the DB
         events = rotki.data.db.get_amm_events(cursor, [EventType.MINT_UNISWAP, EventType.BURN_UNISWAP])  # noqa: E501

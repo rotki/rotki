@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import CryptoAsset
 from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.decoding.utils import maybe_reshuffle_events
@@ -26,7 +26,7 @@ KYBER_LEGACY_CONTRACT_MIGRATED = string_to_evm_address('0x65bF64Ff5f51272f729BDc
 KYBER_LEGACY_CONTRACT_UPGRADED = string_to_evm_address('0x9AAb3f75489902f3a48495025729a0AF77d4b11e')  # noqa: E501
 
 
-def _legacy_contracts_basic_info(tx_log: EthereumTxReceiptLog) -> Tuple[ChecksumEvmAddress, Optional[Asset], Optional[Asset]]:  # noqa: E501
+def _legacy_contracts_basic_info(tx_log: EthereumTxReceiptLog) -> Tuple[ChecksumEvmAddress, Optional[CryptoAsset], Optional[CryptoAsset]]:  # noqa: E501
     """
     Returns:
     - address of the sender
@@ -47,8 +47,8 @@ def _legacy_contracts_basic_info(tx_log: EthereumTxReceiptLog) -> Tuple[Checksum
 def _maybe_update_events_legacy_contrats(
     decoded_events: List[HistoryBaseEntry],
     sender: ChecksumEvmAddress,
-    source_token: Asset,
-    destination_token: Asset,
+    source_asset: CryptoAsset,
+    destination_asset: CryptoAsset,
     spent_amount: FVal,
     return_amount: FVal,
 ) -> None:
@@ -58,17 +58,18 @@ def _maybe_update_events_legacy_contrats(
     """
     in_event = out_event = None
     for event in decoded_events:
-        if event.event_type == HistoryEventType.SPEND and event.location_label == sender and event.asset == source_token and event.balance.amount == spent_amount:  # noqa: E501
+        crypto_asset = event.asset.resolve_to_crypto_asset()
+        if event.event_type == HistoryEventType.SPEND and event.location_label == sender and event.asset == source_asset and event.balance.amount == spent_amount:  # noqa: E501
             event.event_type = HistoryEventType.TRADE
             event.event_subtype = HistoryEventSubType.SPEND
             event.counterparty = CPT_KYBER
-            event.notes = f'Swap {event.balance.amount} {event.asset.symbol} in kyber'
+            event.notes = f'Swap {event.balance.amount} {crypto_asset.symbol} in kyber'
             out_event = event
-        elif event.event_type == HistoryEventType.RECEIVE and event.location_label == sender and event.balance.amount == return_amount and destination_token == event.asset:  # noqa: E501
+        elif event.event_type == HistoryEventType.RECEIVE and event.location_label == sender and event.balance.amount == return_amount and destination_asset == event.asset:  # noqa: E501
             event.event_type = HistoryEventType.TRADE
             event.event_subtype = HistoryEventSubType.RECEIVE
             event.counterparty = CPT_KYBER
-            event.notes = f'Receive {event.balance.amount} {event.asset.symbol} from kyber swap'  # noqa: E501
+            event.notes = f'Receive {event.balance.amount} {crypto_asset.symbol} from kyber swap'  # noqa: E501
             in_event = event
 
         maybe_reshuffle_events(out_event=out_event, in_event=in_event)
@@ -96,19 +97,19 @@ class KyberDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
         if tx_log.topics[0] == KYBER_TRADE_LEGACY:
             return None, None
 
-        sender, source_token, destination_token = _legacy_contracts_basic_info(tx_log)
-        if source_token is None or destination_token is None:
+        sender, source_asset, destination_asset = _legacy_contracts_basic_info(tx_log)
+        if source_asset is None or destination_asset is None:
             return None, None
 
         spent_amount_raw = hex_or_bytes_to_int(tx_log.data[64:96])
         return_amount_raw = hex_or_bytes_to_int(tx_log.data[96:128])
-        spent_amount = asset_normalized_value(amount=spent_amount_raw, asset=source_token)
-        return_amount = asset_normalized_value(amount=return_amount_raw, asset=destination_token)
+        spent_amount = asset_normalized_value(amount=spent_amount_raw, asset=source_asset)
+        return_amount = asset_normalized_value(amount=return_amount_raw, asset=destination_asset)
         _maybe_update_events_legacy_contrats(
             decoded_events=decoded_events,
             sender=sender,
-            source_token=source_token,
-            destination_token=destination_token,
+            source_asset=source_asset,
+            destination_asset=destination_asset,
             spent_amount=spent_amount,
             return_amount=return_amount,
         )
@@ -126,19 +127,19 @@ class KyberDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
         if tx_log.topics[0] != KYBER_TRADE_LEGACY:
             return None, None
 
-        sender, source_token, destination_token = _legacy_contracts_basic_info(tx_log)
-        if source_token is None or destination_token is None:
+        sender, source_asset, destination_asset = _legacy_contracts_basic_info(tx_log)
+        if source_asset is None or destination_asset is None:
             return None, None
 
         spent_amount_raw = hex_or_bytes_to_int(tx_log.data[96:128])
         return_amount_raw = hex_or_bytes_to_int(tx_log.data[128:160])
-        spent_amount = asset_normalized_value(amount=spent_amount_raw, asset=source_token)
-        return_amount = asset_normalized_value(amount=return_amount_raw, asset=destination_token)
+        spent_amount = asset_normalized_value(amount=spent_amount_raw, asset=source_asset)
+        return_amount = asset_normalized_value(amount=return_amount_raw, asset=destination_asset)
         _maybe_update_events_legacy_contrats(
             decoded_events=decoded_events,
             sender=sender,
-            source_token=source_token,
-            destination_token=destination_token,
+            source_asset=source_asset,
+            destination_asset=destination_asset,
             spent_amount=spent_amount,
             return_amount=return_amount,
         )

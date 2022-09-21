@@ -19,10 +19,11 @@ import requests
 from cryptography.fernet import Fernet
 from eth_utils import to_checksum_address
 
-from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import NFT_DIRECTIVE, ZERO
+from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
@@ -244,11 +245,13 @@ class Opensea(ExternalServiceWithApiKey):
             last_sale = entry.get('last_sale')
             if last_sale:
                 if last_sale['payment_token']['symbol'] in ('ETH', 'WETH'):
-                    payment_token = A_ETH
+                    payment_token = A_ETH.resolve_to_evm_token()
                 else:
-                    payment_token = EvmToken(
-                        to_checksum_address(last_sale['payment_token']['address']),
-                    )
+                    payment_token = Asset(
+                        ethaddress_to_identifier(
+                            to_checksum_address(last_sale['payment_token']['address']),
+                        ),
+                    ).resolve_to_evm_token()
 
                 amount = asset_normalized_value(int(last_sale['total_price']), payment_token)
                 eth_price = FVal(last_sale['payment_token']['eth_price'])

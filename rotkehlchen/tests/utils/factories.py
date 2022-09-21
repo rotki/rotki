@@ -8,10 +8,10 @@ from eth_utils.address import to_checksum_address
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.assets.asset import AssetWithSymbol
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.constants import ONE
-from rotkehlchen.constants.assets import A_USD
+from rotkehlchen.constants.assets import A_USDT
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import (
     AddressbookEntry,
@@ -89,7 +89,7 @@ def make_ethereum_transaction(tx_hash: Optional[bytes] = None) -> EvmTransaction
 def make_ethereum_event(
     index: int,
     tx_hash: Optional[bytes] = None,
-    asset: AssetWithSymbol = A_USD,
+    asset: Asset = A_USDT,
     counterparty: Optional[str] = None,
 ) -> HistoryBaseEntry:
     if tx_hash is None:

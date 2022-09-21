@@ -46,6 +46,7 @@ class PickleFinanceDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             action_items: List[ActionItem],  # pylint: disable=unused-argument
     ) -> bool:
         """Enrich tranfer transactions to address for jar deposits and withdrawals"""
+        crypto_asset = event.asset.resolve_to_crypto_asset()
         if not (
             hex_or_bytes_to_address(tx_log.topics[2]) in self.pickle_contracts or
             hex_or_bytes_to_address(tx_log.topics[1]) in self.pickle_contracts or
@@ -67,7 +68,7 @@ class PickleFinanceDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                 event.counterparty = CPT_PICKLE
-                event.notes = f'Deposit {event.balance.amount} {event.asset.symbol} in pickle contract'  # noqa: E501
+                event.notes = f'Deposit {event.balance.amount} {crypto_asset.symbol} in pickle contract'  # noqa: E501
         elif (  # Deposit receive wrapped
             event.event_type == HistoryEventType.RECEIVE and
             event.event_subtype == HistoryEventSubType.NONE and
@@ -79,7 +80,7 @@ class PickleFinanceDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                 event.event_type = HistoryEventType.RECEIVE
                 event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
                 event.counterparty = CPT_PICKLE
-                event.notes = f'Receive {event.balance.amount} {event.asset.symbol} after depositing in pickle contract'  # noqa: E501
+                event.notes = f'Receive {event.balance.amount} {crypto_asset.symbol} after depositing in pickle contract'  # noqa: E501
         elif (  # Withdraw send wrapped
             event.event_type == HistoryEventType.SPEND and
             event.event_subtype == HistoryEventSubType.NONE and
@@ -95,7 +96,7 @@ class PickleFinanceDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                 event.event_type = HistoryEventType.SPEND
                 event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
                 event.counterparty = CPT_PICKLE
-                event.notes = f'Return {event.balance.amount} {event.asset.symbol} to the pickle contract'  # noqa: E501
+                event.notes = f'Return {event.balance.amount} {crypto_asset.symbol} to the pickle contract'  # noqa: E501
         elif (  # Withdraw receive asset
             event.event_type == HistoryEventType.RECEIVE and
             event.event_subtype == HistoryEventSubType.NONE and
@@ -111,7 +112,7 @@ class PickleFinanceDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.REMOVE_ASSET
                 event.counterparty = CPT_PICKLE
-                event.notes = f'Unstake {event.balance.amount} {event.asset.symbol} from the pickle contract'  # noqa: E501
+                event.notes = f'Unstake {event.balance.amount} {crypto_asset.symbol} from the pickle contract'  # noqa: E501
 
         return True
 

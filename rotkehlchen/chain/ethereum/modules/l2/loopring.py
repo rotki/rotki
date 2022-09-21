@@ -141,141 +141,6 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-# Taken from https://github.com/Loopring/protocols/blob/master/packages/loopring_v3/deployment_mainnet_v3.6.md  # noqa: E501
-# Same result as the https://docs3.loopring.io/en/dex_apis/getTokens.html endpoint
-# but since it's guaranteed to stay the same at least until a new rollup version
-# we keep it hard coded here to save on queries
-TOKENID_TO_ASSET = {
-    0: A_ETH,
-    1: A_LRC,
-    2: A_WETH,
-    3: A_USDT,
-    4: A_WBTC,
-    5: A_DAI,
-    6: A_USDC,
-    7: A_MKR,
-    8: A_KNC,
-    9: A_LINK,
-    10: A_BAT,
-    11: A_ZRX,
-    12: A_HT,
-    13: A_OKB,
-    14: A_BNB,
-    15: A_KEEP,
-    16: A_DXD,
-    17: A_TRB,
-    18: A_AUC,
-    19: A_RPL,
-    20: A_RENBTC,
-    21: A_PAX,
-    22: A_TUSD,
-    23: A_BUSD,
-    # 24: SNX -> but for some reason delisted
-    25: A_GNO,
-    # 26: LEND -> migrated to AAVE
-    27: A_REN,
-    # 28: old REP
-    29: A_BNT,
-    30: A_PBTC,
-    31: A_COMP,
-    32: A_PNT,
-    33: A_GRID,
-    34: A_PNK,
-    35: A_NEST,
-    36: A_BTU,
-    37: A_BZRX,
-    38: A_VBZRX,
-    39: A_CDAI,
-    40: A_CETH,
-    41: A_CUSDC,
-    # 42: aLEND delisted
-    43: A_ALINK_V1,
-    44: A_AUSDC_V1,
-    45: A_OMG,
-    46: A_ENJ,
-    47: A_NMR,
-    48: A_SNT,
-    # 49: tBTC
-    # 50: ANT old
-    51: A_BAL,
-    52: A_MTA,
-    53: A_SUSD,
-    54: A_ONG,
-    55: A_GRG,
-    # 56: BEEF - https://etherscan.io/address/0xbc2908de55877e6baf2faad7ae63ac8b26bd3de5 no coingecko/cc  # noqa: E501
-    57: A_YFI,
-    58: A_CRV,
-    59: A_QCAD,
-    60: A_TON,
-    61: A_BAND,
-    62: A_UMA,
-    63: A_WNXM,
-    64: A_ENTRP,
-    65: A_NIOX,
-    66: A_STAKE,
-    67: A_OGN,
-    68: A_ADX,
-    69: A_HEX,
-    70: A_DPI,
-    71: A_HBTC,
-    72: A_UNI,
-    73: A_PLTC,
-    # 74: KAI
-    75: A_FIN,
-    76: A_DOUGH,
-    77: A_DEFI_L,
-    78: A_DEFI_S,
-    79: A_AAVE,
-    80: A_TRYB,
-    81: A_CEL,
-    82: A_AMP,
-    # 83 -> 88 LP (uniswap?) tokens - need to fill in when we support them
-    89: A_KP3R,
-    90: A_YFII,
-    91: A_MCB,
-    # 92 -> 97 LP (uniswap?) tokens - need to fill in when we support them
-    98: A_AC,
-    # 99 -> 100 LP (uniswap?) tokens - need to fill in when we support them
-    101: A_CVT,
-    # 102 -> 103 LP (uniswap?) tokens - need to fill in when we support them
-    104: A_1INCH,
-    # 105 -> 106 LP (uniswap?) tokens - need to fill in when we support them
-    # 107: vETH https://etherscan.io/address/0xc3d088842dcf02c13699f936bb83dfbbc6f721ab not in coingecko or cc  # noqa: E501
-    108: A_WOO,
-    # 109 -> 113 LP (uniswap?) tokens - need to fill in when we support them
-    114: A_BEL,
-    115: A_OBTC,
-    116: A_INDEX,
-    117: A_GRT,
-    118: A_TTV,
-    119: A_FARM,
-    # 120 -> 146 LP (uniswap?) tokens - need to fill in when we support them
-    147: A_BOR,
-    # 148 -> 168 LP (uniswap?) tokens - need to fill in when we support them
-    169: A_RFOX,
-    170: A_NEC,
-    # 171 -> 172 LP (uniswap?) tokens - need to fill in when we support them
-    173: A_SNX,
-    174: A_RGT,
-    175: A_VSP,
-    176: A_SMARTCREDIT,
-    177: A_RAI,
-    178: A_TEL,
-    179: A_BCP,
-    180: A_BADGER,
-    181: A_SUSHI,
-    182: A_MASK,
-    # 183 -> 195 LP (uniswap?) tokens - need to fill in when we support them
-    196: A_YPIE,
-    197: A_FUSE,
-    # 198 -> 200 LP (uniswap?) tokens - need to fill in when we support them
-    201: A_SX,
-    # 202: REPT
-    203: A_RSPT,
-    # 204 -> 206 LP (uniswap?) tokens - need to fill in when we support them
-}
-
-
 class LoopringInvalidApiKey(Exception):
     pass
 
@@ -301,6 +166,139 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryMixIn):
         if api_key:
             self.session.headers.update({'X-API-KEY': api_key})
         self.base_url = 'https://api3.loopring.io/api/v3/'
+        # Taken from https://github.com/Loopring/protocols/blob/master/packages/loopring_v3/deployment_mainnet_v3.6.md  # noqa: E501
+        # Same result as the https://docs3.loopring.io/en/dex_apis/getTokens.html endpoint
+        # but since it's guaranteed to stay the same at least until a new rollup version
+        # we keep it hard coded here to save on queries
+        self.tokenid_to_asset = {
+            0: A_ETH.resolve_to_crypto_asset(),
+            1: A_LRC.resolve_to_crypto_asset(),
+            2: A_WETH.resolve_to_crypto_asset(),
+            3: A_USDT.resolve_to_crypto_asset(),
+            4: A_WBTC.resolve_to_crypto_asset(),
+            5: A_DAI.resolve_to_crypto_asset(),
+            6: A_USDC.resolve_to_crypto_asset(),
+            7: A_MKR.resolve_to_crypto_asset(),
+            8: A_KNC.resolve_to_crypto_asset(),
+            9: A_LINK.resolve_to_crypto_asset(),
+            10: A_BAT.resolve_to_crypto_asset(),
+            11: A_ZRX.resolve_to_crypto_asset(),
+            12: A_HT.resolve_to_crypto_asset(),
+            13: A_OKB.resolve_to_crypto_asset(),
+            14: A_BNB.resolve_to_crypto_asset(),
+            15: A_KEEP.resolve_to_crypto_asset(),
+            16: A_DXD.resolve_to_crypto_asset(),
+            17: A_TRB.resolve_to_crypto_asset(),
+            18: A_AUC.resolve_to_crypto_asset(),
+            19: A_RPL.resolve_to_crypto_asset(),
+            20: A_RENBTC.resolve_to_crypto_asset(),
+            21: A_PAX.resolve_to_crypto_asset(),
+            22: A_TUSD.resolve_to_crypto_asset(),
+            23: A_BUSD.resolve_to_crypto_asset(),
+            # 24: SNX -> but for some reason delisted
+            25: A_GNO.resolve_to_crypto_asset(),
+            # 26: LEND -> migrated to AAVE
+            27: A_REN.resolve_to_crypto_asset(),
+            # 28: old RE.resolve_to_crypto_asset()P
+            29: A_BNT.resolve_to_crypto_asset(),
+            30: A_PBTC.resolve_to_crypto_asset(),
+            31: A_COMP.resolve_to_crypto_asset(),
+            32: A_PNT.resolve_to_crypto_asset(),
+            33: A_GRID.resolve_to_crypto_asset(),
+            34: A_PNK.resolve_to_crypto_asset(),
+            35: A_NEST.resolve_to_crypto_asset(),
+            36: A_BTU.resolve_to_crypto_asset(),
+            37: A_BZRX.resolve_to_crypto_asset(),
+            38: A_VBZRX.resolve_to_crypto_asset(),
+            39: A_CDAI.resolve_to_crypto_asset(),
+            40: A_CETH.resolve_to_crypto_asset(),
+            41: A_CUSDC.resolve_to_crypto_asset(),
+            # 42: aLEND delisted
+            43: A_ALINK_V1.resolve_to_crypto_asset(),
+            44: A_AUSDC_V1.resolve_to_crypto_asset(),
+            45: A_OMG.resolve_to_crypto_asset(),
+            46: A_ENJ.resolve_to_crypto_asset(),
+            47: A_NMR.resolve_to_crypto_asset(),
+            48: A_SNT.resolve_to_crypto_asset(),
+            # 49: tBTC
+            # 50: ANT old
+            51: A_BAL.resolve_to_crypto_asset(),
+            52: A_MTA.resolve_to_crypto_asset(),
+            53: A_SUSD.resolve_to_crypto_asset(),
+            54: A_ONG.resolve_to_crypto_asset(),
+            55: A_GRG.resolve_to_crypto_asset(),
+            # 56: BEEF - https://etherscan.io/address/0xbc2908de55877e6baf2faad7ae63ac8b26bd3de5 no coingecko/cc  # noqa: E501
+            57: A_YFI.resolve_to_crypto_asset(),
+            58: A_CRV.resolve_to_crypto_asset(),
+            59: A_QCAD.resolve_to_crypto_asset(),
+            60: A_TON.resolve_to_crypto_asset(),
+            61: A_BAND.resolve_to_crypto_asset(),
+            62: A_UMA.resolve_to_crypto_asset(),
+            63: A_WNXM.resolve_to_crypto_asset(),
+            64: A_ENTRP.resolve_to_crypto_asset(),
+            65: A_NIOX.resolve_to_crypto_asset(),
+            66: A_STAKE.resolve_to_crypto_asset(),
+            67: A_OGN.resolve_to_crypto_asset(),
+            68: A_ADX.resolve_to_crypto_asset(),
+            69: A_HEX.resolve_to_crypto_asset(),
+            70: A_DPI.resolve_to_crypto_asset(),
+            71: A_HBTC.resolve_to_crypto_asset(),
+            72: A_UNI.resolve_to_crypto_asset(),
+            73: A_PLTC.resolve_to_crypto_asset(),
+            # 74: KAI
+            75: A_FIN.resolve_to_crypto_asset(),
+            76: A_DOUGH.resolve_to_crypto_asset(),
+            77: A_DEFI_L.resolve_to_crypto_asset(),
+            78: A_DEFI_S.resolve_to_crypto_asset(),
+            79: A_AAVE.resolve_to_crypto_asset(),
+            80: A_TRYB.resolve_to_crypto_asset(),
+            81: A_CEL.resolve_to_crypto_asset(),
+            82: A_AMP.resolve_to_crypto_asset(),
+            # 83 -> 88 LP (uniswap?) tokens - need to fill in when we support them
+            89: A_KP3R.resolve_to_crypto_asset(),
+            90: A_YFII.resolve_to_crypto_asset(),
+            91: A_MCB.resolve_to_crypto_asset(),
+            # 92 -> 97 LP (uniswap?) tokens - need to fill in when we support them
+            98: A_AC.resolve_to_crypto_asset(),
+            # 99 -> 100 LP (uniswap?) tokens - need to fill in when we support them
+            101: A_CVT.resolve_to_crypto_asset(),
+            # 102 -> 103 LP (uniswap?) tokens - need to fill in when we support them
+            104: A_1INCH.resolve_to_crypto_asset(),
+            # 105 -> 106 LP (uniswap?) tokens - need to fill in when we support them
+            # 107: vETH https://etherscan.io/address/0xc3d088842dcf02c13699f936bb83dfbbc6f721ab not in coingecko or cc  # noqa: E501
+            108: A_WOO.resolve_to_crypto_asset(),
+            # 109 -> 113 LP (uniswap?) tokens - need to fill in when we support them
+            114: A_BEL.resolve_to_crypto_asset(),
+            115: A_OBTC.resolve_to_crypto_asset(),
+            116: A_INDEX.resolve_to_crypto_asset(),
+            117: A_GRT.resolve_to_crypto_asset(),
+            118: A_TTV.resolve_to_crypto_asset(),
+            119: A_FARM.resolve_to_crypto_asset(),
+            # 120 -> 146 LP (uniswap?) tokens - need to fill in when we support them
+            147: A_BOR.resolve_to_crypto_asset(),
+            # 148 -> 168 LP (uniswap?) tokens - need to fill in when we support them
+            169: A_RFOX.resolve_to_crypto_asset(),
+            170: A_NEC.resolve_to_crypto_asset(),
+            # 171 -> 172 LP (uniswap?) tokens - need to fill in when we support them
+            173: A_SNX.resolve_to_crypto_asset(),
+            174: A_RGT.resolve_to_crypto_asset(),
+            175: A_VSP.resolve_to_crypto_asset(),
+            176: A_SMARTCREDIT.resolve_to_crypto_asset(),
+            177: A_RAI.resolve_to_crypto_asset(),
+            178: A_TEL.resolve_to_crypto_asset(),
+            179: A_BCP.resolve_to_crypto_asset(),
+            180: A_BADGER.resolve_to_crypto_asset(),
+            181: A_SUSHI.resolve_to_crypto_asset(),
+            182: A_MASK.resolve_to_crypto_asset(),
+            # 183 -> 195 LP (uniswap?) tokens - need to fill in when we support them
+            196: A_YPIE.resolve_to_crypto_asset(),
+            197: A_FUSE.resolve_to_crypto_asset(),
+            # 198 -> 200 LP (uniswap?) tokens - need to fill in when we support them
+            201: A_SX.resolve_to_crypto_asset(),
+            # 202: REPT
+            203: A_RSPT.resolve_to_crypto_asset(),
+            # 204 -> 206 LP (uniswap?) tokens - need to fill in when we support them
+        }
 
     def got_api_key(self) -> bool:
         """Checks if we got an api key and if yes makes sure it's in the session headers"""
@@ -451,7 +449,7 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryMixIn):
             if total == ZERO:
                 continue
 
-            asset = TOKENID_TO_ASSET.get(token_id, None)
+            asset = self.tokenid_to_asset.get(token_id, None)
             if asset is None:
                 self.msg_aggregator.add_warning(
                     f'Ignoring loopring balance of unsupported token with id {token_id}',

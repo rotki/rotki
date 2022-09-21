@@ -219,7 +219,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-
             raw_amount = hex_or_bytes_to_int(tx_log.topics[3])
             amount = token_normalized_value(
                 token_amount=raw_amount,
-                token=A_DAI,
+                token=A_DAI.resolve_to_evm_token(),
             )
             # The transfer comes right before, but we don't have enough information
             # yet to make sure that this transfer is indeed a vault payback debt. We
@@ -229,7 +229,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-
                 sequence_index=tx_log.log_index,
                 from_event_type=HistoryEventType.SPEND,
                 from_event_subtype=HistoryEventSubType.NONE,
-                asset=A_DAI,
+                asset=A_DAI.resolve_to_evm_token(),
                 amount=amount,
                 to_event_subtype=HistoryEventSubType.PAYBACK_DEBT,
                 to_counterparty=CPT_VAULT,
@@ -270,7 +270,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-
             raw_amount = hex_or_bytes_to_int(daijoin_log.topics[3])
             amount = token_normalized_value(
                 token_amount=raw_amount,
-                token=A_DAI,
+                token=A_DAI.resolve_to_evm_token(),
             )
 
             # The transfer event should be right before
@@ -307,7 +307,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-
             raw_amount = hex_or_bytes_to_int(daiexit_log.topics[3])
             amount = token_normalized_value(
                 token_amount=raw_amount,
-                token=A_DAI,
+                token=A_DAI.resolve_to_evm_token(),
             )
             # The transfer event will be in a subsequent logs
             action_item = ActionItem(
@@ -315,7 +315,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-
                 sequence_index=tx_log.log_index,
                 from_event_type=HistoryEventType.RECEIVE,
                 from_event_subtype=HistoryEventSubType.NONE,
-                asset=A_DAI,
+                asset=A_DAI.resolve_to_evm_token(),
                 amount=amount,
                 to_event_type=HistoryEventType.WITHDRAWAL,
                 to_event_subtype=HistoryEventSubType.REMOVE_ASSET,
@@ -412,7 +412,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-
         raw_amount = shift_num_right_by(hex_or_bytes_to_int(tx_log.data[132:164]), RAY_DIGITS)
         amount = token_normalized_value(
             token_amount=raw_amount,
-            token=A_DAI,
+            token=A_DAI.resolve_to_evm_token(),
         )
 
         # The transfer event appears after the debt generation event, so we need to transform it
@@ -421,7 +421,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-
             sequence_index=tx_log.log_index,
             from_event_type=HistoryEventType.RECEIVE,
             from_event_subtype=HistoryEventSubType.NONE,
-            asset=A_DAI,
+            asset=A_DAI.resolve_to_evm_token(),
             amount=amount,
             to_event_type=HistoryEventType.WITHDRAWAL,
             to_event_subtype=HistoryEventSubType.GENERATE_DEBT,
@@ -479,13 +479,14 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-
             # dink is the raw collateral amount change. Let's use this event to see if
             # there was a deposit event beforehand to append the cdp id
             for event in decoded_events:
+                crypto_asset = event.asset.resolve_to_crypto_asset()
                 if event.event_type == HistoryEventType.DEPOSIT and event.event_subtype == HistoryEventSubType.DEPOSIT_ASSET and event.counterparty == CPT_VAULT:  # noqa: E501
                     normalized_dink = asset_normalized_value(amount=dink, asset=event.asset)
                     if normalized_dink != event.balance.amount:
                         continue
 
                     vault_type = event.extra_data.get('vault_type', 'unknown') if event.extra_data else 'unknown'  # noqa: E501
-                    event.notes = f'Deposit {event.balance.amount} {event.asset.symbol} to {vault_type} vault {cdp_id}'  # noqa: E501
+                    event.notes = f'Deposit {event.balance.amount} {crypto_asset.symbol} to {vault_type} vault {cdp_id}'  # noqa: E501
                     break
 
         return None, None
@@ -521,7 +522,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-
                 return None, None
 
             # sending SAI to migration contract
-            transfer = self.base.decode_erc20_721_transfer(token=A_SAI, tx_log=tx_log, transaction=transaction)  # noqa: E501
+            transfer = self.base.decode_erc20_721_transfer(token=A_SAI.resolve_to_evm_token(), tx_log=tx_log, transaction=transaction)  # noqa: E501
             if transfer is None:
                 return None, None
 
@@ -536,7 +537,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-
                 sequence_index=tx_log.log_index,
                 from_event_type=HistoryEventType.RECEIVE,
                 from_event_subtype=HistoryEventSubType.NONE,
-                asset=A_DAI,
+                asset=A_DAI.resolve_to_evm_token(),
                 amount=transfer.balance.amount,
                 to_event_type=HistoryEventType.MIGRATE,
                 to_event_subtype=HistoryEventSubType.RECEIVE,

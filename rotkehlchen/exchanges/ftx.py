@@ -23,7 +23,7 @@ import requests
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import AssetWithSymbol
+from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_ftx
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
@@ -399,7 +399,7 @@ class Ftx(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             balances = resp_lst
 
         # extract the balances and aggregate them
-        returned_balances: DefaultDict[AssetWithSymbol, Balance] = defaultdict(Balance)
+        returned_balances: DefaultDict[AssetWithOracles, Balance] = defaultdict(Balance)
         for balance_info in balances:
             try:
                 amount = deserialize_asset_amount(balance_info['total'])

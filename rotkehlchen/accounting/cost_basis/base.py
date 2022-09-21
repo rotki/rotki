@@ -421,7 +421,7 @@ class CostBasisCalculator(CustomizableDateMixin):
         if not asset.is_fiat() and taxable_spend:
             return self.calculate_spend_cost_basis(
                 spending_amount=amount,
-                spending_asset=asset,
+                spending_asset=asset.resolve_to_fiat_asset(),
                 timestamp=timestamp,
             )
         # just reduce the amount's acquisition without counting anything

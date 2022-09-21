@@ -689,7 +689,7 @@ def test_cvx_stake(database, ethereum_manager, eth_transactions):
             EthereumTxReceiptLog(
                 log_index=342,
                 data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000de0b6b3a7640000'),  # noqa: E501
-                address=A_CVX.evm_address,
+                address=A_CVX.resolve_to_evm_token().evm_address,
                 removed=False,
                 topics=[
                     hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
@@ -699,7 +699,7 @@ def test_cvx_stake(database, ethereum_manager, eth_transactions):
             ), EthereumTxReceiptLog(
                 log_index=343,
                 data=hexstring_to_bytes('0xfffffffffffffffffffffffffffffffffffffffffffffffff21f494c589bffff'),  # noqa: E501
-                address=A_CVX.evm_address,
+                address=A_CVX.resolve_to_evm_token().evm_address,
                 removed=False,
                 topics=[
                     hexstring_to_bytes('0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925'),  # noqa: E501
@@ -937,7 +937,7 @@ def test_cvx_withdraw(database, ethereum_manager, eth_transactions):
             EthereumTxReceiptLog(
                 log_index=422,
                 data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000001dd12c8e3dff5d8fee'),  # noqa: E501
-                address=A_CVX.evm_address,
+                address=A_CVX.resolve_to_evm_token().evm_address,
                 removed=False,
                 topics=[
                     hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
@@ -1029,7 +1029,7 @@ def test_claimzap_abracadabras(database, ethereum_manager, eth_transactions):
             EthereumTxReceiptLog(
                 log_index=592,
                 data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000000669e01928977e52a3'),  # noqa: E501
-                address=A_CVX.evm_address,
+                address=A_CVX.resolve_to_evm_token().evm_address,
                 removed=False,
                 topics=[
                     hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501

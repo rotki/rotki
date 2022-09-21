@@ -53,7 +53,9 @@ class CompoundDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
 
         mint_amount_raw = hex_or_bytes_to_int(tx_log.data[32:64])
         minted_amount_raw = hex_or_bytes_to_int(tx_log.data[64:96])
-        underlying_asset = symbol_to_asset_or_token(compound_token.symbol[1:])
+        underlying_asset = symbol_to_asset_or_token(
+            compound_token.symbol[1:],
+        ).resolve_to_crypto_asset()
         mint_amount = asset_normalized_value(mint_amount_raw, underlying_asset)
         minted_amount = token_normalized_value(minted_amount_raw, compound_token)
         out_event = None
@@ -98,7 +100,10 @@ class CompoundDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
 
         redeem_amount_raw = hex_or_bytes_to_int(tx_log.data[32:64])
         redeem_tokens_raw = hex_or_bytes_to_int(tx_log.data[64:96])
-        underlying_token = symbol_to_asset_or_token(compound_token.symbol[1:])
+        underlying_token = symbol_to_asset_or_token(
+            compound_token.symbol[1:],
+        ).resolve_to_crypto_asset()
+        # TODO: probably asset_normalized_value should be / have a companion with more cpecific type  # noqa: E501
         redeem_amount = asset_normalized_value(redeem_amount_raw, underlying_token)
         redeem_tokens = token_normalized_value(redeem_tokens_raw, compound_token)
         out_event = in_event = None

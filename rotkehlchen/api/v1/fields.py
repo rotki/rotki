@@ -1,5 +1,4 @@
 import logging
-import urllib.parse
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Mapping, Optional, Sequence, Type, Union
 
@@ -10,9 +9,8 @@ from marshmallow.exceptions import ValidationError
 from marshmallow.utils import is_iterable_but_not_string
 from werkzeug.datastructures import FileStorage
 
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, AssetWithOracles, CryptoAsset, EvmToken
 from rotkehlchen.assets.types import AssetType
-from rotkehlchen.assets.utils import get_asset_by_identifier
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.utils import is_valid_derivation_path
 from rotkehlchen.constants.misc import ZERO
@@ -358,7 +356,19 @@ class SerializableEnumField(fields.Field):
 
 class AssetField(fields.Field):
 
-    def __init__(self, *, form_with_incomplete_data: bool = False, **kwargs: Any) -> None:  # noqa: E501
+    def __init__(
+            self,
+            *,
+            expected_type: Union[
+                Type[Asset],
+                Type[AssetWithOracles],
+                Type[CryptoAsset],
+                Type[EvmToken],
+            ],
+            form_with_incomplete_data: bool = False,
+            **kwargs: Any,
+    ) -> None:
+        self.expected_type = expected_type
         self.form_with_incomplete_data = form_with_incomplete_data
         super().__init__(**kwargs)
 
@@ -383,10 +393,15 @@ class AssetField(fields.Field):
             raise ValidationError(f'Tried to initialize an asset out of a non-string identifier {value}')  # noqa: E501
 
         try:
-            asset = get_asset_by_identifier(
-                identifier=urllib.parse.unquote(value),
-                form_with_incomplete_data=self.form_with_incomplete_data,
-            )
+            if self.expected_type == Asset:
+                # Just to check identifier's existence
+                asset = Asset(identifier=value).resolve_to_asset_with_name_and_type()
+            elif self.expected_type == AssetWithOracles:
+                asset = Asset(identifier=value).resolve_to_asset_with_oracles()
+            elif self.expected_type == CryptoAsset:
+                asset = Asset(identifier=value).resolve_to_crypto_asset()
+            else:  # EvmToken
+                asset = Asset(identifier=value).resolve_to_evm_token()
         except (DeserializationError, UnknownAsset) as e:
             raise ValidationError(str(e)) from e
 
@@ -395,8 +410,15 @@ class AssetField(fields.Field):
 
 class MaybeAssetField(fields.Field):
 
-    def __init__(self, *, form_with_incomplete_data: bool = False, **kwargs: Any) -> None:  # noqa: E501
+    def __init__(
+            self,
+            *,
+            expected_type: Type[AssetWithOracles],  # the only possible type now
+            form_with_incomplete_data: bool = False,
+            **kwargs: Any,
+    ) -> None:
         self.form_with_incomplete_data = form_with_incomplete_data
+        self.expected_type = expected_type
         super().__init__(**kwargs)
 
     @staticmethod
@@ -417,15 +439,13 @@ class MaybeAssetField(fields.Field):
             **_kwargs: Any,
     ) -> Optional[Asset]:
         try:
-            asset = get_asset_by_identifier(
-                identifier=value,
-                form_with_incomplete_data=self.form_with_incomplete_data,
-            )
+            asset = Asset(identifier=value).resolve_to_asset_with_oracles()
         except DeserializationError as e:
             raise ValidationError(str(e)) from e
         except UnknownAsset:
             log.error(f'Failed to deserialize asset {value}')
             return None
+
         return asset
 
 
