@@ -2182,15 +2182,21 @@ class AssetIconsResource(BaseMethodView):
         return self.rest_api.refresh_asset_icon(asset)
 
 
+class AllCurrentAssetsPriceResource(BaseMethodView):
+
+    post_schema = ManualPriceRegisteredSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(post_schema, location='json')
+    def post(self, from_asset: Optional[Asset], to_asset: Optional[Asset]) -> Response:
+        return self.rest_api.get_manual_current_prices(from_asset, to_asset)
+
+
 class CurrentAssetsPriceResource(BaseMethodView):
 
     put_schema = ManualPriceSchema()
     post_schema = CurrentAssetsPriceSchema()
     delete_schema = SingleAssetIdentifierSchema()
-
-    @require_loggedin_user()
-    def get(self) -> Response:
-        return self.rest_api.get_nfts_with_price()
 
     @require_loggedin_user()
     @use_kwargs(put_schema, location='json')

@@ -3822,13 +3822,24 @@ class RestAPI():
         result_dict = {'result': response['result'], 'message': response['message']}
         return api_response(process_result(result_dict), status_code=status_code)
 
-    def get_nfts_with_price(self) -> Response:
-        return self._api_query_for_eth_module(
-            async_query=False,
-            module_name='nfts',
-            method='get_nfts_with_price',
-            query_specific_balances_before=None,
+    def get_manual_current_prices(
+            self,
+            from_asset: Optional[Asset],
+            to_asset: Optional[Asset],
+    ) -> Response:
+        prices = GlobalDBHandler().get_all_manual_current_prices(
+            from_asset=from_asset,
+            to_asset=to_asset,
         )
+        prices_information = []
+        for price_entry in prices:
+            prices_information.append({
+                'from_asset': price_entry[0],
+                'to_asset': price_entry[1],
+                'price': price_entry[2],
+            })
+        processed_result = process_result_list(prices_information)
+        return api_response(_wrap_in_ok_result(processed_result), status_code=HTTPStatus.OK)
 
     def add_manual_current_price(
             self,

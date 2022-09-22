@@ -303,3 +303,98 @@ def test_inquirer_oracles_affect_manual_price(inquirer):
     assert inquirer.find_usd_price(A_ETH) == 3  # Should remain the same since cache should be hit
     inquirer.remove_cached_current_price_entry(cache_key=(A_ETH, A_USD))
     assert inquirer.find_usd_price(A_ETH) > 100  # should have real price now
+
+
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_get_all_current_prices(rotkehlchen_api_server):
+    """Test that the endpoint to fetch all manual imput returns the correct prices results"""
+    # Check that when there are no entries in the database the result is empty
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'allcurrentassetspriceresource',
+        ),
+    )
+    result = assert_proper_response_with_result(response)
+    assert result == []
+
+    # Add prices to the database and one that overwrites another with the same from/to
+    GlobalDBHandler().add_manual_current_price(
+        from_asset=A_ETH,
+        to_asset=A_EUR,
+        price=Price(FVal(10)),
+    )
+    GlobalDBHandler().add_manual_current_price(
+        from_asset=A_ETH,
+        to_asset=A_EUR,
+        price=Price(FVal(5)),
+    )
+    GlobalDBHandler().add_manual_current_price(
+        from_asset=A_EUR,
+        to_asset=A_USD,
+        price=Price(FVal(1.01)),
+    )
+
+    # Check that the old ETH -> EUR price has become historical
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        cursor.execute(
+            'SELECT source_type FROM price_history WHERE from_asset="ETH" AND price="10"',
+        )
+        assert cursor.fetchone()[0] == HistoricalPriceOracle.MANUAL.serialize_for_db()
+
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'allcurrentassetspriceresource',
+        ),
+    )
+    result = assert_proper_response_with_result(response)
+    expected_response = [
+        {'from_asset': 'ETH', 'to_asset': 'EUR', 'price': '5'},
+        {'from_asset': 'EUR', 'to_asset': 'USD', 'price': '1.01'},
+    ]
+    assert result == expected_response
+
+    # try filtering by to asset
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'allcurrentassetspriceresource',
+        ),
+        json={'to_asset': 'USD'},
+    )
+    result = assert_proper_response_with_result(response)
+    assert result == [{'from_asset': 'EUR', 'to_asset': 'USD', 'price': '1.01'}]
+
+    # try filtering by from asset
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'allcurrentassetspriceresource',
+        ),
+        json={'from_asset': 'ETH'},
+    )
+    result = assert_proper_response_with_result(response)
+    assert result == [{'from_asset': 'ETH', 'to_asset': 'EUR', 'price': '5'}]
+
+    # try filtering both fields
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'allcurrentassetspriceresource',
+        ),
+        json={'from_asset': 'ETH', 'to_asset': 'EUR'},
+    )
+    result = assert_proper_response_with_result(response)
+    assert result == [{'from_asset': 'ETH', 'to_asset': 'EUR', 'price': '5'}]
+
+    # try empty search
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'allcurrentassetspriceresource',
+        ),
+        json={'from_asset': 'ETH', 'to_asset': 'USD'},
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result) == 0
