@@ -144,10 +144,6 @@ export function getBalances(
         const oldBalance = balance.userBalance;
         balance.userBalance = balanceSum(oldBalance, userBalance);
 
-        if (balance.totalSupply && totalSupply) {
-          balance.totalSupply = balance.totalSupply.plus(totalSupply);
-        }
-
         assets.forEach(asset => {
           const index = balance.assets.findIndex(
             item => item.asset === asset.asset

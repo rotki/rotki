@@ -1,7 +1,6 @@
 import { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 import { SupportedAsset } from '@rotki/common/lib/data';
 import { ProfitLossModel } from '@rotki/common/lib/defi';
-import { BalancerBalanceWithOwner } from '@rotki/common/lib/defi/balancer';
 import {
   AdexApi,
   AssetsApi,
@@ -137,11 +136,12 @@ export const balancesApi = (): BalancesApi => {
 
 export const balancerApi = (): BalancerApi => {
   const store = useBalancerStore();
-  const { balanceList, pools, addresses } = storeToRefs(store);
+  const { pools, addresses } = storeToRefs(store);
   return {
     balancerProfitLoss: (addresses: string[]) => store.profitLoss(addresses),
     balancerEvents: (addresses: string[]) => store.eventList(addresses),
-    balancerBalances: balanceList as Ref<BalancerBalanceWithOwner[]>,
+    balancerBalances: (addresses: string[]) =>
+      store.balancerBalances(addresses),
     balancerPools: pools,
     balancerAddresses: addresses,
     fetchBalancerBalances: async (refresh: boolean) => {

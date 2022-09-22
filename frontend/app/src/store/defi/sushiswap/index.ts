@@ -35,7 +35,7 @@ export const useSushiswapStore = defineStore('defi/sushiswap', () => {
   const { fetchSupportedAssets } = useAssetInfoRetrieval();
 
   const balanceList = (addresses: string[]) =>
-    computed(() => getBalances(get(balances), addresses, false));
+    computed(() => getBalances(get(balances), addresses));
   const poolProfit = (addresses: string[]) =>
     computed(() => getPoolProfit(get(events) as XswapEvents, addresses));
   const eventList = (addresses: string[]) =>

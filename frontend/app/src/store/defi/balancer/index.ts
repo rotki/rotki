@@ -1,12 +1,13 @@
 import {
+  BalancerBalance,
   BalancerBalances,
-  BalancerBalanceWithOwner,
   BalancerEvent,
   BalancerEvents,
   BalancerProfitLoss
 } from '@rotki/common/lib/defi/balancer';
 import { XswapPool } from '@rotki/common/lib/defi/xswap';
 import { get, set } from '@vueuse/core';
+import cloneDeep from 'lodash/cloneDeep';
 import { acceptHMRUpdate, defineStore } from 'pinia';
 import { computed, ComputedRef, ref, Ref } from 'vue';
 import { usePremium } from '@/composables/premium';
@@ -19,9 +20,11 @@ import { Section } from '@/store/const';
 import { fetchDataAsync } from '@/store/fetch-async';
 import { OnError } from '@/store/typing';
 import { filterAddresses } from '@/store/utils';
+import { Writeable } from '@/types';
 import { Module } from '@/types/modules';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
+import { balanceSum } from '@/utils/calculation';
 
 export const useBalancerStore = defineStore('defi/balancer', () => {
   const events: Ref<BalancerEvents> = ref({});
@@ -33,24 +36,70 @@ export const useBalancerStore = defineStore('defi/balancer', () => {
 
   const addresses = computed(() => Object.keys(get(balances)));
 
-  const balanceList = computed(() => {
-    const result: BalancerBalanceWithOwner[] = [];
-    const perAddressBalances = get(balances);
-    for (const address in perAddressBalances) {
-      for (const balance of perAddressBalances[address]) {
-        result.push({
-          ...balance,
-          owner: address
-        });
+  const balancerBalances = (addresses: string[]) =>
+    computed<BalancerBalance[]>(() => {
+      const perAddressBalances = get(balances);
+
+      const aggregatedBalances: {
+        [poolAddress: string]: Writeable<BalancerBalance>;
+      } = {};
+
+      for (const account in perAddressBalances) {
+        if (addresses.length > 0 && !addresses.includes(account)) {
+          continue;
+        }
+        const accountBalances = cloneDeep(perAddressBalances)[account];
+        if (!accountBalances || accountBalances.length === 0) {
+          continue;
+        }
+
+        for (const {
+          address,
+          tokens,
+          totalAmount,
+          userBalance
+        } of accountBalances) {
+          const balance = aggregatedBalances[address];
+          if (balance) {
+            const oldBalance = balance.userBalance;
+            balance.userBalance = balanceSum(oldBalance, userBalance);
+
+            tokens.forEach(token => {
+              const index = balance.tokens.findIndex(
+                item => item.token === token.token
+              );
+              if (index > -1) {
+                const existingAssetData = balance.tokens[index];
+                const userBalance = balanceSum(
+                  existingAssetData.userBalance,
+                  token.userBalance
+                );
+                balance.tokens[index] = {
+                  ...existingAssetData,
+                  userBalance
+                };
+              } else {
+                balance.tokens.push(token);
+              }
+            });
+          } else {
+            aggregatedBalances[address] = {
+              address,
+              tokens,
+              totalAmount,
+              userBalance
+            };
+          }
+        }
       }
-    }
-    return result;
-  });
+
+      return Object.values(aggregatedBalances);
+    });
 
   const pools = computed(() => {
     const pools: Record<string, XswapPool> = {};
     const events = get(eventList());
-    const balances = get(balanceList);
+    const balances = get(balancerBalances([]));
 
     for (const { address, tokens } of balances) {
       if (pools[address]) {
@@ -219,7 +268,7 @@ export const useBalancerStore = defineStore('defi/balancer', () => {
     balances,
     addresses,
     pools,
-    balanceList,
+    balancerBalances,
     eventList,
     profitLoss,
     fetchBalances,
