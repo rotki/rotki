@@ -866,6 +866,7 @@ WORLD_TO_BITFINEX = {
     evm_address_to_identifier('0xdB25f211AB05b1c97D595516F45794528a807ad8', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'EUS',  # noqa: E501
     evm_address_to_identifier('0xD533a949740bb3306d119CC777fa900bA034cd52', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'CRV',  # noqa: E501
     evm_address_to_identifier('0x4674672BcDdDA2ea5300F5207E1158185c944bc0', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'GXT',  # noqa: E501
+    evm_address_to_identifier('0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'WBT',  # noqa: E501
 }
 
 WORLD_TO_KUCOIN = {
