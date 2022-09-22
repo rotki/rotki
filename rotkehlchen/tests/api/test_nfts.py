@@ -143,8 +143,8 @@ def test_nft_ids_are_unique(rotkehlchen_api_server):
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC4]])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('ethereum_modules', [['nfts']])
-def test_nft_balances(rotkehlchen_api_server):
-    """Check that nfts balances return the expected fields."""
+def test_nft_balances_and_prices(rotkehlchen_api_server):
+    """Check that nfts balances return the expected fields. Also check nft prices"""
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
         'nftsbalanceresource',
@@ -157,3 +157,19 @@ def test_nft_balances(rotkehlchen_api_server):
                 assert nft_balance['name'] == 'yabir.eth'
                 assert nft_balance['collection_name'] == 'ENS: Ethereum Name Service'
                 assert nft_balance['is_lp'] is False
+
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        'nftspricesresource',
+    ))
+    result = assert_proper_response_with_result(response)[0]
+    expected_result = {
+        'asset': '_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_26612040215479394739615825115912800930061094786769410446114278812336794170041',  # noqa: E501
+        'manually_input': False,
+        'price_asset': 'ETH',
+    }
+    price = result.pop('price_in_asset')
+    price_usd = result.pop('usd_price')
+    assert expected_result == result
+    assert FVal(price) > 0
+    assert FVal(price_usd) > 0

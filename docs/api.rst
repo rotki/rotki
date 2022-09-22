@@ -1089,6 +1089,59 @@ Query the current price of assets
    :statuscode 500: Internal rotki error
    :statuscode 502: An external service used in the query such as cryptocompare/coingecko could not be reached or returned unexpected response.
 
+
+Get current price and custom price for NFT assets
+==================================================
+
+.. http:get:: /api/(version)/nfts/prices
+
+   Get current prices and whether they have been manually input or not for NFT assets.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/nfts/prices HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {}
+
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": [
+              {
+                  "asset": "nft_uniqueid1",
+                  "manually_input": true,
+                  "price_asset": "ETH",
+                  "price_in_asset": "1",
+                  "usd_price": "2505.13"
+              }, {
+                  "asset": "nft_uniqueid2",
+                  "manually_input": false,
+                  "price_asset": "USD",
+                  "price_in_asset": "155.13",
+                  "usd_price": "155.13"
+              }]
+          "message": ""
+      }
+
+   :resjson object result: A list of results of assets along with their uds prices
+   :statuscode 200: Successful query
+   :statuscode 400: Provided JSON is in some way malformed.
+   :statuscode 409: Nft module is not activated.
+   :statuscode 500: Internal rotki error
+   :statuscode 502: An external service used in the query such as cryptocompare/coingecko could not be reached or returned unexpected response.
+
+
 Get current price and custom price for assets
 =============================================
 

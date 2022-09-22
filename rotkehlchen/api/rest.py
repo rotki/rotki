@@ -3841,6 +3841,14 @@ class RestAPI():
         processed_result = process_result_list(prices_information)
         return api_response(_wrap_in_ok_result(processed_result), status_code=HTTPStatus.OK)
 
+    def get_nfts_with_price(self) -> Response:
+        return self._api_query_for_eth_module(
+            async_query=False,
+            module_name='nfts',
+            method='get_nfts_with_price',
+            query_specific_balances_before=None,
+        )
+
     def add_manual_current_price(
             self,
             from_asset: Asset,
