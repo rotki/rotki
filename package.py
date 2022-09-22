@@ -320,6 +320,9 @@ class Storage:
         logger.info(f'copying {file.name} to {self.dist_directory}')
         shutil.copy(src=file, dst=self.dist_directory)
 
+    def clean(self) -> None:
+        shutil.rmtree(self.build_directory)
+
 
 class WindowsPackaging:
     def __init__(self, storage: Storage, env: Environment) -> None:
@@ -425,14 +428,17 @@ class MacPackaging:
             plt: Literal['macosx_10_9_x86_64', 'macosx_11_0_arm64'],
             directory: Path,
     ) -> None:
+        logger.info(f'preparing to download {package_version} wheel for {plt}')
         directory.mkdir(exist_ok=True)
         os.chdir(directory)
         subprocess.call(
             f'pip download {package_version} --platform {plt} --only-binary=:all:',
             shell=True,
         )
+        pkg_arch = 'x86_64' if plt.find('x86_64') >= 0 else 'arm64'
         for file in directory.iterdir():
-            if file.name.find(plt) >= 0:
+            logger.info(f'checking if {file} package is {pkg_arch}')
+            if file.name.find(pkg_arch) >= 0:
                 logger.info(f'unpacking wheel {file}')
                 subprocess.call(f'wheel unpack {file}', shell=True)
 
@@ -532,10 +538,10 @@ class MacPackaging:
                     package_versions[package_name.strip()] = package_version.strip()
         return package_versions
 
-    @log_group('coincurve universal2 wheel')
-    def __coincurve_universal_repackage(self) -> None:
+    @log_group('universal2 wheel')
+    def __universal_repackage(self, package_name: str) -> None:
         """
-        Creates universal2 wheels for coincurve and cffi.
+        Creates universal2 wheels for packages.
 
         coincurve and cffi only provide architecture specific wheels (x86_64, arm64)
         for macOS. To create a universal2 wheel we download the architecture
@@ -544,8 +550,7 @@ class MacPackaging:
         and we finally pack the wheel again.
         """
         storage = self.__storage
-        logger.info('Preparing to merge coincurve wheels')
-        package_name = 'coincurve'
+        logger.info(f'Preparing to merge {package_name} wheels')
         versions = self.__get_versions(packages=[package_name])
         build_directory = storage.build_directory
         if not build_directory.exists():
@@ -560,7 +565,7 @@ class MacPackaging:
         x86_64 = temp / 'x86_64'
         arm64 = temp / 'arm64'
 
-        package = f'{package_name}=={versions.get("coincurve")}'
+        package = f'{package_name}=={versions.get(package_name)}'
         self.unpack_wheels(package, 'macosx_10_9_x86_64', x86_64)
         self.unpack_wheels(package, 'macosx_11_0_arm64', arm64)
 
@@ -570,7 +575,7 @@ class MacPackaging:
                 arm64_solib = next(arm64.glob(f'**/{so_lib.name}'))
                 self.macos_link_archs(destination=so_lib, source=arm64_solib)
             metadata = next(unpacked_wheel.glob('**/WHEEL'))
-            logger.info(metadata)
+            logger.info(f'preparing to modify metadata: {metadata}')
             self.modify_wheel_metadata(metadata)
             ret_code = subprocess.call(
                 f'wheel pack {unpacked_wheel} -d {wheels_directory}',
@@ -579,6 +584,9 @@ class MacPackaging:
             if ret_code != 0:
                 logger.error(f'repack of {unpacked_wheel} failed')
                 exit(1)
+
+        shutil.rmtree(x86_64)
+        shutil.rmtree(arm64)
 
     @log_group('miniupnpc universal2 wheel')
     def __build_miniupnpc_universal(self) -> None:
@@ -691,7 +699,8 @@ class MacPackaging:
         special treatment.
         """
         self.__build_miniupnpc_universal()
-        self.__coincurve_universal_repackage()
+        self.__universal_repackage('coincurve')
+        self.__universal_repackage('py-ed25519-zebra-bindings')
 
     def install_wheels(self, install: Callable[[str], None]) -> None:
         """
@@ -860,15 +869,18 @@ class BackendBuilder:
         if storage.dist_directory.exists():
             shutil.rmtree(storage.dist_directory)
 
-    @staticmethod
     @log_group('pip install')
-    def pip_install(what: str) -> None:
+    def pip_install(self, what: str) -> None:
         """
         Calls pip install using subprocess.
 
         :param what: anything that goes after pip install
         """
-        ret_code = subprocess.call(f'pip install {what}', shell=True)
+        ret_code = subprocess.call(
+            f'pip install {what}',
+            shell=True,
+            cwd=self.__storage.working_directory,
+        )
         if ret_code != 0:
             logger.error(f'could not run "pip install {what}"')
             exit(1)
@@ -1158,7 +1170,17 @@ def main() -> None:
 
     parser = argparse.ArgumentParser(description='Build rotki')
     parser.add_argument('--build', choices=['backend', 'frontend', 'full'], default='full')
+    parser.add_argument(
+        '--clean',
+        action='store_true',
+        default=False,
+        help='Performs a clean build',
+    )
     args = parser.parse_args()
+
+    if args.clean:
+        logger.info('Cleaning build directory')
+        storage.clean()
 
     logger.info(f'starting build with {args.build}')
 
