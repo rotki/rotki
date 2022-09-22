@@ -1092,20 +1092,22 @@ Query the current price of assets
 Get current price and custom price for assets
 =============================================
 
-.. http:get:: /api/(version)/assets/prices/current
+.. http:post:: /api/(version)/assets/prices/current/all
 
-   Get current prices and whether they have been manually input or not for all assets. At the moment this only works for nfts.
-
+   Retrieve all the manual current prices stored in the database.
 
    **Example Request**:
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/assets/prices/current HTTP/1.1
+      POST /api/1/assets/prices/current HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {}
+      {"to_asset": "EUR"}
+
+   :reqjson string from_asset: Asset identifier to use as filter in the `from` side of the prices.
+   :reqjson string to_asset: Asset identifier to use as filter in the `to` side of the prices.
 
 
    **Example Response**:
@@ -1117,28 +1119,25 @@ Get current price and custom price for assets
 
       {
           "result": [
-              {
-                  "asset": "nft_uniqueid1",
-                  "manually_input": true,
-                  "price_asset": "ETH",
-                  "price_in_asset": "1",
-                  "usd_price": "2505.13"
-              }, {
-                  "asset": "nft_uniqueid2",
-                  "manually_input": false,
-                  "price_asset": "USD",
-                  "price_in_asset": "155.13",
-                  "usd_price": "155.13"
-              }]
+            {
+              "from_asset": "ETH",
+              "to_asset": "EUR",
+              "price": "5"
+            },
+            {
+              "from_asset": "USD",
+              "to_asset": "EUR",
+              "price": "25"
+            }
+          ]
           "message": ""
       }
 
-   :resjson object result: A list of results of assets along with their uds prices
+   :resjson object result: A list of results with the prices along their `from_asset` and `to_asset`.
    :statuscode 200: Successful query
-   :statuscode 400: Provided JSON is in some way malformed.
-   :statuscode 409: Nft module is not activated.
+   :statuscode 409: No user is logged in.
    :statuscode 500: Internal rotki error
-   :statuscode 502: An external service used in the query such as cryptocompare/coingecko could not be reached or returned unexpected response.
+
 
 Add manual current price for an asset
 =============================================
