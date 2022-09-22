@@ -76,6 +76,7 @@ def _force_remote(cursor: DBCursor, local_asset: Asset, full_insert: str) -> Non
         (local_asset.identifier,),
     )
     # Insert new entry. Since identifiers are the same, no foreign key constrains should break
+    print(full_insert)
     executeall(cursor, full_insert)
     AssetResolver().clean_memory_cache(local_asset.identifier.lower())
 
@@ -363,10 +364,11 @@ class AssetsUpdater():
 
                 # else can't resolve. Mark it for the user to resolve.
                 # TODO: After the Asset refactor has finished remove the usage of AssetData here
-                local_data = GlobalDBHandler().get_all_asset_data(
+                local_data = GlobalDBHandler().get_all_asset_data(  # type: ignore  # noqa: E501
                     mapping=False,
+                    serialized=False,
                     specific_ids=[local_asset.identifier],
-                )[0]
+                )[0]  # pylint: disable=unsubscriptable-object
                 self.conflicts.append((local_data, remote_asset_data))
 
         # at the very end update the current version in the DB

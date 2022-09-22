@@ -17,7 +17,7 @@ from rotkehlchen.constants.assets import A_DAI, A_USDC
 from rotkehlchen.constants.ethereum import ETH_SPECIAL_ADDRESS, ZERION_ABI
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
-from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset, WrongAssetType
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
@@ -414,8 +414,8 @@ class ZerionSDK():
             return None
 
         try:
-            token = EvmToken(asset.identifier)
-        except UnknownAsset:
+            token = asset.resolve_to_evm_token()
+        except (UnknownAsset, WrongAssetType):
             return None
         underlying_asset_price, _ = get_underlying_asset_price(token)
         usd_price = handle_defi_price_query(self.ethereum, token, underlying_asset_price)

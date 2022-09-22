@@ -219,7 +219,7 @@ class EthereumTransactionQuerySchema(
     from_timestamp = TimestampField(load_default=Timestamp(0))
     to_timestamp = TimestampField(load_default=ts_now)
     protocols = DelimitedOrNormalList(fields.String(), load_default=None)
-    asset = AssetField(expected_type=EvmToken, load_default=None)
+    asset = AssetField(expected_type=CryptoAsset, load_default=None)
     exclude_ignored_assets = fields.Boolean(load_default=True)
 
     @validates_schema

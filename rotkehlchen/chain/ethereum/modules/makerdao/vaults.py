@@ -231,7 +231,7 @@ class MakerdaoVault(NamedTuple):
         starting_assets = {self.collateral_asset: self.collateral} if self.collateral.amount != ZERO else {}  # noqa: E501
         starting_liabilities = {A_DAI: self.debt} if self.debt.amount != ZERO else {}
         return BalanceSheet(
-            assets=defaultdict(Balance, starting_assets),
+            assets=defaultdict(Balance, starting_assets),  # type: ignore # Doesn't recognize that the defaultdict CryptoAsset is an Asset  # noqa: E501
             liabilities=defaultdict(Balance, starting_liabilities),
         )
 

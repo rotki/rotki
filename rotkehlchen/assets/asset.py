@@ -1,6 +1,6 @@
 import abc
 import logging
-from dataclasses import dataclass, field
+from dataclasses import InitVar, dataclass, field
 from functools import total_ordering
 from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Tuple, Type
 from rotkehlchen.constants.misc import NFT_DIRECTIVE
@@ -11,6 +11,7 @@ from rotkehlchen.constants.resolver import (
     strethaddress_to_identifier,
 )
 from rotkehlchen.errors.asset import UnsupportedAsset
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind, Timestamp
@@ -725,9 +726,15 @@ WORLD_TO_CRYPTOCOM = {
 class Asset:
     """Base class for all assets"""
     identifier: str
+    direct_field_initialization: InitVar[bool] = field(default=False)
     resolver: 'AssetResolver' = field(init=False)
 
-    def __post_init__(self) -> None:
+    def __post_init__(self, direct_field_initialization: bool = False) -> None:
+        if not isinstance(self.identifier, str):
+            raise DeserializationError(
+                'Tried to initialize an asset out of a non-string identifier',
+            )
+
         # Initializing resolver here to avoid circular imports
         from rotkehlchen.assets.resolver import AssetResolver
         object.__setattr__(self, 'resolver', AssetResolver())
@@ -868,6 +875,17 @@ class AssetWithOracles(AssetWithSymbol, metaclass=abc.ABCMeta):
 @dataclass(init=True, repr=False, eq=False, order=False, unsafe_hash=False, frozen=True)
 class FiatAsset(AssetWithOracles):
 
+    def __post_init__(self, direct_field_initialization: bool = False) -> None:
+        super().__post_init__(direct_field_initialization)
+        if direct_field_initialization is True:
+            return
+        resolved = self.resolver.resolve_asset_to_class(self.identifier, FiatAsset)
+        object.__setattr__(self, 'asset_type', resolved.asset_type)
+        object.__setattr__(self, 'name', resolved.name)
+        object.__setattr__(self, 'symbol', resolved.symbol)
+        object.__setattr__(self, 'cryptocompare', resolved.cryptocompare)
+        object.__setattr__(self, 'coingecko', resolved.coingecko)
+
     @classmethod
     def initialize(
             cls: Type['FiatAsset'],
@@ -877,7 +895,7 @@ class FiatAsset(AssetWithOracles):
             coingecko: Optional[str] = None,
             cryptocompare: Optional[str] = '',
     ) -> 'FiatAsset':
-        asset = FiatAsset(identifier=identifier)
+        asset = FiatAsset(identifier=identifier, direct_field_initialization=True)
         object.__setattr__(asset, 'asset_type', AssetType.FIAT)
         object.__setattr__(asset, 'name', name)
         object.__setattr__(asset, 'symbol', symbol)
@@ -892,6 +910,20 @@ class CryptoAsset(AssetWithOracles):
     forked: Optional['CryptoAsset'] = field(init=False)
     swapped_for: Optional['CryptoAsset'] = field(init=False)
 
+    def __post_init__(self, direct_field_initialization: bool = False) -> None:
+        super().__post_init__(direct_field_initialization)
+        if direct_field_initialization is True:
+            return
+        resolved = self.resolver.resolve_asset_to_class(self.identifier, CryptoAsset)
+        object.__setattr__(self, 'asset_type', resolved.asset_type)
+        object.__setattr__(self, 'name', resolved.name)
+        object.__setattr__(self, 'symbol', resolved.symbol)
+        object.__setattr__(self, 'cryptocompare', resolved.cryptocompare)
+        object.__setattr__(self, 'coingecko', resolved.coingecko)
+        object.__setattr__(self, 'started', resolved.started)
+        object.__setattr__(self, 'forked', resolved.forked)
+        object.__setattr__(self, 'swapped_for', resolved.swapped_for)
+
     @classmethod
     def initialize(
             cls: Type['CryptoAsset'],
@@ -905,7 +937,7 @@ class CryptoAsset(AssetWithOracles):
             forked: Optional['CryptoAsset'] = None,
             swapped_for: Optional['CryptoAsset'] = None,
     ) -> 'CryptoAsset':
-        asset = CryptoAsset(identifier=identifier)
+        asset = CryptoAsset(identifier=identifier, direct_field_initialization=True)
         object.__setattr__(asset, 'asset_type', asset_type)
         object.__setattr__(asset, 'name', name)
         object.__setattr__(asset, 'symbol', symbol)
@@ -963,6 +995,19 @@ class EvmToken(CryptoAsset):
     protocol: str = field(init=False)
     underlying_tokens: List[UnderlyingToken] = field(init=False)
 
+    def __post_init__(self, direct_field_initialization: bool = False) -> None:
+        super().__post_init__(direct_field_initialization)
+        if direct_field_initialization is True:
+            return
+        resolved = self.resolver.resolve_asset_to_class(self.identifier, EvmToken)
+        object.__setattr__(self, 'asset_type', AssetType.EVM_TOKEN)
+        object.__setattr__(self, 'evm_address', resolved.evm_address)
+        object.__setattr__(self, 'chain', resolved.chain)
+        object.__setattr__(self, 'token_kind', resolved.token_kind)
+        object.__setattr__(self, 'decimals', resolved.decimals)
+        object.__setattr__(self, 'protocol', resolved.protocol)
+        object.__setattr__(self, 'underlying_tokens', resolved.underlying_tokens)
+
     @classmethod
     def initialize(  # type: ignore  # signature is incompatible with super type
             cls: Type['EvmToken'],
@@ -985,7 +1030,7 @@ class EvmToken(CryptoAsset):
             chain=chain,
             token_type=token_kind,
         )
-        asset = EvmToken(identifier=identifier)
+        asset = EvmToken(identifier=identifier, direct_field_initialization=True)
         object.__setattr__(asset, 'asset_type', AssetType.EVM_TOKEN)
         object.__setattr__(asset, 'name', name)
         object.__setattr__(asset, 'symbol', symbol)
@@ -994,7 +1039,7 @@ class EvmToken(CryptoAsset):
         object.__setattr__(asset, 'started', started)
         object.__setattr__(asset, 'forked', forked)
         object.__setattr__(asset, 'swapped_for', swapped_for)
-        object.__setattr__(asset, 'address', address)
+        object.__setattr__(asset, 'evm_address', address)
         object.__setattr__(asset, 'chain', chain)
         object.__setattr__(asset, 'token_kind', token_kind)
         object.__setattr__(asset, 'decimals', decimals)

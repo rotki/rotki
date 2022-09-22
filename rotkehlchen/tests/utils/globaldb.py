@@ -19,7 +19,7 @@ INITIAL_TOKENS = [
         name='Custom 1',
         symbol='CST1',
         started=Timestamp(0),
-        swapped_for=A_MKR,
+        swapped_for=EvmToken(A_MKR.identifier, direct_field_initialization=True),
         coingecko='internet-computer',
         cryptocompare='ICP',
         protocol='uniswap',

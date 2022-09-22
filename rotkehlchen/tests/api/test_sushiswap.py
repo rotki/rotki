@@ -127,8 +127,8 @@ EXPECTED_EVENTS_BALANCES_1 = [
     SushiswapPoolEventsBalance(
         address=string_to_evm_address(TEST_EVENTS_ADDRESS_1),
         pool_address=string_to_evm_address("0xC3f279090a47e80990Fe3a9c30d24Cb117EF91a8"),
-        token0=EvmToken('eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
-        token1=EvmToken('eip155:1/erc20:0xdBdb4d16EdA451D0503b854CF79D55697F90c8DF'),
+        token0=EvmToken('eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', direct_field_initialization=True),  # noqa: E501
+        token1=EvmToken('eip155:1/erc20:0xdBdb4d16EdA451D0503b854CF79D55697F90c8DF', direct_field_initialization=True),  # noqa: E501
         events=[
             SushiswapPoolEvent(
                 tx_hash=deserialize_evm_tx_hash(
@@ -139,8 +139,8 @@ EXPECTED_EVENTS_BALANCES_1 = [
                 timestamp=Timestamp(1627401170),
                 event_type=EventType.MINT_SUSHISWAP,
                 pool_address=string_to_evm_address("0xC3f279090a47e80990Fe3a9c30d24Cb117EF91a8"),  # noqa: E501
-                token0=EvmToken('eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
-                token1=EvmToken('eip155:1/erc20:0xdBdb4d16EdA451D0503b854CF79D55697F90c8DF'),
+                token0=EvmToken('eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', direct_field_initialization=True),  # noqa: E501
+                token1=EvmToken('eip155:1/erc20:0xdBdb4d16EdA451D0503b854CF79D55697F90c8DF', direct_field_initialization=True),  # noqa: E501
                 amount0=AssetAmount(FVal('0.192426688761441618')),
                 amount1=AssetAmount(FVal('1.498665931466140813')),
                 usd_price=Price(FVal('874.684787927721190125529172850727')),

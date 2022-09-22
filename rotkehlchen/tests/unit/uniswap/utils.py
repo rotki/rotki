@@ -25,9 +25,9 @@ TEST_ADDRESS_3 = string_to_evm_address('0x77777777777777777777777777777777777777
 
 
 # Tokens without oracle data (unknown tokens)
-A_SHL = EvmToken('eip155:1/erc20:0x8542325B72C6D9fC0aD2Ca965A78435413a915A0')
-A_CAR = EvmToken('eip155:1/erc20:0x4D9e23a3842fE7Eb7682B9725cF6c507C424A41B')
-A_BTR = EvmToken('eip155:1/erc20:0xcbf15FB8246F679F9Df0135881CB29a3746f734b')
+A_SHL = EvmToken('eip155:1/erc20:0x8542325B72C6D9fC0aD2Ca965A78435413a915A0', direct_field_initialization=True)  # noqa: E501
+A_CAR = EvmToken('eip155:1/erc20:0x4D9e23a3842fE7Eb7682B9725cF6c507C424A41B', direct_field_initialization=True)  # noqa: E501
+A_BTR = EvmToken('eip155:1/erc20:0xcbf15FB8246F679F9Df0135881CB29a3746f734b', direct_field_initialization=True)  # noqa: E501
 
 # Method: `_get_balances_graph`
 # 'liquidityPositions' subgraph response data for TEST_ADDRESS_1
@@ -99,7 +99,7 @@ EXP_LIQUIDITY_POOL_1 = (
                 usd_price=Price(ZERO),
             ),
             LiquidityPoolAsset(
-                token=A_WETH.resolve_to_evm_token(),
+                token=EvmToken(A_WETH.identifier, direct_field_initialization=True),
                 total_amount=FVal('72.576018267058292417'),
                 user_balance=Balance(
                     amount=FVal('1.332490679729371260856256139'),
@@ -131,7 +131,7 @@ EXP_LIQUIDITY_POOL_2 = (
                 usd_price=Price(ZERO),
             ),
             LiquidityPoolAsset(
-                token=A_USDT.resolve_to_evm_token(),
+                token=EvmToken(A_USDT.identifier, direct_field_initialization=True),
                 total_amount=FVal('2351046.688852'),
                 user_balance=Balance(
                     amount=FVal('997021.3061952553312356558897'),
@@ -160,12 +160,12 @@ EXP_UNKNOWN_ASSETS_2 = {A_CAR}
 # Method: `_get_unknown_asset_price_graph`
 # 'tokenDayDatas' subgraph response data for SHL
 TOKEN_DAY_DATA_SHL = {
-    'token': {'id': A_SHL.evm_address},
+    'token': {'id': '0x8542325B72C6D9fC0aD2Ca965A78435413a915A0'},  # A_SHL.evm_address
     'priceUSD': '0.2373897544244518146892192714786454',
 }
 # 'tokenDayDatas' subgraph response data for CAR
 TOKEN_DAY_DATA_CAR = {
-    'token': {'id': A_CAR.evm_address},
+    'token': {'id': '0x4D9e23a3842fE7Eb7682B9725cF6c507C424A41B'},
     'priceUSD': '0.2635575008126147388714187358722384',
 }
 

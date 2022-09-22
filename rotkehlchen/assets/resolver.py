@@ -80,4 +80,4 @@ class AssetResolver():
                 expected_type=expected_type,
                 real_type=type(resolved_asset),
             )
-        return resolved_asset
+        return resolved_asset  # type: ignore
