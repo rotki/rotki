@@ -75,12 +75,15 @@ def test_gemini_all_symbols_are_known(sandbox_gemini):
             test_warnings.warn(UserWarning(
                 f'UnprocessableTradePair in Gemini. {e}',
             ))
+            continue
         except UnknownAsset as e:
             test_warnings.warn(UserWarning(
                 f'Unknown Gemini asset detected. {e} Symbol: {symbol}',
             ))
+            continue
         except UnsupportedAsset as e:
             assert str(e).split(' ')[2] in UNSUPPORTED_GEMINI_ASSETS
+            continue
 
         assert base is not None
         assert quote is not None
