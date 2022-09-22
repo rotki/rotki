@@ -41,7 +41,7 @@ export class RotkiApp {
   fasterLogin(
     username: string,
     password: string = '1234',
-    disableModules: boolean
+    disableModules: boolean = false
   ) {
     cy.createAccount(username, password);
     if (disableModules) {

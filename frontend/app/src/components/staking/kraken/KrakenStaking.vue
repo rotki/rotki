@@ -28,9 +28,9 @@ import KrakenStakingEvents from '@/components/staking/kraken/KrakenStakingEvents
 import KrakenStakingOverview from '@/components/staking/kraken/KrakenStakingOverview.vue';
 import KrakenStakingReceived from '@/components/staking/kraken/KrakenStakingReceived.vue';
 import { useSectionLoading } from '@/composables/common';
-import { Section } from '@/store/const';
 import { useKrakenStakingStore } from '@/store/staking/kraken';
 import { KrakenStakingEvents as Events } from '@/types/staking';
+import { Section } from '@/types/status';
 
 export default defineComponent({
   name: 'KrakenStaking',

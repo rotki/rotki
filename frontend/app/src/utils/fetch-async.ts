@@ -3,10 +3,10 @@ import { get, set } from '@vueuse/core';
 import * as logger from 'loglevel';
 import { Ref } from 'vue';
 import { useStatusUpdater } from '@/composables/status';
-import { Section, Status } from '@/store/const';
 import { useNotifications } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
 import { FetchData } from '@/store/typing';
+import { Section, Status } from '@/types/status';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 

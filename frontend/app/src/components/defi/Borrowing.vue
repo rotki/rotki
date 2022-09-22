@@ -105,9 +105,9 @@ import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
 import { useSectionLoading } from '@/composables/common';
 import { useRoute } from '@/composables/router';
-import { Section } from '@/store/const';
 import { useDefiSupportedProtocolsStore } from '@/store/defi/protocols';
 import { Module } from '@/types/modules';
+import { Section } from '@/types/status';
 
 defineProps({
   modules: { required: true, type: Array as PropType<Module[]> }

@@ -1,10 +1,6 @@
 import { BigNumber } from '@rotki/common';
 import { ActionResult } from '@rotki/common/lib/data';
 import { TimeFramePersist } from '@rotki/common/lib/settings/graphs';
-import { get, set } from '@vueuse/core';
-import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
-import { ref } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 import { useStatusUpdater } from '@/composables/status';
 import { getBnFormat } from '@/data/amount_formatter';
 import { EXTERNAL_EXCHANGES } from '@/data/defaults';
@@ -20,21 +16,14 @@ import { Purgeable } from '@/services/session/types';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useBalancesStore } from '@/store/balances';
-import { useEthNamesStore } from '@/store/balances/ethereum-names';
-import { Section, Status } from '@/store/const';
+import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { useDefiStore } from '@/store/defi';
 import { useHistory } from '@/store/history';
 import { usePurgeStore } from '@/store/history/purge';
-import { useTxQueryStatus } from '@/store/history/query-status';
 import { useTransactions } from '@/store/history/transactions';
-import { useMainStore } from '@/store/main';
 import { useMessageStore } from '@/store/message';
 import { useMonitorStore } from '@/store/monitor';
-import { useNotifications } from '@/store/notifications';
-import { useReports } from '@/store/reports';
-import { usePeriodicStore } from '@/store/session/periodic';
 import { usePremiumStore } from '@/store/session/premium';
-import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
 import { useTagStore } from '@/store/session/tags';
 import {
   ChangePasswordPayload,
@@ -42,14 +31,12 @@ import {
   SyncConflict
 } from '@/store/session/types';
 import { useWatchersStore } from '@/store/session/watchers';
-import { useSettingsStore } from '@/store/settings';
 import { useAccountingSettingsStore } from '@/store/settings/accounting';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { useStakingStore } from '@/store/staking';
 import { useStatisticsStore } from '@/store/statistics';
-import { useStatusStore } from '@/store/status';
 import { useTasks } from '@/store/tasks';
 import { ActionStatus } from '@/store/types';
 import {
@@ -64,6 +51,7 @@ import {
   UnlockPayload
 } from '@/types/login';
 import { Module } from '@/types/modules';
+import { Section, Status } from '@/types/status';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { UserSettingsModel } from '@/types/user';
@@ -98,23 +86,22 @@ export const useSessionStore = defineStore('session', () => {
   const { fetchNetValue } = useStatisticsStore();
   const { fetchSupportedAssets } = useAssetInfoRetrieval();
   const { fetchCounterparties } = useTransactions();
-  const { timeframe } = storeToRefs(useSessionSettingsStore());
   const { fetch, refreshPrices } = useBalancesStore();
   const { start, stop } = useMonitorStore();
 
   const { t } = useI18n();
 
-  const refreshData = async (exchanges: Exchange[]) => {
+  const refreshData = async (): Promise<void> => {
     logger.info('Refreshing data');
 
     await Promise.allSettled([
       fetchIgnored(),
       fetchIgnoredAssets(),
       fetchWatchers(),
-      fetch(exchanges),
+      fetch(),
       fetchNetValue()
     ]);
-    await refreshPrices({ ignoreCache: false });
+    await refreshPrices();
   };
 
   const unlock = async ({
@@ -134,11 +121,13 @@ export const useSessionStore = defineStore('session', () => {
         );
         const selectedTimeframe = get(timeframeSetting);
         const lastKnown = get(lastKnownTimeframe);
-        if (selectedTimeframe !== TimeFramePersist.REMEMBER) {
-          set(timeframe, selectedTimeframe);
-        } else {
-          set(timeframe, lastKnown);
-        }
+        useExchangeBalancesStore().setExchanges(exchanges);
+        useSessionSettingsStore().update({
+          timeframe:
+            selectedTimeframe !== TimeFramePersist.REMEMBER
+              ? selectedTimeframe
+              : lastKnown
+        });
         BigNumber.config({
           FORMAT: getBnFormat(
             frontendSettings.thousandSeparator,
@@ -162,7 +151,7 @@ export const useSessionStore = defineStore('session', () => {
       await fetchCounterparties();
 
       if (!isNew || sync) {
-        startPromise(refreshData(exchanges));
+        startPromise(refreshData());
       } else {
         const ethUpdater = useStatusUpdater(Section.BLOCKCHAIN_ETH);
         const btcUpdater = useStatusUpdater(Section.BLOCKCHAIN_BTC);
@@ -242,18 +231,7 @@ export const useSessionStore = defineStore('session', () => {
 
   async function cleanup() {
     stop();
-    useBalancesStore().reset();
-    useMainStore().reset();
     reset();
-    useSettingsStore().reset();
-    useDefiStore().reset();
-    useStakingStore().reset();
-    useStatisticsStore().reset();
-    useHistory().reset();
-    useTxQueryStatus().reset();
-    useNotifications().reset();
-    useReports().reset();
-    useTasks().reset();
   }
 
   const logout = async () => {
@@ -389,14 +367,6 @@ export const useSessionStore = defineStore('session', () => {
     set(syncConflict, defaultSyncConflict());
     set(showUpdatePopup, false);
     set(darkModeEnabled, false);
-
-    usePremiumStore().reset();
-    useQueriedAddressesStore().reset();
-    useTagStore().reset();
-    useWatchersStore().reset();
-    useEthNamesStore().reset();
-    useStatusStore().reset();
-    usePeriodicStore().reset();
   };
 
   return {

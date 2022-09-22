@@ -100,14 +100,14 @@ module.exports = {
       }
     ],
     // vue 3 migration rules
-    'vue/component-api-style': ['warn', ['script-setup', 'composition']],
-    'vue/no-deprecated-dollar-listeners-api': 'warn',
-    'vue/no-deprecated-events-api': 'warn',
+    'vue/component-api-style': ['warn', ['script-setup']],
+    'vue/no-deprecated-dollar-listeners-api': 'error',
+    'vue/no-deprecated-events-api': 'error',
     'vue/no-deprecated-filter': 'error',
-    'vue/prefer-import-from-vue': 'warn',
-    'vue/require-explicit-emits': 'warn',
+    'vue/prefer-import-from-vue': 'error',
+    'vue/require-explicit-emits': 'error',
     // cyclic imports
-    'import/no-cycle': 'warn'
+    'import/no-cycle': 'error'
   },
 
   parserOptions: {

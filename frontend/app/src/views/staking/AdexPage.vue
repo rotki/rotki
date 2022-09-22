@@ -27,9 +27,9 @@ import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import { useSectionLoading } from '@/composables/common';
 import { useModules } from '@/composables/session';
 import { AdexStaking } from '@/premium/premium';
-import { Section } from '@/store/const';
 import { useAdexStakingStore } from '@/store/staking';
 import { Module } from '@/types/modules';
+import { Section } from '@/types/status';
 
 const { isModuleEnabled } = useModules();
 const enabled = isModuleEnabled(Module.ADEX);

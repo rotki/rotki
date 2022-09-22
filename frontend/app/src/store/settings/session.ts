@@ -1,12 +1,4 @@
 import { TimeFramePeriod } from '@rotki/common/lib/settings/graphs';
-import {
-  createSharedComposable,
-  get,
-  set,
-  useLocalStorage
-} from '@vueuse/core';
-import { acceptHMRUpdate, defineStore } from 'pinia';
-import { computed, reactive, toRefs } from 'vue';
 import { PrivacyMode } from '@/store/session/types';
 import { ActionStatus } from '@/store/types';
 
@@ -33,6 +25,11 @@ const defaultSessionSettings = (): SessionSettings => ({
 export const useSessionSettingsStore = defineStore('settings/session', () => {
   const settings = reactive(defaultSessionSettings());
 
+  const privacyMode = computed(() => settings.privacyMode);
+  const scrambleData = computed(() => settings.scrambleData);
+  const timeframe = computed(() => settings.timeframe);
+  const animationsEnabled = computed(() => settings.animationsEnabled);
+
   const shouldShowAmount = computed(() => {
     return settings.privacyMode < PrivacyMode.SEMI_PRIVATE;
   });
@@ -46,9 +43,7 @@ export const useSessionSettingsStore = defineStore('settings/session', () => {
     settings.animationsEnabled = enabled;
   };
 
-  const update = async (
-    sessionSettings: Partial<SessionSettings>
-  ): Promise<ActionStatus> => {
+  const update = (sessionSettings: Partial<SessionSettings>): ActionStatus => {
     Object.assign(settings, sessionSettings);
     return {
       success: true
@@ -60,7 +55,10 @@ export const useSessionSettingsStore = defineStore('settings/session', () => {
   };
 
   return {
-    ...toRefs(settings),
+    privacyMode,
+    scrambleData,
+    timeframe,
+    animationsEnabled,
     shouldShowAmount,
     shouldShowPercentage,
     setAnimationsEnabled,

@@ -33,6 +33,7 @@ import { useI18n } from 'vue-i18n-composable';
 import { useBackendManagement } from '@/composables/backend';
 import { useTheme } from '@/composables/common';
 import { useDarkMode } from '@/composables/dark-mode';
+import { useSessionStateCleaner } from '@/composables/logout';
 import { useRoute, useRouter } from '@/composables/router';
 import { useInterop } from '@/electron-interop';
 import { BackendCode } from '@/electron-main/backend-code';
@@ -83,6 +84,7 @@ const route = useRoute();
 
 const isDevelopment = checkIfDevelopment();
 const loginIn = computed(() => get(logged) && get(loginComplete));
+useSessionStateCleaner();
 
 const completeLogin = async (complete: boolean) => {
   set(loginComplete, complete);

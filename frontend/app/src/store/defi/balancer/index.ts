@@ -16,15 +16,15 @@ import { useStatusUpdater } from '@/composables/status';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
-import { Section } from '@/store/const';
-import { fetchDataAsync } from '@/store/fetch-async';
 import { OnError } from '@/store/typing';
 import { filterAddresses } from '@/store/utils';
 import { Writeable } from '@/types';
 import { Module } from '@/types/modules';
+import { Section } from '@/types/status';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { balanceSum } from '@/utils/calculation';
+import { fetchDataAsync } from '@/utils/fetch-async';
 
 export const useBalancerStore = defineStore('defi/balancer', () => {
   const events: Ref<BalancerEvents> = ref({});

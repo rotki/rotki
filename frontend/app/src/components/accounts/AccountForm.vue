@@ -89,13 +89,15 @@ import TagInput from '@/components/inputs/TagInput.vue';
 import { setupTaskStatus } from '@/composables/tasks';
 import { useInterop } from '@/electron-interop';
 import { deserializeApiErrorMessage } from '@/services/converters';
-import { useBlockchainAccountsStore } from '@/store/balances/blockchain-accounts';
 import {
   AccountPayload,
   BlockchainAccountPayload,
   BlockchainAccountWithBalance,
   XpubPayload
 } from '@/store/balances/types';
+import { useBlockchainStore } from '@/store/blockchain';
+import { useBlockchainAccountsStore } from '@/store/blockchain/accounts';
+import { useEthAccountsStore } from '@/store/blockchain/accounts/eth';
 import { useMessageStore } from '@/store/message';
 import { useNotifications } from '@/store/notifications';
 import {
@@ -294,8 +296,9 @@ const AccountForm = defineComponent({
       input(get(valid) && !loading);
     });
 
-    const { addAccounts, editAccount, addEth2Validator, editEth2Validator } =
-      useBlockchainAccountsStore();
+    const { addEth2Validator, editEth2Validator } = useEthAccountsStore();
+    const { addAccounts, refreshAccounts } = useBlockchainStore();
+    const { editAccount } = useBlockchainAccountsStore();
 
     const metamaskImport = async (): Promise<boolean> => {
       const interop = useInterop();
@@ -347,6 +350,7 @@ const AccountForm = defineComponent({
       try {
         if (get(isEdit)) {
           await editAccount(blockchainAccount);
+          await refreshAccounts(blockchainAccount.blockchain);
         } else {
           const entries = get(addresses);
           const payload = entries.map(address => ({

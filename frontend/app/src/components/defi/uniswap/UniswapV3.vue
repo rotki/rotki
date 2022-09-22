@@ -174,9 +174,9 @@ import { usePremium } from '@/composables/premium';
 import { useModules } from '@/composables/session';
 import { useInterop } from '@/electron-interop';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
-import { Section } from '@/store/const';
 import { useUniswapStore } from '@/store/defi/uniswap';
 import { Module } from '@/types/modules';
+import { Section } from '@/types/status';
 
 const uniswap = Module.UNISWAP;
 const chains = [Blockchain.ETH];

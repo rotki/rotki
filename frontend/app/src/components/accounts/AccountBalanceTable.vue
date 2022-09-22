@@ -145,13 +145,13 @@
             :loopring="loopring"
             :assets="assets(item.address)"
             :liabilities="liabilities(item.address)"
-            :loopring-balances="getLoopringBalances(item.address)"
+            :loopring-balances="loopringBalances(item.address)"
           />
         </table-expand-container>
       </template>
       <template #item.expand="{ item }">
         <row-expander
-          v-if="isEth && (get(hasDetails(item.address)) || loopring)"
+          v-if="isEth && (get(accountHasDetails(item.address)) || loopring)"
           :expanded="expanded.includes(item)"
           @click="expanded = expanded.includes(item) ? [] : [item]"
         />
@@ -195,18 +195,19 @@ import TagDisplay from '@/components/tags/TagDisplay.vue';
 import { useTheme } from '@/composables/common';
 import { useStatusUpdater } from '@/composables/status';
 import { bigNumberSum } from '@/filters';
-import { useBlockchainAccountsStore } from '@/store/balances/blockchain-accounts';
-import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';
-import { chainSection } from '@/store/balances/const';
 import {
   BlockchainAccountWithBalance,
   XpubAccountWithBalance,
   XpubPayload
 } from '@/store/balances/types';
-import { Section } from '@/store/const';
+import { useBlockchainBalancesStore } from '@/store/blockchain/balances';
+import { useEthBalancesStore } from '@/store/blockchain/balances/eth';
+import { useBlockchainTokensStore } from '@/store/blockchain/tokens';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTasks } from '@/store/tasks';
 import { Properties } from '@/types';
+import { chainSection } from '@/types/blockchain';
+import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { assert } from '@/utils/assertions';
 import { Zero, zeroBalance } from '@/utils/bignumbers';
@@ -237,8 +238,12 @@ const { isTaskRunning } = useTasks();
 const { currencySymbol, treatEth2AsEth } = storeToRefs(
   useGeneralSettingsStore()
 );
-const { hasDetails, accountAssets, accountLiabilities, loopringBalances } =
-  useBlockchainBalancesStore();
+const {
+  accountHasDetails,
+  accountAssets,
+  accountLiabilities,
+  getLoopringBalances
+} = useEthBalancesStore();
 
 const { tc } = useI18n();
 
@@ -293,7 +298,7 @@ const withL2 = (
 
   return balances.map((value, index) => {
     const address = value.address;
-    const assetBalances = get(loopringBalances(address));
+    const assetBalances = get(getLoopringBalances(address));
     if (assetBalances.length === 0) {
       return { ...value, index };
     }
@@ -570,8 +575,7 @@ const accountOperation = computed<boolean>(() => {
 });
 
 const { getEthDetectedTokensInfo, fetchDetectedTokens } =
-  useBlockchainAccountsStore();
-
+  useBlockchainTokensStore();
 const { fetchBlockchainBalances } = useBlockchainBalancesStore();
 
 const detectingTokens = (address: string | null) =>
@@ -592,9 +596,7 @@ const assets = (address: string) => {
 const liabilities = (address: string) => {
   return get(accountLiabilities(address));
 };
-const getLoopringBalances = (address: string) => {
-  return get(loopringBalances(address));
-};
+const loopringBalances = (address: string) => get(getLoopringBalances(address));
 </script>
 
 <style scoped lang="scss">

@@ -1,27 +1,8 @@
-import { Balance, BigNumber, HasBalance } from '@rotki/common';
+import { Balance, HasBalance } from '@rotki/common';
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { Section } from '@/store/const';
 import { Module } from '@/types/modules';
-import { PriceOracle } from '@/types/price-oracle';
-import { SupportedSubBlockchainProtocol } from '@/types/protocols';
-
-export interface LocationBalance {
-  readonly location: string;
-  readonly usdValue: BigNumber;
-}
-
-export interface BalanceByLocation {
-  [location: string]: BigNumber;
-}
-
-export interface AssetBalances {
-  [asset: string]: Balance;
-}
-
-export interface AccountAssetBalances {
-  readonly [account: string]: AssetBalances;
-}
+import { Section } from '@/types/status';
 
 export enum XpubKeyType {
   P2TR = 'p2tr',
@@ -73,7 +54,7 @@ export interface AllBalancePayload {
 
 export interface FetchPricePayload {
   readonly ignoreCache: boolean;
-  readonly selectedAsset?: string;
+  readonly selectedAssets: string[];
 }
 
 export interface AccountWithBalance extends GeneralAccount, HasBalance {}
@@ -96,57 +77,9 @@ export type AddAccountsPayload = {
   readonly modules?: Module[];
 };
 
-export interface SubBlockchainTotal {
-  readonly protocol: SupportedSubBlockchainProtocol;
-  readonly usdValue: BigNumber;
-  readonly loading: boolean;
-}
-
-export interface BlockchainTotal {
-  readonly chain: Blockchain;
-  readonly children: SubBlockchainTotal[];
-  readonly usdValue: BigNumber;
-  readonly loading: boolean;
-}
-
 export type ChainSections = {
   readonly [chain in Blockchain]: Section;
 };
-
-export type AssetPrices = {
-  [asset: string]: BigNumber;
-};
-
-export type AssetPriceResponse = {
-  readonly assets: AssetPrices;
-  readonly targetAsset: string;
-};
-
-export type OracleCachePayload = {
-  readonly source: PriceOracle;
-  readonly fromAsset: string;
-  readonly toAsset: string;
-  readonly purgeOld: boolean;
-};
-
-type TimedPrices = { [timestamp: string]: BigNumber };
-
-type AssetTimedPrices = { [asset: string]: TimedPrices };
-
-export type HistoricPrices = {
-  readonly assets: AssetTimedPrices;
-  readonly targetAsset: string;
-};
-
-export type HistoricPricePayload = {
-  readonly fromAsset: string;
-  readonly toAsset: string;
-  readonly timestamp: number;
-};
-
-export interface AssetPriceInfo extends Balance {
-  readonly usdPrice: BigNumber;
-}
 
 export interface AssetBreakdown {
   readonly location: string;

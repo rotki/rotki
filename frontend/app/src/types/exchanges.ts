@@ -1,7 +1,7 @@
 import { BigNumber } from '@rotki/common';
 import { z } from 'zod';
-import { AssetBalances } from '@/store/balances/types';
 import { Nullable } from '@/types';
+import { AssetBalances } from '@/types/balances';
 
 export const KrakenAccountType = z.enum(['starter', 'intermediate', 'pro']);
 export type KrakenAccountType = z.infer<typeof KrakenAccountType>;
@@ -50,7 +50,7 @@ export interface ExchangeInfo {
   readonly total: BigNumber;
 }
 
-export type ExchangeData = { [exchange: string]: AssetBalances };
+export type ExchangeData = Record<string, AssetBalances>;
 
 export interface EditExchange {
   readonly exchange: Exchange;

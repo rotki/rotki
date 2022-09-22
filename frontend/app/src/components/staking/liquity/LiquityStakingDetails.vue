@@ -56,8 +56,8 @@ import RefreshButton from '@/components/helper/RefreshButton.vue';
 import LiquityStake from '@/components/staking/liquity/LiquityStake.vue';
 import { isSectionLoading } from '@/composables/common';
 import { LiquityStakeEvents } from '@/premium/premium';
-import { Section } from '@/store/const';
 import { useLiquityStore } from '@/store/defi/liquity';
+import { Section } from '@/types/status';
 
 const selectedAccount = ref<GeneralAccount | null>(null);
 

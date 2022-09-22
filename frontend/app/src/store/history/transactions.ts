@@ -1,13 +1,9 @@
-import { get, set } from '@vueuse/core';
 import isEqual from 'lodash/isEqual';
-import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
-import { Ref, ref } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { Ref } from 'vue';
 import { useStatusUpdater } from '@/composables/status';
 import { api } from '@/services/rotkehlchen-api';
-import { useBlockchainAccountsStore } from '@/store/balances/blockchain-accounts';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
-import { Section, Status } from '@/store/const';
+import { useEthBalancesStore } from '@/store/blockchain/balances/eth';
 import { EthTransactionEntry } from '@/store/history/types';
 import {
   defaultHistoricPayloadState,
@@ -26,6 +22,7 @@ import {
   NewEthTransactionEvent,
   TransactionRequestPayload
 } from '@/types/history/tx';
+import { Section, Status } from '@/types/status';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import {
@@ -48,7 +45,7 @@ export const useTransactions = defineStore('history/transactions', () => {
 
   const { t } = useI18n();
 
-  const { ethAddresses } = storeToRefs(useBlockchainAccountsStore());
+  const { ethAddresses } = storeToRefs(useEthBalancesStore());
   const fetchTransactions = async (refresh: boolean = false) => {
     const { awaitTask, isTaskRunning } = useTasks();
     const { setStatus, loading, isFirstLoad, resetStatus } = useStatusUpdater(

@@ -222,9 +222,7 @@ import NavigatorLink from '@/components/helper/NavigatorLink.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
-import ExternalTradeForm, {
-  ExternalTradeFormInstance
-} from '@/components/history/ExternalTradeForm.vue';
+import ExternalTradeForm from '@/components/history/ExternalTradeForm.vue';
 import TableFilter from '@/components/history/filtering/TableFilter.vue';
 import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
@@ -236,13 +234,13 @@ import { setupIgnore } from '@/composables/history';
 import { useRoute, useRouter } from '@/composables/router';
 import { Routes } from '@/router/routes';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
-import { Section } from '@/store/const';
 import { useTrades } from '@/store/history/trades';
 import { IgnoreActionType, TradeEntry } from '@/store/history/types';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Collection } from '@/types/collection';
 import { TradeLocation } from '@/types/history/trade-location';
 import { NewTrade, Trade, TradeRequestPayload } from '@/types/history/trades';
+import { Section } from '@/types/status';
 import { getCollectionData, setupEntryLimit } from '@/utils/collection';
 
 type PaginationOptions = {
@@ -273,7 +271,7 @@ const tradesToDelete: Ref<TradeEntry[]> = ref([]);
 const confirmationMessage: Ref<string> = ref('');
 const expanded: Ref<TradeEntry[]> = ref([]);
 const valid: Ref<boolean> = ref(false);
-const form = ref<ExternalTradeFormInstance | null>(null);
+const form: Ref<InstanceType<typeof ExternalTradeForm> | null> = ref(null);
 const pageRoute = Routes.HISTORY_TRADES.route;
 
 const { filters, matchers, updateFilter } = useTradeFilters();

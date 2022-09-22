@@ -5,7 +5,6 @@ import { useStatusUpdater } from '@/composables/status';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
-import { Section, Status } from '@/store/const';
 import { useNotifications } from '@/store/notifications';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useTasks } from '@/store/tasks';
@@ -14,6 +13,7 @@ import {
   KrakenStakingPagination,
   ReceivedAmount
 } from '@/types/staking';
+import { Section, Status } from '@/types/status';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { Zero } from '@/utils/bignumbers';

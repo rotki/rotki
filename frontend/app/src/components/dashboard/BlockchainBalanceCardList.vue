@@ -48,9 +48,11 @@ import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import Fragment from '@/components/helper/Fragment';
 import { Routes } from '@/router/routes';
-import { SupportedSubBlockchainProtocolData } from '@/store/balances/const';
-import { BlockchainTotal } from '@/store/balances/types';
 import { ActionDataEntry } from '@/store/types';
+import {
+  BlockchainTotal,
+  SupportedSubBlockchainProtocolData
+} from '@/types/blockchain';
 import { toSentenceCase } from '@/utils/text';
 
 const props = defineProps({

@@ -46,8 +46,8 @@ import Overview from '@/components/defi/Overview.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
 import { useSectionLoading } from '@/composables/common';
-import { Section } from '@/store/const';
 import { useDefiStore } from '@/store/defi';
+import { Section } from '@/types/status';
 
 const store = useDefiStore();
 const { overview: currentOverview } = storeToRefs(store);

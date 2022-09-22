@@ -31,12 +31,10 @@ export const toUnit = (value: BigNumber, unit: Unit = Unit.ETH): BigNumber => {
 export const balanceSum = (
   sum: Balance,
   { amount, usdValue }: Balance
-): Balance => {
-  return {
-    amount: sum.amount.plus(amount),
-    usdValue: sum.usdValue.plus(usdValue)
-  };
-};
+): Balance => ({
+  amount: sum.amount.plus(amount),
+  usdValue: sum.usdValue.plus(usdValue)
+});
 
 export const calculatePercentage = (value: BigNumber, divider: BigNumber) => {
   const percentage = divider.isZero()

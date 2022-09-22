@@ -1,497 +1,52 @@
-import {
-  AssetBalance,
-  AssetBalanceWithPrice,
-  Balance,
-  BigNumber
-} from '@rotki/common';
-import { Blockchain } from '@rotki/common/lib/blockchain';
-import { Eth2Validators } from '@rotki/common/lib/staking/eth2';
-import { forEach } from 'lodash';
-import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
-import { computed, ref } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { MaybeRef } from '@vueuse/core';
 import { useStatusUpdater } from '@/composables/status';
-import { TRADE_LOCATION_BLOCKCHAIN } from '@/data/defaults';
-import { bigNumberSum } from '@/filters';
-import {
-  BlockchainAssetBalances,
-  BtcBalances
-} from '@/services/balances/types';
-import { api } from '@/services/rotkehlchen-api';
-import { BtcAccountData, GeneralAccountData } from '@/services/types-api';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
-import { useBlockchainAccountsStore } from '@/store/balances/blockchain-accounts';
-import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';
+import { useBalancesApi } from '@/services/balances';
+import { useAggregatedBalancesStore } from '@/store/balances/aggregated';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { useManualBalancesStore } from '@/store/balances/manual';
+import { useNonFungibleBalancesStore } from '@/store/balances/non-funginble';
 import { useBalancePricesStore } from '@/store/balances/prices';
-import {
-  AccountAssetBalances,
-  AllBalancePayload,
-  AssetBreakdown,
-  FetchPricePayload,
-  LocationBalance
-} from '@/store/balances/types';
-import { Section, Status } from '@/store/const';
+import { AllBalancePayload } from '@/store/balances/types';
+import { useBlockchainStore } from '@/store/blockchain';
+import { useBlockchainBalancesStore } from '@/store/blockchain/balances';
 import { useNotifications } from '@/store/notifications';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { setStatus } from '@/store/status';
 import { useTasks } from '@/store/tasks';
-import { Writeable } from '@/types';
-import { Exchange, ExchangeData, ExchangeInfo } from '@/types/exchanges';
-import { ManualBalanceWithValue } from '@/types/manual-balances';
-import { Module } from '@/types/modules';
-import { NonFungibleBalance, NonFungibleBalances } from '@/types/nfbalances';
-import { TaskMeta } from '@/types/task';
+import { AssetPrices } from '@/types/prices';
+import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
-import { ReadOnlyTag } from '@/types/user';
-import { NoPrice, sortDesc, zeroBalance } from '@/utils/bignumbers';
-import { assetSum, balanceSum } from '@/utils/calculation';
-import { logger } from '@/utils/logging';
 
 export const useBalancesStore = defineStore('balances', () => {
-  const nonFungibleBalancesState = ref<NonFungibleBalances>({});
-
-  const { t } = useI18n();
-
-  const pricesStore = useBalancePricesStore();
-  const { prices } = storeToRefs(pricesStore);
-  const {
-    updateBalancesPrices,
-    fetchPrices,
-    fetchExchangeRates,
-    exchangeRate,
-    reset: resetPrices
-  } = pricesStore;
-
-  const manualBalancesStore = useManualBalancesStore();
-  const { manualBalancesData, manualBalances, manualBalanceByLocation } =
-    storeToRefs(manualBalancesStore);
-  const { fetchManualBalances, reset: resetManualBalances } =
-    manualBalancesStore;
-
-  const exchangeStore = useExchangeBalancesStore();
-  const { exchanges, exchangeBalances, connectedExchanges } =
-    storeToRefs(exchangeStore);
-  const {
-    getBalances: getExchangeBalances,
-    setExchanges,
-    reset: resetExchangeBalances
-  } = exchangeStore;
-
-  const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
-  const { isAssetIgnored } = useIgnoredAssetsStore();
-
-  const { treatEth2AsEth, currencySymbol } = storeToRefs(
-    useGeneralSettingsStore()
-  );
-
-  const blockchainAccountsStore = useBlockchainAccountsStore();
-  const {
-    ethAccountsState,
-    ksmAccountsState,
-    dotAccountsState,
-    avaxAccountsState,
-    btcAccountsState,
-    bchAccountsState,
-    eth2ValidatorsState
-  } = storeToRefs(blockchainAccountsStore);
-  const { fetchAccounts, reset: resetBlockchainAccountsStore } =
-    blockchainAccountsStore;
-
-  const blockchainBalancesStore = useBlockchainBalancesStore();
-
-  const {
-    adjustBlockchainPrices,
-    fetchBlockchainBalances,
-    fetchLoopringBalances,
-    totals,
-    reset: resetBlockchainBalancesStore
-  } = blockchainBalancesStore;
-
-  const {
-    ethBalancesState,
-    ksmBalancesState,
-    dotBalancesState,
-    avaxBalancesState,
-    btcBalancesState,
-    bchBalancesState,
-    eth2BalancesState,
-    loopringBalancesState,
-    blockchainTotal
-  } = storeToRefs(blockchainBalancesStore);
-
-  const { awaitTask, addTask, isTaskRunning } = useTasks();
+  const { updatePrices: updateManualPrices, fetchManualBalances } =
+    useManualBalancesStore();
+  const { updatePrices: updateChainPrices } = useBlockchainBalancesStore();
+  const { updatePrices: updateExchangePrices, fetchConnectedExchangeBalances } =
+    useExchangeBalancesStore();
+  const { refreshAccounts } = useBlockchainStore();
+  const { fetchNonFunginbleBalances } = useNonFungibleBalancesStore();
+  const { assets } = useAggregatedBalancesStore();
+  const { queryBalancesAsync } = useBalancesApi();
+  const priceStore = useBalancePricesStore();
+  const { prices } = storeToRefs(priceStore);
   const { notify } = useNotifications();
+  const { isTaskRunning, addTask } = useTasks();
+  const { tc } = useI18n();
 
-  const adjustPrices = async () => {
-    await adjustBlockchainPrices();
-
-    const newManualBalancesData = get(manualBalancesData).map(item => {
-      const assetPrice = get(prices)[item.asset];
-      if (!assetPrice) {
-        return item;
-      }
-      return {
-        ...item,
-        usdValue: item.amount.times(assetPrice)
-      };
-    });
-
-    set(manualBalancesData, newManualBalancesData);
-
-    const exchanges = { ...(get(exchangeBalances) as ExchangeData) };
-    for (const exchange in exchanges) {
-      exchanges[exchange] = updateBalancesPrices(exchanges[exchange]);
-    }
-
-    set(exchangeBalances, exchanges);
+  const adjustPrices = (prices: MaybeRef<AssetPrices>) => {
+    updateChainPrices(prices);
+    updateManualPrices(prices);
+    updateExchangePrices(prices);
   };
 
-  const refreshPrices = async (payload: FetchPricePayload) => {
-    setStatus(Status.LOADING, Section.PRICES);
-    await fetchExchangeRates();
-    await fetchPrices(payload);
-    await adjustPrices();
-    setStatus(Status.LOADED, Section.PRICES);
-  };
-
-  const assetBreakdown = (asset: string) =>
-    computed<AssetBreakdown[]>(() => {
-      const breakdown: AssetBreakdown[] = [];
-
-      const cexBalances = get(exchangeBalances) as ExchangeData;
-      for (const exchange in cexBalances) {
-        const exchangeData = cexBalances[exchange];
-        if (!exchangeData[asset]) {
-          continue;
-        }
-
-        breakdown.push({
-          address: '',
-          location: exchange,
-          balance: exchangeData[asset],
-          tags: []
-        });
-      }
-
-      (get(manualBalances) as ManualBalanceWithValue[]).forEach(
-        manualBalance => {
-          if (manualBalance.asset !== asset) {
-            return;
-          }
-
-          breakdown.push({
-            address: '',
-            location: manualBalance.location,
-            balance: {
-              amount: manualBalance.amount,
-              usdValue: manualBalance.usdValue
-            },
-            tags: manualBalance.tags
-          });
-        }
-      );
-
-      const addBlockchainToBreakdown = (
-        blockchain: Blockchain,
-        balances: BlockchainAssetBalances,
-        accounts: GeneralAccountData[]
-      ) => {
-        for (const address in balances) {
-          const balance = balances[address];
-          const assetBalance = balance.assets[asset];
-          if (!assetBalance) {
-            continue;
-          }
-
-          const tags =
-            accounts.find(account => account.address === address)?.tags || [];
-
-          breakdown.push({
-            address,
-            location: blockchain,
-            balance: assetBalance,
-            tags
-          });
-        }
-      };
-
-      const list = [
-        {
-          blockchain: Blockchain.ETH,
-          balances: get(ethBalancesState) as BlockchainAssetBalances,
-          accounts: get(ethAccountsState)
-        },
-        {
-          blockchain: Blockchain.KSM,
-          balances: get(ksmBalancesState) as BlockchainAssetBalances,
-          accounts: get(ksmAccountsState)
-        },
-        {
-          blockchain: Blockchain.DOT,
-          balances: get(dotBalancesState) as BlockchainAssetBalances,
-          accounts: get(dotAccountsState)
-        },
-        {
-          blockchain: Blockchain.AVAX,
-          balances: get(avaxBalancesState) as BlockchainAssetBalances,
-          accounts: get(avaxAccountsState)
-        }
-      ];
-
-      list.map(item =>
-        addBlockchainToBreakdown(item.blockchain, item.balances, item.accounts)
-      );
-
-      const addBlockchainBtcToBreakdown = (
-        blockchain: Blockchain,
-        balances: BtcBalances,
-        accounts: BtcAccountData
-      ) => {
-        const { standalone, xpubs } = balances;
-        if (standalone) {
-          for (const address in standalone) {
-            const balance = standalone[address];
-            const tags =
-              accounts.standalone.find(account => account.address === address)
-                ?.tags || [];
-
-            breakdown.push({
-              address,
-              location: blockchain,
-              balance,
-              tags
-            });
-          }
-        }
-
-        if (xpubs) {
-          for (let i = 0; i < xpubs.length; i++) {
-            const xpub = xpubs[i];
-            const addresses = xpub.addresses;
-            const tags = accounts?.xpubs[i].tags;
-            for (const address in addresses) {
-              const balance = addresses[address];
-
-              breakdown.push({
-                address,
-                location: blockchain,
-                balance,
-                tags
-              });
-            }
-          }
-        }
-      };
-
-      if (asset === Blockchain.BTC) {
-        addBlockchainBtcToBreakdown(
-          Blockchain.BTC,
-          get(btcBalancesState) as BtcBalances,
-          get(btcAccountsState)
-        );
-      }
-
-      if (asset === Blockchain.BCH) {
-        addBlockchainBtcToBreakdown(
-          Blockchain.BCH,
-          get(bchBalancesState) as BtcBalances,
-          get(bchAccountsState)
-        );
-      }
-
-      const loopringBalances = get(
-        loopringBalancesState
-      ) as AccountAssetBalances;
-      for (const address in loopringBalances) {
-        const existing: Writeable<AssetBreakdown> | undefined = breakdown.find(
-          value => value.address === address
-        );
-        const balanceElement = loopringBalances[address][asset];
-        if (!balanceElement) {
-          continue;
-        }
-        if (existing) {
-          existing.balance = balanceSum(existing.balance, balanceElement);
-        } else {
-          breakdown.push({
-            address,
-            location: Blockchain.ETH,
-            balance: loopringBalances[address][asset],
-            tags: [ReadOnlyTag.LOOPRING]
-          });
-        }
-      }
-
-      if (
-        asset === Blockchain.ETH2 ||
-        (get(treatEth2AsEth) && asset === Blockchain.ETH)
-      ) {
-        const validators = get(eth2ValidatorsState) as Eth2Validators;
-        for (const { publicKey } of validators.entries) {
-          const balances = get(eth2BalancesState) as BlockchainAssetBalances;
-          const validatorBalances = balances[publicKey];
-          let balance: Balance = zeroBalance();
-          if (validatorBalances && validatorBalances.assets) {
-            const assets = validatorBalances.assets;
-            balance = {
-              amount: assets[Blockchain.ETH2].amount,
-              usdValue: assetSum(assets)
-            };
-          }
-
-          breakdown.push({
-            address: publicKey,
-            location: Blockchain.ETH2,
-            balance,
-            tags: []
-          });
-        }
-      }
-
-      return breakdown.sort((a, b) =>
-        sortDesc(a.balance.usdValue, b.balance.usdValue)
-      );
+  const refreshPrices = async (ignoreCache: boolean = false): Promise<void> => {
+    const { setStatus } = useStatusUpdater(Section.PRICES);
+    setStatus(Status.LOADING);
+    await priceStore.fetchExchangeRates();
+    await priceStore.fetchPrices({
+      ignoreCache,
+      selectedAssets: get(assets())
     });
-
-  const locationBreakdown = (identifier: string) =>
-    computed<AssetBalanceWithPrice[]>(() => {
-      const ownedAssets: Record<string, Balance> = {};
-
-      const addToOwned = (value: AssetBalance) => {
-        const associatedAsset: string = get(
-          getAssociatedAssetIdentifier(value.asset)
-        );
-
-        const ownedAsset = ownedAssets[associatedAsset];
-
-        ownedAssets[associatedAsset] = !ownedAsset
-          ? {
-              ...value
-            }
-          : {
-              ...balanceSum(ownedAsset, value)
-            };
-      };
-
-      const exchange = get(connectedExchanges).find(
-        ({ location }) => identifier === location
-      );
-
-      if (exchange) {
-        const balances = get(getExchangeBalances(exchange.location));
-        balances.forEach((value: AssetBalance) => addToOwned(value));
-      }
-
-      if (identifier === TRADE_LOCATION_BLOCKCHAIN) {
-        (get(totals()) as AssetBalance[]).forEach((value: AssetBalance) =>
-          addToOwned(value)
-        );
-
-        const loopringBalances = get(
-          loopringBalancesState
-        ) as AccountAssetBalances;
-        for (const address in loopringBalances) {
-          const accountBalances = loopringBalances[address];
-
-          forEach(accountBalances, (balance: Balance, asset: string) => {
-            addToOwned({ asset, ...balance });
-          });
-        }
-      }
-
-      (get(manualBalances) as ManualBalanceWithValue[]).forEach(value => {
-        if (value.location === identifier) {
-          addToOwned(value);
-        }
-      });
-
-      return Object.keys(ownedAssets)
-        .filter(asset => !get(isAssetIgnored(asset)))
-        .map(asset => ({
-          asset,
-          amount: ownedAssets[asset].amount,
-          usdValue: ownedAssets[asset].usdValue,
-          usdPrice: (get(prices)[asset] as BigNumber) ?? NoPrice
-        }))
-        .sort((a, b) => sortDesc(a.usdValue, b.usdValue));
-    });
-
-  const balancesByLocation = computed<Record<string, BigNumber>>(() => {
-    const byLocations: Record<string, BigNumber> = {};
-
-    const addToOwned = (location: string, value: BigNumber) => {
-      const byLocation = byLocations[location];
-
-      byLocations[location] = !byLocation ? value : value.plus(byLocation);
-    };
-
-    for (const { location, usdValue } of get(
-      manualBalanceByLocation
-    ) as LocationBalance[]) {
-      addToOwned(location, usdValue);
-    }
-
-    const mainCurrency = get(currencySymbol);
-    const total = get(blockchainTotal) as BigNumber;
-
-    const currentExchangeRate = get(exchangeRate(mainCurrency)) as
-      | BigNumber
-      | undefined;
-    const blockchainTotalConverted = currentExchangeRate
-      ? total.multipliedBy(currentExchangeRate)
-      : total;
-
-    addToOwned(TRADE_LOCATION_BLOCKCHAIN, blockchainTotalConverted);
-
-    for (const { location, total } of get(exchanges) as ExchangeInfo[]) {
-      const exchangeBalanceConverted = currentExchangeRate
-        ? total.multipliedBy(currentExchangeRate)
-        : total;
-      addToOwned(location, exchangeBalanceConverted);
-    }
-
-    return byLocations;
-  });
-
-  const fetchNfBalances = async (payload?: {
-    ignoreCache: boolean;
-  }): Promise<void> => {
-    const { activeModules } = useGeneralSettingsStore();
-    if (!activeModules.includes(Module.NFTS)) {
-      return;
-    }
-    const { isFirstLoad, setStatus, resetStatus } = useStatusUpdater(
-      Section.NON_FUNGIBLE_BALANCES
-    );
-    try {
-      setStatus(isFirstLoad() ? Status.LOADING : Status.REFRESHING);
-      const taskType = TaskType.NF_BALANCES;
-      const { taskId } = await api.balances.fetchNfBalances(payload);
-      const { result } = await awaitTask<NonFungibleBalances, TaskMeta>(
-        taskId,
-        taskType,
-        {
-          title: t('actions.nft_balances.task.title').toString(),
-          numericKeys: []
-        }
-      );
-
-      set(nonFungibleBalancesState, NonFungibleBalances.parse(result));
-      setStatus(Status.LOADED);
-    } catch (e: any) {
-      logger.error(e);
-      notify({
-        title: t('actions.nft_balances.error.title').toString(),
-        message: t('actions.nft_balances.error.message', {
-          message: e.message
-        }).toString(),
-        display: true
-      });
-      resetStatus();
-    }
+    adjustPrices(get(prices));
+    setStatus(Status.LOADED);
   };
 
   const fetchBalances = async (payload: Partial<AllBalancePayload> = {}) => {
@@ -499,80 +54,43 @@ export const useBalancesStore = defineStore('balances', () => {
       return;
     }
     try {
-      const { taskId } = await api.queryBalancesAsync(payload);
+      const { taskId } = await queryBalancesAsync(payload);
       await addTask(taskId, TaskType.QUERY_BALANCES, {
-        title: t('actions.balances.all_balances.task.title').toString(),
+        title: tc('actions.balances.all_balances.task.title'),
         ignoreResult: true
       });
     } catch (e: any) {
       notify({
-        title: t('actions.balances.all_balances.error.title').toString(),
-        message: t('actions.balances.all_balances.error.message', {
+        title: tc('actions.balances.all_balances.error.title'),
+        message: tc('actions.balances.all_balances.error.message', 0, {
           message: e.message
-        }).toString(),
+        }),
         display: true
       });
     }
-    await fetchAccounts();
   };
 
-  const fetch = async (exchanges: Exchange[]): Promise<void> => {
+  const fetch = async (): Promise<void> => {
     await fetchManualBalances();
-    await fetchExchangeRates();
+    await priceStore.fetchExchangeRates();
     await fetchBalances();
-
-    if (exchanges && exchanges.length > 0) {
-      await setExchanges(exchanges);
-    }
-
-    await fetchBlockchainBalances();
-    await fetchNfBalances();
-    await fetchLoopringBalances(false);
+    await refreshAccounts();
+    await fetchConnectedExchangeBalances();
+    await fetchNonFunginbleBalances();
   };
 
-  const nfBalances = computed<NonFungibleBalance[]>(() => {
-    const balances: NonFungibleBalance[] = [];
-    const nonFungibleBalances = get(
-      nonFungibleBalancesState
-    ) as NonFungibleBalances;
-    for (const address in nonFungibleBalances) {
-      const addressNfBalance = nonFungibleBalances[address];
-      balances.push(...addressNfBalance);
-    }
-    return balances;
-  });
-
-  const nfTotalValue = (includeLPToken: boolean = false) =>
-    computed<BigNumber>(() => {
-      return bigNumberSum(
-        get(nfBalances)
-          .filter(item => includeLPToken || !item.isLp)
-          .map(item => item.usdPrice)
-      );
-    });
-
-  const reset = () => {
-    resetBlockchainBalancesStore();
-    resetBlockchainAccountsStore();
-    resetExchangeBalances();
-    resetManualBalances();
-    resetPrices();
-    set(nonFungibleBalancesState, {});
+  const autoRefresh = async () => {
+    await fetchManualBalances();
+    await refreshAccounts();
+    await fetchConnectedExchangeBalances();
+    await refreshPrices(true);
   };
 
   return {
-    nonFungibleBalancesState,
-    nfBalances,
-    nfTotalValue,
-    adjustPrices,
+    autoRefresh,
     refreshPrices,
-    assetBreakdown,
-    locationBreakdown,
-    balancesByLocation,
     fetchBalances,
-    fetchNfBalances,
-    fetch,
-    reset
+    fetch
   };
 });
 

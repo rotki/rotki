@@ -21,11 +21,7 @@
 </template>
 <script setup lang="ts">
 import { BigNumber } from '@rotki/common';
-import { get } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { computed, toRefs } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
-import { useBalancesStore } from '@/store/balances';
+import { useBalancesBreakdownStore } from '@/store/balances/breakdown';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Zero } from '@/utils/bignumbers';
 
@@ -38,7 +34,7 @@ const { identifier } = toRefs(props);
 const { t } = useI18n();
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { balancesByLocation } = storeToRefs(useBalancesStore());
+const { balancesByLocation } = storeToRefs(useBalancesBreakdownStore());
 
 const totalValue = computed<BigNumber>(() => {
   const locations = get(balancesByLocation);

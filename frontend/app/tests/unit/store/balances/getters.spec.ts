@@ -3,13 +3,17 @@ import { get, set } from '@vueuse/core';
 import sortBy from 'lodash/sortBy';
 import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { TRADE_LOCATION_BANKS } from '@/data/defaults';
-import { BalanceType, BtcBalances } from '@/services/balances/types';
+import { BalanceType } from '@/services/balances/types';
 import { BtcAccountData } from '@/services/types-api';
-import { useBlockchainAccountsStore } from '@/store/balances/blockchain-accounts';
-import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';
+import { useAggregatedBalancesStore } from '@/store/balances/aggregated';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { useManualBalancesStore } from '@/store/balances/manual';
 import { useBalancePricesStore } from '@/store/balances/prices';
+import { useBtcAccountBalancesStore } from '@/store/blockchain/accountbalances/btc';
+import { useBtcAccountsStore } from '@/store/blockchain/accounts/btc';
+import { useBtcBalancesStore } from '@/store/blockchain/balances/btc';
+import { useEthBalancesStore } from '@/store/blockchain/balances/eth';
+import { BtcBalances } from '@/types/blockchain/balances';
 import { SupportedExchange } from '@/types/exchanges';
 import { bigNumberify, zeroBalance } from '@/utils/bignumbers';
 
@@ -73,12 +77,13 @@ describe('balances:getters', () => {
       }
     ]);
 
-    const blockchainBalancesStore = useBlockchainBalancesStore();
-    const { aggregatedBalances } = blockchainBalancesStore;
-    const { blockchainTotalsState } = storeToRefs(blockchainBalancesStore);
+    const store = useAggregatedBalancesStore();
+    const { balances } = store;
+    const { totals } = storeToRefs(store);
+    const { totals: ethTotals } = storeToRefs(useEthBalancesStore());
 
     const totalsState = {
-      ...get(blockchainTotalsState),
+      ...get(totals),
       ETH: {
         DAI: {
           amount: bigNumberify(100),
@@ -99,9 +104,9 @@ describe('balances:getters', () => {
       }
     };
 
-    set(blockchainTotalsState, totalsState);
+    set(ethTotals, totalsState);
 
-    const actualResult = sortBy(get(aggregatedBalances()), 'asset');
+    const actualResult = sortBy(get(balances()), 'asset');
 
     const expectedResult = sortBy(
       [
@@ -206,7 +211,7 @@ describe('balances:getters', () => {
         }
       ]
     };
-    const balances: BtcBalances = {
+    const btcBalances: BtcBalances = {
       standalone: {
         '123': { usdValue: bigNumberify(10), amount: bigNumberify(10) }
       },
@@ -221,13 +226,12 @@ describe('balances:getters', () => {
       ]
     };
 
-    const { btcAccountsState, btcAccounts } = storeToRefs(
-      useBlockchainAccountsStore()
-    );
-    const { btcBalancesState } = storeToRefs(useBlockchainBalancesStore());
+    const { btc } = storeToRefs(useBtcAccountsStore());
+    const { balances } = storeToRefs(useBtcBalancesStore());
+    const { btcAccounts } = storeToRefs(useBtcAccountBalancesStore());
 
-    set(btcAccountsState, accounts);
-    set(btcBalancesState, balances);
+    set(btc, accounts);
+    set(balances, { BTC: btcBalances });
 
     expect(get(btcAccounts)).toEqual([
       {

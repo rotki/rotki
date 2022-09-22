@@ -54,7 +54,7 @@ import { computed, toRefs, useCssModule } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import { useSectionLoading } from '@/composables/common';
 import { NftAsset, useNftAssetInfoStore } from '@/store/assets/nft';
-import { Section } from '@/store/const';
+import { Section } from '@/types/status';
 import { isVideo } from '@/utils/nft';
 
 const props = defineProps({

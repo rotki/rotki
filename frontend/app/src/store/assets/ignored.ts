@@ -1,7 +1,4 @@
-import { get, MaybeRef, set } from '@vueuse/core';
-import { acceptHMRUpdate, defineStore } from 'pinia';
-import { computed, ref } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { MaybeRef } from '@vueuse/core';
 import { api } from '@/services/rotkehlchen-api';
 import { useMessageStore } from '@/store/message';
 import { useNotifications } from '@/store/notifications';

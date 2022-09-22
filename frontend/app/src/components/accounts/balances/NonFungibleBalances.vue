@@ -86,10 +86,7 @@
 </template>
 
 <script lang="ts">
-import { get, set } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { computed, defineComponent, PropType, Ref, ref } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { PropType, Ref } from 'vue';
 import { DataTableHeader } from 'vuetify';
 import NonFungibleBalanceEdit from '@/components/accounts/balances/NonFungibleBalanceEdit.vue';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
@@ -99,12 +96,12 @@ import RowAction from '@/components/helper/RowActions.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import { isSectionLoading } from '@/composables/common';
 import { api } from '@/services/rotkehlchen-api';
-import { useBalancesStore } from '@/store/balances';
-import { Section } from '@/store/const';
+import { useNonFungibleBalancesStore } from '@/store/balances/non-funginble';
 import { useNotifications } from '@/store/notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Module } from '@/types/modules';
 import { NonFungibleBalance } from '@/types/nfbalances';
+import { Section } from '@/types/status';
 import { assert } from '@/utils/assertions';
 import { isVideo } from '@/utils/nft';
 
@@ -128,11 +125,11 @@ export default defineComponent({
     const edit: Ref<NonFungibleBalance | null> = ref(null);
     const confirmDelete: Ref<NonFungibleBalance | null> = ref(null);
 
-    const balancesStore = useBalancesStore();
-    const { nfTotalValue, fetchNfBalances } = balancesStore;
-    const { nfBalances } = storeToRefs(balancesStore);
+    const balancesStore = useNonFungibleBalancesStore();
+    const { nonFungibleTotalValue, fetchNonFunginbleBalances } = balancesStore;
+    const { nonFunginbleBalances } = storeToRefs(balancesStore);
     const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-    const total = nfTotalValue();
+    const total = nonFungibleTotalValue();
     const { tc } = useI18n();
     const { notify } = useNotifications();
 
@@ -142,7 +139,7 @@ export default defineComponent({
     });
 
     const mappedBalances = computed(() => {
-      return get(nfBalances).map(balance => {
+      return get(nonFunginbleBalances).map(balance => {
         return {
           ...balance,
           imageUrl: balance.imageUrl || '/assets/images/placeholder.svg',
@@ -189,7 +186,7 @@ export default defineComponent({
     const setupRefresh = (ignoreCache: boolean = false) => {
       const payload = ignoreCache ? { ignoreCache: true } : undefined;
 
-      return async () => await fetchNfBalances(payload);
+      return async () => await fetchNonFunginbleBalances(payload);
     };
 
     const refresh = setupRefresh(true);

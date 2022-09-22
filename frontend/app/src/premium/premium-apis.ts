@@ -19,17 +19,15 @@ import {
   TimedAssetBalances,
   TimedBalances
 } from '@rotki/common/lib/statistics';
-import { get, toRefs } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { computed, ComputedRef, Ref } from 'vue';
+import { ComputedRef, Ref } from 'vue';
 import { setupLiquidityPosition } from '@/composables/defi';
 import { truncateAddress } from '@/filters';
 import { api } from '@/services/rotkehlchen-api';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useNftAssetInfoStore } from '@/store/assets/nft';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
-import { useBalancesStore } from '@/store/balances';
-import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';
+import { useAggregatedBalancesStore } from '@/store/balances/aggregated';
+import { useBalancesBreakdownStore } from '@/store/balances/breakdown';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useBalancerStore } from '@/store/defi/balancer';
 import { useCompoundStore } from '@/store/defi/compound';
@@ -122,13 +120,11 @@ export const adexApi = (): AdexApi => {
 
 export const balancesApi = (): BalancesApi => {
   const { exchangeRate } = useBalancePricesStore();
-  const { balancesByLocation } = storeToRefs(useBalancesStore());
-  const { aggregatedBalances } = useBlockchainBalancesStore();
+  const { balancesByLocation } = storeToRefs(useBalancesBreakdownStore());
+  const { balances } = useAggregatedBalancesStore();
   return {
     byLocation: balancesByLocation as ComputedRef<Record<string, BigNumber>>,
-    aggregatedBalances: aggregatedBalances() as ComputedRef<
-      AssetBalanceWithPrice[]
-    >,
+    aggregatedBalances: balances() as ComputedRef<AssetBalanceWithPrice[]>,
     exchangeRate: (currency: string) =>
       computed(() => get(exchangeRate(currency)) ?? One)
   };

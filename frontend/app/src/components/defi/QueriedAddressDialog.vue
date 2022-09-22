@@ -93,13 +93,10 @@
 <script setup lang="ts">
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { set, get } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { computed, PropType, Ref, ref, toRefs } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { PropType, Ref } from 'vue';
 import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
-import { useBlockchainAccountsStore } from '@/store/balances/blockchain-accounts';
+import { useAccountBalancesStore } from '@/store/blockchain/accountbalances';
 import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
 import { Nullable } from '@/types';
 import { Module, SUPPORTED_MODULES } from '@/types/modules';
@@ -123,7 +120,7 @@ const ETH = Blockchain.ETH;
 const store = useQueriedAddressesStore();
 const { addQueriedAddress, deleteQueriedAddress } = store;
 let { queriedAddresses } = storeToRefs(useQueriedAddressesStore());
-const { accounts } = storeToRefs(useBlockchainAccountsStore());
+const { accounts } = storeToRefs(useAccountBalancesStore());
 
 const { tc } = useI18n();
 

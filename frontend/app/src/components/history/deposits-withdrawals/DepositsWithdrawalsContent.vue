@@ -144,7 +144,6 @@ import { isSectionLoading } from '@/composables/common';
 import { setupIgnore } from '@/composables/history';
 import { Routes } from '@/router/routes';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
-import { Section } from '@/store/const';
 import { useAssetMovements } from '@/store/history/asset-movements';
 import { useAssociatedLocationsStore } from '@/store/history/associated-locations';
 import {
@@ -161,6 +160,7 @@ import {
   MovementCategory
 } from '@/types/history/movements';
 import { TradeLocation } from '@/types/history/trade-location';
+import { Section } from '@/types/status';
 import { getCollectionData, setupEntryLimit } from '@/utils/collection';
 import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
 

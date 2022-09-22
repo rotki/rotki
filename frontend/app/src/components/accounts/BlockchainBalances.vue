@@ -33,7 +33,7 @@
         :primary-action="tc('common.actions.save')"
         :secondary-action="tc('common.actions.cancel')"
         :action-disabled="!valid"
-        :loading="get(isAccountOperationRunning()) || pending"
+        :loading="loading"
         @confirm="saveAccount()"
         @cancel="clearDialog()"
       >
@@ -209,10 +209,7 @@
 
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { get, set } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { computed, onMounted, Ref, ref } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { Ref } from 'vue';
 import AccountBalances from '@/components/accounts/AccountBalances.vue';
 import AccountForm, {
   AccountFormType
@@ -221,9 +218,11 @@ import AssetBalances from '@/components/AssetBalances.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import PriceRefresh from '@/components/helper/PriceRefresh.vue';
 import { useRoute, useRouter } from '@/composables/router';
-import { useBlockchainAccountsStore } from '@/store/balances/blockchain-accounts';
-import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';
 import { BlockchainAccountWithBalance } from '@/store/balances/types';
+import { useBtcAccountBalancesStore } from '@/store/blockchain/accountbalances/btc';
+import { useChainAccountBalancesStore } from '@/store/blockchain/accountbalances/chain';
+import { useEthAccountBalancesStore } from '@/store/blockchain/accountbalances/eth';
+import { useAggregatedBlockchainBalancesStore } from '@/store/blockchain/balances/aggregated';
 import { useTasks } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 
@@ -250,6 +249,10 @@ const valid = ref(false);
 const openDialog = ref(false);
 const form = ref<AccountFormType | null>(null);
 const pending = ref<boolean>(false);
+
+const loading = computed(
+  () => get(isAccountOperationRunning()) || get(pending)
+);
 
 const createAccount = () => {
   set(accountToEdit, null);
@@ -320,16 +323,13 @@ const updateWhenRatio = (
   });
 };
 
-const {
-  btcAccounts,
-  bchAccounts,
-  dotAccounts,
-  ethAccounts,
-  eth2Accounts,
-  avaxAccounts,
-  ksmAccounts,
-  loopringAccounts
-} = storeToRefs(useBlockchainAccountsStore());
+const { ethAccounts, eth2Accounts, loopringAccounts } = storeToRefs(
+  useEthAccountBalancesStore()
+);
+const { ksmAccounts, dotAccounts, avaxAccounts } = storeToRefs(
+  useChainAccountBalancesStore()
+);
+const { btcAccounts, bchAccounts } = storeToRefs(useBtcAccountBalancesStore());
 
 const blockchainData: BlockchainData = {
   btcAccounts,
@@ -342,7 +342,9 @@ const blockchainData: BlockchainData = {
   loopringAccounts
 };
 
-const { blockchainAssets } = storeToRefs(useBlockchainBalancesStore());
+const { blockchainAssets } = storeToRefs(
+  useAggregatedBlockchainBalancesStore()
+);
 
 const getFirstContext = (data: BlockchainData) => {
   const hasData = (data: Ref<BlockchainAccountWithBalance[]>) => {

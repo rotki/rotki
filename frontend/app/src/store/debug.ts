@@ -1,4 +1,5 @@
 import { BigNumber } from '@rotki/common';
+import cloneDeep from 'lodash/cloneDeep';
 import { PiniaPluginContext } from 'pinia';
 import { bigNumberify } from '@/utils/bignumbers';
 import { logger } from '@/utils/logging';
@@ -89,3 +90,8 @@ export const storePiniaPlugins = (context: PiniaPluginContext) => {
     { detached: true }
   );
 };
+
+export default function StoreResetPlugin({ store }: PiniaPluginContext) {
+  const initialState = cloneDeep(store.$state);
+  store.$reset = () => store.$patch(cloneDeep(initialState));
+}

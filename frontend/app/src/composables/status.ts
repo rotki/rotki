@@ -1,5 +1,5 @@
-import { Section, Status } from '@/store/const';
 import { useStatusStore } from '@/store/status';
+import { Section, Status } from '@/types/status';
 
 export const useStatusUpdater = (section: Section, ignore: boolean = false) => {
   const { setStatus, getStatus, isLoading } = useStatusStore();

@@ -8,7 +8,6 @@ import { useStatusUpdater } from '@/composables/status';
 import i18n from '@/i18n';
 import { balanceKeys } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
-import { Section, Status } from '@/store/const';
 import { useNotifications } from '@/store/notifications';
 import { getStatus, setStatus } from '@/store/status';
 import { useTasks } from '@/store/tasks';
@@ -24,6 +23,7 @@ import {
   vaultKeys
 } from '@/types/defi/maker';
 import { Module } from '@/types/modules';
+import { Section, Status } from '@/types/status';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { bigNumberify, Zero } from '@/utils/bignumbers';

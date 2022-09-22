@@ -61,8 +61,8 @@ import PremiumCard from '@/components/display/PremiumCard.vue';
 import { isSectionLoading } from '@/composables/common';
 import { usePremium } from '@/composables/premium';
 import { LiquityTroveEvents } from '@/premium/premium';
-import { Section } from '@/store/const';
 import { LiquityLoan } from '@/store/defi/liquity/types';
+import { Section } from '@/types/status';
 
 export default defineComponent({
   name: 'LiquityLending',

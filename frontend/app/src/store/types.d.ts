@@ -1,4 +1,4 @@
-import { Section, Status } from '@/store/const';
+import { Section, Status } from '@/types/status';
 
 type ActionFailure = {
   readonly message: string;

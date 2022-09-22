@@ -14,7 +14,6 @@ import {
   ALL_DECENTRALIZED_EXCHANGES,
   ALL_MODULES
 } from '@/services/session/consts';
-import { Section, Status } from '@/store/const';
 import { useAaveStore } from '@/store/defi/aave';
 import { useBalancerStore } from '@/store/defi/balancer';
 import { useCompoundStore } from '@/store/defi/compound';
@@ -54,6 +53,7 @@ import {
   YEARN_FINANCE_VAULTS_V2
 } from '@/types/defi/protocols';
 import { Module } from '@/types/modules';
+import { Section, Status } from '@/types/status';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { Zero } from '@/utils/bignumbers';

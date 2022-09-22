@@ -18,9 +18,9 @@ import { useI18n } from 'vue-i18n-composable';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import ClosedTrades from '@/components/history/ClosedTrades.vue';
 import { useSectionLoading } from '@/composables/common';
-import { Section } from '@/store/const';
 import { useTrades } from '@/store/history/trades';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { Section } from '@/types/status';
 
 const { refreshPeriod } = storeToRefs(useFrontendSettingsStore());
 const { fetchTrades } = useTrades();

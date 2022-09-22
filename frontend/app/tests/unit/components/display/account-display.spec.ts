@@ -1,14 +1,7 @@
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { mount, Wrapper } from '@vue/test-utils';
-import { set } from '@vueuse/core';
-import {
-  createPinia,
-  Pinia,
-  PiniaVuePlugin,
-  setActivePinia,
-  storeToRefs
-} from 'pinia';
+import { createPinia, Pinia, PiniaVuePlugin, setActivePinia } from 'pinia';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import AccountDisplay from '@/components/display/AccountDisplay.vue';
@@ -71,8 +64,7 @@ describe('AccountDisplay.vue', () => {
   });
 
   test('blurs address on privacy mode', async () => {
-    const { privacyMode } = storeToRefs(useSessionSettingsStore());
-    set(privacyMode, PrivacyMode.SEMI_PRIVATE);
+    useSessionSettingsStore().update({ privacyMode: PrivacyMode.SEMI_PRIVATE });
     await wrapper.vm.$nextTick();
     expect(wrapper.find('.blur-content').exists()).toBe(true);
   });

@@ -5,7 +5,6 @@ import { Ref, ref } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import { useStatusUpdater } from '@/composables/status';
 import { api } from '@/services/rotkehlchen-api';
-import { Section, Status } from '@/store/const';
 import { useAssociatedLocationsStore } from '@/store/history/associated-locations';
 import { LedgerActionEntry } from '@/store/history/types';
 import {
@@ -25,6 +24,7 @@ import {
 } from '@/types/history/ledger-actions';
 import { EntryWithMeta } from '@/types/history/meta';
 import { TradeLocation } from '@/types/history/trade-location';
+import { Section, Status } from '@/types/status';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { exchangeName } from '@/types/trades';

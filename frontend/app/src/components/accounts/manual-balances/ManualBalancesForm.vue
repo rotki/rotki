@@ -74,6 +74,7 @@ import TagInput from '@/components/inputs/TagInput.vue';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import { BalanceType } from '@/services/balances/types';
 import { deserializeApiErrorMessage } from '@/services/converters';
+import { useBalancesStore } from '@/store/balances';
 import { useManualBalancesStore } from '@/store/balances/manual';
 import { TradeLocation } from '@/types/history/trade-location';
 import { ManualBalance } from '@/types/manual-balances';
@@ -167,6 +168,7 @@ const ManualBalancesForm = defineComponent({
 
     const { editManualBalance, addManualBalance, manualLabels } =
       useManualBalancesStore();
+    const { refreshPrices } = useBalancesStore();
 
     const save = async () => {
       set(pending, true);
@@ -184,6 +186,8 @@ const ManualBalancesForm = defineComponent({
       const status = await (get(edit) && idVal
         ? editManualBalance({ ...balance, id: idVal })
         : addManualBalance(balance));
+
+      await refreshPrices(false);
 
       set(pending, false);
 
