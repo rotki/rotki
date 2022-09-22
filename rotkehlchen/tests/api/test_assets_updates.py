@@ -279,7 +279,7 @@ INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0x1B175474E890
         assert globaldb.get_setting_value(ASSETS_VERSION_KEY, None) == 999999990
         assert globaldb.count_total_assets() == start_assets_num
         with pytest.raises(UnknownAsset):
-            Asset('121-ada-FADS-as')
+            Asset('121-ada-FADS-as').resolve_to_asset_with_name_and_type()
         errors = rotki.msg_aggregator.consume_errors()
         warnings = rotki.msg_aggregator.consume_warnings()
         assert len(errors) == 0, f'Found errors: {errors}'
@@ -487,7 +487,7 @@ def test_foreignkey_conflict(rotkehlchen_api_server, globaldb):
     update_1 = """INSERT INTO assets(identifier, name, type) VALUES("121-ada-FADS-as", "A name", "F"); INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked, started, swapped_for) VALUES("121-ada-FADS-as", "SYMBOL", "", "", "BTC", NULL, NULL);
 *
 UPDATE assets SET swapped_for="eip155:1/erc20:0xA8d35739EE92E69241A2Afd9F513d41021A07972" WHERE identifier="eip155:1/erc20:0xa74476443119A942dE498590Fe1f2454d7D4aC0d";
-INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protocol) VALUES("eip155:1/erc20:0xa74476443119A942dE498590Fe1f2454d7D4aC0d", "A", 1, "0xa74476443119A942dE498590Fe1f2454d7D4aC0d", 18, NULL);INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0xa74476443119A942dE498590Fe1f2454d7D4aC0d", "Golem", "C"); INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked, started, swapped_for) VALUES("eip155:1/erc20:0xa74476443119A942dE498590Fe1f2454d7D4aC0d", "GNT", "golem", NULL, NULL, 1478810650, "eip155:1/erc20:0xA8d35739EE92E69241A2Afd9F513d41021A07972")
+INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0xa74476443119A942dE498590Fe1f2454d7D4aC0d", "Golem", "C");INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protocol) VALUES("eip155:1/erc20:0xa74476443119A942dE498590Fe1f2454d7D4aC0d", "A", 1, "0xa74476443119A942dE498590Fe1f2454d7D4aC0d", 18, NULL); INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked, started, swapped_for) VALUES("eip155:1/erc20:0xa74476443119A942dE498590Fe1f2454d7D4aC0d", "GNT", "golem", NULL, NULL, 1478810650, "eip155:1/erc20:0xA8d35739EE92E69241A2Afd9F513d41021A07972")
     """  # noqa: E501
     update_patch = mock_asset_updates(
         original_requests_get=requests.get,
@@ -549,7 +549,7 @@ INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protoco
         assert globaldb.get_setting_value(ASSETS_VERSION_KEY, None) == 999999990
         assert globaldb.count_total_assets() == start_assets_num
         with pytest.raises(UnknownAsset):
-            Asset('121-ada-FADS-as')
+            Asset('121-ada-FADS-as').resolve_to_asset_with_name_and_type()
         errors = rotki.msg_aggregator.consume_errors()
         warnings = rotki.msg_aggregator.consume_warnings()
         assert len(errors) == 0, f'Found errors: {errors}'
@@ -703,7 +703,7 @@ INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protoco
         assert globaldb.get_setting_value(ASSETS_VERSION_KEY, 0) == 0
         assert globaldb.count_total_assets() == start_assets_num
         with pytest.raises(UnknownAsset):
-            Asset('121-ada-FADS-as')
+            Asset('121-ada-FADS-as').resolve_to_asset_with_name_and_type()
         errors = rotki.msg_aggregator.consume_errors()
         warnings = rotki.msg_aggregator.consume_warnings()
         assert len(errors) == 0, f'Found errors: {errors}'

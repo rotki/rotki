@@ -150,7 +150,7 @@ class HistoryBaseEntry(AccountingEventMixin):
                 location_label=entry[5],
                 # Setting incomplete data to true since we save all history events,
                 # regardless of the type of token that it may involve
-                asset=cls.asset_class(entry[6], form_with_incomplete_data=True),
+                asset=cls.asset_class(entry[6], direct_field_initialization=True).resolve_to_asset_with_symbol(),  # noqa: E501
                 balance=Balance(
                     amount=FVal(entry[7]),
                     usd_value=FVal(entry[8]),

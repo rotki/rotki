@@ -1772,10 +1772,10 @@ class GlobalDBHandler():
         SELECT A.identifier, A.type, B.address, B.decimals, A.name, C.symbol, C.started, null, C.swapped_for, C.coingecko, C.cryptocompare, B.protocol, B.chain, B.token_kind, null, null FROM assets as A JOIN evm_tokens as B
         ON B.identifier = A.identifier JOIN common_asset_details AS C ON C.identifier = B.identifier WHERE A.type = ? AND A.identifier = ?
         UNION ALL
-        SELECT A.identifier, A.type, null, null, A.name, B.symbol,  B.started, B.forked, B.swapped_for, B.coingecko, B.cryptocompare, null, null, null, null, null from assets as A JOIN common_asset_details as B
+        SELECT A.identifier, A.type, null, null, A.name, B.symbol, B.started, B.forked, B.swapped_for, B.coingecko, B.cryptocompare, null, null, null, null, null from assets as A JOIN common_asset_details as B
         ON B.identifier = A.identifier WHERE A.type != ? AND A.type != ? AND A.identifier = ?
         UNION ALL
-        SELECT A.identifier, A.type, null, null, A.name, null, null, null, null, null, null, null, null, null, null, B.notes, B.type FROM assets AS A JOIN custom_assets AS B on A.identifier=B.identifier WHERE A.identifier = ?
+        SELECT A.identifier, A.type, null, null, A.name, null, null, null, null, null, null, null, null, null, B.notes, B.type FROM assets AS A JOIN custom_assets AS B on A.identifier=B.identifier WHERE A.identifier = ?
         """  # noqa: E501
         with GlobalDBHandler().conn.read_ctx() as cursor:
             cursor.execute(
@@ -1792,18 +1792,26 @@ class GlobalDBHandler():
 
             asset_data = cursor.fetchone()
             if asset_data is None:
-                raise UnknownAsset(
-                    f'Could not find any asset with identifier {identifier} when'
-                    f'trying to resolve',
-                )
-            asset_type = AssetType.deserialize_from_db(asset_data[0])
+                raise UnknownAsset(identifier)
+
+            asset_type = AssetType.deserialize_from_db(asset_data[1])
             if asset_type == AssetType.EVM_TOKEN:
                 underlying_tokens = GlobalDBHandler().fetch_underlying_tokens(
                     cursor=cursor,
                     parent_token_identifier=identifier,
                 )
-                return EvmToken.deserialize_from_db(
-                    entry=asset_data,
+                return EvmToken.initialize(
+                    address=asset_data[2],
+                    chain=ChainID(asset_data[12]),
+                    token_kind=EvmTokenKind.deserialize_from_db(asset_data[13]),
+                    decimals=asset_data[3],
+                    name=asset_data[4],
+                    symbol=asset_data[5],
+                    started=Timestamp(asset_data[6]),
+                    swapped_for=CryptoAsset(asset_data[8]) if asset_data[8] is not None else None,
+                    coingecko=asset_data[9],
+                    cryptocompare=asset_data[10],
+                    protocol=asset_data[11],
                     underlying_tokens=underlying_tokens,
                 )
             if asset_type == AssetType.FIAT:

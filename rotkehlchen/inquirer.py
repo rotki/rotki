@@ -59,7 +59,7 @@ from rotkehlchen.constants.assets import (
 from rotkehlchen.constants.ethereum import CURVE_POOL_ABI, YEARN_VAULT_V2_ABI
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, MONTH_IN_SECONDS
-from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.defi import DefiPoolError
 from rotkehlchen.errors.misc import BlockchainQueryError, RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.errors.price import PriceQueryUnsupportedAsset
@@ -580,21 +580,21 @@ class Inquirer():
         try:
             asset = asset.resolve_to_fiat_asset()
             return instance._query_fiat_pair(base=asset, quote=A_USD.resolve_to_fiat_asset())
-        except (UnknownAsset, RemoteError):
+        except (UnknownAsset, RemoteError, WrongAssetType):
             pass  # continue, asset is not fiat or a price can be found by one of the oracles (CC for example)  # noqa: E501
 
         # Try and check if it is an ethereum token with specified protocol or underlying tokens
         is_known_protocol = False
         underlying_tokens = None
         try:
-            token = EvmToken(asset.identifier)
+            token = asset.resolve_to_evm_token()
             if token.protocol is not None:
                 is_known_protocol = token.protocol in KnownProtocolsAssets
             underlying_tokens = GlobalDBHandler().get_evm_token(  # type: ignore
                 token.evm_address,
                 chain=ChainID.ETHEREUM,
             ).underlying_tokens
-        except UnknownAsset:
+        except (UnknownAsset, WrongAssetType):
             pass
 
         # Check if it is a special token
@@ -849,6 +849,10 @@ class Inquirer():
     ) -> Optional[Price]:
         assert from_fiat_currency.is_fiat(), 'fiat currency should have been provided'
         assert to_fiat_currency.is_fiat(), 'fiat currency should have been provided'
+
+        if from_fiat_currency == to_fiat_currency:
+            return Price(ONE)
+
         # Check cache
         price_cache_entry = GlobalDBHandler().get_historical_price(
             from_asset=from_fiat_currency,

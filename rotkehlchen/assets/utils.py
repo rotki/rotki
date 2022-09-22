@@ -47,7 +47,6 @@ def get_or_create_evm_token(
         decimals: Optional[int] = None,
         protocol: Optional[str] = None,
         underlying_tokens: Optional[List[UnderlyingToken]] = None,
-        form_with_incomplete_data: bool = False,
         ethereum_manager: 'EthereumManager' = None,
 ) -> EvmToken:
     """Given a token address return the <EvmToken>
@@ -70,7 +69,7 @@ def get_or_create_evm_token(
         token_type=token_kind,
     )
     try:
-        ethereum_token = EvmToken(identifier, form_with_incomplete_data)
+        ethereum_token = EvmToken(identifier)
     except (UnknownAsset, DeserializationError):
         log.info(
             f'Encountered unknown asset with address '

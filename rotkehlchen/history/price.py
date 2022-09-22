@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, List, Optional
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_KFEE, A_USD
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.fval import FVal
@@ -193,7 +193,7 @@ class PriceHistorian():
             )
             if price is not None:
                 return price
-        except UnknownAsset:
+        except (UnknownAsset, WrongAssetType):
             pass
             # else cryptocompare also has historical fiat to fiat data
 

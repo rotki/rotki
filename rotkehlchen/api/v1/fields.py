@@ -1,4 +1,5 @@
 import logging
+import urllib
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Mapping, Optional, Sequence, Type, Union
 
@@ -14,7 +15,7 @@ from rotkehlchen.assets.types import AssetType
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.utils import is_valid_derivation_path
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import XPUBError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
@@ -391,18 +392,19 @@ class AssetField(fields.Field):
     ) -> Asset:
         if isinstance(value, str) is False:
             raise ValidationError(f'Tried to initialize an asset out of a non-string identifier {value}')  # noqa: E501
-
+        # Since the identifier could be url encoded for evm tokens in urls we need to unquote it
+        real_value = urllib.parse.unquote(value)
         try:
             if self.expected_type == Asset:
                 # Just to check identifier's existence
-                asset = Asset(identifier=value).resolve_to_asset_with_name_and_type()
+                asset = Asset(identifier=real_value).resolve_to_asset_with_name_and_type()
             elif self.expected_type == AssetWithOracles:
-                asset = Asset(identifier=value).resolve_to_asset_with_oracles()
+                asset = Asset(identifier=real_value).resolve_to_asset_with_oracles()
             elif self.expected_type == CryptoAsset:
-                asset = Asset(identifier=value).resolve_to_crypto_asset()
+                asset = CryptoAsset(real_value)
             else:  # EvmToken
-                asset = Asset(identifier=value).resolve_to_evm_token()
-        except (DeserializationError, UnknownAsset) as e:
+                asset = EvmToken(real_value)
+        except (DeserializationError, UnknownAsset, WrongAssetType) as e:
             raise ValidationError(str(e)) from e
 
         return asset

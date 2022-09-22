@@ -8,8 +8,8 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.structures.balance import BalanceType
-from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.assets.types import AssetType
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_EUR, A_SAI, A_USD
 from rotkehlchen.db.settings import ModifiableDBSettings
@@ -27,7 +27,7 @@ from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.types import Location
 
-KICK_TOKEN = EvmToken('eip155:1/erc20:0x824a50dF33AC1B41Afc52f4194E2e8356C17C3aC')
+KICK_TOKEN = Asset('eip155:1/erc20:0x824a50dF33AC1B41Afc52f4194E2e8356C17C3aC')
 
 
 def mock_cryptoscamdb_request():

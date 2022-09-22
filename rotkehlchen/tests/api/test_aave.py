@@ -171,7 +171,7 @@ def _query_simple_aave_history_test(
         AaveDepositWithdrawalEvent(
             event_type='deposit',
             asset=A_DAI.resolve_to_crypto_asset(),
-            atoken=A_ADAI_V1,
+            atoken=A_ADAI_V1.resolve_to_evm_token(),
             value=Balance(
                 amount=FVal('102.926986169186236436'),
                 usd_value=FVal('104.367963975554843746104'),
@@ -279,7 +279,7 @@ def _query_simple_aave_history_test(
         ), AaveDepositWithdrawalEvent(
             event_type='deposit',
             asset=A_DAI.resolve_to_crypto_asset(),
-            atoken=A_ADAI_V1,
+            atoken=A_ADAI_V1.resolve_to_evm_token(),
             value=Balance(
                 amount=FVal('168.84093462143338681'),
                 usd_value=FVal('171.03586677151202083853'),

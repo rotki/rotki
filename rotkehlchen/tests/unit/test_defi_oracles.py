@@ -68,7 +68,7 @@ def test_uniswap_no_decimals(inquirer_defi):
     """Test that if a token has no information about the number of decimals a proper error
     is raised"""
     asset_resolver = AssetResolver()
-    original_getter = asset_resolver.get_asset_data  # TODO: Yabir, please fix this
+    original_getter = asset_resolver.resolve_asset  # TODO: Yabir, please fix this
 
     def fake_weth_token():
         """Make sure that the weth token has no decimals fields and any other token
@@ -95,7 +95,7 @@ def test_uniswap_no_decimals(inquirer_defi):
                     protocol=resolved_weth.protocol,
                 )
                 return fake_weth
-            return original_getter(asset_identifier, form_with_incomplete_data)
+            return original_getter(asset_identifier)
         return patch.object(asset_resolver, 'get_asset_data', wraps=mocked_asset_getter)
 
     with fake_weth_token():

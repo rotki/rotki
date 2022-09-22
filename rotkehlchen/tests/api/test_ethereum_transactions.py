@@ -18,7 +18,7 @@ from rotkehlchen.chain.ethereum.constants import (
 )
 from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt
-from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_MKR, A_USDT
+from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_MKR, A_USDT, A_WETH
 from rotkehlchen.constants.limits import FREE_ETH_TX_LIMIT
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
@@ -1136,8 +1136,8 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
     tx3 = make_ethereum_transaction(tx_hash=b'3')
     event1 = make_ethereum_event(tx_hash=b'1', index=1, asset=A_ETH)
     event2 = make_ethereum_event(tx_hash=b'1', index=2, asset=A_ETH, counterparty='EXAMPLE_PROTOCOL')  # noqa: E501
-    event3 = make_ethereum_event(tx_hash=b'1', index=3, asset=A_BTC, counterparty='EXAMPLE_PROTOCOL')  # noqa: E501
-    event4 = make_ethereum_event(tx_hash=b'2', index=4, asset=A_BTC)
+    event3 = make_ethereum_event(tx_hash=b'1', index=3, asset=A_WETH, counterparty='EXAMPLE_PROTOCOL')  # noqa: E501
+    event4 = make_ethereum_event(tx_hash=b'2', index=4, asset=A_WETH)
     dbethtx = DBEthTx(db)
     dbevents = DBHistoryEvents(db)
     with db.user_write() as cursor:
@@ -1151,7 +1151,7 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
             'ethereumtransactionsresource',
         ),
         json={
-            'asset': A_BTC.serialize(),
+            'asset': A_WETH.serialize(),
             'protocols': [],
         },
     )
@@ -1166,7 +1166,7 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
             'ethereumtransactionsresource',
         ),
         json={
-            'asset': A_BTC.serialize(),
+            'asset': A_WETH.serialize(),
             'address': ethereum_accounts[0],
         },
     )
@@ -1190,7 +1190,7 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
             rotkehlchen_api_server,
             'ethereumtransactionsresource',
         ),
-        json={'asset': A_BTC.serialize()},
+        json={'asset': A_WETH.serialize()},
     )
     result = assert_proper_response_with_result(response)
     expected = generate_tx_entries_response([(tx1, [event3]), (tx2, [event4])])
@@ -1213,7 +1213,7 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
             'ethereumtransactionsresource',
         ),
         json={
-            'asset': A_BTC.serialize(),
+            'asset': A_WETH.serialize(),
             'protocols': ['EXAMPLE_PROTOCOL'],
         },
     )

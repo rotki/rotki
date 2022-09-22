@@ -480,7 +480,7 @@ def test_deleting_user_tokens(rotkehlchen_api_server):
             rotkehlchen_api_server,
             'ethereumassetsresource',
         ),
-        json={'address': A_MKR.evm_address, 'chain': str(ChainID.ETHEREUM)},
+        json={'address': A_MKR.resolve_to_evm_token().evm_address, 'chain': str(ChainID.ETHEREUM)},
     )
     assert_proper_response(response)
     # Check that with the MKR deletion `swapped_for` was set to null

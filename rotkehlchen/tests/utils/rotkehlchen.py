@@ -121,7 +121,7 @@ def setup_balances(
     else:
         # Default test values
         if len(ethereum_accounts) != 0:
-            token_balances = {A_RDN: ['0', '4000000']}
+            token_balances = {A_RDN.resolve_to_evm_token(): ['0', '4000000']}
         else:
             token_balances = {}
     if btc_balances is not None:

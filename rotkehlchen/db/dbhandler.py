@@ -1310,6 +1310,8 @@ class DBHandler:
                 last_queried_ts = deserialize_timestamp(value)
             else:  # should be ACCOUNTS_DETAILS_TOKENS
                 try:
+                    # This method is used directly when querying the balances and it is easier
+                    # to resolve here the token
                     token = EvmToken(value)
                 except (DeserializationError, UnknownAsset):
                     token = None
