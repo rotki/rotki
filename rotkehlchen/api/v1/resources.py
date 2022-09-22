@@ -2415,6 +2415,13 @@ class NFTSBalanceResource(BaseMethodView):
         return self.rest_api.get_nfts_balances(async_query=async_query, ignore_cache=ignore_cache)
 
 
+class NFTSPricesResource(BaseMethodView):
+
+    @require_loggedin_user()
+    def get(self) -> Response:
+        return self.rest_api.get_nfts_with_price()
+
+
 class StakingResource(BaseMethodView):
 
     def make_get_schema(self) -> StakingQuerySchema:
