@@ -1,4 +1,4 @@
-from rotkehlchen.assets.asset import EvmToken, UnderlyingToken
+from rotkehlchen.assets.asset import Asset, EvmToken, UnderlyingToken
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_MKR
 from rotkehlchen.tests.utils.factories import make_ethereum_address
@@ -12,14 +12,15 @@ user_token_address1 = make_ethereum_address()
 user_token_address2 = make_ethereum_address()
 INITIAL_TOKENS = [
     EvmToken.initialize(
-        address=user_token_address1,
+        evm_address=user_token_address1,
         chain=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
         decimals=4,
         name='Custom 1',
         symbol='CST1',
         started=Timestamp(0),
-        swapped_for=EvmToken(A_MKR.identifier, direct_field_initialization=True),
+        # Very ugly (swapped_for is CryptoAsset) but this constant is used for parametrizing tests.
+        swapped_for=Asset(A_MKR.identifier),  # type: ignore
         coingecko='internet-computer',
         cryptocompare='ICP',
         protocol='uniswap',
@@ -30,7 +31,7 @@ INITIAL_TOKENS = [
         ],
     ),
     EvmToken.initialize(
-        address=user_token_address2,
+        evm_address=user_token_address2,
         chain=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
         decimals=18,
@@ -49,7 +50,7 @@ INITIAL_EXPECTED_TOKENS = [INITIAL_TOKENS[0]] + [
 underlying_address4 = make_ethereum_address()
 user_token_address3 = make_ethereum_address()
 USER_TOKEN3 = EvmToken.initialize(
-    address=user_token_address3,
+    evm_address=user_token_address3,
     chain=ChainID.ETHEREUM,
     token_kind=EvmTokenKind.ERC20,
     decimals=15,

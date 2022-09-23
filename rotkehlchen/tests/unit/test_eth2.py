@@ -760,6 +760,7 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
                 end_amount=FVal('32.71013'),
                 missed_attestations=1,
             )]
+            # TODO: doesn't seem to be related to the refactoring. Need to check.
             assert stats[:len(expected_stats)] == expected_stats
             assert sum_pnl >= sum(x.pnl for x in expected_stats)
             assert sum_usd_value >= sum(x.pnl * ((x.start_usd_price + x.end_usd_price) / 2) for x in expected_stats)  # noqa: E501

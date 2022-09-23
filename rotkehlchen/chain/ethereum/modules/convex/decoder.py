@@ -42,7 +42,7 @@ class ConvexDecoder(DecoderInterface):
         interacted_address = hex_or_bytes_to_address(tx_log.topics[1])
 
         for event in decoded_events:
-            amount = asset_normalized_value(amount_raw, event.asset)
+            amount = asset_normalized_value(amount_raw, event.asset.resolve_to_crypto_asset())
             crypto_asset = event.asset.resolve_to_crypto_asset()
             if (
                 event.location_label == transaction.from_address == interacted_address is False or

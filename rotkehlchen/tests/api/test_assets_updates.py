@@ -12,7 +12,7 @@ from rotkehlchen.assets.asset import Asset, CryptoAsset, EvmToken
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset
-from rotkehlchen.globaldb.handler import GLOBAL_DB_VERSION
+from rotkehlchen.globaldb.handler import GLOBAL_DB_VERSION, GlobalDBHandler
 from rotkehlchen.globaldb.updates import ASSETS_VERSION_KEY
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -24,6 +24,12 @@ from rotkehlchen.tests.utils.api import (
 from rotkehlchen.tests.utils.constants import A_GLM
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind
+
+
+def count_total_assets() -> int:
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        cursor.execute('SELECT COUNT(*) FROM assets')
+        return cursor.fetchone()[0]
 
 
 def mock_asset_updates(original_requests_get, latest: int, updates: Dict[str, Any], sql_actions: Dict[str, str]):  # noqa: E501
@@ -204,7 +210,7 @@ INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0x1B175474E890
         asset_id='eip155:1/erc20:0x1B175474E89094C44Da98b954EedeAC495271d0F',
         asset_type=AssetType.EVM_TOKEN,
         data=EvmToken.initialize(
-            address=ChecksumEvmAddress('0x1B175474E89094C44Da98b954EedeAC495271d0F'),
+            evm_address=ChecksumEvmAddress('0x1B175474E89094C44Da98b954EedeAC495271d0F'),
             chain=ChainID.ETHEREUM,
             token_kind=EvmTokenKind.ERC20,
             decimals=12,
@@ -230,7 +236,7 @@ INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0x1B175474E890
         sql_actions={"999999991": update_1},
     )
     globaldb.add_setting_value(ASSETS_VERSION_KEY, 999999990)
-    start_assets_num = globaldb.count_total_assets()
+    start_assets_num = count_total_assets()
     with update_patch:
         response = requests.get(
             api_url_for(
@@ -277,7 +283,7 @@ INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0x1B175474E890
 
         # Make sure that nothing was committed
         assert globaldb.get_setting_value(ASSETS_VERSION_KEY, None) == 999999990
-        assert globaldb.count_total_assets() == start_assets_num
+        assert count_total_assets() == start_assets_num
         with pytest.raises(UnknownAsset):
             Asset('121-ada-FADS-as').resolve_to_asset_with_name_and_type()
         errors = rotki.msg_aggregator.consume_errors()
@@ -500,7 +506,7 @@ INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0xa74476443119
         sql_actions={"999999991": update_1},
     )
     globaldb.add_setting_value(ASSETS_VERSION_KEY, 999999990)
-    start_assets_num = globaldb.count_total_assets()
+    start_assets_num = count_total_assets()
     with update_patch:
         response = requests.get(
             api_url_for(
@@ -547,7 +553,7 @@ INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0xa74476443119
 
         # Make sure that nothing was committed
         assert globaldb.get_setting_value(ASSETS_VERSION_KEY, None) == 999999990
-        assert globaldb.count_total_assets() == start_assets_num
+        assert count_total_assets() == start_assets_num
         with pytest.raises(UnknownAsset):
             Asset('121-ada-FADS-as').resolve_to_asset_with_name_and_type()
         errors = rotki.msg_aggregator.consume_errors()
@@ -618,6 +624,9 @@ INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0xa74476443119
         # inability to do anything with the missing swapped_for
         assert result is True
         assert globaldb.get_setting_value(ASSETS_VERSION_KEY, None) == 999999991
+        # TODO: Investigate. Right now this test breaks since swapped_for of the freshly added
+        # token is not present in the db. Should it fail in this case? I (Alexey) would say yes
+        # since we have foreign keys, but why wasn't it failing in the past?
         gnt = EvmToken('eip155:1/erc20:0xa74476443119A942dE498590Fe1f2454d7D4aC0d')
         assert gnt.identifier == strethaddress_to_identifier('0xa74476443119A942dE498590Fe1f2454d7D4aC0d')  # noqa: E501
         assert gnt.name == 'Golem'
@@ -674,7 +683,7 @@ INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protoco
     )
     cursor = globaldb.conn.cursor()
     cursor.execute(f'DELETE FROM settings WHERE name="{ASSETS_VERSION_KEY}"')
-    start_assets_num = globaldb.count_total_assets()
+    start_assets_num = count_total_assets()
     with update_patch:
         response = requests.get(
             api_url_for(
@@ -701,7 +710,7 @@ INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protoco
 
         # Make sure that nothing was committed
         assert globaldb.get_setting_value(ASSETS_VERSION_KEY, 0) == 0
-        assert globaldb.count_total_assets() == start_assets_num
+        assert count_total_assets() == start_assets_num
         with pytest.raises(UnknownAsset):
             Asset('121-ada-FADS-as').resolve_to_asset_with_name_and_type()
         errors = rotki.msg_aggregator.consume_errors()
@@ -763,6 +772,9 @@ INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protoco
         # inability to do anything with the missing swapped_for
         assert result is True
         assert globaldb.get_setting_value(ASSETS_VERSION_KEY, 0) == 1
+        # TODO: Investigate. Right now this test breaks since swapped_for of the freshly added
+        # token is not present in the db. Should it fail in this case? I (Alexey) would say yes
+        # since we have foreign keys, but why wasn't it failing in the past?
         gnt = EvmToken('eip155:1/erc20:0xa74476443119A942dE498590Fe1f2454d7D4aC0d')
         assert gnt.identifier == strethaddress_to_identifier('0xa74476443119A942dE498590Fe1f2454d7D4aC0d')  # noqa: E501
         assert gnt.name == 'Golem'

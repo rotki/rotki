@@ -30,8 +30,8 @@ from rotkehlchen.types import Price, Timestamp
 def test_cryptocompare_query_pricehistorical(cryptocompare):
     """Test that cryptocompare price historical query works fine"""
     price = cryptocompare.query_endpoint_pricehistorical(
-        from_asset=A_SNGLS,
-        to_asset=A_BTC,
+        from_asset=A_SNGLS.resolve_to_asset_with_oracles(),
+        to_asset=A_BTC.resolve_to_asset_with_oracles(),
         timestamp=1475413990,
     )
     # Just test a price is returned
@@ -106,8 +106,8 @@ def test_cryptocompare_histohour_data_going_forward(data_dir, database, freezer)
     freezer.move_to(datetime.fromtimestamp(now_ts))
     cc = Cryptocompare(data_directory=data_dir, database=database)
     cc.query_and_store_historical_data(
-        from_asset=A_BTC,
-        to_asset=A_USD,
+        from_asset=A_BTC.resolve_to_asset_with_oracles(),
+        to_asset=A_USD.resolve_to_asset_with_oracles(),
         timestamp=now_ts - 3600 * 2 - 55,
     )
 
@@ -123,8 +123,8 @@ def test_cryptocompare_histohour_data_going_forward(data_dir, database, freezer)
     now_ts = now_ts + 3600 * 2000 * 2 + 4700
     freezer.move_to(datetime.fromtimestamp(now_ts))
     cc.query_and_store_historical_data(
-        from_asset=A_BTC,
-        to_asset=A_USD,
+        from_asset=A_BTC.resolve_to_asset_with_oracles(),
+        to_asset=A_USD.resolve_to_asset_with_oracles(),
         timestamp=now_ts - 3600 * 4 - 55,
     )
     result = get_globaldb_cache_entries(from_asset=A_BTC, to_asset=A_USD)
@@ -169,8 +169,8 @@ def test_cryptocompare_histohour_data_going_backward(data_dir, database, freezer
     freezer.move_to(datetime.fromtimestamp(now_ts))
     cc = Cryptocompare(data_directory=data_dir, database=database)
     cc.query_and_store_historical_data(
-        from_asset=A_BTC,
-        to_asset=A_USD,
+        from_asset=A_BTC.resolve_to_asset_with_oracles(),
+        to_asset=A_USD.resolve_to_asset_with_oracles(),
         timestamp=now_ts - 3600 * 2 - 55,
     )
     result = get_globaldb_cache_entries(from_asset=A_BTC, to_asset=A_USD)

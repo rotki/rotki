@@ -393,7 +393,7 @@ class RestAPI():
         asset_rates = {}
         for asset in currencies:
             if asset.is_fiat():
-                fiat_currencies.append(FiatAsset(asset.identifier))
+                fiat_currencies.append(asset.resolve_to_fiat_asset())
                 continue
 
             usd_price = Inquirer().find_usd_price(asset)

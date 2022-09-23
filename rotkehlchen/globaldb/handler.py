@@ -408,7 +408,7 @@ class GlobalDBHandler():
                 'WHERE coingecko IS NOT NULL AND coingecko != "" and asset_type !=?',
                 (AssetType.FIAT.serialize_for_db()),
             )
-            return [row[0] for row in cursor.fetchall()]
+            return [row[0] for row in cursor]
 
     @staticmethod
     def count_total_assets() -> int:
@@ -1807,7 +1807,7 @@ class GlobalDBHandler():
                     parent_token_identifier=identifier,
                 )
                 return EvmToken.initialize(
-                    address=asset_data[2],
+                    evm_address=asset_data[2],
                     chain=ChainID(asset_data[12]),
                     token_kind=EvmTokenKind.deserialize_from_db(asset_data[13]),
                     decimals=asset_data[3],

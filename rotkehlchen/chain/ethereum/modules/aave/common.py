@@ -91,7 +91,7 @@ def atoken_to_asset(atoken: EvmToken) -> Optional[CryptoAsset]:
         log.error(f'Could not find asset from {atoken} since multiple or no results were returned')
         return None
 
-    return CryptoAsset(ethaddress_to_identifier(result[0][0]))
+    return EvmToken(ethaddress_to_identifier(result[0][0]))
 
 
 def asset_to_atoken(asset: CryptoAsset, version: int) -> Optional[EvmToken]:

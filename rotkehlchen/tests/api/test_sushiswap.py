@@ -123,35 +123,6 @@ def test_get_balances(
 
 # Get events history tests
 TEST_EVENTS_ADDRESS_1 = '0xE11fc0B43ab98Eb91e9836129d1ee7c3Bc95df50'
-EXPECTED_EVENTS_BALANCES_1 = [
-    SushiswapPoolEventsBalance(
-        address=string_to_evm_address(TEST_EVENTS_ADDRESS_1),
-        pool_address=string_to_evm_address("0xC3f279090a47e80990Fe3a9c30d24Cb117EF91a8"),
-        token0=EvmToken('eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', direct_field_initialization=True),  # noqa: E501
-        token1=EvmToken('eip155:1/erc20:0xdBdb4d16EdA451D0503b854CF79D55697F90c8DF', direct_field_initialization=True),  # noqa: E501
-        events=[
-            SushiswapPoolEvent(
-                tx_hash=deserialize_evm_tx_hash(
-                    '0xb226ddb8cbb286a7a998a35263ad258110eed5f923488f03a8d890572cd4608e',
-                ),
-                log_index=137,
-                address=string_to_evm_address(TEST_EVENTS_ADDRESS_1),
-                timestamp=Timestamp(1627401170),
-                event_type=EventType.MINT_SUSHISWAP,
-                pool_address=string_to_evm_address("0xC3f279090a47e80990Fe3a9c30d24Cb117EF91a8"),  # noqa: E501
-                token0=EvmToken('eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', direct_field_initialization=True),  # noqa: E501
-                token1=EvmToken('eip155:1/erc20:0xdBdb4d16EdA451D0503b854CF79D55697F90c8DF', direct_field_initialization=True),  # noqa: E501
-                amount0=AssetAmount(FVal('0.192426688761441618')),
-                amount1=AssetAmount(FVal('1.498665931466140813')),
-                usd_price=Price(FVal('874.684787927721190125529172850727')),
-                lp_amount=AssetAmount(FVal('0.023925092583833892')),
-            ),
-        ],
-        profit_loss0=AssetAmount(FVal('-0.192426688761441618')),
-        profit_loss1=AssetAmount(FVal('-1.498665931466140813')),
-        usd_profit_loss=Price(FVal('-874.6847879277211901255291729')),
-    ),
-]
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_EVENTS_ADDRESS_1]])
@@ -162,6 +133,35 @@ def test_get_events_history_filtering_by_timestamp(
         ethereum_accounts,  # pylint: disable=unused-argument
 ):
     """Test the events balances from 1627401169 to 1627401170 (both included)."""
+    expected_events_balances_1 = [
+        SushiswapPoolEventsBalance(
+            address=string_to_evm_address(TEST_EVENTS_ADDRESS_1),
+            pool_address=string_to_evm_address("0xC3f279090a47e80990Fe3a9c30d24Cb117EF91a8"),
+            token0=EvmToken('eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
+            token1=EvmToken('eip155:1/erc20:0xdBdb4d16EdA451D0503b854CF79D55697F90c8DF'),
+            events=[
+                SushiswapPoolEvent(
+                    tx_hash=deserialize_evm_tx_hash(
+                        '0xb226ddb8cbb286a7a998a35263ad258110eed5f923488f03a8d890572cd4608e',
+                    ),
+                    log_index=137,
+                    address=string_to_evm_address(TEST_EVENTS_ADDRESS_1),
+                    timestamp=Timestamp(1627401170),
+                    event_type=EventType.MINT_SUSHISWAP,
+                    pool_address=string_to_evm_address("0xC3f279090a47e80990Fe3a9c30d24Cb117EF91a8"),  # noqa: E501
+                    token0=EvmToken('eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
+                    token1=EvmToken('eip155:1/erc20:0xdBdb4d16EdA451D0503b854CF79D55697F90c8DF'),
+                    amount0=AssetAmount(FVal('0.192426688761441618')),
+                    amount1=AssetAmount(FVal('1.498665931466140813')),
+                    usd_price=Price(FVal('874.684787927721190125529172850727')),
+                    lp_amount=AssetAmount(FVal('0.023925092583833892')),
+                ),
+            ],
+            profit_loss0=AssetAmount(FVal('-0.192426688761441618')),
+            profit_loss1=AssetAmount(FVal('-1.498665931466140813')),
+            usd_profit_loss=Price(FVal('-874.6847879277211901255291729')),
+        ),
+    ]
     # Call time range
     from_timestamp = 1627401169
     to_timestamp = 1627401170
@@ -209,7 +209,7 @@ def test_get_events_history_filtering_by_timestamp(
         events_balances = result[TEST_EVENTS_ADDRESS_1]
 
         assert len(events_balances) == 1
-        assert EXPECTED_EVENTS_BALANCES_1[0].serialize() == events_balances[0]
+        assert expected_events_balances_1[0].serialize() == events_balances[0]
 
         # Make sure they end up in the DB
         events = rotki.data.db.get_amm_events(cursor, [EventType.MINT_SUSHISWAP, EventType.BURN_SUSHISWAP])  # noqa: E501

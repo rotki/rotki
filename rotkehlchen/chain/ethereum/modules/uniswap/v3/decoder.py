@@ -68,7 +68,10 @@ class Uniswapv3Decoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                     event.event_type == HistoryEventType.SPEND and
                     (event.location_label == buyer or tx_log.topics[1] == tx_log.topics[2]) and
                     (
-                        event.balance.amount == (spent_amount := asset_normalized_value(amount=amount_sent, asset=event.asset)) or  # noqa: E501
+                        event.balance.amount == (spent_amount := asset_normalized_value(
+                            amount=amount_sent,
+                            asset=event.asset.resolve_to_crypto_asset(),
+                        )) or
                         event.asset == A_ETH and spent_amount + received_eth == event.balance.amount  # noqa: E501
                     )
                 ):
@@ -81,7 +84,10 @@ class Uniswapv3Decoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                     (
                         (event.event_type in (HistoryEventType.RECEIVE, HistoryEventType.TRANSFER)) and  # noqa: E501
                         (event.location_label == buyer or event.asset == A_ETH) and
-                        event.balance.amount == asset_normalized_value(amount=amount_received, asset=event.asset)  # noqa: E501
+                        event.balance.amount == asset_normalized_value(
+                            amount=amount_received,
+                            asset=event.asset.resolve_to_crypto_asset(),
+                        )
                     )
                 ):
                     # In this branch of the condition we also add the transfer to correctly decode
@@ -95,7 +101,10 @@ class Uniswapv3Decoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                     in_event = event
                 elif (
                     event.event_type == HistoryEventType.RECEIVE and
-                    event.balance.amount != asset_normalized_value(amount_received, event.asset)
+                    event.balance.amount != asset_normalized_value(
+                        amount=amount_received,
+                        asset=event.asset.resolve_to_crypto_asset(),
+                    )
                 ):
                     # Those are assets returned due to a change in the swap price
                     event.event_type = HistoryEventType.TRANSFER

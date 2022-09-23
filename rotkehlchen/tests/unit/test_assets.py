@@ -3,16 +3,15 @@ import warnings as test_warnings
 import pytest
 from eth_utils import is_checksum_address
 
-from rotkehlchen.assets.asset import Asset, CryptoAsset, EvmToken
+from rotkehlchen.assets.asset import Asset, CryptoAsset, EvmToken, FiatAsset
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.spam_assets import KNOWN_ETH_SPAM_TOKENS
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.assets.utils import get_or_create_evm_token, symbol_to_ethereum_token
 from rotkehlchen.constants.assets import A_DAI, A_USDT
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
-from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import InputError
-from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.coingecko import DELISTED_ASSETS, Coingecko
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.types import ChainID
@@ -21,24 +20,19 @@ from rotkehlchen.types import ChainID
 def test_unknown_asset():
     """Test than an unknown asset will throw"""
     with pytest.raises(UnknownAsset):
-        Asset('jsakdjsladjsakdj')
+        FiatAsset('jsakdjsladjsakdj')
 
 
 def test_asset_nft():
-    a = CryptoAsset('_nft_foo')
+    a = Asset('_nft_foo')
     assert a.identifier == '_nft_foo'
-    assert a.symbol is not None
-    assert a.name == 'nft with id _nft_foo'
-    assert a.started is not None
-    assert a.forked is None
-    assert a.swapped_for is None
-    assert a.cryptocompare is not None
-    assert a.coingecko is None
+    should_not_exist = {'name', 'symbol', 'started', 'forked', 'swapped_for', 'cryptocompare', 'coingecko'}  # noqa: E501
+    assert 0 == len(should_not_exist & a.__dict__.keys())
 
 
 def test_repr():
     btc_repr = repr(CryptoAsset('BTC'))
-    assert btc_repr == '<CryptoAsset identifier:BTC name:Bitcoin symbol:BTC>'
+    assert btc_repr == '<Asset identifier:BTC name:Bitcoin symbol:BTC>'
 
 
 def test_asset_hashes_properly():
@@ -76,7 +70,7 @@ def test_ethereum_tokens():
     assert rdn_asset.decimals == 18
     assert rdn_asset.is_evm_token()
 
-    with pytest.raises(DeserializationError):
+    with pytest.raises(WrongAssetType):
         EvmToken('BTC')
 
 
@@ -241,8 +235,8 @@ def test_asset_identifiers_are_unique_all_lowercased():
 
 def test_case_does_not_matter_for_asset_constructor():
     """Test that whatever case we give to asset constructor result is the same"""
-    a1 = Asset('bTc')
-    a2 = Asset('BTC')
+    a1 = CryptoAsset('bTc')
+    a2 = CryptoAsset('BTC')
     assert a1 == a2
     assert a1.identifier == 'BTC'
     assert a2.identifier == 'BTC'
@@ -514,7 +508,7 @@ def test_coingecko_identifiers_are_reachable():
 def test_asset_with_unknown_type_does_not_crash(asset_resolver):  # pylint: disable=unused-argument
     """Test that finding an asset with an unknown type does not crash rotki"""
     with pytest.raises(UnknownAsset):
-        Asset('COMPRLASSET2')
+        CryptoAsset('COMPRLASSET2')
     # After the test runs we must reset the asset resolver so that it goes back to
     # the normal list of assets
     AssetResolver._AssetResolver__instance = None

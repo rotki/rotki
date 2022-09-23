@@ -245,15 +245,15 @@ class Opensea(ExternalServiceWithApiKey):
             last_sale = entry.get('last_sale')
             if last_sale:
                 if last_sale['payment_token']['symbol'] in ('ETH', 'WETH'):
-                    payment_token = A_ETH.resolve_to_evm_token()
+                    payment_asset = A_ETH.resolve_to_crypto_asset()
                 else:
-                    payment_token = Asset(
+                    payment_asset = Asset(
                         ethaddress_to_identifier(
                             to_checksum_address(last_sale['payment_token']['address']),
                         ),
                     ).resolve_to_evm_token()
 
-                amount = asset_normalized_value(int(last_sale['total_price']), payment_token)
+                amount = asset_normalized_value(int(last_sale['total_price']), payment_asset)
                 eth_price = FVal(last_sale['payment_token']['eth_price'])
                 last_price_in_eth = amount * eth_price
             else:

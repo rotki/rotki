@@ -161,16 +161,16 @@ class TaskManager():
             try:
                 asset = asset.resolve_to_asset_with_oracles()
             except UnknownAsset:
-                continue  # cryptocompare does not work with non-symbol assets
+                continue  # cryptocompare does not work with non-oracles assets
 
             if asset.is_fiat() and main_currency.is_fiat():
                 continue  # ignore fiat to fiat
 
-            if getattr(asset, 'cryptocompare', None) == '' or getattr(main_currency, 'cryptocompare', None) == '':  # noqa: E501
+            if asset.cryptocompare == '' or main_currency.cryptocompare == '':
                 continue  # not supported in cryptocompare
 
-            if getattr(asset, 'cryptocompare', None) is None or getattr(main_currency, 'cryptocompare', None) is None:  # noqa: E501
-                continue  # asset.symbol may be None for auto generated underlying tokens
+            if asset.cryptocompare is None and asset.symbol is None:
+                continue  # type: ignore  # asset.symbol may be None for auto generated underlying tokens # noqa: E501
 
             data_range = GlobalDBHandler().get_historical_price_range(
                 from_asset=asset,

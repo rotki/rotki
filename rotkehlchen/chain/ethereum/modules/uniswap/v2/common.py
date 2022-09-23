@@ -82,7 +82,10 @@ def decode_uniswap_v2_like_swap(
         if (
             event.event_type == HistoryEventType.SPEND and
             (
-                event.balance.amount == (spend_eth := asset_normalized_value(amount_in, event.asset)) or  # noqa: E501
+                event.balance.amount == (spend_eth := asset_normalized_value(
+                    amount=amount_in,
+                    asset=event.asset.resolve_to_crypto_asset(),
+                )) or
                 event.asset == A_ETH and spend_eth + received_eth == event.balance.amount
             )
         ):
@@ -94,7 +97,10 @@ def decode_uniswap_v2_like_swap(
         elif (
             (maybe_buyer == transaction.from_address or event.asset == A_ETH) and
             event.event_type in (HistoryEventType.RECEIVE, HistoryEventType.TRANSFER) and
-            event.balance.amount == asset_normalized_value(amount_out, event.asset)
+            event.balance.amount == asset_normalized_value(
+                amount=amount_out,
+                asset=event.asset.resolve_to_crypto_asset(),
+            )
         ):
             event.event_type = HistoryEventType.TRADE
             event.event_subtype = HistoryEventSubType.RECEIVE
@@ -103,7 +109,10 @@ def decode_uniswap_v2_like_swap(
             in_event = event
         elif (
             event.event_type == HistoryEventType.RECEIVE and
-            event.balance.amount != asset_normalized_value(amount_out, event.asset) and
+            event.balance.amount != asset_normalized_value(
+                amount=amount_out,
+                asset=event.asset.resolve_to_crypto_asset(),
+            ) and
             event.asset == A_ETH and transaction.from_address == event.location_label
         ):
             # Those are assets returned due to a change in the swap price

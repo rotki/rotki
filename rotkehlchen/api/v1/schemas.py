@@ -1670,7 +1670,7 @@ class OptionalEthereumAddressSchema(Schema):
 
 
 class RequiredEthereumAddressSchema(Schema):
-    address = EthereumAddressField(required=True)
+    evm_address = EthereumAddressField(required=True)
     chain = SerializableEnumField(enum_class=ChainID, required=True)
 
 
@@ -1915,18 +1915,18 @@ class EvmTokenSchema(RequiredEthereumAddressSchema):
         if given_underlying_tokens is not None:
             if given_underlying_tokens == []:
                 raise ValidationError(
-                    f'Gave an empty list for underlying tokens of {data["address"]}. '
+                    f'Gave an empty list for underlying tokens of {data["evm_address"]}. '
                     f'If you need to specify no underlying tokens give a null value',
                 )
             weight_sum = sum(x['weight'] for x in given_underlying_tokens)
             if weight_sum > ONE:
                 raise ValidationError(
-                    f'The sum of underlying token weights for {data["address"]} '
+                    f'The sum of underlying token weights for {data["evm_address"]} '
                     f'is {weight_sum * 100} and exceeds 100%',
                 )
             if weight_sum < ONE:
                 raise ValidationError(
-                    f'The sum of underlying token weights for {data["address"]} '
+                    f'The sum of underlying token weights for {data["evm_address"]} '
                     f'is {weight_sum * 100} and does not add up to 100%',
                 )
 

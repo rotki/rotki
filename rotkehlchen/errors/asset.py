@@ -18,8 +18,8 @@ class WrongAssetType(Exception):
         self.expected_type = expected_type
         self.real_type = real_type
         super().__init__(
-            f'Expected asset with identifier to be {expected_type.__name__} but in fact '
-            f'it was {real_type.__name__}',
+            f'Expected asset with identifier {identifier} to be {expected_type.__name__} but in '
+            f'fact it was {real_type.__name__}',
         )
 
 

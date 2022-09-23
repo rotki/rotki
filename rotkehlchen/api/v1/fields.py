@@ -14,7 +14,7 @@ from rotkehlchen.assets.asset import Asset, AssetWithOracles, CryptoAsset, EvmTo
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.utils import is_valid_derivation_path
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.misc import NFT_DIRECTIVE, ZERO
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import XPUBError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -393,11 +393,14 @@ class AssetField(fields.Field):
         if isinstance(value, str) is False:
             raise ValidationError(f'Tried to initialize an asset out of a non-string identifier {value}')  # noqa: E501
         # Since the identifier could be url encoded for evm tokens in urls we need to unquote it
-        real_value = urllib.parse.unquote(value)
+        real_value: str = urllib.parse.unquote(value)
         try:
             if self.expected_type == Asset:
-                # Just to check identifier's existence
-                asset = Asset(identifier=real_value).resolve_to_asset_with_name_and_type()
+                if real_value.startswith(NFT_DIRECTIVE):
+                    asset = Asset(identifier=real_value)
+                else:
+                    # Just to check identifier's existence
+                    asset = Asset(identifier=real_value).resolve_to_asset_with_name_and_type()
             elif self.expected_type == AssetWithOracles:
                 asset = Asset(identifier=real_value).resolve_to_asset_with_oracles()
             elif self.expected_type == CryptoAsset:

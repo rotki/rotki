@@ -27,7 +27,7 @@ def test_asset_data(session_coingecko):
         description='',
         image_url='https://assets.coingecko.com/coins/images/1/small/bitcoin.png?1547033579',
     )
-    data = session_coingecko.asset_data(A_BTC)
+    data = session_coingecko.asset_data(A_BTC.resolve_to_asset_with_oracles())
     assert_coin_data_same(data, expected_data)
 
     expected_data = CoingeckoAssetData(
@@ -37,7 +37,7 @@ def test_asset_data(session_coingecko):
         description='Management token for the yearn.finance ecosystem',
         image_url='https://assets.coingecko.com/coins/images/11849/small/yfi-192x192.png?1598325330',  # noqa: E501
     )
-    data = session_coingecko.asset_data(A_YFI)
+    data = session_coingecko.asset_data(A_YFI.resolve_to_asset_with_oracles())
     assert_coin_data_same(data, expected_data, compare_description=False)
 
     with pytest.raises(UnsupportedAsset):

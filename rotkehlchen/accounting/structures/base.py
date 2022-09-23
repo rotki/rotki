@@ -1,7 +1,7 @@
 import json
 import logging
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, ClassVar, Dict, Iterator, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.accounting.structures.types import (
@@ -82,14 +82,13 @@ class HistoryBaseEntry(AccountingEventMixin):
     Intended to be the base unit of any type of accounting. All trades, deposits,
     swaps etc. are going to be made up of multiple HistoryBaseEntry
     """
-    asset_class: ClassVar = Asset
     event_identifier: bytes  # identifier shared between related events
     sequence_index: int  # When this transaction was executed relative to other related events
     timestamp: TimestampMS
     location: Location
     event_type: HistoryEventType
     event_subtype: HistoryEventSubType
-    asset: asset_class
+    asset: Asset
     balance: Balance
     # location_label is a string field that allows to provide more information about the location.
     # When we use this structure in blockchains can be used to specify addresses for example.
@@ -148,9 +147,7 @@ class HistoryBaseEntry(AccountingEventMixin):
                 timestamp=TimestampMS(entry[3]),
                 location=Location.deserialize_from_db(entry[4]),
                 location_label=entry[5],
-                # Setting incomplete data to true since we save all history events,
-                # regardless of the type of token that it may involve
-                asset=cls.asset_class(entry[6], direct_field_initialization=True).resolve_to_asset_with_symbol(),  # noqa: E501
+                asset=Asset(entry[6]),
                 balance=Balance(
                     amount=FVal(entry[7]),
                     usd_value=FVal(entry[8]),
@@ -224,7 +221,7 @@ class HistoryBaseEntry(AccountingEventMixin):
             notes=deserialize_optional(data['notes'], str),
             identifier=deserialize_optional(data['identifier'], int),
             counterparty=deserialize_optional(data['counterparty'], str),
-            asset=cls.asset_class(data['asset']),
+            asset=Asset(data['asset']),
             balance=Balance(
                 amount=deserialize_fval(
                     value=data['balance']['amount'],
@@ -293,7 +290,7 @@ class HistoryBaseEntry(AccountingEventMixin):
 
             # This omits every acquisition event of `ETH2` if `eth_staking_taxable_after_withdrawal_enabled`  # noqa: 501
             # setting is set to `True` until ETH2 is merged.
-            if self.asset == A_ETH2  and accounting.settings.eth_staking_taxable_after_withdrawal_enabled is True:  # noqa: 501
+            if self.asset == A_ETH2 and accounting.settings.eth_staking_taxable_after_withdrawal_enabled is True:  # noqa: 501
                 return 1
 
             # otherwise it's kraken staking
@@ -328,7 +325,7 @@ class StakingEvent:
         """
         return StakingEvent(
             event_type=event.event_subtype,
-            asset=event.asset,
+            asset=event.asset.resolve_to_asset_with_oracles(),
             balance=event.balance,
             timestamp=ts_ms_to_sec(event.timestamp),
             location=event.location,

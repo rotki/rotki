@@ -5,8 +5,6 @@ from rotkehlchen.chain.ethereum.interfaces.ammswap.types import ProtocolBalance
 from .utils import (
     EXP_KNOWN_ASSETS_1,
     EXP_KNOWN_ASSETS_2,
-    EXP_LIQUIDITY_POOL_1,
-    EXP_LIQUIDITY_POOL_2,
     EXP_UNKNOWN_ASSETS_1,
     EXP_UNKNOWN_ASSETS_2,
     LIQUIDITY_POSITION_1,
@@ -14,6 +12,8 @@ from .utils import (
     TEST_ADDRESS_1,
     TEST_ADDRESS_2,
     TEST_ADDRESS_3,
+    const_exp_liquidity_pool_1,
+    const_exp_liquidity_pool_2,
     store_call_args,
 )
 
@@ -29,7 +29,7 @@ def test_single_address_balance(mock_uniswap):
     protocol_balance = mock_uniswap._get_balances_graph(addresses=addresses)
 
     exp_protocol_balance = ProtocolBalance(
-        address_balances={TEST_ADDRESS_1: [EXP_LIQUIDITY_POOL_1]},
+        address_balances={TEST_ADDRESS_1: [const_exp_liquidity_pool_1()]},
         known_assets=EXP_KNOWN_ASSETS_1,
         unknown_assets=EXP_UNKNOWN_ASSETS_1,
     )
@@ -53,8 +53,8 @@ def test_multiple_addresses_balances(mock_uniswap):
 
     exp_protocol_balance = ProtocolBalance(
         address_balances={
-            TEST_ADDRESS_1: [EXP_LIQUIDITY_POOL_1],
-            TEST_ADDRESS_2: [EXP_LIQUIDITY_POOL_2],
+            TEST_ADDRESS_1: [const_exp_liquidity_pool_1()],
+            TEST_ADDRESS_2: [const_exp_liquidity_pool_2()],
         },
         known_assets=EXP_KNOWN_ASSETS_1.union(EXP_KNOWN_ASSETS_2),
         unknown_assets=EXP_UNKNOWN_ASSETS_1.union(EXP_UNKNOWN_ASSETS_2),

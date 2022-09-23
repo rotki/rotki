@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, List, NamedTuple, Optional
 from eth_utils import to_checksum_address
 from web3.types import BlockIdentifier
 
-from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.assets.asset import Asset, CryptoAsset, EvmToken
 from rotkehlchen.chain.ethereum.constants import ZERO_ADDRESS
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.contracts import EvmContract
@@ -21,7 +21,7 @@ from rotkehlchen.constants.ethereum import (
 )
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
-from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.defi import DefiPoolError
 from rotkehlchen.errors.price import PriceQueryUnsupportedAsset
 from rotkehlchen.fval import FVal
@@ -185,8 +185,8 @@ class UniswapOracle(CurrentPriceOracleInterface, CacheableMixIn):
 
     def get_price(
         self,
-        from_token: EvmToken,
-        to_token: EvmToken,
+        from_asset: CryptoAsset,
+        to_asset: CryptoAsset,
         block_identifier: BlockIdentifier,
     ) -> Price:
         """
@@ -197,15 +197,21 @@ class UniswapOracle(CurrentPriceOracleInterface, CacheableMixIn):
         - RemoteError
         """
         log.debug(
-            f'Searching price for {from_token} to {to_token} at '
+            f'Searching price for {from_asset} to {to_asset} at '
             f'{block_identifier!r} with {self.name}',
         )
 
         # Uniswap V2 and V3 use in their contracts WETH instead of ETH
-        if from_token == A_ETH:
-            from_token = A_WETH.resolve_to_evm_token()
-        if to_token == A_ETH:
-            to_token = A_WETH.resolve_to_evm_token()
+        if from_asset == A_ETH:
+            from_asset = A_WETH.resolve_to_crypto_asset()
+        if to_asset == A_ETH:
+            to_asset = A_WETH.resolve_to_crypto_asset()
+
+        try:
+            from_token = from_asset.resolve_to_evm_token()
+            to_token = to_asset.resolve_to_evm_token()
+        except WrongAssetType as e:
+            raise PriceQueryUnsupportedAsset(e.identifier) from e
 
         if from_token == to_token:
             return Price(ONE)
@@ -256,14 +262,16 @@ class UniswapOracle(CurrentPriceOracleInterface, CacheableMixIn):
             from_asset = A_USDC
 
         try:
-            to_asset = to_asset.resolve_to_evm_token()
-            from_asset = from_asset.resolve_to_evm_token()
+            to_asset = to_asset.resolve_to_crypto_asset()
+            from_asset = from_asset.resolve_to_crypto_asset()
         except UnknownAsset as e:
             raise PriceQueryUnsupportedAsset(e.asset_name) from e
+        except WrongAssetType as e:
+            raise PriceQueryUnsupportedAsset(e.identifier) from e
 
         return self.get_price(
-            from_token=from_asset,
-            to_token=to_asset,
+            from_asset=from_asset,
+            to_asset=to_asset,
             block_identifier='latest',
         )
 

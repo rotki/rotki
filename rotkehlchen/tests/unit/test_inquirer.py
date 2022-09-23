@@ -125,11 +125,17 @@ def test_fallback_to_cached_values_within_a_month(inquirer):  # pylint: disable=
 
     with patch('requests.get', side_effect=mock_api_remote_fail):
         # We fail to find a response but then go back 15 days and find the cached response
-        result = inquirer._query_fiat_pair(A_EUR, A_JPY)
+        result = inquirer._query_fiat_pair(
+            A_EUR.resolve_to_fiat_asset(),
+            A_JPY.resolve_to_fiat_asset(),
+        )
         assert result[0] == eurjpy_val
         # The cached response for EUR CNY is too old so we will fail here
         with pytest.raises(RemoteError):
-            result = inquirer._query_fiat_pair(A_EUR, A_CNY)
+            result = inquirer._query_fiat_pair(
+                A_EUR.resolve_to_fiat_asset(),
+                A_CNY.resolve_to_fiat_asset(),
+            )
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -288,7 +294,7 @@ def test_price_underlying_tokens(inquirer, globaldb):
     address = make_ethereum_address()
     identifier = ethaddress_to_identifier(address)
     token = EvmToken.initialize(
-        address=address,
+        evm_address=address,
         chain=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
         decimals=18,
@@ -317,7 +323,7 @@ def test_find_uniswap_v2_lp_token_price(inquirer, globaldb, ethereum_manager):
     identifier = ethaddress_to_identifier(address)
     inquirer.inject_ethereum(ethereum_manager)
     token = EvmToken.initialize(
-        address=address,
+        evm_address=address,
         chain=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
         decimals=18,
