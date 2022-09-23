@@ -2,9 +2,10 @@ import abc
 import logging
 from dataclasses import InitVar, dataclass, field
 from functools import total_ordering
-from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Tuple, Type
-from rotkehlchen.constants.misc import NFT_DIRECTIVE
+from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Type
 
+from rotkehlchen.assets.resolver import AssetResolver
+from rotkehlchen.constants.misc import NFT_DIRECTIVE
 from rotkehlchen.constants.resolver import (
     ChainID,
     evm_address_to_identifier,
@@ -17,10 +18,6 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind, Timestamp
 
 from .types import ASSETS_WITH_NO_CRYPTO_ORACLES, AssetType
-
-if TYPE_CHECKING:
-    from rotkehlchen.assets.resolver import AssetResolver
-
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -727,17 +724,12 @@ class Asset:
     """Base class for all assets"""
     identifier: str
     direct_field_initialization: InitVar[bool] = field(default=False)
-    resolver: 'AssetResolver' = field(init=False)
 
-    def __post_init__(self, direct_field_initialization: bool = False) -> None:
+    def __post_init__(self, direct_field_initializaion: bool) -> None:  # pylint: disable=unused-argument  # noqa: E501
         if not isinstance(self.identifier, str):
             raise DeserializationError(
                 'Tried to initialize an asset out of a non-string identifier',
             )
-
-        # Initializing resolver here to avoid circular imports
-        from rotkehlchen.assets.resolver import AssetResolver
-        object.__setattr__(self, 'resolver', AssetResolver())
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -751,46 +743,47 @@ class Asset:
         return self.identifier.startswith(NFT_DIRECTIVE)
 
     def is_fiat(self) -> bool:
-        return self.resolver.get_asset_type(self.identifier) == AssetType.FIAT
+        return AssetResolver().get_asset_type(self.identifier) == AssetType.FIAT
 
     def is_asset_with_oracles(self) -> bool:
-        return self.resolver.get_asset_type(self.identifier) not in ASSETS_WITH_NO_CRYPTO_ORACLES
+        return AssetResolver().get_asset_type(self.identifier) not in ASSETS_WITH_NO_CRYPTO_ORACLES
 
     def is_evm_token(self) -> bool:
-        return self.resolver.get_asset_type(self.identifier) == AssetType.EVM_TOKEN
+        return AssetResolver().get_asset_type(self.identifier) == AssetType.EVM_TOKEN
 
     def resolve_to_asset_with_name_and_type(self) -> 'AssetWithNameAndType':
-        return self.resolver.resolve_asset_to_class(
+        return AssetResolver().resolve_asset_to_class(
             identifier=self.identifier,
             expected_type=AssetWithNameAndType,
         )
 
     def resolve_to_asset_with_symbol(self) -> 'AssetWithSymbol':
-        return self.resolver.resolve_asset_to_class(
+        return AssetResolver().resolve_asset_to_class(
             identifier=self.identifier,
             expected_type=AssetWithSymbol,
         )
 
     def resolve_to_fiat_asset(self) -> 'FiatAsset':
-        return self.resolver.resolve_asset_to_class(
+        return AssetResolver().resolve_asset_to_class(
             identifier=self.identifier,
             expected_type=FiatAsset,
         )
 
     def resolve_to_crypto_asset(self) -> 'CryptoAsset':
-        return self.resolver.resolve_asset_to_class(
+        return AssetResolver().resolve_asset_to_class(
             identifier=self.identifier,
             expected_type=CryptoAsset,
         )
 
-    def resolve_to_evm_token(self) -> 'EvmToken':
-        return self.resolver.resolve_asset_to_class(
+    def resolve_to_evm_token(self, form_with_incomplete_data: bool = False) -> 'EvmToken':
+        return AssetResolver().resolve_asset_to_class(
             identifier=self.identifier,
             expected_type=EvmToken,
+            form_with_incomplete_data=form_with_incomplete_data,
         )
 
     def resolve_to_asset_with_oracles(self) -> 'AssetWithOracles':
-        return self.resolver.resolve_asset_to_class(
+        return AssetResolver().resolve_asset_to_class(
             identifier=self.identifier,
             expected_type=AssetWithOracles,
         )
@@ -848,7 +841,7 @@ class AssetWithOracles(AssetWithSymbol, metaclass=abc.ABCMeta):
             raise UnsupportedAsset(f'{self.identifier} is not supported by cryptocompare')
 
         # Seems cryptocompare capitalizes everything. So cDAI -> CDAI
-        return cryptocompare_str.upper()
+        return cryptocompare_str.upper()  # pylint: disable=no-member
 
     def to_coingecko(self) -> str:
         """
@@ -875,11 +868,11 @@ class AssetWithOracles(AssetWithSymbol, metaclass=abc.ABCMeta):
 @dataclass(init=True, repr=False, eq=False, order=False, unsafe_hash=False, frozen=True)
 class FiatAsset(AssetWithOracles):
 
-    def __post_init__(self, direct_field_initialization: bool = False) -> None:
+    def __post_init__(self, direct_field_initialization: bool) -> None:
         super().__post_init__(direct_field_initialization)
         if direct_field_initialization is True:
             return
-        resolved = self.resolver.resolve_asset_to_class(self.identifier, FiatAsset)
+        resolved = AssetResolver().resolve_asset_to_class(self.identifier, FiatAsset)
         object.__setattr__(self, 'asset_type', resolved.asset_type)
         object.__setattr__(self, 'name', resolved.name)
         object.__setattr__(self, 'symbol', resolved.symbol)
@@ -910,11 +903,11 @@ class CryptoAsset(AssetWithOracles):
     forked: Optional['CryptoAsset'] = field(init=False)
     swapped_for: Optional['CryptoAsset'] = field(init=False)
 
-    def __post_init__(self, direct_field_initialization: bool = False) -> None:
+    def __post_init__(self, direct_field_initialization: bool) -> None:
         super().__post_init__(direct_field_initialization)
         if direct_field_initialization is True:
             return
-        resolved = self.resolver.resolve_asset_to_class(self.identifier, CryptoAsset)
+        resolved = AssetResolver().resolve_asset_to_class(self.identifier, CryptoAsset)
         object.__setattr__(self, 'asset_type', resolved.asset_type)
         object.__setattr__(self, 'name', resolved.name)
         object.__setattr__(self, 'symbol', resolved.symbol)
@@ -995,11 +988,19 @@ class EvmToken(CryptoAsset):
     protocol: str = field(init=False)
     underlying_tokens: List[UnderlyingToken] = field(init=False)
 
-    def __post_init__(self, direct_field_initialization: bool = False) -> None:
+    def __post_init__(
+            self,
+            direct_field_initialization: bool,
+            form_with_incomplete_data: bool = False,
+    ) -> None:
         super().__post_init__(direct_field_initialization)
         if direct_field_initialization is True:
             return
-        resolved = self.resolver.resolve_asset_to_class(self.identifier, EvmToken)
+        resolved = AssetResolver().resolve_asset_to_class(
+            identifier=self.identifier,
+            expected_type=EvmToken,
+            form_with_incomplete_data=form_with_incomplete_data,
+        )
         object.__setattr__(self, 'asset_type', AssetType.EVM_TOKEN)
         object.__setattr__(self, 'evm_address', resolved.evm_address)
         object.__setattr__(self, 'chain', resolved.chain)

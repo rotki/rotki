@@ -364,11 +364,11 @@ class AssetsUpdater():
 
                 # else can't resolve. Mark it for the user to resolve.
                 # TODO: After the Asset refactor has finished remove the usage of AssetData here
-                local_data = GlobalDBHandler().get_all_asset_data(  # type: ignore  # noqa: E501
+                local_data = GlobalDBHandler().get_all_asset_data(  # type: ignore  # pylint: disable=unsubscriptable-object  # noqa: E501
                     mapping=False,
                     serialized=False,
                     specific_ids=[local_asset.identifier],
-                )[0]  # pylint: disable=unsubscriptable-object
+                )[0]
                 self.conflicts.append((local_data, remote_asset_data))
 
         # at the very end update the current version in the DB

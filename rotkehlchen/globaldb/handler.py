@@ -1762,7 +1762,7 @@ class GlobalDBHandler():
         )
 
     @staticmethod
-    def resolve_asset(identifier: str) -> AssetWithNameAndType:
+    def resolve_asset(identifier: str, form_with_incomplete_data: bool) -> AssetWithNameAndType:
         """
         Resolve asset in only one query to the database
         May raise:
@@ -1796,6 +1796,13 @@ class GlobalDBHandler():
 
             asset_type = AssetType.deserialize_from_db(asset_data[1])
             if asset_type == AssetType.EVM_TOKEN:
+                decimals = asset_data[3]
+                name = asset_data[4]
+                symbol = asset_data[5]
+                missing_basic_data = name is None or symbol is None or decimals is None
+                if missing_basic_data and form_with_incomplete_data is False:
+                    raise UnknownAsset(asset_name=identifier)
+
                 underlying_tokens = GlobalDBHandler().fetch_underlying_tokens(
                     cursor=cursor,
                     parent_token_identifier=identifier,
