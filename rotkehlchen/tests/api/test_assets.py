@@ -9,8 +9,9 @@ import requests
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
-from rotkehlchen.constants.assets import A_EUR
+from rotkehlchen.constants.assets import A_BTC, A_DAI, A_EUR, A_SAI, A_USD
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb import GlobalDBHandler
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -330,6 +331,63 @@ def test_get_all_assets(rotkehlchen_api_server):
     for entry in result['entries'].values():
         assert entry['name'] == 'Uniswap'
     assert_asset_result_order(data=result['entries'], is_ascending=False, order_field='symbol')
+
+    # test that ignored assets filter works
+    with rotkehlchen_api_server.rest_api.rotkehlchen.data.db.user_write() as write_cursor:
+        rotkehlchen_api_server.rest_api.rotkehlchen.data.db.add_to_ignored_assets(
+            write_cursor=write_cursor,
+            asset=A_USD,
+        )
+        rotkehlchen_api_server.rest_api.rotkehlchen.data.db.add_to_ignored_assets(
+            write_cursor=write_cursor,
+            asset=A_EUR,
+        )
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'allassetsresource',
+        ),
+        json={
+            'limit': 20,
+            'offset': 0,
+            'asset_type': 'fiat',
+            'order_by_attributes': ['name'],
+            'ascending': [True],
+            'include_ignored_assets': False,
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result['entries']) <= 20
+    assert 'entries_found' in result
+    assert 'entries_total' in result
+    assert 'entries_limit' in result
+    for entry in result['entries'].values():
+        assert entry['type'] == 'fiat'
+        assert entry['symbol'] != A_USD.symbol and entry['symbol'] != A_EUR.symbol
+    assert_asset_result_order(data=result['entries'], is_ascending=True, order_field='name')
+
+    # test that user owned assets filter works
+    GlobalDBHandler().add_user_owned_assets([A_BTC, A_DAI, A_SAI])
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'allassetsresource',
+        ),
+        json={
+            'limit': 22,
+            'offset': 0,
+            'order_by_attributes': ['name'],
+            'ascending': [True],
+            'show_user_owned_assets_only': True,
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    assets_names = {r['name'] for r in result['entries'].values()}
+    assert 22 >= len(result['entries']) > 3
+    assert A_BTC.name in assets_names
+    assert A_DAI.name in assets_names
+    assert A_SAI.name not in assets_names  # although present, it exceeds the limit
+    assert_asset_result_order(data=result['entries'], is_ascending=True, order_field='name')
 
     # check that providing multiple order_by_attributes fails
     response = requests.post(

@@ -1314,9 +1314,9 @@ class RestAPI():
         # else
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    def query_all_assets(self, filter_query: AssetsFilterQuery) -> Response:
+    def query_all_assets(self, filter_query: 'AssetsFilterQuery') -> Response:
         """Returns all supported assets with pagination."""
-        assets, assets_found = GlobalDBHandler().retrieve_assets(filter_query)
+        assets, assets_found = GlobalDBHandler().retrieve_assets(filter_query=filter_query)
         with GlobalDBHandler().conn.read_ctx() as cursor:
             assets_total = self.rotkehlchen.data.db.get_entries_count(
                 cursor=cursor,

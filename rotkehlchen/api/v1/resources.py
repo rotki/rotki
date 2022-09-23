@@ -658,8 +658,13 @@ class DatabaseBackupsResource(BaseMethodView):
 
 
 class AllAssetsResource(BaseMethodView):
-    post_schema = AssetsPostSchema()
+
     delete_schema = StringIdentifierSchema()
+
+    def make_post_schema(self) -> AssetsPostSchema:
+        return AssetsPostSchema(
+            db_handler=self.rest_api.rotkehlchen.data.db,
+        )
 
     def make_add_schema(self) -> AssetSchema:
         return AssetSchema(
@@ -675,7 +680,7 @@ class AllAssetsResource(BaseMethodView):
             cryptocompare=self.rest_api.rotkehlchen.cryptocompare,
         )
 
-    @use_kwargs(post_schema, location='json')
+    @resource_parser.use_kwargs(make_post_schema, location='json')
     def post(self, filter_query: AssetsFilterQuery) -> Response:
         return self.rest_api.query_all_assets(filter_query)
 

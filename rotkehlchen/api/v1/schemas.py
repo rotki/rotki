@@ -66,6 +66,7 @@ from rotkehlchen.errors.misc import InputError, RemoteError, XPUBError
 from rotkehlchen.errors.serialization import DeserializationError, EncodingError
 from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.exchanges.manager import ALL_SUPPORTED_EXCHANGES, SUPPORTED_EXCHANGES
+from rotkehlchen.globaldb import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.icons import ALLOWED_ICON_EXTENSIONS
 from rotkehlchen.inquirer import CurrentPriceOracle
@@ -124,6 +125,7 @@ from .fields import (
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
+    from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.externalapis.coingecko import Coingecko
     from rotkehlchen.externalapis.cryptocompare import Cryptocompare
     from rotkehlchen.interfaces import HistoricalPriceOracleInterface
@@ -1742,6 +1744,12 @@ class AssetsPostSchema(DBPaginationSchema, DBOrderBySchema):
     name = fields.String(load_default=None)
     symbol = fields.String(load_default=None)
     asset_type = SerializableEnumField(enum_class=AssetType, load_default=None)
+    include_ignored_assets = fields.Boolean(load_default=True)
+    show_user_owned_assets_only = fields.Boolean(load_default=False)
+
+    def __init__(self, db_handler: 'DBHandler') -> None:
+        super().__init__()
+        self.db_handler = db_handler
 
     @validates_schema
     def validate_schema(  # pylint: disable=no-self-use
@@ -1757,19 +1765,35 @@ class AssetsPostSchema(DBPaginationSchema, DBOrderBySchema):
             )
 
     @post_load
-    def make_assets_post_query(  # pylint: disable=no-self-use
+    def make_assets_post_query(
             self,
             data: Dict[str, Any],
             **_kwargs: Any,
     ) -> Dict[str, Any]:
-        filter_query = AssetsFilterQuery.make(
-            order_by_rules=create_order_by_rules_list(data=data, default_order_by_field='name'),
-            limit=data['limit'],
-            offset=data['offset'],
-            name=data['name'],
-            symbol=data['symbol'],
-            asset_type=data['asset_type'],
-        )
+        ignored_assets_identifiers = None
+        user_owned_assets_identifiers = None
+        with self.db_handler.user_write() as write_cursor, GlobalDBHandler().conn.read_ctx() as globaldb_read_cursor:  # noqa: E501
+            if data['include_ignored_assets'] is False:
+                ignored_assets_identifiers = [asset.identifier for asset in self.db_handler.get_ignored_assets(write_cursor)]  # noqa: E501
+
+            if data['show_user_owned_assets_only'] is True:
+                globaldb_read_cursor.execute('SELECT asset_id FROM user_owned_assets;')
+                user_owned_assets_identifiers = [entry[0] for entry in globaldb_read_cursor]
+
+            filter_query = AssetsFilterQuery.make(
+                and_op=True,
+                order_by_rules=create_order_by_rules_list(
+                    data=data,
+                    default_order_by_field='name',
+                ),
+                limit=data['limit'],
+                offset=data['offset'],
+                name=data['name'],
+                symbol=data['symbol'],
+                asset_type=data['asset_type'],
+                ignored_assets_identifiers=ignored_assets_identifiers,
+                user_owned_assets_identifiers=user_owned_assets_identifiers,
+            )
         return {'filter_query': filter_query}
 
 

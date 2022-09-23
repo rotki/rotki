@@ -228,7 +228,7 @@ class GlobalDBHandler():
         JOIN common_asset_details AS C ON C.identifier = A.identifier
         LEFT JOIN evm_tokens as B ON B.identifier = A.identifier
         """  # noqa: E501
-        query = f'SELECT * FROM ({parent_query}) ' + query
+        query = f'SELECT * FROM ({parent_query}) {query}'
         with GlobalDBHandler().conn.read_ctx() as cursor:
             cursor.execute(query, bindings)
             for entry in cursor:
