@@ -926,6 +926,7 @@ class AssetsFilterQuery(DBFilterQuery):
             asset_type: Optional[AssetType] = None,
             ignored_assets_identifiers: Optional[List[str]] = None,
             user_owned_assets_identifiers: Optional[List[str]] = None,
+            return_exact_matches: bool = False,
     ) -> 'AssetsFilterQuery':
         if order_by_rules is None:
             order_by_rules = [('name', True)]
@@ -959,11 +960,18 @@ class AssetsFilterQuery(DBFilterQuery):
                 value=asset_type.serialize_for_db(),
             ))
         if substring_search is not None and search_column is not None:
-            filters.append(DBSubStringFilter(
-                and_op=True,
-                field=search_column,
-                search_string=substring_search,
-            ))
+            if return_exact_matches is True:
+                filters.append(DBEqualsFilter(
+                    and_op=True,
+                    column=search_column,
+                    value=substring_search,
+                ))
+            else:
+                filters.append(DBSubStringFilter(
+                    and_op=True,
+                    field=search_column,
+                    search_string=substring_search,
+                ))
         if user_owned_assets_identifiers is not None:
             filters.append(DBMultiStringFilter(
                 and_op=True,

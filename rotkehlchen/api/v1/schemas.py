@@ -1803,6 +1803,7 @@ class AssetsSearchSchema(DBOrderBySchema, DBPaginationSchema):
         required=True,
         validate=webargs.validate.OneOf(choices=('name', 'symbol')),
     )
+    return_exact_matches = fields.Boolean(load_default=False)
 
     @validates_schema
     def validate_schema(  # pylint: disable=no-self-use
@@ -1830,6 +1831,7 @@ class AssetsSearchSchema(DBOrderBySchema, DBPaginationSchema):
             offset=0,  # this is needed for the `limit` argument to work.
             substring_search=data['value'],
             search_column=data['search_column'],
+            return_exact_matches=data['return_exact_matches'],
         )
         return {'filter_query': filter_query}
 
