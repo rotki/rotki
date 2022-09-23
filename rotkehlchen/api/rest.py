@@ -3822,12 +3822,12 @@ class RestAPI():
         result_dict = {'result': response['result'], 'message': response['message']}
         return api_response(process_result(result_dict), status_code=status_code)
 
-    def get_manual_current_prices(
+    def get_manual_latest_prices(
             self,
             from_asset: Optional[Asset],
             to_asset: Optional[Asset],
     ) -> Response:
-        prices = GlobalDBHandler().get_all_manual_current_prices(
+        prices = GlobalDBHandler().get_all_manual_latest_prices(
             from_asset=from_asset,
             to_asset=to_asset,
         )
@@ -3849,7 +3849,7 @@ class RestAPI():
             query_specific_balances_before=None,
         )
 
-    def add_manual_current_price(
+    def add_manual_latest_price(
             self,
             from_asset: Asset,
             to_asset: Asset,
@@ -3866,7 +3866,7 @@ class RestAPI():
                 price=price,
             )
         try:
-            GlobalDBHandler().add_manual_current_price(
+            GlobalDBHandler().add_manual_latest_price(
                 from_asset=from_asset,
                 to_asset=to_asset,
                 price=price,
@@ -3880,7 +3880,7 @@ class RestAPI():
         Inquirer().remove_cached_current_price_entry(cache_key=(from_asset, to_asset))
         return api_response(result=OK_RESULT)
 
-    def delete_manual_current_price(
+    def delete_manual_latest_price(
             self,
             asset: Asset,
     ) -> Response:
@@ -3893,7 +3893,7 @@ class RestAPI():
                 asset=asset,
             )
         try:
-            GlobalDBHandler().delete_manual_current_price(asset=asset)
+            GlobalDBHandler().delete_manual_latest_price(asset=asset)
         except InputError as e:
             return api_response(
                 result=wrap_in_fail_result(message=str(e)),

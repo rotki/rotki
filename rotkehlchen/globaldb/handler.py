@@ -1159,7 +1159,7 @@ class GlobalDBHandler():
         return True
 
     @staticmethod
-    def add_manual_current_price(
+    def add_manual_latest_price(
             from_asset: Asset,
             to_asset: Asset,
             price: Price,
@@ -1227,7 +1227,7 @@ class GlobalDBHandler():
         return Asset(result[0]), deserialize_price(result[1])
 
     @staticmethod
-    def get_all_manual_current_prices(
+    def get_all_manual_latest_prices(
             from_asset: Optional[Asset] = None,
             to_asset: Optional[Asset] = None,
     ) -> List[Tuple[Asset, Asset, Price]]:
@@ -1249,7 +1249,7 @@ class GlobalDBHandler():
             ]
 
     @staticmethod
-    def delete_manual_current_price(asset: Asset) -> None:
+    def delete_manual_latest_price(asset: Asset) -> None:
         """
         Deletes manual current price from globaldb.
         May raise:

@@ -2182,17 +2182,17 @@ class AssetIconsResource(BaseMethodView):
         return self.rest_api.refresh_asset_icon(asset)
 
 
-class AllCurrentAssetsPriceResource(BaseMethodView):
+class AllLatestAssetsPriceResource(BaseMethodView):
 
     post_schema = ManualPriceRegisteredSchema()
 
     @require_loggedin_user()
     @use_kwargs(post_schema, location='json')
     def post(self, from_asset: Optional[Asset], to_asset: Optional[Asset]) -> Response:
-        return self.rest_api.get_manual_current_prices(from_asset, to_asset)
+        return self.rest_api.get_manual_latest_prices(from_asset, to_asset)
 
 
-class CurrentAssetsPriceResource(BaseMethodView):
+class LatestAssetsPriceResource(BaseMethodView):
 
     put_schema = ManualPriceSchema()
     post_schema = CurrentAssetsPriceSchema()
@@ -2206,7 +2206,7 @@ class CurrentAssetsPriceResource(BaseMethodView):
             to_asset: Asset,
             price: Price,
     ) -> Response:
-        return self.rest_api.add_manual_current_price(
+        return self.rest_api.add_manual_latest_price(
             from_asset=from_asset,
             to_asset=to_asset,
             price=price,
@@ -2231,7 +2231,7 @@ class CurrentAssetsPriceResource(BaseMethodView):
     @require_loggedin_user()
     @use_kwargs(delete_schema, location='json')
     def delete(self, asset: Asset) -> Response:
-        return self.rest_api.delete_manual_current_price(asset)
+        return self.rest_api.delete_manual_latest_price(asset)
 
 
 class HistoricalAssetsPriceResource(BaseMethodView):
