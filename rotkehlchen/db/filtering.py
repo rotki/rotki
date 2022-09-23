@@ -924,6 +924,8 @@ class AssetsFilterQuery(DBFilterQuery):
             substring_search: Optional[str] = None,
             search_column: Optional[str] = None,
             asset_type: Optional[AssetType] = None,
+            ignored_assets_identifiers: Optional[List[str]] = None,
+            user_owned_assets_identifiers: Optional[List[str]] = None,
     ) -> 'AssetsFilterQuery':
         if order_by_rules is None:
             order_by_rules = [('name', True)]
@@ -961,6 +963,19 @@ class AssetsFilterQuery(DBFilterQuery):
                 and_op=True,
                 field=search_column,
                 search_string=substring_search,
+            ))
+        if user_owned_assets_identifiers is not None:
+            filters.append(DBMultiStringFilter(
+                and_op=True,
+                column='identifier',
+                values=user_owned_assets_identifiers,
+            ))
+        if ignored_assets_identifiers is not None:
+            filters.append(DBMultiStringFilter(
+                and_op=True,
+                column='identifier',
+                operator='NOT IN',
+                values=ignored_assets_identifiers,
             ))
         filter_query.filters = filters
         return filter_query

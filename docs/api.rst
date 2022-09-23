@@ -2797,6 +2797,8 @@ The details of each asset can contain the following keys:
    :reqjson string name: The name of asset to be used to filter the result data. Optional.
    :reqjson string symbol: An asset symbol to be used to filter the result data. Optional.
    :reqjson string asset_type: The category of an asset to be used to filter the result data. Optional.
+   :reqjson bool show_user_owned_assets_only: A flag to specify if only user owned assets should be returned. Defaults to False. Optional.
+   :reqjson string include_ignored_assets: A flag to specify if ignored assets should be included in the result. Defaults to True. Optional.
 
    **Example Response**:
 
@@ -2925,7 +2927,7 @@ Get asset identifiers mappings
 
    :resjson object result: A mapping of identifiers to names and symbols.
    :statuscode 200: Assets successfully queried.
-   :statuscode 400: One of the identifiers are not valid. Provided JSON is in some way malformed.
+   :statuscode 400: One of the identifiers is not valid. Provided JSON is in some way malformed.
    :statuscode 500: Internal rotki error.
 
 Search for assets
