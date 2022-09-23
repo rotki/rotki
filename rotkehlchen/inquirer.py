@@ -711,8 +711,8 @@ class Inquirer():
                 if token_address == '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE':
                     tokens.append(A_WETH.resolve_to_evm_token())
                 else:
-                    asset_identifier = ethaddress_to_identifier(token_address)
-                    tokens.append(Asset(asset_identifier).resolve_to_evm_token())
+                    token_identifier = ethaddress_to_identifier(token_address)
+                    tokens.append(EvmToken(token_identifier))
         except UnknownAsset:
             return None
 

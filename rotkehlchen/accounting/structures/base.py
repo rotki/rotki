@@ -299,7 +299,7 @@ class HistoryBaseEntry(AccountingEventMixin):
             # otherwise it's kraken staking
             accounting.add_acquisition(
                 event_type=AccountingEventType.STAKING,
-                notes=f'Kraken {self.asset.symbol} staking',
+                notes=f'Kraken {self.asset.resolve_to_asset_with_symbol().symbol} staking',
                 location=self.location,
                 timestamp=self.get_timestamp_in_sec(),
                 asset=self.asset,

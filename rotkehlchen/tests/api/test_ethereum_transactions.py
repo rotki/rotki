@@ -313,7 +313,7 @@ def test_query_transactions(rotkehlchen_api_server):
                 ),
                 has_premium=True,  # for this function we don't limit. We only limit txs.
             )
-            event_ids.add(events[0].identifier)
+            event_ids.add(events[0].identifier)  # pylint: disable=unsubscriptable-object
             assert len(events) == 1
 
     # see that if same transaction hash is requested for decoding events are not re-decoded
@@ -340,7 +340,7 @@ def test_query_transactions(rotkehlchen_api_server):
                 has_premium=True,  # for this function we don't limit. We only limit txs.
             )
             assert len(events) == 1
-            assert events[0].identifier in event_ids  # pylint: disable=unsubscritable-object
+            assert events[0].identifier in event_ids  # pylint: disable=unsubscriptable-object
 
     # Check that force re-requesting the events works
     assert_force_redecode_txns_works(rotkehlchen_api_server, hashes)

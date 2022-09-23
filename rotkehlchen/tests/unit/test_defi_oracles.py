@@ -76,7 +76,7 @@ def test_uniswap_no_decimals(inquirer_defi):
         """
         resolved_weth = A_WETH.resolve_to_evm_token()
 
-        def mocked_asset_getter(asset_identifier: str, form_with_incomplete_data: bool = False):
+        def mocked_asset_getter(asset_identifier: str):
             if asset_identifier == resolved_weth.identifier:
                 fake_weth = AssetData(
                     identifier=resolved_weth.identifier,
