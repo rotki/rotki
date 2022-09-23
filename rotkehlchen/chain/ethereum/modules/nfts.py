@@ -221,44 +221,56 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):  # lgtm [py/miss
 
         return result
 
-    def get_nfts_with_price(self) -> List[Dict[str, Any]]:
-        cursor = self.db.conn.cursor()
-        query = cursor.execute('SELECT identifier, last_price, last_price_asset, manual_price from nfts WHERE last_price IS NOT NULL')  # noqa: E501
-        result = []
-        for entry in query:
-            to_asset_id = entry[2] if entry[2] is not None else A_USD
-            try:
-                to_asset = Asset(to_asset_id)
-            except UnknownAsset:
-                log.error(f'Unknown asset {to_asset_id} in custom nft price DB table. Ignoring.')
-                continue
+    def get_nfts_with_price(self, identifier: Optional[str] = None) -> List[Dict[str, Any]]:
+        """
+        Given an identifier for an nft asset return information about its manual price and
+        price queried.
+        """
+        query_str = 'SELECT identifier, last_price, last_price_asset, manual_price from nfts WHERE last_price IS NOT NULL'  # noqa: E501
+        bindings = []
+        if identifier is not None:
+            query_str += ' AND identifier=?'
+            bindings.append(identifier)
 
-            if to_asset != A_USD:
+        with self.db.conn.read_ctx() as cursor:
+            query = cursor.execute(query_str, bindings)
+            result = []
+            for entry in query:
+                to_asset_id = entry[2] if entry[2] is not None else A_USD
                 try:
-                    to_asset_usd_price = Inquirer().find_usd_price(to_asset)
-                except RemoteError as e:
+                    to_asset = Asset(to_asset_id)
+                except UnknownAsset:
                     log.error(
-                        f'Error querying current usd price of {to_asset} in custom nft price '
-                        f'api call due to {str(e)}. Ignoring.',
+                        f'Unknown asset {to_asset_id} in custom nft price DB table. Ignoring.',
                     )
                     continue
-                if to_asset_usd_price == ZERO:
-                    log.error(
-                        f'Could not find current usd price for {to_asset} in custom nft '
-                        f'price api call. Ignoring.',
-                    )
-                    continue
-                usd_price = to_asset_usd_price * FVal(entry[1])
-            else:  # to_asset == USD
-                usd_price = entry[1]
 
-            result.append({
-                'asset': entry[0],
-                'manually_input': bool(entry[3]),
-                'price_asset': to_asset_id,
-                'price_in_asset': entry[1],
-                'usd_price': str(usd_price),
-            })
+                if to_asset != A_USD:
+                    try:
+                        to_asset_usd_price = Inquirer().find_usd_price(to_asset)
+                    except RemoteError as e:
+                        log.error(
+                            f'Error querying current usd price of {to_asset} in custom nft price '
+                            f'api call due to {str(e)}. Ignoring.',
+                        )
+                        continue
+                    if to_asset_usd_price == ZERO:
+                        log.error(
+                            f'Could not find current usd price for {to_asset} in custom nft '
+                            f'price api call. Ignoring.',
+                        )
+                        continue
+                    usd_price = to_asset_usd_price * FVal(entry[1])
+                else:  # to_asset == USD
+                    usd_price = entry[1]
+
+                result.append({
+                    'asset': entry[0],
+                    'manually_input': bool(entry[3]),
+                    'price_asset': to_asset_id,
+                    'price_in_asset': entry[1],
+                    'usd_price': str(usd_price),
+                })
 
         return result
 

@@ -1230,7 +1230,7 @@ class GlobalDBHandler():
     def get_all_manual_latest_prices(
             from_asset: Optional[Asset] = None,
             to_asset: Optional[Asset] = None,
-    ) -> List[Tuple[Asset, Asset, Price]]:
+    ) -> List[Tuple[str, str, str]]:
         """Returns all the manual current prices in the price_history table"""
         query = 'SELECT from_asset, to_asset, price FROM price_history WHERE source_type=?'
         bindings = [HistoricalPriceOracle.MANUAL_CURRENT.serialize_for_db()]
@@ -1242,11 +1242,8 @@ class GlobalDBHandler():
             bindings.append(to_asset.identifier)
 
         with GlobalDBHandler().conn.read_ctx() as read_cursor:
-            result = read_cursor.execute(query, bindings)
-            return [
-                (entry[0], entry[1], deserialize_price(entry[2]))
-                for entry in result
-            ]
+            read_cursor.execute(query, bindings)
+            return read_cursor.fetchall()
 
     @staticmethod
     def delete_manual_latest_price(asset: Asset) -> None:

@@ -1030,12 +1030,12 @@ Query the result of an ongoing backend task
    :statuscode 409: No user is currently logged in
    :statuscode 500: Internal rotki error
 
-Query the current price of assets
+Query the latest price of assets
 ===================================
 
-.. http:post:: /api/(version)/assets/prices/current
+.. http:post:: /api/(version)/assets/prices/latest
 
-   Querying this endpoint with a list of assets and a target asset will return an object with the the price of the assets in the target asset currency. Providing an empty list or no target asset is an error.
+   Querying this endpoint with a list of assets and a target asset will return a mapping of assets to their prices in the target asset and an integer representing the oracle the price was gotten from. Providing an empty list or no target asset is an error.
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``.
@@ -1044,7 +1044,7 @@ Query the current price of assets
 
    .. http:example:: curl wget httpie python-requests
 
-      POST /api/1/assets/prices/current HTTP/1.1
+      POST /api/1/assets/prices/latest HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
@@ -1054,10 +1054,10 @@ Query the current price of assets
           "ignore_cache": true
       }
 
-   :reqjson list assets: A list of assets to query their current price.
+   :reqjson list assets: A list of assets to query their latest price.
    :reqjson string target_asset: The target asset against which to return the price of each asset in the list.
    :reqjson bool async_query: A boolean denoting whether the query should be made asynchronously or not. Missing defaults to false.
-   :reqjson bool ignore_cache: A boolean denoting whether to ignore the current price query cache. Missing defaults to false.
+   :reqjson bool ignore_cache: A boolean denoting whether to ignore the latest price query cache. Missing defaults to false.
 
    **Example Response**:
 
@@ -1069,21 +1069,32 @@ Query the current price of assets
       {
           "result": {
               "assets": {
-                  "BTC": "34758.11",
-                  "ETH": "1302.62",
-                  "EUR": "1.209",
-                  "GBP": "1.362",
-                  "eip155:1/erc20:0x514910771AF9Ca656af840dff83E8264EcF986CA": "20.29",
-                  "USD": "1"
+                  "BTC": ["34758.11", 1],
+                  "ETH": ["1302.62", 2],
+                  "EUR": ["1.209", 8],
+                  "GBP": ["1.362", 8],
+                  "eip155:1/erc20:0x514910771AF9Ca656af840dff83E8264EcF986CA": ["20.29", 1],
+                  "USD": ["1", 8]
               },
-              "target_asset": "USD"
+              "target_asset": "USD",
+              "oracles": {
+                "coingecko": 1,
+                "cryptocompare": 2,
+                "uniswapv2": 3,
+                "uniswapv3": 4,
+                "saddle": 5,
+                "manualcurrent": 6,
+                "blockchain": 7,
+                "fiat": 8
+              }
           },
           "message": ""
       }
 
-   :resjson object result: A JSON object that contains the price of the assets in the target asset currency.
+   :resjson object result: A JSON object that contains the price of the assets in the target asset currency and the oracle used to query it.
    :resjson object assets: A map between an asset and its price.
    :resjson string target_asset: The target asset against which to return the price of each asset in the list.
+   :resjson object oracles: A mapping of oracles to their integer id used.
    :statuscode 200: The USD prices have been successfully returned
    :statuscode 400: Provided JSON is in some way malformed.
    :statuscode 500: Internal rotki error
@@ -1142,25 +1153,25 @@ Get current price and custom price for NFT assets
    :statuscode 502: An external service used in the query such as cryptocompare/coingecko could not be reached or returned unexpected response.
 
 
-Get current price and custom price for assets
-=============================================
+Get all manually input latest prices
+====================================
 
-.. http:post:: /api/(version)/assets/prices/current/all
+.. http:post:: /api/(version)/assets/prices/latest/all
 
-   Retrieve all the manual current prices stored in the database.
+   Retrieve all the manually input latest prices stored in the database.
 
    **Example Request**:
 
    .. http:example:: curl wget httpie python-requests
 
-      POST /api/1/assets/prices/current HTTP/1.1
+      POST /api/1/assets/prices/latest/all HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
       {"to_asset": "EUR"}
 
-   :reqjson string from_asset: Asset identifier to use as filter in the `from` side of the prices.
-   :reqjson string to_asset: Asset identifier to use as filter in the `to` side of the prices.
+   :reqjson string from_asset: Optional. Asset identifier to use as filter in the `from` side of the prices.
+   :reqjson string to_asset: Optional. Asset identifier to use as filter in the `to` side of the prices.
 
 
    **Example Response**:

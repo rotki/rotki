@@ -3304,8 +3304,8 @@ class RestAPI():
             )
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    @staticmethod
     def _get_current_assets_price(
+            self,
             assets: List[Asset],
             target_asset: Asset,
             ignore_cache: bool,
@@ -3316,20 +3316,33 @@ class RestAPI():
             f'Querying the current {target_asset.identifier} price of these assets: '
             f'{", ".join([asset.identifier for asset in assets])}',
         )
-        assets_price = {}
+        # Type is list instead of tuple here because you can't serialize a tuple
+        assets_price: Dict[Asset, List[Union[Price, Optional[int]]]] = {}
+        oracle: Optional[CurrentPriceOracle]
         for asset in assets:
             if asset != target_asset:
-                assets_price[asset] = Inquirer().find_price(
-                    from_asset=asset,
-                    to_asset=target_asset,
-                    ignore_cache=ignore_cache,
-                )
+                if asset.asset_type == AssetType.NFT:
+                    nft_price_data = self._eth_module_query(
+                        module_name='nfts',
+                        method='get_nfts_with_price',
+                        query_specific_balances_before=None,
+                    )
+                    oracle = CurrentPriceOracle.MANUALCURRENT if nft_price_data['manually_input'] is True else CurrentPriceOracle.BLOCKCHAIN  # noqa: E501
+                    assets_price[asset] = [Price(nft_price_data['usd_price']), oracle.value]
+                else:
+                    price, oracle = Inquirer().find_price_and_oracles(
+                        from_asset=asset,
+                        to_asset=target_asset,
+                        ignore_cache=ignore_cache,
+                    )
+                    assets_price[asset] = [price, oracle.value]
             else:
-                assets_price[asset] = Price(FVal('1'))
+                assets_price[asset] = [Price(ONE), CurrentPriceOracle.BLOCKCHAIN.value]
 
         result = {
             'assets': assets_price,
             'target_asset': target_asset,
+            'oracles': {str(oracle): oracle.value for oracle in CurrentPriceOracle},
         }
         return _wrap_in_ok_result(process_result(result))
 
@@ -3838,8 +3851,7 @@ class RestAPI():
                 'to_asset': price_entry[1],
                 'price': price_entry[2],
             })
-        processed_result = process_result_list(prices_information)
-        return api_response(_wrap_in_ok_result(processed_result), status_code=HTTPStatus.OK)
+        return api_response(_wrap_in_ok_result(prices_information), status_code=HTTPStatus.OK)
 
     def get_nfts_with_price(self) -> Response:
         return self._api_query_for_eth_module(

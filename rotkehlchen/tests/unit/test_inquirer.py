@@ -78,9 +78,10 @@ def test_switching_to_backup_api(inquirer):
         return original_get(url)
 
     with patch('requests.get', side_effect=mock_xratescom_fail):
-        result = inquirer._query_fiat_pair(A_USD, A_EUR)
+        result, oracle = inquirer._query_fiat_pair(A_USD, A_EUR)
         assert result and isinstance(result, FVal)
         assert count > 1, 'requests.get should have been called more than once'
+        assert oracle == CurrentPriceOracle.FIAT
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
@@ -91,10 +92,10 @@ def test_fiat_pair_caching(inquirer):
 
     with patch('rotkehlchen.inquirer.get_current_xratescom_exchange_rates', side_effect=mock_xratescom_exchange_rate):  # noqa: E501
         result = inquirer._query_fiat_pair(A_USD, A_EUR)
-        assert result == FVal('0.9165902841')
+        assert result[0] == FVal('0.9165902841')
 
     # Now outside the mocked response, we should get same value due to caching
-    assert inquirer._query_fiat_pair(A_USD, A_EUR) == FVal('0.9165902841')
+    assert inquirer._query_fiat_pair(A_USD, A_EUR)[0] == FVal('0.9165902841')
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -125,7 +126,7 @@ def test_fallback_to_cached_values_within_a_month(inquirer):  # pylint: disable=
     with patch('requests.get', side_effect=mock_api_remote_fail):
         # We fail to find a response but then go back 15 days and find the cached response
         result = inquirer._query_fiat_pair(A_EUR, A_JPY)
-        assert result == eurjpy_val
+        assert result[0] == eurjpy_val
         # The cached response for EUR CNY is too old so we will fail here
         with pytest.raises(RemoteError):
             result = inquirer._query_fiat_pair(A_EUR, A_CNY)
@@ -149,7 +150,7 @@ def test_parsing_forex_cache_works(
         price=price,
     )]
     GlobalDBHandler().add_historical_prices(cache_data)
-    assert inquirer._query_fiat_pair(A_EUR, A_JPY) == price
+    assert inquirer._query_fiat_pair(A_EUR, A_JPY)[0] == price
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
