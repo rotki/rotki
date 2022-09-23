@@ -122,9 +122,6 @@
 
 <script setup lang="ts">
 import { Severity } from '@rotki/common/lib/messages';
-import { get, set } from '@vueuse/core';
-import { computed, onMounted, ref, watch } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 import { DataTableHeader } from 'vuetify';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import DataTable from '@/components/helper/DataTable.vue';
@@ -206,7 +203,7 @@ watch(selection, async () => {
 const deleteFromAsset = computed<string>(() => {
   const deleteEntryVal = get(deleteEntry);
   if (deleteEntryVal?.fromAsset) {
-    return getAssetSymbol(deleteEntryVal.fromAsset);
+    return get(assetSymbol(deleteEntryVal.fromAsset));
   }
   return '';
 });
@@ -214,7 +211,7 @@ const deleteFromAsset = computed<string>(() => {
 const deleteToAsset = computed<string>(() => {
   const deleteEntryVal = get(deleteEntry);
   if (deleteEntryVal?.toAsset) {
-    return getAssetSymbol(deleteEntryVal.toAsset);
+    return get(assetSymbol(deleteEntryVal.toAsset));
   }
   return '';
 });
@@ -227,7 +224,7 @@ const confirmDelete = (entry: OracleCacheMeta) => {
 };
 
 const { notify } = useNotifications();
-const { getAssetSymbol } = useAssetInfoRetrieval();
+const { assetSymbol } = useAssetInfoRetrieval();
 
 const clearCache = async () => {
   const deleteEntryVal = get(deleteEntry);
@@ -242,8 +239,8 @@ const clearCache = async () => {
     const title = t('oracle_cache_management.notification.title').toString();
 
     const message = t('oracle_cache_management.clear_error', {
-      fromAsset: getAssetSymbol(fromAsset),
-      toAsset: getAssetSymbol(toAsset),
+      fromAsset: get(assetSymbol(fromAsset)),
+      toAsset: get(assetSymbol(toAsset)),
       error: e.message
     }).toString();
 
@@ -272,15 +269,17 @@ const fetchPrices = async () => {
     await load();
   }
 
+  let from = get(assetSymbol(fromAssetVal));
+  let to = get(assetSymbol(toAssetVal));
   const message = status.success
     ? t('oracle_cache_management.notification.success', {
-        fromAsset: getAssetSymbol(fromAssetVal),
-        toAsset: getAssetSymbol(toAssetVal),
+        fromAsset: from,
+        toAsset: to,
         source
       })
     : t('oracle_cache_management.notification.error', {
-        fromAsset: getAssetSymbol(fromAssetVal),
-        toAsset: getAssetSymbol(toAssetVal),
+        fromAsset: from,
+        toAsset: to,
         source,
         error: status.message
       });

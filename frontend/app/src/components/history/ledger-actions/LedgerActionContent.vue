@@ -178,11 +178,8 @@
 </template>
 
 <script setup lang="ts">
-import { get, set } from '@vueuse/core';
 import { dropRight } from 'lodash';
-import { storeToRefs } from 'pinia';
-import { computed, onMounted, PropType, Ref, ref, toRefs } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { PropType, Ref } from 'vue';
 import { DataTableHeader } from 'vuetify';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
@@ -262,9 +259,7 @@ const fetch = (refresh: boolean = false) => emit('fetch', refresh);
 
 const locationsStore = useAssociatedLocationsStore();
 const ledgerActionStore = useLedgerActions();
-const assetInfoRetrievalStore = useAssetInfoRetrieval();
-const { supportedAssetsSymbol } = toRefs(assetInfoRetrievalStore);
-const { getAssetIdentifierForSymbol } = assetInfoRetrievalStore;
+const { assetIdentifierForSymbol } = useAssetInfoRetrieval();
 
 const { associatedLocations } = storeToRefs(locationsStore);
 const { ledgerActions } = storeToRefs(ledgerActionStore);
@@ -388,9 +383,9 @@ const matchers = computed<
     key: LedgerActionFilterKeys.ASSET,
     keyValue: LedgerActionFilterValueKeys.ASSET,
     description: tc('ledger_actions.filter.asset'),
-    suggestions: () => get(supportedAssetsSymbol),
-    validate: (asset: string) => get(supportedAssetsSymbol).includes(asset),
-    transformer: (asset: string) => getAssetIdentifierForSymbol(asset) ?? ''
+    suggestions: () => [],
+    validate: () => true,
+    transformer: (asset: string) => assetIdentifierForSymbol(asset) ?? ''
   },
   {
     key: LedgerActionFilterKeys.TYPE,

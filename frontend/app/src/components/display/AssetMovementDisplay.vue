@@ -34,30 +34,21 @@
   </v-row>
 </template>
 
-<script lang="ts">
-import { get } from '@vueuse/core';
-import { computed, defineComponent, PropType } from 'vue';
+<script setup lang="ts">
+import { PropType } from 'vue';
 import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
 import { useTheme } from '@/composables/common';
 import { AssetMovement } from '@/types/defi';
 
-export default defineComponent({
-  components: { BalanceDisplay },
-  props: {
-    movement: { required: true, type: Object as PropType<AssetMovement> },
-    gainLoss: { required: false, type: Boolean, default: false }
-  },
-  setup() {
-    const { breakpoint, isMobile } = useTheme();
-    const small = computed(
-      () => !(['xs', 'sm'].includes(get(breakpoint)) || get(isMobile))
-    );
-    return {
-      small,
-      isMobile
-    };
-  }
+defineProps({
+  movement: { required: true, type: Object as PropType<AssetMovement> },
+  gainLoss: { required: false, type: Boolean, default: false }
 });
+
+const { breakpoint, isMobile } = useTheme();
+const small = computed(
+  () => !(['xs', 'sm'].includes(get(breakpoint)) || get(isMobile))
+);
 </script>
 
 <style module lang="scss">

@@ -30,32 +30,22 @@
   </stat-card>
 </template>
 
-<script lang="ts">
-import { defineComponent, PropType, toRefs } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+<script setup lang="ts">
+import { PropType } from 'vue';
 import LoanRow from '@/components/defi/loan/LoanRow.vue';
 import StatCard from '@/components/display/StatCard.vue';
 import { CompoundLoan } from '@/types/defi/compound';
 import { totalCollateral } from '@/utils/total-collateral';
 
-export default defineComponent({
-  name: 'CompoundCollateral',
-  components: { LoanRow, StatCard },
-  props: {
-    loan: {
-      required: true,
-      type: Object as PropType<CompoundLoan>
-    }
-  },
-  setup(props) {
-    const { loan } = toRefs(props);
-    const { tc } = useI18n();
-
-    return {
-      totalCollateralUsd: totalCollateral(loan),
-      assetPadding: 5,
-      tc
-    };
+const props = defineProps({
+  loan: {
+    required: true,
+    type: Object as PropType<CompoundLoan>
   }
 });
+
+const { loan } = toRefs(props);
+const { tc } = useI18n();
+const assetPadding = 5;
+const totalCollateralUsd = totalCollateral(loan);
 </script>

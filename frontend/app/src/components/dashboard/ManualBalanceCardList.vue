@@ -26,39 +26,23 @@
   </v-list-item>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { BigNumber } from '@rotki/common';
-import { storeToRefs } from 'pinia';
-import { defineAsyncComponent, defineComponent } from 'vue';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { toSentenceCase } from '@/utils/text';
 
-export default defineComponent({
-  name: 'ManualBalanceCardList',
-  components: {
-    AmountDisplay: defineAsyncComponent(
-      () => import('@/components/display/AmountDisplay.vue')
-    )
+defineProps({
+  name: {
+    required: true,
+    type: String
   },
-  props: {
-    name: {
-      required: true,
-      type: String
-    },
-    amount: {
-      required: true,
-      type: BigNumber
-    }
-  },
-  setup() {
-    const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-
-    return {
-      currencySymbol,
-      toSentenceCase
-    };
+  amount: {
+    required: true,
+    type: BigNumber
   }
 });
+
+const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 </script>
 <style scoped lang="scss">
 .manual-balance-box {

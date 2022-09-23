@@ -4,28 +4,17 @@
   </badge-display>
 </template>
 
-<script lang="ts">
-import { get } from '@vueuse/core';
-import { computed, defineComponent, PropType, toRefs } from 'vue';
+<script setup lang="ts">
+import { PropType } from 'vue';
 import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
 import { EventType } from '@/types/defi/event-type';
 
-export default defineComponent({
-  name: 'EventTypeDisplay',
-  components: { BadgeDisplay },
-  props: {
-    eventType: { required: true, type: String as PropType<EventType> }
-  },
-  setup(props) {
-    const { eventType } = toRefs(props);
+const props = defineProps({
+  eventType: { required: true, type: String as PropType<EventType> }
+});
+const { eventType } = toRefs(props);
 
-    const event = computed<string>(() => {
-      return get(eventType) === 'comp' ? 'comp claimed' : get(eventType);
-    });
-
-    return {
-      event
-    };
-  }
+const event = computed<string>(() => {
+  return get(eventType) === 'comp' ? 'comp claimed' : get(eventType);
 });
 </script>

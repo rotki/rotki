@@ -1,28 +1,6 @@
 import { AssetEntry, NumericString, BigNumber } from '@rotki/common';
-import {
-  BaseAsset,
-  EvmTokenKindEnum,
-  SupportedAsset
-} from '@rotki/common/lib/data';
 import { z } from 'zod';
 import { CONFLICT_RESOLUTION } from '@/services/assets/consts';
-
-export const UnderlyingToken = z.object({
-  address: z.string(),
-  tokenKind: EvmTokenKindEnum,
-  weight: z.string()
-});
-
-export type UnderlyingToken = z.infer<typeof UnderlyingToken>;
-
-export const EthereumToken = BaseAsset.extend({
-  address: z.string(),
-  decimals: z.number(),
-  underlyingTokens: z.array(UnderlyingToken).optional(),
-  protocol: z.string().optional()
-});
-
-export type EthereumToken = z.infer<typeof EthereumToken>;
 
 export interface AssetIdResponse {
   readonly identifier: string;
@@ -38,8 +16,6 @@ export interface AssetUpdatePayload {
 export interface ConflictResolution {
   readonly [assetId: string]: ConflictResolutionStrategy;
 }
-
-export type ManagedAsset = EthereumToken | SupportedAsset;
 
 export interface HistoricalPrice {
   readonly fromAsset: string;
@@ -74,9 +50,8 @@ export const PriceInformation = z.object({
 });
 
 export type PriceInformation = z.infer<typeof PriceInformation>;
-export const AssetPrice = PriceInformation.merge(AssetEntry);
 
-export type AssetPrice = z.infer<typeof AssetPrice>;
+export const AssetPrice = PriceInformation.merge(AssetEntry);
 
 export const AssetPriceArray = z.array(AssetPrice);
 

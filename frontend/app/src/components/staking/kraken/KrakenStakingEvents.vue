@@ -65,10 +65,7 @@
 </template>
 
 <script setup lang="ts">
-import { get, set } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { computed, PropType, Ref, ref, toRefs, watch } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { PropType, Ref } from 'vue';
 import { DataTableHeader } from 'vuetify';
 import ValueAccuracyHint from '@/components/helper/hint/ValueAccuracyHint.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
@@ -112,7 +109,7 @@ const getEventTypeIdentifier = (label: string) => {
 const { t, tc } = useI18n();
 
 const useMatchers = (events: Ref<KrakenStakingEvents>) => {
-  const { getAssetIdentifierForSymbol } = useAssetInfoRetrieval();
+  const { assetIdentifierForSymbol } = useAssetInfoRetrieval();
   const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
   return computed<SearchMatcher<KrakenStakingKeys, KrakenStakingValueKeys>[]>(
     () => {
@@ -128,7 +125,7 @@ const useMatchers = (events: Ref<KrakenStakingEvents>) => {
           suggestions: () => get(events).assets,
           validate: (asset: string) => get(events).assets.includes(asset),
           transformer: (asset: string) =>
-            getAssetIdentifierForSymbol(asset) ?? asset
+            assetIdentifierForSymbol(asset) ?? asset
         },
         {
           key: KrakenStakingKeys.TYPE,

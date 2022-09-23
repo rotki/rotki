@@ -8,23 +8,11 @@
   </v-container>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+<script setup lang="ts">
 import NoPremiumPlaceholder from '@/components/premium/NoPremiumPlaceholder.vue';
 import { usePremium } from '@/composables/premium';
 import { PremiumStatistics } from '@/premium/premium';
 
-export default defineComponent({
-  name: 'Statistics',
-  components: { NoPremiumPlaceholder, PremiumStatistics },
-  setup() {
-    const premium = usePremium();
-    const { tc } = useI18n();
-    return {
-      premium,
-      tc
-    };
-  }
-});
+const premium = usePremium();
+const { tc } = useI18n();
 </script>

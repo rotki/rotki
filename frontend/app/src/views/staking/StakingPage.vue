@@ -26,7 +26,7 @@
                 <asset-icon
                   v-else
                   size="24px"
-                  :identifier="getAssetIdentifierForSymbol(data.item.icon)"
+                  :identifier="assetIdentifierForSymbol(data.item.icon)"
                 />
               </v-col>
               <v-col class="pl-0">
@@ -66,7 +66,7 @@
                 <router-link to="/staking/eth2">
                   <asset-icon
                     no-tooltip
-                    :identifier="getAssetIdentifierForSymbol('ETH')"
+                    :identifier="assetIdentifierForSymbol('ETH')"
                     :size="iconSize"
                   />
                 </router-link>
@@ -75,7 +75,7 @@
                 <router-link to="/staking/adex">
                   <asset-icon
                     no-tooltip
-                    :identifier="getAssetIdentifierForSymbol('ADX')"
+                    :identifier="assetIdentifierForSymbol('ADX')"
                     :size="iconSize"
                   />
                 </router-link>
@@ -84,7 +84,7 @@
                 <router-link to="/staking/liquity">
                   <asset-icon
                     no-tooltip
-                    :identifier="getAssetIdentifierForSymbol('LQTY')"
+                    :identifier="assetIdentifierForSymbol('LQTY')"
                     :size="iconSize"
                   />
                 </router-link>
@@ -118,9 +118,7 @@
 </template>
 
 <script setup lang="ts">
-import { get, set, useLocalStorage } from '@vueuse/core';
-import { computed, onBeforeMount, PropType, toRefs } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { PropType } from 'vue';
 import FullSizeContent from '@/components/common/FullSizeContent.vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import { useRouter } from '@/composables/router';
@@ -184,7 +182,7 @@ const staking = computed<StakingInfo[]>(() => [
 ]);
 
 const router = useRouter();
-const { getAssetIdentifierForSymbol } = useAssetInfoRetrieval();
+const { assetIdentifierForSymbol } = useAssetInfoRetrieval();
 
 const lastLocation = useLocalStorage('rotki.staking.last_location', '');
 

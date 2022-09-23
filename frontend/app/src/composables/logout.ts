@@ -1,9 +1,11 @@
+import { useAssetCacheStore } from '@/store/assets/asset-cache';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
 import { useNonFungibleBalancesStore } from '@/store/balances/non-funginble';
 import { useBtcAccountsStore } from '@/store/blockchain/accounts/btc';
 import { useChainsAccountsStore } from '@/store/blockchain/accounts/chains';
 import { useEthAccountsStore } from '@/store/blockchain/accounts/eth';
 import { useBtcBalancesStore } from '@/store/blockchain/balances/btc';
+import { useChainBalancesStore } from '@/store/blockchain/balances/chains';
 import { useEthBalancesStore } from '@/store/blockchain/balances/eth';
 import { useBlockchainTokensStore } from '@/store/blockchain/tokens';
 import { useDefiStore } from '@/store/defi';
@@ -55,7 +57,8 @@ export const useSessionStateCleaner = () => {
     useChainsAccountsStore().reset();
     useBtcBalancesStore().reset();
     useEthBalancesStore().reset();
-    useChainsAccountsStore().reset();
+    useChainBalancesStore().reset();
     useBlockchainTokensStore().reset();
+    useAssetCacheStore().reset();
   });
 };

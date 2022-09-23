@@ -113,10 +113,7 @@
 
 <script setup lang="ts">
 import { AssetBalance, AssetBalanceWithPrice, BigNumber } from '@rotki/common';
-import { get } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { computed, PropType, ref, toRefs } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { PropType } from 'vue';
 import { DataTableHeader } from 'vuetify';
 import DashboardExpandableTable from '@/components/dashboard/DashboardExpandableTable.vue';
 import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
@@ -162,7 +159,7 @@ const total = computed(() => {
   return get(totalInUsd).multipliedBy(get(exchangeRate(mainCurrency)) ?? One);
 });
 
-const { getAssetSymbol, getAssetName } = useAssetInfoRetrieval();
+const { assetSymbol, assetName, assetInfo } = useAssetInfoRetrieval();
 
 const assetFilter = (
   _value: Nullable<string>,
@@ -173,8 +170,8 @@ const assetFilter = (
     return true;
   }
   const keyword = search?.toLocaleLowerCase()?.trim() ?? '';
-  const name = getAssetName(item.asset)?.toLocaleLowerCase()?.trim();
-  const symbol = getAssetSymbol(item.asset)?.toLocaleLowerCase()?.trim();
+  const name = get(assetName(item.asset))?.toLocaleLowerCase()?.trim();
+  const symbol = get(assetSymbol(item.asset))?.toLocaleLowerCase()?.trim();
   return symbol.indexOf(keyword) >= 0 || name.indexOf(keyword) >= 0;
 };
 
@@ -190,13 +187,11 @@ const percentageOfCurrentGroup = (value: BigNumber) => {
   return calculatePercentage(value, get(totalInUsd));
 };
 
-const { getAssetInfo } = useAssetInfoRetrieval();
-
 const { dashboardTablesVisibleColumns } = storeToRefs(
   useFrontendSettingsStore()
 );
 
-const sortItems = getSortItems(getAssetInfo);
+const sortItems = getSortItems(asset => get(assetInfo(asset)));
 
 const tableHeaders = computed<DataTableHeader[]>(() => {
   const visibleColumns = get(dashboardTablesVisibleColumns)[get(tableType)];

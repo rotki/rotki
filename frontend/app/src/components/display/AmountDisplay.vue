@@ -6,7 +6,7 @@
       'amount-display--profit': pnl && value.gt(0),
       'amount-display--loss': pnl && value.lt(0)
     }"
-    @click="copy"
+    @click="copy()"
   >
     <v-skeleton-loader
       :loading="loading"

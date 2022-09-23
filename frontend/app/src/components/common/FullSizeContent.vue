@@ -11,25 +11,14 @@
   </div>
 </template>
 
-<script lang="ts">
-import { set } from '@vueuse/core';
-import { defineComponent, onMounted, ref } from 'vue';
+<script setup lang="ts">
 import { useProxy } from '@/composables/common';
 
-export default defineComponent({
-  name: 'FullSizeContent',
-  setup() {
-    const top = ref(0);
-    const proxy = useProxy();
-    onMounted(() => {
-      const { top: topBound } = proxy.$el.getBoundingClientRect();
-      set(top, topBound);
-    });
-
-    return {
-      top
-    };
-  }
+const top = ref(0);
+const proxy = useProxy();
+onMounted(() => {
+  const { top: topBound } = proxy.$el.getBoundingClientRect();
+  set(top, topBound);
 });
 </script>
 

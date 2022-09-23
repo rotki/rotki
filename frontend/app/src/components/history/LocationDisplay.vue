@@ -18,9 +18,8 @@
   </navigator-link>
 </template>
 
-<script lang="ts">
-import { get } from '@vueuse/core';
-import { computed, defineComponent, PropType, toRefs } from 'vue';
+<script setup lang="ts">
+import { ComputedRef, PropType } from 'vue';
 import ListItem from '@/components/helper/ListItem.vue';
 import NavigatorLink from '@/components/helper/NavigatorLink.vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
@@ -29,44 +28,34 @@ import { Routes } from '@/router/routes';
 import { TradeLocation } from '@/types/history/trade-location';
 import { TradeLocationData } from '@/types/trades';
 
-export default defineComponent({
-  name: 'LocationDisplay',
-  components: { NavigatorLink, ListItem, LocationIcon },
-  props: {
-    identifier: { required: true, type: String as PropType<TradeLocation> },
-    icon: { required: false, type: Boolean, default: false },
-    size: { required: false, type: String, default: '24px' },
-    opensDetails: { required: false, type: Boolean, default: true },
-    detailPath: { required: false, type: String, default: '' }
-  },
-  setup(props) {
-    const { identifier, detailPath } = toRefs(props);
+const props = defineProps({
+  identifier: { required: true, type: String as PropType<TradeLocation> },
+  icon: { required: false, type: Boolean, default: false },
+  size: { required: false, type: String, default: '24px' },
+  opensDetails: { required: false, type: Boolean, default: true },
+  detailPath: { required: false, type: String, default: '' }
+});
 
-    const { getLocation } = setupLocationInfo();
+const { identifier, detailPath } = toRefs(props);
 
-    const location = computed<TradeLocationData>(() =>
-      getLocation(get(identifier))
-    );
+const { getLocation } = setupLocationInfo();
 
-    const route = computed<{ path: string }>(() => {
-      if (get(detailPath)) return { path: get(detailPath) };
+const location: ComputedRef<TradeLocationData> = computed(() =>
+  getLocation(get(identifier))
+);
 
-      const path = get(location).detailPath;
-      if (path) return { path };
+const route = computed<{ path: string }>(() => {
+  if (get(detailPath)) return { path: get(detailPath) };
 
-      return {
-        path: Routes.LOCATIONS.route.replace(
-          ':identifier',
-          get(location).identifier
-        )
-      };
-    });
+  const path = get(location).detailPath;
+  if (path) return { path };
 
-    return {
-      location,
-      route
-    };
-  }
+  return {
+    path: Routes.LOCATIONS.route.replace(
+      ':identifier',
+      get(location).identifier
+    )
+  };
 });
 </script>
 

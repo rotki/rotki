@@ -2,6 +2,7 @@ import { SupportedAsset } from '@rotki/common/lib/data';
 import { AxiosInstance, AxiosResponseTransformer } from 'axios';
 import { z } from 'zod';
 import { ActiveLogLevel } from '@/electron-main/ipc';
+import { getCollectionResponseType } from '@/types/collection';
 
 export const SYNC_UPLOAD = 'upload';
 export const SYNC_DOWNLOAD = 'download';
@@ -10,9 +11,7 @@ const SYNC_ACTIONS = [SYNC_DOWNLOAD, SYNC_UPLOAD] as const;
 
 export type SyncAction = typeof SYNC_ACTIONS[number];
 
-export const SupportedAssets = z.record(
-  SupportedAsset.omit({ identifier: true })
-);
+export const SupportedAssets = getCollectionResponseType(SupportedAsset);
 
 export type SupportedAssets = z.infer<typeof SupportedAssets>;
 

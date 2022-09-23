@@ -30,10 +30,8 @@
   </v-row>
 </template>
 
-<script lang="ts">
-import { get } from '@vueuse/core';
-import { computed, defineComponent, PropType, toRefs } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+<script setup lang="ts">
+import { PropType } from 'vue';
 import LoanDebt from '@/components/defi/loan/LoanDebt.vue';
 import LoanHeader from '@/components/defi/loan/LoanHeader.vue';
 import AaveCollateral from '@/components/defi/loan/loans/aave/AaveCollateral.vue';
@@ -45,37 +43,17 @@ import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { AaveLoan } from '@/store/defi/types';
 import { Section } from '@/types/status';
 
-export default defineComponent({
-  name: 'AaveLending',
-  components: {
-    AaveCollateral,
-    PremiumCard,
-    LoanDebt,
-    LoanHeader,
-    AaveBorrowingDetails
-  },
-  props: {
-    loan: {
-      required: true,
-      type: Object as PropType<AaveLoan>
-    }
-  },
-  setup(props) {
-    const { loan } = toRefs(props);
-    const premium = usePremium();
-    const aaveHistoryLoading = isSectionLoading(Section.DEFI_AAVE_HISTORY);
-    const { getAssetSymbol } = useAssetInfoRetrieval();
-    const { tc } = useI18n();
-    const symbol = computed(() => {
-      const asset = get(loan).asset;
-      return asset ? getAssetSymbol(asset) : '';
-    });
-    return {
-      premium,
-      aaveHistoryLoading,
-      symbol,
-      tc
-    };
+const props = defineProps({
+  loan: {
+    required: true,
+    type: Object as PropType<AaveLoan>
   }
 });
+
+const { loan } = toRefs(props);
+const premium = usePremium();
+const aaveHistoryLoading = isSectionLoading(Section.DEFI_AAVE_HISTORY);
+const { assetSymbol } = useAssetInfoRetrieval();
+const { tc } = useI18n();
+const symbol = asyncComputed(() => assetSymbol(get(loan).asset));
 </script>

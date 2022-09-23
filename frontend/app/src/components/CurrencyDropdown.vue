@@ -58,89 +58,67 @@
   </div>
 </template>
 
-<script lang="ts">
-import { get, set, useTimeoutFn } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { computed, defineComponent, ref } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+<script setup lang="ts">
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import { useSettingsStore } from '@/store/settings';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { currencies, Currency } from '@/types/currencies';
 
-export default defineComponent({
-  name: 'CurrencyDropdown',
-  components: { MenuTooltipButton },
-  setup() {
-    const { update } = useSettingsStore();
-    const { currency } = storeToRefs(useGeneralSettingsStore());
+const { update } = useSettingsStore();
+const { currency } = storeToRefs(useGeneralSettingsStore());
 
-    const filter = ref<string>('');
-    const visible = ref<boolean>(false);
+const filter = ref<string>('');
+const visible = ref<boolean>(false);
 
-    const { tc } = useI18n();
+const { tc } = useI18n();
 
-    const filteredCurrencies = computed<Currency[]>(() => {
-      const filterValue = get(filter).toLocaleLowerCase();
-      if (!filterValue) {
-        return currencies;
-      }
-      return currencies.filter(({ name, tickerSymbol }) => {
-        const currencyName = name.toLocaleLowerCase();
-        const symbol = tickerSymbol.toLocaleLowerCase();
-        return (
-          currencyName.indexOf(filterValue) >= 0 ||
-          symbol.indexOf(filterValue) >= 0
-        );
-      });
-    });
-
-    const onSelected = async (newCurrency: Currency) => {
-      set(visible, false);
-      if (newCurrency.tickerSymbol === get(currency).tickerSymbol) {
-        return;
-      }
-
-      await update({ mainCurrency: newCurrency.tickerSymbol });
-    };
-
-    const { start, stop, isPending } = useTimeoutFn(
-      () => {
-        set(filter, '');
-      },
-      400,
-      { immediate: false }
-    );
-
-    const selectFirst = async () => {
-      const currencies = get(filteredCurrencies);
-      if (currencies.length === 0) {
-        return;
-      }
-      await onSelected(currencies[0]);
-      if (get(isPending)) {
-        stop();
-      }
-      start();
-    };
-
-    const calculateFontSize = (symbol: string) => {
-      const length = symbol.length;
-      return `${2.4 - length * 0.4}em`;
-    };
-
-    return {
-      filter,
-      visible,
-      currency,
-      selectFirst,
-      filteredCurrencies,
-      onSelected,
-      calculateFontSize,
-      tc
-    };
+const filteredCurrencies = computed<Currency[]>(() => {
+  const filterValue = get(filter).toLocaleLowerCase();
+  if (!filterValue) {
+    return currencies;
   }
+  return currencies.filter(({ name, tickerSymbol }) => {
+    const currencyName = name.toLocaleLowerCase();
+    const symbol = tickerSymbol.toLocaleLowerCase();
+    return (
+      currencyName.indexOf(filterValue) >= 0 || symbol.indexOf(filterValue) >= 0
+    );
+  });
 });
+
+const onSelected = async (newCurrency: Currency) => {
+  set(visible, false);
+  if (newCurrency.tickerSymbol === get(currency).tickerSymbol) {
+    return;
+  }
+
+  await update({ mainCurrency: newCurrency.tickerSymbol });
+};
+
+const { start, stop, isPending } = useTimeoutFn(
+  () => {
+    set(filter, '');
+  },
+  400,
+  { immediate: false }
+);
+
+const selectFirst = async () => {
+  const currencies = get(filteredCurrencies);
+  if (currencies.length === 0) {
+    return;
+  }
+  await onSelected(currencies[0]);
+  if (get(isPending)) {
+    stop();
+  }
+  start();
+};
+
+const calculateFontSize = (symbol: string) => {
+  const length = symbol.length;
+  return `${2.4 - length * 0.4}em`;
+};
 </script>
 
 <style scoped lang="scss">

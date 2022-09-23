@@ -31,47 +31,35 @@
   </div>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { Balance } from '@rotki/common';
-import { get } from '@vueuse/core';
-import { computed, defineComponent, PropType, toRefs } from 'vue';
+import { PropType } from 'vue';
 import AssetLink from '@/components/assets/AssetLink.vue';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 
-export default defineComponent({
-  name: 'BalanceDisplay',
-  components: { AssetLink },
-  props: {
-    asset: { required: true, type: String },
-    value: {
-      required: false,
-      type: Object as PropType<Balance>,
-      default: null
-    },
-    noIcon: { required: false, type: Boolean, default: false },
-    noJustify: { required: false, type: Boolean, default: false },
-    align: { required: false, type: String, default: 'end' },
-    mode: {
-      required: false,
-      type: String as PropType<'gain' | 'loss' | ''>,
-      default: ''
-    },
-    assetPadding: { required: false, type: Number, default: 0 },
-    ticker: { required: false, type: Boolean, default: true },
-    priceLoading: { required: false, type: Boolean, default: false }
+const props = defineProps({
+  asset: { required: true, type: String },
+  value: {
+    required: false,
+    type: Object as PropType<Balance>,
+    default: null
   },
-  setup(props) {
-    const { asset } = toRefs(props);
-    const { getAssetSymbol } = useAssetInfoRetrieval();
-    const symbol = computed(() => {
-      const identifier = get(asset);
-      return identifier ? getAssetSymbol(identifier) : '';
-    });
-    return {
-      symbol
-    };
-  }
+  noIcon: { required: false, type: Boolean, default: false },
+  noJustify: { required: false, type: Boolean, default: false },
+  align: { required: false, type: String, default: 'end' },
+  mode: {
+    required: false,
+    type: String as PropType<'gain' | 'loss' | ''>,
+    default: ''
+  },
+  assetPadding: { required: false, type: Number, default: 0 },
+  ticker: { required: false, type: Boolean, default: true },
+  priceLoading: { required: false, type: Boolean, default: false }
 });
+
+const { asset } = toRefs(props);
+const { assetSymbol } = useAssetInfoRetrieval();
+const symbol = asyncComputed(() => assetSymbol(get(asset)));
 </script>
 
 <style module lang="scss">

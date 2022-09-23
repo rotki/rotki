@@ -11,32 +11,21 @@
   </stat-card>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { BigNumber } from '@rotki/common';
-import { defineComponent } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 import LoanRow from '@/components/defi/loan/LoanRow.vue';
 import StatCard from '@/components/display/StatCard.vue';
 
-export default defineComponent({
-  name: 'LiquityLiquidation',
-  components: { LoanRow, StatCard },
-  props: {
-    price: {
-      required: true,
-      type: BigNumber
-    },
-    asset: {
-      required: true,
-      type: String
-    }
+defineProps({
+  price: {
+    required: true,
+    type: BigNumber
   },
-  setup() {
-    const { tc } = useI18n();
-    return {
-      assetPadding: 5,
-      tc
-    };
+  asset: {
+    required: true,
+    type: String
   }
 });
+
+const { tc } = useI18n();
 </script>

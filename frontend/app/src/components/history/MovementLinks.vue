@@ -10,55 +10,39 @@
     </span>
   </span>
 </template>
-<script lang="ts">
+<script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { get } from '@vueuse/core';
-import { computed, defineComponent, PropType, toRefs } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { PropType } from 'vue';
 import HashLink from '@/components/helper/HashLink.vue';
-import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { AssetMovement } from '@/types/history/movements';
+import { isEvmIdentifier } from '@/utils/assets';
 
-export default defineComponent({
-  name: 'MovementLinks',
-  components: { HashLink },
-  props: {
-    item: { required: true, type: Object as PropType<AssetMovement> }
-  },
-  setup(props) {
-    const { item } = toRefs(props);
+const props = defineProps({
+  item: { required: true, type: Object as PropType<AssetMovement> }
+});
 
-    const { isEthereumToken } = useAssetInfoRetrieval();
-    const { tc } = useI18n();
+const { item } = toRefs(props);
+const { tc } = useI18n();
 
-    const chain = computed<Blockchain>(() => {
-      if (
-        get(isEthereumToken(get(item).asset)) ||
-        get(item).asset === Blockchain.ETH
-      ) {
-        return Blockchain.ETH;
-      }
-      return get(item).asset as Blockchain;
-    });
-
-    const transactionId = computed<string>(() => {
-      const { transactionId } = get(item);
-      if (!transactionId) return '';
-
-      if (get(chain) !== Blockchain.ETH) {
-        return transactionId;
-      }
-
-      return transactionId.startsWith('0x')
-        ? transactionId
-        : `0x${transactionId}`;
-    });
-
-    return {
-      transactionId,
-      chain,
-      tc
-    };
+const chain = computed<Blockchain>(() => {
+  // TODO: make it so that the chains are retrieved from the backend
+  if (
+    get(isEvmIdentifier(get(item).asset)) ||
+    get(item).asset === Blockchain.ETH
+  ) {
+    return Blockchain.ETH;
   }
+  return get(item).asset as Blockchain;
+});
+
+const transactionId = computed<string>(() => {
+  const { transactionId } = get(item);
+  if (!transactionId) return '';
+
+  if (get(chain) !== Blockchain.ETH) {
+    return transactionId;
+  }
+
+  return transactionId.startsWith('0x') ? transactionId : `0x${transactionId}`;
 });
 </script>

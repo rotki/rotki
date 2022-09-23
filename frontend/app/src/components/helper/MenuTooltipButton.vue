@@ -15,26 +15,16 @@
   </v-tooltip>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue';
-
-export default defineComponent({
-  name: 'MenuTooltipButton',
-  props: {
-    tooltip: { required: true, type: String, default: '' },
-    onMenu: { required: false, type: Object, default: () => {} },
-    retainFocusOnClick: { required: false, type: Boolean, default: false },
-    className: { required: false, type: String, default: '' }
-  },
-  emits: ['click'],
-  setup(_, { emit }) {
-    const click = () => emit('click');
-
-    return {
-      click
-    };
-  }
+<script setup lang="ts">
+defineProps({
+  tooltip: { required: true, type: String, default: '' },
+  onMenu: { required: false, type: Object, default: () => {} },
+  retainFocusOnClick: { required: false, type: Boolean, default: false },
+  className: { required: false, type: String, default: '' }
 });
+
+const emit = defineEmits(['click']);
+const click = () => emit('click');
 </script>
 
 <style scoped lang="scss">

@@ -1,4 +1,6 @@
-import { SupportedAsset } from '@rotki/common/lib/data';
+import { SupportedAsset, AssetInfo } from '@rotki/common/lib/data';
+import { z } from 'zod';
+import { ApiPagination, TablePagination } from '@/types/pagination';
 
 export interface AssetDBVersion {
   readonly local: number;
@@ -28,3 +30,44 @@ export type AssetMergePayload = {
   readonly sourceIdentifier: string;
   readonly targetIdentifier: string;
 };
+
+export const AssetInfoWithId = AssetInfo.merge(
+  z.object({
+    identifier: z.string().min(1)
+  })
+);
+
+export type AssetInfoWithId = z.infer<typeof AssetInfoWithId>;
+
+export const AssetsWithId = z.array(AssetInfoWithId);
+
+export type AssetsWithId = z.infer<typeof AssetsWithId>;
+
+export const AssetMap = z.record(AssetInfo);
+
+export type AssetMap = z.infer<typeof AssetMap>;
+
+export interface AssetPagination extends ApiPagination<SupportedAsset> {
+  assetType?: string;
+  name?: string;
+  symbol?: string;
+  showUserOwnedAssetsOnly?: boolean;
+  includeIgnoredAssets?: boolean;
+}
+
+export interface AssetPaginationOptions
+  extends TablePagination<SupportedAsset> {
+  name?: string;
+  symbol?: string;
+  showUserOwnedAssetsOnly?: boolean;
+  includeIgnoredAssets?: boolean;
+}
+
+export const defaultAssetPagination = (
+  itemsPerPage: number
+): AssetPaginationOptions => ({
+  page: 0,
+  itemsPerPage: itemsPerPage,
+  sortBy: ['symbol' as keyof SupportedAsset],
+  sortDesc: [false]
+});

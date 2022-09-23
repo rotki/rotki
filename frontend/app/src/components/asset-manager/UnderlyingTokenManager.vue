@@ -79,13 +79,12 @@
 </template>
 
 <script setup lang="ts">
-import { EvmTokenKind } from '@rotki/common/lib/data';
+import { EvmTokenKind, UnderlyingToken } from '@rotki/common/lib/data';
 import { get, set } from '@vueuse/core';
 import { PropType, ref, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import RowActions from '@/components/helper/RowActions.vue';
 import { evmTokenKindsData } from '@/services/assets/consts';
-import { UnderlyingToken } from '@/services/assets/types';
 
 const props = defineProps({
   value: { required: true, type: Array as PropType<UnderlyingToken[]> }

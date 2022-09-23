@@ -6,7 +6,6 @@ import { computed, ref, Ref } from 'vue';
 import { usePremium } from '@/composables/premium';
 import { useModules } from '@/composables/session';
 import { useStatusUpdater } from '@/composables/status';
-import i18n from '@/i18n';
 import { balanceKeys } from '@/services/consts';
 import { aaveHistoryKeys } from '@/services/defi/consts';
 import { api } from '@/services/rotkehlchen-api';
@@ -28,6 +27,7 @@ export const useAaveStore = defineStore('defi/aave', () => {
   const { awaitTask } = useTasks();
   const { activeModules } = useModules();
   const premium = usePremium();
+  const { tc } = useI18n();
 
   const aaveTotalEarned = (addresses: string[]) =>
     computed(() => {
@@ -82,20 +82,20 @@ export const useAaveStore = defineStore('defi/aave', () => {
         taskId,
         taskType,
         {
-          title: i18n.tc('actions.defi.aave_balances.task.title'),
+          title: tc('actions.defi.aave_balances.task.title'),
           numericKeys: balanceKeys
         }
       );
       set(balances, result);
     } catch (e: any) {
-      const message = i18n.tc(
+      const message = tc(
         'actions.defi.aave_balances.error.description',
         undefined,
         {
           error: e.message
         }
       );
-      const title = i18n.tc('actions.defi.aave_balances.error.title');
+      const title = tc('actions.defi.aave_balances.error.title');
       notify({
         title,
         message,
@@ -135,19 +135,19 @@ export const useAaveStore = defineStore('defi/aave', () => {
         taskId,
         taskType,
         {
-          title: i18n.tc('actions.defi.aave_history.task.title'),
+          title: tc('actions.defi.aave_history.task.title'),
           numericKeys: aaveHistoryKeys
         }
       );
 
       set(history, result);
     } catch (e: any) {
-      const message = i18n.tc(
+      const message = tc(
         'actions.defi.aave_history.error.description',
         undefined,
         { error: e.message }
       );
-      const title = i18n.tc('actions.defi.aave_history.error.title');
+      const title = tc('actions.defi.aave_history.error.title');
 
       notify({
         title,

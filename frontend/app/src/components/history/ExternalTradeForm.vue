@@ -164,10 +164,10 @@
                     </strong>
                   </template>
                   <template #base>
-                    <strong>{{ getAssetSymbol(base) }}</strong>
+                    <strong>{{ baseSymbol }}</strong>
                   </template>
                   <template #quote>
-                    <strong>{{ getAssetSymbol(quote) }}</strong>
+                    <strong>{{ quoteSymbol }}</strong>
                   </template>
                   <template #rate>
                     <strong>
@@ -191,10 +191,10 @@
                     </strong>
                   </template>
                   <template #base>
-                    <strong>{{ getAssetSymbol(base) }}</strong>
+                    <strong>{{ baseSymbol }}</strong>
                   </template>
                   <template #quote>
-                    <strong>{{ getAssetSymbol(quote) }}</strong>
+                    <strong>{{ quoteSymbol }}</strong>
                   </template>
                   <template #rate>
                     <strong>
@@ -310,7 +310,6 @@ const emit = defineEmits<{ (e: 'input', valid: boolean): void }>();
 const { t } = useI18n();
 const { edit, saveData } = toRefs(props);
 
-const { getAssetSymbol } = useAssetInfoRetrieval();
 const input = (valid: boolean) => emit('input', valid);
 
 const { isTaskRunning } = useTasks();
@@ -336,6 +335,10 @@ const quoteAmountInput = ref<any>(null);
 const rateInput = ref<any>(null);
 const feeInput = ref<any>(null);
 const feeCurrencyInput = ref<any>(null);
+
+const { assetSymbol } = useAssetInfoRetrieval();
+const baseSymbol = assetSymbol(base);
+const quoteSymbol = assetSymbol(quote);
 
 const baseRules = [
   (v: string) => !!v || t('external_trade_form.validation.non_empty_base')

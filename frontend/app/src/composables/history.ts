@@ -1,6 +1,4 @@
-import { get, set } from '@vueuse/core';
 import { Ref } from 'vue';
-import i18n from '@/i18n';
 import { useHistory } from '@/store/history';
 import { IgnoreActionPayload, IgnoreActionType } from '@/store/history/types';
 import { useMessageStore } from '@/store/message';
@@ -15,8 +13,8 @@ export const setupIgnore = <T extends EntryMeta>(
   getIdentifier: (item: T) => string
 ) => {
   const { setMessage } = useMessageStore();
-
   const { ignoreInAccounting } = useHistory();
+  const { tc } = useI18n();
 
   const ignoreActions = async (
     payload: IgnoreActionPayload
@@ -45,8 +43,8 @@ export const setupIgnore = <T extends EntryMeta>(
       const choice = ignored ? 1 : 2;
       setMessage({
         success: false,
-        title: i18n.tc('ignore.no_items.title', choice).toString(),
-        description: i18n.tc('ignore.no_items.description', choice).toString()
+        title: tc('ignore.no_items.title', choice),
+        description: tc('ignore.no_items.description', choice)
       });
       return;
     }

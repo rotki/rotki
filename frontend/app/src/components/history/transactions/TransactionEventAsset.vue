@@ -24,42 +24,27 @@
     </div>
   </div>
 </template>
-<script lang="ts">
-import { get } from '@vueuse/core';
-import { computed, defineComponent, PropType, toRefs } from 'vue';
+<script setup lang="ts">
+import { PropType } from 'vue';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { EthTransactionEventEntry } from '@/store/history/types';
 import { TransactionEventType } from '@/types/transaction';
 import { getEventType } from '@/utils/history';
 
-export default defineComponent({
-  name: 'TransactionEventAsset',
-  props: {
-    event: {
-      required: true,
-      type: Object as PropType<EthTransactionEventEntry>
-    }
-  },
-
-  setup(props) {
-    const { event } = toRefs(props);
-
-    const { assetSymbol } = useAssetInfoRetrieval();
-
-    const showBalance = computed<boolean>(() => {
-      const type = getEventType(get(event));
-
-      return type !== TransactionEventType.APPROVAL;
-    });
-
-    const symbol = computed<string>(() => {
-      return get(assetSymbol(get(event).asset));
-    });
-
-    return {
-      showBalance,
-      symbol
-    };
+const props = defineProps({
+  event: {
+    required: true,
+    type: Object as PropType<EthTransactionEventEntry>
   }
 });
+
+const { event } = toRefs(props);
+const { assetSymbol } = useAssetInfoRetrieval();
+
+const showBalance = computed<boolean>(() => {
+  return getEventType(get(event)) !== TransactionEventType.APPROVAL;
+});
+
+const eventAsset = computed(() => get(event).asset);
+const symbol = assetSymbol(eventAsset);
 </script>

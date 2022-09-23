@@ -1,7 +1,5 @@
 import { BigNumber } from '@rotki/common';
 import { LpType } from '@rotki/common/lib/defi';
-import { get } from '@vueuse/core';
-import { computed } from 'vue';
 import { bigNumberSum } from '@/filters';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useBalancerStore } from '@/store/defi/balancer';
@@ -14,7 +12,7 @@ export const setupLiquidityPosition = () => {
   const { uniswapV2Balances, uniswapV3Balances } = useUniswapStore();
   const { balanceList: sushiswapBalances } = useSushiswapStore();
   const { balancerBalances } = useBalancerStore();
-  const { getAssetSymbol } = useAssetInfoRetrieval();
+  const { assetSymbol } = useAssetInfoRetrieval();
 
   const lpAggregatedBalances = (includeNft: boolean = true) =>
     computed(() => {
@@ -77,7 +75,7 @@ export const setupLiquidityPosition = () => {
 
   const getPoolName = (type: LpType, assets: string[]) => {
     const concatAssets = (assets: string[]) => {
-      return assets.map(asset => getAssetSymbol(asset)).join('/');
+      return assets.map(asset => get(assetSymbol(asset))).join('/');
     };
 
     const data = [

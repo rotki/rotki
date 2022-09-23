@@ -35,7 +35,7 @@
         </v-tooltip>
         <v-tooltip bottom open-delay="400">
           <template #activator="{ on }">
-            <v-btn :class="$style.copy" text icon v-on="on" @click="copy">
+            <v-btn :class="$style.copy" text icon v-on="on" @click="copy()">
               <v-icon>mdi-content-copy</v-icon>
             </v-btn>
           </template>

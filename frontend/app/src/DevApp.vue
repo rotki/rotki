@@ -17,22 +17,11 @@
     </v-main>
   </v-app>
 </template>
-<script lang="ts">
-import { defineComponent } from 'vue';
+<script setup lang="ts">
+const reset = () => {
+  sessionStorage.removeItem('vuex');
+  window.location.reload();
+};
 
-const DevApp = defineComponent({
-  name: 'DevApp',
-  setup() {
-    const reset = () => {
-      sessionStorage.removeItem('vuex');
-      window.location.reload();
-    };
-    return {
-      resetState: 'Reset State ->',
-      reset
-    };
-  }
-});
-
-export default DevApp;
+const resetState = 'Reset State ->';
 </script>

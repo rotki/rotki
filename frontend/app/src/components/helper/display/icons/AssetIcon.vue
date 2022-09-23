@@ -38,28 +38,20 @@
 
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { get, set } from '@vueuse/core';
-import {
-  computed,
-  defineAsyncComponent,
-  ref,
-  toRefs,
-  useCssModule,
-  watch
-} from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 import { api } from '@/services/rotkehlchen-api';
-import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { currencies } from '@/types/currencies';
+
 const AdaptiveWrapper = defineAsyncComponent(
   () => import('@/components/display/AdaptiveWrapper.vue')
 );
 const GeneratedIcon = defineAsyncComponent(
   () => import('@/components/helper/display/icons/GeneratedIcon.vue')
 );
+
 const props = defineProps({
   identifier: { required: true, type: String },
   symbol: { required: false, type: String, default: '' },
+  name: { required: false, type: String, default: null },
   size: { required: true, type: String },
   changeable: { required: false, type: Boolean, default: false },
   styled: { required: false, type: Object, default: () => null },
@@ -68,14 +60,12 @@ const props = defineProps({
   circle: { required: false, type: Boolean, default: false },
   padding: { required: false, type: String, default: '2px' }
 });
-const { symbol, changeable, identifier, timestamp, padding, size } =
+const { symbol, name, changeable, identifier, timestamp, padding, size } =
   toRefs(props);
 const error = ref<boolean>(false);
 
-const { assetSymbol, assetName, assetIdentifierForSymbol } =
-  useAssetInfoRetrieval();
-
-watch([symbol, changeable, identifier], () => set(error, false));
+const { t } = useI18n();
+const css = useCssModule();
 
 const currency = computed<string | undefined>(() => {
   const id = get(identifier);
@@ -87,25 +77,22 @@ const currency = computed<string | undefined>(() => {
 });
 
 const displayAsset = computed<string>(() => {
-  const id = get(identifier);
-  const matchedSymbol = get(assetSymbol(id));
   if (get(error)) {
-    return get(symbol) || matchedSymbol;
+    return get(symbol);
   }
-  return get(currency) || matchedSymbol || id;
+  return get(currency) || get(identifier);
 });
 
 const tooltip = computed(() => {
-  const id = get(identifier);
   return {
-    symbol: get(assetSymbol(id)),
-    name: get(assetName(id))
+    symbol: get(symbol),
+    name: get(name)
   };
 });
 
 const url = computed<string>(() => {
   let id = get(identifier);
-  if (get(symbol) === 'WETH' || get(assetIdentifierForSymbol('WETH')) === id) {
+  if (get(symbol) === 'WETH') {
     return `/assets/images/defi/weth.svg`;
   }
   const currentTimestamp = get(timestamp) || Date.now();
@@ -117,15 +104,16 @@ const url = computed<string>(() => {
 });
 
 const placeholderStyle = computed(() => {
-  const placeholderSize = `calc(${get(padding)} + ${get(padding)} + ${get(
-    size
-  )})`;
-  return { minWidth: placeholderSize, height: placeholderSize };
+  let pad = get(padding);
+  let width = get(size);
+  let prop = `calc(${pad} + ${pad} + ${width})`;
+  return {
+    'min-width': prop,
+    height: prop
+  };
 });
 
-const { t } = useI18n();
-
-const css = useCssModule();
+watch([symbol, changeable, identifier], () => set(error, false));
 </script>
 <style module lang="scss">
 .circle {

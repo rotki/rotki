@@ -12,39 +12,20 @@
   </error-screen>
 </template>
 
-<script lang="ts">
-import { useClipboard } from '@vueuse/core';
-import { defineComponent, toRefs } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+<script setup lang="ts">
 import ErrorScreen from '@/components/error/ErrorScreen.vue';
-
 import { interop } from '@/electron-interop';
 
-export default defineComponent({
-  name: 'StartupErrorScreen',
-  components: { ErrorScreen },
-  props: {
-    message: { required: true, type: String }
-  },
-  setup(props) {
-    const { message } = toRefs(props);
-    const { tc } = useI18n();
-
-    const terminate = () => {
-      interop.closeApp();
-    };
-
-    const { copy: copyText } = useClipboard({ source: message });
-
-    const copy = () => copyText();
-
-    return {
-      terminate,
-      copy,
-      tc
-    };
-  }
+const props = defineProps({
+  message: { required: true, type: String }
 });
+
+const { message } = toRefs(props);
+const { tc } = useI18n();
+
+const terminate = () => {
+  interop.closeApp();
+};
 </script>
 
 <style scoped lang="scss">

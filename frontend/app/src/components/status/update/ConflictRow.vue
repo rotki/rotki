@@ -17,27 +17,15 @@
   </v-row>
 </template>
 
-<script lang="ts">
-import { get } from '@vueuse/core';
-import { computed, defineComponent, toRefs } from 'vue';
-
-const ConflictRow = defineComponent({
-  props: {
-    field: { required: true, type: String },
-    value: { required: false, type: [String, Number], default: null },
-    diff: { required: true, type: Boolean }
-  },
-  setup(props) {
-    const { field } = toRefs(props);
-
-    const isStarted = computed(() => get(field) === 'started');
-    const isAddress = computed(() => get(field) === 'address');
-
-    return {
-      isStarted,
-      isAddress
-    };
-  }
+<script setup lang="ts">
+const props = defineProps({
+  field: { required: true, type: String },
+  value: { required: false, type: [String, Number], default: null },
+  diff: { required: true, type: Boolean }
 });
-export default ConflictRow;
+
+const { field } = toRefs(props);
+
+const isStarted = computed(() => get(field) === 'started');
+const isAddress = computed(() => get(field) === 'address');
 </script>

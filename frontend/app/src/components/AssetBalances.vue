@@ -50,10 +50,7 @@
 
 <script setup lang="ts">
 import { AssetBalanceWithPrice } from '@rotki/common';
-import { get } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { computed, PropType, toRefs } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { PropType } from 'vue';
 import { DataTableHeader } from 'vuetify';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
@@ -83,7 +80,7 @@ const total = computed(() => {
 });
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { getAssetInfo } = useAssetInfoRetrieval();
+const { assetInfo } = useAssetInfoRetrieval();
 
 const tableHeaders = computed<DataTableHeader[]>(() => {
   return [
@@ -117,5 +114,5 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
   ];
 });
 
-const sortItems = getSortItems(getAssetInfo);
+const sortItems = getSortItems(asset => get(assetInfo(asset)));
 </script>

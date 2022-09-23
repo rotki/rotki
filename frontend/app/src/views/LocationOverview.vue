@@ -21,10 +21,7 @@
     </div>
   </v-container>
 </template>
-<script lang="ts">
-import { get } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { computed, defineComponent, onBeforeMount, toRefs } from 'vue';
+<script setup lang="ts">
 import ClosedTrades from '@/components/history/ClosedTrades.vue';
 import DepositsWithdrawalsContent from '@/components/history/deposits-withdrawals/DepositsWithdrawalsContent.vue';
 import LedgerActionContent from '@/components/history/ledger-actions/LedgerActionContent.vue';
@@ -39,75 +36,54 @@ import { useTrades } from '@/store/history/trades';
 import { Section } from '@/types/status';
 import { TradeLocationData } from '@/types/trades';
 
-export default defineComponent({
-  name: 'LocationOverview',
-  components: {
-    LocationAssets,
-    LedgerActionContent,
-    DepositsWithdrawalsContent,
-    ClosedTrades,
-    LocationIcon,
-    LocationValueRow
-  },
-  props: {
-    identifier: { required: true, type: String }
-  },
-  setup(props) {
-    const { identifier } = toRefs(props);
+const props = defineProps({
+  identifier: { required: true, type: String }
+});
 
-    const { getLocation } = setupLocationInfo();
+const { identifier } = toRefs(props);
 
-    const tradeStore = useTrades();
-    const { updateTradesPayload } = tradeStore;
-    const { trades } = storeToRefs(tradeStore);
+const { getLocation } = setupLocationInfo();
 
-    const assetMovementStore = useAssetMovements();
-    const { updateAssetMovementsPayload } = assetMovementStore;
-    const { assetMovements } = storeToRefs(assetMovementStore);
+const tradeStore = useTrades();
+const { updateTradesPayload } = tradeStore;
+const { trades } = storeToRefs(tradeStore);
 
-    const ledgerActionStore = useLedgerActions();
-    const { updateLedgerActionsPayload } = ledgerActionStore;
-    const { ledgerActions } = storeToRefs(ledgerActionStore);
+const assetMovementStore = useAssetMovements();
+const { updateAssetMovementsPayload } = assetMovementStore;
+const { assetMovements } = storeToRefs(assetMovementStore);
 
-    const location = computed<TradeLocationData>(() =>
-      getLocation(get(identifier))
-    );
+const ledgerActionStore = useLedgerActions();
+const { updateLedgerActionsPayload } = ledgerActionStore;
+const { ledgerActions } = storeToRefs(ledgerActionStore);
 
-    onBeforeMount(async () => {
-      const payload = { location: get(identifier) };
-      await Promise.allSettled([
-        updateTradesPayload(payload),
-        updateAssetMovementsPayload(payload),
-        updateLedgerActionsPayload(payload)
-      ]);
-    });
+const location = computed<TradeLocationData>(() =>
+  getLocation(get(identifier))
+);
 
-    const showTrades = computed<boolean>(() => {
-      return (
-        get(isSectionLoading(Section.TRADES)) || get(trades)?.data.length > 0
-      );
-    });
+onBeforeMount(async () => {
+  const payload = { location: get(identifier) };
+  await Promise.allSettled([
+    updateTradesPayload(payload),
+    updateAssetMovementsPayload(payload),
+    updateLedgerActionsPayload(payload)
+  ]);
+});
 
-    const showAssetMovements = computed<boolean>(() => {
-      return (
-        get(isSectionLoading(Section.ASSET_MOVEMENT)) ||
-        get(assetMovements)?.data.length > 0
-      );
-    });
+const showTrades = computed<boolean>(() => {
+  return get(isSectionLoading(Section.TRADES)) || get(trades)?.data.length > 0;
+});
 
-    const showLedgerActions = computed<boolean>(() => {
-      return (
-        get(isSectionLoading(Section.LEDGER_ACTIONS)) ||
-        get(ledgerActions)?.data.length > 0
-      );
-    });
+const showAssetMovements = computed<boolean>(() => {
+  return (
+    get(isSectionLoading(Section.ASSET_MOVEMENT)) ||
+    get(assetMovements)?.data.length > 0
+  );
+});
 
-    return {
-      location,
-      showTrades,
-      showAssetMovements,
-      showLedgerActions
-    };
-  }
+const showLedgerActions = computed<boolean>(() => {
+  return (
+    get(isSectionLoading(Section.LEDGER_ACTIONS)) ||
+    get(ledgerActions)?.data.length > 0
+  );
 });
 </script>
