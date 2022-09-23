@@ -490,6 +490,27 @@ def test_search_assets(rotkehlchen_api_server):
     result = assert_proper_response_with_result(response)
     assert len(result) == 0
 
+    # use the return_exact_matches flag
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'assetssearchresource',
+        ),
+        json={
+            'value': 'ETH',
+            'search_column': 'symbol',
+            'limit': 10,
+            'return_exact_matches': True,
+            'order_by_attributes': ['name'],
+            'ascending': [False],
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result) == 3
+    for entry in result:
+        assert entry['symbol'] == 'ETH'
+    assert_asset_result_order(data=result, is_ascending=False, order_field='name')
+
     # search using a column that is not allowed
     response = requests.post(
         api_url_for(

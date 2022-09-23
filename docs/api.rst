@@ -2797,8 +2797,8 @@ The details of each asset can contain the following keys:
    :reqjson string name: The name of asset to be used to filter the result data. Optional.
    :reqjson string symbol: An asset symbol to be used to filter the result data. Optional.
    :reqjson string asset_type: The category of an asset to be used to filter the result data. Optional.
-   :reqjson bool show_user_owned_assets_only: A flag to specify if only user owned assets should be returned. Defaults to False. Optional.
-   :reqjson string include_ignored_assets: A flag to specify if ignored assets should be included in the result. Defaults to True. Optional.
+   :reqjson bool show_user_owned_assets_only: A flag to specify if only user owned assets should be returned. Defaults to ``"false"``. Optional.
+   :reqjson string include_ignored_assets: A flag to specify if ignored assets should be included in the result. Defaults to ``"true"``. Optional.
 
    **Example Response**:
 
@@ -2959,6 +2959,8 @@ Search for assets
    :reqjson list[bool] ascending: Should the order be ascending? This is the default. If set to false, it will be on descending order.
    :reqjson string value: A string to be used search the assets. Required.
    :reqjson string search_column: A column on the assets table to perform the search on. One of ``"name"`` or ``"symbol"``. Required.
+   :reqjson bool return_exact_matches: A flag that specifies whether the result returned should match the search keyword. Defaults to ``"false"``.
+
 
    **Example Response**:
 
