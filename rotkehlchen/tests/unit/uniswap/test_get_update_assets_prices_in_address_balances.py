@@ -9,14 +9,14 @@ from rotkehlchen.types import Price
 from .utils import (
     A_CAR,
     A_SHL,
-    EXP_LIQUIDITY_POOL_1,
-    EXP_LIQUIDITY_POOL_2,
     TEST_ADDRESS_1,
     TEST_ADDRESS_2,
     USD_PRICE_CAR,
     USD_PRICE_SHL,
     USD_PRICE_USDT,
     USD_PRICE_WETH,
+    const_exp_liquidity_pool_1,
+    const_exp_liquidity_pool_2,
 )
 
 
@@ -62,7 +62,7 @@ def test_half_asset_prices_are_updated(mock_uniswap):
         )
     )
 
-    address_balances = {TEST_ADDRESS_2: [EXP_LIQUIDITY_POOL_2]}
+    address_balances = {TEST_ADDRESS_2: [const_exp_liquidity_pool_2()]}
     known_asset_price = {A_USDT.resolve_to_evm_token().evm_address: USD_PRICE_USDT}
     unknown_asset_price = {}  # CAR not in it
 
@@ -91,7 +91,7 @@ def test_all_asset_prices_are_updated(mock_uniswap):
             address=string_to_evm_address('0x260E069deAd76baAC587B5141bB606Ef8b9Bab6c'),
             assets=[
                 LiquidityPoolAsset(
-                    token=A_SHL,
+                    token=A_SHL.resolve_to_evm_token(),
                     total_amount=FVal('135433.787685858453561892'),
                     user_balance=Balance(
                         amount=FVal('2486.554982222884623101272349'),
@@ -150,16 +150,16 @@ def test_all_asset_prices_are_updated(mock_uniswap):
     )
 
     address_balances = {
-        TEST_ADDRESS_1: [EXP_LIQUIDITY_POOL_1],
-        TEST_ADDRESS_2: [EXP_LIQUIDITY_POOL_2],
+        TEST_ADDRESS_1: [const_exp_liquidity_pool_1()],
+        TEST_ADDRESS_2: [const_exp_liquidity_pool_2()],
     }
     known_asset_price = {
         A_WETH.resolve_to_evm_token().evm_address: USD_PRICE_WETH,
         A_USDT.resolve_to_evm_token().evm_address: USD_PRICE_USDT,
     }
     unknown_asset_price = {
-        A_SHL.evm_address: USD_PRICE_SHL,
-        A_CAR.evm_address: USD_PRICE_CAR,
+        A_SHL.resolve_to_evm_token().evm_address: USD_PRICE_SHL,
+        A_CAR.resolve_to_evm_token().evm_address: USD_PRICE_CAR,
     }
 
     # Main call

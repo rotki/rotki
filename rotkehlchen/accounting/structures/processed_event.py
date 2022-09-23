@@ -139,7 +139,7 @@ class ProcessedAccountingEvent:
             self.pnl -= PNL(taxable=taxable_value + free_value, free=ZERO)
 
         if self.asset.is_fiat() or count_cost_basis_pnl is False:
-            return self.pnl
+            return self.pnl  # no need to calculate spending pnl if asset is fiat
 
         if self.cost_basis is not None:
             taxable_bought_cost = self.cost_basis.taxable_bought_cost

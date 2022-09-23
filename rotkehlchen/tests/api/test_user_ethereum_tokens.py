@@ -74,7 +74,7 @@ def test_query_user_tokens(rotkehlchen_api_server):
     expected_result = [x.to_dict() for x in INITIAL_EXPECTED_TOKENS]
     assert_token_entry_exists_in_result(result, expected_result)
     # This check is to make sure the sqlite query works correctly and queries only for tokens
-    assert all(x['address'] is not None for x in result), 'All returned tokens should have address'
+    assert all(x['evm_address'] is not None for x in result), 'All returned tokens should have address'  # noqa: E501
 
     # test that querying an unknown address for a token is properly handled
     unknown_address = make_ethereum_address()
@@ -99,6 +99,8 @@ def test_adding_user_tokens(rotkehlchen_api_server):
     """Test that the endpoint for adding a user ethereum token works"""
     serialized_token = USER_TOKEN3.to_dict()
     del serialized_token['identifier']
+    del serialized_token['asset_type']
+    del serialized_token['forked']
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
@@ -119,7 +121,7 @@ def test_adding_user_tokens(rotkehlchen_api_server):
     expected_tokens = INITIAL_EXPECTED_TOKENS.copy() + [
         USER_TOKEN3,
         EvmToken.initialize(
-            address=underlying_address4,
+            evm_address=underlying_address4,
             chain=ChainID.ETHEREUM,
             token_kind=EvmTokenKind.ERC20,
         ),
@@ -130,6 +132,8 @@ def test_adding_user_tokens(rotkehlchen_api_server):
     # test that adding an already existing address is handled properly
     serialized_token = INITIAL_TOKENS[1].to_dict()
     del serialized_token['identifier']
+    del serialized_token['asset_type']
+    del serialized_token['forked']
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
@@ -162,7 +166,7 @@ def test_adding_user_tokens(rotkehlchen_api_server):
 
     # now test that adding a token with underlying tokens adding up to more than 100% is caught
     bad_token = EvmToken.initialize(
-        address=make_ethereum_address(),
+        evm_address=make_ethereum_address(),
         chain=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
         decimals=18,
@@ -175,6 +179,8 @@ def test_adding_user_tokens(rotkehlchen_api_server):
     )
     serialized_token = bad_token.to_dict()
     del serialized_token['identifier']
+    del serialized_token['asset_type']
+    del serialized_token['forked']
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
@@ -193,7 +199,7 @@ def test_adding_user_tokens(rotkehlchen_api_server):
     )
     # and test that adding a token with underlying tokens adding up to less than 100% is caught
     bad_token = EvmToken.initialize(
-        address=make_ethereum_address(),
+        evm_address=make_ethereum_address(),
         chain=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
         decimals=18,
@@ -206,6 +212,8 @@ def test_adding_user_tokens(rotkehlchen_api_server):
     )
     serialized_token = bad_token.to_dict()
     del serialized_token['identifier']
+    del serialized_token['asset_type']
+    del serialized_token['forked']
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
@@ -224,7 +232,7 @@ def test_adding_user_tokens(rotkehlchen_api_server):
     )
     # and test that adding a token with empty list of underlying tokens and not null is an error
     bad_token = EvmToken.initialize(
-        address=make_ethereum_address(),
+        evm_address=make_ethereum_address(),
         chain=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
         decimals=18,
@@ -234,6 +242,8 @@ def test_adding_user_tokens(rotkehlchen_api_server):
     )
     serialized_bad_token = bad_token.to_dict()
     del serialized_bad_token['identifier']
+    del serialized_bad_token['asset_type']
+    del serialized_bad_token['forked']
     serialized_bad_token['underlying_tokens'] = []
     response = requests.put(
         api_url_for(
@@ -253,7 +263,7 @@ def test_adding_user_tokens(rotkehlchen_api_server):
     # test that adding invalid coingecko fails
     bad_identifier = 'INVALIDID'
     bad_token = {
-        'address': make_ethereum_address(),
+        'evm_address': make_ethereum_address(),
         'chain': 'ethereum',
         'token_kind': 'erc20',
         'decimals': 18,
@@ -297,6 +307,8 @@ def test_editing_user_tokens(rotkehlchen_api_server):
     """Test that the endpoint for editing a user ethereum token works"""
     new_token1 = INITIAL_TOKENS[0].to_dict()
     del new_token1['identifier']
+    del new_token1['asset_type']
+    del new_token1['forked']
     new_name = 'Edited token'
     new_symbol = 'ESMBL'
     new_protocol = 'curve'
@@ -334,8 +346,10 @@ def test_editing_user_tokens(rotkehlchen_api_server):
     # test that editing an non existing address is handled properly
     non_existing_token = INITIAL_TOKENS[0].to_dict()
     del non_existing_token['identifier']
+    del non_existing_token['asset_type']
+    del non_existing_token['forked']
     non_existing_address = make_ethereum_address()
-    non_existing_token['address'] = non_existing_address
+    non_existing_token['evm_address'] = non_existing_address
     response = requests.patch(
         api_url_for(
             rotkehlchen_api_server,

@@ -53,7 +53,10 @@ class ZksyncDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
 
         for event in decoded_events:
             if event.event_type == HistoryEventType.SPEND and event.location_label == user_address:
-                event_raw_amount = asset_raw_value(amount=event.balance.amount, asset=event.asset)
+                event_raw_amount = asset_raw_value(
+                    amount=event.balance.amount,
+                    asset=event.asset.resolve_to_crypto_asset(),
+                )
                 if event_raw_amount != amount_raw:
                     continue
 

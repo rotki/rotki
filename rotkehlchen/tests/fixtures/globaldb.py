@@ -74,7 +74,6 @@ def fixture_globaldb(
     copyfile(source_db_path, new_global_dir / 'global.db')
     if reaload_custom_assets is False:
         with (
-            patch('rotkehlchen.globaldb.handler._reload_constant_assets', lambda *a, **k: None),
             patch('rotkehlchen.globaldb.upgrades.manager.UPGRADES_LIST', globaldb_upgrades),
             patch('rotkehlchen.globaldb.utils.GLOBAL_DB_VERSION', target_globaldb_version),
         ):

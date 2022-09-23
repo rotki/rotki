@@ -114,7 +114,7 @@ def export_assets_from_file(
     serialized = []
     for asset_identifier in assets:
         try:
-            asset = Asset(asset_identifier)
+            asset = Asset(asset_identifier).resolve()
             serialized.append(asset.to_dict())
         except UnknownAsset as e:
             log.error(e)

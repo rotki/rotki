@@ -68,6 +68,8 @@ INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('X', 24);
 INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('Y', 25);
 /* NFT */
 INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('Z', 26);
+/* CUSTOM ASSET */
+INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('[', 27);
 """
 
 # Custom enum table for token kindss

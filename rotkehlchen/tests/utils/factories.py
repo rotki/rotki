@@ -89,6 +89,7 @@ def make_ethereum_transaction(tx_hash: Optional[bytes] = None) -> EvmTransaction
 def make_ethereum_event(
     index: int,
     tx_hash: Optional[bytes] = None,
+    # technically accepts any asset, but should be a crypto asset for ethereum events
     asset: Asset = A_USDT,
     counterparty: Optional[str] = None,
 ) -> HistoryBaseEntry:

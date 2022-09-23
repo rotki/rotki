@@ -382,13 +382,7 @@ class Trade(AccountingEventMixin):
             return 1
 
         group_id = self.identifier
-        taxable = accounting.settings.include_crypto2crypto
-        if taxable is False:
-            try:
-                asset_in.resolve_to_fiat_asset()
-                taxable = True  # if asset_in is fiat
-            except UnknownAsset:
-                pass
+        taxable = asset_in.is_fiat() or accounting.settings.include_crypto2crypto
 
         _, trade_taxable_amount = accounting.add_spend(
             event_type=AccountingEventType.TRADE,
@@ -705,13 +699,13 @@ def deserialize_trade(data: Dict[str, Any]) -> Trade:
     return Trade(
         timestamp=data['timestamp'],
         location=location,
-        base_asset=Asset(data['base_asset']),
-        quote_asset=Asset(data['quote_asset']),
+        base_asset=Asset(data['base_asset']).resolve(),  # resolve to any just to verify
+        quote_asset=Asset(data['quote_asset']).resolve(),  # identifier existence
         trade_type=trade_type,
         amount=amount,
         rate=rate,
         fee=deserialize_optional(data['fee'], deserialize_fee),
-        fee_currency=Asset(data['fee_currency']) if data['fee_currency'] is not None else None,  # noqa: E501
+        fee_currency=Asset(data['fee_currency']).resolve() if data['fee_currency'] is not None else None,  # noqa: E501
         link=trade_link,
         notes=trade_notes,
     )

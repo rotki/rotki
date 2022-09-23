@@ -282,7 +282,10 @@ def test_manual_current_prices_loop(inquirer):
         to_asset=A_ETH,
         price=ONE,
     )
-    price = inquirer.find_price(from_asset=A_ETH, to_asset=A_EUR)
+    price = inquirer.find_price(
+        from_asset=A_ETH.resolve_to_asset_with_oracles(),
+        to_asset=A_EUR.resolve_to_asset_with_oracles(),
+    )
     assert price > 100  # should be real ETH price
     warnings = inquirer._msg_aggregator.consume_warnings()
     assert len(warnings) == 1

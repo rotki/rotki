@@ -132,10 +132,8 @@ class AssetBalance:
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class BalanceSheet:
-    # TODO: Check and discuss. Looks like right now BalanceSheet is used only for CryptoAssets,
-    # but perhaps is also usable for custom assets and others?
-    assets: Dict['Asset', Balance] = field(default_factory=lambda: defaultdict(Balance))  # noqa: E501
-    liabilities: Dict['Asset', Balance] = field(default_factory=lambda: defaultdict(Balance))  # noqa: E501
+    assets: Dict['Asset', Balance] = field(default_factory=lambda: defaultdict(Balance))
+    liabilities: Dict['Asset', Balance] = field(default_factory=lambda: defaultdict(Balance))
 
     def copy(self) -> 'BalanceSheet':
         return BalanceSheet(assets=self.assets.copy(), liabilities=self.liabilities.copy())

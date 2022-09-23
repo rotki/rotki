@@ -63,7 +63,10 @@ class PickleFinanceDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             if EvmToken(ethaddress_to_identifier(tx_log.address)) != event.asset:
                 return True
             amount_raw = hex_or_bytes_to_int(tx_log.data)
-            amount = asset_normalized_value(amount=amount_raw, asset=event.asset)
+            amount = asset_normalized_value(
+                amount=amount_raw,
+                asset=event.asset.resolve_to_crypto_asset(),
+            )
             if event.balance.amount == amount:
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
@@ -75,7 +78,10 @@ class PickleFinanceDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             tx_log.address in self.pickle_contracts
         ):
             amount_raw = hex_or_bytes_to_int(tx_log.data)
-            amount = asset_normalized_value(amount=amount_raw, asset=event.asset)
+            amount = asset_normalized_value(
+                amount=amount_raw,
+                asset=event.asset.resolve_to_crypto_asset(),
+            )
             if event.balance.amount == amount:  # noqa: E501
                 event.event_type = HistoryEventType.RECEIVE
                 event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
@@ -91,7 +97,10 @@ class PickleFinanceDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             if event.asset != EvmToken(ethaddress_to_identifier(tx_log.address)):
                 return True
             amount_raw = hex_or_bytes_to_int(tx_log.data)
-            amount = asset_normalized_value(amount=amount_raw, asset=event.asset)
+            amount = asset_normalized_value(
+                amount=amount_raw,
+                asset=event.asset.resolve_to_crypto_asset(),
+            )
             if event.balance.amount == amount:  # noqa: E501
                 event.event_type = HistoryEventType.SPEND
                 event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
@@ -107,7 +116,10 @@ class PickleFinanceDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             if event.asset != EvmToken(ethaddress_to_identifier(tx_log.address)):
                 return True
             amount_raw = hex_or_bytes_to_int(tx_log.data)
-            amount = asset_normalized_value(amount=amount_raw, asset=event.asset)
+            amount = asset_normalized_value(
+                amount=amount_raw,
+                asset=event.asset.resolve_to_crypto_asset(),
+            )
             if event.balance.amount == amount:  # noqa: E501
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.REMOVE_ASSET

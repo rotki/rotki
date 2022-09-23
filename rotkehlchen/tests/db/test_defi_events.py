@@ -154,11 +154,19 @@ def test_add_and_get_aave_events(data_dir, username, sql_vm_instructions_cb):
         )]
         data.db.add_aave_events(cursor, address=addr3, events=addr3_events)
 
-        events = data.db.get_aave_events(cursor, address=addr1, atoken=A_ADAI_V1)
+        events = data.db.get_aave_events(
+            cursor=cursor,
+            address=addr1,
+            atoken=A_ADAI_V1.resolve_to_evm_token(),
+        )
         assert events == addr1_events
-        events = data.db.get_aave_events(cursor, address=addr2, atoken=A_ADAI_V1)
+        events = data.db.get_aave_events(
+            cursor=cursor,
+            address=addr2,
+            atoken=A_ADAI_V1.resolve_to_evm_token(),
+        )
         assert events == addr2_events
-        events = data.db.get_aave_events(cursor, address=addr3)
+        events = data.db.get_aave_events(cursor=cursor, address=addr3)
         assert events == addr3_events
 
     # check that all aave events are properly hashable (aka can go in a set)

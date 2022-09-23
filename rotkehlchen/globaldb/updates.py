@@ -76,7 +76,6 @@ def _force_remote(cursor: DBCursor, local_asset: Asset, full_insert: str) -> Non
         (local_asset.identifier,),
     )
     # Insert new entry. Since identifiers are the same, no foreign key constrains should break
-    print(full_insert)
     executeall(cursor, full_insert)
     AssetResolver().clean_memory_cache(local_asset.identifier.lower())
 
@@ -307,9 +306,6 @@ class AssetsUpdater():
             text: str,
             conflicts: Optional[Dict[Asset, Literal['remote', 'local']]],
     ) -> None:
-        # TODO: don't forget to think about asset updates. We probably need here a method smth like
-        # resolve_to_its_instance which will automatically pick the correct type and create the
-        # corresponding instance. But need to think and check how it works.
         lines = text.splitlines()
         for action, full_insert in zip(*[iter(lines)] * 2):
             if full_insert == '*':
@@ -363,7 +359,7 @@ class AssetsUpdater():
                     continue  # fail or succeed continue to next entry
 
                 # else can't resolve. Mark it for the user to resolve.
-                # TODO: After the Asset refactor has finished remove the usage of AssetData here
+                # TODO: When assets refactor is finished, remove the usage of AssetData here
                 local_data = GlobalDBHandler().get_all_asset_data(  # type: ignore  # pylint: disable=unsubscriptable-object  # noqa: E501
                     mapping=False,
                     serialized=False,

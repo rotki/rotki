@@ -13,7 +13,7 @@ from rotkehlchen.tests.utils.aave import ATOKENV1_TO_ASSET, ATOKENV2_ADDRESS_TO_
 def test_aave_reserve_mapping():
     atokensv1 = GlobalDBHandler().get_ethereum_tokens(protocol='aave')
     for token in atokensv1:
-        underlying_asset = ATOKENV1_TO_ASSET[token]
+        underlying_asset = ATOKENV1_TO_ASSET[token].resolve_to_crypto_asset()
         if underlying_asset == A_ETH:
             assert asset_to_aave_reserve_address(underlying_asset) == ETH_SPECIAL_ADDRESS
             continue
@@ -38,4 +38,4 @@ def test_atoken_to_asset():
             assert reserve_asset == ATOKENV2_ADDRESS_TO_RESERVE_ASSET[atoken.evm_address]
 
     for atokenv1, reserve_asset in ATOKENV1_TO_ASSET.items():
-        assert atoken_to_asset(atokenv1) == reserve_asset
+        assert atoken_to_asset(atokenv1.resolve_to_evm_token()) == reserve_asset

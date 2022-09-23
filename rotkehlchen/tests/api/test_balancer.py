@@ -47,7 +47,7 @@ from rotkehlchen.types import (
 BALANCER_TEST_ADDR1 = string_to_evm_address('0x49a2DcC237a65Cc1F412ed47E0594602f6141936')
 BALANCER_TEST_ADDR2 = string_to_evm_address('0x7716a99194d758c8537F056825b75Dd0C8FDD89f')
 BALANCER_TEST_ADDR2_POOL1 = EvmToken.initialize(
-    address=string_to_evm_address('0x59A19D8c652FA0284f44113D0ff9aBa70bd46fB4'),
+    evm_address=string_to_evm_address('0x59A19D8c652FA0284f44113D0ff9aBa70bd46fB4'),
     chain=ChainID.ETHEREUM,
     token_kind=EvmTokenKind.ERC20,
     symbol='BPT',
@@ -58,7 +58,7 @@ BALANCER_TEST_ADDR2_POOL1 = EvmToken.initialize(
     ],
 )
 BALANCER_TEST_ADDR2_POOL2 = EvmToken.initialize(
-    address=string_to_evm_address('0x574FdB861a0247401B317a3E68a83aDEAF758cf6'),
+    evm_address=string_to_evm_address('0x574FdB861a0247401B317a3E68a83aDEAF758cf6'),
     chain=ChainID.ETHEREUM,
     token_kind=EvmTokenKind.ERC20,
     symbol='BPT',

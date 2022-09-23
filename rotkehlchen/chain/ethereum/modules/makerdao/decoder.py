@@ -481,7 +481,10 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-
             for event in decoded_events:
                 crypto_asset = event.asset.resolve_to_crypto_asset()
                 if event.event_type == HistoryEventType.DEPOSIT and event.event_subtype == HistoryEventSubType.DEPOSIT_ASSET and event.counterparty == CPT_VAULT:  # noqa: E501
-                    normalized_dink = asset_normalized_value(amount=dink, asset=event.asset)
+                    normalized_dink = asset_normalized_value(
+                        amount=dink,
+                        asset=event.asset.resolve_to_crypto_asset(),
+                    )
                     if normalized_dink != event.balance.amount:
                         continue
 

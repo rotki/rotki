@@ -268,7 +268,6 @@ class DBHistoryEvents():
                     (
                         identifier,
                         amount,
-                        # TODO: decide how to load asset_type (cc discord)
                         Asset(asset_identifier),
                         ts_ms_to_sec(TimestampMS(timestamp)),
                     ),
@@ -297,7 +296,7 @@ class DBHistoryEvents():
         cursor.execute(query, bindings)
         for asset_id in cursor:
             try:
-                assets.append(Asset(asset_id[0]))  # TODO: also think about asset_type
+                assets.append(Asset(asset_id[0]))
             except (UnknownAsset, DeserializationError) as e:
                 self.db.msg_aggregator.add_error(
                     f'Found asset {asset_id} in the base history events table and '
@@ -343,7 +342,7 @@ class DBHistoryEvents():
         assets_amounts = []
         for row in cursor:
             try:
-                asset = Asset(row[0])  # TODO: asset_type
+                asset = Asset(row[0])
                 amount = deserialize_fval(
                     value=row[1],
                     name='total amount in history events stats',

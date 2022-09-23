@@ -118,7 +118,7 @@ def test_add_edit_token_with_wrong_swapped_for(globaldb):
     # need to obtain a valid EvmToken object
     address_to_delete = make_ethereum_address()
     token_to_delete = EvmToken.initialize(
-        address=address_to_delete,
+        evm_address=address_to_delete,
         chain=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
         decimals=18,
@@ -145,7 +145,7 @@ def test_add_edit_token_with_wrong_swapped_for(globaldb):
             asset_id='NEWID',
             asset_type=AssetType.EVM_TOKEN,
             data=EvmToken.initialize(
-                address=make_ethereum_address(),
+                evm_address=make_ethereum_address(),
                 chain=ChainID.ETHEREUM,
                 token_kind=EvmTokenKind.ERC20,
                 swapped_for=asset_to_delete,
@@ -156,7 +156,7 @@ def test_add_edit_token_with_wrong_swapped_for(globaldb):
     resolved_bat = A_BAT.resolve_to_evm_token()
     bat_custom = globaldb.get_evm_token(address=resolved_bat.evm_address, chain=ChainID.ETHEREUM)
     bat_custom = EvmToken.initialize(
-        address=resolved_bat.evm_address,
+        evm_address=resolved_bat.evm_address,
         chain=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
         decimals=resolved_bat.decimals,
@@ -228,7 +228,7 @@ def test_get_asset_with_symbol(globaldb):
     bihukey_address = string_to_evm_address('0x4Cd988AfBad37289BAAf53C13e98E2BD46aAEa8c')
     aave_address = string_to_evm_address('0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9')
     renbtc_address = string_to_evm_address('0xEB4C2781e4ebA804CE9a9803C67d0893436bB27D')
-    assert asset_data == [
+    assert asset_data == [  # TODO: Yabir, pls fix this
         selfkey_asset_data,
         AssetData(
             identifier=ethaddress_to_identifier(bihukey_address),
@@ -561,7 +561,7 @@ def test_global_db_restore(globaldb, database):
     # Add a custom eth token
     address_to_delete = make_ethereum_address()
     token_to_delete = EvmToken.initialize(
-        address=address_to_delete,
+        evm_address=address_to_delete,
         chain=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
         decimals=18,
@@ -576,7 +576,7 @@ def test_global_db_restore(globaldb, database):
     # Add a token with underlying token
     with_underlying_address = make_ethereum_address()
     with_underlying = EvmToken.initialize(
-        address=with_underlying_address,
+        evm_address=with_underlying_address,
         chain=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
         decimals=18,
@@ -698,7 +698,7 @@ def test_global_db_reset(globaldb):
     # Add a custom eth token
     address_to_delete = make_ethereum_address()
     token_to_delete = EvmToken.initialize(
-        address=address_to_delete,
+        evm_address=address_to_delete,
         chain=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
         decimals=18,
@@ -713,7 +713,7 @@ def test_global_db_reset(globaldb):
     # Add a token with underlying token
     with_underlying_address = make_ethereum_address()
     with_underlying = EvmToken.initialize(
-        address=with_underlying_address,
+        evm_address=with_underlying_address,
         chain=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
         decimals=18,
@@ -743,7 +743,7 @@ def test_global_db_reset(globaldb):
     )
     # Edit one token
     one_inch_update = EvmToken.initialize(
-        address='0x111111111117dC0aa78b770fA6A738034120C302',
+        evm_address='0x111111111117dC0aa78b770fA6A738034120C302',
         chain=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
         name='1inch boi',
@@ -836,7 +836,7 @@ def test_asset_deletion(globaldb):
 
     # Creating custom evm token to also check that underlying tokens are cleared
     token_data = EvmToken.initialize(
-        address=make_ethereum_address(),
+        evm_address=make_ethereum_address(),
         chain=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
         symbol='a',
