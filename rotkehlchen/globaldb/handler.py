@@ -19,7 +19,6 @@ from typing import (
 
 from polyleven import levenshtein
 
-from rotkehlchen.assets.types import AssetData, AssetType
 from rotkehlchen.assets.asset import (
     Asset,
     AssetWithNameAndType,

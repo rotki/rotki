@@ -36,15 +36,15 @@ class AssetType(DBEnumMixIn):
     NFT = 26
     CUSTOM_ASSET = 27
 
-
-ASSETS_WITH_NO_CRYPTO_ORACLES = {AssetType.NFT, AssetType.OTHER, AssetType.CUSTOM_ASSET}
-NON_CRYPTO_ASSETS = ASSETS_WITH_NO_CRYPTO_ORACLES | {AssetType.FIAT}
-
     @staticmethod
     def is_crypto_asset(asset_type: 'AssetType') -> bool:
         crypto_asset_types_values = set(range(4, 27))
         crypto_asset_types_values.add(2)  # include `OWN_CHAIN`
         return asset_type.value in crypto_asset_types_values
+
+
+ASSETS_WITH_NO_CRYPTO_ORACLES = {AssetType.NFT, AssetType.OTHER, AssetType.CUSTOM_ASSET}
+NON_CRYPTO_ASSETS = ASSETS_WITH_NO_CRYPTO_ORACLES | {AssetType.FIAT}
 
 
 class AssetData(NamedTuple):

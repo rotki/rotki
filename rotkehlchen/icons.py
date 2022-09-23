@@ -153,7 +153,7 @@ class IconManager():
 
         Returns true if there is more icons left to cache after this batch.
         """
-        coingecko_integrated_asset_ids = GlobalDBHandler().assets_with_coingecko_icon()
+        coingecko_integrated_asset_ids = GlobalDBHandler().assets_with_coingecko_id()
         cached_asset_ids = [
             str(x.name)[:-10] for x in self.icons_dir.glob('*_small.png') if x.is_file()
         ]
