@@ -4,7 +4,6 @@ import pytest
 
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.resolver import AssetResolver
-from rotkehlchen.assets.types import AssetData
 from rotkehlchen.constants.assets import A_1INCH, A_BTC, A_DOGE, A_ETH, A_LINK, A_USDC, A_WETH
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.errors.defi import DefiPoolError
@@ -68,7 +67,7 @@ def test_uniswap_no_decimals(inquirer_defi):
     """Test that if a token has no information about the number of decimals a proper error
     is raised"""
     asset_resolver = AssetResolver()
-    original_getter = asset_resolver.resolve_asset  # TODO: Yabir, please fix this
+    original_getter = asset_resolver.resolve_asset
 
     def fake_weth_token():
         """Make sure that the weth token has no decimals fields and any other token
@@ -76,13 +75,10 @@ def test_uniswap_no_decimals(inquirer_defi):
         """
         resolved_weth = A_WETH.resolve_to_evm_token()
 
-        def mocked_asset_getter(asset_identifier: str):
-            # TODO: Yabir, also a test for you. I am not 100% aware of what to do with AssetData
+        def mocked_asset_getter(asset_identifier, form_with_incomplete_data):  # pylint: disable=unused-argument  # noqa: E501
             if asset_identifier == resolved_weth.identifier:
-                fake_weth = AssetData(
-                    identifier=resolved_weth.identifier,
-                    asset_type=resolved_weth.asset_type,
-                    address=resolved_weth.evm_address,
+                fake_weth = EvmToken.initialize(
+                    evm_address=resolved_weth.evm_address,
                     chain=resolved_weth.chain,
                     token_kind=resolved_weth.token_kind,
                     decimals=None,
@@ -97,7 +93,7 @@ def test_uniswap_no_decimals(inquirer_defi):
                 )
                 return fake_weth
             return original_getter(asset_identifier)
-        return patch.object(asset_resolver, 'get_asset_data', wraps=mocked_asset_getter)
+        return patch.object(asset_resolver, 'resolve_asset', wraps=mocked_asset_getter)
 
     with fake_weth_token():
         weth = EvmToken(A_WETH.identifier)

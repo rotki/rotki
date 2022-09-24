@@ -1342,9 +1342,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                 continue
 
             try:
-                token = Asset(
-                    ethaddress_to_identifier(entry.base_balance.token_address),
-                ).resolve_to_evm_token()
+                token = EvmToken(ethaddress_to_identifier(entry.base_balance.token_address))
             except UnknownAsset:
                 log.warning(
                     f'Found unknown asset {entry.base_balance.token_symbol} in DeFi '
