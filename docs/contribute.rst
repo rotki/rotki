@@ -413,6 +413,55 @@ There is some alternative linting tools that we don't run in the CI since they h
  - **vulture**: Source and docs `here <https://github.com/jendrikseipp/vulture>`__. Just get via ``pip install vulture``. If you simply run it from the root directory you will get a list of possibly unused code that you can remove. You will have to go through a lot of false positives.
  - **bandit** Source and docs `here <https://github.com/PyCQA/bandit>`__. Just get via ``pip install bandit``. If you run it you will get a lot of potential issues in the code. You will have to go through a lot of false positives.
 
+Vue/Typescript
+===============
+
+The Vue/Typescript part of the application under the ``frontend`` directory has two types of tests.
+The unit tests that are testing functions and components are using ``vitest`` and ``vue-test-utils`` and you can run
+them by:
+
+::
+
+    npm run test:unit -w app
+
+These are supposed to be small tests ensuring that parts of the code work good in isolation.
+
+The second type of tests is an `e2e` test suite using ``cypress``. The e2e tests require the python virtual environment
+because they depend on the actual python backend. These tests ensure proper e2e functionality and application integration
+and try to replicate scenarios of real user interaction through the application.
+
+To run the e2e tests you need to run the following command inside the frontend directory:
+
+::
+
+    npm run test:integration-ci -w app
+
+The above command will run the e2e tests in headless mode. If you want to debug specific tests you can also run:
+
+::
+
+    npm run test:integration -w
+
+This command will open the Cypress Test Runner window where you can select specific suites to execute.
+
+Linting
+--------
+
+Before committing and pushing your commits ensure that you fix any lint issues. You can do this by running:
+
+::
+
+    npm run lint:fix
+
+.. note::
+
+    While lint warning are not fatal and will not fail the CI pipeline it would be better a PR
+    reduces the number of warnings and doesn't introduces new ones. Warnings are things that
+    need to be fixed and the will be converted to errors in the future.
+
+
+
+
 Manual Testing
 ***********************
 
@@ -681,3 +730,11 @@ tag name.
     docker buildx create --name imgbldr --use
     docker buildx inspect --bootstrap --builder imgbldr
     docker buildx build --build-arg REVISION='git sha' --build-arg ROTKI_VERSION=vx.x.x --file ./Dockerfile --platform linux/amd64 --platform linux/arm64 --tag rotki/rotki:vx.x.x --tag rotki/rotki:latest --push .
+
+
+Working with the frontend
+*****************************
+
+While working with the frontend code and type errors in the code will be displayed inside the page.
+To make clicking the errors open in your editor or IDE you need to set the `LAUNCH_EDITOR <https://github.com/yyx990803/launch-editor#supported-editors>`_
+environment variable in your system.
