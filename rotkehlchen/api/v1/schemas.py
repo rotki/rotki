@@ -1670,7 +1670,7 @@ class OptionalEthereumAddressSchema(Schema):
 
 
 class RequiredEthereumAddressSchema(Schema):
-    evm_address = EthereumAddressField(required=True)
+    address = EthereumAddressField(required=True)
     chain = SerializableEnumField(enum_class=ChainID, required=True)
 
 

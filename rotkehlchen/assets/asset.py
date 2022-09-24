@@ -752,6 +752,12 @@ class Asset:
         return AssetResolver().get_asset_type(self.identifier) == AssetType.EVM_TOKEN
 
     def resolve(self, form_with_incomplete_data: bool = False) -> 'Asset':
+        if self.identifier.startswith(NFT_DIRECTIVE):
+            return Nft.initialize(
+                identifier=self.identifier,
+                chain=ChainID.ETHEREUM,
+            )
+
         return AssetResolver().resolve_asset(
             identifier=self.identifier,
             form_with_incomplete_data=form_with_incomplete_data,
@@ -1141,10 +1147,61 @@ class EvmToken(CryptoAsset):
     def to_dict(self) -> Dict[str, Any]:
         underlying_tokens = [x.serialize() for x in self.underlying_tokens] if self.underlying_tokens is not None else None  # noqa: E501
         return super().to_dict() | {
-            'evm_address': self.evm_address,
+            'address': self.evm_address,
             'chain': self.chain.serialize(),
             'token_kind': self.token_kind.serialize(),
             'decimals': self.decimals,
             'protocol': self.protocol,
             'underlying_tokens': underlying_tokens,
         }
+
+
+class Nft(EvmToken):
+
+    def __post_init__(self, direct_field_initialization: bool) -> None:
+        if direct_field_initialization is True:
+            return
+        address = self.identifier[len(NFT_DIRECTIVE):].split('_')[0]
+        object.__setattr__(self, 'asset_type', AssetType.EVM_TOKEN)
+        object.__setattr__(self, 'name', f'nft with id {self.identifier}')
+        object.__setattr__(self, 'symbol', self.identifier[len(NFT_DIRECTIVE):])
+        object.__setattr__(self, 'cryptocompare', None)
+        object.__setattr__(self, 'coingecko', None)
+        object.__setattr__(self, 'started', None)
+        object.__setattr__(self, 'forked', None)
+        object.__setattr__(self, 'swapped_for', None)
+        object.__setattr__(self, 'evm_address', address)
+        object.__setattr__(self, 'chain', ChainID.ETHEREUM)
+        object.__setattr__(self, 'token_kind', EvmTokenKind.ERC721)
+        object.__setattr__(self, 'decimals', 0)
+        object.__setattr__(self, 'protocol', None)
+        object.__setattr__(self, 'underlying_tokens', None)
+
+    @classmethod
+    def initialize(  # type: ignore  # signature is incompatible with super type
+            cls: Type['EvmToken'],
+            identifier: str,
+            chain: ChainID,
+            name: Optional[str] = None,
+            symbol: Optional[str] = None,
+    ) -> 'Nft':
+        # TODO: This needs to change once we correctly track NFTs
+        asset = Nft(identifier=identifier, direct_field_initialization=True)
+        address = identifier[len(NFT_DIRECTIVE):].split('_')[0]
+        nft_name = f'nft with id {identifier}' if name is None else name
+        nft_symbol = identifier[len(NFT_DIRECTIVE):] if symbol is None else symbol
+        object.__setattr__(asset, 'asset_type', AssetType.EVM_TOKEN)
+        object.__setattr__(asset, 'name', nft_name)
+        object.__setattr__(asset, 'symbol', nft_symbol)
+        object.__setattr__(asset, 'cryptocompare', None)
+        object.__setattr__(asset, 'coingecko', None)
+        object.__setattr__(asset, 'started', None)
+        object.__setattr__(asset, 'forked', None)
+        object.__setattr__(asset, 'swapped_for', None)
+        object.__setattr__(asset, 'evm_address', address)
+        object.__setattr__(asset, 'chain', chain)
+        object.__setattr__(asset, 'token_kind', EvmTokenKind.ERC721)
+        object.__setattr__(asset, 'decimals', 0)
+        object.__setattr__(asset, 'protocol', None)
+        object.__setattr__(asset, 'underlying_tokens', None)
+        return asset

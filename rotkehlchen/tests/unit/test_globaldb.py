@@ -5,7 +5,7 @@ from shutil import copyfile
 
 import pytest
 
-from rotkehlchen.assets.asset import Asset, EvmToken, UnderlyingToken
+from rotkehlchen.assets.asset import Asset, CryptoAsset, EvmToken, UnderlyingToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import AssetData, AssetType
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
@@ -34,15 +34,13 @@ from rotkehlchen.utils.misc import ts_now
 
 selfkey_address = string_to_evm_address('0x4CC19356f2D37338b9802aa8E8fc58B0373296E7')
 selfkey_id = ethaddress_to_identifier(selfkey_address)
-selfkey_asset_data = AssetData(
-    identifier=selfkey_id,
+selfkey_asset_data = EvmToken.initialize(
     name='Selfkey',
     symbol='KEY',
-    asset_type=AssetType.EVM_TOKEN,
     started=Timestamp(1508803200),
     forked=None,
     swapped_for=None,
-    address=selfkey_address,
+    evm_address=selfkey_address,
     chain=ChainID.ETHEREUM,
     token_kind=EvmTokenKind.ERC20,
     decimals=18,
@@ -50,7 +48,7 @@ selfkey_asset_data = AssetData(
     coingecko='selfkey',
     protocol=None,
 )
-bidr_asset_data = AssetData(
+bidr_asset_data = CryptoAsset.initialize(
     identifier='BIDR',
     name='Binance IDR Stable Coin',
     symbol='BIDR',
@@ -58,13 +56,8 @@ bidr_asset_data = AssetData(
     started=Timestamp(1593475200),
     forked=None,
     swapped_for=None,
-    address=None,
-    chain=None,
-    token_kind=None,
-    decimals=None,
     cryptocompare=None,
     coingecko='binanceidr',
-    protocol=None,
 )
 
 
@@ -228,24 +221,22 @@ def test_get_asset_with_symbol(globaldb):
     bihukey_address = string_to_evm_address('0x4Cd988AfBad37289BAAf53C13e98E2BD46aAEa8c')
     aave_address = string_to_evm_address('0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9')
     renbtc_address = string_to_evm_address('0xEB4C2781e4ebA804CE9a9803C67d0893436bB27D')
-    assert asset_data == [  # TODO: Yabir, pls fix this
+    assert asset_data == [
         selfkey_asset_data,
-        AssetData(
-            identifier=ethaddress_to_identifier(bihukey_address),
+        EvmToken.initialize(
             name='Bihu KEY',
             symbol='KEY',
-            asset_type=AssetType.EVM_TOKEN,
             started=1507822985,
             forked=None,
             swapped_for=None,
-            address=bihukey_address,
+            evm_address=bihukey_address,
             chain=ChainID.ETHEREUM,
             token_kind=EvmTokenKind.ERC20,
             decimals=18,
             cryptocompare='BIHU',
             coingecko='key',
             protocol=None,
-        ), AssetData(
+        ), CryptoAsset.initialize(
             identifier='KEY-3',
             name='KeyCoin',
             symbol='KEY',
@@ -253,56 +244,45 @@ def test_get_asset_with_symbol(globaldb):
             started=1405382400,
             forked=None,
             swapped_for=None,
-            address=None,
-            chain=None,
-            token_kind=None,
-            decimals=None,
             cryptocompare='KEYC',
             coingecko='',
-            protocol=None,
         )]
     # only non-ethereum token
     assert globaldb.get_assets_with_symbol('BIDR') == [bidr_asset_data]
     # only ethereum token
-    expected_assets = [AssetData(
-        identifier=ethaddress_to_identifier(aave_address),
+    expected_assets = [EvmToken.initialize(
         name='Aave Token',
         symbol='AAVE',
-        asset_type=AssetType.EVM_TOKEN,
         started=1600970788,
         forked=None,
         swapped_for=None,
-        address=aave_address,
+        evm_address=aave_address,
         chain=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
         decimals=18,
         cryptocompare=None,
         coingecko='aave',
         protocol=None,
-    ), AssetData(
-        identifier='eip155:137/erc20:0xD6DF932A45C0f255f85145f286eA0b292B21C90B',
+    ), EvmToken.initialize(
         name='Aave (PoS)',
         symbol='AAVE',
-        asset_type=AssetType.EVM_TOKEN,
         started=None,
         forked=None,
         swapped_for=None,
-        address='0xD6DF932A45C0f255f85145f286eA0b292B21C90B',
+        evm_address='0xD6DF932A45C0f255f85145f286eA0b292B21C90B',
         chain=ChainID.MATIC,
         token_kind=EvmTokenKind.ERC20,
         decimals=18,
         cryptocompare='',
         coingecko='aave',
         protocol=None,
-    ), AssetData(
-        identifier='eip155:56/erc20:0xfb6115445Bff7b52FeB98650C87f44907E58f802',
+    ), EvmToken.initialize(
         name='Binance-Peg Aave Token',
         symbol='AAVE',
-        asset_type=AssetType.EVM_TOKEN,
         started=Timestamp(1611903498),
         forked=None,
         swapped_for=None,
-        address='0xfb6115445Bff7b52FeB98650C87f44907E58f802',
+        evm_address='0xfb6115445Bff7b52FeB98650C87f44907E58f802',
         chain=ChainID.BINANCE,
         token_kind=EvmTokenKind.ERC20,
         decimals=18,
@@ -315,45 +295,39 @@ def test_get_asset_with_symbol(globaldb):
     assert globaldb.get_assets_with_symbol('DASDSADSDSDSAD') == []
 
     # also check that symbol comparison is case insensitive for many arg combinations
-    expected_renbtc = [AssetData(
-        identifier=ethaddress_to_identifier(renbtc_address),
+    expected_renbtc = [EvmToken.initialize(
         name='renBTC',
         symbol='renBTC',
-        asset_type=AssetType.EVM_TOKEN,
         started=1585090944,
         forked=None,
         swapped_for=None,
-        address=renbtc_address,
+        evm_address=renbtc_address,
         chain=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
         decimals=8,
         cryptocompare=None,
         coingecko='renbtc',
         protocol=None,
-    ), AssetData(
-        identifier='eip155:137/erc20:0xDBf31dF14B66535aF65AaC99C32e9eA844e14501',
+    ), EvmToken.initialize(
         name='renBTC',
         symbol='renBTC',
-        asset_type=AssetType.EVM_TOKEN,
         started=None,
         forked=None,
         swapped_for=None,
-        address='0xDBf31dF14B66535aF65AaC99C32e9eA844e14501',
+        evm_address='0xDBf31dF14B66535aF65AaC99C32e9eA844e14501',
         chain=ChainID.MATIC,
         token_kind=EvmTokenKind.ERC20,
         decimals=8,
         cryptocompare='',
         coingecko='renbtc',
         protocol=None,
-    ), AssetData(
-        identifier='eip155:56/erc20:0xfCe146bF3146100cfe5dB4129cf6C82b0eF4Ad8c',
+    ), EvmToken.initialize(
         name='renBTC',
         symbol='renBTC',
-        asset_type=AssetType.EVM_TOKEN,
         started=1605069649,
         forked=None,
         swapped_for=None,
-        address='0xfCe146bF3146100cfe5dB4129cf6C82b0eF4Ad8c',
+        evm_address='0xfCe146bF3146100cfe5dB4129cf6C82b0eF4Ad8c',
         chain=ChainID.BINANCE,
         token_kind=EvmTokenKind.ERC20,
         decimals=8,
