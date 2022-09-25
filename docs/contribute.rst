@@ -455,12 +455,9 @@ Before committing and pushing your commits ensure that you fix any lint issues. 
 
 .. note::
 
-    While lint warning are not fatal and will not fail the CI pipeline it would be better a PR
-    reduces the number of warnings and doesn't introduces new ones. Warnings are things that
-    need to be fixed and the will be converted to errors in the future.
-
-
-
+    While lint warnings are not fatal and will not fail the CI pipeline it would be better if a PR
+    reduces the number of warnings and doesn't introduce new ones. Warnings are things that
+    need to be fixed and they will be converted to errors in the future.
 
 Manual Testing
 ***********************
