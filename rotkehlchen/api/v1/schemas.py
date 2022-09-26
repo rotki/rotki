@@ -1747,9 +1747,9 @@ class AssetsPostSchema(DBPaginationSchema, DBOrderBySchema):
     include_ignored_assets = fields.Boolean(load_default=True)
     show_user_owned_assets_only = fields.Boolean(load_default=False)
 
-    def __init__(self, db_handler: 'DBHandler') -> None:
+    def __init__(self, db: 'DBHandler') -> None:
         super().__init__()
-        self.db_handler = db_handler
+        self.db = db
 
     @validates_schema
     def validate_schema(  # pylint: disable=no-self-use
@@ -1772,9 +1772,9 @@ class AssetsPostSchema(DBPaginationSchema, DBOrderBySchema):
     ) -> Dict[str, Any]:
         ignored_assets_identifiers = None
         user_owned_assets_identifiers = None
-        with self.db_handler.user_write() as write_cursor, GlobalDBHandler().conn.read_ctx() as globaldb_read_cursor:  # noqa: E501
+        with self.db.user_write() as write_cursor, GlobalDBHandler().conn.read_ctx() as globaldb_read_cursor:  # noqa: E501
             if data['include_ignored_assets'] is False:
-                ignored_assets_identifiers = [asset.identifier for asset in self.db_handler.get_ignored_assets(write_cursor)]  # noqa: E501
+                ignored_assets_identifiers = [asset.identifier for asset in self.db.get_ignored_assets(write_cursor)]  # noqa: E501
 
             if data['show_user_owned_assets_only'] is True:
                 globaldb_read_cursor.execute('SELECT asset_id FROM user_owned_assets;')
