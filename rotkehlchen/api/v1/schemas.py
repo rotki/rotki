@@ -1829,7 +1829,7 @@ class AssetsSearchSchema(DBOrderBySchema, DBPaginationSchema):
             order_by_rules=create_order_by_rules_list(data=data, default_order_by_field='name'),
             limit=data['limit'],
             offset=0,  # this is needed for the `limit` argument to work.
-            substring_search=data['value'],
+            substring_search=data['value'].strip(),
             search_column=data['search_column'],
             return_exact_matches=data['return_exact_matches'],
         )
@@ -1852,7 +1852,7 @@ class AssetsSearchLevenshteinSchema(AssetsSearchSchema):
         )
         return {
             'filter_query': filter_query,
-            'substring_search': data['value'],
+            'substring_search': data['value'].strip().casefold(),
             'limit': data['limit'],
         }
 
