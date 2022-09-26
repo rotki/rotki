@@ -1,10 +1,21 @@
 import json
 from json.decoder import JSONDecodeError
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import (
+    Asset,
+    AssetWithNameAndType,
+    AssetWithOracles,
+    CryptoAsset,
+    CustomAsset,
+    EvmToken,
+    FiatAsset,
+    UnderlyingToken,
+)
+from rotkehlchen.assets.types import AssetType
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import Location, TradeType
+from rotkehlchen.types import ChainID, EvmTokenKind, Location, Timestamp, TradeType
 
 
 class RKLEncoder(json.JSONEncoder):
@@ -59,4 +70,79 @@ def pretty_json_dumps(data: Dict) -> str:
         indent=4,
         separators=(',', ': '),
         cls=RKLEncoder,
+    )
+
+
+def deserialize_asset_with_symbol_from_db(
+        asset_type: AssetType,
+        asset_data: List[Any],
+        underlying_tokens: Optional[List[UnderlyingToken]],
+        form_with_incomplete_data: bool,
+) -> AssetWithOracles:
+    identifier = asset_data[0]
+    if asset_type == AssetType.EVM_TOKEN:
+        decimals = asset_data[3]
+        name = asset_data[4]
+        symbol = asset_data[5]
+        missing_basic_data = name is None or symbol is None or decimals is None
+        if missing_basic_data and form_with_incomplete_data is False:
+            raise UnknownAsset(asset_name=identifier)
+
+        return EvmToken.initialize(
+            address=asset_data[2],
+            chain=ChainID(asset_data[12]),
+            token_kind=EvmTokenKind.deserialize_from_db(asset_data[13]),
+            decimals=asset_data[3],
+            name=asset_data[4],
+            symbol=asset_data[5],
+            started=Timestamp(asset_data[6]),
+            swapped_for=CryptoAsset(asset_data[8]) if asset_data[8] is not None else None,
+            coingecko=asset_data[9],
+            cryptocompare=asset_data[10],
+            protocol=asset_data[11],
+            underlying_tokens=underlying_tokens,
+        )
+    if asset_type == AssetType.FIAT:
+        return FiatAsset.initialize(
+            identifier=identifier,
+            name=asset_data[4],
+            symbol=asset_data[5],
+            coingecko=asset_data[9],
+            cryptocompare=asset_data[10],
+        )
+
+    return CryptoAsset.initialize(
+        identifier=asset_data[0],
+        asset_type=asset_type,
+        name=asset_data[4],
+        symbol=asset_data[5],
+        started=asset_data[6],
+        forked=asset_data[7],
+        swapped_for=asset_data[8],
+        coingecko=asset_data[9],
+        cryptocompare=asset_data[10],
+    )
+
+
+def deserialize_generic_asset_from_db(
+        asset_type: AssetType,
+        asset_data: List[Any],
+        underlying_tokens: Optional[List[UnderlyingToken]],
+        form_with_incomplete_data: bool,
+) -> AssetWithNameAndType:
+    identifier = asset_data[0]
+
+    if asset_type == AssetType.CUSTOM_ASSET:
+        return CustomAsset.initialize(
+            identifier=identifier,
+            name=asset_data[4],
+            custom_asset_type=asset_data[15],
+            notes=asset_data[14],
+        )
+
+    return deserialize_asset_with_symbol_from_db(
+        asset_type=asset_type,
+        asset_data=asset_data,
+        underlying_tokens=underlying_tokens,
+        form_with_incomplete_data=form_with_incomplete_data,
     )

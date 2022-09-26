@@ -1,7 +1,7 @@
 import csv
 import logging
 from pathlib import Path
-from typing import Any, Dict
+from typing import TYPE_CHECKING, Any, Dict
 
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.constants import ZERO
@@ -20,6 +20,9 @@ from rotkehlchen.serialization.deserialize import (
 )
 from rotkehlchen.types import AssetAmount, Fee, Location, Price, TradeType
 
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
+
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
@@ -27,6 +30,11 @@ SAI_TIMESTAMP = 1574035200
 
 
 class ShapeshiftTradesImporter(BaseExchangeImporter):
+
+    def __init__(self, db: 'DBHandler'):
+        super().__init__(db=db)
+        self.sai = A_SAI.resolve_to_evm_token()
+
     def _consume_shapeshift_trade(
             self,
             cursor: DBCursor,
@@ -72,9 +80,9 @@ Trade from ShapeShift with ShapeShift Deposit Address:
         # Assuming that before launch of multi collateral dai everything was SAI.
         # Converting DAI to SAI in buy_asset and sell_asset.
         if buy_asset == A_DAI and timestamp <= SAI_TIMESTAMP:
-            buy_asset = A_SAI.resolve_to_asset_with_oracles()
+            buy_asset = self.sai
         if sold_asset == A_DAI and timestamp <= SAI_TIMESTAMP:
-            sold_asset = A_SAI.resolve_to_asset_with_oracles()
+            sold_asset = self.sai
         if rate <= ZERO:
             log.warning(f'shapeshift csv entry has negative or zero rate. Ignoring. {csv_row}')
             return

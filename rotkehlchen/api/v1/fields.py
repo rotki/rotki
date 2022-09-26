@@ -10,7 +10,7 @@ from marshmallow.exceptions import ValidationError
 from marshmallow.utils import is_iterable_but_not_string
 from werkzeug.datastructures import FileStorage
 
-from rotkehlchen.assets.asset import Asset, AssetWithOracles, CryptoAsset, EvmToken
+from rotkehlchen.assets.asset import Asset, AssetWithOracles, CryptoAsset, EvmToken, Nft
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.utils import is_valid_derivation_path
@@ -394,10 +394,11 @@ class AssetField(fields.Field):
             raise ValidationError(f'Tried to initialize an asset out of a non-string identifier {value}')  # noqa: E501
         # Since the identifier could be url encoded for evm tokens in urls we need to unquote it
         real_value: str = urllib.parse.unquote(value)
+        asset: Asset
         try:
             if self.expected_type == Asset:
                 if real_value.startswith(NFT_DIRECTIVE):
-                    asset = Asset(identifier=real_value)
+                    asset = Nft(identifier=real_value)
                 else:
                     # Just to check identifier's existence
                     asset = Asset(identifier=real_value).resolve_to_asset_with_name_and_type()

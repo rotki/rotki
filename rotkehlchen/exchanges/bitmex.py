@@ -48,7 +48,6 @@ BITMEX_PRIVATE_ENDPOINTS = (
 def bitmex_to_world(symbol: str) -> AssetWithOracles:
     if symbol == 'XBt':
         return A_BTC.resolve_to_asset_with_oracles()
-    # TODO: Investigate. Is it also broken right now due to evm tokens' identifier change?
     return Asset(symbol).resolve_to_asset_with_oracles()
 
 
@@ -108,6 +107,7 @@ class Bitmex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         self.uri = 'https://bitmex.com'
         self.session.headers.update({'api-key': api_key})
         self.msg_aggregator = msg_aggregator
+        self.btc = A_BTC.resolve_to_crypto_asset()
 
     def edit_exchange_credentials(
             self,
@@ -242,7 +242,7 @@ class Bitmex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         try:
             resp = self._api_query_dict('get', 'user/wallet', {'currency': 'XBt'})
             # Bitmex shows only BTC balance
-            usd_price = Inquirer().find_usd_price(A_BTC)
+            usd_price = Inquirer().find_usd_price(self.btc)
         except RemoteError as e:
             msg = f'Bitmex API request failed due to: {str(e)}'
             log.error(msg)
@@ -257,7 +257,7 @@ class Bitmex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             return None, msg
 
         usd_value = amount * usd_price
-        returned_balances[A_BTC.resolve_to_asset_with_oracles()] = Balance(
+        returned_balances[self.btc] = Balance(
             amount=amount,
             usd_value=usd_value,
         )

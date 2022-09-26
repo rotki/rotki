@@ -6,7 +6,7 @@ from enum import auto
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, NamedTuple, Optional, Tuple, Union
 
-from rotkehlchen.assets.asset import Asset, EvmToken, FiatAsset
+from rotkehlchen.assets.asset import Asset, CryptoAsset, EvmToken, FiatAsset
 from rotkehlchen.chain.ethereum.defi.price import handle_defi_price_query
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
@@ -269,7 +269,10 @@ class Inquirer():
     _oracles_not_onchain: Optional[List[CurrentPriceOracle]] = None
     _oracle_instances_not_onchain: Optional[List[CurrentPriceOracleInstance]] = None
     _msg_aggregator: 'MessagesAggregator'
-    special_tokens: List[Asset]  # yes, in fact tokens are here but all constants have Asset type
+    special_tokens: List[Asset]  # special tokens are Asset since they are not resolved
+    weth: EvmToken
+    bsq: CryptoAsset
+    usd: FiatAsset
 
     def __new__(
             cls,
@@ -328,6 +331,9 @@ class Inquirer():
             A_FARM_CRVRENWBTC,
             A_3CRV,
         ]
+        Inquirer.usd = A_USD.resolve_to_fiat_asset()
+        Inquirer.weth = A_WETH.resolve_to_evm_token()
+        Inquirer.bsq = A_BSQ.resolve_to_crypto_asset()
         return Inquirer.__instance
 
     @staticmethod
@@ -579,7 +585,7 @@ class Inquirer():
 
         try:
             asset = asset.resolve_to_fiat_asset()
-            return instance._query_fiat_pair(base=asset, quote=A_USD.resolve_to_fiat_asset())
+            return instance._query_fiat_pair(base=asset, quote=instance.usd)
         except (UnknownAsset, RemoteError, WrongAssetType):
             pass  # continue, asset is not fiat or a price can be found by one of the oracles (CC for example)  # noqa: E501
 
@@ -637,8 +643,8 @@ class Inquirer():
         # BSQ is a special asset that doesnt have oracle information but its custom API
         if asset == A_BSQ:
             try:
-                price_in_btc = get_bisq_market_price(asset)
-                btc_price, oracle = Inquirer().find_usd_price_and_oracle(A_BTC)
+                price_in_btc = get_bisq_market_price(instance.bsq)
+                btc_price, oracle = Inquirer().find_usd_price(A_BTC)
                 usd_price = Price(price_in_btc * btc_price)
                 Inquirer._cached_current_price[cache_key] = CachedPriceEntry(
                     price=usd_price,
@@ -709,7 +715,7 @@ class Inquirer():
             for token_address_str in pool_tokens_addresses:
                 token_address = string_to_evm_address(token_address_str)
                 if token_address == '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE':
-                    tokens.append(A_WETH.resolve_to_evm_token())
+                    tokens.append(self.weth)
                 else:
                     token_identifier = ethaddress_to_identifier(token_address)
                     tokens.append(EvmToken(token_identifier))
@@ -831,10 +837,14 @@ class Inquirer():
         """Gets the USD exchange rate of any of the given assets
 
         In case of failure to query a rate it's returned as zero"""
-        rates = {A_USD.resolve_to_fiat_asset(): Price(ONE)}
+        instance = Inquirer()
+        rates = {instance.usd: Price(ONE)}
         for currency in currencies:
             try:
-                price, _ = Inquirer()._query_fiat_pair(A_USD.resolve_to_fiat_asset(), currency)
+                price, _ = Inquirer()._query_fiat_pair(
+                    instance.usd,
+                    currency,
+                )
                 rates[currency] = price
             except RemoteError:
                 rates[currency] = Price(ZERO)

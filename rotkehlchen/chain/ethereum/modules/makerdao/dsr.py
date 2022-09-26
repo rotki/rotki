@@ -120,6 +120,7 @@ class MakerdaoDsr(HasDSProxy):
         self.reset_last_query_ts()
         self.historical_dsr_reports: Dict[ChecksumEvmAddress, DSRAccountReport] = {}
         self.lock = Semaphore()
+        self.dai = A_DAI.resolve_to_evm_token()
 
     def reset_last_query_ts(self) -> None:
         """Reset the last query timestamps, effectively cleaning the caches"""
@@ -447,11 +448,11 @@ class MakerdaoDsr(HasDSProxy):
                     usd_value=movement.amount_usd_value,
                 )
                 if movement.movement_type == 'deposit':
-                    spent_asset = A_DAI.resolve_to_evm_token()
+                    spent_asset = self.dai
                     spent_balance = balance
                     total_balance -= balance
                 else:
-                    got_asset = A_DAI.resolve_to_evm_token()
+                    got_asset = self.dai
                     got_balance = balance
                     total_balance += balance
                     if total_balance.amount - counted_profit.amount > ZERO:

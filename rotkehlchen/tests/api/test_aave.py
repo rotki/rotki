@@ -39,7 +39,6 @@ from rotkehlchen.tests.utils.api import (
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.checks import assert_serialized_lists_equal
-from rotkehlchen.tests.utils.constants import A_ADAI
 from rotkehlchen.tests.utils.rotkehlchen import BalancesTestSetup, setup_balances
 from rotkehlchen.types import Timestamp, deserialize_evm_tx_hash
 
@@ -167,11 +166,13 @@ def _query_simple_aave_history_test(
         server: APIServer,
         async_query: bool,
 ) -> None:
+    resolved_dai = A_DAI.resolve_to_evm_token()
+    resolved_adai = A_ADAI_V1.resolve_to_evm_token()
     expected_aave_deposit_test_events = [
         AaveDepositWithdrawalEvent(
             event_type='deposit',
-            asset=A_DAI.resolve_to_crypto_asset(),
-            atoken=A_ADAI_V1.resolve_to_evm_token(),
+            asset=resolved_dai,
+            atoken=resolved_adai,
             value=Balance(
                 amount=FVal('102.926986169186236436'),
                 usd_value=FVal('104.367963975554843746104'),
@@ -184,8 +185,8 @@ def _query_simple_aave_history_test(
             log_index=72,
         ), AaveDepositWithdrawalEvent(
             event_type='deposit',
-            asset=A_DAI.resolve_to_crypto_asset(),
-            atoken=A_ADAI_V1.resolve_to_evm_token(),
+            asset=resolved_dai,
+            atoken=resolved_adai,
             value=Balance(
                 amount=FVal('160'),
                 usd_value=FVal('161.440'),
@@ -198,7 +199,7 @@ def _query_simple_aave_history_test(
             log_index=146,
         ), AaveInterestEvent(
             event_type='interest',
-            asset=A_ADAI.resolve_to_crypto_asset(),
+            asset=resolved_adai,
             value=Balance(
                 amount=FVal('0.037901731034995483'),
                 usd_value=FVal('0.038242846614310442347'),
@@ -211,8 +212,8 @@ def _query_simple_aave_history_test(
             log_index=142,
         ), AaveDepositWithdrawalEvent(
             event_type='deposit',
-            asset=A_DAI.resolve_to_crypto_asset(),
-            atoken=A_ADAI_V1.resolve_to_evm_token(),
+            asset=resolved_dai,
+            atoken=resolved_adai,
             value=Balance(
                 amount=FVal('390'),
                 usd_value=FVal('393.510'),
@@ -225,7 +226,7 @@ def _query_simple_aave_history_test(
             log_index=157,
         ), AaveInterestEvent(
             event_type='interest',
-            asset=A_ADAI.resolve_to_crypto_asset(),
+            asset=resolved_adai,
             value=Balance(
                 amount=FVal('0.013768655195843925'),
                 usd_value=FVal('0.013892573092606520325'),
@@ -238,8 +239,8 @@ def _query_simple_aave_history_test(
             log_index=153,
         ), AaveDepositWithdrawalEvent(
             event_type='deposit',
-            asset=A_DAI.resolve_to_crypto_asset(),
-            atoken=A_ADAI_V1.resolve_to_evm_token(),
+            asset=resolved_dai,
+            atoken=resolved_adai,
             value=Balance(
                 amount=FVal('58.985239852398524415'),
                 usd_value=FVal('59.398136531365314085905'),
@@ -252,7 +253,7 @@ def _query_simple_aave_history_test(
             log_index=35,
         ), AaveInterestEvent(
             event_type='interest',
-            asset=A_ADAI.resolve_to_crypto_asset(),
+            asset=resolved_adai,
             value=Balance(
                 amount=FVal('0.598140134217201945'),
                 usd_value=FVal('0.602327115156722358615'),
@@ -265,7 +266,7 @@ def _query_simple_aave_history_test(
             log_index=31,
         ), AaveInterestEvent(
             event_type='interest',
-            asset=A_ADAI.resolve_to_crypto_asset(),
+            asset=resolved_adai,
             value=Balance(
                 amount=FVal('1.13704264707898858'),
                 usd_value=FVal('1.14045377502022554574'),
@@ -278,8 +279,8 @@ def _query_simple_aave_history_test(
             log_index=152,
         ), AaveDepositWithdrawalEvent(
             event_type='deposit',
-            asset=A_DAI.resolve_to_crypto_asset(),
-            atoken=A_ADAI_V1.resolve_to_evm_token(),
+            asset=resolved_dai,
+            atoken=resolved_adai,
             value=Balance(
                 amount=FVal('168.84093462143338681'),
                 usd_value=FVal('171.03586677151202083853'),
@@ -292,7 +293,7 @@ def _query_simple_aave_history_test(
             log_index=82,
         ), AaveInterestEvent(
             event_type='interest',
-            asset=A_ADAI.resolve_to_crypto_asset(),
+            asset=resolved_adai,
             value=Balance(
                 amount=FVal('3.948991286917379003'),
                 usd_value=FVal('4.000328173647304930039'),
@@ -305,8 +306,8 @@ def _query_simple_aave_history_test(
             log_index=78,
         ), AaveDepositWithdrawalEvent(
             event_type='deposit',
-            asset=A_DAI.resolve_to_crypto_asset(),
-            atoken=A_ADAI_V1.resolve_to_evm_token(),
+            asset=resolved_dai,
+            atoken=resolved_adai,
             value=Balance(
                 amount=FVal('1939.840878392183347402'),
                 usd_value=FVal('1976.697855081634831002638'),
@@ -319,7 +320,7 @@ def _query_simple_aave_history_test(
             log_index=104,
         ), AaveInterestEvent(
             event_type='interest',
-            asset=A_ADAI.resolve_to_crypto_asset(),
+            asset=resolved_adai,
             value=Balance(
                 amount=FVal('27.824509817913242961'),
                 usd_value=FVal('28.353175504453594577259'),
@@ -332,8 +333,8 @@ def _query_simple_aave_history_test(
             log_index=100,
         ), AaveDepositWithdrawalEvent(
             event_type='deposit',
-            asset=A_DAI.resolve_to_crypto_asset(),
-            atoken=A_ADAI_V1.resolve_to_evm_token(),
+            asset=resolved_dai,
+            atoken=resolved_adai,
             value=Balance(
                 amount=FVal('2507.675873220870275072'),
                 usd_value=FVal('2507.675873220870275072'),
@@ -346,7 +347,7 @@ def _query_simple_aave_history_test(
             log_index=96,
         ), AaveInterestEvent(
             event_type='interest',
-            asset=A_ADAI.resolve_to_crypto_asset(),
+            asset=resolved_adai,
             value=Balance(
                 amount=FVal('17.91499070977557364'),
                 usd_value=FVal('17.91499070977557364'),
@@ -359,7 +360,7 @@ def _query_simple_aave_history_test(
             log_index=92,
         ), AaveInterestEvent(
             event_type='interest',
-            asset=A_ADAI.resolve_to_crypto_asset(),
+            asset=resolved_adai,
             value=Balance(
                 amount=FVal('88.663672238882760399'),
                 usd_value=FVal('88.663672238882760399'),
@@ -372,8 +373,8 @@ def _query_simple_aave_history_test(
             log_index=97,
         ), AaveDepositWithdrawalEvent(
             event_type='withdrawal',
-            asset=A_DAI.resolve_to_crypto_asset(),
-            atoken=A_ADAI_V1.resolve_to_evm_token(),
+            asset=resolved_dai,
+            atoken=resolved_adai,
             value=Balance(
                 amount=FVal('7968.408929477087756071'),
                 usd_value=FVal('7968.408929477087756071'),

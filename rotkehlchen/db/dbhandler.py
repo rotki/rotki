@@ -264,6 +264,7 @@ class DBHandler:
                 self.set_settings(cursor, initial_settings)
             self.update_owned_assets_in_globaldb(cursor)
             self.add_globaldb_assetids(cursor)
+        self.usd = A_USD.resolve_to_asset_with_oracles()
 
     def __del__(self) -> None:
         self.logout()
@@ -368,7 +369,7 @@ class DBHandler:
             'last_write_ts': (int, Timestamp(0)),
             'last_data_upload_ts': (int, Timestamp(0)),
             'premium_should_sync': (str_to_bool, DEFAULT_PREMIUM_SHOULD_SYNC),
-            'main_currency': (AssetWithOracles, A_USD.resolve_to_asset_with_oracles()),
+            'main_currency': (AssetWithOracles, self.usd),
         }
         deserializer, default_value = setting_to_default_type[name]
         cursor.execute(

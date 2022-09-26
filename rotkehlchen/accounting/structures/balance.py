@@ -1,7 +1,7 @@
 import operator
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Dict, Tuple
+from typing import TYPE_CHECKING, Any, DefaultDict, Dict, Tuple
 
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.misc import InputError
@@ -132,8 +132,8 @@ class AssetBalance:
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class BalanceSheet:
-    assets: Dict['Asset', Balance] = field(default_factory=lambda: defaultdict(Balance))
-    liabilities: Dict['Asset', Balance] = field(default_factory=lambda: defaultdict(Balance))
+    assets: DefaultDict['Asset', Balance] = field(default_factory=lambda: defaultdict(Balance))
+    liabilities: DefaultDict['Asset', Balance] = field(default_factory=lambda: defaultdict(Balance))  # noqa: E501
 
     def copy(self) -> 'BalanceSheet':
         return BalanceSheet(assets=self.assets.copy(), liabilities=self.liabilities.copy())

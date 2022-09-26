@@ -388,9 +388,7 @@ class SubstrateManager():
         try:
             chain_properties = SubstrateChainProperties(
                 ss58_format=properties['ss58Format'],
-                # TODO: Investigate. Perhaps is broken right now since tokenSymbol is used
-                # while identifier (which is in eip155 format) is used for initialization
-                token=CryptoAsset(properties['tokenSymbol']),
+                token=properties['tokenSymbol'],
                 token_decimals=FVal(properties['tokenDecimals']),
             )
         except (KeyError, UnknownAsset) as e:

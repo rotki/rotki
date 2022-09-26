@@ -8,16 +8,17 @@ from eth_utils.address import to_checksum_address
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.constants import ONE
-from rotkehlchen.constants.assets import A_USDT
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import (
     AddressbookEntry,
     ApiKey,
     ApiSecret,
+    ChainID,
     ChecksumEvmAddress,
+    EvmTokenKind,
     EvmTransaction,
     Location,
     Timestamp,
@@ -86,11 +87,26 @@ def make_ethereum_transaction(tx_hash: Optional[bytes] = None) -> EvmTransaction
     )
 
 
+CUSTOM_USDT = EvmToken.initialize(
+    address=string_to_evm_address('0xdAC17F958D2ee523a2206206994597C13D831ec7'),
+    chain=ChainID.ETHEREUM,
+    token_kind=EvmTokenKind.ERC20,
+    name='Tether',
+    symbol='USDT',
+    started=Timestamp(1402358400),
+    forked=None,
+    swapped_for=None,
+    coingecko='tether',
+    cryptocompare=None,
+    decimals=6,
+    protocol=None,
+)
+
+
 def make_ethereum_event(
     index: int,
     tx_hash: Optional[bytes] = None,
-    # technically accepts any asset, but should be a crypto asset for ethereum events
-    asset: Asset = A_USDT,
+    asset: CryptoAsset = CUSTOM_USDT,
     counterparty: Optional[str] = None,
 ) -> HistoryBaseEntry:
     if tx_hash is None:

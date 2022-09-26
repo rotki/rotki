@@ -8,7 +8,7 @@ from rotkehlchen.chain.ethereum.modules.makerdao.vaults import (
     GEMJOIN_MAPPING,
     MakerdaoVault,
     MakerdaoVaults,
-    const_collateral_type_mapping,
+    create_collateral_type_mapping,
 )
 from rotkehlchen.constants.assets import A_BAT, A_DAI, A_ETH
 from rotkehlchen.constants.misc import ZERO
@@ -150,7 +150,7 @@ def test_get_vault_balance(
 
 
 def test_vault_types():
-    collateral_type_mapping = const_collateral_type_mapping()
+    collateral_type_mapping = create_collateral_type_mapping()
     assert len(collateral_type_mapping) == len(GEMJOIN_MAPPING)
     assert set(collateral_type_mapping.keys()) == set(GEMJOIN_MAPPING.keys())
     for collateral_type, asset in collateral_type_mapping.items():

@@ -106,6 +106,7 @@ class Iconomi(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         )
         self.uri = 'https://api.iconomi.com'
         self.msg_aggregator = msg_aggregator
+        self.aust = A_AUST.resolve_to_asset_with_oracles()
 
     def edit_exchange_credentials(
             self,
@@ -300,7 +301,7 @@ class Iconomi(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     )
                     continue
 
-                assets_balance[A_AUST.resolve_to_asset_with_oracles()] = Balance(
+                assets_balance[self.aust] = Balance(
                     amount=usd_value / aust_usd_price,
                     usd_value=usd_value,
                 )

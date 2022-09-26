@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
@@ -11,14 +11,32 @@ from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 
 from .constants import CPT_LIQUITY
 
+if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.decoding.base import BaseDecoderTools
+    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.user_messages import MessagesAggregator
+
 BALANCE_UPDATE = b'\xca#+Z\xbb\x98\x8cT\x0b\x95\x9f\xf6\xc3\xbf\xae>\x97\xff\xf9d\xfd\t\x8cP\x8f\x96\x13\xc0\xa6\xbf\x1a\x80'  # noqa: E501
 STABILITY_POOL = string_to_evm_address('0xDf9Eb223bAFBE5c5271415C75aeCD68C21fE3D7F')
 
 
 class LiquityDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
 
-    @staticmethod
+    def __init__(
+            self,
+            ethereum_manager: 'EthereumManager',
+            base_tools: 'BaseDecoderTools',
+            msg_aggregator: 'MessagesAggregator',
+    ) -> None:
+        super().__init__(
+            ethereum_manager=ethereum_manager,
+            base_tools=base_tools,
+            msg_aggregator=msg_aggregator,
+        )
+        self.lusd = A_LUSD.resolve_to_crypto_asset()
+
     def _decode_trove_operations(
+            self,
             tx_log: EthereumTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
             decoded_events: List[HistoryBaseEntry],
@@ -27,7 +45,6 @@ class LiquityDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
     ) -> Tuple[Optional[HistoryBaseEntry], Optional[ActionItem]]:
         if tx_log.topics[0] != BALANCE_UPDATE:
             return None, None
-        resolved_lusd = A_LUSD.resolve_to_crypto_asset()
 
         for event in decoded_events:
             crypto_asset = event.asset.resolve_to_crypto_asset()
@@ -35,12 +52,12 @@ class LiquityDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.GENERATE_DEBT
                 event.counterparty = CPT_LIQUITY
-                event.notes = f'Generate {event.balance.amount} {resolved_lusd.symbol} from liquity'  # noqa: E501
+                event.notes = f'Generate {event.balance.amount} {self.lusd.symbol} from liquity'  # noqa: E501
             elif event.event_type == HistoryEventType.SPEND and event.asset == A_LUSD:
                 event.event_type = HistoryEventType.SPEND
                 event.event_subtype = HistoryEventSubType.PAYBACK_DEBT
                 event.counterparty = CPT_LIQUITY
-                event.notes = f'Return {event.balance.amount} {resolved_lusd.symbol} to liquity'
+                event.notes = f'Return {event.balance.amount} {self.lusd.symbol} to liquity'
             elif event.event_type == HistoryEventType.SPEND and event.event_subtype == HistoryEventSubType.NONE and event.asset == A_ETH:  # noqa: E501
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET

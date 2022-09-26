@@ -27,7 +27,7 @@ def test_asset_nft():
     a = Asset('_nft_foo')
     assert a.identifier == '_nft_foo'
     should_not_exist = {'name', 'symbol', 'started', 'forked', 'swapped_for', 'cryptocompare', 'coingecko'}  # noqa: E501
-    assert 0 == len(should_not_exist & a.__dict__.keys())
+    assert len(should_not_exist & a.__dict__.keys()) == 0
 
 
 def test_repr():

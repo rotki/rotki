@@ -130,7 +130,6 @@ from .fields import (
 )
 
 if TYPE_CHECKING:
-    from rotkehlchen.assets.asset import Asset
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.externalapis.coingecko import Coingecko
     from rotkehlchen.externalapis.cryptocompare import Cryptocompare
@@ -1715,10 +1714,10 @@ def _validate_single_oracle_id(
             )
 
 
-class CryptoAssetSchema(Schema):
+class GenericNonTokenAssetSchema(Schema):
+    # TODO: When adding custom assets we need to check if this schema needs to be expanded
+    # or we need a different one
     identifier = fields.String(required=False, load_default=None)
-    # TODO: Originally was supposed for addition of any asset but
-    # probably needs rethinking since we have multiple asset classes now
     asset_type = AssetTypeField(
         required=True,
         exclude_types=(AssetType.EVM_TOKEN, AssetType.NFT),
@@ -2132,8 +2131,8 @@ class NamedEthereumModuleDataSchema(Schema):
 
 class NamedOracleCacheSchema(Schema):
     oracle = HistoricalPriceOracleField(required=True)
-    from_asset = AssetField(expected_type=Asset, required=True)
-    to_asset = AssetField(expected_type=Asset, required=True)
+    from_asset = AssetField(expected_type=AssetWithOracles, required=True)
+    to_asset = AssetField(expected_type=AssetWithOracles, required=True)
 
 
 class NamedOracleCacheCreateSchema(AsyncQueryArgumentSchema, NamedOracleCacheSchema):

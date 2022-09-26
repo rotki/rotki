@@ -115,6 +115,7 @@ class YearnVaultsV2(EthereumModule):
             for asset, balance in defi_balances.items():
                 if asset.is_evm_token() is False:
                     continue
+
                 asset = asset.resolve_to_evm_token()
                 if asset.protocol == YEARN_VAULTS_V2_PROTOCOL:
                     underlying = globaldb.fetch_underlying_tokens(cursor, ethaddress_to_identifier(asset.evm_address))  # noqa: E501

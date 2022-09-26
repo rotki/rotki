@@ -26,7 +26,7 @@ from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
 from rotkehlchen.api.websockets.notifier import RotkiNotifier
 from rotkehlchen.api.websockets.typedefs import WSMessageType
-from rotkehlchen.assets.asset import Asset, CryptoAsset
+from rotkehlchen.assets.asset import Asset, AssetWithOracles, CryptoAsset
 from rotkehlchen.balances.manual import (
     account_for_manually_tracked_asset_balances,
     get_manually_tracked_balances,
@@ -701,6 +701,9 @@ class Rotkehlchen():
                 )
             else:
                 location_str = str(exchange.location)
+                # TODO: Don't know why the type is not properly detected here. The expected one
+                # is Dict[Asset, Balance] and the one received
+                # Dict[AssetWithOracles, Balance]
                 if location_str not in balances:
                     balances[location_str] = exchange_balances  # type: ignore
                 else:  # multiple exchange of same type. Combine balances
@@ -956,8 +959,8 @@ class Rotkehlchen():
     def create_oracle_cache(
             self,
             oracle: HistoricalPriceOracle,
-            from_asset: Asset,
-            to_asset: Asset,
+            from_asset: AssetWithOracles,
+            to_asset: AssetWithOracles,
             purge_old: bool,
     ) -> None:
         """Creates the cache of the given asset pair from the start of time
@@ -974,12 +977,12 @@ class Rotkehlchen():
 
         try:
             self.cryptocompare.create_cache(
-                from_asset=from_asset.resolve_to_asset_with_oracles(),
-                to_asset=to_asset.resolve_to_asset_with_oracles(),
+                from_asset=from_asset,
+                to_asset=to_asset,
                 purge_old=purge_old,
             )
         except UnknownAsset:
-            pass  # means that assets are not crypto or fiat, so we can't wuery cryptocompare
+            pass  # means that assets are not crypto or fiat, so we can't query cryptocompare
 
     def update_curve_pools_cache(self) -> None:
         """Updates curve pools cache.

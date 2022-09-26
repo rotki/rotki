@@ -72,6 +72,8 @@ class SaddleOracle(CurrentPriceOracleInterface):
     def query_current_price(self, from_asset: Asset, to_asset: Asset) -> Price:
         """At the moment until more pools get implemented this function is limited to ALETH
         Refer to the docstring of `get_price`.
+        May raise:
+        - PriceQueryUnsupportedAsset: If an asset not supported by saddle is used in the oracle
         """
         try:
             return self.get_price(

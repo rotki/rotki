@@ -379,6 +379,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             msg_aggregator=self.msg_aggregator,
             database=self.database,
         )
+        self.eth_asset = A_ETH.resolve_to_crypto_asset()
 
     def __del__(self) -> None:
         del self.ethereum
@@ -1141,7 +1142,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             usd_value = balance * eth_usd_price
             self.balances.eth[account] = BalanceSheet(
                 assets=defaultdict(Balance, {
-                    A_ETH.resolve_to_crypto_asset(): Balance(balance, usd_value),
+                    self.eth_asset: Balance(balance, usd_value),
                 }),
             )
 

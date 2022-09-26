@@ -61,8 +61,9 @@ class UniswapOracle(CurrentPriceOracleInterface, CacheableMixIn):
         CacheableMixIn.__init__(self)
         CurrentPriceOracleInterface.__init__(self, oracle_name=f'Uniswap V{version} oracle')
         self.eth_manager = eth_manager
+        self.weth = A_WETH.resolve_to_evm_token()
         self.routing_assets = [
-            A_WETH.resolve_to_evm_token(),
+            self.weth,
             A_DAI.resolve_to_evm_token(),
             A_USDT.resolve_to_evm_token(),
         ]
@@ -203,9 +204,9 @@ class UniswapOracle(CurrentPriceOracleInterface, CacheableMixIn):
 
         # Uniswap V2 and V3 use in their contracts WETH instead of ETH
         if from_asset == A_ETH:
-            from_asset = A_WETH.resolve_to_crypto_asset()
+            from_asset = self.weth
         if to_asset == A_ETH:
-            to_asset = A_WETH.resolve_to_crypto_asset()
+            to_asset = self.weth
 
         try:
             from_token = from_asset.resolve_to_evm_token()
