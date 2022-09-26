@@ -8,7 +8,7 @@ import { createPinia, Pinia } from 'pinia';
 import { Defaults } from '@/data/defaults';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
-import { api } from '@/services/rotkehlchen-api';
+import { useSettingsApi } from '@/services/settings/settings-api';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { CurrencyLocation } from '@/types/currency-location';
 import { DateFormat } from '@/types/date-format';
@@ -20,13 +20,19 @@ import {
 } from '@/types/frontend-settings';
 import { TableColumn } from '@/types/table-column';
 
-vi.mock('@/services/rotkehlchen-api');
+vi.mock('@/services/settings/settings-api', () => ({
+  useSettingsApi: vi.fn().mockReturnValue({
+    setSettings: vi.fn()
+  })
+}));
 
 describe('settings:frontend', () => {
   let pinia: Pinia;
+  let api: ReturnType<typeof useSettingsApi>;
+
   beforeEach(() => {
-    vi.resetAllMocks();
     pinia = createPinia();
+    api = useSettingsApi();
   });
 
   test('updates settings on valid payload', async () => {

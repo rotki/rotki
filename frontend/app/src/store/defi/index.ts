@@ -581,7 +581,7 @@ export const useDefiStore = defineStore('defi', () => {
     setStatus(newStatus, section);
 
     try {
-      const { taskId } = await api.airdrops();
+      const { taskId } = await api.defi.fetchAirdrops();
       const { result } = await awaitTask<Airdrops, TaskMeta>(
         taskId,
         TaskType.DEFI_AIRDROPS,

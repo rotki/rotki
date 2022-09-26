@@ -40,7 +40,7 @@ export class AssetApi {
 
   assetImageUrl(identifier: string, randomString?: string | number): string {
     let url = `${
-      this.axios.defaults.baseURL
+        this.axios.defaults.baseURL
     }assets/icon?asset=${encodeURIComponent(identifier)}`;
 
     if (randomString) url += `&t=${randomString}`;
@@ -49,42 +49,42 @@ export class AssetApi {
   }
 
   addEthereumToken(
-    token: Omit<SupportedAsset, 'identifier'>
+      token: Omit<SupportedAsset, 'identifier'>
   ): Promise<AssetIdResponse> {
     return this.axios
-      .put<ActionResult<AssetIdResponse>>(
-        '/assets/ethereum',
-        axiosSnakeCaseTransformer({ token: omit(token, 'type') }),
-        {
-          validateStatus: validStatus,
-          transformResponse: this.baseTransformer
-        }
-      )
-      .then(handleResponse);
+        .put<ActionResult<AssetIdResponse>>(
+            '/assets/ethereum',
+            axiosSnakeCaseTransformer({ token: omit(token, 'type') }),
+            {
+              validateStatus: validStatus,
+              transformResponse: this.baseTransformer
+            }
+        )
+        .then(handleResponse);
   }
 
   editEthereumToken(
-    token: Omit<SupportedAsset, 'identifier'>
+      token: Omit<SupportedAsset, 'identifier'>
   ): Promise<AssetIdResponse> {
     return this.axios
-      .patch<ActionResult<AssetIdResponse>>(
-        '/assets/ethereum',
-        axiosSnakeCaseTransformer({ token }),
-        {
-          validateStatus: validStatus,
-          transformResponse: this.baseTransformer
-        }
-      )
-      .then(handleResponse);
+        .patch<ActionResult<AssetIdResponse>>(
+            '/assets/ethereum',
+            axiosSnakeCaseTransformer({ token }),
+            {
+              validateStatus: validStatus,
+              transformResponse: this.baseTransformer
+            }
+        )
+        .then(handleResponse);
   }
 
   deleteEthereumToken(address: string, chain: string): Promise<boolean> {
     return this.axios
-      .delete<ActionResult<boolean>>('/assets/ethereum', {
-        data: axiosSnakeCaseTransformer({ address, chain }),
-        validateStatus: validStatus
-      })
-      .then(handleResponse);
+        .delete<ActionResult<boolean>>('/assets/ethereum', {
+          data: axiosSnakeCaseTransformer({ address, chain }),
+          validateStatus: validStatus
+        })
+        .then(handleResponse);
   }
 
   uploadIcon(identifier: string, file: File): Promise<boolean> {
@@ -92,45 +92,45 @@ export class AssetApi {
     data.append('file', file);
     data.append('asset', identifier);
     return this.axios
-      .post<ActionResult<boolean>>(`/assets/icon/modify`, data, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      })
-      .then(handleResponse);
+        .post<ActionResult<boolean>>(`/assets/icon/modify`, data, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        })
+        .then(handleResponse);
   }
 
   setIcon(asset: string, file: string): Promise<boolean> {
     return this.axios
-      .put<ActionResult<boolean>>(`/assets/icon/modify`, {
-        file,
-        asset
-      })
-      .then(handleResponse);
+        .put<ActionResult<boolean>>(`/assets/icon/modify`, {
+          file,
+          asset
+        })
+        .then(handleResponse);
   }
 
   refreshIcon(asset: string): Promise<boolean> {
     return this.axios
-      .patch<ActionResult<boolean>>(`/assets/icon/modify`, {
-        asset
-      })
-      .then(handleResponse);
+        .patch<ActionResult<boolean>>(`/assets/icon/modify`, {
+          asset
+        })
+        .then(handleResponse);
   }
 
   assetTypes(): Promise<string[]> {
     return this.axios
-      .get<ActionResult<string[]>>('/assets/types', {
-        validateStatus: validWithoutSessionStatus
-      })
-      .then(handleResponse);
+        .get<ActionResult<string[]>>('/assets/types', {
+          validateStatus: validWithoutSessionStatus
+        })
+        .then(handleResponse);
   }
 
   ignoredAssets(): Promise<string[]> {
     return this.axios
-      .get<ActionResult<string[]>>('/assets/ignored', {
-        validateStatus: validStatus
-      })
-      .then(handleResponse);
+        .get<ActionResult<string[]>>('/assets/ignored', {
+          validateStatus: validStatus
+        })
+        .then(handleResponse);
   }
 
   modifyAsset(add: boolean, assets: string[]): Promise<string[]> {
@@ -142,100 +142,100 @@ export class AssetApi {
 
   addIgnoredAsset(assets: string[]): Promise<string[]> {
     return this.axios
-      .put<ActionResult<string[]>>(
-        '/assets/ignored',
-        {
-          assets
-        },
-        {
-          validateStatus: validStatus
-        }
-      )
-      .then(handleResponse);
+        .put<ActionResult<string[]>>(
+            '/assets/ignored',
+            {
+              assets
+            },
+            {
+              validateStatus: validStatus
+            }
+        )
+        .then(handleResponse);
   }
 
   removeIgnoredAsset(assets: string[]): Promise<string[]> {
     return this.axios
-      .delete<ActionResult<string[]>>('/assets/ignored', {
-        data: {
-          assets
-        },
-        validateStatus: validStatus
-      })
-      .then(handleResponse);
+        .delete<ActionResult<string[]>>('/assets/ignored', {
+          data: {
+            assets
+          },
+          validateStatus: validStatus
+        })
+        .then(handleResponse);
   }
 
   updateIgnoredAssets(): Promise<PendingTask> {
     return this.axios
-      .post<ActionResult<PendingTask>>('/assets/ignored', null, {
-        params: axiosSnakeCaseTransformer({ asyncQuery: true }),
-        validateStatus: validWithoutSessionStatus,
-        transformResponse: this.baseTransformer
-      })
-      .then(handleResponse);
+        .post<ActionResult<PendingTask>>('/assets/ignored', null, {
+          params: axiosSnakeCaseTransformer({ asyncQuery: true }),
+          validateStatus: validWithoutSessionStatus,
+          transformResponse: this.baseTransformer
+        })
+        .then(handleResponse);
   }
 
   async queryOwnedAssets(): Promise<string[]> {
     const ownedAssets = await this.axios.get<ActionResult<string[]>>(
-      '/assets',
-      {
-        validateStatus: validStatus
-      }
+        '/assets',
+        {
+          validateStatus: validStatus
+        }
     );
 
     return OwnedAssets.parse(handleResponse(ownedAssets));
   }
 
   addAsset(
-    asset: Omit<SupportedAsset, 'identifier'>
+      asset: Omit<SupportedAsset, 'identifier'>
   ): Promise<AssetIdResponse> {
     return this.axios
-      .put<ActionResult<AssetIdResponse>>(
-        '/assets/all',
-        axiosSnakeCaseTransformer(asset),
-        {
-          validateStatus: validStatus,
-          transformResponse: this.baseTransformer
-        }
-      )
-      .then(handleResponse);
+        .put<ActionResult<AssetIdResponse>>(
+            '/assets/all',
+            axiosSnakeCaseTransformer(asset),
+            {
+              validateStatus: validStatus,
+              transformResponse: this.baseTransformer
+            }
+        )
+        .then(handleResponse);
   }
 
   editAsset(asset: SupportedAsset): Promise<boolean> {
     return this.axios
-      .patch<ActionResult<boolean>>(
-        '/assets/all',
-        axiosSnakeCaseTransformer(asset),
-        {
-          validateStatus: validStatus,
-          transformResponse: this.baseTransformer
-        }
-      )
-      .then(handleResponse);
+        .patch<ActionResult<boolean>>(
+            '/assets/all',
+            axiosSnakeCaseTransformer(asset),
+            {
+              validateStatus: validStatus,
+              transformResponse: this.baseTransformer
+            }
+        )
+        .then(handleResponse);
   }
 
   deleteAsset(identifier: string): Promise<boolean> {
     return this.axios
-      .delete<ActionResult<boolean>>('/assets/all', {
-        data: axiosSnakeCaseTransformer({ identifier }),
-        validateStatus: validStatus
-      })
-      .then(handleResponse);
+        .delete<ActionResult<boolean>>('/assets/all', {
+          data: axiosSnakeCaseTransformer({ identifier }),
+          validateStatus: validStatus
+        })
+        .then(handleResponse);
   }
 
   checkForAssetUpdate(): Promise<PendingTask> {
     return this.axios
-      .get<ActionResult<PendingTask>>('/assets/updates', {
-        params: axiosSnakeCaseTransformer({ asyncQuery: true }),
-        validateStatus: validWithoutSessionStatus,
-        transformResponse: this.baseTransformer
-      })
-      .then(handleResponse);
+        .get<ActionResult<PendingTask>>('/assets/updates', {
+          params: axiosSnakeCaseTransformer({ asyncQuery: true }),
+          validateStatus: validWithoutSessionStatus,
+          transformResponse: this.baseTransformer
+        })
+        .then(handleResponse);
   }
 
   performUpdate(
-    version: number,
-    conflicts?: ConflictResolution
+      version: number,
+      conflicts?: ConflictResolution
   ): Promise<PendingTask> {
     const data = {
       async_query: true,
@@ -244,121 +244,121 @@ export class AssetApi {
     };
 
     return this.axios
-      .post<ActionResult<PendingTask>>('/assets/updates', data, {
-        validateStatus: validStatus,
-        transformResponse: this.baseTransformer
-      })
-      .then(handleResponse);
+        .post<ActionResult<PendingTask>>('/assets/updates', data, {
+          validateStatus: validStatus,
+          transformResponse: this.baseTransformer
+        })
+        .then(handleResponse);
   }
 
   async mergeAssets(
-    sourceIdentifier: string,
-    targetAsset: string
+      sourceIdentifier: string,
+      targetAsset: string
   ): Promise<true> {
     const data = axiosSnakeCaseTransformer({
       sourceIdentifier,
       targetAsset
     });
     const response = await this.axios.put<ActionResult<true>>(
-      '/assets/replace',
-      data,
-      {
-        validateStatus: validStatus,
-        transformResponse: this.baseTransformer
-      }
+        '/assets/replace',
+        data,
+        {
+          validateStatus: validStatus,
+          transformResponse: this.baseTransformer
+        }
     );
     return handleResponse(response);
   }
 
   async historicalPrices(
-    payload?: Partial<ManualPricePayload>
+      payload?: Partial<ManualPricePayload>
   ): Promise<HistoricalPrice[]> {
     const response = await this.axios.get<ActionResult<HistoricalPrice[]>>(
-      '/assets/prices/historical',
-      {
-        params: axiosSnakeCaseTransformer(payload),
-        validateStatus: validWithoutSessionStatus,
-        transformResponse: this.baseTransformer
-      }
+        '/assets/prices/historical',
+        {
+          params: axiosSnakeCaseTransformer(payload),
+          validateStatus: validWithoutSessionStatus,
+          transformResponse: this.baseTransformer
+        }
     );
 
     return HistoricalPrices.parse(handleResponse(response));
   }
 
   async addHistoricalPrice(
-    price: HistoricalPriceFormPayload
+      price: HistoricalPriceFormPayload
   ): Promise<boolean> {
     return this.axios
-      .put<ActionResult<boolean>>(
-        '/assets/prices/historical',
-        axiosSnakeCaseTransformer(price),
-        {
-          validateStatus: validWithoutSessionStatus
-        }
-      )
-      .then(handleResponse);
+        .put<ActionResult<boolean>>(
+            '/assets/prices/historical',
+            axiosSnakeCaseTransformer(price),
+            {
+              validateStatus: validWithoutSessionStatus
+            }
+        )
+        .then(handleResponse);
   }
 
   async editHistoricalPrice(
-    price: HistoricalPriceFormPayload
+      price: HistoricalPriceFormPayload
   ): Promise<boolean> {
     return this.axios
-      .patch<ActionResult<boolean>>(
-        '/assets/prices/historical',
-        axiosSnakeCaseTransformer(price),
-        {
-          validateStatus: validWithoutSessionStatus
-        }
-      )
-      .then(handleResponse);
+        .patch<ActionResult<boolean>>(
+            '/assets/prices/historical',
+            axiosSnakeCaseTransformer(price),
+            {
+              validateStatus: validWithoutSessionStatus
+            }
+        )
+        .then(handleResponse);
   }
 
   async deleteHistoricalPrice(
-    payload: HistoricalPriceDeletePayload
+      payload: HistoricalPriceDeletePayload
   ): Promise<boolean> {
     return this.axios
-      .delete<ActionResult<boolean>>('/assets/prices/historical', {
-        data: axiosSnakeCaseTransformer(payload),
-        validateStatus: validWithoutSessionStatus
-      })
-      .then(handleResponse);
+        .delete<ActionResult<boolean>>('/assets/prices/historical', {
+          data: axiosSnakeCaseTransformer(payload),
+          validateStatus: validWithoutSessionStatus
+        })
+        .then(handleResponse);
   }
 
   restoreAssetsDatabase(
-    reset: String,
-    ignoreWarnings: boolean
+      reset: String,
+      ignoreWarnings: boolean
   ): Promise<boolean> {
     return this.axios
-      .delete<ActionResult<boolean>>('/assets/updates', {
-        data: axiosSnakeCaseTransformer({ reset, ignoreWarnings }),
-        validateStatus: validStatus,
-        transformResponse: this.baseTransformer
-      })
-      .then(handleResponse);
+        .delete<ActionResult<boolean>>('/assets/updates', {
+          data: axiosSnakeCaseTransformer({ reset, ignoreWarnings }),
+          validateStatus: validStatus,
+          transformResponse: this.baseTransformer
+        })
+        .then(handleResponse);
   }
 
   async fetchNftsPrices(): Promise<AssetPriceArray> {
     const response = await this.axios.get<ActionResult<AssetPriceArray>>(
-      '/nfts/prices',
-      {
-        validateStatus: validStatus,
-        transformResponse: this.baseTransformer
-      }
+        '/nfts/prices',
+        {
+          validateStatus: validStatus,
+          transformResponse: this.baseTransformer
+        }
     );
 
     return AssetPriceArray.parse(handleResponse(response));
   }
 
   async fetchLatestPrices(
-    payload?: Partial<ManualPricePayload>
+      payload?: Partial<ManualPricePayload>
   ): Promise<ManualPrice[]> {
     const response = await this.axios.post<ActionResult<ManualPrice[]>>(
-      '/assets/prices/latest/all',
-      payload,
-      {
-        validateStatus: validStatus,
-        transformResponse: this.baseTransformer
-      }
+        '/assets/prices/latest/all',
+        payload,
+        {
+          validateStatus: validStatus,
+          transformResponse: this.baseTransformer
+        }
     );
 
     return ManualPrices.parse(handleResponse(response));
@@ -366,32 +366,32 @@ export class AssetApi {
 
   addLatestPrice(payload: ManualPriceFormPayload): Promise<boolean> {
     return this.axios
-      .put<ActionResult<boolean>>(
-        '/assets/prices/latest',
-        axiosSnakeCaseTransformer(payload),
-        {
-          validateStatus: validStatus,
-          transformResponse: this.baseTransformer
-        }
-      )
-      .then(handleResponse);
+        .put<ActionResult<boolean>>(
+            '/assets/prices/latest',
+            axiosSnakeCaseTransformer(payload),
+            {
+              validateStatus: validStatus,
+              transformResponse: this.baseTransformer
+            }
+        )
+        .then(handleResponse);
   }
 
   deleteLatestPrice(asset: string): Promise<boolean> {
     return this.axios
-      .delete<ActionResult<boolean>>('/assets/prices/latest', {
-        validateStatus: validStatus,
-        data: {
-          asset
-        },
-        transformResponse: this.baseTransformer
-      })
-      .then(handleResponse);
+        .delete<ActionResult<boolean>>('/assets/prices/latest', {
+          validateStatus: validStatus,
+          data: {
+            asset
+          },
+          transformResponse: this.baseTransformer
+        })
+        .then(handleResponse);
   }
 
   async importCustom(
-    file: File,
-    upload: boolean = false
+      file: File,
+      upload: boolean = false
   ): Promise<ActionResult<boolean>> {
     if (upload) {
       const data = new FormData();
@@ -406,11 +406,11 @@ export class AssetApi {
     }
 
     const response = await this.axios.put(
-      '/assets/user',
-      { action: 'upload', file: file.path },
-      {
-        validateStatus: validFileOperationStatus
-      }
+        '/assets/user',
+        { action: 'upload', file: file.path },
+        {
+          validateStatus: validFileOperationStatus
+        }
     );
     return handleResponse(response);
   }
@@ -419,12 +419,12 @@ export class AssetApi {
     try {
       if (!directory) {
         const response = await this.axios.put(
-          '/assets/user',
-          { action: 'download' },
-          {
-            responseType: 'blob',
-            validateStatus: validFileOperationStatus
-          }
+            '/assets/user',
+            { action: 'download' },
+            {
+              responseType: 'blob',
+              validateStatus: validFileOperationStatus
+            }
         );
         if (response.status === 200) {
           const url = window.URL.createObjectURL(response.data);
@@ -443,11 +443,11 @@ export class AssetApi {
         return { success: false, message: result.message };
       }
       const response = await this.axios.put<ActionResult<{ file: string }>>(
-        '/assets/user',
-        { action: 'download', destination: directory },
-        {
-          validateStatus: validFileOperationStatus
-        }
+          '/assets/user',
+          { action: 'download', destination: directory },
+          {
+            validateStatus: validFileOperationStatus
+          }
       );
       const data = handleResponse(response);
       assert(data.file);

@@ -1,8 +1,6 @@
 import { ProfitLossModel } from '@rotki/common/lib/defi';
 import { AaveBalances, AaveHistory } from '@rotki/common/lib/defi/aave';
-import { get, set } from '@vueuse/core';
-import { acceptHMRUpdate, defineStore } from 'pinia';
-import { computed, ref, Ref } from 'vue';
+import { Ref } from 'vue';
 import { usePremium } from '@/composables/premium';
 import { useModules } from '@/composables/session';
 import { useStatusUpdater } from '@/composables/status';

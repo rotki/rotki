@@ -4,7 +4,7 @@ import { timeframes } from '@rotki/common/lib/settings/graphs';
 import { NetValue } from '@rotki/common/lib/statistics';
 import dayjs from 'dayjs';
 import { setupLiquidityPosition } from '@/composables/defi';
-import { api } from '@/services/rotkehlchen-api';
+import { useStatisticsApi } from '@/services/statistics/statistics-api';
 import { useAggregatedBalancesStore } from '@/store/balances/aggregated';
 import { useNonFungibleBalancesStore } from '@/store/balances/non-fungible';
 import { useBalancePricesStore } from '@/store/balances/prices';
@@ -118,9 +118,10 @@ export const useStatisticsStore = defineStore('statistics', () => {
     };
   });
 
+  const api = useStatisticsApi();
   const fetchNetValue = async () => {
     try {
-      set(netValue, await api.queryNetvalueData(get(nftsInNetValue)));
+      set(netValue, await api.queryNetValueData(get(nftsInNetValue)));
     } catch (e: any) {
       notify({
         title: t('actions.statistics.net_value.error.title').toString(),

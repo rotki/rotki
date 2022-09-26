@@ -104,10 +104,7 @@
 
 <script setup lang="ts">
 import { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
-import { get, set } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { computed, onMounted, PropType, ref, toRefs, watch } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { PropType } from 'vue';
 import ExchangeAmountRow from '@/components/accounts/exchanges/ExchangeAmountRow.vue';
 import AssetBalances from '@/components/AssetBalances.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';

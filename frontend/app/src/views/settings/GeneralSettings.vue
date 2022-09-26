@@ -43,7 +43,6 @@
 </template>
 
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n-composable';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import RoundingSettings from '@/components/settings/explorers/RoundingSettings.vue';
 import FrontendSettings from '@/components/settings/FrontendSettings.vue';

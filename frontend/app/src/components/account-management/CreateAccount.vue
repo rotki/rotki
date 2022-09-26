@@ -260,153 +260,117 @@
   </v-slide-y-transition>
 </template>
 
-<script lang="ts">
-import { get, set } from '@vueuse/core';
-import { computed, defineComponent, ref, Ref, toRefs, watch } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+<script setup lang="ts">
+import { Ref } from 'vue';
 import PremiumCredentials from '@/components/account-management/PremiumCredentials.vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import { useMainStore } from '@/store/main';
 import { CreateAccountPayload } from '@/types/login';
 
-export default defineComponent({
-  name: 'CreateAccount',
-  components: { ExternalLink, RevealableInput, PremiumCredentials },
-  props: {
-    loading: { required: true, type: Boolean },
-    error: { required: false, type: String, default: '' }
-  },
-  emits: ['confirm', 'cancel', 'error:clear'],
-  setup(props, { emit }) {
-    const { error } = toRefs(props);
+const props = defineProps({
+  loading: { required: true, type: Boolean },
+  error: { required: false, type: String, default: '' }
+});
 
-    const store = useMainStore();
-    const { newUser } = toRefs(store);
-    const username: Ref<string> = ref('');
-    const password: Ref<string> = ref('');
-    const passwordConfirm: Ref<string> = ref('');
+const emit = defineEmits(['confirm', 'cancel', 'error:clear']);
+const { error } = toRefs(props);
 
-    const premiumEnabled: Ref<boolean> = ref(false);
-    const userPrompted: Ref<boolean> = ref(false);
+const store = useMainStore();
+const { newUser } = toRefs(store);
+const username: Ref<string> = ref('');
+const password: Ref<string> = ref('');
+const passwordConfirm: Ref<string> = ref('');
 
-    const submitUsageAnalytics: Ref<boolean> = ref(true);
-    const apiKey: Ref<string> = ref('');
-    const apiSecret: Ref<string> = ref('');
-    const syncDatabase: Ref<boolean> = ref(false);
+const premiumEnabled: Ref<boolean> = ref(false);
+const userPrompted: Ref<boolean> = ref(false);
 
-    const premiumFormValid: Ref<boolean> = ref(true);
-    const credentialsFormValid: Ref<boolean> = ref(false);
-    const errorMessages: Ref<string[]> = ref([]);
-    const step: Ref<number> = ref(1);
+const submitUsageAnalytics: Ref<boolean> = ref(true);
+const apiKey: Ref<string> = ref('');
+const apiSecret: Ref<string> = ref('');
+const syncDatabase: Ref<boolean> = ref(false);
 
-    const form: Ref<any> = ref(null);
+const premiumFormValid: Ref<boolean> = ref(true);
+const credentialsFormValid: Ref<boolean> = ref(false);
+const errorMessages: Ref<string[]> = ref([]);
+const step: Ref<number> = ref(1);
 
-    const { tc } = useI18n();
+const form: Ref<any> = ref(null);
 
-    const usernameRules = computed(() => [
-      (v: string) =>
-        !!v ||
-        tc('create_account.select_credentials.validation.non_empty_username'),
+const { tc } = useI18n();
 
-      (v: string) =>
-        (v && /^[0-9a-zA-Z_.-]+$/.test(v)) ||
-        tc('create_account.select_credentials.validation.valid_username')
-    ]);
+const usernameRules = [
+  (v: string) =>
+    !!v ||
+    tc('create_account.select_credentials.validation.non_empty_username'),
 
-    const passwordRules = computed(() => [
-      (v: string) =>
-        !!v ||
-        tc('create_account.select_credentials.validation.non_empty_password')
-    ]);
-    const passwordConfirmRules = computed(() => [
-      (v: string) =>
-        !!v ||
-        tc(
-          'create_account.select_credentials.validation.non_empty_password_confirmation'
-        )
-    ]);
+  (v: string) =>
+    (v && /^[0-9a-zA-Z_.-]+$/.test(v)) ||
+    tc('create_account.select_credentials.validation.valid_username')
+];
 
-    const updateConfirmationError = () => {
-      if (get(errorMessages).length > 0) {
-        return;
-      }
+const passwordRules = [
+  (v: string) =>
+    !!v || tc('create_account.select_credentials.validation.non_empty_password')
+];
+const passwordConfirmRules = [
+  (v: string) =>
+    !!v ||
+    tc(
+      'create_account.select_credentials.validation.non_empty_password_confirmation'
+    )
+];
 
-      get(errorMessages).push(
-        tc(
-          'create_account.select_credentials.validation.password_confirmation_mismatch'
-        )
-      );
-    };
+const updateConfirmationError = () => {
+  if (get(errorMessages).length > 0) {
+    return;
+  }
 
-    watch(
-      [password, passwordConfirm],
-      ([passwordValue, passwordConfirmValue]) => {
-        if (passwordValue && passwordValue !== passwordConfirmValue) {
-          updateConfirmationError();
-        } else {
-          get(errorMessages).pop();
-        }
-      }
-    );
+  get(errorMessages).push(
+    tc(
+      'create_account.select_credentials.validation.password_confirmation_mismatch'
+    )
+  );
+};
 
-    const confirm = () => {
-      const payload: CreateAccountPayload = {
-        credentials: {
-          username: get(username),
-          password: get(password)
-        }
-      };
-
-      if (get(premiumEnabled)) {
-        payload.premiumSetup = {
-          apiKey: get(apiKey),
-          apiSecret: get(apiSecret),
-          submitUsageAnalytics: get(submitUsageAnalytics),
-          syncDatabase: get(syncDatabase)
-        };
-      }
-
-      emit('confirm', payload);
-    };
-
-    const cancel = () => emit('cancel');
-
-    const errorClear = () => emit('error:clear');
-
-    const back = () => {
-      set(step, Math.max(get(step) - 1, 1));
-      if (get(error)) {
-        errorClear();
-      }
-    };
-
-    return {
-      newUser,
-      username,
-      password,
-      passwordConfirm,
-      premiumEnabled,
-      userPrompted,
-      submitUsageAnalytics,
-      apiKey,
-      apiSecret,
-      syncDatabase,
-      premiumFormValid,
-      credentialsFormValid,
-      errorMessages,
-      step,
-      form,
-      usernameRules,
-      passwordRules,
-      passwordConfirmRules,
-      confirm,
-      cancel,
-      back,
-      tc
-    };
+watch([password, passwordConfirm], ([passwordValue, passwordConfirmValue]) => {
+  if (passwordValue && passwordValue !== passwordConfirmValue) {
+    updateConfirmationError();
+  } else {
+    get(errorMessages).pop();
   }
 });
+
+const confirm = () => {
+  const payload: CreateAccountPayload = {
+    credentials: {
+      username: get(username),
+      password: get(password)
+    }
+  };
+
+  if (get(premiumEnabled)) {
+    payload.premiumSetup = {
+      apiKey: get(apiKey),
+      apiSecret: get(apiSecret),
+      submitUsageAnalytics: get(submitUsageAnalytics),
+      syncDatabase: get(syncDatabase)
+    };
+  }
+
+  emit('confirm', payload);
+};
+
+const cancel = () => emit('cancel');
+
+const errorClear = () => emit('error:clear');
+
+const back = () => {
+  set(step, Math.max(get(step) - 1, 1));
+  if (get(error)) {
+    errorClear();
+  }
+};
 </script>
 
 <style scoped lang="scss">

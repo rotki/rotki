@@ -7,7 +7,7 @@ import {
 import { ComputedRef } from 'vue';
 import { getBnFormat } from '@/data/amount_formatter';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
-import { api } from '@/services/rotkehlchen-api';
+import { useSettingsApi } from '@/services/settings/settings-api';
 import { ActionStatus } from '@/store/types';
 import { CurrencyLocation } from '@/types/currency-location';
 import { DateFormat } from '@/types/date-format';
@@ -97,6 +97,8 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
   const enableEthNames: ComputedRef<boolean> = computed(
     () => settings.enableEthNames
   );
+
+  const api = useSettingsApi();
 
   async function updateSetting(
     payload: FrontendSettingsPayload

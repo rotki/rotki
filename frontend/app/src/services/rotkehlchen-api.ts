@@ -1,19 +1,8 @@
 import { ActionResult } from '@rotki/common/lib/data';
-import {
-  Eth2DailyStats,
-  Eth2DailyStatsPayload
-} from '@rotki/common/lib/staking/eth2';
-import {
-  LocationData,
-  NetValue,
-  TimedAssetBalances,
-  TimedBalances
-} from '@rotki/common/lib/statistics';
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import { AssetApi } from '@/services/assets/asset-api';
 import {
   axiosSnakeCaseTransformer,
-  getUpdatedKey,
   setupTransformer
 } from '@/services/axios-tranformers';
 import { BalancesApi } from '@/services/balances/balances-api';
@@ -22,7 +11,6 @@ import { DefiApi } from '@/services/defi/defi-api';
 import { HistoryApi } from '@/services/history/history-api';
 import { ReportsApi } from '@/services/reports/reports-api';
 import {
-  BackendConfiguration,
   BackendInfo,
   PendingTask,
   SyncAction,
@@ -31,44 +19,13 @@ import {
 } from '@/services/types-api';
 import {
   handleResponse,
-  validAccountOperationStatus,
   validAuthorizedStatus,
   validStatus,
   validTaskStatus,
   validWithoutSessionStatus,
-  validWithParamsSessionAndExternalService,
-  validWithSessionAndExternalService,
-  validWithSessionStatus
+  validWithParamsSessionAndExternalService
 } from '@/services/utils';
-import { XpubPayload } from '@/store/balances/types';
-import { IgnoreActionType } from '@/store/history/types';
-import { SyncConflictPayload } from '@/store/session/types';
-import { ActionStatus } from '@/store/types';
-import { Exchanges } from '@/types/exchanges';
-import { IgnoredActions } from '@/types/history/ignored';
-import {
-  AccountSession,
-  CreateAccountPayload,
-  LoginCredentials,
-  SyncConflictError
-} from '@/types/login';
-import { EthereumRpcNode, EthereumRpcNodeList } from '@/types/settings';
-import { Snapshot, SnapshotPayload } from '@/types/snapshots';
-import {
-  emptyPagination,
-  KrakenStakingEvents,
-  KrakenStakingPagination
-} from '@/types/staking';
 import { TaskResultResponse } from '@/types/task';
-import {
-  ExternalServiceKey,
-  ExternalServiceKeys,
-  ExternalServiceName,
-  SettingsUpdate,
-  UserAccount,
-  UserSettingsModel
-} from '@/types/user';
-import { downloadFileByUrl } from '@/utils/download';
 
 export class RotkehlchenApi {
   private axios: AxiosInstance;
@@ -106,7 +63,7 @@ export class RotkehlchenApi {
     return this._serverUrl === this.defaultServerUrl;
   }
 
-  private cancel() {
+  public cancel() {
     this.signal.cancel('cancelling all pending requests');
     this.signal = axios.CancelToken.source();
   }
@@ -187,51 +144,6 @@ export class RotkehlchenApi {
     );
   }
 
-  checkIfLogged(username: string): Promise<boolean> {
-    return this.axios
-      .get<ActionResult<AccountSession>>(`/users`)
-      .then(handleResponse)
-      .then(result => result[username] === 'loggedin');
-  }
-
-  loggedUsers(): Promise<string[]> {
-    return this.axios
-      .get<ActionResult<AccountSession>>(`/users`)
-      .then(handleResponse)
-      .then(result => {
-        const loggedUsers: string[] = [];
-        for (const user in result) {
-          if (result[user] !== 'loggedin') {
-            continue;
-          }
-          loggedUsers.push(user);
-        }
-        return loggedUsers;
-      });
-  }
-
-  async users(): Promise<string[]> {
-    const response = await this.axios.get<ActionResult<AccountSession>>(
-      `/users`
-    );
-    const data = handleResponse(response);
-    return Object.keys(data);
-  }
-
-  async logout(username: string): Promise<boolean> {
-    const response = await this.axios.patch<ActionResult<boolean>>(
-      `/users/${username}`,
-      {
-        action: 'logout'
-      },
-      { validateStatus: validAccountOperationStatus }
-    );
-
-    const success = response.status === 409 ? true : handleResponse(response);
-    this.cancel();
-    return success;
-  }
-
   async setPremiumCredentials(
     username: string,
     apiKey: string,
@@ -257,20 +169,13 @@ export class RotkehlchenApi {
     return handleResponse(response);
   }
 
-  async changeUserPassword(
-    username: string,
-    currentPassword: string,
-    newPassword: string
-  ): Promise<true> {
-    const response = await this.axios.patch<ActionResult<true>>(
-      `/users/${username}/password`,
+  async forceSync(action: SyncAction): Promise<PendingTask> {
+    const response = await this.axios.put<ActionResult<PendingTask>>(
+      '/premium/sync',
+      axiosSnakeCaseTransformer({ asyncQuery: true, action }),
       {
-        name: username,
-        current_password: currentPassword,
-        new_password: newPassword
-      },
-      {
-        validateStatus: validAuthorizedStatus
+        validateStatus: validWithParamsSessionAndExternalService,
+        transformResponse: basicAxiosTransformer
       }
     );
 
@@ -292,21 +197,6 @@ export class RotkehlchenApi {
       transformResponse: basicAxiosTransformer
     });
     return BackendInfo.parse(handleResponse(response));
-  }
-
-  async setSettings(settings: SettingsUpdate): Promise<UserSettingsModel> {
-    const response = await this.axios.put<ActionResult<UserSettingsModel>>(
-      '/settings',
-      axiosSnakeCaseTransformer({
-        settings: settings
-      }),
-      {
-        validateStatus: validStatus,
-        transformResponse: basicAxiosTransformer
-      }
-    );
-    const data = handleResponse(response);
-    return UserSettingsModel.parse(data);
   }
 
   async queryTasks(): Promise<TaskStatus> {
@@ -356,126 +246,6 @@ export class RotkehlchenApi {
       });
   }
 
-  async queryNetvalueData(includeNfts: boolean): Promise<NetValue> {
-    const response = await this.axios.get<ActionResult<NetValue>>(
-      '/statistics/netvalue',
-      {
-        params: axiosSnakeCaseTransformer({
-          includeNfts
-        }),
-        validateStatus: validStatus
-      }
-    );
-
-    return handleResponse(response);
-  }
-
-  async queryTimedBalancesData(
-    asset: string,
-    fromTimestamp: number,
-    toTimestamp: number
-  ): Promise<TimedBalances> {
-    const balances = await this.axios.post<ActionResult<TimedBalances>>(
-      `/statistics/balance`,
-      axiosSnakeCaseTransformer({
-        fromTimestamp,
-        toTimestamp,
-        asset
-      }),
-      {
-        validateStatus: validStatus,
-        transformResponse: basicAxiosTransformer
-      }
-    );
-
-    return TimedBalances.parse(handleResponse(balances));
-  }
-
-  async queryLatestLocationValueDistribution(): Promise<LocationData> {
-    const statistics = await this.axios.get<ActionResult<LocationData>>(
-      '/statistics/value_distribution',
-      {
-        params: axiosSnakeCaseTransformer({ distributionBy: 'location' }),
-        validateStatus: validStatus,
-        transformResponse: basicAxiosTransformer
-      }
-    );
-    return LocationData.parse(handleResponse(statistics));
-  }
-
-  async queryLatestAssetValueDistribution(): Promise<TimedAssetBalances> {
-    const statistics = await this.axios.get<ActionResult<TimedAssetBalances>>(
-      '/statistics/value_distribution',
-      {
-        params: axiosSnakeCaseTransformer({ distributionBy: 'asset' }),
-        validateStatus: validStatus,
-        transformResponse: basicAxiosTransformer
-      }
-    );
-    return TimedAssetBalances.parse(handleResponse(statistics));
-  }
-
-  async queryStatisticsRenderer(): Promise<string> {
-    const response = await this.axios.get<ActionResult<string>>(
-      '/statistics/renderer',
-      {
-        validateStatus: validStatus
-      }
-    );
-
-    return handleResponse(response);
-  }
-
-  async createAccount(payload: CreateAccountPayload): Promise<UserAccount> {
-    const { credentials, premiumSetup } = payload;
-    const { username, password } = credentials;
-
-    const response = await this.axios.put<ActionResult<UserAccount>>(
-      '/users',
-      axiosSnakeCaseTransformer({
-        name: username,
-        password,
-        premiumApiKey: premiumSetup?.apiKey,
-        premiumApiSecret: premiumSetup?.apiSecret,
-        initialSettings: {
-          submitUsageAnalytics: premiumSetup?.submitUsageAnalytics
-        },
-        syncDatabase: premiumSetup?.syncDatabase
-      }),
-      {
-        validateStatus: validStatus,
-        transformResponse: basicAxiosTransformer
-      }
-    );
-    const account = handleResponse(response);
-    return UserAccount.parse(account);
-  }
-
-  async login(credentials: LoginCredentials): Promise<UserAccount> {
-    const { password, syncApproval, username } = credentials;
-    const response = await this.axios.post<
-      ActionResult<UserAccount | SyncConflictPayload>
-    >(
-      `/users/${username}`,
-      axiosSnakeCaseTransformer({
-        password,
-        syncApproval
-      }),
-      {
-        validateStatus: validAccountOperationStatus,
-        transformResponse: basicAxiosTransformer
-      }
-    );
-
-    if (response.status === 300) {
-      const { result, message } = response.data;
-      throw new SyncConflictError(message, SyncConflictPayload.parse(result));
-    }
-
-    const account = handleResponse(response);
-    return UserAccount.parse(account);
-  }
-
   async importDataFrom(
     source: string,
     file: string,
@@ -496,292 +266,6 @@ export class RotkehlchenApi {
     );
 
     return handleResponse(response);
-  }
-
-  async deleteXpub({
-    blockchain,
-    derivationPath,
-    xpub
-  }: XpubPayload): Promise<PendingTask> {
-    const response = await this.axios.delete<ActionResult<PendingTask>>(
-      `/blockchains/${blockchain}/xpub`,
-      {
-        data: axiosSnakeCaseTransformer({
-          xpub,
-          derivationPath: derivationPath ? derivationPath : undefined,
-          asyncQuery: true
-        }),
-        validateStatus: validWithParamsSessionAndExternalService,
-        transformResponse: basicAxiosTransformer
-      }
-    );
-
-    return handleResponse(response);
-  }
-
-  async exportHistoryCSV(directory: string): Promise<boolean> {
-    const response = await this.axios.get<ActionResult<boolean>>(
-      '/history/export',
-      {
-        params: {
-          directory_path: directory
-        },
-        validateStatus: validStatus
-      }
-    );
-
-    return handleResponse(response);
-  }
-
-  async getSettings(): Promise<UserSettingsModel> {
-    const response = await this.axios.get<ActionResult<UserSettingsModel>>(
-      '/settings',
-      {
-        validateStatus: validWithSessionStatus,
-        transformResponse: basicAxiosTransformer
-      }
-    );
-
-    const data = handleResponse(response);
-    return UserSettingsModel.parse(data);
-  }
-
-  async getExchanges(): Promise<Exchanges> {
-    const response = await this.axios.get<ActionResult<Exchanges>>(
-      '/exchanges',
-      {
-        transformResponse: basicAxiosTransformer,
-        validateStatus: validWithSessionStatus
-      }
-    );
-
-    const data = handleResponse(response);
-    return Exchanges.parse(data);
-  }
-
-  async queryExternalServices(): Promise<ExternalServiceKeys> {
-    const response = await this.axios.get<ActionResult<ExternalServiceKeys>>(
-      '/external_services',
-      {
-        validateStatus: validWithSessionStatus,
-        transformResponse: basicAxiosTransformer
-      }
-    );
-
-    const data = handleResponse(response);
-    return ExternalServiceKeys.parse(data);
-  }
-
-  async setExternalServices(
-    keys: ExternalServiceKey[]
-  ): Promise<ExternalServiceKeys> {
-    const response = await this.axios.put<ActionResult<ExternalServiceKeys>>(
-      '/external_services',
-      axiosSnakeCaseTransformer({
-        services: keys
-      }),
-      {
-        validateStatus: validStatus,
-        transformResponse: basicAxiosTransformer
-      }
-    );
-
-    const data = handleResponse(response);
-    return ExternalServiceKeys.parse(data);
-  }
-
-  async deleteExternalServices(
-    serviceToDelete: ExternalServiceName
-  ): Promise<ExternalServiceKeys> {
-    const response = await this.axios.delete<ActionResult<ExternalServiceKeys>>(
-      '/external_services',
-      {
-        data: {
-          services: [serviceToDelete]
-        },
-        validateStatus: validStatus,
-        transformResponse: basicAxiosTransformer
-      }
-    );
-
-    const data = handleResponse(response);
-    return ExternalServiceKeys.parse(data);
-  }
-
-  async forceSync(action: SyncAction): Promise<PendingTask> {
-    const response = await this.axios.put<ActionResult<PendingTask>>(
-      '/premium/sync',
-      axiosSnakeCaseTransformer({ asyncQuery: true, action }),
-      {
-        validateStatus: validWithParamsSessionAndExternalService,
-        transformResponse: basicAxiosTransformer
-      }
-    );
-
-    return handleResponse(response);
-  }
-
-  async importBalancesSnapshot(
-    balancesSnapshotFile: string,
-    locationDataSnapshotFile: string
-  ): Promise<boolean> {
-    const response = await this.axios.put<ActionResult<boolean>>(
-      '/snapshots',
-      axiosSnakeCaseTransformer({
-        balancesSnapshotFile,
-        locationDataSnapshotFile
-      }),
-      {
-        validateStatus: validWithSessionAndExternalService,
-        transformResponse: basicAxiosTransformer
-      }
-    );
-    return handleResponse(response);
-  }
-
-  async uploadBalancesSnapshot(
-    balancesSnapshotFile: File,
-    locationDataSnapshotFile: File
-  ): Promise<boolean> {
-    const data = new FormData();
-    data.append('balances_snapshot_file', balancesSnapshotFile);
-    data.append('location_data_snapshot_file', locationDataSnapshotFile);
-    const response = await this.axios.post<ActionResult<boolean>>(
-      '/snapshots',
-      data,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      }
-    );
-
-    return handleResponse(response);
-  }
-
-  async eth2StakingDetails(): Promise<PendingTask> {
-    const response = await this.axios.get<ActionResult<PendingTask>>(
-      '/blockchains/ETH2/stake/details',
-      {
-        params: axiosSnakeCaseTransformer({
-          asyncQuery: true
-        }),
-        validateStatus: validWithSessionAndExternalService,
-        transformResponse: basicAxiosTransformer
-      }
-    );
-    return handleResponse(response);
-  }
-
-  async eth2StakingDeposits(): Promise<PendingTask> {
-    const response = await this.axios.get<ActionResult<PendingTask>>(
-      '/blockchains/ETH2/stake/deposits',
-      {
-        params: axiosSnakeCaseTransformer({
-          asyncQuery: true
-        }),
-        validateStatus: validWithSessionAndExternalService,
-        transformResponse: basicAxiosTransformer
-      }
-    );
-    return handleResponse(response);
-  }
-
-  private async internalEth2Stats<T>(
-    payload: any,
-    asyncQuery: boolean
-  ): Promise<T> {
-    const response = await this.axios.post<ActionResult<T>>(
-      '/blockchains/ETH2/stake/dailystats',
-      axiosSnakeCaseTransformer({
-        asyncQuery,
-        ...payload,
-        orderByAttributes:
-          payload.orderByAttributes?.map((item: string) =>
-            getUpdatedKey(item, false)
-          ) ?? []
-      }),
-      {
-        validateStatus: validWithSessionAndExternalService,
-        transformResponse: basicAxiosTransformer
-      }
-    );
-    return handleResponse(response);
-  }
-
-  async eth2StatsTask(payload: Eth2DailyStatsPayload): Promise<PendingTask> {
-    return this.internalEth2Stats(payload, true);
-  }
-
-  async eth2Stats(payload: Eth2DailyStatsPayload): Promise<Eth2DailyStats> {
-    const stats = await this.internalEth2Stats<Eth2DailyStats>(payload, false);
-    return Eth2DailyStats.parse(stats);
-  }
-
-  async adexBalances(): Promise<PendingTask> {
-    const response = await this.axios.get<ActionResult<PendingTask>>(
-      '/blockchains/ETH/modules/adex/balances',
-      {
-        params: axiosSnakeCaseTransformer({
-          asyncQuery: true
-        }),
-        validateStatus: validWithSessionAndExternalService,
-        transformResponse: basicAxiosTransformer
-      }
-    );
-
-    return handleResponse(response);
-  }
-
-  async adexHistory(): Promise<PendingTask> {
-    const response = await this.axios.get<ActionResult<PendingTask>>(
-      '/blockchains/ETH/modules/adex/history',
-      {
-        params: axiosSnakeCaseTransformer({
-          asyncQuery: true
-        }),
-        validateStatus: validWithSessionAndExternalService,
-        transformResponse: basicAxiosTransformer
-      }
-    );
-
-    return handleResponse(response);
-  }
-
-  private async internalKrakenStaking<T>(
-    pagination: KrakenStakingPagination,
-    asyncQuery: boolean = false
-  ): Promise<T> {
-    const response = await this.axios.post<ActionResult<T>>(
-      '/staking/kraken',
-      axiosSnakeCaseTransformer({
-        asyncQuery,
-        ...pagination,
-        orderByAttributes:
-          pagination.orderByAttributes?.map(item =>
-            getUpdatedKey(item, false)
-          ) ?? []
-      }),
-      {
-        validateStatus: validWithSessionAndExternalService,
-        transformResponse: basicAxiosTransformer
-      }
-    );
-    return handleResponse(response);
-  }
-
-  async refreshKrakenStaking(): Promise<PendingTask> {
-    return await this.internalKrakenStaking(emptyPagination(), true);
-  }
-
-  async fetchKrakenStakingEvents(
-    pagination: KrakenStakingPagination
-  ): Promise<KrakenStakingEvents> {
-    const data = await this.internalKrakenStaking({
-      ...pagination,
-      onlyCache: true
-    });
-    return KrakenStakingEvents.parse(data);
   }
 
   async importFile(data: FormData): Promise<PendingTask> {
@@ -829,81 +313,6 @@ export class RotkehlchenApi {
     return handleResponse(response);
   }
 
-  async downloadCSV(): Promise<ActionStatus> {
-    try {
-      const response = await this.axios.get('/history/download', {
-        responseType: 'blob',
-        validateStatus: validTaskStatus
-      });
-
-      if (response.status === 200) {
-        const url = window.URL.createObjectURL(response.data);
-        downloadFileByUrl(url, 'reports.zip');
-        return { success: true };
-      }
-
-      const body = await (response.data as Blob).text();
-      const result: ActionResult<null> = JSON.parse(body);
-
-      return { success: false, message: result.message };
-    } catch (e: any) {
-      return { success: false, message: e.message };
-    }
-  }
-
-  async airdrops(): Promise<PendingTask> {
-    const response = await this.axios.get<ActionResult<PendingTask>>(
-      '/blockchains/ETH/airdrops',
-      {
-        params: axiosSnakeCaseTransformer({
-          asyncQuery: true
-        }),
-        validateStatus: validWithSessionAndExternalService,
-        transformResponse: basicAxiosTransformer
-      }
-    );
-
-    return handleResponse(response);
-  }
-
-  async ignoreActions(
-    actionIds: string[],
-    actionType: IgnoreActionType
-  ): Promise<IgnoredActions> {
-    const response = await this.axios.put<ActionResult<IgnoredActions>>(
-      '/actions/ignored',
-      axiosSnakeCaseTransformer({
-        actionIds,
-        actionType
-      }),
-      {
-        validateStatus: validStatus,
-        transformResponse: basicAxiosTransformer
-      }
-    );
-
-    return IgnoredActions.parse(handleResponse(response));
-  }
-
-  async unignoreActions(
-    actionIds: string[],
-    actionType: IgnoreActionType
-  ): Promise<IgnoredActions> {
-    const response = await this.axios.delete<ActionResult<IgnoredActions>>(
-      '/actions/ignored',
-      {
-        data: axiosSnakeCaseTransformer({
-          actionIds,
-          actionType
-        }),
-        validateStatus: validStatus,
-        transformResponse: basicAxiosTransformer
-      }
-    );
-
-    return IgnoredActions.parse(handleResponse(response));
-  }
-
   async fetchNfts(ignoreCache: boolean): Promise<PendingTask> {
     const params = Object.assign(
       {
@@ -918,129 +327,6 @@ export class RotkehlchenApi {
     });
 
     return handleResponse(response);
-  }
-
-  async getSnapshotData(timestamp: number): Promise<Snapshot> {
-    const response = await this.axios.get<ActionResult<Snapshot>>(
-      `/snapshots/${timestamp}`,
-      {
-        validateStatus: validWithoutSessionStatus,
-        transformResponse: basicAxiosTransformer
-      }
-    );
-
-    return Snapshot.parse(handleResponse(response));
-  }
-
-  async updateSnapshotData(
-    timestamp: number,
-    payload: SnapshotPayload
-  ): Promise<boolean> {
-    const response = await this.axios.patch<ActionResult<boolean>>(
-      `/snapshots/${timestamp}`,
-      axiosSnakeCaseTransformer(payload),
-      {
-        validateStatus: validStatus,
-        transformResponse: basicAxiosTransformer
-      }
-    );
-
-    return handleResponse(response);
-  }
-
-  async exportSnapshotCSV({
-    path,
-    timestamp
-  }: {
-    path: string;
-    timestamp: number;
-  }): Promise<boolean> {
-    const response = await this.axios.get<ActionResult<boolean>>(
-      `/snapshots/${timestamp}`,
-      {
-        params: axiosSnakeCaseTransformer({
-          path,
-          action: 'export'
-        }),
-        validateStatus: validWithoutSessionStatus,
-        transformResponse: basicAxiosTransformer
-      }
-    );
-
-    return handleResponse(response);
-  }
-
-  async downloadSnapshot(timestamp: number): Promise<any> {
-    return this.axios.get<any>(`/snapshots/${timestamp}`, {
-      params: axiosSnakeCaseTransformer({ action: 'download' }),
-      validateStatus: validWithoutSessionStatus,
-      responseType: 'arraybuffer'
-    });
-  }
-
-  async deleteSnapshot(payload: { timestamp: number }): Promise<boolean> {
-    const response = await this.axios.delete<ActionResult<boolean>>(
-      '/snapshots',
-      {
-        data: axiosSnakeCaseTransformer(payload),
-        validateStatus: validWithoutSessionStatus,
-        transformResponse: basicAxiosTransformer
-      }
-    );
-
-    return handleResponse(response);
-  }
-
-  async fetchEthereumNodes(): Promise<EthereumRpcNodeList> {
-    const response = await this.axios.get<ActionResult<EthereumRpcNodeList>>(
-      '/blockchains/ETH/nodes'
-    );
-    return EthereumRpcNodeList.parse(handleResponse(response));
-  }
-
-  async addEthereumNode(
-    node: Omit<EthereumRpcNode, 'identifier'>
-  ): Promise<boolean> {
-    const response = await this.axios.put<ActionResult<boolean>>(
-      '/blockchains/ETH/nodes',
-      axiosSnakeCaseTransformer(node),
-      {
-        validateStatus: validStatus
-      }
-    );
-    return handleResponse(response);
-  }
-
-  async editEthereumNode(node: EthereumRpcNode): Promise<boolean> {
-    const response = await this.axios.patch<ActionResult<boolean>>(
-      '/blockchains/ETH/nodes',
-      axiosSnakeCaseTransformer(node),
-      {
-        validateStatus: validStatus
-      }
-    );
-    return handleResponse(response);
-  }
-
-  async deleteEthereumNode(identifier: number): Promise<boolean> {
-    const response = await this.axios.delete<ActionResult<boolean>>(
-      '/blockchains/ETH/nodes',
-      {
-        data: axiosSnakeCaseTransformer({ identifier }),
-        validateStatus: validStatus
-      }
-    );
-    return handleResponse(response);
-  }
-
-  async backendSettings(): Promise<BackendConfiguration> {
-    const response = await this.axios.get<ActionResult<BackendConfiguration>>(
-      '/settings/configuration',
-      {
-        transformResponse: basicAxiosTransformer
-      }
-    );
-    return BackendConfiguration.parse(handleResponse(response));
   }
 }
 

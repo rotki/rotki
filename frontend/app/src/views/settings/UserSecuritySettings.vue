@@ -10,8 +10,7 @@
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue';
+<script setup lang="ts">
 import BackupManager from '@/components/settings/data-security/backups/BackupManager.vue';
 import ManageCustomAssets from '@/components/settings/data-security/backups/ManageCustomAssets.vue';
 import ChangePassword from '@/components/settings/data-security/ChangePassword.vue';
@@ -19,17 +18,4 @@ import DataManagement from '@/components/settings/data-security/DataManagement.v
 import OracleCacheManagement from '@/components/settings/data-security/OracleCacheManagement.vue';
 import RestoreAssetsDatabase from '@/components/settings/data-security/RestoreAssetsDatabase.vue';
 import AssetUpdate from '@/components/status/update/AssetUpdate.vue';
-
-export default defineComponent({
-  name: 'UserSecuritySettings',
-  components: {
-    ManageCustomAssets,
-    BackupManager,
-    AssetUpdate,
-    RestoreAssetsDatabase,
-    OracleCacheManagement,
-    ChangePassword,
-    DataManagement
-  }
-});
 </script>

@@ -34,8 +34,7 @@
 
 <script setup lang="ts">
 import { onlyIfTruthy } from '@rotki/common';
-import { computed, onMounted, PropType, ref, toRefs, watch } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { PropType } from 'vue';
 import { Eth2Validator } from '@/types/balances';
 
 const isValid = (percentage: string) => {

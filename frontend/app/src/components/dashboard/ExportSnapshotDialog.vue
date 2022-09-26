@@ -68,6 +68,7 @@ import { useI18n } from 'vue-i18n-composable';
 import EditSnapshotDialog from '@/components/dashboard/EditSnapshotDialog.vue';
 import { interop } from '@/electron-interop';
 import { api } from '@/services/rotkehlchen-api';
+import { useSnapshotApi } from '@/services/settings/snapshot-api';
 import { useMessageStore } from '@/store/message';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatisticsStore } from '@/store/statistics';
@@ -101,7 +102,7 @@ const formattedSelectedBalance = computed<BigNumber | null>(() => {
 });
 
 const downloadSnapshot = async () => {
-  const resp = await api.downloadSnapshot(get(timestamp));
+  const resp = await snapshotApi.downloadSnapshot(get(timestamp));
 
   const blob = new Blob([resp.data], { type: 'application/zip' });
   const url = window.URL.createObjectURL(blob);
@@ -118,6 +119,8 @@ const { setMessage } = useMessageStore();
 
 const { t, tc } = useI18n();
 
+const snapshotApi = useSnapshotApi();
+
 const exportSnapshotCSV = async () => {
   let message: Message | null = null;
 
@@ -131,7 +134,7 @@ const exportSnapshotCSV = async () => {
         return;
       }
 
-      const success = await api.exportSnapshotCSV({
+      const success = await snapshotApi.exportSnapshotCSV({
         path,
         timestamp: get(timestamp)
       });
@@ -175,7 +178,7 @@ const deleteSnapshot = async () => {
   let message: Message | null;
 
   try {
-    const success = await api.deleteSnapshot({
+    const success = await snapshotApi.deleteSnapshot({
       timestamp: get(timestamp)
     });
 

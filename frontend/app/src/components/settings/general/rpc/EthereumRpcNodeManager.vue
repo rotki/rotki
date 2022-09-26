@@ -140,7 +140,7 @@ import BigDialog from '@/components/dialogs/BigDialog.vue';
 import RowAction from '@/components/helper/RowActions.vue';
 import RpcNodeForm from '@/components/settings/general/rpc/RpcNodeForm.vue';
 import { deserializeApiErrorMessage } from '@/services/converters';
-import { api } from '@/services/rotkehlchen-api';
+import { useEthNodesApi } from '@/services/settings/eth-nodes-api';
 import { useMessageStore } from '@/store/message';
 import { useNotifications } from '@/store/notifications';
 import { usePeriodicStore } from '@/store/session/periodic';
@@ -165,6 +165,7 @@ const { setMessage } = useMessageStore();
 const { tc } = useI18n();
 
 const { connectedEthNodes } = storeToRefs(usePeriodicStore());
+const api = useEthNodesApi();
 
 async function loadNodes(): Promise<void> {
   try {

@@ -13,7 +13,7 @@ import {
   validWithParamsSessionAndExternalService,
   validWithSessionStatus
 } from '@/services/utils';
-import { BlockchainAccountPayload } from '@/store/balances/types';
+import { BlockchainAccountPayload, XpubPayload } from '@/store/balances/types';
 import { BtcChains } from '@/types/blockchain/chains';
 import { assert } from '@/utils/assertions';
 
@@ -154,9 +154,9 @@ export const useBlockchainAccountsApi = () => {
     return handleResponse(response);
   };
 
-  async function queryAccounts(
+  const queryAccounts = async (
     blockchain: Exclude<Blockchain, BtcChains>
-  ): Promise<GeneralAccountData[]> {
+  ): Promise<GeneralAccountData[]> => {
     const response = await api.instance.get<ActionResult<GeneralAccountData[]>>(
       `/blockchains/${blockchain}`,
       {
@@ -165,11 +165,11 @@ export const useBlockchainAccountsApi = () => {
       }
     );
     return handleResponse(response);
-  }
+  };
 
-  async function queryBtcAccounts(
+  const queryBtcAccounts = async (
     blockchain: BtcChains
-  ): Promise<BtcAccountData> {
+  ): Promise<BtcAccountData> => {
     const response = await api.instance.get<ActionResult<BtcAccountData>>(
       `/blockchains/${blockchain}`,
       {
@@ -179,7 +179,28 @@ export const useBlockchainAccountsApi = () => {
     );
 
     return handleResponse(response);
-  }
+  };
+
+  const deleteXpub = async ({
+    blockchain,
+    derivationPath,
+    xpub
+  }: XpubPayload): Promise<PendingTask> => {
+    const response = await api.instance.delete<ActionResult<PendingTask>>(
+      `/blockchains/${blockchain}/xpub`,
+      {
+        data: axiosSnakeCaseTransformer({
+          xpub,
+          derivationPath: derivationPath ? derivationPath : undefined,
+          asyncQuery: true
+        }),
+        validateStatus: validWithParamsSessionAndExternalService,
+        transformResponse: basicAxiosTransformer
+      }
+    );
+
+    return handleResponse(response);
+  };
 
   return {
     addBlockchainAccount,
@@ -187,6 +208,7 @@ export const useBlockchainAccountsApi = () => {
     editBlockchainAccount,
     editBtcAccount,
     queryAccounts,
-    queryBtcAccounts
+    queryBtcAccounts,
+    deleteXpub
   };
 };

@@ -63,10 +63,8 @@
   </v-form>
 </template>
 
-<script lang="ts">
-import { get, set } from '@vueuse/core';
-import { defineComponent, PropType, Ref, ref, toRefs, watch } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+<script setup lang="ts">
+import { PropType, Ref } from 'vue';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import BalanceTypeInput from '@/components/inputs/BalanceTypeInput.vue';
@@ -80,175 +78,147 @@ import { TradeLocation } from '@/types/history/trade-location';
 import { ManualBalance } from '@/types/manual-balances';
 import { bigNumberify } from '@/utils/bignumbers';
 
-const setupRules = (tc: (key: string) => string) => {
-  const amountRules = [
-    (v: string) => !!v || tc('manual_balances_form.validation.amount')
-  ];
-  const assetRules = [
-    (v: string) => !!v || tc('manual_balances_form.validation.asset')
-  ];
-  const labelRules = [
-    (v: string) => !!v || tc('manual_balances_form.validation.label_empty')
-  ];
+const props = defineProps({
+  edit: {
+    required: false,
+    type: Object as PropType<ManualBalance | null>,
+    default: null
+  },
+  value: { required: true, type: Boolean },
+  context: { required: true, type: String as PropType<BalanceType> }
+});
 
-  return {
-    amountRules,
-    assetRules,
-    labelRules
-  };
+const emit = defineEmits(['clear', 'input']);
+
+const { t, tc } = useI18n();
+
+const amountRules = [
+  (v: string) => !!v || tc('manual_balances_form.validation.amount')
+];
+const assetRules = [
+  (v: string) => !!v || tc('manual_balances_form.validation.asset')
+];
+const labelRules = [
+  (v: string) => !!v || tc('manual_balances_form.validation.label_empty')
+];
+
+const { edit, context } = toRefs(props);
+
+const valid = ref(false);
+const pending = ref(false);
+
+const errors: Ref<{ [key: string]: string[] }> = ref({});
+
+const id = ref<number | null>(null);
+const asset = ref<string>('');
+const label = ref<string>('');
+const amount = ref<string>('');
+const tags: Ref<string[]> = ref([]);
+const location: Ref<TradeLocation> = ref(TRADE_LOCATION_EXTERNAL);
+const balanceType: Ref<BalanceType> = ref(BalanceType.ASSET);
+const form = ref<any>(null);
+
+const reset = () => {
+  get(form)?.reset();
+  set(balanceType, get(context));
+  set(errors, {});
 };
 
-const ManualBalancesForm = defineComponent({
-  name: 'ManualBalancesForm',
-  components: { BalanceTypeInput, LocationSelector, TagInput, AssetSelect },
-  props: {
-    edit: {
-      required: false,
-      type: Object as PropType<ManualBalance | null>,
-      default: null
-    },
-    value: { required: true, type: Boolean },
-    context: { required: true, type: String as PropType<BalanceType> }
-  },
-  emits: ['clear', 'input'],
-  setup(props, { emit }) {
-    const { t, tc } = useI18n();
-    const { edit, context } = toRefs(props);
+const clear = () => {
+  emit('clear');
+  reset();
+};
 
-    const valid = ref(false);
-    const pending = ref(false);
+const input = (balance: ManualBalance) => {
+  emit('input', balance);
+};
 
-    const errors: Ref<{ [key: string]: string[] }> = ref({});
+const setBalance = (balance: ManualBalance) => {
+  set(id, balance.id);
+  set(asset, balance.asset);
+  set(label, balance.label);
+  set(amount, balance.amount.toFixed());
+  set(tags, balance.tags ?? []);
+  set(location, balance.location);
+  set(balanceType, balance.balanceType);
+};
 
-    const id = ref<number | null>(null);
-    const asset = ref<string>('');
-    const label = ref<string>('');
-    const amount = ref<string>('');
-    const tags: Ref<string[]> = ref([]);
-    const location: Ref<TradeLocation> = ref(TRADE_LOCATION_EXTERNAL);
-    const balanceType: Ref<BalanceType> = ref(BalanceType.ASSET);
-    const form = ref<any>(null);
-
-    const reset = () => {
-      get(form)?.reset();
-      set(balanceType, get(context));
-      set(errors, {});
-    };
-
-    const clear = () => {
-      emit('clear');
+watch(
+  edit,
+  balance => {
+    if (!balance) {
       reset();
-    };
+    } else {
+      setBalance(balance);
+    }
+  },
+  { immediate: true }
+);
 
-    const input = (balance: ManualBalance) => {
-      emit('input', balance);
-    };
+const { editManualBalance, addManualBalance, manualLabels } =
+  useManualBalancesStore();
+const { refreshPrices } = useBalancesStore();
 
-    const setBalance = (balance: ManualBalance) => {
-      set(id, balance.id);
-      set(asset, balance.asset);
-      set(label, balance.label);
-      set(amount, balance.amount.toFixed());
-      set(tags, balance.tags ?? []);
-      set(location, balance.location);
-      set(balanceType, balance.balanceType);
-    };
+const save = async () => {
+  set(pending, true);
+  const balance: Omit<ManualBalance, 'id'> = {
+    asset: get(asset),
+    amount: bigNumberify(get(amount)),
+    label: get(label),
+    tags: get(tags),
+    location: get(location),
+    balanceType: get(balanceType)
+  };
 
-    watch(
-      edit,
-      balance => {
-        if (!balance) {
-          reset();
-        } else {
-          setBalance(balance);
-        }
-      },
-      { immediate: true }
-    );
+  const idVal = get(id);
 
-    const { editManualBalance, addManualBalance, manualLabels } =
-      useManualBalancesStore();
-    const { refreshPrices } = useBalancesStore();
+  const status = await (get(edit) && idVal
+    ? editManualBalance({ ...balance, id: idVal })
+    : addManualBalance(balance));
 
-    const save = async () => {
-      set(pending, true);
-      const balance: Omit<ManualBalance, 'id'> = {
-        asset: get(asset),
-        amount: bigNumberify(get(amount)),
-        label: get(label),
-        tags: get(tags),
-        location: get(location),
-        balanceType: get(balanceType)
-      };
+  await refreshPrices(false);
 
-      const idVal = get(id);
+  set(pending, false);
 
-      const status = await (get(edit) && idVal
-        ? editManualBalance({ ...balance, id: idVal })
-        : addManualBalance(balance));
+  if (status.success) {
+    clear();
+    return true;
+  }
 
-      await refreshPrices(false);
+  if (status.message) {
+    const errorMessages = deserializeApiErrorMessage(status.message);
+    set(errors, (errorMessages?.balances[0] as any) ?? {});
+  }
+  return false;
+};
 
-      set(pending, false);
+watch(label, label => {
+  if (get(edit)) {
+    return;
+  }
 
-      if (status.success) {
-        clear();
-        return true;
-      }
-
-      if (status.message) {
-        const errorMessages = deserializeApiErrorMessage(status.message);
-        set(errors, (errorMessages?.balances[0] as any) ?? {});
-      }
-      return false;
-    };
-
-    watch(label, label => {
-      if (get(edit)) {
-        return;
-      }
-
-      const validationErrors = get(errors)['label'];
-      if (get(manualLabels).includes(label)) {
-        if (validationErrors && validationErrors.length > 0) {
-          return;
-        }
-        set(errors, {
-          ...get(errors),
-          label: [
-            t('manual_balances_form.validation.label_exists', {
-              label
-            }).toString()
-          ]
-        });
-      } else {
-        const { label, ...data } = get(errors);
-        set(errors, data);
-      }
+  const validationErrors = get(errors)['label'];
+  if (get(manualLabels).includes(label)) {
+    if (validationErrors && validationErrors.length > 0) {
+      return;
+    }
+    set(errors, {
+      ...get(errors),
+      label: [
+        t('manual_balances_form.validation.label_exists', {
+          label
+        }).toString()
+      ]
     });
-
-    return {
-      t,
-      tc,
-      form,
-      valid,
-      pending,
-      errors,
-      asset,
-      label,
-      amount,
-      tags,
-      location,
-      balanceType,
-      ...setupRules(tc),
-      input,
-      save,
-      clear,
-      reset
-    };
+  } else {
+    const { label, ...data } = get(errors);
+    set(errors, data);
   }
 });
-export default ManualBalancesForm;
+
+defineExpose({
+  save
+});
 </script>
 
 <style module lang="scss">

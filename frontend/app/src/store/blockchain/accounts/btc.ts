@@ -1,6 +1,6 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Ref } from 'vue';
-import { api } from '@/services/rotkehlchen-api';
+import { useBlockchainAccountsApi } from '@/services/accounts';
 import { BtcAccountData } from '@/services/types-api';
 import { XpubPayload } from '@/store/balances/types';
 import { useNotifications } from '@/store/notifications';
@@ -25,6 +25,8 @@ export const useBtcAccountsStore = defineStore(
     const { awaitTask, isTaskRunning } = useTasks();
     const { notify } = useNotifications();
     const { tc } = useI18n();
+
+    const api = useBlockchainAccountsApi();
 
     const deleteXpub = async (payload: XpubPayload) => {
       try {

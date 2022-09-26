@@ -92,7 +92,7 @@ export const useReports = defineStore('reports', () => {
   const createCsv = async (path: string) => {
     let message: Message;
     try {
-      const success = await api.exportHistoryCSV(path);
+      const success = await api.reports.exportReportCSV(path);
       message = {
         title: t('actions.reports.csv_export.title').toString(),
         description: success

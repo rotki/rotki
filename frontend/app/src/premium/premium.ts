@@ -3,7 +3,7 @@ import Vue from 'vue';
 import PremiumLoading from '@/components/premium/PremiumLoading.vue';
 import PremiumLoadingError from '@/components/premium/PremiumLoadingError.vue';
 import ThemeSwitchLock from '@/components/premium/ThemeSwitchLock.vue';
-import { api } from '@/services/rotkehlchen-api';
+import { useStatisticsApi } from '@/services/statistics/statistics-api';
 import { checkIfDevelopment } from '@/utils/env-utils';
 import { logger } from '@/utils/logging';
 
@@ -27,6 +27,7 @@ async function loadComponents(): Promise<string[]> {
       return;
     }
 
+    const api = useStatisticsApi();
     const result = await api.queryStatisticsRenderer();
     const script = document.createElement('script');
     script.text = result;

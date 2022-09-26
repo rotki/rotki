@@ -11,8 +11,6 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeMount } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import DepositsWithdrawalsContent from '@/components/history/deposits-withdrawals/DepositsWithdrawalsContent.vue';
 import { useSectionLoading } from '@/composables/common';

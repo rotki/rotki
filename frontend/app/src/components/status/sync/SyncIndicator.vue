@@ -223,7 +223,7 @@ import SyncButtons from '@/components/status/sync/SyncButtons.vue';
 import { useTheme } from '@/composables/common';
 import { usePremium } from '@/composables/premium';
 import { interop } from '@/electron-interop';
-import { api } from '@/services/rotkehlchen-api';
+import { useSnapshotApi } from '@/services/settings/snapshot-api';
 import { SYNC_DOWNLOAD, SYNC_UPLOAD, SyncAction } from '@/services/types-api';
 import { useBalancesStore } from '@/store/balances';
 import { AllBalancePayload } from '@/store/balances/types';
@@ -314,6 +314,8 @@ const importFilesCompleted = computed<boolean>(
 );
 
 const { setMessage } = useMessageStore();
+
+const api = useSnapshotApi();
 
 const importSnapshot = async () => {
   if (!get(importFilesCompleted)) return;

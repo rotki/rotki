@@ -36,8 +36,6 @@
   </v-card>
 </template>
 <script setup lang="ts">
-import { onBeforeMount, onBeforeUnmount, toRefs } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 import { interop } from '@/electron-interop';
 
 const props = defineProps({

@@ -88,7 +88,7 @@ import { useI18n } from 'vue-i18n-composable';
 import EditBalancesSnapshotTable from '@/components/dashboard/EditBalancesSnapshotTable.vue';
 import EditLocationDataSnapshotTable from '@/components/dashboard/EditLocationDataSnapshotTable.vue';
 import EditSnapshotTotal from '@/components/dashboard/EditSnapshotTotal.vue';
-import { api } from '@/services/rotkehlchen-api';
+import { useSnapshotApi } from '@/services/settings/snapshot-api';
 import { useMessageStore } from '@/store/message';
 import { useNotifications } from '@/store/notifications';
 import { useStatisticsStore } from '@/store/statistics';
@@ -114,6 +114,8 @@ const { timestamp } = toRefs(props);
 const snapshotData: Ref<Snapshot | null> = ref(null);
 const step = ref<number>(1);
 const { fetchNetValue } = useStatisticsStore();
+
+const api = useSnapshotApi();
 
 const { tc } = useI18n();
 

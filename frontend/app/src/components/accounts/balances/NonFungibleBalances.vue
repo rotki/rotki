@@ -31,7 +31,7 @@
       </template>
       <template #item.priceInAsset="{ item }">
         <amount-display
-          v-if="item.priceAsset !== currency"
+          v-if="item.priceAsset !== currencySymbol"
           :value="item.priceInAsset"
           :asset="item.priceAsset"
         />
@@ -85,7 +85,7 @@
   </card>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { PropType, Ref } from 'vue';
 import { DataTableHeader } from 'vuetify';
 import NonFungibleBalanceEdit from '@/components/accounts/balances/NonFungibleBalanceEdit.vue';
@@ -106,148 +106,121 @@ import { Section } from '@/types/status';
 import { assert } from '@/utils/assertions';
 import { isVideo } from '@/utils/nft';
 
-export default defineComponent({
-  name: 'NonFungibleBalances',
-  components: {
-    NftDetails,
-    RowAppend,
-    ActiveModules,
-    RefreshButton,
-    NonFungibleBalanceEdit,
-    RowAction
-  },
-  props: {
-    modules: {
-      required: true,
-      type: Array as PropType<Module[]>
-    }
-  },
-  setup() {
-    const edit: Ref<NonFungibleBalance | null> = ref(null);
-    const confirmDelete: Ref<NonFungibleBalance | null> = ref(null);
-
-    const balancesStore = useNonFungibleBalancesStore();
-    const { nonFungibleTotalValue, fetchNonFungibleBalances } = balancesStore;
-    const { nonFungibleBalances } = storeToRefs(balancesStore);
-    const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-    const total = nonFungibleTotalValue();
-    const { tc } = useI18n();
-    const { notify } = useNotifications();
-
-    const deleteAsset = computed(() => {
-      const balance = get(confirmDelete);
-      return !balance ? '' : balance.name ?? balance.id;
-    });
-
-    const mappedBalances = computed(() => {
-      return get(nonFungibleBalances).map(balance => {
-        return {
-          ...balance,
-          imageUrl: balance.imageUrl || '/assets/images/placeholder.svg',
-          isVideo: isVideo(balance.imageUrl)
-        };
-      });
-    });
-
-    const tableHeaders = computed<DataTableHeader[]>(() => [
-      {
-        text: tc('common.name'),
-        value: 'name',
-        cellClass: 'text-no-wrap'
-      },
-      {
-        text: tc('non_fungible_balance.column.price_in_asset'),
-        value: 'priceInAsset',
-        align: 'end',
-        width: '75%',
-        class: 'text-no-wrap'
-      },
-      {
-        text: tc('common.price_in_symbol', 0, { symbol: get(currencySymbol) }),
-        value: 'usdPrice',
-        align: 'end',
-        class: 'text-no-wrap'
-      },
-      {
-        text: tc('non_fungible_balance.column.custom_price'),
-        value: 'manuallyInput',
-        class: 'text-no-wrap'
-      },
-      {
-        text: tc('non_fungible_balance.column.actions'),
-        value: 'actions',
-        align: 'center',
-        sortable: false,
-        width: '50'
-      }
-    ]);
-
-    const loading = isSectionLoading(Section.NON_FUNGIBLE_BALANCES);
-
-    const setupRefresh = (ignoreCache: boolean = false) => {
-      const payload = ignoreCache ? { ignoreCache: true } : undefined;
-
-      return async () => await fetchNonFungibleBalances(payload);
-    };
-
-    const refresh = setupRefresh(true);
-    const refreshBalances = setupRefresh();
-
-    const setPrice = async (price: string, toAsset: string) => {
-      const nft = get(edit);
-      set(edit, null);
-      assert(nft);
-      try {
-        const payload: ManualPriceFormPayload = {
-          fromAsset: nft.id,
-          toAsset,
-          price
-        };
-        await api.assets.addLatestPrice(payload);
-        await refreshBalances();
-      } catch (e: any) {
-        notify({
-          title: '',
-          message: e.message,
-          display: true
-        });
-      }
-    };
-
-    const deletePrice = async () => {
-      const price = get(confirmDelete);
-      assert(price);
-      set(confirmDelete, null);
-      try {
-        await api.assets.deleteLatestPrice(price.id);
-        await refreshBalances();
-      } catch (e: any) {
-        notify({
-          title: tc('non_fungible_balances.delete.error.title'),
-          message: tc('non_fungible_balances.delete.error.message', 0, {
-            asset: price.name ?? price.id
-          }),
-          display: true
-        });
-      }
-    };
-
-    return {
-      edit,
-      confirmDelete,
-      loading,
-      refresh,
-      mappedBalances,
-      currency: currencySymbol,
-      tableHeaders,
-      total,
-      deleteAsset,
-      setPrice,
-      deletePrice,
-      tc
-    };
+defineProps({
+  modules: {
+    required: true,
+    type: Array as PropType<Module[]>
   }
 });
+
+const edit: Ref<NonFungibleBalance | null> = ref(null);
+const confirmDelete: Ref<NonFungibleBalance | null> = ref(null);
+
+const balancesStore = useNonFungibleBalancesStore();
+const { nonFungibleTotalValue, fetchNonFungibleBalances } = balancesStore;
+const { nonFungibleBalances } = storeToRefs(balancesStore);
+const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+const total = nonFungibleTotalValue();
+const { tc } = useI18n();
+const { notify } = useNotifications();
+
+const deleteAsset = computed(() => {
+  const balance = get(confirmDelete);
+  return !balance ? '' : balance.name ?? balance.id;
+});
+
+const mappedBalances = computed(() => {
+  return get(nonFungibleBalances).map(balance => {
+    return {
+      ...balance,
+      imageUrl: balance.imageUrl || '/assets/images/placeholder.svg',
+      isVideo: isVideo(balance.imageUrl)
+    };
+  });
+});
+
+const tableHeaders = computed<DataTableHeader[]>(() => [
+  {
+    text: tc('common.name'),
+    value: 'name',
+    cellClass: 'text-no-wrap'
+  },
+  {
+    text: tc('non_fungible_balance.column.price_in_asset'),
+    value: 'priceInAsset',
+    align: 'end',
+    width: '75%',
+    class: 'text-no-wrap'
+  },
+  {
+    text: tc('common.price_in_symbol', 0, { symbol: get(currencySymbol) }),
+    value: 'usdPrice',
+    align: 'end',
+    class: 'text-no-wrap'
+  },
+  {
+    text: tc('non_fungible_balance.column.custom_price'),
+    value: 'manuallyInput',
+    class: 'text-no-wrap'
+  },
+  {
+    text: tc('non_fungible_balance.column.actions'),
+    value: 'actions',
+    align: 'center',
+    sortable: false,
+    width: '50'
+  }
+]);
+
+const loading = isSectionLoading(Section.NON_FUNGIBLE_BALANCES);
+
+const setupRefresh = (ignoreCache: boolean = false) => {
+  const payload = ignoreCache ? { ignoreCache: true } : undefined;
+
+  return async () => await fetchNonFungibleBalances(payload);
+};
+
+const refresh = setupRefresh(true);
+const refreshBalances = setupRefresh();
+
+const setPrice = async (price: string, toAsset: string) => {
+  const nft = get(edit);
+  set(edit, null);
+  assert(nft);
+  try {
+    const payload: ManualPriceFormPayload = {
+      fromAsset: nft.id,
+      toAsset,
+      price
+    };
+    await api.assets.addLatestPrice(payload);
+    await refreshBalances();
+  } catch (e: any) {
+    notify({
+      title: '',
+      message: e.message,
+      display: true
+    });
+  }
+};
+
+const deletePrice = async () => {
+  const price = get(confirmDelete);
+  assert(price);
+  set(confirmDelete, null);
+  try {
+    await api.assets.deleteLatestPrice(price.id);
+    await refreshBalances();
+  } catch (e: any) {
+    notify({
+      title: tc('non_fungible_balances.delete.error.title'),
+      message: tc('non_fungible_balances.delete.error.message', 0, {
+        asset: price.name ?? price.id
+      }),
+      display: true
+    });
+  }
+};
 </script>
 <style scoped lang="scss">
 .non-fungible-balances {

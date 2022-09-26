@@ -4,12 +4,16 @@ import Vue from 'vue';
 import Vuetify from 'vuetify';
 import ModuleSelector from '@/components/defi/wizard/ModuleSelector.vue';
 import { defaultGeneralSettings } from '@/data/factories';
-import { api } from '@/services/rotkehlchen-api';
+import { useSettingsApi } from '@/services/settings/settings-api';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Module } from '@/types/modules';
 import '../../../i18n';
 
-vi.mock('@/services/rotkehlchen-api');
+vi.mock('@/services/settings/settings-api', () => ({
+  useSettingsApi: vi.fn().mockReturnValue({
+    setSettings: vi.fn()
+  })
+}));
 
 Vue.use(Vuetify);
 Vue.use(PiniaVuePlugin);
@@ -18,6 +22,7 @@ describe('ModuleSelector.vue', () => {
   let wrapper: Wrapper<ModuleSelector>;
   let settingsStore: ReturnType<typeof useGeneralSettingsStore>;
   let pinia: Pinia;
+  let api: ReturnType<typeof useSettingsApi>;
 
   const createWrapper = () => {
     const vuetify = new Vuetify();
@@ -32,6 +37,7 @@ describe('ModuleSelector.vue', () => {
     pinia = createPinia();
     setActivePinia(pinia);
     settingsStore = useGeneralSettingsStore(pinia);
+    api = useSettingsApi();
 
     document.body.setAttribute('data-app', 'true');
     settingsStore.update({
@@ -39,6 +45,7 @@ describe('ModuleSelector.vue', () => {
       activeModules: [Module.AAVE]
     });
     wrapper = createWrapper();
+    api.setSettings = vi.fn();
   });
 
   test('displays active modules', async () => {

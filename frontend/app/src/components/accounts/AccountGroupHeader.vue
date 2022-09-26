@@ -99,12 +99,9 @@
     </td>
   </fragment>
 </template>
-<script lang="ts">
+<script setup lang="ts">
 import { Balance, BigNumber } from '@rotki/common';
-import { get } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { computed, defineComponent, PropType, toRefs } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { PropType } from 'vue';
 import CopyButton from '@/components/helper/CopyButton.vue';
 import Fragment from '@/components/helper/Fragment';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
@@ -114,92 +111,71 @@ import { XpubAccountWithBalance } from '@/store/balances/types';
 import { balanceUsdValueSum } from '@/store/defi/utils';
 import { useSessionSettingsStore } from '@/store/settings/session';
 
-export default defineComponent({
-  name: 'AccountGroupHeader',
-  components: { TagDisplay, CopyButton, Fragment },
-  props: {
-    group: { required: true, type: String },
-    items: {
-      required: true,
-      type: Array as PropType<XpubAccountWithBalance[]>
-    },
-    expanded: { required: true, type: Boolean },
-    loading: { required: false, type: Boolean, default: false }
+const props = defineProps({
+  group: { required: true, type: String },
+  items: {
+    required: true,
+    type: Array as PropType<XpubAccountWithBalance[]>
   },
-  emits: ['delete-clicked', 'expand-clicked', 'edit-clicked'],
-  setup(props, { emit }) {
-    const { items } = toRefs(props);
-    const { breakpoint, currentBreakpoint } = useTheme();
-    const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
-    const { shouldShowAmount } = storeToRefs(useSessionSettingsStore());
-
-    const mobileClass = computed<string | null>(() => {
-      return get(xsOnly) ? 'v-data-table__mobile-row' : null;
-    });
-
-    const xpub = computed<XpubAccountWithBalance>(() => {
-      return get(items).filter(item => !item.address)[0];
-    });
-
-    const label = computed<string>(() => {
-      return get(xpub).label;
-    });
-
-    const xpubTags = computed<string[]>(() => {
-      return get(xpub).tags;
-    });
-
-    const displayXpub = computed<string>(() => {
-      return truncateAddress(
-        get(xpub).xpub,
-        truncationPoints[get(breakpoint)] ?? 4
-      );
-    });
-
-    const sum = computed<BigNumber>(() => {
-      return bigNumberSum(get(items).map(({ balance: { amount } }) => amount));
-    });
-
-    const usdSum = computed<BigNumber>(() => {
-      return balanceUsdValueSum(get(items));
-    });
-
-    const balance = computed<Balance>(() => {
-      return {
-        amount: get(sum),
-        usdValue: get(usdSum)
-      };
-    });
-
-    const deleteClicked = (_payload: XpubAccountWithBalance) =>
-      emit('delete-clicked', _payload);
-
-    const expandClicked = (_payload: XpubAccountWithBalance) =>
-      emit('expand-clicked', _payload);
-
-    const editClicked = (_payload: XpubAccountWithBalance) =>
-      emit('edit-clicked', _payload);
-
-    const { tc } = useI18n();
-
-    return {
-      mobileClass,
-      xsOnly,
-      label,
-      xpub,
-      xpubTags,
-      balance,
-      displayXpub,
-      sum,
-      usdSum,
-      deleteClicked,
-      expandClicked,
-      editClicked,
-      shouldShowAmount,
-      tc
-    };
-  }
+  expanded: { required: true, type: Boolean },
+  loading: { required: false, type: Boolean, default: false }
 });
+
+const emit = defineEmits(['delete-clicked', 'expand-clicked', 'edit-clicked']);
+
+const { items } = toRefs(props);
+const { breakpoint, currentBreakpoint } = useTheme();
+const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
+const { shouldShowAmount } = storeToRefs(useSessionSettingsStore());
+
+const mobileClass = computed<string | null>(() => {
+  return get(xsOnly) ? 'v-data-table__mobile-row' : null;
+});
+
+const xpub = computed<XpubAccountWithBalance>(() => {
+  return get(items).filter(item => !item.address)[0];
+});
+
+const label = computed<string>(() => {
+  return get(xpub).label;
+});
+
+const xpubTags = computed<string[]>(() => {
+  return get(xpub).tags;
+});
+
+const displayXpub = computed<string>(() => {
+  return truncateAddress(
+    get(xpub).xpub,
+    truncationPoints[get(breakpoint)] ?? 4
+  );
+});
+
+const sum = computed<BigNumber>(() => {
+  return bigNumberSum(get(items).map(({ balance: { amount } }) => amount));
+});
+
+const usdSum = computed<BigNumber>(() => {
+  return balanceUsdValueSum(get(items));
+});
+
+const balance = computed<Balance>(() => {
+  return {
+    amount: get(sum),
+    usdValue: get(usdSum)
+  };
+});
+
+const deleteClicked = (_payload: XpubAccountWithBalance) =>
+  emit('delete-clicked', _payload);
+
+const expandClicked = (_payload: XpubAccountWithBalance) =>
+  emit('expand-clicked', _payload);
+
+const editClicked = (_payload: XpubAccountWithBalance) =>
+  emit('edit-clicked', _payload);
+
+const { tc } = useI18n();
 </script>
 <style scoped lang="scss">
 .blur-content {

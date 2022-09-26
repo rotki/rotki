@@ -2,7 +2,7 @@ import { get, set } from '@vueuse/core';
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import { useStatusUpdater } from '@/composables/status';
-import { api } from '@/services/rotkehlchen-api';
+import { useKrakenApi } from '@/services/staking/kraken';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useNotifications } from '@/store/notifications';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
@@ -39,6 +39,8 @@ const defaultEventState = (): KrakenStakingEvents => ({
 export const useKrakenStakingStore = defineStore('staking/kraken', () => {
   const pagination = ref(defaultPagination());
   const rawEvents = ref<KrakenStakingEvents>(defaultEventState());
+
+  const api = useKrakenApi();
 
   const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
   const { t } = useI18n();

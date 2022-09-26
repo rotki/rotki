@@ -53,10 +53,6 @@
 </template>
 
 <script setup lang="ts">
-import { get } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { computed, onMounted, watch } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 import FullSizeContent from '@/components/common/FullSizeContent.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import KrakenStaking from '@/components/staking/kraken/KrakenStaking.vue';

@@ -180,16 +180,16 @@
   </card>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { asyncComputed, get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
-import { computed, defineComponent, Ref, ref, watch } from 'vue';
+import { computed, Ref, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import { useBackendManagement } from '@/composables/backend';
 import { useInterop } from '@/electron-interop';
 import { BackendOptions } from '@/electron-main/ipc';
-import { api } from '@/services/rotkehlchen-api';
+import { useSettingsApi } from '@/services/settings/settings-api';
 import {
   BackendConfiguration,
   NumericBackendArgument
@@ -216,226 +216,201 @@ const updateArgument = (args: Args) => {
   }
 };
 
-export default defineComponent({
-  name: 'BackendSettings',
-  components: { ConfirmDialog },
-  emits: ['dismiss'],
-  setup(_, { emit }) {
-    const { dataDirectory } = storeToRefs(useMainStore());
+const emit = defineEmits<{
+  (e: 'dismiss'): void;
+}>();
 
-    const userDataDirectory: Ref<string> = ref('');
-    const userLogDirectory: Ref<string> = ref('');
-    const logFromOtherModules: Ref<boolean> = ref(false);
-    const maxLogSize: Ref<string> = ref('');
-    const sqliteInstructions: Ref<string> = ref('');
-    const maxLogFiles: Ref<string> = ref('');
-    const formValid: Ref<boolean> = ref(false);
+const { dataDirectory } = storeToRefs(useMainStore());
 
-    const selecting: Ref<boolean> = ref(false);
-    const confirmReset: Ref<boolean> = ref(false);
-    const configuration = asyncComputed<BackendConfiguration>(() =>
-      api.backendSettings()
-    );
+const userDataDirectory: Ref<string> = ref('');
+const userLogDirectory: Ref<string> = ref('');
+const logFromOtherModules: Ref<boolean> = ref(false);
+const maxLogSize: Ref<string> = ref('');
+const sqliteInstructions: Ref<string> = ref('');
+const maxLogFiles: Ref<string> = ref('');
+const formValid: Ref<boolean> = ref(false);
 
-    const { tc } = useI18n();
+const api = useSettingsApi();
 
-    const loaded = async () => {
-      const config = get(configuration);
-      const opts = get(options);
-      set(userDataDirectory, opts.dataDirectory ?? get(dataDirectory));
-      set(userLogDirectory, opts.logDirectory ?? get(defaultLogDirectory));
-      set(logLevel, opts.loglevel ?? get(defaultLogLevel));
-      set(logFromOtherModules, opts.logFromOtherModules ?? false);
-      set(
-        maxLogFiles,
-        (opts.maxLogfilesNum ?? config.maxLogfilesNum.value).toString()
-      );
-      set(
-        maxLogSize,
-        (opts.maxSizeInMbAllLogs ?? config.maxSizeInMbAllLogs.value).toString()
-      );
-      set(
-        sqliteInstructions,
-        (opts.sqliteInstructions ?? config.sqliteInstructions.value).toString()
-      );
-    };
+const selecting: Ref<boolean> = ref(false);
+const confirmReset: Ref<boolean> = ref(false);
+const configuration = asyncComputed<BackendConfiguration>(() =>
+  api.backendSettings()
+);
 
-    const {
-      resetOptions,
-      saveOptions,
-      fileConfig,
-      logLevel,
-      defaultLogLevel,
-      defaultLogDirectory,
-      options
-    } = useBackendManagement(loaded);
+const { tc } = useI18n();
 
-    const newUserOptions = computed(() => {
-      const options: Writeable<Partial<BackendOptions>> = {};
-      const level = get(logLevel);
-      const defaultLevel = get(defaultLogLevel);
-      if (level !== defaultLevel) {
-        options.loglevel = level;
-      }
+const loaded = async () => {
+  const config = get(configuration);
+  const opts = get(options);
+  set(userDataDirectory, opts.dataDirectory ?? get(dataDirectory));
+  set(userLogDirectory, opts.logDirectory ?? get(defaultLogDirectory));
+  set(logLevel, opts.loglevel ?? get(defaultLogLevel));
+  set(logFromOtherModules, opts.logFromOtherModules ?? false);
+  set(
+    maxLogFiles,
+    (opts.maxLogfilesNum ?? config.maxLogfilesNum.value).toString()
+  );
+  set(
+    maxLogSize,
+    (opts.maxSizeInMbAllLogs ?? config.maxSizeInMbAllLogs.value).toString()
+  );
+  set(
+    sqliteInstructions,
+    (opts.sqliteInstructions ?? config.sqliteInstructions.value).toString()
+  );
+};
 
-      const userLog = get(userLogDirectory);
-      if (userLog !== get(defaultLogDirectory)) {
-        options.logDirectory = userLog;
-      }
+const {
+  resetOptions,
+  saveOptions,
+  fileConfig,
+  logLevel,
+  defaultLogLevel,
+  defaultLogDirectory,
+  options
+} = useBackendManagement(loaded);
 
-      const logFromOther = get(logFromOtherModules);
-      if (logFromOther) {
-        options.logFromOtherModules = true;
-      }
-
-      const userData = get(userDataDirectory);
-      if (userData !== get(dataDirectory)) {
-        options.dataDirectory = userData;
-      }
-
-      const config = get(configuration);
-      if (config) {
-        updateArgument({
-          value: get(maxLogFiles),
-          arg: config.maxLogfilesNum,
-          options,
-          key: 'maxLogfilesNum'
-        });
-        updateArgument({
-          value: get(maxLogSize),
-          arg: config.maxSizeInMbAllLogs,
-          options,
-          key: 'maxSizeInMbAllLogs'
-        });
-        updateArgument({
-          value: get(sqliteInstructions),
-          arg: config.sqliteInstructions,
-          options,
-          key: 'sqliteInstructions'
-        });
-      }
-
-      return options;
-    });
-
-    const valid = computed(() => {
-      const newOptions = get(newUserOptions);
-      const oldOptions = get(options);
-      const defaultLevel = get(defaultLogLevel);
-      const newLogLevel = newOptions.loglevel ?? defaultLevel;
-      const oldLogLevel = oldOptions.loglevel ?? defaultLevel;
-      const updatedKeys = Object.keys(newOptions).filter(s => s !== 'loglevel');
-      return updatedKeys.length > 0 || newLogLevel !== oldLogLevel;
-    });
-
-    const { openDirectory } = useInterop();
-
-    const nonNegativeNumberRules = computed(() => {
-      return [
-        (v: string) => !!v || tc('backend_settings.errors.non_empty'),
-        (v: string) =>
-          parseInt(v) >= 0 || tc('backend_settings.errors.min', 0, { min: 0 })
-      ];
-    });
-
-    const icon = (level: LogLevel): string => {
-      if (level === LogLevel.DEBUG) {
-        return 'mdi-bug';
-      } else if (level === LogLevel.INFO) {
-        return 'mdi-information';
-      } else if (level === LogLevel.WARNING) {
-        return 'mdi-alert';
-      } else if (level === LogLevel.ERROR) {
-        return 'mdi-alert-circle';
-      } else if (level === LogLevel.CRITICAL) {
-        return 'mdi-alert-decagram';
-      } else if (level === LogLevel.TRACE) {
-        return 'mdi-magnify-scan';
-      }
-      throw new Error(`Invalid option: ${level}`);
-    };
-
-    const isDefault = (prop?: NumericBackendArgument) => prop?.isDefault;
-
-    const reset = async function () {
-      set(confirmReset, false);
-      dismiss();
-      await resetOptions();
-    };
-
-    const selectDataDirectory = async function () {
-      if (get(selecting)) {
-        return;
-      }
-
-      try {
-        let title = tc('backend_settings.data_directory.select');
-        const directory = await openDirectory(title);
-        if (directory) {
-          set(userDataDirectory, directory);
-        }
-      } finally {
-        set(selecting, false);
-      }
-    };
-
-    async function save() {
-      dismiss();
-      await saveOptions(get(newUserOptions));
-    }
-
-    async function selectLogsDirectory() {
-      if (get(selecting)) {
-        return;
-      }
-      set(selecting, true);
-      try {
-        const directory = await openDirectory(
-          tc('backend_settings.log_directory.select')
-        );
-        if (directory) {
-          set(userLogDirectory, directory);
-        }
-      } finally {
-        set(selecting, false);
-      }
-    }
-
-    const dismiss = () => {
-      emit('dismiss');
-    };
-
-    watch(dataDirectory, directory => {
-      set(userDataDirectory, get(options).dataDirectory ?? directory);
-    });
-
-    return {
-      userDataDirectory,
-      userLogDirectory,
-      logFromOtherModules,
-      maxLogSize,
-      maxLogFiles,
-      sqliteInstructions,
-      logLevel,
-      formValid,
-      levels: Object.values(LogLevel),
-      selecting,
-      confirmReset,
-      configuration,
-      nonNegativeNumberRules,
-      fileConfig,
-      valid,
-      dismiss,
-      reset,
-      icon,
-      isDefault,
-      selectDataDirectory,
-      selectLogsDirectory,
-      save,
-      tc
-    };
+const newUserOptions = computed(() => {
+  const options: Writeable<Partial<BackendOptions>> = {};
+  const level = get(logLevel);
+  const defaultLevel = get(defaultLogLevel);
+  if (level !== defaultLevel) {
+    options.loglevel = level;
   }
+
+  const userLog = get(userLogDirectory);
+  if (userLog !== get(defaultLogDirectory)) {
+    options.logDirectory = userLog;
+  }
+
+  const logFromOther = get(logFromOtherModules);
+  if (logFromOther) {
+    options.logFromOtherModules = true;
+  }
+
+  const userData = get(userDataDirectory);
+  if (userData !== get(dataDirectory)) {
+    options.dataDirectory = userData;
+  }
+
+  const config = get(configuration);
+  if (config) {
+    updateArgument({
+      value: get(maxLogFiles),
+      arg: config.maxLogfilesNum,
+      options,
+      key: 'maxLogfilesNum'
+    });
+    updateArgument({
+      value: get(maxLogSize),
+      arg: config.maxSizeInMbAllLogs,
+      options,
+      key: 'maxSizeInMbAllLogs'
+    });
+    updateArgument({
+      value: get(sqliteInstructions),
+      arg: config.sqliteInstructions,
+      options,
+      key: 'sqliteInstructions'
+    });
+  }
+
+  return options;
 });
+
+const valid = computed(() => {
+  const newOptions = get(newUserOptions);
+  const oldOptions = get(options);
+  const defaultLevel = get(defaultLogLevel);
+  const newLogLevel = newOptions.loglevel ?? defaultLevel;
+  const oldLogLevel = oldOptions.loglevel ?? defaultLevel;
+  const updatedKeys = Object.keys(newOptions).filter(s => s !== 'loglevel');
+  return updatedKeys.length > 0 || newLogLevel !== oldLogLevel;
+});
+
+const { openDirectory } = useInterop();
+
+const nonNegativeNumberRules = computed(() => {
+  return [
+    (v: string) => !!v || tc('backend_settings.errors.non_empty'),
+    (v: string) =>
+      parseInt(v) >= 0 || tc('backend_settings.errors.min', 0, { min: 0 })
+  ];
+});
+
+const icon = (level: LogLevel): string => {
+  if (level === LogLevel.DEBUG) {
+    return 'mdi-bug';
+  } else if (level === LogLevel.INFO) {
+    return 'mdi-information';
+  } else if (level === LogLevel.WARNING) {
+    return 'mdi-alert';
+  } else if (level === LogLevel.ERROR) {
+    return 'mdi-alert-circle';
+  } else if (level === LogLevel.CRITICAL) {
+    return 'mdi-alert-decagram';
+  } else if (level === LogLevel.TRACE) {
+    return 'mdi-magnify-scan';
+  }
+  throw new Error(`Invalid option: ${level}`);
+};
+
+const isDefault = (prop?: NumericBackendArgument) => prop?.isDefault;
+
+const reset = async function () {
+  set(confirmReset, false);
+  dismiss();
+  await resetOptions();
+};
+
+const selectDataDirectory = async function () {
+  if (get(selecting)) {
+    return;
+  }
+
+  try {
+    let title = tc('backend_settings.data_directory.select');
+    const directory = await openDirectory(title);
+    if (directory) {
+      set(userDataDirectory, directory);
+    }
+  } finally {
+    set(selecting, false);
+  }
+};
+
+async function save() {
+  dismiss();
+  await saveOptions(get(newUserOptions));
+}
+
+async function selectLogsDirectory() {
+  if (get(selecting)) {
+    return;
+  }
+  set(selecting, true);
+  try {
+    const directory = await openDirectory(
+      tc('backend_settings.log_directory.select')
+    );
+    if (directory) {
+      set(userLogDirectory, directory);
+    }
+  } finally {
+    set(selecting, false);
+  }
+}
+
+const dismiss = () => {
+  emit('dismiss');
+};
+
+watch(dataDirectory, directory => {
+  set(userDataDirectory, get(options).dataDirectory ?? directory);
+});
+
+const levels = Object.values(LogLevel);
 </script>
 
 <style scoped lang="scss">

@@ -2,8 +2,7 @@ import { ActionResult } from '@rotki/common/lib/data';
 import { AxiosInstance, AxiosRequestTransformer } from 'axios';
 import {
   axiosSnakeCaseTransformer,
-  getUpdatedKey,
-  setupTransformer
+  getUpdatedKey
 } from '@/services/axios-tranformers';
 import { basicAxiosTransformer } from '@/services/consts';
 import { PendingTask } from '@/services/types-api';
@@ -15,7 +14,6 @@ import {
   validWithSessionStatus
 } from '@/services/utils';
 import { CollectionResponse } from '@/types/collection';
-import { IgnoredActions } from '@/types/history/ignored';
 import {
   LedgerAction,
   LedgerActionCollectionResponse,
@@ -327,16 +325,6 @@ export class HistoryApi {
     );
     const data = handleResponse(response);
     return ReportProgress.parse(data);
-  }
-
-  fetchIgnored(): Promise<IgnoredActions> {
-    return this.axios
-      .get<ActionResult<IgnoredActions>>('/actions/ignored', {
-        validateStatus: validStatus,
-        transformResponse: setupTransformer([])
-      })
-      .then(handleResponse)
-      .then(result => IgnoredActions.parse(result));
   }
 
   fetchAvailableCounterparties(): Promise<string[]> {

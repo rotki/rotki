@@ -13,8 +13,6 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeMount } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import LedgerActionContent from '@/components/history/ledger-actions/LedgerActionContent.vue';
 import { useSectionLoading } from '@/composables/common';

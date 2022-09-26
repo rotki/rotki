@@ -56,7 +56,7 @@ import { get, set } from '@vueuse/core';
 import { onMounted, ref, toRefs, watch } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import { useTheme } from '@/composables/common';
-import { api } from '@/services/rotkehlchen-api';
+import { useExchangeApi } from '@/services/balances/exchanges';
 import { useNotifications } from '@/store/notifications';
 import { uniqueStrings } from '@/utils/data';
 
@@ -85,6 +85,7 @@ const handleInput = (value: string[]) => {
 };
 
 const { t } = useI18n();
+const api = useExchangeApi();
 
 onMounted(async () => {
   set(loading, true);

@@ -211,9 +211,7 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Ref } from 'vue';
 import AccountBalances from '@/components/accounts/AccountBalances.vue';
-import AccountForm, {
-  AccountFormType
-} from '@/components/accounts/AccountForm.vue';
+import AccountForm from '@/components/accounts/AccountForm.vue';
 import AssetBalances from '@/components/AssetBalances.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import PriceRefresh from '@/components/helper/PriceRefresh.vue';
@@ -247,7 +245,7 @@ const dialogTitle = ref('');
 const dialogSubtitle = ref('');
 const valid = ref(false);
 const openDialog = ref(false);
-const form = ref<AccountFormType | null>(null);
+const form = ref<any | null>(null);
 const pending = ref<boolean>(false);
 
 const loading = computed(

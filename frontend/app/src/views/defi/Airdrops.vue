@@ -96,10 +96,7 @@
 <script setup lang="ts">
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { get, set } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { computed, onMounted, Ref, ref } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { Ref } from 'vue';
 import { DataTableHeader } from 'vuetify';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import DataTable from '@/components/helper/DataTable.vue';
