@@ -54,7 +54,7 @@ class AssetDataSchema(OptionalEvmTokenInformationSchema):
 
         if asset_type == AssetType.EVM_TOKEN:
             extra_information = EvmToken.initialize(
-                evm_address=data.pop('address'),
+                address=data.pop('address'),
                 chain=data.pop('chain'),
                 token_kind=data.pop('token_kind'),
                 name=data.get('name'),

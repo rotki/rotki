@@ -210,7 +210,7 @@ INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0x1B175474E890
         asset_id='eip155:1/erc20:0x1B175474E89094C44Da98b954EedeAC495271d0F',
         asset_type=AssetType.EVM_TOKEN,
         data=EvmToken.initialize(
-            evm_address=ChecksumEvmAddress('0x1B175474E89094C44Da98b954EedeAC495271d0F'),
+            address=ChecksumEvmAddress('0x1B175474E89094C44Da98b954EedeAC495271d0F'),
             chain=ChainID.ETHEREUM,
             token_kind=EvmTokenKind.ERC20,
             decimals=12,
