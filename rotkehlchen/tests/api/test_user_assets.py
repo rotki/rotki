@@ -834,7 +834,7 @@ def test_exporting_user_assets_list(rotkehlchen_api_server, globaldb, with_custo
         asset_id=identifier,
         asset_type=AssetType.EVM_TOKEN,
         data=EvmToken.initialize(
-            evm_address=eth_address,
+            address=eth_address,
             chain=ChainID.ETHEREUM,
             token_kind=EvmTokenKind.ERC20,
             decimals=18,
@@ -884,7 +884,7 @@ def test_exporting_user_assets_list(rotkehlchen_api_server, globaldb, with_custo
                 'protocol': None,
                 'token_kind': 'erc20',
                 'underlying_tokens': None,
-                'evm_address': eth_address,
+                'address': eth_address,
             }
         else:
             assert response.status_code == HTTPStatus.OK

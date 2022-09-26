@@ -294,7 +294,7 @@ def test_price_underlying_tokens(inquirer, globaldb):
     address = make_ethereum_address()
     identifier = ethaddress_to_identifier(address)
     token = EvmToken.initialize(
-        evm_address=address,
+        address=address,
         chain=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
         decimals=18,
@@ -323,7 +323,7 @@ def test_find_uniswap_v2_lp_token_price(inquirer, globaldb, ethereum_manager):
     identifier = ethaddress_to_identifier(address)
     inquirer.inject_ethereum(ethereum_manager)
     token = EvmToken.initialize(
-        evm_address=address,
+        address=address,
         chain=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
         decimals=18,

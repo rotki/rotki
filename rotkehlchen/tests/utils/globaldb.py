@@ -12,7 +12,7 @@ user_token_address1 = make_ethereum_address()
 user_token_address2 = make_ethereum_address()
 INITIAL_TOKENS = [
     EvmToken.initialize(
-        evm_address=user_token_address1,
+        address=user_token_address1,
         chain=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
         decimals=4,
@@ -31,7 +31,7 @@ INITIAL_TOKENS = [
         ],
     ),
     EvmToken.initialize(
-        evm_address=user_token_address2,
+        address=user_token_address2,
         chain=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
         decimals=18,
@@ -50,7 +50,7 @@ INITIAL_EXPECTED_TOKENS = [INITIAL_TOKENS[0]] + [
 underlying_address4 = make_ethereum_address()
 user_token_address3 = make_ethereum_address()
 USER_TOKEN3 = EvmToken.initialize(
-    evm_address=user_token_address3,
+    address=user_token_address3,
     chain=ChainID.ETHEREUM,
     token_kind=EvmTokenKind.ERC20,
     decimals=15,

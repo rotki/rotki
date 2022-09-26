@@ -1083,7 +1083,7 @@ class EvmToken(CryptoAsset):
     @classmethod
     def initialize(  # type: ignore  # signature is incompatible with super type
             cls: Type['EvmToken'],
-            evm_address: ChecksumEvmAddress,
+            address: ChecksumEvmAddress,
             chain: ChainID,
             token_kind: EvmTokenKind,
             name: Optional[str] = None,
@@ -1098,7 +1098,7 @@ class EvmToken(CryptoAsset):
             underlying_tokens: Optional[List[UnderlyingToken]] = None,
     ) -> 'EvmToken':
         identifier = evm_address_to_identifier(
-            address=evm_address,
+            address=address,
             chain=chain,
             token_type=token_kind,
         )
@@ -1111,7 +1111,7 @@ class EvmToken(CryptoAsset):
         object.__setattr__(asset, 'started', started)
         object.__setattr__(asset, 'forked', forked)
         object.__setattr__(asset, 'swapped_for', swapped_for)
-        object.__setattr__(asset, 'evm_address', evm_address)
+        object.__setattr__(asset, 'evm_address', address)
         object.__setattr__(asset, 'chain', chain)
         object.__setattr__(asset, 'token_kind', token_kind)
         object.__setattr__(asset, 'decimals', decimals)
@@ -1130,7 +1130,7 @@ class EvmToken(CryptoAsset):
         """
         swapped_for = CryptoAsset(entry[8]) if entry[8] is not None else None
         return EvmToken.initialize(
-            evm_address=entry[1],  # type: ignore
+            address=entry[1],  # type: ignore
             chain=ChainID(entry[2]),
             token_kind=EvmTokenKind.deserialize_from_db(entry[3]),
             decimals=entry[4],

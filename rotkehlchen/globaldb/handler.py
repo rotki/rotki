@@ -1807,7 +1807,7 @@ class GlobalDBHandler():
                     parent_token_identifier=identifier,
                 )
                 return EvmToken.initialize(
-                    evm_address=asset_data[2],
+                    address=asset_data[2],
                     chain=ChainID(asset_data[12]),
                     token_kind=EvmTokenKind.deserialize_from_db(asset_data[13]),
                     decimals=asset_data[3],

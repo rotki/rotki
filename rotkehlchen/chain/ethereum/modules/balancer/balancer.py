@@ -659,7 +659,7 @@ class Balancer(EthereumModule):
                         ) for x in bpt_event.pool_tokens
                     ]
                     token_data = EvmToken.initialize(
-                        evm_address=bpt_event.pool_address,
+                        address=bpt_event.pool_address,
                         chain=ChainID.ETHEREUM,
                         token_kind=EvmTokenKind.ERC20,
                         underlying_tokens=underlying_tokens,

@@ -86,7 +86,7 @@ def get_or_create_evm_token(
                 raise NotERC20Conformant(f'Token {evm_address} is not ERC20 conformant')  # noqa: E501  # pylint: disable=raise-missing-from
 
         token_data = EvmToken.initialize(
-            evm_address=evm_address,
+            address=evm_address,
             chain=chain,
             token_kind=token_kind,
             name=name,
