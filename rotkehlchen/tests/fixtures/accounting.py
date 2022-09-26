@@ -195,7 +195,8 @@ def create_inquirer(
         data_dir=data_directory,
         cryptocompare=Cryptocompare(data_directory=data_directory, database=None),
         coingecko=Coingecko(),
-        manualcurrent=ManualCurrentOracle(msg_aggregator=MessagesAggregator()),
+        manualcurrent=ManualCurrentOracle(),
+        msg_aggregator=MessagesAggregator(),
     )
     if ethereum_manager is not None:
         inquirer.inject_ethereum(ethereum_manager)
@@ -216,25 +217,57 @@ def create_inquirer(
             from_asset,
             to_asset,
             ignore_cache: bool = False,  # pylint: disable=unused-argument
+            coming_from_latest_price: bool = False,   # pylint: disable=unused-argument
     ):
         return mocked_prices.get((from_asset, to_asset), FVal('1.5'))
 
-    def mock_find_usd_price(asset, ignore_cache: bool = False):  # pylint: disable=unused-argument
+    def mock_find_usd_price(
+        asset,
+        ignore_cache: bool = False,  # pylint: disable=unused-argument
+        coming_from_latest_price: bool = False,   # pylint: disable=unused-argument
+    ):
         return mocked_prices.get(asset, FVal('1.5'))
 
     if ignore_mocked_prices_for is None:
         inquirer.find_price = mock_find_price  # type: ignore
         inquirer.find_usd_price = mock_find_usd_price  # type: ignore
     else:
-        def mock_some_prices(from_asset, to_asset, ignore_cache=False):
+        def mock_some_prices(
+                from_asset,
+                to_asset,
+                ignore_cache=False,
+                coming_from_latest_price=False,
+        ):
             if from_asset.symbol in ignore_mocked_prices_for:
-                return inquirer.find_price_old(from_asset, to_asset, ignore_cache)
-            return mock_find_price(from_asset, to_asset, ignore_cache)
+                return inquirer.find_price_old(
+                    from_asset=from_asset,
+                    to_asset=to_asset,
+                    ignore_cache=ignore_cache,
+                    coming_from_latest_price=coming_from_latest_price,
+                )
+            return mock_find_price(
+                from_asset=from_asset,
+                to_asset=to_asset,
+                ignore_cache=ignore_cache,
+                coming_from_latest_price=coming_from_latest_price,
+            )
 
-        def mock_some_usd_prices(asset, ignore_cache=False):
+        def mock_some_usd_prices(
+                asset,
+                ignore_cache=False,
+                coming_from_latest_price=False,
+        ):
             if asset.symbol in ignore_mocked_prices_for:
-                return inquirer.find_usd_price_old(asset, ignore_cache)
-            return mock_find_usd_price(asset, ignore_cache)
+                return inquirer.find_usd_price_old(
+                    asset=asset,
+                    ignore_cache=ignore_cache,
+                    coming_from_latest_price=coming_from_latest_price,
+                )
+            return mock_find_usd_price(
+                asset=asset,
+                ignore_cache=ignore_cache,
+                coming_from_latest_price=coming_from_latest_price,
+            )
 
         inquirer.find_price_old = inquirer.find_price  # type: ignore
         inquirer.find_usd_price_old = inquirer.find_usd_price  # type: ignore
