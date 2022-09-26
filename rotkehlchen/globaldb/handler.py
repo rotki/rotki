@@ -344,28 +344,41 @@ class GlobalDBHandler():
                 if entry[1] is None and entry[2] is None:
                     continue
 
-                lev_dist_name = levenshtein(substring_search, entry[1].lower()) if entry[1] is not None else 0  # noqa: E501
-                lev_dist_symbol = levenshtein(substring_search, entry[2].lower()) if entry[2] is not None else 0  # noqa: E501
+                substr_in_name = substr_in_symbol = None
+                if entry[1] is not None:
+                    name_casefold = entry[1].casefold()
+                    lev_dist_name = levenshtein(substring_search, name_casefold)
+                    substr_in_name = substring_search in name_casefold
+
+                if entry[2] is not None:
+                    symbol_casefold = entry[2].casefold()
+                    lev_dist_symbol = levenshtein(substring_search, symbol_casefold)
+                    substr_in_symbol = substring_search in symbol_casefold
+
                 lev_dist_min = min(lev_dist_name, lev_dist_symbol)
                 # the maximum levenshtein distance that should be accepted.
                 if lev_dist_min <= LEVENSHTEIN_DISTANCE_MATCH_THRESHOLD:
-                    if treat_eth2_as_eth is True and entry[0] in (A_ETH.identifier, A_ETH2.identifier):  # noqa:E501
-                        if found_eth is False:
-                            search_result.append({
-                                'identifier': A_ETH.identifier,
-                                'name': A_ETH.name,
-                                'symbol': A_ETH.symbol,
-                            })
-                            levenshtein_distances.append(lev_dist_min)
-                            found_eth = True
+                    if not substr_in_name and not substr_in_symbol:
                         continue
 
-                    search_result.append({
-                        'identifier': entry[0],
-                        'name': entry[1],
-                        'symbol': entry[2],
-                    })
-                    levenshtein_distances.append(lev_dist_min)
+                    if entry[0] not in (A_ETH.identifier, A_ETH2.identifier):
+                        search_result.append({
+                            'identifier': entry[0],
+                            'name': entry[1],
+                            'symbol': entry[2],
+                        })
+                        levenshtein_distances.append(lev_dist_min)
+                        continue
+
+                    if treat_eth2_as_eth is True and found_eth is False:
+                        search_result.append({
+                            'identifier': A_ETH.identifier,
+                            'name': A_ETH.name,
+                            'symbol': A_ETH.symbol,
+                        })
+                        levenshtein_distances.append(lev_dist_min)
+                        found_eth = True
+
         search_result = [result for _, result in sorted(zip(levenshtein_distances, search_result), key=lambda item: item[0])]  # noqa: E501
         return search_result[:limit] if limit is not None else search_result
 

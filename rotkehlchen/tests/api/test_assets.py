@@ -1,13 +1,15 @@
 from contextlib import ExitStack
 from http import HTTPStatus
-from typing import List
+from typing import Any, Dict, List
 from unittest.mock import patch
+from uuid import uuid4
 
 import pytest
 import requests
 
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_EUR, A_SAI, A_USD
 from rotkehlchen.db.settings import ModifiableDBSettings
@@ -52,6 +54,20 @@ def assert_asset_result_order(
             assert entry[order_field].casefold() > last_entry.casefold()
         else:
             assert entry[order_field].casefold() < last_entry.casefold()
+
+
+def assert_substring_in_search_result(
+        data: List[Dict[str, Any]],
+        substring: str,
+) -> None:
+    """Asserts that a given substring is present in the search result."""
+    for entry in data:
+        substr_in_name = substr_in_symbol = None
+        if entry['name'] is not None:
+            substr_in_name = substring.casefold() in entry['name'].casefold()
+        if entry['symbol'] is not None:
+            substr_in_symbol = substring.casefold() in entry['symbol'].casefold()
+        assert substr_in_name or substr_in_symbol, f'no match for {substring}'
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
@@ -569,10 +585,27 @@ def test_search_assets_with_levenshtein(rotkehlchen_api_server):
     )
     result = assert_proper_response_with_result(response)
     assert len(result) <= 50
-    for entry in result:
-        assert 'bitcoin' in entry['name'].lower() or entry['symbol'].lower()
+    assert_substring_in_search_result(result, 'Bitcoin')
 
     # use a different keyword
+    # but add assets without name/symbol and see that nothing breaks
+    asset_without_name_id = str(uuid4())
+    asset_without_symbol_id = str(uuid4())
+    GlobalDBHandler().add_asset(
+        asset_id=asset_without_name_id,
+        asset_type=AssetType.OWN_CHAIN,
+        data={'symbol': 'ETH'},
+    )
+    GlobalDBHandler().add_asset(
+        asset_id=asset_without_symbol_id,
+        asset_type=AssetType.OWN_CHAIN,
+        data={'name': 'ETH'},
+    )
+    GlobalDBHandler().add_asset(
+        asset_id=str(uuid4()),
+        asset_type=AssetType.OWN_CHAIN,
+        data={},
+    )
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
@@ -585,8 +618,9 @@ def test_search_assets_with_levenshtein(rotkehlchen_api_server):
     )
     result = assert_proper_response_with_result(response)
     assert len(result) <= 50
-    for entry in result:
-        assert 'eth' in entry['symbol'].lower() or entry['name'].lower()
+    assert_substring_in_search_result(result, 'ETH')
+    assert any([asset_without_name_id == entry['identifier'] for entry in result])
+    assert any([asset_without_symbol_id == entry['identifier'] for entry in result])
 
     # check that treat_eth2_as_eth` setting is respected
     # using the test above.
@@ -606,9 +640,8 @@ def test_search_assets_with_levenshtein(rotkehlchen_api_server):
     )
     result = assert_proper_response_with_result(response)
     assert len(result) <= 50
-    for entry in result:
-        assert 'ETH' in entry['symbol'].lower() or entry['name'].lower()
-        assert 'ETH2' != entry['identifier']
+    assert_substring_in_search_result(result, 'ETH')
+    assert all(['ETH2' != entry['identifier'] for entry in result])
 
     # check that searching for a non-existent asset returns nothing
     response = requests.post(
