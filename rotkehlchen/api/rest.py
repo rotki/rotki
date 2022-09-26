@@ -1314,7 +1314,7 @@ class RestAPI():
         # else
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    def query_all_assets(self, filter_query: 'AssetsFilterQuery') -> Response:
+    def query_all_assets(self, filter_query: AssetsFilterQuery) -> Response:
         """Returns all supported assets with pagination."""
         assets, assets_found = GlobalDBHandler().retrieve_assets(filter_query=filter_query)
         with GlobalDBHandler().conn.read_ctx() as cursor:
@@ -1338,18 +1338,21 @@ class RestAPI():
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
         return api_response(_wrap_in_ok_result(asset_mappings), status_code=HTTPStatus.OK)
 
-    @staticmethod
-    def search_assets(filter_query: AssetsFilterQuery) -> Response:
-        result = GlobalDBHandler().search_assets(filter_query)
+    def search_assets(self, filter_query: AssetsFilterQuery) -> Response:
+        result = GlobalDBHandler().search_assets(
+            db=self.rotkehlchen.data.db,
+            filter_query=filter_query,
+        )
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 
-    @staticmethod
     def search_assets_levenshtein(
+            self,
             filter_query: AssetsFilterQuery,
             substring_search: str,
             limit: Optional[int],
     ) -> Response:
         result = GlobalDBHandler().search_assets_levenshtein(
+            db=self.rotkehlchen.data.db,
             filter_query=filter_query,
             substring_search=substring_search,
             limit=limit,

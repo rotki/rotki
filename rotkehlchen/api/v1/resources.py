@@ -663,7 +663,7 @@ class AllAssetsResource(BaseMethodView):
 
     def make_post_schema(self) -> AssetsPostSchema:
         return AssetsPostSchema(
-            db_handler=self.rest_api.rotkehlchen.data.db,
+            db=self.rest_api.rotkehlchen.data.db,
         )
 
     def make_add_schema(self) -> AssetSchema:

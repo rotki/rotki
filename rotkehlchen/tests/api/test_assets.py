@@ -1,6 +1,6 @@
 from contextlib import ExitStack
 from http import HTTPStatus
-from typing import Union
+from typing import List
 from unittest.mock import patch
 
 import pytest
@@ -10,6 +10,7 @@ from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_EUR, A_SAI, A_USD
+from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb import GlobalDBHandler
 from rotkehlchen.tests.utils.api import (
@@ -36,14 +37,13 @@ def mock_cryptoscamdb_request():
 
 
 def assert_asset_result_order(
-        data: Union[list, dict],
+        data: List,
         is_ascending: bool,
         order_field: str,
 ) -> None:
     """Asserts the ordering of the result received matches the query provided."""
     last_entry = ''
-    result = data.values() if isinstance(data, dict) else data
-    for index, entry in enumerate(result):
+    for index, entry in enumerate(data):
         if index == 0:
             last_entry = entry[order_field]
             continue
@@ -305,7 +305,7 @@ def test_get_all_assets(rotkehlchen_api_server):
     assert 'entries_found' in result
     assert 'entries_total' in result
     assert 'entries_limit' in result
-    for entry in result['entries'].values():
+    for entry in result['entries']:
         assert entry['type'] == 'fiat'
     assert_asset_result_order(data=result['entries'], is_ascending=True, order_field='name')
 
@@ -328,7 +328,7 @@ def test_get_all_assets(rotkehlchen_api_server):
     assert 'entries_found' in result
     assert 'entries_total' in result
     assert 'entries_limit' in result
-    for entry in result['entries'].values():
+    for entry in result['entries']:
         assert entry['name'] == 'Uniswap'
     assert_asset_result_order(data=result['entries'], is_ascending=False, order_field='symbol')
 
@@ -361,7 +361,7 @@ def test_get_all_assets(rotkehlchen_api_server):
     assert 'entries_found' in result
     assert 'entries_total' in result
     assert 'entries_limit' in result
-    for entry in result['entries'].values():
+    for entry in result['entries']:
         assert entry['type'] == 'fiat'
         assert entry['symbol'] != A_USD.symbol and entry['symbol'] != A_EUR.symbol
     assert_asset_result_order(data=result['entries'], is_ascending=True, order_field='name')
@@ -382,7 +382,7 @@ def test_get_all_assets(rotkehlchen_api_server):
         },
     )
     result = assert_proper_response_with_result(response)
-    assets_names = {r['name'] for r in result['entries'].values()}
+    assets_names = {r['name'] for r in result['entries']}
     assert 22 >= len(result['entries']) > 3
     assert A_BTC.name in assets_names
     assert A_DAI.name in assets_names
@@ -511,6 +511,33 @@ def test_search_assets(rotkehlchen_api_server):
         assert entry['symbol'] == 'ETH'
     assert_asset_result_order(data=result, is_ascending=False, order_field='name')
 
+    # check that treat_eth2_as_eth` setting is respected
+    # using the test above.
+    db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    with db.user_write() as cursor:
+        db.set_settings(cursor, ModifiableDBSettings(treat_eth2_as_eth=True))
+
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'assetssearchresource',
+        ),
+        json={
+            'value': 'ETH',
+            'search_column': 'symbol',
+            'limit': 10,
+            'return_exact_matches': True,
+            'order_by_attributes': ['name'],
+            'ascending': [True],
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result) == 2
+    for entry in result:
+        assert entry['symbol'] == 'ETH'
+        assert entry['identifier'] != 'ETH2'
+    assert_asset_result_order(data=result, is_ascending=True, order_field='name')
+
     # search using a column that is not allowed
     response = requests.post(
         api_url_for(
@@ -549,20 +576,39 @@ def test_search_assets_with_levenshtein(rotkehlchen_api_server):
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
-            'assetssearchresource',
+            'assetssearchlevenshteinresource',
         ),
         json={
-            'value': 'eth',
-            'search_column': 'symbol',
-            'limit': 10,
-            'order_by_attributes': ['name'],
-            'ascending': [False],
+            'value': 'ETH',
+            'limit': 50,
         },
     )
     result = assert_proper_response_with_result(response)
-    assert len(result) <= 10
+    assert len(result) <= 50
     for entry in result:
-        assert 'eth' in entry['symbol'].lower()
+        assert 'eth' in entry['symbol'].lower() or entry['name'].lower()
+
+    # check that treat_eth2_as_eth` setting is respected
+    # using the test above.
+    db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    with db.user_write() as cursor:
+        db.set_settings(cursor, ModifiableDBSettings(treat_eth2_as_eth=True))
+
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'assetssearchlevenshteinresource',
+        ),
+        json={
+            'value': 'ETH',
+            'limit': 50,
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result) <= 50
+    for entry in result:
+        assert 'ETH' in entry['symbol'].lower() or entry['name'].lower()
+        assert 'ETH2' != entry['identifier']
 
     # check that searching for a non-existent asset returns nothing
     response = requests.post(
