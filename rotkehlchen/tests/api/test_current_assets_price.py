@@ -283,11 +283,9 @@ def test_manual_current_prices_loop(inquirer):
     )
     price = inquirer.find_price(from_asset=A_ETH, to_asset=A_EUR)
     assert price > 100  # should be real ETH price
-    warnings = inquirer._manualcurrent.msg_aggregator.consume_warnings()
-    assert len(warnings) == 3
-    assert 'from BTC(Bitcoin) to EUR(Euro) since your manual current' in warnings[0]
-    assert 'from USD(United States Dollar) to EUR(Euro) since your manual current' in warnings[1]
-    assert 'from ETH(Ethereum) to EUR(Euro) since your manual current' in warnings[2]
+    warnings = inquirer._msg_aggregator.consume_warnings()
+    assert len(warnings) == 1
+    assert 'from ETH(Ethereum) to EUR(Euro) since your manual latest' in warnings[0]
 
 
 @pytest.mark.parametrize('ignore_mocked_prices_for', ['ETH'])

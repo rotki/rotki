@@ -84,6 +84,7 @@ from rotkehlchen.types import (
     Price,
     Timestamp,
 )
+from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import timestamp_to_daystart_timestamp, ts_now
 from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 from rotkehlchen.utils.network import request_get_dict
@@ -261,6 +262,7 @@ class Inquirer():
     _oracle_instances: Optional[List[CurrentPriceOracleInstance]] = None
     _oracles_not_onchain: Optional[List[CurrentPriceOracle]] = None
     _oracle_instances_not_onchain: Optional[List[CurrentPriceOracleInstance]] = None
+    _msg_aggregator: 'MessagesAggregator'
     special_tokens: List[EvmToken]
 
     def __new__(
@@ -269,6 +271,7 @@ class Inquirer():
             cryptocompare: 'Cryptocompare' = None,
             coingecko: 'Coingecko' = None,
             manualcurrent: 'ManualCurrentOracle' = None,
+            msg_aggregator: 'MessagesAggregator' = None,
     ) -> 'Inquirer':
         if Inquirer.__instance is not None:
             return Inquirer.__instance
@@ -277,6 +280,7 @@ class Inquirer():
         assert cryptocompare, 'arguments should be given at the first instantiation'
         assert coingecko, 'arguments should be given at the first instantiation'
         assert manualcurrent, 'arguments should be given at the first instantiation'
+        assert msg_aggregator, 'arguments should be given at the first instantiation'
 
         Inquirer.__instance = object.__new__(cls)
 
@@ -285,6 +289,7 @@ class Inquirer():
         Inquirer._coingecko = coingecko
         Inquirer._manualcurrent = manualcurrent
         Inquirer._cached_current_price = {}
+        Inquirer._msg_aggregator = msg_aggregator
         Inquirer.special_tokens = [
             A_YV1_DAIUSDCTBUSD,
             A_CRVP_DAIUSDCTBUSD,
@@ -364,8 +369,13 @@ class Inquirer():
     def _query_oracle_instances(
             from_asset: Asset,
             to_asset: Asset,
+            coming_from_latest_price: bool,
             skip_onchain: bool = False,
     ) -> Price:
+        """
+        Query oracle instances.
+        `coming_from_latest_price` is used by manual latest price oracle to handle price loops.
+        """
         instance = Inquirer()
         cache_key = (from_asset, to_asset)
         assert (
@@ -402,6 +412,20 @@ class Inquirer():
                     f'price for {from_asset.identifier} due to: {str(e)}.',
                 )
                 continue
+            except RecursionError:
+                # We have to catch recursion error only at the top level since otherwise we get to
+                # recursion level MAX - 1, and after calling some other function may run into it again.  # noqa: E501
+                if coming_from_latest_price is True:
+                    raise
+
+                # else
+                # Infinite loop can happen if user creates a loop of manual current prices
+                # (e.g. said that 1 BTC costs 2 ETH and 1 ETH costs 5 BTC).
+                instance._msg_aggregator.add_warning(
+                    f'Was not able to find price from {str(from_asset)} to {str(to_asset)} since your '  # noqa: E501
+                    f'manual latest prices form a loop. For now, other oracles will be used.',
+                )
+                continue
 
             if price != Price(ZERO):
                 log.debug(
@@ -421,25 +445,36 @@ class Inquirer():
             to_asset: Asset,
             ignore_cache: bool = False,
             skip_onchain: bool = False,
+            coming_from_latest_price: bool = False,
     ) -> Price:
         """Returns the current price of 'from_asset' in 'to_asset' valuation.
         NB: prices for special symbols in any currency but USD are not supported.
 
-        Returns Price(ZERO) if all options have been exhausted and errors are logged in the logs
+        Returns Price(ZERO) if all options have been exhausted and errors are logged in the logs.
+        `coming_from_latest_price` is used by manual latest price oracle to handle price loops.
         """
         if from_asset == to_asset:
             return Price(FVal('1'))
 
         instance = Inquirer()
         if to_asset == A_USD:
-            return instance.find_usd_price(asset=from_asset, ignore_cache=ignore_cache)
+            return instance.find_usd_price(
+                asset=from_asset,
+                ignore_cache=ignore_cache,
+                coming_from_latest_price=coming_from_latest_price,
+            )
 
         if ignore_cache is False:
             cache = instance.get_cached_current_price_entry(cache_key=(from_asset, to_asset))
             if cache is not None:
                 return cache.price
 
-        oracle_price = instance._query_oracle_instances(from_asset=from_asset, to_asset=to_asset, skip_onchain=skip_onchain)  # noqa: E501
+        oracle_price = instance._query_oracle_instances(
+            from_asset=from_asset,
+            to_asset=to_asset,
+            skip_onchain=skip_onchain,
+            coming_from_latest_price=coming_from_latest_price,
+        )
         return oracle_price
 
     @staticmethod
@@ -447,10 +482,12 @@ class Inquirer():
             asset: Asset,
             ignore_cache: bool = False,
             skip_onchain: bool = False,
+            coming_from_latest_price: bool = False,
     ) -> Price:
         """Returns the current USD price of the asset
 
-        Returns Price(ZERO) if all options have been exhausted and errors are logged in the logs
+        Returns Price(ZERO) if all options have been exhausted and errors are logged in the logs.
+        `coming_from_latest_price` is used by manual latest price oracle to handle price loops.
         """
         if asset == A_USD:
             return Price(ONE)
@@ -540,7 +577,12 @@ class Inquirer():
             # KFEE is a kraken special asset where 1000 KFEE = 10 USD
             return Price(FVal(0.01))
 
-        return instance._query_oracle_instances(from_asset=asset, to_asset=A_USD, skip_onchain=skip_onchain)  # noqa: E501
+        return instance._query_oracle_instances(
+            from_asset=asset,
+            to_asset=A_USD,
+            coming_from_latest_price=coming_from_latest_price,
+            skip_onchain=skip_onchain,
+        )
 
     def find_uniswap_v2_lp_price(
             self,

@@ -159,7 +159,8 @@ class Rotkehlchen():
             data_dir=self.data_dir,
             cryptocompare=self.cryptocompare,
             coingecko=self.coingecko,
-            manualcurrent=ManualCurrentOracle(msg_aggregator=self.msg_aggregator),
+            manualcurrent=ManualCurrentOracle(),
+            msg_aggregator=self.msg_aggregator,
         )
         self.task_manager: Optional[TaskManager] = None
         self.shutdown_event = gevent.event.Event()

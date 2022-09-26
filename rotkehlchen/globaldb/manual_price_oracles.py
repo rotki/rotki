@@ -10,7 +10,6 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.interfaces import CurrentPriceOracleInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Price, Timestamp
-from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -54,9 +53,8 @@ class ManualPriceOracle:
 
 class ManualCurrentOracle(CurrentPriceOracleInterface):
 
-    def __init__(self, msg_aggregator: MessagesAggregator) -> None:
+    def __init__(self) -> None:
         super().__init__(oracle_name='manual current price oracle')
-        self.msg_aggregator = msg_aggregator
 
     def rate_limited_in_last(self, seconds: Optional[int] = None) -> bool:
         return False
@@ -73,18 +71,10 @@ class ManualCurrentOracle(CurrentPriceOracleInterface):
             return Price(ZERO)
 
         current_to_asset, current_price = manual_current_result
-        try:
-            current_to_asset_price = Inquirer().find_price(
-                from_asset=current_to_asset,
-                to_asset=to_asset,
-            )
-        except RecursionError:
-            # Infinite loop can happen if user has created a loop of manual current prices (e.g.
-            # said that 1 BTC costs 2 ETH and 1 ETH costs 5 BTC).
-            self.msg_aggregator.add_warning(
-                f'Was not able to find price from {str(from_asset)} to {str(to_asset)} since your '
-                f'manual current prices form a loop. For now, other oracles will be used.',
-            )
-            return Price(ZERO)
+        current_to_asset_price = Inquirer().find_price(  # pylint: disable=unexpected-keyword-arg
+            from_asset=current_to_asset,
+            to_asset=to_asset,
+            coming_from_latest_price=True,
+        )
 
         return Price(current_price * current_to_asset_price)
