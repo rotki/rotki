@@ -2757,7 +2757,7 @@ Querying all supported assets
 
 .. http:post:: /api/(version)/assets/all
 
-   Doing a POST on the all assets endpoint will return a mapping of all supported assets and their details. The keys are the unique symbol identifier and the values are the details for each asset.
+   Doing a POST on the all assets endpoint will return a list of all supported assets and their details.
 
 The details of each asset can contain the following keys:
 
@@ -2808,8 +2808,9 @@ The details of each asset can contain the following keys:
       Content-Type: application/json
 
       {
-          "result": {
-              "eip155:1/erc20:0xB6eD7644C69416d67B522e20bC294A9a9B405B31": {
+          "result": [
+              {
+                  "identifier": "eip155:1/erc20:0xB6eD7644C69416d67B522e20bC294A9a9B405B31",
                   "evm_address": "0xB6eD7644C69416d67B522e20bC294A9a9B405B31",
                   "chain":"ethereum",
                   "token_kind":"erc20",
@@ -2822,13 +2823,15 @@ The details of each asset can contain the following keys:
                   "coingecko":"0xbtc",
                   "protocol":"None"
               },
-              "DCR": {
+              {
+                  "identifier": "DCR",
                   "name": "Decred",
                   "started": 1450137600,
                   "symbol": "DCR",
                   "type": "own chain"
               },
-              "eip155:1/erc20:0xcC4eF9EEAF656aC1a2Ab886743E98e97E090ed38": {
+              {
+                  "identifier": "eip155:1/erc20:0xcC4eF9EEAF656aC1a2Ab886743E98e97E090ed38",
                   "evm_address": "0xcC4eF9EEAF656aC1a2Ab886743E98e97E090ed38",
                   "chain":"ethereum",
                   "token_kind":"erc20",
@@ -2841,19 +2844,22 @@ The details of each asset can contain the following keys:
                   "coingecko":"ddf",
                   "protocol":"None"
               },
-              "ETC": {
+              {
+                  "identifier": "ETC",
                   "forked": "ETH",
                   "name": "Ethereum classic",
                   "started": 1469020840,
                   "symbol": "ETC",
                   "type": "own chain"
               },
-              "KRW": {
+              {
+                  "identifier": "KRW",
                   "name": "Korean won",
                   "symbol": "KRW",
                   "type": "fiat"
               },
-              "eip155:1/erc20:0xD850942eF8811f2A866692A623011bDE52a462C1": {
+              {
+                  "identifier": "eip155:1/erc20:0xD850942eF8811f2A866692A623011bDE52a462C1",
                   "evm_address": "0xD850942eF8811f2A866692A623011bDE52a462C1",
                   "chain":"ethereum",
                   "token_kind":"erc20",
@@ -2868,11 +2874,11 @@ The details of each asset can contain the following keys:
                   "coingecko":"vet",
                   "protocol":"None"
               }
-          },
+          ],
           "message": ""
       }
 
-   :resjson object result: A mapping of asset identifiers to their respective asset details.
+   :resjson list result: A list of assets that match the query with their respective asset details.
    :statuscode 200: Assets successfully queried.
    :statuscode 500: Internal rotki error
 

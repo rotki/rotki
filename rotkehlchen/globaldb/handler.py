@@ -213,14 +213,14 @@ class GlobalDBHandler():
             ) from e
 
     @staticmethod
-    def retrieve_assets(filter_query: 'AssetsFilterQuery') -> Tuple[Dict[str, dict], int]:
+    def retrieve_assets(filter_query: 'AssetsFilterQuery') -> Tuple[List[Dict[str, Any]], int]:
         """
-        Returns a tuple that contains a dict of identifiers and their assets details
-        and a count of those assets that match the filter query.
+        Returns a tuple that contains a list of assets details and a
+        count of those assets that match the filter query.
         May raise:
         - DeserializationError
         """
-        assets_info = {}
+        assets_info = []
         query, bindings = filter_query.prepare()
         parent_query = """
         SELECT A.identifier AS identifier, A.type, B.address, B.decimals, A.name, C.symbol, C.started, C.forked, C.swapped_for, C.coingecko, C.cryptocompare, B.protocol, B.chain, B.token_kind
@@ -234,6 +234,7 @@ class GlobalDBHandler():
             for entry in cursor:
                 asset_type = AssetType.deserialize_from_db(entry[1])
                 data = {
+                    'identifier': entry[0],
                     'type': str(asset_type),
                     'name': entry[4],
                 }
@@ -264,8 +265,7 @@ class GlobalDBHandler():
                     data.update(common_data)
                 else:
                     raise NotImplementedError(f'Unsupported AssetType {asset_type} found in the DB. Should never happen')  # noqa: E501
-                # dict of identifier to asset details
-                assets_info[entry[0]] = data
+                assets_info.append(data)
 
             # get `entries_found`
             query, bindings = filter_query.prepare(with_pagination=False)
