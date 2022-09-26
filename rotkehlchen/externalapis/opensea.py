@@ -101,6 +101,7 @@ class Opensea(ExternalServiceWithApiKey):
         self.session.headers.update({'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0'})  # noqa: E501
         self.collections: Dict[str, Collection] = {}
         self.backup_key: Optional[str] = None
+        self.eth_asset = A_ETH.resolve_to_crypto_asset()
 
     def maybe_get_backup_key(self) -> Optional[str]:
         """This will attempt to fetch the backup key from our server if not already fetched"""
@@ -245,7 +246,7 @@ class Opensea(ExternalServiceWithApiKey):
             last_sale = entry.get('last_sale')
             if last_sale:
                 if last_sale['payment_token']['symbol'] in ('ETH', 'WETH'):
-                    payment_asset = A_ETH.resolve_to_crypto_asset()
+                    payment_asset = self.eth_asset
                 else:
                     payment_asset = Asset(
                         ethaddress_to_identifier(

@@ -80,6 +80,17 @@ bidr_asset_data = AssetData(
     coingecko='binanceidr',
     protocol=None,
 )
+bidr_asset = CryptoAsset.initialize(
+    identifier='BIDR',
+    name='Binance IDR Stable Coin',
+    symbol='BIDR',
+    asset_type=AssetType.BINANCE_TOKEN,
+    started=Timestamp(1593475200),
+    forked=None,
+    swapped_for=None,
+    cryptocompare=None,
+    coingecko='binanceidr',
+)
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -269,7 +280,7 @@ def test_get_asset_with_symbol(globaldb):
             coingecko='',
         )]
     # only non-ethereum token
-    assert globaldb.get_assets_with_symbol('BIDR') == [bidr_asset_data]
+    assert globaldb.get_assets_with_symbol('BIDR') == [bidr_asset]
     # only ethereum token
     expected_assets = [EvmToken.initialize(
         name='Aave Token',

@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, List, Literal, Optional, Sequence, Union, overload
+from typing import TYPE_CHECKING, List, Optional, Sequence
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
@@ -162,43 +162,12 @@ class DBHistoryEvents():
         )
         return [x[0] for x in cursor]
 
-    @overload
     def get_history_events(
             self,
             cursor: 'DBCursor',
             filter_query: HistoryEventFilterQuery,
             has_premium: bool,
-            only_crypto: Literal[False] = ...,
     ) -> List[HistoryBaseEntry]:
-        ...
-
-    @overload
-    def get_history_events(
-            self,
-            cursor: 'DBCursor',
-            filter_query: HistoryEventFilterQuery,
-            has_premium: bool,
-            only_crypto: Literal[True],
-    ) -> List[HistoryBaseEntry]:
-        ...
-
-    @overload
-    def get_history_events(
-            self,
-            cursor: 'DBCursor',
-            filter_query: HistoryEventFilterQuery,
-            has_premium: bool,
-            only_crypto: bool = ...,
-    ) -> Union[List[HistoryBaseEntry], List[HistoryBaseEntry]]:
-        ...
-
-    def get_history_events(
-            self,
-            cursor: 'DBCursor',
-            filter_query: HistoryEventFilterQuery,
-            has_premium: bool,
-            only_crypto: bool = False,
-    ) -> Union[List[HistoryBaseEntry], List[HistoryBaseEntry]]:
         """
         Get history events using the provided query filter
         """
@@ -214,10 +183,7 @@ class DBHistoryEvents():
         output = []
         for entry in cursor:
             try:
-                if only_crypto is True:
-                    deserialized = HistoryBaseEntry.deserialize_from_db(entry)
-                else:
-                    deserialized = HistoryBaseEntry.deserialize_from_db(entry)
+                deserialized = HistoryBaseEntry.deserialize_from_db(entry)
             except (DeserializationError, UnknownAsset) as e:
                 log.debug(f'Failed to deserialize history event {entry} due to {str(e)}')
 

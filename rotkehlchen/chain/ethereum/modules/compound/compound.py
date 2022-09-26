@@ -149,6 +149,7 @@ class Compound(EthereumModule):
         self.database = database
         self.premium = premium
         self.msg_aggregator = msg_aggregator
+        self.comp = A_COMP.resolve_to_evm_token()
         try:
             self.graph: Optional[Graph] = Graph(
                 'https://api.thegraph.com/subgraphs/name/graphprotocol/compound-v2',
@@ -210,7 +211,7 @@ class Compound(EthereumModule):
                         continue
 
                 unclaimed_comp_rewards = (
-                    entry.token_address == A_COMP.resolve_to_evm_token().evm_address and
+                    entry.token_address == self.comp.evm_address and
                     balance_entry.protocol.name == 'Compound Governance'
                 )
                 if unclaimed_comp_rewards:
@@ -531,7 +532,7 @@ class Compound(EthereumModule):
             'to': address,
         }
         comp_events = self.ethereum.get_logs(
-            contract_address=A_COMP.resolve_to_evm_token().evm_address,
+            contract_address=self.comp.evm_address,
             abi=ERC20TOKEN_ABI,
             event_name='Transfer',
             argument_filters=argument_filters,
@@ -545,7 +546,7 @@ class Compound(EthereumModule):
             tx_hash = event['transactionHash']
             amount = token_normalized_value(
                 hexstr_to_int(event['data']),
-                A_COMP.resolve_to_evm_token(),
+                self.comp,
             )
             usd_price = query_usd_price_zero_if_error(
                 asset=A_COMP,
@@ -559,7 +560,7 @@ class Compound(EthereumModule):
                 address=address,
                 block_number=event['blockNumber'],
                 timestamp=timestamp,
-                asset=A_COMP.resolve_to_crypto_asset(),
+                asset=self.comp,
                 value=value,
                 to_asset=None,
                 to_value=None,
@@ -645,7 +646,7 @@ class Compound(EthereumModule):
                 loss_assets[event.address][event.to_asset] += event.to_value
                 loss_so_far[event.address][event.to_asset] += event.to_value
             elif event.event_type == 'comp':
-                rewards_assets[event.address][A_COMP.resolve_to_crypto_asset()] += event.value
+                rewards_assets[event.address][self.comp] += event.value
 
         for address, bentry in balances.items():
             for asset, entry in bentry['lending'].items():

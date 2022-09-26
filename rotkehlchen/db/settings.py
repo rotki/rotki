@@ -104,8 +104,6 @@ class DBSettings(NamedTuple):
     include_gas_costs: bool = DEFAULT_INCLUDE_GAS_COSTS
     ksm_rpc_endpoint: str = 'http://localhost:9933'
     dot_rpc_endpoint: str = ''  # same as kusama -- must be set by user
-    # TODO: think what to do. Main currency should be AssetWithOracles, but can't use it right
-    # now here since it requires asset resolution.
     main_currency: Asset = DEFAULT_MAIN_CURRENCY
     date_display_format: str = DEFAULT_DATE_DISPLAY_FORMAT
     last_balance_save: Timestamp = Timestamp(0)

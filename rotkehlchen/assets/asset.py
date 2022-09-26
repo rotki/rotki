@@ -11,7 +11,7 @@ from rotkehlchen.constants.resolver import (
     evm_address_to_identifier,
     strethaddress_to_identifier,
 )
-from rotkehlchen.errors.asset import UnsupportedAsset
+from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -752,6 +752,16 @@ class Asset:
         return AssetResolver().get_asset_type(self.identifier) == AssetType.EVM_TOKEN
 
     def resolve(self, form_with_incomplete_data: bool = False) -> 'Asset':
+        """
+        Returns the deepest representation possible for the current asset identifier.
+        For example if we do
+        dai = Asset('eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F').resolve()
+        we will get in the variable dai the `EvmToken` representation of DAI. Same for other
+        subclasses of Asset.
+
+        May raise:
+        - UnknownAsset
+        """
         if self.identifier.startswith(NFT_DIRECTIVE):
             return Nft.initialize(
                 identifier=self.identifier,
@@ -857,6 +867,9 @@ class AssetWithNameAndType(Asset, metaclass=abc.ABCMeta):
     def __repr__(self) -> str:
         return f'<Asset identifier:{self.identifier} name:{self.name}>'
 
+    def __str__(self) -> str:
+        return f'{self.identifier}({self.name})'
+
 
 class AssetWithSymbol(AssetWithNameAndType, metaclass=abc.ABCMeta):
     symbol: str = field(init=False)
@@ -922,6 +935,7 @@ class FiatAsset(AssetWithOracles):
         super().__post_init__(direct_field_initialization)
         if direct_field_initialization is True:
             return
+
         resolved = AssetResolver().resolve_asset_to_class(self.identifier, FiatAsset)
         object.__setattr__(self, 'identifier', resolved.identifier)
         object.__setattr__(self, 'asset_type', resolved.asset_type)
@@ -958,10 +972,10 @@ class CryptoAsset(AssetWithOracles):
         super().__post_init__(direct_field_initialization)
         if direct_field_initialization is True:
             return
+
         resolved = AssetResolver().resolve_asset_to_class(
             identifier=self.identifier,
             expected_type=CryptoAsset,
-            # Needed in case we are initializing from EvmToken constructor
             form_with_incomplete_data=getattr(self, 'form_with_incomplete_data', False),
         )
         object.__setattr__(self, 'identifier', resolved.identifier)
@@ -1067,6 +1081,7 @@ class EvmToken(CryptoAsset):
         super().__post_init__(direct_field_initialization)
         if direct_field_initialization is True:
             return
+
         resolved = AssetResolver().resolve_asset_to_class(
             identifier=self.identifier,
             expected_type=EvmToken,
@@ -1161,7 +1176,11 @@ class Nft(EvmToken):
     def __post_init__(self, direct_field_initialization: bool) -> None:
         if direct_field_initialization is True:
             return
-        address = self.identifier[len(NFT_DIRECTIVE):].split('_')[0]
+
+        try:
+            address = self.identifier[len(NFT_DIRECTIVE):].split('_')[0]
+        except KeyError as e:
+            raise UnknownAsset(self.identifier) from e
         object.__setattr__(self, 'asset_type', AssetType.EVM_TOKEN)
         object.__setattr__(self, 'name', f'nft with id {self.identifier}')
         object.__setattr__(self, 'symbol', self.identifier[len(NFT_DIRECTIVE):])
@@ -1187,7 +1206,11 @@ class Nft(EvmToken):
     ) -> 'Nft':
         # TODO: This needs to change once we correctly track NFTs
         asset = Nft(identifier=identifier, direct_field_initialization=True)
-        address = identifier[len(NFT_DIRECTIVE):].split('_')[0]
+        try:
+            address = identifier[len(NFT_DIRECTIVE):].split('_')[0]
+        except KeyError as e:
+            raise UnknownAsset(identifier) from e
+
         nft_name = f'nft with id {identifier}' if name is None else name
         nft_symbol = identifier[len(NFT_DIRECTIVE):] if symbol is None else symbol
         object.__setattr__(asset, 'asset_type', AssetType.EVM_TOKEN)

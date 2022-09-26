@@ -1430,7 +1430,7 @@ class RestAPI():
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
         # Also clear the in-memory cache of the asset resolver to requery DB
-        AssetResolver().assets_cache.pop(data['identifier'], None)
+        AssetResolver().assets_cache.remove(data['identifier'])
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     def delete_custom_asset(self, identifier: str) -> Response:
@@ -1444,7 +1444,7 @@ class RestAPI():
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
         # Also clear the in-memory cache of the asset resolver
-        AssetResolver().assets_cache.pop(identifier, None)
+        AssetResolver().assets_cache.remove(identifier)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     def replace_asset(self, source_identifier: str, target_asset: Asset) -> Response:
@@ -1454,7 +1454,7 @@ class RestAPI():
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
         # Also clear the in-memory cache of the asset resolver
-        AssetResolver().assets_cache.pop(source_identifier, None)
+        AssetResolver().assets_cache.remove(source_identifier)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     @staticmethod
@@ -1513,7 +1513,7 @@ class RestAPI():
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
         # Also clear the in-memory cache of the asset resolver to requery DB
-        AssetResolver().assets_cache.pop(identifier, None)
+        AssetResolver().assets_cache.remove(identifier)
 
         return api_response(
             result=_wrap_in_ok_result({'identifier': identifier}),
@@ -1541,7 +1541,7 @@ class RestAPI():
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
         # Also clear the in-memory cache of the asset resolver
-        AssetResolver().assets_cache.pop(identifier, None)
+        AssetResolver().assets_cache.remove(identifier)
 
         return api_response(
             result=_wrap_in_ok_result({'identifier': identifier}),
@@ -3460,8 +3460,8 @@ class RestAPI():
     def _create_oracle_cache(
             self,
             oracle: HistoricalPriceOracle,
-            from_asset: Asset,
-            to_asset: Asset,
+            from_asset: AssetWithOracles,
+            to_asset: AssetWithOracles,
             purge_old: bool,
     ) -> Dict[str, Any]:
         try:
@@ -3476,8 +3476,8 @@ class RestAPI():
     def create_oracle_cache(
             self,
             oracle: HistoricalPriceOracle,
-            from_asset: Asset,
-            to_asset: Asset,
+            from_asset: AssetWithOracles,
+            to_asset: AssetWithOracles,
             purge_old: bool,
             async_query: bool,
     ) -> Response:

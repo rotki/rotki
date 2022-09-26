@@ -53,9 +53,10 @@ class ZksyncDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
 
         for event in decoded_events:
             if event.event_type == HistoryEventType.SPEND and event.location_label == user_address:
+                resolved_event_asset = event.asset.resolve_to_crypto_asset()
                 event_raw_amount = asset_raw_value(
                     amount=event.balance.amount,
-                    asset=event.asset.resolve_to_crypto_asset(),
+                    asset=resolved_event_asset,
                 )
                 if event_raw_amount != amount_raw:
                     continue
@@ -64,7 +65,7 @@ class ZksyncDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.BRIDGE
                 event.counterparty = CPT_ZKSYNC
-                crypto_asset = event.asset.resolve_to_crypto_asset()
+                crypto_asset = resolved_event_asset
                 event.notes = f'Deposit {event.balance.amount} {crypto_asset.symbol} to zksync'  # noqa: E501
                 break
 

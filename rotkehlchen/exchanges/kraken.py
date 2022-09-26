@@ -115,7 +115,7 @@ def kraken_to_world_pair(pair: str) -> Tuple[AssetWithOracles, AssetWithOracles]
         - DeserializationError if one of the assets is not a sting
         - UnprocessableTradePair if the pair can't be processed and
           split into its base/quote assets
-"""
+    """
     # handle dark pool pairs
     if pair[-2:] == '.d':
         pair = pair[:-2]

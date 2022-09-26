@@ -87,6 +87,8 @@ class Adex(EthereumModule):
         self.session = requests.session()
         self.session.headers.update({'User-Agent': 'rotkehlchen'})
         self.staking_pool = EthereumConstants().contract('ADEX_STAKING_POOL')
+        self.adx = A_ADX.resolve_to_evm_token()
+        self.dai = A_DAI.resolve_to_evm_token()
 
         try:
             self.graph = Graph(
@@ -927,10 +929,10 @@ class Adex(EthereumModule):
             for event in history.events:
                 pnl = got_asset = got_balance = spent_asset = spent_balance = None  # noqa: E501
                 if isinstance(event, Bond):
-                    spent_asset = A_ADX.resolve_to_evm_token()
+                    spent_asset = self.adx
                     spent_balance = event.value
                 elif isinstance(event, Unbond):
-                    got_asset = A_ADX.resolve_to_evm_token()
+                    got_asset = self.adx
                     got_balance = event.value
                 elif isinstance(event, UnbondRequest):
                     continue  # just ignore those for accounting purposes

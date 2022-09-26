@@ -1,7 +1,7 @@
 import csv
 from itertools import count
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import TYPE_CHECKING, Any, Dict, List
 from rotkehlchen.assets.asset import AssetWithOracles
 
 from rotkehlchen.assets.converters import LOCATION_TO_ASSET_MAPPING
@@ -22,6 +22,9 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp_from_date,
 )
 from rotkehlchen.types import AssetAmount, AssetMovementCategory, Fee, Location, Price, TradeType
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
 
 
 def remap_header(fieldnames: List[str]) -> List[str]:
@@ -73,6 +76,11 @@ def exchange_row_to_location(entry: str) -> Location:
 
 
 class CointrackingImporter(BaseExchangeImporter):
+
+    def __init__(self, db: 'DBHandler') -> None:
+        super().__init__(db=db)
+        self.usd = A_USD.resolve_to_asset_with_oracles()
+
     def _consume_cointracking_entry(
             self,
             cursor: DBCursor,
@@ -101,7 +109,7 @@ class CointrackingImporter(BaseExchangeImporter):
 
         fee = Fee(ZERO)
         # whatever (used only if there is no fee)
-        fee_currency: AssetWithOracles = A_USD.resolve_to_asset_with_oracles()
+        fee_currency: AssetWithOracles = self.usd
         if csv_row['Fee'] != '':
             fee = deserialize_fee(csv_row['Fee'])
             fee_currency = asset_resolver(csv_row['Cur.Fee'])
@@ -114,7 +122,7 @@ class CointrackingImporter(BaseExchangeImporter):
 
             if quote_asset is None:
                 # Really makes no difference as this is just a gift and the amount is zero
-                quote_asset = A_USD.resolve_to_asset_with_oracles()
+                quote_asset = self.usd
             base_amount_bought = deserialize_asset_amount(csv_row['Buy'])
             if base_amount_bought == ZERO:
                 raise DeserializationError('Bought amount in trade is zero')

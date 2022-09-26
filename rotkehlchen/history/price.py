@@ -194,8 +194,7 @@ class PriceHistorian():
             if price is not None:
                 return price
         except (UnknownAsset, WrongAssetType):
-            pass
-            # else cryptocompare also has historical fiat to fiat data
+            pass  # else cryptocompare also has historical fiat to fiat data
 
         instance = PriceHistorian()
         oracles = instance._oracles

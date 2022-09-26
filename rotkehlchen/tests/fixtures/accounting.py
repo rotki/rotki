@@ -7,6 +7,7 @@ from typing import Optional
 import pytest
 
 from rotkehlchen.accounting.accountant import Accountant
+from rotkehlchen.assets.asset import AssetWithSymbol
 from rotkehlchen.chain.ethereum.accounting.aggregator import EVMAccountingAggregator
 from rotkehlchen.chain.ethereum.oracles.saddle import SaddleOracle
 from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
@@ -261,7 +262,10 @@ def create_inquirer(
                 ignore_cache=False,
                 coming_from_latest_price=False,
         ):
-            if from_asset.symbol in ignore_mocked_prices_for:
+            final_asset = from_asset
+            if not isinstance(from_asset, AssetWithSymbol):
+                final_asset = from_asset.resolve()
+            if final_asset.symbol in ignore_mocked_prices_for:
                 return inquirer.find_price_old(
                     from_asset=from_asset,
                     to_asset=to_asset,
@@ -280,7 +284,10 @@ def create_inquirer(
                 ignore_cache=False,
                 coming_from_latest_price=False,
         ):
-            if asset.symbol in ignore_mocked_prices_for:
+            final_asset = asset
+            if not isinstance(asset, AssetWithSymbol):
+                final_asset = asset.resolve()
+            if final_asset.symbol in ignore_mocked_prices_for:
                 return inquirer.find_usd_price_old(
                     asset=asset,
                     ignore_cache=ignore_cache,

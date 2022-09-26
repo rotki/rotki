@@ -174,7 +174,6 @@ def handle_defi_price_query(
     We can't query it from this module due to recursive imports between rotkehlchen/inquirer
     and rotkehlchen/chain/ethereum/defi
     """
-    token = token.resolve_to_evm_token()
     if token == A_YV1_DAIUSDCTTUSD:
         usd_value = _handle_yearn_curve_vault(
             ethereum=ethereum,

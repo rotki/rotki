@@ -110,6 +110,8 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-
             premium=None,  # not used here
             msg_aggregator=msg_aggregator,
         )
+        self.dai = A_DAI.resolve_to_evm_token()
+        self.sai = A_SAI.resolve_to_evm_token()
 
     def _get_address_or_proxy(self, address: ChecksumEvmAddress) -> Optional[ChecksumEvmAddress]:
         if self.base.is_tracked(address):
@@ -219,7 +221,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-
             raw_amount = hex_or_bytes_to_int(tx_log.topics[3])
             amount = token_normalized_value(
                 token_amount=raw_amount,
-                token=A_DAI.resolve_to_evm_token(),
+                token=self.dai,
             )
             # The transfer comes right before, but we don't have enough information
             # yet to make sure that this transfer is indeed a vault payback debt. We
@@ -229,7 +231,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-
                 sequence_index=tx_log.log_index,
                 from_event_type=HistoryEventType.SPEND,
                 from_event_subtype=HistoryEventSubType.NONE,
-                asset=A_DAI.resolve_to_evm_token(),
+                asset=self.dai,
                 amount=amount,
                 to_event_subtype=HistoryEventSubType.PAYBACK_DEBT,
                 to_counterparty=CPT_VAULT,
@@ -270,7 +272,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-
             raw_amount = hex_or_bytes_to_int(daijoin_log.topics[3])
             amount = token_normalized_value(
                 token_amount=raw_amount,
-                token=A_DAI.resolve_to_evm_token(),
+                token=self.dai,
             )
 
             # The transfer event should be right before
@@ -307,7 +309,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-
             raw_amount = hex_or_bytes_to_int(daiexit_log.topics[3])
             amount = token_normalized_value(
                 token_amount=raw_amount,
-                token=A_DAI.resolve_to_evm_token(),
+                token=self.dai,
             )
             # The transfer event will be in a subsequent logs
             action_item = ActionItem(
@@ -315,7 +317,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-
                 sequence_index=tx_log.log_index,
                 from_event_type=HistoryEventType.RECEIVE,
                 from_event_subtype=HistoryEventSubType.NONE,
-                asset=A_DAI.resolve_to_evm_token(),
+                asset=self.dai,
                 amount=amount,
                 to_event_type=HistoryEventType.WITHDRAWAL,
                 to_event_subtype=HistoryEventSubType.REMOVE_ASSET,
@@ -412,7 +414,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-
         raw_amount = shift_num_right_by(hex_or_bytes_to_int(tx_log.data[132:164]), RAY_DIGITS)
         amount = token_normalized_value(
             token_amount=raw_amount,
-            token=A_DAI.resolve_to_evm_token(),
+            token=self.dai,
         )
 
         # The transfer event appears after the debt generation event, so we need to transform it
@@ -421,7 +423,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-
             sequence_index=tx_log.log_index,
             from_event_type=HistoryEventType.RECEIVE,
             from_event_subtype=HistoryEventSubType.NONE,
-            asset=A_DAI.resolve_to_evm_token(),
+            asset=self.dai,
             amount=amount,
             to_event_type=HistoryEventType.WITHDRAWAL,
             to_event_subtype=HistoryEventSubType.GENERATE_DEBT,
@@ -525,7 +527,11 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-
                 return None, None
 
             # sending SAI to migration contract
-            transfer = self.base.decode_erc20_721_transfer(token=A_SAI.resolve_to_evm_token(), tx_log=tx_log, transaction=transaction)  # noqa: E501
+            transfer = self.base.decode_erc20_721_transfer(
+                token=self.sai,
+                tx_log=tx_log,
+                transaction=transaction,
+            )
             if transfer is None:
                 return None, None
 
@@ -540,7 +546,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-
                 sequence_index=tx_log.log_index,
                 from_event_type=HistoryEventType.RECEIVE,
                 from_event_subtype=HistoryEventSubType.NONE,
-                asset=A_DAI.resolve_to_evm_token(),
+                asset=self.dai,
                 amount=transfer.balance.amount,
                 to_event_type=HistoryEventType.MIGRATE,
                 to_event_subtype=HistoryEventSubType.RECEIVE,

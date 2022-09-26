@@ -50,7 +50,6 @@ from rotkehlchen.api.v1.schemas import (
     BlockchainAccountsPatchSchema,
     BlockchainAccountsPutSchema,
     BlockchainBalanceQuerySchema,
-    CryptoAssetSchema,
     CurrentAssetsPriceSchema,
     DataImportSchema,
     DetectTokensSchema,
@@ -71,6 +70,7 @@ from rotkehlchen.api.v1.schemas import (
     ExternalServicesResourceAddSchema,
     ExternalServicesResourceDeleteSchema,
     FileListSchema,
+    GenericNonTokenAssetSchema,
     HistoricalAssetsPriceSchema,
     HistoryBaseEntrySchema,
     HistoryExportingSchema,
@@ -667,15 +667,15 @@ class AllAssetsResource(BaseMethodView):
             db=self.rest_api.rotkehlchen.data.db,
         )
 
-    def make_add_schema(self) -> CryptoAssetSchema:
-        return CryptoAssetSchema(
+    def make_add_schema(self) -> GenericNonTokenAssetSchema:
+        return GenericNonTokenAssetSchema(
             identifier_required=False,
             coingecko=self.rest_api.rotkehlchen.coingecko,
             cryptocompare=self.rest_api.rotkehlchen.cryptocompare,
         )
 
-    def make_edit_schema(self) -> CryptoAssetSchema:
-        return CryptoAssetSchema(
+    def make_edit_schema(self) -> GenericNonTokenAssetSchema:
+        return GenericNonTokenAssetSchema(
             identifier_required=True,
             coingecko=self.rest_api.rotkehlchen.coingecko,
             cryptocompare=self.rest_api.rotkehlchen.cryptocompare,
@@ -2317,8 +2317,8 @@ class NamedOracleCacheResource(BaseMethodView):
     def post(
             self,
             oracle: HistoricalPriceOracle,
-            from_asset: Asset,
-            to_asset: Asset,
+            from_asset: AssetWithOracles,
+            to_asset: AssetWithOracles,
             purge_old: bool,
             async_query: bool,
     ) -> Response:

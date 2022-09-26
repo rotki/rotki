@@ -121,7 +121,8 @@ GEMJOIN_MAPPING = {
 }
 
 
-def const_collateral_type_mapping() -> Dict[str, CryptoAsset]:
+def create_collateral_type_mapping() -> Dict[str, CryptoAsset]:
+    """Create a mapping with resolved assets for those used as collateral in maker"""
     return {
         'BAT-A': A_BAT.resolve_to_crypto_asset(),
         'ETH-A': A_ETH.resolve_to_crypto_asset(),
@@ -271,7 +272,8 @@ class MakerdaoVaults(HasDSProxy):
         self.vault_mappings: Dict[ChecksumEvmAddress, List[MakerdaoVault]] = defaultdict(list)
         self.ilk_to_stability_fee: Dict[bytes, FVal] = {}
         self.vault_details: List[MakerdaoVaultDetails] = []
-        self.collateral_type_mapping = const_collateral_type_mapping()
+        self.collateral_type_mapping = create_collateral_type_mapping()
+        self.dai = A_DAI.resolve_to_evm_token()
 
     def reset_last_query_ts(self) -> None:
         """Reset the last query timestamps, effectively cleaning the caches"""
@@ -524,7 +526,7 @@ class MakerdaoVaults(HasDSProxy):
             total_dai_wei += given_amount
             amount = token_normalized_value(
                 token_amount=given_amount,
-                token=A_DAI.resolve_to_evm_token(),
+                token=self.dai,
             )
             timestamp = self.ethereum.get_event_timestamp(event)
             usd_price = query_usd_price_or_use_default(
@@ -558,7 +560,7 @@ class MakerdaoVaults(HasDSProxy):
             total_dai_wei -= given_amount
             amount = token_normalized_value(
                 token_amount=given_amount,
-                token=A_DAI.resolve_to_evm_token(),
+                token=self.dai,
             )
             if amount == ZERO:
                 # it seems there is a zero DAI value transfer from the urn when
@@ -619,7 +621,7 @@ class MakerdaoVaults(HasDSProxy):
 
         total_interest_owed = vault.debt.amount - token_normalized_value(
             token_amount=total_dai_wei,
-            token=A_DAI.resolve_to_evm_token(),
+            token=self.dai,
         )
         # sort vault events by timestamp
         vault_events.sort(key=lambda event: event.timestamp)

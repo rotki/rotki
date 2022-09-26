@@ -44,7 +44,7 @@ class AssetType(DBEnumMixIn):
 
 
 ASSETS_WITH_NO_CRYPTO_ORACLES = {AssetType.NFT, AssetType.OTHER, AssetType.CUSTOM_ASSET}
-NON_CRYPTO_ASSETS = ASSETS_WITH_NO_CRYPTO_ORACLES | {AssetType.FIAT}
+NON_CRYPTO_ASSETS = {AssetType.CUSTOM_ASSET, AssetType.OTHER, AssetType.FIAT}
 
 
 class AssetData(NamedTuple):

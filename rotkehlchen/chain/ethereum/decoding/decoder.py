@@ -318,7 +318,6 @@ class EVMTransactionDecoder():
                         event_identifier=transaction.tx_hash,
                     ),
                     has_premium=True,  # for this function we don't limit anything
-                    only_crypto=True,
                 )
                 return events
 
