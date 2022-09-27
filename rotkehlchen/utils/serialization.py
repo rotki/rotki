@@ -73,12 +73,20 @@ def pretty_json_dumps(data: Dict) -> str:
     )
 
 
-def deserialize_asset_with_symbol_from_db(
+def deserialize_asset_with_oracles_from_db(
         asset_type: AssetType,
         asset_data: List[Any],
         underlying_tokens: Optional[List[UnderlyingToken]],
         form_with_incomplete_data: bool,
 ) -> AssetWithOracles:
+    """
+    From a db tuple containing information about any asset deserialize to the correct Asset class
+    according to type in the database.
+    May raise:
+    - DeserializationError
+    - UnknownAsset
+    - WrongAssetType
+    """
     identifier = asset_data[0]
     if asset_type == AssetType.EVM_TOKEN:
         decimals = asset_data[3]
@@ -130,8 +138,16 @@ def deserialize_generic_asset_from_db(
         underlying_tokens: Optional[List[UnderlyingToken]],
         form_with_incomplete_data: bool,
 ) -> AssetWithNameAndType:
+    """
+    From a db tuple containing information about any asset deserialize to the correct Asset class
+    according to type in the database. Is a wrapper around deserialize_asset_with_oracles_from_db
+    And extends it by allowing the deserialization of CustomAsset objets.
+    May raise:
+    - DeserializationError
+    - UnknownAsset
+    - WrongAssetType
+    """
     identifier = asset_data[0]
-
     if asset_type == AssetType.CUSTOM_ASSET:
         return CustomAsset.initialize(
             identifier=identifier,
@@ -140,7 +156,7 @@ def deserialize_generic_asset_from_db(
             notes=asset_data[14],
         )
 
-    return deserialize_asset_with_symbol_from_db(
+    return deserialize_asset_with_oracles_from_db(
         asset_type=asset_type,
         asset_data=asset_data,
         underlying_tokens=underlying_tokens,

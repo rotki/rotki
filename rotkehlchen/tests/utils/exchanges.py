@@ -1,13 +1,15 @@
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from unittest.mock import patch
 
-from rotkehlchen.assets.asset import Asset
-from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
+from rotkehlchen.assets.asset import Asset, AssetWithOracles
+from rotkehlchen.assets.converters import KRAKEN_TO_WORLD, asset_from_kraken
+from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_ETH2, A_EUR
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.db.dbhandler import DBHandler
+from rotkehlchen.errors.asset import UnprocessableTradePair
 from rotkehlchen.exchanges.binance import BINANCE_BASE_URL, BINANCEUS_BASE_URL, Binance
 from rotkehlchen.exchanges.bitcoinde import Bitcoinde
 from rotkehlchen.exchanges.bitfinex import Bitfinex
@@ -1257,3 +1259,51 @@ def mock_normal_coinbase_query(url, **kwargs):  # pylint: disable=unused-argumen
         return MockResponse(200, '{"data": [{"id": "5fs23"}]}')
     # else
     raise AssertionError(f'Unexpected url {url} for test')
+
+
+def kraken_to_world_pair(pair: str) -> Tuple[AssetWithOracles, AssetWithOracles]:
+    """Turns a pair from kraken to our base/quote asset tuple
+
+    Can throw:
+        - UknownAsset if one of the assets of the pair are not known
+        - DeserializationError if one of the assets is not a sting
+        - UnprocessableTradePair if the pair can't be processed and
+          split into its base/quote assets
+    """
+    # handle dark pool pairs
+    if pair[-2:] == '.d':
+        pair = pair[:-2]
+
+    if len(pair) == 6 and pair[0:3] in ('EUR', 'USD', 'AUD'):
+        # This is for the FIAT to FIAT pairs that kraken introduced
+        base_asset_str = pair[0:3]
+        quote_asset_str = pair[3:]
+    elif pair == 'ETHDAI':
+        return A_ETH.resolve_to_asset_with_oracles(), A_DAI.resolve_to_asset_with_oracles()
+    elif pair == 'ETH2.SETH':
+        return A_ETH2.resolve_to_asset_with_oracles(), A_ETH.resolve_to_asset_with_oracles()
+    elif pair[0:2] in KRAKEN_TO_WORLD:
+        base_asset_str = pair[0:2]
+        quote_asset_str = pair[2:]
+    elif pair[0:3] in KRAKEN_TO_WORLD:
+        base_asset_str = pair[0:3]
+        quote_asset_str = pair[3:]
+    elif pair[0:3] in ('XBT', 'ETH', 'XDG', 'LTC', 'XRP'):
+        # Some assets can have the 'X' prefix omitted for some pairs
+        base_asset_str = pair[0:3]
+        quote_asset_str = pair[3:]
+    elif pair[0:4] in KRAKEN_TO_WORLD:
+        base_asset_str = pair[0:4]
+        quote_asset_str = pair[4:]
+    elif pair[0:5] in KRAKEN_TO_WORLD:
+        base_asset_str = pair[0:5]
+        quote_asset_str = pair[5:]
+    elif pair[0:6] in KRAKEN_TO_WORLD:
+        base_asset_str = pair[0:6]
+        quote_asset_str = pair[6:]
+    else:
+        raise UnprocessableTradePair(pair)
+
+    base_asset = asset_from_kraken(base_asset_str)
+    quote_asset = asset_from_kraken(quote_asset_str)
+    return base_asset, quote_asset

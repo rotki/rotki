@@ -255,6 +255,13 @@ class DBHandler:
         self.sql_vm_instructions_cb = sql_vm_instructions_cb
         self.sqlcipher_version = detect_sqlcipher_version()
         self.last_write_ts: Optional[Timestamp] = None
+        self.setting_to_default_type = {
+            'version': (int, ROTKEHLCHEN_DB_VERSION),
+            'last_write_ts': (int, Timestamp(0)),
+            'last_data_upload_ts': (int, Timestamp(0)),
+            'premium_should_sync': (str_to_bool, DEFAULT_PREMIUM_SHOULD_SYNC),
+            'main_currency': (AssetWithOracles, A_USD.resolve_to_fiat_asset()),
+        }
         self.conn: DBConnection = None  # type: ignore
         self.conn_transient: DBConnection = None  # type: ignore
         self._connect(password)
@@ -264,7 +271,6 @@ class DBHandler:
                 self.set_settings(cursor, initial_settings)
             self.update_owned_assets_in_globaldb(cursor)
             self.add_globaldb_assetids(cursor)
-        self.usd = A_USD.resolve_to_asset_with_oracles()
 
     def __del__(self) -> None:
         self.logout()
@@ -359,19 +365,12 @@ class DBHandler:
     def get_setting(self, cursor: 'DBCursor', name: Literal['main_currency']) -> AssetWithOracles:
         ...
 
-    def get_setting(  # pylint: disable=no-self-use
+    def get_setting(
             self,
             cursor: 'DBCursor',
             name: Literal['version', 'last_write_ts', 'last_data_upload_ts', 'premium_should_sync', 'main_currency'],  # noqa: E501
     ) -> Union[int, Timestamp, bool, AssetWithOracles]:
-        setting_to_default_type = {
-            'version': (int, ROTKEHLCHEN_DB_VERSION),
-            'last_write_ts': (int, Timestamp(0)),
-            'last_data_upload_ts': (int, Timestamp(0)),
-            'premium_should_sync': (str_to_bool, DEFAULT_PREMIUM_SHOULD_SYNC),
-            'main_currency': (AssetWithOracles, self.usd),
-        }
-        deserializer, default_value = setting_to_default_type[name]
+        deserializer, default_value = self.setting_to_default_type[name]
         cursor.execute(
             'SELECT value FROM settings WHERE name=?;', (name,),
         )

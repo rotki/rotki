@@ -3300,7 +3300,14 @@ class RestAPI():
     def refresh_asset_icon(self, asset: AssetWithOracles) -> Response:
         """Deletes an asset's icon from the cache and requeries it."""
         self.rotkehlchen.icon_manager.delete_icon(asset)
-        is_success = self.rotkehlchen.icon_manager.query_coingecko_for_icon(asset)
+        try:
+            is_success = self.rotkehlchen.icon_manager.query_coingecko_for_icon(
+                asset=asset,
+                coingecko_id=asset.to_coingecko(),
+            )
+        except UnsupportedAsset:
+            is_success = False
+
         if is_success is False:
             return api_response(
                 wrap_in_fail_result(f'Unable to refresh icon for {asset} at the moment'),

@@ -177,7 +177,7 @@ def get_usd_price_zero_if_error(
     """
     inquirer = Inquirer()
     if (
-        asset in inquirer.special_tokens or
+        asset.identifier in inquirer.special_tokens or
         isinstance(asset, EvmToken) and asset.protocol == YEARN_VAULTS_V2_PROTOCOL
     ):
         return inquirer.find_usd_price(asset)

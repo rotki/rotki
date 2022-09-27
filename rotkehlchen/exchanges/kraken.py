@@ -24,16 +24,16 @@ from rotkehlchen.accounting.structures.base import (
     HistoryEventType,
 )
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
-from rotkehlchen.assets.converters import KRAKEN_TO_WORLD, asset_from_kraken
+from rotkehlchen.assets.converters import asset_from_kraken
 from rotkehlchen.constants import KRAKEN_API_VERSION, KRAKEN_BASE_URL
-from rotkehlchen.constants.assets import A_DAI, A_ETH, A_ETH2, A_KFEE, A_USD
+from rotkehlchen.constants.assets import A_KFEE, A_USD
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.db.constants import KRAKEN_ACCOUNT_TYPE_KEY
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.ranges import DBQueryRanges
-from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
@@ -105,54 +105,6 @@ def kraken_ledger_entry_type_to_ours(value: str) -> HistoryEventType:
         return HistoryEventType.ADJUSTMENT
 
     return HistoryEventType.INFORMATIONAL  # returned for kraken's unknown events
-
-
-def kraken_to_world_pair(pair: str) -> Tuple[AssetWithOracles, AssetWithOracles]:
-    """Turns a pair from kraken to our base/quote asset tuple
-
-    Can throw:
-        - UknownAsset if one of the assets of the pair are not known
-        - DeserializationError if one of the assets is not a sting
-        - UnprocessableTradePair if the pair can't be processed and
-          split into its base/quote assets
-    """
-    # handle dark pool pairs
-    if pair[-2:] == '.d':
-        pair = pair[:-2]
-
-    if len(pair) == 6 and pair[0:3] in ('EUR', 'USD', 'AUD'):
-        # This is for the FIAT to FIAT pairs that kraken introduced
-        base_asset_str = pair[0:3]
-        quote_asset_str = pair[3:]
-    elif pair == 'ETHDAI':
-        return A_ETH.resolve_to_asset_with_oracles(), A_DAI.resolve_to_asset_with_oracles()
-    elif pair == 'ETH2.SETH':
-        return A_ETH2.resolve_to_asset_with_oracles(), A_ETH.resolve_to_asset_with_oracles()
-    elif pair[0:2] in KRAKEN_TO_WORLD:
-        base_asset_str = pair[0:2]
-        quote_asset_str = pair[2:]
-    elif pair[0:3] in KRAKEN_TO_WORLD:
-        base_asset_str = pair[0:3]
-        quote_asset_str = pair[3:]
-    elif pair[0:3] in ('XBT', 'ETH', 'XDG', 'LTC', 'XRP'):
-        # Some assets can have the 'X' prefix omitted for some pairs
-        base_asset_str = pair[0:3]
-        quote_asset_str = pair[3:]
-    elif pair[0:4] in KRAKEN_TO_WORLD:
-        base_asset_str = pair[0:4]
-        quote_asset_str = pair[4:]
-    elif pair[0:5] in KRAKEN_TO_WORLD:
-        base_asset_str = pair[0:5]
-        quote_asset_str = pair[5:]
-    elif pair[0:6] in KRAKEN_TO_WORLD:
-        base_asset_str = pair[0:6]
-        quote_asset_str = pair[6:]
-    else:
-        raise UnprocessableTradePair(pair)
-
-    base_asset = asset_from_kraken(base_asset_str)
-    quote_asset = asset_from_kraken(quote_asset_str)
-    return base_asset, quote_asset
 
 
 def history_event_from_kraken(

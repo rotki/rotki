@@ -1,6 +1,6 @@
-from rotkehlchen.assets.asset import Asset, EvmToken, UnderlyingToken
+from rotkehlchen.assets.asset import EvmToken, UnderlyingToken
+from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.constants import A_MKR
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.types import ChainID, EvmTokenKind, Timestamp
 
@@ -10,6 +10,21 @@ underlying_address3 = make_ethereum_address()
 
 user_token_address1 = make_ethereum_address()
 user_token_address2 = make_ethereum_address()
+
+MAKER_ASSET = EvmToken.initialize(
+    address=string_to_evm_address('0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2'),
+    chain=ChainID.ETHEREUM,
+    token_kind=EvmTokenKind.ERC20,
+    decimals=18,
+    name='Maker',
+    symbol='MKR',
+    started=Timestamp(4),
+    swapped_for=None,
+    coingecko='maker',
+    cryptocompare=None,
+    protocol=None,
+)
+
 INITIAL_TOKENS = [
     EvmToken.initialize(
         address=user_token_address1,
@@ -19,8 +34,7 @@ INITIAL_TOKENS = [
         name='Custom 1',
         symbol='CST1',
         started=Timestamp(0),
-        # Very ugly (swapped_for is CryptoAsset) but this constant is used for parametrizing tests.
-        swapped_for=Asset(A_MKR.identifier),  # type: ignore
+        swapped_for=MAKER_ASSET,
         coingecko='internet-computer',
         cryptocompare='ICP',
         protocol='uniswap',

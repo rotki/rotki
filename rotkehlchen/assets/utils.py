@@ -1,6 +1,8 @@
 import logging
 from typing import TYPE_CHECKING, List, Optional
 
+from rotkehlchen.assets.asset import Asset, AssetWithOracles, EvmToken, UnderlyingToken
+from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset
@@ -9,9 +11,6 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind
-
-from .asset import Asset, AssetWithOracles, EvmToken, UnderlyingToken
-from .types import AssetType
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
@@ -159,5 +158,4 @@ def symbol_to_ethereum_token(symbol: str) -> EvmToken:
     if maybe_asset is None:
         raise UnknownAsset(symbol)
 
-    # ignore type here since the identifier has to match an ethereum token at this point
     return EvmToken(maybe_asset.identifier)

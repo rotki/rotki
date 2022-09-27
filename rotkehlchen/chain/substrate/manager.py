@@ -388,7 +388,7 @@ class SubstrateManager():
         try:
             chain_properties = SubstrateChainProperties(
                 ss58_format=properties['ss58Format'],
-                token=properties['tokenSymbol'],
+                token=CryptoAsset(properties['tokenSymbol']),
                 token_decimals=FVal(properties['tokenDecimals']),
             )
         except (KeyError, UnknownAsset) as e:

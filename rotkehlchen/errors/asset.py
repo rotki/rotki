@@ -1,10 +1,11 @@
 from typing import TYPE_CHECKING, Type, Union
 
 if TYPE_CHECKING:
-    from rotkehlchen.assets.asset import CryptoAsset, CustomAsset, EvmToken, FiatAsset, Nft
+    from rotkehlchen.assets.asset import Asset, CryptoAsset, CustomAsset, EvmToken, FiatAsset, Nft
 
 
 POSSIBLE_ASSET = Union[
+    Type['Asset'],
     Type['FiatAsset'],
     Type['CryptoAsset'],
     Type['CustomAsset'],
@@ -21,7 +22,7 @@ class UnknownAsset(Exception):
 
 class WrongAssetType(Exception):
     """
-    Exception raisen when the resolved type of an Asset is not the one expected.
+    Exception raised when the resolved type of an Asset is not the one expected.
     For example A_BTC.resolve_to_evm_token() fails with this error because BTC is
     a CryptoAsset and not an EvmToken
     """
