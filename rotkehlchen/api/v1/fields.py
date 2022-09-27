@@ -10,7 +10,14 @@ from marshmallow.exceptions import ValidationError
 from marshmallow.utils import is_iterable_but_not_string
 from werkzeug.datastructures import FileStorage
 
-from rotkehlchen.assets.asset import Asset, AssetWithOracles, CryptoAsset, EvmToken, Nft
+from rotkehlchen.assets.asset import (
+    Asset,
+    AssetWithNameAndType,
+    AssetWithOracles,
+    CryptoAsset,
+    EvmToken,
+    Nft,
+)
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.utils import is_valid_derivation_path
@@ -402,6 +409,8 @@ class AssetField(fields.Field):
                 else:
                     # Just to check identifier's existence
                     asset = Asset(identifier=real_value).resolve_to_asset_with_name_and_type()
+            elif self.expected_type == AssetWithNameAndType:
+                asset = Asset(identifier=real_value).resolve_to_asset_with_name_and_type()
             elif self.expected_type == AssetWithOracles:
                 asset = Asset(identifier=real_value).resolve_to_asset_with_oracles()
             elif self.expected_type == CryptoAsset:

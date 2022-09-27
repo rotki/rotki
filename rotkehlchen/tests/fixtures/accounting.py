@@ -7,7 +7,6 @@ from typing import Optional
 import pytest
 
 from rotkehlchen.accounting.accountant import Accountant
-from rotkehlchen.assets.asset import AssetWithSymbol
 from rotkehlchen.chain.ethereum.accounting.aggregator import EVMAccountingAggregator
 from rotkehlchen.chain.ethereum.oracles.saddle import SaddleOracle
 from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
@@ -262,10 +261,7 @@ def create_inquirer(
                 ignore_cache=False,
                 coming_from_latest_price=False,
         ):
-            final_asset = from_asset
-            if not isinstance(from_asset, AssetWithSymbol):
-                final_asset = from_asset.resolve()
-            if final_asset.symbol in ignore_mocked_prices_for:
+            if from_asset.identifier in ignore_mocked_prices_for:
                 return inquirer.find_price_old(
                     from_asset=from_asset,
                     to_asset=to_asset,
@@ -284,10 +280,7 @@ def create_inquirer(
                 ignore_cache=False,
                 coming_from_latest_price=False,
         ):
-            final_asset = asset
-            if not isinstance(asset, AssetWithSymbol):
-                final_asset = asset.resolve()
-            if final_asset.symbol in ignore_mocked_prices_for:
+            if asset.identifier in ignore_mocked_prices_for:
                 return inquirer.find_usd_price_old(
                     asset=asset,
                     ignore_cache=ignore_cache,
@@ -300,7 +293,7 @@ def create_inquirer(
             )
 
         def mock_prices_with_oracles(from_asset, to_asset, ignore_cache=False, coming_from_latest_price=False):  # noqa: E501
-            if from_asset.symbol in ignore_mocked_prices_for:
+            if from_asset.identifier in ignore_mocked_prices_for:
                 return inquirer.find_price_and_oracle_old(
                     from_asset=from_asset,
                     to_asset=to_asset,
@@ -318,7 +311,7 @@ def create_inquirer(
             return price, CurrentPriceOracle.BLOCKCHAIN
 
         def mock_usd_prices_with_oracles(asset, ignore_cache=False, coming_from_latest_price=False):  # noqa: E501
-            if asset.symbol in ignore_mocked_prices_for:
+            if asset.identifier in ignore_mocked_prices_for:
                 return inquirer.find_usd_price_and_oracle_old(
                     asset=asset,
                     ignore_cache=ignore_cache,
