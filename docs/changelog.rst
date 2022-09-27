@@ -18,6 +18,7 @@ Changelog
 * :feature:`-` An ethereum address's tokens can now be manually detected by pressing a specific button in the UI.
 * :feature:`-` Transactions involving uniswap v2 and uniswap v3 will now be properly decoded in the ethereum transactions view
 * :bug:`-` When force sync fails a proper error message is displayed
+* :bug:`-` Now if something is wrong with an asset update, it won't end up having partial information. 
   
 * :release:`1.25.3 <2022-09-02>`
 * :bug:`4781` Failure in one specific binance endpoint during balance query won't fail the entire binance balances query unless it's the main spot balances endpoint.

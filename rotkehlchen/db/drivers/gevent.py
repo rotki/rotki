@@ -8,7 +8,20 @@ from contextlib import contextmanager
 from enum import Enum, auto
 from pathlib import Path
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Sequence, Type, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Generator,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+)
+from uuid import uuid4
 
 import gevent
 from pysqlcipher3 import dbapi2 as sqlcipher
@@ -23,6 +36,10 @@ UnderlyingConnection = Union[sqlite3.Connection, sqlcipher.Connection]  # pylint
 import logging
 
 logger: 'RotkehlchenLogger' = logging.getLogger(__name__)  # type: ignore
+
+
+class ContextError(Exception):
+    """Intended to be raised when something is wrong with db context management"""
 
 
 class DBCursor:
@@ -214,6 +231,9 @@ class DBConnection:
         self.in_callback = gevent.lock.Semaphore()
         self.connection_type = connection_type
         self.sql_vm_instructions_cb = sql_vm_instructions_cb
+        # We need an ordered set. Python doesn't have such thing as a standalone object, but has
+        # `dict` which preserves the order of its keys. So we use dict with None values.
+        self.savepoints: Dict[str, None] = {}
         if connection_type == DBConnectionType.GLOBAL:
             self._conn = sqlite3.connect(path, check_same_thread=False)
         else:
@@ -294,6 +314,86 @@ class DBConnection:
             self._conn.commit()
         finally:
             cursor.close()  # lgtm [py/should-use-with]
+
+    @contextmanager
+    def savepoint_ctx(
+            self,
+            savepoint_name: Optional[str] = None,
+    ) -> Generator['DBCursor', None, None]:
+        """
+        Creates a savepoint context with the provided name. If the code inside the savepoint fails,
+        rolls back this savepoint, otherwise releases it (aka forgets it -- this is not commited to the DB).  # noqa: E501
+        Savepoints work like nested transactions, more information here: https://www.sqlite.org/lang_savepoint.html  # noqa: E501
+        """
+        cursor, savepoint_name = self.enter_savepoint(savepoint_name)
+        try:
+            yield cursor
+        except Exception:
+            self.rollback_savepoint(savepoint_name)
+            raise
+        else:
+            self.release_savepoint(savepoint_name)
+        finally:
+            cursor.close()  # lgtm [py/should-use-with]
+
+    def enter_savepoint(self, savepoint_name: Optional[str] = None) -> Tuple['DBCursor', str]:
+        """
+        Creates an sqlite savepoint with the given name. If None is given, a uuid is created.
+        Returns cursor and savepoint's name.
+        May raise:
+        - ContextError if a savepoint with the same name already exists. Can only happen in case of
+        manually specified name.
+        """
+        if savepoint_name is None:
+            savepoint_name = str(uuid4())
+        if savepoint_name in self.savepoints:
+            raise ContextError(
+                f'Wanted to enter savepoint {savepoint_name} but a savepoint with the same name '
+                f'already exists. Current savepoints: {list(self.savepoints)}',
+            )
+        cursor = self.cursor()
+        cursor.execute(f'SAVEPOINT "{savepoint_name}"')
+        self.savepoints[savepoint_name] = None
+        return cursor, savepoint_name
+
+    def _modify_savepoint(
+            self,
+            rollback_or_release: Literal['ROLLBACK TO', 'RELEASE'],
+            savepoint_name: Optional[str],
+    ) -> None:
+        if len(self.savepoints) == 0:
+            raise ContextError(
+                f'Incorrect use of savepoints! Wanted to {rollback_or_release.lower()} savepoint '
+                f'{savepoint_name}, but the stack is empty.',
+            )
+        list_savepoints = list(self.savepoints)
+        if savepoint_name is None:
+            savepoint_name = list_savepoints[-1]
+        elif savepoint_name not in self.savepoints:
+            raise ContextError(
+                f'Incorrect use of savepoints! Wanted to {rollback_or_release.lower()} savepoint '
+                f'{savepoint_name}, but it is not present in the stack: {list_savepoints}',
+            )
+        self.execute(f'{rollback_or_release} SAVEPOINT "{savepoint_name}"')
+
+        # Rollback all savepoints until, and including, the one with name `savepoint_name`
+        self.savepoints = dict.fromkeys(list_savepoints[:list_savepoints.index(savepoint_name)])
+
+    def rollback_savepoint(self, savepoint_name: Optional[str] = None) -> None:
+        """
+        Rollbacks to `savepoint_name` if given and to the latest savepoint otherwise.
+        May raise:
+        - ContextError if savepoints stack is empty or given savepoint name is not in the stack
+        """
+        self._modify_savepoint(rollback_or_release='ROLLBACK TO', savepoint_name=savepoint_name)
+
+    def release_savepoint(self, savepoint_name: Optional[str] = None) -> None:
+        """
+        Releases (aka forgets) `savepoint_name` if given and the latest savepoint otherwise.
+        May raise:
+        - ContextError if savepoints stack is empty or given savepoint name is not in the stack
+        """
+        self._modify_savepoint(rollback_or_release='RELEASE', savepoint_name=savepoint_name)
 
     @property
     def total_changes(self) -> int:
