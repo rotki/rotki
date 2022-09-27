@@ -48,6 +48,8 @@ BITMEX_PRIVATE_ENDPOINTS = (
 def bitmex_to_world(symbol: str) -> AssetWithOracles:
     if symbol == 'XBt':
         return A_BTC.resolve_to_asset_with_oracles()
+    # This shouldn't happen since all the trades in bitmex are against BTC
+    # as for what @lefterisjp remembers in discord.
     return Asset(symbol).resolve_to_asset_with_oracles()
 
 

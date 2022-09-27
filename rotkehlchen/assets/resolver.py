@@ -14,7 +14,7 @@ T = TypeVar('T', 'FiatAsset', 'CryptoAsset', 'EvmToken', 'Nft')
 class AssetResolver():
     __instance: Optional['AssetResolver'] = None
     # A cache so that the DB is not hit every time
-    # the cache maps identifier -> deepest representation of the asset
+    # the cache maps identifier -> final representation of the asset
     assets_cache: LRUCacheWithRemove['Asset'] = LRUCacheWithRemove(maxsize=512)
     types_cache: LRUCacheWithRemove[AssetType] = LRUCacheWithRemove(maxsize=512)
 
@@ -53,8 +53,7 @@ class AssetResolver():
         """
         # TODO: This is ugly here but is here to avoid a cyclic import in the Assets file
         # Couldn't find a reorg that solves this cyclic import
-        from rotkehlchen.globaldb.handler import \
-            GlobalDBHandler  # pylint: disable=import-outside-toplevel  # noqa: E501
+        from rotkehlchen.globaldb.handler import GlobalDBHandler  # pylint: disable=import-outside-toplevel  # noqa: E501
 
         instance = AssetResolver()
         cached_data = instance.assets_cache.get(identifier)
@@ -62,7 +61,10 @@ class AssetResolver():
             return cached_data
 
         # If was not found in the cache try querying it in the globaldb
-        asset = GlobalDBHandler().resolve_asset(identifier, form_with_incomplete_data)
+        asset = GlobalDBHandler().resolve_asset(
+            identifier=identifier,
+            form_with_incomplete_data=form_with_incomplete_data,
+        )
         # Save it in the cache
         instance.assets_cache.set(identifier, asset)
         return asset
@@ -71,8 +73,7 @@ class AssetResolver():
     def get_asset_type(identifier: str) -> AssetType:
         # TODO: This is ugly here but is here to avoid a cyclic import in the Assets file
         # Couldn't find a reorg that solves this cyclic import
-        from rotkehlchen.globaldb.handler import \
-            GlobalDBHandler  # pylint: disable=import-outside-toplevel
+        from rotkehlchen.globaldb.handler import GlobalDBHandler  # pylint: disable=import-outside-toplevel
 
         instance = AssetResolver()
         cached_data = instance.types_cache.get(identifier)
@@ -95,7 +96,10 @@ class AssetResolver():
         - WrongAssetType: if the asset is resolved but the class is not the expected one.
         - UnknownAsset: if the asset was not found in the database.
         """
-        resolved_asset = AssetResolver().resolve_asset(identifier, form_with_incomplete_data)
+        resolved_asset = AssetResolver().resolve_asset(
+            identifier=identifier,
+            form_with_incomplete_data=form_with_incomplete_data,
+        )
         if isinstance(resolved_asset, expected_type) is False:
             raise WrongAssetType(
                 identifier=identifier,
