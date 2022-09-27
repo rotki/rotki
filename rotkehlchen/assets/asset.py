@@ -753,8 +753,7 @@ class Asset:
 
     def resolve(self, form_with_incomplete_data: bool = False) -> 'Asset':
         """
-        Returns the deepest representation possible for the current asset identifier.
-        For example if we do
+        Returns the final representation for the current asset identifier. For example if we do
         dai = Asset('eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F').resolve()
         we will get in the variable dai the `EvmToken` representation of DAI. Same for other
         subclasses of Asset.
@@ -1177,10 +1176,10 @@ class Nft(EvmToken):
         if direct_field_initialization is True:
             return
 
-        try:
-            address = self.identifier[len(NFT_DIRECTIVE):].split('_')[0]
-        except KeyError as e:
-            raise UnknownAsset(self.identifier) from e
+        identifier_parts = self.identifier[len(NFT_DIRECTIVE):].split('_')
+        if len(identifier_parts) == 0 or len(identifier_parts[0]) == 0:
+            raise UnknownAsset(self.identifier)
+        address = identifier_parts[0]
         object.__setattr__(self, 'asset_type', AssetType.EVM_TOKEN)
         object.__setattr__(self, 'name', f'nft with id {self.identifier}')
         object.__setattr__(self, 'symbol', self.identifier[len(NFT_DIRECTIVE):])
@@ -1206,10 +1205,10 @@ class Nft(EvmToken):
     ) -> 'Nft':
         # TODO: This needs to change once we correctly track NFTs
         asset = Nft(identifier=identifier, direct_field_initialization=True)
-        try:
-            address = identifier[len(NFT_DIRECTIVE):].split('_')[0]
-        except KeyError as e:
-            raise UnknownAsset(identifier) from e
+        identifier_parts = identifier[len(NFT_DIRECTIVE):].split('_')
+        if len(identifier_parts) == 0 or len(identifier_parts[0]) == 0:
+            raise UnknownAsset(identifier)
+        address = identifier_parts[0]
 
         nft_name = f'nft with id {identifier}' if name is None else name
         nft_symbol = identifier[len(NFT_DIRECTIVE):] if symbol is None else symbol

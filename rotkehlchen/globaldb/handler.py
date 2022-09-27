@@ -50,7 +50,7 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.utils.misc import timestamp_to_date, ts_now
 from rotkehlchen.utils.serialization import (
-    deserialize_asset_with_symbol_from_db,
+    deserialize_asset_with_oracles_from_db,
     deserialize_generic_asset_from_db,
 )
 
@@ -1080,7 +1080,7 @@ class GlobalDBHandler():
                         cursor=cursor,
                         parent_token_identifier=entry[0],
                     )
-                asset = deserialize_asset_with_symbol_from_db(
+                asset = deserialize_asset_with_oracles_from_db(
                     asset_type=asset_type,
                     asset_data=entry,
                     underlying_tokens=underlying_tokens,
@@ -1758,7 +1758,7 @@ class GlobalDBHandler():
 
         asset_type = AssetType.deserialize_from_db(asset_data[1])
         if asset_type != AssetType.CUSTOM_ASSET:
-            raise UnknownAsset(f'Tried to resolve to fiat asset an asset of type {asset_type}')
+            raise UnknownAsset(f'Tried to resolve to custom asset an asset of type {asset_type}')
 
         return CustomAsset.initialize(
             identifier=identifier,

@@ -214,8 +214,8 @@ class Adex(EthereumModule):
             slashed_at=slashed_at,
         )
 
-    @staticmethod
     def _deserialize_channel_withdraw(
+            self,
             raw_event: Dict[str, Any],
             identity_address_map: Dict[ChecksumAddress, ChecksumAddress],
     ) -> ChannelWithdraw:
@@ -300,12 +300,10 @@ class Adex(EthereumModule):
                 'Failed to deserialize an AdEx channel withdraw event. Check logs for more details',  # noqa: E501
             )
 
-        resolved_adx = A_ADX.resolve_to_evm_token()
-        resolved_dai = A_DAI.resolve_to_evm_token()
-        if token_address == resolved_adx.evm_address:
-            token = resolved_adx
-        elif token_address == resolved_dai.evm_address:
-            token = resolved_dai
+        if token_address == self.adx.evm_address:
+            token = self.adx
+        elif token_address == self.dai.evm_address:
+            token = self.dai
         else:
             log.error(
                 'Failed to deserialize an AdEx channel withdraw event',

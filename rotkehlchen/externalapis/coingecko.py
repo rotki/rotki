@@ -422,9 +422,9 @@ class Coingecko(HistoricalPriceOracleInterface):
 
         return decoded_json
 
-    def asset_data(self, asset: AssetWithOracles) -> CoingeckoAssetData:
+    def asset_data(self, asset_coingecko_id: str) -> CoingeckoAssetData:
         """
-
+        Query coingecko to retrieve the asset information related to the provided coingecko id
         May raise:
         - UnsupportedAsset() if the asset is not supported by coingecko
         - RemoteError if there is a problem querying coingecko
@@ -443,17 +443,16 @@ class Coingecko(HistoricalPriceOracleInterface):
             # Include sparkline 7 days data (eg. true, false) [default: false]
             'sparkline': 'false',
         }
-        gecko_id = asset.to_coingecko()
         data = self._query(
             module='coins',
-            subpath=f'{gecko_id}',
+            subpath=f'{asset_coingecko_id}',
             options=options,
         )
 
         # https://github.com/PyCQA/pylint/issues/4739
         try:
             parsed_data = CoingeckoAssetData(
-                identifier=gecko_id,
+                identifier=asset_coingecko_id,
                 symbol=data['symbol'],  # pylint: disable=unsubscriptable-object
                 name=data['name'],  # pylint: disable=unsubscriptable-object
                 description=data['description']['en'],  # pylint: disable=unsubscriptable-object

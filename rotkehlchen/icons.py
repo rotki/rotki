@@ -4,12 +4,12 @@ import shutil
 import urllib.parse
 from http import HTTPStatus
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional, Set
+from typing import Dict, Optional, Set
 
 import gevent
 import requests
 
-from rotkehlchen.assets.asset import Asset, AssetWithOracles
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
@@ -18,13 +18,10 @@ from rotkehlchen.externalapis.coingecko import DELISTED_ASSETS, Coingecko
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.hashing import file_md5
-from rotkehlchen.utils.serialization import deserialize_asset_with_symbol_from_db
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-if TYPE_CHECKING:
-    from rotkehlchen.assets.asset import UnderlyingToken
 
 ALLOWED_ICON_EXTENSIONS = ('.png', '.svg', '.jpeg', '.jpg', '.webp')
 
@@ -74,7 +71,7 @@ class IconManager():
 
         return file_md5(path)
 
-    def query_coingecko_for_icon(self, asset: AssetWithOracles) -> bool:
+    def query_coingecko_for_icon(self, asset: Asset, coingecko_id: str) -> bool:
         """Queries coingecko for icons of an asset
 
         If query was okay it returns True, else False
@@ -87,7 +84,7 @@ class IconManager():
             return False
 
         try:
-            data = self.coingecko.asset_data(asset)
+            data = self.coingecko.asset_data(coingecko_id)
         except (UnsupportedAsset, RemoteError) as e:
             log.warning(
                 f'Problem querying coingecko for asset data of {asset.identifier}: {str(e)}',
@@ -142,8 +139,14 @@ class IconManager():
                 image_data = f.read()
             return image_data
 
+        # If we don't have the image check if we is a valid coingecko asset
+        try:
+            coingecko_id = asset.to_coingecko()
+        except UnsupportedAsset:
+            return None
+
         # else query coingecko for the icons and cache all of them
-        if self.query_coingecko_for_icon(asset) is False:
+        if self.query_coingecko_for_icon(asset, coingecko_id) is False:
             return None
 
         if not needed_path.is_file():
@@ -153,44 +156,19 @@ class IconManager():
             image_data = f.read()
         return image_data
 
-    def _assets_with_coingecko_id(self) -> List[AssetWithOracles]:
+    def _assets_with_coingecko_id(self) -> Dict[str, str]:
+        """Create a mapping of all the assets identifiers to their coingecko id if it is set"""
         querystr = """
-        SELECT A.identifier, A.type, B.address, B.decimals, A.name, C.symbol, C.started, null, C.swapped_for, C.coingecko, C.cryptocompare, B.protocol, B.chain, B.token_kind, null, null FROM assets as A JOIN evm_tokens as B
-        ON B.identifier = A.identifier JOIN common_asset_details AS C ON C.identifier = B.identifier WHERE A.type = ? AND C.coingecko IS NOT NULL AND C.coingecko != ""
-        UNION ALL
-        SELECT A.identifier, A.type, null, null, A.name, B.symbol, B.started, B.forked, B.swapped_for, B.coingecko, B.cryptocompare, null, null, null, null, null from assets as A JOIN common_asset_details as B
-        ON B.identifier = A.identifier WHERE A.type != ? AND A.type != ? AND A.type !=? AND B.coingecko IS NOT NULL AND B.coingecko != ""
+        SELECT A.identifier, B.coingecko from assets as A JOIN common_asset_details as B
+        ON B.identifier = A.identifier A.type != ? AND B.coingecko IS NOT NULL AND B.coingecko != ""
         """  # noqa: E501
+        assets_mappings: Dict[str, str] = {}
         with GlobalDBHandler().conn.read_ctx() as cursor:
-            cursor.execute(
-                'SELECT A.identifier from common_asset_details AS A JOIN '
-                'assets AS B ON A.identifier=B.identifer '
-                'WHERE coingecko IS NOT NULL AND coingecko != "" and asset_type !=?',
-                (AssetType.FIAT.serialize_for_db()),
-            )
-            evm_token_type = AssetType.EVM_TOKEN.serialize_for_db()
             fiat_type = AssetType.FIAT.serialize_for_db()
-            custom_assets = AssetType.CUSTOM_ASSET.serialize_for_db()
-            assets = []
-            with GlobalDBHandler().conn.read_ctx() as cursor:
-                cursor.execute(querystr, [evm_token_type, evm_token_type, custom_assets, fiat_type])  # noqa: E501
-                for entry in cursor.fetchall():
-                    asset_type = AssetType.deserialize_from_db(entry[1])
-                    underlying_tokens: Optional[List['UnderlyingToken']] = None
-                    if asset_type == AssetType.EVM_TOKEN:
-                        underlying_tokens = GlobalDBHandler().fetch_underlying_tokens(
-                            cursor=cursor,
-                            parent_token_identifier=entry[0],
-                        )
-                    asset = deserialize_asset_with_symbol_from_db(
-                        asset_type=asset_type,
-                        asset_data=entry,
-                        underlying_tokens=underlying_tokens,
-                        form_with_incomplete_data=False,
-                    )
-                    assets.append(asset)
-
-            return assets
+            cursor.execute(querystr, [fiat_type])
+            for entry in cursor:
+                assets_mappings[entry[0]] = entry[1]
+        return assets_mappings
 
     def query_uncached_icons_batch(self, batch_size: int) -> bool:
         """Queries a batch of uncached icons for assets
@@ -198,7 +176,7 @@ class IconManager():
         Returns true if there is more icons left to cache after this batch.
         """
         coingecko_integrated_asset = self._assets_with_coingecko_id()
-        coingecko_integrated_asset_ids = {asset.identifier for asset in coingecko_integrated_asset}
+        coingecko_integrated_asset_ids = set(coingecko_integrated_asset.keys())
         cached_asset_ids = [
             str(x.name)[:-10] for x in self.icons_dir.glob('*_small.png') if x.is_file()
         ]
@@ -209,9 +187,9 @@ class IconManager():
             f'Periodic task to query coingecko for {batch_size} uncached asset icons. '
             f'Uncached assets: {len(uncached_asset_ids)}. Cached assets: {len(cached_asset_ids)}',
         )
-        assets_to_query = [asset for asset in coingecko_integrated_asset if asset.identifier in uncached_asset_ids]  # noqa: E501
-        for asset in itertools.islice(assets_to_query, batch_size):
-            self.query_coingecko_for_icon(asset.resolve_to_asset_with_oracles())
+        assets_to_query = [(asset_id, coingecko_id) for asset_id, coingecko_id in coingecko_integrated_asset.items() if asset_id in uncached_asset_ids]  # noqa: E501
+        for asset_id, coingecko_id in itertools.islice(assets_to_query, batch_size):
+            self.query_coingecko_for_icon(asset=Asset(asset_id), coingecko_id=coingecko_id)
 
         return len(uncached_asset_ids) > batch_size
 

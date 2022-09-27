@@ -4,7 +4,18 @@ import logging
 import operator
 from enum import auto
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, NamedTuple, Optional, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterable,
+    List,
+    NamedTuple,
+    Optional,
+    Set,
+    Tuple,
+    Union,
+)
 
 from rotkehlchen.assets.asset import Asset, CryptoAsset, EvmToken, FiatAsset
 from rotkehlchen.chain.ethereum.defi.price import handle_defi_price_query
@@ -269,7 +280,8 @@ class Inquirer():
     _oracles_not_onchain: Optional[List[CurrentPriceOracle]] = None
     _oracle_instances_not_onchain: Optional[List[CurrentPriceOracleInstance]] = None
     _msg_aggregator: 'MessagesAggregator'
-    special_tokens: List[Asset]  # special tokens are Asset since they are not resolved
+    # save only the identifier of the special tokens since we only check if assets are in this set
+    special_tokens: Set[str]
     weth: EvmToken
     bsq: CryptoAsset
     usd: FiatAsset
@@ -299,38 +311,38 @@ class Inquirer():
         Inquirer._manualcurrent = manualcurrent
         Inquirer._cached_current_price = {}
         Inquirer._msg_aggregator = msg_aggregator
-        Inquirer.special_tokens = [
-            A_YV1_DAIUSDCTBUSD,
-            A_CRVP_DAIUSDCTBUSD,
-            A_CRVP_DAIUSDCTTUSD,
-            A_YV1_DAIUSDCTTUSD,
-            A_YV1_DAIUSDCTTUSD,
-            A_CRVP_RENWSBTC,
-            A_YV1_RENWSBTC,
-            A_CRV_RENWBTC,
-            A_CRV_YPAX,
-            A_CRV_GUSD,
-            A_CRV_3CRV,
-            A_YV1_3CRV,
-            A_CRV_3CRVSUSD,
-            A_YV1_ALINK,
-            A_YV1_DAI,
-            A_YV1_WETH,
-            A_YV1_YFI,
-            A_YV1_USDT,
-            A_YV1_USDC,
-            A_YV1_TUSD,
-            A_YV1_GUSD,
-            A_FARM_USDC,
-            A_FARM_USDT,
-            A_FARM_DAI,
-            A_FARM_TUSD,
-            A_FARM_WETH,
-            A_FARM_WBTC,
-            A_FARM_RENBTC,
-            A_FARM_CRVRENWBTC,
-            A_3CRV,
-        ]
+        Inquirer.special_tokens = {
+            A_YV1_DAIUSDCTBUSD.identifier,
+            A_CRVP_DAIUSDCTBUSD.identifier,
+            A_CRVP_DAIUSDCTTUSD.identifier,
+            A_YV1_DAIUSDCTTUSD.identifier,
+            A_YV1_DAIUSDCTTUSD.identifier,
+            A_CRVP_RENWSBTC.identifier,
+            A_YV1_RENWSBTC.identifier,
+            A_CRV_RENWBTC.identifier,
+            A_CRV_YPAX.identifier,
+            A_CRV_GUSD.identifier,
+            A_CRV_3CRV.identifier,
+            A_YV1_3CRV.identifier,
+            A_CRV_3CRVSUSD.identifier,
+            A_YV1_ALINK.identifier,
+            A_YV1_DAI.identifier,
+            A_YV1_WETH.identifier,
+            A_YV1_YFI.identifier,
+            A_YV1_USDT.identifier,
+            A_YV1_USDC.identifier,
+            A_YV1_TUSD.identifier,
+            A_YV1_GUSD.identifier,
+            A_FARM_USDC.identifier,
+            A_FARM_USDT.identifier,
+            A_FARM_DAI.identifier,
+            A_FARM_TUSD.identifier,
+            A_FARM_WETH.identifier,
+            A_FARM_WBTC.identifier,
+            A_FARM_RENBTC.identifier,
+            A_FARM_CRVRENWBTC.identifier,
+            A_3CRV.identifier,
+        }
         Inquirer.usd = A_USD.resolve_to_fiat_asset()
         Inquirer.weth = A_WETH.resolve_to_evm_token()
         Inquirer.bsq = A_BSQ.resolve_to_crypto_asset()
@@ -604,7 +616,7 @@ class Inquirer():
             pass
 
         # Check if it is a special token
-        if asset in instance.special_tokens:
+        if asset.identifier in instance.special_tokens:
             ethereum = instance._ethereum
             assert ethereum, 'Inquirer should never be called before the injection of ethereum'
             assert token, 'all assets in special tokens are already ethereum tokens'

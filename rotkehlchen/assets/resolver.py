@@ -5,10 +5,10 @@ from rotkehlchen.errors.asset import WrongAssetType
 from rotkehlchen.utils.data_structures import LRUCacheWithRemove
 
 if TYPE_CHECKING:
-    from rotkehlchen.assets.asset import Asset
+    from rotkehlchen.assets.asset import Asset, CryptoAsset, EvmToken, FiatAsset, Nft
 
 
-T = TypeVar('T')
+T = TypeVar('T', 'FiatAsset', 'CryptoAsset', 'EvmToken', 'Nft')
 
 
 class AssetResolver():
@@ -99,9 +99,8 @@ class AssetResolver():
         if isinstance(resolved_asset, expected_type) is False:
             raise WrongAssetType(
                 identifier=identifier,
-                expected_type=expected_type,  # type: ignore # it expect it to be T but since is dinamic doesn't recognize it as the Asset type  # noqa: E501
-                real_type=type(resolved_asset),  # type: ignore  # same as above
+                expected_type=expected_type,
+                real_type=type(resolved_asset),
             )
-        # We ignore the type here because the linter fails to detect that is properly checked
-        # above section since is checked in runtype and `resolve_asset` can return any type.
+        # resolve_asset returns Asset but we already narrow type with the if check above
         return resolved_asset  # type: ignore
