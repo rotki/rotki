@@ -56,7 +56,8 @@ def test_query_realtime_price_apis(inquirer):
     """
     result = _query_currency_converterapi(A_USD, A_EUR)
     assert result and isinstance(result, FVal)
-    result = inquirer.query_historical_fiat_exchange_rates(A_USD, A_CNY, 1411603200)
+    usd = A_USD.resolve_to_fiat_asset()
+    result = inquirer.query_historical_fiat_exchange_rates(usd, A_CNY, 1411603200)
     assert result == FVal('6.133938')
 
 
@@ -78,7 +79,8 @@ def test_switching_to_backup_api(inquirer):
         return original_get(url)
 
     with patch('requests.get', side_effect=mock_xratescom_fail):
-        result, oracle = inquirer._query_fiat_pair(A_USD, A_EUR)
+        usd, eur = A_USD.resolve_to_fiat_asset(), A_EUR.resolve_to_fiat_asset()
+        result, oracle = inquirer._query_fiat_pair(usd, eur)
         assert result and isinstance(result, FVal)
         assert count > 1, 'requests.get should have been called more than once'
         assert oracle == CurrentPriceOracle.FIAT
@@ -89,13 +91,13 @@ def test_switching_to_backup_api(inquirer):
 def test_fiat_pair_caching(inquirer):
     def mock_xratescom_exchange_rate(from_currency: Asset):  # pylint: disable=unused-argument
         return {A_EUR: FVal('0.9165902841')}
-
+    usd, eur = A_USD.resolve_to_fiat_asset(), A_EUR.resolve_to_fiat_asset()
     with patch('rotkehlchen.inquirer.get_current_xratescom_exchange_rates', side_effect=mock_xratescom_exchange_rate):  # noqa: E501
-        result = inquirer._query_fiat_pair(A_USD, A_EUR)
+        result = inquirer._query_fiat_pair(usd, eur)
         assert result[0] == FVal('0.9165902841')
 
     # Now outside the mocked response, we should get same value due to caching
-    assert inquirer._query_fiat_pair(A_USD, A_EUR)[0] == FVal('0.9165902841')
+    assert inquirer._query_fiat_pair(usd, eur)[0] == FVal('0.9165902841')
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])

@@ -240,21 +240,21 @@ def create_inquirer(
     ):
         return mocked_prices.get(asset, FVal('1.5'))
 
-    def mock_find_price_with_oracles(
+    def mock_find_price_with_oracle(
             from_asset,
             to_asset,
             ignore_cache: bool = False,  # pylint: disable=unused-argument
     ):
         return mocked_prices.get((from_asset, to_asset), (FVal('1.5'), CurrentPriceOracle.BLOCKCHAIN))  # noqa: E501
 
-    def mock_find_usd_price_with_oracles(asset, ignore_cache: bool = False):  # pylint: disable=unused-argument  # noqa: E501
+    def mock_find_usd_price_with_oracle(asset, ignore_cache: bool = False):  # pylint: disable=unused-argument  # noqa: E501
         return mocked_prices.get(asset, (FVal('1.5'), CurrentPriceOracle.BLOCKCHAIN))
 
     if ignore_mocked_prices_for is None:
         inquirer.find_price = mock_find_price  # type: ignore
         inquirer.find_usd_price = mock_find_usd_price  # type: ignore
-        inquirer.find_price_and_oracles = mock_find_price_with_oracles  # type: ignore
-        inquirer.find_usd_price_and_oracle = mock_find_usd_price_with_oracles  # type: ignore
+        inquirer.find_price_and_oracle = mock_find_price_with_oracle  # type: ignore
+        inquirer.find_usd_price_and_oracle = mock_find_usd_price_with_oracle  # type: ignore
     else:
         def mock_some_prices(
                 from_asset,
@@ -301,7 +301,7 @@ def create_inquirer(
 
         def mock_prices_with_oracles(from_asset, to_asset, ignore_cache=False, coming_from_latest_price=False):  # noqa: E501
             if from_asset.symbol in ignore_mocked_prices_for:
-                return inquirer.find_price_and_oracles_old(
+                return inquirer.find_price_and_oracle_old(
                     from_asset=from_asset,
                     to_asset=to_asset,
                     ignore_cache=ignore_cache,
@@ -338,8 +338,8 @@ def create_inquirer(
         inquirer.find_price = mock_some_prices  # type: ignore
         inquirer.find_usd_price = mock_some_usd_prices  # type: ignore
         inquirer.find_usd_price_and_oracle_old = inquirer.find_usd_price_and_oracle  # type: ignore  # noqa: E501
-        inquirer.find_price_and_oracles_old = inquirer.find_price_and_oracles  # type: ignore
-        inquirer.find_price_and_oracles = mock_prices_with_oracles  # type: ignore
+        inquirer.find_price_and_oracle_old = inquirer.find_price_and_oracle  # type: ignore
+        inquirer.find_price_and_oracle = mock_prices_with_oracles  # type: ignore
         inquirer.find_usd_price_and_oracle = mock_usd_prices_with_oracles  # type: ignore
 
     def mock_query_fiat_pair(base, quote):  # pylint: disable=unused-argument

@@ -28,6 +28,7 @@ from rotkehlchen.accounting.structures.types import (
 from rotkehlchen.accounting.types import SchemaEventType
 from rotkehlchen.assets.asset import (
     Asset,
+    AssetWithNameAndType,
     AssetWithOracles,
     CryptoAsset,
     EvmToken,
@@ -2086,7 +2087,7 @@ class SingleAssetWithOraclesIdentifierSchema(Schema):
 
 class CurrentAssetsPriceSchema(AsyncQueryArgumentSchema):
     assets = DelimitedOrNormalList(
-        AssetField(expected_type=Asset, required=True),
+        AssetField(expected_type=AssetWithNameAndType, required=True),
         required=True,
         validate=webargs.validate.Length(min=1),
     )
