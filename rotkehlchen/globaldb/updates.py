@@ -301,7 +301,7 @@ class AssetsUpdater():
 
     def _apply_single_version_update(
             self,
-            cursor: DBCursor,
+            connection: DBConnection,
             version: int,
             text: str,
             conflicts: Optional[Dict[Asset, Literal['remote', 'local']]],
@@ -327,13 +327,15 @@ class AssetsUpdater():
                 pass
 
             try:
-                executeall(cursor, action)
+                with connection.savepoint_ctx() as cursor:
+                    executeall(cursor, action)
                 if local_asset is not None:
                     AssetResolver().clean_memory_cache(local_asset.identifier.lower())
             except sqlite3.Error:  # https://docs.python.org/3/library/sqlite3.html#exceptions
                 if local_asset is None:
                     try:  # if asset is not known then simply do an insertion
-                        executeall(cursor, full_insert)
+                        with connection.savepoint_ctx() as cursor:
+                            executeall(cursor, full_insert)
                     except sqlite3.Error as e:
                         self.msg_aggregator.add_warning(
                             f'Failed to add asset {remote_asset_data.identifier} in the '
@@ -349,7 +351,8 @@ class AssetsUpdater():
                     continue
                 if resolution == 'remote':
                     try:
-                        _force_remote(cursor, local_asset, full_insert)
+                        with connection.savepoint_ctx() as cursor:
+                            _force_remote(cursor, local_asset, full_insert)
                     except sqlite3.Error as e:
                         self.msg_aggregator.add_warning(
                             f'Failed to resolve conflict for {remote_asset_data.identifier} in '
@@ -368,7 +371,7 @@ class AssetsUpdater():
                 self.conflicts.append((local_data, remote_asset_data))
 
         # at the very end update the current version in the DB
-        cursor.execute(
+        connection.execute(
             'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
             (ASSETS_VERSION_KEY, str(version)),
         )
@@ -435,7 +438,6 @@ class AssetsUpdater():
         version = self.local_assets_version + 1
         target_version = min(up_to_version, self.last_remote_checked_version) if up_to_version else self.last_remote_checked_version   # type: ignore # noqa: E501
         # type ignore since due to check_for_updates we know last_remote_checked_version exists
-        cursor = connection.cursor()
         while version <= target_version:
             try:
                 min_schema_version = infojson['updates'][str(version)]['min_schema_version']
@@ -455,7 +457,7 @@ class AssetsUpdater():
                         f'You will have to follow an alternative method to '
                         f'obtain the assets of this update. Easiest would be to reset global DB.',
                     )
-                    cursor.execute(
+                    connection.execute(
                         'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
                         (ASSETS_VERSION_KEY, str(version)),
                     )
@@ -484,7 +486,7 @@ class AssetsUpdater():
                 )
 
             self._apply_single_version_update(
-                cursor=cursor,
+                connection=connection,
                 version=version,
                 text=response.text,
                 conflicts=conflicts,
