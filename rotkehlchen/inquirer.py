@@ -526,7 +526,7 @@ class Inquirer():
         return price
 
     @staticmethod
-    def find_price_and_oracles(
+    def find_price_and_oracle(
             from_asset: Asset,
             to_asset: Asset,
             ignore_cache: bool = False,
@@ -656,7 +656,7 @@ class Inquirer():
         if asset == A_BSQ:
             try:
                 price_in_btc = get_bisq_market_price(instance.bsq)
-                btc_price, oracle = Inquirer().find_usd_price(A_BTC)
+                btc_price, oracle = Inquirer().find_usd_price_and_oracle(A_BTC)
                 usd_price = Price(price_in_btc * btc_price)
                 Inquirer._cached_current_price[cache_key] = CachedPriceEntry(
                     price=usd_price,

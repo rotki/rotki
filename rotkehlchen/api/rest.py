@@ -45,7 +45,13 @@ from rotkehlchen.accounting.structures.types import (
     HistoryEventType,
 )
 from rotkehlchen.api.v1.schemas import TradeSchema
-from rotkehlchen.assets.asset import Asset, AssetWithOracles, EvmToken, FiatAsset
+from rotkehlchen.assets.asset import (
+    Asset,
+    AssetWithNameAndType,
+    AssetWithOracles,
+    EvmToken,
+    FiatAsset,
+)
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.spam_assets import update_spam_assets
 from rotkehlchen.assets.types import AssetType
@@ -3317,7 +3323,7 @@ class RestAPI():
 
     def _get_current_assets_price(
             self,
-            assets: List[Asset],
+            assets: List[AssetWithNameAndType],
             target_asset: Asset,
             ignore_cache: bool,
     ) -> Dict[str, Any]:
@@ -3341,7 +3347,7 @@ class RestAPI():
                     oracle = CurrentPriceOracle.MANUALCURRENT if nft_price_data['manually_input'] is True else CurrentPriceOracle.BLOCKCHAIN  # noqa: E501
                     assets_price[asset] = [Price(nft_price_data['usd_price']), oracle.value]
                 else:
-                    price, oracle = Inquirer().find_price_and_oracles(
+                    price, oracle = Inquirer().find_price_and_oracle(
                         from_asset=asset,
                         to_asset=target_asset,
                         ignore_cache=ignore_cache,
@@ -3359,7 +3365,7 @@ class RestAPI():
 
     def get_current_assets_price(
             self,
-            assets: List[Asset],
+            assets: List[AssetWithNameAndType],
             target_asset: Asset,
             ignore_cache: bool,
             async_query: bool,

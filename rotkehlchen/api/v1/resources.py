@@ -137,7 +137,7 @@ from rotkehlchen.api.v1.schemas import (
     XpubAddSchema,
     XpubPatchSchema,
 )
-from rotkehlchen.assets.asset import Asset, AssetWithOracles, EvmToken
+from rotkehlchen.assets.asset import Asset, AssetWithNameAndType, AssetWithOracles, EvmToken
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.xpub import XpubData
@@ -2217,7 +2217,7 @@ class LatestAssetsPriceResource(BaseMethodView):
     @use_kwargs(post_schema, location='json')
     def post(
             self,
-            assets: List[Asset],
+            assets: List[AssetWithNameAndType],
             target_asset: Asset,
             ignore_cache: bool,
             async_query: bool,
