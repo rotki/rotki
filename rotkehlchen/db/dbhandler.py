@@ -260,7 +260,7 @@ class DBHandler:
             'last_write_ts': (int, Timestamp(0)),
             'last_data_upload_ts': (int, Timestamp(0)),
             'premium_should_sync': (str_to_bool, DEFAULT_PREMIUM_SHOULD_SYNC),
-            'main_currency': (AssetWithOracles, A_USD.resolve_to_fiat_asset()),
+            'main_currency': (lambda x: Asset(x).resolve(), A_USD.resolve_to_fiat_asset()),
         }
         self.conn: DBConnection = None  # type: ignore
         self.conn_transient: DBConnection = None  # type: ignore

@@ -75,8 +75,8 @@ def test_uniswap_no_decimals(inquirer_defi):
         """
         resolved_weth = A_WETH.resolve_to_evm_token()
 
-        def mocked_asset_getter(asset_identifier, form_with_incomplete_data):  # pylint: disable=unused-argument  # noqa: E501
-            if asset_identifier == resolved_weth.identifier:
+        def mocked_asset_getter(identifier, form_with_incomplete_data):  # pylint: disable=unused-argument  # noqa: E501
+            if identifier == resolved_weth.identifier:
                 fake_weth = EvmToken.initialize(
                     address=resolved_weth.evm_address,
                     chain=resolved_weth.chain,
@@ -92,7 +92,7 @@ def test_uniswap_no_decimals(inquirer_defi):
                     protocol=resolved_weth.protocol,
                 )
                 return fake_weth
-            return original_getter(asset_identifier)
+            return original_getter(identifier)
         return patch.object(asset_resolver, 'resolve_asset', wraps=mocked_asset_getter)
 
     with fake_weth_token():

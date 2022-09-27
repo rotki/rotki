@@ -7,6 +7,7 @@ import requests
 
 from rotkehlchen.assets.asset import Asset, EvmToken, UnderlyingToken
 from rotkehlchen.assets.types import AssetType
+from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import (
     A_1INCH,
@@ -31,7 +32,6 @@ from rotkehlchen.inquirer import (
 )
 from rotkehlchen.interfaces import HistoricalPriceOracleInterface
 from rotkehlchen.tests.utils.constants import A_CNY, A_JPY
-from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import ChainID, EvmTokenKind, GeneralCacheType, Price, Timestamp
 from rotkehlchen.utils.misc import ts_now
@@ -290,10 +290,10 @@ def test_find_usd_price_via_second_oracle(inquirer):
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
 @pytest.mark.parametrize('mocked_current_prices', [UNDERLYING_ASSET_PRICES])
-@pytest.mark.parametrize('ignore_mocked_prices_for', [['YAB', 'USD']])
+@pytest.mark.parametrize('ignore_mocked_prices_for', [['eip155:1/erc20:0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 'USD']])  # noqa: E501
 def test_price_underlying_tokens(inquirer, globaldb):
     aave_weight, link_weight, crv_weight = FVal('0.6'), FVal('0.2'), FVal('0.2')
-    address = make_ethereum_address()
+    address = string_to_evm_address('0xc37b40ABdB939635068d3c5f13E7faF686F03B65')
     identifier = ethaddress_to_identifier(address)
     token = EvmToken.initialize(
         address=address,
