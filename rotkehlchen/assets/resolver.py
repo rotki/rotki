@@ -5,10 +5,19 @@ from rotkehlchen.errors.asset import WrongAssetType
 from rotkehlchen.utils.data_structures import LRUCacheWithRemove
 
 if TYPE_CHECKING:
-    from rotkehlchen.assets.asset import Asset, CryptoAsset, EvmToken, FiatAsset, Nft
+    from rotkehlchen.assets.asset import (
+        Asset,
+        AssetWithNameAndType,
+        AssetWithOracles,
+        AssetWithSymbol,
+        CryptoAsset,
+        EvmToken,
+        FiatAsset,
+        Nft,
+    )
 
 
-T = TypeVar('T', 'FiatAsset', 'CryptoAsset', 'EvmToken', 'Nft')
+T = TypeVar('T', 'FiatAsset', 'CryptoAsset', 'EvmToken', 'Nft', 'AssetWithNameAndType', 'AssetWithSymbol', 'AssetWithOracles')  # noqa: E501
 
 
 class AssetResolver():
@@ -53,7 +62,7 @@ class AssetResolver():
         """
         # TODO: This is ugly here but is here to avoid a cyclic import in the Assets file
         # Couldn't find a reorg that solves this cyclic import
-        from rotkehlchen.globaldb.handler import GlobalDBHandler  # pylint: disable=import-outside-toplevel  # noqa: E501
+        from rotkehlchen.globaldb.handler import GlobalDBHandler  # pylint: disable=import-outside-toplevel  # isort:skip  # noqa: E501
 
         instance = AssetResolver()
         cached_data = instance.assets_cache.get(identifier)
@@ -73,7 +82,7 @@ class AssetResolver():
     def get_asset_type(identifier: str) -> AssetType:
         # TODO: This is ugly here but is here to avoid a cyclic import in the Assets file
         # Couldn't find a reorg that solves this cyclic import
-        from rotkehlchen.globaldb.handler import GlobalDBHandler  # pylint: disable=import-outside-toplevel
+        from rotkehlchen.globaldb.handler import GlobalDBHandler   # pylint: disable=import-outside-toplevel  # isort:skip  # noqa: E501
 
         instance = AssetResolver()
         cached_data = instance.types_cache.get(identifier)
