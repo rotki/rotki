@@ -20,7 +20,7 @@ from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.serialization.deserialize import deserialize_asset_amount
 from rotkehlchen.tests.fixtures.globaldb import create_globaldb
 from rotkehlchen.tests.utils.factories import make_ethereum_address
-from rotkehlchen.tests.utils.globaldb import INITIAL_TOKENS
+from rotkehlchen.tests.utils.globaldb import create_initial_globaldb_test_tokens
 from rotkehlchen.types import (
     ChainID,
     EvmTokenKind,
@@ -94,8 +94,10 @@ bidr_asset = CryptoAsset.initialize(
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-@pytest.mark.parametrize('user_ethereum_tokens', [INITIAL_TOKENS])
+@pytest.mark.parametrize('generatable_user_ethereum_tokens', [True])
+@pytest.mark.parametrize('user_ethereum_tokens', [create_initial_globaldb_test_tokens])
 def test_get_ethereum_token_identifier(globaldb):
+    user_tokens = create_initial_globaldb_test_tokens()
     with globaldb.conn.read_ctx() as cursor:
         assert globaldb.get_evm_token_identifier(
             cursor=cursor,
@@ -104,10 +106,10 @@ def test_get_ethereum_token_identifier(globaldb):
         ) is None
         token_0_id = globaldb.get_evm_token_identifier(
             cursor=cursor,
-            address=INITIAL_TOKENS[0].evm_address,
+            address=user_tokens[0].evm_address,
             chain=ChainID.ETHEREUM,
         )
-    assert token_0_id == INITIAL_TOKENS[0].identifier
+    assert token_0_id == user_tokens[0].identifier
 
 
 def test_open_new_globaldb_with_old_rotki(tmpdir_factory, sql_vm_instructions_cb):

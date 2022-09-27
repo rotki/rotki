@@ -854,8 +854,8 @@ class Inquirer():
         for currency in currencies:
             try:
                 price, _ = Inquirer()._query_fiat_pair(
-                    instance.usd,
-                    currency,
+                    base=instance.usd,
+                    quote=currency,
                 )
                 rates[currency] = price
             except RemoteError:

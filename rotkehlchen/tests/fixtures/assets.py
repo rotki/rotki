@@ -42,6 +42,7 @@ def asset_resolver(
         force_reinitialize_asset_resolver,
         use_clean_caching_directory,
         user_ethereum_tokens,
+        generatable_user_ethereum_tokens,
 ):
     """Run the first initialization of the AssetResolver singleton
 
@@ -71,7 +72,11 @@ def asset_resolver(
 
     # add any custom ethereum tokens given by the fixtures for a test
     if user_ethereum_tokens is not None:
-        for entry in user_ethereum_tokens:
+        if generatable_user_ethereum_tokens is False:
+            given_user_tokens = user_ethereum_tokens
+        else:  # a callable was given
+            given_user_tokens = user_ethereum_tokens()
+        for entry in given_user_tokens:
             asset_id = evm_address_to_identifier(
                 address=entry.evm_address,
                 chain=entry.chain,

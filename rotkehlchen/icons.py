@@ -139,7 +139,7 @@ class IconManager():
                 image_data = f.read()
             return image_data
 
-        # If we don't have the image check if we is a valid coingecko asset
+        # If we don't have the image check if this is a valid coingecko asset
         try:
             coingecko_id = asset.to_coingecko()
         except UnsupportedAsset:
