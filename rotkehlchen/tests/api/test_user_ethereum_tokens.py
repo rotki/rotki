@@ -22,9 +22,9 @@ from rotkehlchen.tests.utils.api import (
 from rotkehlchen.tests.utils.constants import A_MKR
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.tests.utils.globaldb import (
-    INITIAL_EXPECTED_TOKENS,
-    INITIAL_TOKENS,
     USER_TOKEN3,
+    create_initial_expected_globaldb_test_tokens,
+    create_initial_globaldb_test_tokens,
     underlying_address1,
     underlying_address2,
     underlying_address3,
@@ -47,9 +47,11 @@ def assert_token_entry_exists_in_result(
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('start_with_logged_in_user', [False])
-@pytest.mark.parametrize('user_ethereum_tokens', [INITIAL_TOKENS])
+@pytest.mark.parametrize('generatable_user_ethereum_tokens', [True])
+@pytest.mark.parametrize('user_ethereum_tokens', [create_initial_globaldb_test_tokens])
 def test_query_user_tokens(rotkehlchen_api_server):
     """Test that using the query user ethereum tokens endpoint works"""
+    expected_tokens = create_initial_expected_globaldb_test_tokens()
     # Test querying by address
     response = requests.get(
         api_url_for(
@@ -59,7 +61,7 @@ def test_query_user_tokens(rotkehlchen_api_server):
         json={'address': user_token_address1, 'chain': str(ChainID.ETHEREUM)},
     )
     result = assert_proper_response_with_result(response)
-    expected_result = INITIAL_TOKENS[0].to_dict()
+    expected_result = expected_tokens[0].to_dict()
     expected_result['identifier'] = ethaddress_to_identifier(user_token_address1)
     assert result == expected_result
 
@@ -71,7 +73,7 @@ def test_query_user_tokens(rotkehlchen_api_server):
         ),
     )
     result = assert_proper_response_with_result(response)
-    expected_result = [x.to_dict() for x in INITIAL_EXPECTED_TOKENS]
+    expected_result = [x.to_dict() for x in expected_tokens]
     assert_token_entry_exists_in_result(result, expected_result)
     # This check is to make sure the sqlite query works correctly and queries only for tokens
     assert all(x['address'] is not None for x in result), 'All returned tokens should have address'  # noqa: E501
@@ -94,9 +96,12 @@ def test_query_user_tokens(rotkehlchen_api_server):
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('start_with_logged_in_user', [True])
-@pytest.mark.parametrize('user_ethereum_tokens', [INITIAL_TOKENS])
+@pytest.mark.parametrize('generatable_user_ethereum_tokens', [True])
+@pytest.mark.parametrize('user_ethereum_tokens', [create_initial_globaldb_test_tokens])
 def test_adding_user_tokens(rotkehlchen_api_server):
     """Test that the endpoint for adding a user ethereum token works"""
+    initial_tokens = create_initial_globaldb_test_tokens()
+    expected_tokens = create_initial_expected_globaldb_test_tokens()
     serialized_token = USER_TOKEN3.to_dict()
     del serialized_token['identifier']
     del serialized_token['asset_type']
@@ -118,7 +123,7 @@ def test_adding_user_tokens(rotkehlchen_api_server):
         ),
     )
     result = assert_proper_response_with_result(response)
-    expected_tokens = INITIAL_EXPECTED_TOKENS.copy() + [
+    expected_tokens = expected_tokens.copy() + [
         USER_TOKEN3,
         EvmToken.initialize(
             address=underlying_address4,
@@ -130,7 +135,7 @@ def test_adding_user_tokens(rotkehlchen_api_server):
     assert_token_entry_exists_in_result(result, expected_result)
 
     # test that adding an already existing address is handled properly
-    serialized_token = INITIAL_TOKENS[1].to_dict()
+    serialized_token = initial_tokens[1].to_dict()
     del serialized_token['identifier']
     del serialized_token['asset_type']
     del serialized_token['forked']
@@ -142,7 +147,7 @@ def test_adding_user_tokens(rotkehlchen_api_server):
         json={'token': serialized_token},
     )
     expected_msg = (
-        f'Ethereum token with address {INITIAL_TOKENS[1].evm_address} already '
+        f'Ethereum token with address {initial_tokens[1].evm_address} already '
         f'exists in the DB',
     )
     assert_error_response(
@@ -302,10 +307,12 @@ def test_adding_user_tokens(rotkehlchen_api_server):
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('start_with_logged_in_user', [True])
-@pytest.mark.parametrize('user_ethereum_tokens', [INITIAL_TOKENS])
+@pytest.mark.parametrize('generatable_user_ethereum_tokens', [True])
+@pytest.mark.parametrize('user_ethereum_tokens', [create_initial_globaldb_test_tokens])
 def test_editing_user_tokens(rotkehlchen_api_server):
     """Test that the endpoint for editing a user ethereum token works"""
-    new_token1 = INITIAL_TOKENS[0].to_dict()
+    expected_tokens = create_initial_expected_globaldb_test_tokens()
+    new_token1 = expected_tokens[0].to_dict()
     del new_token1['identifier']
     del new_token1['asset_type']
     del new_token1['forked']
@@ -325,7 +332,7 @@ def test_editing_user_tokens(rotkehlchen_api_server):
         json={'token': new_token1},
     )
     result = assert_proper_response_with_result(response)
-    token0_id = ethaddress_to_identifier(INITIAL_TOKENS[0].evm_address)
+    token0_id = ethaddress_to_identifier(expected_tokens[0].evm_address)
     assert result == {'identifier': token0_id}
 
     response = requests.get(
@@ -335,7 +342,7 @@ def test_editing_user_tokens(rotkehlchen_api_server):
         ),
     )
     result = assert_proper_response_with_result(response)
-    expected_tokens = deepcopy(INITIAL_EXPECTED_TOKENS)
+    expected_tokens = deepcopy(expected_tokens)
     object.__setattr__(expected_tokens[0], 'name', new_name)
     object.__setattr__(expected_tokens[0], 'symbol', new_symbol)
     object.__setattr__(expected_tokens[0], 'protocol', new_protocol)
@@ -344,7 +351,7 @@ def test_editing_user_tokens(rotkehlchen_api_server):
     assert_token_entry_exists_in_result(result, expected_result)
 
     # test that editing an non existing address is handled properly
-    non_existing_token = INITIAL_TOKENS[0].to_dict()
+    non_existing_token = expected_tokens[0].to_dict()
     del non_existing_token['identifier']
     del non_existing_token['asset_type']
     del non_existing_token['forked']
@@ -404,11 +411,14 @@ def test_editing_user_tokens(rotkehlchen_api_server):
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('start_with_logged_in_user', [True])
-@pytest.mark.parametrize('user_ethereum_tokens', [INITIAL_TOKENS])
+@pytest.mark.parametrize('generatable_user_ethereum_tokens', [True])
+@pytest.mark.parametrize('user_ethereum_tokens', [create_initial_globaldb_test_tokens])
 def test_deleting_user_tokens(rotkehlchen_api_server):
     """Test that the endpoint for deleting a user ethereum token works"""
-    token0_id = ethaddress_to_identifier(INITIAL_TOKENS[0].evm_address)
-    token1_id = ethaddress_to_identifier(INITIAL_TOKENS[1].evm_address)
+    initial_tokens = create_initial_globaldb_test_tokens()
+    initial_expected_tokens = create_initial_expected_globaldb_test_tokens()
+    token0_id = ethaddress_to_identifier(initial_tokens[0].evm_address)
+    token1_id = ethaddress_to_identifier(initial_tokens[1].evm_address)
     underlying1_id = ethaddress_to_identifier(underlying_address1)
     underlying2_id = ethaddress_to_identifier(underlying_address2)
     underlying3_id = ethaddress_to_identifier(underlying_address3)
@@ -426,7 +436,7 @@ def test_deleting_user_tokens(rotkehlchen_api_server):
             rotkehlchen_api_server,
             'ethereumassetsresource',
         ),
-        json={'address': INITIAL_TOKENS[1].evm_address, 'chain': str(ChainID.ETHEREUM)},
+        json={'address': initial_tokens[1].evm_address, 'chain': str(ChainID.ETHEREUM)},
     )
     result = assert_proper_response_with_result(response)
     assert result == {'identifier': token1_id}
@@ -438,7 +448,7 @@ def test_deleting_user_tokens(rotkehlchen_api_server):
         ),
     )
     result = assert_proper_response_with_result(response)
-    expected_tokens = INITIAL_EXPECTED_TOKENS[:-1]
+    expected_tokens = initial_expected_tokens[:-1]
     expected_result = [x.to_dict() for x in expected_tokens]
     assert_token_entry_exists_in_result(result, expected_result)
     # also check the mapping for the underlying still tokens exists
@@ -482,7 +492,7 @@ def test_deleting_user_tokens(rotkehlchen_api_server):
             rotkehlchen_api_server,
             'ethereumassetsresource',
         ),
-        json={'address': INITIAL_TOKENS[0].evm_address, 'chain': str(ChainID.ETHEREUM)},
+        json={'address': initial_tokens[0].evm_address, 'chain': str(ChainID.ETHEREUM)},
     )
     result = assert_proper_response_with_result(response)
     assert result['swapped_for'] == A_MKR.identifier
@@ -507,7 +517,7 @@ def test_deleting_user_tokens(rotkehlchen_api_server):
             rotkehlchen_api_server,
             'ethereumassetsresource',
         ),
-        json={'address': INITIAL_TOKENS[0].evm_address, 'chain': str(ChainID.ETHEREUM)},
+        json={'address': initial_tokens[0].evm_address, 'chain': str(ChainID.ETHEREUM)},
     )
     result = assert_proper_response_with_result(response)
     assert result == {'identifier': token0_id}
@@ -519,7 +529,7 @@ def test_deleting_user_tokens(rotkehlchen_api_server):
         ),
     )
     result = assert_proper_response_with_result(response)
-    expected_tokens = INITIAL_EXPECTED_TOKENS[2:-1]
+    expected_tokens = initial_expected_tokens[2:-1]
     expected_result = [x.to_dict() for x in expected_tokens]
     assert_token_entry_exists_in_result(result, expected_result)
     # and removes the mapping of all underlying tokens
@@ -535,11 +545,13 @@ def test_deleting_user_tokens(rotkehlchen_api_server):
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('start_with_logged_in_user', [True])
-@pytest.mark.parametrize('user_ethereum_tokens', [INITIAL_TOKENS])
+@pytest.mark.parametrize('generatable_user_ethereum_tokens', [True])
+@pytest.mark.parametrize('user_ethereum_tokens', [create_initial_globaldb_test_tokens])
 def test_user_tokens_delete_guard(rotkehlchen_api_server):
     """Test that deleting an owned ethereum token is guarded against"""
+    expected_tokens = create_initial_expected_globaldb_test_tokens()
     user_db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
-    token0_id = ethaddress_to_identifier(INITIAL_TOKENS[0].evm_address)
+    token0_id = ethaddress_to_identifier(expected_tokens[0].evm_address)
     with user_db.user_write() as cursor:
         user_db.add_manually_tracked_balances(cursor, [ManuallyTrackedBalance(
             id=-1,
@@ -557,7 +569,7 @@ def test_user_tokens_delete_guard(rotkehlchen_api_server):
             rotkehlchen_api_server,
             'ethereumassetsresource',
         ),
-        json={'address': INITIAL_TOKENS[0].evm_address, 'chain': str(ChainID.ETHEREUM)},
+        json={'address': expected_tokens[0].evm_address, 'chain': str(ChainID.ETHEREUM)},
     )
     expected_msg = 'Failed to delete asset with id'
     assert_error_response(

@@ -1,6 +1,6 @@
 from pathlib import Path
 from shutil import copyfile
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Callable, List, Optional, Union
 from unittest.mock import patch
 
 import pytest
@@ -19,8 +19,13 @@ if TYPE_CHECKING:
     from rotkehlchen.utils.upgrades import UpgradeRecord
 
 
+@pytest.fixture(name='generatable_user_ethereum_tokens')
+def fixture_generatable_user_ethereum_tokens() -> bool:
+    return False
+
+
 @pytest.fixture(name='user_ethereum_tokens')
-def fixture_user_ethereum_tokens() -> Optional[List[EvmToken]]:
+def fixture_user_ethereum_tokens() -> Optional[Union[List[EvmToken], Callable]]:
     return None
 
 
