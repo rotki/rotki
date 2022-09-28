@@ -3,8 +3,8 @@ import random
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from rotkehlchen.assets.exchanges_mappings import WORLD_TO_KRAKEN
 from rotkehlchen.assets.converters import KRAKEN_TO_WORLD
+from rotkehlchen.assets.exchanges_mappings import WORLD_TO_KRAKEN
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.data_structures import TradeType
