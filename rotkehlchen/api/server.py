@@ -53,6 +53,8 @@ from rotkehlchen.api.v1.resources import (
     CompoundHistoryResource,
     ConfigurationsResource,
     CounterpartiesResource,
+    CustomAssetsResource,
+    CustomAssetsTypesResource,
     DatabaseBackupsResource,
     DatabaseInfoResource,
     DataImportResource,
@@ -303,6 +305,8 @@ URLS_V1: URLS = [
         'per_timestamp_db_snapshots_resource',
     ),
     ('/notes', UserNotesResource),
+    ('/assets/custom', CustomAssetsResource),
+    ('/assets/custom/types', CustomAssetsTypesResource),
 ]
 
 logger = logging.getLogger(__name__)

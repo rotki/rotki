@@ -1060,6 +1060,38 @@ class CustomAsset(AssetWithNameAndType):
         object.__setattr__(asset, 'notes', notes)
         return asset
 
+    @classmethod
+    def deserialize_from_db(
+            cls: Type['CustomAsset'],
+            entry: Tuple[str, str, str, Optional[str]],
+    ) -> 'CustomAsset':
+        """
+        Takes a `custom_asset` entry from DB and turns it into a `CustomAsset` instance.
+        May raise:
+        - DeserializationError if the identifier is not a string
+        """
+        return cls.initialize(
+            identifier=entry[0],
+            name=entry[1],
+            custom_asset_type=entry[2],
+            notes=entry[3],
+        )
+
+    def serialize_for_db(self) -> Tuple[str, str, Optional[str]]:
+        return (
+            self.identifier,
+            self.custom_asset_type,
+            self.notes,
+        )
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            'identifier': self.identifier,
+            'name': self.name,
+            'custom_asset_type': self.custom_asset_type,
+            'notes': self.notes,
+        }
+
 
 EthereumTokenDBTuple = Tuple[
     str,                  # identifier

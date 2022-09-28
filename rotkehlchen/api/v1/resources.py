@@ -42,6 +42,7 @@ from rotkehlchen.api.v1.schemas import (
     AsyncQueryArgumentSchema,
     AsyncTasksQuerySchema,
     AvalancheTransactionQuerySchema,
+    BaseCustomAssetSchema,
     BaseXpubSchema,
     BinanceMarketsSchema,
     BinanceMarketsUserSchema,
@@ -51,8 +52,10 @@ from rotkehlchen.api.v1.schemas import (
     BlockchainAccountsPutSchema,
     BlockchainBalanceQuerySchema,
     CurrentAssetsPriceSchema,
+    CustomAssetsQuerySchema,
     DataImportSchema,
     DetectTokensSchema,
+    EditCustomAssetSchema,
     EditSettingsSchema,
     ERC20InfoSchema,
     Eth2DailyStatsSchema,
@@ -137,7 +140,13 @@ from rotkehlchen.api.v1.schemas import (
     XpubAddSchema,
     XpubPatchSchema,
 )
-from rotkehlchen.assets.asset import Asset, AssetWithNameAndType, AssetWithOracles, EvmToken
+from rotkehlchen.assets.asset import (
+    Asset,
+    AssetWithNameAndType,
+    AssetWithOracles,
+    CustomAsset,
+    EvmToken,
+)
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.xpub import XpubData
@@ -146,6 +155,7 @@ from rotkehlchen.data_import.manager import DataImportSource
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
     AssetsFilterQuery,
+    CustomAssetsFilterQuery,
     Eth2DailyStatsFilterQuery,
     ETHTransactionsFilterQuery,
     LedgerActionsFilterQuery,
@@ -2675,3 +2685,36 @@ class UserNotesResource(BaseMethodView):
     @use_kwargs(delete_schema, location='json')
     def delete(self, identifier: int) -> Response:
         return self.rest_api.delete_user_note(identifier=identifier)
+
+
+class CustomAssetsResource(BaseMethodView):
+    post_schema = CustomAssetsQuerySchema()
+    put_schema = BaseCustomAssetSchema()
+    patch_schema = EditCustomAssetSchema()
+    delete_schema = StringIdentifierSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(post_schema, location='json')
+    def post(self, filter_query: CustomAssetsFilterQuery) -> Response:
+        return self.rest_api.get_custom_assets(filter_query=filter_query)
+
+    @require_loggedin_user()
+    @use_kwargs(put_schema, location='json')
+    def put(self, custom_asset: CustomAsset) -> Response:
+        return self.rest_api.add_custom_asset(custom_asset=custom_asset)
+
+    @require_loggedin_user()
+    @use_kwargs(patch_schema, location='json')
+    def patch(self, custom_asset: CustomAsset) -> Response:
+        return self.rest_api.edit_custom_asset(custom_asset=custom_asset)
+
+    @require_loggedin_user()
+    @use_kwargs(delete_schema, location='json')
+    def delete(self, identifier: str) -> Response:
+        return self.rest_api.delete_asset(identifier=identifier)
+
+
+class CustomAssetsTypesResource(BaseMethodView):
+    @require_loggedin_user()
+    def get(self) -> Response:
+        return self.rest_api.get_custom_asset_types()

@@ -11,6 +11,7 @@ from typing import (
     Union,
     overload,
 )
+from uuid import uuid4
 
 import webargs
 from eth_utils import to_checksum_address
@@ -31,6 +32,7 @@ from rotkehlchen.assets.asset import (
     AssetWithNameAndType,
     AssetWithOracles,
     CryptoAsset,
+    CustomAsset,
     EvmToken,
     UnderlyingToken,
 )
@@ -59,6 +61,7 @@ from rotkehlchen.data_import.manager import DataImportSource
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
     AssetsFilterQuery,
+    CustomAssetsFilterQuery,
     Eth2DailyStatsFilterQuery,
     ETHTransactionsFilterQuery,
     HistoryEventFilterQuery,
@@ -2622,3 +2625,67 @@ class UserNotesGetSchema(DBPaginationSchema, DBOrderBySchema):
         return {
             'filter_query': filter_query,
         }
+
+
+class CustomAssetsQuerySchema(DBPaginationSchema, DBOrderBySchema):
+    name = fields.String(load_default=None)
+    identifier = fields.String(load_default=None)
+    custom_asset_type = fields.String(load_default=None)
+
+    @post_load
+    def make_custom_assets_query(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> Dict[str, Any]:
+        filter_query = CustomAssetsFilterQuery.make(
+            limit=data['limit'],
+            offset=data['offset'],
+            order_by_rules=create_order_by_rules_list(
+                data=data,
+                default_order_by_field='name',
+                is_ascending_by_default=True,
+            ),
+            name=data['name'],
+            identifier=data['identifier'],
+            custom_asset_type=data['custom_asset_type'],
+        )
+        return {'filter_query': filter_query}
+
+
+class BaseCustomAssetSchema(Schema):
+    name = fields.String(required=True)
+    notes = fields.String(load_default=None)
+    custom_asset_type = fields.String(required=True)
+
+    @post_load
+    def make_custom_asset(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> Dict[str, CustomAsset]:
+        custom_asset = CustomAsset.initialize(
+            identifier=str(uuid4()),
+            name=data['name'],
+            notes=data['notes'],
+            custom_asset_type=data['custom_asset_type'],
+        )
+        return {'custom_asset': custom_asset}
+
+
+class EditCustomAssetSchema(BaseCustomAssetSchema):
+    identifier = fields.UUID(required=True)
+
+    @post_load
+    def make_custom_asset(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> Dict[str, CustomAsset]:
+        custom_asset = CustomAsset.initialize(
+            identifier=str(data['identifier']),
+            name=data['name'],
+            notes=data['notes'],
+            custom_asset_type=data['custom_asset_type'],
+        )
+        return {'custom_asset': custom_asset}
