@@ -123,11 +123,8 @@
 </template>
 
 <script lang="ts">
-import { get, set } from '@vueuse/core';
 import { dropRight } from 'lodash';
-import { storeToRefs } from 'pinia';
-import { computed, defineComponent, PropType, Ref, ref, toRefs } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { PropType, Ref } from 'vue';
 import { DataTableHeader } from 'vuetify';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
@@ -213,13 +210,16 @@ export default defineComponent({
   setup(props, { emit }) {
     const { locationOverview } = toRefs(props);
 
+    const selected: Ref<AssetMovementEntry[]> = ref([]);
+    const expanded: Ref<TradeEntry[]> = ref([]);
+    const options: Ref<PaginationOptions | null> = ref(null);
+    const filters: Ref<MatchedKeyword<AssetMovementFilterValueKeys>> = ref({});
+
     const fetch = (refresh: boolean = false) => emit('fetch', refresh);
 
     const locationsStore = useAssociatedLocationsStore();
     const assetMovementStore = useAssetMovements();
-    const assetInfoRetrievalStore = useAssetInfoRetrieval();
-    const { supportedAssetsSymbol } = toRefs(assetInfoRetrievalStore);
-    const { getAssetIdentifierForSymbol } = assetInfoRetrievalStore;
+    const { assetIdentifierForSymbol } = useAssetInfoRetrieval();
 
     const { associatedLocations } = storeToRefs(locationsStore);
     const { assetMovements } = storeToRefs(assetMovementStore);
@@ -232,12 +232,7 @@ export default defineComponent({
 
     const { itemLength, showUpgradeRow } = setupEntryLimit(limit, found, total);
 
-    const expanded: Ref<TradeEntry[]> = ref([]);
-
     const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
-
-    const options: Ref<PaginationOptions | null> = ref(null);
-    const filters: Ref<MatchedKeyword<AssetMovementFilterValueKeys>> = ref({});
 
     const { tc } = useI18n();
 
@@ -300,9 +295,9 @@ export default defineComponent({
         key: AssetMovementFilterKeys.ASSET,
         keyValue: AssetMovementFilterValueKeys.ASSET,
         description: tc('deposit_withdrawals.filter.asset'),
-        suggestions: () => get(supportedAssetsSymbol),
-        validate: (asset: string) => get(supportedAssetsSymbol).includes(asset),
-        transformer: (asset: string) => getAssetIdentifierForSymbol(asset) ?? ''
+        suggestions: () => [],
+        validate: () => true,
+        transformer: (asset: string) => assetIdentifierForSymbol(asset) ?? ''
       },
       {
         key: AssetMovementFilterKeys.ACTION,
@@ -408,7 +403,6 @@ export default defineComponent({
     };
 
     const getId = (item: AssetMovementEntry) => item.identifier;
-    const selected: Ref<AssetMovementEntry[]> = ref([]);
 
     const pageRoute = Routes.HISTORY_DEPOSITS_WITHDRAWALS.route;
 

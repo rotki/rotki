@@ -1,6 +1,3 @@
-import { set } from '@vueuse/core';
-import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
-import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { useMessageStore } from '@/store/message';
 import { usePremiumStore } from '@/store/session/premium';
@@ -23,6 +20,7 @@ export const useSettingsStore = defineStore('settings', () => {
   const frontendStore = useFrontendSettingsStore();
   const sessionStore = useSessionSettingsStore();
   const { premium, premiumSync } = storeToRefs(usePremiumStore());
+  const { t } = useI18n();
 
   const setKrakenAccountType = async (krakenAccountType: KrakenAccountType) => {
     try {
@@ -31,17 +29,15 @@ export const useSettingsStore = defineStore('settings', () => {
       });
       generalStore.update(general);
       setMessage({
-        title: i18n
-          .t('actions.session.kraken_account.success.title')
-          .toString(),
-        description: i18n
-          .t('actions.session.kraken_account.success.message')
-          .toString(),
+        title: t('actions.session.kraken_account.success.title').toString(),
+        description: t(
+          'actions.session.kraken_account.success.message'
+        ).toString(),
         success: true
       });
     } catch (e: any) {
       setMessage({
-        title: i18n.t('actions.session.kraken_account.error.title').toString(),
+        title: t('actions.session.kraken_account.error.title').toString(),
         description: e.message
       });
     }

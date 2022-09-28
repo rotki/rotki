@@ -1,5 +1,5 @@
 import { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
-import { SupportedAsset } from '@rotki/common/lib/data';
+import { AssetInfo } from '@rotki/common/lib/data';
 import { ProfitLossModel } from '@rotki/common/lib/defi';
 import {
   AdexApi,
@@ -40,17 +40,17 @@ import { useStatisticsStore } from '@/store/statistics';
 import { One } from '@/utils/bignumbers';
 
 export const assetsApi = (): AssetsApi => {
-  const { getAssetInfo, getAssetSymbol, getAssetIdentifierForSymbol } =
+  const { assetInfo, assetSymbol, assetIdentifierForSymbol } =
     useAssetInfoRetrieval();
 
   const { getNftDetails } = useNftAssetInfoStore();
   return {
     assetInfo: identifier => {
-      const nft = get(getNftDetails(identifier)) as SupportedAsset | null;
-      return nft ?? get(getAssetInfo(identifier)) ?? undefined;
+      const nft = get(getNftDetails(identifier)) as AssetInfo | null;
+      return nft ?? get(assetInfo(identifier));
     },
-    assetSymbol: getAssetSymbol,
-    getIdentifierForSymbol: getAssetIdentifierForSymbol
+    assetSymbol: asset => get(assetSymbol(asset)),
+    getIdentifierForSymbol: assetIdentifierForSymbol
   };
 };
 

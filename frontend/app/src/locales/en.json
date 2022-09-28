@@ -310,12 +310,6 @@
           "title": "Deleting Manual Balance"
         }
       },
-      "supported_assets": {
-        "error": {
-          "message": "Failed to retrieve supported assets: {message}",
-          "title": "Fetching supported assets"
-        }
-      },
       "xpub_removal": {
         "error": {
           "description": "Failed to remove {xpub}: {error}",
@@ -918,6 +912,9 @@
     "sync_ignored_assets_list": "Sync the list of ignored assets",
     "title": "Asset Management"
   },
+  "asset_select": {
+    "no_results": "No assets matching your search"
+  },
   "asset_table": {
     "copy_identifier": {
       "tooltip": "Copy the asset identifier to clipboard"
@@ -978,6 +975,12 @@
     "amount": "Total Owned",
     "backup": {
       "missing_directory": "Please select a directory"
+    },
+    "filter": {
+      "name": "Filter by the name of the asset",
+      "name_hint": "Search using the asset name",
+      "symbol": "Filter by the symbol of the asset",
+      "symbol_hint": "Search using the asset symbol"
     },
     "ignore": "Ignore Asset",
     "value": "Value"
@@ -1216,6 +1219,7 @@
     "available_to_premium": "only available to premium users.",
     "balance": "Balance",
     "category": "Category",
+    "chain": "Chain",
     "datetime": "Date/Time",
     "deposits": "Deposits",
     "details": "Details",

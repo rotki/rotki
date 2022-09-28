@@ -20,9 +20,7 @@
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent, onMounted, watch } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+<script setup lang="ts">
 import ActiveModules from '@/components/defi/ActiveModules.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
@@ -35,43 +33,26 @@ import { useLiquityStore } from '@/store/defi/liquity';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 
-export default defineComponent({
-  name: 'LiquityPage',
-  components: {
-    LiquityStakingDetails,
-    NoPremiumPlaceholder,
-    ProgressScreen,
-    ActiveModules,
-    ModuleNotActive
-  },
-  setup() {
-    const { isModuleEnabled } = useModules();
-    const { fetchStaking, fetchStakingEvents } = useLiquityStore();
+const modules = [Module.LIQUITY];
+const { isModuleEnabled } = useModules();
+const { fetchStaking, fetchStakingEvents } = useLiquityStore();
+const { shouldShowLoadingScreen } = useSectionLoading();
+const moduleEnabled = isModuleEnabled(modules[0]);
+const loading = shouldShowLoadingScreen(Section.DEFI_LIQUITY_STAKING);
+const premium = usePremium();
 
-    async function load() {
-      await fetchStaking();
-      await fetchStakingEvents();
-    }
+const load = async () => {
+  await fetchStaking();
+  await fetchStakingEvents();
+};
 
-    onMounted(async () => await load());
-    const { shouldShowLoadingScreen } = useSectionLoading();
-    const modules = [Module.LIQUITY];
-    const moduleEnabled = isModuleEnabled(modules[0]);
+onMounted(async () => await load());
 
-    watch(moduleEnabled, async enabled => {
-      if (enabled) {
-        await load();
-      }
-    });
-
-    const { tc } = useI18n();
-    return {
-      moduleEnabled: moduleEnabled,
-      modules,
-      loading: shouldShowLoadingScreen(Section.DEFI_LIQUITY_STAKING),
-      premium: usePremium(),
-      tc
-    };
+watch(moduleEnabled, async enabled => {
+  if (enabled) {
+    await load();
   }
 });
+
+const { tc } = useI18n();
 </script>

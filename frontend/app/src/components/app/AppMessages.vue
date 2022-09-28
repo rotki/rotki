@@ -17,42 +17,31 @@
   </fragment>
 </template>
 
-<script lang="ts">
-import { defineAsyncComponent, defineComponent, toRefs } from 'vue';
+<script setup lang="ts">
 import Fragment from '@/components/helper/Fragment';
 import { useMessageStore } from '@/store/message';
 
-export default defineComponent({
-  name: 'AppMessages',
-  components: {
-    Fragment,
-    StartupErrorScreen: defineAsyncComponent(
-      () => import('@/components/error/StartupErrorScreen.vue')
-    ),
-    MessageDialog: defineAsyncComponent(
-      () => import('@/components/dialogs/MessageDialog.vue')
-    ),
-    MacOsVersionUnsupported: defineAsyncComponent(
-      () => import('@/components/error/MacOsVersionUnsupported.vue')
-    ),
-    WinVersionUnsupported: defineAsyncComponent(
-      () => import('@/components/error/WinVersionUnsupported.vue')
-    )
-  },
-  props: {
-    startupError: { required: true, type: String },
-    macosUnsupported: { required: true, type: Boolean },
-    winUnsupported: { required: true, type: Boolean }
-  },
-  setup() {
-    const store = useMessageStore();
-    const { message } = toRefs(store);
-    const { setMessage } = store;
-    const dismissMessage = () => setMessage();
-    return {
-      message,
-      dismissMessage
-    };
-  }
+const StartupErrorScreen = defineAsyncComponent(
+  () => import('@/components/error/StartupErrorScreen.vue')
+);
+const MessageDialog = defineAsyncComponent(
+  () => import('@/components/dialogs/MessageDialog.vue')
+);
+const MacOsVersionUnsupported = defineAsyncComponent(
+  () => import('@/components/error/MacOsVersionUnsupported.vue')
+);
+const WinVersionUnsupported = defineAsyncComponent(
+  () => import('@/components/error/WinVersionUnsupported.vue')
+);
+
+defineProps({
+  startupError: { required: true, type: String },
+  macosUnsupported: { required: true, type: Boolean },
+  winUnsupported: { required: true, type: Boolean }
 });
+
+const store = useMessageStore();
+const { message } = toRefs(store);
+const { setMessage } = store;
+const dismissMessage = () => setMessage();
 </script>

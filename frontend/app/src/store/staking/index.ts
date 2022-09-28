@@ -5,14 +5,10 @@ import {
   Eth2Deposits,
   Eth2Details
 } from '@rotki/common/lib/staking/eth2';
-import { get, set } from '@vueuse/core';
 import { omitBy } from 'lodash';
 import isEqual from 'lodash/isEqual';
-import { acceptHMRUpdate, defineStore } from 'pinia';
-import { ref } from 'vue';
 import { usePremium } from '@/composables/premium';
 import { useStatusUpdater } from '@/composables/status';
-import i18n from '@/i18n';
 import { balanceKeys } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
 import { useNotifications } from '@/store/notifications';
@@ -55,6 +51,7 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
   const premium = usePremium();
   const { awaitTask, isTaskRunning } = useTasks();
   const { notify } = useNotifications();
+  const { t, tc } = useI18n();
 
   const fetchStakingDetails = async (refresh: boolean = false) => {
     if (!get(premium)) {
@@ -80,7 +77,7 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
           taskId,
           taskType,
           {
-            title: i18n.tc('actions.staking.eth2.task.title'),
+            title: tc('actions.staking.eth2.task.title'),
             numericKeys: []
           }
         );
@@ -89,14 +86,10 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
       } catch (e: any) {
         logger.error(e);
         notify({
-          title: i18n.tc('actions.staking.eth2.error.title'),
-          message: i18n.tc(
-            'actions.staking.eth2.error.description',
-            undefined,
-            {
-              error: e.message
-            }
-          ),
+          title: tc('actions.staking.eth2.error.title'),
+          message: tc('actions.staking.eth2.error.description', undefined, {
+            error: e.message
+          }),
           display: true
         });
         resetStatus();
@@ -115,7 +108,7 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
           taskId,
           taskType,
           {
-            title: `${i18n.t('actions.staking.eth2_deposits.task.title')}`,
+            title: `${t('actions.staking.eth2_deposits.task.title')}`,
             numericKeys: []
           }
         );
@@ -124,13 +117,10 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
       } catch (e: any) {
         logger.error(e);
         notify({
-          title: `${i18n.t('actions.staking.eth2_deposits.error.title')}`,
-          message: `${i18n.t(
-            'actions.staking.eth2_deposits.error.description',
-            {
-              error: e.message
-            }
-          )}`,
+          title: `${t('actions.staking.eth2_deposits.error.title')}`,
+          message: `${t('actions.staking.eth2_deposits.error.description', {
+            error: e.message
+          })}`,
           display: true
         });
       }
@@ -171,10 +161,10 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
       const { taskId } = await api.eth2StatsTask(defaults);
 
       const taskMeta: TaskMeta = {
-        title: i18n.t('actions.eth2_staking_stats.task.title').toString(),
-        description: i18n
-          .t('actions.eth2_staking_stats.task.description')
-          .toString(),
+        title: t('actions.eth2_staking_stats.task.title').toString(),
+        description: t(
+          'actions.eth2_staking_stats.task.description'
+        ).toString(),
         numericKeys: []
       };
 
@@ -220,10 +210,10 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
       logger.error(e);
       resetStatus();
       notify({
-        title: i18n.t('actions.eth2_staking_stats.error.title').toString(),
-        message: i18n
-          .t('actions.eth2_staking_stats.error.message', { message: e.message })
-          .toString(),
+        title: t('actions.eth2_staking_stats.error.title').toString(),
+        message: t('actions.eth2_staking_stats.error.message', {
+          message: e.message
+        }).toString(),
         display: true
       });
     }
@@ -273,6 +263,7 @@ export const useAdexStakingStore = defineStore('staking/adex', () => {
   const premium = usePremium();
   const { notify } = useNotifications();
   const { awaitTask } = useTasks();
+  const { t } = useI18n();
 
   const fetchAdex = async (refresh: boolean) => {
     if (!get(premium)) {
@@ -299,15 +290,15 @@ export const useAdexStakingStore = defineStore('staking/adex', () => {
         taskId,
         taskType,
         {
-          title: `${i18n.t('actions.staking.adex_balances.task.title')}`,
+          title: `${t('actions.staking.adex_balances.task.title')}`,
           numericKeys: balanceKeys
         }
       );
       set(adexBalances, result);
     } catch (e: any) {
       notify({
-        title: `${i18n.t('actions.staking.adex_balances.error.title')}`,
-        message: `${i18n.t('actions.staking.adex_balances.error.description', {
+        title: `${t('actions.staking.adex_balances.error.title')}`,
+        message: `${t('actions.staking.adex_balances.error.description', {
           error: e.message
         })}`,
         display: true
@@ -325,7 +316,7 @@ export const useAdexStakingStore = defineStore('staking/adex', () => {
         taskId,
         taskType,
         {
-          title: `${i18n.t('actions.staking.adex_history.task.title')}`,
+          title: `${t('actions.staking.adex_history.task.title')}`,
           numericKeys: [...balanceKeys, 'total_staked_amount']
         }
       );
@@ -333,8 +324,8 @@ export const useAdexStakingStore = defineStore('staking/adex', () => {
       set(adexHistory, result);
     } catch (e: any) {
       notify({
-        title: `${i18n.t('actions.staking.adex_history.error.title')}`,
-        message: `${i18n.t('actions.staking.adex_history.error.description', {
+        title: `${t('actions.staking.adex_history.error.title')}`,
+        message: `${t('actions.staking.adex_history.error.description', {
           error: e.message
         })}`,
         display: true

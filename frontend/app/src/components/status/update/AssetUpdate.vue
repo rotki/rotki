@@ -105,10 +105,8 @@
   </fragment>
 </template>
 
-<script lang="ts">
-import { get, set, useLocalStorage } from '@vueuse/core';
-import { computed, defineComponent, onMounted, ref, Ref, toRefs } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+<script setup lang="ts">
+import { Ref } from 'vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import Fragment from '@/components/helper/Fragment';
 import ConflictDialog from '@/components/status/update/ConflictDialog.vue';
@@ -119,131 +117,105 @@ import { useMainStore } from '@/store/main';
 import { useSessionStore } from '@/store/session';
 import { AssetUpdateConflictResult } from '@/types/assets';
 
-export default defineComponent({
-  name: 'AssetUpdate',
-  components: { ConfirmDialog, Fragment, ConflictDialog },
-  props: {
-    auto: { required: false, default: false, type: Boolean }
-  },
-  setup(props) {
-    const { auto } = toRefs(props);
-    const showUpdateDialog: Ref<boolean> = ref(false);
-    const showConflictDialog: Ref<boolean> = ref(false);
-    const skipUpdate: Ref<boolean> = ref(false);
-    const localVersion: Ref<number> = ref(0);
-    const remoteVersion: Ref<number> = ref(0);
-    const changes: Ref<number> = ref(0);
-    const upToVersion: Ref<number> = ref(0);
-    const partial: Ref<boolean> = ref(false);
+const props = defineProps({
+  auto: { required: false, default: false, type: Boolean }
+});
 
-    const conflicts: Ref<AssetUpdateConflictResult[]> = ref([]);
-    const done: Ref<boolean> = ref(false);
+const { auto } = toRefs(props);
+const showUpdateDialog: Ref<boolean> = ref(false);
+const showConflictDialog: Ref<boolean> = ref(false);
+const skipUpdate: Ref<boolean> = ref(false);
+const localVersion: Ref<number> = ref(0);
+const remoteVersion: Ref<number> = ref(0);
+const changes: Ref<number> = ref(0);
+const upToVersion: Ref<number> = ref(0);
+const partial: Ref<boolean> = ref(false);
 
-    const skipped = useLocalStorage('rotki_skip_asset_db_version', undefined);
+const conflicts: Ref<AssetUpdateConflictResult[]> = ref([]);
+const done: Ref<boolean> = ref(false);
 
-    const { logout } = useSessionStore();
-    const { checkForUpdate, applyUpdates } = useAssets();
-    const { connect, setConnected } = useMainStore();
-    const { restartBackend } = useBackendManagement();
+const skipped = useLocalStorage('rotki_skip_asset_db_version', undefined);
 
-    const { tc } = useI18n();
+const { logout } = useSessionStore();
+const { checkForUpdate, applyUpdates } = useAssets();
+const { connect, setConnected } = useMainStore();
+const { restartBackend } = useBackendManagement();
 
-    const multiple = computed(() => {
-      return get(remoteVersion) - get(localVersion) > 1;
-    });
+const { tc } = useI18n();
 
-    const check = async () => {
-      const checkResult = await checkForUpdate();
-      const skippedVersion = get(skipped);
-      const versions = checkResult.versions;
-      if (get(auto) && skippedVersion && skippedVersion === versions?.remote) {
-        return;
-      }
-      set(showUpdateDialog, checkResult.updateAvailable);
-      if (versions) {
-        set(localVersion, versions.local);
-        set(remoteVersion, versions.remote);
-        set(changes, versions.newChanges);
-        set(upToVersion, versions.remote);
-      }
-    };
+const multiple = computed(() => {
+  return get(remoteVersion) - get(localVersion) > 1;
+});
 
-    const skip = () => {
-      set(showUpdateDialog, false);
-      set(showConflictDialog, false);
-      if (get(skipUpdate)) {
-        set(skipped, get(remoteVersion));
-      }
-    };
+const check = async () => {
+  const checkResult = await checkForUpdate();
+  const skippedVersion = get(skipped);
+  const versions = checkResult.versions;
+  if (get(auto) && skippedVersion && skippedVersion === versions?.remote) {
+    return;
+  }
+  set(showUpdateDialog, checkResult.updateAvailable);
+  if (versions) {
+    set(localVersion, versions.local);
+    set(remoteVersion, versions.remote);
+    set(changes, versions.newChanges);
+    set(upToVersion, versions.remote);
+  }
+};
 
-    const onChange = (value: string) => {
-      const number = parseInt(value);
-      const local = get(localVersion);
-      if (isNaN(number)) {
-        set(upToVersion, local + 1);
-      } else {
-        if (number < local) {
-          set(upToVersion, local + 1);
-        } else if (number > get(remoteVersion)) {
-          set(upToVersion, get(remoteVersion));
-        } else {
-          set(upToVersion, number);
-        }
-      }
-    };
+const skip = () => {
+  set(showUpdateDialog, false);
+  set(showConflictDialog, false);
+  if (get(skipUpdate)) {
+    set(skipped, get(remoteVersion));
+  }
+};
 
-    const updateAssets = async (resolution?: ConflictResolution) => {
-      set(showUpdateDialog, false);
-      set(showConflictDialog, false);
-      const version = get(multiple) ? get(upToVersion) : get(remoteVersion);
-      const updateResult = await applyUpdates({ version, resolution });
-      if (updateResult.done) {
-        set(skipped, undefined);
-        set(done, true);
-      } else if (updateResult.conflicts) {
-        set(conflicts, updateResult.conflicts);
-        set(showConflictDialog, true);
-      }
-    };
+const onChange = (value: string) => {
+  const number = parseInt(value);
+  const local = get(localVersion);
+  if (isNaN(number)) {
+    set(upToVersion, local + 1);
+  } else {
+    if (number < local) {
+      set(upToVersion, local + 1);
+    } else if (number > get(remoteVersion)) {
+      set(upToVersion, get(remoteVersion));
+    } else {
+      set(upToVersion, number);
+    }
+  }
+};
 
-    const updateComplete = async () => {
-      await logout();
-      setConnected(false);
-      await restartBackend();
-      await connect();
-    };
+const updateAssets = async (resolution?: ConflictResolution) => {
+  set(showUpdateDialog, false);
+  set(showConflictDialog, false);
+  const version = get(multiple) ? get(upToVersion) : get(remoteVersion);
+  const updateResult = await applyUpdates({ version, resolution });
+  if (updateResult.done) {
+    set(skipped, undefined);
+    set(done, true);
+  } else if (updateResult.conflicts) {
+    set(conflicts, updateResult.conflicts);
+    set(showConflictDialog, true);
+  }
+};
 
-    onMounted(async () => {
-      const skipUpdate = sessionStorage.getItem('skip_update');
-      if (skipUpdate) {
-        return;
-      }
+const updateComplete = async () => {
+  await logout();
+  setConnected(false);
+  await restartBackend();
+  await connect();
+};
 
-      if (get(auto)) {
-        await check();
-      }
-    });
+onMounted(async () => {
+  const skipUpdate = sessionStorage.getItem('skip_update');
+  if (skipUpdate) {
+    return;
+  }
 
-    return {
-      showUpdateDialog,
-      showConflictDialog,
-      skipUpdate,
-      localVersion,
-      remoteVersion,
-      changes,
-      upToVersion,
-      partial,
-      conflicts,
-      done,
-      multiple,
-      skipped,
-      check,
-      skip,
-      onChange,
-      updateAssets,
-      updateComplete,
-      tc
-    };
+  if (get(auto)) {
+    await check();
   }
 });
 </script>

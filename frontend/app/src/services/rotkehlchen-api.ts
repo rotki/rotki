@@ -904,22 +904,6 @@ export class RotkehlchenApi {
     return IgnoredActions.parse(handleResponse(response));
   }
 
-  async erc20details(address: string): Promise<PendingTask> {
-    const response = await this.axios.get<ActionResult<PendingTask>>(
-      '/blockchains/ETH/erc20details',
-      {
-        params: axiosSnakeCaseTransformer({
-          asyncQuery: true,
-          address
-        }),
-        validateStatus: validWithoutSessionStatus,
-        transformResponse: basicAxiosTransformer
-      }
-    );
-
-    return handleResponse(response);
-  }
-
   async fetchNfts(ignoreCache: boolean): Promise<PendingTask> {
     const params = Object.assign(
       {

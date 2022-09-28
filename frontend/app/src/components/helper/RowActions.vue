@@ -36,26 +36,22 @@
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue';
-
-export default defineComponent({
-  name: 'RowAction',
-  props: {
-    disabled: { required: false, type: Boolean, default: false },
-    deleteDisabled: { required: false, type: Boolean, default: false },
-    editTooltip: { required: false, type: String, default: '' },
-    deleteTooltip: { required: false, type: String, default: '' },
-    noDelete: { required: false, type: Boolean, default: false }
-  },
-  emits: ['edit-click', 'delete-click'],
-  setup(_, { emit }) {
-    return {
-      editClick: () => emit('edit-click'),
-      deleteClick: () => emit('delete-click')
-    };
-  }
+<script setup lang="ts">
+defineProps({
+  disabled: { required: false, type: Boolean, default: false },
+  deleteDisabled: { required: false, type: Boolean, default: false },
+  editTooltip: { required: false, type: String, default: '' },
+  deleteTooltip: { required: false, type: String, default: '' },
+  noDelete: { required: false, type: Boolean, default: false }
 });
+
+const emit = defineEmits<{
+  (e: 'edit-click'): void;
+  (e: 'delete-click'): void;
+}>();
+
+const editClick = () => emit('edit-click');
+const deleteClick = () => emit('delete-click');
 </script>
 
 <style module lang="scss">

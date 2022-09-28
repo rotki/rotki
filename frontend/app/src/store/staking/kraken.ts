@@ -2,7 +2,6 @@ import { get, set } from '@vueuse/core';
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import { useStatusUpdater } from '@/composables/status';
-import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useNotifications } from '@/store/notifications';
@@ -42,6 +41,7 @@ export const useKrakenStakingStore = defineStore('staking/kraken', () => {
   const rawEvents = ref<KrakenStakingEvents>(defaultEventState());
 
   const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
+  const { t } = useI18n();
 
   const events = computed<KrakenStakingEvents>(() => {
     const eventsValue = get(rawEvents) as KrakenStakingEvents;
@@ -83,7 +83,7 @@ export const useKrakenStakingStore = defineStore('staking/kraken', () => {
     const { taskId } = await api.refreshKrakenStaking();
 
     const taskMeta: TaskMeta = {
-      title: i18n.t('actions.kraken_staking.task.title').toString(),
+      title: t('actions.kraken_staking.task.title').toString(),
       numericKeys: []
     };
 
@@ -121,10 +121,10 @@ export const useKrakenStakingStore = defineStore('staking/kraken', () => {
       logger.error(e);
       resetStatus();
       notify({
-        title: i18n.t('actions.kraken_staking.error.title').toString(),
-        message: i18n
-          .t('actions.kraken_staking.error.message', { message: e.message })
-          .toString(),
+        title: t('actions.kraken_staking.error.title').toString(),
+        message: t('actions.kraken_staking.error.message', {
+          message: e.message
+        }).toString(),
         display: true
       });
     }

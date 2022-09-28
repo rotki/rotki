@@ -43,42 +43,30 @@
   </v-card>
 </template>
 
-<script lang="ts">
-import { get } from '@vueuse/core';
-import { computed, defineComponent, toRefs } from 'vue';
+<script setup lang="ts">
 import PremiumLock from '@/components/premium/PremiumLock.vue';
 import { useTheme } from '@/composables/common';
 import { assert } from '@/utils/assertions';
 
-export default defineComponent({
-  name: 'StatCardWide',
-  components: { PremiumLock },
-  props: {
-    locked: { required: false, type: Boolean, default: false },
-    loading: { required: false, type: Boolean, default: false },
-    cols: { required: false, type: Number, default: 3 }
-  },
-  setup(props) {
-    const { cols } = toRefs(props);
-    const colsSize = {
-      2: 6,
-      3: 4,
-      4: 3
-    };
+const props = defineProps({
+  locked: { required: false, type: Boolean, default: false },
+  loading: { required: false, type: Boolean, default: false },
+  cols: { required: false, type: Number, default: 3 }
+});
 
-    const { currentBreakpoint } = useTheme();
+const { cols } = toRefs(props);
+const colsSize = {
+  2: 6,
+  3: 4,
+  4: 3
+};
 
-    const size = computed(() => {
-      const colNum = get(cols);
-      assert(colNum === 2 || colNum === 3 || colNum === 4);
-      return colsSize[colNum];
-    });
+const { currentBreakpoint } = useTheme();
 
-    return {
-      currentBreakpoint,
-      size
-    };
-  }
+const size = computed(() => {
+  const colNum = get(cols);
+  assert(colNum === 2 || colNum === 3 || colNum === 4);
+  return colsSize[colNum];
 });
 </script>
 

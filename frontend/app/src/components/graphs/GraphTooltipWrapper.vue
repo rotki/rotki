@@ -17,25 +17,20 @@
     <slot name="content" />
   </div>
 </template>
-<script lang="ts">
+<script setup lang="ts">
 import { TooltipDisplayOption } from '@rotki/common/lib/settings/graphs';
-import { defineComponent, PropType } from 'vue';
+import { PropType } from 'vue';
 import { useTheme } from '@/composables/common';
-export default defineComponent({
-  name: 'GraphTooltipWrapper',
-  props: {
-    tooltipOption: {
-      required: false,
-      type: Object as PropType<TooltipDisplayOption>,
-      default: null
-    }
-  },
-  setup() {
-    const { dark } = useTheme();
 
-    return { dark };
+defineProps({
+  tooltipOption: {
+    required: false,
+    type: Object as PropType<TooltipDisplayOption>,
+    default: null
   }
 });
+
+const { dark } = useTheme();
 </script>
 <style module lang="scss">
 .tooltip {

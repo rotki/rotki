@@ -6,16 +6,12 @@ import {
   BalancerProfitLoss
 } from '@rotki/common/lib/defi/balancer';
 import { XswapPool } from '@rotki/common/lib/defi/xswap';
-import { get, set } from '@vueuse/core';
 import cloneDeep from 'lodash/cloneDeep';
-import { acceptHMRUpdate, defineStore } from 'pinia';
-import { computed, ComputedRef, ref, Ref } from 'vue';
+import { ComputedRef, Ref } from 'vue';
 import { usePremium } from '@/composables/premium';
 import { useModules } from '@/composables/session';
 import { useStatusUpdater } from '@/composables/status';
-import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
-import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { OnError } from '@/store/typing';
 import { filterAddresses } from '@/store/utils';
 import { Writeable } from '@/types';
@@ -30,9 +26,9 @@ export const useBalancerStore = defineStore('defi/balancer', () => {
   const events: Ref<BalancerEvents> = ref({});
   const balances: Ref<BalancerBalances> = ref({});
 
-  const { fetchSupportedAssets } = useAssetInfoRetrieval();
   const { activeModules } = useModules();
   const isPremium = usePremium();
+  const { t } = useI18n();
 
   const addresses = computed(() => Object.keys(get(balances)));
 
@@ -172,18 +168,16 @@ export const useBalancerStore = defineStore('defi/balancer', () => {
 
   const fetchBalances = async (refresh: boolean = false) => {
     const meta: TaskMeta = {
-      title: i18n.t('actions.defi.balancer_balances.task.title').toString(),
+      title: t('actions.defi.balancer_balances.task.title').toString(),
       numericKeys: []
     };
 
     const onError: OnError = {
-      title: i18n.t('actions.defi.balancer_balances.error.title').toString(),
+      title: t('actions.defi.balancer_balances.error.title').toString(),
       error: message =>
-        i18n
-          .t('actions.defi.balancer_balances.error.description', {
-            message
-          })
-          .toString()
+        t('actions.defi.balancer_balances.error.description', {
+          message
+        }).toString()
     };
 
     await fetchDataAsync(
@@ -208,24 +202,20 @@ export const useBalancerStore = defineStore('defi/balancer', () => {
       },
       balances
     );
-
-    await fetchSupportedAssets(true);
   };
 
   const fetchEvents = async (refresh: boolean = false) => {
     const meta: TaskMeta = {
-      title: i18n.t('actions.defi.balancer_events.task.title').toString(),
+      title: t('actions.defi.balancer_events.task.title').toString(),
       numericKeys: []
     };
 
     const onError: OnError = {
-      title: i18n.t('actions.defi.balancer_events.error.title').toString(),
+      title: t('actions.defi.balancer_events.error.title').toString(),
       error: message => {
-        return i18n
-          .t('actions.defi.balancer_events.error.description', {
-            message
-          })
-          .toString();
+        return t('actions.defi.balancer_events.error.description', {
+          message
+        }).toString();
       }
     };
 
@@ -251,8 +241,6 @@ export const useBalancerStore = defineStore('defi/balancer', () => {
       },
       events
     );
-
-    await fetchSupportedAssets(true);
   };
 
   const reset = () => {

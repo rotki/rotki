@@ -207,11 +207,8 @@
 </template>
 
 <script setup lang="ts">
-import { get, set } from '@vueuse/core';
 import { dropRight } from 'lodash';
-import { storeToRefs } from 'pinia';
-import { computed, onMounted, PropType, Ref, ref, toRefs, watch } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { PropType, Ref } from 'vue';
 import { DataTableHeader } from 'vuetify';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
@@ -354,7 +351,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
 
 const tradeStore = useTrades();
 const assetInfoRetrievalStore = useAssetInfoRetrieval();
-const { getAssetSymbol } = assetInfoRetrievalStore;
+const { assetSymbol } = assetInfoRetrievalStore;
 const { trades } = storeToRefs(tradeStore);
 
 const {
@@ -392,12 +389,12 @@ const promptForDelete = (trade: TradeEntry) => {
       : tc('closed_trades.description.for')
   ).toLocaleLowerCase();
 
+  let base = get(assetSymbol(trade.baseAsset));
+  let quote = get(assetSymbol(trade.quoteAsset));
   set(
     confirmationMessage,
     tc('closed_trades.confirmation.message', 0, {
-      pair: `${getAssetSymbol(trade.baseAsset)} ${prep} ${getAssetSymbol(
-        trade.quoteAsset
-      )}`,
+      pair: `${base} ${prep} ${quote}`,
       action: trade.tradeType,
       amount: trade.amount.toFormat(get(floatingPrecision))
     })

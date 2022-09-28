@@ -134,12 +134,8 @@
   </card>
 </template>
 
-<script lang="ts">
-import { get, set } from '@vueuse/core';
+<script setup lang="ts">
 import { omit } from 'lodash';
-import { storeToRefs } from 'pinia';
-import { defineComponent, onMounted, ref } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import RowAction from '@/components/helper/RowActions.vue';
 import RpcNodeForm from '@/components/settings/general/rpc/RpcNodeForm.vue';
@@ -155,161 +151,135 @@ import {
 } from '@/types/settings';
 import { assert } from '@/utils/assertions';
 
-export default defineComponent({
-  name: 'EthereumRpcNodeManager',
-  components: { RpcNodeForm, BigDialog, RowAction },
-  setup() {
-    const nodes = ref<EthereumRpcNodeList>([]);
-    const showForm = ref(false);
-    const valid = ref(false);
-    const loading = ref(false);
-    const isEdit = ref(false);
-    const selectedNode = ref<EthereumRpcNode>(getPlaceholderNode());
-    const confirmDelete = ref<EthereumRpcNode | null>(null);
-    const errors = ref<Record<string, string[] | string>>({});
+const nodes = ref<EthereumRpcNodeList>([]);
+const showForm = ref(false);
+const valid = ref(false);
+const loading = ref(false);
+const isEdit = ref(false);
+const selectedNode = ref<EthereumRpcNode>(getPlaceholderNode());
+const confirmDelete = ref<EthereumRpcNode | null>(null);
+const errors = ref<Record<string, string[] | string>>({});
 
-    const { notify } = useNotifications();
-    const { setMessage } = useMessageStore();
-    const { tc } = useI18n();
+const { notify } = useNotifications();
+const { setMessage } = useMessageStore();
+const { tc } = useI18n();
 
-    const { connectedEthNodes } = storeToRefs(usePeriodicStore());
+const { connectedEthNodes } = storeToRefs(usePeriodicStore());
 
-    async function loadNodes(): Promise<void> {
-      try {
-        set(nodes, await api.fetchEthereumNodes());
-      } catch (e: any) {
-        notify({
-          title: tc('ethereum_rpc_node_manager.loading_error.title'),
-          message: e.message
-        });
-      }
-    }
-
-    onMounted(async () => {
-      await loadNodes();
+async function loadNodes(): Promise<void> {
+  try {
+    set(nodes, await api.fetchEthereumNodes());
+  } catch (e: any) {
+    notify({
+      title: tc('ethereum_rpc_node_manager.loading_error.title'),
+      message: e.message
     });
-
-    const save = async () => {
-      const editing = get(isEdit);
-      try {
-        set(loading, true);
-        const node = get(selectedNode);
-        if (editing) {
-          await api.editEthereumNode(node);
-        } else {
-          await api.addEthereumNode(omit(node, 'identifier'));
-        }
-        await loadNodes();
-      } catch (e: any) {
-        const errorTitle = editing
-          ? tc('ethereum_rpc_node_manager.edit_error.title')
-          : tc('ethereum_rpc_node_manager.add_error.title');
-        const messages = deserializeApiErrorMessage(e.message);
-        if (messages) {
-          set(errors, messages);
-
-          const keys = Object.keys(messages);
-          const knownKeys = Object.keys(get(selectedNode));
-          const unknownKeys = keys.filter(key => !knownKeys.includes(key));
-          if (unknownKeys.length > 0) {
-            setMessage({
-              title: errorTitle,
-              description: unknownKeys
-                .map(key => `${key}: ${messages[key]}`)
-                .join(', '),
-              success: false
-            });
-          }
-        } else {
-          setMessage({
-            title: errorTitle,
-            description: e.message,
-            success: false
-          });
-        }
-      } finally {
-        set(loading, false);
-        clear();
-      }
-    };
-
-    const clear = () => {
-      set(showForm, false);
-      set(selectedNode, getPlaceholderNode());
-      set(isEdit, false);
-    };
-
-    const edit = (item: EthereumRpcNode) => {
-      set(isEdit, true);
-      set(showForm, true);
-      set(selectedNode, item);
-    };
-
-    const deleteNode = async () => {
-      try {
-        let node = get(confirmDelete);
-        assert(node);
-        const identifier = node.identifier;
-        set(confirmDelete, null);
-        await api.deleteEthereumNode(identifier);
-        await loadNodes();
-      } catch (e: any) {
-        setMessage({
-          title: tc('ethereum_rpc_node_manager.delete_error.title'),
-          description: e.message,
-          success: false
-        });
-      }
-    };
-
-    const updateValid = (isValid: boolean) => {
-      set(valid, isValid);
-      set(errors, {});
-    };
-
-    const onActiveChange = async (active: boolean, node: EthereumRpcNode) => {
-      const state = { ...node, active };
-      try {
-        await api.editEthereumNode(state);
-        await loadNodes();
-      } catch (e: any) {
-        setMessage({
-          title: tc('ethereum_rpc_node_manager.activate_error.title', 0, {
-            node: node.name
-          }),
-          description: e.message,
-          success: false
-        });
-      }
-    };
-
-    const isEtherscan = (item: EthereumRpcNode) => item.name === 'etherscan';
-
-    const isNodeConnected = (item: EthereumRpcNode): boolean => {
-      return get(connectedEthNodes).includes(item.name) || isEtherscan(item);
-    };
-
-    return {
-      nodes,
-      showForm,
-      valid,
-      selectedNode,
-      confirmDelete,
-      isEdit,
-      errors,
-      loading,
-      isEtherscan,
-      isNodeConnected,
-      onActiveChange,
-      updateValid,
-      save,
-      edit,
-      deleteNode,
-      clear,
-      tc
-    };
   }
+}
+
+onMounted(async () => {
+  await loadNodes();
 });
+
+const save = async () => {
+  const editing = get(isEdit);
+  try {
+    set(loading, true);
+    const node = get(selectedNode);
+    if (editing) {
+      await api.editEthereumNode(node);
+    } else {
+      await api.addEthereumNode(omit(node, 'identifier'));
+    }
+    await loadNodes();
+  } catch (e: any) {
+    const errorTitle = editing
+      ? tc('ethereum_rpc_node_manager.edit_error.title')
+      : tc('ethereum_rpc_node_manager.add_error.title');
+    const messages = deserializeApiErrorMessage(e.message);
+    if (messages) {
+      set(errors, messages);
+
+      const keys = Object.keys(messages);
+      const knownKeys = Object.keys(get(selectedNode));
+      const unknownKeys = keys.filter(key => !knownKeys.includes(key));
+      if (unknownKeys.length > 0) {
+        setMessage({
+          title: errorTitle,
+          description: unknownKeys
+            .map(key => `${key}: ${messages[key]}`)
+            .join(', '),
+          success: false
+        });
+      }
+    } else {
+      setMessage({
+        title: errorTitle,
+        description: e.message,
+        success: false
+      });
+    }
+  } finally {
+    set(loading, false);
+    clear();
+  }
+};
+
+const clear = () => {
+  set(showForm, false);
+  set(selectedNode, getPlaceholderNode());
+  set(isEdit, false);
+};
+
+const edit = (item: EthereumRpcNode) => {
+  set(isEdit, true);
+  set(showForm, true);
+  set(selectedNode, item);
+};
+
+const deleteNode = async () => {
+  try {
+    let node = get(confirmDelete);
+    assert(node);
+    const identifier = node.identifier;
+    set(confirmDelete, null);
+    await api.deleteEthereumNode(identifier);
+    await loadNodes();
+  } catch (e: any) {
+    setMessage({
+      title: tc('ethereum_rpc_node_manager.delete_error.title'),
+      description: e.message,
+      success: false
+    });
+  }
+};
+
+const updateValid = (isValid: boolean) => {
+  set(valid, isValid);
+  set(errors, {});
+};
+
+const onActiveChange = async (active: boolean, node: EthereumRpcNode) => {
+  const state = { ...node, active };
+  try {
+    await api.editEthereumNode(state);
+    await loadNodes();
+  } catch (e: any) {
+    setMessage({
+      title: tc('ethereum_rpc_node_manager.activate_error.title', 0, {
+        node: node.name
+      }),
+      description: e.message,
+      success: false
+    });
+  }
+};
+
+const isEtherscan = (item: EthereumRpcNode) => item.name === 'etherscan';
+
+const isNodeConnected = (item: EthereumRpcNode): boolean => {
+  return get(connectedEthNodes).includes(item.name) || isEtherscan(item);
+};
 </script>
 
 <style module lang="scss">

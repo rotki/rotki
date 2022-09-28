@@ -71,9 +71,8 @@
   </div>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { get } from '@vueuse/core';
-import { defineComponent } from 'vue';
 import NavigationMenuItem from '@/components/NavigationMenuItem.vue';
 import { routesRef } from '@/router/routes';
 
@@ -94,137 +93,128 @@ type NavGroupItem = {
 type DividerItem = { readonly type: 'divider' };
 type MenuItem = NavItem | NavGroupItem | DividerItem;
 
-export default defineComponent({
-  name: 'NavigationMenu',
-  components: { NavigationMenuItem },
-  props: {
-    isMini: { required: false, type: Boolean, default: false }
-  },
-  setup() {
-    const Routes = get(routesRef);
-    const navItems: MenuItem[] = [
-      {
-        type: 'item',
-        class: 'dashboard',
-        ...Routes.DASHBOARD
-      },
-      {
-        type: 'item',
-        class: 'accounts-balances',
-        ...Routes.ACCOUNTS_BALANCES
-      },
-      {
-        type: 'item',
-        class: 'nfts',
-        ...Routes.NFTS
-      },
-      {
-        type: 'group',
-        class: 'history',
-        ...Routes.HISTORY,
-        items: [
-          {
-            type: 'item',
-            class: 'history-trades',
-            ...Routes.HISTORY_TRADES
-          },
-          {
-            type: 'item',
-            class: 'deposits-withdrawals',
-            ...Routes.HISTORY_DEPOSITS_WITHDRAWALS
-          },
-          {
-            type: 'item',
-            class: 'eth-transactions',
-            ...Routes.HISTORY_TRANSACTIONS
-          },
-          {
-            type: 'item',
-            class: 'ledger',
-            ...Routes.HISTORY_LEDGER_ACTIONS
-          }
-        ]
-      },
-      {
-        type: 'group',
-        class: 'defi',
-        ...Routes.DEFI,
-        items: [
-          {
-            type: 'item',
-            class: 'defi-overview',
-            ...Routes.DEFI_OVERVIEW
-          },
-          {
-            type: 'item',
-            class: 'defi-deposits',
-            ...Routes.DEFI_DEPOSITS
-          },
-          {
-            type: 'item',
-            class: 'defi-liabilities',
-            ...Routes.DEFI_LIABILITIES
-          },
-          {
-            type: 'item',
-            class: 'defi-airdrops',
-            ...Routes.DEFI_AIRDROPS
-          }
-        ]
-      },
-      {
-        type: 'item',
-        class: 'statistics',
-        ...Routes.STATISTICS
-      },
-      {
-        type: 'item',
-        class: 'staking',
-        ...Routes.STAKING,
-        route: Routes.STAKING.route.split(':')[0]
-      },
-      {
-        type: 'item',
-        class: 'profit-loss-report',
-        ...Routes.PROFIT_LOSS_REPORTS
-      },
-      {
-        type: 'divider'
-      },
-      {
-        type: 'item',
-        class: 'asset-manager',
-        ...Routes.ASSET_MANAGER
-      },
-      {
-        type: 'item',
-        class: 'price-manager',
-        ...Routes.PRICE_MANAGER
-      },
-      {
-        type: 'item',
-        class: 'eth-address-book-manager',
-        ...Routes.ETH_ADDRESS_BOOK_MANAGER
-      },
-      {
-        type: 'divider'
-      },
-      {
-        type: 'item',
-        class: 'settings__api-keys',
-        ...Routes.API_KEYS
-      },
-      {
-        type: 'item',
-        ...Routes.IMPORT
-      }
-    ];
-
-    return {
-      navItems
-    };
-  }
+defineProps({
+  isMini: { required: false, type: Boolean, default: false }
 });
+
+const Routes = get(routesRef);
+const navItems: MenuItem[] = [
+  {
+    type: 'item',
+    class: 'dashboard',
+    ...Routes.DASHBOARD
+  },
+  {
+    type: 'item',
+    class: 'accounts-balances',
+    ...Routes.ACCOUNTS_BALANCES
+  },
+  {
+    type: 'item',
+    class: 'nfts',
+    ...Routes.NFTS
+  },
+  {
+    type: 'group',
+    class: 'history',
+    ...Routes.HISTORY,
+    items: [
+      {
+        type: 'item',
+        class: 'history-trades',
+        ...Routes.HISTORY_TRADES
+      },
+      {
+        type: 'item',
+        class: 'deposits-withdrawals',
+        ...Routes.HISTORY_DEPOSITS_WITHDRAWALS
+      },
+      {
+        type: 'item',
+        class: 'eth-transactions',
+        ...Routes.HISTORY_TRANSACTIONS
+      },
+      {
+        type: 'item',
+        class: 'ledger',
+        ...Routes.HISTORY_LEDGER_ACTIONS
+      }
+    ]
+  },
+  {
+    type: 'group',
+    class: 'defi',
+    ...Routes.DEFI,
+    items: [
+      {
+        type: 'item',
+        class: 'defi-overview',
+        ...Routes.DEFI_OVERVIEW
+      },
+      {
+        type: 'item',
+        class: 'defi-deposits',
+        ...Routes.DEFI_DEPOSITS
+      },
+      {
+        type: 'item',
+        class: 'defi-liabilities',
+        ...Routes.DEFI_LIABILITIES
+      },
+      {
+        type: 'item',
+        class: 'defi-airdrops',
+        ...Routes.DEFI_AIRDROPS
+      }
+    ]
+  },
+  {
+    type: 'item',
+    class: 'statistics',
+    ...Routes.STATISTICS
+  },
+  {
+    type: 'item',
+    class: 'staking',
+    ...Routes.STAKING,
+    route: Routes.STAKING.route.split(':')[0]
+  },
+  {
+    type: 'item',
+    class: 'profit-loss-report',
+    ...Routes.PROFIT_LOSS_REPORTS
+  },
+  {
+    type: 'divider'
+  },
+  {
+    type: 'item',
+    class: 'asset-manager',
+    ...Routes.ASSET_MANAGER
+  },
+  {
+    type: 'item',
+    class: 'price-manager',
+    ...Routes.PRICE_MANAGER
+  },
+  {
+    type: 'item',
+    class: 'eth-address-book-manager',
+    ...Routes.ETH_ADDRESS_BOOK_MANAGER
+  },
+  {
+    type: 'divider'
+  },
+  {
+    type: 'item',
+    class: 'settings__api-keys',
+    ...Routes.API_KEYS
+  },
+  {
+    type: 'item',
+    ...Routes.IMPORT
+  }
+];
 </script>
 
 <style scoped lang="scss">

@@ -21,26 +21,16 @@
     </div>
   </div>
 </template>
-<script lang="ts">
-import { defineComponent, PropType } from 'vue';
+<script setup lang="ts">
+import { PropType } from 'vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import { DefiAsset } from '@/store/defi/types';
 import { createEvmIdentifierFromAddress } from '@/utils/assets';
 
-export default defineComponent({
-  name: 'DefiAsset',
-  components: { AmountDisplay, AssetIcon },
-  props: {
-    asset: { required: true, type: Object as PropType<DefiAsset> }
-  },
-  setup() {
-    const assetPadding: number = 1;
-
-    return {
-      assetPadding,
-      createEvmIdentifierFromAddress
-    };
-  }
+defineProps({
+  asset: { required: true, type: Object as PropType<DefiAsset> }
 });
+
+const assetPadding: number = 1;
 </script>

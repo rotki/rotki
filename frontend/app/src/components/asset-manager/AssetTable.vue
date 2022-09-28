@@ -36,25 +36,11 @@
           />
         </v-col>
         <v-col cols="12" md="4" class="pb-md-8">
-          <v-text-field
-            :value="pendingSearch"
-            hide-details
-            class="asset-table__filter"
-            prepend-inner-icon="mdi-magnify"
-            :label="tc('common.actions.filter')"
-            outlined
-            clearable
-            @input="onSearchTermChange($event)"
-          >
-            <template v-if="isTimeoutPending" #append>
-              <v-progress-circular
-                indeterminate
-                color="primary"
-                width="2"
-                size="24"
-              />
-            </template>
-          </v-text-field>
+          <table-filter
+            :matchers="matchers"
+            data-cy="asset_table_filter"
+            @update:matches="updateFilter"
+          />
         </v-col>
       </v-row>
     </template>
@@ -63,7 +49,7 @@
     </v-btn>
     <data-table
       v-model="selected"
-      :items="filteredTokens"
+      :items="tokens"
       :loading="loading"
       :headers="tableHeaders"
       single-expand
@@ -72,10 +58,10 @@
       sort-by="symbol"
       :sort-desc="false"
       :search="search"
+      :server-items-length="serverItemLength"
       :single-select="false"
       show-select
-      :custom-sort="sortItems"
-      :custom-filter="assetFilter"
+      @update:options="updatePaginationHandler($event)"
     >
       <template #item.symbol="{ item }">
         <asset-details-base
@@ -91,8 +77,8 @@
         <date-display v-if="item.started" :timestamp="item.started" />
         <span v-else>-</span>
       </template>
-      <template #item.assetType="{ item }">
-        {{ formatType(item.assetType) }}
+      <template #item.type="{ item }">
+        {{ formatType(item.type) }}
       </template>
       <template #item.ignored="{ item }">
         <div class="d-flex justify-center">
@@ -117,39 +103,7 @@
         </row-actions>
       </template>
       <template #expanded-item="{ item, headers }">
-        <table-expand-container
-          visible
-          :colspan="headers.length"
-          :padded="false"
-        >
-          <template #title>
-            {{ tc('asset_table.underlying_tokens') }}
-          </template>
-          <v-simple-table>
-            <thead>
-              <tr>
-                <th>{{ tc('common.address') }}</th>
-                <th>{{ tc('underlying_token_manager.tokens.token_kind') }}</th>
-                <th>{{ tc('underlying_token_manager.tokens.weight') }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="token in item.underlyingTokens" :key="token.address">
-                <td class="grow">
-                  <hash-link :text="token.address" full-address />
-                </td>
-                <td class="shrink">{{ token.tokenKind.toUpperCase() }}</td>
-                <td class="shrink">
-                  {{
-                    tc('underlying_token_manager.tokens.weight_percentage', 0, {
-                      weight: token.weight
-                    })
-                  }}
-                </td>
-              </tr>
-            </tbody>
-          </v-simple-table>
-        </table-expand-container>
+        <asset-underlying-tokens :cols="headers.length" :asset="item" />
       </template>
       <template #item.expand="{ item }">
         <row-expander
@@ -163,51 +117,59 @@
 </template>
 
 <script setup lang="ts">
-import { get, set, useTimeoutFn } from '@vueuse/core';
-import { computed, PropType, Ref, ref, toRefs } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { SupportedAsset } from '@rotki/common/lib/data';
+import { PropType, Ref } from 'vue';
 import { DataTableHeader } from 'vuetify';
+import AssetUnderlyingTokens from '@/components/asset-manager/AssetUnderlyingTokens.vue';
 import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
 import CopyButton from '@/components/helper/CopyButton.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import RowExpander from '@/components/helper/RowExpander.vue';
-import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
-import { EthereumToken, ManagedAsset } from '@/services/assets/types';
+import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
+import { useAssetFilter } from '@/composables/filters/assets';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useAggregatedBalancesStore } from '@/store/balances/aggregated';
 import { useMessageStore } from '@/store/message';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { ActionStatus } from '@/store/types';
-import { Nullable } from '@/types';
 import {
-  compareAssets,
-  getAddressFromEvmIdentifier,
-  isEvmIdentifier
-} from '@/utils/assets';
+  AssetPagination,
+  AssetPaginationOptions,
+  defaultAssetPagination
+} from '@/types/assets';
+import { convertPagination } from '@/types/pagination';
+import { getAddressFromEvmIdentifier, isEvmIdentifier } from '@/utils/assets';
 import { uniqueStrings } from '@/utils/data';
 import { toSentenceCase } from '@/utils/text';
 
 const props = defineProps({
-  tokens: { required: true, type: Array as PropType<ManagedAsset[]> },
+  tokens: { required: true, type: Array as PropType<SupportedAsset[]> },
   loading: { required: false, type: Boolean, default: false },
-  change: { required: true, type: Boolean }
+  change: { required: true, type: Boolean },
+  serverItemLength: { required: true, type: Number }
 });
 
 const emit = defineEmits<{
   (e: 'add'): void;
-  (e: 'edit', asset: ManagedAsset): void;
-  (e: 'delete-asset', asset: ManagedAsset): void;
+  (e: 'edit', asset: SupportedAsset): void;
+  (e: 'delete-asset', asset: SupportedAsset): void;
+  (e: 'update:pagination', pagination: AssetPagination): void;
 }>();
 
-const { tc } = useI18n();
-
 const { tokens } = toRefs(props);
-const expanded = ref<ManagedAsset[]>([]);
-const selected: Ref<ManagedAsset[]> = ref([]);
+const { itemsPerPage } = storeToRefs(useFrontendSettingsStore());
+const { filters, matchers, updateFilter } = useAssetFilter();
+
+const expanded: Ref<SupportedAsset[]> = ref([]);
+const selected: Ref<SupportedAsset[]> = ref([]);
 const search = ref<string>('');
-const pendingSearch = ref<string>('');
 const onlyShowOwned = ref<boolean>(false);
 const hideIgnoredAssets = ref<boolean>(false);
+const options: Ref<AssetPaginationOptions> = ref(
+  defaultAssetPagination(get(itemsPerPage))
+);
+
+const { tc } = useI18n();
 
 const tableHeaders = computed<DataTableHeader[]>(() => [
   {
@@ -216,7 +178,11 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
   },
   {
     text: tc('common.type'),
-    value: 'assetType'
+    value: 'type'
+  },
+  {
+    text: tc('common.chain'),
+    value: 'chain'
   },
   {
     text: tc('common.address'),
@@ -250,86 +216,17 @@ const isIgnored = (identifier: string) => {
 };
 
 const add = () => emit('add');
-const edit = (asset: ManagedAsset) => emit('edit', asset);
-const deleteAsset = (asset: ManagedAsset) => emit('delete-asset', asset);
+const edit = (asset: SupportedAsset) => emit('edit', asset);
+const deleteAsset = (asset: SupportedAsset) => emit('delete-asset', asset);
 
 const { setMessage } = useMessageStore();
-const { assets } = useAggregatedBalancesStore();
-
 const { isAssetIgnored, ignoreAsset, unignoreAsset } = useIgnoredAssetsStore();
-
-const filteredTokens = computed<ManagedAsset[]>(() => {
-  const showOwned = get(onlyShowOwned);
-  const hideIgnored = get(hideIgnoredAssets);
-
-  if (!showOwned && !hideIgnored) return get(tokens);
-
-  return get(tokens).filter(item => {
-    return (
-      (!showOwned || get(assets(hideIgnored)).includes(item.identifier)) &&
-      (!hideIgnored || !get(isIgnored(item.identifier)))
-    );
-  });
-});
-
-const {
-  isPending: isTimeoutPending,
-  start,
-  stop
-} = useTimeoutFn(
-  () => {
-    set(search, get(pendingSearch));
-  },
-  600,
-  { immediate: false }
-);
-
-const onSearchTermChange = (term: string) => {
-  set(pendingSearch, term);
-  if (get(isTimeoutPending)) {
-    stop();
-  }
-  start();
-};
-
-const assetFilter = (
-  value: Nullable<string>,
-  search: Nullable<string>,
-  item: Nullable<ManagedAsset>
-) => {
-  if (!search || !item) {
-    return true;
-  }
-
-  const keyword = search?.toLocaleLowerCase()?.trim() ?? '';
-  const name = item.name?.toLocaleLowerCase()?.trim() ?? '';
-  const symbol = item.symbol?.toLocaleLowerCase()?.trim() ?? '';
-  const address =
-    (item as EthereumToken).address?.toLocaleLowerCase()?.trim() ?? '';
-  return (
-    symbol.indexOf(keyword) >= 0 ||
-    name.indexOf(keyword) >= 0 ||
-    address.indexOf(keyword) >= 0 ||
-    item.identifier.indexOf(keyword) >= 0
-  );
-};
-
-const sortItems = (
-  items: ManagedAsset[],
-  sortBy: (keyof ManagedAsset)[],
-  sortDesc: boolean[]
-): ManagedAsset[] => {
-  const keyword = get(search)?.toLocaleLowerCase()?.trim() ?? '';
-  return items.sort((a, b) =>
-    compareAssets(a, b, sortBy[0], keyword, sortDesc[0])
-  );
-};
 
 const formatType = (string?: string) => {
   return toSentenceCase(string ?? 'EVM token');
 };
 
-const getAsset = (item: EthereumToken) => {
+const getAsset = (item: SupportedAsset) => {
   const name =
     item.name ??
     item.symbol ??
@@ -382,4 +279,26 @@ const massIgnore = async (ignored: boolean) => {
     set(selected, []);
   }
 };
+
+const updatePaginationHandler = (updateOptions: AssetPaginationOptions) => {
+  set(options, updateOptions);
+};
+
+watch(
+  [options, filters, hideIgnoredAssets, onlyShowOwned] as const,
+  ([options, filters, hideIgnored, onlyOwned]) => {
+    let apiPagination = convertPagination<SupportedAsset>(
+      options,
+      'symbol'
+    ) as AssetPagination;
+
+    emit('update:pagination', {
+      ...apiPagination,
+      symbol: filters.symbol as string | undefined,
+      name: filters.name as string | undefined,
+      includeIgnoredAssets: !hideIgnored,
+      showUserOwnedAssetsOnly: onlyOwned
+    });
+  }
+);
 </script>

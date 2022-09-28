@@ -8,25 +8,7 @@
 
     <v-row class="mt-2" justify="space-between">
       <v-col cols="auto">
-        <v-btn
-          class="mr-4 mb-sm-0 mb-4"
-          color="primary"
-          depressed
-          :loading="isUpdateIgnoredAssetsLoading"
-          :disabled="isUpdateIgnoredAssetsLoading"
-          @click="update"
-        >
-          <v-icon class="mr-2">mdi-sync</v-icon>
-          {{ tc('asset_management.sync_ignored_assets_list') }}
-          <v-chip
-            small
-            class="ml-2 px-2 asset_management__ignored-assets__chip"
-            color="white"
-            text-color="primary"
-          >
-            {{ ignoredAssets.length }}
-          </v-chip>
-        </v-btn>
+        <ignore-scam-assets-button @refresh="refresh" />
         <v-tooltip open-delay="400" top>
           <template #activator="{ on, attrs }">
             <v-btn
@@ -52,12 +34,14 @@
 
     <asset-table
       class="mt-12"
-      :tokens="tokens"
+      :tokens="assets"
       :loading="loading"
       :change="!loading"
+      :server-item-length="totalEntries"
       @add="add()"
       @edit="edit($event)"
       @delete-asset="toDeleteAsset = $event"
+      @update:pagination="pagination = $event"
     />
     <big-dialog
       :display="showForm"
@@ -72,7 +56,7 @@
       <asset-form
         ref="form"
         v-model="validForm"
-        :edit="token"
+        :edit="asset"
         :saving="saving"
       />
     </big-dialog>
@@ -89,12 +73,11 @@
 </template>
 
 <script setup lang="ts">
-import { get, set } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { computed, onMounted, ref, toRefs, watch } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { SupportedAsset } from '@rotki/common/lib/data';
+import { Ref } from 'vue';
 import AssetForm from '@/components/asset-manager/AssetForm.vue';
 import AssetTable from '@/components/asset-manager/AssetTable.vue';
+import IgnoreScamAssetsButton from '@/components/asset-manager/IgnoreScamAssetsButton.vue';
 import MergeDialog from '@/components/asset-manager/MergeDialog.vue';
 import RestoreAssetDbButton from '@/components/asset-manager/RestoreAssetDbButton.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
@@ -102,14 +85,13 @@ import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import { useRoute, useRouter } from '@/composables/router';
 import { Routes } from '@/router/routes';
 import { EVM_TOKEN } from '@/services/assets/consts';
-import { ManagedAsset } from '@/services/assets/types';
+import { useAssetManagementApi } from '@/services/assets/management-api';
 import { api } from '@/services/rotkehlchen-api';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useMessageStore } from '@/store/message';
-import { useTasks } from '@/store/tasks';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { Nullable } from '@/types';
-import { TaskType } from '@/types/task-type';
+import { AssetPagination, defaultAssetPagination } from '@/types/assets';
+import { convertPagination } from '@/types/pagination';
 import { assert } from '@/utils/assertions';
 
 const props = defineProps({
@@ -117,21 +99,22 @@ const props = defineProps({
 });
 
 const { identifier } = toRefs(props);
-
-const assetsStore = useAssetInfoRetrieval();
-const { supportedAssets } = storeToRefs(assetsStore);
-const { fetchSupportedAssets } = assetsStore;
 const { setMessage } = useMessageStore();
+const { itemsPerPage } = storeToRefs(useFrontendSettingsStore());
 
 const loading = ref<boolean>(false);
-const tokens = ref<ManagedAsset[]>([]);
+const assets = ref<SupportedAsset[]>([]);
 const validForm = ref<boolean>(false);
 const showForm = ref<boolean>(false);
 const saving = ref<boolean>(false);
-const token = ref<Nullable<ManagedAsset>>(null);
-const toDeleteAsset = ref<Nullable<ManagedAsset>>(null);
+const asset = ref<Nullable<SupportedAsset>>(null);
+const toDeleteAsset = ref<Nullable<SupportedAsset>>(null);
 const mergeTool = ref<boolean>(false);
 const form = ref<any>(null);
+const totalEntries = ref(0);
+const pagination: Ref<AssetPagination> = ref(
+  convertPagination(defaultAssetPagination(get(itemsPerPage)), 'symbol')
+);
 
 const { tc } = useI18n();
 
@@ -140,38 +123,30 @@ const deleteAssetSymbol = computed(() => ({
 }));
 
 const dialogTitle = computed<string>(() => {
-  return get(token)
+  return get(asset)
     ? tc('asset_management.edit_title')
     : tc('asset_management.add_title');
 });
 
+const { queryAllAssets } = useAssetManagementApi();
+
 const add = () => {
-  set(token, null);
+  set(asset, null);
   set(showForm, true);
 };
 
-const edit = (tokenToEdit: ManagedAsset) => {
-  set(token, tokenToEdit);
+const edit = (editAsset: SupportedAsset) => {
+  set(asset, editAsset);
   set(showForm, true);
 };
 
 const editAsset = (identifier: Nullable<string>) => {
   if (identifier) {
-    const token = get(tokens).find(({ identifier: id }) => id === identifier);
-    if (token) {
-      edit(token);
+    const asset = get(assets).find(({ identifier: id }) => id === identifier);
+    if (asset) {
+      edit(asset);
     }
   }
-};
-
-const refresh = async () => {
-  set(loading, true);
-  await fetchSupportedAssets(true);
-  const assets = get(supportedAssets).filter(
-    ({ assetType }) => assetType !== EVM_TOKEN
-  );
-  set(tokens, [...(await api.assets.ethereumTokens()), ...assets]);
-  set(loading, false);
 };
 
 const save = async () => {
@@ -180,7 +155,7 @@ const save = async () => {
   if (success) {
     set(showForm, false);
     await refresh();
-    set(token, null);
+    set(asset, null);
   }
   set(saving, false);
 };
@@ -220,11 +195,13 @@ const deleteAsset = async (identifier: string) => {
 const confirmDelete = async () => {
   const asset = get(toDeleteAsset);
   set(toDeleteAsset, null);
-  assert(asset !== null);
-  if ('assetType' in asset) {
+  assert(asset);
+  if (asset.type === EVM_TOKEN) {
     await deleteAsset(asset.identifier);
   } else {
-    await deleteToken(asset.address, asset.chain as string);
+    let address = asset.address;
+    assert(address);
+    await deleteToken(address, asset.chain as string);
   }
 };
 
@@ -251,17 +228,15 @@ watch(identifier, identifier => {
   editAsset(identifier);
 });
 
-const ignoredAssetsStore = useIgnoredAssetsStore();
-const { ignoredAssets } = storeToRefs(ignoredAssetsStore);
-const { updateIgnoredAssets } = ignoredAssetsStore;
+watch(pagination, () => refresh());
 
-const update = async () => {
-  await updateIgnoredAssets();
-  await fetchSupportedAssets();
+const refresh = async () => {
+  let supportedAssets = await queryAllAssets(get(pagination));
+  set(assets, supportedAssets.entries);
+  set(totalEntries, supportedAssets.entriesFound);
 };
 
-const { isTaskRunning } = useTasks();
-const isUpdateIgnoredAssetsLoading = isTaskRunning(
-  TaskType.UPDATE_IGNORED_ASSETS
-);
+onMounted(async () => {
+  await refresh();
+});
 </script>

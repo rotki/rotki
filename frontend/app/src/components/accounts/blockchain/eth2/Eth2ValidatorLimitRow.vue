@@ -8,28 +8,20 @@
   />
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import { useEthAccountsStore } from '@/store/blockchain/accounts/eth';
 
-export default defineComponent({
-  name: 'Eth2ValidatorLimitRow',
-  components: { UpgradeRow },
-  props: {
-    colspan: {
-      required: true,
-      type: Number
-    }
-  },
-  setup() {
-    const { eth2Validators } = storeToRefs(useEthAccountsStore());
-    const limit = computed(() => get(eth2Validators).entriesLimit);
-    const total = computed(() => get(eth2Validators).entriesFound);
-    const visible = computed(
-      () => limit.value > 0 && limit.value <= total.value
-    );
-    const { tc } = useI18n();
-    return { limit, total, visible, tc };
+defineProps({
+  colspan: {
+    required: true,
+    type: Number
   }
 });
+
+const { eth2Validators } = storeToRefs(useEthAccountsStore());
+const limit = computed(() => get(eth2Validators).entriesLimit);
+const total = computed(() => get(eth2Validators).entriesFound);
+const visible = computed(() => limit.value > 0 && limit.value <= total.value);
+const { tc } = useI18n();
 </script>

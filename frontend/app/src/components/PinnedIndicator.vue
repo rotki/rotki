@@ -13,38 +13,23 @@
   </menu-tooltip-button>
 </template>
 
-<script lang="ts">
-import { get } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { defineComponent, toRefs } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+<script setup lang="ts">
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
 
-export default defineComponent({
-  name: 'PinnedIndicator',
-  components: { MenuTooltipButton },
-  props: {
-    visible: { required: true, type: Boolean }
-  },
-  emits: ['visible:update'],
-  setup(props, { emit }) {
-    const { visible } = toRefs(props);
-
-    const { pinned } = storeToRefs(useAreaVisibilityStore());
-    const { tc } = useI18n();
-
-    const toggleVisibility = () => {
-      emit('visible:update', !get(visible));
-    };
-
-    return {
-      pinned,
-      toggleVisibility,
-      tc
-    };
-  }
+const props = defineProps({
+  visible: { required: true, type: Boolean }
 });
+
+const emit = defineEmits<{ (e: 'visible:update', visible: boolean): void }>();
+
+const { visible } = toRefs(props);
+const { pinned } = storeToRefs(useAreaVisibilityStore());
+const { tc } = useI18n();
+
+const toggleVisibility = () => {
+  emit('visible:update', !get(visible));
+};
 </script>
 
 <style scoped lang="scss">

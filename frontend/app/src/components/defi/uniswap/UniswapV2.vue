@@ -100,7 +100,7 @@
                         :value="asset.userBalance"
                       />
                     </div>
-                    <hash-link link-only :text="getTokenAddress(asset.asset)" />
+                    <hash-link link-only :text="tokenAddress(asset.asset)" />
                   </v-col>
                 </v-row>
               </div>
@@ -124,10 +124,7 @@ import { GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { LpType } from '@rotki/common/lib/defi';
 import { XswapAsset, XswapBalance } from '@rotki/common/lib/defi/xswap';
-import { get } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { computed, onMounted, ref } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { ComputedRef } from 'vue';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import PaginatedCards from '@/components/common/PaginatedCards.vue';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
@@ -167,7 +164,7 @@ const { uniswapV2Addresses: addresses, uniswapV2PoolAssets: poolAssets } =
   storeToRefs(store);
 
 const { isModuleEnabled } = useModules();
-const { getTokenAddress } = useAssetInfoRetrieval();
+const { tokenAddress } = useAssetInfoRetrieval();
 const { isSectionRefreshing, shouldShowLoadingScreen } = useSectionLoading();
 
 const { tc } = useI18n();
@@ -184,7 +181,7 @@ const selectedAddresses = computed(() => {
   return account ? [account.address] : [];
 });
 
-const balances = computed(() => {
+const balances: ComputedRef<XswapBalance[]> = computed(() => {
   const addresses = get(selectedAddresses);
   const pools = get(selectedPools);
   const balances = get(uniswapBalances(addresses));

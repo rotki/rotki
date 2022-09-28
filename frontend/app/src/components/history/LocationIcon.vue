@@ -30,36 +30,24 @@
     </span>
   </span>
 </template>
-<script lang="ts">
-import { get } from '@vueuse/core';
-import { computed, defineComponent, PropType, toRefs } from 'vue';
+<script setup lang="ts">
+import { PropType } from 'vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import { TradeLocationData } from '@/types/trades';
 
-export default defineComponent({
-  name: 'LocationIcon',
-  components: { AdaptiveWrapper },
-  props: {
-    item: {
-      required: true,
-      type: Object as PropType<TradeLocationData>
-    },
-    horizontal: { required: false, type: Boolean, default: false },
-    icon: { required: false, type: Boolean, default: false },
-    size: { required: false, type: String, default: '24px' },
-    noPadding: { required: false, type: Boolean, default: false }
+const props = defineProps({
+  item: {
+    required: true,
+    type: Object as PropType<TradeLocationData>
   },
-  setup(props) {
-    const { size } = toRefs(props);
-    const iconStyle = computed(() => {
-      return {
-        fontSize: get(size)
-      };
-    });
-
-    return {
-      iconStyle
-    };
-  }
+  horizontal: { required: false, type: Boolean, default: false },
+  icon: { required: false, type: Boolean, default: false },
+  size: { required: false, type: String, default: '24px' },
+  noPadding: { required: false, type: Boolean, default: false }
 });
+
+const { size } = toRefs(props);
+const iconStyle = computed(() => ({
+  fontSize: get(size)
+}));
 </script>

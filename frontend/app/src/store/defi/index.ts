@@ -1,12 +1,9 @@
 import { AddressIndexed } from '@rotki/common';
 import { DefiAccount } from '@rotki/common/lib/account';
 import { Blockchain, DefiProtocol } from '@rotki/common/lib/blockchain';
-import { get, set } from '@vueuse/core';
 import sortBy from 'lodash/sortBy';
-import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
-import { computed, ComputedRef, Ref, ref } from 'vue';
+import { ComputedRef, Ref } from 'vue';
 import { usePremium } from '@/composables/premium';
-import i18n from '@/i18n';
 import { balanceKeys } from '@/services/consts';
 import { ProtocolVersion } from '@/services/defi/consts';
 import { api } from '@/services/rotkehlchen-api';
@@ -81,6 +78,7 @@ export const useDefiStore = defineStore('defi', () => {
   const sushiswapStore = useSushiswapStore();
   const uniswapStore = useUniswapStore();
   const lendingStore = useDefiSupportedProtocolsStore();
+  const { t, tc } = useI18n();
 
   const {
     vaultsBalances: yearnV1Balances,
@@ -358,7 +356,7 @@ export const useDefiStore = defineStore('defi', () => {
           summary[protocol].tokenInfo?.tokenName !== entry.baseBalance.tokenName
         ) {
           const tokenInfo: Writeable<TokenInfo> = summary[protocol].tokenInfo!;
-          tokenInfo.tokenName = `${i18n.t('defi_overview.multiple_assets')}`;
+          tokenInfo.tokenName = `${t('defi_overview.multiple_assets')}`;
           tokenInfo.tokenSymbol = '';
         }
 
@@ -473,19 +471,17 @@ export const useDefiStore = defineStore('defi', () => {
         taskId,
         taskType,
         {
-          title: i18n.tc('actions.defi.balances.task.title'),
+          title: tc('actions.defi.balances.task.title'),
           numericKeys: balanceKeys
         }
       );
 
       set(allProtocols, result);
     } catch (e: any) {
-      const title = i18n.tc('actions.defi.balances.error.title');
-      const message = i18n.tc(
-        'actions.defi.balances.error.description',
-        undefined,
-        { error: e.message }
-      );
+      const title = tc('actions.defi.balances.error.title');
+      const message = tc('actions.defi.balances.error.description', undefined, {
+        error: e.message
+      });
       notify({
         title,
         message,
@@ -590,19 +586,17 @@ export const useDefiStore = defineStore('defi', () => {
         taskId,
         TaskType.DEFI_AIRDROPS,
         {
-          title: i18n.t('actions.defi.airdrops.task.title').toString(),
+          title: t('actions.defi.airdrops.task.title').toString(),
           numericKeys: balanceKeys
         }
       );
       set(airdrops, result);
     } catch (e: any) {
       notify({
-        title: i18n.t('actions.defi.airdrops.error.title').toString(),
-        message: i18n
-          .t('actions.defi.airdrops.error.description', {
-            error: e.message
-          })
-          .toString(),
+        title: t('actions.defi.airdrops.error.title').toString(),
+        message: t('actions.defi.airdrops.error.description', {
+          error: e.message
+        }).toString(),
         display: true
       });
     }

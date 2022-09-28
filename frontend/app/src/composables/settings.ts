@@ -1,6 +1,4 @@
-import { promiseTimeout, set, useTimeoutFn } from '@vueuse/core';
-import { ref, watch } from 'vue';
-import i18n from '@/i18n';
+import { promiseTimeout } from '@vueuse/core';
 import { useSettingsStore } from '@/store/settings';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import {
@@ -85,6 +83,7 @@ export const useSettings = () => {
 export const useClearableMessages = () => {
   const error = ref('');
   const success = ref('');
+  const { tc } = useI18n();
 
   const clear = () => {
     set(error, '');
@@ -102,17 +101,11 @@ export const useClearableMessages = () => {
   };
 
   const setSuccess = (message: string, useBase: boolean = true) => {
-    set(
-      success,
-      formatMessage(useBase ? i18n.tc('settings.saved') : '', message)
-    );
+    set(success, formatMessage(useBase ? tc('settings.saved') : '', message));
   };
 
   const setError = (message: string, useBase: boolean = true) => {
-    set(
-      error,
-      formatMessage(useBase ? i18n.tc('settings.not_saved') : '', message)
-    );
+    set(error, formatMessage(useBase ? tc('settings.not_saved') : '', message));
   };
 
   const wait = async () => await promiseTimeout(200);

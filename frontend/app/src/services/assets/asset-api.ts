@@ -1,11 +1,11 @@
 import { ActionResult, SupportedAsset } from '@rotki/common/lib/data';
 import { OwnedAssets } from '@rotki/common/lib/statistics';
 import { AxiosInstance, AxiosResponseTransformer } from 'axios';
+import { omit } from 'lodash';
 import {
   AssetIdResponse,
   AssetPriceArray,
   ConflictResolution,
-  EthereumToken,
   HistoricalPrice,
   HistoricalPriceDeletePayload,
   HistoricalPriceFormPayload,
@@ -15,14 +15,12 @@ import {
   axiosSnakeCaseTransformer,
   setupTransformer
 } from '@/services/axios-tranformers';
-import { PendingTask, SupportedAssets } from '@/services/types-api';
+import { PendingTask } from '@/services/types-api';
 import {
   handleResponse,
   validFileOperationStatus,
   validStatus,
-  validTaskStatus,
-  validWithoutSessionStatus,
-  validWithSessionAndExternalService
+  validWithoutSessionStatus
 } from '@/services/utils';
 import { ActionStatus } from '@/store/types';
 import { assert } from '@/utils/assertions';
@@ -46,22 +44,13 @@ export class AssetApi {
     return url;
   }
 
-  ethereumTokens(): Promise<EthereumToken[]> {
-    return this.axios
-      .get<ActionResult<EthereumToken[]>>('/assets/ethereum', {
-        validateStatus: validTaskStatus,
-        transformResponse: this.baseTransformer
-      })
-      .then(handleResponse);
-  }
-
   addEthereumToken(
-    token: Omit<EthereumToken, 'identifier'>
+    token: Omit<SupportedAsset, 'identifier'>
   ): Promise<AssetIdResponse> {
     return this.axios
       .put<ActionResult<AssetIdResponse>>(
         '/assets/ethereum',
-        axiosSnakeCaseTransformer({ token }),
+        axiosSnakeCaseTransformer({ token: omit(token, 'type') }),
         {
           validateStatus: validStatus,
           transformResponse: this.baseTransformer
@@ -71,7 +60,7 @@ export class AssetApi {
   }
 
   editEthereumToken(
-    token: Omit<EthereumToken, 'identifier'>
+    token: Omit<SupportedAsset, 'identifier'>
   ): Promise<AssetIdResponse> {
     return this.axios
       .patch<ActionResult<AssetIdResponse>>(
@@ -180,18 +169,6 @@ export class AssetApi {
         transformResponse: this.baseTransformer
       })
       .then(handleResponse);
-  }
-
-  async allAssets(): Promise<SupportedAssets> {
-    const assets = await this.axios.get<ActionResult<SupportedAssets>>(
-      '/assets/all',
-      {
-        validateStatus: validWithSessionAndExternalService,
-        transformResponse: setupTransformer([], true)
-      }
-    );
-
-    return SupportedAssets.parse(handleResponse(assets));
   }
 
   async queryOwnedAssets(): Promise<string[]> {

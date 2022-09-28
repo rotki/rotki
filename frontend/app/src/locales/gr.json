@@ -304,12 +304,6 @@
           "title": "Deleting Manual Balance"
         }
       },
-      "supported_assets": {
-        "error": {
-          "message": "Failed to retrieve supported assets: {message}",
-          "title": "Fetching supported assets"
-        }
-      },
       "xpub_removal": {
         "error": {
           "description": "Failed to remove {xpub}: {error}",

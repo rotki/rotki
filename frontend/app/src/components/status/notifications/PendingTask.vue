@@ -35,40 +35,27 @@
   </card>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import dayjs from 'dayjs';
-import { storeToRefs } from 'pinia';
-import { computed, defineComponent, PropType, toRefs } from 'vue';
+import { PropType } from 'vue';
 import { useReports } from '@/store/reports';
 import { Task, TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 
-export default defineComponent({
-  name: 'PendingTask',
-  props: {
-    task: {
-      required: true,
-      type: Object as PropType<Task<TaskMeta>>
-    }
-  },
-  setup(props) {
-    const { task } = toRefs(props);
-    const isHistory = computed(
-      () => task.value.type === TaskType.TRADE_HISTORY
-    );
-
-    const { progress } = storeToRefs(useReports());
-
-    const time = computed(() => {
-      return dayjs(task.value.time).format('LLL');
-    });
-
-    return {
-      time,
-      isHistory,
-      progress
-    };
+const props = defineProps({
+  task: {
+    required: true,
+    type: Object as PropType<Task<TaskMeta>>
   }
+});
+
+const { task } = toRefs(props);
+const isHistory = computed(() => task.value.type === TaskType.TRADE_HISTORY);
+
+const { progress } = storeToRefs(useReports());
+
+const time = computed(() => {
+  return dayjs(task.value.time).format('LLL');
 });
 </script>
 

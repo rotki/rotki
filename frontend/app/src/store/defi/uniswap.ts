@@ -1,12 +1,12 @@
-import { XswapBalances, XswapEvents } from '@rotki/common/lib/defi/xswap';
-import { get, set } from '@vueuse/core';
-import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
-import { computed, Ref, ref } from 'vue';
+import {
+  XswapBalance,
+  XswapBalances,
+  XswapEvents
+} from '@rotki/common/lib/defi/xswap';
+import { ComputedRef, Ref } from 'vue';
 import { usePremium } from '@/composables/premium';
 import { useStatusUpdater } from '@/composables/status';
-import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
-import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import {
   getBalances,
   getEventDetails,
@@ -28,16 +28,20 @@ export const useUniswapStore = defineStore('defi/uniswap', () => {
   const v3Balances = ref<XswapBalances>({}) as Ref<XswapBalances>;
   const events = ref<XswapEvents>({}) as Ref<XswapEvents>;
 
-  const { fetchSupportedAssets } = useAssetInfoRetrieval();
   const { activeModules } = storeToRefs(useGeneralSettingsStore());
   const isPremium = usePremium();
+  const { t, tc } = useI18n();
 
-  const uniswapV2Balances = (addresses: string[]) =>
+  const uniswapV2Balances = (
+    addresses: string[]
+  ): ComputedRef<XswapBalance[]> =>
     computed(() => {
       return getBalances(get(v2Balances), addresses);
     });
 
-  const uniswapV3Balances = (addresses: string[]) =>
+  const uniswapV3Balances = (
+    addresses: string[]
+  ): ComputedRef<XswapBalance[]> =>
     computed(() => {
       return getBalances(get(v3Balances), addresses, false);
     });
@@ -81,19 +85,17 @@ export const useUniswapStore = defineStore('defi/uniswap', () => {
 
   const fetchV2Balances = async (refresh: boolean = false) => {
     const meta: TaskMeta = {
-      title: i18n.t('actions.defi.uniswap.task.title', { v: 2 }).toString(),
+      title: t('actions.defi.uniswap.task.title', { v: 2 }).toString(),
       numericKeys: []
     };
 
     const onError: OnError = {
-      title: i18n.t('actions.defi.uniswap.error.title', { v: 2 }).toString(),
+      title: t('actions.defi.uniswap.error.title', { v: 2 }).toString(),
       error: message =>
-        i18n
-          .t('actions.defi.uniswap.error.description', {
-            error: message,
-            v: 2
-          })
-          .toString()
+        t('actions.defi.uniswap.error.description', {
+          error: message,
+          v: 2
+        }).toString()
     };
 
     await fetchDataAsync(
@@ -118,26 +120,22 @@ export const useUniswapStore = defineStore('defi/uniswap', () => {
       },
       v2Balances
     );
-
-    await fetchSupportedAssets(true);
   };
 
   const fetchV3Balances = async (refresh: boolean = false) => {
     const meta = {
-      title: i18n.t('actions.defi.uniswap.task.title', { v: 3 }).toString(),
+      title: t('actions.defi.uniswap.task.title', { v: 3 }).toString(),
       numericKeys: [],
       premium: get(isPremium)
     };
 
     const onError: OnError = {
-      title: i18n.t('actions.defi.uniswap.error.title', { v: 3 }).toString(),
+      title: t('actions.defi.uniswap.error.title', { v: 3 }).toString(),
       error: message =>
-        i18n
-          .t('actions.defi.uniswap.error.description', {
-            error: message,
-            v: 3
-          })
-          .toString()
+        t('actions.defi.uniswap.error.description', {
+          error: message,
+          v: 3
+        }).toString()
     };
 
     await fetchDataAsync(
@@ -163,20 +161,18 @@ export const useUniswapStore = defineStore('defi/uniswap', () => {
       },
       v3Balances
     );
-
-    await fetchSupportedAssets(true);
   };
 
   const fetchEvents = async (refresh: boolean = false) => {
     const meta: TaskMeta = {
-      title: i18n.tc('actions.defi.uniswap_events.task.title'),
+      title: tc('actions.defi.uniswap_events.task.title'),
       numericKeys: uniswapEventsNumericKeys
     };
 
     const onError: OnError = {
-      title: i18n.tc('actions.defi.uniswap_events.error.title'),
+      title: tc('actions.defi.uniswap_events.error.title'),
       error: message =>
-        i18n.tc('actions.defi.uniswap_events.error.description', undefined, {
+        tc('actions.defi.uniswap_events.error.description', undefined, {
           error: message
         })
     };
@@ -202,8 +198,6 @@ export const useUniswapStore = defineStore('defi/uniswap', () => {
       },
       events
     );
-
-    await fetchSupportedAssets(true);
   };
 
   const reset = () => {

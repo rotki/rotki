@@ -1,10 +1,7 @@
-import { get, set } from '@vueuse/core';
-import { acceptHMRUpdate, defineStore } from 'pinia';
-import { computed, ComputedRef, Ref, ref } from 'vue';
+import { ComputedRef, Ref } from 'vue';
 import { usePremium } from '@/composables/premium';
 import { useModules } from '@/composables/session';
 import { useStatusUpdater } from '@/composables/status';
-import i18n from '@/i18n';
 import { balanceKeys } from '@/services/consts';
 import { ProtocolVersion } from '@/services/defi/consts';
 import { api } from '@/services/rotkehlchen-api';
@@ -40,6 +37,7 @@ export const useYearnStore = defineStore('defi/yearn', () => {
   const { activeModules } = useModules();
   const { assetSymbol } = useAssetInfoRetrieval();
   const premium = usePremium();
+  const { t } = useI18n();
 
   const yearnVaultsProfit = (
     addresses: string[],
@@ -197,9 +195,9 @@ export const useYearnStore = defineStore('defi/yearn', () => {
         taskId,
         taskType,
         {
-          title: i18n
-            .t('actions.defi.yearn_vaults.task.title', { version })
-            .toString(),
+          title: t('actions.defi.yearn_vaults.task.title', {
+            version
+          }).toString(),
           numericKeys: balanceKeys
         }
       );
@@ -211,15 +209,13 @@ export const useYearnStore = defineStore('defi/yearn', () => {
       }
     } catch (e: any) {
       notify({
-        title: i18n
-          .t('actions.defi.yearn_vaults.error.title', { version })
-          .toString(),
-        message: i18n
-          .t('actions.defi.yearn_vaults.error.description', {
-            error: e.message,
-            version
-          })
-          .toString(),
+        title: t('actions.defi.yearn_vaults.error.title', {
+          version
+        }).toString(),
+        message: t('actions.defi.yearn_vaults.error.description', {
+          error: e.message,
+          version
+        }).toString(),
         display: true
       });
     }
@@ -272,11 +268,9 @@ export const useYearnStore = defineStore('defi/yearn', () => {
         taskId,
         taskType,
         {
-          title: i18n
-            .t('actions.defi.yearn_vaults_history.task.title', {
-              version: payload.version
-            })
-            .toString(),
+          title: t('actions.defi.yearn_vaults_history.task.title', {
+            version: payload.version
+          }).toString(),
           numericKeys: balanceKeys
         }
       );
@@ -288,17 +282,13 @@ export const useYearnStore = defineStore('defi/yearn', () => {
       }
     } catch (e: any) {
       notify({
-        title: i18n
-          .t('actions.defi.yearn_vaults_history.error.title', {
-            version: payload.version
-          })
-          .toString(),
-        message: i18n
-          .t('actions.defi.yearn_vaults_history.error.description', {
-            error: e.message,
-            version: payload.version
-          })
-          .toString(),
+        title: t('actions.defi.yearn_vaults_history.error.title', {
+          version: payload.version
+        }).toString(),
+        message: t('actions.defi.yearn_vaults_history.error.description', {
+          error: e.message,
+          version: payload.version
+        }).toString(),
         display: true
       });
     }

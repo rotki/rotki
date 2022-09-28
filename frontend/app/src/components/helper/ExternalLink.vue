@@ -1,24 +1,14 @@
 <template>
-  <a href="#" @click="openLink()"><slot /></a>
+  <a href="#" @click="onLinkClick()"><slot /></a>
 </template>
 
-<script lang="ts">
-import { get } from '@vueuse/core';
-import { defineComponent, toRefs } from 'vue';
-import { interop } from '@/electron-interop';
+<script setup lang="ts">
+import { useLinks } from '@/composables/links';
 
-export default defineComponent({
-  name: 'ExternalLink',
-  props: {
-    url: { required: true, type: String }
-  },
-  setup(props) {
-    const { url } = toRefs(props);
-    const openLink = () => {
-      interop.openUrl(get(url));
-    };
-
-    return { openLink };
-  }
+const props = defineProps({
+  url: { required: true, type: String }
 });
+
+const { url } = toRefs(props);
+const { onLinkClick } = useLinks(url);
 </script>

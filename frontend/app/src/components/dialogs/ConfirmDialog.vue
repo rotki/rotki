@@ -58,48 +58,36 @@
   </v-dialog-transition>
 </template>
 
-<script lang="ts">
-import { get } from '@vueuse/core';
-import { computed, defineComponent, PropType, toRefs } from 'vue';
+<script setup lang="ts">
+import { PropType } from 'vue';
 import { themes } from '@/types/dialogs';
 
-const ConfirmDialog = defineComponent({
-  name: 'ConfirmDialog',
-  props: {
-    title: { required: true, type: String },
-    message: { required: true, type: String },
-    display: { type: Boolean, required: true },
-    primaryAction: { type: String, required: false, default: 'Confirm' },
-    secondaryAction: { type: String, required: false, default: 'Cancel' },
-    confirmType: {
-      type: String as PropType<keyof typeof themes>,
-      required: false,
-      default: 'info'
-    },
-    disabled: { type: Boolean, required: false, default: false },
-    singleAction: { required: false, type: Boolean, default: false },
-    loading: { required: false, type: Boolean, default: false },
-    maxWidth: { required: false, type: String, default: '500' }
+const props = defineProps({
+  title: { required: true, type: String },
+  message: { required: true, type: String },
+  display: { type: Boolean, required: true },
+  primaryAction: { type: String, required: false, default: 'Confirm' },
+  secondaryAction: { type: String, required: false, default: 'Cancel' },
+  confirmType: {
+    type: String as PropType<keyof typeof themes>,
+    required: false,
+    default: 'info'
   },
-  emits: ['confirm', 'cancel'],
-  setup(props, { emit }) {
-    const { confirmType } = toRefs(props);
-    const color = computed(() => themes[get(confirmType)].color);
-    const icon = computed(() => themes[get(confirmType)].icon);
-    const confirm = () => emit('confirm');
-    const cancel = () => emit('cancel');
-
-    return {
-      cancel,
-      confirm,
-      color,
-      icon
-    };
-  }
+  disabled: { type: Boolean, required: false, default: false },
+  singleAction: { required: false, type: Boolean, default: false },
+  loading: { required: false, type: Boolean, default: false },
+  maxWidth: { required: false, type: String, default: '500' }
 });
 
-export default ConfirmDialog;
+const emit = defineEmits(['confirm', 'cancel']);
+
+const { confirmType } = toRefs(props);
+const color = computed(() => themes[get(confirmType)].color);
+const icon = computed(() => themes[get(confirmType)].icon);
+const confirm = () => emit('confirm');
+const cancel = () => emit('cancel');
 </script>
+
 <style scoped lang="scss">
 .confirm-dialog {
   &__actions {

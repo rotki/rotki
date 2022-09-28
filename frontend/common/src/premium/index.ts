@@ -1,6 +1,7 @@
 import { Ref } from "vue";
 import VueI18n from 'vue-i18n';
-import { SupportedAsset } from "../data";
+
+import { AssetInfo } from "../data";
 import { LpType, ProfitLossModel } from "../defi";
 import { BalancerBalance, BalancerEvent, BalancerProfitLoss } from "../defi/balancer";
 import { XswapBalance, XswapEventDetails, XswapPool, XswapPoolProfit } from "../defi/xswap";
@@ -81,7 +82,7 @@ export type BalancesApi = {
 };
 
 export type AssetsApi = {
-  assetInfo(identifier: string): SupportedAsset | undefined;
+  assetInfo(identifier: string): AssetInfo | null;
   assetSymbol(identifier: string): string;
   getIdentifierForSymbol(symbol: string): string | undefined;
 };

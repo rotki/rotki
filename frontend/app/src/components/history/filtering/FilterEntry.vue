@@ -3,15 +3,15 @@
     <v-btn
       text
       color="primary"
-      :class="$style.button"
+      :class="css.button"
       class="text-none text-body-1"
       @click="click(matcher.key)"
     >
-      <span class="text-start" :class="$style.wrapper">
+      <span class="text-start" :class="css.wrapper">
         <span class="font-weight-medium"> {{ matcher.key }}: </span>
         <span
           class="ms-2 text--secondary font-weight-regular"
-          :class="$style.description"
+          :class="css.description"
         >
           {{ matcher.description }}
         </span>
@@ -20,28 +20,23 @@
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent, PropType } from 'vue';
+<script setup lang="ts">
+import { PropType } from 'vue';
 import { SearchMatcher } from '@/types/filtering';
 
-export default defineComponent({
-  name: 'FilterEntry',
-  props: {
-    matcher: {
-      required: true,
-      type: Object as PropType<SearchMatcher<any>>
-    }
-  },
-  emits: ['click'],
-  setup(props, { emit }) {
-    const click = (key: string) => {
-      emit('click', key);
-    };
-    return {
-      click
-    };
+defineProps({
+  matcher: {
+    required: true,
+    type: Object as PropType<SearchMatcher<any>>
   }
 });
+
+const emit = defineEmits<{ (e: 'click', key: string): void }>();
+const css = useCssModule();
+
+const click = (key: string) => {
+  emit('click', key);
+};
 </script>
 
 <style module>

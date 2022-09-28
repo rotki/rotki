@@ -8,24 +8,15 @@
   </span>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue';
-
-export default defineComponent({
-  name: 'RowExpander',
-  props: {
-    expanded: { required: true, type: Boolean }
-  },
-  emits: ['click'],
-  setup(_, { emit }) {
-    const click = () => emit('click');
-
-    return {
-      click
-    };
-  }
+<script setup lang="ts">
+defineProps({
+  expanded: { required: true, type: Boolean }
 });
+
+const emit = defineEmits(['click']);
+const click = () => emit('click');
 </script>
+
 <style scoped lang="scss">
 .icon {
   &--expanded {

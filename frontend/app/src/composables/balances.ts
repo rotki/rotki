@@ -1,9 +1,9 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { get } from '@vueuse/core';
+import { MaybeRef } from '@vueuse/core';
 import { Routes } from '@/router/routes';
 import { api } from '@/services/rotkehlchen-api';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
-import { tradeLocations } from '@/types/trades';
+import { TradeLocationData, tradeLocations } from '@/types/trades';
 import { assert } from '@/utils/assertions';
 
 export const setupLocationInfo = () => {
@@ -11,22 +11,23 @@ export const setupLocationInfo = () => {
     return Object.values(Blockchain).includes(identifier as any);
   };
 
-  const getLocation = (identifier: string) => {
-    const { assetName } = useAssetInfoRetrieval();
+  const { assetName } = useAssetInfoRetrieval();
 
-    if (isSupportedBlockchain(identifier)) {
+  const getLocation = (identifier: MaybeRef<string>): TradeLocationData => {
+    const id = get(identifier);
+    if (isSupportedBlockchain(id)) {
       return {
-        name: get(assetName(identifier)),
-        identifier: identifier,
+        name: get(assetName(id)),
+        identifier: id,
         exchange: false,
         imageIcon: true,
-        icon: api.assets.assetImageUrl(identifier),
-        detailPath: `${Routes.ACCOUNTS_BALANCES_BLOCKCHAIN.route}#blockchain-balances-${identifier}`
+        icon: api.assets.assetImageUrl(id),
+        detailPath: `${Routes.ACCOUNTS_BALANCES_BLOCKCHAIN.route}#blockchain-balances-${id}`
       };
     }
 
     const locationFound = tradeLocations.find(
-      location => location.identifier === identifier
+      location => location.identifier === id
     );
     assert(!!locationFound, 'location should not be falsy');
     return locationFound;

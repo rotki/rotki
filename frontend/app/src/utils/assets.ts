@@ -1,6 +1,5 @@
 import { AssetBalance } from '@rotki/common';
-import { SupportedAsset } from '@rotki/common/lib/data';
-import { ManagedAsset } from '@/services/assets/types';
+import { AssetInfo } from '@rotki/common/lib/data';
 import { assert } from '@/utils/assertions';
 
 const levenshtein = (a: string, b: string) => {
@@ -41,26 +40,18 @@ const levenshtein = (a: string, b: string) => {
   return res;
 };
 
-const score = (keyword: string, { name, symbol }: ManagedAsset): number => {
-  const symbolScore = symbol
-    ? levenshtein(keyword, symbol.toLocaleLowerCase())
-    : 0;
-  const nameScore = name ? levenshtein(keyword, name.toLocaleLowerCase()) : 0;
-  return Math.min(symbolScore, nameScore);
-};
-
 /**
  *
  * @param {string} a - First string to compare
  * @param {string} b - Second string to compare
  * @param {string} keyword
  *
- * @return {number} - Rank comparison between string a to keyword and string b to keyword.
+ * @return {number} - Rank comparison between string `a` to keyword and string `b` to keyword.
  *
  * @description
  * This method use levenshtein to compare the string, but with little modifications.
  * This method will prioritize this thing (in order) other than the value from levenshtein:
- * 1. It will prioritize string that match from beginning (i.e. for keyword `hop`, it prioritizes string `hop-portocol` higher than string `hoo`)
+ * 1. It will prioritize string that match from beginning (i.e. for keyword `hop`, it prioritizes string `hop-protocol` higher than string `hoo`)
  * 2. It will prioritize string that contain the keyword (i.e. for keyword `urv`, it prioritizes string `curvy`, higher than string `urw`)
  */
 export const compareSymbols = (a: string, b: string, keyword: string) => {
@@ -96,34 +87,8 @@ export const compareSymbols = (a: string, b: string, keyword: string) => {
   return rankA - rankB;
 };
 
-export const compareAssets = (
-  a: ManagedAsset,
-  b: ManagedAsset,
-  element: keyof ManagedAsset,
-  keyword: string,
-  desc: boolean
-): number => {
-  const fields = ['symbol', 'name'];
-  if (keyword.length > 0 && fields.includes(element)) {
-    const diff = score(keyword, a) - score(keyword, b);
-    return desc ? diff * -1 : diff;
-  }
-
-  const aElement = a[element];
-  const bElement = b[element];
-
-  if (typeof bElement === 'number' && typeof aElement === 'number') {
-    return desc ? bElement - aElement : aElement - bElement;
-  } else if (typeof bElement === 'string' && typeof aElement === 'string') {
-    return desc
-      ? bElement.toLocaleLowerCase().localeCompare(aElement)
-      : aElement.toLocaleLowerCase().localeCompare(bElement);
-  }
-  return 0;
-};
-
 export const getSortItems = (
-  getInfo: (identifier: string) => SupportedAsset | undefined
+  getInfo: (identifier: string) => AssetInfo | null
 ) => {
   return (
     items: AssetBalance[],

@@ -13,25 +13,23 @@
     :persistent-hint="persistentHint"
     :required="required"
     :success-messages="successMessages"
-    :error-messages="errorMessages"
+    :error-messages="errors"
     item-value="identifier"
-    :filter="customFilter"
     :search-input.sync="search"
     :item-text="assetText"
     :hide-details="hideDetails"
+    :hide-no-data="loading || !search"
     auto-select-first
+    :loading="loading"
     :menu-props="{ closeOnContentClick: true }"
     :outlined="outlined"
+    no-filter
     :class="outlined ? 'asset-select--outlined' : null"
     @input="input"
     @blur="blur"
   >
     <template #selection="{ item }">
-      <asset-details
-        class="asset-select__details ml-2"
-        :asset="item.identifier"
-        :enable-association="enableAssociation"
-      />
+      <asset-details-base class="asset-select__details ml-2" :asset="item" />
     </template>
     <template #item="{ item }">
       <div class="pr-4">
@@ -52,142 +50,150 @@
         <v-list-item-subtitle>{{ item.name }}</v-list-item-subtitle>
       </v-list-item-content>
     </template>
+    <template #no-data>
+      <div data-cy="no_assets" class="px-4 py-2">
+        {{ tc('asset_select.no_results') }}
+      </div>
+    </template>
   </v-autocomplete>
 </template>
 
-<script lang="ts">
-import { SupportedAsset } from '@rotki/common/lib/data';
-import { get, set, useTimeoutFn } from '@vueuse/core';
-import { computed, defineComponent, PropType, ref, toRefs } from 'vue';
-import AssetDetails from '@/components/helper/AssetDetails.vue';
+<script setup lang="ts">
+import { PropType, Ref } from 'vue';
+import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
+import { useAssetInfoApi } from '@/services/assets/info';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
-import { compareAssets, getValidSelectorFromEvmAddress } from '@/utils/assets';
+import { AssetInfoWithId } from '@/types/assets';
+import { getValidSelectorFromEvmAddress } from '@/utils/assets';
 
-export default defineComponent({
-  name: 'AssetSelect',
-  components: { AssetDetails, AssetIcon },
-  props: {
-    items: {
-      required: false,
-      type: Array as PropType<string[]>,
-      default: () => []
-    },
-    excludes: {
-      required: false,
-      type: Array as PropType<string[]>,
-      default: () => []
-    },
-    hint: { required: false, type: String, default: '' },
-    successMessages: { required: false, type: String, default: '' },
-    errorMessages: {
-      required: false,
-      type: Array as PropType<string[]>,
-      default: () => []
-    },
-    label: { required: false, type: String, default: 'Asset' },
-    value: { required: false, type: String, default: '' },
-    rules: {
-      required: false,
-      type: Array as PropType<((v: string) => boolean | string)[]>,
-      default: () => []
-    },
-    disabled: { required: false, type: Boolean, default: false },
-    outlined: { required: false, type: Boolean, default: false },
-    clearable: { required: false, type: Boolean, default: false },
-    persistentHint: { required: false, type: Boolean, default: false },
-    required: { required: false, type: Boolean, default: false },
-    showIgnored: { required: false, type: Boolean, default: false },
-    hideDetails: { required: false, type: Boolean, default: false },
-    enableAssociation: { required: false, type: Boolean, default: true }
+const props = defineProps({
+  items: {
+    required: false,
+    type: Array as PropType<string[]>,
+    default: () => []
   },
-  emits: ['input'],
-  setup(props, { emit }) {
-    const { items, showIgnored, enableAssociation, excludes } = toRefs(props);
-    const assetInfoRetrievalStore = useAssetInfoRetrieval();
-    const { isAssetIgnored } = useIgnoredAssetsStore();
-    const { supportedAssets, allSupportedAssets } = toRefs(
-      assetInfoRetrievalStore
-    );
-
-    const input = (_value: string) => emit('input', _value);
-
-    const autoCompleteInput = ref(null);
-
-    const search = ref<string>('');
-
-    const keyword = computed<string>(() => {
-      if (!get(search)) {
-        return '';
-      }
-
-      return get(search).toLocaleLowerCase().trim();
-    });
-
-    const customFilter = (item: SupportedAsset, queryText: string): boolean => {
-      const toLower = (string?: string | null) => {
-        return string?.toLocaleLowerCase()?.trim() ?? '';
-      };
-      const keyword = toLower(queryText);
-      const name = toLower(item.name);
-      const symbol = toLower(item.symbol);
-      return name.indexOf(keyword) >= 0 || symbol.indexOf(keyword) >= 0;
-    };
-
-    const visibleAssets = computed<SupportedAsset[]>(() => {
-      const itemsVal = get(items);
-      const excludesVal = get(excludes);
-
-      let assets = (
-        get(enableAssociation) ? get(supportedAssets) : get(allSupportedAssets)
-      ).filter((asset: SupportedAsset) => {
-        const unIgnored =
-          get(showIgnored) || !get(isAssetIgnored(asset.identifier));
-
-        const included =
-          itemsVal && itemsVal.length > 0
-            ? itemsVal.includes(asset.identifier)
-            : true;
-
-        const excluded =
-          excludesVal && excludesVal.length > 0
-            ? excludesVal.includes(asset.identifier)
-            : false;
-
-        return unIgnored && included && !excluded;
-      });
-
-      const searchVal = get(search);
-      if (!searchVal) return assets;
-
-      return assets
-        .filter(item => customFilter(item, searchVal))
-        .sort((a, b) => compareAssets(a, b, 'name', get(keyword), false));
-    });
-
-    const assetText = (asset: SupportedAsset): string => {
-      return `${asset.symbol} ${asset.name}`;
-    };
-
-    const blur = () => {
-      useTimeoutFn(() => {
-        set(search, '');
-      }, 200);
-    };
-
-    return {
-      autoCompleteInput,
-      blur,
-      visibleAssets,
-      customFilter,
-      search,
-      assetText,
-      input,
-      getValidSelectorFromEvmAddress
-    };
-  }
+  excludes: {
+    required: false,
+    type: Array as PropType<string[]>,
+    default: () => []
+  },
+  hint: { required: false, type: String, default: '' },
+  successMessages: { required: false, type: String, default: '' },
+  errorMessages: {
+    required: false,
+    type: Array as PropType<string[]>,
+    default: () => []
+  },
+  label: { required: false, type: String, default: 'Asset' },
+  value: { required: false, type: String, default: '' },
+  rules: {
+    required: false,
+    type: Array as PropType<((v: string) => boolean | string)[]>,
+    default: () => []
+  },
+  disabled: { required: false, type: Boolean, default: false },
+  outlined: { required: false, type: Boolean, default: false },
+  clearable: { required: false, type: Boolean, default: false },
+  persistentHint: { required: false, type: Boolean, default: false },
+  required: { required: false, type: Boolean, default: false },
+  showIgnored: { required: false, type: Boolean, default: false },
+  hideDetails: { required: false, type: Boolean, default: false }
 });
+
+const emit = defineEmits<{ (e: 'input', value: string): void }>();
+
+const { items, showIgnored, excludes, errorMessages } = toRefs(props);
+const { isAssetIgnored } = useIgnoredAssetsStore();
+
+const input = (value: string) => emit('input', value);
+
+const autoCompleteInput = ref(null);
+const search = ref<string>('');
+const assets: Ref<AssetInfoWithId[]> = ref([]);
+const error = ref('');
+const loading = ref(false);
+
+const { assetSearch } = useAssetInfoApi();
+const { tc } = useI18n();
+
+const errors = computed(() => {
+  let messages = get(errorMessages);
+  let errorMessage = get(error);
+  if (errorMessage) {
+    messages.push(errorMessage);
+  }
+  return messages;
+});
+
+const visibleAssets = computed<AssetInfoWithId[]>(() => {
+  const itemsVal = get(items);
+  const excludesVal = get(excludes);
+  let knownAssets = get(assets);
+
+  let includeIgnored = get(showIgnored);
+  return knownAssets.filter((asset: AssetInfoWithId) => {
+    const unIgnored = includeIgnored || !get(isAssetIgnored(asset.identifier));
+
+    const included =
+      itemsVal && itemsVal.length > 0
+        ? itemsVal.includes(asset.identifier)
+        : true;
+
+    const excluded =
+      excludesVal && excludesVal.length > 0
+        ? excludesVal.includes(asset.identifier)
+        : false;
+
+    return unIgnored && included && !excluded;
+  });
+});
+
+const assetText = (asset: AssetInfoWithId): string => {
+  return `${asset.symbol} ${asset.name}`;
+};
+
+const blur = () => {
+  useTimeoutFn(() => {
+    set(search, '');
+  }, 200);
+};
+
+const searchAssets = async (
+  keyword: string,
+  signal: AbortSignal
+): Promise<void> => {
+  try {
+    set(assets, await assetSearch(keyword, 50, signal));
+  } catch (e: any) {
+    set(error, e.message);
+  }
+};
+
+const pending: Record<string, AbortController> = {};
+
+watchThrottled(
+  search,
+  async (search, old) => {
+    if (!search) {
+      return;
+    }
+
+    if (pending[old]) {
+      pending[old].abort();
+      delete pending[old];
+    }
+    set(error, '');
+    set(loading, true);
+    let controller = new AbortController();
+    pending[search] = controller;
+    await searchAssets(search, controller.signal);
+    set(loading, false);
+  },
+  {
+    throttle: 800
+  }
+);
 </script>
 
 <style scoped lang="scss">

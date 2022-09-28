@@ -1,8 +1,5 @@
 import { Message } from '@rotki/common/lib/messages';
-import { get, set } from '@vueuse/core';
-import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
-import { computed, Ref, ref } from 'vue';
-import i18n from '@/i18n';
+import { Ref } from 'vue';
 import { api } from '@/services/rotkehlchen-api';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
 import { filterAddressesFromWords } from '@/store/history/utils';
@@ -90,21 +87,22 @@ export const useReports = defineStore('reports', () => {
 
   const { setMessage } = useMessageStore();
   const { itemsPerPage } = storeToRefs(useFrontendSettingsStore());
+  const { t } = useI18n();
 
   const createCsv = async (path: string) => {
     let message: Message;
     try {
       const success = await api.exportHistoryCSV(path);
       message = {
-        title: i18n.t('actions.reports.csv_export.title').toString(),
+        title: t('actions.reports.csv_export.title').toString(),
         description: success
-          ? i18n.t('actions.reports.csv_export.message.success').toString()
-          : i18n.t('actions.reports.csv_export.message.failure').toString(),
+          ? t('actions.reports.csv_export.message.success').toString()
+          : t('actions.reports.csv_export.message.failure').toString(),
         success
       };
     } catch (e: any) {
       message = {
-        title: i18n.t('actions.reports.csv_export.title').toString(),
+        title: t('actions.reports.csv_export.title').toString(),
         description: e.message,
         success: false
       };
@@ -118,9 +116,9 @@ export const useReports = defineStore('reports', () => {
       await fetchReports();
     } catch (e: any) {
       notify({
-        title: i18n.t('actions.reports.delete.error.title').toString(),
+        title: t('actions.reports.delete.error.title').toString(),
         message: values =>
-          i18n.t('actions.reports.delete.error.description', values).toString(),
+          t('actions.reports.delete.error.description', values).toString(),
         error: e
       });
     }
@@ -178,9 +176,9 @@ export const useReports = defineStore('reports', () => {
       await fetchEnsNames(addresses, false);
     } catch (e: any) {
       notify({
-        title: i18n.t('actions.reports.fetch.error.title').toString(),
+        title: t('actions.reports.fetch.error.title').toString(),
         message: value =>
-          i18n.t('actions.reports.fetch.error.description', value).toString(),
+          t('actions.reports.fetch.error.description', value).toString(),
         error: e
       });
       return false;
@@ -193,9 +191,9 @@ export const useReports = defineStore('reports', () => {
       set(reports, await api.reports.fetchReports());
     } catch (e: any) {
       notify({
-        title: i18n.t('actions.reports.fetch.error.title').toString(),
+        title: t('actions.reports.fetch.error.title').toString(),
         message: value =>
-          i18n.t('actions.reports.fetch.error.description', value).toString(),
+          t('actions.reports.fetch.error.description', value).toString(),
         error: e
       });
     }
@@ -221,7 +219,7 @@ export const useReports = defineStore('reports', () => {
         taskId,
         TaskType.TRADE_HISTORY,
         {
-          title: i18n.t('actions.reports.generate.task.title').toString(),
+          title: t('actions.reports.generate.task.title').toString(),
           numericKeys: []
         }
       );
@@ -232,16 +230,16 @@ export const useReports = defineStore('reports', () => {
       } else {
         set(reportError, {
           error: '',
-          message: i18n
-            .t('actions.reports.generate.error.description', { error: '' })
-            .toString()
+          message: t('actions.reports.generate.error.description', {
+            error: ''
+          }).toString()
         });
       }
       return result;
     } catch (e: any) {
       set(reportError, {
         error: e.message,
-        message: i18n.t('actions.reports.generate.error.description').toString()
+        message: t('actions.reports.generate.error.description').toString()
       });
       return -1;
     } finally {
@@ -274,7 +272,7 @@ export const useReports = defineStore('reports', () => {
         taskId,
         TaskType.TRADE_HISTORY,
         {
-          title: i18n.t('actions.reports.generate.task.title').toString(),
+          title: t('actions.reports.generate.task.title').toString(),
           numericKeys: [],
           transform: false
         }
@@ -284,7 +282,7 @@ export const useReports = defineStore('reports', () => {
     } catch (e: any) {
       set(reportError, {
         error: e.message,
-        message: i18n.t('actions.reports.generate.error.description').toString()
+        message: t('actions.reports.generate.error.description').toString()
       });
 
       return {};

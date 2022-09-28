@@ -1,10 +1,7 @@
-import { get, set } from '@vueuse/core';
-import { acceptHMRUpdate, defineStore } from 'pinia';
-import { computed, Ref, ref } from 'vue';
+import { Ref } from 'vue';
 import { usePremium } from '@/composables/premium';
 import { useModules } from '@/composables/session';
 import { useStatusUpdater } from '@/composables/status';
-import i18n from '@/i18n';
 import { balanceKeys } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
 import { toProfitLossModel } from '@/store/defi/utils';
@@ -37,6 +34,7 @@ export const useCompoundStore = defineStore('defi/compound', () => {
   const { notify } = useNotifications();
   const { activeModules } = useModules();
   const premium = usePremium();
+  const { tc } = useI18n();
 
   const rewards = computed(() => toProfitLossModel(get(history).rewards));
   const interestProfit = computed(() =>
@@ -72,15 +70,15 @@ export const useCompoundStore = defineStore('defi/compound', () => {
         taskId,
         taskType,
         {
-          title: i18n.tc('actions.defi.compound.task.title'),
+          title: tc('actions.defi.compound.task.title'),
           numericKeys: balanceKeys
         }
       );
       set(balances, result);
     } catch (e: any) {
       notify({
-        title: i18n.tc('actions.defi.compound.error.title'),
-        message: i18n.tc('actions.defi.compound.error.description', undefined, {
+        title: tc('actions.defi.compound.error.title'),
+        message: tc('actions.defi.compound.error.description', undefined, {
           error: e.message
         }),
         display: true
@@ -114,7 +112,7 @@ export const useCompoundStore = defineStore('defi/compound', () => {
         taskId,
         taskType,
         {
-          title: i18n.tc('actions.defi.compound_history.task.title'),
+          title: tc('actions.defi.compound_history.task.title'),
           numericKeys: balanceKeys
         }
       );
@@ -122,8 +120,8 @@ export const useCompoundStore = defineStore('defi/compound', () => {
       set(history, result);
     } catch (e: any) {
       notify({
-        title: i18n.tc('actions.defi.compound_history.error.title'),
-        message: i18n.tc(
+        title: tc('actions.defi.compound_history.error.title'),
+        message: tc(
           'actions.defi.compound_history.error.description',
           undefined,
           {

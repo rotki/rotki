@@ -19,9 +19,7 @@
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent, onMounted } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+<script setup lang="ts">
 import ActiveModules from '@/components/defi/ActiveModules.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
@@ -34,41 +32,22 @@ import { useSushiswapStore } from '@/store/defi/sushiswap';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 
-export default defineComponent({
-  name: 'Sushiswap',
-  components: {
-    ActiveModules,
-    Sushi,
-    NoPremiumPlaceholder,
-    ProgressScreen,
-    ModuleNotActive
-  },
-  setup() {
-    const section = Section.DEFI_SUSHISWAP_BALANCES;
-    const secondSection = Section.DEFI_SUSHISWAP_EVENTS;
-    const modules: Module[] = [Module.SUSHISWAP];
+const section = Section.DEFI_SUSHISWAP_BALANCES;
+const secondSection = Section.DEFI_SUSHISWAP_EVENTS;
+const modules: Module[] = [Module.SUSHISWAP];
 
-    const { fetchBalances, fetchEvents } = useSushiswapStore();
-    const { isModuleEnabled } = useModules();
-    const { shouldShowLoadingScreen, isSectionRefreshing } =
-      useSectionLoading();
-    const premium = usePremium();
-    const { tc } = useI18n();
+const { fetchBalances, fetchEvents } = useSushiswapStore();
+const { isModuleEnabled } = useModules();
+const { shouldShowLoadingScreen, isSectionRefreshing } = useSectionLoading();
+const premium = usePremium();
+const { tc } = useI18n();
 
-    onMounted(async () => {
-      await Promise.all([fetchBalances(false), fetchEvents(false)]);
-    });
-    return {
-      section,
-      secondSection,
-      modules,
-      premium,
-      primaryRefreshing: isSectionRefreshing(section),
-      secondaryRefreshing: isSectionRefreshing(secondSection),
-      loading: shouldShowLoadingScreen(section),
-      isEnabled: isModuleEnabled(modules[0]),
-      tc
-    };
-  }
+const primaryRefreshing = isSectionRefreshing(section);
+const secondaryRefreshing = isSectionRefreshing(secondSection);
+const loading = shouldShowLoadingScreen(section);
+const isEnabled = isModuleEnabled(modules[0]);
+
+onMounted(async () => {
+  await Promise.all([fetchBalances(false), fetchEvents(false)]);
 });
 </script>

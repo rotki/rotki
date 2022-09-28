@@ -1,11 +1,8 @@
 import { DefiProtocol } from '@rotki/common/lib/blockchain';
-import { get, set } from '@vueuse/core';
-import { acceptHMRUpdate, defineStore } from 'pinia';
-import { ref, Ref } from 'vue';
+import { Ref } from 'vue';
 import { usePremium } from '@/composables/premium';
 import { useModules } from '@/composables/session';
 import { useStatusUpdater } from '@/composables/status';
-import i18n from '@/i18n';
 import { balanceKeys } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
 import { useNotifications } from '@/store/notifications';
@@ -61,6 +58,7 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
   const { notify } = useNotifications();
   const { activeModules } = useModules();
   const premium = usePremium();
+  const { tc } = useI18n();
 
   async function fetchDSRBalances(refresh: boolean = false) {
     if (!get(activeModules).includes(Module.MAKERDAO_DSR)) {
@@ -86,20 +84,20 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
         taskId,
         taskType,
         {
-          title: i18n.tc('actions.defi.dsr_balances.task.title'),
+          title: tc('actions.defi.dsr_balances.task.title'),
           numericKeys: dsrKeys
         }
       );
       set(dsrBalances, result);
     } catch (e: any) {
-      const message = i18n.tc(
+      const message = tc(
         'actions.defi.dsr_balances.error.description',
         undefined,
         {
           error: e.message
         }
       );
-      const title = i18n.tc('actions.defi.dsr_balances.error.title');
+      const title = tc('actions.defi.dsr_balances.error.title');
       notify({
         title,
         message,
@@ -134,21 +132,21 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
         taskId,
         taskType,
         {
-          title: i18n.tc('actions.defi.dsr_history.task.title'),
+          title: tc('actions.defi.dsr_history.task.title'),
           numericKeys: balanceKeys
         }
       );
 
       set(dsrHistory, result);
     } catch (e: any) {
-      const message = i18n.tc(
+      const message = tc(
         'actions.defi.dsr_history.error.description',
         undefined,
         {
           error: e.message
         }
       );
-      const title = i18n.tc('actions.defi.dsr_history.error.title');
+      const title = tc('actions.defi.dsr_history.error.title');
       notify({
         title,
         message,
@@ -182,21 +180,21 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
         taskId,
         taskType,
         {
-          title: i18n.tc('actions.defi.makerdao_vaults.task.title'),
+          title: tc('actions.defi.makerdao_vaults.task.title'),
           numericKeys: vaultKeys
         }
       );
 
       set(makerDAOVaults, convertMakerDAOVaults(result));
     } catch (e: any) {
-      const message = i18n.tc(
+      const message = tc(
         'actions.defi.makerdao_vaults.error.description',
         undefined,
         {
           error: e.message
         }
       );
-      const title = i18n.tc('actions.defi.makerdao_vaults.error.title');
+      const title = tc('actions.defi.makerdao_vaults.error.title');
       const { notify } = useNotifications();
       notify({
         title,
@@ -230,19 +228,19 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
         taskId,
         TaskType.MAKERDAO_VAULT_DETAILS,
         {
-          title: i18n.tc('actions.defi.makerdao_vault_details.task.title'),
+          title: tc('actions.defi.makerdao_vault_details.task.title'),
           numericKeys: vaultDetailsKeys
         }
       );
 
       set(makerDAOVaultDetails, result);
     } catch (e: any) {
-      const message = i18n.tc(
+      const message = tc(
         'actions.defi.makerdao_vault_details.error.description',
         undefined,
         { error: e.message }
       );
-      const title = i18n.tc('actions.defi.makerdao_vault_details.error.title');
+      const title = tc('actions.defi.makerdao_vault_details.error.title');
       notify({
         title,
         message,

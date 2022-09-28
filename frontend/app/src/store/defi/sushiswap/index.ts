@@ -1,13 +1,9 @@
 import { XswapBalances, XswapEvents } from '@rotki/common/lib/defi/xswap';
-import { get, set } from '@vueuse/core';
-import { acceptHMRUpdate, defineStore } from 'pinia';
-import { computed, Ref, ref } from 'vue';
+import { Ref } from 'vue';
 import { usePremium } from '@/composables/premium';
 import { useModules } from '@/composables/session';
 import { useStatusUpdater } from '@/composables/status';
-import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
-import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import {
   getBalances,
   getEventDetails,
@@ -32,7 +28,7 @@ export const useSushiswapStore = defineStore('defi/sushiswap', () => {
 
   const isPremium = usePremium();
   const { activeModules } = useModules();
-  const { fetchSupportedAssets } = useAssetInfoRetrieval();
+  const { t } = useI18n();
 
   const balanceList = (addresses: string[]) =>
     computed(() => getBalances(get(balances), addresses));
@@ -51,18 +47,16 @@ export const useSushiswapStore = defineStore('defi/sushiswap', () => {
 
   async function fetchBalances(refresh: boolean = false) {
     const meta: TaskMeta = {
-      title: i18n.t('actions.defi.sushiswap_balances.task.title').toString(),
+      title: t('actions.defi.sushiswap_balances.task.title').toString(),
       numericKeys: uniswapNumericKeys
     };
 
     const onError: OnError = {
-      title: i18n.t('actions.defi.sushiswap_balances.error.title').toString(),
+      title: t('actions.defi.sushiswap_balances.error.title').toString(),
       error: message =>
-        i18n
-          .t('actions.defi.sushiswap_balances.error.description', {
-            message
-          })
-          .toString()
+        t('actions.defi.sushiswap_balances.error.description', {
+          message
+        }).toString()
     };
 
     await fetchDataAsync(
@@ -86,24 +80,20 @@ export const useSushiswapStore = defineStore('defi/sushiswap', () => {
       },
       balances
     );
-
-    await fetchSupportedAssets(true);
   }
 
   async function fetchEvents(refresh: boolean = false) {
     const meta: TaskMeta = {
-      title: i18n.t('actions.defi.sushiswap_events.task.title').toString(),
+      title: t('actions.defi.sushiswap_events.task.title').toString(),
       numericKeys: uniswapEventsNumericKeys
     };
 
     const onError: OnError = {
-      title: i18n.t('actions.defi.sushiswap_events.error.title').toString(),
+      title: t('actions.defi.sushiswap_events.error.title').toString(),
       error: message =>
-        i18n
-          .t('actions.defi.sushiswap_events.error.description', {
-            message
-          })
-          .toString()
+        t('actions.defi.sushiswap_events.error.description', {
+          message
+        }).toString()
     };
 
     await fetchDataAsync(
@@ -127,8 +117,6 @@ export const useSushiswapStore = defineStore('defi/sushiswap', () => {
       },
       events
     );
-
-    await fetchSupportedAssets(true);
   }
 
   async function reset() {

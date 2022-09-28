@@ -14,7 +14,6 @@ import {
 } from '@/services/session/consts';
 import { Purgeable } from '@/services/session/types';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useBalancesStore } from '@/store/balances';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { useDefiStore } from '@/store/defi';
@@ -84,7 +83,6 @@ export const useSessionStore = defineStore('session', () => {
   const { fetchIgnored } = useHistory();
   const { fetchIgnoredAssets } = useIgnoredAssetsStore();
   const { fetchNetValue } = useStatisticsStore();
-  const { fetchSupportedAssets } = useAssetInfoRetrieval();
   const { fetchCounterparties } = useTransactions();
   const { fetch, refreshPrices } = useBalancesStore();
   const { start, stop } = useMonitorStore();
@@ -147,7 +145,6 @@ export const useSessionStore = defineStore('session', () => {
       set(newAccount, isNew);
       set(username, user);
       set(logged, true);
-      await fetchSupportedAssets();
       await fetchCounterparties();
 
       if (!isNew || sync) {

@@ -15,31 +15,20 @@
     </span>
   </span>
 </template>
-<script lang="ts">
-import { storeToRefs } from 'pinia';
-import { defineComponent, PropType } from 'vue';
+<script setup lang="ts">
+import { PropType } from 'vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
 import { useTagStore } from '@/store/session/tags';
 
-export default defineComponent({
-  name: 'TagDisplay',
-  components: {
-    TagIcon
+defineProps({
+  tags: {
+    required: false,
+    type: Array as PropType<string[]>,
+    default: () => []
   },
-  props: {
-    tags: {
-      required: false,
-      type: Array as PropType<string[]>,
-      default: () => []
-    },
-    small: { required: false, type: Boolean, default: false },
-    wrapperClass: { required: false, type: String, default: '' }
-  },
-  setup() {
-    const { availableTags } = storeToRefs(useTagStore());
-    return {
-      availableTags
-    };
-  }
+  small: { required: false, type: Boolean, default: false },
+  wrapperClass: { required: false, type: String, default: '' }
 });
+
+const { availableTags } = storeToRefs(useTagStore());
 </script>

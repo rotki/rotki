@@ -22,9 +22,9 @@ export class ManualBalancesPage extends AccountBalancesPage {
 
   addBalance(balance: FixtureManualBalance) {
     cy.get('.big-dialog').should('be.visible');
-    cy.get('.manual-balances-form__asset')
-      .type(balance.keyword)
-      .type('{enter}');
+    cy.get('.manual-balances-form__asset').type(balance.keyword);
+    cy.get('[data-cy="no_assets"]').should('not.exist');
+    cy.get('.manual-balances-form__asset').type('{enter}');
     cy.get('.manual-balances-form__label').type(balance.label);
     cy.get('.manual-balances-form__amount').type(balance.amount);
     for (const tag of balance.tags) {

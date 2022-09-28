@@ -14,34 +14,20 @@
     </div>
   </v-navigation-drawer>
 </template>
-<script lang="ts">
-import { storeToRefs } from 'pinia';
-import { defineComponent } from 'vue';
-import ReportActionableCard from '@/components/profitloss/ReportActionableCard.vue';
+<script setup lang="ts">
 import { useAreaVisibilityStore } from '@/store/session/visibility';
 
-export default defineComponent({
-  name: 'PinnedSidebar',
-  components: {
-    ReportActionableCard
-  },
-  props: {
-    visible: { required: true, type: Boolean }
-  },
-  emits: ['visible:update'],
-  setup(_, { emit }) {
-    const visibleUpdate = (_visible: boolean) => {
-      emit('visible:update', _visible);
-    };
-
-    const { pinned } = storeToRefs(useAreaVisibilityStore());
-
-    return {
-      pinned,
-      visibleUpdate
-    };
-  }
+defineProps({
+  visible: { required: true, type: Boolean }
 });
+
+const emit = defineEmits<{ (e: 'visible:update', visible: boolean): void }>();
+
+const visibleUpdate = (visible: boolean) => {
+  emit('visible:update', visible);
+};
+
+const { pinned } = storeToRefs(useAreaVisibilityStore());
 </script>
 
 <style scoped lang="scss">

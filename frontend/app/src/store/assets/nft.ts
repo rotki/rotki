@@ -1,10 +1,10 @@
-import { SupportedAsset } from '@rotki/common/lib/data';
 import { MaybeRef } from '@vueuse/core';
 import { ComputedRef } from 'vue';
 import { useNonFungibleBalancesStore } from '@/store/balances/non-funginble';
+import { AssetInfoWithId } from '@/types/assets';
 import { isNft } from '@/utils/nft';
 
-export type NftAsset = SupportedAsset & {
+export type NftAsset = AssetInfoWithId & {
   imageUrl?: string;
   collectionName?: string;
 };
@@ -31,12 +31,11 @@ export const useNftAssetInfoStore = defineStore('assets/nfts', () => {
 
       return {
         identifier: balance.id,
-        symbol: balance.name,
-        name: balance.name,
-        assetType: 'ethereum_token',
-        imageUrl: balance.imageUrl,
-        collectionName: balance.collectionName
-      } as NftAsset;
+        symbol: balance.name ?? '',
+        name: balance.name ?? '',
+        imageUrl: balance.imageUrl ?? undefined,
+        collectionName: balance.collectionName ?? undefined
+      };
     });
 
   return {

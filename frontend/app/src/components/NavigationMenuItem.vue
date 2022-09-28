@@ -55,49 +55,33 @@
   </div>
 </template>
 
-<script lang="ts">
-import { get } from '@vueuse/core';
-import {
-  computed,
-  defineComponent,
-  PropType,
-  toRefs,
-  VueConstructor
-} from 'vue';
+<script setup lang="ts">
+import { PropType, VueConstructor } from 'vue';
 import { useTheme } from '@/composables/common';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 
-export default defineComponent({
-  name: 'NavigationMenuItem',
-  props: {
-    showTooltips: { required: false, type: Boolean, default: false },
-    icon: { required: false, type: String, default: '' },
-    cryptoIcon: { required: false, type: String, default: '' },
-    text: { required: true, type: String },
-    image: { required: false, type: String, default: '' },
-    iconComponent: {
-      required: false,
-      type: Object as PropType<VueConstructor>,
-      default: null
-    },
-    active: { required: false, type: Boolean, default: false }
+const props = defineProps({
+  showTooltips: { required: false, type: Boolean, default: false },
+  icon: { required: false, type: String, default: '' },
+  cryptoIcon: { required: false, type: String, default: '' },
+  text: { required: true, type: String },
+  image: { required: false, type: String, default: '' },
+  iconComponent: {
+    required: false,
+    type: Object as PropType<VueConstructor>,
+    default: null
   },
-  setup(props) {
-    const { cryptoIcon } = toRefs(props);
-    const { assetIdentifierForSymbol } = useAssetInfoRetrieval();
-
-    const identifier = computed<string>(() => {
-      return get(assetIdentifierForSymbol(get(cryptoIcon))) ?? get(cryptoIcon);
-    });
-
-    const { dark } = useTheme();
-
-    return {
-      dark,
-      identifier
-    };
-  }
+  active: { required: false, type: Boolean, default: false }
 });
+
+const { cryptoIcon } = toRefs(props);
+const { assetIdentifierForSymbol } = useAssetInfoRetrieval();
+
+const identifier = computed<string>(() => {
+  return assetIdentifierForSymbol(get(cryptoIcon)) ?? get(cryptoIcon);
+});
+
+const { dark } = useTheme();
 </script>
 
 <style module lang="scss">

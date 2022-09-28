@@ -41,9 +41,6 @@
 </template>
 
 <script setup lang="ts">
-import { get } from '@vueuse/core';
-import { computed, toRefs } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 import { RawLocation } from 'vue-router';
 import AssetLocations from '@/components/assets/AssetLocations.vue';
 import AssetValueRow from '@/components/assets/AssetValueRow.vue';
@@ -83,14 +80,8 @@ const editRoute = computed<RawLocation>(() => {
 const premium = usePremium();
 
 const { assetName, assetSymbol } = useAssetInfoRetrieval();
-
-const name = computed<string>(() => {
-  return get(assetName(get(identifier)));
-});
-
-const symbol = computed<string>(() => {
-  return get(assetSymbol(get(identifier)));
-});
+const name = assetName(identifier);
+const symbol = assetSymbol(identifier);
 
 const { t } = useI18n();
 </script>

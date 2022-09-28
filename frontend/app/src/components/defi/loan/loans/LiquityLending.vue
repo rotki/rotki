@@ -48,11 +48,9 @@
   </v-row>
 </template>
 
-<script lang="ts">
-import { AssetBalance } from '@rotki/common';
-import { get } from '@vueuse/core';
-import { computed, defineComponent, PropType, toRefs } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+<script setup lang="ts">
+import { AssetBalance, BigNumber } from '@rotki/common';
+import { ComputedRef, PropType } from 'vue';
 import LoanDebt from '@/components/defi/loan/LoanDebt.vue';
 import LoanHeader from '@/components/defi/loan/LoanHeader.vue';
 import LiquityCollateral from '@/components/defi/loan/loans/liquity/LiquityCollateral.vue';
@@ -64,42 +62,25 @@ import { LiquityTroveEvents } from '@/premium/premium';
 import { LiquityLoan } from '@/store/defi/liquity/types';
 import { Section } from '@/types/status';
 
-export default defineComponent({
-  name: 'LiquityLending',
-  components: {
-    PremiumCard,
-    LiquityLiquidation,
-    LiquityCollateral,
-    LiquityTroveEvents,
-    LoanDebt,
-    LoanHeader
-  },
-  props: {
-    loan: {
-      required: true,
-      type: Object as PropType<LiquityLoan>
-    }
-  },
-  setup(props) {
-    const { loan } = toRefs(props);
-    const debt = computed<AssetBalance>(() => get(loan).balance.debt);
-    const collateral = computed<AssetBalance>(
-      () => get(loan).balance.collateral
-    );
-    const ratio = computed(() => get(loan).balance.collateralizationRatio);
-    const liquidationPrice = computed(() => get(loan).balance.liquidationPrice);
-    const premium = usePremium();
-    const loadingEvents = isSectionLoading(Section.DEFI_LIQUITY_EVENTS);
-    const { tc } = useI18n();
-    return {
-      debt,
-      collateral,
-      ratio,
-      liquidationPrice,
-      premium,
-      loadingEvents,
-      tc
-    };
+const props = defineProps({
+  loan: {
+    required: true,
+    type: Object as PropType<LiquityLoan>
   }
 });
+
+const { loan } = toRefs(props);
+const debt: ComputedRef<AssetBalance> = computed(() => get(loan).balance.debt);
+const collateral: ComputedRef<AssetBalance> = computed(
+  () => get(loan).balance.collateral
+);
+const ratio: ComputedRef<BigNumber | null> = computed(
+  () => get(loan).balance.collateralizationRatio
+);
+const liquidationPrice: ComputedRef<BigNumber | null> = computed(
+  () => get(loan).balance.liquidationPrice
+);
+const premium = usePremium();
+const loadingEvents = isSectionLoading(Section.DEFI_LIQUITY_EVENTS);
+const { tc } = useI18n();
 </script>

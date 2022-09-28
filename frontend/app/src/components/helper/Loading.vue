@@ -4,16 +4,8 @@
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue';
-
-export default defineComponent({
-  name: 'Loading',
-  setup() {
-    const char = '.';
-    return { char };
-  }
-});
+<script setup lang="ts">
+const char = '.';
 </script>
 
 <style scoped lang="scss">

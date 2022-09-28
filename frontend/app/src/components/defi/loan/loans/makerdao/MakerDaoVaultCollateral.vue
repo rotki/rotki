@@ -22,36 +22,26 @@
   </stat-card>
 </template>
 
-<script lang="ts">
-import { get } from '@vueuse/core';
-import { computed, defineComponent, PropType, toRefs } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+<script setup lang="ts">
+import { PropType } from 'vue';
 import LoanRow from '@/components/defi/loan/LoanRow.vue';
 import ManageWatchers from '@/components/defi/loan/loans/makerdao/ManageWatchers.vue';
 import StatCard from '@/components/display/StatCard.vue';
 import { MakerDAOVaultModel } from '@/types/defi/maker';
 
-export default defineComponent({
-  name: 'MakerDaoVaultCollateral',
-  components: { ManageWatchers, LoanRow, StatCard },
-  props: {
-    vault: {
-      required: true,
-      type: Object as PropType<MakerDAOVaultModel>
-    }
-  },
-  setup(props) {
-    const { vault } = toRefs(props);
-    const { tc } = useI18n();
-    const ratio = computed(() => {
-      const value = get(vault);
-      return value.collateralizationRatio ? value.collateralizationRatio : null;
-    });
-    return {
-      ratio,
-      assetPadding: 5,
-      tc
-    };
+const props = defineProps({
+  vault: {
+    required: true,
+    type: Object as PropType<MakerDAOVaultModel>
   }
 });
+
+const { vault } = toRefs(props);
+const { tc } = useI18n();
+const ratio = computed(() => {
+  const { collateralizationRatio } = get(vault);
+  return collateralizationRatio ? collateralizationRatio : null;
+});
+
+const assetPadding = 5;
 </script>

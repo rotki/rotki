@@ -1,7 +1,4 @@
-import { get, set } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { computed, ref, Ref, toRefs } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { Ref } from 'vue';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useAssociatedLocationsStore } from '@/store/history/associated-locations';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
@@ -32,9 +29,7 @@ export const useTradeFilters = () => {
 
   const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
   const { associatedLocations } = storeToRefs(useAssociatedLocationsStore());
-  const assetStore = useAssetInfoRetrieval();
-  const { supportedAssetsSymbol } = toRefs(assetStore);
-  const { getAssetIdentifierForSymbol } = assetStore;
+  const { assetIdentifierForSymbol } = useAssetInfoRetrieval();
   const i18n = useI18n();
 
   const matchers = computed<
@@ -44,17 +39,17 @@ export const useTradeFilters = () => {
       key: TradeFilterKeys.BASE,
       keyValue: TradeFilterValueKeys.BASE,
       description: i18n.t('closed_trades.filter.base_asset').toString(),
-      suggestions: () => get(supportedAssetsSymbol),
-      validate: (asset: string) => get(supportedAssetsSymbol).includes(asset),
-      transformer: (asset: string) => getAssetIdentifierForSymbol(asset) ?? ''
+      suggestions: () => [],
+      validate: () => true,
+      transformer: (asset: string) => assetIdentifierForSymbol(asset) ?? ''
     },
     {
       key: TradeFilterKeys.QUOTE,
       keyValue: TradeFilterValueKeys.QUOTE,
       description: i18n.t('closed_trades.filter.quote_asset').toString(),
-      suggestions: () => get(supportedAssetsSymbol),
-      validate: (asset: string) => get(supportedAssetsSymbol).includes(asset),
-      transformer: (asset: string) => getAssetIdentifierForSymbol(asset) ?? ''
+      suggestions: () => [],
+      validate: () => true,
+      transformer: (asset: string) => assetIdentifierForSymbol(asset) ?? ''
     },
     {
       key: TradeFilterKeys.ACTION,

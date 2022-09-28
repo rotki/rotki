@@ -7,7 +7,6 @@ import {
 import { Themes, TimeUnit } from '@rotki/common/lib/settings';
 import dayjs from 'dayjs';
 import { displayDateFormatter } from '@/data/date_formatter';
-import i18n from '@/i18n';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 import {
   adexApi,
@@ -72,6 +71,7 @@ const data = (): DataUtilities => ({
 
 const settings = (): SettingsApi => {
   const frontendStore = useFrontendSettingsStore();
+  const { t, tc } = useI18n();
   return {
     async update(settings: FrontendSettingsPayload): Promise<void> {
       await frontendStore.updateSetting(settings);
@@ -90,8 +90,8 @@ const settings = (): SettingsApi => {
     },
     user: userSettings(),
     i18n: {
-      t: i18n.t.bind(i18n),
-      tc: i18n.tc.bind(i18n)
+      t,
+      tc
     }
   };
 };

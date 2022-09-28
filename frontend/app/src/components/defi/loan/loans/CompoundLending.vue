@@ -30,10 +30,8 @@
   </v-row>
 </template>
 
-<script lang="ts">
-import { get } from '@vueuse/core';
-import { computed, defineComponent, PropType, toRefs } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+<script setup lang="ts">
+import { PropType } from 'vue';
 import LoanDebt from '@/components/defi/loan/LoanDebt.vue';
 import LoanHeader from '@/components/defi/loan/LoanHeader.vue';
 import CompoundCollateral from '@/components/defi/loan/loans/compound/CompoundCollateral.vue';
@@ -44,52 +42,31 @@ import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { CompoundLoan } from '@/types/defi/compound';
 import { uniqueStrings } from '@/utils/data';
 
-export default defineComponent({
-  name: 'CompoundLending',
-  components: {
-    LoanDebt,
-    CompoundCollateral,
-    PremiumCard,
-    LoanHeader,
-    CompoundBorrowingDetails
-  },
-  props: {
-    loan: {
-      required: true,
-      type: Object as PropType<CompoundLoan>
-    }
-  },
-  setup(props) {
-    const premium = usePremium();
-
-    const { loan } = toRefs(props);
-    const assets = computed(() => {
-      const { asset, events } = get(loan);
-      const assets = events
-        .map(({ toAsset }) => toAsset ?? '')
-        .filter(uniqueStrings);
-
-      if (asset) {
-        assets.push(asset);
-      }
-
-      return assets;
-    });
-
-    const { getAssetSymbol } = useAssetInfoRetrieval();
-    const symbol = computed(() => {
-      const asset = get(loan).asset;
-      return asset ? getAssetSymbol(asset) : '';
-    });
-
-    const { tc } = useI18n();
-
-    return {
-      premium,
-      assets,
-      symbol,
-      tc
-    };
+const props = defineProps({
+  loan: {
+    required: true,
+    type: Object as PropType<CompoundLoan>
   }
 });
+
+const premium = usePremium();
+
+const { loan } = toRefs(props);
+const assets = computed(() => {
+  const { asset, events } = get(loan);
+  const assets = events
+    .map(({ toAsset }) => toAsset ?? '')
+    .filter(uniqueStrings);
+
+  if (asset) {
+    assets.push(asset);
+  }
+
+  return assets;
+});
+
+const { assetSymbol } = useAssetInfoRetrieval();
+const symbol = asyncComputed(() => assetSymbol(get(loan).asset));
+
+const { tc } = useI18n();
 </script>

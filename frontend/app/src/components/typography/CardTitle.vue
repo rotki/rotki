@@ -10,18 +10,10 @@
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue';
+<script setup lang="ts">
 import { useTheme } from '@/composables/common';
 
-export default defineComponent({
-  setup() {
-    const { dark } = useTheme();
-    return {
-      dark
-    };
-  }
-});
+const { dark } = useTheme();
 </script>
 
 <style module lang="scss">

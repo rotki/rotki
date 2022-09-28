@@ -43,39 +43,26 @@
   </div>
 </template>
 
-<script lang="ts">
-import { get } from '@vueuse/core';
-import { computed, defineComponent, toRefs } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+<script setup lang="ts">
 import CopyButton from '@/components/helper/CopyButton.vue';
 
-export default defineComponent({
-  name: 'ErrorScreen',
-  components: { CopyButton },
-  props: {
-    header: { required: false, type: String, default: '' },
-    title: { required: false, type: String, default: '' },
-    subtitle: { required: false, type: String, default: '' },
-    message: { required: false, type: String, default: '' },
-    error: { required: false, type: String, default: '' },
-    alternative: { required: false, type: String, default: '' }
-  },
-  setup(props) {
-    const { error, message } = toRefs(props);
+const props = defineProps({
+  header: { required: false, type: String, default: '' },
+  title: { required: false, type: String, default: '' },
+  subtitle: { required: false, type: String, default: '' },
+  message: { required: false, type: String, default: '' },
+  error: { required: false, type: String, default: '' },
+  alternative: { required: false, type: String, default: '' }
+});
 
-    const { tc } = useI18n();
+const { error, message } = toRefs(props);
 
-    const errorText = computed(() => {
-      const errorText = get(error);
-      const errorMessage = get(message);
-      return !errorText ? errorMessage : `${errorMessage}\n\n${errorText}`;
-    });
+const { tc } = useI18n();
 
-    return {
-      errorText,
-      tc
-    };
-  }
+const errorText = computed(() => {
+  const errorText = get(error);
+  const errorMessage = get(message);
+  return !errorText ? errorMessage : `${errorMessage}\n\n${errorText}`;
 });
 </script>
 

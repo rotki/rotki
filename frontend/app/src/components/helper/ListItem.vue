@@ -1,18 +1,18 @@
 <template>
   <span
-    v-bind="$attrs"
+    v-bind="rootAttrs"
     :class="{
-      [$style.wrapper]: true,
-      [$style.dense]: dense
+      [css.wrapper]: true,
+      [css.dense]: dense
     }"
     @click="click"
   >
-    <slot name="icon" :class="$style.icon" />
-    <span v-if="showDetails" :class="$style.details">
-      <span :class="$style.title" data-cy="details-symbol">
+    <slot name="icon" :class="css.icon" />
+    <span v-if="showDetails" :class="css.details">
+      <span :class="css.title" data-cy="details-symbol">
         {{ title }}
       </span>
-      <span v-if="subtitle" class="grey--text" :class="$style.subtitle">
+      <span v-if="subtitle" class="grey--text" :class="css.subtitle">
         <v-tooltip open-delay="400" top :disabled="large">
           <template #activator="{ on, attrs }">
             <span v-bind="attrs" class="text-truncate" v-on="on">
@@ -26,64 +26,55 @@
   </span>
 </template>
 
-<script lang="ts">
-import { get } from '@vueuse/core';
-import { computed, defineComponent, PropType, toRefs } from 'vue';
+<script setup lang="ts">
+import { PropType } from 'vue';
 import { useTheme } from '@/composables/common';
 
-export default defineComponent({
-  name: 'ListItem',
-  props: {
-    title: {
-      required: false,
-      type: String,
-      default: ''
-    },
-    subtitle: {
-      required: false,
-      type: String as PropType<string | null>,
-      default: null
-    },
-    dense: { required: false, type: Boolean, default: false },
-    showDetails: {
-      required: false,
-      type: Boolean,
-      default: true
-    }
+const props = defineProps({
+  title: {
+    required: false,
+    type: String,
+    default: ''
   },
-  emits: ['click'],
-  setup(props, { emit }) {
-    const { subtitle } = toRefs(props);
-    const { currentBreakpoint } = useTheme();
-    const large = computed(() => get(currentBreakpoint).lgAndUp);
-    const visibleSubtitle = computed(() => {
-      const sub = get(subtitle);
-      if (!sub) {
-        return '';
-      }
-      const truncLength = 7;
-      const small = get(currentBreakpoint).mdAndDown;
-      const length = sub.length;
-
-      if (!small || (length <= truncLength * 2 && small)) {
-        return sub;
-      }
-
-      return `${sub.slice(0, truncLength)}...${sub.slice(
-        length - truncLength,
-        length
-      )}`;
-    });
-
-    const click = () => emit('click');
-
-    return {
-      visibleSubtitle,
-      large,
-      click
-    };
+  subtitle: {
+    required: false,
+    type: String as PropType<string | null>,
+    default: null
+  },
+  dense: { required: false, type: Boolean, default: false },
+  showDetails: {
+    required: false,
+    type: Boolean,
+    default: true
   }
 });
+
+const emit = defineEmits(['click']);
+const { subtitle } = toRefs(props);
+const { currentBreakpoint } = useTheme();
+const css = useCssModule();
+const rootAttrs = useAttrs();
+const large = computed(() => get(currentBreakpoint).lgAndUp);
+const visibleSubtitle = computed(() => {
+  const sub = get(subtitle);
+  if (!sub) {
+    return '';
+  }
+  const truncLength = 7;
+  const small = get(currentBreakpoint).mdAndDown;
+  const length = sub.length;
+
+  if (!small || (length <= truncLength * 2 && small)) {
+    return sub;
+  }
+
+  return `${sub.slice(0, truncLength)}...${sub.slice(
+    length - truncLength,
+    length
+  )}`;
+});
+
+const click = () => emit('click');
 </script>
 
 <style module lang="scss">
@@ -112,6 +103,7 @@ export default defineComponent({
   display: flex;
   flex-direction: column;
   width: 100%;
+  max-width: 200px;
   margin-left: 1rem;
   text-overflow: ellipsis;
   overflow: hidden;

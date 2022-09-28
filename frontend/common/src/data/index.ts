@@ -27,6 +27,14 @@ export enum EvmTokenKind {
 export const EvmTokenKindEnum = z.nativeEnum(EvmTokenKind);
 export type EvmTokenKindEnum = z.infer<typeof EvmTokenKindEnum>;
 
+export const UnderlyingToken = z.object({
+  address: z.string(),
+  tokenKind: EvmTokenKindEnum,
+  weight: z.string()
+});
+
+export type UnderlyingToken = z.infer<typeof UnderlyingToken>;
+
 export const BaseAsset = z.object({
   identifier: z.string(),
   coingecko: z.string().nullish(),
@@ -45,9 +53,18 @@ export const SupportedAsset = BaseAsset.extend({
   active: z.boolean().optional(),
   ended: z.number().nullish(),
   decimals: z.number().nullish(),
-  assetType: z.string(),
+  type: z.string(),
   forked: z.string().nullish(),
   address: z.string().nullish(),
+  underlyingTokens: z.array(UnderlyingToken).optional(),
+  protocol: z.string().nullish()
 })
 
 export type SupportedAsset = z.infer<typeof SupportedAsset>;
+
+export const AssetInfo = z.object({
+  name: z.string().nullish(),
+  symbol: z.string().nullish()
+});
+
+export type AssetInfo = z.infer<typeof AssetInfo>;
