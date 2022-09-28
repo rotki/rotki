@@ -552,6 +552,11 @@ def test_search_assets(rotkehlchen_api_server):
     for entry in result:
         assert entry['symbol'] == 'ETH'
         assert entry['identifier'] != 'ETH2'
+        if entry['name'] != 'Binance-Peg Ethereum Token':
+            assert 'chain' not in entry
+        else:
+            assert entry['chain'] == 'binance'
+
     assert_asset_result_order(data=result, is_ascending=True, order_field='name')
 
     # search using a column that is not allowed
@@ -569,6 +574,24 @@ def test_search_assets(rotkehlchen_api_server):
         },
     )
     assert_error_response(response, contained_in_msg='Must be one of: name, symbol.')
+
+    # test that the chain column is included
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'assetssearchresource',
+        ),
+        json={
+            'value': 'DAI',
+            'search_column': 'symbol',
+            'limit': 10,
+            'return_exact_matches': True,
+            'order_by_attributes': ['name'],
+            'ascending': [True],
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    assert {asset['chain'] for asset in result} == {'matic', 'optimism', 'ethereum', 'arbitrum', 'binance'}  # noqa: E501
 
 
 def test_search_assets_with_levenshtein(rotkehlchen_api_server):

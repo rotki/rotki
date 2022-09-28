@@ -3044,12 +3044,22 @@ Search for assets
                   "identifier": "eip155:1/erc20:0xB6eD7644C69416d67B522e20bC294A9a9B405B31",
                   "name": "0xBitcoin",
                   "symbol": "0xBTC"
+                  "chain": "ethereum",
+              },
+              {
+                  "identifier": "BTC",
+                  "name": "bitcoin",
+                  "symbol": "BTC"
               }
           ],
           "message": ""
       }
 
    :resjson object result: A list of objects that contain the asset details which match the search keyword.
+   :reqjson string identifier: Identifier of the asset.
+   :reqjson string name: Name of the asset.
+   :reqjson string symbol: Symbol of the asset.
+   :reqjson string chain: This value might not be included in all the results. Full name of the EVM chain where the asset is located if the asset is an EVM token.
    :statuscode 200: Assets successfully queried.
    :statuscode 400: Provided JSON is in some way malformed.
    :statuscode 500: Internal rotki error.
@@ -3093,12 +3103,17 @@ Search for assets(Levenshtein)
                   "identifier": "eip155:1/erc20:0xB6eD7644C69416d67B522e20bC294A9a9B405B31",
                   "name": "0xBitcoin",
                   "symbol": "0xBTC"
+                  "chain": "ethereum",
               }
           ],
           "message": ""
       }
 
    :resjson object result: A list of objects that contain the asset details which match the search keyword ordered by distance to search keyword.
+   :reqjson string identifier: Identifier of the asset.
+   :reqjson string name: Name of the asset.
+   :reqjson string symbol: Symbol of the asset.
+   :reqjson string chain: This value might not be included in all the results. Full name of the EVM chain where the asset is located if the asset is an EVM token.
    :statuscode 200: Assets successfully queried.
    :statuscode 400: Provided JSON is in some way malformed.
    :statuscode 500: Internal rotki error.
