@@ -49,6 +49,7 @@ from rotkehlchen.assets.asset import (
     Asset,
     AssetWithNameAndType,
     AssetWithOracles,
+    CustomAsset,
     EvmToken,
     FiatAsset,
 )
@@ -95,11 +96,13 @@ from rotkehlchen.constants.resolver import (
 from rotkehlchen.data_import.manager import DataImportSource
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.constants import HISTORY_MAPPING_CUSTOMIZED
+from rotkehlchen.db.custom_assets import DBCustomAssets
 from rotkehlchen.db.ens import DBEns
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
     AssetsFilterQuery,
+    CustomAssetsFilterQuery,
     Eth2DailyStatsFilterQuery,
     ETHTransactionsFilterQuery,
     HistoryEventFilterQuery,
@@ -4619,3 +4622,40 @@ class RestAPI():
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+
+    def get_custom_assets(self, filter_query: CustomAssetsFilterQuery) -> Response:
+        db_custom_assets = DBCustomAssets(db_handler=self.rotkehlchen.data.db)
+        custom_assets_result, entries_found, entries_total = db_custom_assets.get_custom_assets_and_limit_info(  # noqa: E501
+            filter_query=filter_query,
+        )
+        entries = [entry.to_dict() for entry in custom_assets_result]
+        result = {
+            'entries': entries,
+            'entries_found': entries_found,
+            'entries_total': entries_total,
+        }
+        return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
+
+    def add_custom_asset(self, custom_asset: CustomAsset) -> Response:
+        db_custom_assets = DBCustomAssets(db_handler=self.rotkehlchen.data.db)
+        try:
+            identifier = db_custom_assets.add_custom_asset(custom_asset=custom_asset)
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+        return api_response(_wrap_in_ok_result(identifier), status_code=HTTPStatus.OK)
+
+    def edit_custom_asset(self, custom_asset: CustomAsset) -> Response:
+        db_custom_assets = DBCustomAssets(db_handler=self.rotkehlchen.data.db)
+        try:
+            db_custom_assets.edit_custom_asset(custom_asset=custom_asset)
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+
+        # Also clear the in-memory cache of the asset resolver to requery DB
+        AssetResolver().assets_cache.remove(custom_asset.identifier)
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+
+    def get_custom_asset_types(self) -> Response:
+        db_custom_assets = DBCustomAssets(db_handler=self.rotkehlchen.data.db)
+        custom_asset_types = db_custom_assets.get_custom_asset_types()
+        return api_response(_wrap_in_ok_result(custom_asset_types), status_code=HTTPStatus.OK)

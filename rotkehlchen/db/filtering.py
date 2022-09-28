@@ -430,9 +430,13 @@ class DBEqualsFilter(DBFilter):
     """Filter a column by comparing its column to its value for equality."""
     column: str
     value: Union[str, bytes]
+    alias: Optional[str] = None
 
     def prepare(self) -> Tuple[List[str], List[Any]]:
-        return [f'{self.column}=?'], [self.value]
+        key_name = self.column
+        if self.alias is not None:
+            key_name = f'{self.alias}.{key_name}'
+        return [f'{key_name}=?'], [self.value]
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -984,6 +988,53 @@ class AssetsFilterQuery(DBFilterQuery):
                 column='identifier',
                 operator='NOT IN',
                 values=ignored_assets_identifiers,
+            ))
+        filter_query.filters = filters
+        return filter_query
+
+
+class CustomAssetsFilterQuery(DBFilterQuery):
+    @classmethod
+    def make(
+            cls,
+            order_by_rules: Optional[List[Tuple[str, bool]]] = None,
+            limit: Optional[int] = None,
+            offset: Optional[int] = None,
+            identifier: Optional[str] = None,
+            name: Optional[str] = None,
+            custom_asset_type: Optional[str] = None,
+    ) -> 'CustomAssetsFilterQuery':
+        if order_by_rules is None:
+            order_by_rules = [('name', True)]
+
+        filter_query = cls.create(
+            and_op=True,
+            limit=limit,
+            offset=offset,
+            order_by_rules=order_by_rules,
+        )
+        filter_query = cast('CustomAssetsFilterQuery', filter_query)
+
+        filters: List[DBFilter] = []
+        if identifier is not None:
+            filters.append(DBEqualsFilter(
+                and_op=True,
+                column='identifier',
+                alias='B',  # assets table.
+                value=identifier,
+            ))
+        if name is not None:
+            filters.append(DBSubStringFilter(
+                and_op=True,
+                field='name',
+                search_string=name,
+            ))
+        if custom_asset_type is not None:
+            filters.append(DBEqualsFilter(
+                and_op=True,
+                column='type',
+                alias='A',  # custom_assets table
+                value=custom_asset_type,
             ))
         filter_query.filters = filters
         return filter_query

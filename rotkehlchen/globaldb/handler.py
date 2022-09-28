@@ -235,10 +235,11 @@ class GlobalDBHandler():
         assets_info = []
         query, bindings = filter_query.prepare()
         parent_query = """
-        SELECT A.identifier AS identifier, A.type, B.address, B.decimals, A.name, C.symbol, C.started, C.forked, C.swapped_for, C.coingecko, C.cryptocompare, B.protocol, B.chain, B.token_kind
+        SELECT A.identifier AS identifier, A.type, B.address, B.decimals, A.name, C.symbol, C.started, C.forked, C.swapped_for, C.coingecko, C.cryptocompare, B.protocol, B.chain, B.token_kind, D.notes, D.type AS custom_asset_type
         FROM assets as A
-        JOIN common_asset_details AS C ON C.identifier = A.identifier
+        LEFT JOIN common_asset_details AS C ON C.identifier = A.identifier
         LEFT JOIN evm_tokens as B ON B.identifier = A.identifier
+        LEFT JOIN custom_assets as D ON D.identifier = A.identifier
         """  # noqa: E501
         query = f'SELECT * FROM ({parent_query}) {query}'
         with GlobalDBHandler().conn.read_ctx() as cursor:
@@ -275,6 +276,11 @@ class GlobalDBHandler():
                     data.update(common_data)
                 elif AssetType.is_crypto_asset(asset_type):
                     data.update(common_data)
+                elif asset_type == AssetType.CUSTOM_ASSET:
+                    data.update({
+                        'notes': entry[14],
+                        'custom_asset_type': entry[15],
+                    })
                 else:
                     raise NotImplementedError(f'Unsupported AssetType {asset_type} found in the DB. Should never happen')  # noqa: E501
                 assets_info.append(data)

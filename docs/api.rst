@@ -11749,3 +11749,204 @@ Handling user notes
    :statuscode 400: Provided JSON is in some way malformed.
    :statuscode 409: No user is currently logged in. User note with the given title already exists. User has reached the limit of available notes. Check error message.
    :statuscode 500: Internal rotki error.
+
+
+Custom Assets
+================
+
+.. http:post:: /api/(version)/assets/custom
+
+   Doing a POST on this endpoint will return all the custom assets present in the database using the filter parameters.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      POST /api/1/assets/custom HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"name": "land", "custom_asset_type": "real estate"}
+
+   :reqjson int[optional] limit: This signifies the limit of records to return as per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
+   :reqjson int[optional] offset: This signifies the offset from which to start the return of records per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
+   :reqjson string[optional] name: The name of the custom asset to be used as a filter.
+   :reqjson string[optional] identifier: The identifier of the custom asset to be used as a filter.
+   :reqjson string[optional] custom_asset_type: The type of the custom asset to be used as a filter.
+   :reqjson list[string][optional] order_by_attributes: This is the list of attributes of the custom asset by which to order the results. By default we sort using ``name``.
+   :reqjson list[bool][optional] ascending: Should the order be ascending? This is the default. If set to false, it will be on descending order.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+                "entries": [{
+                        "identifier": "00fe5f97-882b-42e5-b0e0-39ebd3a99156'",
+                        "name": "House",
+                        "notes": "Apartment purchase",
+                        "custom_asset_type": "real estate"
+                    },
+                    {
+                        "identifier": "333c248f-7c64-41f4-833b-2fad96c4ea6b",
+                        "name": "Ferrari",
+                        "notes": "Exotic car inheritance from lineage",
+                        "custom_asset_types": "vehicles"
+                }],
+                "entries_found": 2,
+                "entries_total": 2,
+            },
+          "message": ""
+      }
+
+   :resjson object result: An array of objects representing custom assets entries.
+   :resjson str identifier: The unique identifier of the custom asset.
+   :resjson str name: The name of the custom asset.
+   :resjson str notes: The notes used as a description of the custom asset. This field can be null.
+   :resjson str custom_asset_type: The type/category of the custom asset.
+   :resjson int entries_found: The number of entries found for the current filter. Ignores pagination.
+   :resjson int entries_total: The number of total entries ignoring all filters.
+
+   :statuscode 200: Custom assets were retrieved successfully.
+   :statuscode 400: Provided JSON is in some way malformed.
+   :statuscode 409: No user is currently logged in.
+   :statuscode 500: Internal rotki error.
+
+.. http:delete:: /api/(version)/assets/custom
+
+   Doing a DELETE on this endpoint will delete a custom asset for the specified identifier.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      DELETE /api/1/assets/custom HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"identifier": "aca42c5d-36f1-4a8b-af28-5aeb322748b5"}
+
+   :reqjson str identifier: The identifier of the custom asset you're trying to delete.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/zip
+
+      {"result": true, "message": ""}
+
+   :statuscode 200: Custom asset was deleted successfully.
+   :statuscode 400: Provided JSON is in some way malformed.
+   :statuscode 409: No user is currently logged in. No custom asset found. Check error message.
+   :statuscode 500: Internal rotki error.
+
+
+.. http:patch:: /api/(version)/assets/custom
+
+   Doing a PATCH on this endpoint will update the content of an already existing custom asset.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PATCH /api/1/assets/custom HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+        {
+            "identifier": "de0b49aa-65e1-4b4e-94b5-d1cd3e4baee1",
+            "name": "Hotel",
+            "notes": "Hotel from ma",
+            "custom_asset_type": "real estate"
+        }
+
+   :reqjson str identifier: The unique identifier of the custom asset to update.
+   :reqjson str name: The name of the custom asset.
+   :reqjson str custom_asset_type: The type/category of the custom asset.
+   :reqjson str[optional] notes: The notes that serve as a description of the custom asset. This is optional.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/zip
+
+      {"result": true, "message": ""}
+
+   :statuscode 200: Custom asset was updated successfully.
+   :statuscode 400: Provided JSON is in some way malformed.
+   :statuscode 409: No user is currently logged in. Custom asset name and type is already being used. Custom asset does not exist.  Check error message.
+   :statuscode 500: Internal rotki error.
+
+
+.. http:put:: /api/(version)/assets/custom
+
+   Doing a PUT on this endpoint will add a new custom asset to the DB.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/assets/custom HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+            "name": "Yacht",
+            "custom_asset_type": "flex"
+      }
+
+   :reqjson str name: The name of the custom asset to be created.
+   :reqjson str custom_asset_type: The type/category of the custom asset.
+   :reqjson str[optional] notes: The notes of the custom asset to be created. This is optional.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 201 OK
+      Content-Type: application/zip
+
+      {"result": "c0c991f0-6511-4b0d-83fc-40fde8495874", "message": ""}
+
+   :resjson str result: The unique identifier of the custom asset created.
+
+   :statuscode 200: Custom asset was created successfully.
+   :statuscode 400: Provided JSON is in some way malformed.
+   :statuscode 409: No user is currently logged in. Custom asset with the given name and type already exists. Check error message.
+   :statuscode 500: Internal rotki error.
+
+
+.. http:get:: /api/(version)/assets/custom/types
+
+   Doing a GET on this endpoint will return all the custom asset types in the DB sorted in ascending order.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/assets/custom/types HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 201 OK
+      Content-Type: application/zip
+
+      {"result": ["medals", "real estate", "stocks"], "message": ""}
+
+   :resjson list[str] result: The list of custom asset types in the DB.
+
+   :statuscode 200: Custom asset types retrieved successfully.
+   :statuscode 409: No user is currently logged in. Check error message.
+   :statuscode 500: Internal rotki error.
