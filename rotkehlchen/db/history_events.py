@@ -234,7 +234,7 @@ class DBHistoryEvents():
                     (
                         identifier,
                         amount,
-                        Asset(asset_identifier),
+                        Asset(asset_identifier).check_existence(),
                         ts_ms_to_sec(TimestampMS(timestamp)),
                     ),
                 )
@@ -262,7 +262,7 @@ class DBHistoryEvents():
         cursor.execute(query, bindings)
         for asset_id in cursor:
             try:
-                assets.append(Asset(asset_id[0]))
+                assets.append(Asset(asset_id[0]).check_existence())
             except (UnknownAsset, DeserializationError) as e:
                 self.db.msg_aggregator.add_error(
                     f'Found asset {asset_id} in the base history events table and '
@@ -308,7 +308,7 @@ class DBHistoryEvents():
         assets_amounts = []
         for row in cursor:
             try:
-                asset = Asset(row[0])
+                asset = Asset(row[0]).check_existence()
                 amount = deserialize_fval(
                     value=row[1],
                     name='total amount in history events stats',

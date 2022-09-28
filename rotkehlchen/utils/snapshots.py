@@ -83,7 +83,7 @@ def parse_import_snapshot_data(
                 DBAssetBalance(
                     category=BalanceType.deserialize(entry['category']),
                     time=Timestamp(int(entry['timestamp'])),
-                    asset=Asset(identifier=entry['asset_identifier']),
+                    asset=Asset(identifier=entry['asset_identifier']).check_existence(),
                     amount=deserialize_fval(
                         value=entry['amount'],
                         name='amount',

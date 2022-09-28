@@ -66,8 +66,8 @@ class HistoricalPrice(NamedTuple):
         - UnknownAsset
         """
         return cls(
-            from_asset=Asset(value[0]),
-            to_asset=Asset(value[1]),
+            from_asset=Asset(value[0]).check_existence(),
+            to_asset=Asset(value[1]).check_existence(),
             source=HistoricalPriceOracle.deserialize_from_db(value[2]),
             timestamp=Timestamp(value[3]),
             price=deserialize_price(value[4]),

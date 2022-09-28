@@ -238,7 +238,7 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):  # lgtm [py/miss
             for entry in query:
                 to_asset_id = entry[2] if entry[2] is not None else A_USD
                 try:
-                    to_asset = Asset(to_asset_id)
+                    to_asset = Asset(to_asset_id).check_existence()
                 except UnknownAsset:
                     log.error(
                         f'Unknown asset {to_asset_id} in custom nft price DB table. Ignoring.',

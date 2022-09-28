@@ -322,7 +322,7 @@ class AssetsUpdater():
 
             local_asset: Optional[Asset] = None
             try:
-                local_asset = Asset(remote_asset_data.identifier)
+                local_asset = Asset(remote_asset_data.identifier).check_existence()
             except UnknownAsset:
                 pass
 

@@ -739,6 +739,17 @@ class Asset:
     def serialize(self) -> str:
         return self.identifier
 
+    def check_existence(self) -> 'Asset':
+        """
+        If this asset exists, returns the instance. If it doesn't, throws an error.
+        May raise:
+        - UnknownAsset
+        """
+        # We don't need asset type, but using `get_asset_type` since it has all the functionality
+        # that we need here
+        AssetResolver().get_asset_type(self.identifier)
+        return self
+
     def is_nft(self) -> bool:
         return self.identifier.startswith(NFT_DIRECTIVE)
 

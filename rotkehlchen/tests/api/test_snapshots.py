@@ -584,7 +584,7 @@ def test_import_snapshot(rotkehlchen_api_server, tmpdir_factory):
     )
     assert_error_response(
         response,
-        contained_in_msg='Either unknown asset identifier or',
+        contained_in_msg='snapshot contains an unknown asset',
         status_code=HTTPStatus.CONFLICT,
     )
 
