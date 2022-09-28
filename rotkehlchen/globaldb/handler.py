@@ -310,9 +310,12 @@ class GlobalDBHandler():
         return result
 
     @staticmethod
-    def search_assets(filter_query: 'AssetsFilterQuery', db: 'DBHandler') -> List[Dict[str, str]]:
+    def search_assets(
+            filter_query: 'AssetsFilterQuery',
+            db: 'DBHandler',
+    ) -> List[Dict[str, Optional[str]]]:
         """Returns a list of asset details that match the search query provided."""
-        search_result: List[Dict[str, str]] = []
+        search_result: List[Dict[str, Optional[str]]] = []
         query, bindings = GlobalDBHandler()._prepare_search_assets_query(filter_query)  # noqa:E501
         resolved_eth = A_ETH.resolve_to_crypto_asset()
         with db.conn.read_ctx() as cursor, GlobalDBHandler().conn.read_ctx() as global_db_cursor:
@@ -330,11 +333,15 @@ class GlobalDBHandler():
                         found_eth = True
                     continue
 
-                search_result.append({
+                entry_info = {
                     'identifier': entry[0],
                     'name': entry[1],
                     'symbol': entry[2],
-                })
+                }
+                if entry[3] is not None:
+                    entry_info['chain'] = ChainID.deserialize_from_db(entry[3]).serialize()
+
+                search_result.append(entry_info)
         return search_result
 
     @staticmethod
@@ -343,9 +350,9 @@ class GlobalDBHandler():
             db: 'DBHandler',
             substring_search: str,
             limit: Optional[int],
-    ) -> List[Dict[str, str]]:
+    ) -> List[Dict[str, Optional[str]]]:
         """Returns a list of asset details that match the search keyword using the Levenshtein distance approach."""  # noqa: E501
-        search_result: List[Dict[str, str]] = []
+        search_result: List[Dict[str, Optional[str]]] = []
         levenshtein_distances: List[int] = []
         query, bindings = GlobalDBHandler()._prepare_search_assets_query(filter_query)  # noqa:E501
         resolved_eth = A_ETH.resolve_to_crypto_asset()
@@ -376,11 +383,15 @@ class GlobalDBHandler():
                         continue
 
                     if entry[0] not in (A_ETH.identifier, A_ETH2.identifier):
-                        search_result.append({
+                        entry_info = {
                             'identifier': entry[0],
                             'name': entry[1],
                             'symbol': entry[2],
-                        })
+                        }
+                        if entry[3] is not None:
+                            entry_info['chain'] = ChainID.deserialize_from_db(entry[3]).serialize()
+
+                        search_result.append(entry_info)
                         levenshtein_distances.append(lev_dist_min)
                         continue
 
@@ -400,8 +411,9 @@ class GlobalDBHandler():
     def _prepare_search_assets_query(filter_query: 'AssetsFilterQuery') -> Tuple[str, list]:
         query, bindings = filter_query.prepare()
         parent_query = """
-        SELECT assets.identifier, name, symbol FROM assets
+        SELECT assets.identifier, name, symbol, chain FROM assets
         JOIN common_asset_details on assets.identifier = common_asset_details.identifier
+        LEFT JOIN evm_tokens ON evm_tokens.identifier= assets.identifier
         """
         query = parent_query + query
         return query, bindings
