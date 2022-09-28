@@ -3,7 +3,7 @@ import warnings as test_warnings
 import pytest
 from eth_utils import is_checksum_address
 
-from rotkehlchen.assets.asset import Asset, CryptoAsset, EvmToken, FiatAsset
+from rotkehlchen.assets.asset import Asset, CryptoAsset, EvmToken, FiatAsset, Nft
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.spam_assets import KNOWN_ETH_SPAM_TOKENS
 from rotkehlchen.assets.types import AssetType
@@ -562,3 +562,14 @@ def test_spam_assets_are_valid():
         assert 'name' in info
         assert 'symbol' in info
         assert 'decimals' in info
+
+
+def test_resolve_nft():
+    """Test that a special case of nft is handled when checking asset type and when resolving"""
+    nft_asset = Asset('_nft_foo')
+    assert nft_asset.is_nft() is True
+    assert nft_asset.is_fiat() is False
+    assert nft_asset.resolve() == Nft.initialize(
+        identifier='_nft_foo',
+        chain=ChainID.ETHEREUM,
+    )
