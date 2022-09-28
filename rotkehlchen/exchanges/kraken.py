@@ -538,7 +538,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 our_asset = asset_from_kraken(kraken_name)
             except UnknownAsset as e:
                 self.msg_aggregator.add_warning(
-                    f'Found unsupported/unknown kraken asset {e.asset_name}. '
+                    f'Found unsupported/unknown kraken asset {e.identifier}. '
                     f' Ignoring its balance query.',
                 )
                 continue
@@ -777,7 +777,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 ))
             except UnknownAsset as e:
                 self.msg_aggregator.add_warning(
-                    f'Found unknown kraken asset {e.asset_name}. '
+                    f'Found unknown kraken asset {e.identifier}. '
                     f'Ignoring its deposit/withdrawals query.',
                 )
                 continue

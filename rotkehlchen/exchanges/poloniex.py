@@ -399,13 +399,13 @@ class Poloniex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                         asset = asset_from_poloniex(poloniex_asset)
                     except UnsupportedAsset as e:
                         self.msg_aggregator.add_warning(
-                            f'Found unsupported poloniex asset {e.asset_name}. '
+                            f'Found unsupported poloniex asset {e.identifier}. '
                             f'Ignoring its balance query.',
                         )
                         continue
                     except UnknownAsset as e:
                         self.msg_aggregator.add_warning(
-                            f'Found unknown poloniex asset {e.asset_name}. '
+                            f'Found unknown poloniex asset {e.identifier}. '
                             f'Ignoring its balance query.',
                         )
                         continue
@@ -475,13 +475,13 @@ class Poloniex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             except UnsupportedAsset as e:
                 self.msg_aggregator.add_warning(
                     f'Found poloniex trade with unsupported asset'
-                    f' {e.asset_name}. Ignoring it.',
+                    f' {e.identifier}. Ignoring it.',
                 )
                 continue
             except UnknownAsset as e:
                 self.msg_aggregator.add_warning(
                     f'Found poloniex trade with unknown asset'
-                    f' {e.asset_name}. Ignoring it.',
+                    f' {e.identifier}. Ignoring it.',
                 )
                 continue
             except (UnprocessableTradePair, DeserializationError) as e:
@@ -539,12 +539,12 @@ class Poloniex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         except UnsupportedAsset as e:
             self.msg_aggregator.add_warning(
                 f'Found {str(movement_type)} of unsupported poloniex asset '
-                f'{e.asset_name}. Ignoring it.',
+                f'{e.identifier}. Ignoring it.',
             )
         except UnknownAsset as e:
             self.msg_aggregator.add_warning(
                 f'Found {str(movement_type)} of unknown poloniex asset '
-                f'{e.asset_name}. Ignoring it.',
+                f'{e.identifier}. Ignoring it.',
             )
         except (DeserializationError, KeyError) as e:
             msg = str(e)

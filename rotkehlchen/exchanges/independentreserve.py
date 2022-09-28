@@ -372,7 +372,7 @@ class Independentreserve(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             except UnknownAsset as e:
                 self.msg_aggregator.add_warning(
                     f'Found IndependentReserve balance result with unknown asset '
-                    f'{e.asset_name}. Ignoring it.',
+                    f'{e.identifier}. Ignoring it.',
                 )
                 continue
             except RemoteError as e:  # raised only by find_usd_price
@@ -445,7 +445,7 @@ class Independentreserve(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             except UnknownAsset as e:
                 self.msg_aggregator.add_warning(
                     f'Found IndependentReserve trade with unknown asset '
-                    f'{e.asset_name}. Ignoring it.',
+                    f'{e.identifier}. Ignoring it.',
                 )
                 continue
             except (DeserializationError, KeyError) as e:
@@ -504,7 +504,7 @@ class Independentreserve(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                         movements.append(movement)
                 except UnknownAsset as e:
                     self.msg_aggregator.add_warning(
-                        f'Found unknown IndependentReserve asset {e.asset_name}. '
+                        f'Found unknown IndependentReserve asset {e.identifier}. '
                         f'Ignoring the deposit/withdrawal containing it.',
                     )
                     continue

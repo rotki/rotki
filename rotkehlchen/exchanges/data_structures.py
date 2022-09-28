@@ -738,7 +738,7 @@ def trades_from_dictlist(
         except UnknownAsset as e:
             msg_aggregator.add_warning(
                 f'When processing {location} trades found a trade containing unknown '
-                f'asset {e.asset_name}. Ignoring it.')
+                f'asset {e.identifier}. Ignoring it.')
             continue
 
     return returned_trades

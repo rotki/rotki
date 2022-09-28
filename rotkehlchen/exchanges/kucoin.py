@@ -430,7 +430,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     )
                     if isinstance(e, (UnknownAsset, UnsupportedAsset)):
                         asset_tag = 'unknown' if isinstance(e, UnknownAsset) else 'unsupported'
-                        error_msg = f'Found {asset_tag} kucoin asset {e.asset_name}'
+                        error_msg = f'Found {asset_tag} kucoin asset {e.identifier}'
 
                     self.msg_aggregator.add_error(
                         f'Failed to deserialize a kucoin {case} result. {error_msg}. Ignoring it. '
@@ -508,7 +508,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             except (UnknownAsset, UnsupportedAsset) as e:
                 asset_tag = 'unknown' if isinstance(e, UnknownAsset) else 'unsupported'
                 self.msg_aggregator.add_warning(
-                    f'Found {asset_tag} kucoin asset {e.asset_name} while deserializing '
+                    f'Found {asset_tag} kucoin asset {e.identifier} while deserializing '
                     f'a balance. Ignoring it.',
                 )
                 continue

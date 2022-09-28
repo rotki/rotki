@@ -266,7 +266,7 @@ class UniswapOracle(CurrentPriceOracleInterface, CacheableMixIn):
             to_asset = to_asset.resolve_to_crypto_asset()
             from_asset = from_asset.resolve_to_crypto_asset()
         except UnknownAsset as e:
-            raise PriceQueryUnsupportedAsset(e.asset_name) from e
+            raise PriceQueryUnsupportedAsset(e.identifier) from e
         except WrongAssetType as e:
             raise PriceQueryUnsupportedAsset(e.identifier) from e
 

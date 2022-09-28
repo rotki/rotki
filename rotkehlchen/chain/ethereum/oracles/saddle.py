@@ -83,8 +83,4 @@ class SaddleOracle(CurrentPriceOracleInterface):
             )
         except (UnknownAsset, WrongAssetType) as e:
             # Means that either from_asset or to_asset is not a crypto asset
-            if isinstance(e, WrongAssetType):
-                asset_id = e.identifier
-            else:
-                asset_id = e.asset_name
-            raise PriceQueryUnsupportedAsset(asset_id) from e
+            raise PriceQueryUnsupportedAsset(e.identifier) from e

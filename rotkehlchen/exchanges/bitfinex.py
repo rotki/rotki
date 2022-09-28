@@ -465,7 +465,7 @@ class Bitfinex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             except (UnknownAsset, UnsupportedAsset) as e:
                 msg = (
                     f'Found {self.name} {case} with unknown/unsupported '
-                    f'asset {e.asset_name}'
+                    f'asset {e.identifier}'
                 )
                 log.warning(f'{msg}. raw_data={raw_result}')
                 self.msg_aggregator.add_warning(f'{msg}. Ignoring {case}')
@@ -916,7 +916,7 @@ class Bitfinex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             except (UnknownAsset, UnsupportedAsset) as e:
                 asset_tag = 'unknown' if isinstance(e, UnknownAsset) else 'unsupported'
                 self.msg_aggregator.add_warning(
-                    f'Found {asset_tag} {self.name} asset {e.asset_name} due to: {str(e)}. '
+                    f'Found {asset_tag} {self.name} asset {e.identifier} due to: {str(e)}. '
                     f'Ignoring its balance query.',
                 )
                 continue

@@ -243,7 +243,7 @@ def test_poloniex_assets_are_known(poloniex):
                 assert poloniex_asset in UNSUPPORTED_POLONIEX_ASSETS
             except UnknownAsset as e:
                 test_warnings.warn(UserWarning(
-                    f'Found unknown asset {e.asset_name} in Poloniex. Support for it has to be added',  # noqa: E501
+                    f'Found unknown asset {e.identifier} in Poloniex. Support for it has to be added',  # noqa: E501
                 ))
 
 

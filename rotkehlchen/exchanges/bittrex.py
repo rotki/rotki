@@ -316,13 +316,13 @@ class Bittrex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 amount = deserialize_asset_amount(entry['total'])
             except UnsupportedAsset as e:
                 self.msg_aggregator.add_warning(
-                    f'Found unsupported bittrex asset {e.asset_name}. '
+                    f'Found unsupported bittrex asset {e.identifier}. '
                     f' Ignoring its balance query.',
                 )
                 continue
             except UnknownAsset as e:
                 self.msg_aggregator.add_warning(
-                    f'Found unknown bittrex asset {e.asset_name}. '
+                    f'Found unknown bittrex asset {e.identifier}. '
                     f' Ignoring its balance query.',
                 )
                 continue
@@ -417,13 +417,13 @@ class Bittrex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             except UnknownAsset as e:
                 self.msg_aggregator.add_warning(
                     f'Found bittrex trade with unknown asset '
-                    f'{e.asset_name}. Ignoring it.',
+                    f'{e.identifier}. Ignoring it.',
                 )
                 continue
             except UnsupportedAsset as e:
                 self.msg_aggregator.add_warning(
                     f'Found bittrex trade with unsupported asset '
-                    f'{e.asset_name}. Ignoring it.',
+                    f'{e.identifier}. Ignoring it.',
                 )
                 continue
             except UnprocessableTradePair as e:
@@ -489,12 +489,12 @@ class Bittrex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         except UnknownAsset as e:
             self.msg_aggregator.add_warning(
                 f'Found bittrex deposit/withdrawal with unknown asset '
-                f'{e.asset_name}. Ignoring it.',
+                f'{e.identifier}. Ignoring it.',
             )
         except UnsupportedAsset as e:
             self.msg_aggregator.add_warning(
                 f'Found bittrex deposit/withdrawal with unsupported asset '
-                f'{e.asset_name}. Ignoring it.',
+                f'{e.identifier}. Ignoring it.',
             )
         except (DeserializationError, KeyError) as e:
             msg = str(e)

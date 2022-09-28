@@ -94,7 +94,7 @@ def deserialize_asset_with_oracles_from_db(
         symbol = asset_data[5]
         missing_basic_data = name is None or symbol is None or decimals is None
         if missing_basic_data and form_with_incomplete_data is False:
-            raise UnknownAsset(asset_name=identifier)
+            raise UnknownAsset(identifier=identifier)
 
         return EvmToken.initialize(
             address=asset_data[2],
