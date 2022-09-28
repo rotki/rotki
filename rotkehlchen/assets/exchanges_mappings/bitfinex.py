@@ -67,4 +67,15 @@ WORLD_TO_BITFINEX = COMMON_ASSETS_MAPPINGS | {
     evm_address_to_identifier('0xD533a949740bb3306d119CC777fa900bA034cd52', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'CRV',  # noqa: E501
     evm_address_to_identifier('0x4674672BcDdDA2ea5300F5207E1158185c944bc0', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'GXT',  # noqa: E501
     evm_address_to_identifier('0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'WBT',  # noqa: E501
+    evm_address_to_identifier('0x99D8a9C45b2ecA8864373A26D1459e3Dff1e17F3', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'MIM',  # noqa: E501
+    evm_address_to_identifier('0x4691937a7508860F876c9c0a2a617E7d9E945D4B', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'WOO',  # noqa: E501
+    evm_address_to_identifier('0xd7c302fc3ac829C7E896a32c4Bd126f3e8Bd0a1f', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'B2M',  # noqa: E501
+    evm_address_to_identifier('0xAf5191B0De278C7286d6C7CC6ab6BB8A73bA2Cd6', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'STG',  # noqa: E501
+    evm_address_to_identifier('0xb9EF770B6A5e12E45983C5D80545258aA38F3B78', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'ZCN',  # noqa: E501
+    evm_address_to_identifier('0xD9Ec3ff1f8be459Bb9369b4E79e9Ebcf7141C093', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'KAI',  # noqa: E501
+    evm_address_to_identifier('0x99fE3B1391503A1bC1788051347A1324bff41452', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'SXX',  # noqa: E501
+    evm_address_to_identifier('0xFE3E6a25e6b192A42a44ecDDCd13796471735ACf', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'REEF',  # noqa: E501
+    evm_address_to_identifier('0xaA8330FB2B4D5D07ABFE7A72262752a8505C6B37', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'POLC',  # noqa: E501
+    evm_address_to_identifier('0xd1ba9BAC957322D6e8c07a160a3A8dA11A0d2867', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'HMT',  # noqa: E501
+    evm_address_to_identifier('0x6F87D756DAf0503d08Eb8993686c7Fc01Dc44fB1', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'TRADE',  # noqa: E501
 }

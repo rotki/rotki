@@ -7,12 +7,12 @@ from unittest.mock import MagicMock, call, patch
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.exchanges_mappings import WORLD_TO_BITFINEX
 from rotkehlchen.assets.converters import (
     BITFINEX_EXCHANGE_TEST_ASSETS,
     UNSUPPORTED_BITFINEX_ASSETS,
     asset_from_bitfinex,
 )
+from rotkehlchen.assets.exchanges_mappings import WORLD_TO_BITFINEX
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_LINK, A_USD, A_USDT, A_WBTC
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
@@ -179,7 +179,7 @@ def test_query_balances_asset_balance(mock_bitfinex, inquirer):  # pylint: disab
         'UST': ethaddress_to_identifier('0xdAC17F958D2ee523a2206206994597C13D831ec7'),
         'GNT': 'GLM',
         'WBT': ethaddress_to_identifier('0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599'),
-        'LINK': ethaddress_to_identifier('0x514910771AF9Ca656af840dff83E8264EcF986CA')
+        'LINK': ethaddress_to_identifier('0x514910771AF9Ca656af840dff83E8264EcF986CA'),
     }
     balances_data = (
         """
@@ -359,7 +359,7 @@ def test_deserialize_trade_buy(mock_bitfinex):
 
 
 def test_deserialize_trade_sell(mock_bitfinex):
-    mock_bitfinex.currency_map = {'UST': ethaddress_to_identifier('0xdAC17F958D2ee523a2206206994597C13D831ec7')}
+    mock_bitfinex.currency_map = {'UST': ethaddress_to_identifier('0xdAC17F958D2ee523a2206206994597C13D831ec7')}  # noqa: E501
     mock_bitfinex.pair_bfx_symbols_map = {'ETHUST': ('ETH', 'UST')}
     raw_result = [
         399251013,
@@ -794,7 +794,7 @@ def test_query_online_trade_history_case_2(mock_bitfinex):
 
 
 def test_deserialize_asset_movement_deposit(mock_bitfinex):
-    mock_bitfinex.currency_map = {'WBT': ethaddress_to_identifier('0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599')}
+    mock_bitfinex.currency_map = {'WBT': ethaddress_to_identifier('0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599')}  # noqa: E501
     raw_result = [
         13105603,
         'WBT',
@@ -902,7 +902,7 @@ def test_query_online_deposits_withdrawals_case_1(mock_bitfinex):
     """
     api_limit = 2
     mock_bitfinex.first_connection = MagicMock()
-    mock_bitfinex.currency_map = {'WBT': ethaddress_to_identifier('0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599')}
+    mock_bitfinex.currency_map = {'WBT': ethaddress_to_identifier('0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599')}  # noqa: E501
     # Deposit WBTC
     movement_1 = """
     [
@@ -1156,7 +1156,7 @@ def test_query_online_deposits_withdrawals_case_2(mock_bitfinex):
     """
     api_limit = 2
     mock_bitfinex.first_connection = MagicMock()
-    mock_bitfinex.currency_map = {'WBT': ethaddress_to_identifier('0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599')}
+    mock_bitfinex.currency_map = {'WBT': ethaddress_to_identifier('0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599')}  # noqa: E501
     # Deposit WBTC
     movement_1 = """
     [
