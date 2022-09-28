@@ -10,8 +10,9 @@ from urllib.parse import urlencode
 import pytest
 import requests
 
-from rotkehlchen.assets.asset import WORLD_TO_BINANCE, Asset
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import UNSUPPORTED_BINANCE_ASSETS, asset_from_binance
+from rotkehlchen.assets.exchanges_mappings import WORLD_TO_BINANCE
 from rotkehlchen.constants.assets import A_ADA, A_BNB, A_BTC, A_DOT, A_ETH, A_EUR, A_USDT, A_WBTC
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset

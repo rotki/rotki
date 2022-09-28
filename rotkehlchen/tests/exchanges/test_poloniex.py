@@ -3,8 +3,9 @@ from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.assets.asset import WORLD_TO_POLONIEX, Asset
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import UNSUPPORTED_POLONIEX_ASSETS, asset_from_poloniex
+from rotkehlchen.assets.exchanges_mappings import WORLD_TO_POLONIEX
 from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETH
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.serialization import DeserializationError

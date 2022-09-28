@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, call, patch
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import WORLD_TO_BITFINEX
+from rotkehlchen.assets.exchanges_mappings import WORLD_TO_BITFINEX
 from rotkehlchen.assets.converters import (
     BITFINEX_EXCHANGE_TEST_ASSETS,
     UNSUPPORTED_BITFINEX_ASSETS,
