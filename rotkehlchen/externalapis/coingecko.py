@@ -517,7 +517,7 @@ class Coingecko(HistoricalPriceOracleInterface):
             from_asset = from_asset.resolve_to_asset_with_oracles()
             to_asset = to_asset.resolve_to_asset_with_oracles()
         except UnknownAsset as e:
-            raise PriceQueryUnsupportedAsset(e.asset_name) from e
+            raise PriceQueryUnsupportedAsset(e.identifier) from e
         vs_currency = Coingecko.check_vs_currencies(
             from_asset=from_asset,
             to_asset=to_asset,
@@ -582,7 +582,7 @@ class Coingecko(HistoricalPriceOracleInterface):
             from_asset = from_asset.resolve_to_asset_with_oracles()
             to_asset = to_asset.resolve_to_asset_with_oracles()
         except UnknownAsset as e:
-            raise PriceQueryUnsupportedAsset(e.asset_name) from e
+            raise PriceQueryUnsupportedAsset(e.identifier) from e
         vs_currency = Coingecko.check_vs_currencies(
             from_asset=from_asset,
             to_asset=to_asset,

@@ -203,7 +203,7 @@ class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 log.error(str(e))
                 asset_tag = 'unknown' if isinstance(e, UnknownAsset) else 'unsupported'
                 self.msg_aggregator.add_warning(
-                    f'Found {asset_tag} Bistamp asset {e.asset_name}. Ignoring its balance query.',
+                    f'Found {asset_tag} Bistamp asset {e.identifier}. Ignoring its balance query.',
                 )
                 continue
             try:
@@ -649,7 +649,7 @@ class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             log.error(str(e))
             asset_tag = 'Unknown' if isinstance(e, UnknownAsset) else 'Unsupported'
             raise DeserializationError(
-                f'{asset_tag} {e.asset_name} found while processing trade pair.',
+                f'{asset_tag} {e.identifier} found while processing trade pair.',
             ) from e
 
         return TradePairData(

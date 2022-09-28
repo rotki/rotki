@@ -207,4 +207,4 @@ class ProcessedAccountingEvent:
         except KeyError as e:
             raise DeserializationError(f'Could not decode processed accounting event json from the DB due to missing key {str(e)}') from e  # noqa: E501
         except UnknownAsset as e:
-            raise DeserializationError(f'Couldnt deserialize processed accounting event due to unkown asset {e.asset_name}') from e  # noqa: E501
+            raise DeserializationError(f'Couldnt deserialize processed accounting event due to unkown asset {e.identifier}') from e  # noqa: E501

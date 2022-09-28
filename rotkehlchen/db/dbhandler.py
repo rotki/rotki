@@ -1015,7 +1015,7 @@ class DBHandler:
             except UnknownAsset as e:
                 self.msg_aggregator.add_error(
                     f'Error deserializing AMM event from the DB. Skipping event. '
-                    f'Unknown asset {e.asset_name} found',
+                    f'Unknown asset {e.identifier} found',
                 )
                 continue
             db_events.append(event)
@@ -2011,7 +2011,7 @@ class DBHandler:
             except UnknownAsset as e:
                 self.msg_aggregator.add_error(
                     f'Error deserializing margin position from the DB. Skipping it. '
-                    f'Unknown asset {e.asset_name} found',
+                    f'Unknown asset {e.identifier} found',
                 )
                 continue
             margin_positions.append(margin)
@@ -2100,7 +2100,7 @@ class DBHandler:
             except UnknownAsset as e:
                 self.msg_aggregator.add_error(
                     f'Error deserializing asset movement from the DB. Skipping it. '
-                    f'Unknown asset {e.asset_name} found',
+                    f'Unknown asset {e.identifier} found',
                 )
                 continue
             asset_movements.append(movement)
@@ -2290,7 +2290,7 @@ class DBHandler:
             except UnknownAsset as e:
                 self.msg_aggregator.add_error(
                     f'Error deserializing trade from the DB. Skipping trade. '
-                    f'Unknown asset {e.asset_name} found',
+                    f'Unknown asset {e.identifier} found',
                 )
                 continue
             trades.append(trade)

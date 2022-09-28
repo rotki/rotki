@@ -47,7 +47,7 @@ def test_bittrex_assets_are_known(bittrex):
             assert symbol in UNSUPPORTED_BITTREX_ASSETS
         except UnknownAsset as e:
             test_warnings.warn(UserWarning(
-                f'Found unknown asset {e.asset_name} in Bittrex. Support for it has to be added',
+                f'Found unknown asset {e.identifier} in Bittrex. Support for it has to be added',
             ))
 
 

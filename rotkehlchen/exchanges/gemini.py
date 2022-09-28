@@ -351,13 +351,13 @@ class Gemini(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             except UnknownAsset as e:
                 self.msg_aggregator.add_warning(
                     f'Found gemini balance result with unknown asset '
-                    f'{e.asset_name}. Ignoring it.',
+                    f'{e.identifier}. Ignoring it.',
                 )
                 continue
             except UnsupportedAsset as e:
                 self.msg_aggregator.add_warning(
                     f'Found gemini {balance_type} balance result with unsupported '
-                    f'asset {e.asset_name}. Ignoring it.',
+                    f'asset {e.identifier}. Ignoring it.',
                 )
                 continue
             except (DeserializationError, KeyError) as e:
@@ -494,7 +494,7 @@ class Gemini(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     continue
                 except UnknownAsset as e:
                     self.msg_aggregator.add_warning(
-                        f'Found unknown Gemini asset {e.asset_name}. '
+                        f'Found unknown Gemini asset {e.identifier}. '
                         f'Ignoring the trade.',
                     )
                     continue
@@ -548,13 +548,13 @@ class Gemini(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             except UnknownAsset as e:
                 self.msg_aggregator.add_warning(
                     f'Found gemini deposit/withdrawal with unknown asset '
-                    f'{e.asset_name}. Ignoring it.',
+                    f'{e.identifier}. Ignoring it.',
                 )
                 continue
             except UnsupportedAsset as e:
                 self.msg_aggregator.add_warning(
                     f'Found gemini deposit/withdrawal with unsupported asset '
-                    f'{e.asset_name}. Ignoring it.',
+                    f'{e.identifier}. Ignoring it.',
                 )
                 continue
             except (DeserializationError, KeyError) as e:

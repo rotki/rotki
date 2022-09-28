@@ -310,13 +310,13 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             except UnsupportedAsset as e:
                 self.msg_aggregator.add_warning(
                     f'Found coinbase pro account with unsupported asset '
-                    f'{e.asset_name}. Ignoring it.',
+                    f'{e.identifier}. Ignoring it.',
                 )
                 continue
             except UnknownAsset as e:
                 self.msg_aggregator.add_warning(
                     f'Found coinbase pro account result with unknown asset '
-                    f'{e.asset_name}. Ignoring it.',
+                    f'{e.identifier}. Ignoring it.',
                 )
                 continue
             except KeyError as e:
@@ -364,13 +364,13 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             except UnknownAsset as e:
                 self.msg_aggregator.add_warning(
                     f'Found coinbase pro balance result with unknown asset '
-                    f'{e.asset_name}. Ignoring it.',
+                    f'{e.identifier}. Ignoring it.',
                 )
                 continue
             except UnsupportedAsset as e:
                 self.msg_aggregator.add_warning(
                     f'Found coinbase pro balance result with unsupported asset '
-                    f'{e.asset_name}. Ignoring it.',
+                    f'{e.identifier}. Ignoring it.',
                 )
                 continue
             except (DeserializationError, KeyError) as e:
@@ -485,7 +485,7 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 ))
             except UnknownAsset as e:
                 self.msg_aggregator.add_warning(
-                    f'Found unknown Coinbasepro asset {e.asset_name}. '
+                    f'Found unknown Coinbasepro asset {e.identifier}. '
                     f'Ignoring its deposit/withdrawal.',
                 )
                 continue
@@ -562,7 +562,7 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 continue
             except UnknownAsset as e:
                 self.msg_aggregator.add_warning(
-                    f'Found unknown Coinbasepro asset {e.asset_name}. '
+                    f'Found unknown Coinbasepro asset {e.identifier}. '
                     f'Ignoring the trade.',
                 )
                 continue
@@ -595,7 +595,7 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     continue
                 except UnknownAsset as e:
                     self.msg_aggregator.add_warning(
-                        f'Found unknown Coinbasepro asset {e.asset_name}. '
+                        f'Found unknown Coinbasepro asset {e.identifier}. '
                         f'Ignoring the trade.',
                     )
                     continue

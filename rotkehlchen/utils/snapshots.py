@@ -97,7 +97,7 @@ def parse_import_snapshot_data(
                 ),
             )
     except UnknownAsset as err:
-        error_msg = f'snapshot contains an unknown asset ({err.asset_name}). Try adding this asset manually.'  # noqa: 501
+        error_msg = f'snapshot contains an unknown asset ({err.identifier}). Try adding this asset manually.'  # noqa: 501
         return error_msg, [], []
     except DeserializationError as err:
         error_msg = f'Error occured while importing snapshot due to: {str(err)}'

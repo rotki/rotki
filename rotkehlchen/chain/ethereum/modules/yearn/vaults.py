@@ -442,7 +442,7 @@ class YearnVaults(EthereumModule):
                     vault_asset = EvmToken(ethaddress_to_identifier(vault_address))
                 except UnknownAsset as e:
                     self.msg_aggregator.add_warning(
-                        f'Found unknown asset {e.asset_name} for yearn vault entry',
+                        f'Found unknown asset {e.identifier} for yearn vault entry',
                     )
                     continue
 

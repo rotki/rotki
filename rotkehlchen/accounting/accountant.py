@@ -251,13 +251,13 @@ class Accountant():
             event_assets = event.get_assets()
         except UnknownAsset as e:
             self.msg_aggregator.add_warning(
-                f'At history processing found event with unknown asset {e.asset_name}. '
+                f'At history processing found event with unknown asset {e.identifier}. '
                 f'Ignoring the event.',
             )
             return 1, prev_time
         except UnsupportedAsset as e:
             self.msg_aggregator.add_warning(
-                f'At history processing found event with unsupported asset {e.asset_name}. '
+                f'At history processing found event with unsupported asset {e.identifier}. '
                 f'Ignoring the event.',
             )
             return 1, prev_time

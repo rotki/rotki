@@ -114,6 +114,6 @@ def test_iconomi_assets_are_known(
             _ = asset_from_iconomi(ticker)
         except UnknownAsset as e:
             test_warnings.warn(UserWarning(
-                f'Found unknown asset {e.asset_name} in ICONOMI. '
+                f'Found unknown asset {e.identifier} in ICONOMI. '
                 f'Support for it has to be added',
             ))

@@ -419,7 +419,7 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleInterface):
             cc_from_asset_symbol = from_asset.to_cryptocompare()
             cc_to_asset_symbol = to_asset.to_cryptocompare()
         except UnsupportedAsset as e:
-            raise PriceQueryUnsupportedAsset(e.asset_name) from e
+            raise PriceQueryUnsupportedAsset(e.identifier) from e
 
         query_path = (
             f'v2/histohour?fsym={cc_from_asset_symbol}&tsym={cc_to_asset_symbol}'
@@ -444,7 +444,7 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleInterface):
             from_asset = from_asset.resolve_to_asset_with_oracles()
             to_asset = to_asset.resolve_to_asset_with_oracles()
         except UnknownAsset as e:
-            raise PriceQueryUnsupportedAsset(e.asset_name) from e
+            raise PriceQueryUnsupportedAsset(e.identifier) from e
         special_asset = (
             from_asset.identifier in CRYPTOCOMPARE_SPECIAL_CASES or
             to_asset.identifier in CRYPTOCOMPARE_SPECIAL_CASES
@@ -460,7 +460,7 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleInterface):
             cc_from_asset_symbol = from_asset.to_cryptocompare()
             cc_to_asset_symbol = to_asset.to_cryptocompare()
         except UnsupportedAsset as e:
-            raise PriceQueryUnsupportedAsset(e.asset_name) from e
+            raise PriceQueryUnsupportedAsset(e.identifier) from e
 
         query_path = f'price?fsym={cc_from_asset_symbol}&tsyms={cc_to_asset_symbol}'
         result = self._api_query(path=query_path)
@@ -506,7 +506,7 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleInterface):
             cc_from_asset_symbol = from_asset.to_cryptocompare()
             cc_to_asset_symbol = to_asset.to_cryptocompare()
         except UnsupportedAsset as e:
-            raise PriceQueryUnsupportedAsset(e.asset_name) from e
+            raise PriceQueryUnsupportedAsset(e.identifier) from e
 
         query_path = (
             f'pricehistorical?fsym={cc_from_asset_symbol}&tsyms={cc_to_asset_symbol}'
@@ -764,7 +764,7 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleInterface):
             from_asset = from_asset.resolve_to_asset_with_oracles()
             to_asset = to_asset.resolve_to_asset_with_oracles()
         except UnknownAsset as e:
-            raise PriceQueryUnsupportedAsset(e.asset_name) from e
+            raise PriceQueryUnsupportedAsset(e.identifier) from e
         # check DB cache
         price_cache_entry = GlobalDBHandler().get_historical_price(
             from_asset=from_asset,

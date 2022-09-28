@@ -187,7 +187,7 @@ Activity from uphold with uphold transaction id:
                 except UnknownAsset as e:
                     self.db.msg_aggregator.add_warning(
                         f'During uphold CSV import found action with unknown '
-                        f'asset {e.asset_name}. Ignoring entry',
+                        f'asset {e.identifier}. Ignoring entry',
                     )
                     continue
                 except DeserializationError as e:

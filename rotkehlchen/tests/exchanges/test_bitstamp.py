@@ -70,7 +70,7 @@ def test_bitstamp_exchange_assets_are_known(mock_bitstamp):
             asset_from_bitstamp(symbol)
         except UnknownAsset as e:
             test_warnings.warn(UserWarning(
-                f'Found unknown asset {e.asset_name} in {mock_bitstamp.name}. '
+                f'Found unknown asset {e.identifier} in {mock_bitstamp.name}. '
                 f'Support for it has to be added',
             ))
 

@@ -322,7 +322,7 @@ def deserialize_trade_pair(pair: str) -> TradePair:
         raise DeserializationError(str(e)) from e
     except UnknownAsset as e:
         raise DeserializationError(
-            f'Unknown asset {e.asset_name} found while processing trade pair',
+            f'Unknown asset {e.identifier} found while processing trade pair',
         ) from e
 
     return TradePair(pair)

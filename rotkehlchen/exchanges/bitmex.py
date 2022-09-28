@@ -348,7 +348,7 @@ class Bitmex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             except UnknownAsset as e:
                 self.msg_aggregator.add_warning(
                     f'Found bitmex deposit/withdrawal with unknown asset '
-                    f'{e.asset_name}. Ignoring it.',
+                    f'{e.identifier}. Ignoring it.',
                 )
                 continue
             except (DeserializationError, KeyError) as e:

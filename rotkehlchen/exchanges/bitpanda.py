@@ -109,7 +109,7 @@ class Bitpanda(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 asset = asset_from_bitpanda(entry['attributes'][symbol_key])
             except UnknownAsset as e:
                 self.msg_aggregator.add_warning(
-                    f'Found unsupported/unknown Bitpanda asset {e.asset_name}. '
+                    f'Found unsupported/unknown Bitpanda asset {e.identifier}. '
                     f' Not adding asset to mapping during first connection.',
                 )
                 continue
@@ -496,7 +496,7 @@ class Bitpanda(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 asset = asset_from_bitpanda(entry['attributes'][symbol_key])
             except UnknownAsset as e:
                 self.msg_aggregator.add_warning(
-                    f'Found unsupported/unknown Bitpanda asset {e.asset_name}. '
+                    f'Found unsupported/unknown Bitpanda asset {e.identifier}. '
                     f' Ignoring its balance query.',
                 )
                 continue

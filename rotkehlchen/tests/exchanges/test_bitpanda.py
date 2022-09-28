@@ -50,7 +50,7 @@ def test_bitpanda_exchange_assets_are_known():
             asset_from_bitpanda(entry['code'])
         except UnknownAsset as e:
             test_warnings.warn(UserWarning(
-                f'Found unknown asset {e.asset_name} in bitpanda. '
+                f'Found unknown asset {e.identifier} in bitpanda. '
                 f'Support for it has to be added',
             ))
 

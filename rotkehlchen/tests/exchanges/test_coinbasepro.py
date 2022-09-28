@@ -131,7 +131,7 @@ def test_coverage_of_products():
             coinbasepro_to_worldpair(product['id'])
         except UnknownAsset as e:
             test_warnings.warn(UserWarning(
-                f'Found unknown asset {e.asset_name} in Coinbase Pro. '
+                f'Found unknown asset {e.identifier} in Coinbase Pro. '
                 f'Support for it has to be added',
             ))
 

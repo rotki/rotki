@@ -15,9 +15,9 @@ POSSIBLE_ASSET = Union[
 
 
 class UnknownAsset(Exception):
-    def __init__(self, asset_name: str) -> None:
-        self.asset_name = asset_name
-        super().__init__(f'Unknown asset {asset_name} provided.')
+    def __init__(self, identifier: str) -> None:
+        self.identifier = identifier
+        super().__init__(f'Unknown asset {identifier} provided.')
 
 
 class WrongAssetType(Exception):
@@ -43,9 +43,9 @@ class WrongAssetType(Exception):
 
 
 class UnsupportedAsset(Exception):
-    def __init__(self, asset_name: str) -> None:
-        self.asset_name = asset_name
-        super().__init__(f'Found asset {asset_name} which is not supported.')
+    def __init__(self, identifier: str) -> None:
+        self.identifier = identifier
+        super().__init__(f'Found asset {identifier} which is not supported.')
 
 
 class UnprocessableTradePair(Exception):

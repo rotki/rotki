@@ -504,15 +504,15 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             try:
                 asset = asset_from_binance(asset_symbol)
             except UnsupportedAsset as e:
-                if e.asset_name != 'ETF':
+                if e.identifier != 'ETF':
                     self.msg_aggregator.add_warning(
-                        f'Found unsupported {self.name} asset {e.asset_name}. '
+                        f'Found unsupported {self.name} asset {e.identifier}. '
                         f'Ignoring its balance query.',
                     )
                 continue
             except UnknownAsset as e:
                 self.msg_aggregator.add_warning(
-                    f'Found unknown {self.name} asset {e.asset_name}. '
+                    f'Found unknown {self.name} asset {e.identifier}. '
                     f'Ignoring its balance query.',
                 )
                 continue
@@ -565,13 +565,13 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 asset = asset_from_binance(entry['asset'])
             except UnsupportedAsset as e:
                 self.msg_aggregator.add_warning(
-                    f'Found unsupported {self.name} asset {e.asset_name}. '
+                    f'Found unsupported {self.name} asset {e.identifier}. '
                     f'Ignoring its lending balance query.',
                 )
                 continue
             except UnknownAsset as e:
                 self.msg_aggregator.add_warning(
-                    f'Found unknown {self.name} asset {e.asset_name}. '
+                    f'Found unknown {self.name} asset {e.identifier}. '
                     f'Ignoring its lending balance query.',
                 )
                 continue
@@ -622,13 +622,13 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     asset = asset_from_binance(entry['collateralCoin'])
                 except UnsupportedAsset as e:
                     self.msg_aggregator.add_warning(
-                        f'Found unsupported {self.name} asset {e.asset_name}. '
+                        f'Found unsupported {self.name} asset {e.identifier}. '
                         f'Ignoring its futures balance query.',
                     )
                     continue
                 except UnknownAsset as e:
                     self.msg_aggregator.add_warning(
-                        f'Found unknown {self.name} asset {e.asset_name}. '
+                        f'Found unknown {self.name} asset {e.identifier}. '
                         f'Ignoring its futures balance query.',
                     )
                     continue
@@ -698,13 +698,13 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     asset = asset_from_binance(entry['asset'])
                 except UnsupportedAsset as e:
                     self.msg_aggregator.add_warning(
-                        f'Found unsupported {self.name} asset {e.asset_name}. '
+                        f'Found unsupported {self.name} asset {e.identifier}. '
                         f'Ignoring its margined futures balance query.',
                     )
                     continue
                 except UnknownAsset as e:
                     self.msg_aggregator.add_warning(
-                        f'Found unknown {self.name} asset {e.asset_name}. '
+                        f'Found unknown {self.name} asset {e.identifier}. '
                         f'Ignoring its margined futures balance query.',
                     )
                     continue
@@ -914,13 +914,13 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             except UnknownAsset as e:
                 self.msg_aggregator.add_warning(
                     f'Found {self.name} trade with unknown asset '
-                    f'{e.asset_name}. Ignoring it.',
+                    f'{e.identifier}. Ignoring it.',
                 )
                 continue
             except UnsupportedAsset as e:
                 self.msg_aggregator.add_warning(
                     f'Found {self.name} trade with unsupported asset '
-                    f'{e.asset_name}. Ignoring it.',
+                    f'{e.identifier}. Ignoring it.',
                 )
                 continue
             except (DeserializationError, KeyError) as e:
@@ -1030,12 +1030,12 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         except UnknownAsset as e:
             self.msg_aggregator.add_warning(
                 f'Found {str(self.location)} fiat payment with unknown asset '
-                f'{e.asset_name}. Ignoring it.',
+                f'{e.identifier}. Ignoring it.',
             )
         except UnsupportedAsset as e:
             self.msg_aggregator.add_warning(
                 f'Found {str(self.location)} fiat payment with unsupported asset '
-                f'{e.asset_name}. Ignoring it.',
+                f'{e.identifier}. Ignoring it.',
             )
         except (DeserializationError, KeyError) as e:
             msg = str(e)
@@ -1091,12 +1091,12 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         except UnknownAsset as e:
             self.msg_aggregator.add_warning(
                 f'Found {str(self.location)} fiat deposit/withdrawal with unknown asset '
-                f'{e.asset_name}. Ignoring it.',
+                f'{e.identifier}. Ignoring it.',
             )
         except UnsupportedAsset as e:
             self.msg_aggregator.add_warning(
                 f'Found {str(self.location)} fiat deposit/withdrawal with unsupported asset '
-                f'{e.asset_name}. Ignoring it.',
+                f'{e.identifier}. Ignoring it.',
             )
         except (DeserializationError, KeyError) as e:
             msg = str(e)
@@ -1154,12 +1154,12 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         except UnknownAsset as e:
             self.msg_aggregator.add_warning(
                 f'Found {str(self.location)} deposit/withdrawal with unknown asset '
-                f'{e.asset_name}. Ignoring it.',
+                f'{e.identifier}. Ignoring it.',
             )
         except UnsupportedAsset as e:
             self.msg_aggregator.add_warning(
                 f'Found {str(self.location)} deposit/withdrawal with unsupported asset '
-                f'{e.asset_name}. Ignoring it.',
+                f'{e.identifier}. Ignoring it.',
             )
         except (DeserializationError, KeyError) as e:
             msg = str(e)
