@@ -3,11 +3,11 @@ from typing import TYPE_CHECKING, Optional
 
 from web3.types import BlockIdentifier
 
-from rotkehlchen.assets.asset import Asset, CryptoAsset
+from rotkehlchen.assets.asset import Asset, AssetWithOracles, CryptoAsset
 from rotkehlchen.constants.assets import A_ALETH, A_ETH, A_WETH
 from rotkehlchen.constants.ethereum import SADDLE_ALETH_POOL
 from rotkehlchen.constants.misc import EXP18
-from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.price import PriceQueryUnsupportedAsset
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.interfaces import CurrentPriceOracleInterface
@@ -39,7 +39,7 @@ class SaddleOracle(CurrentPriceOracleInterface):
     def get_price(
         self,
         from_asset: CryptoAsset,
-        to_asset: CryptoAsset,
+        to_asset: AssetWithOracles,
         block_identifier: BlockIdentifier,
     ) -> Price:
         """
@@ -78,9 +78,13 @@ class SaddleOracle(CurrentPriceOracleInterface):
         try:
             return self.get_price(
                 from_asset=from_asset.resolve_to_crypto_asset(),
-                to_asset=to_asset.resolve_to_crypto_asset(),
+                to_asset=to_asset.resolve_to_asset_with_oracles(),
                 block_identifier='latest',
             )
-        except UnknownAsset as e:
+        except (UnknownAsset, WrongAssetType) as e:
             # Means that either from_asset or to_asset is not a crypto asset
-            raise PriceQueryUnsupportedAsset(e.asset_name) from e
+            if isinstance(e, WrongAssetType):
+                asset_id = e.identifier
+            else:
+                asset_id = e.asset_name
+            raise PriceQueryUnsupportedAsset(asset_id) from e
