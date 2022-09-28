@@ -119,17 +119,18 @@ class LedgerAction(AccountingEventMixin):
             - KeyError
             - UnknownAsset
         """
+        rate_asset = deserialize_optional(data['rate_asset'], Asset)
         return cls(
             identifier=int(data['identifier']),
             timestamp=deserialize_timestamp(data['timestamp']),
             action_type=LedgerActionType.deserialize(data['action_type']),
             location=Location.deserialize(data['location']),
-            asset=Asset(data['asset']),
+            asset=Asset(data['asset']).check_existence(),
             amount=deserialize_asset_amount(data['amount']),
             rate=deserialize_optional(data['rate'], deserialize_price),
             link=deserialize_optional(data['link'], str),
             notes=deserialize_optional(data['notes'], str),
-            rate_asset=Asset(data['rate_asset']) if data.get('rate_asset') is not None else None,
+            rate_asset=rate_asset.check_existence() if rate_asset is not None else None,
         )
 
     def serialize_for_db(self) -> LedgerActionDBTuple:
@@ -156,15 +157,16 @@ class LedgerAction(AccountingEventMixin):
         - DeserializationError
         - UnknownAsset
         """
+        rate_asset = deserialize_optional(data[7], Asset)
         return cls(
             identifier=data[0],
             timestamp=deserialize_timestamp(data[1]),
             action_type=LedgerActionType.deserialize_from_db(data[2]),
             location=Location.deserialize_from_db(data[3]),
             amount=deserialize_asset_amount(data[4]),
-            asset=Asset(data[5]),
+            asset=Asset(data[5]).check_existence(),
             rate=deserialize_optional(data[6], deserialize_price),
-            rate_asset=deserialize_optional(data[7], Asset),
+            rate_asset=rate_asset.check_existence() if rate_asset is not None else None,
             link=data[8],
             notes=data[9],
         )

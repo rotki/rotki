@@ -131,9 +131,9 @@ class AssetMovement(AccountingEventMixin):
             timestamp=deserialize_timestamp(data['timestamp']),
             address=deserialize_optional(data['address'], str),
             transaction_id=deserialize_optional(data['transaction_id'], str),
-            asset=Asset(data['asset']),
+            asset=Asset(data['asset']).check_existence(),
             amount=deserialize_fval(data['amount'], name='amount', location='data structure'),
-            fee_asset=Asset(data['fee_asset']),
+            fee_asset=Asset(data['fee_asset']).check_existence(),
             fee=deserialize_fee(data['fee']),
             link=str(data['link']),
         )
@@ -150,9 +150,9 @@ class AssetMovement(AccountingEventMixin):
             address=entry[3],
             transaction_id=entry[4],
             timestamp=Timestamp(entry[5]),
-            asset=Asset(entry[6]),
+            asset=Asset(entry[6]).check_existence(),
             amount=deserialize_asset_amount(entry[7]),
-            fee_asset=Asset(entry[8]),
+            fee_asset=Asset(entry[8]).check_existence(),
             fee=deserialize_fee(entry[9]),
             link=entry[10],
         )
@@ -316,8 +316,8 @@ class Trade(AccountingEventMixin):
         return Trade(
             timestamp=deserialize_timestamp(entry[1]),
             location=Location.deserialize_from_db(entry[2]),
-            base_asset=Asset(entry[3]),
-            quote_asset=Asset(entry[4]),
+            base_asset=Asset(entry[3]).check_existence(),
+            quote_asset=Asset(entry[4]).check_existence(),
             trade_type=TradeType.deserialize_from_db(entry[5]),
             amount=deserialize_asset_amount(entry[6]),
             rate=deserialize_price(entry[7]),
@@ -512,9 +512,9 @@ class MarginPosition(AccountingEventMixin):
             open_time=deserialize_timestamp(data['open_time']),
             close_time=deserialize_timestamp(data['close_time']),
             profit_loss=deserialize_asset_amount(data['profit_loss']),
-            pl_currency=Asset(data['pl_currency']),
+            pl_currency=Asset(data['pl_currency']).check_existence(),
             fee=deserialize_fee(data['fee']),
-            fee_currency=Asset(data['fee_currency']),
+            fee_currency=Asset(data['fee_currency']).check_existence(),
             link=str(data['link']),
             notes=str(data['notes']),
         )
@@ -534,9 +534,9 @@ class MarginPosition(AccountingEventMixin):
             open_time=open_time,
             close_time=deserialize_timestamp(entry[3]),
             profit_loss=deserialize_asset_amount(entry[4]),
-            pl_currency=Asset(entry[5]),
+            pl_currency=Asset(entry[5]).check_existence(),
             fee=deserialize_fee(entry[6]),
-            fee_currency=Asset(entry[7]),
+            fee_currency=Asset(entry[7]).check_existence(),
             link=entry[8],
             notes=entry[9],
         )
@@ -635,7 +635,7 @@ class Loan(AccountingEventMixin):
             location=Location.deserialize(data['location']),
             open_time=deserialize_timestamp(data['open_time']),
             close_time=deserialize_timestamp(data['close_time']),
-            currency=Asset(data['currency']),
+            currency=Asset(data['currency']).check_existence(),
             fee=deserialize_fee(data['fee']),
             earned=deserialize_asset_amount(data['earned']),
             amount_lent=deserialize_asset_amount(data['amount_lent']),
@@ -699,13 +699,13 @@ def deserialize_trade(data: Dict[str, Any]) -> Trade:
     return Trade(
         timestamp=data['timestamp'],
         location=location,
-        base_asset=Asset(data['base_asset']).resolve(),  # resolve to any just to verify
-        quote_asset=Asset(data['quote_asset']).resolve(),  # identifier existence
+        base_asset=Asset(data['base_asset']).check_existence(),
+        quote_asset=Asset(data['quote_asset']).check_existence(),
         trade_type=trade_type,
         amount=amount,
         rate=rate,
         fee=deserialize_optional(data['fee'], deserialize_fee),
-        fee_currency=Asset(data['fee_currency']).resolve() if data['fee_currency'] is not None else None,  # noqa: E501
+        fee_currency=Asset(data['fee_currency']).check_existence() if data['fee_currency'] is not None else None,  # noqa: E501
         link=trade_link,
         notes=trade_notes,
     )

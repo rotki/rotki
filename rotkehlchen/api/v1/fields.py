@@ -369,6 +369,7 @@ class AssetField(fields.Field):
             *,
             expected_type: Union[
                 Type[Asset],
+                Type[AssetWithNameAndType],
                 Type[AssetWithOracles],
                 Type[CryptoAsset],
                 Type[EvmToken],
@@ -407,8 +408,7 @@ class AssetField(fields.Field):
                 if real_value.startswith(NFT_DIRECTIVE):
                     asset = Nft(identifier=real_value)
                 else:
-                    # Just to check identifier's existence
-                    asset = Asset(identifier=real_value).resolve_to_asset_with_name_and_type()
+                    asset = Asset(identifier=real_value).check_existence()
             elif self.expected_type == AssetWithNameAndType:
                 asset = Asset(identifier=real_value).resolve_to_asset_with_name_and_type()
             elif self.expected_type == AssetWithOracles:
@@ -682,7 +682,7 @@ class AssetConflictsField(fields.Field):
         deserialized_dict = {}
         for asset_id, choice in value.items():
             try:
-                asset = Asset(asset_id)
+                asset = Asset(asset_id).check_existence()
             except UnknownAsset as e:
                 raise ValidationError(f'Unknown asset identifier {asset_id}') from e
 

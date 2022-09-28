@@ -201,7 +201,7 @@ class DBAssetBalance:
         return cls(
             category=BalanceType.deserialize_from_db(entry[0]),
             time=Timestamp(entry[1]),
-            asset=Asset(entry[2]).resolve(),  # resolving to check identifier existence
+            asset=Asset(entry[2]).check_existence(),
             amount=FVal(entry[3]),
             usd_value=FVal(entry[4]),
         )

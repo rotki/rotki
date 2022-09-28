@@ -147,7 +147,7 @@ class HistoryBaseEntry(AccountingEventMixin):
                 timestamp=TimestampMS(entry[3]),
                 location=Location.deserialize_from_db(entry[4]),
                 location_label=entry[5],
-                asset=Asset(entry[6]),
+                asset=Asset(entry[6]).check_existence(),
                 balance=Balance(
                     amount=FVal(entry[7]),
                     usd_value=FVal(entry[8]),
@@ -221,7 +221,7 @@ class HistoryBaseEntry(AccountingEventMixin):
             notes=deserialize_optional(data['notes'], str),
             identifier=deserialize_optional(data['identifier'], int),
             counterparty=deserialize_optional(data['counterparty'], str),
-            asset=Asset(data['asset']),
+            asset=Asset(data['asset']).check_existence(),
             balance=Balance(
                 amount=deserialize_fval(
                     value=data['balance']['amount'],

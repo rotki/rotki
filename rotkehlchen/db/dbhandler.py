@@ -669,7 +669,7 @@ class DBHandler:
         assets = []
         for asset_setting in cursor:
             try:
-                asset = Asset(asset_setting[0])
+                asset = Asset(asset_setting[0]).check_existence()
             except UnknownAsset:
                 msg = (
                     f'Found unknown asset {asset_setting[0]} in the list of ignored '
@@ -1462,7 +1462,7 @@ class DBHandler:
                 balance_type = BalanceType.deserialize_from_db(entry[5])
                 data.append(ManuallyTrackedBalance(
                     id=entry[6],
-                    asset=Asset(entry[0]),
+                    asset=Asset(entry[0]).check_existence(),
                     label=entry[1],
                     amount=FVal(entry[2]),
                     location=Location.deserialize_from_db(entry[3]),
@@ -2498,7 +2498,7 @@ class DBHandler:
                 for _, asset_id in enumerate(result):
                     try:
                         if asset_id is not None:
-                            results.add(Asset(asset_id))
+                            results.add(Asset(asset_id).check_existence())
                     except UnknownAsset:
                         self.msg_aggregator.add_warning(
                             f'Unknown/unsupported asset {asset_id} found in the database. '
@@ -2639,7 +2639,7 @@ class DBHandler:
                 usd_value=ZERO,
             )
             for result in cursor:
-                asset = Asset(result[1])
+                asset = Asset(result[1]).check_existence()
                 time = Timestamp(result[0])
                 amount = FVal(result[2])
                 usd_value = FVal(result[3])
