@@ -27,6 +27,7 @@ from rotkehlchen.assets.asset import (
     CustomAsset,
     EvmToken,
     FiatAsset,
+    Nft,
     UnderlyingToken,
 )
 from rotkehlchen.assets.types import NON_CRYPTO_ASSETS, AssetData, AssetType
@@ -1786,6 +1787,8 @@ class GlobalDBHandler():
         May raise:
         - UnknownAsset if the asset is not found in the database
         """
+        if identifier.startswith(NFT_DIRECTIVE):
+            return Nft(identifier)
         query = """
         SELECT A.identifier, A.type, B.address, B.decimals, A.name, C.symbol, C.started, null, C.swapped_for, C.coingecko, C.cryptocompare, B.protocol, B.chain, B.token_kind, null, null FROM assets as A JOIN evm_tokens as B
         ON B.identifier = A.identifier JOIN common_asset_details AS C ON C.identifier = B.identifier WHERE A.type = ? AND A.identifier = ?
@@ -1834,6 +1837,8 @@ class GlobalDBHandler():
         May raise:
         - UnknownAsset: if the asset is not present in the database
         """
+        if identifier.startswith(NFT_DIRECTIVE):
+            return AssetType.NFT
         with GlobalDBHandler().conn.read_ctx() as cursor:
             type_in_db = cursor.execute(
                 'SELECT type FROM assets WHERE identifier=?',
