@@ -8,8 +8,8 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import WORLD_TO_KUCOIN
 from rotkehlchen.assets.converters import UNSUPPORTED_KUCOIN_ASSETS, asset_from_kucoin
+from rotkehlchen.assets.exchanges_mappings import WORLD_TO_KUCOIN
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_LINK, A_USDT
 from rotkehlchen.constants.timing import WEEK_IN_SECONDS
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset

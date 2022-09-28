@@ -4,8 +4,8 @@ from unittest.mock import patch
 import pytest
 import requests
 
-from rotkehlchen.assets.asset import WORLD_TO_GEMINI
 from rotkehlchen.assets.converters import UNSUPPORTED_GEMINI_ASSETS
+from rotkehlchen.assets.exchanges_mappings import WORLD_TO_GEMINI
 from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETH, A_LINK, A_LTC, A_USD
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair, UnsupportedAsset

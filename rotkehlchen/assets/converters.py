@@ -1,6 +1,7 @@
 from typing import Callable, Dict, Optional
 
-from rotkehlchen.assets.asset import (
+from rotkehlchen.assets.asset import Asset, AssetWithOracles
+from rotkehlchen.assets.exchanges_mappings import (
     WORLD_TO_BINANCE,
     WORLD_TO_BITFINEX,
     WORLD_TO_BITPANDA,
@@ -17,8 +18,6 @@ from rotkehlchen.assets.asset import (
     WORLD_TO_NEXO,
     WORLD_TO_POLONIEX,
     WORLD_TO_UPHOLD,
-    Asset,
-    AssetWithOracles,
 )
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.constants.assets import A_DAI, A_SAI
@@ -879,7 +878,10 @@ def asset_from_bitstamp(bitstamp_name: str) -> AssetWithOracles:
     if not isinstance(bitstamp_name, str):
         raise DeserializationError(f'Got non-string type {type(bitstamp_name)} for bitstamp asset')
 
-    name = BITSTAMP_TO_WORLD.get(bitstamp_name, bitstamp_name)
+    # (Yabir): Do un upper here since in the tests I've seen that we pass as asset lowercase
+    # symbols and in the mapping we use uppercase for the search. Before it was not an issue
+    # since there were no multiple asset with symbol for example USDC.
+    name = BITSTAMP_TO_WORLD.get(bitstamp_name.upper(), bitstamp_name)
     return symbol_to_asset_or_token(name)
 
 
