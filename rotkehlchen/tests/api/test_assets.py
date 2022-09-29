@@ -70,6 +70,18 @@ def assert_substring_in_search_result(
         assert substr_in_name or substr_in_symbol, f'no match for {substring}'
 
 
+def assert_asset_at_top_position(
+        asset_id: str,
+        max_position_index: int,
+        result: List[Dict[str, Any]],
+) -> None:
+    """Aserts that an asset appears at the top of the search results."""
+    assert any([asset_id == entry['identifier'] for entry in result])
+    for index, entry in enumerate(result):
+        if entry['identifier'] == asset_id:
+            assert index <= max_position_index
+
+
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
@@ -523,6 +535,7 @@ def test_search_assets(rotkehlchen_api_server):
     )
     result = assert_proper_response_with_result(response)
     assert len(result) == 3
+    assert any(['Ethereum' == entry['name'] for entry in result])
     for entry in result:
         assert entry['symbol'] == 'ETH'
     assert_asset_result_order(data=result, is_ascending=False, order_field='name')
@@ -549,6 +562,7 @@ def test_search_assets(rotkehlchen_api_server):
     )
     result = assert_proper_response_with_result(response)
     assert len(result) == 2
+    assert any(['Ethereum' == entry['name'] for entry in result])
     for entry in result:
         assert entry['symbol'] == 'ETH'
         assert entry['identifier'] != 'ETH2'
@@ -608,6 +622,8 @@ def test_search_assets_with_levenshtein(rotkehlchen_api_server):
     )
     result = assert_proper_response_with_result(response)
     assert len(result) <= 50
+    # check that Bitcoin(BTC) appears at the top of result.
+    assert_asset_at_top_position('BTC', max_position_index=1, result=result)
     assert_substring_in_search_result(result, 'Bitcoin')
 
     # use a different keyword
@@ -642,6 +658,8 @@ def test_search_assets_with_levenshtein(rotkehlchen_api_server):
     result = assert_proper_response_with_result(response)
     assert len(result) <= 50
     assert_substring_in_search_result(result, 'ETH')
+    # check that Ethereum(ETH) appear at the top of result.
+    assert_asset_at_top_position('ETH', max_position_index=1, result=result)
     assert any([asset_without_name_id == entry['identifier'] for entry in result])
     assert any([asset_without_symbol_id == entry['identifier'] for entry in result])
 
@@ -664,6 +682,8 @@ def test_search_assets_with_levenshtein(rotkehlchen_api_server):
     result = assert_proper_response_with_result(response)
     assert len(result) <= 50
     assert_substring_in_search_result(result, 'ETH')
+    # check that Ethereum(ETH) appears at the top of result.
+    assert_asset_at_top_position('ETH', max_position_index=1, result=result)
     assert all(['ETH2' != entry['identifier'] for entry in result])
 
     # check that searching for a non-existent asset returns nothing
