@@ -12,6 +12,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     AssetMovementCategory,
+    ChainID,
     ChecksumEvmAddress,
     EVMTxHash,
     Location,
@@ -429,7 +430,7 @@ class DBTypeFilter(DBFilter):
 class DBEqualsFilter(DBFilter):
     """Filter a column by comparing its column to its value for equality."""
     column: str
-    value: Union[str, bytes]
+    value: Union[str, bytes, int]
     alias: Optional[str] = None
 
     def prepare(self) -> Tuple[List[str], List[Any]]:
@@ -931,6 +932,7 @@ class AssetsFilterQuery(DBFilterQuery):
             ignored_assets_identifiers: Optional[List[str]] = None,
             user_owned_assets_identifiers: Optional[List[str]] = None,
             return_exact_matches: bool = False,
+            chain: Optional[ChainID] = None,
     ) -> 'AssetsFilterQuery':
         if order_by_rules is None:
             order_by_rules = [('name', True)]
@@ -988,6 +990,12 @@ class AssetsFilterQuery(DBFilterQuery):
                 column='identifier',
                 operator='NOT IN',
                 values=ignored_assets_identifiers,
+            ))
+        if chain is not None:
+            filters.append(DBEqualsFilter(
+                and_op=True,
+                column='chain',
+                value=chain.serialize_for_db(),
             ))
         filter_query.filters = filters
         return filter_query
