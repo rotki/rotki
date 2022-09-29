@@ -6,6 +6,10 @@
       "vitest/globals"
     ]
   },
-  "include": ["**/*.ts", ".eslintrc.js"],
+  "include": [
+    "**/*.ts",
+    ".eslintrc.js",
+    "../../src/auto-imports.d.ts"
+  ],
   "compileOnSave": false
 }
