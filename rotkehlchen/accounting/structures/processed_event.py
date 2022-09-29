@@ -45,7 +45,7 @@ class ProcessedAccountingEvent:
     count_cost_basis_pnl: bool = field(init=False, default=False)
 
     def to_string(self, ts_converter: Callable[[Timestamp], str]) -> str:
-        desc = f'{self.type.name} for {self.free_amount}/{self.taxable_amount} {self.asset.resolve_to_asset_with_symbol().symbol} with price: {self.price} and PNL: {self.pnl}.'  # noqa: E501
+        desc = f'{self.type.name} for {self.free_amount}/{self.taxable_amount} {self.asset.symbol_or_name()} with price: {self.price} and PNL: {self.pnl}.'  # noqa: E501
         if self.cost_basis:
             taxable, free = self.cost_basis.to_string(ts_converter)
             desc += f'Cost basis. Taxable {taxable}. Free: {free}'

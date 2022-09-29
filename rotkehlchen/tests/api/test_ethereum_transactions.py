@@ -946,7 +946,7 @@ def test_query_transactions_check_decoded_events(
         gevent.joinall(rotki.greenlet_manager.greenlets)
         with dbevents.db.user_write() as write_cursor:
             # Add an event with random values. Important thing is that asset doesn't exist.
-            # We do it to check that this event will be skipped during deserialization
+            # We do it to check that events query won't fail if asset is unknown.
             dbevents.add_history_event(
                 write_cursor=write_cursor,
                 event=HistoryBaseEntry(

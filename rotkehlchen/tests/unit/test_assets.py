@@ -3,13 +3,14 @@ import warnings as test_warnings
 import pytest
 from eth_utils import is_checksum_address
 
-from rotkehlchen.assets.asset import Asset, CryptoAsset, EvmToken, FiatAsset, Nft
+from rotkehlchen.assets.asset import Asset, CryptoAsset, CustomAsset, EvmToken, FiatAsset, Nft
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.spam_assets import KNOWN_ETH_SPAM_TOKENS
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.assets.utils import get_or_create_evm_token, symbol_to_ethereum_token
 from rotkehlchen.constants.assets import A_DAI, A_USDT
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
+from rotkehlchen.db.custom_assets import DBCustomAssets
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.externalapis.coingecko import DELISTED_ASSETS, Coingecko
@@ -573,3 +574,16 @@ def test_resolve_nft():
         identifier='_nft_foo',
         chain=ChainID.ETHEREUM,
     )
+
+
+def test_symbol_or_name(database):
+    db_custom_assets = DBCustomAssets(database)
+    db_custom_assets.add_custom_asset(CustomAsset.initialize(
+        identifier='xyz',
+        name='custom name',
+        custom_asset_type='lolkek',
+    ))
+    assert Asset('ETH').symbol_or_name() == 'ETH'
+    assert Asset('xyz').symbol_or_name() == 'custom name'
+    with pytest.raises(UnknownAsset):
+        Asset('i-dont-exist').symbol_or_name()

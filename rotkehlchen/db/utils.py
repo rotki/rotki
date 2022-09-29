@@ -21,7 +21,7 @@ from eth_utils import is_checksum_address
 from typing_extensions import Concatenate, ParamSpec
 
 from rotkehlchen.accounting.structures.balance import BalanceType
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.chain.substrate.types import KusamaAddress, PolkadotAddress
 from rotkehlchen.chain.substrate.utils import is_valid_kusama_address, is_valid_polkadot_address
 from rotkehlchen.db.drivers.gevent import DBCursor
@@ -157,19 +157,19 @@ class DBAssetBalance:
 
     def serialize(
             self,
-            export_data: Optional[Tuple[Asset, Price]] = None,
+            currency_and_price: Optional[Tuple[AssetWithOracles, Price]] = None,
     ) -> Dict[str, Union[str, int]]:
         """Serializes a `DBAssetBalance` to dict.
         It accepts an `export_data` tuple of the user's local currency and the value of the
         currency in USD e.g (EUR, 1.01). If provided, the data is serialized for human consumption.
         """
-        if export_data:
+        if currency_and_price:
             return {
                 'timestamp': timestamp_to_date(self.time, '%Y-%m-%d %H:%M:%S'),
                 'category': self.category.serialize(),
                 'asset': str(self.asset),
                 'amount': str(self.amount),
-                f'{export_data[0].resolve_to_asset_with_symbol().symbol.lower()}_value': str(self.usd_value * export_data[1]),  # noqa: E501
+                f'{currency_and_price[0].symbol.lower()}_value': str(self.usd_value * currency_and_price[1]),  # noqa: E501
             }
         return {
             'timestamp': int(self.time),
@@ -222,14 +222,13 @@ class LocationData(NamedTuple):
 
     def serialize(
             self,
-            export_data: Optional[Tuple[Asset, Price]] = None,
+            currency_and_price: Optional[Tuple[AssetWithOracles, Price]] = None,
     ) -> Dict[str, Union[str, int]]:
-        if export_data:
+        if currency_and_price:
             return {
                 'timestamp': timestamp_to_date(self.time, '%Y-%m-%d %H:%M:%S'),
                 'location': Location.deserialize_from_db(self.location).serialize(),
-                # TODO: probably has to change since not all assets have symbol, but all assets can be saved in snapshots  # noqa: E501
-                f'{export_data[0].resolve_to_asset_with_symbol().symbol.lower()}_value': str(FVal(self.usd_value) * export_data[1]),   # noqa: 501
+                f'{currency_and_price[0].symbol.lower()}_value': str(FVal(self.usd_value) * currency_and_price[1]),   # noqa: 501
             }
         return {
             'timestamp': int(self.time),
