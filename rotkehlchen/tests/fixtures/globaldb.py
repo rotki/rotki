@@ -56,15 +56,14 @@ def create_globaldb(
     return handler
 
 
-@pytest.fixture(name='globaldb')
-def fixture_globaldb(
+def _initialize_fixture_globaldb(
         globaldb_version,
         tmpdir_factory,
-        sql_vm_instructions_cb,
+        sql_vm_instructions_cb: int,
         reload_user_assets,
         target_globaldb_version,
         globaldb_upgrades,
-):
+) -> GlobalDBHandler:
     # clean the previous resolver memory cache, as it
     # may have cached results from a discarded database
     AssetResolver().clean_memory_cache()
@@ -84,6 +83,40 @@ def fixture_globaldb(
         ):
             return create_globaldb(new_data_dir, sql_vm_instructions_cb)
     return create_globaldb(new_data_dir, sql_vm_instructions_cb)
+
+
+@pytest.fixture(scope='session', name='session_globaldb')
+def fixture_session_globaldb(
+        tmpdir_factory,
+        session_sql_vm_instructions_cb,
+):
+    return _initialize_fixture_globaldb(
+        globaldb_version=None,
+        tmpdir_factory=tmpdir_factory,
+        sql_vm_instructions_cb=session_sql_vm_instructions_cb,
+        reload_user_assets=True,
+        target_globaldb_version=GLOBAL_DB_VERSION,
+        globaldb_upgrades=[],
+    )
+
+
+@pytest.fixture(name='globaldb')
+def fixture_globaldb(
+        globaldb_version,
+        tmpdir_factory,
+        sql_vm_instructions_cb,
+        reload_user_assets,
+        target_globaldb_version,
+        globaldb_upgrades,
+):
+    return _initialize_fixture_globaldb(
+        globaldb_version=globaldb_version,
+        tmpdir_factory=tmpdir_factory,
+        sql_vm_instructions_cb=sql_vm_instructions_cb,
+        reload_user_assets=reload_user_assets,
+        target_globaldb_version=target_globaldb_version,
+        globaldb_upgrades=globaldb_upgrades,
+    )
 
 
 @pytest.fixture(name='globaldb_version')

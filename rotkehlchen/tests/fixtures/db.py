@@ -154,6 +154,7 @@ def _init_database(
 
 @pytest.fixture
 def database(
+        globaldb,  # pylint: disable=unused-argument  # needed for init_database
         user_data_dir,
         function_scope_messages_aggregator,
         db_password,
@@ -196,6 +197,7 @@ def database(
 
 @pytest.fixture(scope='session')
 def session_database(
+        session_globaldb,  # pylint: disable=unused-argument  # needed for init_database
         session_user_data_dir,
         messages_aggregator,
         session_db_password,
