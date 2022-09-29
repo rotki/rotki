@@ -51,7 +51,10 @@ def test_nft_query(rotkehlchen_api_server, start_with_valid_premium):
     assert result['entries_limit'] == FREE_NFT_LIMIT
     assert result['entries_found'] == len(result['addresses'][TEST_ACC1])
 
-    # find the one known nft in the nfts list
+    if start_with_valid_premium is False:
+        return  # test nft may not fit in results without premium
+
+    # else find the one known nft in the nfts list
     nfts = result['addresses'][TEST_ACC1]
     nft_found = False
     for entry in nfts:
