@@ -2,7 +2,7 @@ import abc
 import logging
 from dataclasses import InitVar, dataclass, field
 from functools import total_ordering
-from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Type
+from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Type, Union
 
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.constants.misc import NFT_DIRECTIVE
@@ -849,15 +849,15 @@ class Asset:
         if isinstance(other, str):
             return self.identifier.lower() == other.lower()
         # else
-        raise ValueError(f'Invalid comparison of asset with {type(other)}')
+        raise NotImplementedError(f'Invalid comparison of asset with {type(other)}')
 
-    def __lt__(self, other: Any) -> bool:
+    def __lt__(self, other: Union['Asset', str]) -> bool:
         if isinstance(other, Asset):
             return self.identifier < other.identifier
         if isinstance(other, str):
             return self.identifier < other
-        # else
-        raise ValueError(f'Invalid comparison of asset with {type(other)}')
+        # else (but should never happen due to type checking)
+        raise NotImplementedError(f'Invalid comparison of asset with {type(other)}')
 
     def __str__(self) -> str:
         return self.identifier
