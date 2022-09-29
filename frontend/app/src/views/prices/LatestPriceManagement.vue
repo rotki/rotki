@@ -2,43 +2,34 @@
   <v-container>
     <v-row justify="space-between" align="center" no-gutters>
       <v-col>
-        <card-title>{{ tc('price_management.title') }}</card-title>
+        <card-title>{{ tc('price_management.latest.title') }}</card-title>
       </v-col>
     </v-row>
     <card class="mt-8">
       <template #title>{{ tc('price_management.filter_title') }}</template>
       <v-row>
-        <v-col cols="12" md="6">
+        <v-col>
           <asset-select
-            v-model="filter.fromAsset"
+            v-model="assetFilter"
             outlined
             :label="tc('price_management.from_asset')"
             clearable
             hide-details
           />
         </v-col>
-        <v-col cols="12" md="6">
-          <asset-select
-            v-model="filter.toAsset"
-            outlined
-            :label="tc('price_management.to_asset')"
-            clearable
-            hide-details
-          />
-        </v-col>
       </v-row>
     </card>
-    <price-table
+    <latest-price-table
       class="mt-12"
-      :filter="filter"
-      :refresh="refresh"
+      :asset-filter="assetFilter"
+      :refreshing="refreshing"
       @edit="openForm($event)"
-      @refreshed="refresh = false"
+      @refreshed="refreshing = false"
     >
       <v-btn absolute fab top right color="primary" @click="openForm()">
         <v-icon> mdi-plus </v-icon>
       </v-btn>
-    </price-table>
+    </latest-price-table>
     <big-dialog
       :display="showForm"
       :title="
@@ -50,44 +41,40 @@
       @confirm="managePrice(formData, editMode)"
       @cancel="hideForm()"
     >
-      <price-form v-model="formData" :edit="editMode" @valid="valid = $event" />
+      <latest-price-form
+        v-model="formData"
+        :edit="editMode"
+        @valid="valid = $event"
+      />
     </big-dialog>
   </v-container>
 </template>
-
 <script setup lang="ts">
 import { get, set } from '@vueuse/core';
-import { onMounted, reactive, ref } from 'vue';
+import { omit } from 'lodash';
+import { onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
-import PriceForm from '@/components/price-manager/PriceForm.vue';
-import PriceTable from '@/components/price-manager/PriceTable.vue';
+import LatestPriceForm from '@/components/price-manager/latest/LatestPriceForm.vue';
+import LatestPriceTable from '@/components/price-manager/latest/LatestPriceTable.vue';
 import { useRoute, useRouter } from '@/composables/router';
-import {
-  HistoricalPrice,
-  HistoricalPriceFormPayload
-} from '@/services/assets/types';
+import { ManualPrice, ManualPriceFormPayload } from '@/services/assets/types';
 import { api } from '@/services/rotkehlchen-api';
+import { useBalancesStore } from '@/store/balances';
 import { useMessageStore } from '@/store/message';
 import { Nullable } from '@/types';
 
-const emptyPrice: () => HistoricalPriceFormPayload = () => ({
+const emptyPrice: () => ManualPriceFormPayload = () => ({
   fromAsset: '',
   toAsset: '',
-  price: '0',
-  timestamp: 0
+  price: '0'
 });
 
-const refresh = ref(false);
-const formData = ref<HistoricalPriceFormPayload>(emptyPrice());
+const refreshing = ref(false);
+const formData = ref<ManualPriceFormPayload>(emptyPrice());
 const showForm = ref(false);
-const filter = reactive<{
-  fromAsset: Nullable<string>;
-  toAsset: Nullable<string>;
-}>({
-  fromAsset: null,
-  toAsset: null
-});
+
+const assetFilter = ref<Nullable<string>>(null);
 const valid = ref(false);
 const editMode = ref(false);
 
@@ -96,19 +83,18 @@ const router = useRouter();
 const route = useRoute();
 const { tc } = useI18n();
 
-const openForm = (hPrice: HistoricalPrice | null = null) => {
-  set(editMode, !!hPrice);
-  if (hPrice) {
+const openForm = (cPrice: ManualPrice | null = null) => {
+  set(editMode, !!cPrice);
+  if (cPrice) {
     set(formData, {
-      ...hPrice,
-      price: hPrice.price.toFixed() ?? ''
+      ...cPrice,
+      price: cPrice.price.toFixed() ?? ''
     });
   } else {
     const emptyPriceObj = emptyPrice();
     set(formData, {
       ...emptyPriceObj,
-      fromAsset: filter.fromAsset ?? '',
-      toAsset: filter.toAsset ?? ''
+      fromAsset: get(assetFilter) ?? ''
     });
   }
   set(showForm, true);
@@ -119,21 +105,15 @@ const hideForm = function () {
   set(formData, emptyPrice());
 };
 
-const managePrice = async (
-  price: HistoricalPriceFormPayload,
-  edit: boolean
-) => {
+const { refreshPrices } = useBalancesStore();
+const managePrice = async (price: ManualPriceFormPayload, edit: boolean) => {
   try {
-    if (edit) {
-      await api.assets.editHistoricalPrice(price);
-    } else {
-      await api.assets.addHistoricalPrice(price);
-    }
-
+    await api.assets.addLatestPrice(omit(price, 'usdPrice'));
     set(showForm, false);
-    if (!get(refresh)) {
-      set(refresh, true);
+    if (!get(refreshing)) {
+      set(refreshing, true);
     }
+    await refreshPrices(false);
   } catch (e: any) {
     const values = { message: e.message };
     const title = edit

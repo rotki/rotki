@@ -26,7 +26,7 @@ export const updateTotalsPrices = <T extends Blockchain>(
       const amount = balances[asset].amount;
       balances[asset] = {
         amount,
-        usdValue: amount.times(assetPrice)
+        usdValue: amount.times(assetPrice.value)
       };
     }
   }
@@ -45,7 +45,7 @@ export const updateBalancesPrices = (
     const assetInfo = balances[asset];
     balances[asset] = {
       amount: assetInfo.amount,
-      usdValue: assetInfo.amount.times(assetPrice)
+      usdValue: assetInfo.amount.times(assetPrice.value)
     };
   }
   return balances;
@@ -81,7 +81,7 @@ export const updateAssetBalances = (
       const amount = addressAssets[asset].amount;
       addressAssets[asset] = {
         amount,
-        usdValue: amount.times(assetPrice)
+        usdValue: amount.times(assetPrice.value)
       };
     }
   }
@@ -107,7 +107,7 @@ export const updateBtcPrices = (
       const amount = addressBalance.amount;
       balance.standalone[address] = {
         amount,
-        usdValue: amount.times(assetPrice)
+        usdValue: amount.times(assetPrice.value)
       };
     }
     const xpubs = balance.xpubs;
@@ -119,7 +119,7 @@ export const updateBtcPrices = (
           const amount = balance.amount;
           xpub.addresses[address] = {
             amount: amount,
-            usdValue: amount.times(assetPrice)
+            usdValue: amount.times(assetPrice.value)
           };
         }
       }

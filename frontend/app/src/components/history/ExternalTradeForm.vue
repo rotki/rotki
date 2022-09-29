@@ -579,7 +579,7 @@ onMounted(() => {
     position: relative;
     margin-bottom: 30px;
 
-    ::v-deep {
+    :deep() {
       .v-input {
         position: static;
 
@@ -639,7 +639,7 @@ onMounted(() => {
     }
   }
 
-  ::v-deep {
+  :deep() {
     .v-select.v-text-field--outlined:not(.v-text-field--single-line) {
       .v-select__selections {
         padding: 0 !important;
@@ -652,7 +652,7 @@ onMounted(() => {
   &--dark {
     .external-trade-form {
       &__grouped-amount-input {
-        ::v-deep {
+        :deep() {
           .v-input {
             &__slot {
               &::before {

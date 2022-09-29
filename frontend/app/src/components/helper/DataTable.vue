@@ -110,7 +110,7 @@ const scrollToTop = () => {
 <style scoped lang="scss">
 /* stylelint-disable selector-class-pattern,selector-nested-pattern,no-descending-specificity */
 
-::v-deep {
+:deep() {
   .v-data-table {
     &__expanded {
       &__content {
@@ -137,7 +137,7 @@ const scrollToTop = () => {
 
 .theme {
   &--dark {
-    ::v-deep {
+    :deep() {
       .v-data-table {
         &__expanded {
           &__content {

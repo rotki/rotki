@@ -427,7 +427,7 @@ export default defineComponent({
     line-height: 1rem;
   }
 
-  ::v-deep {
+  :deep() {
     .v-stepper {
       box-shadow: none !important;
       -webkit-box-shadow: none !important;

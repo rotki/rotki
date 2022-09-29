@@ -187,7 +187,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
 </script>
 
 <style scoped lang="scss">
-::v-deep {
+:deep() {
   th {
     &:first-child {
       span {

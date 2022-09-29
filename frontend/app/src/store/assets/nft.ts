@@ -1,6 +1,6 @@
 import { MaybeRef } from '@vueuse/core';
 import { ComputedRef } from 'vue';
-import { useNonFungibleBalancesStore } from '@/store/balances/non-funginble';
+import { useNonFungibleBalancesStore } from '@/store/balances/non-fungible';
 import { AssetInfoWithId } from '@/types/assets';
 import { isNft } from '@/utils/nft';
 
@@ -10,7 +10,7 @@ export type NftAsset = AssetInfoWithId & {
 };
 
 export const useNftAssetInfoStore = defineStore('assets/nfts', () => {
-  const { nonFunginbleBalances } = storeToRefs(useNonFungibleBalancesStore());
+  const { nonFungibleBalances } = storeToRefs(useNonFungibleBalancesStore());
 
   const getNftDetails = (
     identifier: MaybeRef<string>
@@ -22,7 +22,7 @@ export const useNftAssetInfoStore = defineStore('assets/nfts', () => {
         return null;
       }
 
-      const balances = get(nonFunginbleBalances);
+      const balances = get(nonFungibleBalances);
       const balance = balances.find(item => item.id === id);
 
       if (!balance) {

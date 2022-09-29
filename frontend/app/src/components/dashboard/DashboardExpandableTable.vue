@@ -48,7 +48,7 @@ const panel = computed<number>(() => {
 });
 </script>
 <style scoped lang="scss">
-::v-deep {
+:deep() {
   .v-expansion-panel {
     &::before {
       box-shadow: none;

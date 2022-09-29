@@ -210,7 +210,7 @@ watch(value, async value => {
 </script>
 
 <style scoped lang="scss">
-::v-deep {
+:deep() {
   .v-select {
     &__slot {
       height: 56px;
@@ -240,7 +240,7 @@ watch(value, async value => {
   }
 
   &--outlined {
-    ::v-deep {
+    :deep() {
       .v-input {
         &__icon {
           &--append {

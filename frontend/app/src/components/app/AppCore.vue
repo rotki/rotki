@@ -111,7 +111,7 @@ watch(language, language => {
 </script>
 
 <style scoped lang="scss">
-::v-deep {
+:deep() {
   .v-main {
     padding: 0 !important;
   }
@@ -129,7 +129,7 @@ watch(language, language => {
 
 .app {
   &__app-bar {
-    ::v-deep {
+    :deep() {
       .v-toolbar {
         &__content {
           padding: 0 1rem;

@@ -56,11 +56,11 @@ describe('balances:getters', () => {
 
     const { prices } = storeToRefs(useBalancePricesStore());
     set(prices, {
-      DAI: bigNumberify(1),
-      EUR: bigNumberify(1),
-      SAI: bigNumberify(1),
-      ETH: bigNumberify(3000),
-      BTC: bigNumberify(40000)
+      DAI: { value: bigNumberify(1), isManualPrice: false },
+      EUR: { value: bigNumberify(1), isManualPrice: false },
+      SAI: { value: bigNumberify(1), isManualPrice: false },
+      ETH: { value: bigNumberify(3000), isManualPrice: false },
+      BTC: { value: bigNumberify(40000), isManualPrice: false }
     });
 
     const { manualBalancesData } = storeToRefs(useManualBalancesStore());

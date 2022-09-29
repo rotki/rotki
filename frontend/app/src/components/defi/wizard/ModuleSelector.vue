@@ -62,7 +62,7 @@
 <script setup lang="ts">
 import { Ref } from 'vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
-import { useNonFungibleBalancesStore } from '@/store/balances/non-funginble';
+import { useNonFungibleBalancesStore } from '@/store/balances/non-fungible';
 import { useSettingsStore } from '@/store/settings';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Module, SUPPORTED_MODULES } from '@/types/modules';
@@ -90,10 +90,10 @@ const { update: updateSettings } = useSettingsStore();
 
 const balancesStore = useNonFungibleBalancesStore();
 const { balances } = storeToRefs(balancesStore);
-const { fetchNonFunginbleBalances } = balancesStore;
+const { fetchNonFungibleBalances } = balancesStore;
 
 const fetch = () => {
-  const callback = () => fetchNonFunginbleBalances({ ignoreCache: false });
+  const callback = () => fetchNonFungibleBalances({ ignoreCache: false });
   setTimeout(callback, 800);
 };
 

@@ -109,7 +109,7 @@ onMounted(async () => {
   box-shadow: none !important;
   background: transparent !important;
 
-  ::v-deep {
+  :deep() {
     .v-stepper {
       &__header {
         border: none !important;

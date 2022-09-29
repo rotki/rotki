@@ -177,12 +177,7 @@
                       </i18n>
                     </v-tooltip>
                   </div>
-                  <v-stepper
-                    vertical
-                    flat
-                    :value="getStatusData(item).index - 1"
-                    :class="$style.stepper"
-                  >
+                  <v-stepper vertical flat :value="-1" :class="$style.stepper">
                     <v-stepper-header :class="$style['stepper__header']">
                       <template v-for="(step, index) in steps">
                         <v-stepper-step

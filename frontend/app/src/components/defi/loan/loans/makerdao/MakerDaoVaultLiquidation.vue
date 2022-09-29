@@ -131,7 +131,7 @@ const totalInterestOwed = computed(() => {
   display: flex;
   flex-direction: column;
 
-  ::v-deep {
+  :deep() {
     .v-card {
       &__text {
         display: flex;

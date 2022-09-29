@@ -63,7 +63,7 @@ const getBalance = ({ amount, asset, usdValue }: ReceivedAmount): Balance => {
   const assetPrices = get(prices);
 
   const currentPrice = assetPrices[asset]
-    ? assetPrices[asset].times(amount)
+    ? assetPrices[asset].value.times(amount)
     : Zero;
   return {
     amount,

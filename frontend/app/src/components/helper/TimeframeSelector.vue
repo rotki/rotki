@@ -70,7 +70,7 @@ const { t } = useI18n();
 
 <style scoped lang="scss">
 .timeframe-selector {
-  ::v-deep {
+  :deep() {
     .v-chip {
       cursor: pointer;
     }

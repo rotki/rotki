@@ -39,7 +39,7 @@ const isPlayground = computed(() => {
   overflow: hidden;
 
   &--animations-disabled {
-    ::v-deep {
+    :deep() {
       * {
         &:not(.animate) {
           // ignore manual animation (e.g. animation on login screen)

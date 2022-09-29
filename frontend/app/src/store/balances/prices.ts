@@ -1,6 +1,7 @@
 import { BigNumber } from '@rotki/common';
 import { MaybeRef } from '@vueuse/core';
 import { ComputedRef } from 'vue';
+import { useStatusUpdater } from '@/composables/status';
 import { usePriceApi } from '@/services/balances/price';
 import { FetchPricePayload } from '@/store/balances/types';
 import { useNotifications } from '@/store/notifications';
@@ -16,6 +17,7 @@ import {
   HistoricPrices,
   OracleCachePayload
 } from '@/types/prices';
+import { Section, Status } from '@/types/status';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { ExchangeRates } from '@/types/user';
@@ -42,9 +44,6 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
 
   const fetchPrices = async (payload: FetchPricePayload): Promise<void> => {
     const taskType = TaskType.UPDATE_PRICES;
-    if (get(isTaskRunning(taskType))) {
-      return;
-    }
 
     const fetch = async (assets: string[]): Promise<void> => {
       const { taskId } = await queryPrices(
@@ -58,18 +57,21 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
         taskType,
         {
           title: t('actions.session.fetch_prices.task.title').toString(),
-          numericKeys: null
+          numericKeys: []
         },
         true
       );
 
       set(prices, {
         ...get(prices),
-        ...result.assets
+        ...AssetPriceResponse.parse(result)
       });
     };
 
+    const { setStatus } = useStatusUpdater(Section.PRICES);
+
     try {
+      setStatus(Status.LOADING);
       await Promise.all(
         chunkArray<string>(payload.selectedAssets, 100).map(fetch)
       );
@@ -83,6 +85,8 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
         message,
         display: true
       });
+    } finally {
+      setStatus(Status.LOADED);
     }
   };
 
@@ -95,7 +99,7 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
       const assetInfo = balances[asset];
       balances[asset] = {
         amount: assetInfo.amount,
-        usdValue: assetInfo.amount.times(assetPrice)
+        usdValue: assetInfo.amount.times(assetPrice.value)
       };
     }
     return balances;
@@ -242,6 +246,10 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
       return currentExchangeRate ? val.multipliedBy(currentExchangeRate) : val;
     });
 
+  const getAssetPrice = (asset: string): BigNumber | undefined => {
+    return get(prices)[asset]?.value;
+  };
+
   const reset = (): void => {
     set(prices, {});
     set(exchangeRates, {});
@@ -250,6 +258,7 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
   return {
     prices,
     exchangeRates,
+    getAssetPrice,
     fetchPrices,
     updateBalancesPrices,
     fetchExchangeRates,

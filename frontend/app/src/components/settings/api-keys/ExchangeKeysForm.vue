@@ -313,7 +313,7 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
-::v-deep {
+:deep() {
   .exchange-keys-form {
     &__keys {
       .v-input {

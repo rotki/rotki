@@ -153,7 +153,7 @@ const label = computed<string>(() => {
       max-width: 120px;
     }
 
-    ::v-deep {
+    :deep() {
       .v-chip {
         background-color: white !important;
 

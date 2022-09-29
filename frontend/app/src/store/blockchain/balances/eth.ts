@@ -153,7 +153,7 @@ export const useEthBalancesStore = defineStore('balances/eth', () => {
   };
 
   const fetchLoopringBalances = async (refresh: boolean) => {
-    if (!activeModules.includes(Module.LOOPRING)) {
+    if (!get(activeModules).includes(Module.LOOPRING)) {
       return;
     }
 

@@ -103,7 +103,7 @@ const totalUsdCurrent = computed<BigNumber>(() => {
   for (const { asset, amount } of earnedAssets) {
     const assetPrice = assetPrices[asset];
     assert(assetPrice);
-    sum = sum.plus(assetPrice.times(amount));
+    sum = sum.plus(assetPrice.value.times(amount));
   }
   return sum;
 });

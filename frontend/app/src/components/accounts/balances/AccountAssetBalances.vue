@@ -13,12 +13,12 @@
         </template>
         <template #item.price="{ item }">
           <amount-display
-            v-if="prices[item.asset]"
+            v-if="getAssetPrice(item.asset)"
             tooltip
             show-currency="symbol"
             fiat-currency="USD"
             :price-asset="item.asset"
-            :value="prices[item.asset]"
+            :value="getPrice(item.asset)"
           />
           <div v-else>-</div>
         </template>
@@ -48,6 +48,7 @@ import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { Zero } from '@/utils/bignumbers';
 
 defineProps({
   assets: { required: true, type: Array as PropType<AssetBalance[]> },
@@ -55,7 +56,7 @@ defineProps({
 });
 
 const { t } = useI18n();
-const { prices } = storeToRefs(useBalancePricesStore());
+const { getAssetPrice } = useBalancePricesStore();
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
 const headers = computed<DataTableHeader[]>(() => [
@@ -89,10 +90,14 @@ const headers = computed<DataTableHeader[]>(() => [
     class: 'text-no-wrap'
   }
 ]);
+
+const getPrice = (asset: string) => {
+  return getAssetPrice(asset) ?? Zero;
+};
 </script>
 
 <style scoped lang="scss">
-::v-deep {
+:deep() {
   .asset-divider {
     width: 100%;
 

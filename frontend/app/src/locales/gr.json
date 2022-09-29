@@ -838,7 +838,8 @@
   },
   "amount_display": {
     "click_to_copy": "Click to copy",
-    "copied": "Copied!"
+    "copied": "Copied!",
+    "manual_tooltip": "This price is manual price you defined."
   },
   "app": {
     "moto": "the opensource portfolio manager that protects your privacy",
@@ -2792,14 +2793,18 @@
       "ledger_actions": "Ledger Actions",
       "trades": "Συναλλαγές"
     },
-    "import_data": "Import Data",
+    "import_data": "Εισαγωγή δεδομένων",
     "locations": "Locations",
     "manage_assets": "Manage Assets",
     "manage_eth_address_book": "Manage ETH Address Book",
     "manage_prices": "Manage Prices",
+    "manage_prices_sub": {
+      "historic_prices": "Ιστορικές τιμές",
+      "latest_prices": "Πρόσφατε τιμές"
+    },
     "nfts": "NFTs",
     "profit_loss_report": "Λογαριασμός Κερδών και Ζημιών",
-    "settings": "Settings",
+    "settings": "Ρυθμίσεις",
     "settings_sub": {
       "accounting": "Accounting",
       "data_security": "Data & Security",
@@ -2860,8 +2865,8 @@
   "non_fungible_balances": {
     "delete": {
       "error": {
-        "message": "Could not delete the current price for {asset}",
-        "title": "Deleting custom current price"
+        "message": "Could not delete the latest price for {asset}",
+        "title": "Deleting custom latest price"
       },
       "message": "Are you sure wou want to delete the custom price for {asset}?",
       "title": "Delete custom price"
@@ -2971,7 +2976,7 @@
     "to_asset": "To Asset"
   },
   "oracles": {
-    "manualcurrent": "Manual current",
+    "manual_latest": "Manual latest",
     "uniswap_v2": "Uniswap V2",
     "uniswap_v3": "Uniswap V3"
   },
@@ -3185,7 +3190,12 @@
     "date_non_empty": "The date of the price cannot be empty",
     "from_asset": "From Asset",
     "from_non_empty": "The from asset cannot be empty",
-    "hint": "1 {fromAsset} was worth {price} {toAsset}",
+    "historic": {
+      "hint": "1 {fromAsset} was worth {price} {toAsset}"
+    },
+    "latest": {
+      "hint": "1 {fromAsset} is worth {price} {toAsset}"
+    },
     "price_non_empty": "The price cannot be empty",
     "to_asset": "To Asset",
     "to_non_empty": "The to asset cannot be empty"
@@ -3209,7 +3219,14 @@
     },
     "filter_title": "Filter Prices",
     "from_asset": "From Asset",
-    "title": "Price Management",
+    "historic": {
+      "add_title": "Add a manual historical price",
+      "title": "Manage Historic Prices"
+    },
+    "latest": {
+      "add_title": "Add a manual latest price",
+      "title": "Manage Latest Prices"
+    },
     "to_asset": "To Asset"
   },
   "price_oracle_selection": {
@@ -3225,8 +3242,8 @@
     }
   },
   "price_oracle_settings": {
-    "current_prices": "Current Prices",
     "historic_prices": "Historic Prices",
+    "latest_prices": "Latest Prices",
     "subtitle": "Manage which price oracles are used, in which order.",
     "title": "Price oracle settings"
   },
@@ -3262,8 +3279,15 @@
       "from_asset": "From Asset",
       "to_asset": "To Asset"
     },
+    "historic": {
+      "title": "Manual Historic Prices"
+    },
+    "is_worth": "is worth",
+    "latest": {
+      "title": "Manual Latest Prices"
+    },
     "on": "on",
-    "title": "Manual Prices",
+    "refresh_tooltip": "Refresh prices",
     "was_worth": "was worth"
   },
   "privacy_notice": {

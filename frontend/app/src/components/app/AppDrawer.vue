@@ -86,7 +86,7 @@ const { t } = useI18n();
   }
 }
 
-::v-deep {
+:deep() {
   .v-navigation-drawer {
     box-shadow: 0 2px 12px rgba(74, 91, 120, 0.1);
 

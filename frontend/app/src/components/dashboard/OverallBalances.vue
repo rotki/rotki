@@ -106,6 +106,7 @@ const { currencySymbol, floatingPrecision } = storeToRefs(
   useGeneralSettingsStore()
 );
 const sessionStore = useSessionSettingsStore();
+const { update } = sessionStore;
 const { timeframe } = storeToRefs(sessionStore);
 const { premium } = storeToRefs(usePremiumStore());
 const statistics = useStatisticsStore();
@@ -196,7 +197,7 @@ onMounted(() => {
   const isPremium = get(premium);
   const selectedTimeframe = get(timeframe);
   if (isPremium && !isPeriodAllowed(selectedTimeframe)) {
-    set(timeframe, TimeFramePeriod.TWO_WEEKS);
+    update({ timeframe: TimeFramePeriod.TWO_WEEKS });
   }
 });
 
@@ -215,7 +216,7 @@ const chartSectionHeight = computed<string>(() => {
   }
 
   &__net-worth {
-    ::v-deep {
+    :deep() {
       .amount-display {
         &__value {
           font-size: 3.5em;

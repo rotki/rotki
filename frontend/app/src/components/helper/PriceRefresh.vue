@@ -3,8 +3,8 @@
     outlined
     color="primary"
     :loading="refreshing"
-    :disabled="refreshing || loadingData"
-    @click="refreshPrices(true)"
+    :disabled="disabled"
+    @click="refresh"
   >
     <v-icon left>mdi-refresh</v-icon>
     {{ t('price_refresh.button') }}
@@ -12,15 +12,26 @@
 </template>
 
 <script setup lang="ts">
+import { ComputedRef, PropType } from 'vue';
 import { useSectionLoading } from '@/composables/common';
 import { useBalancesStore } from '@/store/balances';
+import { useBalancePricesStore } from '@/store/balances/prices';
 import { useTasks } from '@/store/tasks';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 
+const props = defineProps({
+  assets: {
+    required: false,
+    type: Array as PropType<string[] | null>,
+    default: () => null
+  }
+});
+
 const { isTaskRunning } = useTasks();
 const { refreshPrices } = useBalancesStore();
 const { isSectionRefreshing } = useSectionLoading();
+const { fetchPrices } = useBalancePricesStore();
 
 const refreshing = isSectionRefreshing(Section.PRICES);
 
@@ -33,5 +44,29 @@ const loadingData = computed<boolean>(() => {
   );
 });
 
+const { assets } = toRefs(props);
+const refresh = async () => {
+  const assetsVal = get(assets);
+  if (assetsVal === null) {
+    await refreshPrices(true);
+    return;
+  }
+
+  if (assetsVal.length > 0) {
+    await fetchPrices({
+      ignoreCache: true,
+      selectedAssets: [...assetsVal]
+    });
+  }
+};
+
 const { t } = useI18n();
+
+const disabled: ComputedRef<boolean> = computed(() => {
+  return (
+    get(refreshing) ||
+    get(loadingData) ||
+    (get(assets) !== null && get(assets)!.length === 0)
+  );
+});
 </script>

@@ -158,7 +158,7 @@ const { t } = useI18n();
 
 <style scoped lang="scss">
 .explorers {
-  ::v-deep {
+  :deep() {
     .v-select {
       &__slot {
         height: 76px;

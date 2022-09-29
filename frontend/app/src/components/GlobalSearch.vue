@@ -270,7 +270,14 @@ const items = computed<SearchItem[]>(() => {
     { ...Routes.STAKING },
     { ...Routes.PROFIT_LOSS_REPORTS },
     { ...Routes.ASSET_MANAGER },
-    { ...Routes.PRICE_MANAGER },
+    {
+      ...Routes.PRICE_MANAGER_LATEST,
+      texts: [Routes.PRICE_MANAGER.text, Routes.PRICE_MANAGER_LATEST.text]
+    },
+    {
+      ...Routes.PRICE_MANAGER_HISTORIC,
+      texts: [Routes.PRICE_MANAGER.text, Routes.PRICE_MANAGER_HISTORIC.text]
+    },
     { ...Routes.ETH_ADDRESS_BOOK_MANAGER },
     {
       ...Routes.API_KEYS_ROTKI_PREMIUM,
@@ -352,8 +359,13 @@ const items = computed<SearchItem[]>(() => {
       icon: 'mdi-plus-circle-multiple-outline'
     },
     {
-      text: t('price_management.dialog.add_title').toString(),
-      route: `${Routes.PRICE_MANAGER.route}?add=true`,
+      text: t('price_management.latest.add_title').toString(),
+      route: `${Routes.PRICE_MANAGER_LATEST.route}?add=true`,
+      icon: 'mdi-database-plus'
+    },
+    {
+      text: t('price_management.historic.add_title').toString(),
+      route: `${Routes.PRICE_MANAGER_HISTORIC.route}?add=true`,
       icon: 'mdi-database-plus'
     }
   ];

@@ -122,7 +122,7 @@ const calculateFontSize = (symbol: string) => {
 </script>
 
 <style scoped lang="scss">
-::v-deep {
+:deep() {
   .currency-dropdown {
     font-size: 1.6em !important;
     font-weight: bold !important;

@@ -310,7 +310,7 @@ const headers: DataTableHeader[] = [
 
   &__fields {
     &__exchange {
-      ::v-deep {
+      :deep() {
         .v-select {
           &__selections {
             height: 36px;

@@ -49,7 +49,7 @@
   </table-expand-container>
 </template>
 <script setup lang="ts">
-import { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
+import { AssetBalanceWithPrice } from '@rotki/common';
 import { XswapAsset } from '@rotki/common/lib/defi/xswap';
 import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
@@ -122,13 +122,13 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
 const { dark } = useTheme();
 const premium = usePremium();
 
-const { prices } = storeToRefs(useBalancePricesStore());
+const { getAssetPrice } = useBalancePricesStore();
 
 const transformAssets = (assets: XswapAsset[]): AssetBalanceWithPrice[] => {
   return assets.map(item => {
     return {
       asset: item.asset,
-      usdPrice: item.usdPrice ?? (get(prices)[item.asset] as BigNumber) ?? Zero,
+      usdPrice: item.usdPrice ?? getAssetPrice(item.asset) ?? Zero,
       amount: item.userBalance.amount,
       usdValue: item.userBalance.usdValue
     };

@@ -124,7 +124,7 @@ watch(locationName, locationName => {
 }
 
 .tabs {
-  ::v-deep {
+  :deep() {
     .v-slide-group {
       &__prev,
       &__next {

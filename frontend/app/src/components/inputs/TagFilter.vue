@@ -86,7 +86,7 @@ const remove = (tag: string) => {
     margin-top: -4px;
   }
 
-  ::v-deep {
+  :deep() {
     .v-select {
       &__slot {
         min-height: 40px;

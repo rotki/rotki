@@ -154,7 +154,7 @@ watch(search, search => {
 <style scoped lang="scss">
 .binance-market-selector {
   &--outlined {
-    ::v-deep {
+    :deep() {
       /* stylelint-disable */
       .v-label:not(.v-label--active) {
         /* stylelint-enable */

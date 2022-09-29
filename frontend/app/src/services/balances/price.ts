@@ -90,7 +90,7 @@ export const usePriceApi = () => {
   ): Promise<PendingTask> =>
     api.instance
       .post<ActionResult<PendingTask>>(
-        '/assets/prices/current',
+        '/assets/prices/latest',
         axiosSnakeCaseTransformer({
           asyncQuery: true,
           assets: assets.join(','),

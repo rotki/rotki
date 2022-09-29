@@ -30,8 +30,11 @@
           :rules="priceRules"
           :label="tc('common.price')"
         />
-        <div v-if="price" class="text-caption green--text mt-n6 pb-1 pl-3">
-          <i18n tag="div" path="price_form.hint">
+        <div
+          v-if="price && fromAsset && toAsset"
+          class="text-caption green--text mt-n6 pb-1 pl-3"
+        >
+          <i18n tag="div" path="price_form.historic.hint">
             <template #fromAsset>
               <strong>
                 {{ fromAsset }}

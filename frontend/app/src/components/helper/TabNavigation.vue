@@ -103,7 +103,7 @@ export default defineComponent({
 
 .tab-navigation {
   &__tabs {
-    ::v-deep {
+    :deep() {
       .v-tabs-bar {
         background-color: var(--v-rotki-light-grey-base) !important;
       }
