@@ -107,4 +107,53 @@ WORLD_TO_BITTREX = COMMON_ASSETS_MAPPINGS | {
     evm_address_to_identifier('0x1b40183EFB4Dd766f11bDa7A7c3AD8982e998421', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'VSP',  # noqa: E501
     evm_address_to_identifier('0x7659CE147D0e714454073a5dd7003544234b6Aa0', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'XCAD',  # noqa: E501
     evm_address_to_identifier('0x05f4a42e251f2d52b8ed15E9FEdAacFcEF1FAD27', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'ZIL',  # noqa: E501
+    evm_address_to_identifier('0xD2dDa223b2617cB616c1580db421e4cFAe6a8a85', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'BONDLY',  # noqa: E501
+    evm_address_to_identifier('0x32E6C34Cd57087aBBD59B5A4AECC4cB495924356', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'BTBS',  # noqa: E501
+    evm_address_to_identifier('0xb683D83a532e2Cb7DFa5275eED3698436371cc9f', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'BTU',  # noqa: E501
+    evm_address_to_identifier('0x41e5560054824eA6B0732E656E3Ad64E20e94E45', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'CIV',  # noqa: E501
+    evm_address_to_identifier('0x5B685863494C33F344081F75e5430C260c224A32', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'CMCX',  # noqa: E501
+    evm_address_to_identifier('0x5CAc718A3AE330d361e39244BF9e67AB17514CE8', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'COT',  # noqa: E501
+    evm_address_to_identifier('0x1A3496C18d558bd9C6C8f609E1B129f67AB08163', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'DEP',  # noqa: E501
+    evm_address_to_identifier('0x82030CDBD9e4B7c5bb0b811A61DA6360D69449cc', ChainID.BINANCE, EvmTokenKind.ERC20): 'FEVR',  # noqa: E501
+    evm_address_to_identifier('0x0e2ef8AeCB3c01Ad5D596f1B67134e178199984D', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'LAND',  # noqa: E501
+    evm_address_to_identifier('0xF94b5C5651c888d928439aB6514B93944eEE6F48', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'YLD',  # noqa: E501
+    evm_address_to_identifier('0xcC1a8BD438BebC4b2a885a34475BB974f2124317', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'WEC',  # noqa: E501
+    evm_address_to_identifier('0x755be920943eA95e39eE2DC437b268917B580D6e', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'VVT',  # noqa: E501
+    evm_address_to_identifier('0xcFEB09C3c5F0f78aD72166D55f9e6E9A60e96eEC', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'VEMP',  # noqa: E501
+    evm_address_to_identifier('0x1735Db6AB5BAa19eA55d0AdcEeD7bcDc008B3136', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'URQA',  # noqa: E501
+    evm_address_to_identifier('0xDDD6A0ECc3c6F6C102E5eA3d8Af7B801d1a77aC8', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'UNIX',  # noqa: E501
+    evm_address_to_identifier('0x8400D94A5cb0fa0D041a3788e395285d61c9ee5e', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'UBT',  # noqa: E501
+    evm_address_to_identifier('0x394A16744Dcd805BB0cA7252e70691f0dcAc56AA', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'TRZ',  # noqa: E501
+    evm_address_to_identifier('0x2C537E5624e4af88A7ae4060C022609376C8D0EB', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'TRYB',  # noqa: E501
+    evm_address_to_identifier('0x888888848B652B3E3a0f34c96E00EEC0F3a23F72', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'TLM',  # noqa: E501
+    'SOL-2': 'SOL',
+    evm_address_to_identifier('0xd98F75b1A3261dab9eEd4956c93F33749027a964', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'SHR',  # noqa: E501
+    evm_address_to_identifier('0x2A039B1D9bBDccBb91be28691b730ca893e5e743', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'RNB',  # noqa: E501
+    evm_address_to_identifier('0xa1d6Df714F91DeBF4e0802A542E13067f31b8262', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'RFOX',  # noqa: E501
+    evm_address_to_identifier('0x6D0F5149c502faf215C89ab306ec3E50b15e2892', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'PRT',  # noqa: E501
+    evm_address_to_identifier('0x054D64b73d3D8A21Af3D764eFd76bCaA774f3Bb2', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'PPAY',  # noqa: E501
+    evm_address_to_identifier('0xaA8330FB2B4D5D07ABFE7A72262752a8505C6B37', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'POLC',  # noqa: E501
+    evm_address_to_identifier('0x846C66cf71C43f80403B51fE3906B3599D63336f', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'PMA',  # noqa: E501
+    evm_address_to_identifier('0x001A8Ffcb0f03e99141652eBCdecDb0384E3bd6c', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'PKR',  # noqa: E501
+    evm_address_to_identifier('0xff56Cc6b1E6dEd347aA0B7676C85AB0B3D08B0FA', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'ORBS',  # noqa: E501
+    evm_address_to_identifier('0xa645264C5603E96c3b0B078cdab68733794B0A71', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'MYST',  # noqa: E501
+    evm_address_to_identifier('0x16CDA4028e9E872a38AcB903176719299beAed87', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'MARS4',  # noqa: E501
+    evm_address_to_identifier('0x2162f572B25f7358db9376AB58a947a4e45CeDE1', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'LBL',  # noqa: E501
+    evm_address_to_identifier('0x0e2ef8AeCB3c01Ad5D596f1B67134e178199984D', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'LAND',  # noqa: E501
+    evm_address_to_identifier('0xD9Ec3ff1f8be459Bb9369b4E79e9Ebcf7141C093', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'KAI',  # noqa: E501
+    evm_address_to_identifier('0x73374Ea518De7adDD4c2B624C0e8B113955ee041', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'JGN',  # noqa: E501
+    evm_address_to_identifier('0xd794DD1CAda4cf79C9EebaAb8327a1B0507ef7d4', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'HYVE',  # noqa: E501
+    evm_address_to_identifier('0xEBBdf302c940c6bfd49C6b165f457fdb324649bc', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'HYDRO',  # noqa: E501
+    evm_address_to_identifier('0x4297394c20800E8a38A619A243E9BbE7681Ff24E', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'HOTCROSS',  # noqa: E501
+    evm_address_to_identifier('0x970B9bB2C0444F5E81e9d0eFb84C8ccdcdcAf84d', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'FUSE',  # noqa: E501
+
+    evm_address_to_identifier('0x6e8908cfa881C9f6f2C64d3436E7b80b1bf0093F', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'BIST',  # noqa: E501
+    evm_address_to_identifier('0xF74941046389c78F12fE44784C0EC9ca7CEb7dc2', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'DMR',  # noqa: E501
+    evm_address_to_identifier('0xa150Db9b1Fa65b44799d4dD949D922c0a33Ee606', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'DRC',  # noqa: E501
+    evm_address_to_identifier('0xBd3de9a069648c84d27d74d701C9fa3253098B15', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'EQX',  # noqa: E501
+    evm_address_to_identifier('0x1FCdcE58959f536621d76f5b7FfB955baa5A672F', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'FOR',  # noqa: E501
+    evm_address_to_identifier('0x9B02dD390a603Add5c07f9fd9175b7DABE8D63B7', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'SPI',  # noqa: E501
+    evm_address_to_identifier('0x6e8908cfa881C9f6f2C64d3436E7b80b1bf0093F', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'BIST',  # noqa: E501
+    evm_address_to_identifier('0x6e8908cfa881C9f6f2C64d3436E7b80b1bf0093F', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'BIST',  # noqa: E501
+    evm_address_to_identifier('0x6e8908cfa881C9f6f2C64d3436E7b80b1bf0093F', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'BIST',  # noqa: E501
 }

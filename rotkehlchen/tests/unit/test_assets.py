@@ -212,6 +212,15 @@ def test_cryptocompare_asset_support(cryptocompare):
         'eip155:56/erc20:0xDCEcf0664C33321CECA2effcE701E710A2D28A3F',  # Alpaca USD but cc has appeal dollar  # noqa: E501
         'GBPT',  # pound but cc has listed poundtoken
         'MNFT',  # mongol NFT but cc has marvelous NFT
+        'ETHS',  # Ethereum PoS fork IOU but CC has ethereum script
+        'eip155:137/erc20:0xabEDe05598760E399ed7EB24900b30C51788f00F',  # noqa: E501 # stepwatch but cc has kava swap
+        'BSX',  # basilixc but cc has bitspace
+        'eip155:43114/erc20:0xb54f16fB19478766A268F172C9480f8da1a7c9C3',  # noqa: E501 # wonderland but a different time in cc
+        'eip155:56/erc20:0x5F2F6c4C491B690216E0f8Ea753fF49eF4E36ba6',  # noqa: E501 # Metaland but cc has crops
+        ethaddress_to_identifier('0x2620638EDA99F9e7E902Ea24a285456EE9438861'),  # noqa: E501 # crust storeage but cc has consentium
+        'FB',  # fitbit but cc has fenerbache
+        'CMP',  # cadecius but cc has compcoin
+        'KUSD',  # kolibri usd but cc has kowala
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         potential_support = (
@@ -470,8 +479,19 @@ def test_coingecko_identifiers_are_reachable():
         'USDE',
         # gearbox is not returned by the coingecko api
         ethaddress_to_identifier('0xBa3335588D9403515223F109EdC4eB7269a9Ab5D'),
-        # bitcoindark bu coingecko has bitdollars
+        # bitcoindark but coingecko has bitdollars
         'BTCD',
+        ethaddress_to_identifier('0x78a73B6CBc5D183CE56e786f6e905CaDEC63547B'),
+        # defidollar but has been marked as inactive
+        ethaddress_to_identifier('0x5BC25f649fc4e26069dDF4cF4010F9f706c23831'),
+        # zeus but has been marked as inactive
+        ethaddress_to_identifier('0xe7E4279b80D319EDe2889855135A22021baf0907'),
+        # tok but has been marked as inactive
+        ethaddress_to_identifier('0x9a49f02e128a8E989b443a8f94843C0918BF45E7'),
+        # fabrik but another ft in coingecko
+        ethaddress_to_identifier('0x78a73B6CBc5D183CE56e786f6e905CaDEC63547B'),
+        # memorycoin but cc has monopoly
+        'MMC',
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         identifier = asset_data.identifier

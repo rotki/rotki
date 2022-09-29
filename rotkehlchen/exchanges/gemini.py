@@ -70,7 +70,7 @@ def gemini_symbol_to_base_quote(symbol: str) -> Tuple[AssetWithOracles, AssetWit
     - Can raise UnprocessableTradePair if symbol is in unexpected format
     - Case raise UnknownAsset if any of the pair assets are not known to rotki
     """
-    five_letter_assets = ('sushi', '1inch', 'storj', 'matic', 'audio', 'index')
+    five_letter_assets = ('sushi', '1inch', 'storj', 'matic', 'audio', 'index', 'metis')
     if len(symbol) == 5:
         base_asset = asset_from_gemini(symbol[:2].upper())
         quote_asset = asset_from_gemini(symbol[2:].upper())

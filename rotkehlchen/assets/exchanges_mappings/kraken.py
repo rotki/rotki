@@ -1,5 +1,6 @@
 from rotkehlchen.assets.exchanges_mappings.common import COMMON_ASSETS_MAPPINGS
-from rotkehlchen.constants.resolver import strethaddress_to_identifier
+from rotkehlchen.constants.resolver import evm_address_to_identifier, strethaddress_to_identifier
+from rotkehlchen.types import ChainID, EvmTokenKind
 
 
 WORLD_TO_KRAKEN = COMMON_ASSETS_MAPPINGS | {
@@ -9,7 +10,7 @@ WORLD_TO_KRAKEN = COMMON_ASSETS_MAPPINGS | {
     strethaddress_to_identifier('0xc00e94Cb662C3520282E6f5717214004A7f26888'): 'COMP',
     'DOT': 'DOT',
     'KAVA': 'KAVA',
-    strethaddress_to_identifier('0xdeFA4e8a7bcBA345F687a2f1456F5Edd9CE97202'): 'KNC',
+    strethaddress_to_identifier('0xdd974D5C2e2928deA5F71b9825b8b646686BD200'): 'KNC',
     'BSV': 'BSV',
     'ETC': 'XETC',
     'ETH': 'XETH',
@@ -65,7 +66,7 @@ WORLD_TO_KRAKEN = COMMON_ASSETS_MAPPINGS | {
     'KEEP': 'KEEP',
     'TBTC': 'TBTC',
     'ETH2': 'ETH2',
-    'MANA': 'MANA',
+    strethaddress_to_identifier('0x0F5D2fB29fb7d3CFeE444a200298f468908cC942'): 'MANA',
     strethaddress_to_identifier('0xc944E90C64B2c07662A292be6244BDf05Cda44a7'): 'GRT',
     'FLOW': 'FLOW',
     'OCEAN': 'OCEAN',
@@ -201,4 +202,24 @@ WORLD_TO_KRAKEN = COMMON_ASSETS_MAPPINGS | {
     strethaddress_to_identifier('0x1A4b46696b2bB4794Eb3D4c26f1c55F9170fa4C5'): 'BIT',
     'INTR': 'INTR',
     'TEER': 'TEER',
+    evm_address_to_identifier('0xAE12C5930881c53715B369ceC7606B70d8EB229f', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'C98',  # noqa: E501
+    evm_address_to_identifier('0xAf5191B0De278C7286d6C7CC6ab6BB8A73bA2Cd6', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'STG',  # noqa: E501
+    evm_address_to_identifier('0xB4EFd85c19999D84251304bDA99E90B92300Bd93', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'RPL',  # noqa: E501
+    'ETHW': 'ETHW',
+    evm_address_to_identifier('0x42bBFa2e77757C645eeaAd1655E0911a7553Efbc', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'BOBA',  # noqa: E501
+    evm_address_to_identifier('0x2620638eda99f9e7e902ea24a285456ee9438861', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'CSM',  # noqa: E501
+    evm_address_to_identifier('0x5fAa989Af96Af85384b8a938c2EdE4A7378D9875', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'GAL',  # noqa: E501
+    evm_address_to_identifier('0xabEDe05598760E399ed7EB24900b30C51788f00F', ChainID.MATIC, EvmTokenKind.ERC20): 'SWP',  # noqa: E501
+    evm_address_to_identifier('0xA2cd3D43c775978A96BdBf12d733D5A1ED94fb18', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'XCN',  # noqa: E501
+    evm_address_to_identifier('0xBA50933C268F567BDC86E1aC131BE072C6B0b71a', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'ARPA',  # noqa: E501
+    evm_address_to_identifier('0x0f2D719407FdBeFF09D87557AbB7232601FD9F29', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'SYN',  # noqa: E501
+    evm_address_to_identifier('0x4C19596f5aAfF459fA38B0f7eD92F11AE6543784', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'TRU',  # noqa: E501
+    evm_address_to_identifier('0xa1faa113cbE53436Df28FF0aEe54275c13B40975', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'ALPHA',  # noqa: E501
+    evm_address_to_identifier('0x57B946008913B82E4dF85f501cbAeD910e58D26C', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'POND',  # noqa: E501
+    evm_address_to_identifier('0x5732046A883704404F284Ce41FfADd5b007FD668', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'BLZ',  # noqa: E501
+    evm_address_to_identifier('0x4F9254C83EB525f9FCf346490bbb3ed28a81C667', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'CELR',  # noqa: E501
+    evm_address_to_identifier('0x83e6f1E41cdd28eAcEB20Cb649155049Fac3D5Aa', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'POLS',  # noqa: E501
+    'JUNO': 'JUNO',
+    'NODL': 'NODL',
+    'BSX': 'BSX',
 }
