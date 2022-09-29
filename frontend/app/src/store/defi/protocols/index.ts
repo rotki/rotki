@@ -57,7 +57,7 @@ const isLendingEvent = (value: AaveHistoryEvents): value is AaveEvent => {
 export const useDefiSupportedProtocolsStore = defineStore(
   'defi/supportedProtocols',
   () => {
-    const { assetIdentifierForSymbol, assetInfo } = useAssetInfoRetrieval();
+    const { assetInfo } = useAssetInfoRetrieval();
     const premium = usePremium();
 
     const liquityStore = useLiquityStore();
@@ -101,7 +101,8 @@ export const useDefiSupportedProtocolsStore = defineStore(
                 eventType: movement.movementType,
                 protocol: DefiProtocol.MAKERDAO_DSR,
                 address,
-                asset: assetIdentifierForSymbol('DAI'),
+                asset:
+                  'eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F',
                 value: movement.value,
                 blockNumber: movement.blockNumber,
                 timestamp: movement.timestamp,
@@ -646,7 +647,8 @@ export const useDefiSupportedProtocolsStore = defineStore(
             balances.push({
               address,
               protocol: DefiProtocol.MAKERDAO_DSR,
-              asset: assetIdentifierForSymbol('DAI'),
+              asset:
+                'eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F',
               balance: { ...balance },
               effectiveInterestRate: `${format}%`
             });

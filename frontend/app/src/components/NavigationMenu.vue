@@ -16,7 +16,6 @@
               :icon="navItem.icon"
               :image="navItem.image"
               :icon-component="navItem.component"
-              :crypto-icon="navItem.cryptoIcon"
             />
           </v-list-item>
           <v-list-group
@@ -29,7 +28,6 @@
                 :show-tooltips="isMini"
                 :text="navItem.text"
                 :icon="navItem.icon"
-                :crypto-icon="navItem.cryptoIcon"
                 :icon-component="navItem.component"
                 :image="navItem.image"
                 :class="`navigation__${navItem.class}`"
@@ -53,7 +51,6 @@
                     :icon="subNavItem.icon"
                     :image="subNavItem.image"
                     :icon-component="subNavItem.component"
-                    :crypto-icon="subNavItem.cryptoIcon"
                     :active="active"
                   />
                 </template>
@@ -83,7 +80,6 @@ type NavItemDetails = {
   readonly icon: string;
   readonly image?: string;
   readonly component?: any;
-  readonly cryptoIcon?: string;
 };
 
 type NavItem = { readonly type: 'item' } & NavItemDetails;
