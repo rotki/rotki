@@ -11,7 +11,7 @@ from rotkehlchen.constants.resolver import (
     evm_address_to_identifier,
     strethaddress_to_identifier,
 )
-from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset, WrongAssetType
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -833,6 +833,19 @@ class Asset:
             identifier=self.identifier,
             expected_type=FiatAsset,
         )
+
+    def symbol_or_name(self) -> str:
+        """
+        If it is an asset with symbol, returns symbol. If it's not, returns name.
+        May raise:
+        - UnknownAsset if identifier is not in the db
+        """
+        try:
+            with_symbol = self.resolve_to_asset_with_symbol()
+            return with_symbol.symbol
+        except WrongAssetType:
+            with_name = self.resolve_to_asset_with_name_and_type()
+            return with_name.name
 
     def __hash__(self) -> int:
         return hash(self.identifier)

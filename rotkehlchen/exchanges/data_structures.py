@@ -302,8 +302,8 @@ class Trade(AccountingEventMixin):
         return (
             f'trade at {str(self.location)} location and date '
             f'{datetime.fromtimestamp(self.timestamp)} '
-            f'of type {str(self.trade_type)} with base asset: {self.base_asset.resolve_to_asset_with_name_and_type().name} '  # noqa: E501
-            f'and quote asset: {self.quote_asset.resolve_to_asset_with_name_and_type().name}'
+            f'of type {str(self.trade_type)} with base asset: {self.base_asset.symbol_or_name()} '
+            f'and quote asset: {self.quote_asset.symbol_or_name()}'
         )
 
     @classmethod
