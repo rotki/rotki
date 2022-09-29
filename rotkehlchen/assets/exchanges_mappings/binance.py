@@ -139,4 +139,5 @@ WORLD_TO_BINANCE = COMMON_ASSETS_MAPPINGS | {
     evm_address_to_identifier('0x00AbA6fE5557De1a1d565658cBDdddf7C710a1eb', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'EZ',  # noqa: E501
     evm_address_to_identifier('0x445f51299Ef3307dBD75036dd896565F5B4BF7A5', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'VIDT',  # noqa: E501
     evm_address_to_identifier('0xb6EE9668771a79be7967ee29a63D4184F8097143', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'CXO',  # noqa: E501
+    evm_address_to_identifier('0x0202Be363B8a4820f3F4DE7FaF5224fF05943AB1', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'UFT',  # noqa: E501
 }

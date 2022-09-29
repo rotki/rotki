@@ -148,4 +148,5 @@ WORLD_TO_POLONIEX = COMMON_ASSETS_MAPPINGS | {
     evm_address_to_identifier('0xFE2786D7D1cCAb8B015f6Ef7392F67d778f8d8D7', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'PRQ',  # noqa: E501
     evm_address_to_identifier('0x4e352cF164E64ADCBad318C3a1e222E9EBa4Ce42', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'MCB',  # noqa: E501
     evm_address_to_identifier('0x949D48EcA67b17269629c7194F4b727d4Ef9E5d6', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'MC',  # noqa: E501
+    evm_address_to_identifier('0xfFffFffF2ba8F66D4e51811C5190992176930278', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'COMBO',  # noqa: E501
 }

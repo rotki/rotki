@@ -351,6 +351,7 @@ UNSUPPORTED_POLONIEX_ASSETS = (
     'SUNX',  # neither in coingecko nor cryptocompare
     'SQUID',  # neither in coingecko nor cryptocompare
     'XCNOLD',  # No info in the exchange about this asset
+    'USDTEARN1',  # neither in coingecko nor cryptocompare
 )
 
 UNSUPPORTED_BITTREX_ASSETS = (
@@ -511,6 +512,10 @@ UNSUPPORTED_BITTREX_ASSETS = (
     'GIGX',
     'GPX',
     'IQO',
+    'CAIZ',
+    'SIRS',
+    'VOLTINU',
+    'TZBTC',
 )
 
 
@@ -616,6 +621,8 @@ UNSUPPORTED_FTX_ASSETS = (
     'KBTT',  # no cryptocompare/coingecko data
     'KSOS',  # no cryptocompare/coingecko data
     'GALFAN',  # no cc/coingecko data
+    'APEAMC',  # no cc/coingecko data
+    'WAXL',  # no cc/coingecko data
 )
 
 # https://api.kucoin.com/api/v1/currencies
@@ -728,6 +735,8 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'RBP',  # no cryptocompare/coingecko data
     'IDLENFT',  # no cryptocompare/coingecko data
     'RBS',  # no cryptocompare/coingecko data
+    'HIMAYC',  # no cryptocompare/coingecko data
+    'PRMX',  # no cryptocompare/coingecko data
 )
 
 # https://api.iconomi.com/v1/assets marks delisted assets

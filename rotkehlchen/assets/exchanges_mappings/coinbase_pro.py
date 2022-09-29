@@ -20,10 +20,10 @@ WORLD_TO_COINBASE_PRO = COMMON_ASSETS_MAPPINGS | {
     strethaddress_to_identifier('0x221657776846890989a759BA2973e427DfF5C9bB'): 'REP',
     strethaddress_to_identifier('0xfB7B4564402E5500dB5bB6d63Ae671302777C75a'): 'DEXT',
     strethaddress_to_identifier('0x27702a26126e0B3702af63Ee09aC4d1A084EF628'): 'ALEPH',
-    strethaddress_to_identifier('0x362bc847A3a9637d3af6624EeC853618a43ed7D2'): 'PRQ',
+    strethaddress_to_identifier('0xFE2786D7D1cCAb8B015f6Ef7392F67d778f8d8D7'): 'PRQ',
     strethaddress_to_identifier('0x0258F474786DdFd37ABCE6df6BBb1Dd5dfC4434a'): 'ORN',
-    strethaddress_to_identifier('0xdeFA4e8a7bcBA345F687a2f1456F5Edd9CE97202'): 'KNC',
-    strethaddress_to_identifier('0x41D5D79431A913C4aE7d69a668ecdfE5fF9DFB68'): 'INV',
+    strethaddress_to_identifier('0xdd974D5C2e2928deA5F71b9825b8b646686BD200'): 'KNC',
+    strethaddress_to_identifier('0xEcE83617Db208Ad255Ad4f45Daf81E25137535bb'): 'INV',
     evm_address_to_identifier('0xe28b3B32B6c345A34Ff64674606124Dd5Aceca30', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'INJ',  # noqa: E501
     evm_address_to_identifier('0x3845badAde8e6dFF049820680d1F14bD3903a5d0', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'SAND',  # noqa: E501
     evm_address_to_identifier('0x0D8775F648430679A709E98d2b0Cb6250d2887EF', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'BAT',  # noqa: E501
@@ -72,4 +72,7 @@ WORLD_TO_COINBASE_PRO = COMMON_ASSETS_MAPPINGS | {
     evm_address_to_identifier('0x84cA8bc7997272c7CfB4D0Cd3D55cd942B3c9419', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'DIA',  # noqa: E501
     evm_address_to_identifier('0x5732046A883704404F284Ce41FfADd5b007FD668', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'BLZ',  # noqa: E501
     evm_address_to_identifier('0xD291E7a03283640FDc51b121aC401383A46cC623', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'RGT',  # noqa: E501
+    evm_address_to_identifier('0xA2120b9e674d3fC3875f415A7DF52e382F141225', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'ATA',  # noqa: E501
+    evm_address_to_identifier('0x04abEdA201850aC0124161F037Efd70c74ddC74C', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'NEST',  # noqa: E501
+    evm_address_to_identifier('0x0f2D719407FdBeFF09D87557AbB7232601FD9F29', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'SYN',  # noqa: E501
 }

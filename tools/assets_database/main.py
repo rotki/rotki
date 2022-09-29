@@ -95,7 +95,7 @@ def main() -> None:
         branch=args.assets_branch,
     )
     print('Applying updates...')
-    GlobalDBHandler(data_dir=target_directory)
+    GlobalDBHandler(data_dir=target_directory, sql_vm_instructions_cb=0)
     assets_updater = AssetsUpdater(msg_aggregator=MessagesAggregator)
     conflicts = assets_updater.perform_update(
         up_to_version=args.target_version,
