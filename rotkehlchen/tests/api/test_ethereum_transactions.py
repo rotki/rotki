@@ -10,7 +10,11 @@ import gevent
 import pytest
 import requests
 
+from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.api.server import APIServer
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.constants import (
     RANGE_PREFIX_ETHINTERNALTX,
     RANGE_PREFIX_ETHTOKENTX,
@@ -44,7 +48,14 @@ from rotkehlchen.tests.utils.factories import (
 )
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
-from rotkehlchen.types import EvmTransaction, EVMTxHash, Timestamp, make_evm_tx_hash
+from rotkehlchen.types import (
+    EvmTransaction,
+    EVMTxHash,
+    Location,
+    Timestamp,
+    TimestampMS,
+    make_evm_tx_hash,
+)
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
 EXPECTED_AFB7_TXS = [{
@@ -921,6 +932,7 @@ def test_query_transactions_check_decoded_events(
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     start_ts = Timestamp(0)
     end_ts = Timestamp(1642803566)  # time of test writing
+    dbevents = DBHistoryEvents(rotki.data.db)
 
     def query_transactions(rotki) -> None:
         rotki.eth_transactions.single_address_query_transactions(
@@ -932,6 +944,22 @@ def test_query_transactions_check_decoded_events(
         gevent.joinall(rotki.greenlet_manager.greenlets)
         rotki.task_manager._maybe_decode_evm_transactions()
         gevent.joinall(rotki.greenlet_manager.greenlets)
+        with dbevents.db.user_write() as write_cursor:
+            # Add an event with random values. Important thing is that asset doesn't exist.
+            # We do it to check that this event will be skipped during deserialization
+            dbevents.add_history_event(
+                write_cursor=write_cursor,
+                event=HistoryBaseEntry(
+                    event_identifier=hexstring_to_bytes('0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f'),  # noqa: E501
+                    sequence_index=128,
+                    timestamp=TimestampMS(9876),
+                    location=Location.BLOCKCHAIN,
+                    event_type=HistoryEventType.INFORMATIONAL,
+                    event_subtype=HistoryEventSubType.NONE,
+                    asset=Asset('lol-idk-who-i-am'),
+                    balance=Balance(),
+                ),
+            )
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server,
@@ -1089,7 +1117,6 @@ def test_query_transactions_check_decoded_events(
                 ('history_events_mappings', 2),
         ):
             assert cursor.execute(f'SELECT COUNT(*) from {name}').fetchone()[0] == count
-        dbevents = DBHistoryEvents(rotki.data.db)
         customized_events = dbevents.get_history_events(cursor, HistoryEventFilterQuery.make(), True)  # noqa: E501
         assert customized_events[0].serialize() == tx4_events[0]['entry']  # pylint: disable=unsubscriptable-object  # noqa: E501
         assert customized_events[1].serialize() == tx2_events[1]['entry']  # pylint: disable=unsubscriptable-object  # noqa: E501
