@@ -14,7 +14,7 @@
           <template v-for="slot in ['item', 'selection']" #[slot]="data">
             <v-row v-if="data.item" :key="slot" align="center">
               <v-col cols="auto">
-                <adaptive-wrapper v-if="data.item.img" width="24" height="24">
+                <adaptive-wrapper width="24" height="24">
                   <v-img
                     width="24px"
                     contain
@@ -22,12 +22,6 @@
                     :src="data.item.icon"
                   />
                 </adaptive-wrapper>
-
-                <asset-icon
-                  v-else
-                  size="24px"
-                  :identifier="assetIdentifierForSymbol(data.item.icon)"
-                />
               </v-col>
               <v-col class="pl-0">
                 {{ data.item.name }}
@@ -64,28 +58,29 @@
             <v-row justify="center" class="mt-md-12 mt-4">
               <v-col cols="auto" class="mx-4">
                 <router-link to="/staking/eth2">
-                  <asset-icon
-                    no-tooltip
-                    :identifier="assetIdentifierForSymbol('ETH')"
-                    :size="iconSize"
+                  <v-img
+                    :width="iconSize"
+                    :height="iconSize"
+                    contain
+                    src="/assets/images/modules/eth.svg"
                   />
                 </router-link>
               </v-col>
               <v-col cols="auto" class="mx-4">
                 <router-link to="/staking/adex">
-                  <asset-icon
-                    no-tooltip
-                    :identifier="assetIdentifierForSymbol('ADX')"
-                    :size="iconSize"
+                  <v-img
+                    :width="iconSize"
+                    contain
+                    src="/assets/images/adex.svg"
                   />
                 </router-link>
               </v-col>
               <v-col cols="auto" class="mx-4">
                 <router-link to="/staking/liquity">
-                  <asset-icon
-                    no-tooltip
-                    :identifier="assetIdentifierForSymbol('LQTY')"
-                    :size="iconSize"
+                  <v-img
+                    :width="iconSize"
+                    contain
+                    src="/assets/images/defi/liquity.png"
                   />
                 </router-link>
               </v-col>
@@ -123,7 +118,6 @@ import FullSizeContent from '@/components/common/FullSizeContent.vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import { useRouter } from '@/composables/router';
 import { Routes } from '@/router/routes';
-import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import AdexPage from '@/views/staking/AdexPage.vue';
 import Eth2Page from '@/views/staking/Eth2Page.vue';
 import KrakenPage from '@/views/staking/KrakenPage.vue';
@@ -160,29 +154,27 @@ const { tc } = useI18n();
 const staking = computed<StakingInfo[]>(() => [
   {
     id: 'eth2',
-    icon: 'ETH',
+    icon: '/assets/images/modules/eth.svg',
     name: tc('staking.eth2')
   },
   {
     id: 'adex',
-    icon: 'ADX',
+    icon: '/assets/images/adex.svg',
     name: tc('staking.adex')
   },
   {
     id: 'liquity',
-    icon: 'LQTY',
+    icon: '/assets/images/defi/liquity.png',
     name: tc('staking.liquity')
   },
   {
     id: 'kraken',
     icon: '/assets/images/exchanges/kraken.svg',
-    name: tc('staking.kraken'),
-    img: true
+    name: tc('staking.kraken')
   }
 ]);
 
 const router = useRouter();
-const { assetIdentifierForSymbol } = useAssetInfoRetrieval();
 
 const lastLocation = useLocalStorage('rotki.staking.last_location', '');
 
