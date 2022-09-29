@@ -188,7 +188,7 @@ def fixture_session_current_price_oracles_order():
     return DEFAULT_CURRENT_PRICE_ORACLES_ORDER
 
 
-def create_inquirer(
+def _create_inquirer(
         data_directory,
         should_mock_current_price_queries,
         mocked_prices,
@@ -345,6 +345,7 @@ def create_inquirer(
 
 @pytest.fixture(name='inquirer')
 def fixture_inquirer(
+        globaldb,  # pylint: disable=unused-argument  # needed for _create_inquirer
         data_dir,
         should_mock_current_price_queries,
         mocked_current_prices,
@@ -357,7 +358,7 @@ def fixture_inquirer(
     The reason is that some tests became really slow because they exhausted the coingecko/cc
     oracles and used the defi ones.
     """
-    return create_inquirer(
+    return _create_inquirer(
         data_directory=data_dir,
         should_mock_current_price_queries=should_mock_current_price_queries,
         mocked_prices=mocked_current_prices,
@@ -370,6 +371,7 @@ def fixture_inquirer(
 
 @pytest.fixture(scope='session')
 def session_inquirer(
+        session_globaldb,  # pylint: disable=unused-argument  # needed for _create_inquirer
         session_data_dir,
         session_should_mock_current_price_queries,
         session_mocked_current_prices,
@@ -380,7 +382,7 @@ def session_inquirer(
     The ethereum_manager argument is defined as None for the reasons explained in the
     `inquirer` fixture
     """
-    return create_inquirer(
+    return _create_inquirer(
         data_directory=session_data_dir,
         should_mock_current_price_queries=session_should_mock_current_price_queries,
         mocked_prices=session_mocked_current_prices,
@@ -392,6 +394,7 @@ def session_inquirer(
 
 @pytest.fixture(name='inquirer_defi')
 def fixture_inquirer_defi(
+        globaldb,  # pylint: disable=unused-argument  # needed for _create_inquirer
         data_dir,
         should_mock_current_price_queries,
         mocked_current_prices,
@@ -403,7 +406,7 @@ def fixture_inquirer_defi(
     """This fixture is different from `inquirer` just in the use of defi oracles to query
     prices. If you don't need to use the defi oracles it is faster to use the `inquirer` fixture.
     """
-    return create_inquirer(
+    return _create_inquirer(
         data_directory=data_dir,
         should_mock_current_price_queries=should_mock_current_price_queries,
         mocked_prices=mocked_current_prices,
