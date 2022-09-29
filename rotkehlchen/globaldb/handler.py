@@ -305,13 +305,16 @@ class GlobalDBHandler():
         identifiers_query = f'assets.identifier IN ({",".join("?" * len(identifiers))})'
         with GlobalDBHandler().conn.read_ctx() as cursor:
             cursor.execute(
-                'SELECT assets.identifier, assets.name, common_asset_details.symbol FROM assets '
-                'JOIN common_asset_details on assets.identifier = common_asset_details.identifier '
+                'SELECT assets.identifier, name, symbol, chain FROM assets '
+                'LEFT JOIN common_asset_details on assets.identifier = common_asset_details.identifier '  # noqa: E501
+                'LEFT JOIN evm_tokens ON evm_tokens.identifier= assets.identifier '
                 'WHERE ' + identifiers_query,
                 tuple(identifiers),
             )
             for entry in cursor:
                 result[entry[0]] = {'name': entry[1], 'symbol': entry[2]}
+                if entry[3] is not None:
+                    result[entry[0]].update({'chain': ChainID.deserialize_from_db(entry[3]).serialize()})  # noqa: E501
             if len(result) != len(identifiers):
                 raise InputError('One or more of the given identifiers could not be found in the database')  # noqa: E501
         return result
@@ -421,7 +424,7 @@ class GlobalDBHandler():
         query, bindings = filter_query.prepare()
         parent_query = """
         SELECT assets.identifier, name, symbol, chain FROM assets
-        JOIN common_asset_details on assets.identifier = common_asset_details.identifier
+        LEFT JOIN common_asset_details on assets.identifier = common_asset_details.identifier
         LEFT JOIN evm_tokens ON evm_tokens.identifier= assets.identifier
         """
         query = parent_query + query

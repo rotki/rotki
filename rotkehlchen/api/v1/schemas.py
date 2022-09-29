@@ -1821,6 +1821,7 @@ class AssetsSearchSchema(DBOrderBySchema, DBPaginationSchema):
         validate=webargs.validate.OneOf(choices=('name', 'symbol')),
     )
     return_exact_matches = fields.Boolean(load_default=False)
+    chain = SerializableEnumField(enum_class=ChainID, load_default=None)
 
     @validates_schema
     def validate_schema(  # pylint: disable=no-self-use
@@ -1849,6 +1850,7 @@ class AssetsSearchSchema(DBOrderBySchema, DBPaginationSchema):
             substring_search=data['value'].strip(),
             search_column=data['search_column'],
             return_exact_matches=data['return_exact_matches'],
+            chain=data['chain'],
         )
         return {'filter_query': filter_query}
 
@@ -1866,6 +1868,7 @@ class AssetsSearchLevenshteinSchema(AssetsSearchSchema):
         filter_query = AssetsFilterQuery.make(
             and_op=True,
             order_by_rules=create_order_by_rules_list(data=data, default_order_by_field='name'),
+            chain=data['chain'],
         )
         return {
             'filter_query': filter_query,

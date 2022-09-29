@@ -8,10 +8,11 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.structures.balance import BalanceType
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, CustomAsset
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_EUR, A_SAI, A_USD
+from rotkehlchen.db.custom_assets import DBCustomAssets
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb import GlobalDBHandler
@@ -417,6 +418,34 @@ def test_get_all_assets(rotkehlchen_api_server):
     assert A_SAI.resolve_to_asset_with_name_and_type().name not in assets_names  # although present, it exceeds the limit  # noqa: E501
     assert_asset_result_order(data=result['entries'], is_ascending=True, order_field='name')
 
+    # add custom asset and filter results using `custom asset` type.
+    db_custom_assets = DBCustomAssets(
+        db_handler=rotkehlchen_api_server.rest_api.rotkehlchen.data.db,
+    )
+    custom_asset_id = str(uuid4())
+    db_custom_assets.add_custom_asset(CustomAsset.initialize(
+        identifier=custom_asset_id,
+        name='My Custom Prop',
+        custom_asset_type='random',
+    ))
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'allassetsresource',
+        ),
+        json={
+            'limit': 10,
+            'offset': 0,
+            'order_by_attributes': ['name'],
+            'asset_type': 'custom asset',
+            'ascending': [True],
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result['entries']) == 1
+    assert result['entries'][0]['identifier'] == custom_asset_id
+    assert result['entries'][0]['type'] == 'custom asset'
+
     # check that providing multiple order_by_attributes fails
     response = requests.post(
         api_url_for(
@@ -436,7 +465,7 @@ def test_get_all_assets(rotkehlchen_api_server):
 
 def test_get_assets_mappings(rotkehlchen_api_server):
     """Test that providing a list of asset identifiers, the appropriate assets mappings are returned."""  # noqa: E501
-    queried_assets = ('BTC', 'TRY', 'EUR')
+    queried_assets = ('BTC', 'TRY', 'EUR', A_DAI.identifier)
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
@@ -445,11 +474,15 @@ def test_get_assets_mappings(rotkehlchen_api_server):
         json={'identifiers': queried_assets},
     )
     result = assert_proper_response_with_result(response)
-    assert len(result) == 3
-    for identifier in result.keys():
+    assert len(result) == len(queried_assets)
+    for identifier, details in result.items():
         assert identifier in queried_assets
+        if identifier == A_DAI.identifier:
+            assert details['chain'] == 'ethereum'
+        else:
+            assert 'chain' not in details.keys()
 
-    # check that providing multiple order_by_attributes fails
+    # check that providing a wrong identifier fails
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
@@ -607,6 +640,43 @@ def test_search_assets(rotkehlchen_api_server):
     result = assert_proper_response_with_result(response)
     assert {asset['chain'] for asset in result} == {'matic', 'optimism', 'ethereum', 'arbitrum', 'binance'}  # noqa: E501
 
+    # check that using chain filter works.
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'assetssearchresource',
+        ),
+        json={
+            'value': 'DAI',
+            'search_column': 'symbol',
+            'limit': 50,
+            'chain': 'ethereum',
+            'order_by_attributes': ['name'],
+            'ascending': [True],
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    assert 50 >= len(result) > 10
+    assert all(['ethereum' == entry['chain'] and 'DAI' in entry['symbol'] for entry in result])
+    assert_asset_result_order(data=result, is_ascending=True, order_field='name')
+
+    # check that using an unsupported chain fails
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'assetssearchresource',
+        ),
+        json={
+            'value': 'dai',
+            'search_column': 'symbol',
+            'limit': 50,
+            'chain': 'near',
+            'order_by_attributes': ['name'],
+            'ascending': [True],
+        },
+    )
+    assert_error_response(response, contained_in_msg='Failed to deserialize ChainID value near')
+
 
 def test_search_assets_with_levenshtein(rotkehlchen_api_server):
     """Test that searching for assets using a keyword works(levenshtein approach)."""
@@ -699,3 +769,40 @@ def test_search_assets_with_levenshtein(rotkehlchen_api_server):
     )
     result = assert_proper_response_with_result(response)
     assert len(result) == 0
+
+    # check that using chain filter works.
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'assetssearchlevenshteinresource',
+        ),
+        json={
+            'value': 'dai',
+            'limit': 50,
+            'chain': 'ethereum',
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    assert 50 >= len(result) > 10
+    assert all(['ethereum' == entry['chain'] for entry in result])
+    assert_substring_in_search_result(result, 'dai')
+    # check that Dai(DAI) appears at the top of result.
+    assert_asset_at_top_position(
+        asset_id=A_DAI.identifier,
+        max_position_index=0,
+        result=result,
+    )
+
+    # check that using an unsupported chain fails
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'assetssearchlevenshteinresource',
+        ),
+        json={
+            'value': 'dai',
+            'limit': 50,
+            'chain': 'near',
+        },
+    )
+    assert_error_response(response, contained_in_msg='Failed to deserialize ChainID value near')

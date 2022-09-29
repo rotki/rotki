@@ -2988,13 +2988,17 @@ Get asset identifiers mappings
               },
               "eip155:1/erc20:0xcC4eF9EEAF656aC1a2Ab886743E98e97E090ed38": {
                   "name": "DigitalDevelopersFund",
-                  "symbol": "DDF"
+                  "symbol": "DDF",
+                  "chain": "ethereum"
               }
           },
           "message": ""
       }
 
-   :resjson object result: A mapping of identifiers to names and symbols.
+   :resjson object result: A mapping of identifiers to their name, symbol & chain(if available).
+   :resjson string name: Name of the asset.
+   :resjson string symbol: Symbol of the asset.
+   :resjson string chain: This value might not be included in all the results. Full name of the EVM chain where the asset is located if the asset is an EVM token.
    :statuscode 200: Assets successfully queried.
    :statuscode 400: One of the identifiers is not valid. Provided JSON is in some way malformed.
    :statuscode 500: Internal rotki error.
@@ -3029,6 +3033,7 @@ Search for assets
    :reqjson string value: A string to be used search the assets. Required.
    :reqjson string search_column: A column on the assets table to perform the search on. One of ``"name"`` or ``"symbol"``. Required.
    :reqjson bool return_exact_matches: A flag that specifies whether the result returned should match the search keyword. Defaults to ``"false"``.
+   :reqjson string[optional] chain: A string representing the name of a supported EVM chain used to filter the result. e.g "ethereum", "optimism", "binance", etc.
 
 
    **Example Response**:
@@ -3056,10 +3061,10 @@ Search for assets
       }
 
    :resjson object result: A list of objects that contain the asset details which match the search keyword.
-   :reqjson string identifier: Identifier of the asset.
-   :reqjson string name: Name of the asset.
-   :reqjson string symbol: Symbol of the asset.
-   :reqjson string chain: This value might not be included in all the results. Full name of the EVM chain where the asset is located if the asset is an EVM token.
+   :resjson string identifier: Identifier of the asset.
+   :resjson string name: Name of the asset.
+   :resjson string symbol: Symbol of the asset.
+   :resjson string chain: This value might not be included in all the results. Full name of the EVM chain where the asset is located if the asset is an EVM token.
    :statuscode 200: Assets successfully queried.
    :statuscode 400: Provided JSON is in some way malformed.
    :statuscode 500: Internal rotki error.
@@ -3089,6 +3094,7 @@ Search for assets(Levenshtein)
    :reqjson list[string] order_by_attributes: This is the list of attributes of the asset by which to order the results. By default we sort using ``name``.
    :reqjson list[bool] ascending: Should the order be ascending? This is the default. If set to false, it will be on descending order.
    :reqjson string value: A string to be used to search the assets. Required.
+   :reqjson string[optional] chain: A string representing the name of a supported EVM chain used to filter the result. e.g "ethereum", "optimism", "binance", etc.
 
    **Example Response**:
 
@@ -3110,10 +3116,10 @@ Search for assets(Levenshtein)
       }
 
    :resjson object result: A list of objects that contain the asset details which match the search keyword ordered by distance to search keyword.
-   :reqjson string identifier: Identifier of the asset.
-   :reqjson string name: Name of the asset.
-   :reqjson string symbol: Symbol of the asset.
-   :reqjson string chain: This value might not be included in all the results. Full name of the EVM chain where the asset is located if the asset is an EVM token.
+   :resjson string identifier: Identifier of the asset.
+   :resjson string name: Name of the asset.
+   :resjson string symbol: Symbol of the asset.
+   :resjson string chain: This value might not be included in all the results. Full name of the EVM chain where the asset is located if the asset is an EVM token.
    :statuscode 200: Assets successfully queried.
    :statuscode 400: Provided JSON is in some way malformed.
    :statuscode 500: Internal rotki error.
