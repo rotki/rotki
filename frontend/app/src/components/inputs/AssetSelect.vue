@@ -103,7 +103,7 @@ const props = defineProps({
 
 const emit = defineEmits<{ (e: 'input', value: string): void }>();
 
-const { items, showIgnored, excludes, errorMessages } = toRefs(props);
+const { items, showIgnored, excludes, errorMessages, value } = toRefs(props);
 const { isAssetIgnored } = useIgnoredAssetsStore();
 
 const input = (value: string) => emit('input', value);
@@ -114,7 +114,7 @@ const assets: Ref<AssetInfoWithId[]> = ref([]);
 const error = ref('');
 const loading = ref(false);
 
-const { assetSearch } = useAssetInfoApi();
+const { assetSearch, assetMapping } = useAssetInfoApi();
 const { tc } = useI18n();
 
 const errors = computed(() => {
@@ -194,6 +194,19 @@ watchThrottled(
     throttle: 800
   }
 );
+
+watch(value, async value => {
+  if (value) {
+    const mapping = await assetMapping([value]);
+    set(assets, [
+      ...get(assets),
+      {
+        identifier: value,
+        ...mapping[value]
+      }
+    ]);
+  }
+});
 </script>
 
 <style scoped lang="scss">
