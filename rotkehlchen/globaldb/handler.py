@@ -314,7 +314,7 @@ class GlobalDBHandler():
             for entry in cursor:
                 result[entry[0]] = {'name': entry[1], 'symbol': entry[2]}
                 if entry[3] is not None:
-                    result[entry[0]].update({'chain': ChainID.deserialize_from_db(entry[3]).serialize()})  # noqa: E501
+                    result[entry[0]].update({'evm_chain': ChainID.deserialize_from_db(entry[3]).serialize()})  # noqa: E501
             if len(result) != len(identifiers):
                 raise InputError('One or more of the given identifiers could not be found in the database')  # noqa: E501
         return result
@@ -349,7 +349,7 @@ class GlobalDBHandler():
                     'symbol': entry[2],
                 }
                 if entry[3] is not None:
-                    entry_info['chain'] = ChainID.deserialize_from_db(entry[3]).serialize()
+                    entry_info['evm_chain'] = ChainID.deserialize_from_db(entry[3]).serialize()
 
                 search_result.append(entry_info)
         return search_result
@@ -412,7 +412,7 @@ class GlobalDBHandler():
                         'symbol': entry[2],
                     }
                     if entry[3] is not None:
-                        entry_info['chain'] = ChainID.deserialize_from_db(entry[3]).serialize()
+                        entry_info['evm_chain'] = ChainID.deserialize_from_db(entry[3]).serialize()
                     search_result.append(entry_info)
                     levenshtein_distances.append(lev_dist_min)
 

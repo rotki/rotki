@@ -358,7 +358,7 @@ def test_get_all_assets(rotkehlchen_api_server):
     assert 'entries_total' in result
     assert 'entries_limit' in result
     for entry in result['entries']:
-        assert entry['name'] == 'Uniswap'
+        assert 'Uniswap' in entry['name']
     assert_asset_result_order(data=result['entries'], is_ascending=False, order_field='symbol')
 
     # test that ignored assets filter works
@@ -446,6 +446,27 @@ def test_get_all_assets(rotkehlchen_api_server):
     assert result['entries'][0]['identifier'] == custom_asset_id
     assert result['entries'][0]['type'] == 'custom asset'
 
+    # filter by name & symbol
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'allassetsresource',
+        ),
+        json={
+            'limit': 50,
+            'offset': 0,
+            'name': 'Uniswap',
+            'symbol': 'UNI',
+            'order_by_attributes': ['symbol'],
+            'ascending': [False],
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    assert 50 >= len(result['entries']) > 2
+    for entry in result['entries']:
+        assert 'Uniswap' in entry['name']
+        assert 'UNI' in entry['symbol']
+
     # check that providing multiple order_by_attributes fails
     response = requests.post(
         api_url_for(
@@ -478,9 +499,9 @@ def test_get_assets_mappings(rotkehlchen_api_server):
     for identifier, details in result.items():
         assert identifier in queried_assets
         if identifier == A_DAI.identifier:
-            assert details['chain'] == 'ethereum'
+            assert details['evm_chain'] == 'ethereum'
         else:
-            assert 'chain' not in details.keys()
+            assert 'evm_chain' not in details.keys()
 
     # check that providing a wrong identifier fails
     response = requests.post(
@@ -600,9 +621,9 @@ def test_search_assets(rotkehlchen_api_server):
         assert entry['symbol'] == 'ETH'
         assert entry['identifier'] != 'ETH2'
         if entry['name'] != 'Binance-Peg Ethereum Token':
-            assert 'chain' not in entry
+            assert 'evm_chain' not in entry
         else:
-            assert entry['chain'] == 'binance'
+            assert entry['evm_chain'] == 'binance'
 
     assert_asset_result_order(data=result, is_ascending=True, order_field='name')
 
@@ -622,7 +643,7 @@ def test_search_assets(rotkehlchen_api_server):
     )
     assert_error_response(response, contained_in_msg='Must be one of: name, symbol.')
 
-    # test that the chain column is included
+    # test that the evm_chain column is included
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
@@ -638,9 +659,9 @@ def test_search_assets(rotkehlchen_api_server):
         },
     )
     result = assert_proper_response_with_result(response)
-    assert {asset['chain'] for asset in result} == {'matic', 'optimism', 'ethereum', 'arbitrum', 'binance'}  # noqa: E501
+    assert {asset['evm_chain'] for asset in result} == {'matic', 'optimism', 'ethereum', 'arbitrum', 'binance'}  # noqa: E501
 
-    # check that using chain filter works.
+    # check that using evm_chain filter works.
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
@@ -650,17 +671,17 @@ def test_search_assets(rotkehlchen_api_server):
             'value': 'DAI',
             'search_column': 'symbol',
             'limit': 50,
-            'chain': 'ethereum',
+            'evm_chain': 'ethereum',
             'order_by_attributes': ['name'],
             'ascending': [True],
         },
     )
     result = assert_proper_response_with_result(response)
     assert 50 >= len(result) > 10
-    assert all(['ethereum' == entry['chain'] and 'DAI' in entry['symbol'] for entry in result])
+    assert all(['ethereum' == entry['evm_chain'] and 'DAI' in entry['symbol'] for entry in result])
     assert_asset_result_order(data=result, is_ascending=True, order_field='name')
 
-    # check that using an unsupported chain fails
+    # check that using an unsupported evm_chain fails
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
@@ -670,7 +691,7 @@ def test_search_assets(rotkehlchen_api_server):
             'value': 'dai',
             'search_column': 'symbol',
             'limit': 50,
-            'chain': 'near',
+            'evm_chain': 'near',
             'order_by_attributes': ['name'],
             'ascending': [True],
         },
@@ -770,7 +791,7 @@ def test_search_assets_with_levenshtein(rotkehlchen_api_server):
     result = assert_proper_response_with_result(response)
     assert len(result) == 0
 
-    # check that using chain filter works.
+    # check that using evm_chain filter works.
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
@@ -779,12 +800,12 @@ def test_search_assets_with_levenshtein(rotkehlchen_api_server):
         json={
             'value': 'dai',
             'limit': 50,
-            'chain': 'ethereum',
+            'evm_chain': 'ethereum',
         },
     )
     result = assert_proper_response_with_result(response)
     assert 50 >= len(result) > 10
-    assert all(['ethereum' == entry['chain'] for entry in result])
+    assert all(['ethereum' == entry['evm_chain'] for entry in result])
     assert_substring_in_search_result(result, 'dai')
     # check that Dai(DAI) appears at the top of result.
     assert_asset_at_top_position(
@@ -793,7 +814,7 @@ def test_search_assets_with_levenshtein(rotkehlchen_api_server):
         result=result,
     )
 
-    # check that using an unsupported chain fails
+    # check that using an unsupported evm_chain fails
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
@@ -802,7 +823,7 @@ def test_search_assets_with_levenshtein(rotkehlchen_api_server):
         json={
             'value': 'dai',
             'limit': 50,
-            'chain': 'near',
+            'evm_chain': 'near',
         },
     )
     assert_error_response(response, contained_in_msg='Failed to deserialize ChainID value near')

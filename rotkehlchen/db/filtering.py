@@ -932,7 +932,7 @@ class AssetsFilterQuery(DBFilterQuery):
             ignored_assets_identifiers: Optional[List[str]] = None,
             user_owned_assets_identifiers: Optional[List[str]] = None,
             return_exact_matches: bool = False,
-            chain: Optional[ChainID] = None,
+            evm_chain: Optional[ChainID] = None,
     ) -> 'AssetsFilterQuery':
         if order_by_rules is None:
             order_by_rules = [('name', True)]
@@ -948,16 +948,16 @@ class AssetsFilterQuery(DBFilterQuery):
 
         filters: List[DBFilter] = []
         if name is not None:
-            filters.append(DBEqualsFilter(
+            filters.append(DBSubStringFilter(
                 and_op=True,
-                column='name',
-                value=name,
+                field='name',
+                search_string=name,
             ))
         if symbol is not None:
-            filters.append(DBEqualsFilter(
+            filters.append(DBSubStringFilter(
                 and_op=True,
-                column='symbol',
-                value=symbol,
+                field='symbol',
+                search_string=symbol,
             ))
         if asset_type is not None:
             filters.append(DBEqualsFilter(
@@ -991,11 +991,11 @@ class AssetsFilterQuery(DBFilterQuery):
                 operator='NOT IN',
                 values=ignored_assets_identifiers,
             ))
-        if chain is not None:
+        if evm_chain is not None:
             filters.append(DBEqualsFilter(
                 and_op=True,
                 column='chain',
-                value=chain.serialize_for_db(),
+                value=evm_chain.serialize_for_db(),
             ))
         filter_query.filters = filters
         return filter_query
