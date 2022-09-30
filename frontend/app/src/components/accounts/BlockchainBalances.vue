@@ -245,7 +245,7 @@ const dialogTitle = ref('');
 const dialogSubtitle = ref('');
 const valid = ref(false);
 const openDialog = ref(false);
-const form = ref<any | null>(null);
+const form = ref<InstanceType<typeof AccountForm> | null>(null);
 const pending = ref<boolean>(false);
 
 const loading = computed(

@@ -273,7 +273,11 @@ const props = defineProps({
   error: { required: false, type: String, default: '' }
 });
 
-const emit = defineEmits(['confirm', 'cancel', 'error:clear']);
+const emit = defineEmits<{
+  (e: 'confirm', payload: CreateAccountPayload): void;
+  (e: 'cancel'): void;
+  (e: 'error:clear'): void;
+}>();
 const { error } = toRefs(props);
 
 const store = useMainStore();

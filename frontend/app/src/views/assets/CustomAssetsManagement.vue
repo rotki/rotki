@@ -48,7 +48,7 @@
 
 <script setup lang="ts">
 import { omit } from 'lodash';
-import { ref, Ref } from 'vue';
+import { Ref } from 'vue';
 import CustomAssetForm from '@/components/asset-manager/CustomAssetForm.vue';
 import CustomAssetTable from '@/components/asset-manager/CustomAssetTable.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';

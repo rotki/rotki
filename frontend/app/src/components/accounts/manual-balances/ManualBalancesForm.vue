@@ -129,7 +129,10 @@ const props = defineProps({
   context: { required: true, type: String as PropType<BalanceType> }
 });
 
-const emit = defineEmits(['clear', 'input']);
+const emit = defineEmits<{
+  (e: 'clear'): void;
+  (e: 'input', valid: boolean): void;
+}>();
 
 const { t, tc } = useI18n();
 

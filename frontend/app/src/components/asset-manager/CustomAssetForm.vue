@@ -41,8 +41,7 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
-import { get, set } from '@vueuse/core';
-import { PropType, ref, watch } from 'vue';
+import { PropType } from 'vue';
 import { CustomAsset } from '@/types/assets';
 import { toCapitalCase } from '@/utils/text';
 
