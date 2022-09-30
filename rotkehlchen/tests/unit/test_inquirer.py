@@ -21,7 +21,8 @@ from rotkehlchen.constants.assets import (
     A_LINK,
     A_USD,
 )
-from rotkehlchen.constants.resolver import ethaddress_to_identifier
+from rotkehlchen.constants.resolver import ethaddress_to_identifier, evm_address_to_identifier
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -414,3 +415,39 @@ def test_saddle_oracle(inquirer_defi):
     price = inquirer_defi.find_usd_price(A_ALETH, ignore_cache=True)
     price_eth = inquirer_defi.find_usd_price(A_ETH, ignore_cache=True)
     assert price.is_close(price_eth, max_diff='100')
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_price_non_ethereum_evm_token(inquirer_defi, globaldb):
+    """
+    This test checks that `inquirer.find_usd_price` does not fail with
+    "'NoneType' object has no attribute 'underlying_tokens'" when an evm token
+    that's not from the Ethereum chain is passed.
+
+    https://github.com/rotki/rotki/blob/a2cc1676f874ece1ddfe84686d8dfcc82ed6ffcf/rotkehlchen/inquirer.py#L611
+    """
+    address = string_to_evm_address('0x2656f02bc30427Ed9d380E20CEc5E04F5a7A50FE')
+    identifier = evm_address_to_identifier(
+        address=address,
+        chain=ChainID.BINANCE,
+        token_type=EvmTokenKind.ERC20,
+    )
+    token = EvmToken.initialize(
+        address=address,
+        chain=ChainID.BINANCE,
+        token_kind=EvmTokenKind.ERC20,
+        decimals=18,
+        name='SLOUGI',
+        symbol='SLOUGI',
+        underlying_tokens=None,
+    )
+    globaldb.add_asset(
+        asset_id=identifier,
+        asset_type=AssetType.EVM_TOKEN,
+        data=token,
+    )
+    with pytest.raises(UnknownAsset):
+        # error is expected as token only exists on ethereum chain and uniswap
+        # oracle only queries ethereum chain.
+        inquirer_defi.find_usd_price(EvmToken(token.identifier))
