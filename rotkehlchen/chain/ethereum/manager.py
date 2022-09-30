@@ -409,7 +409,15 @@ class EthereumManager():
             msg = ''
             try:
                 if mainnet_check:
-                    network_id = int(web3.net.version)
+                    try:
+                        network_id = int(web3.net.version)
+                    except requests.exceptions.RequestException as e:
+                        msg = (
+                            f'Connected to node {node} at endpoint {ethrpc_endpoint} but'
+                            f'failed to request node version due to {str(e)}'
+                        )
+                        log.warning(msg)
+                        return False, msg
 
                     if network_id != 1:
                         message = (
