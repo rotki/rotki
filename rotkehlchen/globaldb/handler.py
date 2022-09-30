@@ -65,7 +65,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-LEVENSHTEIN_DISTANCE_MATCH_THRESHOLD = 4
 
 
 def initialize_globaldb(dbpath: Path, sql_vm_instructions_cb: int) -> DBConnection:
@@ -393,32 +392,30 @@ class GlobalDBHandler():
                     lev_dist_symbol = levenshtein(substring_search, symbol_casefold)
                     substr_in_symbol = substring_search in symbol_casefold
 
+                if not substr_in_name and not substr_in_symbol:
+                    continue
+
                 lev_dist_min = min(lev_dist_name, lev_dist_symbol)
-                # the maximum levenshtein distance that should be accepted.
-                if lev_dist_min <= LEVENSHTEIN_DISTANCE_MATCH_THRESHOLD:
-                    if not substr_in_name and not substr_in_symbol:
-                        continue
+                if treat_eth2_as_eth is True and entry[0] in (A_ETH.identifier, A_ETH2.identifier):  # noqa:E501
+                    if found_eth is False:
+                        search_result.append({
+                            'identifier': resolved_eth.identifier,
+                            'name': resolved_eth.name,
+                            'symbol': resolved_eth.symbol,
+                        })
+                        levenshtein_distances.append(lev_dist_min)
+                        found_eth = True
+                    continue
 
-                    if treat_eth2_as_eth is True and entry[0] in (A_ETH.identifier, A_ETH2.identifier):  # noqa:E501
-                        if found_eth is False:
-                            search_result.append({
-                                'identifier': resolved_eth.identifier,
-                                'name': resolved_eth.name,
-                                'symbol': resolved_eth.symbol,
-                            })
-                            levenshtein_distances.append(lev_dist_min)
-                            found_eth = True
-                        continue
-
-                    entry_info = {
-                        'identifier': entry[0],
-                        'name': entry[1],
-                        'symbol': entry[2],
-                    }
-                    if entry[3] is not None:
-                        entry_info['evm_chain'] = ChainID.deserialize_from_db(entry[3]).serialize()
-                    search_result.append(entry_info)
-                    levenshtein_distances.append(lev_dist_min)
+                entry_info = {
+                    'identifier': entry[0],
+                    'name': entry[1],
+                    'symbol': entry[2],
+                }
+                if entry[3] is not None:
+                    entry_info['evm_chain'] = ChainID.deserialize_from_db(entry[3]).serialize()
+                search_result.append(entry_info)
+                levenshtein_distances.append(lev_dist_min)
 
         search_result = [result for _, result in sorted(zip(levenshtein_distances, search_result), key=lambda item: item[0])]  # noqa: E501
         return search_result[:limit] if limit is not None else search_result
