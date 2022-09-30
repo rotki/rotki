@@ -12,6 +12,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response,
     assert_proper_response_with_result,
 )
+from rotkehlchen.tests.utils.checks import assert_asset_result_order
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -109,6 +110,44 @@ def test_get_custom_assets(rotkehlchen_api_server) -> None:
     )
     result = assert_proper_response_with_result(response)
     assert len(result['entries']) == 0
+
+    # sort by custom asset type
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'customassetsresource',
+        ),
+        json={
+            'order_by_attributes': ['custom_asset_type'],
+            'ascending': [True],
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result['entries']) == 4
+    assert_asset_result_order(
+        data=result['entries'],
+        is_ascending=True,
+        order_field='custom_asset_type',
+    )
+
+    # sort by name
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'customassetsresource',
+        ),
+        json={
+            'order_by_attributes': ['name'],
+            'ascending': [True],
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result['entries']) == 4
+    assert_asset_result_order(
+        data=result['entries'],
+        is_ascending=True,
+        order_field='name',
+    )
 
 
 def test_add_custom_asset(rotkehlchen_api_server) -> None:

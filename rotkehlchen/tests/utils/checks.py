@@ -117,3 +117,23 @@ def assert_serialized_dicts_equal(
             )
         else:
             assert a_val == b[a_key], f"{a_key} doesn't match. {a_val} != {b[a_key]}"
+
+
+def assert_asset_result_order(
+        data: List,
+        is_ascending: bool,
+        order_field: str,
+) -> None:
+    """Asserts the ordering of the result received matches the query provided."""
+    last_entry = ''
+    for index, entry in enumerate(data):
+        if index == 0:
+            last_entry = entry[order_field].casefold()
+            continue
+        # the .casefold() is needed because the sorting is case-insensitive
+        if is_ascending is True:
+            assert entry[order_field].casefold() >= last_entry
+        else:
+            assert entry[order_field].casefold() <= last_entry
+
+        last_entry = entry[order_field].casefold()
