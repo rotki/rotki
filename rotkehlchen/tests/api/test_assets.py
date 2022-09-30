@@ -470,6 +470,16 @@ def test_get_all_assets(rotkehlchen_api_server):
 def test_get_assets_mappings(rotkehlchen_api_server):
     """Test that providing a list of asset identifiers, the appropriate assets mappings are returned."""  # noqa: E501
     queried_assets = ('BTC', 'TRY', 'EUR', A_DAI.identifier)
+    # add custom asset
+    db_custom_assets = DBCustomAssets(
+        db_handler=rotkehlchen_api_server.rest_api.rotkehlchen.data.db,
+    )
+    custom_asset_id = str(uuid4())
+    db_custom_assets.add_custom_asset(CustomAsset.initialize(
+        identifier=custom_asset_id,
+        name='My Custom Prop',
+        custom_asset_type='random',
+    ))
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
@@ -483,8 +493,15 @@ def test_get_assets_mappings(rotkehlchen_api_server):
         assert identifier in queried_assets
         if identifier == A_DAI.identifier:
             assert details['evm_chain'] == 'ethereum'
+            assert 'custom_asset_type' not in details.keys()
+            assert not details['is_custom_asset']
+        elif identifier == custom_asset_id:
+            assert details['custom_asset_type'] == 'random'
+            assert details['is_custom_asset']
         else:
             assert 'evm_chain' not in details.keys()
+            assert 'custom_asset_type' not in details.keys()
+            assert not details['is_custom_asset']
 
     # check that providing a wrong identifier fails
     response = requests.post(
@@ -796,6 +813,30 @@ def test_search_assets_with_levenshtein(rotkehlchen_api_server):
         max_position_index=0,
         result=result,
     )
+
+    # check that searching for assets with long name works
+    db_custom_assets = DBCustomAssets(
+        db_handler=rotkehlchen_api_server.rest_api.rotkehlchen.data.db,
+    )
+    custom_asset_id = str(uuid4())
+    db_custom_assets.add_custom_asset(CustomAsset.initialize(
+        identifier=custom_asset_id,
+        name='My Custom Prop that has a very long name haha',
+        custom_asset_type='random',
+    ))
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'assetssearchlevenshteinresource',
+        ),
+        json={
+            'value': 'my custom',
+            'limit': 50,
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    assert_substring_in_search_result(result, 'my custom')
+    assert any([custom_asset_id == entry['identifier'] for entry in result])
 
     # check that using an unsupported evm_chain fails
     response = requests.post(
