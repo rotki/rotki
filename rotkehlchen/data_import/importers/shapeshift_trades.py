@@ -3,7 +3,7 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict
 
-from rotkehlchen.assets.utils import symbol_to_asset_or_token
+from rotkehlchen.assets.converters import asset_from_kraken
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_DAI, A_SAI
 from rotkehlchen.data_import.utils import BaseExchangeImporter
@@ -53,9 +53,10 @@ class ShapeshiftTradesImporter(BaseExchangeImporter):
             formatstr=timestamp_format,
             location='ShapeShift',
         )
-        buy_asset = symbol_to_asset_or_token(csv_row['outputCurrency'])
+        # Use asset_from_kraken since the mapping is the same as in kraken
+        buy_asset = asset_from_kraken(csv_row['outputCurrency'])
         buy_amount = deserialize_asset_amount(csv_row['outputAmount'])
-        sold_asset = symbol_to_asset_or_token(csv_row['inputCurrency'])
+        sold_asset = asset_from_kraken(csv_row['inputCurrency'])
         sold_amount = deserialize_asset_amount(csv_row['inputAmount'])
         rate = deserialize_asset_amount(csv_row['rate'])
         fee = deserialize_fee(csv_row['minerFee'])

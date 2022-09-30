@@ -20,7 +20,7 @@ from rotkehlchen.history.price import query_usd_price_zero_if_error
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.types import ChecksumEvmAddress, Timestamp
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import hexstr_to_int, ts_now
@@ -305,7 +305,10 @@ class Compound(EthereumModule):
                 continue
 
             try:
-                underlying_asset = symbol_to_asset_or_token(underlying_symbol)
+                underlying_asset = symbol_to_asset_or_token(
+                    symbol=underlying_symbol,
+                    evm_chain=ChainID.ETHEREUM,
+                )
             except UnknownAsset:
                 log.error(
                     f'Found unexpected token symbol {underlying_symbol} during '
@@ -374,7 +377,10 @@ class Compound(EthereumModule):
                 continue
             underlying_symbol = entry['underlyingSymbol']
             try:
-                underlying_asset = symbol_to_asset_or_token(underlying_symbol)
+                underlying_asset = symbol_to_asset_or_token(
+                    symbol=underlying_symbol,
+                    evm_chain=ChainID.ETHEREUM,
+                )
             except UnknownAsset:
                 log.error(
                     f'Found unexpected token symbol {underlying_symbol} during '
@@ -465,8 +471,10 @@ class Compound(EthereumModule):
 
             underlying_symbol = ctoken_symbol[1:]
             try:
-                _underlying_asset = symbol_to_asset_or_token(underlying_symbol)
-                underlying_asset = CryptoAsset(_underlying_asset.identifier)
+                underlying_asset = symbol_to_asset_or_token(
+                    symbol=underlying_symbol,
+                    evm_chain=ChainID.ETHEREUM,
+                )
             except UnknownAsset:
                 log.error(
                     f'Found unexpected token symbol {underlying_symbol} during '
@@ -492,7 +500,7 @@ class Compound(EthereumModule):
             if event_type == 'mint':
                 from_value = Balance(amount=underlying_amount, usd_value=usd_value)
                 to_value = Balance(amount=amount, usd_value=usd_value)
-                from_asset = underlying_asset
+                from_asset = underlying_asset.resolve_to_crypto_asset()
                 to_asset = ctoken_asset
             else:  # redeem
                 from_value = Balance(amount=amount, usd_value=usd_value)

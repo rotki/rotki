@@ -5,6 +5,7 @@ from rotkehlchen.types import ChainID, EvmTokenKind
 
 # Assets that need mapping in almost all the exchanges
 COMMON_ASSETS_MAPPINGS: Final[Dict[str, str]] = {
+    evm_address_to_identifier('0xBB0E17EF65F82Ab018d8EDd776e8DD940327B28b', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'AXS',  # noqa: E501
     evm_address_to_identifier('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'USDC',  # noqa: E501
     evm_address_to_identifier('0x6B175474E89094C44Da98b954EedeAC495271d0F', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'DAI',  # noqa: E501
     evm_address_to_identifier('0xdAC17F958D2ee523a2206206994597C13D831ec7', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'USDT',  # noqa: E501
@@ -18,4 +19,8 @@ COMMON_ASSETS_MAPPINGS: Final[Dict[str, str]] = {
     evm_address_to_identifier('0x111111111117dC0aa78b770fA6A738034120C302', ChainID.ETHEREUM, EvmTokenKind.ERC20): '1INCH',  # noqa: E501
     evm_address_to_identifier('0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'UNI',  # noqa: E501
     evm_address_to_identifier('0xba100000625a3754423978a60c9317c58a424e3D', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'BAL',  # noqa: E501
+    evm_address_to_identifier('0x4E15361FD6b4BB609Fa63C81A2be19d873717870', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'FTM',  # noqa: E501
+    evm_address_to_identifier('0x0F5D2fB29fb7d3CFeE444a200298f468908cC942', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'MANA',  # noqa: E501
+    evm_address_to_identifier('0xBBbbCA6A901c926F240b89EacB641d8Aec7AEafD', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'LRC',  # noqa: E501
+    evm_address_to_identifier('0xc944E90C64B2c07662A292be6244BDf05Cda44a7', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'GRT',  # noqa: E501
 }

@@ -267,9 +267,10 @@ def test_case_does_not_matter_for_asset_constructor():
     assert a1.identifier == 'BTC'
     assert a2.identifier == 'BTC'
 
-    a3 = symbol_to_ethereum_token('UsDt')
-    a4 = symbol_to_ethereum_token('usdt')
-    assert a3.identifier == a4.identifier == ethaddress_to_identifier('0xdAC17F958D2ee523a2206206994597C13D831ec7')  # noqa: E501
+    # We use a token that is only in ethereum (redacted)
+    a3 = symbol_to_ethereum_token('BTRFLY')
+    a4 = symbol_to_ethereum_token('BtRfLy')
+    assert a3.identifier == a4.identifier == ethaddress_to_identifier('0xC0d4Ceb216B3BA9C3701B291766fDCbA977ceC3A')  # noqa: E501
 
 
 def test_coingecko_identifiers_are_reachable():

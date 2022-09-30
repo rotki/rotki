@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any, Dict
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
-from rotkehlchen.assets.utils import symbol_to_asset_or_token
+from rotkehlchen.assets.converters import asset_from_blockfi
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.data_import.utils import BaseExchangeImporter, UnsupportedCSVEntry
@@ -49,7 +49,7 @@ class BlockfiTransactionsImporter(BaseExchangeImporter):
             log.debug(f'Ignoring unconfirmed BlockFi entry {csv_row}')
             return
 
-        asset = symbol_to_asset_or_token(csv_row['Cryptocurrency'])
+        asset = asset_from_blockfi(csv_row['Cryptocurrency'])
         raw_amount = deserialize_asset_amount(csv_row['Amount'])
         abs_amount = AssetAmount(abs(raw_amount))
         entry_type = csv_row['Transaction Type']

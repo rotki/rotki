@@ -1,6 +1,5 @@
-from rotkehlchen.constants.resolver import strethaddress_to_identifier
+from rotkehlchen.assets.exchanges_mappings.common import COMMON_ASSETS_MAPPINGS
 
-WORLD_TO_CRYPTOCOM = {
-    strethaddress_to_identifier('0xBB0E17EF65F82Ab018d8EDd776e8DD940327B28b'): 'AXS',
+WORLD_TO_CRYPTOCOM = COMMON_ASSETS_MAPPINGS | {
     'LUNA-2': 'LUNA',
 }

@@ -1,10 +1,9 @@
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.chain.ethereum.interfaces.ammswap.types import EventType, LiquidityPoolEvent
 from rotkehlchen.chain.ethereum.modules.balancer.db import add_balancer_events
 from rotkehlchen.chain.ethereum.modules.balancer.types import BalancerBPTEventType, BalancerEvent
-from rotkehlchen.constants.assets import A_ETH, A_EUR, A_USD
+from rotkehlchen.constants.assets import A_ETH, A_EUR, A_LTC, A_USD, A_USDC
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
@@ -88,8 +87,8 @@ def test_associated_locations(database):
     ), Trade(
         timestamp=Timestamp(1612051199),
         location=Location.BLOCKFI,
-        base_asset=symbol_to_asset_or_token('USDC'),
-        quote_asset=symbol_to_asset_or_token('LTC'),
+        base_asset=A_USDC,
+        quote_asset=A_LTC,
         trade_type=TradeType.BUY,
         amount=AssetAmount(FVal('6404.6')),
         rate=Price(FVal('151.6283999982779809352223797')),

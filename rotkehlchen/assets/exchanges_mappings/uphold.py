@@ -21,7 +21,6 @@ WORLD_TO_UPHOLD = COMMON_ASSETS_MAPPINGS | {
     'EOS': 'EOS',
     'FIL': 'FIL',
     'FLOW': 'FLOW',
-    strethaddress_to_identifier('0xc944E90C64B2c07662A292be6244BDf05Cda44a7'): 'GRT',
     'HBAR': 'HBAR',
     'HNT': 'HNT',
     'IOTA': 'MIOTA',

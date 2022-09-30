@@ -548,7 +548,7 @@ def assert_cryptocom_special_events_import_results(rotki: Rotkehlchen):
         timestamp=Timestamp(1635390998),
         location=Location.CRYPTOCOM,
         base_asset=symbol_to_asset_or_token('EUR'),
-        quote_asset=symbol_to_asset_or_token('USDC'),
+        quote_asset=A_USDC.resolve_to_evm_token(),
         trade_type=TradeType.BUY,
         amount=AssetAmount(FVal('11.3')),
         rate=Price(FVal('1.145132743362831858407079646')),
@@ -676,7 +676,7 @@ def assert_blockfi_trades_import_results(rotki: Rotkehlchen):
         timestamp=Timestamp(1612051199),
         location=Location.BLOCKFI,
         base_asset=symbol_to_asset_or_token('LTC'),
-        quote_asset=symbol_to_asset_or_token('USDC'),
+        quote_asset=A_USDC.resolve_to_evm_token(),
         trade_type=TradeType.SELL,
         amount=AssetAmount(FVal('42.23878904')),
         rate=Price(FVal('151.6283999982779809352223797')),
@@ -1502,7 +1502,7 @@ def assert_rotki_generic_trades_import_results(rotki: Rotkehlchen):
 
     expected_warnings = [
         'Deserialization error during rotki generic trades CSV import. Failed to deserialize Location value luno. Ignoring entry',  # noqa: E501
-        'During rotki generic trades import, csv row {\'Location\': \'bisq\', \'Base Currency\': \'DAI\', \'Quote Currency\': \'USDT\', \'Type\': \'Buy\', \'Buy Amount\': \'0\', \'Sell Amount\': \'4576.6400\', \'Fee\': \'5.1345\', \'Fee Currency\': \'USD\', \'Description\': \'Trade USDT for DAI\', \'Timestamp\': \'1659345600000\'} has zero amount bought. Ignoring entry',  # noqa: E501
+        'During rotki generic trades import, csv row {\'Location\': \'bisq\', \'Base Currency\': \'eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F\', \'Quote Currency\': \'eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7\', \'Type\': \'Buy\', \'Buy Amount\': \'0\', \'Sell Amount\': \'4576.6400\', \'Fee\': \'5.1345\', \'Fee Currency\': \'USD\', \'Description\': \'Trade USDT for DAI\', \'Timestamp\': \'1659345600000\'} has zero amount bought. Ignoring entry',  # noqa: E501
     ]
     assert trades == expected_trades
     assert warnings == expected_warnings
