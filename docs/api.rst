@@ -2980,16 +2980,19 @@ Get asset identifiers mappings
           "result": {
               "eip155:1/erc20:0xB6eD7644C69416d67B522e20bC294A9a9B405B31": {
                   "name": "0xBitcoin",
-                  "symbol": "0xBTC"
+                  "symbol": "0xBTC",
+                  "is_custom_asset": false
               },
               "DCR": {
                   "name": "Decred",
-                  "symbol": "DCR"
+                  "symbol": "DCR",
+                  "is_custom_asset": false
               },
               "eip155:1/erc20:0xcC4eF9EEAF656aC1a2Ab886743E98e97E090ed38": {
                   "name": "DigitalDevelopersFund",
                   "symbol": "DDF",
-                  "evm_chain": "ethereum"
+                  "evm_chain": "ethereum",
+                  "is_custom_asset": false
               }
           },
           "message": ""
@@ -2999,6 +3002,7 @@ Get asset identifiers mappings
    :resjson string name: Name of the asset.
    :resjson string symbol: Symbol of the asset.
    :resjson string evm_chain: This value might not be included in all the results. Full name of the EVM chain where the asset is located if the asset is an EVM token.
+   :resjson bool is_custom_asset: A boolean to represent whether the asset is a custom asset or not.
    :statuscode 200: Assets successfully queried.
    :statuscode 400: One of the identifiers is not valid. Provided JSON is in some way malformed.
    :statuscode 500: Internal rotki error.

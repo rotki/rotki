@@ -299,20 +299,24 @@ class GlobalDBHandler():
         Given a list of asset identifiers, return a list of asset information(id, name, symbol)
         for those identifiers.
         May raise:
-        - InputError if one of the identifiers do not exist
+        - InputError if one of the identifiers does not exist
         """
         result = {}
         identifiers_query = f'assets.identifier IN ({",".join("?" * len(identifiers))})'
         with GlobalDBHandler().conn.read_ctx() as cursor:
             cursor.execute(
-                'SELECT assets.identifier, name, symbol, chain FROM assets '
+                'SELECT assets.identifier, name, symbol, chain, type FROM assets '
                 'LEFT JOIN common_asset_details on assets.identifier = common_asset_details.identifier '  # noqa: E501
                 'LEFT JOIN evm_tokens ON evm_tokens.identifier= assets.identifier '
                 'WHERE ' + identifiers_query,
                 tuple(identifiers),
             )
             for entry in cursor:
-                result[entry[0]] = {'name': entry[1], 'symbol': entry[2]}
+                result[entry[0]] = {
+                    'name': entry[1],
+                    'symbol': entry[2],
+                    'is_custom_asset': AssetType.deserialize_from_db(entry[4]) == AssetType.CUSTOM_ASSET,  # noqa: E501
+                }
                 if entry[3] is not None:
                     result[entry[0]].update({'evm_chain': ChainID.deserialize_from_db(entry[3]).serialize()})  # noqa: E501
             if len(result) != len(identifiers):
