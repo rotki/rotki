@@ -39,7 +39,7 @@ from rotkehlchen.constants.assets import (
 )
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
-from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset, WrongAssetType
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.errors.serialization import DeserializationError
@@ -345,6 +345,11 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleInterface):
         This function takes care of these special cases."""
         method = getattr(self, method_name)
         intermediate_asset = CRYPTOCOMPARE_SPECIAL_CASES_MAPPING[from_asset.identifier]
+        try:
+            intermediate_asset = intermediate_asset.resolve_to_asset_with_oracles()
+        except (UnknownAsset, WrongAssetType) as e:
+            raise PriceQueryUnsupportedAsset(e.identifier) from e
+
         result1 = method(
             from_asset=from_asset,
             to_asset=intermediate_asset,
@@ -763,7 +768,7 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleInterface):
         try:
             from_asset = from_asset.resolve_to_asset_with_oracles()
             to_asset = to_asset.resolve_to_asset_with_oracles()
-        except UnknownAsset as e:
+        except (UnknownAsset, WrongAssetType) as e:
             raise PriceQueryUnsupportedAsset(e.identifier) from e
         # check DB cache
         price_cache_entry = GlobalDBHandler().get_historical_price(
