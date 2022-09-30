@@ -1,4 +1,5 @@
 gevent==21.12.0
+asyncio-gevent==0.2.1  # to be able to use asyncio packages
 greenlet==1.1.3
 gevent-websocket==0.10.1
 wsaccel==0.6.3  # recommended for acceleration of gevent-websocket. But abandoned.

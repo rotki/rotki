@@ -1,7 +1,9 @@
+import asyncio
 import base64
 from contextlib import ExitStack
 from unittest.mock import patch
 
+import asyncio_gevent
 import pytest
 
 import rotkehlchen.tests.utils.exchanges as exchange_tests
@@ -36,6 +38,12 @@ from rotkehlchen.types import AVAILABLE_MODULES_MAP, Location
 @pytest.fixture(autouse=True, scope='session', name='global_requests_html')
 def fixture_global_requests_html() -> GlobalRequestsHTML:
     return GlobalRequestsHTML()
+
+
+@pytest.fixture(autouse=True, scope='session', name='asyncio_gevent')
+def fixture_asyncio_gevent() -> None:
+    """ set asyncio to work with gevent -- for compatibility with asyncio packages"""
+    asyncio.set_event_loop_policy(asyncio_gevent.EventLoopPolicy())
 
 
 @pytest.fixture(name='max_tasks_num')

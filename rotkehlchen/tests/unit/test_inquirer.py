@@ -23,6 +23,7 @@ from rotkehlchen.constants.assets import (
 )
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.externalapis.session import GlobalRequestsHTML
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
@@ -126,7 +127,9 @@ def test_fallback_to_cached_values_within_a_month(inquirer):  # pylint: disable=
     )]
     GlobalDBHandler().add_historical_prices(cache_data)
 
-    with patch('requests.get', side_effect=mock_api_remote_fail):
+    patch_requests_html_get = patch.object(GlobalRequestsHTML().session(), 'get', side_effect=mock_api_remote_fail)  # noqa: E501
+    patch_requests_get = patch('requests.get', side_effect=mock_api_remote_fail)
+    with patch_requests_get, patch_requests_html_get:
         # We fail to find a response but then go back 15 days and find the cached response
         result = inquirer._query_fiat_pair(
             A_EUR.resolve_to_fiat_asset(),

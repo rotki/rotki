@@ -1,6 +1,8 @@
+import asyncio
 import logging
 from typing import Dict
 
+import asyncio_gevent
 import requests
 
 from rotkehlchen.assets.asset import FiatAsset
@@ -38,6 +40,10 @@ def _scrape_xratescom_exchange_rates(url: str) -> Dict[FiatAsset, Price]:
             f'x-rates.com request {url} failed with code: {response.status_code}'
             f' and response: {response.text}',
         )
+
+    # html.render() ends up using asyncio so we have to make sure asyncio uses gevent for greenlet
+    loop = asyncio_gevent.EventLoop()
+    asyncio.set_event_loop(loop)
     response.html.render()
 
     try:

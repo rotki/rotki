@@ -1,7 +1,9 @@
+import asyncio
 import logging
 import os
 import signal
 
+import asyncio_gevent
 import gevent
 
 from rotkehlchen.api.server import APIServer, RestAPI
@@ -30,10 +32,14 @@ class RotkehlchenServer():
         self.args = arg_parser.parse_args()
         add_logging_level('TRACE', TRACE)
         configure_logging(self.args)
+
+        # set asyncio to work with gevent -- for compatibility with asyncio packages
+        asyncio.set_event_loop_policy(asyncio_gevent.EventLoopPolicy())
+
         self.rotkehlchen = Rotkehlchen(self.args)
         self.stop_event = gevent.event.Event()
         domain_list = []
-        GlobalRequestsHTML()  # initialize the llobal requests_html session
+        GlobalRequestsHTML()  # initialize the global requests_html session
         if self.args.api_cors:
             if "," in self.args.api_cors:
                 for domain in self.args.api_cors.split(","):
