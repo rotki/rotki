@@ -6,7 +6,7 @@ import pytest
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import UNSUPPORTED_FTX_ASSETS, asset_from_ftx
-from rotkehlchen.assets.exchanges_mappings import WORLD_TO_FTX
+from rotkehlchen.assets.exchanges_mappings.ftx import WORLD_TO_FTX
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_1INCH, A_ETH, A_USD, A_USDC
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset

@@ -1,24 +1,23 @@
 from typing import Callable, Dict, Optional
 
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
-from rotkehlchen.assets.exchanges_mappings import (
-    WORLD_TO_BINANCE,
-    WORLD_TO_BITFINEX,
-    WORLD_TO_BITPANDA,
-    WORLD_TO_BITSTAMP,
-    WORLD_TO_BITTREX,
-    WORLD_TO_COINBASE,
-    WORLD_TO_COINBASE_PRO,
-    WORLD_TO_CRYPTOCOM,
-    WORLD_TO_FTX,
-    WORLD_TO_GEMINI,
-    WORLD_TO_ICONOMI,
-    WORLD_TO_KRAKEN,
-    WORLD_TO_KUCOIN,
-    WORLD_TO_NEXO,
-    WORLD_TO_POLONIEX,
-    WORLD_TO_UPHOLD,
-)
+from rotkehlchen.assets.exchanges_mappings.binance import WORLD_TO_BINANCE
+from rotkehlchen.assets.exchanges_mappings.bitfinex import WORLD_TO_BITFINEX
+from rotkehlchen.assets.exchanges_mappings.bitpanda import WORLD_TO_BITPANDA
+from rotkehlchen.assets.exchanges_mappings.bitstamp import WORLD_TO_BITSTAMP
+from rotkehlchen.assets.exchanges_mappings.bittrex import WORLD_TO_BITTREX
+from rotkehlchen.assets.exchanges_mappings.blockfi import WORLD_TO_BLOCKFI
+from rotkehlchen.assets.exchanges_mappings.coinbase import WORLD_TO_COINBASE
+from rotkehlchen.assets.exchanges_mappings.coinbase_pro import WORLD_TO_COINBASE_PRO
+from rotkehlchen.assets.exchanges_mappings.cryptocom import WORLD_TO_CRYPTOCOM
+from rotkehlchen.assets.exchanges_mappings.ftx import WORLD_TO_FTX
+from rotkehlchen.assets.exchanges_mappings.gemeni import WORLD_TO_GEMINI
+from rotkehlchen.assets.exchanges_mappings.iconomi import WORLD_TO_ICONOMI
+from rotkehlchen.assets.exchanges_mappings.kraken import WORLD_TO_KRAKEN
+from rotkehlchen.assets.exchanges_mappings.kucoin import WORLD_TO_KUCOIN
+from rotkehlchen.assets.exchanges_mappings.nexo import WORLD_TO_NEXO
+from rotkehlchen.assets.exchanges_mappings.poloniex import WORLD_TO_POLONIEX
+from rotkehlchen.assets.exchanges_mappings.uphold import WORLD_TO_UPHOLD
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.constants.assets import A_DAI, A_SAI
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
@@ -789,6 +788,7 @@ GEMINI_TO_WORLD = {v: k for k, v in WORLD_TO_GEMINI.items()}
 NEXO_TO_WORLD = {v: k for k, v in WORLD_TO_NEXO.items()}
 BITPANDA_TO_WORLD = {v: k for k, v in WORLD_TO_BITPANDA.items()}
 CRYPTOCOM_TO_WORLD = {v: k for k, v in WORLD_TO_CRYPTOCOM.items()}
+BLOCKFI_TO_WORLD = {v: k for k, v in WORLD_TO_BLOCKFI.items()}
 
 RENAMED_BINANCE_ASSETS = {
     # The old BCC in binance forked into BCHABC and BCHSV
@@ -887,9 +887,7 @@ def asset_from_bitstamp(bitstamp_name: str) -> AssetWithOracles:
     if not isinstance(bitstamp_name, str):
         raise DeserializationError(f'Got non-string type {type(bitstamp_name)} for bitstamp asset')
 
-    # (Yabir): Do un upper here since in the tests I've seen that we pass as asset lowercase
-    # symbols and in the mapping we use uppercase for the search. Before it was not an issue
-    # since there were no multiple asset with symbol for example USDC.
+    # bitstamp assets are read as lowercase from the exchange
     name = BITSTAMP_TO_WORLD.get(bitstamp_name.upper(), bitstamp_name)
     return symbol_to_asset_or_token(name)
 
@@ -1018,6 +1016,18 @@ def asset_from_gemini(symbol: str) -> AssetWithOracles:
         raise UnsupportedAsset(symbol)
 
     name = GEMINI_TO_WORLD.get(symbol, symbol)
+    return symbol_to_asset_or_token(name)
+
+
+def asset_from_blockfi(symbol: str) -> AssetWithOracles:
+    """May raise:
+    - DeserializationError
+    - UnknownAsset
+    """
+    if not isinstance(symbol, str):
+        raise DeserializationError(f'Got non-string type {type(symbol)} for blockfi asset')
+
+    name = BLOCKFI_TO_WORLD.get(symbol, symbol)
     return symbol_to_asset_or_token(name)
 
 

@@ -4,7 +4,7 @@ from dataclasses import InitVar, dataclass, field
 from functools import total_ordering
 from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Type, Union
 
-from rotkehlchen.assets.exchanges_mappings import WORLD_TO_BITTREX
+from rotkehlchen.assets.exchanges_mappings.bittrex import WORLD_TO_BITTREX
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.constants.misc import NFT_DIRECTIVE
 from rotkehlchen.constants.resolver import ChainID, evm_address_to_identifier

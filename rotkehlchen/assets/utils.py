@@ -105,6 +105,7 @@ def get_or_create_evm_token(
 def get_crypto_asset_by_symbol(
         symbol: str,
         asset_type: Optional[AssetType] = None,
+        evm_chain: Optional[ChainID] = None,
 ) -> Optional[AssetWithOracles]:
     """Gets an asset by symbol from the DB.
 
@@ -118,6 +119,7 @@ def get_crypto_asset_by_symbol(
     assets_data = GlobalDBHandler().get_assets_with_symbol(
         symbol=symbol,
         asset_type=asset_type,
+        chain=evm_chain,
     )
     if len(assets_data) != 1:
         return None
@@ -125,7 +127,10 @@ def get_crypto_asset_by_symbol(
     return assets_data[0]
 
 
-def symbol_to_asset_or_token(symbol: str) -> AssetWithOracles:
+def symbol_to_asset_or_token(
+        symbol: str,
+        evm_chain: Optional[ChainID] = None,
+) -> AssetWithOracles:
     """Tries to turn the given symbol to an asset or an ethereum Token
 
     May raise:
@@ -137,7 +142,7 @@ def symbol_to_asset_or_token(symbol: str) -> AssetWithOracles:
         asset = Asset(symbol).resolve_to_asset_with_oracles()
     except UnknownAsset:
         # Let's search by symbol if a single asset matches
-        maybe_asset = get_crypto_asset_by_symbol(symbol)
+        maybe_asset = get_crypto_asset_by_symbol(symbol=symbol, evm_chain=evm_chain)
         if maybe_asset is None:
             raise
         asset = maybe_asset
@@ -145,15 +150,19 @@ def symbol_to_asset_or_token(symbol: str) -> AssetWithOracles:
     return asset
 
 
-def symbol_to_ethereum_token(symbol: str) -> EvmToken:
+def symbol_to_ethereum_token(symbol: str, evm_chain: Optional[ChainID] = None) -> EvmToken:
     """Tries to turn the given symbol to an ethereum token
 
     May raise:
     - UnknownAsset if an ethereum token can't be found by the symbol or if
     more than one tokens match this symbol
     """
-    maybe_asset = get_crypto_asset_by_symbol(symbol, asset_type=AssetType.EVM_TOKEN)
+    maybe_asset = get_crypto_asset_by_symbol(
+        symbol=symbol,
+        asset_type=AssetType.EVM_TOKEN,
+        evm_chain=evm_chain,
+    )
     if maybe_asset is None:
         raise UnknownAsset(symbol)
 
-    return EvmToken(maybe_asset.identifier)
+    return maybe_asset.resolve_to_evm_token()

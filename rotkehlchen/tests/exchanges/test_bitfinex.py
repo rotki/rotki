@@ -12,7 +12,7 @@ from rotkehlchen.assets.converters import (
     UNSUPPORTED_BITFINEX_ASSETS,
     asset_from_bitfinex,
 )
-from rotkehlchen.assets.exchanges_mappings import WORLD_TO_BITFINEX
+from rotkehlchen.assets.exchanges_mappings.bitfinex import WORLD_TO_BITFINEX
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_LINK, A_USD, A_USDT, A_WBTC
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset

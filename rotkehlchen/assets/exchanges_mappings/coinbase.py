@@ -3,7 +3,6 @@ from rotkehlchen.constants.resolver import strethaddress_to_identifier
 
 WORLD_TO_COINBASE = COMMON_ASSETS_MAPPINGS | {
     'SOL-2': 'SOL',
-    strethaddress_to_identifier('0xBB0E17EF65F82Ab018d8EDd776e8DD940327B28b'): 'AXS',
     strethaddress_to_identifier('0x32353A6C91143bfd6C7d363B546e62a9A2489A20'): 'AGLD',
     strethaddress_to_identifier('0xaea46A60368A7bD060eec7DF8CBa43b7EF41Ad85'): 'FET',
     strethaddress_to_identifier('0xDe30da39c46104798bB5aA3fe8B9e0e1F348163F'): 'GTC',

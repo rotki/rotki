@@ -386,7 +386,7 @@ def test_get_all_assets(rotkehlchen_api_server):
             'allassetsresource',
         ),
         json={
-            'limit': 22,
+            'limit': 2,
             'offset': 0,
             'order_by_attributes': ['name'],
             'ascending': [True],
@@ -395,10 +395,10 @@ def test_get_all_assets(rotkehlchen_api_server):
     )
     result = assert_proper_response_with_result(response)
     assets_names = {r['name'] for r in result['entries']}
-    assert 22 >= len(result['entries']) > 3
+    assert result['entries_found'] == 3
     assert A_BTC.resolve_to_asset_with_name_and_type().name in assets_names
     assert A_DAI.resolve_to_asset_with_name_and_type().name in assets_names
-    assert A_SAI.resolve_to_asset_with_name_and_type().name not in assets_names  # although present, it exceeds the limit  # noqa: E501
+    assert A_SAI.resolve_to_asset_with_name_and_type().name not in assets_names
     assert_asset_result_order(data=result['entries'], is_ascending=True, order_field='name')
 
     # add custom asset and filter results using `custom asset` type.
