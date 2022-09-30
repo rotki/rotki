@@ -153,13 +153,13 @@ def const_exp_liquidity_pool_2():
     )
 
 
-# Expected `known_assets` and `unknown_assets` for LIQUIDITY_POSITION_1
-EXP_KNOWN_ASSETS_1 = {A_WETH}
-EXP_UNKNOWN_ASSETS_1 = {A_SHL}
+# Expected `known_tokens` and `unknown_tokens` for LIQUIDITY_POSITION_1
+EXP_KNOWN_TOKENS_1 = {A_WETH}
+EXP_UNKNOWN_TOKENS_1 = {A_SHL}
 
-# Expected `known_assets` and `unknown_assets` for LIQUIDITY_POSITION_2
-EXP_KNOWN_ASSETS_2 = {A_USDT}
-EXP_UNKNOWN_ASSETS_2 = {A_CAR}
+# Expected `known_tokens` and `unknown_tokens` for LIQUIDITY_POSITION_2
+EXP_KNOWN_TOKENS_2 = {A_USDT}
+EXP_UNKNOWN_TOKENS_2 = {A_CAR}
 
 
 # Method: `_get_unknown_asset_price_graph`

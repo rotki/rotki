@@ -60,8 +60,8 @@ def uniswap_v3_lp_token_balances(
         address: ChecksumEvmAddress,
         ethereum: 'EthereumManager',
         msg_aggregator: MessagesAggregator,
-        price_known_assets: Set[EvmToken],
-        price_unknown_assets: Set[EvmToken],
+        price_known_tokens: Set[EvmToken],
+        price_unknown_tokens: Set[EvmToken],
 ) -> List[NFTLiquidityPool]:
     """
     Fetches all the Uniswap V3 LP positions for the specified address.
@@ -314,8 +314,8 @@ def uniswap_v3_lp_token_balances(
                 balances.append(_decode_uniswap_v3_result(
                     userdb=userdb,
                     data=item,
-                    price_known_assets=price_known_assets,
-                    price_unknown_assets=price_unknown_assets,
+                    price_known_tokens=price_known_tokens,
+                    price_unknown_tokens=price_unknown_tokens,
                 ))
     return balances
 
@@ -460,8 +460,8 @@ def _decode_uniswap_v3_token(entry: Dict[str, Any]) -> TokenDetails:
 def _decode_uniswap_v3_result(
         userdb: 'DBHandler',
         data: Tuple,
-        price_known_assets: Set[EvmToken],
-        price_unknown_assets: Set[EvmToken],
+        price_known_tokens: Set[EvmToken],
+        price_unknown_tokens: Set[EvmToken],
 ) -> NFTLiquidityPool:
     """
     Takes the data aggregated from the Positions NFT contract & LP contract and converts it
@@ -503,9 +503,9 @@ def _decode_uniswap_v3_result(
             )
         # Classify the asset either as price known or unknown
         if asset.has_oracle():
-            price_known_assets.add(asset)
+            price_known_tokens.add(asset)
         else:
-            price_unknown_assets.add(asset)
+            price_unknown_tokens.add(asset)
         assets.append(LiquidityPoolAsset(
             token=asset,
             total_amount=total_amounts_of_tokens[token.address],
@@ -525,21 +525,21 @@ def _decode_uniswap_v3_result(
 
 def get_unknown_asset_price_chain(
         ethereum: 'EthereumManager',
-        unknown_assets: Set[EvmToken],
+        unknown_tokens: Set[EvmToken],
 ) -> AssetToPrice:
     """Get token price using Uniswap V3 Oracle."""
     oracle = UniswapV3Oracle(eth_manager=ethereum)
     asset_price: AssetToPrice = {}
-    for from_asset in unknown_assets:
+    for from_token in unknown_tokens:
         try:
-            price = oracle.query_current_price(from_asset, A_USDC)
-            asset_price[from_asset.evm_address] = price
+            price = oracle.query_current_price(from_token, A_USDC.resolve_to_asset_with_oracles())
+            asset_price[from_token.evm_address] = price
         except (PriceQueryUnsupportedAsset, RemoteError) as e:
             log.error(
-                f'Failed to find price for {str(from_asset)}/{str(A_USDC) } LP using '
+                f'Failed to find price for {str(from_token)}/{str(A_USDC) } LP using '
                 f'Uniswap V3 oracle due to: {str(e)}.',
             )
-            asset_price[from_asset.evm_address] = Price(ZERO)
+            asset_price[from_token.evm_address] = Price(ZERO)
 
     return asset_price
 
