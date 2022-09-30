@@ -21,6 +21,7 @@ vi.mock('vue-i18n-composable', async () => {
     })
   };
 });
+
 vi.mock('vue', async () => {
   const mod = await vi.importActual<typeof import('vue')>('vue');
   return {

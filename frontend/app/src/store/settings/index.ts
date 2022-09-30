@@ -1,4 +1,4 @@
-import { api } from '@/services/rotkehlchen-api';
+import { useSettingsApi } from '@/services/settings/settings-api';
 import { useMessageStore } from '@/store/message';
 import { usePremiumStore } from '@/store/session/premium';
 import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
@@ -21,6 +21,8 @@ export const useSettingsStore = defineStore('settings', () => {
   const sessionStore = useSessionSettingsStore();
   const { premium, premiumSync } = storeToRefs(usePremiumStore());
   const { t } = useI18n();
+
+  const api = useSettingsApi();
 
   const setKrakenAccountType = async (krakenAccountType: KrakenAccountType) => {
     try {

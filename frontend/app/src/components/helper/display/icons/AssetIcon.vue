@@ -25,9 +25,16 @@
             :class="{ [css.circle]: circle }"
             v-on="on"
           >
+            <v-icon
+              v-if="isCustomAsset"
+              :color="dark ? 'black' : 'gray'"
+              :size="size"
+            >
+              mdi-pencil-circle-outline
+            </v-icon>
             <generated-icon
-              v-if="!!currency || error"
-              :asset="displayAsset"
+              v-else-if="!!currency || error"
+              :asset="displayAsset ?? ''"
               :currency="!!currency"
               :size="size"
             />
@@ -55,6 +62,7 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { EvmChain } from '@rotki/common/lib/data';
 import { PropType } from 'vue';
+import { useTheme } from '@/composables/common';
 import { api } from '@/services/rotkehlchen-api';
 import { getChainIcon } from '@/types/blockchain/chains';
 import { currencies } from '@/types/currencies';
@@ -70,6 +78,7 @@ const props = defineProps({
   identifier: { required: true, type: String },
   symbol: { required: false, type: String, default: '' },
   name: { required: false, type: String, default: null },
+  isCustomAsset: { required: false, type: Boolean, default: false },
   size: { required: true, type: String },
   chain: {
     required: false,
@@ -91,7 +100,8 @@ const {
   identifier,
   timestamp,
   padding,
-  size
+  size,
+  isCustomAsset
 } = toRefs(props);
 const error = ref<boolean>(false);
 
@@ -115,6 +125,12 @@ const displayAsset = computed<string>(() => {
 });
 
 const tooltip = computed(() => {
+  if (get(isCustomAsset)) {
+    return {
+      symbol: get(name),
+      name: ''
+    };
+  }
   return {
     symbol: get(symbol),
     name: get(name)
@@ -128,19 +144,21 @@ const url = computed<string>(() => {
   }
   const currentTimestamp = get(timestamp) || Date.now();
 
+  if (get(isCustomAsset)) return '';
+
   return api.assets.assetImageUrl(
     id,
     get(changeable) ? currentTimestamp : undefined
   );
 });
 
-const chainIconSize = computed(() => `${(parseInt(get(size)) * 33) / 100}px`);
+const chainIconSize = computed(() => `${(parseInt(get(size)) * 50) / 100}px`);
 const chainWrapperSize = computed(
-  () => `${parseInt(get(chainIconSize)) + 3}px`
+  () => `${parseInt(get(chainIconSize)) + 4}px`
 );
 const chainIconMargin = computed(() => `-${get(chainIconSize)}`);
-const chainIconTop = computed(() => {
-  return `${(parseInt(get(chainIconSize)) * 80) / 100}px`;
+const chainIconPosition = computed(() => {
+  return `${(parseInt(get(chainIconSize)) * 50) / 100}px`;
 });
 
 const placeholderStyle = computed(() => {
@@ -156,6 +174,8 @@ const placeholderStyle = computed(() => {
 const chainIcon = computed(() => getChainIcon(get(chain)));
 
 watch([symbol, changeable, identifier], () => set(error, false));
+
+const { dark } = useTheme();
 </script>
 <style module lang="scss">
 .circle {
@@ -168,9 +188,14 @@ watch([symbol, changeable, identifier], () => set(error, false));
   background-color: white;
   position: relative;
   margin-top: v-bind(chainIconMargin);
-  top: v-bind(chainIconTop);
+  margin-left: v-bind(chainIconMargin);
+  top: v-bind(chainIconPosition);
+  left: v-bind(chainIconPosition);
   width: v-bind(chainWrapperSize);
   height: v-bind(chainWrapperSize);
-  z-index: 8;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>

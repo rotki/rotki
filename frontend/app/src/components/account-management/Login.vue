@@ -245,20 +245,8 @@
     </div>
   </v-slide-y-transition>
 </template>
-<script lang="ts">
-import { get, set, useLocalStorage } from '@vueuse/core';
-import {
-  computed,
-  defineComponent,
-  nextTick,
-  onMounted,
-  PropType,
-  ref,
-  Ref,
-  toRefs,
-  watch
-} from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+<script setup lang="ts">
+import { PropType, Ref } from 'vue';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import { useInterop } from '@/electron-interop';
 import { useSessionStore } from '@/store/session';
@@ -274,250 +262,219 @@ const KEY_REMEMBER_USERNAME = 'rotki.remember_username';
 const KEY_REMEMBER_PASSWORD = 'rotki.remember_password';
 const KEY_USERNAME = 'rotki.username';
 
-export default defineComponent({
-  name: 'Login',
-  components: { RevealableInput },
-  props: {
-    loading: { required: true, type: Boolean },
-    syncConflict: { required: true, type: Object as PropType<SyncConflict> },
-    errors: { required: false, type: Array, default: () => [] }
-  },
-  emits: ['backend-changed', 'login', 'new-account', 'touched'],
-  setup(props, { emit }) {
-    const { syncConflict, errors } = toRefs(props);
+const props = defineProps({
+  loading: { required: true, type: Boolean },
+  syncConflict: { required: true, type: Object as PropType<SyncConflict> },
+  errors: { required: false, type: Array, default: () => [] }
+});
 
-    const touched = () => emit('touched');
-    const newAccount = () => emit('new-account');
-    const backendChanged = (url: string | null) => emit('backend-changed', url);
+const emit = defineEmits([
+  'backend-changed',
+  'login',
+  'new-account',
+  'touched'
+]);
 
-    const { logoutRemoteSession } = useSessionStore();
+const { syncConflict, errors } = toRefs(props);
 
-    const username: Ref<string> = ref('');
-    const password: Ref<string> = ref('');
-    const rememberUsername: Ref<boolean> = ref(false);
-    const rememberPassword: Ref<boolean> = ref(false);
-    const customBackendDisplay: Ref<boolean> = ref(false);
-    const customBackendUrl: Ref<string> = ref('');
-    const customBackendSessionOnly: Ref<boolean> = ref(false);
-    const customBackendSaved: Ref<boolean> = ref(false);
-    const valid: Ref<boolean> = ref(false);
+const touched = () => emit('touched');
+const newAccount = () => emit('new-account');
+const backendChanged = (url: string | null) => emit('backend-changed', url);
 
-    const form: Ref<any> = ref(null);
-    const usernameRef: Ref<any> = ref(null);
-    const passwordRef: Ref<any> = ref(null);
+const { logoutRemoteSession } = useSessionStore();
 
-    const savedRememberUsername = useLocalStorage(KEY_REMEMBER_USERNAME, null);
-    const savedRememberPassword = useLocalStorage(KEY_REMEMBER_PASSWORD, null);
-    const savedUsername = useLocalStorage(KEY_USERNAME, '');
+const username: Ref<string> = ref('');
+const password: Ref<string> = ref('');
+const rememberUsername: Ref<boolean> = ref(false);
+const rememberPassword: Ref<boolean> = ref(false);
+const customBackendDisplay: Ref<boolean> = ref(false);
+const customBackendUrl: Ref<string> = ref('');
+const customBackendSessionOnly: Ref<boolean> = ref(false);
+const customBackendSaved: Ref<boolean> = ref(false);
+const valid: Ref<boolean> = ref(false);
 
-    const { tc } = useI18n();
+const form: Ref<any> = ref(null);
+const usernameRef: Ref<any> = ref(null);
+const passwordRef: Ref<any> = ref(null);
 
-    const customBackendRules = computed(() => [
-      (v: string) => !!v || tc('login.custom_backend.validation.non_empty'),
-      (v: string) =>
-        (v &&
-          v.length < 300 &&
-          /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}(\.[a-zA-Z0-9()]{1,6})?\b([-a-zA-Z0-9()@:%_+.~#?&/=]*)$/.test(
-            v
-          )) ||
-        tc('login.custom_backend.validation.url')
-    ]);
+const savedRememberUsername = useLocalStorage(KEY_REMEMBER_USERNAME, null);
+const savedRememberPassword = useLocalStorage(KEY_REMEMBER_PASSWORD, null);
+const savedUsername = useLocalStorage(KEY_USERNAME, '');
 
-    const usernameRules = computed(() => [
-      (v: string) => !!v || tc('login.validation.non_empty_username'),
-      (v: string) =>
-        (v && /^[0-9a-zA-Z_.-]+$/.test(v)) ||
-        tc('login.validation.valid_username')
-    ]);
+const { tc } = useI18n();
 
-    const passwordRules = computed(() => [
-      (v: string) => !!v || tc('login.validation.non_empty_password')
-    ]);
+const customBackendRules = [
+  (v: string) => !!v || tc('login.custom_backend.validation.non_empty'),
+  (v: string) =>
+    (v &&
+      v.length < 300 &&
+      /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}(\.[a-zA-Z0-9()]{1,6})?\b([-a-zA-Z0-9()@:%_+.~#?&/=]*)$/.test(
+        v
+      )) ||
+    tc('login.custom_backend.validation.url')
+];
 
-    const { clearPassword, getPassword, isPackaged, storePassword } =
-      useInterop();
+const usernameRules = [
+  (v: string) => !!v || tc('login.validation.non_empty_username'),
+  (v: string) =>
+    (v && /^[0-9a-zA-Z_.-]+$/.test(v)) || tc('login.validation.valid_username')
+];
 
-    watch(username, () => {
-      touched();
-    });
+const passwordRules = [
+  (v: string) => !!v || tc('login.validation.non_empty_password')
+];
 
-    watch(password, () => {
-      touched();
-    });
+const { clearPassword, getPassword, isPackaged, storePassword } = useInterop();
 
-    const isLoggedInError = computed<boolean>(() => {
-      return !!(get(errors) as string[]).find(error =>
-        error.includes('is already logged in')
-      );
-    });
+watch(username, () => {
+  touched();
+});
 
-    const logout = async () => {
-      const { success } = await logoutRemoteSession();
-      if (success) {
-        touched();
-      }
-    };
+watch(password, () => {
+  touched();
+});
 
-    const localLastModified = computed<number>(() => {
-      return get(syncConflict).payload?.localLastModified ?? 0;
-    });
+const isLoggedInError = computed<boolean>(() => {
+  return !!(get(errors) as string[]).find(error =>
+    error.includes('is already logged in')
+  );
+});
 
-    const remoteLastModified = computed<number>(() => {
-      return get(syncConflict).payload?.remoteLastModified ?? 0;
-    });
+const logout = async () => {
+  const { success } = await logoutRemoteSession();
+  if (success) {
+    touched();
+  }
+};
 
-    const serverColor = computed<string | null>(() => {
-      if (get(customBackendSessionOnly)) {
-        return 'primary';
-      } else if (get(customBackendSaved)) {
-        return 'success';
-      }
+const localLastModified = computed<number>(() => {
+  return get(syncConflict).payload?.localLastModified ?? 0;
+});
 
-      return null;
-    });
+const remoteLastModified = computed<number>(() => {
+  return get(syncConflict).payload?.remoteLastModified ?? 0;
+});
 
-    const focusElement = (element: any) => {
-      if (element) {
-        const input = element.$el.querySelector(
-          'input:not([type=hidden])'
-        ) as HTMLInputElement;
-        input.focus();
-      }
-    };
+const serverColor = computed<string | null>(() => {
+  if (get(customBackendSessionOnly)) {
+    return 'primary';
+  } else if (get(customBackendSaved)) {
+    return 'success';
+  }
 
-    const updateFocus = () => {
-      nextTick(() => {
-        focusElement(get(username) ? get(passwordRef) : get(usernameRef));
-      });
-    };
+  return null;
+});
 
-    const saveCustomBackend = () => {
-      saveBackendUrl({
-        url: get(customBackendUrl),
-        sessionOnly: get(customBackendSessionOnly)
-      });
-      backendChanged(get(customBackendUrl));
-      set(customBackendSaved, true);
-      set(customBackendDisplay, false);
-    };
+const focusElement = (element: any) => {
+  if (element) {
+    const input = element.$el.querySelector(
+      'input:not([type=hidden])'
+    ) as HTMLInputElement;
+    input.focus();
+  }
+};
 
-    const clearCustomBackend = () => {
-      set(customBackendUrl, '');
-      set(customBackendSessionOnly, false);
-      deleteBackendUrl();
-      backendChanged(null);
-      set(customBackendSaved, false);
-      set(customBackendDisplay, false);
-    };
+const updateFocus = () => {
+  nextTick(() => {
+    focusElement(get(username) ? get(passwordRef) : get(usernameRef));
+  });
+};
 
-    const checkRememberUsername = () => {
-      set(
-        rememberUsername,
-        !!get(savedRememberUsername) || !!get(savedRememberPassword)
-      );
-    };
+const saveCustomBackend = () => {
+  saveBackendUrl({
+    url: get(customBackendUrl),
+    sessionOnly: get(customBackendSessionOnly)
+  });
+  backendChanged(get(customBackendUrl));
+  set(customBackendSaved, true);
+  set(customBackendDisplay, false);
+};
 
-    const loadSettings = async () => {
-      set(rememberPassword, !!get(savedRememberPassword));
-      checkRememberUsername();
-      set(username, get(savedUsername));
-      const { sessionOnly, url } = getBackendUrl();
-      set(customBackendUrl, url);
-      set(customBackendSessionOnly, sessionOnly);
-      set(customBackendSaved, !!url);
+const clearCustomBackend = () => {
+  set(customBackendUrl, '');
+  set(customBackendSessionOnly, false);
+  deleteBackendUrl();
+  backendChanged(null);
+  set(customBackendSaved, false);
+  set(customBackendDisplay, false);
+};
 
-      if (isPackaged && get(rememberPassword) && get(username)) {
-        const savedPassword = await getPassword(get(username));
+const checkRememberUsername = () => {
+  set(
+    rememberUsername,
+    !!get(savedRememberUsername) || !!get(savedRememberPassword)
+  );
+};
 
-        if (savedPassword) {
-          set(password, savedPassword);
-          await login();
-        }
-      }
-    };
+const loadSettings = async () => {
+  set(rememberPassword, !!get(savedRememberPassword));
+  checkRememberUsername();
+  set(username, get(savedUsername));
+  const { sessionOnly, url } = getBackendUrl();
+  set(customBackendUrl, url);
+  set(customBackendSessionOnly, sessionOnly);
+  set(customBackendSaved, !!url);
 
-    onMounted(async () => {
-      await loadSettings();
-      updateFocus();
-    });
+  if (isPackaged && get(rememberPassword) && get(username)) {
+    const savedPassword = await getPassword(get(username));
 
-    watch(rememberUsername, (remember: boolean, previous: boolean) => {
-      if (remember === previous) {
-        return;
-      }
+    if (savedPassword) {
+      set(password, savedPassword);
+      await login();
+    }
+  }
+};
 
-      if (!remember) {
-        set(savedRememberUsername, null);
-        set(savedUsername, null);
-      } else {
-        set(savedRememberUsername, 'true');
-      }
-    });
+onMounted(async () => {
+  await loadSettings();
+  updateFocus();
+});
 
-    watch(rememberPassword, async (remember: boolean, previous: boolean) => {
-      if (remember === previous) {
-        return;
-      }
+watch(rememberUsername, (remember: boolean, previous: boolean) => {
+  if (remember === previous) {
+    return;
+  }
 
-      if (!remember) {
-        set(savedRememberPassword, null);
-        if (isPackaged) {
-          await clearPassword();
-        }
-      } else {
-        set(savedRememberPassword, 'true');
-      }
-
-      checkRememberUsername();
-    });
-
-    const login = async (syncApproval: SyncApproval = 'unknown') => {
-      const credentials: LoginCredentials = {
-        username: get(username),
-        password: get(password),
-        syncApproval
-      };
-      emit('login', credentials);
-      if (get(rememberUsername)) {
-        set(savedUsername, get(username));
-      }
-
-      if (get(rememberPassword) && isPackaged) {
-        await storePassword(get(username), get(password));
-      }
-    };
-
-    return {
-      logoutRemoteSession,
-      customBackendRules,
-      usernameRules,
-      passwordRules,
-      username,
-      password,
-      rememberUsername,
-      rememberPassword,
-      customBackendDisplay,
-      customBackendUrl,
-      customBackendSessionOnly,
-      customBackendSaved,
-      valid,
-      form,
-      passwordRef,
-      usernameRef,
-      newAccount,
-      login,
-      logout,
-      isLoggedInError,
-      localLastModified,
-      remoteLastModified,
-      serverColor,
-      saveCustomBackend,
-      clearCustomBackend,
-      isPackaged,
-      tc
-    };
+  if (!remember) {
+    set(savedRememberUsername, null);
+    set(savedUsername, null);
+  } else {
+    set(savedRememberUsername, 'true');
   }
 });
+
+watch(rememberPassword, async (remember: boolean, previous: boolean) => {
+  if (remember === previous) {
+    return;
+  }
+
+  if (!remember) {
+    set(savedRememberPassword, null);
+    if (isPackaged) {
+      await clearPassword();
+    }
+  } else {
+    set(savedRememberPassword, 'true');
+  }
+
+  checkRememberUsername();
+});
+
+const login = async (syncApproval: SyncApproval = 'unknown') => {
+  const credentials: LoginCredentials = {
+    username: get(username),
+    password: get(password),
+    syncApproval
+  };
+  emit('login', credentials);
+  if (get(rememberUsername)) {
+    set(savedUsername, get(username));
+  }
+
+  if (get(rememberPassword) && isPackaged) {
+    await storePassword(get(username), get(password));
+  }
+};
 </script>
 
 <style scoped lang="scss">

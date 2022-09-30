@@ -5,7 +5,7 @@ import Vue from 'vue';
 import Vuetify from 'vuetify';
 import ExternalServices from '@/components/settings/api-keys/ExternalServices.vue';
 import i18n from '@/i18n';
-import { api } from '@/services/rotkehlchen-api';
+import { useExternalServicesApi } from '@/services/settings/external-services-api';
 import { useMessageStore } from '@/store/message';
 import { useSessionStore } from '@/store/session';
 import { ExternalServiceKeys } from '@/types/user';
@@ -14,7 +14,14 @@ import '../../../i18n';
 Vue.use(Vuetify);
 Vue.use(PiniaVuePlugin);
 
-vi.mock('@/services/rotkehlchen-api');
+vi.mock('@/services/settings/external-services-api', () => ({
+  useExternalServicesApi: vi.fn().mockReturnValue({
+    queryExternalServices: vi.fn(),
+    setExternalServices: vi.fn(),
+    deleteExternalServices: vi.fn()
+  })
+}));
+
 vi.mock('vue', async () => {
   const mod = await vi.importActual<typeof import('vue')>('vue');
   return {
@@ -27,6 +34,7 @@ vi.mock('vue', async () => {
 describe('ExternalServices.vue', () => {
   let wrapper: Wrapper<ExternalServices>;
   let pinia: Pinia;
+  let api: ReturnType<typeof useExternalServicesApi>;
 
   const mockResponse: ExternalServiceKeys = {
     etherscan: {
@@ -54,11 +62,11 @@ describe('ExternalServices.vue', () => {
     document.body.setAttribute('data-app', 'true');
     pinia = createPinia();
     setActivePinia(pinia);
+    api = useExternalServicesApi();
   });
 
   afterEach(() => {
     useSessionStore().reset();
-    vi.resetAllMocks();
   });
 
   describe('first time', () => {

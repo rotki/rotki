@@ -27,6 +27,7 @@ export const useBalancesStore = defineStore('balances', () => {
   const { queryBalancesAsync } = useBalancesApi();
   const priceStore = useBalancePricesStore();
   const { prices } = storeToRefs(priceStore);
+  const { getAssetPrice } = priceStore;
   const { notify } = useNotifications();
   const { isTaskRunning, addTask } = useTasks();
   const { tc } = useI18n();
@@ -37,17 +38,27 @@ export const useBalancesStore = defineStore('balances', () => {
     updateExchangePrices(prices);
   };
 
-  const refreshPrices = async (ignoreCache: boolean = false): Promise<void> => {
+  const refreshPrices = async (
+    ignoreCache: boolean = false,
+    selectedAssets: string[] = []
+  ): Promise<void> => {
     const { setStatus } = useStatusUpdater(Section.PRICES);
     setStatus(Status.LOADING);
     await priceStore.fetchExchangeRates();
     await priceStore.fetchPrices({
       ignoreCache,
-      selectedAssets: get(assets())
+      selectedAssets: get(selectedAssets ? selectedAssets : assets())
     });
     adjustPrices(get(prices));
     setStatus(Status.LOADED);
   };
+
+  watch(assets(), async assets => {
+    const noPriceAssets = assets.filter(asset => !getAssetPrice(asset));
+    if (noPriceAssets.length > 0) {
+      await refreshPrices(false, noPriceAssets);
+    }
+  });
 
   const fetchBalances = async (payload: Partial<AllBalancePayload> = {}) => {
     if (get(isTaskRunning(TaskType.QUERY_BALANCES))) {

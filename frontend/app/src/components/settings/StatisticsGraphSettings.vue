@@ -47,72 +47,54 @@
   </v-menu>
 </template>
 
-<script lang="ts">
-import { get, set } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { computed, defineComponent, onMounted, ref, watch } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+<script setup lang="ts">
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import { useSettingsStore } from '@/store/settings';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 
-export default defineComponent({
-  name: 'StatisticsGraphSettings',
-  components: { MenuTooltipButton },
-  emits: ['updated'],
-  setup(_, { emit }) {
-    const multiplier = ref('0');
-    const visible = ref(false);
-    const numericMultiplier = computed(() => {
-      const multi = parseInt(get(multiplier));
-      return isNaN(multi) ? 0 : multi;
-    });
-    const invalid = computed(() => {
-      const numericValue = parseInt(get(multiplier));
-      return isNaN(numericValue) || numericValue < 0;
-    });
+const emit = defineEmits(['updated']);
 
-    const { update } = useSettingsStore();
-    const { ssf0graphMultiplier, balanceSaveFrequency } = storeToRefs(
-      useGeneralSettingsStore()
-    );
-
-    const { tc } = useI18n();
-
-    const updateSetting = async () => {
-      await update({
-        ssf0graphMultiplier: get(numericMultiplier)
-      });
-      emit('updated');
-      set(visible, false);
-    };
-
-    const multiplierSetting = computed(() => {
-      return get(ssf0graphMultiplier).toString();
-    });
-
-    const period = computed(() => {
-      const multi = get(numericMultiplier);
-      if (multi <= 0) {
-        return 0;
-      }
-      return multi * get(balanceSaveFrequency);
-    });
-
-    onMounted(() => {
-      set(multiplier, get(multiplierSetting));
-    });
-
-    watch(multiplierSetting, value => set(multiplier, value.toString()));
-
-    return {
-      invalid,
-      visible,
-      multiplier,
-      period,
-      updateSetting,
-      tc
-    };
-  }
+const multiplier = ref('0');
+const visible = ref(false);
+const numericMultiplier = computed(() => {
+  const multi = parseInt(get(multiplier));
+  return isNaN(multi) ? 0 : multi;
 });
+const invalid = computed(() => {
+  const numericValue = parseInt(get(multiplier));
+  return isNaN(numericValue) || numericValue < 0;
+});
+
+const { update } = useSettingsStore();
+const { ssf0graphMultiplier, balanceSaveFrequency } = storeToRefs(
+  useGeneralSettingsStore()
+);
+
+const { tc } = useI18n();
+
+const updateSetting = async () => {
+  await update({
+    ssf0graphMultiplier: get(numericMultiplier)
+  });
+  emit('updated');
+  set(visible, false);
+};
+
+const multiplierSetting = computed(() => {
+  return get(ssf0graphMultiplier).toString();
+});
+
+const period = computed(() => {
+  const multi = get(numericMultiplier);
+  if (multi <= 0) {
+    return 0;
+  }
+  return multi * get(balanceSaveFrequency);
+});
+
+onMounted(() => {
+  set(multiplier, get(multiplierSetting));
+});
+
+watch(multiplierSetting, value => set(multiplier, value.toString()));
 </script>

@@ -5,19 +5,15 @@
     </template>
   </list-item>
 </template>
-<script lang="ts">
+<script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { defineComponent, PropType } from 'vue';
+import { PropType } from 'vue';
 import ListItem from '@/components/helper/ListItem.vue';
 
-export default defineComponent({
-  name: 'ChainDisplay',
-  components: { ListItem },
-  props: {
-    item: {
-      required: true,
-      type: Object as PropType<{ symbol: Blockchain; name: string }>
-    }
+defineProps({
+  item: {
+    required: true,
+    type: Object as PropType<{ symbol: Blockchain; name: string }>
   }
 });
 </script>

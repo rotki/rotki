@@ -6,7 +6,8 @@ import {
 } from '@/services/axios-tranformers';
 import { basicAxiosTransformer } from '@/services/consts';
 import { PendingTask } from '@/services/types-api';
-import { handleResponse, validStatus } from '@/services/utils';
+import { handleResponse, validStatus, validTaskStatus } from '@/services/utils';
+import { ActionStatus } from '@/store/types';
 import {
   ProfitLossOverview,
   ProfitLossReportDebugPayload,
@@ -16,6 +17,7 @@ import {
   ReportActionableItem,
   Reports
 } from '@/types/reports';
+import { downloadFileByUrl } from '@/utils/download';
 
 export class ReportsApi {
   private readonly axios: AxiosInstance;
@@ -41,6 +43,42 @@ export class ReportsApi {
       }
     );
     return handleResponse(response);
+  }
+
+  async exportReportCSV(directory: string): Promise<boolean> {
+    const response = await this.axios.get<ActionResult<boolean>>(
+      '/history/export',
+      {
+        params: {
+          directory_path: directory
+        },
+        validateStatus: validStatus
+      }
+    );
+
+    return handleResponse(response);
+  }
+
+  async downloadReportCSV(): Promise<ActionStatus> {
+    try {
+      const response = await this.axios.get('/history/download', {
+        responseType: 'blob',
+        validateStatus: validTaskStatus
+      });
+
+      if (response.status === 200) {
+        const url = window.URL.createObjectURL(response.data);
+        downloadFileByUrl(url, 'reports.zip');
+        return { success: true };
+      }
+
+      const body = await (response.data as Blob).text();
+      const result: ActionResult<null> = JSON.parse(body);
+
+      return { success: false, message: result.message };
+    } catch (e: any) {
+      return { success: false, message: e.message };
+    }
   }
 
   async exportReportData(

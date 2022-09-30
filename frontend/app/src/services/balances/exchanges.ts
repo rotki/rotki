@@ -4,8 +4,12 @@ import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
 import { basicAxiosTransformer } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
 import { PendingTask } from '@/services/types-api';
-import { handleResponse, validStatus } from '@/services/utils';
-import { Exchange, ExchangePayload } from '@/types/exchanges';
+import {
+  handleResponse,
+  validStatus,
+  validWithSessionStatus
+} from '@/services/utils';
+import { Exchange, ExchangePayload, Exchanges } from '@/types/exchanges';
 import { nonNullProperties } from '@/utils/data';
 
 export const useExchangeApi = () => {
@@ -73,9 +77,54 @@ export const useExchangeApi = () => {
     return request.then(handleResponse);
   };
 
+  const getExchanges = async (): Promise<Exchanges> => {
+    const response = await api.instance.get<ActionResult<Exchanges>>(
+      '/exchanges',
+      {
+        transformResponse: basicAxiosTransformer,
+        validateStatus: validWithSessionStatus
+      }
+    );
+
+    const data = handleResponse(response);
+    return Exchanges.parse(data);
+  };
+
+  const queryBinanceMarkets = async (location: string): Promise<string[]> => {
+    const response = await api.instance.get<ActionResult<string[]>>(
+      '/exchanges/binance/pairs',
+      {
+        params: axiosSnakeCaseTransformer({
+          location: location
+        })
+      }
+    );
+
+    return handleResponse(response);
+  };
+
+  const queryBinanceUserMarkets = async (
+    name: string,
+    location: string
+  ): Promise<string[]> => {
+    const response = await api.instance.get<ActionResult<string[]>>(
+      `/exchanges/binance/pairs/${name}`,
+      {
+        params: axiosSnakeCaseTransformer({
+          location: location
+        })
+      }
+    );
+
+    return handleResponse(response);
+  };
+
   return {
     queryRemoveExchange,
     queryExchangeBalances,
-    querySetupExchange
+    querySetupExchange,
+    getExchanges,
+    queryBinanceMarkets,
+    queryBinanceUserMarkets
   };
 };

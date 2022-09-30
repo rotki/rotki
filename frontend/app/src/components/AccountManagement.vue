@@ -118,7 +118,6 @@ import {
   toRefs,
   watch
 } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 import ConnectionFailure from '@/components/account-management/ConnectionFailure.vue';
 import ConnectionLoading from '@/components/account-management/ConnectionLoading.vue';
 import BackendSettingsButton from '@/components/helper/BackendSettingsButton.vue';

@@ -78,7 +78,7 @@ const exportCSV = async () => {
       }
       await createCsv(directory);
     } else {
-      const result = await api.downloadCSV();
+      const result = await api.reports.downloadReportCSV();
       if (!result.success) {
         showMessage(
           result.message ?? t('profit_loss_report.download_failed').toString()

@@ -53,10 +53,7 @@
 </template>
 
 <script setup lang="ts">
-import { get, set } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { computed, ComputedRef, onMounted, onUnmounted, ref } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { ComputedRef } from 'vue';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import AccountingSettingsDisplay from '@/components/profitloss/AccountingSettingsDisplay.vue';

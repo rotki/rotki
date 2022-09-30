@@ -1,5 +1,6 @@
 import { acceptHMRUpdate, defineStore } from 'pinia';
 import { api } from '@/services/rotkehlchen-api';
+import { useUsersApi } from '@/services/session/users.api';
 import { Version } from '@/store/types';
 import { Nullable } from '@/types';
 import { LogLevel } from '@/utils/log-level';
@@ -14,6 +15,8 @@ export const useMainStore = defineStore('main', () => {
   const connectionFailure = ref(false);
   const dataDirectory = ref('');
   const logLevel = ref<LogLevel>(getDefaultLogLevel());
+
+  const usersApi = useUsersApi();
 
   const updateNeeded = computed(() => {
     const { version: appVersion, downloadUrl } = get(version);
@@ -71,7 +74,7 @@ export const useMainStore = defineStore('main', () => {
 
         const isConnected = !!(await api.ping());
         if (isConnected) {
-          const accounts = await api.users();
+          const accounts = await usersApi.users();
           if (accounts.length === 0) {
             set(newUser, true);
           }

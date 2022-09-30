@@ -7,7 +7,11 @@ import {
   handleResponse,
   validWithSessionAndExternalService
 } from '@/services/utils';
-import { AssetPagination } from '@/types/assets';
+import {
+  AssetPagination,
+  CustomAssetPagination,
+  CustomAssets
+} from '@/types/assets';
 
 export const useAssetManagementApi = () => {
   async function queryAllAssets(
@@ -25,7 +29,23 @@ export const useAssetManagementApi = () => {
     return SupportedAssets.parse(handleResponse(response));
   }
 
+  async function queryAllCustomAssets(
+    pagination: CustomAssetPagination
+  ): Promise<CustomAssets> {
+    const response = await api.instance.post<ActionResult<CustomAssets>>(
+      '/assets/custom',
+      axiosSnakeCaseTransformer(pagination),
+      {
+        validateStatus: validWithSessionAndExternalService,
+        transformResponse: basicAxiosTransformer
+      }
+    );
+
+    return CustomAssets.parse(handleResponse(response));
+  }
+
   return {
-    queryAllAssets
+    queryAllAssets,
+    queryAllCustomAssets
   };
 };

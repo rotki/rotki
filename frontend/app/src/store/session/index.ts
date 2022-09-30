@@ -5,6 +5,7 @@ import { useStatusUpdater } from '@/composables/status';
 import { getBnFormat } from '@/data/amount_formatter';
 import { EXTERNAL_EXCHANGES } from '@/data/defaults';
 import { interop, useInterop } from '@/electron-interop';
+import { useExchangeApi } from '@/services/balances/exchanges';
 import { SupportedExternalExchanges } from '@/services/balances/types';
 import { api } from '@/services/rotkehlchen-api';
 import {
@@ -13,6 +14,8 @@ import {
   ALL_MODULES
 } from '@/services/session/consts';
 import { Purgeable } from '@/services/session/types';
+import { useUsersApi } from '@/services/session/users.api';
+import { useSettingsApi } from '@/services/settings/settings-api';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useBalancesStore } from '@/store/balances';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
@@ -71,6 +74,10 @@ export const useSessionStore = defineStore('session', () => {
   const syncConflict = ref<SyncConflict>(defaultSyncConflict());
   const showUpdatePopup = ref(false);
   const darkModeEnabled = ref(false);
+
+  const usersApi = useUsersApi();
+  const settingsApi = useSettingsApi();
+  const exchangeApi = useExchangeApi();
 
   const { setMessage } = useMessageStore();
   const { awaitTask } = useTasks();
@@ -171,7 +178,7 @@ export const useSessionStore = defineStore('session', () => {
     payload: CreateAccountPayload
   ): Promise<ActionStatus> => {
     try {
-      const { settings, exchanges } = await api.createAccount(payload);
+      const { settings, exchanges } = await usersApi.createAccount(payload);
       const data: UnlockPayload = {
         settings,
         exchanges,
@@ -193,22 +200,22 @@ export const useSessionStore = defineStore('session', () => {
       const username = credentials.username
         ? credentials.username
         : lastLogin();
-      const isLogged = await api.checkIfLogged(username);
+      const isLogged = await usersApi.checkIfLogged(username);
 
       let settings: UserSettingsModel;
       let exchanges: Exchange[];
       const conflict = get(syncConflict);
       if (isLogged && !conflict.message) {
         [settings, exchanges] = await Promise.all([
-          api.getSettings(),
-          api.getExchanges()
+          settingsApi.getSettings(),
+          exchangeApi.getExchanges()
         ]);
       } else {
         if (!credentials.username) {
           return { success: false, message: '' };
         }
         set(syncConflict, defaultSyncConflict());
-        ({ settings, exchanges } = await api.login(credentials));
+        ({ settings, exchanges } = await usersApi.login(credentials));
       }
 
       return await unlock({
@@ -234,7 +241,7 @@ export const useSessionStore = defineStore('session', () => {
   const logout = async () => {
     interop.resetTray();
     try {
-      await api.logout(get(username));
+      await usersApi.logout(get(username));
       await cleanup();
     } catch (e: any) {
       setMessage({
@@ -246,10 +253,10 @@ export const useSessionStore = defineStore('session', () => {
 
   const logoutRemoteSession = async (): Promise<ActionStatus> => {
     try {
-      const loggedUsers = await api.loggedUsers();
+      const loggedUsers = await usersApi.loggedUsers();
       for (let i = 0; i < loggedUsers.length; i++) {
         const user = loggedUsers[i];
-        await api.logout(user);
+        await usersApi.logout(user);
       }
       return { success: true };
     } catch (e: any) {
@@ -272,7 +279,7 @@ export const useSessionStore = defineStore('session', () => {
   }: ChangePasswordPayload): Promise<ActionStatus> => {
     const { isPackaged, clearPassword } = useInterop();
     try {
-      const success = await api.changeUserPassword(
+      const success = await usersApi.changeUserPassword(
         get(username),
         currentPassword,
         newPassword

@@ -4,11 +4,16 @@ import Vue from 'vue';
 import Vuetify from 'vuetify';
 import DefiWizard from '@/components/defi/wizard/DefiWizard.vue';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
-import { api } from '@/services/rotkehlchen-api';
 import '../../../i18n';
+import { useSettingsApi } from '@/services/settings/settings-api';
 import { FrontendSettings } from '@/types/frontend-settings';
 
-vi.mock('@/services/rotkehlchen-api');
+vi.mock('@/services/settings/settings-api', () => ({
+  useSettingsApi: vi.fn().mockReturnValue({
+    setSettings: vi.fn()
+  })
+}));
+
 vi.mock('vue', async () => {
   const mod = await vi.importActual<typeof import('vue')>('vue');
   return {
@@ -24,6 +29,7 @@ Vue.use(PiniaVuePlugin);
 describe('DefiWizard.vue', () => {
   let wrapper: Wrapper<any>;
   let settings: FrontendSettings;
+  let api: ReturnType<typeof useSettingsApi>;
 
   const createWrapper = () => {
     const vuetify = new Vuetify();
@@ -39,6 +45,8 @@ describe('DefiWizard.vue', () => {
   beforeEach(() => {
     settings = FrontendSettings.parse({});
     wrapper = createWrapper();
+    api = useSettingsApi();
+    api.setSettings = vi.fn();
   });
 
   test('wizard completes when use default is pressed', async () => {

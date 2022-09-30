@@ -10,7 +10,8 @@ import isEqual from 'lodash/isEqual';
 import { usePremium } from '@/composables/premium';
 import { useStatusUpdater } from '@/composables/status';
 import { balanceKeys } from '@/services/consts';
-import { api } from '@/services/rotkehlchen-api';
+import { useAdexApi } from '@/services/staking/adex';
+import { useEth2Api } from '@/services/staking/eth2';
 import { useNotifications } from '@/store/notifications';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { getStatus, setStatus } from '@/store/status';
@@ -52,6 +53,8 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
   const { awaitTask, isTaskRunning } = useTasks();
   const { notify } = useNotifications();
   const { t, tc } = useI18n();
+
+  const api = useEth2Api();
 
   const fetchStakingDetails = async (refresh: boolean = false) => {
     if (!get(premium)) {
@@ -264,6 +267,8 @@ export const useAdexStakingStore = defineStore('staking/adex', () => {
   const { notify } = useNotifications();
   const { awaitTask } = useTasks();
   const { t } = useI18n();
+
+  const api = useAdexApi();
 
   const fetchAdex = async (refresh: boolean) => {
     if (!get(premium)) {

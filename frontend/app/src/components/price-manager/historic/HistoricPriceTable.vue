@@ -167,16 +167,13 @@ watch(filter, async payload => {
   await fetchPrices(nonNullProperties(payload));
 });
 
-watch(
-  () => refreshing,
-  async refreshing => {
-    if (!refreshing) {
-      return;
-    }
-    await fetchPrices();
-    emit('refreshed');
+watch(refreshing, async refreshing => {
+  if (!refreshing) {
+    return;
   }
-);
+  await fetchPrices();
+  emit('refreshed');
+});
 
 onMounted(fetchPrices);
 </script>

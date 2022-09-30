@@ -27,6 +27,7 @@ import {
   validWithoutSessionStatus
 } from '@/services/utils';
 import { ActionStatus } from '@/store/types';
+import { CustomAsset } from '@/types/assets';
 import { assert } from '@/utils/assertions';
 
 export class AssetApi {
@@ -457,5 +458,51 @@ export class AssetApi {
     } catch (e: any) {
       return { success: false, message: e.message };
     }
+  }
+
+  async getCustomAssetTypes(): Promise<string[]> {
+    return this.axios
+      .get<ActionResult<string[]>>('/assets/custom/types', {
+        validateStatus: validStatus,
+        transformResponse: this.baseTransformer
+      })
+      .then(handleResponse);
+  }
+
+  async addCustomAsset(
+    asset: Omit<CustomAsset, 'identifier'>
+  ): Promise<string> {
+    return this.axios
+      .put<ActionResult<string>>(
+        '/assets/custom',
+        axiosSnakeCaseTransformer(asset),
+        {
+          validateStatus: validStatus,
+          transformResponse: this.baseTransformer
+        }
+      )
+      .then(handleResponse);
+  }
+
+  async editCustomAsset(asset: CustomAsset): Promise<boolean> {
+    return this.axios
+      .patch<ActionResult<boolean>>(
+        '/assets/custom',
+        axiosSnakeCaseTransformer(asset),
+        {
+          validateStatus: validStatus,
+          transformResponse: this.baseTransformer
+        }
+      )
+      .then(handleResponse);
+  }
+
+  async deleteCustomAsset(identifier: string): Promise<boolean> {
+    return this.axios
+      .delete<ActionResult<boolean>>('/assets/custom', {
+        data: axiosSnakeCaseTransformer({ identifier }),
+        validateStatus: validStatus
+      })
+      .then(handleResponse);
   }
 }

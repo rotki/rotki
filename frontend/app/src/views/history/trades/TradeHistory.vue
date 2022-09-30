@@ -11,10 +11,6 @@
 </template>
 
 <script setup lang="ts">
-import { get, useIntervalFn } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { onBeforeMount, onUnmounted } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import ClosedTrades from '@/components/history/ClosedTrades.vue';
 import { useSectionLoading } from '@/composables/common';

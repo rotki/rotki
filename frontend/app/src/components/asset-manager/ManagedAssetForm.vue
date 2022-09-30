@@ -302,6 +302,7 @@ import HelpLink from '@/components/helper/HelpLink.vue';
 import FileUpload from '@/components/import/FileUpload.vue';
 import { interop, useInterop } from '@/electron-interop';
 import {
+  CUSTOM_ASSET,
   EVM_TOKEN,
   evmChainsData,
   evmTokenKindsData
@@ -426,7 +427,11 @@ const asset: ComputedRef<Omit<SupportedAsset, 'identifier'>> = computed(() => {
 
 onBeforeMount(async () => {
   try {
-    set(types, await api.assets.assetTypes());
+    const queriedTypes = await api.assets.assetTypes();
+    set(
+      types,
+      queriedTypes.filter(item => item !== CUSTOM_ASSET)
+    );
   } catch (e: any) {
     setMessage({
       description: t('asset_form.types.error', {

@@ -145,7 +145,7 @@ import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import ApiKeyBox from '@/components/settings/api-keys/ApiKeyBox.vue';
 import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
-import { api } from '@/services/rotkehlchen-api';
+import { useExternalServicesApi } from '@/services/settings/external-services-api';
 import { useEthBalancesStore } from '@/store/blockchain/balances/eth';
 import { useMessageStore } from '@/store/message';
 import { useGeneralSettingsStore } from '@/store/settings/general';
@@ -173,6 +173,7 @@ const { setMessage } = useMessageStore();
 const { fetchLoopringBalances } = useEthBalancesStore();
 
 const { tc } = useI18n();
+const api = useExternalServicesApi();
 
 const isLoopringActive = computed(() => {
   return get(activeModules).includes(Module.LOOPRING);

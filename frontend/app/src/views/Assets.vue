@@ -4,12 +4,25 @@
       <v-col>
         <v-row align="center">
           <v-col cols="auto">
-            <asset-icon :identifier="identifier" size="48px" />
+            <asset-icon
+              :identifier="identifier"
+              size="48px"
+              :chain="asset?.evmChain"
+              :name="name"
+              :symbol="symbol"
+              :is-custom-asset="isCustomAsset"
+            />
           </v-col>
-          <v-col class="d-flex flex-column" cols="auto">
+          <v-col v-if="!isCustomAsset" class="d-flex flex-column" cols="auto">
             <span class="text-h5 font-weight-medium">{{ symbol }}</span>
             <span class="text-subtitle-2 text--secondary">
               {{ name }}
+            </span>
+          </v-col>
+          <v-col v-else class="d-flex flex-column" cols="auto">
+            <span class="text-h5 font-weight-medium">{{ name }}</span>
+            <span class="text-subtitle-2 text--secondary">
+              {{ asset?.customAssetType }}
             </span>
           </v-col>
           <v-col cols="auto">
@@ -68,20 +81,24 @@ const toggleIgnoreAsset = async () => {
   }
 };
 
+const premium = usePremium();
+
+const { assetName, assetSymbol, assetInfo } = useAssetInfoRetrieval();
+const name = assetName(identifier);
+const symbol = assetSymbol(identifier);
+const asset = assetInfo(identifier);
+const isCustomAsset = computed(() => get(assetInfo(identifier))?.isCustomAsset);
+
+const { t } = useI18n();
+
 const editRoute = computed<RawLocation>(() => {
   return {
-    path: Routes.ASSET_MANAGER.route,
+    path: get(isCustomAsset)
+      ? Routes.ASSET_MANAGER_CUSTOM.route
+      : Routes.ASSET_MANAGER_MANAGED.route,
     query: {
       id: get(identifier)
     }
   };
 });
-
-const premium = usePremium();
-
-const { assetName, assetSymbol } = useAssetInfoRetrieval();
-const name = assetName(identifier);
-const symbol = assetSymbol(identifier);
-
-const { t } = useI18n();
 </script>

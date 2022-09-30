@@ -26,7 +26,6 @@
 </template>
 
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n-composable';
 import AccountAssetMovementsSetting from '@/components/settings/accounting/AccountAssetMovementsSetting.vue';
 import CalculatePastCostBasisSetting from '@/components/settings/accounting/CalculatePastCostBasisSetting.vue';
 import CostBasisMethodSetting from '@/components/settings/accounting/CostBasisMethodSetting.vue';

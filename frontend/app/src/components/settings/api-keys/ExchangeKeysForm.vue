@@ -148,17 +148,8 @@
   </v-form>
 </template>
 
-<script lang="ts">
-import { get, set } from '@vueuse/core';
-import {
-  computed,
-  defineComponent,
-  onMounted,
-  PropType,
-  ref,
-  toRefs
-} from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+<script setup lang="ts">
+import { PropType } from 'vue';
 import ExchangeDisplay from '@/components/display/ExchangeDisplay.vue';
 import BinancePairsSelector from '@/components/helper/BinancePairsSelector.vue';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
@@ -172,144 +163,122 @@ import {
 import { tradeLocations } from '@/types/trades';
 import { trimOnPaste } from '@/utils/event';
 
-export default defineComponent({
-  name: 'ExchangeKeysForm',
-  components: { RevealableInput, ExchangeDisplay, BinancePairsSelector },
-  props: {
-    value: { required: true, type: Boolean },
-    exchange: { required: true, type: Object as PropType<ExchangePayload> },
-    edit: { required: true, type: Boolean }
-  },
-  emits: ['input', 'update:exchange'],
-  setup(props, { emit }) {
-    const { edit, exchange } = toRefs(props);
-    const editKeys = ref(false);
-    const form = ref();
-
-    const { getExchangeNonce } = useExchangeBalancesStore();
-    const { tc } = useI18n();
-
-    const requiresPassphrase = computed(() => {
-      const { location } = get(exchange);
-      return (
-        location === SupportedExchange.COINBASEPRO ||
-        location === SupportedExchange.KUCOIN
-      );
-    });
-
-    const isBinance = computed(() => {
-      const { location } = get(exchange);
-      return (
-        location === SupportedExchange.BINANCE ||
-        location === SupportedExchange.BINANCEUS
-      );
-    });
-
-    const nameRules = computed(() => [
-      (v: string) => !!v || tc('exchange_keys_form.name.non_empty')
-    ]);
-
-    const apiKeyRules = computed(() => [
-      (v: string) => !!v || tc('exchange_keys_form.api_key.non_empty')
-    ]);
-
-    const apiSecretRules = computed(() => [
-      (v: string) => !!v || tc('exchange_keys_form.api_secret.non_empty')
-    ]);
-
-    const passphraseRules = computed(() => [
-      (v: string) => !!v || tc('exchange_keys_form.passphrase.non_empty')
-    ]);
-
-    const suggestedName = function (exchange: SupportedExchange): string {
-      const location = tradeLocations.find(
-        ({ identifier }) => identifier === exchange
-      );
-      const nonce = get(getExchangeNonce(exchange));
-      return location ? `${location.name} ${nonce}` : '';
-    };
-
-    const toggleEdit = () => {
-      set(editKeys, !get(editKeys));
-
-      if (!get(editKeys)) {
-        onUpdateExchange({
-          ...get(exchange),
-          apiSecret: null,
-          apiKey: null
-        });
-      }
-    };
-
-    const onExchangeChange = (exchange: SupportedExchange) => {
-      get(form).reset();
-      onUpdateExchange({
-        name: suggestedName(exchange),
-        newName: null,
-        location: exchange,
-        apiKey: null,
-        apiSecret: exchange === SupportedExchange.BITPANDA ? '' : null,
-        passphrase: null,
-        krakenAccountType:
-          exchange === SupportedExchange.KRAKEN ? 'starter' : null,
-        binanceMarkets: null,
-        ftxSubaccount: null
-      });
-    };
-
-    const onApiKeyPaste = function (event: ClipboardEvent) {
-      const paste = trimOnPaste(event);
-      if (paste) {
-        onUpdateExchange({ ...get(exchange), apiKey: paste });
-      }
-    };
-
-    const onApiSecretPaste = function (event: ClipboardEvent) {
-      const paste = trimOnPaste(event);
-      if (paste) {
-        onUpdateExchange({ ...get(exchange), apiSecret: paste });
-      }
-    };
-
-    const input = (value: boolean) => {
-      emit('input', value);
-    };
-
-    const onUpdateExchange = (payload: ExchangePayload) => {
-      emit('update:exchange', payload);
-    };
-
-    onMounted(() => {
-      if (get(edit)) {
-        return;
-      }
-      onUpdateExchange({
-        ...get(exchange),
-        name: suggestedName(get(exchange).location)
-      });
-    });
-
-    return {
-      krakenAccountTypes: KrakenAccountType.options,
-      exchanges: SUPPORTED_EXCHANGES,
-      editKeys,
-      form,
-      requiresPassphrase,
-      isBinance,
-      nameRules,
-      apiKeyRules,
-      apiSecretRules,
-      passphraseRules,
-      input,
-      onUpdateExchange,
-      onExchangeChange,
-      toggleEdit,
-      onApiKeyPaste,
-      onApiSecretPaste,
-      tc
-    };
-  }
+const props = defineProps({
+  value: { required: true, type: Boolean },
+  exchange: { required: true, type: Object as PropType<ExchangePayload> },
+  edit: { required: true, type: Boolean }
 });
+
+const emit = defineEmits(['input', 'update:exchange']);
+
+const { edit, exchange } = toRefs(props);
+const editKeys = ref(false);
+const form = ref();
+
+const { getExchangeNonce } = useExchangeBalancesStore();
+const { tc } = useI18n();
+
+const requiresPassphrase = computed(() => {
+  const { location } = get(exchange);
+  return (
+    location === SupportedExchange.COINBASEPRO ||
+    location === SupportedExchange.KUCOIN
+  );
+});
+
+const isBinance = computed(() => {
+  const { location } = get(exchange);
+  return (
+    location === SupportedExchange.BINANCE ||
+    location === SupportedExchange.BINANCEUS
+  );
+});
+
+const nameRules = computed(() => [
+  (v: string) => !!v || tc('exchange_keys_form.name.non_empty')
+]);
+
+const apiKeyRules = computed(() => [
+  (v: string) => !!v || tc('exchange_keys_form.api_key.non_empty')
+]);
+
+const apiSecretRules = computed(() => [
+  (v: string) => !!v || tc('exchange_keys_form.api_secret.non_empty')
+]);
+
+const passphraseRules = computed(() => [
+  (v: string) => !!v || tc('exchange_keys_form.passphrase.non_empty')
+]);
+
+const suggestedName = function (exchange: SupportedExchange): string {
+  const location = tradeLocations.find(
+    ({ identifier }) => identifier === exchange
+  );
+  const nonce = get(getExchangeNonce(exchange));
+  return location ? `${location.name} ${nonce}` : '';
+};
+
+const toggleEdit = () => {
+  set(editKeys, !get(editKeys));
+
+  if (!get(editKeys)) {
+    onUpdateExchange({
+      ...get(exchange),
+      apiSecret: null,
+      apiKey: null
+    });
+  }
+};
+
+const onExchangeChange = (exchange: SupportedExchange) => {
+  get(form).reset();
+  onUpdateExchange({
+    name: suggestedName(exchange),
+    newName: null,
+    location: exchange,
+    apiKey: null,
+    apiSecret: exchange === SupportedExchange.BITPANDA ? '' : null,
+    passphrase: null,
+    krakenAccountType: exchange === SupportedExchange.KRAKEN ? 'starter' : null,
+    binanceMarkets: null,
+    ftxSubaccount: null
+  });
+};
+
+const onApiKeyPaste = function (event: ClipboardEvent) {
+  const paste = trimOnPaste(event);
+  if (paste) {
+    onUpdateExchange({ ...get(exchange), apiKey: paste });
+  }
+};
+
+const onApiSecretPaste = function (event: ClipboardEvent) {
+  const paste = trimOnPaste(event);
+  if (paste) {
+    onUpdateExchange({ ...get(exchange), apiSecret: paste });
+  }
+};
+
+const input = (value: boolean) => {
+  emit('input', value);
+};
+
+const onUpdateExchange = (payload: ExchangePayload) => {
+  emit('update:exchange', payload);
+};
+
+onMounted(() => {
+  if (get(edit)) {
+    return;
+  }
+  onUpdateExchange({
+    ...get(exchange),
+    name: suggestedName(get(exchange).location)
+  });
+});
+
+const krakenAccountTypes = KrakenAccountType.options;
+const exchanges = SUPPORTED_EXCHANGES;
 </script>
 
 <style lang="scss" scoped>

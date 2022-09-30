@@ -34,8 +34,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, PropType } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { PropType } from 'vue';
 import { DataTableHeader } from 'vuetify';
 import DataTable from '@/components/helper/DataTable.vue';
 import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';

@@ -39,6 +39,7 @@
           :symbol="item.symbol"
           :name="item.name"
           :chain="item.evmChain"
+          :is-custom-asset="item.isCustomAsset || false"
         />
       </div>
       <v-list-item-content
@@ -46,10 +47,20 @@
           item.identifier.toLocaleLowerCase()
         )}`"
       >
-        <v-list-item-title class="font-weight-medium">
-          {{ item.symbol }}
-        </v-list-item-title>
-        <v-list-item-subtitle>{{ item.name }}</v-list-item-subtitle>
+        <template v-if="!item.isCustomAsset">
+          <v-list-item-title class="font-weight-medium">
+            {{ item.symbol }}
+          </v-list-item-title>
+          <v-list-item-subtitle>{{ item.name }}</v-list-item-subtitle>
+        </template>
+        <template v-else>
+          <v-list-item-title class="font-weight-medium">
+            {{ item.name }}
+          </v-list-item-title>
+          <v-list-item-subtitle>
+            {{ item.customAssetType }}
+          </v-list-item-subtitle>
+        </template>
       </v-list-item-content>
     </template>
     <template #no-data>
@@ -197,17 +208,26 @@ watchThrottled(
   }
 );
 
-watch(value, async value => {
-  if (value) {
-    const mapping = await assetMapping([value]);
+const checkValue = async () => {
+  const val = get(value);
+  if (val) {
+    const mapping = await assetMapping([val]);
     set(assets, [
       ...get(assets),
       {
         identifier: value,
-        ...mapping[value]
+        ...mapping[val]
       }
     ]);
   }
+};
+
+onMounted(async () => {
+  await checkValue();
+});
+
+watch(value, async () => {
+  await checkValue();
 });
 </script>
 

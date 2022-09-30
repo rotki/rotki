@@ -23,6 +23,7 @@ import { ComputedRef, Ref } from 'vue';
 import { setupLiquidityPosition } from '@/composables/defi';
 import { truncateAddress } from '@/filters';
 import { api } from '@/services/rotkehlchen-api';
+import { useStatisticsApi } from '@/services/statistics/statistics-api';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useNftAssetInfoStore } from '@/store/assets/nft';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
@@ -57,12 +58,13 @@ export const assetsApi = (): AssetsApi => {
 export const statisticsApi = (): StatisticsApi => {
   const { isAssetIgnored } = useIgnoredAssetsStore();
   const { fetchNetValue, getNetValue } = useStatisticsStore();
+  const statsApi = useStatisticsApi();
   return {
     async assetValueDistribution(): Promise<TimedAssetBalances> {
-      return api.queryLatestAssetValueDistribution();
+      return statsApi.queryLatestAssetValueDistribution();
     },
     async locationValueDistribution(): Promise<LocationData> {
-      return api.queryLatestLocationValueDistribution();
+      return statsApi.queryLatestLocationValueDistribution();
     },
     async ownedAssets(): Promise<OwnedAssets> {
       const owned = await api.assets.queryOwnedAssets();
@@ -73,7 +75,7 @@ export const statisticsApi = (): StatisticsApi => {
       start: number,
       end: number
     ): Promise<TimedBalances> {
-      return api.queryTimedBalancesData(asset, start, end);
+      return statsApi.queryTimedBalancesData(asset, start, end);
     },
     async fetchNetValue(): Promise<void> {
       await fetchNetValue();

@@ -11,9 +11,7 @@ import {
   AaveLendingEventType,
   isAaveLiquidationEvent
 } from '@rotki/common/lib/defi/aave';
-import { get } from '@vueuse/core';
 import sortBy from 'lodash/sortBy';
-import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
 import { computed, ComputedRef } from 'vue';
 import { usePremium } from '@/composables/premium';
 import { truncateAddress } from '@/filters';

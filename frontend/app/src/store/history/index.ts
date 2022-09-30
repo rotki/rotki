@@ -2,7 +2,7 @@ import { set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore } from 'pinia';
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
-import { api } from '@/services/rotkehlchen-api';
+import { useHistoryIgnoringApi } from '@/services/history/history-ignoring-api';
 import { useAssetMovements } from '@/store/history/asset-movements';
 import { useAssociatedLocationsStore } from '@/store/history/associated-locations';
 import { useLedgerActions } from '@/store/history/ledger-actions';
@@ -22,9 +22,11 @@ export const useHistory = defineStore('history', () => {
   const { setMessage } = useMessageStore();
   const { t } = useI18n();
 
+  const api = useHistoryIgnoringApi();
+
   const fetchIgnored = async () => {
     try {
-      set(ignored, await api.history.fetchIgnored());
+      set(ignored, await api.fetchIgnored());
     } catch (e: any) {
       logger.error(e);
       const message = e?.message ?? e ?? '';

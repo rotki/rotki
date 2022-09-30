@@ -272,12 +272,32 @@ export default new Router({
       meta: {
         noteLocation: NoteLocation.ASSETS
       },
-      component: async () => import('../views/AssetManager.vue'),
-      props: route => ({ identifier: route.query.id ?? null })
+      component: async () => import('../views/assets/AssetManager.vue'),
+      children: [
+        {
+          path: '',
+          name: 'asset-manager',
+          redirect: Routes.ASSET_MANAGER_MANAGED.route
+        },
+        {
+          path: Routes.ASSET_MANAGER_MANAGED.route,
+          name: 'asset-manager-managed',
+          component: async () =>
+            import('../views/assets/ManagedAssetsManagement.vue'),
+          props: route => ({ identifier: route.query.id ?? null })
+        },
+        {
+          path: Routes.ASSET_MANAGER_CUSTOM.route,
+          name: 'asset-manager-custom',
+          component: async () =>
+            import('../views/assets/CustomAssetsManagement.vue'),
+          props: route => ({ identifier: route.query.id ?? null })
+        }
+      ]
     },
     {
       path: Routes.PRICE_MANAGER.route,
-      component: async () => import('../views/PriceManager.vue'),
+      component: async () => import('../views/prices/PriceManager.vue'),
       meta: {
         canNavigateBack: true,
         noteLocation: NoteLocation.PRICE_MANAGER
