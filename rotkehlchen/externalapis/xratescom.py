@@ -2,7 +2,7 @@ import logging
 from typing import Dict
 
 import requests
-from bs4 import BeautifulSoup, SoupStrainer
+from requests_html import HTMLSession
 
 from rotkehlchen.assets.asset import FiatAsset
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
@@ -26,57 +26,53 @@ def _scrape_xratescom_exchange_rates(url: str) -> Dict[FiatAsset, Price]:
     - RemoteError if we can't query x-rates.com
     """
     log.debug(f'Querying x-rates.com stats: {url}')
+    session = HTMLSession()
     prices = {}
     try:
-        response = requests.get(url=url, timeout=DEFAULT_TIMEOUT_TUPLE)
+        response = session.get(url=url, timeout=DEFAULT_TIMEOUT_TUPLE)
     except requests.exceptions.RequestException as e:
         raise RemoteError(f'x-rates.com request {url} failed due to {str(e)}') from e
+
+    session.close()
 
     if response.status_code != 200:
         raise RemoteError(
             f'x-rates.com request {url} failed with code: {response.status_code}'
             f' and response: {response.text}',
         )
+    response.html.render()
 
-    soup = BeautifulSoup(
-        response.text,
-        'html.parser',
-        parse_only=SoupStrainer('table', {'class': 'tablesorter ratesTable'}),
-    )
-    if soup is None:
-        raise RemoteError('Could not find <table> while parsing x-rates stats page')
     try:
-        tr = soup.table.tbody.tr
+        elements = response.html.find("table.tablesorter > tbody", first=True).find('tr')
     except AttributeError as e:
-        raise RemoteError('Could not find first <tr> while parsing x-rates.com page') from e
+        raise RemoteError('Could not find <table> while parsing x-rates stats page') from e
 
-    while tr is not None:
-        secondtd = tr.select('td:nth-of-type(2)')[0]
-        try:
-            href = secondtd.a['href']
-        except (AttributeError, KeyError) as e:
-            raise RemoteError('Could not find a href of 2nd td while parsing x-rates.com page') from e  # noqa: E501
+    for row in elements:
+        columns = row.find('td')
+        if len(columns) != 3:
+            raise RemoteError('Could not find proper row <td> while parsing x-rates stats page')
 
-        parts = href.split('to=')
+        link = columns[1].find('td > a', first=True)
+        if link is None or 'href' not in link.attrs:
+            raise RemoteError(f'Could not find <a href in {columns[1].html} while parsing x-rates.com page')  # noqa: E501
+
+        parts = link.attrs['href'].split('to=')
         if len(parts) != 2:
-            raise RemoteError(f'Could not find to= in {href} while parsing x-rates.com page')
+            raise RemoteError(f'Could not find to= in {link.attrs["href"]} while parsing x-rates.com page')  # noqa: E501
 
         try:
             to_asset = FiatAsset(parts[1])
         except UnknownAsset:
             log.debug(f'Skipping {parts[1]} asset because its not a known fiat asset while parsing x-rates.com page')  # noqa: E501
-            tr = tr.find_next_sibling()
             continue
 
         try:
-            price = deserialize_price(secondtd.a.text)
+            price = deserialize_price(columns[1].text)
         except DeserializationError as e:
             log.debug(f'Could not parse x-rates.com rate of {to_asset.identifier} due to {str(e)}. Skipping ...')  # noqa: E501
-            tr = tr.find_next_sibling()
             continue
 
         prices[to_asset] = price
-        tr = tr.find_next_sibling()
 
     return prices
 
