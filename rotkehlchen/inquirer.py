@@ -608,10 +608,7 @@ class Inquirer():
             token = asset.resolve_to_evm_token()
             if token.protocol is not None:
                 is_known_protocol = token.protocol in KnownProtocolsAssets
-            underlying_tokens = GlobalDBHandler().get_evm_token(  # type: ignore
-                token.evm_address,
-                chain=ChainID.ETHEREUM,
-            ).underlying_tokens
+            underlying_tokens = token.underlying_tokens
         except (UnknownAsset, WrongAssetType):
             pass
 
