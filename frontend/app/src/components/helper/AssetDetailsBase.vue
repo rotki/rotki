@@ -15,6 +15,7 @@
         :identifier="asset.identifier"
         :symbol="symbol"
         :name="name"
+        :chain="asset.evmChain"
       />
     </template>
   </list-item>
