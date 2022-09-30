@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 import requests
 
-from rotkehlchen.assets.asset import Asset, EvmToken, UnderlyingToken
+from rotkehlchen.assets.asset import Asset, CustomAsset, EvmToken, UnderlyingToken
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
@@ -22,6 +22,7 @@ from rotkehlchen.constants.assets import (
     A_USD,
 )
 from rotkehlchen.constants.resolver import ethaddress_to_identifier, evm_address_to_identifier
+from rotkehlchen.db.custom_assets import DBCustomAssets
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
@@ -451,3 +452,23 @@ def test_price_non_ethereum_evm_token(inquirer_defi, globaldb):
         # error is expected as token only exists on ethereum chain and uniswap
         # oracle only queries ethereum chain.
         inquirer_defi.find_usd_price(EvmToken(token.identifier))
+
+
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_price_for_custom_assets(inquirer, database, globaldb):
+    db_custom_assets = DBCustomAssets(database)
+    db_custom_assets.add_custom_asset(CustomAsset.initialize(
+        identifier='id',
+        name='my name',
+        custom_asset_type='oh my type',
+    ))
+    asset = Asset('id')
+    # check that inquirer doesn't fail if there is no price for a custom asset
+    assert inquirer.find_usd_price(asset) == ZERO
+    globaldb.add_manual_latest_price(
+        from_asset=asset,
+        to_asset=A_USD,
+        price=Price(FVal(10)),
+    )
+    inquirer.remove_cached_current_price_entry((asset, A_USD))
+    assert inquirer.find_usd_price(asset) == Price(FVal(10))

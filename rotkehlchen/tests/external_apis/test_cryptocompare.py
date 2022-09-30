@@ -318,5 +318,8 @@ def test_cryptocompare_query_with_api_key(cryptocompare):
     response = cryptocompare._api_query('v2/news/')
     assert response and isinstance(response, list)
     # call to endpoint with args
-    price = cryptocompare.query_current_price(A_ETH, A_USD)
+    price = cryptocompare.query_current_price(
+        from_asset=A_ETH.resolve_to_asset_with_oracles(),
+        to_asset=A_USD.resolve_to_asset_with_oracles(),
+    )
     assert price is not None
