@@ -410,12 +410,18 @@ class Inquirer():
         ), (
             'Inquirer should never be called before the setting the oracles'
         )
-        oracles = instance._oracles
-        oracle_instances = instance._oracle_instances
-
-        if skip_onchain:
-            oracles = instance._oracles_not_onchain
-            oracle_instances = instance._oracle_instances_not_onchain
+        if from_asset.is_asset_with_oracles() is True:
+            from_asset = from_asset.resolve_to_asset_with_oracles()
+            to_asset = to_asset.resolve_to_asset_with_oracles()
+            if skip_onchain:
+                oracles = instance._oracles_not_onchain
+                oracle_instances = instance._oracle_instances_not_onchain
+            else:
+                oracles = instance._oracles
+                oracle_instances = instance._oracle_instances
+        else:
+            oracles = [CurrentPriceOracle.MANUALCURRENT]
+            oracle_instances = [instance._manualcurrent]
 
         price = Price(ZERO)
         oracle_queried = CurrentPriceOracle.BLOCKCHAIN
@@ -428,8 +434,8 @@ class Inquirer():
 
             try:
                 price = oracle_instance.query_current_price(
-                    from_asset=from_asset,
-                    to_asset=to_asset,
+                    from_asset=from_asset,  # type: ignore  # type is guaranteed by the if above
+                    to_asset=to_asset,  # type: ignore  # type is guaranteed by the if above
                 )
             except (DefiPoolError, PriceQueryUnsupportedAsset, RemoteError) as e:
                 log.warning(

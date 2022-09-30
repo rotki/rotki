@@ -3,11 +3,10 @@ from typing import TYPE_CHECKING, Optional
 
 from web3.types import BlockIdentifier
 
-from rotkehlchen.assets.asset import Asset, AssetWithOracles, CryptoAsset
+from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.constants.assets import A_ALETH, A_ETH, A_WETH
 from rotkehlchen.constants.ethereum import SADDLE_ALETH_POOL
 from rotkehlchen.constants.misc import EXP18
-from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.price import PriceQueryUnsupportedAsset
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.interfaces import CurrentPriceOracleInterface
@@ -38,7 +37,7 @@ class SaddleOracle(CurrentPriceOracleInterface):
 
     def get_price(
         self,
-        from_asset: CryptoAsset,
+        from_asset: AssetWithOracles,
         to_asset: AssetWithOracles,
         block_identifier: BlockIdentifier,
     ) -> Price:
@@ -69,18 +68,18 @@ class SaddleOracle(CurrentPriceOracleInterface):
 
         return aleth_eth_price
 
-    def query_current_price(self, from_asset: Asset, to_asset: Asset) -> Price:
+    def query_current_price(
+            self,
+            from_asset: AssetWithOracles,
+            to_asset: AssetWithOracles,
+    ) -> Price:
         """At the moment until more pools get implemented this function is limited to ALETH
         Refer to the docstring of `get_price`.
         May raise:
         - PriceQueryUnsupportedAsset: If an asset not supported by saddle is used in the oracle
         """
-        try:
-            return self.get_price(
-                from_asset=from_asset.resolve_to_crypto_asset(),
-                to_asset=to_asset.resolve_to_asset_with_oracles(),
-                block_identifier='latest',
-            )
-        except (UnknownAsset, WrongAssetType) as e:
-            # Means that either from_asset or to_asset is not a crypto asset
-            raise PriceQueryUnsupportedAsset(e.identifier) from e
+        return self.get_price(
+            from_asset=from_asset,
+            to_asset=to_asset,
+            block_identifier='latest',
+        )

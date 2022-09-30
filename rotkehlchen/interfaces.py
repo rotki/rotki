@@ -1,7 +1,7 @@
 import abc
 from typing import Any, Dict, Optional
 
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.types import Price, Timestamp
 
 
@@ -21,7 +21,11 @@ class CurrentPriceOracleInterface(metaclass=abc.ABCMeta):
         ...
 
     @abc.abstractmethod
-    def query_current_price(self, from_asset: Asset, to_asset: Asset) -> Price:
+    def query_current_price(
+            self,
+            from_asset: AssetWithOracles,
+            to_asset: AssetWithOracles,
+    ) -> Price:
         """Returns the price from_asset to to_asset at the current timestamp
         for the current oracle
         """

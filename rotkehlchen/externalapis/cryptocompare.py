@@ -435,8 +435,8 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleInterface):
 
     def query_current_price(
             self,
-            from_asset: Asset,
-            to_asset: Asset,
+            from_asset: AssetWithOracles,
+            to_asset: AssetWithOracles,
             handling_special_case: bool = False,
     ) -> Price:
         """Returns the current price of an asset compared to another asset
@@ -445,11 +445,6 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleInterface):
         or with reading the response returned by the server
         - May raise PriceQueryUnsupportedAsset if from/to assets are not known to cryptocompare
         """
-        try:
-            from_asset = from_asset.resolve_to_asset_with_oracles()
-            to_asset = to_asset.resolve_to_asset_with_oracles()
-        except UnknownAsset as e:
-            raise PriceQueryUnsupportedAsset(e.identifier) from e
         special_asset = (
             from_asset.identifier in CRYPTOCOMPARE_SPECIAL_CASES or
             to_asset.identifier in CRYPTOCOMPARE_SPECIAL_CASES

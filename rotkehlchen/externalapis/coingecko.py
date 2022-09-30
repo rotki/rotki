@@ -503,7 +503,11 @@ class Coingecko(HistoricalPriceOracleInterface):
 
         return vs_currency
 
-    def query_current_price(self, from_asset: Asset, to_asset: Asset) -> Price:
+    def query_current_price(
+            self,
+            from_asset: AssetWithOracles,
+            to_asset: AssetWithOracles,
+    ) -> Price:
         """Returns a simple price for from_asset to to_asset in coingecko
 
         Uses the simple/price endpoint of coingecko. If to_asset is not part of the
@@ -513,11 +517,6 @@ class Coingecko(HistoricalPriceOracleInterface):
         May raise:
         - RemoteError if there is a problem querying coingecko
         """
-        try:
-            from_asset = from_asset.resolve_to_asset_with_oracles()
-            to_asset = to_asset.resolve_to_asset_with_oracles()
-        except UnknownAsset as e:
-            raise PriceQueryUnsupportedAsset(e.identifier) from e
         vs_currency = Coingecko.check_vs_currencies(
             from_asset=from_asset,
             to_asset=to_asset,

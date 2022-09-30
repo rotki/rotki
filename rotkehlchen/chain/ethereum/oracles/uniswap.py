@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, List, NamedTuple, Optional
 from eth_utils import to_checksum_address
 from web3.types import BlockIdentifier
 
-from rotkehlchen.assets.asset import Asset, CryptoAsset, EvmToken
+from rotkehlchen.assets.asset import AssetWithOracles, EvmToken
 from rotkehlchen.chain.ethereum.constants import ZERO_ADDRESS
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.contracts import EvmContract
@@ -21,7 +21,7 @@ from rotkehlchen.constants.ethereum import (
 )
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
-from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
+from rotkehlchen.errors.asset import WrongAssetType
 from rotkehlchen.errors.defi import DefiPoolError
 from rotkehlchen.errors.price import PriceQueryUnsupportedAsset
 from rotkehlchen.fval import FVal
@@ -186,8 +186,8 @@ class UniswapOracle(CurrentPriceOracleInterface, CacheableMixIn):
 
     def get_price(
         self,
-        from_asset: CryptoAsset,
-        to_asset: CryptoAsset,
+        from_asset: AssetWithOracles,
+        to_asset: AssetWithOracles,
         block_identifier: BlockIdentifier,
     ) -> Price:
         """
@@ -250,7 +250,11 @@ class UniswapOracle(CurrentPriceOracleInterface, CacheableMixIn):
         price = FVal(reduce(mul, [item.price for item in prices_and_tokens], 1))
         return Price(price)
 
-    def query_current_price(self, from_asset: Asset, to_asset: Asset) -> Price:
+    def query_current_price(
+            self,
+            from_asset: AssetWithOracles,
+            to_asset: AssetWithOracles,
+    ) -> Price:
         """
         This method gets the current price for two ethereum tokens finding a pool
         or a path of pools in the uniswap protocol. The special case of USD as asset
@@ -258,17 +262,9 @@ class UniswapOracle(CurrentPriceOracleInterface, CacheableMixIn):
         right now for pools.
         """
         if to_asset == A_USD:
-            to_asset = A_USDC
+            to_asset = A_USDC.resolve_to_asset_with_oracles()
         elif from_asset == A_USD:
-            from_asset = A_USDC
-
-        try:
-            to_asset = to_asset.resolve_to_crypto_asset()
-            from_asset = from_asset.resolve_to_crypto_asset()
-        except UnknownAsset as e:
-            raise PriceQueryUnsupportedAsset(e.identifier) from e
-        except WrongAssetType as e:
-            raise PriceQueryUnsupportedAsset(e.identifier) from e
+            from_asset = A_USDC.resolve_to_asset_with_oracles()
 
         return self.get_price(
             from_asset=from_asset,
