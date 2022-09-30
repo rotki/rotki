@@ -64,7 +64,8 @@ export type SupportedAsset = z.infer<typeof SupportedAsset>;
 
 export const AssetInfo = z.object({
   name: z.string().nullish(),
-  symbol: z.string().nullish()
+  symbol: z.string().nullish(),
+  evmChain: EvmChainEnum.nullish()
 });
 
 export type AssetInfo = z.infer<typeof AssetInfo>;

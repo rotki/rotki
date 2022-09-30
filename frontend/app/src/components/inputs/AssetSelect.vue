@@ -37,6 +37,8 @@
           size="40px"
           :identifier="item.identifier"
           :symbol="item.symbol"
+          :name="item.name"
+          :chain="item.evmChain"
         />
       </div>
       <v-list-item-content

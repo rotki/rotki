@@ -4,6 +4,21 @@
       <v-tooltip top open-delay="400" :disabled="noTooltip">
         <template #activator="{ on, attrs }">
           <div
+            v-if="chainIcon"
+            :class="{
+              [css.circle]: true,
+              [css.chain]: true
+            }"
+          >
+            <v-img
+              :src="chainIcon"
+              :width="chainIconSize"
+              :height="chainIconSize"
+              contain
+            />
+          </div>
+
+          <div
             v-bind="attrs"
             :style="styled"
             class="d-flex"
@@ -38,7 +53,10 @@
 
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
+import { EvmChain } from '@rotki/common/lib/data';
+import { PropType } from 'vue';
 import { api } from '@/services/rotkehlchen-api';
+import { getChainIcon } from '@/types/blockchain/chains';
 import { currencies } from '@/types/currencies';
 
 const AdaptiveWrapper = defineAsyncComponent(
@@ -53,6 +71,11 @@ const props = defineProps({
   symbol: { required: false, type: String, default: '' },
   name: { required: false, type: String, default: null },
   size: { required: true, type: String },
+  chain: {
+    required: false,
+    type: String as PropType<EvmChain | null>,
+    default: null
+  },
   changeable: { required: false, type: Boolean, default: false },
   styled: { required: false, type: Object, default: () => null },
   noTooltip: { required: false, type: Boolean, default: false },
@@ -60,8 +83,16 @@ const props = defineProps({
   circle: { required: false, type: Boolean, default: false },
   padding: { required: false, type: String, default: '2px' }
 });
-const { symbol, name, changeable, identifier, timestamp, padding, size } =
-  toRefs(props);
+const {
+  symbol,
+  name,
+  chain,
+  changeable,
+  identifier,
+  timestamp,
+  padding,
+  size
+} = toRefs(props);
 const error = ref<boolean>(false);
 
 const { t } = useI18n();
@@ -103,6 +134,15 @@ const url = computed<string>(() => {
   );
 });
 
+const chainIconSize = computed(() => `${(parseInt(get(size)) * 33) / 100}px`);
+const chainWrapperSize = computed(
+  () => `${parseInt(get(chainIconSize)) + 3}px`
+);
+const chainIconMargin = computed(() => `-${get(chainIconSize)}`);
+const chainIconTop = computed(() => {
+  return `${(parseInt(get(chainIconSize)) * 80) / 100}px`;
+});
+
 const placeholderStyle = computed(() => {
   let pad = get(padding);
   let width = get(size);
@@ -113,11 +153,24 @@ const placeholderStyle = computed(() => {
   };
 });
 
+const chainIcon = computed(() => getChainIcon(get(chain)));
+
 watch([symbol, changeable, identifier], () => set(error, false));
 </script>
 <style module lang="scss">
 .circle {
   border-radius: 50%;
   overflow: hidden;
+}
+
+.chain {
+  border: 1px solid rgb(200, 200, 200);
+  background-color: white;
+  position: relative;
+  margin-top: v-bind(chainIconMargin);
+  top: v-bind(chainIconTop);
+  width: v-bind(chainWrapperSize);
+  height: v-bind(chainWrapperSize);
+  z-index: 8;
 }
 </style>
