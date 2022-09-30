@@ -3002,6 +3002,7 @@ Get asset identifiers mappings
    :resjson string name: Name of the asset.
    :resjson string symbol: Symbol of the asset.
    :resjson string evm_chain: This value might not be included in all the results. Full name of the EVM chain where the asset is located if the asset is an EVM token.
+   :resjson string custom_asset_type: This value might not be included in all the results. It represents the custom asset type for a custom asset.
    :resjson bool is_custom_asset: A boolean to represent whether the asset is a custom asset or not.
    :statuscode 200: Assets successfully queried.
    :statuscode 400: One of the identifiers is not valid. Provided JSON is in some way malformed.
