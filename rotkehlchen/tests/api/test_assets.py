@@ -22,6 +22,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response,
     assert_proper_response_with_result,
 )
+from rotkehlchen.tests.utils.checks import assert_asset_result_order
 from rotkehlchen.tests.utils.constants import A_GNO, A_RDN
 from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2
 from rotkehlchen.tests.utils.mock import MockResponse
@@ -37,24 +38,6 @@ def mock_cryptoscamdb_request():
         return MockResponse(200, response)
 
     return patch('requests.get', side_effect=mock_requests_get)
-
-
-def assert_asset_result_order(
-        data: List,
-        is_ascending: bool,
-        order_field: str,
-) -> None:
-    """Asserts the ordering of the result received matches the query provided."""
-    last_entry = ''
-    for index, entry in enumerate(data):
-        if index == 0:
-            last_entry = entry[order_field]
-            continue
-        # the .casefold() is needed because the sorting is case-insensitive
-        if is_ascending is True:
-            assert entry[order_field].casefold() > last_entry.casefold()
-        else:
-            assert entry[order_field].casefold() < last_entry.casefold()
 
 
 def assert_substring_in_search_result(
