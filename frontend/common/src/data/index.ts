@@ -57,7 +57,8 @@ export const SupportedAsset = BaseAsset.extend({
   forked: z.string().nullish(),
   address: z.string().nullish(),
   underlyingTokens: z.array(UnderlyingToken).optional(),
-  protocol: z.string().nullish()
+  protocol: z.string().nullish(),
+  customAssetType: z.string().nullish()
 })
 
 export type SupportedAsset = z.infer<typeof SupportedAsset>;
@@ -65,7 +66,9 @@ export type SupportedAsset = z.infer<typeof SupportedAsset>;
 export const AssetInfo = z.object({
   name: z.string().nullish(),
   symbol: z.string().nullish(),
-  evmChain: EvmChainEnum.nullish()
+  evmChain: EvmChainEnum.nullish(),
+  isCustomAsset: z.boolean().nullish(),
+  customAssetType: z.string().nullish()
 });
 
 export type AssetInfo = z.infer<typeof AssetInfo>;

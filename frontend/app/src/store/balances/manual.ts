@@ -173,7 +173,7 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
         taskId,
         taskType,
         {
-          title: tc('actions.manual_balances.task.title'),
+          title: tc('actions.manual_balances.fetch.task.title'),
           numericKeys: []
         }
       );
@@ -204,7 +204,7 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
         taskId,
         taskType,
         {
-          title: tc('actions.manual_balances.task.title'),
+          title: tc('actions.manual_balances.add.task.title'),
           numericKeys: []
         }
       );
@@ -232,7 +232,7 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
         taskId,
         taskType,
         {
-          title: tc('actions.manual_balances.task.title'),
+          title: tc('actions.manual_balances.edit.task.title'),
           numericKeys: []
         }
       );

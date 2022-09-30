@@ -18,7 +18,7 @@ export const getCollectionResponseType = (obj: ZodTypeAny) => {
   return z.object({
     entries: z.array(obj),
     entriesFound: z.number(),
-    entriesLimit: z.number(),
+    entriesLimit: z.number().default(-1),
     entriesTotal: z.number()
   });
 };

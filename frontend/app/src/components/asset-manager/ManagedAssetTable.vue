@@ -4,7 +4,7 @@
       {{ tc('common.assets') }}
     </template>
     <template #subtitle>
-      {{ tc('asset_table.subtitle') }}
+      {{ tc('asset_table.managed.subtitle') }}
     </template>
     <template #actions>
       <v-row>
@@ -57,7 +57,6 @@
       item-key="identifier"
       sort-by="symbol"
       :sort-desc="false"
-      :search="search"
       :server-items-length="serverItemLength"
       :single-select="false"
       show-select
@@ -90,6 +89,7 @@
       </template>
       <template #item.actions="{ item }">
         <row-actions
+          v-if="item.type !== CUSTOM_ASSET"
           :edit-tooltip="tc('asset_table.edit_tooltip')"
           :delete-tooltip="tc('asset_table.delete_tooltip')"
           @edit-click="edit(item)"
@@ -128,6 +128,7 @@ import RowActions from '@/components/helper/RowActions.vue';
 import RowExpander from '@/components/helper/RowExpander.vue';
 import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import { useAssetFilter } from '@/composables/filters/assets';
+import { CUSTOM_ASSET } from '@/services/assets/consts';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useMessageStore } from '@/store/message';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
@@ -142,7 +143,7 @@ import { getAddressFromEvmIdentifier, isEvmIdentifier } from '@/utils/assets';
 import { uniqueStrings } from '@/utils/data';
 import { toSentenceCase } from '@/utils/text';
 
-const props = defineProps({
+defineProps({
   tokens: { required: true, type: Array as PropType<SupportedAsset[]> },
   loading: { required: false, type: Boolean, default: false },
   change: { required: true, type: Boolean },
@@ -156,13 +157,11 @@ const emit = defineEmits<{
   (e: 'update:pagination', pagination: AssetPagination): void;
 }>();
 
-const { tokens } = toRefs(props);
 const { itemsPerPage } = storeToRefs(useFrontendSettingsStore());
 const { filters, matchers, updateFilter } = useAssetFilter();
 
 const expanded: Ref<SupportedAsset[]> = ref([]);
 const selected: Ref<SupportedAsset[]> = ref([]);
-const search = ref<string>('');
 const onlyShowOwned = ref<boolean>(false);
 const hideIgnoredAssets = ref<boolean>(false);
 const options: Ref<AssetPaginationOptions> = ref(
@@ -233,10 +232,13 @@ const getAsset = (item: SupportedAsset) => {
     (isEvmIdentifier(item.identifier)
       ? getAddressFromEvmIdentifier(item.identifier)
       : item.identifier);
+
   return {
     name,
     symbol: item.symbol ?? '',
-    identifier: item.identifier
+    identifier: item.identifier,
+    isCustomAsset: item.type === CUSTOM_ASSET,
+    customAssetType: item.customAssetType ?? ''
   };
 };
 

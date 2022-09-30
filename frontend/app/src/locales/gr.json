@@ -586,8 +586,26 @@
       }
     },
     "manual_balances": {
-      "task": {
-        "title": "Retrieving manual balances"
+      "add": {
+        "error": {
+          "description": "Failed to add manual balance: {message}"
+        },
+        "task": {
+          "title": "Adding manual balances"
+        }
+      },
+      "edit": {
+        "error": {
+          "description": "Failed to edit manual balance: {message}"
+        },
+        "task": {
+          "title": "Editing manual balances"
+        }
+      },
+      "fetch": {
+        "task": {
+          "title": "Retrieving manual balances"
+        }
       }
     },
     "nft_balances": {
@@ -870,14 +888,17 @@
       "cryptocompare_hint": "The identifier of the asset on CryptoCompare. If not given, the symbol is assumed as default. If that does not work and if not otherwise set rotki will not be able to retrieve prices for the asset from CryptoCompare",
       "decimals": "Decimals",
       "forked": "Forked",
+      "notes": "Notes",
       "started": "Started",
       "swapped_for": "Swapped for",
       "symbol": "Symbol",
       "token_kind": "Token Kind"
     },
+    "name_non_empty": "The name of the asset cannot be empty",
     "optional": "Optional Fields",
     "oracle_disable": "Disable/Enable the price fetching from the price oracle. If the oracle is not disabled, and there is no value specified, rotki will attempt to fetch a price using the asset symbol.",
     "replaced": "This icon will be replaced with {name} on save.",
+    "type_non_empty": "The type of the asset cannot be empty",
     "types": {
       "error": "We could not load the asset types: {message}"
     },
@@ -900,16 +921,24 @@
       "message": "Are you sure you want to delete {asset} from the asset database?",
       "title": "Delete asset"
     },
+    "custom": {
+      "title": "Custom Assets"
+    },
     "delete_error": "Could not delete {address}: {message}",
     "edit_title": "Edit an asset",
+    "managed": {
+      "title": "Managed Assets"
+    },
     "merge_assets": "Merge Assets",
     "merge_assets_tooltip": "Merge two assets into one (can be used to migrate custom assets to officially supported ones)",
-    "sync_ignored_assets_list": "Sync the list of ignored assets",
-    "title": "Asset Management"
+    "sync_ignored_assets_list": "Sync the list of ignored assets"
   },
   "asset_table": {
     "copy_identifier": {
       "tooltip": "Copy the asset identifier to clipboard"
+    },
+    "custom": {
+      "subtitle": "Add, edit, remove custom assets. Changes in the assets will be reflected across all your accounts"
     },
     "delete_tooltip": "Delete the asset",
     "edit_tooltip": "Edit the asset",
@@ -917,9 +946,12 @@
       "started": "Started"
     },
     "hide_ignored_assets": "Hide ignored assets",
+    "managed": {
+      "subtitle": "Add, edit, remove tokens and assets. Changes in the assets will be reflected across all your accounts"
+    },
+    "notes": "Notes",
     "only_show_owned": "Only show owned assets",
     "selected": "{count} asset(s) selected",
-    "subtitle": "Add, edit, remove tokens and assets. Changes in the assets will be reflected across all your accounts",
     "underlying_tokens": "Underlying Tokens"
   },
   "asset_update": {
@@ -967,6 +999,14 @@
     "amount": "Total Owned",
     "backup": {
       "missing_directory": "Please select a directory"
+    },
+    "filter": {
+      "name": "Filter by the name of the asset",
+      "name_hint": "Search using the asset name",
+      "symbol": "Filter by the symbol of the asset",
+      "symbol_hint": "Search using the asset symbol",
+      "type": "Filter by the type of the custom asset",
+      "type_hint": "Search using the asset type"
     },
     "ignore": "Ignore Asset",
     "value": "Value"
@@ -2681,7 +2721,9 @@
   "manual_balances_form": {
     "fields": {
       "balance_type": "Balance Type",
+      "create_a_custom_asset": "Create a custom asset",
       "label": "Label",
+      "select_available_asset": "Select available assets",
       "tags": "Tags"
     },
     "type": {
@@ -2796,6 +2838,10 @@
     "import_data": "Εισαγωγή δεδομένων",
     "locations": "Locations",
     "manage_assets": "Manage Assets",
+    "manage_assets_sub": {
+      "custom_assets": "Custom Assets",
+      "managed_assets": "Managed Assets"
+    },
     "manage_eth_address_book": "Manage ETH Address Book",
     "manage_prices": "Manage Prices",
     "manage_prices_sub": {

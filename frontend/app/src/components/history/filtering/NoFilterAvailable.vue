@@ -50,7 +50,7 @@
         {{ t('no_filter_available.hint.example') }}
       </span>
     </div>
-    <div class="caption-text text--secondary text--lighten-2 ms-2">
+    <div class="caption-text text--secondary text--lighten-2 mt-2">
       {{ t('no_filter_available.hint_filter') }}
     </div>
   </div>

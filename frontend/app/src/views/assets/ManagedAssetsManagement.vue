@@ -1,7 +1,7 @@
 <template>
   <v-container>
     <refresh-header
-      :title="tc('asset_management.title')"
+      :title="tc('asset_management.managed.title')"
       :loading="loading"
       @refresh="refresh"
     />
@@ -32,7 +32,7 @@
 
     <merge-dialog v-model="mergeTool" />
 
-    <asset-table
+    <managed-asset-table
       class="mt-12"
       :tokens="assets"
       :loading="loading"
@@ -48,12 +48,12 @@
       :title="dialogTitle"
       subtitle=""
       :action-disabled="!validForm || saving"
-      :primary-action="'save'"
+      :primary-action="tc('common.actions.save')"
       :loading="saving"
       @confirm="save()"
       @cancel="closeDialog()"
     >
-      <asset-form
+      <managed-asset-form
         ref="form"
         v-model="validForm"
         :edit="asset"
@@ -75,9 +75,9 @@
 <script setup lang="ts">
 import { SupportedAsset } from '@rotki/common/lib/data';
 import { Ref } from 'vue';
-import AssetForm from '@/components/asset-manager/AssetForm.vue';
-import AssetTable from '@/components/asset-manager/AssetTable.vue';
 import IgnoreScamAssetsButton from '@/components/asset-manager/IgnoreScamAssetsButton.vue';
+import ManagedAssetForm from '@/components/asset-manager/ManagedAssetForm.vue';
+import ManagedAssetTable from '@/components/asset-manager/ManagedAssetTable.vue';
 import MergeDialog from '@/components/asset-manager/MergeDialog.vue';
 import RestoreAssetDbButton from '@/components/asset-manager/RestoreAssetDbButton.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
@@ -235,8 +235,4 @@ const refresh = async () => {
   set(assets, supportedAssets.entries);
   set(totalEntries, supportedAssets.entriesFound);
 };
-
-onMounted(async () => {
-  await refresh();
-});
 </script>

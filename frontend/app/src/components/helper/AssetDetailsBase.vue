@@ -3,8 +3,8 @@
     v-bind="$attrs"
     :class="opensDetails ? 'asset-details-base--link' : null"
     :dense="dense"
-    :title="symbol"
-    :subtitle="name"
+    :title="asset.isCustomAsset ? name : symbol"
+    :subtitle="asset.isCustomAsset ? asset.customAssetType : symbol"
     @click="navigate"
   >
     <template #icon>
@@ -16,6 +16,7 @@
         :symbol="symbol"
         :name="name"
         :chain="asset.evmChain"
+        :is-custom-asset="asset.isCustomAsset || false"
       />
     </template>
   </list-item>

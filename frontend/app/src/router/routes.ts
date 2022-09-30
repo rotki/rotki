@@ -162,6 +162,16 @@ export const routesRef = computed(() => ({
     icon: 'mdi-database-edit',
     text: i18n.t('navigation_menu.manage_assets').toString()
   },
+  ASSET_MANAGER_MANAGED: {
+    route: '/asset-manager/managed',
+    icon: 'mdi-database-edit',
+    text: i18n.t('navigation_menu.manage_assets_sub.managed_assets').toString()
+  },
+  ASSET_MANAGER_CUSTOM: {
+    route: '/asset-manager/custom',
+    icon: 'mdi-database-edit',
+    text: i18n.t('navigation_menu.manage_assets_sub.custom_assets').toString()
+  },
   PRICE_MANAGER: {
     route: '/price-manager',
     icon: 'mdi-chart-line',

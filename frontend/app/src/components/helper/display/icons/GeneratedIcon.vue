@@ -21,7 +21,7 @@ type Dimension = { value: number; unit: string };
 const props = defineProps({
   size: { required: true, type: String },
   backgroundColor: { required: false, type: String, default: '#fff' },
-  asset: { required: true, type: String },
+  asset: { required: false, type: String, default: '' },
   currency: { required: false, type: Boolean, default: false }
 });
 

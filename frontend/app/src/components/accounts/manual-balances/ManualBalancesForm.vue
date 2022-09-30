@@ -4,15 +4,13 @@
     :value="valid"
     :class="$style.form"
     data-cy="manual-balance-form"
-    @input="input"
   >
     <v-text-field
       v-model="label"
       class="manual-balances-form__label"
       outlined
       :label="tc('manual_balances_form.fields.label')"
-      :error-messages="errors['label']"
-      :rules="labelRules"
+      :error-messages="v$.label.$errors.map(e => e.$message)"
       :disabled="pending"
       @focus="delete errors['label']"
     />
@@ -23,16 +21,54 @@
       outlined
     />
 
+    <v-radio-group v-model="assetMethod" class="mt-0" row :disabled="pending">
+      <v-radio
+        :value="0"
+        :label="tc('manual_balances_form.fields.select_available_asset')"
+      />
+      <v-radio
+        :value="1"
+        :label="tc('manual_balances_form.fields.create_a_custom_asset')"
+      />
+    </v-radio-group>
+
     <asset-select
+      v-if="assetMethod === 0"
       v-model="asset"
       :label="tc('common.asset')"
-      :error-messages="errors['asset']"
       class="manual-balances-form__asset"
       outlined
-      :rules="assetRules"
+      :error-messages="v$.asset.$errors.map(e => get(e.$message))"
       :disabled="pending"
       @focus="delete errors['asset']"
     />
+
+    <v-row v-else>
+      <v-col class="col" md="6">
+        <v-text-field
+          v-model="customAssetName"
+          outlined
+          persistent-hint
+          clearable
+          :disabled="pending"
+          :error-messages="v$.customAssetName.$errors.map(e => e.$message)"
+          :label="t('common.name')"
+        />
+      </v-col>
+
+      <v-col class="col" md="6">
+        <v-text-field
+          v-model="customAssetType"
+          outlined
+          persistent-hint
+          clearable
+          :disabled="pending"
+          :error-messages="v$.customAssetType.$errors.map(e => e.$message)"
+          :label="t('common.type')"
+        />
+      </v-col>
+    </v-row>
+
     <amount-input
       v-model="amount"
       :label="tc('common.amount')"
@@ -41,7 +77,6 @@
       outlined
       autocomplete="off"
       :disabled="pending"
-      :rules="amountRules"
       @focus="delete errors['amount']"
     />
     <tag-input
@@ -64,7 +99,10 @@
 </template>
 
 <script setup lang="ts">
-import { PropType, Ref } from 'vue';
+import useVuelidate from '@vuelidate/core';
+import { helpers, required, requiredIf } from '@vuelidate/validators';
+import { get, set } from '@vueuse/core';
+import { PropType, Ref, watch } from 'vue';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import BalanceTypeInput from '@/components/inputs/BalanceTypeInput.vue';
@@ -72,11 +110,14 @@ import TagInput from '@/components/inputs/TagInput.vue';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import { BalanceType } from '@/services/balances/types';
 import { deserializeApiErrorMessage } from '@/services/converters';
+import { api } from '@/services/rotkehlchen-api';
 import { useBalancesStore } from '@/store/balances';
 import { useManualBalancesStore } from '@/store/balances/manual';
+import { useMessageStore } from '@/store/message';
 import { TradeLocation } from '@/types/history/trade-location';
 import { ManualBalance } from '@/types/manual-balances';
 import { bigNumberify } from '@/utils/bignumbers';
+import { toCapitalCase } from '@/utils/text';
 
 const props = defineProps({
   edit: {
@@ -91,16 +132,6 @@ const props = defineProps({
 const emit = defineEmits(['clear', 'input']);
 
 const { t, tc } = useI18n();
-
-const amountRules = [
-  (v: string) => !!v || tc('manual_balances_form.validation.amount')
-];
-const assetRules = [
-  (v: string) => !!v || tc('manual_balances_form.validation.asset')
-];
-const labelRules = [
-  (v: string) => !!v || tc('manual_balances_form.validation.label_empty')
-];
 
 const { edit, context } = toRefs(props);
 
@@ -129,8 +160,8 @@ const clear = () => {
   reset();
 };
 
-const input = (balance: ManualBalance) => {
-  emit('input', balance);
+const input = (value: boolean) => {
+  emit('input', value);
 };
 
 const setBalance = (balance: ManualBalance) => {
@@ -158,11 +189,28 @@ watch(
 const { editManualBalance, addManualBalance, manualLabels } =
   useManualBalancesStore();
 const { refreshPrices } = useBalancesStore();
+const { setMessage } = useMessageStore();
+
+const saveCustomAsset = async (): Promise<string | undefined> => {
+  let identifier: string | undefined = undefined;
+  try {
+    const id = await api.assets.addCustomAsset({
+      name: get(customAssetName),
+      customAssetType: get(customAssetType)
+    });
+    if (id) identifier = id;
+  } catch (e: any) {
+    setMessage({
+      description: tc('asset_management.add_error', 0, { message: e.message })
+    });
+  }
+
+  return identifier;
+};
 
 const save = async () => {
   set(pending, true);
-  const balance: Omit<ManualBalance, 'id'> = {
-    asset: get(asset),
+  const balance: Omit<ManualBalance, 'id' | 'asset'> = {
     amount: bigNumberify(get(amount)),
     label: get(label),
     tags: get(tags),
@@ -170,14 +218,27 @@ const save = async () => {
     balanceType: get(balanceType)
   };
 
-  const idVal = get(id);
+  let usedAsset: string = get(asset);
 
-  const status = await (get(edit) && idVal
-    ? editManualBalance({ ...balance, id: idVal })
-    : addManualBalance(balance));
+  if (get(assetMethod) === 1) {
+    const assetIdentifier = await saveCustomAsset();
+
+    if (assetIdentifier) {
+      usedAsset = assetIdentifier;
+    } else {
+      set(pending, false);
+      return false;
+    }
+  }
+
+  const idVal = get(id);
+  const isEdit = get(edit) && idVal;
+
+  const status = await (isEdit
+    ? editManualBalance({ ...balance, id: idVal, asset: usedAsset })
+    : addManualBalance({ ...balance, asset: usedAsset }));
 
   await refreshPrices(false);
-
   set(pending, false);
 
   if (status.success) {
@@ -187,7 +248,16 @@ const save = async () => {
 
   if (status.message) {
     const errorMessages = deserializeApiErrorMessage(status.message);
-    set(errors, (errorMessages?.balances[0] as any) ?? {});
+    if (errorMessages) {
+      set(errors, (errorMessages?.balances[0] as any) ?? {});
+    } else {
+      const obj = { message: status.message };
+      setMessage({
+        description: isEdit
+          ? tc('actions.manual_balances.edit.error.description', 0, obj)
+          : tc('actions.manual_balances.add.error.description', 0, obj)
+      });
+    }
   }
   return false;
 };
@@ -215,6 +285,65 @@ watch(label, label => {
     set(errors, data);
   }
 });
+
+const assetMethod = ref<number>(0);
+const customAssetName = ref<string>('');
+const customAssetType = ref<string>('');
+
+watch(customAssetType, type => {
+  set(customAssetType, toCapitalCase(type));
+});
+
+const rules = {
+  amount: {
+    required: helpers.withMessage(
+      tc('manual_balances_form.validation.amount'),
+      required
+    )
+  },
+  label: {
+    required: helpers.withMessage(
+      tc('manual_balances_form.validation.label_empty'),
+      required
+    )
+  },
+  asset: {
+    required: helpers.withMessage(
+      tc('manual_balances_form.validation.asset'),
+      requiredIf(() => get(assetMethod) === 0)
+    )
+  },
+  customAssetName: {
+    required: helpers.withMessage(
+      tc('asset_form.name_non_empty'),
+      requiredIf(() => get(assetMethod) === 1)
+    )
+  },
+  customAssetType: {
+    required: helpers.withMessage(
+      tc('asset_form.type_non_empty'),
+      requiredIf(() => get(assetMethod) === 1)
+    )
+  }
+};
+
+const v$ = useVuelidate(
+  rules,
+  {
+    amount,
+    asset,
+    label,
+    customAssetName,
+    customAssetType
+  },
+  { $autoDirty: true, $externalResults: errors }
+);
+
+watch(v$, ({ $invalid }) => {
+  set(valid, !$invalid);
+});
+
+watch(valid, value => input(value));
 
 defineExpose({
   save
