@@ -330,9 +330,9 @@ class GlobalDBHandler():
     def search_assets(
             filter_query: 'AssetsFilterQuery',
             db: 'DBHandler',
-    ) -> List[Dict[str, Optional[str]]]:
+    ) -> List[Dict[str, Any]]:
         """Returns a list of asset details that match the search query provided."""
-        search_result: List[Dict[str, Optional[str]]] = []
+        search_result = []
         query, bindings = GlobalDBHandler()._prepare_search_assets_query(filter_query)  # noqa:E501
         resolved_eth = A_ETH.resolve_to_crypto_asset()
         with db.conn.read_ctx() as cursor, GlobalDBHandler().conn.read_ctx() as global_db_cursor:
@@ -346,6 +346,7 @@ class GlobalDBHandler():
                             'identifier': resolved_eth.identifier,
                             'name': resolved_eth.name,
                             'symbol': resolved_eth.symbol,
+                            'is_custom_asset': False,
                         })
                         found_eth = True
                     continue
@@ -354,9 +355,12 @@ class GlobalDBHandler():
                     'identifier': entry[0],
                     'name': entry[1],
                     'symbol': entry[2],
+                    'is_custom_asset': AssetType.deserialize_from_db(entry[4]) == AssetType.CUSTOM_ASSET,  # noqa: E501
                 }
                 if entry[3] is not None:
                     entry_info['evm_chain'] = ChainID.deserialize_from_db(entry[3]).serialize()
+                if entry[5] is not None:
+                    entry_info['custom_asset_type'] = entry[5]
 
                 search_result.append(entry_info)
         return search_result
@@ -367,9 +371,9 @@ class GlobalDBHandler():
             db: 'DBHandler',
             substring_search: str,
             limit: Optional[int],
-    ) -> List[Dict[str, Optional[str]]]:
+    ) -> List[Dict[str, Any]]:
         """Returns a list of asset details that match the search keyword using the Levenshtein distance approach."""  # noqa: E501
-        search_result: List[Dict[str, Optional[str]]] = []
+        search_result = []
         levenshtein_distances: List[int] = []
         query, bindings = GlobalDBHandler()._prepare_search_assets_query(filter_query)  # noqa:E501
         resolved_eth = A_ETH.resolve_to_crypto_asset()
@@ -406,6 +410,7 @@ class GlobalDBHandler():
                             'identifier': resolved_eth.identifier,
                             'name': resolved_eth.name,
                             'symbol': resolved_eth.symbol,
+                            'is_custom_asset': False,
                         })
                         levenshtein_distances.append(lev_dist_min)
                         found_eth = True
@@ -415,9 +420,13 @@ class GlobalDBHandler():
                     'identifier': entry[0],
                     'name': entry[1],
                     'symbol': entry[2],
+                    'is_custom_asset': AssetType.deserialize_from_db(entry[4]) == AssetType.CUSTOM_ASSET,  # noqa: E501
                 }
                 if entry[3] is not None:
                     entry_info['evm_chain'] = ChainID.deserialize_from_db(entry[3]).serialize()
+                if entry[5] is not None:
+                    entry_info['custom_asset_type'] = entry[5]
+
                 search_result.append(entry_info)
                 levenshtein_distances.append(lev_dist_min)
 
@@ -428,9 +437,10 @@ class GlobalDBHandler():
     def _prepare_search_assets_query(filter_query: 'AssetsFilterQuery') -> Tuple[str, list]:
         query, bindings = filter_query.prepare()
         parent_query = """
-        SELECT assets.identifier, name, symbol, chain FROM assets
+        SELECT assets.identifier, name, symbol, chain, assets.type, custom_assets.type FROM assets
         LEFT JOIN common_asset_details on assets.identifier = common_asset_details.identifier
         LEFT JOIN evm_tokens ON evm_tokens.identifier= assets.identifier
+        LEFT JOIN custom_assets ON custom_assets.identifier= assets.identifier
         """
         query = parent_query + query
         return query, bindings
