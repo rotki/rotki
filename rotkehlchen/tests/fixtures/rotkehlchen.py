@@ -11,6 +11,7 @@ from rotkehlchen.data_migrations.migrations.migration_4 import read_and_write_no
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.db.upgrade_manager import DBUpgradeManager
 from rotkehlchen.exchanges.manager import EXCHANGES_WITH_PASSPHRASE
+from rotkehlchen.externalapis.session import GlobalRequestsHTML
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.premium.premium import Premium, PremiumCredentials
 from rotkehlchen.rotkehlchen import Rotkehlchen
@@ -30,6 +31,11 @@ from rotkehlchen.tests.utils.factories import make_random_b64bytes
 from rotkehlchen.tests.utils.history import maybe_mock_historical_price_queries
 from rotkehlchen.tests.utils.substrate import wait_until_all_substrate_nodes_connected
 from rotkehlchen.types import AVAILABLE_MODULES_MAP, Location
+
+
+@pytest.fixture(autouse=True, scope='session', name='global_requests_html')
+def fixture_global_requests_html() -> GlobalRequestsHTML:
+    return GlobalRequestsHTML()
 
 
 @pytest.fixture(name='max_tasks_num')

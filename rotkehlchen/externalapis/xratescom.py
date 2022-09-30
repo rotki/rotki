@@ -2,7 +2,6 @@ import logging
 from typing import Dict
 
 import requests
-from requests_html import HTMLSession
 
 from rotkehlchen.assets.asset import FiatAsset
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
@@ -13,6 +12,8 @@ from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Price, Timestamp
 from rotkehlchen.utils.misc import timestamp_to_date
+
+from .session import GlobalRequestsHTML
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -26,14 +27,11 @@ def _scrape_xratescom_exchange_rates(url: str) -> Dict[FiatAsset, Price]:
     - RemoteError if we can't query x-rates.com
     """
     log.debug(f'Querying x-rates.com stats: {url}')
-    session = HTMLSession()
     prices = {}
     try:
-        response = session.get(url=url, timeout=DEFAULT_TIMEOUT_TUPLE)
+        response = GlobalRequestsHTML().session().get(url=url, timeout=DEFAULT_TIMEOUT_TUPLE)
     except requests.exceptions.RequestException as e:
         raise RemoteError(f'x-rates.com request {url} failed due to {str(e)}') from e
-
-    session.close()
 
     if response.status_code != 200:
         raise RemoteError(

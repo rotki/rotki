@@ -6,6 +6,7 @@ import gevent
 
 from rotkehlchen.api.server import APIServer, RestAPI
 from rotkehlchen.args import app_args
+from rotkehlchen.externalapis.session import GlobalRequestsHTML
 from rotkehlchen.logging import TRACE, RotkehlchenLogsAdapter, add_logging_level, configure_logging
 from rotkehlchen.rotkehlchen import Rotkehlchen
 
@@ -32,6 +33,7 @@ class RotkehlchenServer():
         self.rotkehlchen = Rotkehlchen(self.args)
         self.stop_event = gevent.event.Event()
         domain_list = []
+        GlobalRequestsHTML()  # initialize the llobal requests_html session
         if self.args.api_cors:
             if "," in self.args.api_cors:
                 for domain in self.args.api_cors.split(","):
@@ -48,6 +50,7 @@ class RotkehlchenServer():
         log.debug('Shutdown initiated')
         self.api_server.stop()
         self.stop_event.set()
+        GlobalRequestsHTML().close()  # close the global requests_html session
 
     def main(self) -> None:
         # disable printing hub exceptions in stderr. With using the hub to do various
