@@ -198,8 +198,8 @@ class Sushiswap(AMMSwapPlatform, EthereumModule):
             lp_balances_mappings=protocol_balance.address_balances,
             protocol=CPT_SUSHISWAP_V2,
         )
-        known_assets = protocol_balance.known_assets
-        unknown_assets = protocol_balance.unknown_assets
+        known_assets = protocol_balance.known_tokens
+        unknown_assets = protocol_balance.unknown_tokens
         known_asset_price = self._get_known_asset_price(
             known_assets=known_assets,
             unknown_assets=unknown_assets,

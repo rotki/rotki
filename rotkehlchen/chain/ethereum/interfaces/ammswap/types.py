@@ -74,8 +74,8 @@ class ProtocolBalance(NamedTuple):
     Unknown assets are those we would have to try to query through uniswap directly
     """
     address_balances: AddressToLPBalances
-    known_assets: Set[EvmToken]
-    unknown_assets: Set[EvmToken]
+    known_tokens: Set[EvmToken]
+    unknown_tokens: Set[EvmToken]
 
 
 class EventType(Enum):

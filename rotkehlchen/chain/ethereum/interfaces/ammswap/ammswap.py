@@ -444,8 +444,8 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
         Each liquidity position is converted into a <LiquidityPool>.
         """
         address_balances: DDAddressToLPBalances = defaultdict(list)
-        known_assets: Set[EvmToken] = set()
-        unknown_assets: Set[EvmToken] = set()
+        known_tokens: Set[EvmToken] = set()
+        unknown_tokens: Set[EvmToken] = set()
 
         addresses_lower = [address.lower() for address in addresses]
         querystr = format_query_indentation(LIQUIDITY_POSITIONS_QUERY.format())
@@ -524,9 +524,9 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
                         decimals=int(token['decimals']),
                     )
                     if asset.has_oracle():
-                        known_assets.add(asset)
+                        known_tokens.add(asset)
                     else:
-                        unknown_assets.add(asset)
+                        unknown_tokens.add(asset)
 
                     # Estimate the underlying asset total_amount
                     asset_total_amount = FVal(token['total_amount'])
@@ -569,8 +569,8 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
 
         protocol_balance = ProtocolBalance(
             address_balances=dict(address_balances),
-            known_assets=known_assets,
-            unknown_assets=unknown_assets,
+            known_tokens=known_tokens,
+            unknown_tokens=unknown_tokens,
         )
         return protocol_balance
 

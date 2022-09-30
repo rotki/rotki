@@ -38,8 +38,8 @@ def uniswap_lp_token_balances(
         address: ChecksumEvmAddress,
         ethereum: 'EthereumManager',
         lp_addresses: List[ChecksumEvmAddress],
-        known_assets: Set[EvmToken],
-        unknown_assets: Set[EvmToken],
+        known_tokens: Set[EvmToken],
+        unknown_tokens: Set[EvmToken],
 ) -> List[LiquidityPool]:
     """Query uniswap token balances from ethereum chain
 
@@ -72,7 +72,7 @@ def uniswap_lp_token_balances(
         )
 
         for entry in result[1]:
-            balances.append(_decode_result(userdb, entry, known_assets, unknown_assets))
+            balances.append(_decode_result(userdb, entry, known_tokens, unknown_tokens))
 
     return balances
 

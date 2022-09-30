@@ -31,5 +31,5 @@ class UniswapV3ProtocolBalance(NamedTuple):
     Unknown assets are those we would have to try to query through uniswap directly.
     """
     address_balances: AddressToUniswapV3LPBalances
-    known_assets: Set[EvmToken]
-    unknown_assets: Set[EvmToken]
+    known_tokens: Set[EvmToken]
+    unknown_tokens: Set[EvmToken]

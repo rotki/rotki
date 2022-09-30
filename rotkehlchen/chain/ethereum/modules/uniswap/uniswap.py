@@ -87,8 +87,8 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
 
     def get_balances_chain(self, addresses: List[ChecksumEvmAddress]) -> ProtocolBalance:
         """Get the addresses' pools data via chain queries."""
-        known_assets: Set[EvmToken] = set()
-        unknown_assets: Set[EvmToken] = set()
+        known_tokens: Set[EvmToken] = set()
+        unknown_tokens: Set[EvmToken] = set()
         lp_addresses = get_latest_lp_addresses(self.data_directory)
 
         address_mapping = {}
@@ -98,23 +98,23 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
                 address=address,
                 ethereum=self.ethereum,
                 lp_addresses=lp_addresses,
-                known_assets=known_assets,
-                unknown_assets=unknown_assets,
+                known_tokens=known_tokens,
+                unknown_tokens=unknown_tokens,
             )
             if len(pool_balances) != 0:
                 address_mapping[address] = pool_balances
 
         protocol_balance = ProtocolBalance(
             address_balances=address_mapping,
-            known_assets=known_assets,
-            unknown_assets=unknown_assets,
+            known_tokens=known_tokens,
+            unknown_tokens=unknown_tokens,
         )
         return protocol_balance
 
     def get_v3_balances_chain(self, addresses: List[ChecksumEvmAddress]) -> UniswapV3ProtocolBalance:  # noqa: 501
         """Get the addresses' Uniswap V3 pools data via chain queries."""
-        price_known_assets: Set[EvmToken] = set()
-        price_unknown_assets: Set[EvmToken] = set()
+        price_known_tokens: Set[EvmToken] = set()
+        price_unknown_tokens: Set[EvmToken] = set()
 
         address_mapping = {}
         for address in addresses:
@@ -123,16 +123,16 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
                 address=address,
                 msg_aggregator=self.msg_aggregator,
                 ethereum=self.ethereum,
-                price_known_assets=price_known_assets,
-                price_unknown_assets=price_unknown_assets,
+                price_known_tokens=price_known_tokens,
+                price_unknown_tokens=price_unknown_tokens,
             )
             if len(pool_balances) != 0:
                 address_mapping[address] = pool_balances
 
         protocol_balance = UniswapV3ProtocolBalance(
             address_balances=address_mapping,
-            known_assets=price_known_assets,
-            unknown_assets=price_unknown_assets,
+            known_tokens=price_known_tokens,
+            unknown_tokens=price_unknown_tokens,
         )
         return protocol_balance
 
@@ -271,8 +271,8 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
             lp_balances_mappings=protocol_balance.address_balances,
             protocol=CPT_UNISWAP_V2,
         )
-        known_assets = protocol_balance.known_assets
-        unknown_assets = protocol_balance.unknown_assets
+        known_assets = protocol_balance.known_tokens
+        unknown_assets = protocol_balance.unknown_tokens
 
         known_asset_price = self._get_known_asset_price(
             known_assets=known_assets,
@@ -297,8 +297,8 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
     ) -> AddressToUniswapV3LPBalances:
         """Get the addresses' balances in the Uniswap V3 protocol."""
         protocol_balance = self.get_v3_balances_chain(addresses)
-        known_assets = protocol_balance.known_assets
-        unknown_assets = protocol_balance.unknown_assets
+        known_assets = protocol_balance.known_tokens
+        unknown_assets = protocol_balance.unknown_tokens
         known_asset_price = self._get_known_asset_price(
             known_assets=known_assets,
             unknown_assets=unknown_assets,
@@ -307,7 +307,7 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
         unknown_asset_price: AssetToPrice = {}
         unknown_asset_price = get_unknown_asset_price_chain(
             ethereum=self.ethereum,
-            unknown_assets=unknown_assets,
+            unknown_tokens=unknown_assets,
         )
 
         update_asset_price_in_uniswap_v3_lp_balances(
