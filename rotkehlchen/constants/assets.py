@@ -1,8 +1,4 @@
-from typing import List
-
-from rotkehlchen.assets.asset import Asset, AssetWithOracles
-
-CONSTANT_ASSETS: List[AssetWithOracles] = []
+from rotkehlchen.assets.asset import Asset
 
 A_USD = Asset('USD')
 A_EUR = Asset('EUR')
