@@ -594,16 +594,6 @@ class EthereumManager():
 
         return BlockNumber(block_number)
 
-    def get_eth_balance(self, account: ChecksumEvmAddress) -> FVal:
-        """Gets the balance of the given account in ETH
-
-        May raise:
-        - RemoteError if Etherscan is used and there is a problem querying it or
-        parsing its response
-        """
-        result = self.get_multieth_balance([account])
-        return result[account]
-
     def get_multieth_balance(
             self,
             accounts: List[ChecksumEvmAddress],

@@ -43,10 +43,6 @@ INFURA_TEST = random.choice([
 ])
 ALCHEMY_TEST = 'https://eth-mainnet.alchemyapi.io/v2/ga1GtB7R26UgzjextaVpbaWZ49nSi2zt'
 
-ETHERSCAN_PARAMS: Tuple[str, List[Tuple]] = ('ethereum_manager_connect_at_start, call_order', [  # noqa: E501
-    ((), (ETHERSCAN_NODE,)),
-])
-
 ETHERSCAN_AND_INFURA_PARAMS: Tuple[str, List[Tuple]] = ('ethereum_manager_connect_at_start, call_order', [  # noqa: E501
     ((), (ETHERSCAN_NODE,)),
     (

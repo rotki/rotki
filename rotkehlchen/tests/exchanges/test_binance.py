@@ -159,21 +159,6 @@ def test_trade_from_binance(function_scope_binance):
         assert isinstance(our_trade.fee_currency, Asset)
 
 
-exchange_info_mock_text = '''{
-  "timezone": "UTC",
-  "serverTime": 1508631584636,
-  "symbols": [{
-    "symbol": "ETHBTC",
-    "status": "TRADING",
-    "baseAsset": "ETH",
-    "baseAssetPrecision": 8,
-    "quoteAsset": "BTC",
-    "quotePrecision": 8,
-    "icebergAllowed": false
-    }]
-}'''
-
-
 def test_binance_assets_are_known(inquirer):  # pylint: disable=unused-argument
     unsupported_assets = set(UNSUPPORTED_BINANCE_ASSETS)
     common_items = unsupported_assets.intersection(set(WORLD_TO_BINANCE.values()))

@@ -1677,12 +1677,6 @@ class RequiredEthereumAddressSchema(Schema):
     chain = SerializableEnumField(enum_class=ChainID, required=True)
 
 
-class EvmTokenInformationSchema(Schema):
-    address = EthereumAddressField(required=True)
-    chain = SerializableEnumField(enum_class=ChainID, required=True)
-    token_kind = SerializableEnumField(enum_class=EvmTokenKind, required=True)
-
-
 class OptionalEvmTokenInformationSchema(Schema):
     address = EthereumAddressField(required=False)
     chain = SerializableEnumField(enum_class=ChainID, required=False)

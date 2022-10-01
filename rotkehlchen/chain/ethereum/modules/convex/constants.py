@@ -1,6 +1,5 @@
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
 
-
 CPT_CONVEX = 'convex'
 
 BOOSTER = string_to_evm_address('0xF403C135812408BFbE8713b5A23a04b3D48AAE31')
@@ -35,9 +34,6 @@ CONVEX_ABRAS_HEX = {  # using set since we only need to check if an address is "
     b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xb6^\xde\x13E!\xf0\xef\xd4\xe9C\xc85\xf4P\x13}\xc6\xe8>',  # noqa: E501
     b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00;\xa2\x07\xc2Z'\x85$\xe1\xcc\x7f\xaa\xea\x95\x07S\x04\x90r\xa4",  # noqa: E501
 }
-
-# ABI that is used for all convex reward pools to get balances
-CONVEX_BALANCE_ABI = [{"inputs": [{"internalType": "address", "name": "account", "type": "address"}], "name": "balanceOf", "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}], "stateMutability": "view", "type": "function"}]  # noqa: E501
 
 
 CONVEX_POOLS = {  # mapping of pool rewards address: pool name
