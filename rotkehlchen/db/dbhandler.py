@@ -272,9 +272,6 @@ class DBHandler:
             self.update_owned_assets_in_globaldb(cursor)
             self.add_globaldb_assetids(cursor)
 
-    def __del__(self) -> None:
-        self.logout()
-
     def logout(self) -> None:
         if self.conn is not None:
             self.disconnect(conn_attribute='conn')
