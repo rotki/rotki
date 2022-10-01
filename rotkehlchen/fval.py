@@ -52,75 +52,82 @@ class FVal():
         return 'FVal({})'.format(str(self.num))
 
     def __gt__(self, other: AcceptableFValOtherInput) -> bool:
-        evaluated_other = evaluate_input(other)
+        evaluated_other = _evaluate_input(other)
         return self.num.compare_signal(evaluated_other) == Decimal('1')
 
     def __lt__(self, other: AcceptableFValOtherInput) -> bool:
-        evaluated_other = evaluate_input(other)
+        evaluated_other = _evaluate_input(other)
         return self.num.compare_signal(evaluated_other) == Decimal('-1')
 
     def __le__(self, other: AcceptableFValOtherInput) -> bool:
-        evaluated_other = evaluate_input(other)
+        evaluated_other = _evaluate_input(other)
         return self.num.compare_signal(evaluated_other) in (Decimal('-1'), Decimal('0'))
 
     def __ge__(self, other: AcceptableFValOtherInput) -> bool:
-        evaluated_other = evaluate_input(other)
+        evaluated_other = _evaluate_input(other)
         return self.num.compare_signal(evaluated_other) in (Decimal('1'), Decimal('0'))
 
     def __eq__(self, other: object) -> bool:
-        evaluated_other = evaluate_input(other)
+        evaluated_other: Union[Decimal, int]
+        if isinstance(other, FVal):
+            evaluated_other = other.num
+        elif not isinstance(other, int):
+            return False
+        else:
+            evaluated_other = other
+
         return self.num.compare_signal(evaluated_other) == Decimal('0')
 
     def __add__(self, other: AcceptableFValOtherInput) -> 'FVal':
-        evaluated_other = evaluate_input(other)
+        evaluated_other = _evaluate_input(other)
         return FVal(self.num.__add__(evaluated_other))
 
     def __sub__(self, other: AcceptableFValOtherInput) -> 'FVal':
-        evaluated_other = evaluate_input(other)
+        evaluated_other = _evaluate_input(other)
         return FVal(self.num.__sub__(evaluated_other))
 
     def __mul__(self, other: AcceptableFValOtherInput) -> 'FVal':
-        evaluated_other = evaluate_input(other)
+        evaluated_other = _evaluate_input(other)
         return FVal(self.num.__mul__(evaluated_other))
 
     def __truediv__(self, other: AcceptableFValOtherInput) -> 'FVal':
-        evaluated_other = evaluate_input(other)
+        evaluated_other = _evaluate_input(other)
         return FVal(self.num.__truediv__(evaluated_other))
 
     def __floordiv__(self, other: AcceptableFValOtherInput) -> 'FVal':
-        evaluated_other = evaluate_input(other)
+        evaluated_other = _evaluate_input(other)
         return FVal(self.num.__floordiv__(evaluated_other))
 
     def __pow__(self, other: AcceptableFValOtherInput) -> 'FVal':
-        evaluated_other = evaluate_input(other)
+        evaluated_other = _evaluate_input(other)
         return FVal(self.num.__pow__(evaluated_other))
 
     def __radd__(self, other: AcceptableFValOtherInput) -> 'FVal':
-        evaluated_other = evaluate_input(other)
+        evaluated_other = _evaluate_input(other)
         return FVal(self.num.__radd__(evaluated_other))
 
     def __rsub__(self, other: AcceptableFValOtherInput) -> 'FVal':
-        evaluated_other = evaluate_input(other)
+        evaluated_other = _evaluate_input(other)
         return FVal(self.num.__rsub__(evaluated_other))
 
     def __rmul__(self, other: AcceptableFValOtherInput) -> 'FVal':
-        evaluated_other = evaluate_input(other)
+        evaluated_other = _evaluate_input(other)
         return FVal(self.num.__rmul__(evaluated_other))
 
     def __rtruediv__(self, other: AcceptableFValOtherInput) -> 'FVal':
-        evaluated_other = evaluate_input(other)
+        evaluated_other = _evaluate_input(other)
         return FVal(self.num.__rtruediv__(evaluated_other))
 
     def __rfloordiv__(self, other: AcceptableFValOtherInput) -> 'FVal':
-        evaluated_other = evaluate_input(other)
+        evaluated_other = _evaluate_input(other)
         return FVal(self.num.__rfloordiv__(evaluated_other))
 
     def __mod__(self, other: AcceptableFValOtherInput) -> 'FVal':
-        evaluated_other = evaluate_input(other)
+        evaluated_other = _evaluate_input(other)
         return FVal(self.num.__mod__(evaluated_other))
 
     def __rmod__(self, other: AcceptableFValOtherInput) -> 'FVal':
-        evaluated_other = evaluate_input(other)
+        evaluated_other = _evaluate_input(other)
         return FVal(self.num.__rmod__(evaluated_other))
 
     def __float__(self) -> float:
@@ -141,8 +148,8 @@ class FVal():
         Fused multiply-add. Return self*other+third with no rounding of the
         intermediate product self*other
         """
-        evaluated_other = evaluate_input(other)
-        evaluated_third = evaluate_input(third)
+        evaluated_other = _evaluate_input(other)
+        evaluated_third = _evaluate_input(third)
         return FVal(self.num.fma(evaluated_other, evaluated_third))
 
     def to_percentage(self, precision: int = 4, with_perc_sign: bool = True) -> str:
@@ -170,7 +177,7 @@ class FVal():
         return diff_num <= evaluated_max_diff.num
 
 
-def evaluate_input(other: Any) -> Union[Decimal, int]:
+def _evaluate_input(other: Any) -> Union[Decimal, int]:
     """Evaluate 'other' and return its Decimal representation"""
     if isinstance(other, FVal):
         return other.num
