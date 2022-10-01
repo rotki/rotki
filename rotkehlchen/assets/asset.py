@@ -197,8 +197,8 @@ class Asset:
             return self.identifier.lower() == other.identifier.lower()
         if isinstance(other, str):
             return self.identifier.lower() == other.lower()
-        # else
-        raise NotImplementedError(f'Invalid comparison of asset with {type(other)}')
+
+        return False
 
     def __lt__(self, other: Union['Asset', str]) -> bool:
         if isinstance(other, Asset):
