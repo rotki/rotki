@@ -7,6 +7,7 @@ pytest-cov==3.0.0
 coverage==6.4.4
 psutil==5.9.1
 pytest-freezegun==0.4.2
+pytest-deadfixtures==2.2.1
 freezegun==1.2.2
 flaky==3.7.0
 
