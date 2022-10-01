@@ -1,7 +1,6 @@
 import pytest
 
 from rotkehlchen.exchanges.gemini import Gemini
-from rotkehlchen.tests.utils.exchanges import create_test_gemini
 
 SANDBOX_GEMINI_API_KEY = 'account-1eIn3XjiCdSZH2jizoNg'
 SANDBOX_GEMINI_API_SECRET = b'26NFMLWrVWf1TrHQtVExRFmBovnq'
@@ -9,24 +8,6 @@ SANDBOX_GEMINI_API_SECRET = b'26NFMLWrVWf1TrHQtVExRFmBovnq'
 # Key with wrong permissions (Trader instead of auditor)
 SANDBOX_GEMINI_WP_API_KEY = 'account-TDwgWRVnQqvsHDphwCUD'
 SANDBOX_GEMINI_WP_API_SECRET = b'2ohngowRpWc2qnXpFj1TEur9xoww'
-
-
-@pytest.fixture
-def mock_gemini(
-        database,
-        inquirer,  # pylint: disable=unused-argument
-        function_scope_messages_aggregator,
-        base_uri,
-):
-    gemini = create_test_gemini(
-        api_key='account-1aIn3XkiCdSZH2jiooMg',
-        api_secret=b'361FMLZrVWf2TrHPtVEmRFmBovyq',
-        database=database,
-        msg_aggregator=function_scope_messages_aggregator,
-        base_uri=base_uri,
-    )
-    gemini.first_connection_made = True
-    return gemini
 
 
 @pytest.fixture(name='gemini_sandbox_api_key')

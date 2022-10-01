@@ -699,6 +699,7 @@ def create_test_ftx(
     return mock
 
 
+# This function is dynamically used in rotkehlchen_api_server_with_exchanges
 def create_test_gemini(
         api_key,
         api_secret,
