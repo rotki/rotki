@@ -51,7 +51,8 @@ jobs:
           then
             COVERAGE_ARGS=''
           fi
-          python pytestgeventwrapper.py $COVERAGE_ARGS rotkehlchen/tests
+          PYTEST_ARGS='--durations=150'
+          python pytestgeventwrapper.py $PYTEST_ARGS $COVERAGE_ARGS rotkehlchen/tests  && python pytestgeventwrapper.py --dead-fixtures
       - name: Upload coverage
         run: bash ./.github/.codecov -F backend
 
