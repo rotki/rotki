@@ -930,7 +930,7 @@ class AssetsFilterQuery(DBFilterQuery):
             search_column: Optional[str] = None,
             asset_type: Optional[AssetType] = None,
             ignored_assets_identifiers: Optional[List[str]] = None,
-            user_owned_assets_identifiers: Optional[List[str]] = None,
+            identifiers: Optional[List[str]] = None,
             return_exact_matches: bool = False,
             evm_chain: Optional[ChainID] = None,
     ) -> 'AssetsFilterQuery':
@@ -978,11 +978,11 @@ class AssetsFilterQuery(DBFilterQuery):
                     field=search_column,
                     search_string=substring_search,
                 ))
-        if user_owned_assets_identifiers is not None:
+        if identifiers is not None:
             filters.append(DBMultiStringFilter(
                 and_op=True,
                 column='identifier',
-                values=user_owned_assets_identifiers,
+                values=identifiers,
             ))
         if ignored_assets_identifiers is not None:
             filters.append(DBMultiStringFilter(

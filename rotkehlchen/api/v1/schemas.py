@@ -1758,6 +1758,7 @@ class AssetsPostSchema(DBPaginationSchema, DBOrderBySchema):
     asset_type = SerializableEnumField(enum_class=AssetType, load_default=None)
     include_ignored_assets = fields.Boolean(load_default=True)
     show_user_owned_assets_only = fields.Boolean(load_default=False)
+    identifiers = DelimitedOrNormalList(fields.String(required=True), load_default=None)
 
     def __init__(self, db: 'DBHandler') -> None:
         super().__init__()
@@ -1783,14 +1784,15 @@ class AssetsPostSchema(DBPaginationSchema, DBOrderBySchema):
             **_kwargs: Any,
     ) -> Dict[str, Any]:
         ignored_assets_identifiers = None
-        user_owned_assets_identifiers = None
         with self.db.user_write() as write_cursor, GlobalDBHandler().conn.read_ctx() as globaldb_read_cursor:  # noqa: E501
             if data['include_ignored_assets'] is False:
                 ignored_assets_identifiers = [asset.identifier for asset in self.db.get_ignored_assets(write_cursor)]  # noqa: E501
 
             if data['show_user_owned_assets_only'] is True:
                 globaldb_read_cursor.execute('SELECT asset_id FROM user_owned_assets;')
-                user_owned_assets_identifiers = [entry[0] for entry in globaldb_read_cursor]
+                identifiers = [entry[0] for entry in globaldb_read_cursor]
+            else:
+                identifiers = data['identifiers']
 
             filter_query = AssetsFilterQuery.make(
                 and_op=True,
@@ -1803,10 +1805,10 @@ class AssetsPostSchema(DBPaginationSchema, DBOrderBySchema):
                 name=data['name'],
                 symbol=data['symbol'],
                 asset_type=data['asset_type'],
+                identifiers=identifiers,
                 ignored_assets_identifiers=ignored_assets_identifiers,
-                user_owned_assets_identifiers=user_owned_assets_identifiers,
             )
-        return {'filter_query': filter_query}
+        return {'filter_query': filter_query, 'identifiers': data['identifiers']}
 
 
 class AssetsSearchSchema(DBOrderBySchema, DBPaginationSchema):

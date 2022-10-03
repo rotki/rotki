@@ -692,8 +692,11 @@ class AllAssetsResource(BaseMethodView):
         )
 
     @resource_parser.use_kwargs(make_post_schema, location='json')
-    def post(self, filter_query: AssetsFilterQuery) -> Response:
-        return self.rest_api.query_all_assets(filter_query)
+    def post(self, filter_query: AssetsFilterQuery, identifiers: Optional[List[str]]) -> Response:
+        return self.rest_api.query_list_of_all_assets(
+            filter_query=filter_query,
+            identifiers=identifiers,
+        )
 
     @require_loggedin_user()
     @resource_parser.use_kwargs(make_add_schema, location='json')
