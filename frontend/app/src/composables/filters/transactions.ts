@@ -1,5 +1,5 @@
-import { Ref } from 'vue';
-import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
+import { ComputedRef, Ref } from 'vue';
+import { useAssetInfoApi } from '@/services/assets/info';
 import { useTransactions } from '@/store/history/transactions';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { MatchedKeyword, SearchMatcher } from '@/types/filtering';
@@ -19,27 +19,27 @@ enum TransactionFilterValueKeys {
   PROTOCOL = 'protocols'
 }
 
+type Filters = MatchedKeyword<TransactionFilterValueKeys>;
+type Matcher = SearchMatcher<TransactionFilterKeys, TransactionFilterValueKeys>;
+
 export const useTransactionFilter = () => {
-  const filters: Ref<MatchedKeyword<TransactionFilterValueKeys>> = ref({});
+  const filters: Ref<Filters> = ref({});
 
   const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
-  const { assetIdentifierForSymbol } = useAssetInfoRetrieval();
   const { counterparties } = storeToRefs(useTransactions());
-  const i18n = useI18n();
+  const { assetSearch } = useAssetInfoApi();
+  const { tc } = useI18n();
 
-  const matchers = computed<
-    SearchMatcher<TransactionFilterKeys, TransactionFilterValueKeys>[]
-  >(() => [
+  const matchers: ComputedRef<Matcher[]> = computed(() => [
     {
       key: TransactionFilterKeys.START,
       keyValue: TransactionFilterValueKeys.START,
-      description: i18n.t('transactions.filter.start_date').toString(),
+      description: tc('transactions.filter.start_date'),
+      string: true,
+      hint: tc('transactions.filter.date_hint', 0, {
+        format: getDateInputISOFormat(get(dateInputFormat))
+      }),
       suggestions: () => [],
-      hint: i18n
-        .t('transactions.filter.date_hint', {
-          format: getDateInputISOFormat(get(dateInputFormat))
-        })
-        .toString(),
       validate: value => {
         return (
           value.length > 0 &&
@@ -52,13 +52,12 @@ export const useTransactionFilter = () => {
     {
       key: TransactionFilterKeys.END,
       keyValue: TransactionFilterValueKeys.END,
-      description: i18n.t('transactions.filter.end_date').toString(),
+      description: tc('transactions.filter.end_date'),
+      string: true,
+      hint: tc('transactions.filter.date_hint', 0, {
+        format: getDateInputISOFormat(get(dateInputFormat))
+      }),
       suggestions: () => [],
-      hint: i18n
-        .t('transactions.filter.date_hint', {
-          format: getDateInputISOFormat(get(dateInputFormat))
-        })
-        .toString(),
       validate: value => {
         return (
           value.length > 0 &&
@@ -71,22 +70,22 @@ export const useTransactionFilter = () => {
     {
       key: TransactionFilterKeys.ASSET,
       keyValue: TransactionFilterValueKeys.ASSET,
-      description: i18n.t('transactions.filter.asset').toString(),
-      suggestions: () => [],
-      validate: () => true,
-      transformer: (asset: string) => assetIdentifierForSymbol(asset) ?? ''
+      description: tc('transactions.filter.asset'),
+      asset: true,
+      suggestions: async (value: string) => await assetSearch(value, 5)
     },
     {
       key: TransactionFilterKeys.PROTOCOL,
       keyValue: TransactionFilterValueKeys.PROTOCOL,
-      description: i18n.t('transactions.filter.protocol').toString(),
+      description: tc('transactions.filter.protocol'),
       multiple: true,
+      string: true,
       suggestions: () => get(counterparties),
       validate: (protocol: string) => !!protocol
     }
   ]);
 
-  const updateFilter = (newFilters: MatchedKeyword<TransactionFilterKeys>) => {
+  const updateFilter = (newFilters: Filters) => {
     set(filters, newFilters);
   };
 

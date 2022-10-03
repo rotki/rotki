@@ -3,70 +3,65 @@ import { useAssetInfoApi } from '@/services/assets/info';
 import { useAssociatedLocationsStore } from '@/store/history/associated-locations';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { MatchedKeyword, SearchMatcher } from '@/types/filtering';
-import { TradeType } from '@/types/history/trades';
+import { MovementCategory } from '@/types/history/movements';
 import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
 
-enum TradeFilterKeys {
-  BASE = 'base',
-  QUOTE = 'quote',
+enum AssetMovementFilterKeys {
+  LOCATION = 'location',
   ACTION = 'action',
+  ASSET = 'asset',
   START = 'start',
-  END = 'end',
-  LOCATION = 'location'
+  END = 'end'
 }
 
-enum TradeFilterValueKeys {
-  BASE = 'baseAsset',
-  QUOTE = 'quoteAsset',
-  ACTION = 'tradeType',
+enum AssetMovementFilterValueKeys {
+  LOCATION = 'location',
+  ACTION = 'action',
+  ASSET = 'asset',
   START = 'fromTimestamp',
-  END = 'toTimestamp',
-  LOCATION = 'location'
+  END = 'toTimestamp'
 }
 
-type Matcher = SearchMatcher<TradeFilterKeys, TradeFilterValueKeys>;
-type Filters = MatchedKeyword<TradeFilterValueKeys>;
+type Matcher = SearchMatcher<
+  AssetMovementFilterKeys,
+  AssetMovementFilterValueKeys
+>;
+type Filters = MatchedKeyword<AssetMovementFilterValueKeys>;
 
-export const useTradeFilters = () => {
+export const useAssetMovementFilters = () => {
   const filters: Ref<Filters> = ref({});
 
-  const { associatedLocations } = storeToRefs(useAssociatedLocationsStore());
+  const locationsStore = useAssociatedLocationsStore();
+  const { associatedLocations } = storeToRefs(locationsStore);
   const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
   const { assetSearch } = useAssetInfoApi();
   const { tc } = useI18n();
 
   const matchers: ComputedRef<Matcher[]> = computed(() => [
     {
-      key: TradeFilterKeys.BASE,
-      keyValue: TradeFilterValueKeys.BASE,
-      description: tc('closed_trades.filter.base_asset'),
+      key: AssetMovementFilterKeys.ASSET,
+      keyValue: AssetMovementFilterValueKeys.ASSET,
+      description: tc('deposit_withdrawals.filter.asset'),
       asset: true,
       suggestions: async (value: string) => await assetSearch(value, 5)
     },
     {
-      key: TradeFilterKeys.QUOTE,
-      keyValue: TradeFilterValueKeys.QUOTE,
-      description: tc('closed_trades.filter.quote_asset'),
-      asset: true,
-      suggestions: async (value: string) => await assetSearch(value, 5)
+      key: AssetMovementFilterKeys.ACTION,
+      keyValue: AssetMovementFilterValueKeys.ACTION,
+      description: tc('deposit_withdrawals.filter.action'),
+      string: true,
+      suggestions: () => MovementCategory.options,
+      validate: type => (MovementCategory.options as string[]).includes(type)
     },
     {
-      key: TradeFilterKeys.ACTION,
-      keyValue: TradeFilterValueKeys.ACTION,
-      description: tc('closed_trades.filter.trade_type'),
+      key: AssetMovementFilterKeys.START,
+      keyValue: AssetMovementFilterValueKeys.START,
+      description: tc('deposit_withdrawals.filter.start_date'),
       string: true,
-      suggestions: () => TradeType.options,
-      validate: type => (TradeType.options as string[]).includes(type)
-    },
-    {
-      key: TradeFilterKeys.START,
-      keyValue: TradeFilterValueKeys.START,
-      description: tc('closed_trades.filter.start_date'),
-      string: true,
-      suggestions: () => [],
-      hint: tc('closed_trades.filter.date_hint', 0, {
+      hint: tc('deposit_withdrawals.filter.date_hint', 0, {
         format: getDateInputISOFormat(get(dateInputFormat))
       }),
+      suggestions: () => [],
       validate: value => {
         return (
           value.length > 0 &&
@@ -77,14 +72,14 @@ export const useTradeFilters = () => {
         convertToTimestamp(date, get(dateInputFormat)).toString()
     },
     {
-      key: TradeFilterKeys.END,
-      keyValue: TradeFilterValueKeys.END,
-      description: tc('closed_trades.filter.end_date'),
-      string: true,
-      suggestions: () => [],
-      hint: tc('closed_trades.filter.date_hint', 0, {
+      key: AssetMovementFilterKeys.END,
+      keyValue: AssetMovementFilterValueKeys.END,
+      description: tc('deposit_withdrawals.filter.end_date'),
+      hint: tc('deposit_withdrawals.filter.date_hint', 0, {
         format: getDateInputISOFormat(get(dateInputFormat))
       }),
+      string: true,
+      suggestions: () => [],
       validate: value => {
         return (
           value.length > 0 &&
@@ -95,9 +90,9 @@ export const useTradeFilters = () => {
         convertToTimestamp(date, get(dateInputFormat)).toString()
     },
     {
-      key: TradeFilterKeys.LOCATION,
-      keyValue: TradeFilterValueKeys.LOCATION,
-      description: tc('closed_trades.filter.location'),
+      key: AssetMovementFilterKeys.LOCATION,
+      keyValue: AssetMovementFilterValueKeys.LOCATION,
+      description: tc('deposit_withdrawals.filter.location'),
       string: true,
       suggestions: () => get(associatedLocations),
       validate: location => get(associatedLocations).includes(location as any)

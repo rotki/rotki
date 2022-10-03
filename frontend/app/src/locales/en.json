@@ -2903,6 +2903,7 @@
       "example": "start: 26/05/2022"
     },
     "hint_filter": "The combined filters will be applied at the same time",
+    "no_suggestions": "No suggestions found for {search}",
     "title": "Available filters",
     "unsupported_filter": "Unsupported filter:"
   },

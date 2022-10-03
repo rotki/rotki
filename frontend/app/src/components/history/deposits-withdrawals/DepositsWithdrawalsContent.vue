@@ -31,7 +31,7 @@
           <div class="pb-sm-8">
             <table-filter
               :matchers="matchers"
-              @update:matches="updateFilterHandler($event)"
+              @update:matches="updateFilter($event)"
             />
           </div>
         </v-col>
@@ -122,7 +122,7 @@
   </card>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { dropRight } from 'lodash';
 import { PropType, Ref } from 'vue';
 import { DataTableHeader } from 'vuetify';
@@ -138,44 +138,23 @@ import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import { isSectionLoading } from '@/composables/common';
+import { useAssetMovementFilters } from '@/composables/filters/asset-movement';
 import { setupIgnore } from '@/composables/history';
 import { Routes } from '@/router/routes';
-import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useAssetMovements } from '@/store/history/asset-movements';
-import { useAssociatedLocationsStore } from '@/store/history/associated-locations';
 import {
   AssetMovementEntry,
   IgnoreActionType,
   TradeEntry
 } from '@/store/history/types';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { Collection } from '@/types/collection';
-import { MatchedKeyword, SearchMatcher } from '@/types/filtering';
 import {
   AssetMovement,
-  AssetMovementRequestPayload,
-  MovementCategory
+  AssetMovementRequestPayload
 } from '@/types/history/movements';
 import { TradeLocation } from '@/types/history/trade-location';
 import { Section } from '@/types/status';
 import { getCollectionData, setupEntryLimit } from '@/utils/collection';
-import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
-
-enum AssetMovementFilterKeys {
-  LOCATION = 'location',
-  ACTION = 'action',
-  ASSET = 'asset',
-  START = 'start',
-  END = 'end'
-}
-
-enum AssetMovementFilterValueKeys {
-  LOCATION = 'location',
-  ACTION = 'action',
-  ASSET = 'asset',
-  START = 'fromTimestamp',
-  END = 'toTimestamp'
-}
 
 type PaginationOptions = {
   page: number;
@@ -184,253 +163,152 @@ type PaginationOptions = {
   sortDesc: boolean[];
 };
 
-export default defineComponent({
-  name: 'DepositsWithdrawalsContent',
-  components: {
-    NavigatorLink,
-    BadgeDisplay,
-    TableFilter,
-    DepositWithdrawalDetails,
-    DataTable,
-    IgnoreButtons,
-    RefreshButton,
-    UpgradeRow,
-    AssetDetails,
-    LocationDisplay,
-    DateDisplay
-  },
-  props: {
-    locationOverview: {
-      required: false,
-      type: String as PropType<TradeLocation | ''>,
-      default: ''
-    }
-  },
-  emits: ['fetch'],
-  setup(props, { emit }) {
-    const { locationOverview } = toRefs(props);
-
-    const selected: Ref<AssetMovementEntry[]> = ref([]);
-    const expanded: Ref<TradeEntry[]> = ref([]);
-    const options: Ref<PaginationOptions | null> = ref(null);
-    const filters: Ref<MatchedKeyword<AssetMovementFilterValueKeys>> = ref({});
-
-    const fetch = (refresh: boolean = false) => emit('fetch', refresh);
-
-    const locationsStore = useAssociatedLocationsStore();
-    const assetMovementStore = useAssetMovements();
-    const { assetIdentifierForSymbol } = useAssetInfoRetrieval();
-
-    const { associatedLocations } = storeToRefs(locationsStore);
-    const { assetMovements } = storeToRefs(assetMovementStore);
-
-    const { updateAssetMovementsPayload } = assetMovementStore;
-
-    const { data, limit, found, total } = getCollectionData<AssetMovementEntry>(
-      assetMovements as Ref<Collection<AssetMovementEntry>>
-    );
-
-    const { itemLength, showUpgradeRow } = setupEntryLimit(limit, found, total);
-
-    const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
-
-    const { tc } = useI18n();
-
-    const tableHeaders = computed<DataTableHeader[]>(() => {
-      let overview = get(locationOverview);
-      const headers: DataTableHeader[] = [
-        {
-          text: '',
-          value: 'ignoredInAccounting',
-          sortable: false,
-          class: !overview ? 'pa-0' : 'pr-0',
-          cellClass: !overview ? 'pa-0' : 'pr-0'
-        },
-        {
-          text: tc('common.location'),
-          value: 'location',
-          width: '120px',
-          align: 'center'
-        },
-        {
-          text: tc('deposits_withdrawals.headers.action'),
-          value: 'category',
-          align: 'center',
-          class: `text-no-wrap ${overview ? 'pl-0' : ''}`,
-          cellClass: overview ? 'pl-0' : ''
-        },
-        {
-          text: tc('common.asset'),
-          value: 'asset',
-          sortable: false
-        },
-        {
-          text: tc('common.amount'),
-          value: 'amount',
-          align: 'end'
-        },
-        {
-          text: tc('deposits_withdrawals.headers.fee'),
-          value: 'fee',
-          align: 'end'
-        },
-        {
-          text: tc('common.datetime'),
-          value: 'timestamp'
-        },
-        { text: '', value: 'data-table-expand', sortable: false }
-      ];
-
-      if (overview) {
-        headers.splice(1, 1);
-      }
-
-      return headers;
-    });
-
-    const matchers = computed<
-      SearchMatcher<AssetMovementFilterKeys, AssetMovementFilterValueKeys>[]
-    >(() => [
-      {
-        key: AssetMovementFilterKeys.ASSET,
-        keyValue: AssetMovementFilterValueKeys.ASSET,
-        description: tc('deposit_withdrawals.filter.asset'),
-        suggestions: () => [],
-        validate: () => true,
-        transformer: (asset: string) => assetIdentifierForSymbol(asset) ?? ''
-      },
-      {
-        key: AssetMovementFilterKeys.ACTION,
-        keyValue: AssetMovementFilterValueKeys.ACTION,
-        description: tc('deposit_withdrawals.filter.action'),
-        suggestions: () => MovementCategory.options,
-        validate: type => (MovementCategory.options as string[]).includes(type)
-      },
-      {
-        key: AssetMovementFilterKeys.START,
-        keyValue: AssetMovementFilterValueKeys.START,
-        description: tc('deposit_withdrawals.filter.start_date'),
-        suggestions: () => [],
-        hint: tc('deposit_withdrawals.filter.date_hint', 0, {
-          format: getDateInputISOFormat(get(dateInputFormat))
-        }),
-        validate: value => {
-          return (
-            value.length > 0 &&
-            !isNaN(convertToTimestamp(value, get(dateInputFormat)))
-          );
-        },
-        transformer: (date: string) =>
-          convertToTimestamp(date, get(dateInputFormat)).toString()
-      },
-      {
-        key: AssetMovementFilterKeys.END,
-        keyValue: AssetMovementFilterValueKeys.END,
-        description: tc('deposit_withdrawals.filter.end_date'),
-        suggestions: () => [],
-        hint: tc('deposit_withdrawals.filter.date_hint', 0, {
-          format: getDateInputISOFormat(get(dateInputFormat))
-        }),
-        validate: value => {
-          return (
-            value.length > 0 &&
-            !isNaN(convertToTimestamp(value, get(dateInputFormat)))
-          );
-        },
-        transformer: (date: string) =>
-          convertToTimestamp(date, get(dateInputFormat)).toString()
-      },
-      {
-        key: AssetMovementFilterKeys.LOCATION,
-        keyValue: AssetMovementFilterValueKeys.LOCATION,
-        description: tc('deposit_withdrawals.filter.location'),
-        suggestions: () => get(associatedLocations),
-        validate: location => get(associatedLocations).includes(location as any)
-      }
-    ]);
-
-    const updatePayloadHandler = async () => {
-      let paginationOptions = {};
-      const optionsVal = get(options);
-      if (optionsVal) {
-        const { itemsPerPage, page, sortBy, sortDesc } = get(options)!;
-        const offset = (page - 1) * itemsPerPage;
-
-        paginationOptions = {
-          limit: itemsPerPage,
-          offset,
-          orderByAttributes: sortBy.length > 0 ? sortBy : ['timestamp'],
-          ascending:
-            sortDesc.length > 1
-              ? dropRight(sortDesc).map(bool => !bool)
-              : [false]
-        };
-      }
-
-      if (get(locationOverview)) {
-        filters.value.location = get(locationOverview) as TradeLocation;
-      }
-
-      const payload: Partial<AssetMovementRequestPayload> = {
-        ...(get(filters) as Partial<AssetMovementRequestPayload>),
-        ...paginationOptions
-      };
-
-      await updateAssetMovementsPayload(payload);
-    };
-
-    const updatePaginationHandler = async (
-      newOptions: PaginationOptions | null
-    ) => {
-      set(options, newOptions);
-      await updatePayloadHandler();
-    };
-
-    const updateFilterHandler = async (
-      newFilters: MatchedKeyword<AssetMovementFilterKeys>
-    ) => {
-      set(filters, newFilters);
-
-      let newOptions = null;
-      if (get(options)) {
-        newOptions = {
-          ...get(options)!,
-          page: 1
-        };
-      }
-
-      await updatePaginationHandler(newOptions);
-    };
-
-    const getId = (item: AssetMovementEntry) => item.identifier;
-
-    const pageRoute = Routes.HISTORY_DEPOSITS_WITHDRAWALS.route;
-
-    const getClass = (item: AssetMovementEntry) => {
-      return item.ignoredInAccounting ? 'darken-row' : '';
-    };
-
-    return {
-      pageRoute,
-      selected,
-      tableHeaders,
-      data,
-      limit,
-      found,
-      total,
-      itemLength,
-      fetch,
-      showUpgradeRow,
-      loading: isSectionLoading(Section.ASSET_MOVEMENT),
-      expanded,
-      options,
-      matchers,
-      updatePaginationHandler,
-      updateFilterHandler,
-      ...setupIgnore(IgnoreActionType.MOVEMENTS, selected, fetch, getId),
-      getClass,
-      tc
-    };
+const props = defineProps({
+  locationOverview: {
+    required: false,
+    type: String as PropType<TradeLocation | ''>,
+    default: ''
   }
 });
+
+const emit = defineEmits<{
+  (e: 'fetch', refresh: boolean): void;
+}>();
+
+const { locationOverview } = toRefs(props);
+
+const selected: Ref<AssetMovementEntry[]> = ref([]);
+const expanded: Ref<TradeEntry[]> = ref([]);
+const options: Ref<PaginationOptions | null> = ref(null);
+
+const { tc } = useI18n();
+
+const tableHeaders = computed<DataTableHeader[]>(() => {
+  let overview = get(locationOverview);
+  const headers: DataTableHeader[] = [
+    {
+      text: '',
+      value: 'ignoredInAccounting',
+      sortable: false,
+      class: !overview ? 'pa-0' : 'pr-0',
+      cellClass: !overview ? 'pa-0' : 'pr-0'
+    },
+    {
+      text: tc('common.location'),
+      value: 'location',
+      width: '120px',
+      align: 'center'
+    },
+    {
+      text: tc('deposits_withdrawals.headers.action'),
+      value: 'category',
+      align: 'center',
+      class: `text-no-wrap ${overview ? 'pl-0' : ''}`,
+      cellClass: overview ? 'pl-0' : ''
+    },
+    {
+      text: tc('common.asset'),
+      value: 'asset',
+      sortable: false
+    },
+    {
+      text: tc('common.amount'),
+      value: 'amount',
+      align: 'end'
+    },
+    {
+      text: tc('deposits_withdrawals.headers.fee'),
+      value: 'fee',
+      align: 'end'
+    },
+    {
+      text: tc('common.datetime'),
+      value: 'timestamp'
+    },
+    { text: '', value: 'data-table-expand', sortable: false }
+  ];
+
+  if (overview) {
+    headers.splice(1, 1);
+  }
+
+  return headers;
+});
+
+const assetMovementStore = useAssetMovements();
+const { assetMovements } = storeToRefs(assetMovementStore);
+const { updateAssetMovementsPayload } = assetMovementStore;
+
+const { data, limit, found, total } = getCollectionData<AssetMovementEntry>(
+  assetMovements as Ref<Collection<AssetMovementEntry>>
+);
+
+const { itemLength, showUpgradeRow } = setupEntryLimit(limit, found, total);
+
+const fetch = (refresh: boolean = false) => emit('fetch', refresh);
+
+const { ignore } = setupIgnore(
+  IgnoreActionType.MOVEMENTS,
+  selected,
+  fetch,
+  (item: AssetMovementEntry) => item.identifier
+);
+const { filters, matchers, updateFilter } = useAssetMovementFilters();
+const loading = isSectionLoading(Section.ASSET_MOVEMENT);
+
+const updatePayloadHandler = async () => {
+  let paginationOptions = {};
+  const optionsVal = get(options);
+  if (optionsVal) {
+    const { itemsPerPage, page, sortBy, sortDesc } = get(options)!;
+    const offset = (page - 1) * itemsPerPage;
+
+    paginationOptions = {
+      limit: itemsPerPage,
+      offset,
+      orderByAttributes: sortBy.length > 0 ? sortBy : ['timestamp'],
+      ascending:
+        sortDesc.length > 1 ? dropRight(sortDesc).map(bool => !bool) : [false]
+    };
+  }
+
+  if (get(locationOverview)) {
+    filters.value.location = get(locationOverview) as TradeLocation;
+  }
+
+  const payload: Partial<AssetMovementRequestPayload> = {
+    ...(get(filters) as Partial<AssetMovementRequestPayload>),
+    ...paginationOptions
+  };
+
+  await updateAssetMovementsPayload(payload);
+};
+
+const updatePaginationHandler = async (
+  newOptions: PaginationOptions | null
+) => {
+  set(options, newOptions);
+  await updatePayloadHandler();
+};
+
+const getClass = (item: AssetMovementEntry) => {
+  return item.ignoredInAccounting ? 'darken-row' : '';
+};
+
+watch(filters, async (filter, oldValue) => {
+  if (filter === oldValue) {
+    return;
+  }
+  let newOptions = null;
+  if (get(options)) {
+    newOptions = {
+      ...get(options)!,
+      page: 1
+    };
+  }
+
+  await updatePaginationHandler(newOptions);
+});
+
+const pageRoute = Routes.HISTORY_DEPOSITS_WITHDRAWALS.route;
 </script>

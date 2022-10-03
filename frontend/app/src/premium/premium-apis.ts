@@ -41,8 +41,7 @@ import { useStatisticsStore } from '@/store/statistics';
 import { One } from '@/utils/bignumbers';
 
 export const assetsApi = (): AssetsApi => {
-  const { assetInfo, assetSymbol, assetIdentifierForSymbol } =
-    useAssetInfoRetrieval();
+  const { assetInfo, assetSymbol } = useAssetInfoRetrieval();
 
   const { getNftDetails } = useNftAssetInfoStore();
   return {
@@ -50,8 +49,7 @@ export const assetsApi = (): AssetsApi => {
       const nft = get(getNftDetails(identifier)) as AssetInfo | null;
       return nft ?? get(assetInfo(identifier));
     },
-    assetSymbol: asset => get(assetSymbol(asset)),
-    getIdentifierForSymbol: assetIdentifierForSymbol
+    assetSymbol: asset => get(assetSymbol(asset))
   };
 };
 

@@ -19,6 +19,19 @@
     @keydown.down.prevent
     @keydown.down="moveSuggestion(false)"
   >
+    <template #selection="{ item, selected, select }">
+      <v-chip
+        label
+        small
+        class="font-weight-medium"
+        :input-value="selected"
+        close
+        @click:close="removeSelection(item)"
+        @click="select"
+      >
+        <suggested-item :suggestion="item" />
+      </v-chip>
+    </template>
     <template #no-data>
       <no-filter-available
         :matchers="matchers"
@@ -35,10 +48,13 @@
 </template>
 
 <script setup lang="ts">
+import { AssetInfo } from '@rotki/common/lib/data';
 import { PropType } from 'vue';
 import NoFilterAvailable from '@/components/history/filtering/NoFilterAvailable.vue';
+import SuggestedItem from '@/components/history/filtering/SuggestedItem.vue';
 import { MatchedKeyword, SearchMatcher, Suggestion } from '@/types/filtering';
 import { assert } from '@/utils/assertions';
+import { logger } from '@/utils/logging';
 import { splitSearch } from '@/utils/search';
 
 const props = defineProps({
@@ -54,29 +70,38 @@ const emit = defineEmits({
   }
 });
 
-const input = ref();
-const selection = ref<string[]>([]);
-const search = ref('');
-const validKeys = props.matchers.map(({ key }) => key);
-
 const { matchers } = toRefs(props);
 
-const matcherForKey = (searchKey: string | undefined) => {
-  return get(matchers).find(({ key }) => key === searchKey);
-};
+const input = ref();
+const selection = ref<Suggestion[]>([]);
+const search = ref('');
+const selectedSuggestion = ref(0);
+const suggestedFilter = ref<Suggestion>({
+  index: 0,
+  total: 0,
+  key: '',
+  value: ''
+});
+const validKeys = computed(() => get(matchers).map(({ key }) => key));
 
 const searchSuggestion = computed(() => {
   const searchKey = splitSearch(get(search));
-  const key = validKeys.find(value => value.startsWith(searchKey[0]));
+  const key = get(validKeys).find(value => value.startsWith(searchKey[0]));
   return matcherForKey(key) ?? null;
 });
 
-const usedKeys = computed(() =>
-  get(selection).map(entry => splitSearch(entry)[0])
-);
+const usedKeys = computed(() => get(selection).map(entry => entry.key));
 
-const onSelectionUpdate = (pairs: string[]) => {
+const onSelectionUpdate = (pairs: Suggestion[]) => {
   updateMatches(pairs);
+};
+
+const removeSelection = (suggestion: Suggestion) => {
+  updateMatches(get(selection).filter(sel => sel !== suggestion));
+};
+
+const matcherForKey = (searchKey: string | undefined) => {
+  return get(matchers).find(({ key }) => key === searchKey);
 };
 
 const appendToSearch = (key: string) => {
@@ -89,27 +114,45 @@ const appendToSearch = (key: string) => {
   get(input).focus();
 };
 
-function updateMatches(pairs: string[]) {
+function updateMatches(pairs: Suggestion[]) {
   const matched: Partial<MatchedKeyword<any>> = {};
-  const validPairs: string[] = [];
+  const validPairs: Suggestion[] = [];
+
   for (const entry of pairs) {
-    const [key, keyword] = splitSearch(entry);
+    const key = entry.key;
     const matcher = matcherForKey(key);
-    assert(matcher);
+    if (!matcher) {
+      continue;
+    }
 
-    if (matcher.validate(keyword)) {
-      validPairs.push(entry);
-      const valueKey = (matcher.keyValue || matcher.key) as string;
-      const transformedKeyword = matcher.transformer?.(keyword) || keyword;
-
-      if (matcher.multiple) {
-        if (!matched[valueKey]) {
-          matched[valueKey] = [];
-        }
-        (matched[valueKey] as string[]).push(transformedKeyword);
-      } else {
-        matched[valueKey] = transformedKeyword;
+    const valueKey = (matcher.keyValue || matcher.key) as string;
+    let transformedKeyword: string = '';
+    if ('validate' in matcher) {
+      if (typeof entry.value !== 'string') {
+        continue;
       }
+      if (matcher.validate(entry.value)) {
+        transformedKeyword = matcher.transformer?.(entry.value) || entry.value;
+      } else {
+        continue;
+      }
+    } else if (typeof entry.value !== 'string') {
+      transformedKeyword = entry.value.identifier;
+    }
+
+    if (!transformedKeyword) {
+      continue;
+    }
+
+    validPairs.push(entry);
+
+    if (matcher.multiple) {
+      if (!matched[valueKey]) {
+        matched[valueKey] = [];
+      }
+      (matched[valueKey] as string[]).push(transformedKeyword);
+    } else {
+      matched[valueKey] = transformedKeyword;
     }
   }
 
@@ -117,10 +160,10 @@ function updateMatches(pairs: string[]) {
   emit('update:matches', matched);
 }
 
-const applyFilter = (filter: string) => {
+const applyFilter = (filter: Suggestion) => {
   const newSelection = [...get(selection)];
-  const [key] = splitSearch(filter);
-  const index = newSelection.findIndex(value => splitSearch(value)[0] === key);
+  const key = filter.key;
+  const index = newSelection.findIndex(value => value.key === key);
   const matcher = matcherForKey(key);
   assert(matcher);
 
@@ -134,25 +177,34 @@ const applyFilter = (filter: string) => {
   set(search, '');
 };
 
-const selectedSuggestion = ref(0);
-const suggestedFilter = ref<Suggestion>({
-  index: 0,
-  total: 0,
-  suggestion: ''
-});
-const applySuggestion = () => {
+const applySuggestion = async () => {
   const filter = get(suggestedFilter);
-  const suggestion = filter.suggestion;
-  if (suggestion.length > 0) {
-    nextTick(() => {
-      applyFilter(suggestion);
-    });
+  if (filter.value) {
+    nextTick(() => applyFilter(filter));
   } else {
     const [key, keyword] = splitSearch(get(search));
     const matcher = matcherForKey(key);
-    if (matcher && matcher.suggestions().length === 0) {
-      if (matcher.validate(keyword)) {
-        nextTick(() => applyFilter(`${key}: ${keyword}`));
+    if (matcher) {
+      let suggestedItems: (AssetInfo | string)[] = [];
+      if ('string' in matcher) {
+        suggestedItems = matcher.suggestions();
+      } else if ('asset' in matcher) {
+        suggestedItems = await matcher.suggestions(keyword);
+      } else {
+        logger.debug('Matcher missing asset=true or string=true', matcher);
+      }
+
+      if (suggestedItems.length === 0) {
+        if ('validate' in matcher && matcher.validate(keyword)) {
+          nextTick(() =>
+            applyFilter({
+              key,
+              value: keyword,
+              index: 0,
+              total: 1
+            })
+          );
+        }
       }
     }
     if (!key) {

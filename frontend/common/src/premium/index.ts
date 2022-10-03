@@ -84,7 +84,6 @@ export type BalancesApi = {
 export type AssetsApi = {
   assetInfo(identifier: string): AssetInfo | null;
   assetSymbol(identifier: string): string;
-  getIdentifierForSymbol(symbol: string): string | undefined;
 };
 
 export type UtilsApi = {
