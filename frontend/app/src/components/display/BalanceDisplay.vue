@@ -10,7 +10,7 @@
     <div :class="`d-flex flex-column align-${align}`">
       <amount-display
         :loading-="!!!value"
-        :asset="symbol"
+        :asset="asset"
         :asset-padding="assetPadding"
         :value="value.amount"
         class="d-block font-weight-medium"
@@ -35,7 +35,6 @@
 import { Balance } from '@rotki/common';
 import { PropType } from 'vue';
 import AssetLink from '@/components/assets/AssetLink.vue';
-import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 
 const props = defineProps({
   asset: { required: true, type: String },
@@ -58,8 +57,6 @@ const props = defineProps({
 });
 
 const { asset } = toRefs(props);
-const { assetSymbol } = useAssetInfoRetrieval();
-const symbol = asyncComputed(() => assetSymbol(get(asset)));
 </script>
 
 <style module lang="scss">

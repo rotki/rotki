@@ -84,6 +84,7 @@ export type BalancesApi = {
 export type AssetsApi = {
   assetInfo(identifier: string): AssetInfo | null;
   assetSymbol(identifier: string): string;
+  tokenAddress(identifier: string): string;
 };
 
 export type UtilsApi = {

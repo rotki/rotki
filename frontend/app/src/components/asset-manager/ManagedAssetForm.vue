@@ -262,7 +262,6 @@
             <asset-icon
               v-if="preview"
               :identifier="preview"
-              :symbol="symbol"
               size="72px"
               changeable
               :timestamp="timestamp"
@@ -294,6 +293,7 @@ import {
   SupportedAsset,
   UnderlyingToken
 } from '@rotki/common/lib/data';
+import { omit } from 'lodash';
 import { ComputedRef, PropType } from 'vue';
 import UnderlyingTokenManager from '@/components/asset-manager/UnderlyingTokenManager.vue';
 import CopyButton from '@/components/helper/CopyButton.vue';
@@ -515,11 +515,15 @@ const saveEthereumToken = async () => {
 const saveAsset = async () => {
   let newIdentifier: string;
   const assetVal = get(asset);
+  const payload = {
+    ...omit(assetVal, ['decimals', 'address', 'chain', 'type', 'tokenKind']),
+    assetType: get(assetType)
+  };
   if (get(edit)) {
     newIdentifier = get(identifier);
-    await api.assets.editAsset({ ...assetVal, identifier: newIdentifier });
+    await api.assets.editAsset({ ...payload, identifier: newIdentifier });
   } else {
-    ({ identifier: newIdentifier } = await api.assets.addAsset(assetVal));
+    ({ identifier: newIdentifier } = await api.assets.addAsset(payload));
   }
   return newIdentifier;
 };

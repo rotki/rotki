@@ -15,7 +15,6 @@
 import { ComputedRef, PropType } from 'vue';
 import { useSectionLoading } from '@/composables/common';
 import { useBalancesStore } from '@/store/balances';
-import { useBalancePricesStore } from '@/store/balances/prices';
 import { useTasks } from '@/store/tasks';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
@@ -31,7 +30,6 @@ const props = defineProps({
 const { isTaskRunning } = useTasks();
 const { refreshPrices } = useBalancesStore();
 const { isSectionRefreshing } = useSectionLoading();
-const { fetchPrices } = useBalancePricesStore();
 
 const refreshing = isSectionRefreshing(Section.PRICES);
 
@@ -47,17 +45,7 @@ const loadingData = computed<boolean>(() => {
 const { assets } = toRefs(props);
 const refresh = async () => {
   const assetsVal = get(assets);
-  if (assetsVal === null) {
-    await refreshPrices(true);
-    return;
-  }
-
-  if (assetsVal.length > 0) {
-    await fetchPrices({
-      ignoreCache: true,
-      selectedAssets: [...assetsVal]
-    });
-  }
+  await refreshPrices(true, assetsVal);
 };
 
 const { t } = useI18n();

@@ -186,8 +186,7 @@ const refresh = async () => {
   await fetchLatestPrices();
 };
 
-const pricesStore = useBalancePricesStore();
-const { fetchPrices, getAssetPrice } = pricesStore;
+const { getAssetPrice } = useBalancePricesStore();
 
 const assets: ComputedRef<string[]> = computed(() => {
   return get(latestPrices)
@@ -196,7 +195,9 @@ const assets: ComputedRef<string[]> = computed(() => {
 });
 
 watch(assets, async assets => {
-  await fetchPrices({ selectedAssets: [...assets], ignoreCache: true });
+  if (assets.length > 0) {
+    await refreshPrices(false, [...assets]);
+  }
 });
 
 const filteredPrices = computed(() => {

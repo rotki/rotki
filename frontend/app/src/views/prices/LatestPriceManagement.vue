@@ -113,7 +113,7 @@ const managePrice = async (price: ManualPriceFormPayload, edit: boolean) => {
     if (!get(refreshing)) {
       set(refreshing, true);
     }
-    await refreshPrices(false);
+    await refreshPrices(false, [price.fromAsset, price.toAsset]);
   } catch (e: any) {
     const values = { message: e.message };
     const title = edit

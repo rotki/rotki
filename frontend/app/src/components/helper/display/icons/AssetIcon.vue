@@ -3,51 +3,53 @@
     <adaptive-wrapper :circle="circle" :padding="padding">
       <v-tooltip top open-delay="400" :disabled="noTooltip">
         <template #activator="{ on, attrs }">
-          <div
-            v-if="chainIcon"
-            :class="{
-              [css.circle]: true,
-              [css.chain]: true
-            }"
-          >
-            <v-img
-              :src="chainIcon"
-              :width="chainIconSize"
-              :height="chainIconSize"
-              contain
-            />
-          </div>
-
-          <div
-            v-bind="attrs"
-            :style="styled"
-            class="d-flex"
-            :class="{ [css.circle]: circle }"
-            v-on="on"
-          >
-            <v-icon
-              v-if="isCustomAsset"
-              :color="dark ? 'black' : 'gray'"
-              :size="size"
+          <div>
+            <div
+              v-if="chainIcon"
+              :class="{
+                [css.circle]: true,
+                [css.chain]: true
+              }"
             >
-              mdi-pencil-circle-outline
-            </v-icon>
-            <generated-icon
-              v-else-if="!!currency || error"
-              :asset="displayAsset ?? ''"
-              :currency="!!currency"
-              :size="size"
-            />
-            <v-img
-              v-else-if="!error"
-              :src="url"
-              :max-height="size"
-              :min-height="size"
-              :max-width="size"
-              :min-width="size"
-              contain
-              @error="error = true"
-            />
+              <v-img
+                :src="chainIcon"
+                :width="chainIconSize"
+                :height="chainIconSize"
+                contain
+              />
+            </div>
+
+            <div
+              v-bind="attrs"
+              :style="styled"
+              class="d-flex"
+              :class="{ [css.circle]: circle }"
+              v-on="on"
+            >
+              <v-icon
+                v-if="isCustomAsset"
+                :color="dark ? 'black' : 'gray'"
+                :size="size"
+              >
+                mdi-pencil-circle-outline
+              </v-icon>
+              <generated-icon
+                v-else-if="!!currency || error"
+                :asset="displayAsset ?? ''"
+                :currency="!!currency"
+                :size="size"
+              />
+              <v-img
+                v-else-if="!error"
+                :src="url"
+                :max-height="size"
+                :min-height="size"
+                :max-width="size"
+                :min-width="size"
+                contain
+                @load="error = false"
+              />
+            </div>
           </div>
         </template>
         <span>
@@ -60,10 +62,9 @@
 
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { EvmChain } from '@rotki/common/lib/data';
-import { PropType } from 'vue';
 import { useTheme } from '@/composables/common';
 import { api } from '@/services/rotkehlchen-api';
+import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { getChainIcon } from '@/types/blockchain/chains';
 import { currencies } from '@/types/currencies';
 
@@ -76,34 +77,26 @@ const GeneratedIcon = defineAsyncComponent(
 
 const props = defineProps({
   identifier: { required: true, type: String },
-  symbol: { required: false, type: String, default: '' },
-  name: { required: false, type: String, default: null },
-  isCustomAsset: { required: false, type: Boolean, default: false },
   size: { required: true, type: String },
-  chain: {
-    required: false,
-    type: String as PropType<EvmChain | null>,
-    default: null
-  },
   changeable: { required: false, type: Boolean, default: false },
   styled: { required: false, type: Object, default: () => null },
   noTooltip: { required: false, type: Boolean, default: false },
   timestamp: { required: false, type: Number, default: null },
   circle: { required: false, type: Boolean, default: false },
-  padding: { required: false, type: String, default: '2px' }
+  padding: { required: false, type: String, default: '2px' },
+  enableAssociation: { required: false, type: Boolean, default: true },
+  showChain: { required: false, type: Boolean, default: true }
 });
 const {
-  symbol,
-  name,
-  chain,
   changeable,
   identifier,
   timestamp,
   padding,
   size,
-  isCustomAsset
+  enableAssociation,
+  showChain
 } = toRefs(props);
-const error = ref<boolean>(false);
+const error = ref<boolean>(true);
 
 const { t } = useI18n();
 const css = useCssModule();
@@ -117,11 +110,19 @@ const currency = computed<string | undefined>(() => {
     ?.unicodeSymbol;
 });
 
+const { assetInfo } = useAssetInfoRetrieval();
+
+const asset = assetInfo(identifier, enableAssociation);
+const isCustomAsset = computed(() => get(asset)?.isCustomAsset);
+const chain = computed(() => get(asset)?.evmChain);
+const symbol = computed(() => get(asset)?.symbol);
+const name = computed(() => get(asset)?.name);
+
 const displayAsset = computed<string>(() => {
   if (get(error)) {
-    return get(symbol);
+    return get(symbol) || '';
   }
-  return get(currency) || get(identifier);
+  return get(currency) || get(identifier) || '';
 });
 
 const tooltip = computed(() => {
@@ -131,6 +132,7 @@ const tooltip = computed(() => {
       name: ''
     };
   }
+
   return {
     symbol: get(symbol),
     name: get(name)
@@ -171,9 +173,10 @@ const placeholderStyle = computed(() => {
   };
 });
 
-const chainIcon = computed(() => getChainIcon(get(chain)));
-
-watch([symbol, changeable, identifier], () => set(error, false));
+const chainIcon = computed(() =>
+  get(showChain) ? getChainIcon(get(chain)) : null
+);
+watch([symbol, changeable, identifier], () => set(error, true));
 
 const { dark } = useTheme();
 </script>

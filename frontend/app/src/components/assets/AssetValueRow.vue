@@ -11,7 +11,7 @@
             show-currency="symbol"
             fiat-currency="USD"
             tooltip
-            :price-asset="symbol"
+            :price-asset="identifier"
             :value="info.usdPrice"
           />
           <div v-else class="pt-3 d-flex justify-end">
@@ -26,7 +26,7 @@
           <card-title>{{ t('assets.amount') }}</card-title>
         </v-card-title>
         <v-card-text class="text-end text-h5 font-weight-medium pt-4">
-          <amount-display :value="info.amount" :asset="symbol" />
+          <amount-display :value="info.amount" :asset="identifier" />
         </v-card-text>
       </v-card>
     </v-col>
@@ -56,8 +56,7 @@ import { useAggregatedBalancesStore } from '@/store/balances/aggregated';
 import { AssetPriceInfo } from '@/types/prices';
 
 const props = defineProps({
-  identifier: { required: true, type: String },
-  symbol: { required: true, type: String }
+  identifier: { required: true, type: String }
 });
 const { identifier } = toRefs(props);
 const { assetPriceInfo } = useAggregatedBalancesStore();

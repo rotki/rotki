@@ -40,7 +40,7 @@ export const useBalancesStore = defineStore('balances', () => {
 
   const refreshPrices = async (
     ignoreCache: boolean = false,
-    selectedAssets: string[] = []
+    selectedAssets: string[] | null = null
   ): Promise<void> => {
     const { setStatus } = useStatusUpdater(Section.PRICES);
     setStatus(Status.LOADING);

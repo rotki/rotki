@@ -4,14 +4,7 @@
       <v-col>
         <v-row align="center">
           <v-col cols="auto">
-            <asset-icon
-              :identifier="identifier"
-              size="48px"
-              :chain="asset?.evmChain"
-              :name="name"
-              :symbol="symbol"
-              :is-custom-asset="isCustomAsset"
-            />
+            <asset-icon :identifier="identifier" size="48px" />
           </v-col>
           <v-col v-if="!isCustomAsset" class="d-flex flex-column" cols="auto">
             <span class="text-h5 font-weight-medium">{{ symbol }}</span>
@@ -43,7 +36,7 @@
         </v-row>
       </v-col>
     </v-row>
-    <asset-value-row class="mt-8" :identifier="identifier" :symbol="symbol" />
+    <asset-value-row class="mt-8" :identifier="identifier" />
     <asset-amount-and-value-over-time
       v-if="premium"
       class="mt-8"

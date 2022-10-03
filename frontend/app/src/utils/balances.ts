@@ -81,14 +81,20 @@ export const appendAssetBalance = (
   }
 };
 
-export const sumAssetBalances = (balances: AssetBalances[]): AssetBalances => {
+export const sumAssetBalances = (
+  balances: AssetBalances[],
+  getAssociatedAssetIdentifier: (identifier: string) => ComputedRef<string>
+): AssetBalances => {
   const summed: AssetBalances = {};
   for (const balance of balances) {
     for (const [asset, value] of Object.entries(balance)) {
-      if (summed[asset]) {
-        summed[asset] = balanceSum(value, summed[asset]);
+      const identifier = getAssociatedAssetIdentifier(asset);
+      const associatedAsset: string = get(identifier);
+
+      if (summed[associatedAsset]) {
+        summed[associatedAsset] = balanceSum(value, summed[associatedAsset]);
       } else {
-        summed[asset] = { ...value };
+        summed[associatedAsset] = { ...value };
       }
     }
   }

@@ -3,7 +3,6 @@
     <asset-icon
       size="32px"
       :identifier="createEvmIdentifierFromAddress(asset.tokenAddress)"
-      :symbol="asset.tokenSymbol"
     />
     <span class="ml-3">{{ asset.tokenSymbol }}</span>
     <v-spacer />

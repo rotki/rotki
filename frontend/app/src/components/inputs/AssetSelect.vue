@@ -33,14 +33,7 @@
     </template>
     <template #item="{ item }">
       <div class="pr-4">
-        <asset-icon
-          size="40px"
-          :identifier="item.identifier"
-          :symbol="item.symbol"
-          :name="item.name"
-          :chain="item.evmChain"
-          :is-custom-asset="item.isCustomAsset || false"
-        />
+        <asset-icon size="40px" :identifier="item.identifier" />
       </div>
       <v-list-item-content
         :id="`asset-${getValidSelectorFromEvmAddress(

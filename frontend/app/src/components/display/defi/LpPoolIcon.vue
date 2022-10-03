@@ -1,7 +1,13 @@
 <template>
   <div class="d-flex">
     <div class="d-flex align-center">
-      <asset-icon circle :identifier="assets[0]" size="32px" padding="0" />
+      <asset-icon
+        circle
+        :identifier="assets[0]"
+        size="32px"
+        padding="0"
+        :show-chain="false"
+      />
       <asset-icon
         v-if="!multiple"
         circle
@@ -9,6 +15,7 @@
         :identifier="assets[1]"
         size="32px"
         padding="0"
+        :show-chain="false"
       />
       <div v-else :class="[css['second-icon'], css['more-assets']]">
         +{{ assets.length - 1 }}

@@ -4,6 +4,7 @@ import { ComputedRef } from 'vue';
 import { useManualAssetBalances } from '@/composables/balances/manual';
 import { setupLiquidityPosition } from '@/composables/defi';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
+import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useAggregatedBlockchainBalancesStore } from '@/store/blockchain/balances/aggregated';
@@ -30,15 +31,16 @@ export const useAggregatedBalancesStore = defineStore(
     const { balances: manualBalances, liabilities: manualLiabilities } =
       useManualAssetBalances();
 
+    const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
+
     const balances = (
       hideIgnored: boolean = true
     ): ComputedRef<AssetBalance[]> =>
       computed(() => {
-        const ownedAssets = sumAssetBalances([
-          get(totals),
-          get(exchangeBalances),
-          get(manualBalances)
-        ]);
+        const ownedAssets = sumAssetBalances(
+          [get(totals), get(exchangeBalances), get(manualBalances)],
+          getAssociatedAssetIdentifier
+        );
 
         return toStoredAssetBalanceWithPrice(
           ownedAssets,
@@ -51,10 +53,10 @@ export const useAggregatedBalancesStore = defineStore(
       hideIgnored: boolean = true
     ): ComputedRef<AssetBalanceWithPrice[]> =>
       computed(() => {
-        const liabilities = sumAssetBalances([
-          get(chainLiabilities),
-          get(manualLiabilities)
-        ]);
+        const liabilities = sumAssetBalances(
+          [get(chainLiabilities), get(manualLiabilities)],
+          getAssociatedAssetIdentifier
+        );
 
         return toStoredAssetBalanceWithPrice(
           liabilities,
