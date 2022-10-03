@@ -3171,7 +3171,7 @@ class RestAPI():
                     events = dbevents.get_history_events(
                         cursor=cursor,
                         filter_query=HistoryEventFilterQuery.make(
-                            event_identifier=entry.tx_hash,
+                            event_identifiers=[entry.tx_hash],
                             assets=asset,
                             protocols=event_params['protocols'],
                             exclude_ignored_assets=event_params['exclude_ignored_assets'],
@@ -3243,7 +3243,19 @@ class RestAPI():
             tx_hashes: Optional[List[EVMTxHash]],
     ) -> Dict[str, Any]:
         try:
-            self.rotkehlchen.eth_tx_decoder.decode_transaction_hashes(ignore_cache=ignore_cache, tx_hashes=tx_hashes)  # noqa: E501
+            decoded_events = self.rotkehlchen.eth_tx_decoder.decode_transaction_hashes(
+                ignore_cache=ignore_cache,
+                tx_hashes=tx_hashes,
+            )
+            task_manager = self.rotkehlchen.task_manager
+            if tx_hashes is not None and task_manager is not None:
+                events_filter = HistoryEventFilterQuery.make(
+                    event_identifiers=[event.event_identifier for event in decoded_events],
+                )
+                entries = task_manager.get_base_entries_missing_prices(events_filter)
+                task_manager.query_missing_prices_of_base_entries(
+                    entries_missing_prices=entries,
+                )
             return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
         except (RemoteError, DeserializationError) as e:
             status_code = HTTPStatus.BAD_GATEWAY

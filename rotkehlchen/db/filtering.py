@@ -441,10 +441,10 @@ class DBEqualsFilter(DBFilter):
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class DBMultiStringFilter(DBFilter):
+class DBMultiValueFilter(DBFilter):
     """Filter a column having a string value out of a selection of values"""
     column: str
-    values: List[str]
+    values: Union[List[str], List[bytes]]
     operator: str = 'IN'
 
     def prepare(self) -> Tuple[List[str], List[Any]]:
@@ -488,7 +488,7 @@ class TradesFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLocation):
                 )
             else:
                 filters.append(
-                    DBMultiStringFilter(
+                    DBMultiValueFilter(
                         and_op=True,
                         column='base_asset',
                         values=[asset.identifier for asset in base_assets],
@@ -501,7 +501,7 @@ class TradesFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLocation):
                 )
             else:
                 filters.append(
-                    DBMultiStringFilter(
+                    DBMultiValueFilter(
                         and_op=True,
                         column='quote_asset',
                         values=[asset.identifier for asset in quote_assets],
@@ -554,7 +554,7 @@ class AssetMovementsFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLo
                 filters.append(DBAssetFilter(and_op=True, asset=assets[0], asset_key='asset'))
             else:
                 filters.append(
-                    DBMultiStringFilter(
+                    DBMultiValueFilter(
                         and_op=True,
                         column='asset',
                         values=[asset.identifier for asset in assets],
@@ -606,7 +606,7 @@ class LedgerActionsFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoc
                 filters.append(DBAssetFilter(and_op=True, asset=assets[0], asset_key='asset'))
             else:
                 filters.append(
-                    DBMultiStringFilter(
+                    DBMultiValueFilter(
                         and_op=True,
                         column='asset',
                         values=[asset.identifier for asset in assets],
@@ -761,7 +761,7 @@ class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoca
             location_label: Optional[str] = None,
             ignored_ids: Optional[List[str]] = None,
             null_columns: Optional[List[str]] = None,
-            event_identifier: Optional[bytes] = None,
+            event_identifiers: Optional[List[bytes]] = None,
             protocols: Optional[List[str]] = None,
             exclude_ignored_assets: bool = False,
     ) -> 'HistoryEventFilterQuery':
@@ -781,27 +781,27 @@ class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoca
                 filters.append(DBAssetFilter(and_op=True, asset=assets[0], asset_key='asset'))
             else:
                 filters.append(
-                    DBMultiStringFilter(
+                    DBMultiValueFilter(
                         and_op=True,
                         column='asset',
                         values=[asset.identifier for asset in assets],
                     ),
                 )
         if event_types is not None:
-            filters.append(DBMultiStringFilter(
+            filters.append(DBMultiValueFilter(
                 and_op=True,
                 column='type',
                 values=[x.serialize() for x in event_types],
             ))
         if event_subtypes is not None:
-            filters.append(DBMultiStringFilter(
+            filters.append(DBMultiValueFilter(
                 and_op=True,
                 column='subtype',
                 values=[x.serialize() for x in event_subtypes],
                 operator='IN',
             ))
         if exclude_subtypes is not None:
-            filters.append(DBMultiStringFilter(
+            filters.append(DBMultiValueFilter(
                 and_op=True,
                 column='subtype',
                 values=[x.serialize() for x in exclude_subtypes],
@@ -829,9 +829,13 @@ class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoca
                     columns=null_columns,
                 ),
             )
-        if event_identifier is not None:
+        if event_identifiers is not None:
             filters.append(
-                DBEqualsFilter(and_op=True, column='event_identifier', value=event_identifier),
+                DBMultiValueFilter(
+                    and_op=True,
+                    column='event_identifier',
+                    values=event_identifiers,
+                ),
             )
         if protocols is not None:
             filters.append(
@@ -979,13 +983,13 @@ class AssetsFilterQuery(DBFilterQuery):
                     search_string=substring_search,
                 ))
         if identifiers is not None:
-            filters.append(DBMultiStringFilter(
+            filters.append(DBMultiValueFilter(
                 and_op=True,
                 column='identifier',
                 values=identifiers,
             ))
         if ignored_assets_identifiers is not None:
-            filters.append(DBMultiStringFilter(
+            filters.append(DBMultiValueFilter(
                 and_op=True,
                 column='identifier',
                 operator='NOT IN',

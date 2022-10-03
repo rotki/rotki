@@ -24,11 +24,13 @@ from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_MKR, A_USDT, A_WETH
 from rotkehlchen.constants.limits import FREE_ETH_TX_LIMIT
+from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.externalapis.etherscan import Etherscan
+from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -202,6 +204,8 @@ def assert_force_redecode_txns_works(api_server: APIServer, hashes: Optional[Lis
     '0xaFB7ed3beBE50E0b62Fa862FAba93e7A46e59cA7',
     '0x4193122032b38236825BBa166F42e54fc3F4A1EE',
 ]])
+@pytest.mark.parametrize('should_mock_price_queries', [True])
+@pytest.mark.parametrize('default_mock_price_value', [FVal(1.5)])
 def test_query_transactions(rotkehlchen_api_server):
     """Test that querying the ethereum transactions endpoint works as expected.
     Also tests that requesting for transaction decoding works.
@@ -320,12 +324,13 @@ def test_query_transactions(rotkehlchen_api_server):
             events = dbevents.get_history_events(
                 cursor=cursor,
                 filter_query=HistoryEventFilterQuery.make(
-                    event_identifier=TXHASH_HEX_TO_BYTES[tx_hash_hex],
+                    event_identifiers=[TXHASH_HEX_TO_BYTES[tx_hash_hex]],
                 ),
                 has_premium=True,  # for this function we don't limit. We only limit txs.
             )
             event_ids.add(events[0].identifier)  # pylint: disable=unsubscriptable-object
             assert len(events) == 1
+            assert events[0].balance.usd_value == events[0].balance.amount * FVal(1.5)
 
     # see that if same transaction hash is requested for decoding events are not re-decoded
     response = requests.post(
@@ -346,7 +351,7 @@ def test_query_transactions(rotkehlchen_api_server):
             events = dbevents.get_history_events(
                 cursor=cursor,
                 filter_query=HistoryEventFilterQuery.make(
-                    event_identifier=TXHASH_HEX_TO_BYTES[tx_hash_hex],
+                    event_identifiers=[TXHASH_HEX_TO_BYTES[tx_hash_hex]],
                 ),
                 has_premium=True,  # for this function we don't limit. We only limit txs.
             )
@@ -372,6 +377,8 @@ def test_query_transactions(rotkehlchen_api_server):
     )
 
 
+@pytest.mark.parametrize('should_mock_price_queries', [True])
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_request_transaction_decoding_errors(rotkehlchen_api_server):
     """Test that the request transaction decoding endpoint handles input errors"""
     response = requests.post(
@@ -442,6 +449,8 @@ def test_request_transaction_decoding_errors(rotkehlchen_api_server):
 )
 @pytest.mark.parametrize('ethereum_accounts', [['0xe62193Bc1c340EF2205C0Bd71691Fad5e5072253']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('should_mock_price_queries', [True])
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_query_over_10k_transactions(rotkehlchen_api_server):
     """Test that querying for an address with over 10k transactions works
 
@@ -561,6 +570,8 @@ def test_query_transactions_errors(rotkehlchen_api_server):
 
 @pytest.mark.parametrize('start_with_valid_premium', [False, True])
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
+@pytest.mark.parametrize('should_mock_price_queries', [True])
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_query_transactions_over_limit(
         rotkehlchen_api_server,
         ethereum_accounts,
@@ -642,6 +653,8 @@ def test_query_transactions_over_limit(
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
+@pytest.mark.parametrize('should_mock_price_queries', [True])
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_query_transactions_from_to_address(
         rotkehlchen_api_server,
         ethereum_accounts,
@@ -724,6 +737,8 @@ def test_query_transactions_from_to_address(
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
+@pytest.mark.parametrize('should_mock_price_queries', [True])
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_query_transactions_removed_address(
         rotkehlchen_api_server,
         ethereum_accounts,
@@ -839,6 +854,8 @@ def test_query_transactions_removed_address(
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
+@pytest.mark.parametrize('should_mock_price_queries', [True])
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_transaction_same_hash_same_nonce_two_tracked_accounts(
         rotkehlchen_api_server,
         ethereum_accounts,
@@ -918,6 +935,8 @@ def test_transaction_same_hash_same_nonce_two_tracked_accounts(
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x6e15887E2CEC81434C16D587709f64603b39b545']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('should_mock_price_queries', [True])
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_query_transactions_check_decoded_events(
         rotkehlchen_api_server,
         ethereum_accounts,
@@ -1145,6 +1164,8 @@ def test_query_transactions_check_decoded_events(
         assert dbevents.get_history_events(cursor, HistoryEventFilterQuery.make(), True) == []
 
 
+@pytest.mark.parametrize('should_mock_price_queries', [True])
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
     """Tests filtering by transaction's events' properties
     Test cases:
@@ -1249,6 +1270,8 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
     assert result['entries'] == expected
 
 
+@pytest.mark.parametrize('should_mock_price_queries', [True])
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_ignored_assets(rotkehlchen_api_server, ethereum_accounts):
     """This test tests that transactions with ignored assets are excluded when needed"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
