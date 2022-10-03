@@ -58,7 +58,7 @@
             <div class="pb-md-8">
               <table-filter
                 :matchers="matchers"
-                @update:matches="updateFilterHandler($event)"
+                @update:matches="updateFilter($event)"
               />
             </div>
           </v-col>
@@ -199,42 +199,21 @@ import LedgerActionForm, {
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import { isSectionLoading } from '@/composables/common';
+import { useLedgerActionsFilter } from '@/composables/filters/ledger-actions';
 import { setupIgnore } from '@/composables/history';
 import { useRoute, useRouter } from '@/composables/router';
 import { Routes } from '@/router/routes';
-import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
-import { useAssociatedLocationsStore } from '@/store/history/associated-locations';
 import { useLedgerActions } from '@/store/history/ledger-actions';
 import { IgnoreActionType, LedgerActionEntry } from '@/store/history/types';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { Collection } from '@/types/collection';
-import { MatchedKeyword, SearchMatcher } from '@/types/filtering';
 import {
   LedgerAction,
   LedgerActionRequestPayload,
   NewLedgerAction
 } from '@/types/history/ledger-actions';
 import { TradeLocation } from '@/types/history/trade-location';
-import { LedgerActionType } from '@/types/ledger-actions';
 import { Section } from '@/types/status';
 import { getCollectionData, setupEntryLimit } from '@/utils/collection';
-import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
-
-enum LedgerActionFilterKeys {
-  ASSET = 'asset',
-  TYPE = 'type',
-  START = 'start',
-  END = 'end',
-  LOCATION = 'location'
-}
-
-enum LedgerActionFilterValueKeys {
-  ASSET = 'asset',
-  TYPE = 'type',
-  START = 'fromTimestamp',
-  END = 'toTimestamp',
-  LOCATION = 'location'
-}
 
 type PaginationOptions = {
   page: number;
@@ -255,13 +234,20 @@ const emit = defineEmits(['fetch']);
 
 const { locationOverview } = toRefs(props);
 
+const options: Ref<PaginationOptions | null> = ref(null);
+const dialogTitle: Ref<string> = ref('');
+const dialogSubtitle: Ref<string> = ref('');
+const openDialog: Ref<boolean> = ref(false);
+const editableItem: Ref<LedgerActionEntry | null> = ref(null);
+const ledgerActionsToDelete: Ref<LedgerActionEntry[]> = ref([]);
+const confirmationMessage: Ref<string> = ref('');
+const expanded: Ref<LedgerActionEntry[]> = ref([]);
+const valid: Ref<boolean> = ref(false);
+const form = ref<LedgerActionFormInstance | null>(null);
+
 const fetch = (refresh: boolean = false) => emit('fetch', refresh);
 
-const locationsStore = useAssociatedLocationsStore();
 const ledgerActionStore = useLedgerActions();
-const { assetIdentifierForSymbol } = useAssetInfoRetrieval();
-
-const { associatedLocations } = storeToRefs(locationsStore);
 const { ledgerActions } = storeToRefs(ledgerActionStore);
 const {
   addLedgerAction,
@@ -275,16 +261,7 @@ const { data, limit, found, total } = getCollectionData<LedgerActionEntry>(
 );
 
 const { itemLength, showUpgradeRow } = setupEntryLimit(limit, found, total);
-
-const dialogTitle: Ref<string> = ref('');
-const dialogSubtitle: Ref<string> = ref('');
-const openDialog: Ref<boolean> = ref(false);
-const editableItem: Ref<LedgerActionEntry | null> = ref(null);
-const ledgerActionsToDelete: Ref<LedgerActionEntry[]> = ref([]);
-const confirmationMessage: Ref<string> = ref('');
-const expanded: Ref<LedgerActionEntry[]> = ref([]);
-const valid: Ref<boolean> = ref(false);
-const form = ref<LedgerActionFormInstance | null>(null);
+const { filters, matchers, updateFilter } = useLedgerActionsFilter();
 
 const { tc } = useI18n();
 
@@ -371,73 +348,6 @@ const saveData = async (ledgerAction: NewLedgerAction | LedgerActionEntry) => {
   return await addLedgerAction(ledgerAction as NewLedgerAction);
 };
 
-const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
-
-const options: Ref<PaginationOptions | null> = ref(null);
-const filters: Ref<MatchedKeyword<LedgerActionFilterValueKeys>> = ref({});
-
-const matchers = computed<
-  SearchMatcher<LedgerActionFilterKeys, LedgerActionFilterValueKeys>[]
->(() => [
-  {
-    key: LedgerActionFilterKeys.ASSET,
-    keyValue: LedgerActionFilterValueKeys.ASSET,
-    description: tc('ledger_actions.filter.asset'),
-    suggestions: () => [],
-    validate: () => true,
-    transformer: (asset: string) => assetIdentifierForSymbol(asset) ?? ''
-  },
-  {
-    key: LedgerActionFilterKeys.TYPE,
-    keyValue: LedgerActionFilterValueKeys.TYPE,
-    description: tc('ledger_actions.filter.action_type'),
-    suggestions: () => [...Object.values(LedgerActionType)],
-    validate: type =>
-      ([...Object.values(LedgerActionType)] as string[]).includes(type)
-  },
-  {
-    key: LedgerActionFilterKeys.START,
-    keyValue: LedgerActionFilterValueKeys.START,
-    description: tc('ledger_actions.filter.start_date'),
-    suggestions: () => [],
-    hint: tc('ledger_actions.filter.date_hint', 0, {
-      format: getDateInputISOFormat(get(dateInputFormat))
-    }).toString(),
-    validate: value => {
-      return (
-        value.length > 0 &&
-        !isNaN(convertToTimestamp(value, get(dateInputFormat)))
-      );
-    },
-    transformer: (date: string) =>
-      convertToTimestamp(date, get(dateInputFormat)).toString()
-  },
-  {
-    key: LedgerActionFilterKeys.END,
-    keyValue: LedgerActionFilterValueKeys.END,
-    description: tc('ledger_actions.filter.end_date'),
-    suggestions: () => [],
-    hint: tc('ledger_actions.filter.date_hint', 0, {
-      format: getDateInputISOFormat(get(dateInputFormat))
-    }).toString(),
-    validate: value => {
-      return (
-        value.length > 0 &&
-        !isNaN(convertToTimestamp(value, get(dateInputFormat)))
-      );
-    },
-    transformer: (date: string) =>
-      convertToTimestamp(date, get(dateInputFormat)).toString()
-  },
-  {
-    key: LedgerActionFilterKeys.LOCATION,
-    keyValue: LedgerActionFilterValueKeys.LOCATION,
-    description: tc('ledger_actions.filter.location'),
-    suggestions: () => get(associatedLocations),
-    validate: location => get(associatedLocations).includes(location as any)
-  }
-]);
-
 const updatePayloadHandler = async () => {
   let paginationOptions = {};
 
@@ -474,11 +384,10 @@ const updatePaginationHandler = async (
   await updatePayloadHandler();
 };
 
-const updateFilterHandler = async (
-  newFilters: MatchedKeyword<LedgerActionFilterKeys>
-) => {
-  set(filters, newFilters);
-
+watch(filters, async (filter, oldValue) => {
+  if (filter === oldValue) {
+    return;
+  }
   let newOptions = null;
   if (get(options)) {
     newOptions = {
@@ -488,7 +397,7 @@ const updateFilterHandler = async (
   }
 
   await updatePaginationHandler(newOptions);
-};
+});
 
 const getId = (item: LedgerActionEntry) => item.identifier.toString();
 const selected: Ref<LedgerActionEntry[]> = ref([]);

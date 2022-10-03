@@ -6,8 +6,12 @@ export const splitSearch: (keyword: Nullable<string>) => string[] = (
   if (!keyword) {
     return [];
   }
-  const key = keyword.split(':')[0];
-  const value = keyword.replace(key + ':', '');
+  const index = keyword.indexOf(':');
+  if (index < 0) {
+    return [keyword.trim(), ''];
+  }
 
-  return [key.trim(), value.trim()];
+  const key = keyword.substring(0, index).trim();
+  const value = keyword.substring(index + 1, keyword.length).trim();
+  return [key, value];
 };

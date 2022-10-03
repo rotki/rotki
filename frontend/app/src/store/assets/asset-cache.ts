@@ -99,15 +99,8 @@ export const useAssetCacheStore = defineStore('assets/cache', () => {
     unknown.clear();
   };
 
-  const cachedEntries: ComputedRef<[string, AssetInfo][]> = computed(() => {
-    return Object.entries(get(cache)).filter(
-      ([key, value]) => key && value
-    ) as [string, AssetInfo][];
-  });
-
   return {
     cache,
-    cachedEntries,
     retrieve,
     reset
   };

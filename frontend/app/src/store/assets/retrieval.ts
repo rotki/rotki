@@ -15,7 +15,7 @@ export const useAssetInfoRetrieval = defineStore(
   'assets/infoRetrievals',
   () => {
     const { erc20details } = useAssetInfoApi();
-    const { retrieve, cachedEntries } = useAssetCacheStore();
+    const { retrieve } = useAssetCacheStore();
     const { treatEth2AsEth } = storeToRefs(useGeneralSettingsStore());
     const { tc } = useI18n();
     const { notify } = useNotifications();
@@ -104,17 +104,6 @@ export const useAssetInfoRetrieval = defineStore(
         return getAddressFromEvmIdentifier(id);
       });
 
-    const assetIdentifierForSymbol = (symbol: string) => {
-      for (const [identifier, value] of get(cachedEntries)) {
-        if (value.symbol === symbol) {
-          return identifier;
-        }
-      }
-
-      console.trace(`request for identifier for: ${symbol}`);
-      return '';
-    };
-
     const fetchTokenDetails = async (address: string): Promise<ERC20Token> => {
       try {
         const taskType = TaskType.ERC20_DETAILS;
@@ -143,7 +132,6 @@ export const useAssetInfoRetrieval = defineStore(
     return {
       fetchTokenDetails,
       getAssociatedAssetIdentifier,
-      assetIdentifierForSymbol,
       assetInfo,
       assetSymbol,
       assetName,

@@ -44,6 +44,7 @@ export default defineConfig({
     deps: {
       inline: ['vuetify']
     },
+    setupFiles: ['tests/unit/setup-files/setup.ts'],
     coverage: {
       reportsDirectory: 'tests/unit/coverage',
       reporter: ['json'],

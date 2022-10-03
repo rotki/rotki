@@ -11,15 +11,15 @@ enum AssetFilterValueKeys {
   NAME = 'name'
 }
 
-type AssetMatcher = SearchMatcher<AssetFilterKeys, AssetFilterValueKeys>;
-type Matches = MatchedKeyword<AssetFilterValueKeys>;
+type Matcher = SearchMatcher<AssetFilterKeys, AssetFilterValueKeys>;
+type Filters = MatchedKeyword<AssetFilterValueKeys>;
 
 export const useAssetFilter = () => {
-  const filters: Ref<Matches> = ref({});
+  const filters: Ref<Filters> = ref({});
 
   const { tc } = useI18n();
 
-  const matchers: ComputedRef<AssetMatcher[]> = computed(() => [
+  const matchers: ComputedRef<Matcher[]> = computed(() => [
     {
       key: AssetFilterKeys.SYMBOL,
       keyValue: AssetFilterValueKeys.SYMBOL,
@@ -38,7 +38,7 @@ export const useAssetFilter = () => {
     }
   ]);
 
-  const updateFilter = (newFilters: Matches) => {
+  const updateFilter = (newFilters: Filters) => {
     set(filters, newFilters);
   };
 

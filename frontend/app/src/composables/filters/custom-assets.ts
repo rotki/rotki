@@ -12,18 +12,15 @@ enum CustomAssetFilterValueKeys {
   CUSTOM_ASSET_TYPE = 'custom_asset_type'
 }
 
-type AssetMatcher = SearchMatcher<
-  CustomAssetFilterKeys,
-  CustomAssetFilterValueKeys
->;
-type Matches = MatchedKeyword<CustomAssetFilterValueKeys>;
+type Matcher = SearchMatcher<CustomAssetFilterKeys, CustomAssetFilterValueKeys>;
+type Filters = MatchedKeyword<CustomAssetFilterValueKeys>;
 
 export const useCustomAssetFilter = (suggestions: MaybeRef<string[]>) => {
-  const filters: Ref<Matches> = ref({});
+  const filters: Ref<Filters> = ref({});
 
   const { tc } = useI18n();
 
-  const matchers: ComputedRef<AssetMatcher[]> = computed(() => [
+  const matchers: ComputedRef<Matcher[]> = computed(() => [
     {
       key: CustomAssetFilterKeys.NAME,
       keyValue: CustomAssetFilterValueKeys.NAME,
@@ -42,7 +39,7 @@ export const useCustomAssetFilter = (suggestions: MaybeRef<string[]>) => {
     }
   ]);
 
-  const updateFilter = (newFilters: Matches) => {
+  const updateFilter = (newFilters: Filters) => {
     set(filters, newFilters);
   };
 

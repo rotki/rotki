@@ -112,7 +112,7 @@ describe('store::assets/cache', () => {
       await flushPromises();
     }
 
-    const entries = get(store.cachedEntries);
+    const entries = Object.entries(get(store.cache));
     expect(entries).toHaveLength(200);
     expect(entries.map(([id]) => id)).toContain('AST-0');
   });

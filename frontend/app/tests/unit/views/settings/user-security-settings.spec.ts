@@ -8,11 +8,8 @@ import {
 } from 'pinia';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
-import { BalancesApi } from '@/services/balances/balances-api';
-import { api } from '@/services/rotkehlchen-api';
 import { usePremiumStore } from '@/store/session/premium';
 import UserSecuritySettings from '@/views/settings/UserSecuritySettings.vue';
-import { stub } from '../../../common/utils';
 import '../../i18n';
 
 vi.mock('@/services/backup', () => ({
@@ -20,20 +17,6 @@ vi.mock('@/services/backup', () => ({
     info: vi.fn()
   })
 }));
-
-vi.spyOn(api, 'balances', 'get').mockReturnValue(
-  stub<BalancesApi>({
-    getPriceCache: vi.fn().mockResolvedValue([])
-  })
-);
-vi.mock('vue', async () => {
-  const mod = await vi.importActual<typeof import('vue')>('vue');
-  return {
-    ...mod,
-    useListeners: vi.fn(),
-    useAttrs: vi.fn()
-  };
-});
 
 Vue.use(Vuetify);
 Vue.use(PiniaVuePlugin);
