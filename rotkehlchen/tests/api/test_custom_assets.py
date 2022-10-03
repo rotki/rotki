@@ -67,7 +67,7 @@ def test_get_custom_assets(rotkehlchen_api_server) -> None:
             rotkehlchen_api_server,
             'customassetsresource',
         ),
-        json={'name': 'Gold'},
+        json={'name': 'goLD'},  # also check that case doesn't matter
     )
     result = assert_proper_response_with_result(response)
     assert len(result['entries']) == 1
@@ -80,7 +80,7 @@ def test_get_custom_assets(rotkehlchen_api_server) -> None:
             rotkehlchen_api_server,
             'customassetsresource',
         ),
-        json={'custom_asset_type': 'real estate'},
+        json={'custom_asset_type': 'ReAl EsTaTe'},  # also check that case doesn't matter
     )
     result = assert_proper_response_with_result(response)
     assert len(result['entries']) == 2
