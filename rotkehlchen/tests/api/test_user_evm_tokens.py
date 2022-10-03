@@ -577,3 +577,35 @@ def test_user_tokens_delete_guard(rotkehlchen_api_server):
         contained_in_msg=expected_msg,
         status_code=HTTPStatus.CONFLICT,
     )
+
+
+def test_add_non_ethereum_token(rotkehlchen_api_server):
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ethereumassetsresource',
+        ),
+        json={
+            'token': {
+                'name': 'Some random name',
+                'symbol': 'XYZ',
+                'cryptocompare': None,
+                'coingecko': None,
+                'started': 1599646888,
+                'swapped_for': None,
+                'address': '0xC88eA7a5df3A7BA59C72393C5b2dc2CE260ff04D',
+                'chain': 'binance',  # important that is not `ethereum` here
+                'token_kind': 'erc20',
+                'decimals': 18,
+                'protocol': 'my-own-protocol',
+                'underlying_tokens': None,
+            },
+        },
+    )
+    identifier = assert_proper_response_with_result(response)['identifier']
+    assert identifier == 'eip155:56/erc20:0xC88eA7a5df3A7BA59C72393C5b2dc2CE260ff04D'
+    token = EvmToken(identifier)
+    assert token.name == 'Some random name'
+    assert token.symbol == 'XYZ'
+    assert token.chain == ChainID.BINANCE
+    assert token.protocol == 'my-own-protocol'

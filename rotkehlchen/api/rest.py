@@ -88,11 +88,7 @@ from rotkehlchen.constants.misc import (
     ONE,
     ZERO,
 )
-from rotkehlchen.constants.resolver import (
-    ChainID,
-    ethaddress_to_identifier,
-    evm_address_to_identifier,
-)
+from rotkehlchen.constants.resolver import ChainID, evm_address_to_identifier
 from rotkehlchen.data_import.manager import DataImportSource
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.constants import HISTORY_MAPPING_CUSTOMIZED
@@ -1494,10 +1490,9 @@ class RestAPI():
         )
 
     def add_custom_ethereum_token(self, token: EvmToken) -> Response:
-        identifier = ethaddress_to_identifier(token.evm_address)
         try:
             GlobalDBHandler().add_asset(
-                asset_id=identifier,
+                asset_id=token.identifier,
                 asset_type=AssetType.EVM_TOKEN,
                 data=token,
             )
@@ -1507,10 +1502,10 @@ class RestAPI():
         with self.rotkehlchen.data.db.user_write() as cursor:
             # clean token detection cache.
             cursor.execute('DELETE from accounts_details;')
-            self.rotkehlchen.data.db.add_asset_identifiers(cursor, [identifier])
+            self.rotkehlchen.data.db.add_asset_identifiers(cursor, [token.identifier])
 
         return api_response(
-            _wrap_in_ok_result({'identifier': identifier}),
+            _wrap_in_ok_result({'identifier': token.identifier}),
             status_code=HTTPStatus.OK,
         )
 
