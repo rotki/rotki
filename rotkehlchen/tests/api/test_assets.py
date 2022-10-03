@@ -466,6 +466,53 @@ def test_get_all_assets(rotkehlchen_api_server):
     )
     assert_error_response(response, contained_in_msg='Multiple fields ordering is not allowed.')
 
+    # test asking for a single evm token
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'allassetsresource',
+        ),
+        json={
+            'identifiers': [A_DAI.identifier],
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    assert result['entries'][0]['identifier'] == A_DAI
+    assert 'address' in result['entries'][0]
+    assert 'decimals' in result['entries'][0]
+    assert result['entries'][0]['type'] == AssetType.EVM_TOKEN.serialize()
+
+    # ask for a crypto asset and a fiat asset (test multiple asset query)
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'allassetsresource',
+        ),
+        json={
+            'identifiers': [A_BTC.identifier, A_USD.identifier, custom_asset_id],
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    assert result['entries'][0]['identifier'] == A_USD
+    assert result['entries'][1]['identifier'] == custom_asset_id
+    assert result['entries'][2]['identifier'] == A_BTC
+
+    # ask for a non existent asset
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'allassetsresource',
+        ),
+        json={
+            'identifiers': ['my_life'],
+        },
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Queried identifiers my_life are not present in the database',
+        status_code=HTTPStatus.CONFLICT,
+    )
+
 
 def test_get_assets_mappings(rotkehlchen_api_server):
     """Test that providing a list of asset identifiers, the appropriate assets mappings are returned."""  # noqa: E501

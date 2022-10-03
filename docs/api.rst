@@ -2822,22 +2822,6 @@ Querying all supported assets
 
    Doing a POST on the all assets endpoint will return a list of all supported assets and their details.
 
-The details of each asset can contain the following keys:
-
-- **type**: The type of asset. Valid values are ethereum token, own chain, omni token and more. For all valid values check here: https://github.com/rotki/rotki/blob/develop/rotkehlchen/assets/resolver.py#L7
-- **started**: An optional unix timestamp denoting where we know price data for the asset started
-- **name**: The long name of the asset. Does not need to be the same as the unique symbol identifier
-- **forked**: An optional attribute representing another asset out of which this asset forked from. For example ``ETC`` would have ``ETH`` here.
-- **swapped_for**: An optional attribute representing another asset for which this asset was swapped for. For example ``VEN`` tokens were at some point swapped for ``VET`` tokens.
-- **symbol**: The symbol used for this asset. This is not guaranteed to be unique. Unfortunately some assets use the same symbol as others.
-- **evm_address**: If the type is ``ethereum_token`` then this will be the hexadecimal address of the token's contract.
-- **chain**: If the type is ``ethereum_token`` then this will be the chain in which the token is.
-- **token_kind**:  If the type is ``ethereum_token`` then this will be the token type, for example ``erc20``.
-- **decimals**: If the type is ``ethereum_token`` then this will be the number of decimals the token has.
-- **cryptocompare**: The cryptocompare identifier for the asset. can be missing if not known. If missing the symbol is attempted to be queried.
-- **coingecko**: The coingecko identifier for the asset. can be missing if not known.
-- **protocol**: An optional string for ethereum tokens denoting the protocol they belong to. For example uniswap, for uniswap LP tokens.
-- **underlying_tokens**: Optional. If the token is an LP token or a token set or something similar which represents a pool of multiple other tokens, then this is a list of the underlying token addresses and a percentage that each token contributes to the pool.
 
    **Example Request**:
 
@@ -2942,7 +2926,24 @@ The details of each asset can contain the following keys:
       }
 
    :resjson list result: A list of assets that match the query with their respective asset details.
+   :resjson string type: The type of asset. Valid values are ethereum token, own chain, omni token and more. For all valid values check `here <https://github.com/rotki/rotki/blob/8387c96eb77f9904b44a1ddd0eb2acbf3f8d03f6/rotkehlchen/assets/types.py#L10>`_. 
+   :resjson integer started: An optional unix timestamp denoting when we know the asset started to have a price.
+   :resjson string name: The long name of the asset. Does not need to be the same as the unique identifier.
+   :resjson string forked: An optional attribute representing another asset out of which this asset forked from. For example ``ETC`` would have ``ETH`` here.
+   :resjson string swapped_for: An optional attribute representing another asset for which this asset was swapped for. For example ``VEN`` tokens were at some point swapped for ``VET`` tokens.
+   :resjson string symbol: The symbol used for this asset. This is not guaranteed to be unique.
+   :resjson string evm_address: If the type is ``evm_token`` then this will be the hexadecimal address of the token's contract.
+   :resjson string chain: If the type is ``evm_token`` then this will be the chain in the form of string in which the token is.
+   :resjson string token_kind:  If the type is ``evm_token`` then this will be the token type, for example ``erc20``.
+   :resjson integer decimals: If the type is ``evm_token`` then this will be the number of decimals the token has.
+   :resjson string cryptocompare: The cryptocompare identifier for the asset. can be missing if not known. If missing a query by symbol is attempted.
+   :resjson string coingecko: The coingecko identifier for the asset. can be missing if not known.
+   :resjson string protocol: An optional string for evm tokens denoting the protocol they belong to. For example uniswap, for uniswap LP tokens.
+   :resjson object underlying_tokens: Optional. If the token is an LP token or a token set or something similar which represents a pool of multiple other tokens, then this is a list of the underlying token addresses and a percentage(value in the range of 0 to 100) that each token contributes to the pool.
+   :resjson string notes: If the type is ``custom_asset`` this is a string field with notes added by the user.
+   :resjson string custom_asset_type: If the type is ``custom_asset`` this field contains the custom type set by the user for the asset.
    :statuscode 200: Assets successfully queried.
+   :statuscode 409: One or more of the requested identifiers don't exist in the database.
    :statuscode 500: Internal rotki error
 
 
