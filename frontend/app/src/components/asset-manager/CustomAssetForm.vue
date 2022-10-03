@@ -22,7 +22,7 @@
           :label="t('common.type')"
           :error-messages="v$.type.$errors.map(e => e.$message)"
           :search-input.sync="search"
-          @input="input({ customAssetType: toCapitalCase($event) })"
+          @input="input({ customAssetType: $event })"
         />
       </v-col>
       <v-col cols="12">
@@ -43,7 +43,6 @@ import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import { PropType } from 'vue';
 import { CustomAsset } from '@/types/assets';
-import { toCapitalCase } from '@/utils/text';
 
 const props = defineProps({
   value: {
@@ -77,11 +76,6 @@ watch(valid, value => emit('valid', value));
 const { t } = useI18n();
 
 const search = ref<string | null>('');
-
-watch(search, customAssetType => {
-  if (customAssetType === null) customAssetType = '';
-  input({ customAssetType: toCapitalCase(customAssetType) });
-});
 
 const rules = {
   name: {
