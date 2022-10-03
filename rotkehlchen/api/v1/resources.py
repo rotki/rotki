@@ -51,6 +51,7 @@ from rotkehlchen.api.v1.schemas import (
     BlockchainAccountsPatchSchema,
     BlockchainAccountsPutSchema,
     BlockchainBalanceQuerySchema,
+    CryptoAssetSchema,
     CurrentAssetsPriceSchema,
     CustomAssetsQuerySchema,
     DataImportSchema,
@@ -73,7 +74,6 @@ from rotkehlchen.api.v1.schemas import (
     ExternalServicesResourceAddSchema,
     ExternalServicesResourceDeleteSchema,
     FileListSchema,
-    GenericNonTokenAssetSchema,
     HistoricalAssetsPriceSchema,
     HistoryBaseEntrySchema,
     HistoryExportingSchema,
@@ -677,15 +677,15 @@ class AllAssetsResource(BaseMethodView):
             db=self.rest_api.rotkehlchen.data.db,
         )
 
-    def make_add_schema(self) -> GenericNonTokenAssetSchema:
-        return GenericNonTokenAssetSchema(
+    def make_add_schema(self) -> CryptoAssetSchema:
+        return CryptoAssetSchema(
             identifier_required=False,
             coingecko=self.rest_api.rotkehlchen.coingecko,
             cryptocompare=self.rest_api.rotkehlchen.cryptocompare,
         )
 
-    def make_edit_schema(self) -> GenericNonTokenAssetSchema:
-        return GenericNonTokenAssetSchema(
+    def make_edit_schema(self) -> CryptoAssetSchema:
+        return CryptoAssetSchema(
             identifier_required=True,
             coingecko=self.rest_api.rotkehlchen.coingecko,
             cryptocompare=self.rest_api.rotkehlchen.cryptocompare,
