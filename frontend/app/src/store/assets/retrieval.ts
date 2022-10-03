@@ -46,7 +46,7 @@ export const useAssetInfoRetrieval = defineStore(
         const id = get(identifier);
         if (!id) return null;
 
-        const key = enableAssociation
+        const key = get(enableAssociation)
           ? get(getAssociatedAssetIdentifier(id))
           : id;
 

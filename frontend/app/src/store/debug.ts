@@ -73,6 +73,11 @@ export const storePiniaPlugins = (context: PiniaPluginContext) => {
   try {
     const fromStorage = getState(storeId);
     if (fromStorage) {
+      // Ensures that components reload properly.
+      if (storeId === 'session/premium') {
+        fromStorage.componentsLoaded = false;
+        fromStorage.componentsReady = false;
+      }
       store.$patch(fromStorage);
     }
   } catch (e) {

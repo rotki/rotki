@@ -7,18 +7,19 @@ import { useStatisticsApi } from '@/services/statistics/statistics-api';
 import { checkIfDevelopment } from '@/utils/env-utils';
 import { logger } from '@/utils/logging';
 
-function findComponents(): string[] {
-  return Object.getOwnPropertyNames(window).filter(value =>
+class ComponentLoadFailed extends Error {}
+
+const findComponents = (): string[] =>
+  Object.getOwnPropertyNames(window).filter(value =>
     value.startsWith('PremiumComponents')
   );
-}
 
 if (checkIfDevelopment()) {
   // @ts-ignore
   findComponents().forEach(component => (window[component] = undefined));
 }
 
-async function loadComponents(): Promise<string[]> {
+const loadComponents = async (): Promise<string[]> => {
   // eslint-disable-next-line no-async-promise-executor
   return new Promise(async (resolve, reject) => {
     let components = findComponents();
@@ -43,9 +44,9 @@ async function loadComponents(): Promise<string[]> {
     script.addEventListener('error', reject);
     resolve(components);
   });
-}
+};
 
-async function loadLibrary() {
+export const loadLibrary = async () => {
   const [component] = await loadComponents();
   // @ts-ignore
   const library = window[component];
@@ -54,20 +55,19 @@ async function loadLibrary() {
     library.installed = true;
   }
   return library;
-}
+};
 
 const load = async (name: string) => {
-  const error = PremiumLoadingError;
   try {
     const library = await loadLibrary();
     if (library[name]) {
       return library[name];
     }
-    return error;
   } catch (e: any) {
     logger.error(e);
-    return error;
   }
+
+  throw new ComponentLoadFailed();
 };
 
 const createFactory = (
@@ -77,7 +77,7 @@ const createFactory = (
   component: component,
   loading: options?.loading ?? PremiumLoading,
   error: options?.error ?? PremiumLoadingError,
-  delay: 100,
+  delay: 500,
   timeout: 30000
 });
 

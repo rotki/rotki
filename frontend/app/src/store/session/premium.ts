@@ -1,5 +1,3 @@
-import { acceptHMRUpdate, defineStore } from 'pinia';
-import { ref } from 'vue';
 import { api } from '@/services/rotkehlchen-api';
 import { PremiumCredentialsPayload } from '@/store/session/types';
 import { ActionStatus } from '@/store/types';
@@ -7,7 +5,11 @@ import { ActionStatus } from '@/store/types';
 export const usePremiumStore = defineStore('session/premium', () => {
   const premium = ref(false);
   const premiumSync = ref(false);
-  const componentsLoaded = ref(false);
+  const componentsReady = ref(false);
+
+  const showComponents = computed(() => {
+    return get(premium) && get(componentsReady);
+  });
 
   const setup = async ({
     apiKey,
@@ -51,13 +53,14 @@ export const usePremiumStore = defineStore('session/premium', () => {
   const reset = () => {
     set(premium, false);
     set(premiumSync, false);
-    set(componentsLoaded, false);
+    set(componentsReady, false);
   };
 
   return {
     premium,
     premiumSync,
-    componentsLoaded,
+    componentsReady,
+    showComponents,
     setup,
     deletePremium,
     reset
