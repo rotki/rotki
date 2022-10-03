@@ -315,7 +315,7 @@ class EVMTransactionDecoder():
                 events = self.dbevents.get_history_events(
                     cursor=write_cursor,
                     filter_query=HistoryEventFilterQuery.make(
-                        event_identifier=transaction.tx_hash,
+                        event_identifiers=[transaction.tx_hash],
                     ),
                     has_premium=True,  # for this function we don't limit anything
                 )
