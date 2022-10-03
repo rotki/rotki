@@ -1712,21 +1712,22 @@ def _validate_single_oracle_id(
             )
 
 
-class GenericNonTokenAssetSchema(Schema):
-    # TODO: When adding custom assets we need to check if this schema needs to be expanded
-    # or we need a different one
+class BaseCryptoAssetSchema(Schema):
+    name = fields.String(required=True)
+    symbol = fields.String(required=True)
+    started = TimestampField(load_default=None)
+    swapped_for = AssetField(expected_type=CryptoAsset, load_default=None)
+    coingecko = fields.String(load_default=None)
+    cryptocompare = fields.String(load_default=None)
+
+
+class CryptoAssetSchema(BaseCryptoAssetSchema):
     identifier = fields.String(required=False, load_default=None)
     asset_type = AssetTypeField(
         required=True,
         exclude_types=(AssetType.EVM_TOKEN, AssetType.NFT),
     )
-    name = fields.String(required=True)
-    symbol = fields.String(required=True)
-    started = TimestampField(load_default=None)
     forked = AssetField(expected_type=CryptoAsset, load_default=None)
-    swapped_for = AssetField(expected_type=CryptoAsset, load_default=None)
-    coingecko = fields.String(load_default=None)
-    cryptocompare = fields.String(load_default=None)
 
     def __init__(
             self,
@@ -1875,7 +1876,7 @@ class AssetsMappingSchema(Schema):
     identifiers = DelimitedOrNormalList(fields.String(required=True), required=True)
 
 
-class EvmTokenSchema(RequiredEthereumAddressSchema):
+class EvmTokenSchema(BaseCryptoAssetSchema, RequiredEthereumAddressSchema):
     token_kind = SerializableEnumField(enum_class=EvmTokenKind, required=True)
     decimals = fields.Integer(
         strict=True,
@@ -1886,12 +1887,6 @@ class EvmTokenSchema(RequiredEthereumAddressSchema):
         ),
         required=True,
     )
-    name = fields.String(required=True)
-    symbol = fields.String(required=True)
-    started = TimestampField(load_default=None)
-    swapped_for = AssetField(expected_type=CryptoAsset, load_default=None)
-    coingecko = fields.String(load_default=None)
-    cryptocompare = fields.String(load_default=None)
     protocol = fields.String(load_default=None)
     underlying_tokens = fields.List(fields.Nested(UnderlyingTokenInfoSchema), load_default=None)
 
