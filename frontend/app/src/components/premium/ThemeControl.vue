@@ -1,7 +1,7 @@
 <template>
   <div>
     <theme-switch
-      v-if="premium && componentsLoaded"
+      v-if="showComponents"
       :dark-mode-enabled="darkModeEnabled"
       :in-menu="menu"
     >
@@ -29,5 +29,5 @@ defineProps({
   }
 });
 
-const { premium, componentsLoaded } = storeToRefs(usePremiumStore());
+const { showComponents } = storeToRefs(usePremiumStore());
 </script>

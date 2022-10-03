@@ -5,7 +5,7 @@
       :macos-unsupported="isMacOsVersionUnsupported"
       :win-unsupported="isWinVersionUnsupported"
     >
-      <theme-checker v-if="premium" @update:dark-mode="updateDarkMode" />
+      <theme-checker v-if="showComponents" @update:dark-mode="updateDarkMode" />
       <app-update-popup />
       <app-core v-if="logged" />
     </app-messages>
@@ -74,7 +74,7 @@ const isWinVersionUnsupported = ref(false);
 const { connect } = useMainStore();
 const { showAbout, showDrawer } = storeToRefs(useAreaVisibilityStore());
 const { logged, loginComplete } = storeToRefs(useSessionStore());
-const { premium } = storeToRefs(usePremiumStore());
+const { showComponents } = storeToRefs(usePremiumStore());
 const { setupListeners, isPackaged } = useInterop();
 const { isMobile } = useTheme();
 const { updateDarkMode } = useDarkMode();
