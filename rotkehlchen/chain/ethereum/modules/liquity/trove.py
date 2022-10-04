@@ -18,6 +18,7 @@ from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants.assets import A_ETH, A_LQTY, A_LUSD, A_USD
 from rotkehlchen.constants.ethereum import LIQUITY_TROVE_MANAGER
 from rotkehlchen.errors.misc import ModuleInitializationFailure, RemoteError
+from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import PriceHistorian
@@ -438,7 +439,7 @@ class Liquity(HasDSProxy):
                         sequence_number=str(change['sequenceNumber']),
                     )
                     result[owner].append(event)
-                except (DeserializationError, KeyError) as e:
+                except (DeserializationError, KeyError, NoPriceForGivenTimestamp) as e:
                     log.debug(f'Failed to deserialize Liquity trove event: {change}')
                     msg = str(e)
                     if isinstance(e, KeyError):
