@@ -180,10 +180,6 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
     value: 'type'
   },
   {
-    text: tc('common.chain'),
-    value: 'chain'
-  },
-  {
     text: tc('common.address'),
     value: 'address'
   },

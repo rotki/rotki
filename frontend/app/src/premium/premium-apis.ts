@@ -41,15 +41,22 @@ import { useStatisticsStore } from '@/store/statistics';
 import { One } from '@/utils/bignumbers';
 
 export const assetsApi = (): AssetsApi => {
-  const { assetInfo, assetSymbol } = useAssetInfoRetrieval();
+  const { assetInfo, assetSymbol, tokenAddress } = useAssetInfoRetrieval();
 
   const { getNftDetails } = useNftAssetInfoStore();
+
   return {
     assetInfo: identifier => {
       const nft = get(getNftDetails(identifier)) as AssetInfo | null;
       return nft ?? get(assetInfo(identifier));
     },
-    assetSymbol: asset => get(assetSymbol(asset))
+    assetSymbol: identifier => {
+      const nft = get(getNftDetails(identifier)) as AssetInfo | null;
+      return nft?.symbol ?? get(assetSymbol(identifier));
+    },
+    tokenAddress: identifier => {
+      return get(tokenAddress(identifier));
+    }
   };
 };
 

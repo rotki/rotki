@@ -65,7 +65,10 @@ export const useExchangeBalancesStore = defineStore(
     });
 
     const balances: ComputedRef<AssetBalances> = computed(() => {
-      return sumAssetBalances(Object.values(get(exchangeBalances)));
+      return sumAssetBalances(
+        Object.values(get(exchangeBalances)),
+        getAssociatedAssetIdentifier
+      );
     });
 
     const getBreakdown = (asset: string): ComputedRef<AssetBreakdown[]> =>

@@ -77,6 +77,11 @@ const { t } = useI18n();
 
 const search = ref<string | null>('');
 
+watch(search, customAssetType => {
+  if (customAssetType === null) customAssetType = '';
+  input({ customAssetType });
+});
+
 const rules = {
   name: {
     required: helpers.withMessage(

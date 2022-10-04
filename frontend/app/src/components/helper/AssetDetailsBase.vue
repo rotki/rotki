@@ -4,7 +4,7 @@
     :class="opensDetails ? 'asset-details-base--link' : null"
     :dense="dense"
     :title="asset.isCustomAsset ? name : symbol"
-    :subtitle="asset.isCustomAsset ? asset.customAssetType : symbol"
+    :subtitle="asset.isCustomAsset ? asset.customAssetType : name"
     @click="navigate"
   >
     <template #icon>
@@ -13,10 +13,7 @@
         size="26px"
         :styled="assetStyled"
         :identifier="asset.identifier"
-        :symbol="symbol"
-        :name="name"
-        :chain="asset.evmChain"
-        :is-custom-asset="asset.isCustomAsset || false"
+        :enable-association="enableAssociation"
       />
     </template>
   </list-item>
@@ -39,7 +36,8 @@ const props = defineProps({
   opensDetails: { required: false, type: Boolean, default: false },
   changeable: { required: false, type: Boolean, default: false },
   hideName: { required: false, type: Boolean, default: false },
-  dense: { required: false, type: Boolean, default: false }
+  dense: { required: false, type: Boolean, default: false },
+  enableAssociation: { required: false, type: Boolean, default: true }
 });
 
 const { asset, opensDetails } = toRefs(props);

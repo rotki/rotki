@@ -25,6 +25,9 @@ export class ManualBalancesPage extends AccountBalancesPage {
     cy.get('.manual-balances-form__asset').type(balance.keyword);
     cy.get('[data-cy="no_assets"]').should('not.exist');
     cy.get(`#asset-${balance.asset.toLowerCase()}`).should('be.visible');
+    cy.get('.v-autocomplete__content .v-list > div').should($list => {
+      expect($list.eq(0)).to.contain(balance.asset);
+    });
     cy.get('.manual-balances-form__asset').type('{enter}');
     cy.get('.manual-balances-form__label').type(balance.label);
     cy.get('.manual-balances-form__amount').type(balance.amount);

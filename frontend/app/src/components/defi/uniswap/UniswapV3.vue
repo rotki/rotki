@@ -126,7 +126,10 @@
                         :value="asset.userBalance"
                       />
                     </div>
-                    <hash-link link-only :text="tokenAddress(asset.asset)" />
+                    <hash-link
+                      link-only
+                      :text="tokenAddress(asset.asset).value"
+                    />
                   </v-col>
                 </v-row>
               </div>

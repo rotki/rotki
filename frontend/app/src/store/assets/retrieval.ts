@@ -38,6 +38,14 @@ export const useAssetInfoRetrieval = defineStore(
         return get(assetAssociationMap)[identifier] ?? identifier;
       });
 
+    const getAssetNameFallback = (id: string) => {
+      if (isEvmIdentifier(id)) {
+        const address = getAddressFromEvmIdentifier(id);
+        return `EVM Token: ${address}`;
+      }
+      return '';
+    };
+
     const assetInfo = (
       identifier: MaybeRef<string | undefined>,
       enableAssociation: MaybeRef<boolean> = true
@@ -50,7 +58,23 @@ export const useAssetInfoRetrieval = defineStore(
           ? get(getAssociatedAssetIdentifier(id))
           : id;
 
-        return get(retrieve(key));
+        const data = get(retrieve(key));
+
+        if (data && data.isCustomAsset) {
+          return {
+            ...data,
+            symbol: data.name
+          };
+        }
+
+        const name = data?.name || getAssetNameFallback(id);
+        const symbol = data?.symbol || getAssetNameFallback(id);
+
+        return {
+          ...data,
+          name,
+          symbol
+        };
       });
 
     const assetSymbol = (
@@ -62,13 +86,7 @@ export const useAssetInfoRetrieval = defineStore(
         if (!id) return '';
 
         const symbol = get(assetInfo(id, enableAssociation))?.symbol;
-
         if (symbol) return symbol;
-
-        if (isEvmIdentifier(id)) {
-          const address = getAddressFromEvmIdentifier(id);
-          return `EVM Token: ${address}`;
-        }
 
         return '';
       });
@@ -83,11 +101,6 @@ export const useAssetInfoRetrieval = defineStore(
 
         const name = get(assetInfo(id, enableAssociation))?.name;
         if (name) return name;
-
-        if (isEvmIdentifier(id)) {
-          const address = getAddressFromEvmIdentifier(id);
-          return `EVM Token: ${address}`;
-        }
 
         return '';
       });
