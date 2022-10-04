@@ -60,7 +60,6 @@ import LatestPriceTable from '@/components/price-manager/latest/LatestPriceTable
 import { useRoute, useRouter } from '@/composables/router';
 import { ManualPrice, ManualPriceFormPayload } from '@/services/assets/types';
 import { api } from '@/services/rotkehlchen-api';
-import { useBalancesStore } from '@/store/balances';
 import { useMessageStore } from '@/store/message';
 import { Nullable } from '@/types';
 
@@ -105,7 +104,6 @@ const hideForm = function () {
   set(formData, emptyPrice());
 };
 
-const { refreshPrices } = useBalancesStore();
 const managePrice = async (price: ManualPriceFormPayload, edit: boolean) => {
   try {
     await api.assets.addLatestPrice(omit(price, 'usdPrice'));
@@ -113,7 +111,6 @@ const managePrice = async (price: ManualPriceFormPayload, edit: boolean) => {
     if (!get(refreshing)) {
       set(refreshing, true);
     }
-    await refreshPrices(false, [price.fromAsset, price.toAsset]);
   } catch (e: any) {
     const values = { message: e.message };
     const title = edit

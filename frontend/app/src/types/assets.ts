@@ -54,6 +54,7 @@ export interface AssetPagination extends ApiPagination<SupportedAsset> {
   symbol?: string;
   showUserOwnedAssetsOnly?: boolean;
   includeIgnoredAssets?: boolean;
+  identifiers?: string[];
 }
 
 export interface AssetPaginationOptions

@@ -9,8 +9,8 @@
           v-if="mode === 'icon' || mode === 'both'"
           contain
           v-bind="attrs"
-          max-width="24px"
-          max-height="24"
+          max-width="32px"
+          max-height="32px"
           :class="{
             'mr-2': mode !== 'icon',
             [$style.icon]: true

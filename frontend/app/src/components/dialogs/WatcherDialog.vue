@@ -128,7 +128,7 @@
       <template #buttons>
         <div class="watcher-dialog__actions">
           <div
-            :class="`text-caption flex-1 watcher-dialog__actions__messages watcher-dialog__actions__messages--${validationStatus} py-1 px-3 mr-4`"
+            :class="`text-caption flex-1 watcher-dialog__actions__messages watcher-dialog__actions__messages--${validationStatus} py-2 px-4 mb-4`"
           >
             {{ validationMessage }}
           </div>
@@ -170,7 +170,7 @@ const props = defineProps({
   },
   watcherContentId: {
     required: false,
-    type: String,
+    type: [String, Number],
     default: null
   },
   preselectWatcherType: {
@@ -409,11 +409,12 @@ const cancel = () => {
   }
 
   &__actions {
-    padding: 1rem 1.5rem !important;
+    width: 100%;
     justify-content: space-between;
 
     &__messages {
       min-height: 2.5em;
+      width: 100%;
       border-radius: 8px;
 
       &--success {

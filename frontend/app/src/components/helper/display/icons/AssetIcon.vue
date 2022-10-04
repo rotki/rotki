@@ -1,9 +1,9 @@
 <template>
-  <div :style="placeholderStyle">
+  <div :class="css.placeholder" :style="placeholderStyle">
     <adaptive-wrapper :circle="circle" :padding="padding">
       <v-tooltip top open-delay="400" :disabled="noTooltip">
         <template #activator="{ on, attrs }">
-          <div>
+          <div :class="css.outer">
             <div
               v-if="chainIcon"
               :class="{
@@ -33,22 +33,28 @@
               >
                 mdi-pencil-circle-outline
               </v-icon>
-              <generated-icon
-                v-else-if="!!currency || error"
-                :asset="displayAsset ?? ''"
-                :currency="!!currency"
-                :size="size"
-              />
-              <v-img
-                v-else-if="!error"
-                :src="url"
-                :max-height="size"
-                :min-height="size"
-                :max-width="size"
-                :min-width="size"
-                contain
-                @load="error = false"
-              />
+              <div v-else :class="css.wrapper">
+                <generated-icon
+                  v-if="currency || pending || error"
+                  :asset="displayAsset"
+                  :currency="!!currency"
+                  :size="size"
+                />
+                <v-img
+                  v-if="!error"
+                  :src="url"
+                  :max-height="size"
+                  :min-height="size"
+                  :max-width="size"
+                  :min-width="size"
+                  contain
+                  @load="pending = false"
+                  @error="
+                    error = true;
+                    pending = false;
+                  "
+                />
+              </div>
             </div>
           </div>
         </template>
@@ -96,7 +102,9 @@ const {
   enableAssociation,
   showChain
 } = toRefs(props);
-const error = ref<boolean>(true);
+
+const error = ref<boolean>(false);
+const pending = ref<boolean>(true);
 
 const { t } = useI18n();
 const css = useCssModule();
@@ -106,6 +114,7 @@ const currency = computed<string | undefined>(() => {
   if ([Blockchain.BTC, Blockchain.ETH].includes(id as Blockchain)) {
     return undefined;
   }
+
   return currencies.find(({ tickerSymbol }) => tickerSymbol === id)
     ?.unicodeSymbol;
 });
@@ -119,10 +128,10 @@ const symbol = computed(() => get(asset)?.symbol);
 const name = computed(() => get(asset)?.name);
 
 const displayAsset = computed<string>(() => {
-  if (get(error)) {
-    return get(symbol) || '';
-  }
-  return get(currency) || get(identifier) || '';
+  const currencySymbol = get(currency);
+  if (currencySymbol) return currencySymbol;
+
+  return get(symbol) ?? get(name) ?? get(identifier) ?? '';
 });
 
 const tooltip = computed(() => {
@@ -176,7 +185,10 @@ const placeholderStyle = computed(() => {
 const chainIcon = computed(() =>
   get(showChain) ? getChainIcon(get(chain)) : null
 );
-watch([symbol, changeable, identifier], () => set(error, true));
+watch([symbol, changeable, identifier], () => {
+  set(error, false);
+  set(pending, true);
+});
 
 const { dark } = useTheme();
 </script>
@@ -189,7 +201,7 @@ const { dark } = useTheme();
 .chain {
   border: 1px solid rgb(200, 200, 200);
   background-color: white;
-  position: relative;
+  position: absolute;
   margin-top: v-bind(chainIconMargin);
   margin-left: v-bind(chainIconMargin);
   top: v-bind(chainIconPosition);
@@ -200,5 +212,21 @@ const { dark } = useTheme();
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.placeholder {
+  position: relative;
+}
+
+.wrapper {
+  position: relative;
+  width: v-bind(size);
+  height: v-bind(size);
+
+  > * {
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
 }
 </style>

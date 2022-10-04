@@ -80,7 +80,7 @@ import { ManualBalance } from '@/types/manual-balances';
 const form = ref<any | null>(null);
 const balanceToEdit: Ref<ManualBalance | null> = ref(null);
 const loading = ref(false);
-const valid = ref(false);
+const valid = ref(true);
 
 const store = useManualBalancesStore();
 const { fetchManualBalances } = store;
@@ -98,6 +98,7 @@ const add = () => {
   set(dialogTitle, t('manual_balances.dialog.add.title').toString());
   set(dialogSubtitle, '');
   set(openDialog, true);
+  set(valid, false);
 };
 
 const edit = (balance: ManualBalance) => {
@@ -105,6 +106,7 @@ const edit = (balance: ManualBalance) => {
   set(dialogTitle, t('manual_balances.dialog.edit.title').toString());
   set(dialogSubtitle, t('manual_balances.dialog.edit.subtitle').toString());
   set(openDialog, true);
+  set(valid, true);
 };
 
 const cancel = () => {

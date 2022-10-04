@@ -1,5 +1,6 @@
 import { Balance, BigNumber } from '@rotki/common';
 import { DefiProtocol } from '@rotki/common/lib/blockchain';
+import { assetSymbolToIdentifierMap } from '@rotki/common/lib/data';
 import {
   AaveBalances,
   AaveBorrowingEventType,
@@ -99,8 +100,7 @@ export const useDefiSupportedProtocolsStore = defineStore(
                 eventType: movement.movementType,
                 protocol: DefiProtocol.MAKERDAO_DSR,
                 address,
-                asset:
-                  'eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F',
+                asset: assetSymbolToIdentifierMap.DAI,
                 value: movement.value,
                 blockNumber: movement.blockNumber,
                 timestamp: movement.timestamp,
@@ -396,7 +396,13 @@ export const useDefiSupportedProtocolsStore = defineStore(
             details => details.identifier.toString().toLocaleLowerCase() === id
           );
 
-          return details ? { ...vault, ...details, asset: 'DAI' } : vault;
+          return details
+            ? {
+                ...vault,
+                ...details,
+                asset: assetSymbolToIdentifierMap.DAI
+              }
+            : vault;
         }
 
         if (loan.protocol === DefiProtocol.AAVE) {
@@ -645,8 +651,7 @@ export const useDefiSupportedProtocolsStore = defineStore(
             balances.push({
               address,
               protocol: DefiProtocol.MAKERDAO_DSR,
-              asset:
-                'eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F',
+              asset: assetSymbolToIdentifierMap.DAI,
               balance: { ...balance },
               effectiveInterestRate: `${format}%`
             });

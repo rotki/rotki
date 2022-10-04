@@ -10,7 +10,7 @@
           :asset-padding="assetPadding"
           :value="interest"
           :loading="loading"
-          asset="DAI"
+          :asset="dai"
         />
       </div>
       <div v-else>
@@ -22,6 +22,7 @@
 
 <script setup lang="ts">
 import { BigNumber } from '@rotki/common';
+import { assetSymbolToIdentifierMap } from '@rotki/common/lib/data';
 import LoanRow from '@/components/defi/loan/LoanRow.vue';
 import Fragment from '@/components/helper/Fragment';
 import PremiumLock from '@/components/premium/PremiumLock.vue';
@@ -53,5 +54,6 @@ const interest = computed(() => {
   return get(totalInterestOwed);
 });
 
+const dai: string = assetSymbolToIdentifierMap.DAI;
 const assetPadding = 4;
 </script>

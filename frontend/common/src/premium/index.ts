@@ -1,4 +1,5 @@
-import { Ref } from "vue";
+import { MaybeRef } from '@vueuse/core';
+import { ComputedRef, Ref } from "vue";
 import VueI18n from 'vue-i18n';
 
 import { AssetInfo } from "../data";
@@ -82,9 +83,9 @@ export type BalancesApi = {
 };
 
 export type AssetsApi = {
-  assetInfo(identifier: string): AssetInfo | null;
-  assetSymbol(identifier: string): string;
-  tokenAddress(identifier: string): string;
+  assetInfo(identifier: MaybeRef<string>): ComputedRef<AssetInfo | null>;
+  assetSymbol(identifier: MaybeRef<string>): ComputedRef<string>;
+  tokenAddress(identifier: MaybeRef<string>): ComputedRef<string>;
 };
 
 export type UtilsApi = {

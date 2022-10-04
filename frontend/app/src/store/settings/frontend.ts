@@ -100,6 +100,10 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
 
   const api = useSettingsApi();
 
+  const update = (update: FrontendSettings) => {
+    Object.assign(settings, update);
+  };
+
   async function updateSetting(
     payload: FrontendSettingsPayload
   ): Promise<ActionStatus> {
@@ -113,7 +117,7 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
         )
       });
 
-      Object.assign(settings, updatedSettings);
+      update(updatedSettings);
 
       if (payload.thousandSeparator || payload.decimalSeparator) {
         BigNumber.config({
@@ -134,10 +138,6 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
       };
     }
   }
-
-  const update = (update: FrontendSettings) => {
-    Object.assign(settings, update);
-  };
 
   const reset = () => {
     update(FrontendSettings.parse({}));

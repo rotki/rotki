@@ -49,9 +49,6 @@ import {
   LiquityStakingEvent,
   LiquityStakingEvents
 } from '@rotki/common/lib/liquity';
-import { get, toRefs } from '@vueuse/core';
-import { computed, ref } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import LiquityStake from '@/components/staking/liquity/LiquityStake.vue';
 import { isSectionLoading } from '@/composables/common';

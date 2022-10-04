@@ -96,10 +96,6 @@
 import { BigNumber } from '@rotki/common';
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain, DefiProtocol } from '@rotki/common/lib/blockchain';
-import { get, set } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { computed, onMounted, ref } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
 import DepositProtocolReset from '@/components/defi/DepositProtocolReset.vue';
 import DepositTotals from '@/components/defi/DepositTotals.vue';

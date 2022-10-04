@@ -140,11 +140,13 @@ const edit = (editAsset: SupportedAsset) => {
   set(showForm, true);
 };
 
-const editAsset = (identifier: Nullable<string>) => {
+const editAsset = async (identifier: Nullable<string>) => {
   if (identifier) {
-    const asset = get(assets).find(({ identifier: id }) => id === identifier);
-    if (asset) {
-      edit(asset);
+    const result = await queryAllAssets({
+      identifiers: [identifier]
+    });
+    if (result?.entries?.length > 0) {
+      edit(result.entries[0]);
     }
   }
 };
@@ -215,7 +217,7 @@ const closeDialog = async () => {
 
 onMounted(async () => {
   await refresh();
-  editAsset(get(identifier));
+  await editAsset(get(identifier));
 
   const query = get(route).query;
   if (query.add) {
@@ -224,8 +226,8 @@ onMounted(async () => {
   }
 });
 
-watch(identifier, identifier => {
-  editAsset(identifier);
+watch(identifier, async identifier => {
+  await editAsset(identifier);
 });
 
 watch(pagination, () => refresh());
