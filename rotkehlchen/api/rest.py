@@ -3242,6 +3242,11 @@ class RestAPI():
             ignore_cache: bool,
             tx_hashes: Optional[List[EVMTxHash]],
     ) -> Dict[str, Any]:
+        """
+        Decode a set of transactions selected by their transaction hash. If the tx_hashes
+        value is None all the transactions in the database will be attempted to be decoded.
+        If the tx_hashes argument is provided then the USD price for their events will be queried.
+        """
         try:
             decoded_events = self.rotkehlchen.eth_tx_decoder.decode_transaction_hashes(
                 ignore_cache=ignore_cache,
@@ -3249,6 +3254,7 @@ class RestAPI():
             )
             task_manager = self.rotkehlchen.task_manager
             if tx_hashes is not None and task_manager is not None:
+                # Trigger the task to query the missing prices for the decoded events
                 events_filter = HistoryEventFilterQuery.make(
                     event_identifiers=[event.event_identifier for event in decoded_events],
                 )
