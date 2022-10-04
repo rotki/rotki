@@ -12,7 +12,7 @@ import requests
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
-from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset, WrongAssetType
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.coingecko import DELISTED_ASSETS, Coingecko
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -130,7 +130,7 @@ class IconManager():
         # Then our only chance is coingecko
         try:
             asset = asset.resolve_to_asset_with_oracles()
-        except UnknownAsset:
+        except (UnknownAsset, WrongAssetType):
             return None
 
         needed_path = self.iconfile_path(asset)

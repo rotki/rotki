@@ -8,7 +8,7 @@ from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.ethereum import ETH_SPECIAL_ADDRESS
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
-from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset, WrongAssetType
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
@@ -139,7 +139,7 @@ def ethaddress_to_asset(address: ChecksumEvmAddress) -> Optional[CryptoAsset]:
 
     try:
         asset = EvmToken(ethaddress_to_identifier(address))
-    except UnknownAsset:
+    except (UnknownAsset, WrongAssetType):
         log.error(f'Could not find asset/token for address {address}')
         return None
 

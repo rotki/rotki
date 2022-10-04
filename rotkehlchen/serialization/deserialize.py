@@ -18,7 +18,7 @@ from rotkehlchen.accounting.structures.types import HistoryEventType
 from rotkehlchen.assets.asset import AssetWithOracles, EvmToken
 from rotkehlchen.assets.utils import get_crypto_asset_by_symbol
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair
+from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair, WrongAssetType
 from rotkehlchen.errors.serialization import ConversionError, DeserializationError
 from rotkehlchen.externalapis.utils import read_hash, read_integer
 from rotkehlchen.fval import AcceptableFValInitInput, FVal
@@ -474,7 +474,7 @@ def deserialize_ethereum_token_from_db(identifier: str) -> EvmToken:
     """Takes an identifier and returns the <EvmToken>"""
     try:
         ethereum_token = EvmToken(identifier)
-    except UnknownAsset as e:
+    except (UnknownAsset, WrongAssetType) as e:
         raise DeserializationError(
             f'Could not initialize an ethereum token with identifier {identifier}',
         ) from e

@@ -70,7 +70,7 @@ from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.utils import BlockchainAccounts
-from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import (
     EthSyncError,
     InputError,
@@ -1344,7 +1344,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
 
             try:
                 token = EvmToken(ethaddress_to_identifier(entry.base_balance.token_address))
-            except UnknownAsset:
+            except (UnknownAsset, WrongAssetType):
                 log.warning(
                     f'Found unknown asset {entry.base_balance.token_symbol} in DeFi '
                     f'balances for account: {account} and '

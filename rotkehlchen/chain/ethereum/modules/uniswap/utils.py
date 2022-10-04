@@ -17,7 +17,7 @@ from rotkehlchen.constants.ethereum import UNISWAP_V2_LP_ABI, ZERION_ABI
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
-from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -212,7 +212,7 @@ def find_uniswap_v2_lp_price(
     try:
         token0 = EvmToken(ethaddress_to_identifier(decoded[0]))
         token1 = EvmToken(ethaddress_to_identifier(decoded[1]))
-    except UnknownAsset:
+    except (UnknownAsset, WrongAssetType):
         log.debug(f'Unknown assets while querying uniswap v2 lp price {decoded[0]} {decoded[1]}')
         return None
 

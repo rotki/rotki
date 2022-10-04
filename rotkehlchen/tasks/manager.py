@@ -16,7 +16,7 @@ from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import DBEqualsFilter, DBIgnoreValuesFilter, HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.api import PremiumAuthenticationError
-from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.exchanges.manager import ExchangeManager
@@ -160,7 +160,7 @@ class TaskManager():
         for asset in assets:
             try:
                 asset = asset.resolve_to_asset_with_oracles()
-            except UnknownAsset:
+            except (UnknownAsset, WrongAssetType):
                 continue  # cryptocompare does not work with non-oracles assets
 
             if asset.is_fiat() and main_currency.is_fiat():
