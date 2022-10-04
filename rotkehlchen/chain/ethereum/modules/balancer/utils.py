@@ -6,7 +6,7 @@ from rotkehlchen.assets.asset import EvmToken, UnderlyingToken
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
-from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -149,7 +149,7 @@ def deserialize_invest_event(
     pool_address = deserialize_evm_address(raw_pool_address)
     try:
         pool_address_token = EvmToken(ethaddress_to_identifier(pool_address))
-    except UnknownAsset as e:
+    except (UnknownAsset, WrongAssetType) as e:
         raise DeserializationError(
             f'Balancer pool token with address {pool_address} should have been in the DB',
         ) from e

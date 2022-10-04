@@ -457,7 +457,7 @@ class MaybeAssetField(fields.Field):
             asset = Asset(identifier=value).resolve_to_asset_with_oracles()
         except DeserializationError as e:
             raise ValidationError(str(e)) from e
-        except UnknownAsset:
+        except (UnknownAsset, WrongAssetType):
             log.error(f'Failed to deserialize asset {value}')
             return None
 

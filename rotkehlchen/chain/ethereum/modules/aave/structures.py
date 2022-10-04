@@ -3,7 +3,7 @@ from typing import Any, Dict, Literal, Optional, Tuple
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
-from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import deserialize_optional_to_fval
@@ -204,7 +204,7 @@ def aave_event_from_db(event_tuple: AAVE_EVENT_DB_TUPLE) -> AaveEvent:
     if event_tuple[9] is not None:
         try:
             asset2 = CryptoAsset(event_tuple[9])
-        except UnknownAsset as e:
+        except (UnknownAsset, WrongAssetType) as e:
             raise DeserializationError(
                 f'Unknown asset {event_tuple[6]} encountered during deserialization '
                 f'of Aave event from DB for asset2',

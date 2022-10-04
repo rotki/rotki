@@ -13,7 +13,7 @@ from rotkehlchen.constants.assets import A_COMP, A_ETH
 from rotkehlchen.constants.ethereum import CTOKEN_ABI, ERC20TOKEN_ABI, ETH_SPECIAL_ADDRESS
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
-from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import BlockchainQueryError, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_zero_if_error
@@ -464,7 +464,7 @@ class Compound(EthereumModule):
             timestamp = entry['blockTime']
             try:
                 ctoken_asset = _compound_symbol_to_token(symbol=ctoken_symbol, timestamp=timestamp)
-            except UnknownAsset:
+            except (UnknownAsset, WrongAssetType):
                 log.error(
                     f'Found unexpected cTokenSymbol {ctoken_symbol} during graph query. Skipping.')
                 continue
@@ -475,7 +475,7 @@ class Compound(EthereumModule):
                     symbol=underlying_symbol,
                     evm_chain=ChainID.ETHEREUM,
                 )
-            except UnknownAsset:
+            except (UnknownAsset, WrongAssetType):
                 log.error(
                     f'Found unexpected token symbol {underlying_symbol} during '
                     f'graph query. Skipping.',
