@@ -330,9 +330,10 @@ class EthereumManager():
         ---> Average: 70 seconds
         """
         open_nodes = self.database.get_web3_nodes(blockchain=SupportedBlockchain.ETHEREUM, only_active=True)  # noqa: E501
-        selection = list(open_nodes)
         if skip_etherscan:
-            selection = [wnode for wnode in open_nodes if wnode.node_info.name != ETHERSCAN_NODE_NAME]  # noqa: E501
+            selection = [wnode for wnode in open_nodes if wnode.node_info.name != ETHERSCAN_NODE_NAME and wnode.node_info.owned is False]  # noqa: E501
+        else:
+            selection = [wnode for wnode in open_nodes if wnode.node_info.owned is False]
 
         ordered_list = []
         while len(selection) != 0:
