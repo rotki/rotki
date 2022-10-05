@@ -3187,7 +3187,7 @@ class DBHandler:
         """
         with self.conn.read_ctx() as cursor:
             if only_active:
-                cursor.execute('SELECT identifier, name, endpoint, owned, weight, active, blockchain FROM web3_nodes WHERE blockchain=? AND active=1 AND CAST(weight as decimal) != 0;', (blockchain.value,))  # noqa: E501
+                cursor.execute('SELECT identifier, name, endpoint, owned, weight, active, blockchain FROM web3_nodes WHERE blockchain=? AND active=1 AND (CAST(weight as decimal) != 0 OR owned == 1);', (blockchain.value,))  # noqa: E501
             else:
                 cursor.execute(
                     'SELECT identifier, name, endpoint, owned, weight, active, blockchain FROM web3_nodes WHERE blockchain=?;', (blockchain.value,),  # noqa: E501
