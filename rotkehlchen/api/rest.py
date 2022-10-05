@@ -3937,13 +3937,14 @@ class RestAPI():
                 asset=asset,
             )
         try:
-            GlobalDBHandler().delete_manual_latest_price(asset=asset)
+            to_asset = GlobalDBHandler().delete_manual_latest_price(asset=asset)
         except InputError as e:
             return api_response(
                 result=wrap_in_fail_result(message=str(e)),
                 status_code=HTTPStatus.CONFLICT,
             )
 
+        Inquirer().remove_cached_current_price_entry(cache_key=(asset, to_asset))
         return api_response(result=OK_RESULT)
 
     def get_database_info(self) -> Response:

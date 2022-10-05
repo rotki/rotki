@@ -9,7 +9,7 @@ from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_USD
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
-from rotkehlchen.inquirer import CurrentPriceOracle
+from rotkehlchen.inquirer import CurrentPriceOracle, Inquirer
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -224,6 +224,7 @@ def test_edit_manual_current_price(rotkehlchen_api_server):
     )
 
 
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_remove_manual_current_price(rotkehlchen_api_server):
     GlobalDBHandler().add_manual_latest_price(
         from_asset=A_ETH,
@@ -235,6 +236,10 @@ def test_remove_manual_current_price(rotkehlchen_api_server):
         to_asset=A_EUR,
         price=Price(FVal(25)),
     )
+    # add the price to the inquirer cache
+    price = Inquirer().find_price(from_asset=A_ETH, to_asset=A_EUR)
+    assert price == Price(FVal(10))
+
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
@@ -261,6 +266,8 @@ def test_remove_manual_current_price(rotkehlchen_api_server):
     )
     # usd manual current price should have not been touched
     assert GlobalDBHandler().get_manual_current_price(A_USD) == (A_EUR, Price(FVal(25)))
+    # Check that the cache in the inquirer has been invalidated
+    assert (A_ETH, A_EUR) not in Inquirer()._cached_current_price
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
