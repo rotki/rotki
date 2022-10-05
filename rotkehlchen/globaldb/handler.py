@@ -1305,21 +1305,31 @@ class GlobalDBHandler():
             return read_cursor.fetchall()
 
     @staticmethod
-    def delete_manual_latest_price(asset: Asset) -> None:
+    def delete_manual_latest_price(asset: Asset) -> Asset:
         """
-        Deletes manual current price from globaldb.
+        Deletes manual current price from globaldb and returns the asset that was being used as
+        reference for the price
         May raise:
         - InputError if asset was not found in the price_history table
         """
         with GlobalDBHandler().conn.write_ctx() as write_cursor:
+            # check the asset of reference that will be deleted
+            write_cursor.execute(
+                'SELECT to_asset FROM price_history WHERE source_type=? AND from_asset=?',
+                (HistoricalPriceOracle.MANUAL_CURRENT.serialize_for_db(), asset.identifier),
+            )
+            to_asset = write_cursor.fetchone()
+            if to_asset is None:
+                raise InputError(
+                    f'Not found manual current price to delete for asset {str(asset)}',
+                )
+
+            # Execute the deletion
             write_cursor.execute(
                 'DELETE FROM price_history WHERE source_type=? AND from_asset=?',
                 (HistoricalPriceOracle.MANUAL_CURRENT.serialize_for_db(), asset.identifier),
             )
-            if write_cursor.rowcount != 1:
-                raise InputError(
-                    f'Not found manual current price to delete for asset {str(asset)}',
-                )
+            return Asset(to_asset[0])
 
     @staticmethod
     def get_manual_prices(
