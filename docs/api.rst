@@ -1291,7 +1291,7 @@ Query the current exchange rate for select assets
 
 .. http:get:: /api/(version)/exchange_rates
 
-   Querying this endpoint with a list of strings representing some assets will return a dictionary of their current exchange rates compared to USD.
+   Querying this endpoint with a list of strings representing some assets will return a dictionary of their current exchange rates compared to USD. If an asset's price could not be queried then zero will be returned as the price.
 
    .. note::
       This endpoint also accepts parameters as query arguments. List as a query argument here would be given as: ``?currencies=EUR,CNY,GBP``

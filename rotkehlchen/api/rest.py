@@ -404,20 +404,11 @@ class RestAPI():
             usd_price = Inquirer().find_usd_price(asset)
             if usd_price == Price(ZERO):
                 asset_rates[asset] = Price(ZERO)
-                self.rotkehlchen.msg_aggregator.add_warning(
-                    f'Failed to query usd price of {asset.identifier}. This asset '
-                    f'will not be selectable as a native currency in the app',
-                )
             else:
                 asset_rates[asset] = Price(ONE / usd_price)
 
         fiat_rates = Inquirer().get_fiat_usd_exchange_rates(fiat_currencies)
         for fiat, rate in fiat_rates.items():
-            if rate == ZERO:
-                self.rotkehlchen.msg_aggregator.add_warning(
-                    f'Failed to query usd price of {fiat.identifier}. This asset '
-                    f'will not be selectable as a native currency in the app',
-                )
             asset_rates[fiat] = rate
 
         return _wrap_in_ok_result(process_result(asset_rates))
