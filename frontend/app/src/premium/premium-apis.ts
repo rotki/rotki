@@ -57,10 +57,7 @@ export const assetsApi = (): AssetsApi => {
         const nft = get(getNftDetails(identifier)) as AssetInfo | null;
         return nft?.symbol ?? get(assetSymbol(identifier));
       }),
-    tokenAddress: (identifier: MaybeRef<string>) =>
-      computed(() => {
-        return get(tokenAddress(identifier));
-      })
+    tokenAddress: (identifier: MaybeRef<string>) => tokenAddress(identifier)
   };
 };
 

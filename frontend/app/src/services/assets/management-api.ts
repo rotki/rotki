@@ -15,7 +15,7 @@ import {
 
 export const useAssetManagementApi = () => {
   async function queryAllAssets(
-    pagination: AssetPagination
+    pagination: Partial<AssetPagination>
   ): Promise<SupportedAssets> {
     const response = await api.instance.post<ActionResult<SupportedAssets>>(
       '/assets/all',
