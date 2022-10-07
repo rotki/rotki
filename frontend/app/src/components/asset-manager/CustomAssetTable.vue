@@ -1,5 +1,5 @@
 <template>
-  <card outline-body>
+  <card outlined-body>
     <template #title>
       {{ tc('common.assets') }}
     </template>
