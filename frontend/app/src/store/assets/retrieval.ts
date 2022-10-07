@@ -106,15 +106,17 @@ export const useAssetInfoRetrieval = defineStore(
       });
 
     const tokenAddress = (
-      identifier: string,
-      enableAssociation: boolean = true
+      identifier: MaybeRef<string>,
+      enableAssociation: MaybeRef<boolean> = true
     ): ComputedRef<string> =>
       computed(() => {
-        if (!identifier) return '';
-        const id = enableAssociation
-          ? get(getAssociatedAssetIdentifier(identifier))
-          : identifier;
-        return getAddressFromEvmIdentifier(id);
+        const id = get(identifier);
+        if (!id) return '';
+
+        const key = get(enableAssociation)
+          ? get(getAssociatedAssetIdentifier(id))
+          : id;
+        return getAddressFromEvmIdentifier(key);
       });
 
     const fetchTokenDetails = async (address: string): Promise<ERC20Token> => {

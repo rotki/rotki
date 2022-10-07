@@ -12,3 +12,4 @@ export enum LpType {
   SUSHISWAP = 'SUSHISWAP',
   BALANCER = 'BALANCER'
 }
+

@@ -24,6 +24,8 @@ export const useBlockchainStore = defineStore('blockchain', () => {
   const { fetchLoopringBalances } = useEthBalancesStore();
   const { fetchDetected } = useBlockchainTokensStore();
   const { enableModule } = useSettingsStore();
+  const { reset: resetDefi } = useDefiStore();
+  const { resetDefiStatus } = useStatusStore();
 
   const { isTaskRunning } = useTasks();
   const { notify } = useNotifications();
@@ -61,15 +63,21 @@ export const useBlockchainStore = defineStore('blockchain', () => {
       })
     ];
 
-    if (blockchain === Blockchain.ETH) {
+    const isEth = blockchain === Blockchain.ETH;
+
+    if (isEth) {
       pending.push(
         fetchBlockchainBalances({
           blockchain: Blockchain.ETH2,
           ignoreCache: false
         })
       );
+    }
+
+    if (isEth || !blockchain) {
       pending.push(fetchLoopringBalances(false));
     }
+
     await Promise.allSettled(pending);
   };
 
@@ -115,8 +123,8 @@ export const useBlockchainStore = defineStore('blockchain', () => {
           addresses
         });
       }
-      useDefiStore().reset();
-      useStatusStore().resetDefiStatus();
+      resetDefi();
+      resetDefiStatus();
       if (blockchain === Blockchain.ETH) {
         await fetchDetected(addr.filter(add => add.length > 0));
       }

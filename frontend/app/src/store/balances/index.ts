@@ -14,6 +14,7 @@ import { useTasks } from '@/store/tasks';
 import { AssetPrices } from '@/types/prices';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
+import { uniqueStrings } from '@/utils/data';
 
 export const useBalancesStore = defineStore('balances', () => {
   const { updatePrices: updateManualPrices, fetchManualBalances } =
@@ -42,12 +43,13 @@ export const useBalancesStore = defineStore('balances', () => {
     ignoreCache: boolean = false,
     selectedAssets: string[] | null = null
   ): Promise<void> => {
+    const unique = selectedAssets ? selectedAssets.filter(uniqueStrings) : null;
     const { setStatus } = useStatusUpdater(Section.PRICES);
     setStatus(Status.LOADING);
     await priceStore.fetchExchangeRates();
     await priceStore.fetchPrices({
       ignoreCache,
-      selectedAssets: get(selectedAssets ? selectedAssets : assets())
+      selectedAssets: get(unique && unique.length > 0 ? unique : assets())
     });
     adjustPrices(get(prices));
     setStatus(Status.LOADED);

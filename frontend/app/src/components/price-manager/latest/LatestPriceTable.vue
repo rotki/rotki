@@ -2,7 +2,7 @@
   <div>
     <v-row justify="end" class="mb-10">
       <v-col cols="auto">
-        <price-refresh :assets="assets" />
+        <price-refresh :additional-assets="latestAssets" />
       </v-col>
     </v-row>
     <card outlined-body>
@@ -74,6 +74,7 @@ import RowActions from '@/components/helper/RowActions.vue';
 import { ManualPrice } from '@/services/assets/types';
 import { api } from '@/services/rotkehlchen-api';
 import { useBalancesStore } from '@/store/balances';
+import { useAggregatedBalancesStore } from '@/store/balances/aggregated';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useNotifications } from '@/store/notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
@@ -143,13 +144,13 @@ const dismiss = () => {
 };
 
 const { refreshPrices } = useBalancesStore();
+
 const deletePrice = async () => {
   const { fromAsset } = get(pending)!;
   set(pending, null);
   try {
     await api.assets.deleteLatestPrice(fromAsset);
     await refresh();
-    await refreshPrices(false);
   } catch (e: any) {
     const notification: NotificationPayload = {
       title: tc('price_table.delete.failure.title'),
@@ -182,22 +183,20 @@ const fetchLatestPrices = async () => {
   }
 };
 
+const { assets } = useAggregatedBalancesStore();
+
 const refresh = async () => {
   await fetchLatestPrices();
+  await refreshPrices(false, [...get(latestAssets), ...get(assets())]);
 };
 
 const { getAssetPrice } = useBalancePricesStore();
 
-const assets: ComputedRef<string[]> = computed(() => {
+const latestAssets: ComputedRef<string[]> = computed(() => {
   return get(latestPrices)
-    .map(({ toAsset }) => toAsset)
+    .map(({ fromAsset, toAsset }) => [fromAsset, toAsset])
+    .flat()
     .filter(asset => asset !== CURRENCY_USD);
-});
-
-watch(assets, async assets => {
-  if (assets.length > 0) {
-    await refreshPrices(false, [...assets]);
-  }
 });
 
 const filteredPrices = computed(() => {
@@ -222,9 +221,9 @@ watch(refreshing, async refreshing => {
   if (!refreshing) {
     return;
   }
-  await fetchLatestPrices();
+  await refresh();
   emit('refreshed');
 });
 
-onMounted(fetchLatestPrices);
+onMounted(refresh);
 </script>

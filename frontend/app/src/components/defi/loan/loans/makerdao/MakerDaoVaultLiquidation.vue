@@ -41,7 +41,7 @@
             <amount-display
               :asset-padding="assetPadding"
               :value="totalInterestOwed"
-              asset="DAI"
+              :asset="dai"
             />
           </loan-row>
           <v-divider class="my-4" />
@@ -62,6 +62,7 @@
   </stat-card>
 </template>
 <script setup lang="ts">
+import { assetSymbolToIdentifierMap } from '@rotki/common/lib/data';
 import { get } from '@vueuse/core';
 import { computed, PropType, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
@@ -113,6 +114,7 @@ const totalInterestOwed = computed(() => {
   }
   return makerVault.totalInterestOwed;
 });
+const dai: string = assetSymbolToIdentifierMap.DAI;
 </script>
 
 <style lang="scss" module>

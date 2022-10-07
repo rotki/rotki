@@ -132,20 +132,29 @@ const dateInputFormatExample = computed(() => {
 const taskType = TaskType.IMPORT_CSV;
 const { awaitTask, isTaskRunning } = useTasks();
 
-const loading = isTaskRunning(taskType);
+const loading = isTaskRunning(taskType, { source: get(source) });
 
 const uploadPackaged = async (file: string) => {
   try {
+    const sourceVal = get(source);
     const { taskId } = await api.importDataFrom(
-      get(source),
+      sourceVal,
       file,
       get(dateInputFormat) || null
     );
 
-    const { result } = await awaitTask<boolean, TaskMeta>(taskId, taskType, {
-      title: t('file_upload.task.title', { source: get(source) }).toString(),
-      numericKeys: []
-    });
+    const taskMeta = {
+      title: t('file_upload.task.title', { source: sourceVal }).toString(),
+      numericKeys: [],
+      source: sourceVal
+    };
+
+    const { result } = await awaitTask<boolean, TaskMeta>(
+      taskId,
+      taskType,
+      taskMeta,
+      true
+    );
 
     if (result) {
       set(uploaded, true);

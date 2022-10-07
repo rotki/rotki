@@ -17,6 +17,7 @@
 
     <balance-type-input
       v-model="balanceType"
+      :disabled="pending"
       :label="tc('manual_balances_form.fields.balance_type')"
       outlined
     />
@@ -57,14 +58,16 @@
       </v-col>
 
       <v-col class="col" md="6">
-        <v-text-field
+        <v-combobox
           v-model="customAssetType"
+          :items="customAssetTypes"
           outlined
           persistent-hint
           clearable
           :disabled="pending"
-          :error-messages="v$.customAssetType.$errors.map(e => e.$message)"
           :label="t('common.type')"
+          :error-messages="v$.customAssetType.$errors.map(e => e.$message)"
+          :search-input.sync="search"
         />
       </v-col>
     </v-row>
@@ -116,8 +119,8 @@ import { useManualBalancesStore } from '@/store/balances/manual';
 import { useMessageStore } from '@/store/message';
 import { TradeLocation } from '@/types/history/trade-location';
 import { ManualBalance } from '@/types/manual-balances';
+import { startPromise } from '@/utils';
 import { bigNumberify } from '@/utils/bignumbers';
-import { toCapitalCase } from '@/utils/text';
 
 const props = defineProps({
   edit: {
@@ -151,6 +154,13 @@ const tags: Ref<string[]> = ref([]);
 const location: Ref<TradeLocation> = ref(TRADE_LOCATION_EXTERNAL);
 const balanceType: Ref<BalanceType> = ref(BalanceType.ASSET);
 const form = ref<any>(null);
+const customAssetTypes = ref<string[]>([]);
+const search = ref<string | null>('');
+
+watch(search, search => {
+  if (search === null) search = '';
+  set(customAssetType, search);
+});
 
 const reset = () => {
   get(form)?.reset();
@@ -241,8 +251,8 @@ const save = async () => {
     ? editManualBalance({ ...balance, id: idVal, asset: usedAsset })
     : addManualBalance({ ...balance, asset: usedAsset }));
 
-  await refreshPrices(false);
   set(pending, false);
+  startPromise(refreshPrices(false));
 
   if (status.success) {
     clear();
@@ -292,10 +302,6 @@ watch(label, label => {
 const assetMethod = ref<number>(0);
 const customAssetName = ref<string>('');
 const customAssetType = ref<string>('');
-
-watch(customAssetType, type => {
-  set(customAssetType, toCapitalCase(type));
-});
 
 const rules = {
   amount: {
@@ -350,6 +356,10 @@ watch(valid, value => input(value));
 
 defineExpose({
   save
+});
+
+onMounted(async () => {
+  set(customAssetTypes, await api.assets.getCustomAssetTypes());
 });
 </script>
 

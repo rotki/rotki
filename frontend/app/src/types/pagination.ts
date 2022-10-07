@@ -6,10 +6,10 @@ export interface TablePagination<T> {
 }
 
 export interface ApiPagination<T> {
-  limit: number;
-  offset: number;
-  orderByAttributes: (keyof T)[];
-  ascending: boolean[];
+  limit?: number;
+  offset?: number;
+  orderByAttributes?: (keyof T)[];
+  ascending?: boolean[];
 }
 
 export const convertPagination = <T>(

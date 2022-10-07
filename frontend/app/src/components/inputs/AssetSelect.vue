@@ -29,7 +29,11 @@
     @blur="blur"
   >
     <template #selection="{ item }">
-      <asset-details-base class="asset-select__details ml-2" :asset="item" />
+      <asset-details-base
+        v-if="item && item.identifier"
+        class="asset-select__details ml-2"
+        :asset="item"
+      />
     </template>
     <template #item="{ item }">
       <div class="pr-4">
@@ -59,6 +63,17 @@
     <template #no-data>
       <div data-cy="no_assets" class="px-4 py-2">
         {{ tc('asset_select.no_results') }}
+      </div>
+    </template>
+    <template #append>
+      <div v-if="loading" class="fill-height d-flex items-center">
+        <v-progress-circular
+          class="asset-select__loading"
+          color="primary"
+          indeterminate
+          width="3"
+          size="30"
+        />
       </div>
     </template>
   </v-autocomplete>
@@ -112,7 +127,7 @@ const emit = defineEmits<{ (e: 'input', value: string): void }>();
 const { items, showIgnored, excludes, errorMessages, value } = toRefs(props);
 const { isAssetIgnored } = useIgnoredAssetsStore();
 
-const input = (value: string) => emit('input', value);
+const input = (value: string) => emit('input', value || '');
 
 const autoCompleteInput = ref(null);
 const search = ref<string>('');
@@ -151,7 +166,7 @@ const visibleAssets = computed<AssetInfoWithId[]>(() => {
         ? excludesVal.includes(asset.identifier)
         : false;
 
-    return unIgnored && included && !excluded;
+    return !!asset.identifier && unIgnored && included && !excluded;
   });
 });
 
@@ -178,13 +193,20 @@ const searchAssets = async (
 
 const pending: Record<string, AbortController> = {};
 
+watch(search, search => {
+  if (search) {
+    set(loading, true);
+  } else {
+    set(loading, false);
+  }
+});
+
 watchThrottled(
   search,
   async (search, old) => {
     if (!search) {
       return;
     }
-
     if (pending[old]) {
       pending[old].abort();
       delete pending[old];
@@ -252,6 +274,10 @@ watch(value, async () => {
   &__details {
     padding-top: 4px;
     padding-bottom: 4px;
+  }
+
+  &__loading {
+    margin-top: -2px;
   }
 
   &--outlined {
