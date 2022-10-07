@@ -747,7 +747,7 @@ class Adex(EthereumModule):
                     to_timestamp=to_timestamp,
                 )
             except DeserializationError as e:
-                raise RemoteError(e) from e
+                raise RemoteError(str(e)) from e
 
             all_events.extend(events)
 

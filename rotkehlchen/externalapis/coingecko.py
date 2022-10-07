@@ -1,9 +1,9 @@
 import json
 import logging
+from http import HTTPStatus
 from typing import Any, Dict, List, Literal, NamedTuple, Optional, Union, overload
 from urllib.parse import urlencode
 
-import gevent
 import requests
 
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
@@ -23,8 +23,6 @@ from rotkehlchen.utils.misc import create_timestamp, timestamp_to_date, ts_now
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
-COINGECKO_QUERY_RETRY_TIMES = 3
 
 
 class CoingeckoAssetData(NamedTuple):
@@ -398,40 +396,19 @@ class Coingecko(HistoricalPriceOracleInterface):
             url += subpath
 
         log.debug(f'Querying coingecko: {url}?{urlencode(options)}')
-        tries = COINGECKO_QUERY_RETRY_TIMES
-        while tries >= 0:
-            try:
-                response = self.session.get(
-                    f'{url}?{urlencode(options)}',
-                    timeout=DEFAULT_TIMEOUT_TUPLE,
-                )
-            except requests.exceptions.RequestException as e:
-                raise RemoteError(f'Coingecko API request failed due to {str(e)}') from e
+        try:
+            response = self.session.get(
+                f'{url}?{urlencode(options)}',
+                timeout=DEFAULT_TIMEOUT_TUPLE,
+            )
+        except requests.exceptions.RequestException as e:
+            raise RemoteError(f'Coingecko API request failed due to {str(e)}') from e
 
-            if response.status_code == 429:
-                # Coingecko allows only 50 calls per minute. If you get 429 it means you
-                # exceeded this and are throttled until the next minute window
-                # backoff and retry COINGECKO_QUERY_RETRY_TIMES times
-                # that is 1.67 + 2.5 + 5 = at most 9.17 secs
-                self.last_rate_limit = ts_now()
-                if tries >= 1:
-                    backoff_seconds = 5 / tries
-                    log.debug(
-                        f'Got rate limited by coingecko. '
-                        f'Backing off for {backoff_seconds}',
-                    )
-                    gevent.sleep(backoff_seconds)
-                    tries -= 1
-                    continue
-
-                # else
-                log.debug(
-                    f'Got rate limited by coingecko and did not manage to get a '
-                    f'request through even after {COINGECKO_QUERY_RETRY_TIMES} '
-                    f'incremental backoff retries',
-                )
-
-            break
+        if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
+            self.last_rate_limit = ts_now()
+            msg = f'Got rate limited by coingecko querying {url}'
+            log.debug(msg)
+            raise RemoteError(message=msg, error_code=HTTPStatus.TOO_MANY_REQUESTS)
 
         if response.status_code != 200:
             msg = (
@@ -649,14 +626,23 @@ class Coingecko(HistoricalPriceOracleInterface):
 
         # no cache, query coingecko for daily price
         date = timestamp_to_date(timestamp, formatstr='%d-%m-%Y')
-        result = self._query(
-            module='coins',
-            subpath=f'{from_coingecko_id}/history',
-            options={
-                'date': date,
-                'localizatioen': 'false',
-            },
-        )
+        try:
+            result = self._query(
+                module='coins',
+                subpath=f'{from_coingecko_id}/history',
+                options={
+                    'date': date,
+                    'localizatioen': 'false',
+                },
+            )
+        except RemoteError as e:
+            rate_limited = e.error_code == HTTPStatus.TOO_MANY_REQUESTS
+            raise NoPriceForGivenTimestamp(
+                from_asset=from_asset,
+                to_asset=to_asset,
+                time=timestamp,
+                rate_limited=rate_limited,
+            ) from e
 
         # https://github.com/PyCQA/pylint/issues/4739
         try:
@@ -671,6 +657,7 @@ class Coingecko(HistoricalPriceOracleInterface):
                 from_asset=from_asset,
                 to_asset=to_asset,
                 time=timestamp,
+                rate_limited=False,
             ) from e
 
         # save result in the DB and return

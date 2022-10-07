@@ -144,8 +144,7 @@ class Covalent(ExternalServiceWithApiKey):
                 raise RemoteError(
                     f'Covalent API request {response.url} failed '
                     f'with HTTP status code {response.status_code} and '
-                    f'Error message: {error_message} and text',
-                    f'{response.text}',
+                    f'Error message: {error_message} and text {response.text}',
                 )
 
             # success, break out of the loop and return result

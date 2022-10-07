@@ -4,10 +4,17 @@ from rotkehlchen.utils.misc import timestamp_to_date
 
 
 class NoPriceForGivenTimestamp(Exception):
-    def __init__(self, from_asset: Asset, to_asset: Asset, time: Timestamp) -> None:
+    def __init__(
+            self,
+            from_asset: Asset,
+            to_asset: Asset,
+            time: Timestamp,
+            rate_limited: bool = False,
+    ) -> None:
         self.from_asset = from_asset
         self.to_asset = to_asset
         self.time = time
+        self.rate_limited = rate_limited
         super().__init__(
             'Unable to query a historical price for "{}" to "{}" at {}'.format(
                 from_asset.identifier,

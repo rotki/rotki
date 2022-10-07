@@ -1,4 +1,5 @@
 import logging
+from http import HTTPStatus
 from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional
 
@@ -202,6 +203,7 @@ class PriceHistorian():
         assert isinstance(oracles, list) and isinstance(oracle_instances, list), (
             'PriceHistorian should never be called before setting the oracles'
         )
+        rate_limited = False
         for oracle, oracle_instance in zip(oracles, oracle_instances):
             can_query_history = oracle_instance.can_query_history(
                 from_asset=from_asset,
@@ -220,9 +222,15 @@ class PriceHistorian():
             except (
                 PriceQueryUnsupportedAsset,
                 NoPriceForGivenTimestamp,
-                RemoteError,
                 UnknownAsset,
             ):
+                continue
+            except RemoteError as e:
+                # Raise the flag if any of the services was rate limited
+                rate_limited = (
+                    e.error_code == HTTPStatus.TOO_MANY_REQUESTS and
+                    rate_limited is False
+                )
                 continue
 
             log.debug(
@@ -238,4 +246,5 @@ class PriceHistorian():
             from_asset=from_asset,
             to_asset=to_asset,
             time=timestamp,
+            rate_limited=rate_limited,
         )

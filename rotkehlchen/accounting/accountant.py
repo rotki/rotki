@@ -170,6 +170,7 @@ class Accountant():
                         from_asset=e.from_asset,
                         to_asset=e.to_asset,
                         time=e.time,
+                        rate_limited=e.rate_limited,
                     ),
                 )
                 continue
