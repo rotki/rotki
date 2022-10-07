@@ -19,12 +19,12 @@ from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.interfaces import HistoricalPriceOracleInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Price, Timestamp
-from rotkehlchen.utils.misc import create_timestamp, timestamp_to_date
+from rotkehlchen.utils.misc import create_timestamp, timestamp_to_date, ts_now
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-COINGECKO_QUERY_RETRY_TIMES = 4
+COINGECKO_QUERY_RETRY_TIMES = 3
 
 
 class CoingeckoAssetData(NamedTuple):
@@ -360,6 +360,7 @@ class Coingecko(HistoricalPriceOracleInterface):
         self.session = requests.session()
         self.session.headers.update({'User-Agent': 'rotkehlchen'})
         self.all_coins_cache: Optional[Dict[str, Dict[str, Any]]] = None
+        self.last_rate_limit = 0
 
     @overload
     def _query(
@@ -408,11 +409,13 @@ class Coingecko(HistoricalPriceOracleInterface):
                 raise RemoteError(f'Coingecko API request failed due to {str(e)}') from e
 
             if response.status_code == 429:
-                # Coingecko allows only 100 calls per minute. If you get 429 it means you
+                # Coingecko allows only 50 calls per minute. If you get 429 it means you
                 # exceeded this and are throttled until the next minute window
-                # backoff and retry 4 times =  2.5 + 3.33 + 5 + 10 = at most 20.8 secs
+                # backoff and retry COINGECKO_QUERY_RETRY_TIMES times
+                # that is 1.67 + 2.5 + 5 = at most 9.17 secs
+                self.last_rate_limit = ts_now()
                 if tries >= 1:
-                    backoff_seconds = 10 / tries
+                    backoff_seconds = 5 / tries
                     log.debug(
                         f'Got rate limited by coingecko. '
                         f'Backing off for {backoff_seconds}',
@@ -584,11 +587,14 @@ class Coingecko(HistoricalPriceOracleInterface):
     ) -> bool:
         return True  # noop for coingecko
 
-    def rate_limited_in_last(  # pylint: disable=no-self-use
+    def rate_limited_in_last(
             self,
-            seconds: Optional[int] = None,  # pylint: disable=unused-argument
+            seconds: Optional[int] = None,
     ) -> bool:
-        return False  # noop for coingecko
+        if seconds is None:
+            return False
+
+        return ts_now() - self.last_rate_limit <= seconds
 
     def query_historical_price(
             self,
