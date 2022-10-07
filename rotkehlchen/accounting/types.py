@@ -125,10 +125,12 @@ class MissingPrice(NamedTuple):
     from_asset: Asset
     to_asset: Asset
     time: Timestamp
+    rate_limited: bool
 
     def serialize(self) -> Dict[str, Union[str, int]]:
         return {
             'from_asset': self.from_asset.identifier,
             'to_asset': self.to_asset.identifier,
             'time': self.time,
+            'rate_limited': self.rate_limited,
         }
