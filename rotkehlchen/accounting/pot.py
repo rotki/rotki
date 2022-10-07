@@ -212,8 +212,8 @@ class AccountingPot(CustomizableDateMixin):
         if amount == ZERO:  # do nothing for zero spends
             return ZERO, ZERO
 
-        if asset.is_fiat() and event_type != AccountingEventType.FEE:
-            taxable = False
+        if asset.is_fiat() and event_type == AccountingEventType.TRADE:
+            taxable = False  # for buys with fiat do not count it as taxable
 
         handle_prefork_asset_spends(
             cost_basis=self.cost_basis,
