@@ -34,8 +34,8 @@ from rotkehlchen.api.v1.schemas import (
     AssetsMappingSchema,
     AssetsPostSchema,
     AssetsReplaceSchema,
+    AssetsSearchByColumnSchema,
     AssetsSearchLevenshteinSchema,
-    AssetsSearchSchema,
     AssetUpdatesRequestSchema,
     AsyncHistoricalQuerySchema,
     AsyncIgnoreCacheQueryArgumentSchema,
@@ -722,7 +722,7 @@ class AssetsMappingResource(BaseMethodView):
 
 
 class AssetsSearchResource(BaseMethodView):
-    post_schema = AssetsSearchSchema()
+    post_schema = AssetsSearchByColumnSchema()
 
     @use_kwargs(post_schema, location='json')
     def post(self, filter_query: AssetsFilterQuery) -> Response:

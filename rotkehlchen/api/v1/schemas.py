@@ -1811,12 +1811,8 @@ class AssetsPostSchema(DBPaginationSchema, DBOrderBySchema):
         return {'filter_query': filter_query, 'identifiers': data['identifiers']}
 
 
-class AssetsSearchSchema(DBOrderBySchema, DBPaginationSchema):
+class AssetsSearchLevenshteinSchema(DBOrderBySchema, DBPaginationSchema):
     value = fields.String(required=True)
-    search_column = fields.String(
-        required=True,
-        validate=webargs.validate.OneOf(choices=('name', 'symbol')),
-    )
     return_exact_matches = fields.Boolean(load_default=False)
     evm_chain = SerializableEnumField(enum_class=ChainID, load_default=None)
 
@@ -1842,19 +1838,20 @@ class AssetsSearchSchema(DBOrderBySchema, DBPaginationSchema):
         filter_query = AssetsFilterQuery.make(
             and_op=True,
             order_by_rules=create_order_by_rules_list(data=data, default_order_by_field='name'),
-            limit=data['limit'],
-            offset=0,  # this is needed for the `limit` argument to work.
-            substring_search=data['value'].strip(),
-            search_column=data['search_column'],
-            return_exact_matches=data['return_exact_matches'],
             evm_chain=data['evm_chain'],
         )
-        return {'filter_query': filter_query}
+        return {
+            'filter_query': filter_query,
+            'substring_search': data['value'].strip().casefold(),
+            'limit': data['limit'],
+        }
 
 
-class AssetsSearchLevenshteinSchema(AssetsSearchSchema):
-    # this is not used at all.
-    search_column = fields.String(required=False)
+class AssetsSearchByColumnSchema(AssetsSearchLevenshteinSchema):
+    search_column = fields.String(
+        required=True,
+        validate=webargs.validate.OneOf(choices=('name', 'symbol')),
+    )
 
     @post_load
     def make_assets_search_query(  # pylint: disable=no-self-use
@@ -1865,13 +1862,14 @@ class AssetsSearchLevenshteinSchema(AssetsSearchSchema):
         filter_query = AssetsFilterQuery.make(
             and_op=True,
             order_by_rules=create_order_by_rules_list(data=data, default_order_by_field='name'),
+            limit=data['limit'],
+            offset=0,  # this is needed for the `limit` argument to work.
+            substring_search=data['value'].strip(),
+            search_column=data['search_column'],
+            return_exact_matches=data['return_exact_matches'],
             evm_chain=data['evm_chain'],
         )
-        return {
-            'filter_query': filter_query,
-            'substring_search': data['value'].strip().casefold(),
-            'limit': data['limit'],
-        }
+        return {'filter_query': filter_query}
 
 
 class AssetsMappingSchema(Schema):
