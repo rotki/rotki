@@ -1,5 +1,6 @@
 import os
 from datetime import datetime
+from http import HTTPStatus
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -30,6 +31,7 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.inquirer import (
     CURRENT_PRICE_CACHE_SECS,
+    DEFAULT_RATE_LIMIT_WAITING_TIME,
     CurrentPriceOracle,
     _query_currency_converterapi,
 )
@@ -472,3 +474,31 @@ def test_price_for_custom_assets(inquirer, database, globaldb):
     )
     inquirer.remove_cached_current_price_entry((asset, A_USD))
     assert inquirer.find_usd_price(asset) == Price(FVal(10))
+
+
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_coingecko_handles_rate_limit(inquirer):
+    """
+    Test that the mechanism to ignore coingecko when the user gets rate limited works as expected
+    """
+    coingecko_api_calls = 0
+
+    def mock_coingecko_return(url, *args, **kwargs):  # pylint: disable=unused-argument
+        nonlocal coingecko_api_calls
+        coingecko_api_calls += 1
+        return MockResponse(HTTPStatus.TOO_MANY_REQUESTS, '{}')
+
+    coingecko_patch = patch.object(inquirer._coingecko.session, 'get', side_effect=mock_coingecko_return)  # noqa: E501
+    inquirer.set_oracles_order(oracles=[CurrentPriceOracle.COINGECKO])
+    with coingecko_patch:
+        # Query a price and get rate limited
+        price = inquirer.find_usd_price(A_ETH)
+        assert price == Price(ZERO)
+        assert inquirer._coingecko.last_rate_limit > 0
+        # Now try again, since we are rate limited the price query wil fail
+        assert inquirer.find_usd_price(A_ETH, ignore_cache=True) == Price(ZERO)
+        # Change the last_rate_limit time to allow for further calls
+        inquirer._coingecko.last_rate_limit = ts_now() - (DEFAULT_RATE_LIMIT_WAITING_TIME + 10)
+        inquirer.find_usd_price(A_ETH, ignore_cache=True)
+        # Check that the last price query contacted coingecko api
+        assert coingecko_api_calls == 2

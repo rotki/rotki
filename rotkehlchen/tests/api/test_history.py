@@ -2,13 +2,21 @@ import random
 from contextlib import ExitStack
 from http import HTTPStatus
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 import requests
 
 from rotkehlchen.accounting.constants import FREE_PNL_EVENTS_LIMIT, FREE_REPORTS_LOOKUP_LIMIT
+from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.accounting.mixins.event import AccountingEventType
+from rotkehlchen.constants.assets import A_BTC, A_DAI, A_EUR
+from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.db.ledger_actions import DBLedgerActions
+from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.price import PriceHistorian
+from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -22,8 +30,9 @@ from rotkehlchen.tests.utils.history import (
     prepare_rotki_for_history_processing_test,
     prices,
 )
+from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.pnl_report import query_api_create_and_get_report
-from rotkehlchen.types import Location
+from rotkehlchen.types import AssetAmount, Fee, Location, Price, TradeType
 
 
 @pytest.mark.parametrize(
@@ -352,3 +361,77 @@ def test_history_debug_import(rotkehlchen_api_server):
         filepath=filepath,
         database=rotkehlchen_api_server.rest_api.rotkehlchen.data.db,
     )
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+@pytest.mark.parametrize('should_mock_price_queries', [False])
+def test_missing_prices_in_pnl_report(rotkehlchen_api_server):
+    """
+    Test missing prices propagated during the PNL report
+    """
+    # set environment
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    action = LedgerAction(
+        identifier=0,  # whatever
+        timestamp=1665336822,
+        action_type=LedgerActionType.INCOME,
+        location=Location.EXTERNAL,
+        amount=FVal(0.5),
+        asset=A_BTC,
+        rate=None,
+        rate_asset=None,
+        link=None,
+        notes=None,
+    )
+    trade = Trade(
+        timestamp=1665336822,
+        location=Location.EXTERNAL,
+        base_asset=A_DAI,
+        quote_asset=A_EUR,
+        trade_type=TradeType.BUY,
+        amount=AssetAmount(FVal('1')),
+        rate=Price(FVal('320')),
+        fee=Fee(ZERO),
+        fee_currency=A_EUR,
+        link='',
+        notes='',
+    )
+    with rotki.data.db.user_write() as cursor:
+        db = DBLedgerActions(rotki.data.db, rotki.msg_aggregator)
+        db.add_ledger_action(cursor, action)
+        rotki.data.db.add_trades(cursor, [trade])
+
+    PriceHistorian().set_oracles_order([HistoricalPriceOracle.COINGECKO])
+    coingecko_api_calls = 0
+
+    def mock_coingecko_return(url, *args, **kwargs):  # pylint: disable=unused-argument
+        nonlocal coingecko_api_calls
+        coingecko_api_calls += 1
+        return MockResponse(HTTPStatus.TOO_MANY_REQUESTS, '{}')
+
+    coingecko_patch = patch.object(PriceHistorian()._coingecko.session, 'get', side_effect=mock_coingecko_return)  # noqa: E501
+    # create the PNL report
+    with coingecko_patch:
+        query_api_create_and_get_report(
+            server=rotkehlchen_api_server,
+            start_ts=1665336820,
+            end_ts=1665336823,
+            prepare_mocks=False,
+        )
+
+    # get the information about the report
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'historyactionableitemsresource',
+        ),
+    )
+    result = assert_proper_response_with_result(response=response, status_code=HTTPStatus.OK)
+    assert coingecko_api_calls == 2
+    assert result['report_id'] == 1
+    assert result['missing_prices'] == [{
+        'from_asset': 'BTC',
+        'to_asset': 'EUR',
+        'time': 1665336822,
+        'rate_limited': True,
+    }]

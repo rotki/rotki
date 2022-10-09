@@ -268,6 +268,7 @@ def test_asset_and_price_not_found_in_history_processing(accountant):
         from_asset=fgp,
         to_asset=A_EUR,
         time=time,
+        rate_limited=False,
     )
 
 

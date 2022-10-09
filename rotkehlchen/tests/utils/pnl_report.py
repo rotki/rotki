@@ -25,7 +25,7 @@ def query_api_create_and_get_report(
     async_query = random.choice([False, True])
     rotki = server.rest_api.rotkehlchen
     setup = None
-    if prepare_mocks:
+    if prepare_mocks is True:
         setup = prepare_rotki_for_history_processing_test(
             rotki=rotki,
             should_mock_history_processing=False,
