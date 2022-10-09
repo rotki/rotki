@@ -626,23 +626,15 @@ class Coingecko(HistoricalPriceOracleInterface):
 
         # no cache, query coingecko for daily price
         date = timestamp_to_date(timestamp, formatstr='%d-%m-%Y')
-        try:
-            result = self._query(
-                module='coins',
-                subpath=f'{from_coingecko_id}/history',
-                options={
-                    'date': date,
-                    'localizatioen': 'false',
-                },
-            )
-        except RemoteError as e:
-            rate_limited = e.error_code == HTTPStatus.TOO_MANY_REQUESTS
-            raise NoPriceForGivenTimestamp(
-                from_asset=from_asset,
-                to_asset=to_asset,
-                time=timestamp,
-                rate_limited=rate_limited,
-            ) from e
+
+        result = self._query(
+            module='coins',
+            subpath=f'{from_coingecko_id}/history',
+            options={
+                'date': date,
+                'localization': 'false',
+            },
+        )
 
         # https://github.com/PyCQA/pylint/issues/4739
         try:

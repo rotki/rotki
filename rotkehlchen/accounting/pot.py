@@ -138,7 +138,9 @@ class AccountingPot(CustomizableDateMixin):
         else:
             try:
                 price = self.get_rate_in_profit_currency(asset=asset, timestamp=timestamp)
-            except (NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset, RemoteError):
+            except (PriceQueryUnsupportedAsset, RemoteError):
+                # In the case of NoPriceForGivenTimestamp we let it propagate so the user
+                # can take action after the report is made
                 price = Price(ZERO)
 
         prefork_events = handle_prefork_asset_acquisitions(
@@ -353,8 +355,12 @@ class AccountingPot(CustomizableDateMixin):
                 asset=asset_in,
                 timestamp=timestamp,
             )
-        except (PriceQueryUnsupportedAsset, NoPriceForGivenTimestamp, RemoteError):
+        except (PriceQueryUnsupportedAsset, RemoteError):
             in_price = None
+        except NoPriceForGivenTimestamp:
+            in_price = None
+            if out_price is None:
+                raise
 
         if out_price is None and in_price is None:
             return None

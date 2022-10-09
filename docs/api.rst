@@ -5314,6 +5314,13 @@ Get missing acquisitions and prices
               "from_asset": "eip155:1/erc20:0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359",
               "to_asset": "AVAX",
               "time": 1439994442,
+              "rate_limited": false,
+            },
+            {
+              "from_asset": "eip155:1/erc20:0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359",
+              "to_asset": "USD",
+              "time": 1439995442,
+              "rate_limited": true,
             }
           ]
         },
@@ -5325,6 +5332,8 @@ Get missing acquisitions and prices
    :resjson list missing_prices: A list that contains entries of missing prices found during PnL reporting.
    :resjsonarr str from_asset: The asset whose price is missing.
    :resjsonarr str to_asset: The asset in which we want the price of from_asset.
+   :resjsonarr int time: The timestamp for which the price is missing.
+   :resjosnarr bool reate_limited: True if we couldn't get the price and any of the oracles got rate limited.
    :resjson list missing_acquisitions: A list that contains entries of missing acquisitions found during PnL reporting.
    :resjsonarr str asset: The asset that is involved in the event.
    :resjsonarr int time: The timestamp this event took place in.
