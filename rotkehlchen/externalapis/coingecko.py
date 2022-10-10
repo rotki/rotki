@@ -407,7 +407,7 @@ class Coingecko(HistoricalPriceOracleInterface):
         if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
             self.last_rate_limit = ts_now()
             msg = f'Got rate limited by coingecko querying {url}'
-            log.debug(msg)
+            log.warning(msg)
             raise RemoteError(message=msg, error_code=HTTPStatus.TOO_MANY_REQUESTS)
 
         if response.status_code != 200:
@@ -626,7 +626,6 @@ class Coingecko(HistoricalPriceOracleInterface):
 
         # no cache, query coingecko for daily price
         date = timestamp_to_date(timestamp, formatstr='%d-%m-%Y')
-
         result = self._query(
             module='coins',
             subpath=f'{from_coingecko_id}/history',

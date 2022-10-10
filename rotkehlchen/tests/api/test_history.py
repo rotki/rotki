@@ -2,7 +2,7 @@ import random
 from contextlib import ExitStack
 from http import HTTPStatus
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 import requests
@@ -14,6 +14,7 @@ from rotkehlchen.constants.assets import A_BTC, A_DAI, A_EUR
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.exchanges.data_structures import Trade
+from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.types import HistoricalPriceOracle
@@ -401,7 +402,14 @@ def test_missing_prices_in_pnl_report(rotkehlchen_api_server):
         db.add_ledger_action(cursor, action)
         rotki.data.db.add_trades(cursor, [trade])
 
-    PriceHistorian().set_oracles_order([HistoricalPriceOracle.COINGECKO])
+    coingecko = PriceHistorian._coingecko
+    PriceHistorian._PriceHistorian__instance = None
+    price_historian = PriceHistorian(
+        data_directory=MagicMock(spec=Path),
+        cryptocompare=MagicMock(spec=Cryptocompare),
+        coingecko=coingecko,
+    )
+    price_historian.set_oracles_order([HistoricalPriceOracle.COINGECKO])
     coingecko_api_calls = 0
 
     def mock_coingecko_return(url, *args, **kwargs):  # pylint: disable=unused-argument

@@ -431,10 +431,6 @@ class Inquirer():
                 isinstance(oracle_instance, CurrentPriceOracleInterface) and
                 oracle_instance.rate_limited_in_last(DEFAULT_RATE_LIMIT_WAITING_TIME) is True
             ):
-                log.warning(
-                    f'Skipping {oracle} when querying price from {from_asset} to {to_asset} '
-                    f'because we got rate limited.',
-                )
                 continue
 
             try:
