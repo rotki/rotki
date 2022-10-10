@@ -1305,31 +1305,31 @@ class GlobalDBHandler():
             return read_cursor.fetchall()
 
     @staticmethod
-    def delete_manual_latest_price(asset: Asset) -> Asset:
+    def delete_manual_latest_price(asset: Asset) -> List[Tuple[Asset, Asset]]:
         """
-        Deletes manual current price from globaldb and returns the asset that was being used as
-        reference for the price
+        Deletes manual current price from globaldb and returns the list of asset
+        price pairs to be invalidated.
         May raise:
         - InputError if asset was not found in the price_history table
         """
         with GlobalDBHandler().conn.write_ctx() as write_cursor:
-            # check the asset of reference that will be deleted
+            # get asset pairs to invalidate their prices from cache after deletion
             write_cursor.execute(
-                'SELECT to_asset FROM price_history WHERE source_type=? AND from_asset=?',
-                (HistoricalPriceOracle.MANUAL_CURRENT.serialize_for_db(), asset.identifier),
+                'SELECT from_asset, to_asset FROM price_history WHERE source_type=? AND (from_asset=? OR to_asset=?);',  # noqa: E501
+                (HistoricalPriceOracle.MANUAL_CURRENT.serialize_for_db(), asset.identifier, asset.identifier),  # noqa: E501
             )
-            to_asset = write_cursor.fetchone()
-            if to_asset is None:
-                raise InputError(
-                    f'Not found manual current price to delete for asset {str(asset)}',
-                )
+            pairs_to_invalidate = [(Asset(entry[0]), Asset(entry[1])) for entry in write_cursor]
 
             # Execute the deletion
             write_cursor.execute(
                 'DELETE FROM price_history WHERE source_type=? AND from_asset=?',
                 (HistoricalPriceOracle.MANUAL_CURRENT.serialize_for_db(), asset.identifier),
             )
-            return Asset(to_asset[0])
+            if write_cursor.rowcount != 1:
+                raise InputError(
+                    f'Not found manual current price to delete for asset {str(asset)}',
+                )
+            return pairs_to_invalidate
 
     @staticmethod
     def get_manual_prices(
