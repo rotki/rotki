@@ -395,6 +395,19 @@ class DBConnection:
         """
         self._modify_savepoint(rollback_or_release='RELEASE', savepoint_name=savepoint_name)
 
+    @contextmanager
+    def critical_section(self) -> Generator[None, None, None]:
+        with self.in_callback:
+            if __debug__:
+                logger.trace(f'entering critical section for {self.connection_type}')
+            self._conn.set_progress_handler(None, 0)
+        yield
+
+        with self.in_callback:
+            if __debug__:
+                logger.trace(f'exiting critical section for {self.connection_type}')
+            self._set_progress_handler()
+
     @property
     def total_changes(self) -> int:
         """total number of database rows that have been modified, inserted,
