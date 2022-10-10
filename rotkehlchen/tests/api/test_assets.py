@@ -513,6 +513,18 @@ def test_get_all_assets(rotkehlchen_api_server):
         status_code=HTTPStatus.CONFLICT,
     )
 
+    # check that evm tokens with underlying tokens are shown
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'allassetsresource',
+        ),
+        json={'asset_type': 'evm token'},
+    )
+    result = assert_proper_response_with_result(response)
+    for entry in result['entries']:
+        assert 'underlying_tokens' in entry
+
 
 def test_get_assets_mappings(rotkehlchen_api_server):
     """Test that providing a list of asset identifiers, the appropriate assets mappings are returned."""  # noqa: E501
