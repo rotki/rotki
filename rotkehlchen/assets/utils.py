@@ -20,13 +20,12 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def add_ethereum_token_to_db(token_data: EvmToken) -> EvmToken:
+def add_ethereum_token_to_db(token_data: EvmToken, globaldb: 'GlobalDBHandler') -> EvmToken:
     """Adds an ethereum token to the DB and returns it
 
     May raise:
     - InputError if token already exists in the DB
     """
-    globaldb = GlobalDBHandler()
     globaldb.add_asset(
         asset_id=token_data.identifier,
         asset_type=AssetType.EVM_TOKEN,
@@ -69,7 +68,10 @@ def get_or_create_evm_token(
         token_type=token_kind,
     )
     try:
-        ethereum_token = EvmToken(identifier, form_with_incomplete_data=form_with_incomplete_data)
+        ethereum_token = EvmToken(
+            identifier=identifier,
+            form_with_incomplete_data=form_with_incomplete_data,
+        )
     except (UnknownAsset, DeserializationError):
         log.info(
             f'Encountered unknown asset with address '
@@ -95,8 +97,17 @@ def get_or_create_evm_token(
             underlying_tokens=underlying_tokens,
         )
         # This can but should not raise InputError since it should not already exist
-        ethereum_token = add_ethereum_token_to_db(token_data)
-        with userdb.user_write() as cursor:
+        # We need to wrap the whole call to add_ethereum_token_to_db since it makes
+        # the insert + when returning the EvmToken it can do a read to the database
+        globaldb = GlobalDBHandler()
+        with globaldb.conn.critical_section():
+            ethereum_token = add_ethereum_token_to_db(
+                token_data=token_data,
+                globaldb=globaldb,
+            )
+
+        # Also update the user db in a criticial section to avoid a switch
+        with userdb.conn.critical_section(), userdb.user_write() as cursor:
             userdb.add_asset_identifiers(cursor, [ethereum_token.identifier])
 
     return ethereum_token

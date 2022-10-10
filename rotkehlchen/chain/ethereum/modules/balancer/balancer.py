@@ -665,7 +665,7 @@ class Balancer(EthereumModule):
                         underlying_tokens=underlying_tokens,
                         protocol='balancer',
                     )
-                    balancer_pool = add_ethereum_token_to_db(token_data)
+                    balancer_pool = add_ethereum_token_to_db(token_data=token_data, globaldb=GlobalDBHandler())  # noqa: E501
                     balancer_pools.append(balancer_pool)
 
                 # Aggregate the <BalancerInvestEvent> token amounts related with the
