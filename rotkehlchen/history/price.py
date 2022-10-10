@@ -228,8 +228,8 @@ class PriceHistorian():
             except RemoteError as e:
                 # Raise the flag if any of the services was rate limited
                 rate_limited = (
-                    e.error_code == HTTPStatus.TOO_MANY_REQUESTS and
-                    rate_limited is False
+                    rate_limited is True or
+                    e.error_code == HTTPStatus.TOO_MANY_REQUESTS
                 )
                 continue
 

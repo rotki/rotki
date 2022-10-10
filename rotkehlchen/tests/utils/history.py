@@ -1160,6 +1160,7 @@ def maybe_mock_historical_price_queries(
                 from_asset=from_asset,
                 to_asset=to_asset,
                 time=timestamp,
+                rate_limited=False,
             )
 
         try:
