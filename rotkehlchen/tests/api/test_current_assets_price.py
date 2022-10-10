@@ -236,9 +236,16 @@ def test_remove_manual_current_price(rotkehlchen_api_server):
         to_asset=A_EUR,
         price=Price(FVal(25)),
     )
-    # add the price to the inquirer cache
-    price = Inquirer().find_price(from_asset=A_ETH, to_asset=A_EUR)
-    assert price == Price(FVal(10))
+    GlobalDBHandler().add_manual_latest_price(
+        from_asset=A_BTC,
+        to_asset=A_ETH,
+        price=Price(FVal(100)),
+    )
+    # add the prices to the inquirer cache
+    eth_eur_price = Inquirer().find_price(from_asset=A_ETH, to_asset=A_EUR)
+    assert eth_eur_price == Price(FVal(10))
+    btc_eth_price = Inquirer().find_price(from_asset=A_BTC, to_asset=A_ETH)
+    assert btc_eth_price == Price(FVal(100))
 
     response = requests.delete(
         api_url_for(
@@ -268,6 +275,7 @@ def test_remove_manual_current_price(rotkehlchen_api_server):
     assert GlobalDBHandler().get_manual_current_price(A_USD) == (A_EUR, Price(FVal(25)))
     # Check that the cache in the inquirer has been invalidated
     assert (A_ETH, A_EUR) not in Inquirer()._cached_current_price
+    assert (A_BTC, A_ETH) not in Inquirer()._cached_current_price
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
