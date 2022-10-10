@@ -1,6 +1,7 @@
 import logging
 import shutil
 import sqlite3
+from collections import defaultdict
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -230,7 +231,8 @@ class GlobalDBHandler():
         - DeserializationError
         """
         assets_info = []
-        query, bindings = filter_query.prepare()
+        underlying_tokens: Dict[str, List[Dict[str, str]]] = defaultdict(list)
+        prepared_filter_query, bindings = filter_query.prepare()
         parent_query = """
         SELECT A.identifier AS identifier, A.type, B.address, B.decimals, A.name, C.symbol, C.started, C.forked, C.swapped_for, C.coingecko, C.cryptocompare, B.protocol, B.chain, B.token_kind, D.notes, D.type AS custom_asset_type
         FROM assets as A
@@ -238,8 +240,19 @@ class GlobalDBHandler():
         LEFT JOIN evm_tokens as B ON B.identifier = A.identifier
         LEFT JOIN custom_assets as D ON D.identifier = A.identifier
         """  # noqa: E501
-        query = f'SELECT * FROM ({parent_query}) {query}'
+        query = f'SELECT * FROM ({parent_query}) {prepared_filter_query}'
+        underlying_tokens_query = """
+        SELECT assets.identifier AS identifier, address, token_kind, parent_token_entry, weight, name, symbol, type, chain
+        FROM underlying_tokens_list
+        INNER JOIN assets ON assets.identifier = parent_token_entry
+        INNER JOIN evm_tokens ON assets.identifier=evm_tokens.identifier
+        INNER JOIN common_asset_details ON common_asset_details.identifier = assets.identifier
+        """  # noqa: E501
         with GlobalDBHandler().conn.read_ctx() as cursor:
+            # get all underlying tokens
+            for entry in cursor.execute(f'SELECT * FROM ({underlying_tokens_query}) {prepared_filter_query}', bindings):  # noqa: E501
+                underlying_tokens[entry[0]].append(UnderlyingToken.deserialize_from_db((entry[1], entry[2], entry[4])).serialize())  # noqa: E501
+
             cursor.execute(query, bindings)
             for entry in cursor:
                 asset_type = AssetType.deserialize_from_db(entry[1])
@@ -268,6 +281,7 @@ class GlobalDBHandler():
                         'chain': ChainID.deserialize_from_db(entry[12]).serialize(),
                         'token_kind': EvmTokenKind.deserialize_from_db(entry[13]).serialize(),
                         'decimals': entry[3],
+                        'underlying_tokens': underlying_tokens.get(entry[0], None),
                         'protocol': entry[11],
                     })
                     data.update(common_data)
