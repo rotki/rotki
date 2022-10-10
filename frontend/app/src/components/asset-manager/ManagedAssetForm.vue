@@ -404,26 +404,26 @@ const preview = computed<string | null>(() => {
   return get(identifier) ?? get(symbol) ?? null;
 });
 
-const asset: ComputedRef<Omit<SupportedAsset, 'identifier'>> = computed(() => {
-  const ut = get(underlyingTokens);
-  return {
-    address: get(address),
-    name: get(name),
-    symbol: get(symbol),
-    decimals: parseInt(get(decimals)),
-    coingecko: get(coingeckoEnabled) ? onlyIfTruthy(get(coingecko)) : null,
-    cryptocompare: get(cryptocompareEnabled)
-      ? onlyIfTruthy(get(cryptocompare))
-      : '',
-    started: time(get(started)),
-    underlyingTokens: ut.length > 0 ? ut : undefined,
-    type: get(assetType),
-    swappedFor: onlyIfTruthy(get(swappedFor)),
-    protocol: onlyIfTruthy(get(protocol)),
-    chain: (get(chain) as EvmChain) || null,
-    tokenKind: (get(tokenKind) as EvmTokenKind) || null
-  };
-});
+const asset: ComputedRef<Omit<SupportedAsset, 'identifier' | 'type'>> =
+  computed(() => {
+    const ut = get(underlyingTokens);
+    return {
+      address: get(address),
+      name: get(name),
+      symbol: get(symbol),
+      decimals: parseInt(get(decimals)),
+      coingecko: get(coingeckoEnabled) ? onlyIfTruthy(get(coingecko)) : null,
+      cryptocompare: get(cryptocompareEnabled)
+        ? onlyIfTruthy(get(cryptocompare))
+        : '',
+      started: time(get(started)),
+      underlyingTokens: ut.length > 0 ? ut : undefined,
+      swappedFor: onlyIfTruthy(get(swappedFor)),
+      protocol: onlyIfTruthy(get(protocol)),
+      chain: (get(chain) as EvmChain) || null,
+      tokenKind: (get(tokenKind) as EvmTokenKind) || null
+    };
+  });
 
 onBeforeMount(async () => {
   try {

@@ -255,6 +255,19 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
     set(exchangeRates, {});
   };
 
+  watch([exchangeRates, currencySymbol], ([a, b]) => {
+    if (Object.keys(a).length > 0) {
+      const rate = get(exchangeRate(b));
+      if (!rate || rate.eq(0)) {
+        notify({
+          title: t('missing_exchange_rate.title').toString(),
+          message: t('missing_exchange_rate.message').toString(),
+          display: true
+        });
+      }
+    }
+  });
+
   return {
     prices,
     exchangeRates,

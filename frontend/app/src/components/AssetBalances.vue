@@ -103,7 +103,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
       text: t('common.amount').toString(),
       value: 'amount',
       align: 'end',
-      width: '99%'
+      width: '50%'
     },
     {
       text: t('common.value_in_symbol', {

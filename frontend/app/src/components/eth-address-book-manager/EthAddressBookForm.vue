@@ -1,5 +1,5 @@
 <template>
-  <v-form v-model="valid">
+  <v-form :value="valid">
     <div class="mt-2">
       <div>
         <v-select
@@ -24,7 +24,7 @@
           :items="addressSuggestions"
           :no-data-text="t('eth_address_book.form.no_suggestions_available')"
           :disabled="edit"
-          :rules="addressRules"
+          :error-messages="v$.address.$errors.map(e => e.$message)"
           :search-input.sync="search"
           @input="input({ address: $event })"
         />
@@ -34,7 +34,7 @@
           :value="value.name"
           outlined
           :label="t('common.name')"
-          :rules="nameRules"
+          :error-messages="v$.name.$errors.map(e => e.$message)"
           @input="input({ name: $event })"
         />
       </div>
@@ -43,12 +43,18 @@
 </template>
 
 <script setup lang="ts">
+import useVuelidate from '@vuelidate/core';
+import { helpers, required } from '@vuelidate/validators';
 import { get, set } from '@vueuse/core';
 import { computed, PropType, ref, toRefs, watch } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
 import { EthAddressBookLocation, EthNamesPayload } from '@/types/eth-names';
-import { sanitizeAddress, toSentenceCase } from '@/utils/text';
+import {
+  isValidEthAddress,
+  sanitizeAddress,
+  toSentenceCase
+} from '@/utils/text';
 
 const props = defineProps({
   value: {
@@ -82,8 +88,6 @@ const addressSuggestions = computed<string[]>(() => {
   );
 });
 
-watch(valid, value => emit('valid', value));
-
 const input = (payload: Partial<EthNamesPayload>) => {
   emit('input', { ...get(value), ...payload });
 };
@@ -102,11 +106,36 @@ watch(value, ({ address }) => {
 
 const locations: EthAddressBookLocation[] = ['global', 'private'];
 
-const addressRules = [
-  (v: string) => !!v || t('eth_address_book.form.validation.address').toString()
-];
+const rules = {
+  address: {
+    required: helpers.withMessage(
+      t('eth_address_book.form.validation.address').toString(),
+      required
+    ),
+    isValidEthAddress: helpers.withMessage(
+      t('eth_address_book.form.validation.valid').toString(),
+      isValidEthAddress
+    )
+  },
+  name: {
+    required: helpers.withMessage(
+      t('eth_address_book.form.validation.name').toString(),
+      required
+    )
+  }
+};
 
-const nameRules = [
-  (v: string) => !!v || t('eth_address_book.form.validation.name').toString()
-];
+const v$ = useVuelidate(
+  rules,
+  {
+    address: computed(() => get(value).address),
+    name: computed(() => get(value).name)
+  },
+  { $autoDirty: true }
+);
+
+watch(v$, ({ $invalid }) => {
+  set(valid, !$invalid);
+  emit('valid', get(valid));
+});
 </script>

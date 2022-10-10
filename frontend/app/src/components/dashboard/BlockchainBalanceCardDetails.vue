@@ -7,7 +7,7 @@
     :to="details.detailPath"
   >
     <v-list-item-avatar tile class="blockchain-balance-box__icon shrink ps-7">
-      <adaptive-wrapper>
+      <adaptive-wrapper class="d-flex">
         <v-img :src="details.icon" width="24px" height="24px" />
       </adaptive-wrapper>
     </v-list-item-avatar>

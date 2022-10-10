@@ -102,16 +102,24 @@ const loading = computed<boolean>(() => {
 const balanceBlockchainRoute = Routes.ACCOUNTS_BALANCES_BLOCKCHAIN.route;
 </script>
 <style scoped lang="scss">
-.blockchain-balance-box {
-  &__icon {
-    filter: grayscale(100%);
-    margin: 0;
-    margin-right: 5px !important;
-    width: auto !important;
-  }
+:deep() {
+  .blockchain-balance-box {
+    &__icon {
+      filter: grayscale(100%);
+      margin: 0;
+      margin-right: 5px !important;
+      width: auto !important;
+    }
 
-  &__item:hover &__icon {
-    filter: grayscale(0);
+    &__item {
+      &:hover {
+        .blockchain-balance-box {
+          &__icon {
+            filter: grayscale(0);
+          }
+        }
+      }
+    }
   }
 }
 

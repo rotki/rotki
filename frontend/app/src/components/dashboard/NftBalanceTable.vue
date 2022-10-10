@@ -2,7 +2,7 @@
   <dashboard-expandable-table>
     <template #title>
       <refresh-button
-        :loading="refreshing || loading"
+        :loading="loading"
         :tooltip="tc('nft_balance_table.refresh')"
         @refresh="refresh"
       />
@@ -111,15 +111,14 @@ const { totalNetWorthUsd } = storeToRefs(statistics);
 const balancesStore = useNonFungibleBalancesStore();
 const { nonFungibleBalances } = storeToRefs(balancesStore);
 const { nonFungibleTotalValue, fetchNonFungibleBalances } = balancesStore;
-const { shouldShowLoadingScreen, isSectionRefreshing } = useSectionLoading();
+const { isSectionRefreshing } = useSectionLoading();
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const total = nonFungibleTotalValue();
 const { tc } = useI18n();
 
 const group = DashboardTableType.NFT;
-const loading = shouldShowLoadingScreen(Section.NON_FUNGIBLE_BALANCES);
-const refreshing = isSectionRefreshing(Section.NON_FUNGIBLE_BALANCES);
+const loading = isSectionRefreshing(Section.NON_FUNGIBLE_BALANCES);
 
 const tableHeaders = computed<DataTableHeader[]>(() => {
   const visibleColumns = get(dashboardTablesVisibleColumns)[group];

@@ -81,5 +81,6 @@ const text = computed<string>(() => {
 .generated-icon {
   border: 1px solid black;
   border-radius: 50%;
+  white-space: nowrap;
 }
 </style>

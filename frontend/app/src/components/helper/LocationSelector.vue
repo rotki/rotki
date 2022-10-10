@@ -3,7 +3,6 @@
     v-bind="rootAttrs"
     data-cy="location-input"
     :value="value"
-    :disabled="pending"
     :items="locations"
     item-value="identifier"
     item-text="name"
@@ -41,7 +40,6 @@ import { TradeLocationData, tradeLocations } from '@/types/trades';
 
 const props = defineProps({
   value: { required: false, type: String, default: '' },
-  pending: { required: false, type: Boolean, default: false },
   items: {
     required: false,
     type: Array as PropType<string[]>,

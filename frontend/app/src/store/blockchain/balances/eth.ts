@@ -49,7 +49,7 @@ export const useEthBalancesStore = defineStore('balances/eth', () => {
   const totals: Ref<Totals> = ref(defaultTotals());
   const liabilities: Ref<Totals> = ref(defaultTotals());
 
-  const { activeModules } = useGeneralSettingsStore();
+  const { activeModules } = storeToRefs(useGeneralSettingsStore());
   const { awaitTask } = useTasks();
   const { notify } = useNotifications();
   const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();

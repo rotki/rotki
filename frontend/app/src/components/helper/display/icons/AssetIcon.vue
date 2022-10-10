@@ -3,7 +3,7 @@
     <adaptive-wrapper :circle="circle" :padding="padding">
       <v-tooltip top open-delay="400" :disabled="noTooltip">
         <template #activator="{ on, attrs }">
-          <div :class="css.outer">
+          <div>
             <div
               v-if="chainIcon"
               :class="{
@@ -34,20 +34,24 @@
                 mdi-pencil-circle-outline
               </v-icon>
               <div v-else :class="css.wrapper">
+                <div v-if="pending">
+                  <v-icon :size="size" color="grey">mdi-circle-multiple</v-icon>
+                </div>
                 <generated-icon
-                  v-if="currency || pending || error"
+                  v-if="currency || error"
                   :asset="displayAsset"
                   :currency="!!currency"
                   :size="size"
                 />
                 <v-img
-                  v-if="!error"
+                  v-else
                   :src="url"
                   :max-height="size"
                   :min-height="size"
                   :max-width="size"
                   :min-width="size"
                   contain
+                  @loadstart="pending = true"
                   @load="pending = false"
                   @error="
                     error = true;
@@ -187,7 +191,6 @@ const chainIcon = computed(() =>
 );
 watch([symbol, changeable, identifier], () => {
   set(error, false);
-  set(pending, true);
 });
 
 const { dark } = useTheme();

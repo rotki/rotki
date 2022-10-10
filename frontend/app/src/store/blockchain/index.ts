@@ -117,16 +117,17 @@ export const useBlockchainStore = defineStore('blockchain', () => {
       const addr = await Promise.all(
         payload.map(data => addAccount(blockchain, data))
       );
+      const filteredAddresses = addr.filter(add => add.length > 0);
       if (blockchain === Blockchain.ETH && modules) {
         await enableModule({
           enable: modules,
-          addresses
+          addresses: filteredAddresses
         });
       }
       resetDefi();
       resetDefiStatus();
       if (blockchain === Blockchain.ETH) {
-        await fetchDetected(addr.filter(add => add.length > 0));
+        await fetchDetected(filteredAddresses);
       }
       startPromise(fetchNonFungibleBalances());
       startPromise(refreshAccounts(blockchain));
