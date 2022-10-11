@@ -51,6 +51,7 @@
                   <adaptive-wrapper>
                     <v-img
                       width="24px"
+                      height="24px"
                       contain
                       position="left"
                       max-height="32px"
@@ -58,7 +59,7 @@
                       :src="getIcon(item.source)"
                     />
                   </adaptive-wrapper>
-                  <span class="ms-2" v-text="getLabel(item.source)" />
+                  <span class="ml-4" v-text="getLabel(item.source)" />
                 </div>
               </template>
               <template #item.link="{ item }">

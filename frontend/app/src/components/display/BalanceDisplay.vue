@@ -25,7 +25,7 @@
         class="d-block grey--text"
       />
     </div>
-    <asset-link v-if="!noIcon" class="ml-1" icon :asset="asset">
+    <asset-link v-if="!noIcon" class="ml-4" icon :asset="asset">
       <asset-icon :identifier="asset" size="24px" />
     </asset-link>
   </div>

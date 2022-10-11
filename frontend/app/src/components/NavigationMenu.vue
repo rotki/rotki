@@ -1,6 +1,10 @@
 <template>
   <div>
-    <v-list nav class="navigation-menu" :class="{ 'pa-0': isMini }">
+    <v-list
+      nav
+      class="navigation-menu"
+      :class="{ 'navigation-menu--mini': isMini }"
+    >
       <v-list-item-group>
         <template v-for="(navItem, i) in navItems">
           <v-list-item
@@ -247,6 +251,21 @@ const navItems: MenuItem[] = [
         .nav-icon {
           opacity: 1 !important;
           filter: brightness(0) invert(100%);
+        }
+      }
+    }
+  }
+
+  &--mini {
+    padding: 0;
+
+    :deep() {
+      .v-list-item {
+        padding-left: 28px;
+        justify-content: center;
+
+        &__content {
+          display: none !important;
         }
       }
     }

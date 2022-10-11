@@ -1,13 +1,15 @@
 <template>
   <v-row align="center">
     <v-col cols="auto">
-      <v-img
-        :width="size"
-        contain
-        position="left"
-        :max-height="size"
-        :src="icon"
-      />
+      <adaptive-wrapper>
+        <v-img
+          :width="size"
+          contain
+          position="left"
+          :max-height="size"
+          :src="icon"
+        />
+      </adaptive-wrapper>
     </v-col>
     <v-col v-if="identifier == PriceOracle.UNISWAP3" cols="auto">
       {{ t('oracles.uniswap_v3') }}
@@ -28,6 +30,7 @@
 import { get } from '@vueuse/core';
 import { computed, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
+import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import { PriceOracle } from '@/types/price-oracle';
 import { toSentenceCase } from '@/utils/text';
 

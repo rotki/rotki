@@ -36,11 +36,12 @@ export const useAggregatedBlockchainBalancesStore = defineStore(
 
     const totals: ComputedRef<AssetBalances> = computed(() => {
       const balances: AssetBalances = {};
+
       const totals = {
         ...get(ethTotals),
         ...get(btcTotals),
         ...get(chainTotals),
-        ...get(ethBalancesStore.getLoopringAssetBalances())
+        LOOPRING: { ...get(ethBalancesStore.getLoopringAssetBalances()) }
       };
 
       for (const value of Object.values(totals)) {

@@ -1,7 +1,6 @@
 import { ActionResult, SupportedAsset } from '@rotki/common/lib/data';
 import { OwnedAssets } from '@rotki/common/lib/statistics';
 import { AxiosInstance, AxiosResponseTransformer } from 'axios';
-import { omit } from 'lodash';
 import {
   AssetIdResponse,
   ConflictResolution,
@@ -55,7 +54,7 @@ export class AssetApi {
     return this.axios
       .put<ActionResult<AssetIdResponse>>(
         '/assets/ethereum',
-        axiosSnakeCaseTransformer({ token: omit(token, 'type') }),
+        axiosSnakeCaseTransformer({ token }),
         {
           validateStatus: validStatus,
           transformResponse: this.baseTransformer
