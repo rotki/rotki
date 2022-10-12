@@ -4,7 +4,7 @@
       id="user-dropdown"
       content-class="user-dropdown__menu"
       transition="slide-y-transition"
-      max-width="180px"
+      max-width="300px"
       min-width="180px"
       offset-y
     >

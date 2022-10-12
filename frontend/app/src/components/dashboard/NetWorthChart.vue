@@ -654,7 +654,7 @@ export default defineComponent({
       event: MouseEvent
     ) => {
       set(activeRangeButton, selectedButton);
-      set(rangeLastX, Math.round(event.screenX));
+      set(rangeLastX, Math.round(event.pageX));
     };
 
     const rangeButtonMouseMove = (event: MouseEvent) => {
@@ -664,7 +664,7 @@ export default defineComponent({
       if (!activeRangeButtonVal || !rangeElem) return;
 
       const { x: elemX, width } = rangeElem.getBoundingClientRect();
-      const x = Math.round(event.screenX) - elemX;
+      const x = Math.round(event.pageX) - elemX;
       const scale = x / width;
 
       const { min, max, range } = get(dataTimeRange);
@@ -705,9 +705,9 @@ export default defineComponent({
       }
       // Drag the area, move both button
       else if (activeRangeButtonVal === 'both') {
-        const dist = event.screenX - get(rangeLastX);
+        const dist = event.pageX - get(rangeLastX);
         const distScale = dist / width;
-        set(rangeLastX, event.screenX);
+        set(rangeLastX, event.pageX);
 
         const newMin = distScale * range + displayedMin;
         const newMax = distScale * range + displayedMax;

@@ -14,7 +14,9 @@
               <v-img
                 :src="chainIcon"
                 :width="chainIconSize"
+                :max-width="chainIconSize"
                 :height="chainIconSize"
+                :max-height="chainIconSize"
                 contain
               />
             </div>
@@ -34,8 +36,8 @@
                 mdi-pencil-circle-outline
               </v-icon>
               <div v-else :class="css.wrapper">
-                <div v-if="pending">
-                  <v-icon :size="size" color="grey">mdi-circle-multiple</v-icon>
+                <div v-if="pending" class="black--text">
+                  <token-placeholder :size="size" />
                 </div>
                 <generated-icon
                   v-if="currency || error"
@@ -72,6 +74,7 @@
 
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
+import TokenPlaceholder from '@/components/svgs/TokenPlaceholder.vue';
 import { useTheme } from '@/composables/common';
 import { api } from '@/services/rotkehlchen-api';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';

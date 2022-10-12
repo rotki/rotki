@@ -18,13 +18,16 @@
         </menu-tooltip-button>
       </template>
       <div>
-        <v-row class="ps-4 pe-4">
+        <v-row class="px-4 py-3">
           <v-col>
             <v-text-field
               v-model="filter"
+              outlined
+              dense
               autofocus
+              hide-details
               label="Filter"
-              prepend-icon="mdi-magnify"
+              prepend-inner-icon="mdi-magnify"
               @keypress.enter="selectFirst()"
             />
           </v-col>

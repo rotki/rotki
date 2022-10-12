@@ -39,21 +39,6 @@ const dimensions = computed<Dimension>(() => {
   };
 });
 
-const textStyle = computed<Style>(() => {
-  const { value } = get(dimensions);
-  const scale = get(currency) || get(asset).length <= 2 ? 1 : 0.58;
-
-  const lineHeight = value - 4;
-  return {
-    transform: `scale(${lineHeight < 20 ? 0.3 : scale})`,
-    'line-height': `${lineHeight}px`
-  };
-});
-
-const textColor = computed<string>(() => {
-  return `#${invertColor(get(backgroundColor), true)}`;
-});
-
 const wrapperStyle = computed<Style>(() => {
   return {
     width: get(size),
@@ -75,6 +60,21 @@ const text = computed<string>(() => {
     return get(asset).substr(0, 3);
   }
   return get(asset);
+});
+
+const textStyle = computed<Style>(() => {
+  const length = get(text).length;
+  const { value } = get(dimensions);
+
+  const fontSize = value / length + (length - 3) * 5;
+
+  return {
+    fontSize: `${fontSize}px`
+  };
+});
+
+const textColor = computed<string>(() => {
+  return `#${invertColor(get(backgroundColor), true)}`;
 });
 </script>
 <style scoped lang="scss">

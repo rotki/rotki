@@ -3516,8 +3516,8 @@
   },
   "sorting_selector": {
     "desc": {
-      "sort_asc_tooltip": "Sort ascending",
-      "sort_desc_tooltip": "Sort descending"
+      "sort_asc_tooltip": "Change sort to ascending",
+      "sort_desc_tooltip": "Change sort to descending"
     }
   },
   "staking": {

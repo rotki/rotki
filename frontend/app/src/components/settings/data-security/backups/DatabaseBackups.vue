@@ -2,10 +2,10 @@
   <fragment>
     <data-table
       :value="selected"
-      :items="items"
+      :items="itemsWithIndex"
       sort-by="time"
       show-select
-      item-key="time"
+      item-key="index"
       :single-select="false"
       :headers="tableHeaders"
       :loading="loading"
@@ -72,7 +72,7 @@
 <script setup lang="ts">
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
-import { computed, PropType, ref, toRefs } from 'vue';
+import { computed, ComputedRef, PropType, ref, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import { DataTableHeader } from 'vuetify';
 import Fragment from '@/components/helper/Fragment';
@@ -156,4 +156,12 @@ const getLink = (db: UserDbBackup) => fileUrl(getFilepath(db, directory));
 const onSelectedChange = (selected: UserDbBackup[]) => {
   emit('change', selected);
 };
+
+const itemsWithIndex: ComputedRef<(UserDbBackup & { index: number })[]> =
+  computed(() => {
+    return get(items).map((item, index) => ({
+      ...item,
+      index
+    }));
+  });
 </script>

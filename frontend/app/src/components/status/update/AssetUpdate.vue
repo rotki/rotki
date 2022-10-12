@@ -3,11 +3,15 @@
     <card v-if="!auto" class="mt-8">
       <template #title>{{ tc('asset_update.manual.title') }}</template>
       <template #subtitle>{{ tc('asset_update.manual.subtitle') }}</template>
-      <div v-if="skipped" class="text-body-1">
-        {{ tc('asset_update.manual.skipped', 0, { skipped }) }}
+      <div v-if="skipped && skipped !== 'undefined'" class="text-body-1">
+        <i18n path="asset_update.manual.skipped">
+          <template #skipped>
+            <badge-display class="ml-2">{{ skipped }}</badge-display>
+          </template>
+        </i18n>
       </div>
       <template #buttons>
-        <v-btn depressed color="primary" class="mt-2" @click="check">
+        <v-btn depressed color="primary" :loading="checking" @click="check">
           {{ tc('asset_update.manual.check') }}
         </v-btn>
       </template>
@@ -114,6 +118,7 @@ import { useBackendManagement } from '@/composables/backend';
 import { ConflictResolution } from '@/services/assets/types';
 import { useAssets } from '@/store/assets';
 import { useMainStore } from '@/store/main';
+import { useMessageStore } from '@/store/message';
 import { useSessionStore } from '@/store/session';
 import { AssetUpdateConflictResult } from '@/types/assets';
 
@@ -147,14 +152,29 @@ const multiple = computed(() => {
   return get(remoteVersion) - get(localVersion) > 1;
 });
 
+const checking: Ref<boolean> = ref(false);
+const { setMessage } = useMessageStore();
+
 const check = async () => {
+  set(checking, true);
   const checkResult = await checkForUpdate();
+  set(checking, false);
   const skippedVersion = get(skipped);
   const versions = checkResult.versions;
   if (get(auto) && skippedVersion && skippedVersion === versions?.remote) {
+    set(checking, false);
     return;
   }
+
   set(showUpdateDialog, checkResult.updateAvailable);
+
+  if (!get(auto) && !checkResult.updateAvailable) {
+    setMessage({
+      description: tc('asset_update.up_to_date'),
+      success: true
+    });
+  }
+
   if (versions) {
     set(localVersion, versions.local);
     set(remoteVersion, versions.remote);
