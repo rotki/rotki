@@ -56,7 +56,7 @@ export const SupportedAsset = BaseAsset.extend({
   type: z.string().nullish(),
   forked: z.string().nullish(),
   address: z.string().nullish(),
-  underlyingTokens: z.array(UnderlyingToken).optional(),
+  underlyingTokens: z.array(UnderlyingToken).nullish(),
   protocol: z.string().nullish(),
   customAssetType: z.string().nullish()
 })
