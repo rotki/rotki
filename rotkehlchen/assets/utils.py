@@ -20,12 +20,13 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def add_ethereum_token_to_db(token_data: EvmToken, globaldb: 'GlobalDBHandler') -> EvmToken:
+def add_ethereum_token_to_db(token_data: EvmToken) -> EvmToken:
     """Adds an ethereum token to the DB and returns it
 
     May raise:
     - InputError if token already exists in the DB
     """
+    globaldb = GlobalDBHandler()
     globaldb.add_asset(
         asset_id=token_data.identifier,
         asset_type=AssetType.EVM_TOKEN,
@@ -73,10 +74,21 @@ def get_or_create_evm_token(
             form_with_incomplete_data=form_with_incomplete_data,
         )
     except (UnknownAsset, DeserializationError):
+        # It can happen that the assets exists but is missing basic information. Check if it exists
+        # and if that is the case we fetch information. The check above would fail if the
+        # identifier is not a token or name, symbol or decimals is missing while
+        # form_with_incomplete_data is False
+        try:
+            asset_exists = Asset(identifier).check_existence() is not None
+        except UnknownAsset:
+            asset_exists = False
+
         log.info(
             f'Encountered unknown asset with address '
             f'{evm_address}. Adding it to the global DB',
         )
+
+        info = {}
         if ethereum_manager is not None:
             info = ethereum_manager.get_basic_contract_info(evm_address)
             decimals = info['decimals'] if decimals is None else decimals
@@ -86,6 +98,7 @@ def get_or_create_evm_token(
             if None in (decimals, symbol, name):
                 raise NotERC20Conformant(f'Token {evm_address} is not ERC20 conformant')  # noqa: E501  # pylint: disable=raise-missing-from
 
+        # Store the information in the database
         token_data = EvmToken.initialize(
             address=evm_address,
             chain=chain,
@@ -96,19 +109,22 @@ def get_or_create_evm_token(
             protocol=protocol,
             underlying_tokens=underlying_tokens,
         )
-        # This can but should not raise InputError since it should not already exist
-        # We need to wrap the whole call to add_ethereum_token_to_db since it makes
-        # the insert + when returning the EvmToken it can do a read to the database
-        globaldb = GlobalDBHandler()
-        with globaldb.conn.critical_section():
-            ethereum_token = add_ethereum_token_to_db(
-                token_data=token_data,
-                globaldb=globaldb,
-            )
+        if asset_exists is True:
+            # This means that we need to update the information in the database with the
+            # newly queried data
+            GlobalDBHandler().edit_evm_token(token_data)
+        else:
+            # This can but should not raise InputError since it should not already exist.
+            # We need to wrap the whole call to add_ethereum_token_to_db since it makes
+            # the insert + when returning the EvmToken it can do a read on the database
+            with GlobalDBHandler().conn.critical_section():
+                ethereum_token = add_ethereum_token_to_db(
+                    token_data=token_data,
+                )
 
-        # Also update the user db in a criticial section to avoid a switch
-        with userdb.conn.critical_section(), userdb.user_write() as cursor:
-            userdb.add_asset_identifiers(cursor, [ethereum_token.identifier])
+            # Also update the user db inside a critical section to avoid context switch
+            with userdb.conn.critical_section(), userdb.user_write() as cursor:
+                userdb.add_asset_identifiers(cursor, [ethereum_token.identifier])
 
     return ethereum_token
 
