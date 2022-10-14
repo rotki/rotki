@@ -78,6 +78,9 @@ export const updateAssetBalances = (
     const addressAssets = state[address];
     for (const asset in addressAssets) {
       const assetPrice = get(prices)[asset];
+      if (!assetPrice) {
+        continue;
+      }
       const amount = addressAssets[asset].amount;
       addressAssets[asset] = {
         amount,

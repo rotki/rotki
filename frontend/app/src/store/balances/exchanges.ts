@@ -137,14 +137,19 @@ export const useExchangeBalancesStore = defineStore(
     ): ComputedRef<AssetBalanceWithPrice[]> =>
       computed(() => {
         const balances = get(exchangeBalances);
-        return toStoredAssetBalanceWithPrice(
-          mergeAssociatedAssets(
-            balances[exchange],
-            getAssociatedAssetIdentifier
-          ),
-          asset => hideIgnored && get(isAssetIgnored(asset)),
-          getAssetPrice
-        );
+
+        if (balances && balances[exchange]) {
+          return toStoredAssetBalanceWithPrice(
+            mergeAssociatedAssets(
+              balances[exchange],
+              getAssociatedAssetIdentifier
+            ),
+            asset => hideIgnored && get(isAssetIgnored(asset)),
+            getAssetPrice
+          );
+        }
+
+        return [];
       });
 
     const addExchange = (exchange: Exchange): void => {

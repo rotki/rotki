@@ -37,13 +37,13 @@
           <template #selection="{ item }">
             <exchange-amount-row
               :balance="exchangeBalance(item)"
-              :exchange="exchange"
+              :exchange="item"
             />
           </template>
           <template #item="{ item }">
             <exchange-amount-row
               :balance="exchangeBalance(item)"
-              :exchange="exchange"
+              :exchange="item"
             />
           </template>
         </v-select>
@@ -59,7 +59,7 @@
           <v-tab
             v-for="(usedExchange, i) in usedExchanges"
             :key="i"
-            class="exchange-balances__tab ml-3 my-3 py-3 text-none"
+            class="exchange-balances__tab text-none"
             active-class="exchange-balances__tab--active"
             :to="`/accounts-balances/exchange-balances/${usedExchange}`"
             @click="selectedExchange = usedExchange"
@@ -196,22 +196,6 @@ const { t, tc } = useI18n();
 }
 
 .exchange-balances {
-  &__content {
-    &__select {
-      border-radius: 4px 4px 0 0;
-
-      :deep() {
-        .v-input {
-          &__icon {
-            &--append {
-              margin-top: 24px;
-            }
-          }
-        }
-      }
-    }
-  }
-
   &__balances {
     border-left: var(--v-rotki-light-grey-darken1) solid thin;
   }

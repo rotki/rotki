@@ -1004,6 +1004,7 @@
     },
     "title": "A supported asset update is available",
     "total_changes": "This update contains {changes} asset changes.",
+    "up_to_date": "Your asset database is up to date.",
     "up_to_version": "Only update up to version"
   },
   "assets": {
@@ -3574,8 +3575,8 @@
   },
   "sorting_selector": {
     "desc": {
-      "sort_asc_tooltip": "Sort ascending",
-      "sort_desc_tooltip": "Sort descending"
+      "sort_asc_tooltip": "Change sort to ascending",
+      "sort_desc_tooltip": "Change sort to descending"
     }
   },
   "staking": {

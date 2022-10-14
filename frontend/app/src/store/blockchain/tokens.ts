@@ -96,7 +96,7 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
   };
 
   watch(ethAddresses, async (curr, prev) => {
-    if (isEqual(curr, prev)) {
+    if (curr.length === 0 || isEqual(curr, prev)) {
       return;
     }
     await fetchDetectedTokens();

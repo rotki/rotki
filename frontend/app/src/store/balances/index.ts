@@ -46,7 +46,9 @@ export const useBalancesStore = defineStore('balances', () => {
     const unique = selectedAssets ? selectedAssets.filter(uniqueStrings) : null;
     const { setStatus } = useStatusUpdater(Section.PRICES);
     setStatus(Status.LOADING);
-    await priceStore.fetchExchangeRates();
+    if (ignoreCache) {
+      await priceStore.fetchExchangeRates();
+    }
     await priceStore.fetchPrices({
       ignoreCache,
       selectedAssets: get(unique && unique.length > 0 ? unique : assets())
