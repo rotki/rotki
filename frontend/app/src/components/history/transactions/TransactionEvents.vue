@@ -28,7 +28,12 @@
             </template>
           </v-expansion-panel-header>
           <v-expansion-panel-content>
-            <div class="my-n4">
+            <div
+              class="my-n4"
+              :class="{
+                'pt-4': transaction.ignoredInAccounting && events.length > 0
+              }"
+            >
               <data-table
                 :class="css.table"
                 :headers="headers"

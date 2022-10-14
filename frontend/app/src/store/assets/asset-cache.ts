@@ -66,6 +66,9 @@ export const useAssetCacheStore = defineStore('assets/cache', () => {
         logger.debug(`unknown key: ${key}`);
         unknown.set(key, Date.now() + CACHE_EXPIRY);
       }
+    } catch (e) {
+      logger.debug(`unknown key: ${key}`);
+      unknown.set(key, Date.now() + CACHE_EXPIRY);
     } finally {
       resetPending(key);
     }

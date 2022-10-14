@@ -284,7 +284,7 @@ const total = computed<BigNumber>(() => {
 <style module lang="scss">
 .table {
   scroll-behavior: smooth;
-  max-height: calc(100vh - 310px);
+  max-height: calc(100vh - 340px);
   overflow: auto;
 }
 

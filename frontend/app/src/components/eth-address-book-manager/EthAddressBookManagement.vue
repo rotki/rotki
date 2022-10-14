@@ -96,10 +96,7 @@
     </big-dialog>
   </v-container>
 </template>
-<script lang="ts">
-import { get, set, useTimeoutFn } from '@vueuse/core';
-import { computed, defineComponent, ref } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+<script setup lang="ts">
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import EthAddressBookForm from '@/components/eth-address-book-manager/EthAddressBookForm.vue';
 import EthAddressBookTable from '@/components/eth-address-book-manager/EthAddressBookTable.vue';
@@ -112,129 +109,102 @@ import {
   EthNamesPayload
 } from '@/types/eth-names';
 
-export default defineComponent({
-  name: 'EthAddressBookManagement',
-  components: {
-    EthNamesHint,
-    EthAddressBookForm,
-    EthAddressBookTable,
-    BigDialog
-  },
-  setup() {
-    const search = ref<string>('');
-    const pendingSearch = ref<string>('');
+const search = ref<string>('');
+const pendingSearch = ref<string>('');
 
-    const tab = ref<number>(0);
-    const locations: EthAddressBookLocation[] = ['global', 'private'];
-    const { tc } = useI18n();
+const tab = ref<number>(0);
+const locations: EthAddressBookLocation[] = ['global', 'private'];
+const { tc } = useI18n();
 
-    const location = computed<EthAddressBookLocation>(() => {
-      return locations[get(tab)];
-    });
-
-    const emptyForm: () => EthNamesPayload = () => ({
-      location: get(location),
-      address: '',
-      name: ''
-    });
-
-    const openForm = (item: EthNamesEntry | null = null) => {
-      set(editMode, !!item);
-      if (item) {
-        set(form, {
-          ...item,
-          location: get(location)
-        });
-      } else {
-        const newForm = emptyForm();
-        set(form, {
-          ...newForm
-        });
-      }
-      set(showForm, true);
-    };
-
-    const hideForm = function () {
-      set(showForm, false);
-      set(form, emptyForm());
-    };
-
-    const valid = ref<boolean>(false);
-    const showForm = ref(false);
-    const editMode = ref<boolean>(false);
-    const form = ref<EthNamesPayload>(emptyForm());
-
-    const {
-      isPending: isTimeoutPending,
-      start,
-      stop
-    } = useTimeoutFn(
-      () => {
-        set(search, get(pendingSearch));
-      },
-      600,
-      { immediate: false }
-    );
-
-    const onSearchTermChange = (term: string) => {
-      set(pendingSearch, term);
-      if (get(isTimeoutPending)) {
-        stop();
-      }
-      start();
-    };
-
-    const { addEthAddressBook, updateEthAddressBook } = useEthNamesStore();
-    const { setMessage } = useMessageStore();
-
-    const save = async () => {
-      if (!get(valid)) return;
-      try {
-        const formVal = get(form);
-        const payload = {
-          address: formVal.address.trim(),
-          name: formVal.name
-        };
-        const location = formVal.location;
-        if (get(editMode)) {
-          await updateEthAddressBook(location, [payload]);
-        } else {
-          await addEthAddressBook(location, [payload]);
-        }
-
-        set(showForm, false);
-      } catch (e: any) {
-        const values = { message: e.message };
-        const title = get(editMode)
-          ? tc('eth_address_book.actions.edit.error.title')
-          : tc('eth_address_book.actions.add.error.title');
-        const description = get(editMode)
-          ? tc('eth_address_book.actions.edit.error.description', 0, values)
-          : tc('eth_address_book.actions.add.error.description', 0, values);
-        setMessage({
-          title,
-          description,
-          success: false
-        });
-      }
-    };
-
-    return {
-      form,
-      tab,
-      locations,
-      search,
-      pendingSearch,
-      showForm,
-      editMode,
-      valid,
-      isTimeoutPending,
-      openForm,
-      hideForm,
-      onSearchTermChange,
-      save,
-      tc
-    };
-  }
+const location = computed<EthAddressBookLocation>(() => {
+  return locations[get(tab)];
 });
+
+const emptyForm: () => EthNamesPayload = () => ({
+  location: get(location),
+  address: '',
+  name: ''
+});
+
+const openForm = (item: EthNamesEntry | null = null) => {
+  set(editMode, !!item);
+  if (item) {
+    set(form, {
+      ...item,
+      location: get(location)
+    });
+  } else {
+    const newForm = emptyForm();
+    set(form, {
+      ...newForm
+    });
+  }
+  set(showForm, true);
+};
+
+const hideForm = function () {
+  set(showForm, false);
+  set(form, emptyForm());
+};
+
+const valid = ref<boolean>(false);
+const showForm = ref(false);
+const editMode = ref<boolean>(false);
+const form = ref<EthNamesPayload>(emptyForm());
+
+const {
+  isPending: isTimeoutPending,
+  start,
+  stop
+} = useTimeoutFn(
+  () => {
+    set(search, get(pendingSearch));
+  },
+  600,
+  { immediate: false }
+);
+
+const onSearchTermChange = (term: string) => {
+  set(pendingSearch, term);
+  if (get(isTimeoutPending)) {
+    stop();
+  }
+  start();
+};
+
+const { addEthAddressBook, updateEthAddressBook } = useEthNamesStore();
+const { setMessage } = useMessageStore();
+
+const save = async () => {
+  if (!get(valid)) return;
+  try {
+    const formVal = get(form);
+    const payload = {
+      address: formVal.address.trim(),
+      name: formVal.name
+    };
+    const location = formVal.location;
+    if (get(editMode)) {
+      await updateEthAddressBook(location, [payload]);
+    } else {
+      await addEthAddressBook(location, [payload]);
+    }
+
+    set(tab, location === 'global' ? 0 : 1);
+    set(showForm, false);
+  } catch (e: any) {
+    const values = { message: e.message };
+    const title = get(editMode)
+      ? tc('eth_address_book.actions.edit.error.title')
+      : tc('eth_address_book.actions.add.error.title');
+    const description = get(editMode)
+      ? tc('eth_address_book.actions.edit.error.description', 0, values)
+      : tc('eth_address_book.actions.add.error.description', 0, values);
+    setMessage({
+      title,
+      description,
+      success: false
+    });
+  }
+};
 </script>

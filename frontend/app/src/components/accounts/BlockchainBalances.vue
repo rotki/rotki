@@ -33,7 +33,7 @@
         :primary-action="tc('common.actions.save')"
         :secondary-action="tc('common.actions.cancel')"
         :action-disabled="!valid"
-        :loading="loading"
+        :loading="loading || isQueryingBlockchain"
         @confirm="saveAccount()"
         @cancel="clearDialog()"
       >
@@ -209,7 +209,7 @@
 
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { Ref } from 'vue';
+import { ComputedRef, Ref } from 'vue';
 import AccountBalances from '@/components/accounts/AccountBalances.vue';
 import AccountForm from '@/components/accounts/AccountForm.vue';
 import AssetBalances from '@/components/AssetBalances.vue';
@@ -248,7 +248,7 @@ const openDialog = ref(false);
 const form = ref<InstanceType<typeof AccountForm> | null>(null);
 const pending = ref<boolean>(false);
 
-const loading = computed(
+const loading: ComputedRef<boolean> = computed(
   () => get(isAccountOperationRunning()) || get(pending)
 );
 
@@ -364,7 +364,7 @@ const getFirstContext = (data: BlockchainData) => {
   return Blockchain.ETH;
 };
 
-const context = computed(() => {
+const context: ComputedRef<Blockchain> = computed(() => {
   const intersect = get(intersections);
   let currentContext = getFirstContext(blockchainData);
 
@@ -398,12 +398,14 @@ const { isTaskRunning } = useTasks();
 const isQueryingBlockchain = isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
 const isLoopringLoading = isTaskRunning(TaskType.L2_LOOPRING);
 
-const isBlockchainLoading = computed<boolean>(() => {
+const isBlockchainLoading: ComputedRef<boolean> = computed(() => {
   return get(isQueryingBlockchain) || get(isLoopringLoading);
 });
 
-const isAccountOperationRunning = (blockchain?: Blockchain) =>
-  computed<boolean>(() => {
+const isAccountOperationRunning = (
+  blockchain?: Blockchain
+): ComputedRef<boolean> =>
+  computed(() => {
     return (
       get(
         isTaskRunning(TaskType.ADD_ACCOUNT, blockchain ? { blockchain } : {})

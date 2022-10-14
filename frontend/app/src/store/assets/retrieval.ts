@@ -43,7 +43,7 @@ export const useAssetInfoRetrieval = defineStore(
         const address = getAddressFromEvmIdentifier(id);
         return `EVM Token: ${address}`;
       }
-      return '';
+      return id;
     };
 
     const assetInfo = (

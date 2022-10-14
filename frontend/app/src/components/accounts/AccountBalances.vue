@@ -181,6 +181,8 @@ const deleteAccount = async () => {
     set(xpubToDelete, null);
     await deleteXpub(payload);
     get(balanceTable)?.removeCollapsed(payload);
+
+    await refreshAccounts(get(blockchain));
   }
 };
 

@@ -1,6 +1,11 @@
 <template>
   <fragment>
-    <td v-if="offset > 0" :colspan="offset" :class="offsetClassName">
+    <td
+      v-if="offset > 0"
+      class="table-expand-container"
+      :colspan="offset"
+      :class="offsetClassName"
+    >
       <slot name="offset" />
     </td>
     <td v-if="visible" class="table-expand-container" :colspan="colspan">

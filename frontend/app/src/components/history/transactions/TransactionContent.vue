@@ -73,15 +73,9 @@
         :class="$style.table"
         @update:options="updatePaginationHandler($event)"
       >
-        <template #item.ignoredInAccounting="{ item, isMobile }">
+        <template #item.ignoredInAccounting="{ item }">
           <div v-if="item.ignoredInAccounting" class="pl-4">
-            <badge-display v-if="isMobile" color="grey">
-              <v-icon small> mdi-eye-off </v-icon>
-              <span class="ml-2">
-                {{ tc('common.ignored_in_accounting') }}
-              </span>
-            </badge-display>
-            <v-tooltip v-else bottom>
+            <v-tooltip bottom>
               <template #activator="{ on }">
                 <badge-display color="grey" v-on="on">
                   <v-icon small> mdi-eye-off </v-icon>
@@ -228,12 +222,8 @@
 
 <script setup lang="ts">
 import { GeneralAccount } from '@rotki/common/lib/account';
-import { get, set } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { computed, defineAsyncComponent, Ref, ref, watch } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { Ref } from 'vue';
 import { DataTableHeader } from 'vuetify';
-import { TransactionEventFormInstance } from '@/components/history/TransactionEventForm.vue';
 import { isSectionLoading } from '@/composables/common';
 import { useTransactionFilter } from '@/composables/filters/transactions';
 import { setupIgnore } from '@/composables/history';
@@ -261,35 +251,8 @@ type PaginationOptions = {
   sortDesc: boolean[];
 };
 
-const TransactionQueryStatus = defineAsyncComponent(
-  () => import('@/components/history/transactions/TransactionQueryStatus.vue')
-);
 const Fragment = defineAsyncComponent(
   () => import('@/components/helper/Fragment')
-);
-const TransactionEventForm = defineAsyncComponent(
-  () => import('@/components/history/TransactionEventForm.vue')
-);
-const BigDialog = defineAsyncComponent(
-  () => import('@/components/dialogs/BigDialog.vue')
-);
-const TransactionDetail = defineAsyncComponent(
-  () => import('@/components/history/transactions/TransactionDetail.vue')
-);
-const BadgeDisplay = defineAsyncComponent(
-  () => import('@/components/history/BadgeDisplay.vue')
-);
-const UpgradeRow = defineAsyncComponent(
-  () => import('@/components/history/UpgradeRow.vue')
-);
-const TransactionEvents = defineAsyncComponent(
-  () => import('@/components/history/transactions/TransactionEvents.vue')
-);
-const BlockchainAccountSelector = defineAsyncComponent(
-  () => import('@/components/helper/BlockchainAccountSelector.vue')
-);
-const RefreshButton = defineAsyncComponent(
-  () => import('@/components/helper/RefreshButton.vue')
 );
 
 const emit = defineEmits(['fetch']);
@@ -375,7 +338,7 @@ const confirmationTitle: Ref<string> = ref('');
 const confirmationMessage: Ref<string> = ref('');
 const confirmationPrimaryAction: Ref<string> = ref('');
 const valid: Ref<boolean> = ref(false);
-const form = ref<TransactionEventFormInstance | null>(null);
+const form = ref<any>(null);
 
 const getId = (item: EthTransactionEntry) => item.txHash;
 

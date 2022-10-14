@@ -60,7 +60,7 @@
   },
   "devDependencies": {
     "@intlify/eslint-plugin-vue-i18n": "2.0.0",
-    "@mdi/font": "7.0.96",
+    "@mdi/font": "6.9.96",
     "@namics/stylelint-bem": "6.3.4",
     "@pinia/testing": "0.0.13",
     "@types/chart.js": "2.9.37",

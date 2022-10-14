@@ -140,6 +140,7 @@ const visibleUpdate = (_visible: boolean) => {
 
 const openAbout = () => {
   visibleUpdate(false);
+  emit('about');
 };
 
 const downloadBrowserLog = async () => {

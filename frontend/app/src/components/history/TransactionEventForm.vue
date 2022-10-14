@@ -179,14 +179,14 @@
     />
   </v-form>
 </template>
-<script lang="ts">
+<script setup lang="ts">
 import { BigNumber } from '@rotki/common';
 import { get, set, useLocalStorage } from '@vueuse/core';
 import dayjs from 'dayjs';
 import { storeToRefs } from 'pinia';
 import {
   computed,
-  defineComponent,
+  defineProps,
   onMounted,
   PropType,
   ref,
@@ -208,6 +208,7 @@ import {
   EthTransactionEntry,
   EthTransactionEventEntry
 } from '@/store/history/types';
+import { useMessageStore } from '@/store/message';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTasks } from '@/store/tasks';
 import { ActionStatus } from '@/store/types';
@@ -223,326 +224,280 @@ import { bigNumberifyFromRef, One, Zero } from '@/utils/bignumbers';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { getEventTypeData } from '@/utils/history';
 
-const TransactionEventForm = defineComponent({
-  name: 'TransactionEventForm',
-  components: { ValueAccuracyHint, LocationSelector },
-  props: {
-    value: { required: false, type: Boolean, default: false },
-    edit: {
-      required: false,
-      type: Object as PropType<EthTransactionEvent>,
-      default: null
-    },
-    transaction: {
-      required: false,
-      type: Object as PropType<EthTransactionEntry>,
-      default: null
-    },
-    saveData: {
-      required: true,
-      type: Function as PropType<
-        (
-          event: NewEthTransactionEvent | EthTransactionEventEntry
-        ) => Promise<ActionStatus>
-      >
-    }
+const props = defineProps({
+  value: { required: false, type: Boolean, default: false },
+  edit: {
+    required: false,
+    type: Object as PropType<EthTransactionEvent>,
+    default: null
   },
-  emits: ['input'],
-  setup(props, { emit }) {
-    const { t } = useI18n();
-    const { edit, transaction, saveData } = toRefs(props);
-
-    const input = (valid: boolean) => emit('input', valid);
-
-    const { isTaskRunning } = useTasks();
-    const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-    const { exchangeRate, getHistoricPrice } = useBalancePricesStore();
-
-    const lastLocation = useLocalStorage(
-      'rotki.ledger_action.location',
-      TRADE_LOCATION_EXTERNAL
-    );
-
-    const identifier = ref<number | null>(null);
-    const eventIdentifier = ref<string>('');
-    const sequenceIndex = ref<string>('');
-    const datetime = ref<string>('');
-    const location = ref<string>('');
-    const eventType = ref<string>('');
-    const eventSubtype = ref<string>('');
-    const transactionEventType = ref<string | null>();
-    const asset = ref<string>('');
-    const amount = ref<string>('');
-    const fiatValue = ref<string>('');
-    const locationLabel = ref<string>('');
-    const notes = ref<string>('');
-    const counterparty = ref<string>('');
-
-    const rate = ref<string>('');
-    const errorMessages = ref<{ [field: string]: string[] }>({});
-
-    const locationRules = [
-      (v: string) =>
-        !!v ||
-        t('transactions.events.form.location.validation.non_empty').toString()
-    ];
-
-    const assetRules = [
-      (v: string) =>
-        !!v ||
-        t('transactions.events.form.asset.validation.non_empty').toString()
-    ];
-
-    const amountRules = [
-      (v: string) =>
-        !!v ||
-        t('transactions.events.form.amount.validation.non_empty').toString()
-    ];
-
-    const fiatValueRules = [
-      (v: string) =>
-        !!v ||
-        t('transactions.events.form.fiat_value.validation.non_empty', {
-          currency: get(currencySymbol)
-        }).toString()
-    ];
-
-    const sequenceIndexRules = [
-      (v: string) =>
-        !!v ||
-        t(
-          'transactions.events.form.sequence_index.validation.non_empty'
-        ).toString()
-    ];
-
-    const eventTypeRules = [
-      (v: string) =>
-        !!v ||
-        t('transactions.events.form.event_type.validation.non_empty').toString()
-    ];
-
-    const eventSubtypeRules = [
-      (v: string) =>
-        !!v ||
-        t(
-          'transactions.events.form.event_subtype.validation.non_empty'
-        ).toString()
-    ];
-
-    const fetching = isTaskRunning(TaskType.FETCH_HISTORIC_PRICE);
-
-    const reset = () => {
-      set(identifier, null);
-      set(eventIdentifier, get(transaction)?.txHash || '');
-      set(sequenceIndex, '0');
-      set(
-        datetime,
-        convertFromTimestamp(
-          get(transaction)?.timestamp || dayjs().unix(),
-          true
-        )
-      );
-      set(location, '');
-      set(eventType, '');
-      set(eventSubtype, '');
-      set(asset, '');
-      set(amount, '0');
-      set(fiatValue, '0');
-      set(location, get(lastLocation));
-      set(notes, '');
-      set(counterparty, '');
-      set(rate, '');
-      set(errorMessages, {});
-    };
-
-    const fiatExchangeRate = computed<BigNumber>(() => {
-      return get(exchangeRate(get(currencySymbol))) ?? One;
-    });
-
-    const setEditMode = async () => {
-      if (!get(edit)) {
-        reset();
-        return;
-      }
-
-      const event: EthTransactionEvent = get(edit);
-
-      const convertedFiatValue =
-        get(currencySymbol) === CURRENCY_USD
-          ? event.balance.usdValue.toFixed()
-          : event.balance.usdValue
-              .multipliedBy(get(fiatExchangeRate))
-              .toFixed();
-
-      set(identifier, event.identifier ?? null);
-      set(eventIdentifier, event.eventIdentifier);
-      set(sequenceIndex, event.sequenceIndex?.toString() ?? '');
-      set(datetime, convertFromTimestamp(event.timestamp, true));
-      set(location, event.location);
-      set(eventType, event.eventType);
-      set(eventSubtype, event.eventSubtype || HistoryEventSubType.NONE);
-      set(asset, event.asset);
-      set(amount, event.balance.amount.toFixed());
-      set(fiatValue, convertedFiatValue);
-      set(locationLabel, event.locationLabel ?? '');
-      set(notes, event.notes ?? '');
-      set(counterparty, event.counterparty ?? '');
-
-      await fetchPrice();
-    };
-
-    const save = async (): Promise<boolean> => {
-      const numericAmount = get(bigNumberifyFromRef(amount));
-      const numericFiatValue = get(bigNumberifyFromRef(fiatValue));
-
-      const convertedUsdValue =
-        get(currencySymbol) === CURRENCY_USD
-          ? numericFiatValue
-          : numericFiatValue.dividedBy(get(fiatExchangeRate));
-
-      const transactionEventPayload: Writeable<NewEthTransactionEvent> = {
-        eventIdentifier: get(eventIdentifier),
-        sequenceIndex: get(sequenceIndex) || '0',
-        timestamp: convertToTimestamp(get(datetime)),
-        location: get(location),
-        eventType: get(eventType) as HistoryEventType,
-        eventSubtype: get(eventSubtype) as HistoryEventSubType,
-        asset: get(asset),
-        balance: {
-          amount: numericAmount.isNaN() ? Zero : numericAmount,
-          usdValue: convertedUsdValue.isNaN() ? Zero : convertedUsdValue
-        },
-        locationLabel: get(locationLabel) ? get(locationLabel) : undefined,
-        notes: get(notes) ? get(notes) : undefined,
-        counterparty: get(counterparty) ? get(counterparty) : undefined
-      };
-
-      const save = get(saveData);
-      const result = !get(identifier)
-        ? await save(transactionEventPayload)
-        : await save({
-            ...transactionEventPayload,
-            identifier: get(identifier)!
-          });
-
-      if (result.success) {
-        reset();
-        return true;
-      }
-
-      if (result.message) {
-        set(
-          errorMessages,
-          convertKeys(
-            deserializeApiErrorMessage(result.message) ?? {},
-            true,
-            false
-          )
-        );
-      }
-
-      return false;
-    };
-
-    const updateUsdValue = () => {
-      if (get(amount) && get(rate)) {
-        set(
-          fiatValue,
-          new BigNumber(get(amount))
-            .multipliedBy(new BigNumber(get(rate)))
-            .toFixed()
-        );
-      }
-    };
-
-    const fetchPrice = async () => {
-      if ((get(fiatValue) && get(edit)) || !get(datetime) || !get(asset)) {
-        return;
-      }
-
-      const timestamp = convertToTimestamp(get(datetime));
-      const fromAsset = get(asset);
-      const toAsset = get(currencySymbol);
-
-      const rateFromHistoricPrice = await getHistoricPrice({
-        timestamp,
-        fromAsset,
-        toAsset
-      });
-
-      if (rateFromHistoricPrice.gt(0)) {
-        set(rate, rateFromHistoricPrice.toFixed());
-        updateUsdValue();
-      }
-    };
-
-    watch(edit, async () => {
-      await setEditMode();
-    });
-
-    watch([datetime, asset], async () => {
-      await fetchPrice();
-    });
-
-    watch(amount, () => {
-      updateUsdValue();
-    });
-
-    watch(transaction, transaction => {
-      set(eventIdentifier, transaction?.txHash || '');
-    });
-
-    watch(location, (location: string) => {
-      if (location) {
-        set(lastLocation, location);
-      }
-    });
-
-    watch([eventType, eventSubtype], ([eventType, eventSubtype]) => {
-      const typeData = getEventTypeData({ eventType, eventSubtype }, false);
-      set(transactionEventType, typeData.label);
-    });
-
-    onMounted(async () => {
-      await setEditMode();
-    });
-
-    return {
-      t,
-      currencySymbol,
-      historyEventTypeData,
-      historyEventSubTypeData,
-      input,
-      sequenceIndex,
-      datetime,
-      location,
-      eventType,
-      eventSubtype,
-      transactionEventType,
-      asset,
-      amount,
-      fiatValue,
-      locationLabel,
-      notes,
-      counterparty,
-      errorMessages,
-      locationRules,
-      assetRules,
-      amountRules,
-      fiatValueRules,
-      sequenceIndexRules,
-      eventTypeRules,
-      eventSubtypeRules,
-      fetching,
-      save,
-      reset
-    };
+  transaction: {
+    required: false,
+    type: Object as PropType<EthTransactionEntry>,
+    default: null
+  },
+  saveData: {
+    required: true,
+    type: Function as PropType<
+      (
+        event: NewEthTransactionEvent | EthTransactionEventEntry
+      ) => Promise<ActionStatus>
+    >
   }
 });
 
-export type TransactionEventFormInstance = InstanceType<
-  typeof TransactionEventForm
->;
+const emit = defineEmits(['input']);
+const { t } = useI18n();
+const { edit, transaction, saveData } = toRefs(props);
 
-export default TransactionEventForm;
+const input = (valid: boolean) => emit('input', valid);
+
+const { isTaskRunning } = useTasks();
+const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+const { exchangeRate, getHistoricPrice } = useBalancePricesStore();
+
+const lastLocation = useLocalStorage(
+  'rotki.ledger_action.location',
+  TRADE_LOCATION_EXTERNAL
+);
+
+const identifier = ref<number | null>(null);
+const eventIdentifier = ref<string>('');
+const sequenceIndex = ref<string>('');
+const datetime = ref<string>('');
+const location = ref<string>('');
+const eventType = ref<string>('');
+const eventSubtype = ref<string>('');
+const transactionEventType = ref<string | null>();
+const asset = ref<string>('');
+const amount = ref<string>('');
+const fiatValue = ref<string>('');
+const locationLabel = ref<string>('');
+const notes = ref<string>('');
+const counterparty = ref<string>('');
+
+const rate = ref<string>('');
+const errorMessages = ref<{ [field: string]: string[] }>({});
+
+const locationRules = [
+  (v: string) =>
+    !!v ||
+    t('transactions.events.form.location.validation.non_empty').toString()
+];
+
+const assetRules = [
+  (v: string) =>
+    !!v || t('transactions.events.form.asset.validation.non_empty').toString()
+];
+
+const amountRules = [
+  (v: string) =>
+    !!v || t('transactions.events.form.amount.validation.non_empty').toString()
+];
+
+const fiatValueRules = [
+  (v: string) =>
+    !!v ||
+    t('transactions.events.form.fiat_value.validation.non_empty', {
+      currency: get(currencySymbol)
+    }).toString()
+];
+
+const sequenceIndexRules = [
+  (v: string) =>
+    !!v ||
+    t('transactions.events.form.sequence_index.validation.non_empty').toString()
+];
+
+const eventTypeRules = [
+  (v: string) =>
+    !!v ||
+    t('transactions.events.form.event_type.validation.non_empty').toString()
+];
+
+const eventSubtypeRules = [
+  (v: string) =>
+    !!v ||
+    t('transactions.events.form.event_subtype.validation.non_empty').toString()
+];
+
+const fetching = isTaskRunning(TaskType.FETCH_HISTORIC_PRICE);
+
+const reset = () => {
+  set(identifier, null);
+  set(eventIdentifier, get(transaction)?.txHash || '');
+  set(sequenceIndex, '0');
+  set(
+    datetime,
+    convertFromTimestamp(get(transaction)?.timestamp || dayjs().unix(), true)
+  );
+  set(location, '');
+  set(eventType, '');
+  set(eventSubtype, '');
+  set(asset, '');
+  set(amount, '0');
+  set(fiatValue, '0');
+  set(location, get(lastLocation));
+  set(notes, '');
+  set(counterparty, '');
+  set(rate, '');
+  set(errorMessages, {});
+};
+
+const fiatExchangeRate = computed<BigNumber>(() => {
+  return get(exchangeRate(get(currencySymbol))) ?? One;
+});
+
+const setEditMode = async () => {
+  if (!get(edit)) {
+    reset();
+    return;
+  }
+
+  const event: EthTransactionEvent = get(edit);
+
+  const convertedFiatValue =
+    get(currencySymbol) === CURRENCY_USD
+      ? event.balance.usdValue.toFixed()
+      : event.balance.usdValue.multipliedBy(get(fiatExchangeRate)).toFixed();
+
+  set(identifier, event.identifier ?? null);
+  set(eventIdentifier, event.eventIdentifier);
+  set(sequenceIndex, event.sequenceIndex?.toString() ?? '');
+  set(datetime, convertFromTimestamp(event.timestamp, true));
+  set(location, event.location);
+  set(eventType, event.eventType);
+  set(eventSubtype, event.eventSubtype || HistoryEventSubType.NONE);
+  set(asset, event.asset);
+  set(amount, event.balance.amount.toFixed());
+  set(fiatValue, convertedFiatValue);
+  set(locationLabel, event.locationLabel ?? '');
+  set(notes, event.notes ?? '');
+  set(counterparty, event.counterparty ?? '');
+
+  await fetchPrice();
+};
+
+const { setMessage } = useMessageStore();
+
+const save = async (): Promise<boolean> => {
+  const numericAmount = get(bigNumberifyFromRef(amount));
+  const numericFiatValue = get(bigNumberifyFromRef(fiatValue));
+
+  const convertedUsdValue =
+    get(currencySymbol) === CURRENCY_USD
+      ? numericFiatValue
+      : numericFiatValue.dividedBy(get(fiatExchangeRate));
+
+  const transactionEventPayload: Writeable<NewEthTransactionEvent> = {
+    eventIdentifier: get(eventIdentifier),
+    sequenceIndex: get(sequenceIndex) || '0',
+    timestamp: convertToTimestamp(get(datetime)),
+    location: get(location),
+    eventType: get(eventType) as HistoryEventType,
+    eventSubtype: get(eventSubtype) as HistoryEventSubType,
+    asset: get(asset),
+    balance: {
+      amount: numericAmount.isNaN() ? Zero : numericAmount,
+      usdValue: convertedUsdValue.isNaN() ? Zero : convertedUsdValue
+    },
+    locationLabel: get(locationLabel) ? get(locationLabel) : undefined,
+    notes: get(notes) ? get(notes) : undefined,
+    counterparty: get(counterparty) ? get(counterparty) : undefined
+  };
+
+  const save = get(saveData);
+  const result = !get(identifier)
+    ? await save(transactionEventPayload)
+    : await save({
+        ...transactionEventPayload,
+        identifier: get(identifier)!
+      });
+
+  if (result.success) {
+    reset();
+    return true;
+  }
+
+  if (result.message) {
+    const errorFields = deserializeApiErrorMessage(result.message);
+    if (errorFields) {
+      set(errorMessages, convertKeys(errorFields, true, false));
+    } else {
+      setMessage({
+        description: result.message
+      });
+    }
+  }
+
+  return false;
+};
+
+const updateUsdValue = () => {
+  if (get(amount) && get(rate)) {
+    set(
+      fiatValue,
+      new BigNumber(get(amount))
+        .multipliedBy(new BigNumber(get(rate)))
+        .toFixed()
+    );
+  }
+};
+
+const fetchPrice = async () => {
+  if ((get(fiatValue) && get(edit)) || !get(datetime) || !get(asset)) {
+    return;
+  }
+
+  const timestamp = convertToTimestamp(get(datetime));
+  const fromAsset = get(asset);
+  const toAsset = get(currencySymbol);
+
+  const rateFromHistoricPrice = await getHistoricPrice({
+    timestamp,
+    fromAsset,
+    toAsset
+  });
+
+  if (rateFromHistoricPrice.gt(0)) {
+    set(rate, rateFromHistoricPrice.toFixed());
+    updateUsdValue();
+  }
+};
+
+watch(edit, async () => {
+  await setEditMode();
+});
+
+watch([datetime, asset], async () => {
+  await fetchPrice();
+});
+
+watch(amount, () => {
+  updateUsdValue();
+});
+
+watch(transaction, transaction => {
+  set(eventIdentifier, transaction?.txHash || '');
+});
+
+watch(location, (location: string) => {
+  if (location) {
+    set(lastLocation, location);
+  }
+});
+
+watch([eventType, eventSubtype], ([eventType, eventSubtype]) => {
+  const typeData = getEventTypeData({ eventType, eventSubtype }, false);
+  set(transactionEventType, typeData.label);
+});
+
+onMounted(async () => {
+  await setEditMode();
+});
+
+defineExpose({
+  save,
+  reset
+});
 </script>

@@ -1,7 +1,7 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Severity } from '@rotki/common/lib/messages';
 import { useNonFungibleBalancesStore } from '@/store/balances/non-fungible';
-import { AddAccountsPayload } from '@/store/balances/types';
+import { AddAccountsPayload, XpubPayload } from '@/store/balances/types';
 import { useAccountBalancesStore } from '@/store/blockchain/accountbalances';
 import { useBlockchainAccountsStore } from '@/store/blockchain/accounts';
 import { useBlockchainBalancesStore } from '@/store/blockchain/balances';
@@ -33,12 +33,17 @@ export const useBlockchainStore = defineStore('blockchain', () => {
 
   const getNewAddresses = (
     chain: Blockchain,
-    addresses: string[]
+    addresses: { xpub?: XpubPayload; address?: string }[]
   ): string[] => {
     const knownAddresses = getAccountsByChain(chain);
-    return addresses.filter(
-      address => !knownAddresses.includes(address.toLocaleLowerCase())
-    );
+    return addresses
+      .filter(
+        address =>
+          !knownAddresses.includes(
+            address?.xpub?.xpub || address.address?.toLocaleLowerCase() || ''
+          )
+      )
+      .map(address => address.xpub?.xpub || address.address || '');
   };
 
   const fetchAccounts = async (blockchain?: Blockchain): Promise<void> => {
@@ -90,11 +95,7 @@ export const useBlockchainStore = defineStore('blockchain', () => {
       logger.debug(`${TaskType[TaskType.ADD_ACCOUNT]} is already running.`);
       return;
     }
-
-    const addresses = getNewAddresses(
-      blockchain,
-      payload.map(({ address }) => address)
-    );
+    const addresses = getNewAddresses(blockchain, payload);
     if (addresses.length === 0) {
       const title = tc(
         'actions.balances.blockchain_accounts_add.no_new.title',
@@ -113,10 +114,11 @@ export const useBlockchainStore = defineStore('blockchain', () => {
       return;
     }
 
+    const addr = await Promise.all(
+      payload.map(data => addAccount(blockchain, data))
+    );
+
     try {
-      const addr = await Promise.all(
-        payload.map(data => addAccount(blockchain, data))
-      );
       const filteredAddresses = addr.filter(add => add.length > 0);
       if (blockchain === Blockchain.ETH && modules) {
         await enableModule({

@@ -145,7 +145,8 @@ export type MissingAcquisition = z.infer<typeof MissingAcquisition>;
 export const MissingPrice = z.object({
   fromAsset: z.string(),
   toAsset: z.string(),
-  time: z.number()
+  time: z.number(),
+  rateLimited: z.boolean()
 });
 
 export type MissingPrice = z.infer<typeof MissingPrice>;

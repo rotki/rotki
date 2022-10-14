@@ -596,6 +596,21 @@ const liabilities = (address: string) => {
   return get(accountLiabilities(address));
 };
 const loopringBalances = (address: string) => get(getLoopringBalances(address));
+
+const removeCollapsed = ({ derivationPath, xpub }: XpubPayload) => {
+  const index = get(collapsedXpubs).findIndex(
+    collapsed =>
+      collapsed.derivationPath === derivationPath && collapsed.xpub === xpub
+  );
+
+  if (index >= 0) {
+    get(collapsedXpubs).splice(index, 1);
+  }
+};
+
+defineExpose({
+  removeCollapsed
+});
 </script>
 
 <style scoped lang="scss">

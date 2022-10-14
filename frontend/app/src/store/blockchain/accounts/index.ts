@@ -47,40 +47,33 @@ export const useBlockchainAccountsStore = defineStore(
       { address, label, tags, xpub }: AccountPayload
     ): Promise<string> => {
       const taskType = TaskType.ADD_ACCOUNT;
-      try {
-        const { taskId } = await addBlockchainAccount({
+      const { taskId } = await addBlockchainAccount({
+        blockchain,
+        address,
+        label,
+        xpub,
+        tags
+      });
+
+      const { result } = await awaitTask<string[], BlockchainMetadata>(
+        taskId,
+        taskType,
+        {
+          title: tc('actions.balances.blockchain_accounts_add.task.title', 0, {
+            blockchain
+          }),
+          description: tc(
+            'actions.balances.blockchain_accounts_add.task.description',
+            0,
+            { address }
+          ),
           blockchain,
-          address,
-          label,
-          xpub,
-          tags
-        });
+          numericKeys: []
+        } as BlockchainMetadata,
+        true
+      );
 
-        const { result } = await awaitTask<string[], BlockchainMetadata>(
-          taskId,
-          taskType,
-          {
-            title: tc(
-              'actions.balances.blockchain_accounts_add.task.title',
-              0,
-              { blockchain }
-            ),
-            description: tc(
-              'actions.balances.blockchain_accounts_add.task.description',
-              0,
-              { address }
-            ),
-            blockchain,
-            numericKeys: []
-          } as BlockchainMetadata,
-          true
-        );
-
-        return result.length > 0 ? result[0] : '';
-      } catch (e) {
-        logger.error(e);
-      }
-      return '';
+      return result.length > 0 ? result[0] : '';
     };
 
     const editAccount = async (
