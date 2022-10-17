@@ -1236,13 +1236,16 @@ class GlobalDBHandler():
             from_asset: Asset,
             to_asset: Asset,
             price: Price,
-    ) -> None:
+    ) -> List[Tuple[Asset, Asset]]:
         """
         Adds manual current price and turns previously known manual current price into a
         historical manual price.
+
+        Returns a list of asset pairs involving `from_asset` to invalidate their cached prices.
         May raise:
         - InputError if some db constraint was hit. Probably means manual price duplication.
         """
+        pairs_to_invalidate = []
         with GlobalDBHandler().conn.write_ctx() as write_cursor:
             try:
                 write_cursor.execute(
@@ -1284,6 +1287,15 @@ class GlobalDBHandler():
             except sqlite3.IntegrityError as e:
                 # Means foreign keys failure. Should not happen since is checked by marshmallow
                 raise InputError(f'Failed to add manual current price due to: {str(e)}') from e
+
+            write_cursor.execute(
+                'SELECT from_asset, to_asset FROM price_history WHERE from_asset=? OR to_asset=?',
+                (from_asset.identifier, from_asset.identifier),
+            )
+            for entry in write_cursor:
+                pairs_to_invalidate.append((Asset(entry[0]), Asset(entry[1])))
+
+        return pairs_to_invalidate
 
     @staticmethod
     def get_manual_current_price(asset: Asset) -> Optional[Tuple[Asset, Price]]:
