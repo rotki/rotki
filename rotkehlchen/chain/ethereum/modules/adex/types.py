@@ -248,9 +248,9 @@ class ADXStakingEvents(NamedTuple):
     def get_all(self) -> List[Union[Bond, Unbond, UnbondRequest, ChannelWithdraw]]:
         return (
             self.bonds +
-            self.unbonds +  # type: ignore # concatenating lists
-            self.unbond_requests +  # type: ignore # concatenating lists
-            self.channel_withdraws  # type: ignore # concatenating lists
+            self.unbonds +
+            self.unbond_requests +
+            self.channel_withdraws
         )
 
 

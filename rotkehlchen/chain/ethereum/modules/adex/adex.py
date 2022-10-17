@@ -781,7 +781,7 @@ class Adex(EthereumModule):
         }
         for event in (
             staking_events.unbonds +
-            staking_events.unbond_requests  # type: ignore # mypy bug concatenating lists
+            staking_events.unbond_requests
         ):
             has_bond = True
             bond = bond_id_bond_map.get(event.bond_id, None)

@@ -217,8 +217,7 @@ class DBConnection:
 
     def _set_progress_handler(self) -> None:
         callback = CALLBACK_MAP.get(self.connection_type)
-        # https://github.com/python/typeshed/issues/8105
-        self._conn.set_progress_handler(callback, self.sql_vm_instructions_cb)  # type: ignore
+        self._conn.set_progress_handler(callback, self.sql_vm_instructions_cb)
 
     def __init__(
             self,
