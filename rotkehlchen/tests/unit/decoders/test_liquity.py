@@ -7,7 +7,7 @@ from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.decoding.decoder import EVMTransactionDecoder
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_ETH, A_LUSD
+from rotkehlchen.constants.assets import A_ETH, A_LQTY, A_LUSD
 from rotkehlchen.constants.misc import EXP18, ZERO
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.fval import FVal
@@ -24,7 +24,8 @@ from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x9ba961989Dd6609Ed091f512bE947118c40F2291']])  # noqa: E501
 def test_liquity_trove_adjust(database, ethereum_manager, eth_transactions):
-    """Data for deposit taken from
+    """
+    Data for deposit taken from
     https://etherscan.io/tx/0xdb9a541a4af7d5d46d7ea5fe4a2a752dcb731d64d052f86f630e97362063602c
     Deposit 2.1 ether and borrow 4752 LUSD
     """
@@ -150,7 +151,8 @@ def test_liquity_trove_adjust(database, ethereum_manager, eth_transactions):
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x648E180e246741363639B1496762763dd25649db']])  # noqa: E501
 def test_liquity_trove_deposit_lusd(database, ethereum_manager, eth_transactions):
-    """Data for deposit taken from
+    """
+    Data for deposit taken from
     https://etherscan.io/tx/0x40bb08427a3b99fb9896cf14858d82d361a6e7a8fb7dd6d2000511ac3dca5707
     Deposit 2.1 ether and borrow 4752 LUSD
     """
@@ -253,7 +255,8 @@ def test_liquity_trove_deposit_lusd(database, ethereum_manager, eth_transactions
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x648E180e246741363639B1496762763dd25649db']])  # noqa: E501
 def test_liquity_trove_remove_eth(database, ethereum_manager, eth_transactions):
-    """Data for deposit taken from
+    """
+    Data for deposit taken from
     https://etherscan.io/tx/0x6be5312c21855c3cc324b5b6ce9f9f65dbd488e270e84ac5e6fb96c74d83fe4e
     Deposit 2.1 ether and borrow 4752 LUSD
     """
@@ -371,6 +374,238 @@ def test_liquity_trove_remove_eth(database, ethereum_manager, eth_transactions):
             balance=Balance(amount=FVal('0'), usd_value=ZERO),
             location_label=user_address,
             notes='Return 0 LUSD to liquity',
+            counterparty='liquity',
+        )]
+    assert events == expected_events
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0xF04E6f2D27ED324917AD2098F96f5d4ac52e1684']])  # noqa: E501
+def test_liquity_pool_deposit(database, ethereum_manager, eth_transactions):
+    """
+    Data for deposit taken from
+    https://etherscan.io/tx/0x1277cb6c2c8e151fe90118cdd738e46f894e18de04ab6af33d567e91597f322b
+    """
+    msg_aggregator = MessagesAggregator()
+    tx_hex = '0x1277cb6c2c8e151fe90118cdd738e46f894e18de04ab6af33d567e91597f322b'
+    user_address = '0xF04E6f2D27ED324917AD2098F96f5d4ac52e1684'
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    transaction = EvmTransaction(
+        tx_hash=evmhash,
+        timestamp=1646375440,
+        block_number=14318825,
+        from_address=user_address,
+        to_address='0x66017D22b0f8556afDd19FC67041899Eb65a21bb',
+        value=0,
+        gas=171249,
+        gas_price=22990000000,
+        gas_used=171249,
+        input_data=hexstring_to_bytes('0x5f788d650000000000000000000000000000000000000000000000068155a43676e0000000000000000000000000000030e5d10dc30a0ce2545a4dbe8de4fcba590062c5'),  # noqa: E501
+        nonce=507,
+    )
+    receipt = EthereumTxReceipt(
+        tx_hash=evmhash,
+        contract_address=None,
+        status=True,
+        type=0,
+        logs=[
+            EthereumTxReceiptLog(
+                log_index=907,
+                data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000068155a43676e00000'),  # noqa: E501
+                address=string_to_evm_address('0x5f98805A4E8be255a32880FDeC7F6728C6568bA0'),
+                removed=False,
+                topics=[
+                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
+                    hexstring_to_bytes('0x000000000000000000000000f04e6f2d27ed324917ad2098f96f5d4ac52e1684'),  # noqa: E501
+                    hexstring_to_bytes('0x00000000000000000000000066017d22b0f8556afdd19fc67041899eb65a21bb'),  # noqa: E501
+                ],
+            ), EthereumTxReceiptLog(
+                log_index=911,
+                data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'),  # noqa: E501
+                address=string_to_evm_address('0x66017D22b0f8556afDd19FC67041899Eb65a21bb'),
+                removed=False,
+                topics=[
+                    hexstring_to_bytes('0x51457222ebca92c335c9c86e2baa1cc0e40ffaa9084a51452980d5ba8dec2f63'),  # noqa: E501
+                    hexstring_to_bytes('0x000000000000000000000000f04e6f2d27ed324917ad2098f96f5d4ac52e1684'),  # noqa: E501
+                ],
+            ),
+        ],
+    )
+    dbethtx = DBEthTx(database)
+    with database.user_write() as cursor:
+        dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
+        decoder = EVMTransactionDecoder(
+            database=database,
+            ethereum_manager=ethereum_manager,
+            transactions=eth_transactions,
+            msg_aggregator=msg_aggregator,
+        )
+        events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
+    assert len(events) == 2
+    expected_events = [
+        HistoryBaseEntry(
+            event_identifier=evmhash,
+            sequence_index=0,
+            timestamp=1646375440000,
+            location=Location.BLOCKCHAIN,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(
+                amount=FVal(0.00393701451),
+                usd_value=ZERO,
+            ),
+            location_label=user_address,
+            notes='Burned 0.00393701451 ETH for gas',
+            counterparty=CPT_GAS,
+        ), HistoryBaseEntry(
+            event_identifier=evmhash,
+            sequence_index=908,
+            timestamp=1646375440000,
+            location=Location.BLOCKCHAIN,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=A_LUSD,
+            balance=Balance(amount=FVal('120'), usd_value=ZERO),
+            location_label=user_address,
+            notes="Deposit 120 LUSD in liquity's stability pool",
+            counterparty='liquity',
+        )]
+    assert events == expected_events
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0xF03639047f75204d00c9314611C2b24570db4405']])  # noqa: E501
+def test_liquity_pool_remove_deposits(database, ethereum_manager, eth_transactions):
+    """
+    Data for deposit taken from
+    https://etherscan.io/tx/0xad077faf7976504615561ac7fd9fdddc934180f3237f216851136d2327d71196
+    Deposit 2.1 ether and borrow 4752 LUSD
+    """
+    msg_aggregator = MessagesAggregator()
+    tx_hex = '0xad077faf7976504615561ac7fd9fdddc934180f3237f216851136d2327d71196'
+    user_address = '0xF03639047f75204d00c9314611C2b24570db4405'
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    transaction = EvmTransaction(
+        tx_hash=evmhash,
+        timestamp=1646375440,
+        block_number=14318825,
+        from_address=user_address,
+        to_address='0x66017D22b0f8556afDd19FC67041899Eb65a21bb',
+        value=0,
+        gas=171249,
+        gas_price=22990000000,
+        gas_used=171249,
+        input_data=hexstring_to_bytes('0x2e54bf950000000000000000000000000000000000000000000000000000000000000000'),  # noqa: E501
+        nonce=507,
+    )
+    receipt = EthereumTxReceipt(
+        tx_hash=evmhash,
+        contract_address=None,
+        status=True,
+        type=0,
+        logs=[
+            EthereumTxReceiptLog(
+                log_index=131,
+                data=hexstring_to_bytes('0x000000000000000000000000000000000000000000000000bfa91a19de91add4'),  # noqa: E501
+                address=string_to_evm_address('0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D'),
+                removed=False,
+                topics=[
+                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
+                    hexstring_to_bytes('0x000000000000000000000000d8c9d9071123a059c6e0a945cf0e0c82b508d816'),  # noqa: E501
+                    hexstring_to_bytes('0x00000000000000000000000003cd116cabe0747f31a71b3565877717097fc06c'),  # noqa: E501
+                ],
+            ), EthereumTxReceiptLog(
+                log_index=133,
+                data=hexstring_to_bytes('0x000000000000000000000000000000000000000000000046f454ff5d19ab0efd'),  # noqa: E501
+                address=string_to_evm_address('0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D'),
+                removed=False,
+                topics=[
+                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
+                    hexstring_to_bytes('0x000000000000000000000000d8c9d9071123a059c6e0a945cf0e0c82b508d816'),  # noqa: E501
+                    hexstring_to_bytes('0x000000000000000000000000f03639047f75204d00c9314611c2b24570db4405'),  # noqa: E501
+                ],
+            ), EthereumTxReceiptLog(
+                log_index=134,
+                data=hexstring_to_bytes('0x000000000000000000000000000000000000000000000046f454ff5d19ab0efd'),  # noqa: E501
+                address=string_to_evm_address('0x66017D22b0f8556afDd19FC67041899Eb65a21bb'),
+                removed=False,
+                topics=[
+                    hexstring_to_bytes('0x2608b986a6ac0f6c629ca37018e80af5561e366252ae93602a96d3ab2e73e42d'),  # noqa: E501
+                    hexstring_to_bytes('0x000000000000000000000000f03639047f75204d00c9314611c2b24570db4405'),  # noqa: E501
+                ],
+            ), EthereumTxReceiptLog(
+                log_index=208,
+                data=hexstring_to_bytes('0x000000000000000000000000000000000000000000000000004b0e79ddb72c200000000000000000000000000000000000000000000000014acf0eec96f96a1c'),  # noqa: E501
+                address=string_to_evm_address('0x66017D22b0f8556afDd19FC67041899Eb65a21bb'),
+                removed=False,
+                topics=[
+                    hexstring_to_bytes('0x51457222ebca92c335c9c86e2baa1cc0e40ffaa9084a51452980d5ba8dec2f63'),  # noqa: E501
+                    hexstring_to_bytes('0x000000000000000000000000f03639047f75204d00c9314611c2b24570db4405'),  # noqa: E501
+                ],
+            ),
+        ],
+    )
+    internal_tx = EvmInternalTransaction(
+        parent_tx_hash=evmhash,
+        trace_id=19,
+        timestamp=Timestamp(1646375440),
+        block_number=10182160,
+        from_address='0xDf9Eb223bAFBE5c5271415C75aeCD68C21fE3D7F',
+        to_address=user_address,
+        value=FVal(0.0211265398269) * EXP18,
+    )
+
+    dbethtx = DBEthTx(database)
+    with database.user_write() as cursor:
+        dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
+        dbethtx.add_ethereum_internal_transactions(cursor, [internal_tx], relevant_address=user_address)  # noqa: E501
+        decoder = EVMTransactionDecoder(
+            database=database,
+            ethereum_manager=ethereum_manager,
+            transactions=eth_transactions,
+            msg_aggregator=msg_aggregator,
+        )
+        events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
+
+    assert len(events) == 3
+    expected_events = [
+        HistoryBaseEntry(
+            event_identifier=evmhash,
+            sequence_index=0,
+            timestamp=1646375440000,
+            location=Location.BLOCKCHAIN,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(
+                amount=FVal(0.00393701451),
+                usd_value=ZERO,
+            ),
+            location_label=user_address,
+            notes='Burned 0.00393701451 ETH for gas',
+            counterparty=CPT_GAS,
+        ), HistoryBaseEntry(
+            event_identifier=evmhash,
+            sequence_index=1,
+            timestamp=1646375440000,
+            location=Location.BLOCKCHAIN,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=A_ETH,
+            balance=Balance(amount=FVal('0.0211265398269'), usd_value=ZERO),
+            location_label=user_address,
+            notes="Collect 0.0211265398269 ETH from liquity's stability pool",
+            counterparty='liquity',
+        ), HistoryBaseEntry(
+            event_identifier=evmhash,
+            sequence_index=135,
+            timestamp=1646375440000,
+            location=Location.BLOCKCHAIN,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=A_LQTY,
+            balance=Balance(amount=FVal('1308.878062778294406909'), usd_value=ZERO),
+            location_label=user_address,
+            notes="Collect 1308.878062778294406909 LQTY from liquity's stability pool",
             counterparty='liquity',
         )]
     assert events == expected_events

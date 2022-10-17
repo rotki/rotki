@@ -7455,6 +7455,60 @@ Getting Liquity staked amount
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
 
+Getting Liquity stability pool infomration
+==========================================
+
+.. http:get:: /api/(version)/blockchains/ETH/modules/liquity/pool
+
+   Doing a GET on the liquity stability pool resource will return the balances deposited in it and the rewards accrued.
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   .. note::
+      This endpoint requires a premium account.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchains/ETH/modules/liquity/pool HTTP/1.1
+      Host: localhost:5042
+
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result":{
+            "0x3DdfA8eC3052539b6C9549F12cEA2C295cfF5296":{
+              "eth_gain":"43.180853032438783295",
+              "lqty_gain":"94477.70111867384658505",
+              "deposited":"10211401.723115634393264567"
+            },
+            "0xFBcAFB005695afa660836BaC42567cf6917911ac":{
+              "eth_gain":"0.012830143966323228",
+              "lqty_gain":"1430.186501693619414912",
+              "deposited":"546555.36725208608367891"
+            }
+        },
+        "message":""
+      }
+
+   :resjson object result: A mapping of the addresses having the liquity module enabled and their positions.
+   :resjson string deposited: The amount of LUSD owned by the address deposited in the pool.
+   :resjson string eth_gain: The amount of ETH gained in the pool.
+   :resjson string lqty_gain: The amount of LQTY gained in the pool.
+
+   :statuscode 200: Liquity information successfully queried.
+   :statuscode 409: User is not logged in or Liquity module is not activated.
+   :statuscode 500: Internal rotki error.
+
 
 Getting Liquity historical trove data
 =====================================
