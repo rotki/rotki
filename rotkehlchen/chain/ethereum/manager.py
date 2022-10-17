@@ -285,7 +285,12 @@ class EthereumManager(LockableQueryMixIn):
         """
         Uses MULTICALL_2 contract. If require success is set to False any call in the list
         of calls is allowed to fail.
-        source: https://etherscan.io/address/0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696#code"""
+        source: https://etherscan.io/address/0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696#code
+
+        May raise:
+        - RemoteError
+        - BlockchainQueryError if web3 is used and there is a VM execution error
+        """
         return self.contract_multicall_2.call(
             manager=self,
             method_name='tryAggregate',
@@ -481,10 +486,13 @@ class EthereumManager(LockableQueryMixIn):
             )
 
     def query(self, method: Callable, call_order: Sequence[WeightedNode], **kwargs: Any) -> Any:
-        """Queries ethereum related data by performing the provided method to all given nodes
+        """
+        Queries ethereum related data by performing the provided method to all given nodes
 
         The first node in the call order that gets a succcesful response returns.
         If none get a result then a remote error is raised
+        May raise:
+        - RemoteError
         """
         for weighted_node in call_order:
             node = weighted_node.node_info

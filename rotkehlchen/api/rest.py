@@ -3057,6 +3057,15 @@ class RestAPI():
             addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('liquity'),
         )
 
+    def get_liquity_stability_pool_positions(self, async_query: bool) -> Response:
+        return self._api_query_for_eth_module(
+            async_query=async_query,
+            module_name='liquity',
+            method='get_stability_pool_positions',
+            query_specific_balances_before=None,
+            addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('liquity'),
+        )
+
     def get_liquity_trove_events(
         self,
         async_query: bool,

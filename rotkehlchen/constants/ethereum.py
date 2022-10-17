@@ -181,6 +181,7 @@ YEARN_VAULTS_PREFIX = 'yearn_vaults_events'
 YEARN_VAULTS_V2_PREFIX = 'yearn_vaults_v2_events'
 
 LIQUITY_TROVE_MANAGER = EthereumConstants().contract('TROVE_MANAGER')
+LIQUITY_STABILITY_POOL = EthereumConstants().contract('LIQUITY_STABILITY_POOL')
 
 PICKLE_DILL_REWARDS = EthereumConstants().contract('DILL_REWARDS')
 PICKLE_DILL = EthereumConstants().contract('DILL')
