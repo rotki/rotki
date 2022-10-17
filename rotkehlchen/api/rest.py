@@ -70,7 +70,7 @@ from rotkehlchen.chain.ethereum.names import search_for_addresses_names
 from rotkehlchen.chain.ethereum.types import WeightedNode
 from rotkehlchen.chain.evm.tokens import EvmTokens
 from rotkehlchen.constants import ENS_UPDATE_INTERVAL
-from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.assets import A_ETH, A_USD
 from rotkehlchen.constants.limits import (
     FREE_ASSET_MOVEMENTS_LIMIT,
     FREE_ETH_TX_LIMIT,
@@ -3919,7 +3919,7 @@ class RestAPI():
                 price=price,
             )
         try:
-            GlobalDBHandler().add_manual_latest_price(
+            pairs_to_invalidate = GlobalDBHandler().add_manual_latest_price(
                 from_asset=from_asset,
                 to_asset=to_asset,
                 price=price,
@@ -3929,8 +3929,10 @@ class RestAPI():
                 result=wrap_in_fail_result(message=str(e)),
                 status_code=HTTPStatus.CONFLICT,
             )
+        # also invalidate the usd price equivalent of the `from_asset`
+        pairs_to_invalidate.append((from_asset, A_USD))
+        self._invalidate_asset_pairs_prices(pairs_to_invalidate)
 
-        Inquirer().remove_cached_current_price_entry(cache_key=(from_asset, to_asset))
         return api_response(result=OK_RESULT)
 
     def delete_manual_latest_price(
@@ -3953,9 +3955,17 @@ class RestAPI():
                 status_code=HTTPStatus.CONFLICT,
             )
 
+        # also invalidate the usd price equivalent of the `from_asset`
+        pairs_to_invalidate.append((asset, A_USD))
+        self._invalidate_asset_pairs_prices(pairs_to_invalidate)
+
+        return api_response(result=OK_RESULT)
+
+    @staticmethod
+    def _invalidate_asset_pairs_prices(pairs_to_invalidate: List[Tuple[Asset, Asset]]) -> None:
+        """Invalidates the prices cache of asset pairs."""
         for pair in pairs_to_invalidate:
             Inquirer().remove_cached_current_price_entry(cache_key=pair)
-        return api_response(result=OK_RESULT)
 
     def get_database_info(self) -> Response:
         globaldb_schema_version = GlobalDBHandler().get_schema_version()

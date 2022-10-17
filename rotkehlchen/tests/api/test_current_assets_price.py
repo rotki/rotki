@@ -417,3 +417,65 @@ def test_get_all_current_prices(rotkehlchen_api_server):
     )
     result = assert_proper_response_with_result(response)
     assert len(result) == 0
+
+
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_latest_usd_price_for_manual_prices(rotkehlchen_api_server):
+    """
+    Test that querying the USD price of an updated manual price entry
+    returns the updated USD price when `ignore_cache` is False.
+
+    Prices are not mocked in order to get the latest prices
+    and not a constant value when adjustments are made to the amount.
+    """
+    requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'latestassetspriceresource',
+        ),
+        json={
+            'from_asset': 'ETH',
+            'to_asset': 'BTC',
+            'price': '1',
+        },
+    )
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'latestassetspriceresource',
+        ),
+        json={
+            'assets': ['ETH'],
+            'target_asset': 'USD',
+            'ignore_cache': False,
+        },
+    )
+    old_result = assert_proper_response_with_result(response)
+
+    # now update the btc price of eth manually and see that usd price returned is
+    # the latest price when `ignore_cache` is False.
+    requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'latestassetspriceresource',
+        ),
+        json={
+            'from_asset': 'ETH',
+            'to_asset': 'BTC',
+            'price': '10',
+        },
+    )
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'latestassetspriceresource',
+        ),
+        json={
+            'assets': ['ETH'],
+            'target_asset': 'USD',
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    # the max diff is to account for price changes between the requests interval
+    assert FVal(result['assets']['ETH'][0]).is_close(FVal(old_result['assets']['ETH'][0]) * 10, max_diff='100')  # noqa: E501
+    assert result['target_asset'] == 'USD'
