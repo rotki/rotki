@@ -33,7 +33,7 @@
         :primary-action="tc('common.actions.save')"
         :secondary-action="tc('common.actions.cancel')"
         :action-disabled="!valid"
-        :loading="loading || isQueryingBlockchain"
+        :loading="loading"
         @confirm="saveAccount()"
         @cancel="clearDialog()"
       >
@@ -249,7 +249,10 @@ const form = ref<InstanceType<typeof AccountForm> | null>(null);
 const pending = ref<boolean>(false);
 
 const loading: ComputedRef<boolean> = computed(
-  () => get(isAccountOperationRunning()) || get(pending)
+  () =>
+    get(isAccountOperationRunning()) ||
+    get(pending) ||
+    get(isQueryingBlockchain)
 );
 
 const createAccount = () => {

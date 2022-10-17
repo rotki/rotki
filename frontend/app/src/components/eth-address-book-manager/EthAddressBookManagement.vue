@@ -41,8 +41,8 @@
       <v-row align="center">
         <v-col cols="auto">
           <v-tabs v-model="tab">
-            <v-tab v-for="location in locations" :key="location">
-              {{ location }}
+            <v-tab v-for="loc in locations" :key="loc">
+              {{ loc }}
             </v-tab>
           </v-tabs>
         </v-col>
@@ -65,13 +65,13 @@
       </v-row>
 
       <v-tabs-items v-model="tab">
-        <v-tab-item v-for="location in locations" :key="location">
+        <v-tab-item v-for="loc in locations" :key="loc">
           <eth-address-book-table
-            :location="location"
+            :location="loc"
             :search="search"
             @edit="openForm($event)"
           >
-            {{ location }}
+            {{ loc }}
           </eth-address-book-table>
         </v-tab-item>
       </v-tabs-items>

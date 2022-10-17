@@ -2,7 +2,7 @@
   <div>
     <data-table
       ref="tableRef"
-      :class="css.table"
+      class="table-inside-dialog"
       :headers="tableHeaders"
       :items="data"
       :container="tableContainer"
@@ -473,12 +473,6 @@ const tableContainer = computed(() => {
 });
 </script>
 <style module lang="scss">
-.table {
-  scroll-behavior: smooth;
-  max-height: calc(100vh - 340px);
-  overflow: auto;
-}
-
 .asset {
   max-width: 640px;
 }

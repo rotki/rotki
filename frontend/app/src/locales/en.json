@@ -237,6 +237,7 @@
       "blockchain_accounts_add": {
         "error": {
           "description": "Failed to add {addresses} new {blockchain} accounts: {error}",
+          "failed_list_description": "Failed to add {addresses} new {blockchain} accounts. Please check again if these account(s) are valid:\n {list}",
           "title": "Adding {blockchain} accounts"
         },
         "no_new": {
@@ -3719,7 +3720,6 @@
       "gas_limit": "Gas Limit",
       "gas_price": "Gas Price",
       "gas_used": "Gas Used",
-      "gwei": "Gwei",
       "input_data": "Input Data",
       "internal_transaction": "Internal",
       "nonce": "Nonce",

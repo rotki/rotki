@@ -19,9 +19,7 @@
   </v-navigation-drawer>
 </template>
 <script setup lang="ts">
-// @ts-ignore
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { ComputedRef, VueConstructor } from 'vue';
+import { ComputedRef } from 'vue';
 import ReportActionableCard from '@/components/profitloss/ReportActionableCard.vue';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
 

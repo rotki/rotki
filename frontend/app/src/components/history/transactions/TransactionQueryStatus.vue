@@ -1,6 +1,6 @@
 <template>
   <tr v-if="length > 0" :class="$style.tr">
-    <td :colspan="$vuetify.breakpoint.xsOnly ? 2 : colspan" class="py-2">
+    <td :colspan="colspan" class="py-2">
       <div class="d-flex">
         <div v-if="isAllFinished" class="pr-2">
           <v-btn icon @click="resetQueryStatus">

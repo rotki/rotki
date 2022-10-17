@@ -76,3 +76,9 @@ aside {
     }
   }
 }
+
+.table-inside-dialog {
+  scroll-behavior: smooth;
+  max-height: calc(100vh - 340px);
+  overflow: auto;
+}

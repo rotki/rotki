@@ -2,8 +2,8 @@
   <div>
     <data-table
       ref="tableRef"
+      class="table-inside-dialog"
       :class="{
-        [$style.table]: true,
         [$style['table--pinned']]: isPinned
       }"
       :headers="headers"
@@ -184,10 +184,6 @@ const childHeaders = computed<DataTableHeader[]>(() => {
 
 <style module lang="scss">
 .table {
-  scroll-behavior: smooth;
-  max-height: calc(100vh - 340px);
-  overflow: auto;
-
   &--pinned {
     max-height: 100%;
     height: calc(100vh - 230px);

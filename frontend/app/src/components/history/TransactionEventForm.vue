@@ -3,7 +3,6 @@
     :value="value"
     data-cy="transaction-event-form"
     class="transaction-event-form"
-    @input="input"
   >
     <location-selector
       v-model="location"
@@ -11,10 +10,9 @@
       required
       outlined
       data-cy="location"
-      :rules="locationRules"
       :label="t('common.location')"
-      :error-messages="errorMessages['location']"
-      @focus="delete errorMessages['location']"
+      :error-messages="v$.location.$errors.map(e => e.$message)"
+      @blur="v$.location.$touch()"
     />
 
     <date-time-picker
@@ -45,9 +43,8 @@
           outlined
           required
           data-cy="asset"
-          :rules="assetRules"
-          :error-messages="errorMessages['asset']"
-          @focus="delete errorMessages['asset']"
+          :error-messages="v$.asset.$errors.map(e => e.$message)"
+          @blur="v$.asset.$touch()"
         />
       </v-col>
 
@@ -57,10 +54,9 @@
           outlined
           required
           data-cy="amount"
-          :rules="amountRules"
           :label="t('common.amount')"
-          :error-messages="errorMessages['amount']"
-          @focus="delete errorMessages['amount']"
+          :error-messages="v$.amount.$errors.map(e => e.$message)"
+          @blur="v$.amount.$touch()"
         />
       </v-col>
 
@@ -70,15 +66,14 @@
           outlined
           required
           data-cy="fiatValue"
-          :rules="fiatValueRules"
           :loading="fetching"
           :label="
             t('common.value_in_symbol', {
               symbol: currencySymbol
             })
           "
-          :error-messages="errorMessages['usdValue']"
-          @focus="delete errorMessages['usdValue']"
+          :error-messages="v$.usdValue.$errors.map(e => e.$message)"
+          @blur="v$.usdValue.$touch()"
         >
           <template #append>
             <div class="pt-1">
@@ -102,9 +97,8 @@
           item-value="identifier"
           item-text="label"
           data-cy="eventType"
-          :rules="eventTypeRules"
-          :error-messages="errorMessages['eventType']"
-          @focus="delete errorMessages['eventType']"
+          :error-messages="v$.eventType.$errors.map(e => e.$message)"
+          @blur="v$.eventType.$touch()"
         />
       </v-col>
       <v-col cols="12" md="4">
@@ -117,9 +111,8 @@
           item-value="identifier"
           item-text="label"
           data-cy="eventSubtype"
-          :rules="eventSubtypeRules"
-          :error-messages="errorMessages['eventSubtype']"
-          @focus="delete errorMessages['eventSubtype']"
+          :error-messages="v$.eventSubtype.$errors.map(e => e.$message)"
+          @blur="v$.eventSubtype.$touch()"
         />
       </v-col>
       <v-col cols="12" md="4">
@@ -138,10 +131,9 @@
           required
           integer
           data-cy="sequenceIndex"
-          :rules="sequenceIndexRules"
           :label="t('transactions.events.form.sequence_index.label')"
-          :error-messages="errorMessages['sequenceIndex']"
-          @focus="delete errorMessages['sequenceIndex']"
+          :error-messages="v$.sequenceIndex.$errors.map(e => e.$message)"
+          @blur="v$.sequenceIndex.$touch()"
         />
       </v-col>
       <v-col cols="12" md="4">
@@ -181,6 +173,8 @@
 </template>
 <script setup lang="ts">
 import { BigNumber } from '@rotki/common';
+import useVuelidate from '@vuelidate/core';
+import { helpers, required } from '@vuelidate/validators';
 import { get, set, useLocalStorage } from '@vueuse/core';
 import dayjs from 'dayjs';
 import { storeToRefs } from 'pinia';
@@ -228,12 +222,12 @@ const props = defineProps({
   value: { required: false, type: Boolean, default: false },
   edit: {
     required: false,
-    type: Object as PropType<EthTransactionEvent>,
+    type: Object as PropType<EthTransactionEvent | null>,
     default: null
   },
   transaction: {
     required: false,
-    type: Object as PropType<EthTransactionEntry>,
+    type: Object as PropType<EthTransactionEntry | null>,
     default: null
   },
   saveData: {
@@ -246,7 +240,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['input']);
+const emit = defineEmits<{ (e: 'input', valid: boolean): void }>();
 const { t } = useI18n();
 const { edit, transaction, saveData } = toRefs(props);
 
@@ -279,47 +273,70 @@ const counterparty = ref<string>('');
 const rate = ref<string>('');
 const errorMessages = ref<{ [field: string]: string[] }>({});
 
-const locationRules = [
-  (v: string) =>
-    !!v ||
-    t('transactions.events.form.location.validation.non_empty').toString()
-];
+const rules = {
+  location: {
+    required: helpers.withMessage(
+      t('transactions.events.form.location.validation.non_empty').toString(),
+      required
+    )
+  },
+  asset: {
+    required: helpers.withMessage(
+      t('transactions.events.form.asset.validation.non_empty').toString(),
+      required
+    )
+  },
+  amount: {
+    required: helpers.withMessage(
+      t('transactions.events.form.amount.validation.non_empty').toString(),
+      required
+    )
+  },
+  usdValue: {
+    required: helpers.withMessage(
+      t('transactions.events.form.fiat_value.validation.non_empty', {
+        currency: get(currencySymbol)
+      }).toString(),
+      required
+    )
+  },
+  sequenceIndex: {
+    required: helpers.withMessage(
+      t(
+        'transactions.events.form.sequence_index.validation.non_empty'
+      ).toString(),
+      required
+    )
+  },
+  eventType: {
+    required: helpers.withMessage(
+      t('transactions.events.form.event_type.validation.non_empty').toString(),
+      required
+    )
+  },
+  eventSubtype: {
+    required: helpers.withMessage(
+      t(
+        'transactions.events.form.event_subtype.validation.non_empty'
+      ).toString(),
+      required
+    )
+  }
+};
 
-const assetRules = [
-  (v: string) =>
-    !!v || t('transactions.events.form.asset.validation.non_empty').toString()
-];
-
-const amountRules = [
-  (v: string) =>
-    !!v || t('transactions.events.form.amount.validation.non_empty').toString()
-];
-
-const fiatValueRules = [
-  (v: string) =>
-    !!v ||
-    t('transactions.events.form.fiat_value.validation.non_empty', {
-      currency: get(currencySymbol)
-    }).toString()
-];
-
-const sequenceIndexRules = [
-  (v: string) =>
-    !!v ||
-    t('transactions.events.form.sequence_index.validation.non_empty').toString()
-];
-
-const eventTypeRules = [
-  (v: string) =>
-    !!v ||
-    t('transactions.events.form.event_type.validation.non_empty').toString()
-];
-
-const eventSubtypeRules = [
-  (v: string) =>
-    !!v ||
-    t('transactions.events.form.event_subtype.validation.non_empty').toString()
-];
+const v$ = useVuelidate(
+  rules,
+  {
+    location,
+    asset,
+    amount,
+    usdValue: fiatValue,
+    sequenceIndex,
+    eventType,
+    eventSubtype
+  },
+  { $externalResults: errorMessages }
+);
 
 const fetching = isTaskRunning(TaskType.FETCH_HISTORIC_PRICE);
 
@@ -349,12 +366,13 @@ const fiatExchangeRate = computed<BigNumber>(() => {
 });
 
 const setEditMode = async () => {
-  if (!get(edit)) {
+  const editVal = get(edit);
+  if (!editVal) {
     reset();
     return;
   }
 
-  const event: EthTransactionEvent = get(edit);
+  const event: EthTransactionEvent = editVal;
 
   const convertedFiatValue =
     get(currencySymbol) === CURRENCY_USD
@@ -490,6 +508,10 @@ watch(location, (location: string) => {
 watch([eventType, eventSubtype], ([eventType, eventSubtype]) => {
   const typeData = getEventTypeData({ eventType, eventSubtype }, false);
   set(transactionEventType, typeData.label);
+});
+
+watch(v$, ({ $invalid }) => {
+  input(!$invalid);
 });
 
 onMounted(async () => {

@@ -28,6 +28,7 @@
         v-model="userAddresses"
         outlined
         :disabled="disabled"
+        :error-messages="errors"
         :hint="t('account_form.labels.addresses_hint')"
         :label="t('account_form.labels.addresses')"
         @paste="onPasteMulti"

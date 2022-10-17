@@ -93,7 +93,7 @@ const props = defineProps({
   xpub: {
     required: false,
     default: null,
-    type: Object as PropType<XpubPayload>
+    type: Object as PropType<XpubPayload | null>
   },
   blockchain: {
     required: true,

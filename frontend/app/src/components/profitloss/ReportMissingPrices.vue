@@ -2,8 +2,8 @@
   <div>
     <data-table
       ref="tableRef"
+      class="table-inside-dialog"
       :class="{
-        [$style.table]: true,
         [$style['table--pinned']]: isPinned
       }"
       :headers="headers"
@@ -126,7 +126,7 @@ export default defineComponent({
     const { t, tc } = useI18n();
     const { items } = toRefs(props);
     const prices = ref<HistoricalPrice[]>([]);
-    const errorMessages: Ref<{ [key: string]: string[] }> = ref({});
+    const errorMessages: Ref<Record<string, string[]>> = ref({});
 
     const createKey = (item: MissingPrice) => {
       return item.fromAsset + item.toAsset + item.time;
@@ -140,9 +140,7 @@ export default defineComponent({
       await fetchHistoricalPrices();
     });
 
-    const refreshedHistoricalPrices: Ref<{ [key: string]: BigNumber }> = ref(
-      {}
-    );
+    const refreshedHistoricalPrices: Ref<Record<string, BigNumber>> = ref({});
 
     const formattedItems = computed<EditableMissingPrice[]>(() => {
       return get(items).map(item => {
@@ -292,10 +290,6 @@ export default defineComponent({
 
 <style module lang="scss">
 .table {
-  scroll-behavior: smooth;
-  max-height: calc(100vh - 340px);
-  overflow: auto;
-
   &--pinned {
     max-height: 100%;
     height: calc(100vh - 230px);

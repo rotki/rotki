@@ -4,6 +4,7 @@ import '@mdi/font/css/materialdesignicons.css';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import { VSwitch } from 'vuetify/lib/components';
+import DiscordIcon from '@/components/svgs/DiscordIcon.vue';
 import {
   DARK_ACCENT,
   DARK_GRAPH,
@@ -21,7 +22,12 @@ const DARK_GREY = '#1e1e1e';
 
 export default new Vuetify({
   icons: {
-    iconfont: 'mdi'
+    iconfont: 'mdi',
+    values: {
+      discord: {
+        component: DiscordIcon
+      }
+    }
   },
   theme: {
     options: {

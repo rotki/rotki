@@ -35,7 +35,7 @@
                 </td>
                 <td>
                   <div class="d-flex flex-row">
-                    <v-tooltip top>
+                    <v-tooltip top open-delay="400">
                       <template #activator="{ on }">
                         <div
                           class="text-truncate"
@@ -51,7 +51,7 @@
                     </v-tooltip>
                     <v-spacer />
                     <div v-if="isPackaged" class="ml-2">
-                      <v-tooltip top>
+                      <v-tooltip top open-delay="400">
                         <template #activator="{ on, attrs }">
                           <v-btn
                             v-bind="attrs"

@@ -38,7 +38,7 @@
         <v-col cols="10" class="d-flex">
           <amount-display :value="toGwei(transaction.gasPrice)" />
           <div class="ml-1">
-            {{ t('transactions.details.gwei') }}
+            {{ gwei }}
           </div>
         </v-col>
       </v-row>
@@ -96,6 +96,8 @@ const { transaction } = toRefs(props);
 const toGwei = (value: BigNumber) => {
   return toUnit(value, Unit.GWEI);
 };
+
+const gwei: string = 'Gwei';
 
 const gasFee = computed<BigNumber>(() => {
   const tx = get(transaction);

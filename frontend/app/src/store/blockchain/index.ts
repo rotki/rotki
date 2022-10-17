@@ -1,7 +1,8 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Severity } from '@rotki/common/lib/messages';
+import { MaybeRef } from '@vueuse/core';
 import { useNonFungibleBalancesStore } from '@/store/balances/non-fungible';
-import { AddAccountsPayload, XpubPayload } from '@/store/balances/types';
+import { AccountPayload, AddAccountsPayload } from '@/store/balances/types';
 import { useAccountBalancesStore } from '@/store/blockchain/accountbalances';
 import { useBlockchainAccountsStore } from '@/store/blockchain/accounts';
 import { useBlockchainBalancesStore } from '@/store/blockchain/balances';
@@ -31,19 +32,16 @@ export const useBlockchainStore = defineStore('blockchain', () => {
   const { notify } = useNotifications();
   const { tc } = useI18n();
 
-  const getNewAddresses = (
+  const getNewAccountPayload = (
     chain: Blockchain,
-    addresses: { xpub?: XpubPayload; address?: string }[]
-  ): string[] => {
+    payload: AccountPayload[]
+  ): AccountPayload[] => {
     const knownAddresses = getAccountsByChain(chain);
-    return addresses
-      .filter(
-        address =>
-          !knownAddresses.includes(
-            address?.xpub?.xpub || address.address?.toLocaleLowerCase() || ''
-          )
-      )
-      .map(address => address.xpub?.xpub || address.address || '');
+    return payload.filter(({ xpub, address }) => {
+      const key = (xpub?.xpub || address!).toLocaleLowerCase();
+
+      return !knownAddresses.includes(key);
+    });
   };
 
   const fetchAccounts = async (blockchain?: Blockchain): Promise<void> => {
@@ -59,16 +57,17 @@ export const useBlockchainStore = defineStore('blockchain', () => {
     await Promise.allSettled(promises);
   };
 
-  const refreshAccounts = async (blockchain?: Blockchain) => {
-    await fetchAccounts(blockchain);
+  const refreshAccounts = async (blockchain?: MaybeRef<Blockchain>) => {
+    const blockchainVal = get(blockchain);
+    await fetchAccounts(blockchainVal);
     const pending: Promise<any>[] = [
       fetchBlockchainBalances({
-        blockchain,
+        blockchain: blockchainVal,
         ignoreCache: true
       })
     ];
 
-    const isEth = blockchain === Blockchain.ETH;
+    const isEth = blockchainVal === Blockchain.ETH;
 
     if (isEth) {
       pending.push(
@@ -79,7 +78,7 @@ export const useBlockchainStore = defineStore('blockchain', () => {
       );
     }
 
-    if (isEth || !blockchain) {
+    if (isEth || !blockchainVal) {
       pending.push(fetchLoopringBalances(false));
     }
 
@@ -95,8 +94,8 @@ export const useBlockchainStore = defineStore('blockchain', () => {
       logger.debug(`${TaskType[TaskType.ADD_ACCOUNT]} is already running.`);
       return;
     }
-    const addresses = getNewAddresses(blockchain, payload);
-    if (addresses.length === 0) {
+    const filteredPayload = getNewAccountPayload(blockchain, payload);
+    if (filteredPayload.length === 0) {
       const title = tc(
         'actions.balances.blockchain_accounts_add.no_new.title',
         0,
@@ -114,46 +113,86 @@ export const useBlockchainStore = defineStore('blockchain', () => {
       return;
     }
 
-    const addr = await Promise.all(
-      payload.map(data => addAccount(blockchain, data))
+    const registeredAddresses: string[] = [];
+    const promiseResult = await Promise.allSettled(
+      filteredPayload.map(data => addAccount(blockchain, data))
     );
 
-    try {
-      const filteredAddresses = addr.filter(add => add.length > 0);
-      if (blockchain === Blockchain.ETH && modules) {
-        await enableModule({
-          enable: modules,
-          addresses: filteredAddresses
-        });
+    const failedPayload: AccountPayload[] = [];
+
+    if (filteredPayload.length === 1) {
+      if (promiseResult[0].status === 'rejected') {
+        throw promiseResult[0].reason;
       }
-      resetDefi();
-      resetDefiStatus();
-      if (blockchain === Blockchain.ETH) {
-        await fetchDetected(filteredAddresses);
+    }
+
+    promiseResult.forEach((res, index) => {
+      if (res.status === 'fulfilled' && res.value !== '') {
+        registeredAddresses.push(res.value);
+      } else {
+        if (res.status === 'rejected') {
+          logger.error(res.reason.message);
+        }
+        failedPayload.push(payload[index]);
       }
-      startPromise(fetchNonFungibleBalances());
-      startPromise(refreshAccounts(blockchain));
-    } catch (e: any) {
-      logger.error(e);
-      const title = tc(
-        'actions.balances.blockchain_accounts_add.error.title',
-        0,
-        { blockchain }
-      );
+    });
+
+    const titleError = tc(
+      'actions.balances.blockchain_accounts_add.error.title',
+      0,
+      { blockchain }
+    );
+
+    if (failedPayload.length > 0) {
       const description = tc(
-        'actions.balances.blockchain_accounts_add.error.description',
+        'actions.balances.blockchain_accounts_add.error.failed_list_description',
         0,
         {
-          error: e.message,
-          address: addresses.length,
+          list: failedPayload.map(({ address }) => `- ${address}`).join('\n'),
+          address: filteredPayload.length,
           blockchain
         }
       );
+
       notify({
-        title,
+        title: titleError,
         message: description,
         display: true
       });
+    }
+
+    if (registeredAddresses.length > 0) {
+      try {
+        if (blockchain === Blockchain.ETH && modules) {
+          await enableModule({
+            enable: modules,
+            addresses: registeredAddresses
+          });
+        }
+        resetDefi();
+        resetDefiStatus();
+        if (blockchain === Blockchain.ETH) {
+          await fetchDetected(registeredAddresses);
+        }
+        startPromise(fetchNonFungibleBalances());
+        startPromise(refreshAccounts(blockchain));
+      } catch (e: any) {
+        logger.error(e);
+        const description = tc(
+          'actions.balances.blockchain_accounts_add.error.description',
+          0,
+          {
+            error: e.message,
+            address: filteredPayload.length,
+            blockchain
+          }
+        );
+        notify({
+          title: titleError,
+          message: description,
+          display: true
+        });
+      }
     }
   };
 

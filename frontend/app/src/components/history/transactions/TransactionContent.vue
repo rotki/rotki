@@ -68,14 +68,19 @@
         :options="options"
         :server-items-length="itemLength"
         :single-select="false"
-        :mobile-breakpoint="0"
         :item-class="getItemClass"
         :class="$style.table"
         @update:options="updatePaginationHandler($event)"
       >
-        <template #item.ignoredInAccounting="{ item }">
+        <template #item.ignoredInAccounting="{ item, isMobile }">
           <div v-if="item.ignoredInAccounting" class="pl-4">
-            <v-tooltip bottom>
+            <badge-display v-if="isMobile" color="grey">
+              <v-icon small> mdi-eye-off </v-icon>
+              <span class="ml-2">
+                {{ tc('common.ignored_in_accounting') }}
+              </span>
+            </badge-display>
+            <v-tooltip v-else bottom>
               <template #activator="{ on }">
                 <badge-display color="grey" v-on="on">
                   <v-icon small> mdi-eye-off </v-icon>
@@ -224,6 +229,7 @@
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { Ref } from 'vue';
 import { DataTableHeader } from 'vuetify';
+import TransactionEventForm from '@/components/history/TransactionEventForm.vue';
 import { isSectionLoading } from '@/composables/common';
 import { useTransactionFilter } from '@/composables/filters/transactions';
 import { setupIgnore } from '@/composables/history';
@@ -338,7 +344,7 @@ const confirmationTitle: Ref<string> = ref('');
 const confirmationMessage: Ref<string> = ref('');
 const confirmationPrimaryAction: Ref<string> = ref('');
 const valid: Ref<boolean> = ref(false);
-const form = ref<any>(null);
+const form = ref<InstanceType<typeof TransactionEventForm> | null>(null);
 
 const getId = (item: EthTransactionEntry) => item.txHash;
 
