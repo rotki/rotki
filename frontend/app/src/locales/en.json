@@ -10,7 +10,8 @@
       "title": "Premium Components",
       "version": "Premium Version:"
     },
-    "copy_tooltip": "Copy the application information",
+    "copy_data_directory_tooltip": "Copy data directory",
+    "copy_information_tooltip": "Copy the application information",
     "data_directory": "Data Directory:",
     "electron": "Electron:",
     "frontend_version": "Frontend Version:",
@@ -236,6 +237,7 @@
       "blockchain_accounts_add": {
         "error": {
           "description": "Failed to add {addresses} new {blockchain} accounts: {error}",
+          "failed_list_description": "Failed to add {addresses} new {blockchain} accounts. Please check again if these account(s) are valid:\n {list}",
           "title": "Adding {blockchain} accounts"
         },
         "no_new": {
@@ -2705,17 +2707,17 @@
     "stability_fee": "Stability fee",
     "total_lost": "Total lost due to interest"
   },
-  "manage_custom_assets": {
+  "manage_user_assets": {
     "export": {
       "button": "Export",
-      "subtitle": "Create a zip archive of your custom assets",
+      "subtitle": "Create a zip archive of your assets",
       "success": "The archive was created successfully",
       "title": "Export"
     },
     "import": {
-      "subtitle": "Restore custom assets from a zip archive"
+      "subtitle": "Restore user assets from a zip archive"
     },
-    "title": "Export/Import Custom Assets",
+    "title": "Export/Import User Assets",
     "warning": "This functionality is designed to allow you to easily move your assets from one instance of rotki to another. It requires both instances to be of the same version. Using this functionality across different versions might result in errors."
   },
   "manual_balances": {
@@ -3458,8 +3460,11 @@
         },
         "hint": "Some events are skipped because we cannot find prices for the related assets. You can help rotki by manually inputting the prices. The entries that you don't fill will keep being skipped.",
         "if_sure": "If you are sure, ",
+        "input_price": "Input price",
         "no_filled_prices": "No prices are filled",
         "price_is_saved": "Price is saved",
+        "price_not_found": "Price not found",
+        "refresh_price_hint": "Rate limiting detected when rokti tried to fetch the historical price. You can either fetch the historical price again manually, or input manual price.",
         "regenerate_report_nudge": "click button below to re-generate the report.",
         "skipped_all_events_confirmation": "Are you sure you want to skip all events whose asset price is missing?",
         "title": "Missing Prices ({total})",

@@ -220,8 +220,8 @@ export const useEthBalancesStore = defineStore('balances/eth', () => {
   };
 
   const updatePrices = (prices: MaybeRef<AssetPrices>) => {
-    updateTotalsPrices(totals, prices);
-    updateTotalsPrices(liabilities, prices);
+    set(totals, updateTotalsPrices(totals, prices));
+    set(liabilities, updateTotalsPrices(liabilities, prices));
     set(balances, updateBlockchainAssetBalances(balances, prices));
     set(loopring, updateAssetBalances(loopring, prices));
   };

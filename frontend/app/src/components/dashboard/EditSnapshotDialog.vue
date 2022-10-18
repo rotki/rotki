@@ -230,12 +230,6 @@ const finish = async () => {
 };
 </script>
 <style module lang="scss">
-.table {
-  scroll-behavior: smooth;
-  max-height: calc(100vh - 310px);
-  overflow: auto;
-}
-
 .asset-select {
   max-width: 640px;
 }

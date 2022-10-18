@@ -64,7 +64,6 @@
 </template>
 
 <script setup lang="ts">
-import { BigNumber } from '@rotki/common';
 import { NotificationPayload, Severity } from '@rotki/common/lib/messages';
 import { ComputedRef, PropType } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
@@ -80,7 +79,6 @@ import { useNotifications } from '@/store/notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Nullable } from '@/types';
 import { CURRENCY_USD } from '@/types/currencies';
-import { NoPrice, One } from '@/utils/bignumbers';
 import { isNft } from '@/utils/nft';
 
 const props = defineProps({
@@ -116,7 +114,8 @@ const headers = computed<DataTableHeader[]>(() => [
   },
   {
     text: '',
-    value: 'isWorth'
+    value: 'isWorth',
+    sortable: false
   },
   {
     text: tc('common.price'),
@@ -204,17 +203,10 @@ const filteredPrices = computed(() => {
   const data = [...get(latestPrices)].filter(({ fromAsset }) => {
     return !isNft(fromAsset) && (!filter || fromAsset === filter);
   });
-  return data.map(item => {
-    const assetPrice =
-      item.toAsset === CURRENCY_USD ? One : getAssetPrice(item.toAsset);
-
-    return {
-      ...item,
-      usdPrice: (assetPrice
-        ? assetPrice.multipliedBy(item.price)
-        : NoPrice) as BigNumber
-    };
-  });
+  return data.map(item => ({
+    ...item,
+    usdPrice: getAssetPrice(item.fromAsset)
+  }));
 });
 
 watch(refreshing, async refreshing => {

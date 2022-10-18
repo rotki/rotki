@@ -22,7 +22,6 @@ import { Zero } from '@/utils/bignumbers';
 
 export default defineComponent({
   name: 'InfoRow',
-
   components: { AmountDisplay },
   props: {
     loading: { required: false, type: Boolean },

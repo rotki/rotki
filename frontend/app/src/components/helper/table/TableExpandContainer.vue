@@ -1,6 +1,11 @@
 <template>
   <fragment>
-    <td v-if="offset > 0" :colspan="offset" :class="offsetClassName">
+    <td
+      v-if="offset > 0"
+      class="table-expand-container table-expand-container__offset"
+      :colspan="offset"
+      :class="offsetClassName"
+    >
       <slot name="offset" />
     </td>
     <td v-if="visible" class="table-expand-container" :colspan="colspan">
@@ -44,5 +49,13 @@ export default defineComponent({
 <style scoped lang="scss">
 .table-expand-container {
   background-color: var(--v-rotki-light-grey-base) !important;
+
+  @media screen and (max-width: 599px) {
+    width: 599px;
+
+    &__offset {
+      display: none;
+    }
+  }
 }
 </style>

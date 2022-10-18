@@ -10,11 +10,17 @@
     @input="visibleUpdate($event)"
   >
     <div>
-      <component :is="pinned.name" v-if="pinned" v-bind="pinned.props" />
+      <component
+        :is="component"
+        v-if="pinned && component"
+        v-bind="pinned.props"
+      />
     </div>
   </v-navigation-drawer>
 </template>
 <script setup lang="ts">
+import { ComputedRef } from 'vue';
+import ReportActionableCard from '@/components/profitloss/ReportActionableCard.vue';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
 
 defineProps({
@@ -28,6 +34,15 @@ const visibleUpdate = (visible: boolean) => {
 };
 
 const { pinned } = storeToRefs(useAreaVisibilityStore());
+
+const component: ComputedRef<any> = computed(() => {
+  const pinnedValue = get(pinned);
+  if (pinnedValue) {
+    if (pinnedValue.name === 'report-actionable-card')
+      return ReportActionableCard;
+  }
+  return null;
+});
 </script>
 
 <style scoped lang="scss">

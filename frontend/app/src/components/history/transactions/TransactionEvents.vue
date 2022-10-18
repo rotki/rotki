@@ -28,16 +28,20 @@
             </template>
           </v-expansion-panel-header>
           <v-expansion-panel-content>
-            <div class="my-n4">
+            <div
+              class="my-n4"
+              :class="{
+                'pt-4': transaction.ignoredInAccounting && events.length > 0
+              }"
+            >
               <data-table
                 :class="css.table"
                 :headers="headers"
                 :items="events"
-                :mobile-breakpoint="0"
                 :no-data-text="tc('transactions.events.loading')"
                 class="transparent"
                 hide-default-footer
-                hide-default-header
+                :hide-default-header="$vuetify.breakpoint.mdAndUp"
               >
                 <template #item.type="{ item }">
                   <transaction-event-type :event="item" />
@@ -182,15 +186,26 @@ watch(transaction, (current, old) => {
 <style lang="scss" module>
 .table {
   :global {
-    tbody {
-      tr {
-        &:hover {
-          background-color: transparent !important;
-        }
+    .v-data-table {
+      &__wrapper {
+        overflow-x: hidden;
 
-        td {
-          padding-top: 1rem !important;
-          padding-bottom: 1rem !important;
+        tbody {
+          tr {
+            &:hover {
+              background-color: transparent !important;
+            }
+
+            td {
+              padding-top: 1rem !important;
+              padding-bottom: 1rem !important;
+
+              @media screen and (max-width: 599px) {
+                padding-left: 0 !important;
+                padding-right: 0 !important;
+              }
+            }
+          }
         }
       }
     }

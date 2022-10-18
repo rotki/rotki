@@ -10,7 +10,6 @@
       :server-items-length="itemLength"
       :options.sync="options"
       sort-by="time"
-      :mobile-breakpoint="0"
     >
       <template #item.group="{ item }">
         <v-tooltip v-if="item.groupId" right>

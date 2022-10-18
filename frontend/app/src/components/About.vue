@@ -35,9 +35,20 @@
                 </td>
                 <td>
                   <div class="d-flex flex-row">
-                    <div class="text-truncate" :class="css.directory">
-                      {{ dataDirectory }}
-                    </div>
+                    <v-tooltip top open-delay="400">
+                      <template #activator="{ on }">
+                        <div
+                          class="text-truncate"
+                          :class="css.directory"
+                          v-on="on"
+                        >
+                          {{ dataDirectory }}
+                        </div>
+                      </template>
+                      <span :class="css.directory">
+                        {{ dataDirectory }}
+                      </span>
+                    </v-tooltip>
                     <v-spacer />
                     <div v-if="isPackaged" class="ml-2">
                       <v-tooltip top open-delay="400">
@@ -54,6 +65,12 @@
                         </template>
                         <span>{{ tc('about.open_data_dir_tooltip') }}</span>
                       </v-tooltip>
+                    </div>
+                    <div v-else>
+                      <copy-button
+                        :value="dataDirectory"
+                        :tooltip="tc('about.copy_data_directory_tooltip')"
+                      />
                     </div>
                   </div>
                 </td>
@@ -121,14 +138,10 @@
           </table>
         </v-col>
         <v-col cols="auto">
-          <v-tooltip open-delay="400" top>
-            <template #activator="{ on, attrs }">
-              <v-btn icon v-bind="attrs" v-on="on" @click="copy()">
-                <v-icon>mdi-content-copy</v-icon>
-              </v-btn>
-            </template>
-            <span>{{ tc('about.copy_tooltip') }}</span>
-          </v-tooltip>
+          <copy-button
+            :value="versionText"
+            :tooltip="tc('about.copy_information_tooltip')"
+          />
         </v-col>
       </v-row>
     </v-card-text>
@@ -226,8 +239,6 @@ const versionText = computed(() => {
 
   return versionText;
 });
-
-const { copy } = useClipboard({ source: versionText });
 </script>
 
 <style module lang="scss">

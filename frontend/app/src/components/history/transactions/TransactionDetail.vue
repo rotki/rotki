@@ -35,8 +35,11 @@
         <v-col cols="2" class="font-weight-medium">
           {{ t('transactions.details.gas_price') }}
         </v-col>
-        <v-col cols="10">
-          <amount-display :value="toGwei(transaction.gasPrice)" asset="Gwei" />
+        <v-col cols="10" class="d-flex">
+          <amount-display :value="toGwei(transaction.gasPrice)" />
+          <div class="ml-1">
+            {{ gwei }}
+          </div>
         </v-col>
       </v-row>
       <v-divider class="pb-2" />
@@ -93,6 +96,8 @@ const { transaction } = toRefs(props);
 const toGwei = (value: BigNumber) => {
   return toUnit(value, Unit.GWEI);
 };
+
+const gwei: string = 'Gwei';
 
 const gasFee = computed<BigNumber>(() => {
   const tx = get(transaction);

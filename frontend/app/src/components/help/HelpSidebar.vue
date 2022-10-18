@@ -109,7 +109,7 @@ const entries: Entry[] = [
     link: 'https://rotki.readthedocs.io/en/latest/faq.html'
   },
   {
-    icon: 'mdi-discord',
+    icon: '$discord',
     title: t('help_sidebar.support.title').toString(),
     subtitle: t('help_sidebar.support.subtitle').toString(),
     link: 'https://discord.gg/aGCxHG7'
@@ -140,6 +140,7 @@ const visibleUpdate = (_visible: boolean) => {
 
 const openAbout = () => {
   visibleUpdate(false);
+  emit('about');
 };
 
 const downloadBrowserLog = async () => {

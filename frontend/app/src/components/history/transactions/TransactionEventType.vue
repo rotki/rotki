@@ -1,5 +1,5 @@
 <template>
-  <div class="d-flex align-center">
+  <div class="d-flex align-center text-left">
     <v-badge v-if="counterparty" avatar overlap color="white">
       <template #badge>
         <v-tooltip top>

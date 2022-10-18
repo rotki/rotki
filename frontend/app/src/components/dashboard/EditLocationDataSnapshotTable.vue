@@ -1,7 +1,7 @@
 <template>
   <div>
     <data-table
-      :class="$style.table"
+      class="table-inside-dialog"
       :headers="tableHeaders"
       :items="data"
       :mobile-breakpoint="0"
@@ -282,12 +282,6 @@ const total = computed<BigNumber>(() => {
 });
 </script>
 <style module lang="scss">
-.table {
-  scroll-behavior: smooth;
-  max-height: calc(100vh - 310px);
-  overflow: auto;
-}
-
 .asset {
   max-width: 640px;
 }

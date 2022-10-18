@@ -102,64 +102,16 @@ const loading = computed<boolean>(() => {
 const balanceBlockchainRoute = Routes.ACCOUNTS_BALANCES_BLOCKCHAIN.route;
 </script>
 <style scoped lang="scss">
-:deep() {
-  .blockchain-balance-box {
-    &__icon {
-      filter: grayscale(100%);
-      margin: 0;
-      margin-right: 5px !important;
-      width: auto !important;
-    }
-
-    &__item {
-      &:hover {
-        .blockchain-balance-box {
-          &__icon {
-            filter: grayscale(0);
-          }
-        }
-      }
-    }
-  }
-}
-
-.sub-item {
-  &:before {
-    opacity: 0.75 !important;
-    position: relative;
-    top: -0.3em;
-    height: 1em;
-    width: 1em;
-    color: white;
-    border-bottom: 1px solid rgb(100, 100, 100);
-    content: '' !important;
-    display: inline-block;
-    left: 20px;
+.blockchain-balance-box {
+  &__icon {
+    filter: grayscale(100%);
+    margin: 0;
+    margin-right: 5px !important;
+    width: auto !important;
   }
 
-  &:last-child {
-    border-left: none;
-
-    &:before {
-      border-left: 1px solid rgb(100, 100, 100);
-    }
-  }
-}
-
-.theme {
-  &--dark {
-    .sub-item {
-      &:before {
-        color: var(--v-dark-base);
-        border-bottom: 1px solid rgb(200, 200, 200);
-      }
-
-      &:last-child {
-        &:before {
-          border-left: 1px solid rgb(200, 200, 200);
-        }
-      }
-    }
+  &__item:hover &__icon {
+    filter: grayscale(0);
   }
 }
 </style>

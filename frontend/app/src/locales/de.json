@@ -4,7 +4,8 @@
     "history": "Aave Verlauf"
   },
   "about": {
-    "copy_tooltip": "Programminformationen kopieren",
+    "copy_data_directory_tooltip": "Datenverzeichnis kopieren",
+    "copy_information_tooltip": "Programminformationen kopieren",
     "data_directory": "Datenverzeichnis:",
     "electron": "Electron:",
     "frontend_version": "Frontend Version:",

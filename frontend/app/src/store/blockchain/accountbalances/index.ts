@@ -2,7 +2,6 @@ import { GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { ComputedRef, Ref } from 'vue';
 import {
-  AccountWithBalance,
   AssetBreakdown,
   BlockchainAccountWithBalance
 } from '@/store/balances/types';
@@ -48,7 +47,7 @@ export const useAccountBalancesStore = defineStore(
       });
 
     const getAccountsByChain = (blockchain: Blockchain): string[] => {
-      const mapping: Record<Blockchain, Ref<AccountWithBalance[]>> = {
+      const mapping: Record<Blockchain, Ref<BlockchainAccountWithBalance[]>> = {
         [Blockchain.ETH]: ethAccounts,
         [Blockchain.ETH2]: eth2Accounts,
         [Blockchain.BTC]: btcAccounts,
@@ -60,7 +59,14 @@ export const useAccountBalancesStore = defineStore(
 
       const accounts = get(mapping[blockchain]);
       return accounts
-        .map(account => account.address.toLocaleLowerCase())
+        .map(account => {
+          const acc = [account.address.toLocaleLowerCase()];
+          if ('xpub' in account) {
+            acc.push(account.xpub);
+          }
+          return acc;
+        })
+        .flat()
         .filter(uniqueStrings);
     };
 

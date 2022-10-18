@@ -123,6 +123,7 @@ const { fontStyle } = useTheme();
   min-height: 60px;
   max-height: 60px;
   overflow-y: auto;
+  white-space: pre-line;
 }
 
 .dismiss {

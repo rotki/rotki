@@ -92,7 +92,8 @@ const headers = computed<DataTableHeader[]>(() => [
   },
   {
     text: '',
-    value: 'wasWorth'
+    value: 'wasWorth',
+    sortable: false
   },
   {
     text: tc('common.price'),
@@ -105,7 +106,8 @@ const headers = computed<DataTableHeader[]>(() => [
   },
   {
     text: '',
-    value: 'on'
+    value: 'on',
+    sortable: false
   },
   {
     text: tc('common.datetime'),

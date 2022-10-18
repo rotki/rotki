@@ -7,7 +7,12 @@
     tag="div"
   >
     <template #activator="{ on, attrs }">
-      <span v-bind="attrs" :style="assetStyle" v-on="on">
+      <span
+        data-cy="display-currency"
+        v-bind="attrs"
+        :style="assetStyle"
+        v-on="on"
+      >
         {{ asset }}
       </span>
     </template>

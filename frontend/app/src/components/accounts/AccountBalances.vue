@@ -173,14 +173,15 @@ const deleteAccount = async () => {
       });
     }
 
-    await refreshAccounts(get(blockchain));
-
+    await refreshAccounts(blockchain);
     set(selectedAddresses, []);
   } else if (get(xpubToDelete)) {
     const payload = { ...get(xpubToDelete)! };
     set(xpubToDelete, null);
     await deleteXpub(payload);
     get(balanceTable)?.removeCollapsed(payload);
+
+    await refreshAccounts(blockchain);
   }
 };
 
