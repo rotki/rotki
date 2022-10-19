@@ -19,7 +19,7 @@
     @keydown.down.prevent
     @keydown.down="moveSuggestion(false)"
   >
-    <template #selection="{ item, selected, select }">
+    <template #selection="{ item, selected }">
       <v-chip
         label
         small
@@ -27,7 +27,10 @@
         :input-value="selected"
         close
         @click:close="removeSelection(item)"
-        @click="select"
+        @click="
+          removeSelection(item);
+          selectItem(item);
+        "
       >
         <suggested-item :suggestion="item" />
       </v-chip>
@@ -248,5 +251,25 @@ const moveSuggestion = (up: boolean) => {
   } else {
     set(selectedSuggestion, position);
   }
+};
+
+// TODO: This is too specific for custom asset, move it!
+const getDisplayValue = (suggestion: Suggestion) => {
+  let value = suggestion.value;
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  return value.isCustomAsset ? value.name : value.symbol;
+};
+
+const getSuggestionText = (suggestion: Suggestion) => {
+  return `${suggestion.key}: ${getDisplayValue(suggestion)}`;
+};
+
+const selectItem = (suggestion: Suggestion) => {
+  nextTick(() => {
+    set(search, getSuggestionText(suggestion));
+  });
 };
 </script>

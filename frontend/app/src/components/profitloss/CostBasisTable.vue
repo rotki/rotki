@@ -87,13 +87,9 @@
 </template>
 
 <script setup lang="ts">
-import { get } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { computed, PropType, ref, toRefs, useCssModule } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { PropType } from 'vue';
 import { DataTableHeader } from 'vuetify';
 import DataTable from '@/components/helper/DataTable.vue';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 import { CostBasis } from '@/types/reports';
 
 const props = defineProps({
@@ -107,10 +103,9 @@ const props = defineProps({
   showGroupLine: { required: false, type: Boolean, default: false }
 });
 
-const { costBasis } = toRefs(props);
+const { costBasis, currency } = toRefs(props);
 
 const panel = ref<number[]>([]);
-const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { tc } = useI18n();
 
 const css = useCssModule();
@@ -133,7 +128,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
   },
   {
     text: tc('cost_basis_table.headers.rate', 0, {
-      currency: get(currencySymbol)
+      currency: get(currency)
     }),
     value: 'rate',
     align: 'end'

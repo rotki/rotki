@@ -28,7 +28,8 @@ const displayValue = computed(() => {
   if (value.evmChain) {
     return `${value.symbol} (${value.evmChain})`;
   }
-  return value.symbol;
+
+  return value.isCustomAsset ? value.name : value.symbol;
 });
 
 const displayText = computed(() => {
