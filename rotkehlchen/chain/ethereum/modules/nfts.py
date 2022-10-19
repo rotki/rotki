@@ -109,6 +109,10 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):  # lgtm [py/miss
         - RemoteError
         """
         result, total_nfts_num = self._get_all_nft_data(addresses, ignore_cache=ignore_cache)
+        # the filtering happens outside `_get_all_nft_data` to avoid invalidating the cache on
+        # every addition/removal to ignored nfts
+        result = self._filter_ignored_nfts(result)
+
         return NFTResult(
             addresses=result,
             entries_found=total_nfts_num,
@@ -134,10 +138,13 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):  # lgtm [py/miss
         # Be sure that the only addresses queried already exist in the database. Fix for #4456
         queried_addresses = list(set(accounts.eth) & set(addresses))
         result: DefaultDict[ChecksumEvmAddress, List[Dict[str, Any]]] = defaultdict(list)
-        nft_results, _ = self._get_all_nft_data(queried_addresses, ignore_cache=ignore_cache)
+        _nft_results, _ = self._get_all_nft_data(queried_addresses, ignore_cache=ignore_cache)
+        # the filtering happens outside `_get_all_nft_data` to avoid invalidating the cache on
+        # every addition/removal to ignored nfts
+        nft_results = self._filter_ignored_nfts(_nft_results)
         cached_db_result = self.get_nfts_with_price()
         cached_db_prices = {x['asset']: x for x in cached_db_result}
-        db_data: List[Tuple[str, str, Optional[str], Optional[str], int, ChecksumEvmAddress]] = []
+        db_data: List[Tuple[str, Optional[str], Optional[str], Optional[str], int, ChecksumEvmAddress]] = []  # noqa: E501
         # get uniswap v3 lp balances and update nfts that are LPs with their worths.
         for address, nfts in nft_results.items():
             for nft in nfts:
@@ -311,6 +318,19 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):  # lgtm [py/miss
                 raise InputError(f'Failed to delete price for unknown asset {asset.identifier}')
 
         return True
+
+    def _filter_ignored_nfts(self, nfts_data: Dict[ChecksumEvmAddress, List[NFT]]) -> Dict[ChecksumEvmAddress, List[NFT]]:  # noqa: E501
+        """Remove ignored NFTs from NFTs data."""
+        with self.db.conn.read_ctx() as cursor:
+            # convert to set to allow O(1) during `in` conditional below.
+            ignored_nfts = set(self.db.get_ignored_assets(cursor=cursor, only_nfts=True))
+
+        # make a copy to avoid mutating the cached data.
+        nfts_data_copy = nfts_data.copy()
+        for address, nfts in nfts_data_copy.items():
+            nfts_data_copy[address] = [x for x in nfts if x.token_identifier not in ignored_nfts]
+
+        return nfts_data_copy
 
     # -- Methods following the EthereumModule interface -- #
     def on_account_addition(self, address: ChecksumEvmAddress) -> None:
