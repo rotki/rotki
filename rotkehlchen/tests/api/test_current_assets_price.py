@@ -420,10 +420,10 @@ def test_get_all_current_prices(rotkehlchen_api_server):
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_latest_usd_price_for_manual_prices(rotkehlchen_api_server):
+def test_prices_cache_invalidation_for_manual_prices(rotkehlchen_api_server):
     """
-    Test that querying the USD price of an updated manual price entry
-    returns the updated USD price when `ignore_cache` is False.
+    Check that the prices cache are properly invalidated upon addition
+    and deletion of manual prices.
 
     Prices are not mocked in order to get the latest prices
     and not a constant value when adjustments are made to the amount.
@@ -439,6 +439,18 @@ def test_latest_usd_price_for_manual_prices(rotkehlchen_api_server):
             'price': '1',
         },
     )
+    requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'latestassetspriceresource',
+        ),
+        json={
+            'from_asset': 'AVAX',
+            'to_asset': 'ETH',
+            'price': '1',
+        },
+    )
+
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
@@ -478,4 +490,40 @@ def test_latest_usd_price_for_manual_prices(rotkehlchen_api_server):
     result = assert_proper_response_with_result(response)
     # the max diff is to account for price changes between the requests interval
     assert FVal(result['assets']['ETH'][0]).is_close(FVal(old_result['assets']['ETH'][0]) * 10, max_diff='100')  # noqa: E501
+    assert result['target_asset'] == 'USD'
+
+    # now delete the price of ETH to verify that
+    # the price of AVAX -> USD == actual ETH -> USD
+    requests.delete(
+        api_url_for(
+            rotkehlchen_api_server,
+            'latestassetspriceresource',
+        ),
+        json={'asset': 'ETH'},
+    )
+    # now get the price of AVAX
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'latestassetspriceresource',
+        ),
+        json={
+            'assets': ['AVAX'],
+            'target_asset': 'USD',
+        },
+    )
+    avax_result = assert_proper_response_with_result(response)
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'latestassetspriceresource',
+        ),
+        json={
+            'assets': ['ETH'],
+            'target_asset': 'USD',
+        },
+    )
+    eth_result = assert_proper_response_with_result(response)
+    # # the max diff is to account for price changes between the requests interval
+    assert FVal(avax_result['assets']['AVAX'][0]).is_close(FVal(eth_result['assets']['ETH'][0]), max_diff='10')  # noqa: E501
     assert result['target_asset'] == 'USD'
