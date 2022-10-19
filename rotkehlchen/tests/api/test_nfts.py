@@ -1,5 +1,6 @@
 import random
 import warnings as test_warnings
+from unittest.mock import patch
 
 import pytest
 import requests
@@ -7,6 +8,7 @@ from flaky import flaky
 
 from rotkehlchen.chain.ethereum.modules.nfts import FREE_NFT_LIMIT
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.externalapis.opensea import NFT, Collection
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -176,3 +178,91 @@ def test_nft_balances_and_prices(rotkehlchen_api_server):
     assert expected_result == result
     assert FVal(price) > 0
     assert FVal(price_usd) > 0
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC4]])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('ethereum_modules', [['nfts']])
+@pytest.mark.parametrize('endpoint', ['nftsbalanceresource', 'nftsresource'])
+def test_nfts_ignoring_works(rotkehlchen_api_server, endpoint):
+    """Check that ignoring NFTs work as expected"""
+    # return data of `_get_all_nft_data`
+    result = (
+        {
+            '0xc37b40ABdB939635068d3c5f13E7faF686F03B65': [
+                NFT(
+                    token_identifier='_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_26612040215479394739615825115912800930061094786769410446114278812336794170041',  # noqa: E501
+                    background_color=None,
+                    image_url='https://openseauserdata.com/files/3f7c0c7d1ba51e61fe05ef53875f9f7e.svg',  # noqa: E501
+                    name='yabir.eth',
+                    external_link='https://app.ens.domains/name/yabir.eth',
+                    permalink='https://opensea.io/assets/ethereum/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/26612040215479394739615825115912800930061094786769410446114278812336794170041',  # noqa: E501
+                    price_eth=FVal(0.0006899),
+                    price_usd=FVal(1.056568052),
+                    collection=Collection(
+                        name='ENS: Ethereum Name Service',
+                        banner_image='',
+                        description='Ethereum Name Service (ENS) domains are secure domain names for the decentralized world. ENS domains provide a way for users to map human readable names to blockchain and non-blockchain resources, like Ethereum addresses, IPFS hashes, or website URLs. ENS domains can be bought and sold on secondary markets.',  # noqa: E501
+                        large_image='https://i.seadn.io/gae/BBj09xD7R4bBtg1lgnAAS9_TfoYXKwMtudlk-0fVljlURaK7BWcARCpkM-1LGNGTAcsGO6V1TgrtmQFvCo8uVYW_QEfASK-9j6Nr?w=500&auto=format',  # noqa: E501
+                        floor_price=FVal(0.0006899),
+                    ),
+                ),
+            ],
+        },
+        1,
+    )
+    get_all_nft_data_patch = patch('rotkehlchen.chain.ethereum.modules.nfts.Nfts._get_all_nft_data', return_value=result)  # noqa: E501
+
+    # ignore the nft
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ignoredassetsresource',
+        ),
+        json={'assets': [NFT_ID_FOR_TEST_ACC4]},
+    )
+    result = assert_proper_response_with_result(response)
+    assert NFT_ID_FOR_TEST_ACC4 in result
+
+    # query the nfts endpoint and verify that the nft is not present
+    with get_all_nft_data_patch:
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server,
+                endpoint,
+            ),
+            json={'async_query': False},
+        )
+        result = assert_proper_response_with_result(response)
+        if endpoint == 'nftsresource':
+            all_nfts_ids = {nft['token_identifier'] for nft in result['addresses'][TEST_ACC4]}
+            assert NFT_ID_FOR_TEST_ACC4 not in all_nfts_ids
+        else:
+            assert result == {}
+
+    # remove the nft from the ignored list.
+    response = requests.delete(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ignoredassetsresource',
+        ),
+        json={'assets': [NFT_ID_FOR_TEST_ACC4]},
+    )
+    result = assert_proper_response_with_result(response)
+    assert NFT_ID_FOR_TEST_ACC4 not in result
+
+    # query the nfts endpoint again and verify that the nft is present
+    with get_all_nft_data_patch:
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server,
+                endpoint,
+            ),
+            json={'async_query': False},
+        )
+        result = assert_proper_response_with_result(response)
+        if endpoint == 'nftsresource':
+            all_nfts_ids = {nft['token_identifier'] for nft in result['addresses'][TEST_ACC4]}
+        else:
+            all_nfts_ids = {nft['id'] for nft in result[TEST_ACC4]}
+        assert NFT_ID_FOR_TEST_ACC4 in all_nfts_ids

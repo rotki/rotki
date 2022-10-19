@@ -662,11 +662,19 @@ class DBHandler:
             (asset.identifier,),
         )
 
-    def get_ignored_assets(self, cursor: 'DBCursor') -> List[Asset]:
-        cursor.execute(
-            'SELECT value FROM multisettings WHERE name="ignored_asset";',
-        )
+    def get_ignored_assets(self, cursor: 'DBCursor', only_nfts: bool = False) -> List[Asset]:
+        """
+        Retrieve all ignored assets.
+        If `only_nfts` is True, only ignored nfts are returned.
+        """
         assets = []
+        bindings = []
+        query = 'SELECT value FROM multisettings WHERE name="ignored_asset" '
+        if only_nfts is True:
+            query += 'AND value LIKE ?'
+            bindings.append(f'{NFT_DIRECTIVE}%')
+        cursor.execute(query, bindings)
+
         for asset_setting in cursor:
             try:
                 asset = Asset(asset_setting[0]).check_existence()
