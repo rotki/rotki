@@ -21,7 +21,7 @@ from rotkehlchen.db.constants import HISTORY_MAPPING_DECODED
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import ETHTransactionsFilterQuery, HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import InputError, ModuleLoadingError, NotERC20Conformant, RemoteError
 from rotkehlchen.errors.serialization import ConversionError, DeserializationError
 from rotkehlchen.fval import FVal
@@ -572,7 +572,7 @@ class EVMTransactionDecoder():
         )
         return transfer
 
-    def _maybe_enrich_transfers(  # pylint: disable=no-self-use
+    def _maybe_enrich_transfers(
             self,
             token: Optional[EvmToken],  # pylint: disable=unused-argument
             tx_log: EthereumTxReceiptLog,
@@ -597,11 +597,19 @@ class EVMTransactionDecoder():
         if tx_log.topics[0] == GNOSIS_CHAIN_BRIDGE_RECEIVE and tx_log.address == '0x88ad09518695c6c3712AC10a214bE5109a655671':  # noqa: E501
             for event in decoded_events:
                 if event.event_type == HistoryEventType.RECEIVE:
+                    try:
+                        crypto_asset = event.asset.resolve_to_crypto_asset()
+                    except (UnknownAsset, WrongAssetType):
+                        next(iter(self.decoders.values())).notify_user(
+                            event=event,
+                            counterparty=CPT_GNOSIS_CHAIN,
+                        )
+                        continue
+
                     # user bridged from gnosis chain
                     event.event_type = HistoryEventType.TRANSFER
                     event.event_subtype = HistoryEventSubType.BRIDGE
                     event.counterparty = CPT_GNOSIS_CHAIN
-                    crypto_asset = event.asset.resolve_to_crypto_asset()
                     event.notes = (
                         f'Bridge {event.balance.amount} {crypto_asset.symbol} from gnosis chain'
                     )
@@ -623,13 +631,21 @@ class EVMTransactionDecoder():
         transfer.
         """
         for enrich_call in self.token_enricher_rules:
-            transfer_enriched = enrich_call(
-                token=token,
-                tx_log=tx_log,
-                transaction=transaction,
-                event=event,
-                action_items=action_items,
-            )
+            try:
+                transfer_enriched = enrich_call(
+                    token=token,
+                    tx_log=tx_log,
+                    transaction=transaction,
+                    event=event,
+                    action_items=action_items,
+                )
+            except (UnknownAsset, WrongAssetType) as e:
+                log.error(
+                    f'Failed to enrich transfer due to unknown asset {event.asset}. {str(e)}',
+                )
+                # Don't try other rules since all of them will fail to resolve the asset
+                break
+
             if transfer_enriched:
                 break
 

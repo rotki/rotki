@@ -39,6 +39,11 @@ class GitcoinDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             event: HistoryBaseEntry,
             action_items: List[ActionItem],  # pylint: disable=unused-argument
     ) -> bool:
+        """
+        May raise:
+        - UnknownAsset
+        - WrongAssetType
+        """
         if transaction.to_address not in (
                 '0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE',
                 '0x7d655c57f71464B6f83811C55D84009Cd9f5221C',

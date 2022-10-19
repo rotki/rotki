@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, Callable, List
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.utils import get_or_create_evm_token
@@ -9,6 +9,7 @@ from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import ChainID
+from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.types import EvmTokenKind, EvmTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
@@ -24,6 +25,7 @@ def decode_uniswap_v2_like_swap(
         counterparty: str,
         database: 'DBHandler',
         ethereum_manager: 'EthereumManager',
+        notify_user: Callable[[HistoryBaseEntry, str], None],
 ) -> None:
     """Common logic for decoding uniswap v2 like protocols (uniswap and sushiswap atm)
 
@@ -78,13 +80,16 @@ def decode_uniswap_v2_like_swap(
         # When we look for the spend event we have to take into consideration the case
         # where not all the ETH is converted. The ETH that is not converted is returned
         # in an internal transaction to the user.
-        crypto_asset = event.asset.resolve_to_crypto_asset()
+        try:
+            crypto_asset = event.asset.resolve_to_crypto_asset()
+        except (UnknownAsset, WrongAssetType):
+            notify_user(event, counterparty)
         if (
             event.event_type == HistoryEventType.SPEND and
             (
                 event.balance.amount == (spend_eth := asset_normalized_value(
                     amount=amount_in,
-                    asset=event.asset.resolve_to_crypto_asset(),
+                    asset=crypto_asset,
                 )) or
                 event.asset == A_ETH and spend_eth + received_eth == event.balance.amount
             )
@@ -99,7 +104,7 @@ def decode_uniswap_v2_like_swap(
             event.event_type in (HistoryEventType.RECEIVE, HistoryEventType.TRANSFER) and
             event.balance.amount == asset_normalized_value(
                 amount=amount_out,
-                asset=event.asset.resolve_to_crypto_asset(),
+                asset=crypto_asset,
             )
         ):
             event.event_type = HistoryEventType.TRADE
@@ -111,7 +116,7 @@ def decode_uniswap_v2_like_swap(
             event.event_type == HistoryEventType.RECEIVE and
             event.balance.amount != asset_normalized_value(
                 amount=amount_out,
-                asset=event.asset.resolve_to_crypto_asset(),
+                asset=crypto_asset,
             ) and
             event.asset == A_ETH and transaction.from_address == event.location_label
         ):

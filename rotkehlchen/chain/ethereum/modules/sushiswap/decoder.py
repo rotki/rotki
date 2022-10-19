@@ -50,6 +50,7 @@ class SushiswapDecoder(DecoderInterface):
                 counterparty=CPT_SUSHISWAP_V2,
                 database=self.database,
                 ethereum_manager=self.ethereum_manager,
+                notify_user=self.notify_user,
             )
 
     # -- DecoderInterface methods

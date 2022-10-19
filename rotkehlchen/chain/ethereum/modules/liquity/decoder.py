@@ -1,3 +1,4 @@
+import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
@@ -7,6 +8,8 @@ from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_LUSD
+from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 
 from .constants import CPT_LIQUITY
@@ -18,6 +21,9 @@ if TYPE_CHECKING:
 
 BALANCE_UPDATE = b'\xca#+Z\xbb\x98\x8cT\x0b\x95\x9f\xf6\xc3\xbf\xae>\x97\xff\xf9d\xfd\t\x8cP\x8f\x96\x13\xc0\xa6\xbf\x1a\x80'  # noqa: E501
 STABILITY_POOL = string_to_evm_address('0xDf9Eb223bAFBE5c5271415C75aeCD68C21fE3D7F')
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 class LiquityDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
@@ -47,7 +53,11 @@ class LiquityDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             return None, None
 
         for event in decoded_events:
-            crypto_asset = event.asset.resolve_to_crypto_asset()
+            try:
+                crypto_asset = event.asset.resolve_to_crypto_asset()
+            except (UnknownAsset, WrongAssetType):
+                self.notify_user(event=event, counterparty=CPT_LIQUITY)
+                continue
             if event.event_type == HistoryEventType.RECEIVE and event.asset == A_LUSD:
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.GENERATE_DEBT
