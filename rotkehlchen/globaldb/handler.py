@@ -1355,6 +1355,7 @@ class GlobalDBHandler():
                 raise InputError(
                     f'Not found manual current price to delete for asset {str(asset)}',
                 )
+
             return pairs_to_invalidate
 
     @staticmethod
