@@ -27,7 +27,7 @@
       <v-divider class="mt-4 mb-2" />
       <v-row align="center">
         <v-col>
-          <table :class="css.full">
+          <table class="fill-width">
             <tbody>
               <tr>
                 <td class="font-weight-medium" :class="css.label">
@@ -252,9 +252,5 @@ const versionText = computed(() => {
 
 .directory {
   max-width: 200px;
-}
-
-.full {
-  width: 100%;
 }
 </style>

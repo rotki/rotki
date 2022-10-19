@@ -102,6 +102,7 @@ import {
 import { Eth2Validator } from '@/types/balances';
 import { Module } from '@/types/modules';
 import { TaskType } from '@/types/task-type';
+import { startPromise } from '@/utils';
 import { assert } from '@/utils/assertions';
 import { getMetamaskAddresses } from '@/utils/metamask';
 import { xpubToPayload } from '@/utils/xpub';
@@ -398,6 +399,7 @@ const save = async () => {
     result = await (get(edit)
       ? editEth2Validator(payload)
       : addEth2Validator(payload));
+    startPromise(refreshAccounts(Blockchain.ETH2));
   } else {
     result = await manualAdd();
   }

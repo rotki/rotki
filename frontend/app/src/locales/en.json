@@ -2147,7 +2147,7 @@
       "btc_derivation_gap": "BTC derivation gap limit",
       "date_display_format": "Date display format",
       "date_input_format": "Date input format",
-      "display_date_in_localtime": "Display date in localtime and not in UTC in CSV export, backend logs and other locations",
+      "display_date_in_localtime": "Display date in localtime and not in UTC for CSV export and backend logs.",
       "dot_rpc_endpoint": "Polkadot Node RPC Endpoint",
       "ksm_rpc_endpoint": "Kusama Node RPC Endpoint",
       "language": "Selected language",
@@ -2155,6 +2155,7 @@
       "version_update_check": "Set the version update check period while in app",
       "version_update_check_enabled": "Enabled"
     },
+    "language_contribution_tooltip": "This feature is experimental and may not work as expected for some languages. This is because all static sentences in the app have to be manually translated and that is a long and ongoing process. Therefore, we need your contribution to speed it up. Click here for more information.",
     "local_nodes": {
       "title": "Local Nodes"
     },

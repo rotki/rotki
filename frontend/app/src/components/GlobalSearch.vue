@@ -39,10 +39,7 @@
         @input="change"
       >
         <template #item="{ item }">
-          <div
-            class="d-flex align-center text-body-2"
-            :class="$style['full-width']"
-          >
+          <div class="d-flex align-center text-body-2 fill-width">
             <asset-icon
               v-if="item.asset"
               size="30px"
@@ -497,10 +494,6 @@ onBeforeMount(async () => {
 });
 </script>
 <style module lang="scss">
-.full-width {
-  width: 100%;
-}
-
 .dialog {
   margin-top: 200px;
   align-self: flex-start;
