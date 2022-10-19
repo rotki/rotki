@@ -66,6 +66,7 @@ from rotkehlchen.constants.ethereum import (
     MAKERDAO_ZRX_A_JOIN,
     RAY_DIGITS,
 )
+from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction, Location
@@ -102,6 +103,12 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-
             base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',
     ) -> None:
+        DecoderInterface.__init__(
+            self,
+            ethereum_manager=ethereum_manager,
+            base_tools=base_tools,
+            msg_aggregator=msg_aggregator,
+        )
         self.base = base_tools
         HasDSProxy.__init__(
             self,
@@ -481,7 +488,11 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-
             # dink is the raw collateral amount change. Let's use this event to see if
             # there was a deposit event beforehand to append the cdp id
             for event in decoded_events:
-                crypto_asset = event.asset.resolve_to_crypto_asset()
+                try:
+                    crypto_asset = event.asset.resolve_to_crypto_asset()
+                except (UnknownAsset, WrongAssetType):
+                    self.notify_user(event=event, counterparty=CPT_VAULT)
+                    continue
                 if event.event_type == HistoryEventType.DEPOSIT and event.event_subtype == HistoryEventSubType.DEPOSIT_ASSET and event.counterparty == CPT_VAULT:  # noqa: E501
                     normalized_dink = asset_normalized_value(
                         amount=dink,

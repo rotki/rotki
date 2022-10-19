@@ -21,13 +21,13 @@ if TYPE_CHECKING:
     from rotkehlchen.user_messages import MessagesAggregator
 
 
-class PickleFinanceDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
+class PickleFinanceDecoder(DecoderInterface):
 
     def __init__(
             self,
-            ethereum_manager: 'EthereumManager',  # pylint: disable=unused-argument
-            base_tools: 'BaseDecoderTools',  # pylint: disable=unused-argument
-            msg_aggregator: 'MessagesAggregator',  # pylint: disable=unused-argument
+            ethereum_manager: 'EthereumManager',
+            base_tools: 'BaseDecoderTools',
+            msg_aggregator: 'MessagesAggregator',
     ) -> None:
         super().__init__(
             ethereum_manager=ethereum_manager,
@@ -45,7 +45,12 @@ class PickleFinanceDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             event: HistoryBaseEntry,
             action_items: List[ActionItem],  # pylint: disable=unused-argument
     ) -> bool:
-        """Enrich tranfer transactions to address for jar deposits and withdrawals"""
+        """
+        Enrich tranfer transactions to address for jar deposits and withdrawals
+        May raise:
+        - UnknownAsset
+        - WrongAssetType
+        """
         crypto_asset = event.asset.resolve_to_crypto_asset()
         if not (
             hex_or_bytes_to_address(tx_log.topics[2]) in self.pickle_contracts or

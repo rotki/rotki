@@ -1,4 +1,5 @@
-from typing import Callable, List, Optional
+import logging
+from typing import TYPE_CHECKING, Callable, List, Optional
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
@@ -10,17 +11,39 @@ from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import EvmTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from ..constants import CPT_UNISWAP_V3
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.decoding.base import BaseDecoderTools
+    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.user_messages import MessagesAggregator
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 # https://www.4byte.directory/api/v1/event-signatures/?hex_signature=0xc42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca67  # noqa: E501
 # https://docs.uniswap.org/protocol/reference/core/interfaces/pool/IUniswapV3PoolEvents#swap
 SWAP_SIGNATURE = b'\xc4 y\xf9JcP\xd7\xe6#_)\x17I$\xf9(\xcc*\xc8\x18\xebd\xfe\xd8\x00N\x11_\xbc\xcag'  # noqa: E501
 
 
-class Uniswapv3Decoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
+class Uniswapv3Decoder(DecoderInterface):
+
+    def __init__(
+            self,
+            ethereum_manager: 'EthereumManager',
+            base_tools: 'BaseDecoderTools',
+            msg_aggregator: 'MessagesAggregator',
+    ) -> None:
+        super().__init__(
+            ethereum_manager=ethereum_manager,
+            base_tools=base_tools,
+            msg_aggregator=msg_aggregator,
+        )
 
     def _maybe_decode_v3_swap(  # pylint: disable=no-self-use
             self,
@@ -63,14 +86,18 @@ class Uniswapv3Decoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                 # When swapping token for ETH the WETH contract is called by the router and the
                 # swap is not executed with the user in the topic but the router. This is when
                 # tx_log.topics[1] == tx_log.topics[2]
-                crypto_asset = event.asset.resolve_to_crypto_asset()
+                try:
+                    crypto_asset = event.asset.resolve_to_crypto_asset()
+                except (UnknownAsset, WrongAssetType):
+                    self.notify_user(event=event, counterparty=CPT_UNISWAP_V3)
+                    continue
                 if (
                     event.event_type == HistoryEventType.SPEND and
                     (event.location_label == buyer or tx_log.topics[1] == tx_log.topics[2]) and
                     (
                         event.balance.amount == (spent_amount := asset_normalized_value(
                             amount=amount_sent,
-                            asset=event.asset.resolve_to_crypto_asset(),
+                            asset=crypto_asset,
                         )) or
                         event.asset == A_ETH and spent_amount + received_eth == event.balance.amount  # noqa: E501
                     )
@@ -86,7 +113,7 @@ class Uniswapv3Decoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                         (event.location_label == buyer or event.asset == A_ETH) and
                         event.balance.amount == asset_normalized_value(
                             amount=amount_received,
-                            asset=event.asset.resolve_to_crypto_asset(),
+                            asset=crypto_asset,
                         )
                     )
                 ):
@@ -103,7 +130,7 @@ class Uniswapv3Decoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                     event.event_type == HistoryEventType.RECEIVE and
                     event.balance.amount != asset_normalized_value(
                         amount=amount_received,
-                        asset=event.asset.resolve_to_crypto_asset(),
+                        asset=crypto_asset,
                     )
                 ):
                     # Those are assets returned due to a change in the swap price

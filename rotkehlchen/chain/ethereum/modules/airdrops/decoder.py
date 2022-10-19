@@ -1,3 +1,4 @@
+import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Tuple
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -10,6 +11,8 @@ from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.constants.assets import A_1INCH, A_BADGER, A_CVX, A_ELFI, A_FOX, A_FPIS, A_UNI
+from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction, Location
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int, ts_sec_to_ms
 
@@ -49,14 +52,17 @@ FOX_CLAIMED = b"R\x897\xb30\x08-\x89*\x98\xd4\xe4(\xab-\xcc\xa7\x84KQ\xd2'\xa1\x
 ELFI_LOCKING = string_to_evm_address('0x02Bd4A3b1b95b01F2Aa61655415A5d3EAAcaafdD')
 ELFI_VOTE_CHANGE = b'3\x16\x1c\xf2\xda(\xd7G\xbe\x9d\xf16\xb6\xf3r\x93\x90)\x84\x94\x94rht1\x93\xc5=s\xd3\xc2\xe0'  # noqa: E501
 
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
-class AirdropsDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
+
+class AirdropsDecoder(DecoderInterface):
 
     def __init__(
             self,
-            ethereum_manager: 'EthereumManager',  # pylint: disable=unused-argument
+            ethereum_manager: 'EthereumManager',
             base_tools: 'BaseDecoderTools',
-            msg_aggregator: 'MessagesAggregator',  # pylint: disable=unused-argument
+            msg_aggregator: 'MessagesAggregator',
     ) -> None:
         super().__init__(
             ethereum_manager=ethereum_manager,
@@ -209,7 +215,11 @@ class AirdropsDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                 event.event_type = HistoryEventType.RECEIVE
                 event.event_subtype = HistoryEventSubType.AIRDROP
                 event.counterparty = counterparty
-                crypto_asset = event.asset.resolve_to_crypto_asset()
+                try:
+                    crypto_asset = event.asset.resolve_to_crypto_asset()
+                except (UnknownAsset, WrongAssetType):
+                    self.notify_user(event=event, counterparty=counterparty)
+                    continue
                 event.notes = f'Claim {amount} {crypto_asset.symbol} {note_location}'  # noqa: E501
                 break
 

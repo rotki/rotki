@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+import logging
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
@@ -9,7 +10,9 @@ from rotkehlchen.chain.ethereum.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, ethaddress_to_asset
+from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.fval import FVal
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
@@ -24,6 +27,9 @@ KYBER_TRADE_LEGACY = b'\xf7$\xb4\xdff\x17G6\x12\xb5=\x7f\x88\xec\xc6\xea\x980t\x
 KYBER_LEGACY_CONTRACT = string_to_evm_address('0x9ae49C0d7F8F9EF4B864e004FE86Ac8294E20950')
 KYBER_LEGACY_CONTRACT_MIGRATED = string_to_evm_address('0x65bF64Ff5f51272f729BDcD7AcFB00677ced86Cd')  # noqa: E501
 KYBER_LEGACY_CONTRACT_UPGRADED = string_to_evm_address('0x9AAb3f75489902f3a48495025729a0AF77d4b11e')  # noqa: E501
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 def _legacy_contracts_basic_info(tx_log: EthereumTxReceiptLog) -> Tuple[ChecksumEvmAddress, Optional[CryptoAsset], Optional[CryptoAsset]]:  # noqa: E501
@@ -51,6 +57,7 @@ def _maybe_update_events_legacy_contrats(
     destination_asset: CryptoAsset,
     spent_amount: FVal,
     return_amount: FVal,
+    notify_user: Callable[[HistoryBaseEntry, str], None],
 ) -> None:
     """
     Use the information from a trade transaction to modify the HistoryEvents from receive/send to
@@ -58,7 +65,11 @@ def _maybe_update_events_legacy_contrats(
     """
     in_event = out_event = None
     for event in decoded_events:
-        crypto_asset = event.asset.resolve_to_crypto_asset()
+        try:
+            crypto_asset = event.asset.resolve_to_crypto_asset()
+        except (UnknownAsset, WrongAssetType):
+            notify_user(event, CPT_KYBER)
+            continue
         if event.event_type == HistoryEventType.SPEND and event.location_label == sender and event.asset == source_asset and event.balance.amount == spent_amount:  # noqa: E501
             event.event_type = HistoryEventType.TRADE
             event.event_subtype = HistoryEventSubType.SPEND
@@ -75,16 +86,18 @@ def _maybe_update_events_legacy_contrats(
         maybe_reshuffle_events(out_event=out_event, in_event=in_event)
 
 
-class KyberDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
-    def __init__(  # pylint: disable=super-init-not-called
+class KyberDecoder(DecoderInterface):
+    def __init__(
             self,
             ethereum_manager: 'EthereumManager',
             base_tools: 'BaseDecoderTools',
             msg_aggregator: MessagesAggregator,
     ) -> None:
-        self.ethereum_manager = ethereum_manager
-        self.base = base_tools
-        self.msg_aggregator = msg_aggregator
+        super().__init__(
+            ethereum_manager=ethereum_manager,
+            base_tools=base_tools,
+            msg_aggregator=msg_aggregator,
+        )
 
     def _decode_legacy_trade(  # pylint: disable=no-self-use
         self,
@@ -112,6 +125,7 @@ class KyberDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             destination_asset=destination_asset,
             spent_amount=spent_amount,
             return_amount=return_amount,
+            notify_user=self.notify_user,
         )
 
         return None, None
@@ -142,6 +156,7 @@ class KyberDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             destination_asset=destination_asset,
             spent_amount=spent_amount,
             return_amount=return_amount,
+            notify_user=self.notify_user,
         )
 
         return None, None

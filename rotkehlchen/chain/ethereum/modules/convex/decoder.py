@@ -1,4 +1,5 @@
-from typing import Any, Callable, Dict, List, Optional, Tuple
+import logging
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 
 from rotkehlchen.accounting.structures.base import (
     HistoryBaseEntry,
@@ -25,13 +26,36 @@ from rotkehlchen.chain.ethereum.modules.convex.constants import (
 )
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
+from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
+if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.decoding.base import BaseDecoderTools
+    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.user_messages import MessagesAggregator
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
+
 
 class ConvexDecoder(DecoderInterface):
-    @staticmethod
+
+    def __init__(
+            self,
+            ethereum_manager: 'EthereumManager',
+            base_tools: 'BaseDecoderTools',
+            msg_aggregator: 'MessagesAggregator',
+    ) -> None:
+        super().__init__(
+            ethereum_manager=ethereum_manager,
+            base_tools=base_tools,
+            msg_aggregator=msg_aggregator,
+        )
+
     def _decode_convex_events(
+            self,
             tx_log: EthereumTxReceiptLog,
             transaction: EvmTransaction,
             decoded_events: List[HistoryBaseEntry],
@@ -42,8 +66,13 @@ class ConvexDecoder(DecoderInterface):
         interacted_address = hex_or_bytes_to_address(tx_log.topics[1])
 
         for event in decoded_events:
-            amount = asset_normalized_value(amount_raw, event.asset.resolve_to_crypto_asset())
-            crypto_asset = event.asset.resolve_to_crypto_asset()
+            try:
+                crypto_asset = event.asset.resolve_to_crypto_asset()
+            except (UnknownAsset, WrongAssetType):
+                self.notify_user(event=event, counterparty=CPT_CONVEX)
+                continue
+
+            amount = asset_normalized_value(amount_raw, crypto_asset)
             if (
                 event.location_label == transaction.from_address == interacted_address is False or
                 (event.counterparty != ZERO_ADDRESS and event.balance.amount != amount)
@@ -95,9 +124,15 @@ class ConvexDecoder(DecoderInterface):
             event: HistoryBaseEntry,
             action_items: List[ActionItem],  # pylint: disable=unused-argument
     ) -> bool:
-        """Used for rewards paid with abracadabras. Problem is that the transfer event in this
+        """
+        Used for rewards paid with abracadabras. Problem is that the transfer event in this
         case happens at the end of the transaction and there is no reward event after it to
-        emit event processing."""
+        emit event processing.
+
+        May raise:
+        - UnknownAsset
+        - WrongAssetType
+        """
         if (
             tx_log.topics[0] == TRANSFER_TOPIC and
             tx_log.topics[1] in CONVEX_ABRAS_HEX and
@@ -105,8 +140,8 @@ class ConvexDecoder(DecoderInterface):
             event.event_type == HistoryEventType.RECEIVE and
             event.event_subtype == HistoryEventSubType.NONE
         ):
-            event.event_subtype = HistoryEventSubType.REWARD
             crypto_asset = event.asset.resolve_to_crypto_asset()
+            event.event_subtype = HistoryEventSubType.REWARD
             if tx_log.address in CONVEX_POOLS:
                 event.notes = f'Claim {event.balance.amount} {crypto_asset.symbol} reward from convex {CONVEX_POOLS[tx_log.address]} pool'  # noqa: E501
             else:
