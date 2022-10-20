@@ -816,6 +816,14 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument 
 
         tokens = json.loads(cursor.fetchone()[0])
         assert tokens['tokens'] == ['_ceth_0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e']
+        # check that history events contain a transaction with an old style token identifier
+        old_tx_assets_ids = cursor.execute('SELECT DISTINCT asset FROM history_events;').fetchall()  # noqa: E501
+        assert old_tx_assets_ids == [
+            ('ETH',),
+            ('AVAX',),
+            ('BTC',),
+            ('_ceth_0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5',),
+        ]
 
         # Check that oracles exist in the test db
         oracles_before_upgrade = cursor.execute(
@@ -913,6 +921,15 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument 
         # check that ignored assets are now in the current CAIP format.
         new_ignored_assets_ids = cursor.execute('SELECT value FROM multisettings WHERE name="ignored_asset";').fetchall()  # noqa: E501
         assert new_ignored_assets_ids == expected_new_ignored_assets_ids
+
+        # check that history events contain a transaction with new style token identifier
+        new_tx_assets_ids = cursor.execute('SELECT DISTINCT asset FROM history_events;').fetchall()  # noqa: E501
+        assert new_tx_assets_ids == [
+            ('ETH',),
+            ('AVAX',),
+            ('BTC',),
+            ('eip155:1/erc20:0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5',),
+        ]
 
         # Check that token_list for accounts has been correctly upgraded
         cursor.execute('SELECT value from accounts_details WHERE account="0x45E6CA515E840A4e9E02A3062F99216951825eB2" AND blockchain="eth" AND key="tokens"')  # noqa: E501

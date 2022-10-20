@@ -612,6 +612,7 @@ CREATE TABLE IF NOT EXISTS history_events (
     subtype TEXT,
     counterparty TEXT,
     extra_data TEXT,
+    FOREIGN KEY(asset) REFERENCES assets(identifier) ON UPDATE CASCADE,
     UNIQUE(event_identifier, sequence_index)
 );
 """
