@@ -56,7 +56,6 @@
                 >
                   <template #activator="{ on }">
                     <v-btn
-                      v-if="item.rateLimited"
                       :disabled="!!item.price || refreshing"
                       :loading="refreshing"
                       class="mr-n3"

@@ -11,13 +11,13 @@
             text
             color="primary"
             :class="{
-              [css.fullwidth]: true,
+              'fill-width': true,
               [css.selected]: index === selectedSuggestion
             }"
             class="text-none text-body-1"
             @click="applyFilter(item)"
           >
-            <span class="text-start" :class="css.fullwidth">
+            <span class="text-start fill-width">
               <suggested-item :suggestion="item" />
             </span>
           </v-btn>
@@ -212,11 +212,7 @@ watch([keyword, suggestion], async ([keyword, suggestion]) => {
 const { t } = useI18n();
 </script>
 
-<style module>
-.fullwidth {
-  width: 100%;
-}
-
+<style module lang="scss">
 .selected {
   background-color: var(--v-primary-lighten4);
 }

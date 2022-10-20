@@ -37,7 +37,7 @@
           <v-tooltip top open-delay="400">
             <template #activator="{ on, attrs }">
               <v-btn
-                class="general-settings__date-restore"
+                class="general-settings__date-restore mt-n2"
                 icon
                 v-bind="attrs"
                 @click="update(defaultDateDisplayFormat)"

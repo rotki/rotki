@@ -4,7 +4,7 @@
     <div class="text-body-1 mt-2 text--secondary">
       {{ t('connection_failure.message') }}
     </div>
-    <div class="full-width d-flex mt-4">
+    <div class="fill-width d-flex mt-4">
       <v-btn v-if="!defaultBackend" text @click="toDefault">
         {{ t('connection_failure.default') }}
       </v-btn>
