@@ -82,7 +82,8 @@ def _remove_unused_assets(write_cursor: 'DBCursor') -> None:
         SELECT token AS asset FROM adex_events UNION
         SELECT pool_address_token AS asset FROM balancer_events UNION
         SELECT identifier AS asset FROM nfts UNION
-        SELECT last_price_asset AS asset FROM nfts
+        SELECT last_price_asset AS asset FROM nfts UNION
+        SELECT asset from history_events
     ) WHERE asset IS NOT NULL)
     DELETE FROM assets WHERE identifier NOT IN unique_assets AND identifier IS NOT NULL
     """)
@@ -203,13 +204,71 @@ def _update_ignored_assets_identifiers_to_caip_format(cursor: 'DBCursor') -> Non
     log.debug('Exit _update_ignored_assets_identifiers_to_caip_format')
 
 
-def _rename_assets_in_user_queried_tokens(cursor: 'DBCursor') -> None:
+def _update_history_event_assets_identifiers_to_caip_format(cursor: 'DBCursor') -> None:
+    """Make sure assets in history events table are upgraded to CAIP format"""
+    log.debug('Enter _update_history_event_assets_identifiers_to_caip_format')
+    cursor.execute('SELECT * FROM history_events;')
+    new_entries = []
+    for entry in cursor:
+        new_id = entry[6]
+        if entry[6].startswith(ETHEREUM_DIRECTIVE):
+            new_id = evm_address_to_identifier(
+                address=entry[6][ETHEREUM_DIRECTIVE_LENGTH:],
+                chain=ChainID.ETHEREUM,
+                token_type=EvmTokenKind.ERC20,
+            )
+        new_entries.append((
+            entry[0], entry[1], entry[2], entry[3], entry[4], entry[5], new_id,
+            entry[7], entry[8], entry[9], entry[10], entry[11], entry[12], entry[13],
+        ))
+
+    cursor.execute('DROP TABLE history_events;')
+    cursor.execute("""CREATE TABLE IF NOT EXISTS history_events (
+    identifier INTEGER NOT NULL PRIMARY KEY,
+    event_identifier BLOB NOT NULL,
+    sequence_index INTEGER NOT NULL,
+    timestamp INTEGER NOT NULL,
+    location TEXT NOT NULL,
+    location_label TEXT,
+    asset TEXT NOT NULL,
+    amount TEXT NOT NULL,
+    usd_value TEXT NOT NULL,
+    notes TEXT,
+    type TEXT NOT NULL,
+    subtype TEXT,
+    counterparty TEXT,
+    extra_data TEXT,
+    FOREIGN KEY(asset) REFERENCES assets(identifier) ON UPDATE CASCADE,
+    UNIQUE(event_identifier, sequence_index)
+    );""")
+    cursor.executemany(
+        'INSERT INTO history_events( '
+        'identifier, '
+        'event_identifier, '
+        'sequence_index, '
+        'timestamp, '
+        'location, '
+        'location_label, '
+        'asset, '
+        'amount, '
+        'usd_value, '
+        'notes, '
+        'type, '
+        'subtype, '
+        'counterparty, '
+        'extra_data) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        new_entries,
+    )
+    log.debug('Exit _update_history_event_assets_identifiers_to_caip_format')
+
+
+def _update_assets_in_user_queried_tokens(cursor: 'DBCursor') -> None:
     """ethereum_accounts_details has the column tokens_list as a json list with identifiers
     using the _ceth_ format. Those need to be upgraded to the CAIPS format.
     The approach we took was to refactor this table adding a key-value table with the chain
     attribute to map properties of accounts to different chains
     """
-    log.debug('Enter _rename_assets_in_user_queried_tokens')
+    log.debug('Enter _update_assets_in_user_queried_tokens')
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS accounts_details (
         account VARCHAR[42] NOT NULL,
@@ -250,7 +309,7 @@ def _rename_assets_in_user_queried_tokens(cursor: 'DBCursor') -> None:
         update_rows,
     )
     cursor.execute('DROP TABLE ethereum_accounts_details')
-    log.debug('Enter _rename_assets_in_user_queried_tokens')
+    log.debug('Enter _update_assets_in_user_queried_tokens')
 
 
 def _add_manual_current_price_oracle(cursor: 'DBCursor') -> None:
@@ -280,6 +339,7 @@ def upgrade_v34_to_v35(db: 'DBHandler') -> None:
     - Add user_notes table
     - Renames the asset identifiers to use CAIPS
     """
+    log.debug('Entered upgrade!!!')
     with db.user_write() as write_cursor:
         _clean_amm_swaps(write_cursor)
         _remove_unused_assets(write_cursor)
@@ -289,5 +349,6 @@ def upgrade_v34_to_v35(db: 'DBHandler') -> None:
         _create_new_tables(write_cursor)
         _change_xpub_mappings_primary_key(write_cursor=write_cursor, conn=db.conn)
         _add_blockchain_column_web3_nodes(write_cursor)
-        _rename_assets_in_user_queried_tokens(write_cursor)
+        _update_assets_in_user_queried_tokens(write_cursor)
+        _update_history_event_assets_identifiers_to_caip_format(write_cursor)
         _add_manual_current_price_oracle(write_cursor)
