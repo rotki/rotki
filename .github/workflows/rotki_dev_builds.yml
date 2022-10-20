@@ -274,7 +274,7 @@ jobs:
           ROTKI_VERSION=$(cat .bumpversion.cfg | grep 'current_version = ' | sed -n -e 's/current_version = //p')
           POSTFIX=$(if git describe --tags --exact-match "$REVISION" &>/dev/null; then echo ''; else echo '-dev'; fi)
           ROTKI_VERSION=${ROTKI_VERSION}${POSTFIX}-$(date +'%Y.%m.%d')
-          echo "::set-output name=version::${ROTKI_VERSION}"
+          echo "version=${ROTKI_VERSION}" >> $GITHUB_OUTPUT
       - name: Build Information
         id: build_information
         run: |
@@ -285,8 +285,8 @@ jobs:
             PLATFORMS=linux/amd64
             TAG=dev
           fi
-          echo "::set-output name=tag::$TAG"
-          echo "::set-output name=platforms::$PLATFORMS"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "platforms=$PLATFORMS" >> $GITHUB_OUTPUT
       - name: Build and push
         id: docker_build
         uses: docker/build-push-action@v3
