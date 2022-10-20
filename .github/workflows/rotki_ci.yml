@@ -28,7 +28,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       - name: Run check action
-        uses: rotki/action-job-checker@d428e09451023925afa886459d3a3bb32fe72318
+        uses: rotki/action-job-checker@v1
         id: checker
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
