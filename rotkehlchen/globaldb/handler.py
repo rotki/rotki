@@ -308,8 +308,6 @@ class GlobalDBHandler():
         """
         Given a list of asset identifiers, return a list of asset information(id, name, symbol)
         for those identifiers.
-        May raise:
-        - InputError if one of the identifiers does not exist
         """
         result = {}
         identifiers_query = f'assets.identifier IN ({",".join("?" * len(identifiers))})'
@@ -333,8 +331,6 @@ class GlobalDBHandler():
                 if entry[5] is not None:
                     result[entry[0]].update({'custom_asset_type': entry[5]})
 
-            if len(result) != len(identifiers):
-                raise InputError('One or more of the given identifiers could not be found in the database')  # noqa: E501
         return result
 
     @staticmethod
