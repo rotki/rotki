@@ -316,7 +316,8 @@ class AccountingPot(CustomizableDateMixin):
             fee: Optional[FVal],
             fee_asset: Optional[Asset],
     ) -> Optional[Tuple[Price, Price]]:
-        """Calculates the prices for assets going in and out of a swap/trade.
+        """
+        Calculates the prices for assets going in and out of a swap/trade.
 
         The rules are:
         - For the asset_in we get the equivalent rate from asset_out + fee if any.
