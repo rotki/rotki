@@ -140,9 +140,11 @@ export const useExchangeBalancesStore = defineStore(
 
         if (balances && balances[exchange]) {
           return toStoredAssetBalanceWithPrice(
-            mergeAssociatedAssets(
-              balances[exchange],
-              getAssociatedAssetIdentifier
+            get(
+              mergeAssociatedAssets(
+                balances[exchange],
+                getAssociatedAssetIdentifier
+              )
             ),
             asset => hideIgnored && get(isAssetIgnored(asset)),
             getAssetPrice

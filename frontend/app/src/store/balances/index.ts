@@ -57,12 +57,16 @@ export const useBalancesStore = defineStore('balances', () => {
     setStatus(Status.LOADED);
   };
 
-  watch(assets(), async assets => {
-    const noPriceAssets = assets.filter(asset => !getAssetPrice(asset));
-    if (noPriceAssets.length > 0) {
-      await refreshPrices(false, noPriceAssets);
-    }
-  });
+  watchThrottled(
+    assets(),
+    async assets => {
+      const noPriceAssets = assets.filter(asset => !getAssetPrice(asset));
+      if (noPriceAssets.length > 0) {
+        await refreshPrices(false, noPriceAssets);
+      }
+    },
+    { throttle: 800 }
+  );
 
   const fetchBalances = async (payload: Partial<AllBalancePayload> = {}) => {
     if (get(isTaskRunning(TaskType.QUERY_BALANCES))) {
