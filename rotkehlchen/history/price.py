@@ -223,6 +223,7 @@ class PriceHistorian():
                 PriceQueryUnsupportedAsset,
                 NoPriceForGivenTimestamp,
                 UnknownAsset,
+                WrongAssetType,
             ):
                 continue
             except RemoteError as e:
