@@ -35,21 +35,22 @@ export const removeZeroAssets = (entries: AssetBalances): AssetBalances => {
 export const mergeAssociatedAssets = (
   totals: MaybeRef<AssetBalances>,
   getAssociatedAssetIdentifier: (identifier: string) => ComputedRef<string>
-): AssetBalances => {
-  const ownedAssets: AssetBalances = {};
+): ComputedRef<AssetBalances> =>
+  computed(() => {
+    const ownedAssets: AssetBalances = {};
 
-  for (const [asset, value] of Object.entries(get(totals))) {
-    const identifier = getAssociatedAssetIdentifier(asset);
-    const associatedAsset: string = get(identifier);
-    const ownedAsset = ownedAssets[associatedAsset];
-    if (!ownedAsset) {
-      ownedAssets[associatedAsset] = { ...value };
-    } else {
-      ownedAssets[associatedAsset] = { ...balanceSum(ownedAsset, value) };
+    for (const [asset, value] of Object.entries(get(totals))) {
+      const identifier = getAssociatedAssetIdentifier(asset);
+      const associatedAsset: string = get(identifier);
+      const ownedAsset = ownedAssets[associatedAsset];
+      if (!ownedAsset) {
+        ownedAssets[associatedAsset] = { ...value };
+      } else {
+        ownedAssets[associatedAsset] = { ...balanceSum(ownedAsset, value) };
+      }
     }
-  }
-  return ownedAssets;
-};
+    return ownedAssets;
+  });
 
 export const mergeAssetBalances = (
   a: AssetBalances,

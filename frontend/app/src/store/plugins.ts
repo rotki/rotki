@@ -1,6 +1,5 @@
 import cloneDeep from 'lodash/cloneDeep';
 import { PiniaPluginContext, StoreGeneric } from 'pinia';
-import { logger } from '@/utils/logging';
 
 export function StoreResetPlugin({ store }: PiniaPluginContext) {
   const initialState = cloneDeep(store.$state);
@@ -13,7 +12,7 @@ export function StoreResetPlugin({ store }: PiniaPluginContext) {
     } else {
       state = cloneDeep(initialState);
     }
-    return store.$patch(state);
+    store.$patch(toReactive(state));
   };
 }
 
@@ -31,7 +30,6 @@ export function StoreTrackPlugin({ store }: PiniaPluginContext) {
  */
 export const resetState = () => {
   for (const store of storeMap.values()) {
-    logger.debug(`resetting ${store.$id} to default`);
     store.$reset();
   }
 };

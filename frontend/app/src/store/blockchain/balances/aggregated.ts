@@ -88,7 +88,7 @@ export const useAggregatedBlockchainBalancesStore = defineStore(
         );
 
         return toSortedAssetBalanceArray(
-          ownedAssets,
+          get(ownedAssets),
           asset => hideIgnored && get(isAssetIgnored(asset))
         );
       });
@@ -104,7 +104,7 @@ export const useAggregatedBlockchainBalancesStore = defineStore(
           getAssociatedAssetIdentifier
         );
         return toStoredAssetBalanceWithPrice(
-          ownedAssets,
+          get(ownedAssets),
           asset => get(isAssetIgnored(asset)),
           getAssetPrice
         );
