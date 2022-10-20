@@ -562,7 +562,7 @@ def test_get_assets_mappings(rotkehlchen_api_server):
             assert 'custom_asset_type' not in details.keys()
             assert not details['is_custom_asset']
 
-    # check that providing a wrong identifier fails
+    # check that providing an invalid identifier returns only valid ones if any.
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
@@ -570,7 +570,9 @@ def test_get_assets_mappings(rotkehlchen_api_server):
         ),
         json={'identifiers': ['BTC', 'TRY', 'invalid']},
     )
-    assert_error_response(response, contained_in_msg='One or more of the given identifiers could not be found in the database')  # noqa: E501
+    result = assert_proper_response_with_result(response)
+    assert len(result) == 2
+    assert all([identifier in ('BTC', 'TRY') for identifier in result.keys()])
 
 
 def test_search_assets(rotkehlchen_api_server):
