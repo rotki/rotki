@@ -9,9 +9,9 @@ from .deserialization import deserialize_price
 if TYPE_CHECKING:
     from rotkehlchen.externalapis.coingecko import Coingecko
     from rotkehlchen.externalapis.cryptocompare import Cryptocompare
+    from rotkehlchen.globaldb.manual_price_oracles import ManualPriceOracle
 
-
-HistoricalPriceOracleInstance = Union['Coingecko', 'Cryptocompare']
+HistoricalPriceOracleInstance = Union['Coingecko', 'Cryptocompare', 'ManualPriceOracle']
 
 
 class HistoricalPriceOracle(DBEnumMixIn):
