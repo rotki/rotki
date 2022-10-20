@@ -99,6 +99,7 @@ export const useUsersApi = () => {
         syncApproval
       }),
       {
+        timeout: 300000, // Can be slow because of DB Upgrade
         validateStatus: validAccountOperationStatus,
         transformResponse: basicAxiosTransformer
       }
