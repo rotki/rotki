@@ -9,7 +9,6 @@ import { getDefaultLogLevel, logger, setLevel } from '@/utils/logging';
 let intervalId: any = null;
 export const useMainStore = defineStore('main', () => {
   const newUser = ref(false);
-
   const version = ref(defaultVersion());
   const connected = ref(false);
   const connectionFailure = ref(false);
@@ -110,12 +109,6 @@ export const useMainStore = defineStore('main', () => {
     set(connectionFailure, failed);
   };
 
-  const reset = () => {
-    set(newUser, false);
-    set(version, defaultVersion());
-    set(connectionFailure, false);
-  };
-
   return {
     newUser,
     version,
@@ -129,8 +122,7 @@ export const useMainStore = defineStore('main', () => {
     getInfo,
     setConnected,
     setConnectionFailure,
-    setNewUser,
-    reset
+    setNewUser
   };
 });
 
