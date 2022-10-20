@@ -245,7 +245,7 @@ def test_asset_and_price_not_found_in_history_processing(accountant):
     trade = Trade(
         timestamp=time,
         location=Location.KRAKEN,
-        base_asset=fgp,
+        base_asset=A_EUR,
         quote_asset=A_BTC,
         trade_type=TradeType.BUY,
         amount=FVal('2.5'),
