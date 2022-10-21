@@ -3659,7 +3659,6 @@ class RestAPI():
 
         if result is None:
             with self.rotkehlchen.data.db.user_write() as cursor:
-                cursor.execute('DELETE from accounts_details;')
                 self.rotkehlchen.data.db.add_globaldb_assetids(cursor)
             return OK_RESULT
 
