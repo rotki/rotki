@@ -31,14 +31,9 @@ export const useAssociatedLocationsStore = defineStore(
       }
     };
 
-    const reset = () => {
-      set(associatedLocations, []);
-    };
-
     return {
       associatedLocations,
-      fetchAssociatedLocations,
-      reset
+      fetchAssociatedLocations
     };
   }
 );

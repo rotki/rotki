@@ -1,9 +1,4 @@
 import { useHistoryIgnoringApi } from '@/services/history/history-ignoring-api';
-import { useAssetMovements } from '@/store/history/asset-movements';
-import { useAssociatedLocationsStore } from '@/store/history/associated-locations';
-import { useLedgerActions } from '@/store/history/ledger-actions';
-import { useTrades } from '@/store/history/trades';
-import { useTransactions } from '@/store/history/transactions';
 import { IgnoreActionPayload } from '@/store/history/types';
 import { useMessageStore } from '@/store/message';
 import { useNotifications } from '@/store/notifications';
@@ -74,21 +69,10 @@ export const useHistory = defineStore('history', () => {
     return { success: true };
   };
 
-  // Reset
-  const reset = () => {
-    set(ignored, {});
-    useTrades().reset();
-    useAssetMovements().reset();
-    useTransactions().reset();
-    useLedgerActions().reset();
-    useAssociatedLocationsStore().reset();
-  };
-
   return {
     ignored,
     fetchIgnored,
-    ignoreInAccounting,
-    reset
+    ignoreInAccounting
   };
 });
 

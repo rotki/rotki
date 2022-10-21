@@ -3,9 +3,7 @@ import { useMessageStore } from '@/store/message';
 import { usePremiumStore } from '@/store/session/premium';
 import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
 import { useAccountingSettingsStore } from '@/store/settings/accounting';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useSessionSettingsStore } from '@/store/settings/session';
 import { ActionStatus } from '@/store/types';
 import { KrakenAccountType } from '@/types/exchanges';
 import { Module } from '@/types/modules';
@@ -17,8 +15,6 @@ export const useSettingsStore = defineStore('settings', () => {
   const { addQueriedAddress } = useQueriedAddressesStore();
   const generalStore = useGeneralSettingsStore();
   const accountingStore = useAccountingSettingsStore();
-  const frontendStore = useFrontendSettingsStore();
-  const sessionStore = useSessionSettingsStore();
   const { premium, premiumSync } = storeToRefs(usePremiumStore());
   const { t } = useI18n();
 
@@ -86,18 +82,10 @@ export const useSettingsStore = defineStore('settings', () => {
     }
   };
 
-  const reset = () => {
-    accountingStore.reset();
-    generalStore.reset();
-    frontendStore.reset();
-    sessionStore.reset();
-  };
-
   return {
     setKrakenAccountType,
     enableModule,
-    update,
-    reset
+    update
   };
 });
 

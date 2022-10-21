@@ -93,10 +93,6 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
       };
     });
 
-  const reset = (): void => {
-    set(ethTokens, {});
-  };
-
   watch(ethAddresses, async (curr, prev) => {
     if (curr.length === 0 || isEqual(curr, prev)) {
       return;
@@ -107,8 +103,7 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
   return {
     fetchDetected,
     fetchDetectedTokens,
-    getEthDetectedTokensInfo,
-    reset
+    getEthDetectedTokensInfo
   };
 });
 

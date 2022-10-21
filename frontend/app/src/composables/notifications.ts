@@ -8,7 +8,7 @@ export const setupNotifications = () => {
   const data = computed(() => store.data);
 
   const remove = (id: number) => store.remove(id);
-  const reset = () => store.reset();
+  const reset = () => store.$reset();
   const displayed = async (ids: number[]) => store.displayed(ids);
 
   return {

@@ -37,15 +37,10 @@ export const useTxQueryStatus = defineStore(
       set(queryStatus, {});
     };
 
-    const reset = () => {
-      resetQueryStatus();
-    };
-
     return {
       queryStatus,
       setQueryStatus,
-      resetQueryStatus,
-      reset
+      resetQueryStatus
     };
   }
 );

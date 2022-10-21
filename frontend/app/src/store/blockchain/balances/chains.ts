@@ -64,19 +64,12 @@ export const useChainBalancesStore = defineStore('balances/chain', () => {
     set(balances, updateBlockchainAssetBalances(balances, prices));
   };
 
-  const reset = () => {
-    set(balances, defaultBalances());
-    set(totals, defaultTotals());
-    set(liabilities, defaultTotals());
-  };
-
   return {
     balances,
     totals,
     liabilities,
     update,
-    updatePrices,
-    reset
+    updatePrices
   };
 });
 

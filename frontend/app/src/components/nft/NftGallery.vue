@@ -128,7 +128,7 @@ import { usePremium } from '@/composables/premium';
 import { useInterop } from '@/electron-interop';
 import { AssetPriceArray } from '@/services/assets/types';
 import { api } from '@/services/rotkehlchen-api';
-import { useSessionStore } from '@/store/session';
+import { useNftAssetInfoStore } from '@/store/assets/nft';
 import { GalleryNft, Nft, Nfts } from '@/store/session/types';
 import { Module } from '@/types/modules';
 import { uniqueStrings } from '@/utils/data';
@@ -266,7 +266,7 @@ const collections = computed(() => {
     .filter(uniqueStrings);
 });
 
-const { fetchNfts: nftFetch } = useSessionStore();
+const { fetchNfts: nftFetch } = useNftAssetInfoStore();
 
 const fetchNfts = async (ignoreCache: boolean = false) => {
   set(loading, true);

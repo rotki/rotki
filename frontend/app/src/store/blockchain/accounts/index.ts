@@ -199,14 +199,12 @@ export const useBlockchainAccountsStore = defineStore(
       removeChainTag(tag);
     };
 
-    const reset = () => {};
     return {
       addAccount,
       editAccount,
       removeAccount,
       fetch,
-      removeTag,
-      reset
+      removeTag
     };
   }
 );

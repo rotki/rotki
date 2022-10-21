@@ -1,8 +1,14 @@
+import { ActionResult } from '@rotki/common/lib/data';
 import { MaybeRef } from '@vueuse/core';
 import { ComputedRef } from 'vue';
+import { api } from '@/services/rotkehlchen-api';
 import { useNonFungibleBalancesStore } from '@/store/balances/non-fungible';
+import { NftResponse } from '@/store/session/types';
+import { useTasks } from '@/store/tasks';
 import { AssetInfoWithId } from '@/types/assets';
 import { NonFungibleBalance } from '@/types/nfbalances';
+import { TaskMeta } from '@/types/task';
+import { TaskType } from '@/types/task-type';
 import { isNft } from '@/utils/nft';
 
 /**
@@ -59,8 +65,38 @@ export const useNftAssetInfoStore = defineStore('assets/nfts', () => {
     return matches.map(toAsset);
   };
 
+  const { awaitTask } = useTasks();
+  const { t } = useI18n();
+
+  const fetchNfts = async (
+    ignoreCache: boolean
+  ): Promise<ActionResult<NftResponse | null>> => {
+    try {
+      const taskType = TaskType.FETCH_NFTS;
+      const { taskId } = await api.fetchNfts(ignoreCache);
+      const { result } = await awaitTask<NftResponse, TaskMeta>(
+        taskId,
+        taskType,
+        {
+          title: t('actions.session.fetch_nfts.task.title').toString(),
+          numericKeys: []
+        }
+      );
+      return {
+        result: NftResponse.parse(result),
+        message: ''
+      };
+    } catch (e: any) {
+      return {
+        result: null,
+        message: e.message
+      };
+    }
+  };
+
   return {
     getNftDetails,
+    fetchNfts,
     searchNfts
   };
 });

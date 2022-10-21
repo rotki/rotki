@@ -202,11 +202,6 @@ export const useEthAccountsStore = defineStore(
       set(eth, removeTags(get(eth), tag));
     };
 
-    const reset = () => {
-      set(eth, []);
-      set(eth2Validators, defaultValidators());
-    };
-
     return {
       eth,
       eth2Validators,
@@ -216,8 +211,7 @@ export const useEthAccountsStore = defineStore(
       deleteEth2Validators,
       fetchEth2Validators,
       updateEth,
-      removeTag,
-      reset
+      removeTag
     };
   }
 );

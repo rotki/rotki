@@ -41,18 +41,13 @@ export const useStatusStore = defineStore('status', () => {
       return get(status)[section] ?? Status.NONE;
     });
 
-  const reset = () => {
-    set(status, {});
-  };
-
   return {
     status,
     detailsLoading,
     isLoading,
     resetDefiStatus,
     setStatus,
-    getStatus,
-    reset
+    getStatus
   };
 });
 

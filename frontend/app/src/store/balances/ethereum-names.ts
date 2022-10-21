@@ -175,13 +175,6 @@ export const useEthNamesStore = defineStore('ethNames', () => {
     }
   };
 
-  const reset = () => {
-    set(ensAddresses, []);
-    set(ethNames, {});
-    set(ethAddressBookGlobal, []);
-    set(ethAddressBookPrivate, []);
-  };
-
   return {
     fetchEnsNames,
     ethNames,
@@ -192,8 +185,7 @@ export const useEthNamesStore = defineStore('ethNames', () => {
     fetchEthAddressBook,
     addEthAddressBook,
     updateEthAddressBook,
-    deleteEthAddressBook,
-    reset
+    deleteEthAddressBook
   };
 });
 

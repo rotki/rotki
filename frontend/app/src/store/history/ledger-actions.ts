@@ -219,11 +219,6 @@ export const useLedgerActions = defineStore('history/ledgerActions', () => {
     return { success, message };
   };
 
-  const reset = () => {
-    set(ledgerActions, defaultCollectionState<LedgerActionEntry>());
-    set(ledgerActionsPayload, defaultHistoricPayloadState<LedgerAction>());
-  };
-
   return {
     ledgerActions,
     ledgerActionsPayload,
@@ -231,8 +226,7 @@ export const useLedgerActions = defineStore('history/ledgerActions', () => {
     fetchLedgerActions,
     addLedgerAction,
     editLedgerAction,
-    deleteLedgerAction,
-    reset
+    deleteLedgerAction
   };
 });
 

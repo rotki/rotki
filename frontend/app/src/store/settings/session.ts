@@ -50,10 +50,6 @@ export const useSessionSettingsStore = defineStore('settings/session', () => {
     };
   };
 
-  const reset = () => {
-    Object.assign(settings, defaultSessionSettings());
-  };
-
   return {
     privacyMode,
     scrambleData,
@@ -62,8 +58,7 @@ export const useSessionSettingsStore = defineStore('settings/session', () => {
     shouldShowAmount,
     shouldShowPercentage,
     setAnimationsEnabled,
-    update,
-    reset
+    update
   };
 });
 

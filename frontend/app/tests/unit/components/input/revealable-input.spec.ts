@@ -1,16 +1,17 @@
 import { mount, Wrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
-import { createPinia, setActivePinia } from 'pinia';
+import { setActivePinia } from 'pinia';
 import Vuetify from 'vuetify';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import { useSessionStore } from '@/store/session';
+import createCustomPinia from '../../utils/create-pinia';
 
 describe('RevealableInput.vue', () => {
   let wrapper: Wrapper<any>;
 
   beforeEach(() => {
     const vuetify = new Vuetify();
-    const pinia = createPinia();
+    const pinia = createCustomPinia();
     setActivePinia(pinia);
     wrapper = mount(RevealableInput, {
       pinia,
@@ -22,7 +23,7 @@ describe('RevealableInput.vue', () => {
   });
 
   afterEach(() => {
-    useSessionStore().reset();
+    useSessionStore().$reset();
   });
 
   test('should be password mode by default', async () => {

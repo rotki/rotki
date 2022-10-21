@@ -27,10 +27,6 @@ export const useAccountingSettingsStore = defineStore(
       Object.assign(settings, accountingSettings);
     };
 
-    const reset = () => {
-      Object.assign(settings, defaultAccountingSettings());
-    };
-
     return {
       pnlCsvHaveSummary,
       pnlCsvWithFormulas,
@@ -42,8 +38,7 @@ export const useAccountingSettingsStore = defineStore(
       taxableLedgerActions,
       ethStakingTaxableAfterWithdrawalEnabled,
       costBasisMethod,
-      update,
-      reset
+      update
     };
   }
 );

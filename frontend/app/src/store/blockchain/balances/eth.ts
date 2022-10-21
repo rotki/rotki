@@ -226,13 +226,6 @@ export const useEthBalancesStore = defineStore('balances/eth', () => {
     set(loopring, updateAssetBalances(loopring, prices));
   };
 
-  const reset = () => {
-    set(balances, defaultBalances());
-    set(totals, defaultTotals());
-    set(liabilities, defaultTotals());
-    set(loopring, {});
-  };
-
   return {
     balances,
     loopring,
@@ -246,8 +239,7 @@ export const useEthBalancesStore = defineStore('balances/eth', () => {
     accountHasDetails,
     getLoopringBalances,
     getLoopringAssetBalances,
-    fetchLoopringBalances,
-    reset
+    fetchLoopringBalances
   };
 });
 
