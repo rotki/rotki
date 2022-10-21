@@ -153,6 +153,101 @@ KNOWN_ETH_SPAM_TOKENS: Dict[ChecksumEvmAddress, Dict[str, Any]] = {
         'symbol': 'mdai.io',
         'decimals': 18,
     },
+    string_to_evm_address('0x17a10104CBC1eD155D083eaD9FCF5C3440bb50e8'): {
+        'name': '$ USDCNotice.com',
+        'symbol': '$ USDCNotice.com <- Visit to secure your wallet!',
+        'decimals': 18,
+    },
+    string_to_evm_address('0x219B9040eB7D8d8c2E8E84B87CE9ac1C83071980'): {
+        'name': 'Huobi Airdrop HuobiAirdrop.com',
+        'symbol': 'HuobiAirdrop.com',
+        'decimals': 18,
+    },
+    string_to_evm_address('0x3b0811f422cF7e9A46e7Ce22B1425A57949b5360'): {
+        'name': '(sodefi.tech)',
+        'symbol': '[sodefi.tech] Visit and claim rewards',
+        'decimals': 6,
+    },
+    string_to_evm_address('0x471c3A7f132bc94938516CB2Bf6f02C7521D2797'): {
+        'name': 'LUNA 2.0 (lunav2.io)',
+        'symbol': 'LUNA 2.0 (lunav2.io)',
+        'decimals': 18,
+    },
+    string_to_evm_address('0x4E0b2A80E158f8d28a2007866ab80B7f63bE6076'): {
+        'name': 'Owlswap.org',
+        'symbol': 'OWLT',
+        'decimals': 18,
+    },
+    string_to_evm_address('0x4f4d22cA77222aE3D51e308C9A8F0E564F98e77A'): {
+        'name': 'Bulleon Promo Token',
+        'symbol': 'BULLEON-X',
+        'decimals': 18,
+    },
+    string_to_evm_address('0x5D80A8D8CB80696073e82407968600A37e1dd780'): {
+        'name': 'aave-sr.xyz',
+        'symbol': 'Visit [aave-sr.xyz] and claim special rewards',
+        'decimals': 6,
+    },
+    string_to_evm_address('0x695d4e4936C0DE413267C75ca684fc317e03A819'): {
+        'name': 'ApeSnoop.com',
+        'symbol': 'Ape Dog Coin',
+        'decimals': 18,
+    },
+    string_to_evm_address('0x7B2f9706CD8473B4F5B7758b0171a9933Fc6C4d6'): {
+        'name': 'An Etheal Promo',
+        'symbol': 'HEALP',
+        'decimals': 18,
+    },
+    string_to_evm_address('0x7C743517f34daEfc6477D44b0a2a12dE6fA38Ea2'): {
+        'name': '! Uniswapv3LP.com !',
+        'symbol': 'Uniswapv3LP.com',
+        'decimals': 18,
+    },
+    string_to_evm_address('0x8f5a1Cb27cfeD6A640dE424e9c0abbCeaad0b620'): {
+        'name': 'uETH.io',
+        'symbol': 'uETH.io',
+        'decimals': 18,
+    },
+    string_to_evm_address('0xAF0b2fBeDd5d1Fda457580FB3DAbAD1F5C8bBC36'): {
+        'name': 'LunaV2.io (Luna Token)',
+        'symbol': 'LunaV2.io (Luna Token)',
+        'decimals': 18,
+    },
+    string_to_evm_address('0xCf39B7793512F03f2893C16459fd72E65D2Ed00c'): {
+        'name': '$ UniswapLP.com',
+        'symbol': 'UniswapLP.com',
+        'decimals': 18,
+    },
+    string_to_evm_address('0xD4DE05944572D142fBf70F3f010891A35AC15188'): {
+        'name': 'Bulleon Promo Token',
+        'symbol': 'BULLEON PROMO',
+        'decimals': 18,
+    },
+    string_to_evm_address('0xF0df09387693690b1E00D71eabF5E98e7955CFf4'): {
+        'name': 'ENDO.network Promo Token',
+        'symbol': 'ETP',
+        'decimals': 18,
+    },
+    string_to_evm_address('0xc2e39D0Afa884192F2Cc55D841C2C8c5681DbF17'): {
+        'name': '(avrc.xyz)',
+        'symbol': 'avrc.xyz',
+        'decimals': 6,
+    },
+    string_to_evm_address('0xd202ec9D73d8D66242312495e3F72248e8d08d60'): {
+        'name': 'avrc',
+        'symbol': 'okchat.io',
+        'decimals': 18,
+    },
+    string_to_evm_address('0xB688d06d858E092EBB145394a1BA08C7a10E1F56'): {
+        'name': 'acrone.site',
+        'symbol': 'acrone.site',
+        'decimals': 18,
+    },
+    string_to_evm_address('0xA36Ceec605d81aE74268Fda28A5c0Bd10b1D1f7C'): {
+        'name': 'AaveLP.com',
+        'symbol': 'AaveLP.com',
+        'decimals': 18,
+    },
 }
 
 
