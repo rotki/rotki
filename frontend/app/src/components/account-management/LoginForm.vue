@@ -214,6 +214,9 @@
         </v-form>
       </v-card-text>
       <v-card-actions class="login__actions d-block">
+        <v-alert v-if="showUpgradeMessage" type="warning" text>
+          {{ tc('login.upgrading_db_warning') }}
+        </v-alert>
         <span>
           <v-btn
             class="login__button__sign-in"
@@ -265,7 +268,8 @@ const KEY_USERNAME = 'rotki.username';
 const props = defineProps({
   loading: { required: true, type: Boolean },
   syncConflict: { required: true, type: Object as PropType<SyncConflict> },
-  errors: { required: false, type: Array, default: () => [] }
+  errors: { required: false, type: Array, default: () => [] },
+  showUpgradeMessage: { required: false, type: Boolean, default: false }
 });
 
 const emit = defineEmits([
