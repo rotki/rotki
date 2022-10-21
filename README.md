@@ -62,9 +62,9 @@ If you are interested to work in the project full-time or part-time we are alway
 
 The best way to contribute financially and all the while help with the development of the project is to [purchase](https://rotki.com/products/) a premium subscription. We accept both crypto and fiat currencies!
 
-#### Github sponsor
+#### GitHub sponsor
 
-You can sponsor us through Github [here](https://github.com/sponsors/rotki/) and get some nice badges in return.
+You can sponsor us through GitHub [here](https://github.com/sponsors/rotki/) and get some nice badges in return.
 
 #### Donations
 
