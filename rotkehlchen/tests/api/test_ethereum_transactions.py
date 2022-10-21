@@ -10,11 +10,7 @@ import gevent
 import pytest
 import requests
 
-from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
-from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.api.server import APIServer
-from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.constants import (
     RANGE_PREFIX_ETHINTERNALTX,
     RANGE_PREFIX_ETHTOKENTX,
@@ -50,14 +46,7 @@ from rotkehlchen.tests.utils.factories import (
 )
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
-from rotkehlchen.types import (
-    EvmTransaction,
-    EVMTxHash,
-    Location,
-    Timestamp,
-    TimestampMS,
-    make_evm_tx_hash,
-)
+from rotkehlchen.types import EvmTransaction, EVMTxHash, Timestamp, make_evm_tx_hash
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
 EXPECTED_AFB7_TXS = [{
@@ -963,22 +952,6 @@ def test_query_transactions_check_decoded_events(
         gevent.joinall(rotki.greenlet_manager.greenlets)
         rotki.task_manager._maybe_decode_evm_transactions()
         gevent.joinall(rotki.greenlet_manager.greenlets)
-        with dbevents.db.user_write() as write_cursor:
-            # Add an event with random values. Important thing is that asset doesn't exist.
-            # We do it to check that events query won't fail if asset is unknown.
-            dbevents.add_history_event(
-                write_cursor=write_cursor,
-                event=HistoryBaseEntry(
-                    event_identifier=hexstring_to_bytes('0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f'),  # noqa: E501
-                    sequence_index=128,
-                    timestamp=TimestampMS(9876),
-                    location=Location.BLOCKCHAIN,
-                    event_type=HistoryEventType.INFORMATIONAL,
-                    event_subtype=HistoryEventSubType.NONE,
-                    asset=Asset('lol-idk-who-i-am'),
-                    balance=Balance(),
-                ),
-            )
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server,

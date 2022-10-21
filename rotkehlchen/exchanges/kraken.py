@@ -1123,7 +1123,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 with self.db.user_write() as write_cursor:
                     try:
                         self.history_events_db.add_history_events(write_cursor=write_cursor, history=new_events)  # noqa: E501
-                    except InputError as e:
+                    except InputError as e:  # not catching IntegrityError. event asset is resolved
                         self.msg_aggregator.add_error(
                             f'Failed to save kraken events from {query_start_ts} '
                             f'to {query_end_ts} in database. {str(e)}',
