@@ -23,22 +23,23 @@
           </div>
         </div>
         <connection-loading
-          v-if="!connectionFailure"
+          v-if="!hasConnectionFailed"
           :connected="connected && !autolog"
         />
         <connection-failure v-else />
         <div v-if="connected" data-cy="account-management-forms">
-          <login
+          <login-form
             v-if="!accountCreation"
             :loading="loading"
             :sync-conflict="syncConflict"
             :errors="errors"
+            :show-upgrade-message="showUpgradeMessage"
             @touched="errors = []"
             @login="userLogin($event)"
             @backend-changed="backendChanged($event)"
             @new-account="accountCreation = true"
           />
-          <create-account
+          <create-account-form
             v-else
             :loading="loading"
             :error="accountCreationError"
@@ -106,18 +107,7 @@
   </v-overlay>
 </template>
 
-<script lang="ts">
-import { get, set, useLocalStorage } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import {
-  computed,
-  defineAsyncComponent,
-  defineComponent,
-  onMounted,
-  ref,
-  toRefs,
-  watch
-} from 'vue';
+<script setup lang="ts">
 import ConnectionFailure from '@/components/account-management/ConnectionFailure.vue';
 import ConnectionLoading from '@/components/account-management/ConnectionLoading.vue';
 import BackendSettingsButton from '@/components/helper/BackendSettingsButton.vue';
@@ -137,213 +127,202 @@ import {
   setLastLogin
 } from '@/utils/account-management';
 
-export default defineComponent({
-  name: 'AccountManagement',
-  components: {
-    BackendSettingsButton,
-    ConnectionFailure,
-    PrivacyNotice,
-    ConnectionLoading,
-    PremiumReminder: defineAsyncComponent(
-      () => import('@/components/account-management/PremiumReminder.vue')
-    ),
-    Login: defineAsyncComponent(
-      () => import('@/components/account-management/Login.vue')
-    ),
-    CreateAccount: defineAsyncComponent(
-      () => import('@/components/account-management/CreateAccount.vue')
-    )
-  },
-  props: {
-    logged: {
-      required: true,
-      type: Boolean
-    }
-  },
-  emits: ['about', 'login-complete'],
-  setup(props, { emit }) {
-    const { t } = useI18n();
-    const { logged } = toRefs(props);
-    const accountCreation = ref(false);
-    const loading = ref(false);
-    const autolog = ref(false);
-    const errors = ref<string[]>([]);
-    const accountCreationError = ref('');
-    const premiumVisible = ref(false);
+const LoginForm = defineAsyncComponent(
+  () => import('@/components/account-management/LoginForm.vue')
+);
+const CreateAccountForm = defineAsyncComponent(
+  () => import('@/components/account-management/CreateAccountForm.vue')
+);
 
-    const store = useMainStore();
-    const { connectionFailure, newUser, connected, updateNeeded } =
-      toRefs(store);
-
-    const { message } = storeToRefs(useMessageStore());
-
-    const animationEnabled = useLocalStorage(
-      'rotki.login_animation_enabled',
-      true
-    );
-
-    const toggleAnimationEnabled = () => {
-      set(animationEnabled, !get(animationEnabled));
-    };
-
-    watch(newUser, newUser => {
-      if (newUser) {
-        set(accountCreation, true);
-      }
-    });
-
-    const { setConnected, connect } = store;
-
-    const loginComplete = () => {
-      dismissPremiumModal();
-      emit('login-complete');
-    };
-
-    const { currentBreakpoint } = useTheme();
-    const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
-    const premium = usePremium();
-
-    const displayPremium = computed(
-      () => !get(premium) && !get(message).title && get(premiumVisible)
-    );
-
-    const showPremiumDialog = () => {
-      if (get(premium)) {
-        loginComplete();
-        return;
-      }
-      set(premiumVisible, true);
-    };
-
-    const sessionStore = useSessionStore();
-    const { login, createAccount } = sessionStore;
-    const { syncConflict } = storeToRefs(sessionStore);
-    const interop = useInterop();
-
-    const upgrade = () => {
-      interop.navigateToPremium();
-      loginComplete();
-    };
-
-    const showGetPremiumButton = () => {
-      interop.premiumUserLoggedIn(get(premium));
-    };
-
-    const { restartBackend } = useBackendManagement();
-
-    onMounted(async () => {
-      const { sessionOnly } = getBackendUrl();
-      if (sessionOnly) {
-        deleteBackendUrl();
-        await restartBackend();
-      }
-
-      set(autolog, true);
-      await login({ username: '', password: '' });
-      if (get(logged)) {
-        showPremiumDialog();
-        showGetPremiumButton();
-      }
-      set(autolog, false);
-      if (get(newUser)) {
-        set(accountCreation, true);
-      }
-    });
-
-    const setupBackend = async () => {
-      if (get(connected)) {
-        return;
-      }
-
-      const { sessionOnly, url } = getBackendUrl();
-      if (!!url && !sessionOnly) {
-        await backendChanged(url);
-      } else {
-        await restartBackend();
-      }
-    };
-
-    const backendChanged = async (url: string | null) => {
-      setConnected(false);
-      if (!url) {
-        await restartBackend();
-      }
-      await connect(url);
-    };
-
-    startPromise(setupBackend());
-
-    const createNewAccount = async (payload: CreateAccountPayload) => {
-      set(loading, true);
-      set(accountCreationError, '');
-      const result = await createAccount(payload);
-      set(loading, false);
-
-      if (result.success) {
-        set(accountCreation, false);
-
-        if (get(logged)) {
-          showGetPremiumButton();
-          loginComplete();
-        }
-      } else {
-        set(
-          accountCreationError,
-          result.message ?? t('account_management.creation.error').toString()
-        );
-      }
-    };
-
-    const userLogin = async (credentials: LoginCredentials) => {
-      const { username, password, syncApproval } = credentials;
-      set(loading, true);
-      const result = await login({
-        username,
-        password,
-        syncApproval
-      });
-
-      if (!result.success) {
-        set(errors, [result.message]);
-      }
-      set(loading, false);
-      if (get(logged)) {
-        setLastLogin(username);
-        showPremiumDialog();
-        showGetPremiumButton();
-      }
-    };
-
-    const dismissPremiumModal = () => {
-      set(premiumVisible, false);
-    };
-
-    return {
-      t,
-      xsOnly,
-      updateNeeded,
-      autolog,
-      connected,
-      connectionFailure,
-      loading,
-      displayPremium,
-      premiumVisible,
-      accountCreation,
-      accountCreationError,
-      errors,
-      syncConflict,
-      isTest: !!import.meta.env.VITE_TEST,
-      isPackaged: computed(() => interop.isPackaged),
-      backendChanged,
-      dismissPremiumModal,
-      upgrade,
-      userLogin,
-      loginComplete,
-      createNewAccount,
-      animationEnabled,
-      toggleAnimationEnabled
-    };
+const props = defineProps({
+  logged: {
+    required: true,
+    type: Boolean
   }
+});
+
+const emit = defineEmits<{
+  (e: 'about'): void;
+  (e: 'login-complete'): void;
+}>();
+
+const { t } = useI18n();
+const { logged } = toRefs(props);
+const accountCreation = ref(false);
+const loading = ref(false);
+const showUpgradeMessage = ref(false);
+const autolog = ref(false);
+const errors = ref<string[]>([]);
+const accountCreationError = ref('');
+const premiumVisible = ref(false);
+
+const store = useMainStore();
+const {
+  connectionFailure: hasConnectionFailed,
+  newUser,
+  connected
+} = toRefs(store);
+
+const { message } = storeToRefs(useMessageStore());
+
+const animationEnabled = useLocalStorage('rotki.login_animation_enabled', true);
+
+const toggleAnimationEnabled = () => {
+  set(animationEnabled, !get(animationEnabled));
+};
+
+watch(newUser, newUser => {
+  if (newUser) {
+    set(accountCreation, true);
+  }
+});
+
+const { setConnected, connect } = store;
+
+const loginComplete = () => {
+  dismissPremiumModal();
+  emit('login-complete');
+};
+
+const { currentBreakpoint } = useTheme();
+const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
+const premium = usePremium();
+
+const displayPremium = computed(
+  () => !get(premium) && !get(message).title && get(premiumVisible)
+);
+
+const showPremiumDialog = () => {
+  if (get(premium)) {
+    loginComplete();
+    return;
+  }
+  set(premiumVisible, true);
+};
+
+const sessionStore = useSessionStore();
+const { login, createAccount } = sessionStore;
+const { syncConflict } = storeToRefs(sessionStore);
+const interop = useInterop();
+
+const upgrade = () => {
+  interop.navigateToPremium();
+  loginComplete();
+};
+
+const showGetPremiumButton = () => {
+  interop.premiumUserLoggedIn(get(premium));
+};
+
+const { restartBackend } = useBackendManagement();
+
+onMounted(async () => {
+  const { sessionOnly } = getBackendUrl();
+  if (sessionOnly) {
+    deleteBackendUrl();
+    await restartBackend();
+  }
+
+  set(autolog, true);
+  await login({ username: '', password: '' });
+  if (get(logged)) {
+    showPremiumDialog();
+    showGetPremiumButton();
+  }
+  set(autolog, false);
+  if (get(newUser)) {
+    set(accountCreation, true);
+  }
+});
+
+const setupBackend = async () => {
+  if (get(connected)) {
+    return;
+  }
+
+  const { sessionOnly, url } = getBackendUrl();
+  if (!!url && !sessionOnly) {
+    await backendChanged(url);
+  } else {
+    await restartBackend();
+  }
+};
+
+const backendChanged = async (url: string | null) => {
+  setConnected(false);
+  if (!url) {
+    await restartBackend();
+  }
+  await connect(url);
+};
+
+startPromise(setupBackend());
+
+const createNewAccount = async (payload: CreateAccountPayload) => {
+  set(loading, true);
+  set(accountCreationError, '');
+  const result = await createAccount(payload);
+  set(loading, false);
+
+  if (result.success) {
+    set(accountCreation, false);
+
+    if (get(logged)) {
+      showGetPremiumButton();
+      loginComplete();
+    }
+  } else {
+    set(
+      accountCreationError,
+      result.message ?? t('account_management.creation.error').toString()
+    );
+  }
+};
+
+const userLogin = async (credentials: LoginCredentials) => {
+  const { username, password, syncApproval } = credentials;
+  set(loading, true);
+  const result = await login({
+    username,
+    password,
+    syncApproval
+  });
+
+  if (!result.success) {
+    set(errors, [result.message]);
+  }
+  set(loading, false);
+  if (get(logged)) {
+    setLastLogin(username);
+    showPremiumDialog();
+    showGetPremiumButton();
+  }
+};
+
+const dismissPremiumModal = () => {
+  set(premiumVisible, false);
+};
+
+const { isPackaged } = useInterop();
+
+const isTest = !!import.meta.env.VITE_TEST;
+
+const { start, stop } = useTimeoutFn(() => {
+  set(showUpgradeMessage, true);
+}, 15000);
+
+watch(loading, loading => {
+  if (loading) {
+    start();
+  } else {
+    stop();
+    set(showUpgradeMessage, false);
+  }
+});
+
+defineExpose({
+  userLogin,
+  createNewAccount
 });
 </script>
 
