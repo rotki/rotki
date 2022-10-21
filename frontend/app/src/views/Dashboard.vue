@@ -132,16 +132,16 @@
         :title="tc('common.assets')"
         table-type="ASSETS"
         :loading="isAnyLoading"
-        :balances="balances().value"
+        :balances="aggregatedBalances"
       />
       <liquidity-provider-balance-table class="mt-8" />
       <dashboard-asset-table
-        v-if="liabilities.length > 0"
+        v-if="aggregatedLiabilities.length > 0"
         class="mt-8"
         table-type="LIABILITIES"
         :title="tc('dashboard.liabilities.title')"
         :loading="isAnyLoading"
-        :balances="liabilities().value"
+        :balances="aggregatedLiabilities"
       />
       <nft-balance-table data-cy="nft-balance-table" class="mt-8" />
     </v-container>
@@ -190,6 +190,8 @@ const { isTaskRunning } = useTasks();
 
 const { balances, liabilities } = useAggregatedBalancesStore();
 const { blockchainTotals } = storeToRefs(useAccountBalancesStore());
+const aggregatedBalances = balances();
+const aggregatedLiabilities = liabilities();
 
 const manualBalancesStore = useManualBalancesStore();
 const { fetchManualBalances } = manualBalancesStore;
