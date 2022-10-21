@@ -34,6 +34,7 @@ def test_decoders_initialization(evm_transaction_decoder):
         'Zksync',
         'Hop',
         'Convex',
+        'Weth',
     }
 
     assert evm_transaction_decoder.all_counterparties == {
@@ -68,6 +69,7 @@ def test_decoders_initialization(evm_transaction_decoder):
         '1inch-v1',
         'convex',
         'sushiswap-v2',
+        'weth',
     }
 
 

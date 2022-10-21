@@ -93,5 +93,6 @@ export enum TransactionEventProtocol {
   SHAPESHIFT = 'shapeshift',
   ELEMENT_FINANCE = 'element-finance',
   HOP_PROTOCOL = 'hop-protocol',
-  SUSHISWAP = 'sushiswap'
+  SUSHISWAP = 'sushiswap',
+  WETH = 'weth'
 }
