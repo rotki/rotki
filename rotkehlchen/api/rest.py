@@ -1589,7 +1589,11 @@ class RestAPI():
 
         data = self.rotkehlchen.data.db.get_netvalue_data(from_ts, include_nfts)
         result = process_result({'times': data[0], 'data': data[1]})
-        return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
+        return api_response(
+            result=_wrap_in_ok_result(result),
+            status_code=HTTPStatus.OK,
+            log_result=False,
+        )
 
     def query_timed_balances_data(
             self,
@@ -1608,7 +1612,11 @@ class RestAPI():
             )
 
         result = process_result_list(data)
-        return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
+        return api_response(
+            result=_wrap_in_ok_result(result),
+            status_code=HTTPStatus.OK,
+            log_result=False,
+        )
 
     def query_value_distribution_data(self, distribution_by: str) -> Response:
         data: Union[List[DBAssetBalance], List[LocationData]]
@@ -1619,7 +1627,11 @@ class RestAPI():
             data = self.rotkehlchen.data.db.get_latest_asset_value_distribution()
 
         result = process_result_list(data)
-        return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
+        return api_response(
+            result=_wrap_in_ok_result(result),
+            status_code=HTTPStatus.OK,
+            log_result=False,
+        )
 
     def query_premium_components(self) -> Response:
         result_dict = {'result': None, 'message': ''}

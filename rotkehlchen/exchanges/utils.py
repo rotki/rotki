@@ -51,8 +51,8 @@ def deserialize_asset_movement_address(
 
 
 def create_binance_symbols_to_pair(
-    exchange_data: Dict[str, Any],
-    location: Location,
+        exchange_data: Dict[str, Any],
+        location: Location,
 ) -> Dict[str, BinancePair]:
     """Parses the result of 'exchangeInfo' endpoint and creates the symbols_to_pair mapping
     """
