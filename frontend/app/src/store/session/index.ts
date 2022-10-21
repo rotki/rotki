@@ -87,6 +87,8 @@ export const useSessionStore = defineStore('session', () => {
   const frontendSettingsStore = useFrontendSettingsStore();
   const accountingSettingsStore = useAccountingSettingsStore();
   const { update: updateGeneralSettings } = useGeneralSettingsStore();
+  const { update: updateSessionSettings } = useSessionSettingsStore();
+  const { setExchanges } = useExchangeBalancesStore();
   const { fetchIgnored } = useHistory();
   const { fetchIgnoredAssets } = useIgnoredAssetsStore();
   const { fetchNetValue } = useStatisticsStore();
@@ -121,17 +123,13 @@ export const useSessionStore = defineStore('session', () => {
       const frontendSettings = other.frontendSettings;
       if (frontendSettings) {
         frontendSettingsStore.update(frontendSettings);
-        const { timeframeSetting, lastKnownTimeframe } = storeToRefs(
-          frontendSettingsStore
-        );
-        const selectedTimeframe = get(timeframeSetting);
-        const lastKnown = get(lastKnownTimeframe);
-        useExchangeBalancesStore().setExchanges(exchanges);
-        useSessionSettingsStore().update({
+        const { timeframeSetting, lastKnownTimeframe } = frontendSettings;
+        setExchanges(exchanges);
+        updateSessionSettings({
           timeframe:
-            selectedTimeframe !== TimeFramePersist.REMEMBER
-              ? selectedTimeframe
-              : lastKnown
+            timeframeSetting !== TimeFramePersist.REMEMBER
+              ? timeframeSetting
+              : lastKnownTimeframe
         });
         BigNumber.config({
           FORMAT: getBnFormat(

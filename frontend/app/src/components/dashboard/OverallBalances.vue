@@ -196,7 +196,7 @@ watch(premium, async () => fetchNetValue());
 onMounted(() => {
   const isPremium = get(premium);
   const selectedTimeframe = get(timeframe);
-  if (isPremium && !isPeriodAllowed(selectedTimeframe)) {
+  if (!isPremium && !isPeriodAllowed(selectedTimeframe)) {
     update({ timeframe: TimeFramePeriod.TWO_WEEKS });
   }
 });
