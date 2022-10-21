@@ -12,6 +12,7 @@ from rotkehlchen.db.constants import ACCOUNTS_DETAILS_LAST_QUERIED_TS, ACCOUNTS_
 from rotkehlchen.globaldb.upgrades.v2_v3 import OTHER_EVM_CHAINS_ASSETS
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import EvmTokenKind, SupportedBlockchain
+from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -279,8 +280,9 @@ def _update_assets_in_user_queried_tokens(cursor: 'DBCursor') -> None:
     );
     """)
     cursor.execute('SELECT account, tokens_list, time FROM ethereum_accounts_details')
+    now = str(ts_now())
     update_rows = []
-    for address, token_list, timestamp in cursor:
+    for address, token_list, _ in cursor:
         tokens = json.loads(token_list)
         for token in tokens.get('tokens', []):
             new_id = evm_address_to_identifier(
@@ -301,7 +303,7 @@ def _update_assets_in_user_queried_tokens(cursor: 'DBCursor') -> None:
                 address,
                 SupportedBlockchain.ETHEREUM.serialize(),
                 ACCOUNTS_DETAILS_LAST_QUERIED_TS,
-                timestamp,
+                now,
             ),
         )
     cursor.executemany(
