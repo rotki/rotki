@@ -240,7 +240,8 @@ class EVMTransactionDecoder():
             'INSERT OR IGNORE INTO evm_tx_mappings(tx_hash, blockchain, value) VALUES(?, ?, ?)',  # noqa: E501
             (transaction.tx_hash, 'ETH', HISTORY_MAPPING_DECODED),
         )
-
+        if events == [] and (eth_event := self._get_eth_transfer_event(transaction)) is not None:
+            events = [eth_event]
         return sorted(events, key=lambda x: x.sequence_index, reverse=False)
 
     def get_and_decode_undecoded_transactions(self, limit: Optional[int] = None) -> None:
@@ -368,6 +369,30 @@ class EVMTransactionDecoder():
                 counterparty=counterparty,
             ))
 
+    def _get_eth_transfer_event(self, tx: EvmTransaction) -> Optional[HistoryBaseEntry]:
+        direction_result = self.base.decode_direction(
+            from_address=tx.from_address,
+            to_address=tx.to_address,
+        )
+        if direction_result is None:
+            return None
+        event_type, location_label, counterparty, verb = direction_result
+        amount = ZERO if tx.value == 0 else from_wei(FVal(tx.value))
+        preposition = 'to' if verb == 'Send' else 'from'
+        return HistoryBaseEntry(
+            event_identifier=tx.tx_hash,
+            sequence_index=self.base.get_next_sequence_counter(),
+            timestamp=ts_sec_to_ms(tx.timestamp),
+            location=Location.BLOCKCHAIN,
+            location_label=location_label,
+            asset=A_ETH,
+            balance=Balance(amount=amount),
+            notes=f'{verb} {amount} ETH {tx.from_address} {preposition} {tx.to_address}',
+            event_type=event_type,
+            event_subtype=HistoryEventSubType.NONE,
+            counterparty=counterparty,
+        )
+
     def _maybe_decode_simple_transactions(
             self,
             tx: EvmTransaction,
@@ -380,7 +405,7 @@ class EVMTransactionDecoder():
         # check for gas spent
         direction_result = self.base.decode_direction(tx.from_address, tx.to_address)
         if direction_result is not None:
-            event_type, location_label, counterparty, verb = direction_result
+            event_type, location_label, _, _ = direction_result
             if event_type in (HistoryEventType.SPEND, HistoryEventType.TRANSFER):
                 eth_burned_as_gas = from_wei(FVal(tx.gas_used * tx.gas_price))
                 events.append(HistoryBaseEntry(
@@ -434,20 +459,8 @@ class EVMTransactionDecoder():
         if amount == ZERO:
             return events
 
-        preposition = 'to' if verb == 'Send' else 'from'
-        events.append(HistoryBaseEntry(
-            event_identifier=tx.tx_hash,
-            sequence_index=self.base.get_next_sequence_counter(),
-            timestamp=ts_ms,
-            location=Location.BLOCKCHAIN,
-            location_label=location_label,
-            asset=A_ETH,
-            balance=Balance(amount=amount),
-            notes=f'{verb} {amount} ETH {tx.from_address} {preposition} {tx.to_address}',
-            event_type=event_type,
-            event_subtype=HistoryEventSubType.NONE,
-            counterparty=counterparty,
-        ))
+        if (eth_event := self._get_eth_transfer_event(tx)) is not None:
+            events.append(eth_event)
         return events
 
     def _maybe_decode_erc20_approve(
