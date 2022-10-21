@@ -404,7 +404,9 @@ class AssetsUpdater():
         with TemporaryDirectory() as tmpdirname:
             tempdbpath = Path(tmpdirname) / 'temp.db'
             connection = initialize_globaldb(tempdbpath, GlobalDBHandler().conn.sql_vm_instructions_cb)  # noqa: E501
-            _replace_assets_from_db(connection, global_db_path)
+            with GlobalDBHandler().conn.critical_section():
+                # make sure global DB is not accessed anywhere else
+                _replace_assets_from_db(connection, global_db_path)
             self._perform_update(
                 connection=connection,
                 conflicts=conflicts,
@@ -424,7 +426,8 @@ class AssetsUpdater():
             # now move the data to the actual global DB
             connection.close()
             connection = GlobalDBHandler().conn
-            _replace_assets_from_db(connection, tempdbpath)
+            with connection.critical_section():  # assure global DB is not accessed anywhere else
+                _replace_assets_from_db(connection, tempdbpath)
             return None
 
     def _perform_update(
