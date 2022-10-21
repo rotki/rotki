@@ -5,7 +5,7 @@ import { startPromise } from '@/utils';
 import { logger } from '@/utils/logging';
 
 const CACHE_EXPIRY = 1000 * 60 * 10;
-const CACHE_SIZE = 200;
+const CACHE_SIZE = 500;
 
 export const useAssetCacheStore = defineStore('assets/cache', () => {
   const recent: Map<string, number> = new Map();

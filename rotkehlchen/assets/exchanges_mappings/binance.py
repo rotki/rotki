@@ -134,7 +134,7 @@ WORLD_TO_BINANCE = COMMON_ASSETS_MAPPINGS | {
     evm_address_to_identifier('0x445f51299Ef3307dBD75036dd896565F5B4BF7A5', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'VIDT',  # noqa: E501
     evm_address_to_identifier('0xb6EE9668771a79be7967ee29a63D4184F8097143', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'CXO',  # noqa: E501
     evm_address_to_identifier('0x0202Be363B8a4820f3F4DE7FaF5224fF05943AB1', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'UFT',  # noqa: E501
-    evm_address_to_identifier('0xdeFA4e8a7bcBA345F687a2f1456F5Edd9CE97202', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'KNC',  # noqa: E501
+    evm_address_to_identifier('0xdd974D5C2e2928deA5F71b9825b8b646686BD200', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'KNC',  # noqa: E501
     evm_address_to_identifier('0x221657776846890989a759BA2973e427DfF5C9bB', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'REP',  # noqa: E501
     evm_address_to_identifier('0x0391D2021f89DC339F60Fff84546EA23E337750f', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'BOND',  # noqa: E501
     evm_address_to_identifier('0xec67005c4E498Ec7f55E092bd1d35cbC47C91892', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'MLN',  # noqa: E501

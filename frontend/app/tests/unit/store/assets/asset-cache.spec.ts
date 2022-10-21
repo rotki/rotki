@@ -106,14 +106,14 @@ describe('store::assets/cache', () => {
     vi.advanceTimersToNextTimer();
     await flushPromises();
 
-    for (let i = 51; i < 205; i++) {
+    for (let i = 51; i < 505; i++) {
       store.retrieve(`AST-${i}`);
       vi.advanceTimersToNextTimer();
       await flushPromises();
     }
 
     const entries = Object.entries(get(store.cache));
-    expect(entries).toHaveLength(200);
+    expect(entries).toHaveLength(500);
     expect(entries.map(([id]) => id)).toContain('AST-0');
   });
 });
