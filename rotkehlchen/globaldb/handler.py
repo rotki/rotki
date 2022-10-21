@@ -795,10 +795,10 @@ class GlobalDBHandler():
             'C.symbol, C.started, C.swapped_for, C.coingecko, C.cryptocompare, B.protocol '
             'FROM evm_tokens as B LEFT OUTER JOIN '
             'assets AS A on B.identifier = A.identifier JOIN common_asset_details AS C ON '
-            'C.identifier = B.identifier '
+            'C.identifier = B.identifier WHERE B.chain = ? '
         )
+        bindings_list: List[Union[str, int, ChecksumEvmAddress]] = [ChainID.ETHEREUM.serialize_for_db()]  # noqa: E501
         if exceptions is not None or protocol is not None or except_protocols is not None:
-            bindings_list: List[Union[str, ChecksumEvmAddress]] = []
             querystr_additions = []
             if exceptions is not None:
                 questionmarks = '?' * len(exceptions)
@@ -813,12 +813,11 @@ class GlobalDBHandler():
                 querystr_additions.append(f'(B.protocol NOT IN ({",".join(questionmarks)}) OR B.protocol IS NULL) ')  # noqa: E501
                 bindings_list.extend(except_protocols)
 
-            querystr += 'WHERE ' + 'AND '.join(querystr_additions) + ';'
-            bindings = tuple(bindings_list)
+            querystr += 'AND ' + 'AND '.join(querystr_additions) + ';'
         else:
             querystr += ';'
-            bindings = ()
 
+        bindings = tuple(bindings_list)
         with GlobalDBHandler().conn.read_ctx() as cursor:
             cursor.execute(querystr, bindings)
             tokens = []
