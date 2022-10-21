@@ -30,7 +30,7 @@ class AssetType(DBEnumMixIn):
     EOS_TOKEN = 20
     FUSION_TOKEN = 21
     LUNIVERSE_TOKEN = 22
-    OTHER = 23
+    OTHER = 23  # OTHER and OWN chain are probably the same thing -- needs checking
     AVALANCHE_TOKEN = 24
     SOLANA_TOKEN = 25
     NFT = 26
@@ -43,8 +43,8 @@ class AssetType(DBEnumMixIn):
         return asset_type.value in crypto_asset_types_values
 
 
-ASSETS_WITH_NO_CRYPTO_ORACLES = {AssetType.NFT, AssetType.OTHER, AssetType.CUSTOM_ASSET}
-NON_CRYPTO_ASSETS = {AssetType.CUSTOM_ASSET, AssetType.OTHER, AssetType.FIAT}
+ASSETS_WITH_NO_CRYPTO_ORACLES = {AssetType.NFT, AssetType.CUSTOM_ASSET}
+NON_CRYPTO_ASSETS = {AssetType.CUSTOM_ASSET, AssetType.FIAT}
 
 
 class AssetData(NamedTuple):
