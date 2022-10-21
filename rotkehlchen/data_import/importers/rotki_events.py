@@ -83,7 +83,7 @@ class RotkiGenericEventsImporter(BaseExchangeImporter):
                 notes=csv_row['Description'],
             )
             events.append(fee_event)
-        self.add_history_events(cursor, events)
+        self.add_history_events(cursor, events)  # event assets are always resolved here
 
     def _import_csv(self, cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
         """May raise:

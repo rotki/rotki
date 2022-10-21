@@ -47,7 +47,8 @@ class DBHistoryEvents():
 
         May raise:
         - DeserializationError if the event could not be serialized for the DB
-        - sqlcipher.DatabaseError: If anything went wrong at insertion
+        - sqlcipher.IntegrityError: If the asset of the added history event does not exist in
+        the DB. Can only happen if an event with an unresolved asset is passed.
         """
         write_cursor.execute(HISTORY_INSERT, event.serialize_for_db())
         identifier = write_cursor.lastrowid
