@@ -31,7 +31,7 @@
         :search-input.sync="search"
         :background-color="dark ? 'black' : 'white'"
         hide-details
-        :items="filteredItems"
+        :items="visibleItems"
         auto-select-first
         prepend-inner-icon="mdi-magnify"
         append-icon=""
@@ -97,12 +97,24 @@
             </div>
           </div>
         </template>
+        <template #append>
+          <div v-if="loading" class="mt-n1 fill-height d-flex items-center">
+            <v-progress-circular
+              class="asset-select__loading"
+              color="primary"
+              indeterminate
+              width="3"
+              size="30"
+            />
+          </div>
+        </template>
       </v-autocomplete>
     </div>
   </v-dialog>
 </template>
 <script setup lang="ts">
 import { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
+import { Ref } from 'vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
@@ -111,7 +123,7 @@ import { useTheme } from '@/composables/common';
 import { useRouter } from '@/composables/router';
 import { interop } from '@/electron-interop';
 import { routesRef } from '@/router/routes';
-import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
+import { useAssetInfoApi } from '@/services/assets/info';
 import { useAggregatedBalancesStore } from '@/store/balances/aggregated';
 import { useBalancesBreakdownStore } from '@/store/balances/breakdown';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
@@ -145,6 +157,8 @@ const isMac = ref<boolean>(false);
 const input = ref<any>(null);
 const selected = ref<number | string>('');
 const search = ref<string>('');
+const loading = ref(false);
+const visibleItems: Ref<SearchItem[]> = ref([]);
 
 const modifier = computed<string>(() => (get(isMac) ? 'Cmd' : 'Ctrl'));
 const key = '/';
@@ -152,14 +166,41 @@ const key = '/';
 const router = useRouter();
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { assetSymbol } = useAssetInfoRetrieval();
 const { connectedExchanges } = storeToRefs(useExchangeBalancesStore());
 const { balances } = useAggregatedBalancesStore();
 const { balancesByLocation } = storeToRefs(useBalancesBreakdownStore());
 const { getLocation } = setupLocationInfo();
+const { assetSearch } = useAssetInfoApi();
 const { dark } = useTheme();
 
-const items = computed<SearchItem[]>(() => {
+const getItemText = (item: SearchItemWithoutValue): string => {
+  const text = item.texts ? item.texts.join(' ') : item.text;
+  return (
+    text
+      ?.replace(/[^\w\s]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim() ?? ''
+  );
+};
+
+const filterItems = (
+  items: SearchItemWithoutValue[],
+  keyword: string
+): SearchItemWithoutValue[] =>
+  items
+    .filter(item => {
+      let matchedPoints: number = 0;
+      for (const word of keyword.trim().split(' ')) {
+        const indexOf = getItemText(item).toLowerCase().indexOf(word);
+        if (indexOf > -1) matchedPoints++;
+        if (indexOf === 0) matchedPoints += 0.5;
+      }
+      item.matchedPoints = matchedPoints;
+      return matchedPoints > 0;
+    })
+    .sort((a, b) => (b.matchedPoints ?? 0) - (a.matchedPoints ?? 0));
+
+const getRoutes = (keyword: string): SearchItemWithoutValue[] => {
   const routeItems: SearchItemWithoutValue[] = [
     { ...Routes.DASHBOARD },
     {
@@ -307,7 +348,12 @@ const items = computed<SearchItem[]>(() => {
     }
   ];
 
-  const exchangeItems: SearchItemWithoutValue[] = get(connectedExchanges).map(
+  return filterItems(routeItems, keyword);
+};
+
+const getExchanges = (keyword: string): SearchItemWithoutValue[] => {
+  const exchanges = get(connectedExchanges);
+  const exchangeItems: SearchItemWithoutValue[] = exchanges.map(
     (exchange: Exchange) => {
       const identifier = exchange.location;
       const name = exchange.name;
@@ -324,6 +370,10 @@ const items = computed<SearchItem[]>(() => {
     }
   );
 
+  return filterItems(exchangeItems, keyword);
+};
+
+const getActions = (keyword: string): SearchItemWithoutValue[] => {
   const actionItems: SearchItemWithoutValue[] = [
     {
       text: t('exchange_settings.dialog.add.title').toString(),
@@ -366,21 +416,40 @@ const items = computed<SearchItem[]>(() => {
       icon: 'mdi-database-plus'
     }
   ];
+  return filterItems(actionItems, keyword);
+};
 
-  const assetItems: SearchItemWithoutValue[] = (
-    get(balances()) as AssetBalanceWithPrice[]
-  ).map(balance => {
-    const price = balance.usdPrice.gt(0) ? balance.usdPrice : undefined;
-    const asset = balance.asset;
+const getAssets = async (
+  keyword: string
+): Promise<SearchItemWithoutValue[]> => {
+  try {
+    let matches = await assetSearch(keyword, 5);
+    let assetBalances = get(balances()) as AssetBalanceWithPrice[];
+    const map: Record<string, string> = {};
+    for (const match of matches) {
+      map[match.identifier] = match.symbol ?? match.name ?? '';
+    }
+    const ids = matches.map(({ identifier }) => identifier);
 
-    return {
-      route: Routes.ASSETS.route.replace(':identifier', asset),
-      texts: [t('common.asset').toString(), get(assetSymbol(asset))],
-      price,
-      asset
-    };
-  });
+    return assetBalances
+      .filter(balance => ids.includes(balance.asset))
+      .map(balance => {
+        const price = balance.usdPrice.gt(0) ? balance.usdPrice : undefined;
+        const asset = balance.asset;
 
+        return {
+          route: Routes.ASSETS.route.replace(':identifier', asset),
+          texts: [t('common.asset').toString(), map[asset] ?? ''],
+          price,
+          asset
+        };
+      });
+  } catch (e) {
+    return [];
+  }
+};
+
+const getLocations = (keyword: string) => {
   const locationBalances = get(balancesByLocation) as Record<string, BigNumber>;
   const locationItems: SearchItemWithoutValue[] = Object.keys(
     locationBalances
@@ -397,50 +466,43 @@ const items = computed<SearchItem[]>(() => {
     };
   });
 
-  return [
-    ...routeItems,
-    ...exchangeItems,
-    ...actionItems,
-    ...assetItems,
-    ...locationItems
-  ].map((item, index) => {
-    const text = item.texts ? item.texts.join(' ') : item.text;
-    return {
-      ...item,
-      value: index,
-      text: text
-        ?.replace(/[^\w\s]/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim()
-    };
-  });
-});
+  return filterItems(locationItems, keyword);
+};
 
-const filteredItems = computed<SearchItem[]>(() => {
-  const keyword = get(search)?.toLowerCase() ?? '';
-  if (!keyword) {
-    return get(items);
+watchDebounced(
+  search,
+  async keyword => {
+    if (!keyword) {
+      set(visibleItems, []);
+      return;
+    }
+
+    const search = keyword.toLocaleLowerCase();
+
+    set(
+      visibleItems,
+      [
+        ...getRoutes(search),
+        ...getExchanges(search),
+        ...getActions(search),
+        ...(await getAssets(search)),
+        ...getLocations(search)
+      ].map((item, index) => ({
+        ...item,
+        value: index,
+        text: getItemText(item)
+      }))
+    );
+
+    set(loading, false);
+  },
+  {
+    debounce: 800
   }
+);
 
-  // Filter items text by checking how many word on keyword that appear.
-  return get(items)
-    .filter(item => {
-      let matchedPoints: number = 0;
-      keyword
-        .trim()
-        .split(' ')
-        .forEach(word => {
-          const indexOf = item.text!.toLowerCase().indexOf(word);
-          if (indexOf > -1) matchedPoints++;
-          if (indexOf === 0) matchedPoints += 0.5;
-        });
-      item.matchedPoints = matchedPoints;
-      return matchedPoints > 0;
-    })
-    .sort((a, b) => (b.matchedPoints ?? 0) - (a.matchedPoints ?? 0));
-});
-
-watch(search, () => {
+watch(search, search => {
+  set(loading, !!search);
   const el = get(input)?.$el;
   if (el) {
     const className = 'v-list-item--highlighted';
@@ -469,7 +531,7 @@ watch(open, open => {
 });
 
 const change = async (index: number) => {
-  const item: SearchItem = get(items)[index];
+  const item: SearchItem = get(visibleItems)[index];
   if (item) {
     if (item.route) {
       await router.push(item.route);

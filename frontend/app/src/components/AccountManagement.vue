@@ -307,9 +307,15 @@ const { isPackaged } = useInterop();
 
 const isTest = !!import.meta.env.VITE_TEST;
 
-const { start, stop } = useTimeoutFn(() => {
-  set(showUpgradeMessage, true);
-}, 15000);
+const { start, stop } = useTimeoutFn(
+  () => {
+    set(showUpgradeMessage, true);
+  },
+  15000,
+  {
+    immediate: false
+  }
+);
 
 watch(loading, loading => {
   if (loading) {
