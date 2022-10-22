@@ -37,7 +37,7 @@ def test_claim_aidrop(database, ethereum_manager, function_scope_messages_aggreg
             asset=A_ETH,
             balance=Balance(amount=FVal('0.0061843862')),
             location_label=ADDY,
-            notes=f'Burned 0.0061843862 ETH in gas from {ADDY}',
+            notes='Burned 0.0061843862 ETH for gas',
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             event_identifier=tx_hash,

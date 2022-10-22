@@ -64,7 +64,7 @@ def _add_entries(server) -> List[HistoryBaseEntry]:
         asset=A_ETH,
         balance=Balance(amount=FVal('0.0001'), usd_value=FVal('5.31')),
         location_label='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
-        notes='Burned 0.0001 ETH in gas from 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',  # noqa: E501
+        notes='Burned 0.0001 ETH for gas',
         event_subtype=HistoryEventSubType.FEE,
         counterparty=CPT_GAS,
     ), HistoryBaseEntry(
@@ -88,7 +88,7 @@ def _add_entries(server) -> List[HistoryBaseEntry]:
         asset=A_ETH,
         balance=Balance(amount=ONE, usd_value=FVal('1525.11')),
         location_label='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
-        notes='Receive 1 ETH from 0x0EbD2E2130b73107d0C45fF2E16c93E7e2e10e3a to 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',  # noqa: E501
+        notes='Receive 1 ETH from 0x0EbD2E2130b73107d0C45fF2E16c93E7e2e10e3a',
         event_subtype=HistoryEventSubType.NONE,
         counterparty='0x0EbD2E2130b73107d0C45fF2E16c93E7e2e10e3a',
     )]

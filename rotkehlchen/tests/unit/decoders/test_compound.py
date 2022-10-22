@@ -39,7 +39,7 @@ def test_compound_ether_deposit(database, ethereum_manager, function_scope_messa
             asset=A_ETH,
             balance=Balance(amount=FVal('0.014122318'), usd_value=ZERO),
             location_label=ADDY,
-            notes=f'Burned 0.014122318 ETH in gas from {ADDY}',
+            notes='Burned 0.014122318 ETH for gas',
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             event_identifier=tx_hash,
@@ -93,7 +93,7 @@ def test_compound_ether_withdraw(database, ethereum_manager, function_scope_mess
             asset=A_ETH,
             balance=Balance(amount=FVal('0.02858544'), usd_value=ZERO),
             location_label=ADDY,
-            notes=f'Burned 0.02858544 ETH in gas from {ADDY}',
+            notes='Burned 0.02858544 ETH for gas',
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             event_identifier=tx_hash,
@@ -154,7 +154,7 @@ def test_compound_deposit_with_comp_claim(
             asset=A_ETH,
             balance=Balance(amount=FVal('0.00945248'), usd_value=ZERO),
             location_label=ADDY2,
-            notes=f'Burned 0.00945248 ETH in gas from {ADDY2}',
+            notes='Burned 0.00945248 ETH for gas',
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             event_identifier=tx_hash,

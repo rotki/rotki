@@ -120,7 +120,7 @@ def test_uniswap_v3_swap(database, ethereum_manager, eth_transactions):
                 usd_value=ZERO,
             ),
             location_label='0xb63e0C506dDBa7b0dd106d1937d6D13BE2C62aE2',
-            notes='Burned 0.00393701451 ETH in gas from 0xb63e0C506dDBa7b0dd106d1937d6D13BE2C62aE2',  # noqa: E501
+            notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             event_identifier=HistoryBaseEntry.deserialize_event_identifier(tx_hex),
@@ -250,7 +250,7 @@ def test_uniswap_v3_swap_received_token2(database, ethereum_manager, eth_transac
                 usd_value=ZERO,
             ),
             location_label='0xeB312F4921aEbbE99faCaCFE92f22b942Cbd7599',
-            notes='Burned 0.00393701451 ETH in gas from 0xeB312F4921aEbbE99faCaCFE92f22b942Cbd7599',  # noqa: E501
+            notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             event_identifier=HistoryBaseEntry.deserialize_event_identifier(tx_hex),

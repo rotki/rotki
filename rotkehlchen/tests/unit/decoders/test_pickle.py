@@ -96,7 +96,7 @@ def test_pickle_deposit(database, ethereum_manager, eth_transactions):
                 usd_value=ZERO,
             ),
             location_label='0x0f1a748cDF53Bbad378CE2C4429463d01CcE0C3f',
-            notes='Burned 0.00393701451 ETH in gas from 0x0f1a748cDF53Bbad378CE2C4429463d01CcE0C3f',  # noqa: E501
+            notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             event_identifier=HistoryBaseEntry.deserialize_event_identifier(
@@ -209,7 +209,7 @@ def test_pickle_withdraw(database, ethereum_manager, eth_transactions):
                 usd_value=ZERO,
             ),
             location_label='0xC7Dc4Cd171812a441A30472219d390f4F15f6070',
-            notes='Burned 0.00393701451 ETH in gas from 0xC7Dc4Cd171812a441A30472219d390f4F15f6070',  # noqa: E501
+            notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             event_identifier=HistoryBaseEntry.deserialize_event_identifier(

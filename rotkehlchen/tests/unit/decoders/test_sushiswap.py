@@ -104,7 +104,7 @@ def test_sushiswap_single_swap(database, ethereum_manager, eth_transactions):
                 usd_value=ZERO,
             ),
             location_label='0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF',
-            notes='Burned 0.00393701451 ETH in gas from 0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF',  # noqa: E501
+            notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             event_identifier=HistoryBaseEntry.deserialize_event_identifier(tx_hex),

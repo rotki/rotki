@@ -40,7 +40,7 @@ def test_aave_deposit_v1(database, ethereum_manager, function_scope_messages_agg
             asset=A_ETH,
             balance=Balance(amount=FVal('0.00825148723006')),
             location_label=ADDY,
-            notes=f'Burned 0.00825148723006 ETH in gas from {ADDY}',
+            notes='Burned 0.00825148723006 ETH for gas',
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             event_identifier=tx_hash,
@@ -109,7 +109,7 @@ def test_aave_withdraw_v1(database, ethereum_manager, function_scope_messages_ag
             asset=A_ETH,
             balance=Balance(amount=FVal('0.028562839354')),
             location_label=ADDY,
-            notes=f'Burned 0.028562839354 ETH in gas from {ADDY}',
+            notes='Burned 0.028562839354 ETH for gas',
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             event_identifier=tx_hash,
@@ -178,7 +178,7 @@ def test_aave_eth_withdraw_v1(database, ethereum_manager, function_scope_message
             asset=A_ETH,
             balance=Balance(amount=FVal('0.021740928')),
             location_label=ADDY2,
-            notes=f'Burned 0.021740928 ETH in gas from {ADDY2}',
+            notes='Burned 0.021740928 ETH for gas',
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             event_identifier=tx_hash,

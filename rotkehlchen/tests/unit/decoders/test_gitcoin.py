@@ -38,7 +38,7 @@ def test_gitcoin_old_donation(database, ethereum_manager, function_scope_message
             asset=A_ETH,
             balance=Balance(amount=FVal('0.000055118'), usd_value=ZERO),
             location_label=ADDY,
-            notes=f'Burned 0.000055118 ETH in gas from {ADDY}',
+            notes='Burned 0.000055118 ETH for gas',
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             event_identifier=tx_hash,

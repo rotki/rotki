@@ -977,7 +977,7 @@ def test_query_transactions_check_decoded_events(
         'event_type': 'spend',
         'location': 'blockchain',
         'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
-        'notes': 'Burned 0.00863351371344 ETH in gas from 0x6e15887E2CEC81434C16D587709f64603b39b545',  # noqa: E501
+        'notes': 'Burned 0.00863351371344 ETH for gas',
         'sequence_index': 0,
         'timestamp': 1642802807,
     }, 'customized': False}, {'entry': {
@@ -1005,7 +1005,7 @@ def test_query_transactions_check_decoded_events(
         'event_type': 'spend',
         'location': 'blockchain',
         'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
-        'notes': 'Burned 0.017690836625228792 ETH in gas from 0x6e15887E2CEC81434C16D587709f64603b39b545',  # noqa: E501
+        'notes': 'Burned 0.017690836625228792 ETH for gas',
         'sequence_index': 0,
         'timestamp': 1642802735,
     }, 'customized': False}, {'entry': {

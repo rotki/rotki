@@ -24,7 +24,6 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
-
 TEST_CURVE_POOLS = [
     '0xDeBF20617708857ebe4F679508E7b7863a8A8EeE',
     '0xDC24316b9AE028F1497c275EB9192a3Ea0f67022',
@@ -150,7 +149,7 @@ def test_curve_deposit(database, evm_transaction_decoder):
                 usd_value=ZERO,
             ),
             location_label=location_label,
-            notes='Burned 0.00393701451 ETH in gas from 0x57bF3B0f29E37619623994071C9e12091919675c',  # noqa: E501
+            notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             event_identifier=evmhash,
@@ -288,7 +287,7 @@ def test_curve_deposit_eth(database, evm_transaction_decoder):
                 usd_value=ZERO,
             ),
             location_label=location_label,
-            notes='Burned 0.00393701451 ETH in gas from 0x767B35b9F06F6e28e5ed05eE7C27bDf992eba5d2',  # noqa: E501
+            notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             event_identifier=evmhash,
@@ -436,7 +435,7 @@ def test_curve_remove_liquidity(database, evm_transaction_decoder):
                 usd_value=ZERO,
             ),
             location_label=location_label,
-            notes='Burned 0.00393701451 ETH in gas from 0xDf9f0AE722A3919fE7f9cC8805773ef142007Ca6',  # noqa: E501
+            notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             event_identifier=evmhash,
@@ -550,7 +549,7 @@ def test_curve_remove_liquidity_with_internal(database, evm_transaction_decoder)
                 usd_value=ZERO,
             ),
             location_label=location_label,
-            notes='Burned 0.00393701451 ETH in gas from 0xa8005630caE7b7d2AFADD38FD3B3040d13cbE2BC',  # noqa: E501
+            notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             event_identifier=evmhash,
@@ -715,7 +714,7 @@ def test_curve_remove_imbalanced(database, evm_transaction_decoder):
                 usd_value=ZERO,
             ),
             location_label=location_label,
-            notes='Burned 0.00393701451 ETH in gas from 0x2fac74A3a04B031F240923621a578724C40678af',  # noqa: E501
+            notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             event_identifier=evmhash,
