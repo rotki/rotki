@@ -24,16 +24,18 @@ export const useAssetFilter = () => {
       key: AssetFilterKeys.SYMBOL,
       keyValue: AssetFilterValueKeys.SYMBOL,
       description: tc('assets.filter.symbol'),
-      suggestions: () => [],
       hint: tc('assets.filter.symbol_hint'),
+      string: true,
+      suggestions: () => [],
       validate: () => true
     },
     {
       key: AssetFilterKeys.NAME,
       keyValue: AssetFilterValueKeys.NAME,
       description: tc('assets.filter.name'),
-      suggestions: () => [],
       hint: tc('assets.filter.name_hint'),
+      string: true,
+      suggestions: () => [],
       validate: () => true
     }
   ]);
