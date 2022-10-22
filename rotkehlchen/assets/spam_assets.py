@@ -248,14 +248,443 @@ KNOWN_ETH_SPAM_TOKENS: Dict[ChecksumEvmAddress, Dict[str, Any]] = {
         'symbol': 'AaveLP.com',
         'decimals': 18,
     },
+    string_to_evm_address('0x0432ca79d0bF2546bC9a29685636e413B137692d'): {
+        'name': 'Compound-Claim.com',
+        'symbol': 'Compound-Claim.com',
+        'decimals': 18,
+    },
+    string_to_evm_address('0x070C0147884D7CF984aFBC2Eb6F3428A39b5E229'): {
+        'name': 'asdai.xyz',
+        'symbol': 'https://asdai.xyz',
+        'decimals': 18,
+    },
+    string_to_evm_address('0x2f848B4A2B5dfC3b9e4Eb229551c0887E6348653'): {
+        'name': 'ardai.xyz',
+        'symbol': 'https://ardai.xyz',
+        'decimals': 18,
+    },
+    string_to_evm_address('0xF5b2C59F6DB42FFCdFC1625999C81fDF17953384'): {
+        'name': 'mdai.io',
+        'symbol': 'mdai.io',
+        'decimals': 18,
+    },
+    string_to_evm_address('0xe0c230B6DC9a90Cc5F1b8B62e83AF234f108563b'): {
+        'name': 'Try Mushrooms Finance',
+        'symbol': 'Try Mushrooms Finance',
+        'decimals': 18,
+    },
+    string_to_evm_address('0xf5dF66B06DFf95226F1e8834EEbe4006420D295F'): {
+        'name': 'https://alpaca.markets/',
+        'symbol': 'ALPACA',
+        'decimals': 18,
+    },
+    string_to_evm_address('0xac2b43262aE5f3bCD3831EA33A6B5d0f2044C9FB'): {
+        'name': 'PiCoreTeam',
+        'symbol': 'Pi',
+        'decimals': 1,
+    },
+    string_to_evm_address('0x519475b31653E46D20cD09F9FdcF3B12BDAcB4f5'): {
+        'name': 'VIU',
+        'symbol': 'VIU',
+        'decimals': 18,
+    },
+    string_to_evm_address('0xaF47ebBd460F21c2b3262726572CA8812d7143B0'): {
+        'name': 'Promodl',
+        'symbol': 'PMOD',
+        'decimals': 18,
+    },
+    string_to_evm_address('0x1C3BB10dE15C31D5DBE48fbB7B87735d1B7d8c32'): {
+        'name': 'BLONDCOIN',
+        'symbol': 'BLO',
+        'decimals': 18,
+    },
+    string_to_evm_address('0x2630997aAB62fA1030a8b975e1AA2dC573b18a13'): {
+        'name': 'HYPE Token',
+        'symbol': 'HYPE',
+        'decimals': 18,
+    },
+    string_to_evm_address('0x2e91E3e54C5788e9FdD6A181497FDcEa1De1bcc1'): {
+        'name': 'Hercules',
+        'symbol': 'HERC',
+        'decimals': 18,
+    },
+    string_to_evm_address('0x4E546b4A29E2De365aE16BC7B69812Ce3fd943A7'): {
+        'name': 'VKTToken',
+        'symbol': 'VKT',
+        'decimals': 18,
+    },
+    string_to_evm_address('0x5C406D99E04B8494dc253FCc52943Ef82bcA7D75'): {
+        'name': 'cUSD Currency',
+        'symbol': 'cUSD',
+        'decimals': 18,
+    },
+    string_to_evm_address('0x68e14bb5A45B9681327E16E528084B9d962C1a39'): {
+        'name': 'BitClave - Consumer Activity Token',
+        'symbol': 'CAT',
+        'decimals': 18,
+    },
+    string_to_evm_address('0x6ff313FB38d53d7A458860b1bf7512f54a03e968'): {
+        'name': 'Mero Currency',
+        'symbol': 'MRO',
+        'decimals': 18,
+    },
+    string_to_evm_address('0x75EfC1111f98f2d5DCeC9851c8abC77cd5E6CED8'): {
+        'name': 'dappcatalog',
+        'symbol': 'DAP',
+        'decimals': 18,
+    },
+    string_to_evm_address('0x7d3E7D41DA367b4FDCe7CBE06502B13294Deb758'): {
+        'name': 'SSS',
+        'symbol': 'SSS',
+        'decimals': 8,
+    },
+    string_to_evm_address('0xc1F5ba8bab3ca299F9817876a6715627F9e2B11a'): {
+        'name': 'FIFA.win',
+        'symbol': 'FIFAmini',
+        'decimals': 18,
+    },
+    string_to_evm_address('0xc2B62022A90ab4132479c94b609723CF4C56e89C'): {
+        'name': 'MIGRATE REP',
+        'symbol': 'MREP',
+        'decimals': 18,
+    },
+    string_to_evm_address('0x5EaC95ad5b287cF44E058dCf694419333b796123'): {
+        'name': 'AICRYPTO',
+        'symbol': 'AIC',
+        'decimals': 18,
+    },
+    string_to_evm_address('0x94d6b4fB35fB08Cb34Aa716ab40049Ec88002079'): {
+        'name': 'Cryptonex (CNX) - Global Blockchain Acquiring',
+        'symbol': 'CNX',
+        'decimals': 8,
+    },
+    string_to_evm_address('0xBDDab785b306BCD9fB056Da189615Cc8eCE1D823'): {
+        'name': 'Ebakus',
+        'symbol': 'EBK',
+        'decimals': 18,
+    },
+    string_to_evm_address('0xaC9Bb427953aC7FDDC562ADcA86CF42D988047Fd'): {
+        'name': 'Scatter.cx',
+        'symbol': 'STT',
+        'decimals': 18,
+    },
+    string_to_evm_address('0xd037a81B22e7F814bC6f87D50e5bd67d8c329Fa2'): {
+        'name': 'EMO tokens',
+        'symbol': 'EMO',
+        'decimals': 18,
+    },
+    string_to_evm_address('0xdb455c71C1bC2de4e80cA451184041Ef32054001'): {
+        'name': 'Jury.Online Token',
+        'symbol': 'JOT',
+        'decimals': 18,
+    },
+    string_to_evm_address('0x9B11EFcAAA1890f6eE52C6bB7CF8153aC5d74139'): {
+        'name': 'ATMChain',
+        'symbol': 'ATM',
+        'decimals': 8,
+    },
+    string_to_evm_address('0x04ad70466A79Dd1251F22Ad426248088724ff32B'): {
+        'name': 'Time-Honored Brand Chain',
+        'symbol': 'THBC',
+        'decimals': 4,
+    },
+    string_to_evm_address('0x06e0feB0D74106c7adA8497754074D222Ec6BCDf'): {
+        'name': 'BitBall',
+        'symbol': 'BTB',
+        'decimals': 18,
+    },
+    string_to_evm_address('0x15E4Cf1950FFA338cE5bc59456b3E579Ed1bead3'): {
+        'name': 'ALFA NTOK',
+        'symbol': 'aNTOK',
+        'decimals': 18,
+    },
+    string_to_evm_address('0x22a39C2DD54b71aC884657bb3e37308ABe2D02E1'): {
+        'name': 'USD',
+        'symbol': 'USD',
+        'decimals': 18,
+    },
+    string_to_evm_address('0x249f71F8D9dA86c60f485E021b509A206667A079'): {
+        'name': 'Singular Japan',
+        'symbol': 'SNGJ',
+        'decimals': 18,
+    },
+    string_to_evm_address('0x322f4f6a48329690957a3BCBd1301516C2B83c1F'): {
+        'name': 'MesChain',
+        'symbol': 'MES',
+        'decimals': 8,
+    },
+    string_to_evm_address('0x3A4A0D5b8dfAcd651EE28ed4fFEBf91500345489'): {
+        'name': 'BerryXToken',
+        'symbol': 'BRX',
+        'decimals': 18,
+    },
+    string_to_evm_address('0x4C6112F9652463F5bdCB954ff6B650aCb64e47Cc'): {
+        'name': 'DMTS',
+        'symbol': 'DMTS',
+        'decimals': 8,
+    },
+    string_to_evm_address('0x4d829f8C92a6691c56300D020c9e0dB984Cfe2BA'): {
+        'name': 'CoinCrowd',
+        'symbol': 'XCC',
+        'decimals': 18,
+    },
+    string_to_evm_address('0x515669d308f887Fd83a471C7764F5d084886D34D'): {
+        'name': 'MUXE Token',
+        'symbol': 'MUXE',
+        'decimals': 18,
+    },
+    string_to_evm_address('0x5245789633B5D0eBD21e393c3d7eAD22d5Ad1517'): {
+        'name': 'Shaggy Coin',
+        'symbol': 'SHAG',
+        'decimals': 5,
+    },
+    string_to_evm_address('0x708B63545467a9bCFB67aF92299102c650E34a0e'): {
+        'name': 'Vital  Ethereum',
+        'symbol': 'VETH',
+        'decimals': 18,
+    },
+    string_to_evm_address('0x77FE30b2cf39245267C0a5084B66a560f1cF9E1f'): {
+        'name': 'Azbit',
+        'symbol': 'AZ',
+        'decimals': 18,
+    },
+    string_to_evm_address('0x7Bd7e0BbED7d672eede693445a0fb94e11D879FA'): {
+        'name': 'ICO 2018 (https://safe.ad) - 1 year gift tokens',
+        'symbol': 'SAFE.AD',
+        'decimals': 18,
+    },
+    string_to_evm_address('0x8E4fbe2673e154fe9399166E03e18f87A5754420'): {
+        'name': 'Universal Bonus Token | t.me/bubbletonebot',
+        'symbol': 'UBT',
+        'decimals': 18,
+    },
+    string_to_evm_address('0xeeB69Fca351cfd49a8b977b28868D7E6EdB9cD02'): {
+        'name': 'ApolloSeptem',
+        'symbol': 'APO',
+        'decimals': 18,
+    },
+    string_to_evm_address('0x78774D1C3277B83459C730921bfF11019017B233'): {
+        'name': 'SingularX',
+        'symbol': 'SNGX',
+        'decimals': 18,
+    },
+    string_to_evm_address('0x9eC251401eAfB7e98f37A1D911c0AEA02CB63A80'): {
+        'name': 'Bitcratic',
+        'symbol': 'BCT',
+        'decimals': 18,
+    },
+    string_to_evm_address('0xAD1Cd0a72676dbb08848f5d4119a5F4B2e91E82E'): {
+        'name': 'www.dfw.vc零成本大富翁最高赚8000eth',
+        'symbol': 'www.dfw.vc零成本大富翁最高赚8000eth',
+        'decimals': 18,
+    },
+    string_to_evm_address('0xAE66d00496Aaa25418f829140BB259163c06986E'): {
+        'name': 'Super Wallet Token',
+        'symbol': 'SW',
+        'decimals': 8,
+    },
+    string_to_evm_address('0xB7FbE91752Dd926a5EA103f1b2E8b6FD2cEe4d91'): {
+        'name': 'Global Environment Fund',
+        'symbol': 'GEF',
+        'decimals': 6,
+    },
+    string_to_evm_address('0xBa7A6156ff985a119B5a0B35B20ABeF5300A55E9'): {
+        'name': 'Superblue',
+        'symbol': 'SPB',
+        'decimals': 18,
+    },
+    string_to_evm_address('0xCdc7FaA3a06733d50D4Bf86b5C7cd9460c35691E'): {
+        'name': 'TOPBTC',
+        'symbol': 'TOPBTC',
+        'decimals': 8,
+    },
+    string_to_evm_address('0xDa63A8F9b33e3C927E8ce66606913bE1821f67de'): {
+        'name': 'YunJiaMi.Com 免费交易 Free Exchange',
+        'symbol': 'YunJiaMi.Com 免费交易 Free Exchange',
+        'decimals': 18,
+    },
+    string_to_evm_address('0xEA5E4A7a1F29bD8357f1817ff0e873Be83f1FC7D'): {
+        'name': '万国链(WGBC) ',
+        'symbol': 'WGBC',
+        'decimals': 18,
+    },
+    string_to_evm_address('0xEd6cA9522FdA3b9Cd93025780A2939bd04a7ECD6'): {
+        'name': 'https://www.yidaibi.me/ 最佳一键发币解决方案 Create tokens easily',
+        'symbol': 'www.yidaibi.me一键发币CreateTokens',
+        'decimals': 18,
+    },
+    string_to_evm_address('0xF6317DD9B04097a9E7B016cd23DCAa7CfE19D9c6'): {
+        'name': 'TOPBTC TOKEN',
+        'symbol': 'TOPB',
+        'decimals': 18,
+    },
+    string_to_evm_address('0xb679aFD97bCBc7448C1B327795c3eF226b39f0E9'): {
+        'name': 'Win Last Mile',
+        'symbol': 'WLM',
+        'decimals': 6,
+    },
+    string_to_evm_address('0xd4AE0807740dF6FbaA7a258907132a2ac8d52Fbc'): {
+        'name': 'KEOSToken',
+        'symbol': 'KEOS',
+        'decimals': 18,
+    },
+    string_to_evm_address('0xb1CD6e4153B2a390Cf00A6556b0fC1458C4A5533'): {
+        'name': 'BNT Smart Token Relay',
+        'symbol': 'ETHBNT',
+        'decimals': 18,
+    },
+    string_to_evm_address('0xF6276830c265A779A2225B9d2FCbAb790CBEb92B'): {
+        'name': 'XCELTOKEN',
+        'symbol': 'XCEL',
+        'decimals': 18,
+    },
+    string_to_evm_address('0xE94327D07Fc17907b4DB788E5aDf2ed424adDff6'): {
+        'name': 'Reputation',
+        'symbol': 'REP',
+        'decimals': 18,
+    },
+    string_to_evm_address('0x49E033122C8300a6d5091ACf667494466eE4a9D2'): {
+        'name': 'MEET.ONE',
+        'symbol': 'MEET.ONE',
+        'decimals': 18,
+    },
+    string_to_evm_address('0x86Fa049857E0209aa7D9e616F7eb3b3B78ECfdb0'): {
+        'name': '',
+        'symbol': 'EOS',
+        'decimals': 18,
+    },
+    string_to_evm_address('0xA0fEbbd88651CcCa6180BEEFb88e3B4cf85Da5be'): {
+        'name': 'ARCoin',
+        'symbol': 'ARCoin',
+        'decimals': 18,
+    },
+    string_to_evm_address('0xB31C219959E06f9aFBeB36b388a4BaD13E802725'): {
+        'name': 'ONOT',
+        'symbol': 'ONOT',
+        'decimals': 18,
+    },
+    string_to_evm_address('0xBA5F00A28F732f23Ba946C594716496EBDC9aef5'): {
+        'name': 'BKEX.COM Token',
+        'symbol': 'bkex.com',
+        'decimals': 18,
+    },
+    string_to_evm_address('0x08130635368AA28b217a4dfb68E1bF8dC525621C'): {
+        'name': 'AfroDex',
+        'symbol': 'AfroX',
+        'decimals': 4,
+    },
+    string_to_evm_address('0x663085225320c7Afae10f3f1982EAA7324eA55DA'): {
+        'name': 'Qualified Quality Block ',
+        'symbol': 'QQB',
+        'decimals': 8,
+    },
+    string_to_evm_address('0x0EA5Da303c9Ad00c8A2740c0cA8c44F12c7DA790'): {
+        'name': 'NobelAcme',
+        'symbol': 'NBAT',
+        'decimals': 18,
+    },
+    string_to_evm_address('0x2F141Ce366a2462f02cEA3D12CF93E4DCa49e4Fd'): {
+        'name': 'Free Coin',
+        'symbol': 'FREE',
+        'decimals': 18,
+    },
+    string_to_evm_address('0x12565fd1436926bEb0FFf522D63be551240a4594'): {
+        'name': 'GOLD',
+        'symbol': 'GOLD',
+        'decimals': 18,
+    },
+    string_to_evm_address('0x1B5855d39E0a79a9f282478BD7191212a49B53a2'): {
+        'name': 'GENES',
+        'symbol': 'GENES',
+        'decimals': 8,
+    },
+    string_to_evm_address('0x2d1E23144B89fC7364eD3efCd5Af04093F7d9a3D'): {
+        'name': 'Ethereum Asset Split Token',
+        'symbol': 'EAST',
+        'decimals': 18,
+    },
+    string_to_evm_address('0x303014CE11Eed977B3Fb26fe9ca9d2Afe1dDCfF7'): {
+        'name': 'Soundeon Token',
+        'symbol': 'Soundeon',
+        'decimals': 18,
+    },
+    string_to_evm_address('0x31Ea2a265020eCd892956C8E54DBdad9CAAAAA98'): {
+        'name': 'Cryptics.tech Airdrop Token',
+        'symbol': 'cryptics.tech',
+        'decimals': 18,
+    },
+    string_to_evm_address('0x48c7CDADB1313076EfDac3Fdfb8427B4F58c5b7F'): {
+        'name': 'DA$',
+        'symbol': 'DA$',
+        'decimals': 18,
+    },
+    string_to_evm_address('0x5783862cef49094bE4DE1fe31280B2E33cF87416'): {
+        'name': 'KredX Token',
+        'symbol': 'KRT',
+        'decimals': 4,
+    },
+    string_to_evm_address('0x7D266ed871f24D7b47b5a8B80abB391178C48Bac'): {
+        'name': 'StakeIt',
+        'symbol': 'STAKE',
+        'decimals': 8,
+    },
+    string_to_evm_address('0x7f6a47B85a9425c813b1cD191D730054BdF6235D'): {
+        'name': 'dfw.vc8000eth+Profit',
+        'symbol': 'www.dfw.vc零成本大富翁最高赚8000eth',
+        'decimals': 18,
+    },
+    string_to_evm_address('0xB2e4B6eA88C4836d9F710484b08a9c0327e7412D'): {
+        'name': 'QQ微信231799955',
+        'symbol': '通缉FUS骗子陈煜维权QQ微信231799955',
+        'decimals': 18,
+    },
+    string_to_evm_address('0xD443454DFD477e1D689F2Bb0baC578e9D8d4EF2c'): {
+        'name': 'qunfaba.com免费空投',
+        'symbol': 'qunfaba.com免费空投FreeBulksender',
+        'decimals': 18,
+    },
+    string_to_evm_address('0xDB74865fF14D7045EE1723ffDa9E4B33C0DD0968'): {
+        'name': 'Love Chain',
+        'symbol': 'LC',
+        'decimals': 18,
+    },
+    string_to_evm_address('0xd20bcBD56d9D551CAc10a6bC2a83635BFb72F3F4'): {
+        'name': 'FUND',
+        'symbol': 'FUND',
+        'decimals': 6,
+    },
+    string_to_evm_address('0xeF1344bDf80BEf3Ff4428d8bECEC3eea4A2cF574'): {
+        'name': 'Era Swap',
+        'symbol': 'ES',
+        'decimals': 18,
+    },
+    string_to_evm_address('0xf45B778E53d858c79BF4DFBDD5c1bfDB426bb891'): {
+        'name': 'MFCC',
+        'symbol': 'MFCC',
+        'decimals': 18,
+    },
+    string_to_evm_address('0xf485C5E679238f9304D986bb2fC28fE3379200e5'): {
+        'name': 'UG Coin',
+        'symbol': 'UGC',
+        'decimals': 18,
+    },
+    string_to_evm_address(''): {
+        'name': 'UG Coin',
+        'symbol': 'UGC',
+        'decimals': 18,
+    },
+    
 }
 
 
-def query_token_spam_list(db: 'DBHandler') -> Set[EvmToken]:
+def query_token_spam_list(db: 'DBHandler', make_remote_query: bool) -> Set[EvmToken]:
     """Generate a set of assets that can be ignored combining information of cryptoscamdb
     and the list of spam assets KNOWN_ETH_SPAM_TOKENS. This function also makes sure to get the
     bad assets in the list of cryptoscamdb and ensures that they exists in the globaldb before
     trying to add them.
+
+    If `make_remote_query` is False then only the KNOWN_ETH_SPAM_TOKENS are added as
+    ignored assets.
 
     TODO
     This function tries to add as assets to the globaldb the tokens listed in
@@ -266,44 +695,45 @@ def query_token_spam_list(db: 'DBHandler') -> Set[EvmToken]:
     May raise:
     - RemoteError
     """
-    try:
-        response = requests.get(
-            url='https://api.cryptoscamdb.org/v1/addresses',
-            timeout=DEFAULT_TIMEOUT_TUPLE,
-        )
-        data = response.json()
-        success, tokens_info = data['success'], data['result']
-    except requests.exceptions.RequestException as e:
-        raise RemoteError(f'Failed to retrieve information from cryptoscamdb. {str(e)}') from e
-    except (DeserializationError, JSONDecodeError) as e:
-        raise RemoteError(f'Failed to deserialize data from cryptoscamdb. {str(e)}') from e
-    except KeyError as e:
-        raise RemoteError(
-            f'Response from cryptoscamdb doesn\'t contain expected key. {str(e)}',
-        ) from e
-
-    if success is False:
-        log.error(f'Failed to deserialize data from cryptoscamdb. {data}')
-        raise RemoteError(
-            'Failed to deserialize data from cryptoscamdb. Check the logs '
-            'to get more information',
-        )
-
     tokens_to_ignore = set()
-    for token_addr, token_data in tokens_info.items():
-        if not token_addr.startswith('0x') or token_data[0]['type'] != 'scam':
-            continue
+    if make_remote_query is True:
         try:
-            checksumed_address = to_checksum_address(token_addr)
-        except ValueError as e:
-            log.debug(f'Failed to read address from cryptoscamdb. {str(e)}')
-            continue
-        try:
-            token = EvmToken(ethaddress_to_identifier(checksumed_address))
-        except UnknownAsset:
-            continue
-        if token is not None:
-            tokens_to_ignore.add(token)
+            response = requests.get(
+                url='https://api.cryptoscamdb.org/v1/addresses',
+                timeout=DEFAULT_TIMEOUT_TUPLE,
+            )
+            data = response.json()
+            success, tokens_info = data['success'], data['result']
+        except requests.exceptions.RequestException as e:
+            raise RemoteError(f'Failed to retrieve information from cryptoscamdb. {str(e)}') from e
+        except (DeserializationError, JSONDecodeError) as e:
+            raise RemoteError(f'Failed to deserialize data from cryptoscamdb. {str(e)}') from e
+        except KeyError as e:
+            raise RemoteError(
+                f'Response from cryptoscamdb doesn\'t contain expected key. {str(e)}',
+            ) from e
+
+        if success is False:
+            log.error(f'Failed to deserialize data from cryptoscamdb. {data}')
+            raise RemoteError(
+                'Failed to deserialize data from cryptoscamdb. Check the logs '
+                'to get more information',
+            )
+
+        for token_addr, token_data in tokens_info.items():
+            if not token_addr.startswith('0x') or token_data[0]['type'] != 'scam':
+                continue
+            try:
+                checksumed_address = to_checksum_address(token_addr)
+            except ValueError as e:
+                log.debug(f'Failed to read address from cryptoscamdb. {str(e)}')
+                continue
+            try:
+                token = EvmToken(ethaddress_to_identifier(checksumed_address))
+            except UnknownAsset:
+                continue
+            if token is not None:
+                tokens_to_ignore.add(token)
 
     # Try to add custom list
     for token_address, info in KNOWN_ETH_SPAM_TOKENS.items():
@@ -327,14 +757,14 @@ def query_token_spam_list(db: 'DBHandler') -> Set[EvmToken]:
     return tokens_to_ignore
 
 
-def update_spam_assets(write_cursor: 'DBCursor', db: 'DBHandler') -> int:
+def update_spam_assets(write_cursor: 'DBCursor', db: 'DBHandler', make_remote_query: bool) -> int:
     """
     Update the list of ignored assets using query_token_spam_list and avoiding
     the addition of duplicates. It returns the amount of assets that were added
     to the ignore list
     """
-    spam_tokens = query_token_spam_list(db)
-    # order maters here. Make sure ignored_assets are queried after spam tokens creation
+    spam_tokens = query_token_spam_list(db=db, make_remote_query=make_remote_query)
+    # order matters here. Make sure ignored_assets are queried after spam tokens creation
     # since it's possible for a token to exist in ignored assets but not global DB.
     # and in that case query_token_spam_list add it to the global DB
     with db.conn.read_ctx() as cursor:
