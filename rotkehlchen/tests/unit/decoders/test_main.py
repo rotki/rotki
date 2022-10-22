@@ -123,7 +123,7 @@ def test_no_logs_and_zero_eth(
             asset=A_ETH,
             balance=Balance(amount=ZERO, usd_value=ZERO),
             location_label=user_address,
-            notes=f'Receive 0 ETH {sender} from {user_address}',  # noqa: E501
+            notes=f'Receive 0 ETH from {sender}',
             counterparty=sender,
             identifier=None,
             extra_data=None,

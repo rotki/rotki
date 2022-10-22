@@ -109,7 +109,7 @@ def test_kyber_legacy_old_contract(database, ethereum_manager, eth_transactions)
                 usd_value=ZERO,
             ),
             location_label='0x6d379cb5BA04c09293b21Bf314E7aba3FfEAaF5b',
-            notes='Burned 0.01212979988 ETH in gas from 0x6d379cb5BA04c09293b21Bf314E7aba3FfEAaF5b',  # noqa: E501
+            notes='Burned 0.01212979988 ETH for gas',
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             event_identifier=HistoryBaseEntry.deserialize_event_identifier(
@@ -236,7 +236,7 @@ def test_kyber_legacy_new_contract(database, ethereum_manager, eth_transactions)
                 usd_value=ZERO,
             ),
             location_label='0x5340F6faff9BF55F66C16Db6Bf9E020d987F87D0',
-            notes='Burned 0.066614401 ETH in gas from 0x5340F6faff9BF55F66C16Db6Bf9E020d987F87D0',  # noqa: E501
+            notes='Burned 0.066614401 ETH for gas',
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             event_identifier=HistoryBaseEntry.deserialize_event_identifier(

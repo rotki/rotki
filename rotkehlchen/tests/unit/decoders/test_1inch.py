@@ -41,7 +41,7 @@ def test_1inchv1_swap(database, ethereum_manager, function_scope_messages_aggreg
             asset=A_ETH,
             balance=Balance(amount=FVal('0.00896373909')),
             location_label=ADDY,
-            notes=f'Burned 0.00896373909 ETH in gas from {ADDY}',
+            notes='Burned 0.00896373909 ETH for gas',
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             event_identifier=tx_hash,
@@ -124,7 +124,7 @@ def test_1inchv2_swap_for_eth(database, ethereum_manager, function_scope_message
             asset=A_ETH,
             balance=Balance(amount=FVal('0.002618947')),
             location_label=ADDY,
-            notes=f'Burned 0.002618947 ETH in gas from {ADDY}',
+            notes='Burned 0.002618947 ETH for gas',
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             event_identifier=tx_hash,

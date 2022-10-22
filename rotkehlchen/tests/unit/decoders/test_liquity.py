@@ -118,7 +118,7 @@ def test_liquity_trove_adjust(database, ethereum_manager, eth_transactions):
                 usd_value=ZERO,
             ),
             location_label=user_address,
-            notes=f'Burned 0.00393701451 ETH in gas from {user_address}',
+            notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             event_identifier=evmhash,
@@ -233,7 +233,7 @@ def test_liquity_trove_deposit_lusd(database, ethereum_manager, eth_transactions
                 usd_value=ZERO,
             ),
             location_label=user_address,
-            notes=f'Burned 0.00393701451 ETH in gas from {user_address}',
+            notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             event_identifier=evmhash,
@@ -346,7 +346,7 @@ def test_liquity_trove_remove_eth(database, ethereum_manager, eth_transactions):
                 usd_value=ZERO,
             ),
             location_label=user_address,
-            notes=f'Burned 0.00393701451 ETH in gas from {user_address}',
+            notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             event_identifier=evmhash,

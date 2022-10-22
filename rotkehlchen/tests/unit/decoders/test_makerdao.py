@@ -1,4 +1,5 @@
 import pytest
+
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
@@ -38,7 +39,7 @@ def test_makerdao_simple_transaction(
             asset=A_ETH,
             balance=Balance(amount=FVal(0.00926134), usd_value=ZERO),
             location_label='0x648aA14e4424e0825A5cE739C8C68610e143FB79',
-            notes='Burned 0.00926134 ETH in gas from 0x648aA14e4424e0825A5cE739C8C68610e143FB79',
+            notes='Burned 0.00926134 ETH for gas',
             counterparty='gas',
             identifier=None,
             extra_data=None,

@@ -37,7 +37,7 @@ def test_hop_l2_deposit(database, ethereum_manager, function_scope_messages_aggr
             asset=A_ETH,
             balance=Balance(amount=FVal('0.001964214783875487')),
             location_label=ADDY,
-            notes=f'Burned 0.001964214783875487 ETH in gas from {ADDY}',
+            notes='Burned 0.001964214783875487 ETH for gas',
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             event_identifier=tx_hash,

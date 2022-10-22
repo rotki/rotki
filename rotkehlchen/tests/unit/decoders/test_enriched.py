@@ -94,7 +94,7 @@ def test_1inch_claim(database, ethereum_manager, eth_transactions):
                 usd_value=ZERO,
             ),
             location_label='0xc931De6d845846E332a52D045072E3feF540Bd5d',
-            notes='Burned 0.00393701451 ETH in gas from 0xc931De6d845846E332a52D045072E3feF540Bd5d',  # noqa: E501
+            notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             event_identifier=HistoryBaseEntry.deserialize_event_identifier(
@@ -205,7 +205,7 @@ def test_gnosis_chain_bridge(database, ethereum_manager, eth_transactions):
                 usd_value=ZERO,
             ),
             location_label='0x5EDCf547eCE0EA1765D6C02e9E5bae53b52E09D4',
-            notes='Burned 0.00393701451 ETH in gas from 0x5EDCf547eCE0EA1765D6C02e9E5bae53b52E09D4',  # noqa: E501
+            notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             event_identifier=HistoryBaseEntry.deserialize_event_identifier(
@@ -302,7 +302,7 @@ def test_gitcoin_claim(database, ethereum_manager, eth_transactions):
                 usd_value=ZERO,
             ),
             location_label='0xdF5CEF8Dc0CEA8DC200F09280915d1CD7a016BDe',
-            notes='Burned 0.00393701451 ETH in gas from 0xdF5CEF8Dc0CEA8DC200F09280915d1CD7a016BDe',  # noqa: E501
+            notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             event_identifier=HistoryBaseEntry.deserialize_event_identifier(
