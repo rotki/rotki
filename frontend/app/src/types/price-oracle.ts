@@ -9,7 +9,8 @@ export enum PriceOracle {
   MANUALCURRENT = 'manualcurrent',
   SADDLE = 'saddle',
   UNISWAP2 = 'uniswapv2',
-  UNISWAP3 = 'uniswapv3'
+  UNISWAP3 = 'uniswapv3',
+  DEFILLAMA = 'defillama'
 }
 
 export const PriceOracleEnum = z.nativeEnum(PriceOracle);

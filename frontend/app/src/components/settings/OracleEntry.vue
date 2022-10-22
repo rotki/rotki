@@ -64,6 +64,8 @@ const icon = computed<string>(() => {
     return '/assets/images/defi/uniswap.svg';
   } else if (identifier.value === PriceOracle.SADDLE) {
     return '/assets/images/airdrops/saddle-finance.svg';
+  } else if (identifier.value === PriceOracle.DEFILLAMA) {
+    return '/assets/images/oracles/defillama.svg';
   }
   return '';
 });

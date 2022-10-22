@@ -7,6 +7,7 @@ from rotkehlchen.constants.assets import A_BTC, A_USD
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
+from rotkehlchen.externalapis.defillama import DefiLlama
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.manual_price_oracles import ManualPriceOracle
 from rotkehlchen.history.price import PriceHistorian
@@ -29,6 +30,7 @@ def fixture_fake_price_historian(historical_price_oracles_order):
         data_directory=MagicMock(spec=Path),
         cryptocompare=MagicMock(spec=Cryptocompare),
         coingecko=MagicMock(spec=Coingecko),
+        defillama=MagicMock(spec=DefiLlama),
     )
     price_historian.set_oracles_order(historical_price_oracles_order)
     return price_historian

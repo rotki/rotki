@@ -14,6 +14,7 @@ from rotkehlchen.config import default_data_directory
 from rotkehlchen.constants import ONE
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
+from rotkehlchen.externalapis.defillama import DefiLlama
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.manual_price_oracles import ManualCurrentOracle
 from rotkehlchen.inquirer import DEFAULT_CURRENT_PRICE_ORACLES_ORDER, CurrentPriceOracle, Inquirer
@@ -206,6 +207,7 @@ def _create_inquirer(
         data_dir=data_directory,
         cryptocompare=Cryptocompare(data_directory=data_directory, database=None),
         coingecko=Coingecko(),
+        defillama=DefiLlama(),
         manualcurrent=ManualCurrentOracle(),
         msg_aggregator=MessagesAggregator(),
     )
