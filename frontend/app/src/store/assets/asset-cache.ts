@@ -12,6 +12,7 @@ export const useAssetCacheStore = defineStore('assets/cache', () => {
   const unknown: Map<string, number> = new Map();
   const cache: Ref<Record<string, AssetInfo | null>> = ref({});
   const pending: Ref<Record<string, boolean>> = ref({});
+  const batch: Ref<string[]> = ref([]);
 
   const { assetMapping } = useAssetInfoApi();
 
@@ -27,6 +28,11 @@ export const useAssetCacheStore = defineStore('assets/cache', () => {
 
   const setPending = (key: string): void => {
     set(pending, { ...get(pending), [key]: true });
+
+    const currentBatch = get(batch);
+    if (!currentBatch.includes(key)) {
+      set(batch, [...currentBatch, key]);
+    }
   };
 
   const resetPending = (key: string): void => {
@@ -39,6 +45,7 @@ export const useAssetCacheStore = defineStore('assets/cache', () => {
     recent.delete(key);
 
     if (recent.size === CACHE_SIZE) {
+      logger.debug(`Hit cache size of ${CACHE_SIZE} going to evict items`);
       const removeKey = recent.keys().next().value;
       recent.delete(removeKey);
       deleteCacheKey(removeKey);
@@ -47,8 +54,33 @@ export const useAssetCacheStore = defineStore('assets/cache', () => {
     updateCacheKey(key, asset);
   };
 
-  const queueFetch = async (key: string): Promise<void> => {
-    setPending(key);
+  const fetchBatch = useDebounceFn(async () => {
+    const currentBatch = get(batch);
+    set(batch, []);
+    await fetchAssets(currentBatch);
+  }, 800);
+
+  async function fetchAssets(keys: string[]): Promise<void> {
+    try {
+      const response = await assetMapping(keys);
+      for (const key of keys) {
+        if (response[key]) {
+          put(key, response[key]);
+        } else {
+          logger.debug(`unknown key: ${key}`);
+          unknown.set(key, Date.now() + CACHE_EXPIRY);
+        }
+      }
+    } catch (e) {
+      logger.error(e);
+    } finally {
+      for (const key of keys) {
+        resetPending(key);
+      }
+    }
+  }
+
+  const queueIdentifier = async (key: string): Promise<void> => {
     const unknownExpiry = unknown.get(key);
     if (unknownExpiry && unknownExpiry >= Date.now()) {
       return;
@@ -57,21 +89,8 @@ export const useAssetCacheStore = defineStore('assets/cache', () => {
     if (unknown.has(key)) {
       unknown.delete(key);
     }
-
-    try {
-      const response = await assetMapping([key]);
-      if (response[key]) {
-        put(key, response[key]);
-      } else {
-        logger.debug(`unknown key: ${key}`);
-        unknown.set(key, Date.now() + CACHE_EXPIRY);
-      }
-    } catch (e) {
-      logger.debug(`unknown key: ${key}`);
-      unknown.set(key, Date.now() + CACHE_EXPIRY);
-    } finally {
-      resetPending(key);
-    }
+    setPending(key);
+    await fetchBatch();
   };
 
   const retrieve = (key: string): ComputedRef<AssetInfo | null> => {
@@ -89,7 +108,7 @@ export const useAssetCacheStore = defineStore('assets/cache', () => {
     }
 
     if (!get(pending)[key] && !expired) {
-      startPromise(queueFetch(key));
+      startPromise(queueIdentifier(key));
     }
 
     return computed(() => get(cache)[key] ?? null);
@@ -98,6 +117,7 @@ export const useAssetCacheStore = defineStore('assets/cache', () => {
   const reset = (): void => {
     set(pending, {});
     set(cache, {});
+    set(batch, []);
     recent.clear();
     unknown.clear();
   };
