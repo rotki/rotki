@@ -2,6 +2,7 @@ import pytest
 
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
+from rotkehlchen.externalapis.defillama import DefiLlama
 from rotkehlchen.history.events import EventsHistorian
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.types import DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER
@@ -16,6 +17,11 @@ def fixture_cryptocompare(data_dir, database):
 @pytest.fixture(scope='session', name='session_coingecko')
 def fixture_session_coingecko():
     return Coingecko()
+
+
+@pytest.fixture(scope='session', name='session_defillama')
+def fixture_defillama():
+    return DefiLlama()
 
 
 @pytest.fixture(name='historical_price_oracles_order')
@@ -41,6 +47,7 @@ def price_historian(
         mocked_price_queries,
         cryptocompare,
         session_coingecko,
+        session_defillama,
         default_mock_price_value,
         historical_price_oracles_order,
         dont_mock_price_for,
@@ -53,6 +60,7 @@ def price_historian(
         data_directory=data_dir,
         cryptocompare=cryptocompare,
         coingecko=session_coingecko,
+        defillama=session_defillama,
     )
     historian.set_oracles_order(historical_price_oracles_order)
     maybe_mock_historical_price_queries(

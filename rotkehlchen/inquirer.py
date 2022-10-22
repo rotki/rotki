@@ -106,6 +106,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
     from rotkehlchen.externalapis.coingecko import Coingecko
     from rotkehlchen.externalapis.cryptocompare import Cryptocompare
+    from rotkehlchen.externalapis.defillama import DefiLlama
     from rotkehlchen.globaldb.manual_price_oracles import ManualCurrentOracle
 
 
@@ -161,6 +162,7 @@ class CurrentPriceOracle(SerializableEnumMixin):
     MANUALCURRENT = auto()
     BLOCKCHAIN = auto()
     FIAT = auto()
+    DEFILLAMA = auto()
 
 
 DEFAULT_CURRENT_PRICE_ORACLES_ORDER = [
@@ -170,6 +172,7 @@ DEFAULT_CURRENT_PRICE_ORACLES_ORDER = [
     CurrentPriceOracle.UNISWAPV2,
     CurrentPriceOracle.UNISWAPV3,
     CurrentPriceOracle.SADDLE,
+    CurrentPriceOracle.DEFILLAMA,
 ]
 
 
@@ -271,6 +274,7 @@ class Inquirer():
     _data_directory: Path
     _cryptocompare: 'Cryptocompare'
     _coingecko: 'Coingecko'
+    _defillama: 'DefiLlama'
     _manualcurrent: 'ManualCurrentOracle'
     _uniswapv2: Optional['UniswapV2Oracle'] = None
     _uniswapv3: Optional['UniswapV3Oracle'] = None
@@ -292,23 +296,27 @@ class Inquirer():
             data_dir: Path = None,
             cryptocompare: 'Cryptocompare' = None,
             coingecko: 'Coingecko' = None,
+            defillama: 'DefiLlama' = None,
             manualcurrent: 'ManualCurrentOracle' = None,
             msg_aggregator: 'MessagesAggregator' = None,
     ) -> 'Inquirer':
         if Inquirer.__instance is not None:
             return Inquirer.__instance
 
-        assert data_dir, 'arguments should be given at the first instantiation'
-        assert cryptocompare, 'arguments should be given at the first instantiation'
-        assert coingecko, 'arguments should be given at the first instantiation'
-        assert manualcurrent, 'arguments should be given at the first instantiation'
-        assert msg_aggregator, 'arguments should be given at the first instantiation'
+        error_msg = 'arguments should be given at the first instantiation'
+        assert data_dir, error_msg
+        assert cryptocompare, error_msg
+        assert coingecko, error_msg
+        assert defillama, error_msg
+        assert manualcurrent, error_msg
+        assert msg_aggregator, error_msg
 
         Inquirer.__instance = object.__new__(cls)
 
         Inquirer.__instance._data_directory = data_dir
         Inquirer._cryptocompare = cryptocompare
         Inquirer._coingecko = coingecko
+        Inquirer._defillama = defillama
         Inquirer._manualcurrent = manualcurrent
         Inquirer._cached_current_price = {}
         Inquirer._msg_aggregator = msg_aggregator

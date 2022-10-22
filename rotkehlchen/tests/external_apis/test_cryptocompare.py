@@ -220,14 +220,14 @@ def test_cryptocompare_historical_data_price(
     cc = Cryptocompare(data_directory=data_dir, database=database)
     # Get lots of historical prices from at least 1 query after the ts we need
     cc.query_and_store_historical_data(
-        from_asset=from_asset,
-        to_asset=to_asset,
+        from_asset=from_asset.resolve(),
+        to_asset=to_asset.resolve(),
         timestamp=timestamp + 2020 * 3600,
     )
     # Query the ts we need directly from the cached data
     price_cache_entry = GlobalDBHandler().get_historical_price(
-        from_asset=from_asset,
-        to_asset=to_asset,
+        from_asset=from_asset.resolve(),
+        to_asset=to_asset.resolve(),
         timestamp=timestamp,
         max_seconds_distance=3600,
         source=HistoricalPriceOracle.CRYPTOCOMPARE,
@@ -286,24 +286,25 @@ def test_cryptocompare_query_compound_tokens(
     The test always uses a clean caching directory so requests are ALWAYS made to cryptocompare
     to test that everything works.
     """
+    usd = A_USD.resolve()
     asset = run['asset']
     expected_price1 = run['expected_price1']
     expected_price2 = run['expected_price2']
     price = cryptocompare.query_historical_price(
         from_asset=asset,
-        to_asset=A_USD,
+        to_asset=usd,
         timestamp=1576195200,
     )
     assert price == expected_price1
     price = cryptocompare.query_endpoint_pricehistorical(
-        from_asset=asset,
-        to_asset=A_USD,
+        from_asset=asset.resolve(),
+        to_asset=usd,
         timestamp=1584662400,
     )
     assert price == expected_price2
     price = cryptocompare.query_current_price(
-        from_asset=asset,
-        to_asset=A_USD,
+        from_asset=asset.resolve(),
+        to_asset=usd,
     )
     assert price is not None
 

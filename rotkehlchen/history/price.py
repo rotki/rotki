@@ -21,6 +21,7 @@ from .types import HistoricalPriceOracle, HistoricalPriceOracleInstance
 if TYPE_CHECKING:
     from rotkehlchen.externalapis.coingecko import Coingecko
     from rotkehlchen.externalapis.cryptocompare import Cryptocompare
+    from rotkehlchen.externalapis.defillama import DefiLlama
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -74,6 +75,7 @@ class PriceHistorian():
     __instance: Optional['PriceHistorian'] = None
     _cryptocompare: 'Cryptocompare'
     _coingecko: 'Coingecko'
+    _defillama: 'DefiLlama'
     _manual: ManualPriceOracle  # This is used when iterating through all oracles
     _oracles: Optional[List[HistoricalPriceOracle]] = None
     _oracle_instances: Optional[List[HistoricalPriceOracleInstance]] = None
@@ -83,17 +85,21 @@ class PriceHistorian():
             data_directory: Path = None,
             cryptocompare: 'Cryptocompare' = None,
             coingecko: 'Coingecko' = None,
+            defillama: 'DefiLlama' = None,
     ) -> 'PriceHistorian':
         if PriceHistorian.__instance is not None:
             return PriceHistorian.__instance
 
-        assert data_directory, 'arguments should be given at the first instantiation'
-        assert cryptocompare, 'arguments should be given at the first instantiation'
-        assert coingecko, 'arguments should be given at the first instantiation'
+        error_msg = 'arguments should be given at the first instantiation'
+        assert data_directory, error_msg
+        assert cryptocompare, error_msg
+        assert coingecko, error_msg
+        assert defillama, error_msg
 
         PriceHistorian.__instance = object.__new__(cls)
         PriceHistorian._cryptocompare = cryptocompare
         PriceHistorian._coingecko = coingecko
+        PriceHistorian._defillama = defillama
         PriceHistorian._manual = ManualPriceOracle()
 
         return PriceHistorian.__instance

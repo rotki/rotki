@@ -64,6 +64,7 @@ from rotkehlchen.externalapis.beaconchain import BeaconChain
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.covalent import Covalent, chains_id
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
+from rotkehlchen.externalapis.defillama import DefiLlama
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb import GlobalDBHandler
@@ -153,6 +154,7 @@ class Rotkehlchen():
         )
         self.cryptocompare = Cryptocompare(data_directory=self.data_dir, database=None)
         self.coingecko = Coingecko()
+        self.defillama = DefiLlama()
         self.icon_manager = IconManager(data_dir=self.data_dir, coingecko=self.coingecko)
         self.assets_updater = AssetsUpdater(self.msg_aggregator)
         # Initialize the Inquirer singleton
@@ -160,6 +162,7 @@ class Rotkehlchen():
             data_dir=self.data_dir,
             cryptocompare=self.cryptocompare,
             coingecko=self.coingecko,
+            defillama=self.defillama,
             manualcurrent=ManualCurrentOracle(),
             msg_aggregator=self.msg_aggregator,
         )
@@ -261,6 +264,7 @@ class Rotkehlchen():
                 data_directory=self.data_dir,
                 cryptocompare=self.cryptocompare,
                 coingecko=self.coingecko,
+                defillama=self.defillama,
             )
             PriceHistorian().set_oracles_order(settings.historical_price_oracles)
 
