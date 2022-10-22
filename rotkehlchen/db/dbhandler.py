@@ -1295,6 +1295,7 @@ class DBHandler:
 
         If not, or if there is no saved entry, return None.
         """
+        ignored_assets = self.get_ignored_assets(cursor)
         last_queried_ts = None
         cursor.execute(
             'SELECT key, value FROM accounts_details WHERE account=? AND blockchain=? AND (key=? OR key=?)',  # noqa: E501
@@ -1320,7 +1321,8 @@ class DBHandler:
                     )
                     continue
 
-                returned_list.append(token)
+                if token not in ignored_assets:
+                    returned_list.append(token)
 
         if len(returned_list) == 0 and last_queried_ts is None:
             return None, None
