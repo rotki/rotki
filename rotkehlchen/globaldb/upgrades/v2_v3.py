@@ -328,12 +328,21 @@ def translate_assets_in_price_table(cursor: 'DBCursor') -> List[Tuple[str, str, 
     Translate the asset ids in the price table.
 
     Also drop all non manually input asset prices since otherwise this upgrade
-    will take forever. A heavily used globaldb
+    will take forever for a heavily used globaldb
     """
-    # cursor.execute('DELETE from price_history WHERE source_type!="A"')
+    assets = (
+        'ETH',
+        'ETH2',
+        'BTC',
+        'BCH',
+        'ETC',
+        'DOT',
+        'KSM',
+    )
     cursor.execute(
-        'SELECT from_asset, to_asset, source_type, timestamp, price FROM '
-        'price_history WHERE source_type=="A"',
+        f'SELECT from_asset, to_asset, source_type, timestamp, price FROM '
+        f'price_history WHERE (source_type=="A" OR from_asset IN ({",".join(["?"]*len(assets))}))',
+        assets,
     )
     updated_rows = []
     for (from_asset, to_asset, source_type, timestamp, price) in cursor:
@@ -346,20 +355,23 @@ def translate_assets_in_price_table(cursor: 'DBCursor') -> List[Tuple[str, str, 
 
 def migrate_to_v3(connection: 'DBConnection') -> None:
     """Upgrade assets information and migrate globaldb to version 3"""
+    log.debug('Entered globaldb v2->v3 upgrade')
     with connection.read_ctx() as cursor:
-        # Obtain information for ethereum assets
+        log.debug('Obtain ethereum assets information')
         evm_tuples, assets_tuple, common_asset_details = upgrade_ethereum_asset_ids_v3(cursor)
-        # Underlying tokens mappings
         mappings = translate_underlying_table(cursor)
+        log.debug('Upgrade other and owned assets')
         assets_tuple_others, common_asset_details_others = upgrade_other_assets(cursor)
         owned_assets = translate_owned_assets(cursor)
+        log.debug('Upgrade prices')
         updated_prices = translate_assets_in_price_table(cursor)
+        log.debug('Upgrade binance pairs')
         updated_binance_pairs = translate_binance_pairs(cursor)
 
     with connection.write_ctx() as cursor:
-        # Purge or delete tables with outdated information. Some of these tables
-        # like user_owned_assets are recreated in an identical state but are dropped
-        # and recreated since they have references to a table that is dropped and modified
+        log.debug('Purge/delete tables with outdated information')
+        # Some of these tables like user_owned_assets are recreated in an identical state but are
+        # dropped and recreated since they have references to a table that is dropped and modified
         cursor.executescript("""
         PRAGMA foreign_keys=off;
         DROP TABLE IF EXISTS user_owned_assets;
@@ -373,7 +385,7 @@ def migrate_to_v3(connection: 'DBConnection') -> None:
         PRAGMA foreign_keys=on;
         """)
 
-        # Create new tables
+        log.debug('Create new tables')
         cursor.executescript("""
         CREATE TABLE IF NOT EXISTS token_kinds (
           token_kind    CHAR(1)       PRIMARY KEY NOT NULL,
@@ -490,16 +502,20 @@ def migrate_to_v3(connection: 'DBConnection') -> None:
         );
         """)
 
-        # And now input the modified data back to the new tables
         cursor.executescript('PRAGMA foreign_keys=off;')
+        log.debug('Input common asset data')
         cursor.executemany(COMMON_ASSETS_INSERT, common_asset_details)
         cursor.executemany(COMMON_ASSETS_INSERT, common_asset_details_others)
+        log.debug('Input asset data')
         cursor.executemany(ASSETS_INSERT, assets_tuple)
         cursor.executemany(ASSETS_INSERT, assets_tuple_others)
         cursor.executemany(OWNED_ASSETS_INSERT, owned_assets)
+        log.debug('Input prices')
         cursor.executemany(PRICES_INSERT, updated_prices)
+        log.debug('Input binance pairs')
         cursor.executemany(BINANCE_INSERT, updated_binance_pairs)
         cursor.executescript('PRAGMA foreign_keys=on;')
+        log.debug('Input evm and underlying tokens')
         cursor.executemany(EVM_TOKEN_INSERT, evm_tuples)
         cursor.executemany(UNDERLYING_TOKEN_INSERT, mappings)
         # Add `custom asset` asset type
@@ -515,3 +531,4 @@ def migrate_to_v3(connection: 'DBConnection') -> None:
             sql_sentences = f.read()
             cursor.executescript(sql_sentences)
         connection.commit()
+        log.debug('Finished globaldb v2->v3 upgrade')
