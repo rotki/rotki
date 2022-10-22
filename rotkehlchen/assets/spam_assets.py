@@ -668,12 +668,6 @@ KNOWN_ETH_SPAM_TOKENS: Dict[ChecksumEvmAddress, Dict[str, Any]] = {
         'symbol': 'UGC',
         'decimals': 18,
     },
-    string_to_evm_address(''): {
-        'name': 'UG Coin',
-        'symbol': 'UGC',
-        'decimals': 18,
-    },
-    
 }
 
 

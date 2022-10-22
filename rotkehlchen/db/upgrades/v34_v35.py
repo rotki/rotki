@@ -2,6 +2,7 @@ import json
 import logging
 from typing import TYPE_CHECKING, List, Tuple
 
+from rotkehlchen.assets.spam_assets import update_spam_assets
 from rotkehlchen.constants.resolver import (
     ETHEREUM_DIRECTIVE,
     ETHEREUM_DIRECTIVE_LENGTH,
@@ -341,7 +342,7 @@ def upgrade_v34_to_v35(db: 'DBHandler') -> None:
     - Add user_notes table
     - Renames the asset identifiers to use CAIPS
     """
-    log.debug('Entered upgrade!!!')
+    log.debug('Entered userdb v34->v35 upgrade')
     with db.user_write() as write_cursor:
         _clean_amm_swaps(write_cursor)
         _remove_unused_assets(write_cursor)
@@ -354,3 +355,5 @@ def upgrade_v34_to_v35(db: 'DBHandler') -> None:
         _update_assets_in_user_queried_tokens(write_cursor)
         _update_history_event_assets_identifiers_to_caip_format(write_cursor)
         _add_manual_current_price_oracle(write_cursor)
+        update_spam_assets(write_cursor=write_cursor, db=db, make_remote_query=False)
+    log.debug('Finished userdb v34->v35 upgrade')

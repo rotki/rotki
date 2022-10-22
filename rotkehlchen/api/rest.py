@@ -4449,7 +4449,7 @@ class RestAPI():
     def _pull_spam_assets(self) -> Dict[str, Any]:
         try:
             with self.rotkehlchen.data.db.user_write() as cursor:
-                assets_updated = update_spam_assets(write_cursor=cursor, db=self.rotkehlchen.data.db)  # noqa: E501
+                assets_updated = update_spam_assets(write_cursor=cursor, db=self.rotkehlchen.data.db, make_remote_query=True)  # noqa: E501
         except RemoteError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
         return {'result': assets_updated, 'message': '', 'status_code': HTTPStatus.OK}
