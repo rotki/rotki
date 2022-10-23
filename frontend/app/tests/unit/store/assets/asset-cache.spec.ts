@@ -32,7 +32,7 @@ describe('store::assets/cache', () => {
     const firstRetrieval: ComputedRef<AssetInfo | null> = store.retrieve('KEY');
     const secondRetrieval: ComputedRef<AssetInfo | null> =
       store.retrieve('KEY');
-    vi.advanceTimersToNextTimer();
+    vi.advanceTimersByTime(2500);
     await flushPromises();
     expect(useAssetInfoApi().assetMapping).toHaveBeenCalledOnce();
     expect(get(firstRetrieval)).toEqual(asset);
@@ -40,6 +40,7 @@ describe('store::assets/cache', () => {
   });
 
   it('should not request failed assets twice unless they expire', async () => {
+    vi.mocked(useAssetInfoApi().assetMapping).mockResolvedValue({});
     const firstRetrieval: ComputedRef<AssetInfo | null> = store.retrieve('KEY');
     const secondRetrieval: ComputedRef<AssetInfo | null> =
       store.retrieve('KEY');
@@ -93,24 +94,25 @@ describe('store::assets/cache', () => {
     );
 
     store.retrieve(`AST-0`);
-    vi.advanceTimersToNextTimer();
+    vi.advanceTimersByTime(3000);
     await flushPromises();
 
     for (let i = 1; i < 50; i++) {
       store.retrieve(`AST-${i}`);
-      vi.advanceTimersToNextTimer();
-      await flushPromises();
     }
 
+    vi.advanceTimersByTime(4000);
+    await flushPromises();
+
     store.retrieve(`AST-0`);
-    vi.advanceTimersToNextTimer();
+    vi.advanceTimersByTime(4000);
     await flushPromises();
 
     for (let i = 51; i < 505; i++) {
       store.retrieve(`AST-${i}`);
-      vi.advanceTimersToNextTimer();
-      await flushPromises();
     }
+    vi.advanceTimersByTime(4000);
+    await flushPromises();
 
     const entries = Object.entries(get(store.cache));
     expect(entries).toHaveLength(500);
