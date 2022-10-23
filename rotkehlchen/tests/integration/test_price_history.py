@@ -9,8 +9,16 @@ from rotkehlchen.tests.utils.constants import A_DASH, A_XMR
 from rotkehlchen.types import Price, Timestamp
 
 
+HISTORICAL_PRICE_ORACLES = [
+    HistoricalPriceOracle.MANUAL,
+    HistoricalPriceOracle.CRYPTOCOMPARE,
+    HistoricalPriceOracle.COINGECKO,
+]
+
+
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_price_queries', [False])
+@pytest.mark.parametrize('historical_price_oracles_order', [HISTORICAL_PRICE_ORACLES])
 def test_price_queries(price_historian, data_dir, database):
     """Test some historical price queries. Make sure that we test some
     assets not in cryptocompare but in coigecko so the backup mechanism triggers and works"""

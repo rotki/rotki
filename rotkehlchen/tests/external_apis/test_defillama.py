@@ -4,7 +4,7 @@ from rotkehlchen.constants.assets import A_DAI, A_ETH, A_EUR, A_USD
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import Price
 
-aave_mocked_historical_prices = {
+defillama_mocked_historical_prices = {
     'USD': {
         'EUR': {
             1597024800: FVal('1.007'),
@@ -15,7 +15,7 @@ aave_mocked_historical_prices = {
 
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 @pytest.mark.parametrize('ignore_mocked_prices_for', ['ETH'])
-@pytest.mark.parametrize('mocked_price_queries', [aave_mocked_historical_prices])
+@pytest.mark.parametrize('mocked_price_queries', [defillama_mocked_historical_prices])
 def test_defillama_historical_price(price_historian, session_defillama):  # pylint: disable=unused-argument  # noqa: E501
     eth = A_ETH.resolve()
     usd = A_USD.resolve()
