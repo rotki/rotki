@@ -27,6 +27,7 @@ from rotkehlchen.utils.misc import create_timestamp, timestamp_to_date, ts_now
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+MIN_DEFILLAMA_CONFIDENCE = FVal('0.20')
 
 
 class Defillama(HistoricalPriceOracleInterface):
@@ -85,7 +86,7 @@ class Defillama(HistoricalPriceOracleInterface):
 
         return decoded_json
 
-    def _get_asset_id(self, asset: AssetWithOracles) -> Optional[str]:
+    def _get_asset_id(self, asset: AssetWithOracles) -> str:
         """
         Create the id to be used in Defillama.
         May raise:
@@ -96,6 +97,49 @@ class Defillama(HistoricalPriceOracleInterface):
             return f'{str(asset.chain)}:{asset.evm_address}'
 
         return f'coingecko:{asset.to_coingecko()}'
+
+    def _deserialize_price(
+            self,
+            result: Dict[str, Any],
+            coin_id: str,
+            from_asset: Asset,
+            to_asset: Asset,
+    ) -> Price:
+        """
+        Reads the response from defillama for prices and returns the usd price.
+        If the price is not available, couldn't deserialize the response or the confidence
+        is too low we return Price(ZERO) instead
+        """
+        if 'coins' not in result or len(result['coins']) == 0:
+            log.warning(
+                f'Queried Defillama current price from {from_asset.identifier} '
+                f'to {to_asset.identifier}. But coins is not available in the result {result}',
+            )
+            return Price(ZERO)
+
+        coin_result_raw = result['coins'][coin_id]
+        try:
+            if (
+                'confidence' in coin_result_raw and
+                FVal(coin_result_raw['confidence']) < MIN_DEFILLAMA_CONFIDENCE
+            ):
+                # Defillama provides a confidence value ranking how good their confidence in
+                # reported price is. When their confidence in the price is lower than 20% ignore
+                # it. Probably a spam token
+                return Price(ZERO)
+            usd_price = deserialize_price(coin_result_raw['price'])
+        except (KeyError, DeserializationError) as e:
+            error_msg = str(e)
+            if isinstance(e, KeyError):
+                error_msg = f'Missing key in defillama response: {error_msg}.'
+
+            log.warning(
+                f'Queried Defillama current price from {from_asset.identifier} '
+                f'to {to_asset.identifier}. But got key error for {error_msg} when '
+                f'processing the result.',
+            )
+            return Price(ZERO)
+        return usd_price
 
     def query_current_price(
             self,
@@ -114,7 +158,7 @@ class Defillama(HistoricalPriceOracleInterface):
             log.warning(
                 f'Tried to query current price using Defillama from {from_asset} to '
                 f'{to_asset} but {from_asset} is not an EVM token and is not '
-                f'suppoorted by defillama',
+                f'suppported by defillama',
             )
             return Price(ZERO)
 
@@ -123,41 +167,12 @@ class Defillama(HistoricalPriceOracleInterface):
             subpath=f'current/{coin_id}',
         )
 
-        if 'coins' not in result or len(result['coins']) == 0:
-            log.warning(
-                f'Queried Defillama current price from {from_asset.identifier} '
-                f'to {to_asset.identifier}. But coins is not available in the result {result}',
-            )
-            return Price(ZERO)
-
-        coin_result_raw = result['coins'][coin_id]
-        try:
-            if (
-                'confidence' in coin_result_raw and
-                FVal(coin_result_raw['confidence']) < FVal('0.20')
-            ):
-                # Defillama provides a confidence value ranking how good their confidence in
-                # reported price is. When their confidence in the price is lower than 20% ignore
-                # it. Probably a spam token
-                return Price(ZERO)
-            usd_price = deserialize_price(coin_result_raw['price'])
-        except (KeyError, DeserializationError) as e:
-            error_msg = str(e)
-            if isinstance(e, KeyError):
-                error_msg = f'Missing key in defillama response: {error_msg}.'
-
-            log.warning(
-                f'Queried Defillama current price from {from_asset.identifier} '
-                f'to {to_asset.identifier}. But got key error for {error_msg} when '
-                f'processing the result.',
-            )
-            return Price(ZERO)
-
-        # We got the price in usd but if that is not what we need we should query for the next
-        # step in the chain of prices
-        if to_asset == A_USD:
+        usd_price = self._deserialize_price(result, coin_id, from_asset, to_asset)
+        if usd_price == ZERO or to_asset == A_USD:
             return usd_price
 
+        # We got the price in usd but that is not what we need we should query for the next
+        # step in the chain of prices
         rate_price = Inquirer().find_price(from_asset=A_USD, to_asset=to_asset)
         return Price(usd_price * rate_price)
 
@@ -229,45 +244,14 @@ class Defillama(HistoricalPriceOracleInterface):
             subpath=f'historical/{timestamp}/{coin_id}',
         )
 
-        if 'coins' not in result or len(result['coins']) == 0:
-            log.warning(
-                f'Queried Defillama current price from {from_asset.identifier} '
-                f'to {to_asset.identifier}. But coins is not available in the result {result}',
-            )
+        usd_price = self._deserialize_price(result, coin_id, from_asset, to_asset)
+        if usd_price == ZERO:
             raise NoPriceForGivenTimestamp(
                 from_asset=from_asset,
                 to_asset=to_asset,
                 time=timestamp,
                 rate_limited=False,
             )
-
-        coin_result_raw = result['coins'][coin_id]
-        try:
-            if (
-                'confidence' in coin_result_raw and
-                FVal(coin_result_raw['confidence']) < FVal('0.20')
-            ):
-                # Defillama provides a confidence value ranking how good their confidence in the
-                # price calculation is. When their confidence in the price is lower than 20%
-                # ignore it. Probably a spam token
-                return Price(ZERO)
-            usd_price = deserialize_price(coin_result_raw['price'])
-        except (KeyError, DeserializationError) as e:
-            error_msg = str(e)
-            if isinstance(e, KeyError):
-                error_msg = f'Missing key in defillama response: {error_msg}.'
-
-            log.warning(
-                f'Queried Defillama simple price from {from_asset.identifier} '
-                f'to {to_asset.identifier}. But got error {error_msg} when '
-                f'processing the result. {result}',
-            )
-            raise NoPriceForGivenTimestamp(
-                from_asset=from_asset,
-                to_asset=to_asset,
-                time=timestamp,
-                rate_limited=False,
-            ) from e
 
         if to_asset != A_USD:
             # We need to query intermediate price in this case. Let the error propagate if

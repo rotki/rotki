@@ -38,7 +38,7 @@ def test_defillama_historical_price(price_historian, session_defillama):  # pyli
     )
     assert price == Price(FVal('394.35727832860067') * FVal('1.007'))
 
-    # Query a evm token
+    # Query an evm token
     price = session_defillama.query_historical_price(
         from_asset=dai,
         to_asset=usd,
