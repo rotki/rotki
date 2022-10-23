@@ -92,12 +92,12 @@ from rotkehlchen.types import (
     ChainID,
     GeneralCacheType,
     KnownProtocolsAssets,
+    OracleSource,
     Price,
     Timestamp,
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import timestamp_to_daystart_timestamp, ts_now
-from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 from rotkehlchen.utils.network import request_get_dict
 
 if TYPE_CHECKING:
@@ -152,7 +152,7 @@ def _check_curve_contract_call(decoded: Tuple[Any, ...]) -> bool:
     )
 
 
-class CurrentPriceOracle(SerializableEnumMixin):
+class CurrentPriceOracle(OracleSource):
     """Supported oracles for querying current prices"""
     COINGECKO = auto()
     CRYPTOCOMPARE = auto()
@@ -168,11 +168,11 @@ class CurrentPriceOracle(SerializableEnumMixin):
 DEFAULT_CURRENT_PRICE_ORACLES_ORDER = [
     CurrentPriceOracle.MANUALCURRENT,
     CurrentPriceOracle.COINGECKO,
+    CurrentPriceOracle.DEFILLAMA,
     CurrentPriceOracle.CRYPTOCOMPARE,
     CurrentPriceOracle.UNISWAPV2,
     CurrentPriceOracle.UNISWAPV3,
     CurrentPriceOracle.SADDLE,
-    CurrentPriceOracle.DEFILLAMA,
 ]
 
 

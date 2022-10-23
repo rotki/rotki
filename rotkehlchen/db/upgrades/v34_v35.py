@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import TYPE_CHECKING, List, Tuple
+from typing import TYPE_CHECKING, List, Literal, Sequence, Tuple, Type
 
 from rotkehlchen.assets.spam_assets import update_spam_assets
 from rotkehlchen.constants.resolver import (
@@ -11,14 +11,15 @@ from rotkehlchen.constants.resolver import (
 )
 from rotkehlchen.db.constants import ACCOUNTS_DETAILS_LAST_QUERIED_TS, ACCOUNTS_DETAILS_TOKENS
 from rotkehlchen.globaldb.upgrades.v2_v3 import OTHER_EVM_CHAINS_ASSETS
+from rotkehlchen.history.types import DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER, HistoricalPriceOracle
+from rotkehlchen.inquirer import DEFAULT_CURRENT_PRICE_ORACLES_ORDER, CurrentPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import EvmTokenKind, SupportedBlockchain
+from rotkehlchen.types import EvmTokenKind, OracleSource, SupportedBlockchain
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBConnection, DBCursor
-
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -336,6 +337,49 @@ def _add_manual_current_price_oracle(cursor: 'DBCursor') -> None:
     log.debug('Exit _add_manual_current_price_oracle')
 
 
+def _add_defillama_to_oracles(cursor: 'DBCursor', setting_name: Literal['current_price_oracles', 'historical_price_oracles']) -> None:  # noqa: E501
+    """
+    Adds defillama to the list of current price oracles and historical prices oracles.
+    If coingecko is in the list is added just after it, otherwise is added at the end.
+    """
+    cursor.execute('SELECT value FROM settings WHERE name=?', (setting_name,))
+    price_oracles = cursor.fetchone()
+
+    if setting_name == 'current_price_oracles':
+        oracle_cls: Type[OracleSource] = CurrentPriceOracle
+        default_oracles: Sequence[OracleSource] = DEFAULT_CURRENT_PRICE_ORACLES_ORDER
+    else:
+        oracle_cls = HistoricalPriceOracle
+        default_oracles = DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER
+
+    oracle_list = default_oracles
+    if price_oracles is not None:
+        oracles = json.loads(price_oracles[0])
+        oracle_list = [oracle_cls.deserialize(oracle) for oracle in oracles]
+        try:
+            # Type ignores here are needed since OracleSource can't have any member
+            # or otherwise we would be re-defining them in their subclasses (they take different
+            # values).
+            coingecko_pos = oracle_list.index(oracle_cls.COINGECKO)  # type: ignore
+            oracle_list.insert(coingecko_pos + 1, oracle_cls.DEFILLAMA)  # type: ignore
+        except ValueError:
+            # If coingecko is not in the list add at the end defillama
+            oracle_list.append(oracle_cls.DEFILLAMA)  # type: ignore
+
+    cursor.execute(
+        'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+        (setting_name, json.dumps([x.serialize() for x in oracle_list])),
+    )
+
+
+def _add_defillama_to_all_oracles(write_cursor: 'DBCursor') -> None:
+    """Wrapper around _add_defillama_to_oracles to add it in the two possible oracle lists"""
+    log.debug('Enter _add_defillama_to_all_oracles')
+    _add_defillama_to_oracles(write_cursor, 'current_price_oracles')
+    _add_defillama_to_oracles(write_cursor, 'historical_price_oracles')
+    log.debug('Exit _add_defillama_to_all_oracles')
+
+
 def upgrade_v34_to_v35(db: 'DBHandler') -> None:
     """Upgrades the DB from v34 to v35
     - Change tables where time is used as column name to timestamp
@@ -356,4 +400,5 @@ def upgrade_v34_to_v35(db: 'DBHandler') -> None:
         _update_history_event_assets_identifiers_to_caip_format(write_cursor)
         _add_manual_current_price_oracle(write_cursor)
         update_spam_assets(write_cursor=write_cursor, db=db, make_remote_query=False)
+        _add_defillama_to_all_oracles(write_cursor=write_cursor)
     log.debug('Finished userdb v34->v35 upgrade')

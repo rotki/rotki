@@ -631,3 +631,11 @@ class GeneralCacheType(Enum):
         # Using custom serialize method instead of SerializableEnumMixin since mixin replaces
         # `_` with ` ` and we don't need spaces here
         return self.name
+
+
+class OracleSource(SerializableEnumMixin):
+    """
+    Abstraction to represent a variable that could be either HistoricalPriceOracle
+    or CurrentPriceOracle. Can't have any member since you can't override them later
+    """
+    ...
