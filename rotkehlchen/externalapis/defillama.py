@@ -13,8 +13,10 @@ from rotkehlchen.constants.timing import DAY_IN_SECONDS, DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.inquirer import Inquirer
@@ -27,7 +29,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class DefiLlama(HistoricalPriceOracleInterface):
+class Defillama(HistoricalPriceOracleInterface):
 
     def __init__(self) -> None:
         super().__init__(oracle_name='defillama')
@@ -60,17 +62,17 @@ class DefiLlama(HistoricalPriceOracleInterface):
                 timeout=DEFAULT_TIMEOUT_TUPLE,
             )
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'DefiLlama API request failed due to {str(e)}') from e
+            raise RemoteError(f'Defillama API request failed due to {str(e)}') from e
 
         if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
             self.last_rate_limit = ts_now()
-            msg = f'Got rate limited by coingecko querying {url}'
+            msg = f'Got rate limited by Defillama querying {url}'
             log.warning(msg)
             raise RemoteError(message=msg, error_code=HTTPStatus.TOO_MANY_REQUESTS)
 
         if response.status_code != 200:
             msg = (
-                f'DefiLlama API request {response.url} failed with HTTP status '
+                f'Defillama API request {response.url} failed with HTTP status '
                 f'code: {response.status_code}'
             )
             raise RemoteError(msg)
@@ -78,14 +80,14 @@ class DefiLlama(HistoricalPriceOracleInterface):
         try:
             decoded_json = json.loads(response.text)
         except json.decoder.JSONDecodeError as e:
-            msg = f'Invalid JSON in Coingecko response. {e}'
+            msg = f'Invalid JSON in Defillama response. {e}'
             raise RemoteError(msg) from e
 
         return decoded_json
 
     def _get_asset_id(self, asset: AssetWithOracles) -> Optional[str]:
         """
-        Create the id to be used in DefiLlama.
+        Create the id to be used in Defillama.
         May raise:
         - UnsupportedAsset
         """
@@ -101,21 +103,18 @@ class DefiLlama(HistoricalPriceOracleInterface):
             to_asset: AssetWithOracles,
     ) -> Price:
         """
-        Returns a simple price for from_asset to to_asset in DefiLlama.
-
-        from_asset can only be an evm token since DefiLlama doesn't track any other type
-        of assets
+        Returns a simple price for from_asset to to_asset in Defillama.
 
         May raise:
-        - RemoteError if there is a problem querying coingecko
+        - RemoteError if there is a problem querying defillama
         """
         try:
             coin_id = self._get_asset_id(from_asset)
         except UnsupportedAsset:
             log.warning(
-                f'Tried to query current price using DefiLlama from {from_asset} to '
+                f'Tried to query current price using Defillama from {from_asset} to '
                 f'{to_asset} but {from_asset} is not an EVM token and is not '
-                f'suppoorted by coingecko',
+                f'suppoorted by defillama',
             )
             return Price(ZERO)
 
@@ -126,8 +125,8 @@ class DefiLlama(HistoricalPriceOracleInterface):
 
         if 'coins' not in result or len(result['coins']) == 0:
             log.warning(
-                f'Queried DefiLlama current price from {from_asset.identifier} '
-                f'to {to_asset.identifier}. But coins ins not available in the result {result}',
+                f'Queried Defillama current price from {from_asset.identifier} '
+                f'to {to_asset.identifier}. But coins is not available in the result {result}',
             )
             return Price(ZERO)
 
@@ -137,15 +136,19 @@ class DefiLlama(HistoricalPriceOracleInterface):
                 'confidence' in coin_result_raw and
                 FVal(coin_result_raw['confidence']) < FVal('0.20')
             ):
-                # DefiLlama provides a confidence value ranking how good they measure the price
-                # is. When their confidence in the price is lower than 20% ignore it. Probably a
-                # spam token
+                # Defillama provides a confidence value ranking how good their confidence in
+                # reported price is. When their confidence in the price is lower than 20% ignore
+                # it. Probably a spam token
                 return Price(ZERO)
-            usd_price = Price(FVal(coin_result_raw['price']))
-        except KeyError as e:
+            usd_price = deserialize_price(coin_result_raw['price'])
+        except (KeyError, DeserializationError) as e:
+            error_msg = str(e)
+            if isinstance(e, KeyError):
+                error_msg = f'Missing key in defillama response: {error_msg}.'
+
             log.warning(
-                f'Queried DefiLlama simple price from {from_asset.identifier} '
-                f'to {to_asset.identifier}. But got key error for {str(e)} when '
+                f'Queried Defillama current price from {from_asset.identifier} '
+                f'to {to_asset.identifier}. But got key error for {error_msg} when '
                 f'processing the result.',
             )
             return Price(ZERO)
@@ -165,7 +168,7 @@ class DefiLlama(HistoricalPriceOracleInterface):
             timestamp: Timestamp,  # pylint: disable=unused-argument
             seconds: Optional[int] = None,  # pylint: disable=unused-argument
     ) -> bool:
-        return True  # noop for DefiLlama
+        return True  # noop for Defillama
 
     def rate_limited_in_last(
             self,
@@ -208,9 +211,9 @@ class DefiLlama(HistoricalPriceOracleInterface):
             coin_id = self._get_asset_id(from_asset)
         except UnsupportedAsset as e:
             log.warning(
-                f'Tried to query historical price using DefiLlama from {from_asset} to '
-                f'{to_asset} at {timestamp} but {from_asset} is not an EVM token and is not '
-                f'suppoorted by coingecko',
+                f'Tried to query historical price using Defillama from {from_asset} to '
+                f'{to_asset} at {timestamp} but {from_asset} is not an EVM token or is not '
+                f'supported by coingecko',
             )
             raise NoPriceForGivenTimestamp(
                 from_asset=from_asset,
@@ -219,7 +222,7 @@ class DefiLlama(HistoricalPriceOracleInterface):
                 rate_limited=False,
             ) from e
 
-        # no cache, query coingecko for daily price
+        # no cache, query defillama for historical price
         date = timestamp_to_date(timestamp, formatstr='%d-%m-%Y')
         result = self._query(
             module='prices',
@@ -228,8 +231,8 @@ class DefiLlama(HistoricalPriceOracleInterface):
 
         if 'coins' not in result or len(result['coins']) == 0:
             log.warning(
-                f'Queried DefiLlama current price from {from_asset.identifier} '
-                f'to {to_asset.identifier}. But coins ins not available in the result {result}',
+                f'Queried Defillama current price from {from_asset.identifier} '
+                f'to {to_asset.identifier}. But coins is not available in the result {result}',
             )
             raise NoPriceForGivenTimestamp(
                 from_asset=from_asset,
@@ -244,15 +247,19 @@ class DefiLlama(HistoricalPriceOracleInterface):
                 'confidence' in coin_result_raw and
                 FVal(coin_result_raw['confidence']) < FVal('0.20')
             ):
-                # DefiLlama provides a confidence value ranking how good they measure the price
-                # is. When their confidence in the price is lower than 20% ignore it. Probably a
-                # spam token
+                # Defillama provides a confidence value ranking how good their confidence in the
+                # price calculation is. When their confidence in the price is lower than 20%
+                # ignore it. Probably a spam token
                 return Price(ZERO)
-            usd_price = Price(FVal(coin_result_raw['price']))
-        except KeyError as e:
+            usd_price = deserialize_price(coin_result_raw['price'])
+        except (KeyError, DeserializationError) as e:
+            error_msg = str(e)
+            if isinstance(e, KeyError):
+                error_msg = f'Missing key in defillama response: {error_msg}.'
+
             log.warning(
-                f'Queried DefiLlama simple price from {from_asset.identifier} '
-                f'to {to_asset.identifier}. But got key error for {str(e)} when '
+                f'Queried Defillama simple price from {from_asset.identifier} '
+                f'to {to_asset.identifier}. But got error {error_msg} when '
                 f'processing the result. {result}',
             )
             raise NoPriceForGivenTimestamp(

@@ -106,7 +106,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
     from rotkehlchen.externalapis.coingecko import Coingecko
     from rotkehlchen.externalapis.cryptocompare import Cryptocompare
-    from rotkehlchen.externalapis.defillama import DefiLlama
+    from rotkehlchen.externalapis.defillama import Defillama
     from rotkehlchen.globaldb.manual_price_oracles import ManualCurrentOracle
 
 
@@ -274,7 +274,7 @@ class Inquirer():
     _data_directory: Path
     _cryptocompare: 'Cryptocompare'
     _coingecko: 'Coingecko'
-    _defillama: 'DefiLlama'
+    _defillama: 'Defillama'
     _manualcurrent: 'ManualCurrentOracle'
     _uniswapv2: Optional['UniswapV2Oracle'] = None
     _uniswapv3: Optional['UniswapV3Oracle'] = None
@@ -296,7 +296,7 @@ class Inquirer():
             data_dir: Path = None,
             cryptocompare: 'Cryptocompare' = None,
             coingecko: 'Coingecko' = None,
-            defillama: 'DefiLlama' = None,
+            defillama: 'Defillama' = None,
             manualcurrent: 'ManualCurrentOracle' = None,
             msg_aggregator: 'MessagesAggregator' = None,
     ) -> 'Inquirer':

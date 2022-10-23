@@ -194,6 +194,8 @@ INSERT OR IGNORE INTO price_history_source_types(type, seq) VALUES ('C', 3);
 INSERT OR IGNORE INTO price_history_source_types(type, seq) VALUES ('D', 4);
 /* MANUAL_CURRENT */
 INSERT OR IGNORE INTO price_history_source_types(type, seq) VALUES ('E', 5);
+/* DEFILLAMA */
+INSERT OR IGNORE INTO price_history_source_types(type, seq) VALUES ('F', 6);
 """
 
 DB_CREATE_PRICE_HISTORY = """

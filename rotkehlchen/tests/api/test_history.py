@@ -15,7 +15,7 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
-from rotkehlchen.externalapis.defillama import DefiLlama
+from rotkehlchen.externalapis.defillama import Defillama
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.types import HistoricalPriceOracle
@@ -409,7 +409,7 @@ def test_missing_prices_in_pnl_report(rotkehlchen_api_server):
         data_directory=MagicMock(spec=Path),
         cryptocompare=MagicMock(spec=Cryptocompare),
         coingecko=coingecko,
-        defillama=MagicMock(spec=DefiLlama),
+        defillama=MagicMock(spec=Defillama),
     )
     price_historian.set_oracles_order([HistoricalPriceOracle.COINGECKO])
     coingecko_api_calls = 0

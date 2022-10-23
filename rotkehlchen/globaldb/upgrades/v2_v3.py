@@ -520,8 +520,9 @@ def migrate_to_v3(connection: 'DBConnection') -> None:
         cursor.executemany(UNDERLYING_TOKEN_INSERT, mappings)
         # Add `custom asset` asset type
         cursor.execute('INSERT OR IGNORE INTO asset_types(type, seq) VALUES ("[", 27)')
-        # Add manual current price source
+        # Add manual current price source and defillama
         cursor.execute('INSERT OR IGNORE INTO price_history_source_types(type, seq) VALUES ("E", 5)')  # noqa: E501
+        cursor.execute('INSERT OR IGNORE INTO price_history_source_types(type, seq) VALUES ("F", 6)')  # noqa: E501
 
         dir_path = Path(__file__).resolve().parent.parent.parent
         # This file contains the EVM version of the assets that are currently in the

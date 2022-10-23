@@ -65,7 +65,11 @@ import SettingCategory from '@/components/settings/SettingCategory.vue';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { PriceOracle } from '@/types/price-oracle';
 
-const baseAvailableOracles = [PriceOracle.CRYPTOCOMPARE, PriceOracle.COINGECKO, PriceOracle.DEFILLAMA];
+const baseAvailableOracles = [
+  PriceOracle.CRYPTOCOMPARE,
+  PriceOracle.COINGECKO,
+  PriceOracle.DEFILLAMA
+];
 const availableCurrentOracles: string[] = [
   ...baseAvailableOracles,
   PriceOracle.UNISWAP2,

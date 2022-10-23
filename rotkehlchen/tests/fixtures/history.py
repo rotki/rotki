@@ -2,7 +2,7 @@ import pytest
 
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
-from rotkehlchen.externalapis.defillama import DefiLlama
+from rotkehlchen.externalapis.defillama import Defillama
 from rotkehlchen.history.events import EventsHistorian
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.types import DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER
@@ -21,7 +21,7 @@ def fixture_session_coingecko():
 
 @pytest.fixture(scope='session', name='session_defillama')
 def fixture_defillama():
-    return DefiLlama()
+    return Defillama()
 
 
 @pytest.fixture(name='historical_price_oracles_order')
