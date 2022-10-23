@@ -831,6 +831,13 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument 
         ).fetchone()[0]
         assert oracles_before_upgrade == '["cryptocompare", "coingecko", "uniswapv2", "uniswapv3", "saddle"]'  # noqa: E501
 
+        # check that asset movement exist with previous format
+        result = [(
+            '_ceth_0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e',
+            '_ceth_0x6810e776880C02933D47DB1b9fc05908e5386b96',
+        )]
+        assert cursor.execute('SELECT asset, fee_asset from asset_movements').fetchall() == result
+
     xpub1 = 'xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk'  # noqa: E501
     xpub2 = 'zpub6quTRdxqWmerHdiWVKZdLMp9FY641F1F171gfT2RS4D1FyHnutwFSMiab58Nbsdu4fXBaFwpy5xyGnKZ8d6xn2j4r4yNmQ3Yp3yDDxQUo3q'  # noqa: E501
 
@@ -920,7 +927,9 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument 
 
         # check that ignored assets are now in the current CAIP format.
         new_ignored_assets_ids = cursor.execute('SELECT value FROM multisettings WHERE name="ignored_asset";').fetchall()  # noqa: E501
-        assert new_ignored_assets_ids == expected_new_ignored_assets_ids
+        for new_ignored_assets_id in expected_new_ignored_assets_ids:
+            assert new_ignored_assets_id in new_ignored_assets_ids
+        assert len(new_ignored_assets_ids) == 128
 
         # check that history events contain a transaction with new style token identifier
         new_tx_assets_ids = cursor.execute('SELECT DISTINCT asset FROM history_events;').fetchall()  # noqa: E501
@@ -941,6 +950,13 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument 
             'SELECT value FROM settings WHERE name="current_price_oracles"',
         ).fetchone()[0]
         assert oracles_after_upgrade == '["manualcurrent", "cryptocompare", "coingecko", "uniswapv2", "uniswapv3", "saddle"]'  # noqa: E501
+
+        # check that asset movements assets were upgrades
+        result = [(
+            'eip155:1/erc20:0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e',
+            'eip155:1/erc20:0x6810e776880C02933D47DB1b9fc05908e5386b96',
+        )]
+        assert cursor.execute('SELECT asset, fee_asset from asset_movements').fetchall() == result
 
 
 def test_latest_upgrade_adds_remove_tables(user_data_dir):

@@ -6,6 +6,7 @@ from typing import Any, Dict
 
 import pytest
 import requests
+from flaky import flaky
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.api.server import APIServer
@@ -47,6 +48,7 @@ AAVE_BALANCESV2_TEST_ACC = '0x8Fe178db26ebA2eEdb22575265bf10A63c395a3d'
 AAVE_V2_TEST_ACC = '0x008C00c45D461d7E08acBC4755a4A0a3a94115ee'
 
 
+@flaky(max_runs=3, min_passes=1)  # open nodes some times time out
 @pytest.mark.parametrize('ethereum_accounts', [[AAVE_BALANCESV1_TEST_ACC, AAVE_BALANCESV2_TEST_ACC]])  # noqa: E501
 @pytest.mark.parametrize('ethereum_modules', [['aave']])
 def test_query_aave_balances(rotkehlchen_api_server, ethereum_accounts):
@@ -112,6 +114,7 @@ def test_query_aave_balances(rotkehlchen_api_server, ethereum_accounts):
         test_warnings.warn(UserWarning(f'Test account {AAVE_BALANCESV2_TEST_ACC} has no aave v2 balances'))  # noqa: E501
 
 
+@flaky(max_runs=3, min_passes=1)  # open nodes some times time out
 @pytest.mark.parametrize('ethereum_accounts', [[AAVE_V2_TEST_ACC]])
 @pytest.mark.parametrize('ethereum_modules', [['aave']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])

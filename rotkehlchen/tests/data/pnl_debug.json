@@ -15,7 +15,7 @@
       "event_subtype": null,
       "accounting_event_type": "history base entry",
       "location_label": "0x19e4057A38a730be37c4DB690b103267AAE1d75d",
-      "notes": "Receive 3.55448345 ETH 0xaBEA9132b05A70803a4E85094fD0e1800777fBEF -> 0x19e4057A38a730be37c4D690b103267AAE1d75d",
+      "notes": "Receive 3.55448345 ETH from 0xaBEA9132b05A70803a4E85094fD0e1800777fBEF",
       "counterparty": "0xaBEA9132b05A70803a4E85094fD0e1800777fBEF"
     },
     {
@@ -33,7 +33,7 @@
       "accounting_event_type": "history base entry",
       "event_subtype": "fee",
       "location_label": "0x19e4057A38a730be37c4DB690b103267AAE1d75d",
-      "notes": "Burned 0.001367993179812 ETH for gas',
+      "notes": "Burned 0.001367993179812 ETH for gas",
       "counterparty": "gas"
     },
     {
