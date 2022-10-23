@@ -13,7 +13,7 @@ flaky==3.7.0
 
 
 # To test google spreadsheet uploading
-google-api-python-client==2.62.0
+google-api-python-client==2.65.0
 google-auth-httplib2==0.1.0
-google-api-core==2.10.1
-google-auth==2.11.1
+google-api-core==1.32.0  # temporarily due to protobuf conflictwith web3
+google-auth==1.25.0  # temporarily due to protobuf conflictwith web3
