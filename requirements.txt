@@ -34,7 +34,7 @@ filetype==1.1.0
 # for fuzzy search of assets
 polyleven==0.8
 
-bip-utils==2.6.1
+bip-utils==2.7.0
 
 typing-extensions==4.3.0 # used for typing.ParamSpec and typing.Concatenate (in stdlib since python 3.10)
 
