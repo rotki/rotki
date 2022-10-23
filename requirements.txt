@@ -33,7 +33,7 @@ werkzeug==2.2.2
 filetype==1.1.0
 
 # for fuzzy search of assets
-polyleven==0.7
+polyleven==0.8
 
 bip-utils==2.6.1
 
