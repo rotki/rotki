@@ -831,6 +831,11 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument 
         ).fetchone()[0]
         assert oracles_before_upgrade == '["cryptocompare", "coingecko", "uniswapv2", "uniswapv3", "saddle"]'  # noqa: E501
 
+        oracles_after_upgrade = cursor.execute(
+            'SELECT value FROM settings WHERE name="historical_price_oracles"',
+        ).fetchone()
+        assert oracles_after_upgrade is None
+
         # check that asset movement exist with previous format
         result = [(
             '_ceth_0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e',
@@ -949,7 +954,12 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument 
         oracles_after_upgrade = cursor.execute(
             'SELECT value FROM settings WHERE name="current_price_oracles"',
         ).fetchone()[0]
-        assert oracles_after_upgrade == '["manualcurrent", "cryptocompare", "coingecko", "uniswapv2", "uniswapv3", "saddle"]'  # noqa: E501
+        assert oracles_after_upgrade == '["manualcurrent", "cryptocompare", "coingecko", "defillama", "uniswapv2", "uniswapv3", "saddle"]'  # noqa: E501
+
+        oracles_after_upgrade = cursor.execute(
+            'SELECT value FROM settings WHERE name="historical_price_oracles"',
+        ).fetchone()[0]
+        assert oracles_after_upgrade == '["manual", "cryptocompare", "coingecko", "defillama"]'
 
         # check that asset movements assets were upgrades
         result = [(
