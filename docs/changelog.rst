@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :feature:`4906` Add supports for custom assets.
+* :feature:`4675` Added YFIETH-f curve pool to the list of known assets.
 * :feature:`4676` Now curve pools are automatically detected in the background each week, and more pools are supported.
 * :feature:`4755` Add mass delete functionality for trades and ledger actions.
 * :bug:`4722` Show unsupported error when running rotki on Windows 7.
