@@ -206,6 +206,7 @@ def test_migration_4(rotkehlchen_api_server):
             'SELECT * from settings where name=?', ('eth_rpc_endpoint',),
         )
         assert cursor.fetchone() is None, 'Setting should have been deleted'
+
     with open(dir_path / 'data' / 'nodes.json', 'r') as f:
         nodes = json.loads(f.read())
         web3_nodes = database.get_web3_nodes(blockchain=SupportedBlockchain.ETHEREUM)
@@ -218,8 +219,9 @@ def test_migration_4(rotkehlchen_api_server):
                     assert web3_node.node_info.owned == node['owned']
                     assert web3_node.weight == FVal(node['weight'])
                     continue
-        assert web3_nodes[-1].node_info.owned is True
-        assert web3_nodes[-1].node_info.endpoint == 'https://localhost:5222'
+        assert len(web3_nodes) >= 5
+        assert web3_nodes[5].node_info.owned is True
+        assert web3_nodes[5].node_info.endpoint == 'https://localhost:5222'
 
 
 @pytest.mark.parametrize('data_migration_version', [None])
