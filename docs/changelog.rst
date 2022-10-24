@@ -18,6 +18,7 @@ Changelog
 * :feature:`4704` Management of ignored assets is now moved to asset settings.
 * :feature:`-` Ethereum transactions involving convex finance should now be automatically decoded.
 * :feature:`1705` Ethereum token for each address will no longer be automatically detected with each query. Query speed performance improvement.
+* :feature:`-` Transactions that have interaced with the WETH contract are now properly decoded.
 * :feature:`-` An ethereum address's tokens can now be manually detected by pressing a specific button in the UI.
 * :feature:`-` Transactions involving uniswap v2 and uniswap v3 will now be properly decoded in the ethereum transactions view
 * :feature:`2701` Multi-evm assets are now supported. All EVM assets display the chain they correspond to in the UI.
