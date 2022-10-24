@@ -1,5 +1,10 @@
 <template>
   <fragment>
+    <v-row justify="end" class="mb-5">
+      <v-col cols="auto">
+        <price-refresh />
+      </v-col>
+    </v-row>
     <v-btn
       v-blur
       fixed
@@ -72,6 +77,7 @@ import ManualBalancesForm from '@/components/accounts/manual-balances/ManualBala
 import ManualBalanceTable from '@/components/accounts/manual-balances/ManualBalanceTable.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import Fragment from '@/components/helper/Fragment';
+import PriceRefresh from '@/components/helper/PriceRefresh.vue';
 import { useRouter } from '@/composables/router';
 import { BalanceType } from '@/services/balances/types';
 import { useManualBalancesStore } from '@/store/balances/manual';

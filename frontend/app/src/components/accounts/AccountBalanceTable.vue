@@ -528,8 +528,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
     headers.push({
       text: tc('account_balances.headers.num_of_detected_tokens'),
       value: 'numOfDetectedTokens',
-      align: 'end',
-      width: '150'
+      align: 'end'
     });
   }
 
@@ -577,8 +576,10 @@ const { getEthDetectedTokensInfo, fetchDetectedTokens } =
   useBlockchainTokensStore();
 const { fetchBlockchainBalances } = useBlockchainBalancesStore();
 
-const detectingTokens = (address: string | null) =>
+const detectingTokens = (address: string | null = null) =>
   isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, address ? { address } : {});
+
+const detectingAllTokens = detectingTokens();
 
 const fetchDetectedTokensAndQueryBalance = async (address: string) => {
   await fetchDetectedTokens(address);
@@ -588,6 +589,15 @@ const fetchDetectedTokensAndQueryBalance = async (address: string) => {
   });
 };
 
+const fetchAllDetectedTokensAndQueryBalance = async () => {
+  const promises = get(visibleBalances).map(async balance => {
+    const address = balance.address;
+    await fetchDetectedTokensAndQueryBalance(address);
+  });
+
+  await Promise.allSettled(promises);
+};
+
 const assets = (address: string) => {
   return get(accountAssets(address));
 };
@@ -595,6 +605,7 @@ const assets = (address: string) => {
 const liabilities = (address: string) => {
   return get(accountLiabilities(address));
 };
+
 const loopringBalances = (address: string) => get(getLoopringBalances(address));
 
 const removeCollapsed = ({ derivationPath, xpub }: XpubPayload) => {
@@ -609,7 +620,9 @@ const removeCollapsed = ({ derivationPath, xpub }: XpubPayload) => {
 };
 
 defineExpose({
-  removeCollapsed
+  removeCollapsed,
+  fetchAllDetectedTokensAndQueryBalance,
+  detectingAllTokens
 });
 </script>
 

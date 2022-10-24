@@ -31,7 +31,8 @@
     "detect_tokens": {
       "tooltip": {
         "last_detected": "Zuletzt erfasst: {time}",
-        "redetect": "Neuerfassung Tokens"
+        "redetect": "Neuerfassung Tokens",
+        "redetect_all": "Re-detect tokens for all addreses"
       }
     },
     "edit_tooltip": "Konto ändern",

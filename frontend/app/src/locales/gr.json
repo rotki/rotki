@@ -31,7 +31,8 @@
     "detect_tokens": {
       "tooltip": {
         "last_detected": "Τελευταία σάρωση: {time}",
-        "redetect": "Επανασάρωση tokens"
+        "redetect": "Επανασάρωση tokens",
+        "redetect_all": "Επανασάρωση tokens για όλες τις διεθύνσεις"
       }
     },
     "edit_tooltip": "Επεξεργασία λογαριασμού",
@@ -2726,7 +2727,9 @@
     "fields": {
       "balance_type": "Balance Type",
       "create_a_custom_asset": "Create a custom asset",
+      "input_manual_price": "Add and use manual price",
       "label": "Label",
+      "price_asset": "Asset Price",
       "select_available_asset": "Select available assets",
       "tags": "Tags"
     },
