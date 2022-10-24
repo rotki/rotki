@@ -403,7 +403,7 @@
     "pnl_csv_with_formulas": true,
     "pnl_csv_have_summary": false,
     "ssf_0graph_multiplier": 0,
-    "last_data_migration": 4,
+    "last_data_migration": 5,
     "non_syncing_exchanges": [],
     "cost_basis_method": "lifo",
     "treat_eth2_as_eth": true,
