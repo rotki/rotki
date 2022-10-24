@@ -207,8 +207,10 @@ def uniswap_v3_lp_token_balances(
         tokens_a, tokens_b = [], []
         for position in positions:
             try:
-                tokens_a.append(ethereum.get_basic_contract_info(to_checksum_address(position[2])))
-                tokens_b.append(ethereum.get_basic_contract_info(to_checksum_address(position[3])))
+                token1_info, _ = ethereum.get_basic_contract_info(to_checksum_address(position[2]))
+                tokens_a.append(token1_info)
+                token2_info, _ = ethereum.get_basic_contract_info(to_checksum_address(position[3]))
+                tokens_b.append(token2_info)
             except (BadFunctionCallOutput, ValueError) as e:
                 log.error(
                     f'Error retrieving contract information for address: {position[2]} '
