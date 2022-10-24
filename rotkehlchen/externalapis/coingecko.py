@@ -292,6 +292,9 @@ DELISTED_ASSETS = [
     strethaddress_to_identifier('0xD29F0b5b3F50b07Fe9a9511F7d86F4f4bAc3f8c4'),
     strethaddress_to_identifier('0xf05a9382A4C3F29E2784502754293D88b835109C'),
     strethaddress_to_identifier('0xf3C092cA8CD6D3d4ca004Dc1d0f1fe8CcAB53599'),
+    strethaddress_to_identifier('0x43f11c02439e2736800433b4594994Bd43Cd066D'),
+    'TOR',
+    strethaddress_to_identifier('0x5c6D51ecBA4D8E4F20373e3ce96a62342B125D6d'),
 ]
 
 COINGECKO_SIMPLE_VS_CURRENCIES = [

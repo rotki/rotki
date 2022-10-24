@@ -219,5 +219,4 @@ WORLD_TO_KRAKEN = COMMON_ASSETS_MAPPINGS | {
     'APT': 'APT',
     'PARA': 'PARA',
     'STX': 'STX',
-    'SWP': 'SWP',
 }

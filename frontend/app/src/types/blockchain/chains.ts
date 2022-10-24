@@ -25,7 +25,8 @@ const chainIcons: Record<EvmChain, string> = {
   [EvmChain.GNOSIS]: '/assets/images/chains/gnosis.svg',
   [EvmChain.AVALANCHE]: '/assets/images/chains/avalanche.svg',
   [EvmChain.MATIC]: '/assets/images/chains/polygon.svg',
-  [EvmChain.OPTIMISM]: '/assets/images/chains/optimism.svg'
+  [EvmChain.OPTIMISM]: '/assets/images/chains/optimism.svg',
+  [EvmChain.CELO]: '/assets/images/chains/celo.svg'
 };
 
 export const getChainIcon = (chain?: Nullable<EvmChain>): string | null => {
