@@ -221,6 +221,10 @@ def test_cryptocompare_asset_support(cryptocompare):
         'FB',  # fitbit but cc has fenerbache
         'CMP',  # cadecius but cc has compcoin
         'KUSD',  # kolibri usd but cc has kowala
+        ethaddress_to_identifier('0x4b13006980aCB09645131b91D259eaA111eaF5Ba'),  # noqa: E501 # mycelium but cc has a different one
+        'eip155:42161/erc20:0xC74fE4c715510Ec2F8C61d70D397B32043F55Abe',  # noqa: E501 # mycelium but cc has a different one
+        'eip155:56/erc20:0xfEB4e9B932eF708c498Cc997ABe51D0EE39300cf',  # noqa: E501 # getkicks but cc has sessia
+        ethaddress_to_identifier('0x06450dEe7FD2Fb8E39061434BAbCFC05599a6Fb8'),  # noqa: E501 xen crypto but cc has xenxin
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         potential_support = (
@@ -493,6 +497,8 @@ def test_coingecko_identifiers_are_reachable():
         ethaddress_to_identifier('0x78a73B6CBc5D183CE56e786f6e905CaDEC63547B'),
         # memorycoin but cc has monopoly
         'MMC',
+        # lendconnect but cc has localtraders
+        ethaddress_to_identifier('0x05C7065d644096a4E4C3FE24AF86e36dE021074b'),
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         identifier = asset_data.identifier

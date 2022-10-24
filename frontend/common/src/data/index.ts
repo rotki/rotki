@@ -13,7 +13,8 @@ export enum EvmChain {
   MATIC = 'matic',
   FANTOM = 'fantom',
   ARBITRUM = 'arbitrum',
-  AVALANCHE = 'avalanche'
+  AVALANCHE = 'avalanche',
+  CELO = 'celo'
 }
 
 export const EvmChainEnum = z.nativeEnum(EvmChain);

@@ -148,7 +148,8 @@ WORLD_TO_BITTREX = COMMON_ASSETS_MAPPINGS | {
     evm_address_to_identifier('0xBd3de9a069648c84d27d74d701C9fa3253098B15', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'EQX',  # noqa: E501
     evm_address_to_identifier('0x1FCdcE58959f536621d76f5b7FfB955baa5A672F', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'FOR',  # noqa: E501
     evm_address_to_identifier('0x9B02dD390a603Add5c07f9fd9175b7DABE8D63B7', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'SPI',  # noqa: E501
-    evm_address_to_identifier('0x6e8908cfa881C9f6f2C64d3436E7b80b1bf0093F', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'BIST',  # noqa: E501
-    evm_address_to_identifier('0x6e8908cfa881C9f6f2C64d3436E7b80b1bf0093F', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'BIST',  # noqa: E501
-    evm_address_to_identifier('0x6e8908cfa881C9f6f2C64d3436E7b80b1bf0093F', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'BIST',  # noqa: E501
+    evm_address_to_identifier('0x41D5D79431A913C4aE7d69a668ecdfE5fF9DFB68', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'INV',  # noqa: E501
+    evm_address_to_identifier('0x99D8a9C45b2ecA8864373A26D1459e3Dff1e17F3', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'MIM',  # noqa: E501
+    'META': 'METADIUM',
+    'NLG': 'MUNT',
 }

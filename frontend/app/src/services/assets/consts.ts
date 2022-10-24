@@ -39,6 +39,10 @@ export const evmChainsData = [
   {
     identifier: EvmChain.AVALANCHE,
     label: 'Avalanche'
+  },
+  {
+    identifier: EvmChain.CELO,
+    label: 'Celo'
   }
 ];
 

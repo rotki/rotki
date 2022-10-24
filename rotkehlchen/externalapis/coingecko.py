@@ -287,6 +287,11 @@ DELISTED_ASSETS = [
     'SDT',
     strethaddress_to_identifier('0xE081b71Ed098FBe1108EA48e235b74F122272E68'),
     'eip155:56/erc20:0xDCEcf0664C33321CECA2effcE701E710A2D28A3F',
+    strethaddress_to_identifier('0xDf6Ef343350780BF8C3410BF062e0C015B1DD671'),
+    strethaddress_to_identifier('0x24dDFf6D8B8a42d835af3b440De91f3386554Aa4'),
+    strethaddress_to_identifier('0xD29F0b5b3F50b07Fe9a9511F7d86F4f4bAc3f8c4'),
+    strethaddress_to_identifier('0xf05a9382A4C3F29E2784502754293D88b835109C'),
+    strethaddress_to_identifier('0xf3C092cA8CD6D3d4ca004Dc1d0f1fe8CcAB53599'),
 ]
 
 COINGECKO_SIMPLE_VS_CURRENCIES = [

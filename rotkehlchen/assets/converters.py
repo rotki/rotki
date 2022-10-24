@@ -515,6 +515,7 @@ UNSUPPORTED_BITTREX_ASSETS = (
     'SIRS',
     'VOLTINU',
     'TZBTC',
+    'DST',  # Daystarter but no cc/cryptocompare data
 )
 
 
@@ -736,6 +737,8 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'RBS',  # no cryptocompare/coingecko data
     'HIMAYC',  # no cryptocompare/coingecko data
     'PRMX',  # no cryptocompare/coingecko data
+    'ASTROBOY',  # no cc/coingecko data
+    'HIOD',  # no cc/coingecko data
 )
 
 # https://api.iconomi.com/v1/assets marks delisted assets
