@@ -15,7 +15,7 @@ export const useAssetInfoRetrieval = defineStore(
   'assets/infoRetrievals',
   () => {
     const { erc20details } = useAssetInfoApi();
-    const { retrieve } = useAssetCacheStore();
+    const { retrieve, isPending } = useAssetCacheStore();
     const { treatEth2AsEth } = storeToRefs(useGeneralSettingsStore());
     const { tc } = useI18n();
     const { notify } = useNotifications();
@@ -53,6 +53,10 @@ export const useAssetInfoRetrieval = defineStore(
       computed(() => {
         const id = get(identifier);
         if (!id) return null;
+
+        if (get(isPending(id))) {
+          return null;
+        }
 
         const key = get(enableAssociation)
           ? get(getAssociatedAssetIdentifier(id))
