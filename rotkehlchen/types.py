@@ -653,3 +653,22 @@ class OracleSource(SerializableEnumMixin):
     or CurrentPriceOracle. Can't have any member since you can't override them later
     """
     ...
+
+
+AddressNameSource = Literal[
+    'blockchain_account',
+    'ens_names',
+    'ethereum_tokens',
+    'global_addressbook',
+    'hardcoded_mappings',
+    'private_addressbook',
+]
+
+DEFAULT_ADDRESS_NAME_PRIORITY: List[AddressNameSource] = [
+    'private_addressbook',
+    'blockchain_account',
+    'global_addressbook',
+    'ethereum_tokens',
+    'hardcoded_mappings',
+    'ens_names',
+]
