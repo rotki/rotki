@@ -843,6 +843,14 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument 
         )]
         assert cursor.execute('SELECT asset, fee_asset from asset_movements').fetchall() == result
 
+        # test that there is 3 evm tx mappings before the upgrade
+        expected_evm_tx_mappings = [
+            (b'\nP\xd7\x05}\xaf>y|\x03\x83\x89V\xd9\x90\xb4#\x8e\xfc\x02\xc1\x96STD\xe0\xccP6\x08\x1fF', 'ETH', 'decoded'),  # noqa: E501
+            (b'\x0b\xbd\xa0\x0fMA\xe9\xcbs\x0e\x8cT*\x04B\xcb\x08R\x84\x16\xee;\xd5,\x1c\xca\xf7\xadd\x94\x03n', 'ETH', 'decoded'),  # noqa: E501
+            (b"\x0c\x04\x82\x92Z\xf0\x97\xedM\x85\xec\x06\x8f\xed\xc3\xdaMev<\xc82WO'6\x92\xc5\xe88wV", 'ETH', 'customized'),  # noqa: E501
+        ]
+        assert cursor.execute('SELECT * from evm_tx_mappings').fetchall() == expected_evm_tx_mappings  # noqa: E501
+
     xpub1 = 'xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk'  # noqa: E501
     xpub2 = 'zpub6quTRdxqWmerHdiWVKZdLMp9FY641F1F171gfT2RS4D1FyHnutwFSMiab58Nbsdu4fXBaFwpy5xyGnKZ8d6xn2j4r4yNmQ3Yp3yDDxQUo3q'  # noqa: E501
 
@@ -961,12 +969,18 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument 
         ).fetchone()[0]
         assert oracles_after_upgrade == '["manual", "cryptocompare", "coingecko", "defillama"]'
 
-        # check that asset movements assets were upgrades
+        # check that asset movements assets were upgraded
         result = [(
             'eip155:1/erc20:0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e',
             'eip155:1/erc20:0x6810e776880C02933D47DB1b9fc05908e5386b96',
         )]
         assert cursor.execute('SELECT asset, fee_asset from asset_movements').fetchall() == result
+
+        # test that only the customized mapping stayed after the upgrade
+        expected_evm_tx_mappings = [
+            (b"\x0c\x04\x82\x92Z\xf0\x97\xedM\x85\xec\x06\x8f\xed\xc3\xdaMev<\xc82WO'6\x92\xc5\xe88wV", 'ETH', 'customized'),  # noqa: E501
+        ]
+        assert cursor.execute('SELECT * from evm_tx_mappings').fetchall() == expected_evm_tx_mappings  # noqa: E501
 
 
 def test_latest_upgrade_adds_remove_tables(user_data_dir):
