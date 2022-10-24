@@ -115,7 +115,7 @@ WORLD_TO_BINANCE = COMMON_ASSETS_MAPPINGS | {
     evm_address_to_identifier('0x3DB6Ba6ab6F95efed1a6E794caD492fAAabF294D', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'LTO',  # noqa: E501
     evm_address_to_identifier('0x65Ef703f5594D2573eb71Aaf55BC0CB548492df4', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'MULTI',  # noqa: E501
     evm_address_to_identifier('0x809826cceAb68c387726af962713b64Cb5Cb3CCA', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'NCASH',  # noqa: E501
-    evm_address_to_identifier('0x2baEcDf43734F22FD5c152DB08E3C27233F0c7d2', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'OM',  # noqa: E501
+    evm_address_to_identifier('0x3593D125a4f7849a1B059E64F4517A86Dd60c95d', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'OM',  # noqa: E501
     evm_address_to_identifier('0xfc82bb4ba86045Af6F327323a46E80412b91b27d', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'PROM',  # noqa: E501
     evm_address_to_identifier('0x8642A849D0dcb7a15a974794668ADcfbe4794B56', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'PROS',  # noqa: E501
     evm_address_to_identifier('0xD291E7a03283640FDc51b121aC401383A46cC623', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'RGT',  # noqa: E501
@@ -139,7 +139,6 @@ WORLD_TO_BINANCE = COMMON_ASSETS_MAPPINGS | {
     evm_address_to_identifier('0x0391D2021f89DC339F60Fff84546EA23E337750f', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'BOND',  # noqa: E501
     evm_address_to_identifier('0xec67005c4E498Ec7f55E092bd1d35cbC47C91892', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'MLN',  # noqa: E501
     evm_address_to_identifier('0xa0246c9032bC3A600820415aE600c6388619A14D', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'FARM',  # noqa: E501
-    evm_address_to_identifier('0x3593D125a4f7849a1B059E64F4517A86Dd60c95d', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'OM',  # noqa: E501
     evm_address_to_identifier('0x419D0d8BdD9aF5e606Ae2232ed285Aff190E711b', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'FUN',  # noqa: E501
     evm_address_to_identifier('0x0258F474786DdFd37ABCE6df6BBb1Dd5dfC4434a', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'ORN',  # noqa: E501
 }
