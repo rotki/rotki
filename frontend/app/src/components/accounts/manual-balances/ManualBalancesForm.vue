@@ -44,7 +44,7 @@
       @focus="delete errors['asset']"
     />
 
-    <v-row v-else>
+    <v-row v-else class="mb-n9">
       <v-col class="col" md="6">
         <v-text-field
           v-model="customAssetName"
@@ -71,6 +71,19 @@
         />
       </v-col>
     </v-row>
+
+    <manual-balances-price-form
+      :price="price"
+      :price-asset="priceAsset"
+      :fetched-price="fetchedPrice"
+      :fetching-price="fetchingPrice"
+      :is-custom-price="isCustomPrice"
+      :pending="pending"
+      :asset-method="assetMethod"
+      @update:price="price = $event"
+      @update:price-asset="priceAsset = $event"
+      @update:custom-price="isCustomPrice = $event"
+    />
 
     <amount-input
       v-model="amount"
@@ -105,7 +118,8 @@
 import useVuelidate from '@vuelidate/core';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
 import { get, set } from '@vueuse/core';
-import { PropType, Ref, watch } from 'vue';
+import { PropType, Ref } from 'vue';
+import ManualBalancesPriceForm from '@/components/accounts/manual-balances/ManualBalancesPriceForm.vue';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import BalanceTypeInput from '@/components/inputs/BalanceTypeInput.vue';
@@ -116,7 +130,10 @@ import { deserializeApiErrorMessage } from '@/services/converters';
 import { api } from '@/services/rotkehlchen-api';
 import { useBalancesStore } from '@/store/balances';
 import { useManualBalancesStore } from '@/store/balances/manual';
+import { useBalancePricesStore } from '@/store/balances/prices';
 import { useMessageStore } from '@/store/message';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { CURRENCY_USD } from '@/types/currencies';
 import { TradeLocation } from '@/types/history/trade-location';
 import { ManualBalance } from '@/types/manual-balances';
 import { startPromise } from '@/utils';
@@ -156,6 +173,11 @@ const balanceType: Ref<BalanceType> = ref(BalanceType.ASSET);
 const form = ref<any>(null);
 const customAssetTypes = ref<string[]>([]);
 const search = ref<string | null>('');
+const price = ref<string>('');
+const priceAsset = ref<string>('');
+const fetchingPrice = ref<boolean>(false);
+const fetchedPrice = ref<string>('');
+const isCustomPrice = ref<boolean>(false);
 
 watch(search, search => {
   if (search === null) search = '';
@@ -202,6 +224,8 @@ watch(
 const { editManualBalance, addManualBalance, manualLabels } =
   useManualBalancesStore();
 const { refreshPrices } = useBalancesStore();
+const { fetchPrices, toSelectedCurrency, getAssetPrice } =
+  useBalancePricesStore();
 const { setMessage } = useMessageStore();
 
 const saveCustomAsset = async (): Promise<string | undefined> => {
@@ -250,6 +274,16 @@ const save = async () => {
   const status = await (isEdit
     ? editManualBalance({ ...balance, id: idVal, asset: usedAsset })
     : addManualBalance({ ...balance, asset: usedAsset }));
+
+  if (status.success) {
+    if (get(isCustomPrice) && get(price) && get(priceAsset)) {
+      await api.assets.addLatestPrice({
+        fromAsset: usedAsset,
+        toAsset: get(priceAsset),
+        price: get(price)
+      });
+    }
+  }
 
   set(pending, false);
   startPromise(refreshPrices(false));
@@ -358,8 +392,70 @@ defineExpose({
   save
 });
 
+const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+
+const searchAssetPrice = async (asset: string) => {
+  if (!asset) {
+    set(price, '');
+    set(priceAsset, '');
+    set(fetchedPrice, '');
+    set(isCustomPrice, true);
+    return;
+  }
+
+  set(fetchingPrice, true);
+  await fetchPrices({
+    ignoreCache: false,
+    selectedAssets: [asset]
+  });
+  set(fetchingPrice, false);
+
+  const priceInUsd = getAssetPrice(asset);
+  if (priceInUsd && !priceInUsd.eq(0)) {
+    const priceInCurrentRate = get(toSelectedCurrency(priceInUsd)).toFixed();
+    set(price, priceInCurrentRate);
+    set(priceAsset, get(currencySymbol));
+    set(fetchedPrice, priceInCurrentRate);
+    set(isCustomPrice, false);
+  } else {
+    set(isCustomPrice, true);
+  }
+};
+
 onMounted(async () => {
   set(customAssetTypes, await api.assets.getCustomAssetTypes());
+
+  const editPayload = get(edit);
+  if (editPayload) {
+    const asset = editPayload.asset;
+    await searchAssetPrice(asset);
+  }
+});
+
+watch(isCustomPrice, isCustomPrice => {
+  if (isCustomPrice) {
+    set(price, '');
+    set(priceAsset, '');
+  } else {
+    set(price, get(fetchedPrice));
+    set(priceAsset, get(currencySymbol));
+  }
+});
+
+watch(assetMethod, assetMethod => {
+  if (assetMethod === 1) {
+    set(price, '');
+    set(priceAsset, '');
+    set(isCustomPrice, true);
+  } else if (get(fetchedPrice)) {
+    set(price, get(fetchedPrice));
+    set(priceAsset, CURRENCY_USD);
+    set(isCustomPrice, false);
+  }
+});
+
+watch(asset, async asset => {
+  await searchAssetPrice(asset);
 });
 </script>
 

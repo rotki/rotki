@@ -117,7 +117,7 @@ export class ManualBalancesPage extends AccountBalancesPage {
       const rowClass = `.manual-balance__location__${balanceLocation.location}`;
       cy.get('body').then($body => {
         if ($body.find(rowClass).length > 0) {
-          cy.get(`${rowClass} td:nth-child(5) [data-cy="display-amount"]`).each(
+          cy.get(`${rowClass} td:nth-child(6) [data-cy="display-amount"]`).each(
             $amount => {
               balanceLocation.renderedValue =
                 balanceLocation.renderedValue.plus(

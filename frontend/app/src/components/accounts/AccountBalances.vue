@@ -23,7 +23,7 @@
               <span v-bind="attrs" v-on="on">
                 <v-btn
                   data-cy="account-balances__delete-button"
-                  color="primary"
+                  color="red"
                   text
                   outlined
                   :disabled="
@@ -39,6 +39,25 @@
               </span>
             </template>
             <span>{{ tc('account_balances.delete_tooltip') }}</span>
+          </v-tooltip>
+          <v-tooltip v-if="isEth" top>
+            <template #activator="{ on }">
+              <v-btn
+                class="ml-2"
+                text
+                outlined
+                :loading="detectingAllTokens"
+                :disabled="detectingAllTokens || isLoading"
+                v-on="on"
+                @click="redetectAllTokens"
+              >
+                <v-icon class="mr-2">mdi-refresh</v-icon>
+                {{ tc('account_balances.detect_tokens.tooltip.redetect') }}
+              </v-btn>
+            </template>
+            <span>
+              {{ tc('account_balances.detect_tokens.tooltip.redetect_all') }}
+            </span>
           </v-tooltip>
         </v-col>
         <v-col v-if="!isEth2" cols="12" sm="6">
@@ -70,7 +89,7 @@
 
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { PropType } from 'vue';
+import { ComputedRef, PropType } from 'vue';
 import AccountBalanceTable from '@/components/accounts/AccountBalanceTable.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
@@ -105,6 +124,14 @@ const { blockchain } = toRefs(props);
 const { isTaskRunning } = useTasks();
 const { refreshBlockchainBalances } = useRefresh(blockchain);
 
+const redetectAllTokens = () => {
+  get(balanceTable)?.fetchAllDetectedTokensAndQueryBalance();
+};
+
+const detectingAllTokens: ComputedRef<boolean> = computed(() => {
+  return get(balanceTable)?.detectingAllTokens || false;
+});
+
 const selectedAddresses = ref<string[]>([]);
 const visibleTags = ref<string[]>([]);
 const editedAccount = ref<string>('');
@@ -117,6 +144,11 @@ const { tc } = useI18n();
 const isEth2 = computed<boolean>(() => {
   return get(blockchain) === Blockchain.ETH2;
 });
+
+const isEth = computed<boolean>(() => {
+  return get(blockchain) === Blockchain.ETH;
+});
+
 const isQueryingBlockchain = isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
 
 const isLoading = computed<boolean>(() => {
