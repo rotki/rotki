@@ -3,23 +3,21 @@
     <v-row>
       <v-col class="col" md="6">
         <amount-input
-          :value="price"
+          v-model="price"
           :disabled="fetchingPrice || !isCustomPrice || pending"
           :loading="fetchingPrice"
           outlined
           :label="tc('common.price')"
-          @input="updatePrice"
         />
       </v-col>
 
       <v-col class="col" md="6">
         <asset-select
-          :value="priceAsset"
+          v-model="priceAsset"
           :disabled="fetchingPrice || !isCustomPrice || pending"
           :loading="fetchingPrice"
           outlined
           :label="tc('manual_balances_form.fields.price_asset')"
-          @input="updatePriceAsset"
         />
       </v-col>
     </v-row>
@@ -27,10 +25,10 @@
     <v-row v-if="assetMethod === 0 && fetchedPrice" class="mt-n10 mb-0">
       <v-col cols="auto">
         <v-checkbox
+          v-model="isCustomPrice"
           :value="isCustomPrice"
           :disabled="pending"
           :label="tc('manual_balances_form.fields.input_manual_price')"
-          @change="updateCustomPrice"
         />
       </v-col>
     </v-row>
@@ -39,28 +37,12 @@
 
 <script setup lang="ts">
 import { PropType } from 'vue';
+import { api } from '@/services/rotkehlchen-api';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { CURRENCY_USD } from '@/types/currencies';
 
-defineProps({
-  price: {
-    required: true,
-    type: String
-  },
-  priceAsset: {
-    required: true,
-    type: String
-  },
-  fetchedPrice: {
-    required: true,
-    type: String
-  },
-  fetchingPrice: {
-    required: true,
-    type: Boolean
-  },
-  isCustomPrice: {
-    required: true,
-    type: Boolean
-  },
+const props = defineProps({
   pending: {
     required: true,
     type: Boolean
@@ -72,23 +54,82 @@ defineProps({
   }
 });
 
-const emit = defineEmits<{
-  (e: 'update:price', price: string): void;
-  (e: 'update:price-asset', priceAsset: string): void;
-  (e: 'update:custom-price', customPrice: boolean): void;
-}>();
+const { assetMethod } = toRefs(props);
 
-const updatePrice = (price: string) => {
-  emit('update:price', price);
+const price = ref<string>('');
+const priceAsset = ref<string>('');
+const fetchingPrice = ref<boolean>(false);
+const fetchedPrice = ref<string>('');
+const isCustomPrice = ref<boolean>(false);
+
+const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+const { fetchPrices, toSelectedCurrency, getAssetPrice } =
+  useBalancePricesStore();
+
+const searchAssetPrice = async (asset: string) => {
+  if (!asset) {
+    set(price, '');
+    set(priceAsset, '');
+    set(fetchedPrice, '');
+    set(isCustomPrice, true);
+    return;
+  }
+
+  set(fetchingPrice, true);
+  await fetchPrices({
+    ignoreCache: false,
+    selectedAssets: [asset]
+  });
+  set(fetchingPrice, false);
+
+  const priceInUsd = getAssetPrice(asset);
+  if (priceInUsd && !priceInUsd.eq(0)) {
+    const priceInCurrentRate = get(toSelectedCurrency(priceInUsd)).toFixed();
+    set(price, priceInCurrentRate);
+    set(priceAsset, get(currencySymbol));
+    set(fetchedPrice, priceInCurrentRate);
+    set(isCustomPrice, false);
+  } else {
+    set(isCustomPrice, true);
+  }
 };
 
-const updatePriceAsset = (priceAsset: string) => {
-  emit('update:price-asset', priceAsset);
+const savePrice = async (asset: string) => {
+  if (get(isCustomPrice) && get(price) && get(priceAsset)) {
+    await api.assets.addLatestPrice({
+      fromAsset: asset,
+      toAsset: get(priceAsset),
+      price: get(price)
+    });
+  }
 };
 
-const updateCustomPrice = (isCustomPrice: boolean) => {
-  emit('update:custom-price', !!isCustomPrice);
-};
+watch(isCustomPrice, isCustomPrice => {
+  if (isCustomPrice) {
+    set(price, '');
+    set(priceAsset, '');
+  } else {
+    set(price, get(fetchedPrice));
+    set(priceAsset, get(currencySymbol));
+  }
+});
+
+watch(assetMethod, assetMethod => {
+  if (assetMethod === 1) {
+    set(price, '');
+    set(priceAsset, '');
+    set(isCustomPrice, true);
+  } else if (get(fetchedPrice)) {
+    set(price, get(fetchedPrice));
+    set(priceAsset, CURRENCY_USD);
+    set(isCustomPrice, false);
+  }
+});
 
 const { tc } = useI18n();
+
+defineExpose({
+  searchAssetPrice,
+  savePrice
+});
 </script>
