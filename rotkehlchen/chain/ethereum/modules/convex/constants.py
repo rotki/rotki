@@ -147,6 +147,22 @@ CONVEX_POOLS = {  # mapping of pool rewards address: pool name
     string_to_evm_address('0x546cd3B917c1d8A6525b4A312bB0014BE031Eb28'): 'USDDFRAXBP3CRV-f',
     string_to_evm_address('0x4a744870fD705971c8c00aC510eAc2206C93d5bb'): 'TUSDFRAXBP3CRV-f',
     string_to_evm_address('0x43217822E188b39E90AFA54A5fcf1c76AB0F323a'): 'xFraxTplLP-f',
+    string_to_evm_address('0x14F02f3b47B407A7a0cdb9292AA077Ce9E124803'): 'europool-f',
+    string_to_evm_address('0xD3C412C3cEdbEC604425B23DCd79Aa1ac810622f'): 'MAIPool3CRV-f',
+    string_to_evm_address('0x7d955C7076566550f6B35357E7cdDF95272333F5'): 'EUROC3CRV',
+    string_to_evm_address('0x28441fb9b8b026487A6174Ff39Be015810611C0F'): 'RSRcrvFRAX-f',
+    string_to_evm_address('0x6d096C99Cc2Ea52490355311b73D86365Acf087f'): 'pUSDFRAXBP3CRV-f',
+    string_to_evm_address('0xC10fD95fd3B56535668426B2c8681AD1E15Be608'): 'ALCXFRAXBP-f',
+    string_to_evm_address('0xA91fccC1ec9d4A2271B7A86a7509Ca05057C1A98'): 'agEUREUROC-f',
+    string_to_evm_address('0xe0705A91984b076C250d410A41f615380aF1C2ed'): 'BADGERFRAX-f',
+    string_to_evm_address('0x19eA715F854dB2196C6f45A174541a5Ac884D2f9'): 'cvxFxsFrax-f',
+    string_to_evm_address('0xf02B3A77b1e7775de10294d78a4c3d77772B484A'): 'CVXFRAXBP-f',
+    string_to_evm_address('0x0404d05F3992347d2f0dC3a97bdd147D77C85c1c'): 'DOLAFRAXBP3CRV-f',
+    string_to_evm_address('0xe94b4cC50aC9ebeC491c3665C3E5a017a87dCF19'): 'yCRV-f',
+    string_to_evm_address('0x455AC43CcE0E17774C0bF240ba709DD5822102f3'): 'tbtc2/sbtcCRV-f',
+    string_to_evm_address('0xdEbc7B51043b4D0dd4f3310C68A12382b8843ceE'): 'cvxCrvFrax-f',
+    string_to_evm_address('0xb235205E1096E0Ad221Fb7621a2E2cbaB875bE75'): 'pETH-ETH-f',
+    string_to_evm_address('0x17962aB30c7F291b125A0A38d0ad220ab22F8a5B'): 'agEURFRAXB-f',
 }
 
 
