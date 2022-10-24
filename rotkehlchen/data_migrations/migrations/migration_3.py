@@ -32,6 +32,7 @@ def _validate_asset_icons(icon_manager: 'IconManager') -> None:
 
 def data_migration_3(write_cursor: 'DBCursor', rotki: 'Rotkehlchen') -> None:
     """
+    Migration created in 1.24
     - Update the list of ignored assets with tokens from cryptoscamdb.
     - Delete malformed assets icons.
     """
