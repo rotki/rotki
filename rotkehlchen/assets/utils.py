@@ -58,6 +58,8 @@ def get_or_create_evm_token(
 
     Note: if the token already exists but the other arguments don't match the
     existing token will still be silently returned
+    Note2: This entire function is designed so that it does not context switch away from
+    its calling greenlet so it should be safe to call from multiple greenlets.
 
     May raise:
     - NotERC20Conformant exception if an ethereum manager is given to query
@@ -74,7 +76,7 @@ def get_or_create_evm_token(
             form_with_incomplete_data=form_with_incomplete_data,
         )
     except (UnknownAsset, DeserializationError):
-        # It can happen that the assets exists but is missing basic information. Check if it exists
+        # It can happen that the asset exists but is missing basic information. Check if it exists
         # and if that is the case we fetch information. The check above would fail if the
         # identifier is not a token or name, symbol or decimals is missing while
         # form_with_incomplete_data is False
@@ -88,15 +90,21 @@ def get_or_create_evm_token(
             f'{evm_address}. Adding it to the global DB',
         )
 
-        info = {}
         if ethereum_manager is not None:
-            info = ethereum_manager.get_basic_contract_info(evm_address)
-            decimals = info['decimals'] if decimals is None else decimals
-            symbol = info['symbol'] if symbol is None else symbol
-            name = info['name'] if name is None else name
+            with ethereum_manager.contract_info_lock:
+                info, did_remote_query = ethereum_manager.get_basic_contract_info(evm_address)
+                if did_remote_query is False:  # other greenlet already wrote in the DB
+                    return EvmToken(
+                        identifier=identifier,
+                        form_with_incomplete_data=form_with_incomplete_data,
+                    )
 
-            if None in (decimals, symbol, name):
-                raise NotERC20Conformant(f'Token {evm_address} is not ERC20 conformant')  # noqa: E501  # pylint: disable=raise-missing-from
+                decimals = info['decimals'] if decimals is None else decimals
+                symbol = info['symbol'] if symbol is None else symbol
+                name = info['name'] if name is None else name
+
+                if None in (decimals, symbol, name):
+                    raise NotERC20Conformant(f'Token {evm_address} is not ERC20 conformant')  # noqa: E501  # pylint: disable=raise-missing-from
 
         # Store the information in the database
         token_data = EvmToken.initialize(
