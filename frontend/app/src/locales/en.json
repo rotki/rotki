@@ -866,7 +866,7 @@
   "amount_display": {
     "click_to_copy": "Click to copy",
     "copied": "Copied!",
-    "manual_tooltip": "This price is manual price you defined."
+    "manual_tooltip": "Manually defined price"
   },
   "app": {
     "moto": "the opensource portfolio manager that protects your privacy",
