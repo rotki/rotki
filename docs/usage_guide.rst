@@ -1687,9 +1687,9 @@ Editing a note follows similar process with the only exception of clicking the *
 Pinning/Deleting a note
 ========================
 
-To delete a note, click on the button labelled as **1**.
+To delete a note, click on the button labelled as **1** in the screenshot below.
 
-To pin a note to the top, click on the button labelled as **2**.
+To pin a note to the top, click on the button labelled as **2** in the screenshot below.
 
 .. image:: images/rotki_pin_delete_notes.png
    :alt: Delete or pin notes
