@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`2607` Users can now add general and section specific notes in rotki by clicking on the note icon on the top right menu.
 * :feature:`4906` Add supports for custom assets.
 * :feature:`4675` Added YFIETH-f curve pool to the list of known assets.
 * :feature:`4676` Now curve pools are automatically detected in the background each week, and more pools are supported.
