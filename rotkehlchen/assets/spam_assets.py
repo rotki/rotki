@@ -668,6 +668,41 @@ KNOWN_ETH_SPAM_TOKENS: Dict[ChecksumEvmAddress, Dict[str, Any]] = {
         'symbol': 'UGC',
         'decimals': 18,
     },
+    string_to_evm_address('0x754938ED5e966D5794AF6Dd3B3c2bBd43af65Ebe'): {
+        'name': '(lidosr.xyz)',
+        'symbol': '[lidosr.xyz] Claim your special rewards.',
+        'decimals': 6,
+    },
+    string_to_evm_address('0x39cf57b4dECb8aE3deC0dFcA1E2eA2C320416288'): {
+        'name': '$ AaveReward.com',
+        'symbol': '$ AaveReward.com',
+        'decimals': 18,
+    },
+    string_to_evm_address('0x67542502245eb5DF64eF7Ea776199CeB79401058'): {
+        'name': '$ UniswapLR.com',
+        'symbol': '$ UniswapLR.com @ 5.75',
+        'decimals': 18,
+    },
+    string_to_evm_address('0x54fd62228C6e1234fd5Fded28555CA963Dcf6d26'): {
+        'name': '$ NFTButerin.com',
+        'symbol': 'NFTButerin.com',
+        'decimals': 18,
+    },
+    string_to_evm_address('0xe72c7D093Ac50C57e47f4f2674243A4FfF68F0F2'): {
+        'name': 'stDai.xyz',
+        'symbol': 'https://stdai.xyz',
+        'decimals': 18,
+    },
+    string_to_evm_address('0x1883A07C429E84AcA23b041c357e1d21A2B645f3'): {
+        'name': 'LooksDrop.com',
+        'symbol': 'LOOKSDROP.COM',
+        'decimals': 18,
+    },
+    string_to_evm_address('0x062032F5a8FfafBde4D513237071f450C270b764'): {
+        'name': 'VoteFork.com',
+        'symbol': 'VOTEFORK.COM',
+        'decimals': 18,
+    },
 }
 
 
