@@ -204,7 +204,6 @@ WORLD_TO_KRAKEN = COMMON_ASSETS_MAPPINGS | {
     evm_address_to_identifier('0x42bBFa2e77757C645eeaAd1655E0911a7553Efbc', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'BOBA',  # noqa: E501
     evm_address_to_identifier('0x2620638eda99f9e7e902ea24a285456ee9438861', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'CSM',  # noqa: E501
     evm_address_to_identifier('0x5fAa989Af96Af85384b8a938c2EdE4A7378D9875', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'GAL',  # noqa: E501
-    evm_address_to_identifier('0xabEDe05598760E399ed7EB24900b30C51788f00F', ChainID.MATIC, EvmTokenKind.ERC20): 'SWP',  # noqa: E501
     evm_address_to_identifier('0xA2cd3D43c775978A96BdBf12d733D5A1ED94fb18', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'XCN',  # noqa: E501
     evm_address_to_identifier('0xBA50933C268F567BDC86E1aC131BE072C6B0b71a', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'ARPA',  # noqa: E501
     evm_address_to_identifier('0x0f2D719407FdBeFF09D87557AbB7232601FD9F29', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'SYN',  # noqa: E501
@@ -217,4 +216,7 @@ WORLD_TO_KRAKEN = COMMON_ASSETS_MAPPINGS | {
     'JUNO': 'JUNO',
     'NODL': 'NODL',
     'BSX': 'BSX',
+    'APT': 'APT',
+    'PARA': 'PARA',
+    'STX': 'STX',
 }

@@ -252,3 +252,33 @@ def test_migration_4_no_own_endpoint(rotkehlchen_api_server):
     with open(dir_path / 'data' / 'nodes.json', 'r') as f:
         nodes = json.loads(f.read())
         assert len(nodes) == len(web3_nodes)
+
+
+@pytest.mark.parametrize('data_migration_version', [None])
+@pytest.mark.parametrize('perform_migrations_at_unlock', [False])
+@pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('perform_nodes_insertion', [False])
+def test_migration_5(rotkehlchen_api_server):
+    """
+    Test that the fith data migration for rotki works.
+    - Create two fake icons and check that the file name was correctly updated
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    migration_patch = patch(
+        'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
+        new=MIGRATION_LIST[4:],
+    )
+    # Create some fake icon files
+    icons_path = rotki.icon_manager.icons_dir
+    Path(icons_path, '_ceth_0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490_small.png').touch()
+    Path(icons_path, '_ceth_0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D_small.png').touch()
+    # the two files + the custom assets folder
+    assert len(list(rotki.icon_manager.icons_dir.iterdir())) == 3
+    with migration_patch:
+        DataMigrationManager(rotki).maybe_migrate_data()
+
+    assert Path(icons_path, 'eip155%3A1%2Ferc20%3A0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490_small.png').is_file() is True  # noqa: E501
+    assert Path(icons_path, 'eip155%3A1%2Ferc20%3A0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D_small.png').is_file() is True  # noqa: E501
+    assert Path(icons_path, '_ceth_0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490_small.png').exists() is False  # noqa: E501
+    assert Path(icons_path, '_ceth_0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D_small.png').exists() is False  # noqa: E501

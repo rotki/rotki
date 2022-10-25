@@ -10,9 +10,9 @@
       class="manual-balances-form__label"
       outlined
       :label="tc('manual_balances_form.fields.label')"
-      :error-messages="v$.label.$errors.map(e => e.$message)"
+      :error-messages="toMessages(v$.label.$errors)"
       :disabled="pending"
-      @focus="delete errors['label']"
+      @blur="v$.label.$touch()"
     />
 
     <balance-type-input
@@ -39,12 +39,12 @@
       :label="tc('common.asset')"
       class="manual-balances-form__asset"
       outlined
-      :error-messages="v$.asset.$errors.map(e => get(e.$message))"
+      :error-messages="toMessages(v$.asset.$errors)"
       :disabled="pending"
-      @focus="delete errors['asset']"
+      @blur="v$.asset.$touch()"
     />
 
-    <v-row v-else>
+    <v-row v-else class="mb-n9">
       <v-col class="col" md="6">
         <v-text-field
           v-model="customAssetName"
@@ -52,7 +52,7 @@
           persistent-hint
           clearable
           :disabled="pending"
-          :error-messages="v$.customAssetName.$errors.map(e => e.$message)"
+          :error-messages="toMessages(v$.customAssetName.$errors)"
           :label="t('common.name')"
         />
       </v-col>
@@ -66,22 +66,29 @@
           clearable
           :disabled="pending"
           :label="t('common.type')"
-          :error-messages="v$.customAssetType.$errors.map(e => e.$message)"
+          :error-messages="toMessages(v$.customAssetType.$errors)"
           :search-input.sync="search"
         />
       </v-col>
     </v-row>
 
+    <manual-balances-price-form
+      ref="priceForm"
+      :pending="pending"
+      :asset-method="assetMethod"
+    />
+
     <amount-input
       v-model="amount"
       :label="tc('common.amount')"
-      :error-messages="errors['amount']"
+      :error-messages="toMessages(v$.amount.$errors)"
       class="manual-balances-form__amount"
       outlined
       autocomplete="off"
       :disabled="pending"
-      @focus="delete errors['amount']"
+      @blur="v$.amount.$touch()"
     />
+
     <tag-input
       v-model="tags"
       :label="tc('manual_balances_form.fields.tags')"
@@ -89,14 +96,15 @@
       outlined
       class="manual-balances-form__tags"
     />
+
     <location-selector
       v-model="location"
       class="manual-balances-form__location"
       outlined
-      :error-messages="errors['location']"
+      :error-messages="toMessages(v$.location.$errors)"
       :disabled="pending"
       :label="tc('common.location')"
-      @focus="delete errors['location']"
+      @blur="v$.location.$touch()"
     />
   </v-form>
 </template>
@@ -104,8 +112,8 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
-import { get, set } from '@vueuse/core';
-import { PropType, Ref, watch } from 'vue';
+import { PropType, Ref } from 'vue';
+import ManualBalancesPriceForm from '@/components/accounts/manual-balances/ManualBalancesPriceForm.vue';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import BalanceTypeInput from '@/components/inputs/BalanceTypeInput.vue';
@@ -121,6 +129,7 @@ import { TradeLocation } from '@/types/history/trade-location';
 import { ManualBalance } from '@/types/manual-balances';
 import { startPromise } from '@/utils';
 import { bigNumberify } from '@/utils/bignumbers';
+import { toMessages } from '@/utils/validation-errors';
 
 const props = defineProps({
   edit: {
@@ -156,6 +165,8 @@ const balanceType: Ref<BalanceType> = ref(BalanceType.ASSET);
 const form = ref<any>(null);
 const customAssetTypes = ref<string[]>([]);
 const search = ref<string | null>('');
+const priceForm: Ref<InstanceType<typeof ManualBalancesPriceForm> | null> =
+  ref(null);
 
 watch(search, search => {
   if (search === null) search = '';
@@ -251,6 +262,11 @@ const save = async () => {
     ? editManualBalance({ ...balance, id: idVal, asset: usedAsset })
     : addManualBalance({ ...balance, asset: usedAsset }));
 
+  if (status.success) {
+    const form = get(priceForm);
+    await form?.savePrice(usedAsset);
+  }
+
   set(pending, false);
   startPromise(refreshPrices(false));
 
@@ -333,6 +349,9 @@ const rules = {
       tc('asset_form.type_non_empty'),
       requiredIf(() => get(assetMethod) === 1)
     )
+  },
+  location: {
+    required
   }
 };
 
@@ -342,6 +361,7 @@ const v$ = useVuelidate(
     amount,
     asset,
     label,
+    location,
     customAssetName,
     customAssetType
   },
@@ -354,12 +374,23 @@ watch(v$, ({ $invalid }) => {
 
 watch(valid, value => input(value));
 
-defineExpose({
-  save
+watch(asset, async asset => {
+  const form = get(priceForm);
+  await form?.searchAssetPrice(asset);
 });
 
 onMounted(async () => {
   set(customAssetTypes, await api.assets.getCustomAssetTypes());
+
+  const editPayload = get(edit);
+  if (editPayload) {
+    const form = get(priceForm);
+    await form?.searchAssetPrice(editPayload.asset);
+  }
+});
+
+defineExpose({
+  save
 });
 </script>
 

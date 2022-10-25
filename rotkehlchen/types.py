@@ -325,6 +325,7 @@ class ChainID(SerializableEnumMixin):
     FANTOM = 250
     ARBITRUM = 42161
     AVALANCHE = 43114
+    CELO = 42220
 
     @classmethod
     def deserialize_from_db(cls, value: int) -> 'ChainID':

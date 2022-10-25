@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :feature:`4906` Add supports for custom assets.
+* :feature:`4675` Added YFIETH-f curve pool to the list of known assets.
 * :feature:`4676` Now curve pools are automatically detected in the background each week, and more pools are supported.
 * :feature:`4755` Add mass delete functionality for trades and ledger actions.
 * :bug:`4722` Show unsupported error when running rotki on Windows 7.
@@ -16,11 +17,15 @@ Changelog
 * :feature:`1224` Windows binaries should now be signed and the warnings that the software is not trusted should slowly go away.
 * :feature:`4704` Management of ignored assets is now moved to asset settings.
 * :feature:`-` Ethereum transactions involving convex finance should now be automatically decoded.
+* :feature:`1705` Ethereum token for each address will no longer be automatically detected with each query. Query speed performance improvement.
+* :feature:`-` Transactions that have interaced with the WETH contract are now properly decoded.
 * :feature:`-` An ethereum address's tokens can now be manually detected by pressing a specific button in the UI.
 * :feature:`-` Transactions involving uniswap v2 and uniswap v3 will now be properly decoded in the ethereum transactions view
+* :feature:`2701` Multi-evm assets are now supported. All EVM assets display the chain they correspond to in the UI.
 * :bug:`-` When force sync fails a proper error message is displayed
 * :bug:`-` If something is wrong with an asset update, it won't end up having partial information. 
-* :bug:`4930` Taxable ledger actions that spend fiat currencies should now be properly seen as taxable 
+* :bug:`4930` Taxable ledger actions that spend fiat currencies should now be properly seen as taxable.
+* :bug:`4870` ETH2 staking view should no longer freeze for too many validators.
   
 * :release:`1.25.3 <2022-09-02>`
 * :bug:`4781` Failure in one specific binance endpoint during balance query won't fail the entire binance balances query unless it's the main spot balances endpoint.

@@ -213,4 +213,7 @@ WORLD_TO_KUCOIN = COMMON_ASSETS_MAPPINGS | {
     evm_address_to_identifier('0xD0352a019e9AB9d757776F532377aAEbd36Fd541', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'FSN',  # noqa: E501
     evm_address_to_identifier('0x31ea0de8119307aA264Bb4b38727aAb4E36b074f', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'STORE',  # noqa: E501
     'MLS': 'PIKASTER2',
+    evm_address_to_identifier('0x2a3bFF78B79A009976EeA096a51A948a3dC00e34', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'WILD',  # noqa: E501
+    evm_address_to_identifier('0x881Ba05de1E78f549cC63a8f6Cabb1d4AD32250D', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'P00LS',  # noqa: E501
+    evm_address_to_identifier('0x9fa69536d1cda4A04cFB50688294de75B505a9aE', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'DERC',  # noqa: E501
 }

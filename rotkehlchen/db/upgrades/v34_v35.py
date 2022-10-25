@@ -9,7 +9,11 @@ from rotkehlchen.constants.resolver import (
     ChainID,
     evm_address_to_identifier,
 )
-from rotkehlchen.db.constants import ACCOUNTS_DETAILS_LAST_QUERIED_TS, ACCOUNTS_DETAILS_TOKENS
+from rotkehlchen.db.constants import (
+    ACCOUNTS_DETAILS_LAST_QUERIED_TS,
+    ACCOUNTS_DETAILS_TOKENS,
+    HISTORY_MAPPING_CUSTOMIZED,
+)
 from rotkehlchen.globaldb.upgrades.v2_v3 import OTHER_EVM_CHAINS_ASSETS
 from rotkehlchen.history.types import DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER, HistoricalPriceOracle
 from rotkehlchen.inquirer import DEFAULT_CURRENT_PRICE_ORACLES_ORDER, CurrentPriceOracle
@@ -380,6 +384,16 @@ def _add_defillama_to_all_oracles(write_cursor: 'DBCursor') -> None:
     log.debug('Exit _add_defillama_to_all_oracles')
 
 
+def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
+    """Reset all non-user customized decoded events"""
+    log.debug('Enter _reset_decoded_events')
+    write_cursor.execute(
+        'DELETE from evm_tx_mappings WHERE value!=?',
+        (HISTORY_MAPPING_CUSTOMIZED,),
+    )
+    log.debug('Exit _reset_decoded_events')
+
+
 def upgrade_v34_to_v35(db: 'DBHandler') -> None:
     """Upgrades the DB from v34 to v35
     - Change tables where time is used as column name to timestamp
@@ -401,4 +415,5 @@ def upgrade_v34_to_v35(db: 'DBHandler') -> None:
         _add_manual_current_price_oracle(write_cursor)
         update_spam_assets(write_cursor=write_cursor, db=db, make_remote_query=False)
         _add_defillama_to_all_oracles(write_cursor=write_cursor)
+        _reset_decoded_events(write_cursor=write_cursor)
     log.debug('Finished userdb v34->v35 upgrade')

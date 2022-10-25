@@ -24,6 +24,7 @@ from ens.main import ENS_MAINNET_ADDR
 from ens.utils import is_none_or_zero_address, normal_name_to_hash, normalize_name
 from eth_abi.exceptions import InsufficientDataBytes
 from eth_typing import BlockNumber, HexStr
+from gevent.lock import Semaphore
 from web3 import HTTPProvider, Web3
 from web3._utils.abi import get_abi_output_types
 from web3._utils.contracts import find_matching_event_abi
@@ -237,6 +238,8 @@ class EthereumManager():
                 'decimals': 18,
             },
         }
+        # Lock to make sure that 2 caller of contract info do not go in at the sametime
+        self.contract_info_lock = Semaphore()
         self.database = database
 
         # Contracts
@@ -1218,21 +1221,23 @@ class EthereumManager():
                 pass
         return self._get_blocknumber_by_time_from_subgraph(ts)
 
-    def get_basic_contract_info(self, address: ChecksumEvmAddress) -> Dict[str, Any]:
+    def get_basic_contract_info(self, address: ChecksumEvmAddress) -> Tuple[Dict[str, Any], bool]:
         """
         Query a contract address and return basic information as:
         - Decimals
         - name
         - symbol
         At all times, the dictionary returned contains the keys; decimals, name & symbol.
-        Although the values might be empty.
+        Although the values might be None.
+
+        Also returns if the function made a remote call or not.
 
         if it is provided in the contract. This method may raise:
         - BadFunctionCallOutput: If there is an error calling a bad address
         """
         cache = self.contract_info_cache.get(address)
         if cache is not None:
-            return cache
+            return cache, False
 
         properties = ('decimals', 'symbol', 'name')
         info: Dict[str, Any] = {}
@@ -1277,4 +1282,4 @@ class EthereumManager():
             info[prop] = value
 
         self.contract_info_cache[address] = info
-        return info
+        return info, True

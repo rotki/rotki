@@ -43,6 +43,19 @@
       <template #item.asset="{ item }">
         <asset-details opens-details :asset="item.asset" />
       </template>
+      <template #item.usdPrice="{ item }">
+        <amount-display
+          v-if="item.usdPrice && item.usdPrice.gte(0)"
+          tooltip
+          show-currency="symbol"
+          fiat-currency="USD"
+          :price-asset="item.asset"
+          :value="item.usdPrice"
+        />
+        <div v-else class="d-flex justify-end">
+          <v-skeleton-loader width="70" type="text" />
+        </div>
+      </template>
       <template #item.amount="{ item }">
         <amount-display
           class="manual-balances-list__amount"
@@ -145,18 +158,26 @@ const deleteBalance = async () => {
   await deleteManualBalance(id);
 };
 
+const { getAssetPrice } = useBalancePricesStore();
+
 const visibleBalances = computed<ManualBalance[]>(() => {
+  let mappedBalances = [];
   const selectedTags = get(onlyTags);
   if (selectedTags.length === 0) {
-    return get(balances);
+    mappedBalances = get(balances);
+  } else {
+    mappedBalances = get(balances).filter(balance => {
+      const tags = balance.tags;
+      if (tags) {
+        return selectedTags.every(tag => tags.includes(tag));
+      }
+    });
   }
 
-  return get(balances).filter(balance => {
-    const tags = balance.tags;
-    if (tags) {
-      return selectedTags.every(tag => tags.includes(tag));
-    }
-  });
+  return mappedBalances.map(item => ({
+    ...item,
+    usdPrice: getAssetPrice(item.asset)
+  }));
 });
 
 const { exchangeRate } = useBalancePricesStore();
@@ -188,6 +209,13 @@ const headers = computed(() => [
     text: t('common.asset').toString(),
     value: 'asset',
     width: '200'
+  },
+  {
+    text: t('common.price_in_symbol', {
+      symbol: get(currencySymbol)
+    }).toString(),
+    value: 'usdPrice',
+    align: 'end'
   },
   {
     text: t('common.amount').toString(),

@@ -477,5 +477,10 @@ export const transactionEventProtocolData = computed<ActionDataEntry[]>(() => [
     identifier: TransactionEventProtocol.HOP_PROTOCOL,
     label: 'Hop Protocol',
     image: '/assets/images/hop_protocol.png'
+  },
+  {
+    identifier: TransactionEventProtocol.WETH,
+    label: 'WETH',
+    image: '/assets/images/defi/weth.svg'
   }
 ]);

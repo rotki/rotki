@@ -55,7 +55,7 @@ def copy_ethereum_rpc_endpoint(write_cursor: 'DBCursor') -> None:
 
 def data_migration_4(write_cursor: 'DBCursor', rotki: 'Rotkehlchen') -> None:
     """
-    - Add ethereum nodes to connect to the database
+    - Add ethereum nodes to connect to the database in 1.25
     """
     read_and_write_nodes_in_database(write_cursor=write_cursor)
     # Connect to the nodes since the migration happens after the ethereum manager initialization

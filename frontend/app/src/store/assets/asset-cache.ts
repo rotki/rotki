@@ -80,7 +80,8 @@ export const useAssetCacheStore = defineStore('assets/cache', () => {
     }
   }
 
-  const queueIdentifier = async (key: string): Promise<void> => {
+  const batchPromise = async () => await fetchBatch();
+  const queueIdentifier = (key: string): void => {
     const unknownExpiry = unknown.get(key);
     if (unknownExpiry && unknownExpiry >= Date.now()) {
       return;
@@ -90,7 +91,7 @@ export const useAssetCacheStore = defineStore('assets/cache', () => {
       unknown.delete(key);
     }
     setPending(key);
-    await fetchBatch();
+    startPromise(batchPromise());
   };
 
   const retrieve = (key: string): ComputedRef<AssetInfo | null> => {
@@ -108,10 +109,14 @@ export const useAssetCacheStore = defineStore('assets/cache', () => {
     }
 
     if (!get(pending)[key] && !expired) {
-      startPromise(queueIdentifier(key));
+      queueIdentifier(key);
     }
 
     return computed(() => get(cache)[key] ?? null);
+  };
+
+  const isPending = (identifier: string): ComputedRef<boolean> => {
+    return computed(() => get(pending)[identifier] ?? false);
   };
 
   const reset = (): void => {
@@ -124,6 +129,7 @@ export const useAssetCacheStore = defineStore('assets/cache', () => {
 
   return {
     cache,
+    isPending,
     retrieve,
     reset
   };
