@@ -160,7 +160,7 @@ class IconManager():
         """Create a mapping of all the assets identifiers to their coingecko id if it is set"""
         querystr = """
         SELECT A.identifier, B.coingecko from assets as A JOIN common_asset_details as B
-        ON B.identifier = A.identifier A.type != ? AND B.coingecko IS NOT NULL AND B.coingecko != ""
+        ON B.identifier = A.identifier WHERE A.type != ? AND B.coingecko IS NOT NULL AND B.coingecko != ""
         """  # noqa: E501
         assets_mappings: Dict[str, str] = {}
         with GlobalDBHandler().conn.read_ctx() as cursor:
