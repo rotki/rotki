@@ -25,7 +25,7 @@ import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import NoPremiumPlaceholder from '@/components/premium/NoPremiumPlaceholder.vue';
 import { useSectionLoading } from '@/composables/common';
 import { usePremium } from '@/composables/premium';
-import { useModules } from '@/composables/session';
+import { useModules } from '@/composables/session/modules';
 import { BalancerBalances } from '@/premium/premium';
 import { useBalancerStore } from '@/store/defi/balancer';
 import { Module } from '@/types/modules';

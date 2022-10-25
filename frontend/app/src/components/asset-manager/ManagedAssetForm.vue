@@ -125,7 +125,7 @@
             <template #append>
               <help-link
                 small
-                :url="`${contributeUrl}#get-coingecko-asset-identifier`"
+                :url="coingeckoContributeUrl"
                 :tooltip="tc('asset_form.help_coingecko')"
               />
             </template>
@@ -154,7 +154,7 @@
             <template #append>
               <help-link
                 small
-                :url="`${contributeUrl}#get-cryptocompare-asset-identifier`"
+                :url="cryptocompareContributeUrl"
                 :tooltip="tc('asset_form.help_cryptocompare')"
               />
             </template>
@@ -612,7 +612,7 @@ const refreshIcon = async () => {
   set(timestamp, Date.now());
 };
 
-const { contributeUrl } = useInterop();
+const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
 </script>
 
 <style scoped lang="scss">

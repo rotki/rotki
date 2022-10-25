@@ -258,14 +258,12 @@ const save = async () => {
   const idVal = get(id);
   const isEdit = get(edit) && idVal;
 
+  const form = get(priceForm);
+  await form?.savePrice(usedAsset);
+
   const status = await (isEdit
     ? editManualBalance({ ...balance, id: idVal, asset: usedAsset })
     : addManualBalance({ ...balance, asset: usedAsset }));
-
-  if (status.success) {
-    const form = get(priceForm);
-    await form?.savePrice(usedAsset);
-  }
 
   set(pending, false);
   startPromise(refreshPrices(false));

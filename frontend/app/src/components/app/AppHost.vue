@@ -2,7 +2,7 @@
   <v-app
     v-if="!isPlayground"
     id="rotki"
-    :key="language"
+    :key="adaptiveLanguage"
     class="app"
     :class="{ ['app--animations-disabled']: !animationsEnabled }"
   >
@@ -13,24 +13,38 @@
 </template>
 
 <script setup lang="ts">
-import { get } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { computed, defineAsyncComponent } from 'vue';
 import AppPremiumManager from '@/components/app/AppPremiumManager.vue';
 import { useRoute } from '@/composables/router';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useSessionStore } from '@/store/session';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { checkIfDevelopment } from '@/utils/env-utils';
 
 const DevApp = defineAsyncComponent(() => import('@/DevApp.vue'));
 
 const { animationsEnabled } = storeToRefs(useSessionSettingsStore());
-const { language } = storeToRefs(useFrontendSettingsStore());
 const route = useRoute();
 
 const isDevelopment = checkIfDevelopment();
 const isPlayground = computed(() => {
   return isDevelopment && get(route).name === 'playground';
+});
+
+const { locale } = useI18n();
+
+const { adaptiveLanguage } = storeToRefs(useSessionStore());
+
+onBeforeMount(() => {
+  setLanguage(get(adaptiveLanguage));
+});
+
+const setLanguage = (language: string) => {
+  if (language !== get(locale)) {
+    set(locale, language);
+  }
+};
+
+watch(adaptiveLanguage, language => {
+  setLanguage(language);
 });
 </script>
 

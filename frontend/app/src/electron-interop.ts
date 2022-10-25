@@ -23,7 +23,15 @@ export const interop = {
   get contributeUrl() {
     return `${BASE_DOCS_URL}/en/stable/contribute.html`;
   },
-
+  get coingeckoContributeUrl() {
+    return `${this.contributeUrl}#get-coingecko-asset-identifier`;
+  },
+  get cryptocompareContributeUrl() {
+    return `${this.contributeUrl}#get-cryptocompare-asset-identifier`;
+  },
+  get languageContributeUrl() {
+    return `${this.contributeUrl}#add-a-new-language-or-translation`;
+  },
   get isPackaged(): boolean {
     return electronApp;
   },

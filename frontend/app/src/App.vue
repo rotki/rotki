@@ -13,6 +13,7 @@
     <v-fade-transition>
       <account-management
         v-if="startupErrorMessage.length === 0 && !loginIn"
+        :key="adaptiveLanguage"
         :logged="logged"
         @login-complete="completeLogin(true)"
         @about="showAbout = true"
@@ -73,7 +74,9 @@ const isWinVersionUnsupported = ref(false);
 
 const { connect } = useMainStore();
 const { showAbout, showDrawer } = storeToRefs(useAreaVisibilityStore());
-const { logged, loginComplete } = storeToRefs(useSessionStore());
+const { logged, loginComplete, adaptiveLanguage } = storeToRefs(
+  useSessionStore()
+);
 const { showComponents } = storeToRefs(usePremiumStore());
 const { setupListeners, isPackaged } = useInterop();
 const { isMobile } = useTheme();

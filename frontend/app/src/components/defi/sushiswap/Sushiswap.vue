@@ -26,7 +26,7 @@ import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import NoPremiumPlaceholder from '@/components/premium/NoPremiumPlaceholder.vue';
 import { useSectionLoading } from '@/composables/common';
 import { usePremium } from '@/composables/premium';
-import { useModules } from '@/composables/session';
+import { useModules } from '@/composables/session/modules';
 import { Sushi } from '@/premium/premium';
 import { useSushiswapStore } from '@/store/defi/sushiswap';
 import { Module } from '@/types/modules';

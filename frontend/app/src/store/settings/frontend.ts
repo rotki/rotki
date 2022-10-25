@@ -5,6 +5,7 @@ import {
   TimeFrameSetting
 } from '@rotki/common/lib/settings/graphs';
 import { ComputedRef } from 'vue';
+import { useLastLanguage } from '@/composables/session/language';
 import { getBnFormat } from '@/data/amount_formatter';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
 import { useSettingsApi } from '@/services/settings/settings-api';
@@ -102,6 +103,7 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
 
   const update = (update: FrontendSettings) => {
     Object.assign(settings, update);
+    checkMachineLanguage();
   };
 
   async function updateSetting(
@@ -139,11 +141,26 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
     }
   }
 
+  const { lastLanguage, forceUpdateMachineLanguage } = useLastLanguage();
+
   const reset = () => {
     update(FrontendSettings.parse({}));
   };
 
+  const checkMachineLanguage = () => {
+    if (get(forceUpdateMachineLanguage) === 'true') {
+      set(lastLanguage, get(language));
+    } else {
+      set(lastLanguage, SupportedLanguage.EN);
+    }
+  };
+
+  watch([language, forceUpdateMachineLanguage], () => {
+    checkMachineLanguage();
+  });
+
   return {
+    forceUpdateMachineLanguage,
     defiSetupDone,
     language,
     timeframeSetting,

@@ -1,6 +1,6 @@
 import { ComputedRef, Ref } from 'vue';
 import { usePremium } from '@/composables/premium';
-import { useModules } from '@/composables/session';
+import { useModules } from '@/composables/session/modules';
 import { useStatusUpdater } from '@/composables/status';
 import { balanceKeys } from '@/services/consts';
 import { ProtocolVersion } from '@/services/defi/consts';

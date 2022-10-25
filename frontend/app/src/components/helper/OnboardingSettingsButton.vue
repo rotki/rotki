@@ -18,14 +18,14 @@
         <span>{{ t('backend_settings_button.tooltip') }}</span>
       </v-tooltip>
     </template>
-    <backend-settings v-if="visible" @dismiss="visible = false" />
+    <onboarding-settings v-if="visible" @dismiss="visible = false" />
   </v-bottom-sheet>
 </template>
 
 <script setup lang="ts">
 import { ref, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
-import BackendSettings from '@/components/settings/BackendSettings.vue';
+import OnboardingSettings from '@/components/settings/OnboardingSettings.vue';
 import { useMainStore } from '@/store/main';
 
 const visible = ref<boolean>(false);
