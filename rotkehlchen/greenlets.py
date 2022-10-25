@@ -39,12 +39,13 @@ class GreenletManager():
             exception_is_error: bool,
             method: Callable,
             **kwargs: Any,
-    ) -> None:
+    ) -> gevent.Greenlet:
         if after_seconds is None:
             greenlet = gevent.spawn(method, **kwargs)
         else:
             greenlet = gevent.spawn_later(after_seconds, method, **kwargs)
         self.add(task_name, greenlet, exception_is_error)
+        return greenlet
 
     def _handle_killed_greenlets(self, greenlet: gevent.Greenlet) -> None:
         if not greenlet.exception:

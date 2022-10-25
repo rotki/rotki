@@ -2,7 +2,7 @@ import copy
 import logging
 import random
 from collections import defaultdict
-from typing import TYPE_CHECKING, Callable, DefaultDict, List, NamedTuple, Set, Tuple
+from typing import TYPE_CHECKING, Callable, DefaultDict, Dict, List, NamedTuple, Set, Tuple
 
 import gevent
 
@@ -107,6 +107,7 @@ class TaskManager():
         self.last_exchange_query_ts: DefaultDict[ExchangeLocationID, int] = defaultdict(int)
         self.base_entries_ignore_set: Set[str] = set()
         self.prepared_cryptocompare_query = False
+        self.running_greenlets: Dict[Callable, gevent.Greenlet] = {}
         self.greenlet_manager.spawn_and_track(  # Needs to run in greenlet, is slow
             after_seconds=None,
             task_name='Prepare cryptocompare queries',
@@ -184,31 +185,31 @@ class TaskManager():
 
         self.prepared_cryptocompare_query = True
 
-    def _maybe_schedule_cryptocompare_query(self) -> bool:
+    def _maybe_schedule_cryptocompare_query(self) -> Optional[gevent.Greenlet]:
         """Schedules a cryptocompare query for a single asset history"""
         if self.prepared_cryptocompare_query is False:
-            return False
+            return None
 
         if len(self.cryptocompare_queries) == 0:
-            return False
+            return None
 
         # If there is already a cryptocompary query running don't schedule another
         if any(
                 'Cryptocompare historical prices' in x.task_name
                 for x in self.greenlet_manager.greenlets
         ):
-            return False
+            return None
 
         now_ts = ts_now()
         # Make sure there is a long enough period  between an asset's histohour query
         # to avoid getting rate limited by cryptocompare
         if now_ts - self.cryptocompare.last_histohour_query_ts <= CRYPTOCOMPARE_HISTOHOUR_FREQUENCY:  # noqa: E501
-            return False
+            return None
 
         query = self.cryptocompare_queries.pop()
         task_name = f'Cryptocompare historical prices {query.from_asset} / {query.to_asset} query'
         log.debug(f'Scheduling task for {task_name}')
-        self.greenlet_manager.spawn_and_track(
+        return self.greenlet_manager.spawn_and_track(
             after_seconds=None,
             task_name=task_name,
             exception_is_error=False,
@@ -217,13 +218,12 @@ class TaskManager():
             to_asset=query.to_asset,
             timestamp=now_ts,
         )
-        return True
 
-    def _maybe_schedule_xpub_derivation(self) -> None:
+    def _maybe_schedule_xpub_derivation(self) -> Optional[gevent.Greenlet]:
         """Schedules the xpub derivation task if enough time has passed and if user has xpubs"""
         now = ts_now()
         if now - self.last_xpub_derivation_ts <= XPUB_DERIVATION_FREQUENCY:
-            return
+            return None
 
         with self.database.conn.read_ctx() as cursor:
             btc_xpubs = self.database.get_bitcoin_xpub_data(
@@ -237,10 +237,11 @@ class TaskManager():
         should_derive_btc_xpubs = len(btc_xpubs) > 0
         should_derive_bch_xpubs = len(bch_xpubs) > 0
         if should_derive_btc_xpubs is False and should_derive_bch_xpubs is False:
-            return
+            return None
 
         log.debug('Scheduling task for Xpub derivation')
-        self.greenlet_manager.spawn_and_track(
+        self.last_xpub_derivation_ts = now
+        return self.greenlet_manager.spawn_and_track(
             after_seconds=None,
             task_name='Derive new xpub addresses for BTC & BCH',
             exception_is_error=True,
@@ -248,14 +249,13 @@ class TaskManager():
             should_derive_btc_xpubs=should_derive_btc_xpubs,
             should_derive_bch_xpubs=should_derive_bch_xpubs,
         )
-        self.last_xpub_derivation_ts = now
 
-    def _maybe_query_ethereum_transactions(self) -> None:
+    def _maybe_query_ethereum_transactions(self) -> Optional[gevent.Greenlet]:
         """Schedules the ethereum transaction query task if enough time has passed"""
         with self.database.conn.read_ctx() as cursor:
             accounts = self.database.get_blockchain_accounts(cursor).eth
             if len(accounts) == 0:
-                return
+                return None
 
             now = ts_now()
             dbethtx = DBEthTx(self.database)
@@ -266,12 +266,13 @@ class TaskManager():
                     queriable_accounts.append(account)
 
         if len(queriable_accounts) == 0:
-            return
+            return None
 
         address = random.choice(queriable_accounts)
         task_name = f'Query ethereum transactions for {address}'
         log.debug(f'Scheduling task to {task_name}')
-        self.greenlet_manager.spawn_and_track(
+        self.last_eth_tx_query_ts[address] = now
+        return self.greenlet_manager.spawn_and_track(
             after_seconds=None,
             task_name=task_name,
             exception_is_error=True,
@@ -280,9 +281,8 @@ class TaskManager():
             start_ts=0,
             end_ts=now,
         )
-        self.last_eth_tx_query_ts[address] = now
 
-    def _maybe_schedule_ethereum_txreceipts(self) -> None:
+    def _maybe_schedule_ethereum_txreceipts(self) -> Optional[gevent.Greenlet]:
         """Schedules the ethereum transaction receipts query task
 
         The DB check happens first here to see if scheduling would even be needed.
@@ -292,11 +292,11 @@ class TaskManager():
         dbethtx = DBEthTx(self.database)
         hash_results = dbethtx.get_transaction_hashes_no_receipt(tx_filter_query=None, limit=TX_RECEIPTS_QUERY_LIMIT)  # noqa: E501
         if len(hash_results) == 0:
-            return
+            return None
 
         task_name = f'Query {len(hash_results)} ethereum transactions receipts'
         log.debug(f'Scheduling task to {task_name}')
-        self.greenlet_manager.spawn_and_track(
+        return self.greenlet_manager.spawn_and_track(
             after_seconds=None,
             task_name=task_name,
             exception_is_error=True,
@@ -304,10 +304,10 @@ class TaskManager():
             limit=TX_RECEIPTS_QUERY_LIMIT,
         )
 
-    def _maybe_schedule_exchange_history_query(self) -> None:
+    def _maybe_schedule_exchange_history_query(self) -> Optional[gevent.Greenlet]:
         """Schedules the exchange history query task if enough time has passed"""
         if len(self.exchange_manager.connected_exchanges) == 0:
-            return
+            return None
 
         now = ts_now()
         queriable_exchanges = []
@@ -321,12 +321,13 @@ class TaskManager():
                     queriable_exchanges.append(exchange)
 
         if len(queriable_exchanges) == 0:
-            return
+            return None
 
         exchange = random.choice(queriable_exchanges)
         task_name = f'Query history of {exchange.name} exchange'
         log.debug(f'Scheduling task to {task_name}')
-        self.greenlet_manager.spawn_and_track(
+        self.last_exchange_query_ts[exchange.location_id()] = now
+        return self.greenlet_manager.spawn_and_track(
             after_seconds=None,
             task_name=task_name,
             exception_is_error=True,
@@ -336,21 +337,21 @@ class TaskManager():
             success_callback=noop_exchange_success_cb,
             fail_callback=exchange_fail_cb,
         )
-        self.last_exchange_query_ts[exchange.location_id()] = now
 
-    def _maybe_query_missing_prices(self) -> None:
+    def _maybe_query_missing_prices(self) -> Optional[gevent.Greenlet]:
         query_filter = HistoryEventFilterQuery.make(limit=100)
         entries = self.get_base_entries_missing_prices(query_filter)
         if len(entries) > 0:
             task_name = 'Periodically query history events prices'
             log.debug(f'Scheduling task to {task_name}')
-            self.greenlet_manager.spawn_and_track(
+            return self.greenlet_manager.spawn_and_track(
                 after_seconds=None,
                 task_name=task_name,
                 exception_is_error=True,
                 method=self.query_missing_prices_of_base_entries,
                 entries_missing_prices=entries,
             )
+        return None
 
     def get_base_entries_missing_prices(
         self,
@@ -407,7 +408,7 @@ class TaskManager():
         with self.database.user_write() as cursor:
             cursor.executemany(query, updates)
 
-    def _maybe_decode_evm_transactions(self) -> None:
+    def _maybe_decode_evm_transactions(self) -> Optional[gevent.Greenlet]:
         """Schedules the evm transaction decoding task
 
         The DB check happens first here to see if scheduling would even be needed.
@@ -420,13 +421,14 @@ class TaskManager():
         if hashes_length > 0:
             task_name = f'decode {hashes_length} evm trasactions'
             log.debug(f'Scheduling periodic task to {task_name}')
-            self.greenlet_manager.spawn_and_track(
+            return self.greenlet_manager.spawn_and_track(
                 after_seconds=None,
                 task_name=task_name,
                 exception_is_error=True,
                 method=self.eth_tx_decoder.get_and_decode_undecoded_transactions,
                 limit=TX_DECODING_LIMIT,
             )
+        return None
 
     def _maybe_check_premium_status(self) -> None:
         """
@@ -490,7 +492,7 @@ class TaskManager():
         finally:
             self.last_premium_status_check = now
 
-    def _maybe_update_snapshot_balances(self) -> None:
+    def _maybe_update_snapshot_balances(self) -> Optional[gevent.Greenlet]:
         """
         Update the balances of a user if the difference between last time they were updated
         and the current time exceeds the `balance_save_frequency`.
@@ -499,7 +501,7 @@ class TaskManager():
             if self.database.should_save_balances(cursor):
                 task_name = 'Periodically update snapshot balances'
                 log.debug(f'Scheduling task to {task_name}')
-                self.greenlet_manager.spawn_and_track(
+                return self.greenlet_manager.spawn_and_track(
                     after_seconds=None,
                     task_name=task_name,
                     exception_is_error=True,
@@ -509,8 +511,9 @@ class TaskManager():
                     timestamp=None,
                     ignore_cache=True,
                 )
+        return None
 
-    def _maybe_update_curve_pools(self) -> None:
+    def _maybe_update_curve_pools(self) -> Optional[gevent.Greenlet]:
         """Function that schedules curve pools update task if either there is no curve pools cache
         yet or this cache has expired (i.e. it's been more than a week since last update)."""
         curve_lp_tokens = GlobalDBHandler().get_general_cache_values(
@@ -527,16 +530,23 @@ class TaskManager():
             should_schedule = ts_now() - last_update_ts >= CURVE_POOLS_UPDATE_SECS
 
         if should_schedule is True:
-            self.greenlet_manager.spawn_and_track(
+            return self.greenlet_manager.spawn_and_track(
                 after_seconds=None,
                 task_name='Update curve pools cache',
                 exception_is_error=True,
                 method=self.update_curve_pools_cache,
             )
+        return None
 
     def _schedule(self) -> None:
         """Schedules background tasks"""
         self.greenlet_manager.clear_finished()
+        # Also clear methods mapping in the task manager
+        self.running_greenlets = {
+            method: greenlet
+            for method, greenlet in self.running_greenlets.items()
+            if greenlet.dead is False
+        }
         current_greenlets = len(self.greenlet_manager.greenlets) + len(self.api_task_greenlets)
         not_proceed = current_greenlets >= self.max_tasks_num
         log.debug(
@@ -547,13 +557,20 @@ class TaskManager():
         if not_proceed:
             return  # too busy
 
-        callables = random.sample(
-            population=self.potential_tasks,
-            k=min(self.max_tasks_num - current_greenlets, len(self.potential_tasks)),
-        )
+        random.shuffle(self.potential_tasks)
+        max_tasks = min(self.max_tasks_num - current_greenlets, len(self.potential_tasks))
 
-        for callable_fn in callables:
-            callable_fn()
+        spawned_new = 0
+        for scheduling_fn in self.potential_tasks:
+            if spawned_new >= max_tasks:
+                break  # no more task slots left
+            if scheduling_fn in self.running_greenlets:
+                continue  # the specified task is already running
+            new_greenlet = scheduling_fn()
+            if new_greenlet is None:
+                continue  # The scheduling function for the specific task decided to not schedule it  # noqa: E501
+            self.running_greenlets[scheduling_fn] = new_greenlet
+            spawned_new += 1
 
     def schedule(self) -> None:
         """Schedules background task while holding the scheduling lock

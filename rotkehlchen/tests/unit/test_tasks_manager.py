@@ -320,3 +320,58 @@ def test_update_curve_pools(task_manager):
                     gevent.sleep(.2)
     except gevent.Timeout as e:
         raise AssertionError(f'Update curve pools was not completed within {timeout} seconds') from e  # noqa: E501
+
+
+def test_try_start_same_task(rotkehlchen_api_server):
+    """
+    1. Checks that it is not possible to start 2 same tasks
+    2. Checks that is possible to start second same task when the first one finishes
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    # Using rotki.greenlet_manager instead of pure GreenletManager() since patch.object
+    # needs it for proper mocking
+    spawn_patch = patch.object(
+        rotki.greenlet_manager,
+        'spawn_and_track',
+        wraps=rotki.greenlet_manager.spawn_and_track,
+    )
+
+    def simple_task():
+        return rotki.greenlet_manager.spawn_and_track(
+            method=lambda: gevent.sleep(0.1),
+            after_seconds=None,
+            task_name='Lol kek',
+            exception_is_error=True,
+        )
+
+    with spawn_patch as patched:
+        rotki.task_manager.potential_tasks = [rotki.task_manager._maybe_update_snapshot_balances]
+        rotki.task_manager.schedule()
+        rotki.task_manager.schedule()
+        assert patched.call_count == 1
+        # Check that mapping in the task manager is correct
+        assert rotki.task_manager.running_greenlets.keys() == {
+            rotki.task_manager._maybe_update_snapshot_balances,
+        }
+        rotki.task_manager.potential_tasks = [simple_task]
+        rotki.task_manager.schedule()  # start a small greenlet
+        assert patched.call_count == 2
+        assert rotki.task_manager.running_greenlets.keys() == {
+            rotki.task_manager._maybe_update_snapshot_balances,
+            simple_task,  # check that mapping was updated
+        }
+        # Wait until our small greenlet finishes
+        gevent.wait([rotki.task_manager.running_greenlets[simple_task]])
+        rotki.task_manager.potential_tasks = []
+        rotki.task_manager.schedule()  # clear the mapping
+        assert rotki.task_manager.running_greenlets.keys() == {  # and check that it was removed
+            rotki.task_manager._maybe_update_snapshot_balances,
+        }
+        # And make sure that now we are able to start it again
+        rotki.task_manager.potential_tasks = [simple_task]
+        rotki.task_manager.schedule()
+        assert patched.call_count == 3
+        assert rotki.task_manager.running_greenlets.keys() == {
+            rotki.task_manager._maybe_update_snapshot_balances,
+            simple_task,
+        }
