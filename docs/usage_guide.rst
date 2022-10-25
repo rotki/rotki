@@ -227,7 +227,7 @@ This setting modifies the rounding mechanism choosing from ``Round up``, ``Round
 RPC nodes
 ^^^^^^^^^
 
-This setting allows you to modify the nodes that will be queried to interact with the blockchains. We provide a list of public nodes but sometimes they are not available or are overloaded. This is why it is a good idea to have more nodes just in case and to have the possibility to customize the priority with which they are queried.
+This setting allows you to modify the nodes that will be queried to interact with the blockchains. We provide a list of public nodes but sometimes they are not available or are overloaded. You can see either a green or a red icon near each node that shows its connection status. This is why it is a good idea to have more nodes just in case and to have the possibility to customize the priority with which they are queried.
 When making queries we always give preference to your own nodes if you have any and then add a small list of randomly selected open nodes in case they are needed. If you don't have your own node then the open nodes are always selected. The weight of the node sets the probability
 of picking it and is represented by a percentage. From that list it is also possible to mark them as active or inactive by using the toggle button.
 
@@ -383,7 +383,7 @@ Cost basis method
 The method that should be used during the profit and loss execution to calculate cost basis. The methods available at the moment are:
 
 - FIFO: `First In First Out`
-- LIFO: `Last In First Out``
+- LIFO: `Last In First Out`
 
 .. _ledger_action_settings:
 
@@ -447,14 +447,14 @@ To delete a backup you can press the trash can icon on the database row.
 The download button provides an easy way to save the backups locally, and it can be
 especially helpful if you run the docker instance on a remote machine.
 
-Exporting and importing custom assets
+Exporting and importing user assets
 -------------------------------------
 
-When migrating from one computer to another you will also need to move your custom assets entries.
+When migrating from one computer to another you will also need to move your user assets entries.
 To do this you can use the export/import function provided by rotki.
 
-This function will create a zip archive of all your custom assets. You can then use the import function
-in a different instance of rotki to easily transfer your custom asset entries.
+This function will create a zip archive of all your user assets. You can then use the import function
+in a different instance of rotki to easily transfer your user asset entries.
 
 .. image:: images/sc_custom_import_export.png
    :alt: Importing
