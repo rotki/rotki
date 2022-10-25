@@ -1,11 +1,10 @@
-from typing import Set
+from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple
 
 from eth_utils import to_checksum_address
 
 from rotkehlchen.assets.asset import UnderlyingToken
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.constants import ZERO_ADDRESS
-from rotkehlchen.chain.ethereum.manager import CURVE_POOLS_MAPPING_TYPE, EthereumManager
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants import ONE
@@ -25,6 +24,19 @@ from rotkehlchen.types import (
     GeneralCacheType,
 )
 from rotkehlchen.utils.misc import hex_or_bytes_to_address
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.manager import EthereumManager
+
+
+CURVE_POOLS_MAPPING_TYPE = Dict[
+    ChecksumEvmAddress,  # lp token address
+    Tuple[
+        ChecksumEvmAddress,  # pool address
+        List[ChecksumEvmAddress],  # list of coins addresses
+        Optional[List[ChecksumEvmAddress]],  # optional list of underlying coins addresses
+    ],
+]
 
 
 def clear_curve_pools_cache(write_cursor: DBCursor) -> None:
@@ -152,7 +164,7 @@ def save_curve_pools_to_cache(
 
 def update_curve_registry_pools_cache(
         write_cursor: DBCursor,
-        ethereum_manager: EthereumManager,
+        ethereum_manager: 'EthereumManager',
 ) -> None:
     """Query pools from curve registry.
     May raise:
@@ -229,7 +241,7 @@ def update_curve_registry_pools_cache(
 
 def update_curve_metapools_cache(
         write_cursor: DBCursor,
-        ethereum_manager: EthereumManager,
+        ethereum_manager: 'EthereumManager',
 ) -> None:
     """Query pools from curve metapool factory.
     May raise:

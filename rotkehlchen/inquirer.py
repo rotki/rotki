@@ -734,6 +734,8 @@ class Inquirer():
         Returns the price of 1 LP token from the pool
         """
         assert self._ethereum is not None, 'Inquirer ethereum manager should have been initialized'  # noqa: E501
+        # Make sure that the curve cache is queried
+        self._ethereum.curve_protocol_cache_is_queried(tx_decoder=None)
 
         pool_addresses_in_cache = GlobalDBHandler().get_general_cache_values(
             key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, lp_token.evm_address],

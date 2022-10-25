@@ -1543,7 +1543,27 @@ class GlobalDBHandler():
             result = cursor.fetchone()
         if result is None:
             return None
-        return result[0]
+        return Timestamp(result[0])
+
+    @staticmethod
+    def get_general_cache_last_queried_ts_by_key(
+        key_parts: Iterable[Union[str, GeneralCacheType]],
+    ) -> Timestamp:
+        """
+        Get the last_queried_ts of the oldest stored element by key_parts. If there is no such
+        element returns Timestamp(0)
+        """
+        cache_key = _compute_cache_key(key_parts)
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            cursor.execute(
+                'SELECT last_queried_ts FROM general_cache WHERE key=? '
+                'ORDER BY last_queried_ts ASC',
+                (cache_key,),
+            )
+            result = cursor.fetchone()
+        if result is None:
+            return Timestamp(0)
+        return Timestamp(result[0])
 
     @staticmethod
     def delete_general_cache(
