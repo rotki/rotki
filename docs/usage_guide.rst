@@ -1657,6 +1657,45 @@ Some actions provided by this global search:
    :align: center
 
 
+Taking Notes In-App
+***********************
+You can now take notes in various sections of the application. Note taking is categorized into two types:
+
+1. **General Notes**: These are notes available & visible across the application.
+
+.. image:: images/rotki_general_notes.png
+   :alt: General notes
+   :align: center
+
+2. **Location-specific Notes**: These are notes restricted to the location in which they were created in the application.
+
+.. image:: images/rotki_location_specific_notes.png
+   :alt: Location specific notes
+   :align: center
+
+Adding/Editing a note
+=======================
+
+To create a new note, click on the **note icon** at the top right and proceed to click on the ``"+"`` button which will pop up a note creation form.
+
+Editing a note follows similar process with the only exception of clicking the **pen icon** of the note to edit instead of ``"+"`` button.
+
+.. image:: images/rotki_add_edit_notes.png
+   :alt: Create or edit notes
+   :align: center
+
+Pinning/Deleting a note
+========================
+
+To delete a note, click on the button labelled as **1** in the screenshot below.
+
+To pin a note to the top, click on the button labelled as **2** in the screenshot below.
+
+.. image:: images/rotki_pin_delete_notes.png
+   :alt: Delete or pin notes
+   :align: center
+
+
 Ethereum Address Book
 ******************************
 
