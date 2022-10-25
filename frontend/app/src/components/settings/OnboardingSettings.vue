@@ -1,7 +1,23 @@
 <template>
-  <card contained>
-    <template #title>{{ tc('backend_settings.title') }}</template>
-    <template #subtitle>{{ tc('backend_settings.subtitle') }}</template>
+  <card contained class="pt-4">
+    <div class="mb-4">
+      <card-title class="font-weight-medium">
+        {{ tc('frontend_settings.title') }}
+      </card-title>
+    </div>
+
+    <div class="mb-8">
+      <language-setting use-local-setting class="mb-10" />
+    </div>
+
+    <div class="mb-4">
+      <card-title class="font-weight-medium">
+        {{ tc('backend_settings.title') }}
+      </card-title>
+      <v-card-subtitle class="pa-0">
+        {{ tc('backend_settings.subtitle') }}
+      </v-card-subtitle>
+    </div>
 
     <v-text-field
       v-model="userDataDirectory"
@@ -186,6 +202,7 @@ import { storeToRefs } from 'pinia';
 import { computed, Ref, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
+import LanguageSetting from '@/components/settings/general/language/LanguageSetting.vue';
 import { useBackendManagement } from '@/composables/backend';
 import { useInterop } from '@/electron-interop';
 import { BackendOptions } from '@/electron-main/ipc';

@@ -110,7 +110,7 @@
 <script setup lang="ts">
 import ConnectionFailure from '@/components/account-management/ConnectionFailure.vue';
 import ConnectionLoading from '@/components/account-management/ConnectionLoading.vue';
-import BackendSettingsButton from '@/components/helper/BackendSettingsButton.vue';
+import BackendSettingsButton from '@/components/helper/OnboardingSettingsButton.vue';
 import PrivacyNotice from '@/components/PrivacyNotice.vue';
 import { useBackendManagement } from '@/composables/backend';
 import { useTheme } from '@/composables/common';

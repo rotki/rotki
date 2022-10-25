@@ -2136,6 +2136,7 @@
       "date_input_format": "Date input format",
       "display_date_in_localtime": "Display date in localtime and not in UTC for CSV export and backend logs.",
       "dot_rpc_endpoint": "Polkadot Node RPC Endpoint",
+      "force_saved_language_setting_in_machine_hint": "Αυτή η ρύθμιση είναι αποθηκευμένη στις ρυθμίσεις χρήστη. Ενεργοποιήστε τη για να τη διατηρήσετε κατά την αποσύνδεση",
       "ksm_rpc_endpoint": "Kusama Node RPC Endpoint",
       "language": "Selected language",
       "treat_eth2_as_eth": "Should treat ETH2 (Staked ETH) as ETH",

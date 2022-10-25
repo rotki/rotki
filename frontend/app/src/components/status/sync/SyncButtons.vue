@@ -1,11 +1,12 @@
 <template>
-  <fragment>
+  <div class="d-flex flex-wrap mx-n1">
     <v-tooltip top open-delay="400">
       <template #activator="{ on, attrs }">
         <v-btn
           v-bind="attrs"
           outlined
           depressed
+          class="ma-1"
           color="primary"
           :disabled="!premium || pending"
           v-on="on"
@@ -24,7 +25,7 @@
           v-bind="attrs"
           outlined
           depressed
-          class="ml-2"
+          class="ma-1"
           color="primary"
           :disabled="!premium || pending"
           v-on="on"
@@ -36,13 +37,12 @@
       </template>
       <span>{{ tc('sync_buttons.download_tooltip') }}</span>
     </v-tooltip>
-  </fragment>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n-composable';
-import Fragment from '@/components/helper/Fragment';
 import { SYNC_DOWNLOAD, SYNC_UPLOAD, SyncAction } from '@/services/types-api';
 import { usePremiumStore } from '@/store/session/premium';
 

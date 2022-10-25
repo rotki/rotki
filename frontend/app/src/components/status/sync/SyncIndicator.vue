@@ -71,10 +71,10 @@
                   <span>{{ t('sync_indicator.ignore_errors') }}</span>
                 </v-tooltip>
               </v-col>
-              <v-col cols="auto">
+              <v-col cols="auto" class="px-2 py-4">
                 <v-tooltip bottom max-width="300px">
                   <template #activator="{ on }">
-                    <v-icon class="ml-3" v-on="on">mdi-information</v-icon>
+                    <v-icon v-on="on">mdi-information</v-icon>
                   </template>
                   <div>
                     {{ t('sync_indicator.snapshot_tooltip') }}

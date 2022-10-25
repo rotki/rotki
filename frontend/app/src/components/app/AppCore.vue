@@ -34,17 +34,12 @@
 </template>
 
 <script setup lang="ts">
-import { get, set } from '@vueuse/core';
 import { Chart, registerables } from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
-import { storeToRefs } from 'pinia';
-import { computed, defineAsyncComponent, onBeforeMount, watch } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 import { useTheme } from '@/composables/common';
 import { useInterop } from '@/electron-interop';
 import { useSessionStore } from '@/store/session';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useStatisticsStore } from '@/store/statistics';
 
 const AppDrawer = defineAsyncComponent(
@@ -73,7 +68,6 @@ const small = computed(() => get(showDrawer) && get(isMini));
 const expanded = computed(
   () => get(showDrawer) && !get(isMini) && !get(isMobile)
 );
-const { language } = storeToRefs(useFrontendSettingsStore());
 const { overall } = storeToRefs(useStatisticsStore());
 
 const { updateTray } = useInterop();
@@ -91,22 +85,6 @@ onBeforeMount(() => {
   Chart.defaults.font.family = 'Roboto';
   Chart.register(...registerables);
   Chart.register(zoomPlugin);
-});
-
-const { locale } = useI18n();
-
-onBeforeMount(() => {
-  if (get(language) !== get(locale)) {
-    setLanguage(get(language));
-  }
-});
-
-const setLanguage = (language: string) => {
-  set(locale, language);
-};
-
-watch(language, language => {
-  setLanguage(language);
 });
 </script>
 

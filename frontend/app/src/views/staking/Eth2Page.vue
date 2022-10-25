@@ -66,7 +66,7 @@ import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import NoPremiumPlaceholder from '@/components/premium/NoPremiumPlaceholder.vue';
 import { isSectionLoading, useSectionLoading } from '@/composables/common';
 import { usePremium } from '@/composables/premium';
-import { useModules } from '@/composables/session';
+import { useModules } from '@/composables/session/modules';
 import { Eth2Staking } from '@/premium/premium';
 import { useEthAccountsStore } from '@/store/blockchain/accounts/eth';
 import { useEth2StakingStore } from '@/store/staking';

@@ -6,7 +6,7 @@ import {
 } from '@rotki/common/lib/liquity';
 import { Ref } from 'vue';
 import { usePremium } from '@/composables/premium';
-import { useModules } from '@/composables/session';
+import { useModules } from '@/composables/session/modules';
 import { useStatusUpdater } from '@/composables/status';
 import { api } from '@/services/rotkehlchen-api';
 import { OnError } from '@/store/typing';

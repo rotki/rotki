@@ -22,7 +22,7 @@ import ActiveModules from '@/components/defi/ActiveModules.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import { useSectionLoading } from '@/composables/common';
-import { useModules } from '@/composables/session';
+import { useModules } from '@/composables/session/modules';
 import { AdexStaking } from '@/premium/premium';
 import { useAdexStakingStore } from '@/store/staking';
 import { Module } from '@/types/modules';

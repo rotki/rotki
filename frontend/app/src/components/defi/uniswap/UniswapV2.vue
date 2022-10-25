@@ -139,7 +139,7 @@ import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import { useSectionLoading } from '@/composables/common';
 import { setupLiquidityPosition } from '@/composables/defi';
 import { usePremium } from '@/composables/premium';
-import { useModules } from '@/composables/session';
+import { useModules } from '@/composables/session/modules';
 import { useInterop } from '@/electron-interop';
 import { UniswapDetails } from '@/premium/premium';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';

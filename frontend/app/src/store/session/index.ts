@@ -1,6 +1,9 @@
 import { BigNumber } from '@rotki/common';
 import { ActionResult } from '@rotki/common/lib/data';
 import { TimeFramePersist } from '@rotki/common/lib/settings/graphs';
+import { get } from '@vueuse/core';
+import { computed, ComputedRef } from 'vue';
+import { useLastLanguage } from '@/composables/session/language';
 import { useStatusUpdater } from '@/composables/status';
 import { getBnFormat } from '@/data/amount_formatter';
 import { EXTERNAL_EXCHANGES } from '@/data/defaults';
@@ -46,6 +49,7 @@ import {
   SUPPORTED_EXCHANGES,
   SupportedExchange
 } from '@/types/exchanges';
+import { SupportedLanguage } from '@/types/frontend-settings';
 import {
   CreateAccountPayload,
   LoginCredentials,
@@ -361,6 +365,16 @@ export const useSessionStore = defineStore('session', () => {
     }
   };
 
+  const { lastLanguage } = useLastLanguage();
+  const { language } = storeToRefs(frontendSettingsStore);
+
+  const adaptiveLanguage: ComputedRef<SupportedLanguage> = computed(() => {
+    const selectedLanguageVal = get(lastLanguage);
+    return !get(logged) && selectedLanguageVal !== 'undefined'
+      ? (selectedLanguageVal as SupportedLanguage)
+      : get(language);
+  });
+
   const reset = () => {
     set(newAccount, false);
     set(logged, false);
@@ -372,6 +386,7 @@ export const useSessionStore = defineStore('session', () => {
   };
 
   return {
+    adaptiveLanguage,
     newAccount,
     logged,
     loginComplete,
