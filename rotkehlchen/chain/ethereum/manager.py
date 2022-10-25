@@ -58,7 +58,6 @@ from rotkehlchen.constants.ethereum import (
     ETH_SCAN,
     UNIV1_LP_ABI,
 )
-from rotkehlchen.constants.timing import ETH_PROTOCOLS_CACHE_REFRESH
 from rotkehlchen.errors.misc import (
     BlockchainQueryError,
     InputError,
@@ -82,16 +81,15 @@ from rotkehlchen.types import (
     ChecksumEvmAddress,
     EvmTransaction,
     EVMTxHash,
-    GeneralCacheType,
     SupportedBlockchain,
     Timestamp,
 )
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import from_wei, get_chunks, hex_or_bytes_to_str, ts_now
+from rotkehlchen.utils.misc import from_wei, get_chunks, hex_or_bytes_to_str
 from rotkehlchen.utils.network import request_get_dict
 
 from .types import ETHERSCAN_NODE_NAME, NodeName, WeightedNode
-from .utils import ENS_RESOLVER_ABI_MULTICHAIN_ADDRESS
+from .utils import ENS_RESOLVER_ABI_MULTICHAIN_ADDRESS, should_update_curve_cache
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.decoding.decoder import EVMTransactionDecoder
@@ -1295,7 +1293,7 @@ class EthereumManager():
             tx_decoder: Optional['EVMTransactionDecoder'],
     ) -> bool:
         """
-        Make sure that information that needs to be queried is queried and if not query it
+        Make sure that information that needs to be queried is queried and if not query it.
         Returns true if the cache was modified or false otherwise.
         If the tx_decoder provided is None no information for the decoders is reloaded
 
@@ -1304,12 +1302,7 @@ class EthereumManager():
         2. Queries information about curve pools' addresses, lp tokens and used coins
         3. Saves queried information in the cache in globaldb
         """
-        last_update_ts = GlobalDBHandler().get_general_cache_last_queried_ts_by_key(
-            key_parts=[GeneralCacheType.CURVE_LP_TOKENS],
-        )
-        should_query = ts_now() - last_update_ts >= ETH_PROTOCOLS_CACHE_REFRESH
-
-        if should_query is False:
+        if should_update_curve_cache() is False:
             if tx_decoder is not None:
                 self._update_curve_decoder(tx_decoder)
             return False
@@ -1328,8 +1321,7 @@ class EthereumManager():
                 ethereum_manager=self,
             )
 
-        if tx_decoder is None:
-            return True
+        if tx_decoder is not None:
+            self._update_curve_decoder(tx_decoder)
 
-        self._update_curve_decoder(tx_decoder)
         return True

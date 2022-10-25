@@ -8,6 +8,7 @@ import gevent
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
+from rotkehlchen.chain.ethereum.utils import should_update_curve_cache
 from rotkehlchen.chain.manager import ChainManager
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.db.dbhandler import DBHandler
@@ -513,13 +514,16 @@ class TaskManager():
     def _maybe_update_curve_pools(self) -> Optional[gevent.Greenlet]:
         """Function that schedules curve pools update task if either there is no curve pools cache
         yet or this cache has expired (i.e. it's been more than a week since last update)."""
-        self.greenlet_manager.spawn_and_track(
-            after_seconds=None,
-            task_name='Update curve pools cache',
-            exception_is_error=True,
-            method=self.update_curve_pools_cache,
-            tx_decoder=self.eth_tx_decoder,
-        )
+        if should_update_curve_cache() is True:
+            return self.greenlet_manager.spawn_and_track(
+                after_seconds=None,
+                task_name='Update curve pools cache',
+                exception_is_error=True,
+                method=self.update_curve_pools_cache,
+                tx_decoder=self.eth_tx_decoder,
+            )
+
+        return None
 
     def _schedule(self) -> None:
         """Schedules background tasks"""

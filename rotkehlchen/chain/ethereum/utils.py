@@ -8,11 +8,14 @@ from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.ethereum import ETH_SPECIAL_ADDRESS
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
+from rotkehlchen.constants.timing import ETH_PROTOCOLS_CACHE_REFRESH
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset, WrongAssetType
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress
+from rotkehlchen.types import ChecksumEvmAddress, GeneralCacheType
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
+from rotkehlchen.utils.misc import ts_now
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -144,3 +147,14 @@ def ethaddress_to_asset(address: ChecksumEvmAddress) -> Optional[CryptoAsset]:
         return None
 
     return asset
+
+
+def should_update_curve_cache() -> bool:
+    """
+    Checks if the last time the curve lp tokens were queried is far enough to trigger
+    the process of querying them again.
+    """
+    last_update_ts = GlobalDBHandler().get_general_cache_last_queried_ts_by_key(
+        key_parts=[GeneralCacheType.CURVE_LP_TOKENS],
+    )
+    return ts_now() - last_update_ts >= ETH_PROTOCOLS_CACHE_REFRESH
