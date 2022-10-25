@@ -830,6 +830,15 @@ rotki automatically resolves ens name for each of your ethereum accounts. If the
    :alt: Example of resolving an ens name
    :align: center
 
+Token detection
+===============
+
+For every ethereum address is possible to trigger the process of detecting tokens by clicking in the refresh arrow for that address. In addition it is possible to trigger the detection process for all the addresses by clicking in ``RE-DETECT TOKENS``.
+
+.. image:: images/tokens_detection.png
+   :alt: Example of resolving an ens name
+   :align: center
+
 
 Ethereum Transactions
 =====================
@@ -1286,8 +1295,10 @@ You can also ignore assets by clicking asset icons anywhere on the app, that wil
 Adding missing prices
 **********************
 
-Sometimes rotki might be unable to retrieve a historical price for an asset from CoinGecko or CryptoCompare.
-In this case you can use the price management interface to insert your own price entries.
+Sometimes rotki might be unable to retrieve prices for some assets, to always have an available price we provide two types of prices: ``Latest prices`` and ``Historical prices``.
+
+- Latest price: Will be the price displayed when we need to display the current price of an asset.
+- Historical price: The price used in a specific time in the past.
 
 .. image:: images/price_management.png
    :alt: Price management
@@ -1301,6 +1312,12 @@ To add a new price you have to press the plus button. This will open the add for
 
 There you can specify the assets, the price and the date of the price. Then you can proceed to save the entry.
 After saving you should be able to see the new entry.
+
+When a latest price is used it will be visually displayed in the UI.
+
+.. image:: images/latest_price.png
+   :alt: Adding a new price
+   :align: center
 
 Decentralized Finance
 **********************
@@ -1357,11 +1374,16 @@ Finally you need to have a premium subscription in order for the total amount of
 Liquidity Pools
 ================
 
+.. image:: images/lps_in_dashboard.png
+  :alt: Defi Liquidity in dashboard
+  :align: center
+
+Rotki allows its users to keep track of their Liquidity Pools. An overview is available in the dashboard and is also possible
+to get a per protocol view in the deposits section.
+
 .. image:: images/sc_decentralized_lp.png
   :alt: Defi Liquidity Pools
   :align: center
-
-Rotki allows its users to keep track of their Liquidity Pools.
 
 These are the supported Liquidity Pools balances by Rotki:
 
@@ -1381,7 +1403,6 @@ The liquidity pool support allows premium users to see their balances, the per p
   :alt: Defi Liquidity Pools Summary on Dashboard
   :align: center
 
-These LP balances summary will also be shown on dashboard.
 
 Liabilities
 =============
@@ -1432,22 +1453,6 @@ Below you can see a small demonstration of the usage of makerdao vaults by a pre
 .. image:: images/vaults_premium_demo.gif
    :alt: Makerdao vaults premium demo
    :align: center
-
-DEX trades
-================
-
-.. image:: images/sc_dex_trades.png
-  :alt: DEX trades
-  :align: center
-
-In the DEX Trades section you can monitor all trades made in the supported decentralized exchanges. Each trade is also broken down to the separate swaps that it is comprised of.
-
-The currently supported DEXes are:
-
-- Uniswap v2
-- Uniswap v3
-- Balancer
-- Sushiswap
 
 Creating a profit/loss report
 *****************************
