@@ -218,7 +218,7 @@ def test_migration_4(rotkehlchen_api_server):
                     assert web3_node.node_info.owned == node['owned']
                     assert web3_node.weight == FVal(node['weight'])
                     continue
-        private_node = [ node for node in web3_nodes if (node.node_info.name=="eth_rpc_endpoint" ][0]
+        private_node = [ node for node in web3_nodes if node.node_info.name=="eth_rpc_endpoint" ][0]
         assert private_node.node_info.owned is True
         assert private_node.node_info.endpoint == 'https://localhost:5222'
 
