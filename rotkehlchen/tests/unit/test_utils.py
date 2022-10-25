@@ -370,8 +370,7 @@ def test_jsonloads_list():
 
 
 def test_retrieve_old_token_info(ethereum_manager):
-    info, remote_query = ethereum_manager.get_basic_contract_info('0x2C4Bd064b998838076fa341A83d007FC2FA50957')  # noqa: E501
-    assert remote_query is True
+    info = ethereum_manager.get_basic_contract_info('0x2C4Bd064b998838076fa341A83d007FC2FA50957')  # noqa: E501
     assert info['symbol'] == 'UNI-V1'
     assert info['name'] == 'Uniswap V1'
 

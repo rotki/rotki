@@ -70,35 +70,29 @@ def get_or_create_evm_token(
         chain=chain,
         token_type=token_kind,
     )
-    try:
-        ethereum_token = EvmToken(
-            identifier=identifier,
-            form_with_incomplete_data=form_with_incomplete_data,
-        )
-    except (UnknownAsset, DeserializationError):
-        # It can happen that the asset exists but is missing basic information. Check if it exists
-        # and if that is the case we fetch information. The check above would fail if the
-        # identifier is not a token or name, symbol or decimals is missing while
-        # form_with_incomplete_data is False
+    with userdb.get_or_create_evm_token_lock:
         try:
-            asset_exists = Asset(identifier).check_existence() is not None
-        except UnknownAsset:
-            asset_exists = False
+            ethereum_token = EvmToken(
+                identifier=identifier,
+                form_with_incomplete_data=form_with_incomplete_data,
+            )
+        except (UnknownAsset, DeserializationError):
+            # It can happen that the asset exists but is missing basic information.
+            # Check if it exists and if that is the case we fetch information.
+            # The check above would fail if the identifier is not a token or name,
+            # symbol or decimals is missing while form_with_incomplete_data is False
+            try:
+                asset_exists = Asset(identifier).check_existence() is not None
+            except UnknownAsset:
+                asset_exists = False
 
-        log.info(
-            f'Encountered unknown asset with address '
-            f'{evm_address}. Adding it to the global DB',
-        )
+            log.info(
+                f'Encountered unknown asset with address '
+                f'{evm_address}. Adding it to the global DB',
+            )
 
-        if ethereum_manager is not None:
-            with ethereum_manager.contract_info_lock:
-                info, did_remote_query = ethereum_manager.get_basic_contract_info(evm_address)
-                if did_remote_query is False:  # other greenlet already wrote in the DB
-                    return EvmToken(
-                        identifier=identifier,
-                        form_with_incomplete_data=form_with_incomplete_data,
-                    )
-
+            if ethereum_manager is not None:
+                info = ethereum_manager.get_basic_contract_info(evm_address)
                 decimals = info['decimals'] if decimals is None else decimals
                 symbol = info['symbol'] if symbol is None else symbol
                 name = info['name'] if name is None else name
@@ -106,33 +100,29 @@ def get_or_create_evm_token(
                 if None in (decimals, symbol, name):
                     raise NotERC20Conformant(f'Token {evm_address} is not ERC20 conformant')  # noqa: E501  # pylint: disable=raise-missing-from
 
-        # Store the information in the database
-        token_data = EvmToken.initialize(
-            address=evm_address,
-            chain=chain,
-            token_kind=token_kind,
-            name=name,
-            decimals=decimals,
-            symbol=symbol,
-            protocol=protocol,
-            underlying_tokens=underlying_tokens,
-        )
-        if asset_exists is True:
-            # This means that we need to update the information in the database with the
-            # newly queried data
-            GlobalDBHandler().edit_evm_token(token_data)
-        else:
-            # This can but should not raise InputError since it should not already exist.
-            # We need to wrap the whole call to add_ethereum_token_to_db since it makes
-            # the insert + when returning the EvmToken it can do a read on the database
-            with GlobalDBHandler().conn.critical_section():
+            # Store the information in the database
+            token_data = EvmToken.initialize(
+                address=evm_address,
+                chain=chain,
+                token_kind=token_kind,
+                name=name,
+                decimals=decimals,
+                symbol=symbol,
+                protocol=protocol,
+                underlying_tokens=underlying_tokens,
+            )
+            if asset_exists is True:
+                # This means that we need to update the information in the database with the
+                # newly queried data
+                GlobalDBHandler().edit_evm_token(token_data)
+            else:
+                # This can but should not raise InputError since it should not already exist.
                 ethereum_token = add_ethereum_token_to_db(
                     token_data=token_data,
                 )
 
-            # Also update the user db inside a critical section to avoid context switch
-            with userdb.conn.critical_section(), userdb.user_write() as cursor:
-                userdb.add_asset_identifiers(cursor, [ethereum_token.identifier])
+                with userdb.user_write() as cursor:
+                    userdb.add_asset_identifiers(cursor, [ethereum_token.identifier])
 
     return ethereum_token
 

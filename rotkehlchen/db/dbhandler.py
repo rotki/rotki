@@ -23,6 +23,7 @@ from typing import (
     overload,
 )
 
+from gevent.lock import Semaphore
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.structures.balance import BalanceType
@@ -264,6 +265,8 @@ class DBHandler:
         }
         self.conn: DBConnection = None  # type: ignore
         self.conn_transient: DBConnection = None  # type: ignore
+        # Lock to make sure that 2 callers of get_or_create_evm_token do not go in at the same time
+        self.get_or_create_evm_token_lock = Semaphore()
         self._connect(password)
         self._run_actions_after_first_connection(password)
         with self.user_write() as cursor:
