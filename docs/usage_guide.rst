@@ -833,10 +833,10 @@ rotki automatically resolves ens name for each of your ethereum accounts. If the
 Token detection
 ===============
 
-For every ethereum address is possible to trigger the process of detecting tokens by clicking in the refresh arrow for that address. In addition it is possible to trigger the detection process for all the addresses by clicking in ``RE-DETECT TOKENS``.
+For every ethereum address it is possible to trigger the process of detecting tokens by clicking in the refresh arrow for that address. In addition it is possible to trigger the detection process for all the addresses by clicking on ``RE-DETECT TOKENS``.
 
 .. image:: images/tokens_detection.png
-   :alt: Example of resolving an ens name
+   :alt: Detecting tokens
    :align: center
 
 
@@ -1295,10 +1295,10 @@ You can also ignore assets by clicking asset icons anywhere on the app, that wil
 Adding missing prices
 **********************
 
-Sometimes rotki might be unable to retrieve prices for some assets, to always have an available price we provide two types of prices: ``Latest prices`` and ``Historical prices``.
+Sometimes rotki might be unable to retrieve prices for some assets. In order to always have the ability to show a price we provide two types of manual price additions: ``Latest prices`` and ``Historical prices``.
 
 - Latest price: Will be the price displayed when we need to display the current price of an asset.
-- Historical price: The price used in a specific time in the past.
+- Historical price: The price used in a specific time in the past for an asset.
 
 .. image:: images/price_management.png
    :alt: Price management
@@ -1316,7 +1316,7 @@ After saving you should be able to see the new entry.
 When a latest price is used it will be visually displayed in the UI.
 
 .. image:: images/latest_price.png
-   :alt: Adding a new price
+   :alt: Edited latest price UI indicator
    :align: center
 
 Decentralized Finance
@@ -1375,11 +1375,10 @@ Liquidity Pools
 ================
 
 .. image:: images/lps_in_dashboard.png
-  :alt: Defi Liquidity in dashboard
+  :alt: Defi LP positions in the dashboard
   :align: center
 
-Rotki allows its users to keep track of their Liquidity Pools. An overview is available in the dashboard and is also possible
-to get a per protocol view in the deposits section.
+Rotki allows its users to keep track of their Liquidity Pools. An overview is available in the dashboard and it is also possible to get a per protocol view in the deposits section.
 
 .. image:: images/sc_decentralized_lp.png
   :alt: Defi Liquidity Pools
