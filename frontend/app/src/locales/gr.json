@@ -860,7 +860,7 @@
   "amount_display": {
     "click_to_copy": "Click to copy",
     "copied": "Copied!",
-    "manual_tooltip": "This price is manual price you defined."
+    "manual_tooltip": "Χειροκίνητα ορισμένη τιμή"
   },
   "app": {
     "moto": "the opensource portfolio manager that protects your privacy",
