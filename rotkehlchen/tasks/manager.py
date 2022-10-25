@@ -9,7 +9,6 @@ import gevent
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.chain.manager import ChainManager
-from rotkehlchen.constants import WEEK_IN_SECONDS
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.ethtx import DBEthTx
@@ -32,7 +31,6 @@ from rotkehlchen.premium.sync import PremiumSyncManager
 from rotkehlchen.types import (
     ChecksumEvmAddress,
     ExchangeLocationID,
-    GeneralCacheType,
     Location,
     Optional,
     SupportedBlockchain,
@@ -58,7 +56,6 @@ PREMIUM_STATUS_CHECK = 3600  # every hour
 TX_RECEIPTS_QUERY_LIMIT = 500
 TX_DECODING_LIMIT = 500
 PREMIUM_CHECK_RETRY_LIMIT = 3
-CURVE_POOLS_UPDATE_SECS = WEEK_IN_SECONDS
 
 
 def noop_exchange_success_cb(trades, margin, asset_movements, exchange_specific_data) -> None:  # type: ignore # noqa: E501
@@ -516,27 +513,13 @@ class TaskManager():
     def _maybe_update_curve_pools(self) -> Optional[gevent.Greenlet]:
         """Function that schedules curve pools update task if either there is no curve pools cache
         yet or this cache has expired (i.e. it's been more than a week since last update)."""
-        curve_lp_tokens = GlobalDBHandler().get_general_cache_values(
-            key_parts=[GeneralCacheType.CURVE_LP_TOKENS],
+        self.greenlet_manager.spawn_and_track(
+            after_seconds=None,
+            task_name='Update curve pools cache',
+            exception_is_error=True,
+            method=self.update_curve_pools_cache,
+            tx_decoder=self.eth_tx_decoder,
         )
-        if len(curve_lp_tokens) == 0:
-            should_schedule = True
-        else:
-            last_update_ts = GlobalDBHandler().get_general_cache_last_queried_ts(
-                key_parts=[GeneralCacheType.CURVE_LP_TOKENS],
-                value=curve_lp_tokens[0],
-            )
-            assert last_update_ts is not None, 'the cache entry must exist'
-            should_schedule = ts_now() - last_update_ts >= CURVE_POOLS_UPDATE_SECS
-
-        if should_schedule is True:
-            return self.greenlet_manager.spawn_and_track(
-                after_seconds=None,
-                task_name='Update curve pools cache',
-                exception_is_error=True,
-                method=self.update_curve_pools_cache,
-            )
-        return None
 
     def _schedule(self) -> None:
         """Schedules background tasks"""

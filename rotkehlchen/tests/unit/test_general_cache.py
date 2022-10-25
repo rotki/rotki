@@ -91,13 +91,20 @@ def test_curve_pools_cache(rotkehlchen_instance):
         target='rotkehlchen.chain.evm.contracts.EvmContract.call',
         new=mock_call_contract,
     )
+    timestamp_patch = patch(
+        target='rotkehlchen.chain.ethereum.manager.ETH_PROTOCOLS_CACHE_REFRESH',
+        new=0,
+    )
 
-    with call_contract_patch:
-        rotkehlchen_instance.update_curve_pools_cache()
+    with timestamp_patch, call_contract_patch:
+        rotkehlchen_instance.chain_manager.ethereum.curve_protocol_cache_is_queried(
+            tx_decoder=None,
+        )
 
     lp_tokens_to_pools_in_cache = {}
     pool_coins_in_cache = {}
     lp_tokens_in_cache = GlobalDBHandler.get_general_cache_values(key_parts=[GeneralCacheType.CURVE_LP_TOKENS])  # noqa: E501
+
     for lp_token_addr in lp_tokens_in_cache:
         pool_addr = GlobalDBHandler.get_general_cache_values(
             key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, lp_token_addr],
