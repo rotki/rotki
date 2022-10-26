@@ -58,27 +58,24 @@ export const useBlockchainStore = defineStore('blockchain', () => {
   };
 
   const refreshAccounts = async (blockchain?: MaybeRef<Blockchain>) => {
-    const blockchainVal = get(blockchain);
-    await fetchAccounts(blockchainVal);
+    const chain = get(blockchain);
+    await fetchAccounts(chain);
     const pending: Promise<any>[] = [
       fetchBlockchainBalances({
-        blockchain: blockchainVal,
-        ignoreCache: true
+        blockchain: chain,
+        ignoreCache: false
       })
     ];
 
-    const isEth = blockchainVal === Blockchain.ETH;
+    const isEth = chain === Blockchain.ETH;
 
-    if (isEth) {
+    if (isEth || !chain) {
       pending.push(
         fetchBlockchainBalances({
           blockchain: Blockchain.ETH2,
           ignoreCache: false
         })
       );
-    }
-
-    if (isEth || !blockchainVal) {
       pending.push(fetchLoopringBalances(false));
     }
 

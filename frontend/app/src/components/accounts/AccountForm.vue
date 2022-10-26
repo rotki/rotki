@@ -82,6 +82,7 @@ import TagInput from '@/components/inputs/TagInput.vue';
 import { setupTaskStatus } from '@/composables/tasks';
 import { useInterop } from '@/electron-interop';
 import { deserializeApiErrorMessage } from '@/services/converters';
+import { useEthNamesStore } from '@/store/balances/ethereum-names';
 import {
   AccountPayload,
   BlockchainAccountPayload,
@@ -286,6 +287,7 @@ watch(loading, loading => {
 const { addEth2Validator, editEth2Validator } = useEthAccountsStore();
 const { addAccounts, refreshAccounts } = useBlockchainStore();
 const { editAccount } = useBlockchainAccountsStore();
+const { fetchEnsNames } = useEthNamesStore();
 
 const metamaskImport = async (): Promise<boolean> => {
   const interop = useInterop();
@@ -337,7 +339,11 @@ const manualAdd = async () => {
   try {
     if (get(isEdit)) {
       await editAccount(blockchainAccount);
-      await refreshAccounts(blockchainAccount.blockchain);
+
+      if (get(blockchain) === Blockchain.ETH) {
+        await fetchEnsNames([blockchainAccount.address], true);
+      }
+      startPromise(refreshAccounts(blockchainAccount.blockchain));
     } else {
       const entries = get(addresses);
       const payload = entries.map(address => ({

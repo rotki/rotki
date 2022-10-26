@@ -107,6 +107,7 @@ import { useBtcAccountsStore } from '@/store/blockchain/accounts/btc';
 import { useEthAccountsStore } from '@/store/blockchain/accounts/eth';
 import { useTasks } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
+import { startPromise } from '@/utils';
 
 const props = defineProps({
   balances: { required: true, type: Array as PropType<AccountWithBalance[]> },
@@ -205,7 +206,7 @@ const deleteAccount = async () => {
       });
     }
 
-    await refreshAccounts(blockchain);
+    startPromise(refreshAccounts(blockchain));
     set(selectedAddresses, []);
   } else if (get(xpubToDelete)) {
     const payload = { ...get(xpubToDelete)! };
@@ -213,7 +214,7 @@ const deleteAccount = async () => {
     await deleteXpub(payload);
     get(balanceTable)?.removeCollapsed(payload);
 
-    await refreshAccounts(blockchain);
+    startPromise(refreshAccounts(blockchain));
   }
 };
 
