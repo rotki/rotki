@@ -100,12 +100,11 @@ export const useEthNamesStore = defineStore('ethNames', () => {
     }
   };
 
-  const ethNameSelector = (address: string) => {
-    return computed<string | null>(() => {
+  const ethNameSelector = (address: string) =>
+    computed<string | null>(() => {
       if (!get(enableEthNames)) return null;
       return get(ethNames)[address] ?? null;
     });
-  };
 
   const updateEthAddressBookState = async (
     location: EthAddressBookLocation,
