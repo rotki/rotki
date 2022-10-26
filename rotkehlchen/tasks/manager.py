@@ -119,8 +119,9 @@ class TaskManager():
         self.last_premium_status_check = ts_now()
         self.msg_aggregator = msg_aggregator
         self.premium_check_retries = 0
+        self.premium_sync_manager: Optional[PremiumSyncManager] = premium_sync_manager
 
-        self.potential_tasks = [
+        self.potential_tasks: List[Callable[[], Optional[gevent.Greenlet]]] = [
             self._maybe_schedule_cryptocompare_query,
             self._maybe_schedule_xpub_derivation,
             self._maybe_query_ethereum_transactions,
@@ -132,9 +133,20 @@ class TaskManager():
             self._maybe_update_snapshot_balances,
             self._maybe_update_curve_pools,
         ]
-        if premium_sync_manager is not None:
-            self.potential_tasks.append(premium_sync_manager.maybe_upload_data_to_server)
+        if self.premium_sync_manager is not None:
+            self.potential_tasks.append(self._maybe_schedule_db_upload)
         self.schedule_lock = gevent.lock.Semaphore()
+
+    def _maybe_schedule_db_upload(self) -> Optional[gevent.Greenlet]:
+        assert self.premium_sync_manager is not None, 'caller should make sure premium sync manager exists'  # noqa: E501
+        if self.premium_sync_manager.check_if_should_sync(force_upload=False) is False:
+            return None
+        return self.greenlet_manager.spawn_and_track(
+            after_seconds=None,
+            task_name='Upload data to server',
+            exception_is_error=True,
+            method=self.premium_sync_manager.maybe_upload_data_to_server,
+        )
 
     def _prepare_cryptocompare_queries(self) -> None:
         """Prepare the queries to do to cryptocompare
