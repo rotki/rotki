@@ -38,7 +38,6 @@ from web3.exceptions import (
 from web3.types import BlockIdentifier, FilterParams
 
 from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
-from rotkehlchen.chain.ethereum.constants import ETHERSCAN_NODE
 from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.ethereum.modules.curve.pools_cache import (
     clear_curve_pools_cache,
@@ -1331,7 +1330,7 @@ class EthereumManager():
             self,
             output: List[Tuple[bool, bytes]],
             properties: Tuple[str, str, str],
-            contract: EthereumContract,
+            contract: EvmContract,
     ) -> List[Optional[Union[int, str, bytes]]]:
         """Decodes information i.e. (decimals, symbol, name) about the token contract.
         - `decimals` property defaults to 18.
