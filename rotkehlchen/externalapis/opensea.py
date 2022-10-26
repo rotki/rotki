@@ -243,8 +243,8 @@ class Opensea(ExternalServiceWithApiKey):
             )
 
         try:
-            last_sale = entry.get('last_sale')
-            if last_sale:
+            last_sale: Optional[Dict[str, Any]] = entry.get('last_sale')
+            if last_sale is not None and last_sale.get('payment_token') is not None:
                 if last_sale['payment_token']['symbol'] in ('ETH', 'WETH'):
                     payment_asset = self.eth_asset
                 else:
