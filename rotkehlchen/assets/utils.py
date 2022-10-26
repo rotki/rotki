@@ -64,6 +64,8 @@ def get_or_create_evm_token(
     May raise:
     - NotERC20Conformant exception if an ethereum manager is given to query
     and the given address does not have any of symbol, decimals and name
+    - NotERC721Conformant exception if an ethereum manager is given to query
+    and the given address does not conform to ERC721 spec
     """
     identifier = evm_address_to_identifier(
         address=evm_address,
@@ -92,13 +94,24 @@ def get_or_create_evm_token(
             )
 
             if ethereum_manager is not None:
-                info = ethereum_manager.get_basic_contract_info(evm_address)
-                decimals = info['decimals'] if decimals is None else decimals
-                symbol = info['symbol'] if symbol is None else symbol
-                name = info['name'] if name is None else name
+                if token_kind == EvmTokenKind.ERC20:
+                    info = ethereum_manager.get_erc20_contract_info(evm_address)
+                    decimals = info['decimals'] if decimals is None else decimals
+                    symbol = info['symbol'] if symbol is None else symbol
+                    name = info['name'] if name is None else name
+                    if None in (decimals, symbol, name):
+                        raise NotERC20Conformant(f'Token {evm_address} is not ERC20 conformant')  # noqa: E501  # pylint: disable=raise-missing-from
 
-                if None in (decimals, symbol, name):
-                    raise NotERC20Conformant(f'Token {evm_address} is not ERC20 conformant')  # noqa: E501  # pylint: disable=raise-missing-from
+                elif token_kind == EvmTokenKind.ERC721:
+                    info = ethereum_manager.get_erc721_contract_info(evm_address)
+                    decimals = 0
+                    if symbol is None:
+                        symbol = info['symbol'] if info['symbol'] is not None else ''
+                    if name is None:
+                        name = info['name'] if info['name'] is not None else ''
+
+                else:
+                    raise NotERC20Conformant(f'Token {evm_address} is of uknown type')  # pylint: disable=raise-missing-from  # noqa: E501
 
             # Store the information in the database
             token_data = EvmToken.initialize(

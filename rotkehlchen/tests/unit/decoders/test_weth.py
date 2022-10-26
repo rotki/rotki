@@ -3,13 +3,14 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.weth.constants import CPT_WETH
 from rotkehlchen.constants.assets import A_ETH, A_USDC, A_WETH
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import Location, deserialize_evm_tx_hash
+from rotkehlchen.types import ChainID, EvmTokenKind, Location, deserialize_evm_tx_hash
 from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -168,12 +169,13 @@ def test_weth_interaction_with_protocols_deposit(database, ethereum_manager):
         msg_aggregator=msg_aggregator,
         tx_hash=evmhash,
     )
-    assert len(events) == 3
+    assert len(events) == 4
+    tx_hash = HistoryBaseEntry.deserialize_event_identifier(
+        '0xab0dec3785632c567365c48ea1fd1178f0998773136a555912625d2668ef53e9',
+    )
     expected_events = [
         HistoryBaseEntry(
-            event_identifier=HistoryBaseEntry.deserialize_event_identifier(
-                '0xab0dec3785632c567365c48ea1fd1178f0998773136a555912625d2668ef53e9',
-            ),
+            event_identifier=tx_hash,
             sequence_index=0,
             timestamp=1666595591000,
             location=Location.BLOCKCHAIN,
@@ -199,9 +201,7 @@ def test_weth_interaction_with_protocols_deposit(database, ethereum_manager):
             notes='Send 0.999999999949533767 ETH to 0xC36442b4a4522E871399CD717aBDD847Ab11FE88',  # noqa: E501
             counterparty='0xC36442b4a4522E871399CD717aBDD847Ab11FE88',
         ), HistoryBaseEntry(
-            event_identifier=HistoryBaseEntry.deserialize_event_identifier(
-                '0xab0dec3785632c567365c48ea1fd1178f0998773136a555912625d2668ef53e9',
-            ),
+            event_identifier=tx_hash,
             sequence_index=187,
             timestamp=1666595591000,
             location=Location.BLOCKCHAIN,
@@ -214,7 +214,27 @@ def test_weth_interaction_with_protocols_deposit(database, ethereum_manager):
             counterparty='0x8ad599c3A0ff1De082011EFDDc58f1908eb6e6D8',
         ),
     ]
-    assert events == expected_events
+    assert events[:-1] == expected_events
+    expected_erc721 = get_or_create_evm_token(
+        userdb=database,
+        evm_address='0xC36442b4a4522E871399CD717aBDD847Ab11FE88',
+        chain=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC721,
+        ethereum_manager=ethereum_manager,
+    )
+    assert events[3] == HistoryBaseEntry(
+        event_identifier=tx_hash,
+        sequence_index=191,
+        timestamp=1666595591000,
+        location=Location.BLOCKCHAIN,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=expected_erc721,
+        balance=Balance(amount=ONE),
+        location_label='0xC4DdFf531132d32b47eC938AcfA28E354769A806',
+        notes='Receive Uniswap V3 Positions NFT-V1 with id 343053 from 0x0000000000000000000000000000000000000000 to 0xC4DdFf531132d32b47eC938AcfA28E354769A806',  # noqa: E501
+        counterparty='0x0000000000000000000000000000000000000000',
+    )
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0xDea6866A866C60d68fFDFc6178C12fCFdb9d0D47']])  # noqa: E501

@@ -13,6 +13,7 @@ from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
 from rotkehlchen.chain.ethereum.constants import MODULES_PACKAGE, MODULES_PREFIX_LENGTH
+from rotkehlchen.chain.ethereum.decoding.constants import NAUGHTY_ERC721
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.constants import ZERO
@@ -30,6 +31,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
+    EvmTokenKind,
     EvmTransaction,
     EVMTxHash,
     Location,
@@ -520,12 +522,21 @@ class EVMTransactionDecoder():
         if tx_log.topics[0] != ERC20_OR_ERC721_TRANSFER:
             return None
 
+        if tx_log.address in NAUGHTY_ERC721 or len(tx_log.topics) == 4:  # typical ERC721 has 3 indexed args  # noqa: E501
+            token_kind = EvmTokenKind.ERC721
+        elif len(tx_log.topics) == 3:  # typical ERC20 has 2 indexed args
+            token_kind = EvmTokenKind.ERC20
+        else:
+            log.debug(f'Failed to decode token with address {tx_log.address} due to inability to match token type')  # noqa: E501
+            return None
+
         if token is None:
             try:
                 found_token = get_or_create_evm_token(
                     userdb=self.database,
                     evm_address=tx_log.address,
                     chain=ChainID.ETHEREUM,
+                    token_kind=token_kind,
                     ethereum_manager=self.ethereum_manager,
                 )
             except NotERC20Conformant:

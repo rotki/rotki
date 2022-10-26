@@ -3600,7 +3600,7 @@ class RestAPI():
     def _get_token_info(self, address: ChecksumEvmAddress) -> Dict[str, Any]:
         eth_manager = self.rotkehlchen.chain_manager.ethereum
         try:
-            info = eth_manager.get_basic_contract_info(address=address)
+            info = eth_manager.get_erc20_contract_info(address=address)
         except BadFunctionCallOutput:
             return wrap_in_fail_result(
                 f'Address {address} seems to not be a deployed contract',

@@ -52,6 +52,7 @@ from rotkehlchen.constants import ONE
 from rotkehlchen.constants.ethereum import (
     ENS_REVERSE_RECORDS,
     ERC20TOKEN_ABI,
+    ERC721TOKEN_ABI,
     ETH_MULTICALL,
     ETH_MULTICALL_2,
     ETH_SCAN,
@@ -60,6 +61,7 @@ from rotkehlchen.constants.ethereum import (
 from rotkehlchen.errors.misc import (
     BlockchainQueryError,
     InputError,
+    NotERC721Conformant,
     RemoteError,
     UnableToDecryptRemoteData,
 )
@@ -78,6 +80,7 @@ from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
+    EvmTokenKind,
     EvmTransaction,
     EVMTxHash,
     SupportedBlockchain,
@@ -1216,9 +1219,9 @@ class EthereumManager():
                 pass
         return self._get_blocknumber_by_time_from_subgraph(ts)
 
-    def get_basic_contract_info(self, address: ChecksumEvmAddress) -> Dict[str, Any]:
+    def get_erc20_contract_info(self, address: ChecksumEvmAddress) -> Dict[str, Any]:
         """
-        Query a contract address and return basic information as:
+        Query an erc20 contract address and return basic information as:
         - Decimals
         - name
         - symbol
@@ -1251,6 +1254,7 @@ class EthereumManager():
                 output=output,
                 properties=properties,
                 contract=contract,
+                token_kind=EvmTokenKind.ERC20,
             )
         except (OverflowError, InsufficientDataBytes) as e:
             # This can happen when contract follows the ERC20 standard methods
@@ -1266,8 +1270,58 @@ class EthereumManager():
                 output=output,
                 properties=properties,
                 contract=contract,
+                token_kind=EvmTokenKind.ERC20,
             )
             log.debug(f'{address} was succesfuly decoded as ERC20 token')
+
+        for prop, value in zip(properties, decoded):
+            if isinstance(value, bytes):
+                value = value.rstrip(b'\x00').decode()
+            info[prop] = value
+
+        self.contract_info_cache[address] = info
+        return info
+
+    def get_erc721_contract_info(self, address: ChecksumEvmAddress) -> Dict[str, Any]:
+        """
+        Query an erc721 contract address and return basic information.
+        - name
+        - symbol
+        At all times, the dictionary returned contains the keys; name & symbol.
+        Although the values might be None. https://eips.ethereum.org/EIPS/eip-721
+        According to the standard both name and symbol are optional.
+
+        if it is provided in the contract. This method may raise:
+        - BadFunctionCallOutput: If there is an error calling a bad address
+        - NotERC721Conformant: If the address can't be decoded as an ERC721 contract
+        """
+        cache = self.contract_info_cache.get(address)
+        if cache is not None:
+            return cache
+
+        properties = ('symbol', 'name')
+        info: Dict[str, Any] = {}
+
+        contract = EvmContract(address=address, abi=ERC721TOKEN_ABI, deployed_block=0)
+        try:
+            # Output contains call status and result
+            output = self.multicall_2(
+                require_success=False,
+                calls=[(address, contract.encode(method_name=prop)) for prop in properties],
+            )
+        except RemoteError:
+            # If something happens in the connection the output should have
+            # the same length as the tuple of properties
+            output = [(False, b'')] * len(properties)
+        try:
+            decoded = self._process_contract_info(
+                output=output,
+                properties=properties,
+                contract=contract,
+                token_kind=EvmTokenKind.ERC721,
+            )
+        except (OverflowError, InsufficientDataBytes) as e:
+            raise NotERC721Conformant(f'{address} token does not conform to the ERC721 spec') from e  # noqa: E501
 
         for prop, value in zip(properties, decoded):
             if isinstance(value, bytes):
@@ -1329,8 +1383,9 @@ class EthereumManager():
     def _process_contract_info(
             self,
             output: List[Tuple[bool, bytes]],
-            properties: Tuple[str, str, str],
+            properties: Tuple[str, ...],
             contract: EvmContract,
+            token_kind: EvmTokenKind,
     ) -> List[Optional[Union[int, str, bytes]]]:
         """Decodes information i.e. (decimals, symbol, name) about the token contract.
         - `decimals` property defaults to 18.
@@ -1346,7 +1401,10 @@ class EthereumManager():
                 decoded_contract_info.append(contract.decode(method_value[1], method_name)[0])
                 continue
 
-            # for missing methods, use default decimals for decimals or None for others
+            if token_kind != EvmTokenKind.ERC20:
+                continue
+
+            # for missing erc20 methods, use default decimals for decimals or None for others
             if method_name == 'decimals':
                 decoded_contract_info.append(DEFAULT_TOKEN_DECIMALS)
             else:

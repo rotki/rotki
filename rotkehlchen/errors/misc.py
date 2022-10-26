@@ -55,6 +55,10 @@ class NotERC20Conformant(Exception):
     """An address is not conforming to the ERC20 standard"""
 
 
+class NotERC721Conformant(Exception):
+    """An address is not conforming to the ERC721 standard"""
+
+
 class BlockchainQueryError(Exception):
     """Raises when there are problems querying a blockchain node.
 

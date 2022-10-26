@@ -13,10 +13,9 @@ if TYPE_CHECKING:
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
-from rotkehlchen.types import EvmTransaction, Location
+from rotkehlchen.types import EvmTokenKind, EvmTransaction, Location
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int, ts_sec_to_ms
 
-from .constants import NAUGHTY_ERC721
 from .utils import address_is_exchange
 
 
@@ -112,15 +111,6 @@ class BaseDecoderTools():
         - DeserializationError
         - ConversionError
         """
-        if token.evm_address in NAUGHTY_ERC721:
-            token_type = 'erc721'
-        elif len(tx_log.topics) == 3:  # typical ERC20 has 2 indexed args
-            token_type = 'erc20'
-        elif len(tx_log.topics) == 4:  # typical ERC721 has 3 indexed args
-            token_type = 'erc721'
-        else:
-            return None
-
         from_address = hex_or_bytes_to_address(tx_log.topics[1])
         to_address = hex_or_bytes_to_address(tx_log.topics[2])
         direction_result = self.decode_direction(
@@ -132,19 +122,21 @@ class BaseDecoderTools():
 
         event_type, location_label, counterparty, verb = direction_result
         amount_raw_or_token_id = hex_or_bytes_to_int(tx_log.data)
-        if token_type == 'erc20':
+        if token.token_kind == EvmTokenKind.ERC20:
             amount = token_normalized_value(token_amount=amount_raw_or_token_id, token=token)
             if event_type == HistoryEventType.SPEND:
                 notes = f'{verb} {amount} {token.symbol} from {location_label} to {counterparty}'
             else:
                 notes = f'{verb} {amount} {token.symbol} from {counterparty} to {location_label}'
-        else:
-            token_id = hex_or_bytes_to_int(tx_log.data)
+        elif token.token_kind == EvmTokenKind.ERC721:
+            token_id = hex_or_bytes_to_int(tx_log.topics[3])
             amount = ONE
             if event_type == HistoryEventType.SPEND:
                 notes = f'{verb} {token.name} with id {token_id} from {location_label} to {counterparty}'  # noqa: E501
             else:
                 notes = f'{verb} {token.name} with id {token_id} from {counterparty} to {location_label}'  # noqa: E501
+        else:
+            return None  # unknown kind
 
         return HistoryBaseEntry(
             event_identifier=transaction.tx_hash,
