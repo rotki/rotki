@@ -9,7 +9,7 @@ from rotkehlchen.chain.ethereum.decoding.decoder import EVMTransactionDecoder
 from rotkehlchen.chain.ethereum.modules.uniswap.constants import CPT_UNISWAP_V3
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_ETH, A_USDC, A_WETH
+from rotkehlchen.constants.assets import A_ETH, A_USDC
 from rotkehlchen.constants.misc import EXP18, ZERO
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.fval import FVal
@@ -105,7 +105,7 @@ def test_uniswap_v3_swap(database, ethereum_manager, eth_transactions):
         )
         events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
 
-    assert len(events) == 4
+    assert len(events) == 3
     expected_events = [
         HistoryBaseEntry(
             event_identifier=HistoryBaseEntry.deserialize_event_identifier(tx_hex),
@@ -133,18 +133,6 @@ def test_uniswap_v3_swap(database, ethereum_manager, eth_transactions):
             balance=Balance(amount=FVal('0.632989659350357136'), usd_value=ZERO),
             location_label='0xb63e0C506dDBa7b0dd106d1937d6D13BE2C62aE2',
             notes='Swap 0.632989659350357136 ETH in uniswap-v3 from 0xb63e0C506dDBa7b0dd106d1937d6D13BE2C62aE2',  # noqa: E501
-            counterparty=CPT_UNISWAP_V3,
-        ), HistoryBaseEntry(
-            event_identifier=HistoryBaseEntry.deserialize_event_identifier(tx_hex),
-            sequence_index=2,
-            timestamp=1646375440000,
-            location=Location.BLOCKCHAIN,
-            event_type=HistoryEventType.TRANSFER,
-            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
-            asset=A_WETH,
-            balance=Balance(amount=FVal('0.632989659350357136'), usd_value=ZERO),
-            location_label='0xE592427A0AEce92De3Edee1F18E0157C05861564',
-            notes='Refund of 0.632989659350357136 WETH in uniswap-v3 due to price change',
             counterparty=CPT_UNISWAP_V3,
         ), HistoryBaseEntry(
             event_identifier=HistoryBaseEntry.deserialize_event_identifier(tx_hex),
