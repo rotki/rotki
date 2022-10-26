@@ -1029,6 +1029,7 @@ Query the result of an ongoing backend task
    :statuscode 404: There is no task with the given task id
    :statuscode 409: No user is currently logged in
    :statuscode 500: Internal rotki error
+   :statuscode 502: Problem contacting a remote service
 
 Query the latest price of assets
 ===================================
@@ -2814,6 +2815,7 @@ Querying all balances
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 409: User is not logged in.
    :statuscode 500: Internal rotki error
+   :statuscode 502: Problem contacting a remote service
 
 Querying all supported assets
 ================================
