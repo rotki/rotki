@@ -34,11 +34,12 @@ export class ManualBalancesPage extends AccountBalancesPage {
     for (const tag of balance.tags) {
       cy.get('.manual-balances-form__tags').type(tag).type('{enter}');
     }
+
     cy.get('.manual-balances-form__location').click();
-    cy.get('.manual-balances-form__location div.v-select__selections input')
-      .type(`{selectall}{backspace}`)
-      .type(balance.location)
-      .type('{enter}');
+    cy.get('.manual-balances-form__location').type(`{selectall}{backspace}`);
+    cy.get('.manual-balances-form__location').type(balance.location);
+    cy.get('.manual-balances-form__location').type('{enter}');
+    cy.get('.v-autocomplete__content').should('not.be.visible');
     cy.get('.big-dialog__buttons__confirm').click();
     cy.get('.big-dialog', { timeout: 120000 }).should('not.be.visible');
   }

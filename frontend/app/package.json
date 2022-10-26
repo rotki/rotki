@@ -114,7 +114,7 @@
   },
   "optionalDependencies": {
     "@cypress/code-coverage": "3.10.0",
-    "cypress": "10.7.0",
+    "cypress": "10.11.0",
     "dmg-license": "1.0.10"
   },
   "engines": {
