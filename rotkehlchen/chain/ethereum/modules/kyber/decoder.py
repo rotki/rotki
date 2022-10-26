@@ -106,13 +106,13 @@ class KyberDecoder(DecoderInterface):
         decoded_events: List[HistoryBaseEntry],
         all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
         action_items: Optional[List[ActionItem]],  # pylint: disable=unused-argument
-    ) -> Tuple[Optional[HistoryBaseEntry], Optional[ActionItem]]:
+    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
         if tx_log.topics[0] == KYBER_TRADE_LEGACY:
-            return None, None
+            return None, []
 
         sender, source_asset, destination_asset = _legacy_contracts_basic_info(tx_log)
         if source_asset is None or destination_asset is None:
-            return None, None
+            return None, []
 
         spent_amount_raw = hex_or_bytes_to_int(tx_log.data[64:96])
         return_amount_raw = hex_or_bytes_to_int(tx_log.data[96:128])
@@ -128,7 +128,7 @@ class KyberDecoder(DecoderInterface):
             notify_user=self.notify_user,
         )
 
-        return None, None
+        return None, []
 
     def _decode_legacy_upgraded_trade(  # pylint: disable=no-self-use
         self,
@@ -137,13 +137,13 @@ class KyberDecoder(DecoderInterface):
         decoded_events: List[HistoryBaseEntry],
         all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
         action_items: Optional[List[ActionItem]],  # pylint: disable=unused-argument
-    ) -> Tuple[Optional[HistoryBaseEntry], Optional[ActionItem]]:
+    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
         if tx_log.topics[0] != KYBER_TRADE_LEGACY:
-            return None, None
+            return None, []
 
         sender, source_asset, destination_asset = _legacy_contracts_basic_info(tx_log)
         if source_asset is None or destination_asset is None:
-            return None, None
+            return None, []
 
         spent_amount_raw = hex_or_bytes_to_int(tx_log.data[96:128])
         return_amount_raw = hex_or_bytes_to_int(tx_log.data[128:160])
@@ -159,7 +159,7 @@ class KyberDecoder(DecoderInterface):
             notify_user=self.notify_user,
         )
 
-        return None, None
+        return None, []
 
     # -- DecoderInterface methods
 

@@ -43,7 +43,7 @@ class WethDecoder(DecoderInterface):
             decoded_events: List[HistoryBaseEntry],
             all_logs: List[EthereumTxReceiptLog],
             action_items: Optional[List[ActionItem]],
-    ) -> Tuple[Optional[HistoryBaseEntry], Optional[ActionItem]]:
+    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
         if tx_log.topics[0] == WETH_DEPOSIT_TOPIC:
             return self._decode_deposit_event(
                 tx_log=tx_log,
@@ -62,7 +62,7 @@ class WethDecoder(DecoderInterface):
                 action_items=action_items,
             )
 
-        return None, None
+        return None, []
 
     def _decode_deposit_event(
             self,
@@ -71,7 +71,7 @@ class WethDecoder(DecoderInterface):
             decoded_events: List[HistoryBaseEntry],
             all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[List[ActionItem]],  # pylint: disable=unused-argument
-    ) -> Tuple[Optional[HistoryBaseEntry], Optional[ActionItem]]:
+    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
         depositor = hex_or_bytes_to_address(tx_log.topics[1])
         deposited_amount_raw = hex_or_bytes_to_int(tx_log.data[:32])
         deposited_amount = asset_normalized_value(amount=deposited_amount_raw, asset=self.eth)
@@ -85,7 +85,7 @@ class WethDecoder(DecoderInterface):
                 event.asset == self.eth
             ):
                 if event.counterparty == depositor:
-                    return None, None
+                    return None, []
 
                 event.counterparty = CPT_WETH
                 event.event_type = HistoryEventType.DEPOSIT
@@ -94,7 +94,7 @@ class WethDecoder(DecoderInterface):
                 out_event = event
 
         if out_event is None:
-            return None, None
+            return None, []
 
         in_event = HistoryBaseEntry(
             event_identifier=transaction.tx_hash,
@@ -109,7 +109,7 @@ class WethDecoder(DecoderInterface):
             counterparty=CPT_WETH,
             notes=f'Receive {deposited_amount} {self.weth.symbol}',
         )
-        return in_event, None
+        return in_event, []
 
     def _decode_withdrawal_event(
             self,
@@ -118,7 +118,7 @@ class WethDecoder(DecoderInterface):
             decoded_events: List[HistoryBaseEntry],
             all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[List[ActionItem]],  # pylint: disable=unused-argument
-    ) -> Tuple[Optional[HistoryBaseEntry], Optional[ActionItem]]:
+    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
         withdrawer = hex_or_bytes_to_address(tx_log.topics[1])
         withdrawn_amount_raw = hex_or_bytes_to_int(tx_log.data[:32])
         withdrawn_amount = asset_normalized_value(amount=withdrawn_amount_raw, asset=self.eth)
@@ -132,14 +132,14 @@ class WethDecoder(DecoderInterface):
                 event.asset == self.eth
             ):
                 if event.counterparty == withdrawer:
-                    return None, None
+                    return None, []
 
                 in_event = event
                 event.notes = f'Receive {withdrawn_amount} {self.eth.symbol}'
                 event.counterparty = CPT_WETH
 
         if in_event is None:
-            return None, None
+            return None, []
 
         out_event = HistoryBaseEntry(
             event_identifier=transaction.tx_hash,
@@ -159,7 +159,7 @@ class WethDecoder(DecoderInterface):
             in_event=in_event,
             events_list=decoded_events + [out_event],
         )
-        return out_event, None
+        return out_event, []
 
     # -- DecoderInterface methods
 

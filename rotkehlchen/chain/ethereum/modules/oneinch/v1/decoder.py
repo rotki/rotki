@@ -39,17 +39,17 @@ class Oneinchv1Decoder(DecoderInterface):
             transaction: EvmTransaction,  # pylint: disable=unused-argument
             decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
             all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> Tuple[Optional[HistoryBaseEntry], Optional[ActionItem]]:
+    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
         sender = hex_or_bytes_to_address(tx_log.topics[1])
         if not self.base.is_tracked(sender):
-            return None, None
+            return None, []
 
         from_token_address = hex_or_bytes_to_address(tx_log.data[0:32])
         to_token_address = hex_or_bytes_to_address(tx_log.data[32:64])
         from_asset = ethaddress_to_asset(from_token_address)
         to_asset = ethaddress_to_asset(to_token_address)
         if None in (from_asset, to_asset):
-            return None, None
+            return None, []
 
         from_raw = hex_or_bytes_to_int(tx_log.data[64:96])
         from_amount = asset_normalized_value(from_raw, from_asset)  # type: ignore
@@ -85,7 +85,7 @@ class Oneinchv1Decoder(DecoderInterface):
                 out_event = event
 
         maybe_reshuffle_events(out_event=out_event, in_event=in_event, events_list=decoded_events)
-        return None, None
+        return None, []
 
     def _decode_swapped(  # pylint: disable=no-self-use
             self,
@@ -93,17 +93,17 @@ class Oneinchv1Decoder(DecoderInterface):
             transaction: EvmTransaction,
             decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
             all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> Tuple[Optional[HistoryBaseEntry], Optional[ActionItem]]:
+    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
         """We use the Swapped event to get the fee kept by 1inch"""
         to_token_address = hex_or_bytes_to_address(tx_log.topics[2])
         to_asset = ethaddress_to_asset(to_token_address)
         if to_asset is None:
-            return None, None
+            return None, []
 
         to_raw = hex_or_bytes_to_int(tx_log.data[32:64])
         fee_raw = hex_or_bytes_to_int(tx_log.data[96:128])
         if fee_raw == 0:
-            return None, None  # no need to do anything for zero fee taken
+            return None, []  # no need to do anything for zero fee taken
 
         full_amount = asset_normalized_value(to_raw + fee_raw, to_asset)
         sender_address = None
@@ -117,7 +117,7 @@ class Oneinchv1Decoder(DecoderInterface):
                 break
 
         if sender_address is None:
-            return None, None
+            return None, []
 
         # And now create a new event for the fee
         fee_amount = asset_normalized_value(fee_raw, to_asset)
@@ -134,7 +134,7 @@ class Oneinchv1Decoder(DecoderInterface):
             event_subtype=HistoryEventSubType.FEE,
             counterparty=CPT_ONEINCH_V1,
         )
-        return fee_event, None
+        return fee_event, []
 
     def decode_action(
             self,
@@ -143,13 +143,13 @@ class Oneinchv1Decoder(DecoderInterface):
             decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
             all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[List[ActionItem]],  # pylint: disable=unused-argument
-    ) -> Tuple[Optional[HistoryBaseEntry], Optional[ActionItem]]:
+    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
         if tx_log.topics[0] == HISTORY:
             return self._decode_history(tx_log=tx_log, transaction=transaction, decoded_events=decoded_events, all_logs=all_logs)  # noqa: E501
         if tx_log.topics[0] == SWAPPED:
             return self._decode_swapped(tx_log=tx_log, transaction=transaction, decoded_events=decoded_events, all_logs=all_logs)  # noqa: E501
 
-        return None, None
+        return None, []
 
     # -- DecoderInterface methods
 

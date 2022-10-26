@@ -58,7 +58,7 @@ class CurveDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
         transaction: EvmTransaction,
         decoded_events: List[HistoryBaseEntry],
         user_address: ChecksumEvmAddress,
-    ) -> Tuple[Optional[HistoryBaseEntry], Optional[ActionItem]]:
+    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
         """Decode information related to withdrawing assets from curve pools"""
         for event in decoded_events:
             try:
@@ -101,14 +101,14 @@ class CurveDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                 event.event_subtype = HistoryEventSubType.REMOVE_ASSET
                 event.counterparty = CPT_CURVE
                 event.notes = f'Remove {event.balance.amount} {crypto_asset.symbol} from the curve pool {tx_log.address}'  # noqa: E501
-        return None, None
+        return None, []
 
     def _decode_curve_deposit_events(
         self,
         tx_log: EthereumTxReceiptLog,
         decoded_events: List[HistoryBaseEntry],
         user_address: ChecksumEvmAddress,
-    ) -> Tuple[Optional[HistoryBaseEntry], Optional[ActionItem]]:
+    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
         """Decode information related to depositing assets in curve pools"""
         for event in decoded_events:
             try:
@@ -167,7 +167,7 @@ class CurveDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                 event.counterparty = CPT_CURVE
                 event.notes = f'Deposit {event.balance.amount} {crypto_asset.symbol} in curve pool {tx_log.address}'  # noqa: E501
 
-        return None, None
+        return None, []
 
     def _decode_curve_events(  # pylint: disable=no-self-use
         self,
@@ -176,7 +176,7 @@ class CurveDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
         decoded_events: List[HistoryBaseEntry],
         all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
         action_items: Optional[List[ActionItem]],  # pylint: disable=unused-argument
-    ) -> Tuple[Optional[HistoryBaseEntry], Optional[ActionItem]]:
+    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
         if tx_log.topics[0] in (
             REMOVE_LIQUIDITY,
             REMOVE_ONE,
@@ -203,7 +203,7 @@ class CurveDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                 user_address=user_address,
             )
 
-        return None, None
+        return None, []
 
     @staticmethod
     def _maybe_enrich_curve_transfers(

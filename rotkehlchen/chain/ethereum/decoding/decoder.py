@@ -184,7 +184,7 @@ class EVMTransactionDecoder():
             decoded_events: List[HistoryBaseEntry],
             all_logs: List[EthereumTxReceiptLog],
             action_items: List[ActionItem],
-    ) -> Tuple[Optional[HistoryBaseEntry], Optional[ActionItem]]:
+    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
         """
         Sees if the log is on an address for which we have specific decoders and calls it
 
@@ -195,7 +195,7 @@ class EVMTransactionDecoder():
         """
         mapping_result = self.address_mappings.get(tx_log.address)
         if mapping_result is None:
-            return None, None
+            return None, []
         method = mapping_result[0]
 
         try:
@@ -207,7 +207,7 @@ class EVMTransactionDecoder():
             log.debug(
                 f'Decoding tx log with index {tx_log.log_index} of transaction '
                 f'{transaction.tx_hash.hex()} through {method.__name__} failed due to {str(e)}')
-            return None, None
+            return None, []
 
         return result
 
@@ -225,9 +225,8 @@ class EVMTransactionDecoder():
 
         # decode transaction logs from the receipt
         for tx_log in tx_receipt.logs:
-            event, action_item = self.decode_by_address_rules(tx_log, transaction, events, tx_receipt.logs, action_items)  # noqa: E501
-            if action_item:
-                action_items.append(action_item)
+            event, new_action_items = self.decode_by_address_rules(tx_log, transaction, events, tx_receipt.logs, action_items)  # noqa: E501
+            action_items.extend(new_action_items)
             if event:
                 events.append(event)
                 continue

@@ -49,14 +49,14 @@ class VotiumDecoder(DecoderInterface):
         decoded_events: List[HistoryBaseEntry],
         all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
         action_items: Optional[List[ActionItem]],  # pylint: disable=unused-argument
-    ) -> Tuple[Optional[HistoryBaseEntry], Optional[ActionItem]]:
+    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
         if tx_log.topics[0] != VOTIUM_CLAIM:
-            return None, None
+            return None, []
 
         claimed_token_address = hex_or_bytes_to_address(tx_log.topics[1])
         claimed_token = ethaddress_to_asset(claimed_token_address)
         if claimed_token is None:
-            return None, None
+            return None, []
 
         receiver = hex_or_bytes_to_address(tx_log.topics[2])
         claimed_amount_raw = hex_or_bytes_to_int(tx_log.data[32:64])
@@ -73,7 +73,7 @@ class VotiumDecoder(DecoderInterface):
                 event.counterparty = CPT_VOTIUM
                 event.notes = f'Receive {event.balance.amount} {crypto_asset.symbol} from votium bribe'  # noqa: E501
 
-        return None, None
+        return None, []
 
     # -- DecoderInterface methods
 

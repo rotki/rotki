@@ -48,9 +48,9 @@ class LiquityDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             decoded_events: List[HistoryBaseEntry],
             all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
             action_items: List[ActionItem],  # pylint: disable=unused-argument
-    ) -> Tuple[Optional[HistoryBaseEntry], Optional[ActionItem]]:
+    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
         if tx_log.topics[0] != BALANCE_UPDATE:
-            return None, None
+            return None, []
 
         for event in decoded_events:
             try:
@@ -78,7 +78,7 @@ class LiquityDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                 event.event_subtype = HistoryEventSubType.REMOVE_ASSET
                 event.counterparty = CPT_LIQUITY
                 event.notes = f'Withdraw {event.balance.amount} {crypto_asset.symbol} collateral from liquity'  # noqa: E501
-        return None, None
+        return None, []
 
     # -- DecoderInterface methods
 

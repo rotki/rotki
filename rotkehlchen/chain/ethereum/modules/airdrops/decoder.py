@@ -85,9 +85,9 @@ class AirdropsDecoder(DecoderInterface):
             decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
             all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
             action_items: List[ActionItem],  # pylint: disable=unused-argument
-    ) -> Tuple[Optional[HistoryBaseEntry], Optional[ActionItem]]:
+    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
         if tx_log.topics[0] != UNISWAP_TOKEN_CLAIMED:
-            return None, None
+            return None, []
 
         user_address = hex_or_bytes_to_address(tx_log.data[32:64])
         raw_amount = hex_or_bytes_to_int(tx_log.data[64:96])
@@ -101,7 +101,7 @@ class AirdropsDecoder(DecoderInterface):
                 event.notes = f'Claim {amount} UNI from uniswap airdrop'  # noqa: E501
                 break
 
-        return None, None
+        return None, []
 
     def _decode_fox_claim(  # pylint: disable=no-self-use
             self,
@@ -110,9 +110,9 @@ class AirdropsDecoder(DecoderInterface):
             decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
             all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
             action_items: List[ActionItem],  # pylint: disable=unused-argument
-    ) -> Tuple[Optional[HistoryBaseEntry], Optional[ActionItem]]:
+    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
         if tx_log.topics[0] != FOX_CLAIMED:
-            return None, None
+            return None, []
 
         user_address = hex_or_bytes_to_address(tx_log.topics[1])
         raw_amount = hex_or_bytes_to_int(tx_log.data[64:96])
@@ -126,7 +126,7 @@ class AirdropsDecoder(DecoderInterface):
                 event.notes = f'Claim {amount} FOX from shapeshift airdrop'  # noqa: E501
                 break
 
-        return None, None
+        return None, []
 
     def _decode_badger_claim(  # pylint: disable=no-self-use
             self,
@@ -135,9 +135,9 @@ class AirdropsDecoder(DecoderInterface):
             decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
             all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
             action_items: List[ActionItem],  # pylint: disable=unused-argument
-    ) -> Tuple[Optional[HistoryBaseEntry], Optional[ActionItem]]:
+    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
         if tx_log.topics[0] != BADGER_HUNT_EVENT:
-            return None, None
+            return None, []
 
         user_address = hex_or_bytes_to_address(tx_log.topics[1])
         raw_amount = hex_or_bytes_to_int(tx_log.data[32:64])
@@ -154,7 +154,7 @@ class AirdropsDecoder(DecoderInterface):
                 event.notes = f'Claim {amount} BADGER from badger airdrop'  # noqa: E501
                 break
 
-        return None, None
+        return None, []
 
     def _decode_oneinch_claim(  # pylint: disable=no-self-use
             self,
@@ -163,9 +163,9 @@ class AirdropsDecoder(DecoderInterface):
             decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
             all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
             action_items: List[ActionItem],  # pylint: disable=unused-argument
-    ) -> Tuple[Optional[HistoryBaseEntry], Optional[ActionItem]]:
+    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
         if tx_log.topics[0] != ONEINCH_CLAIMED:
-            return None, None
+            return None, []
 
         user_address = hex_or_bytes_to_address(tx_log.data[32:64])
         raw_amount = hex_or_bytes_to_int(tx_log.data[64:96])
@@ -179,7 +179,7 @@ class AirdropsDecoder(DecoderInterface):
                 event.notes = f'Claim {amount} 1INCH from 1inch airdrop'  # noqa: E501
                 break
 
-        return None, None
+        return None, []
 
     def _decode_fpis_claim(  # pylint: disable=no-self-use
             self,
@@ -189,9 +189,9 @@ class AirdropsDecoder(DecoderInterface):
             all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
             action_items: List[ActionItem],  # pylint: disable=unused-argument
             airdrop: Literal['convex', 'fpis'],
-    ) -> Tuple[Optional[HistoryBaseEntry], Optional[ActionItem]]:
+    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
         if tx_log.topics[0] != FPIS_CONVEX_CLAIM:
-            return None, None
+            return None, []
 
         user_address = hex_or_bytes_to_address(tx_log.data[0:32])
         raw_amount = hex_or_bytes_to_int(tx_log.data[32:64])
@@ -223,7 +223,7 @@ class AirdropsDecoder(DecoderInterface):
                 event.notes = f'Claim {amount} {crypto_asset.symbol} {note_location}'  # noqa: E501
                 break
 
-        return None, None
+        return None, []
 
     def _decode_elfi_claim(  # pylint: disable=no-self-use
             self,
@@ -232,12 +232,12 @@ class AirdropsDecoder(DecoderInterface):
             decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
             all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
             action_items: List[ActionItem],  # pylint: disable=unused-argument
-    ) -> Tuple[Optional[HistoryBaseEntry], Optional[ActionItem]]:
+    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
         """Example:
         https://etherscan.io/tx/0x1e58aed1baf70b57e6e3e880e1890e7fe607fddc94d62986c38fe70e483e594b
         """
         if tx_log.topics[0] != ELFI_VOTE_CHANGE:
-            return None, None
+            return None, []
 
         user_address = hex_or_bytes_to_address(tx_log.topics[1])
         delegate_address = hex_or_bytes_to_address(tx_log.topics[2])
@@ -272,9 +272,9 @@ class AirdropsDecoder(DecoderInterface):
                     event_subtype=HistoryEventSubType.AIRDROP,
                     counterparty=CPT_ELEMENT_FINANCE,
                 )
-                return event, None
+                return event, []
 
-        return None, None
+        return None, []
 
     # -- DecoderInterface methods
 
