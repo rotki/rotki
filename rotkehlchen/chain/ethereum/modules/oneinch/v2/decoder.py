@@ -36,17 +36,17 @@ class Oneinchv2Decoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             transaction: EvmTransaction,  # pylint: disable=unused-argument
             decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
             all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> Tuple[Optional[HistoryBaseEntry], Optional[ActionItem]]:
+    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
         sender = hex_or_bytes_to_address(tx_log.topics[1])
         source_token_address = hex_or_bytes_to_address(tx_log.topics[2])
         destination_token_address = hex_or_bytes_to_address(tx_log.topics[3])
 
         source_token = ethaddress_to_asset(source_token_address)
         if source_token is None:
-            return None, None
+            return None, []
         destination_token = ethaddress_to_asset(destination_token_address)
         if destination_token is None:
-            return None, None
+            return None, []
 
         receiver = hex_or_bytes_to_address(tx_log.data[0:32])
         spent_amount_raw = hex_or_bytes_to_int(tx_log.data[64:96])
@@ -73,7 +73,7 @@ class Oneinchv2Decoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                 in_event = event
 
         maybe_reshuffle_events(out_event=out_event, in_event=in_event, events_list=decoded_events)
-        return None, None
+        return None, []
 
     def decode_action(
             self,
@@ -82,11 +82,11 @@ class Oneinchv2Decoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
             all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[List[ActionItem]],  # pylint: disable=unused-argument
-    ) -> Tuple[Optional[HistoryBaseEntry], Optional[ActionItem]]:
+    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
         if tx_log.topics[0] == SWAPPED:
             return self._decode_swapped(tx_log=tx_log, transaction=transaction, decoded_events=decoded_events, all_logs=all_logs)  # noqa: E501
 
-        return None, None
+        return None, []
 
     # -- DecoderInterface methods
 

@@ -39,9 +39,9 @@ class HopDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
             all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
             action_items: List[ActionItem],  # pylint: disable=unused-argument
-    ) -> Tuple[Optional[HistoryBaseEntry], Optional[ActionItem]]:
+    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
         if tx_log.topics[0] != TRANSFER_TO_L2:
-            return None, None
+            return None, []
 
         chain_id = hex_or_bytes_to_int(tx_log.topics[1])
         recipient = hex_or_bytes_to_address(tx_log.topics[2])
@@ -62,7 +62,7 @@ class HopDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                 event.notes = f'Bridge {amount} ETH to {name} {target_str} via Hop protocol'
                 break
 
-        return None, None
+        return None, []
 
     # -- DecoderInterface methods
 

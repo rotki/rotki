@@ -46,10 +46,10 @@ class CompoundDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             tx_log: EthereumTxReceiptLog,
             decoded_events: List[HistoryBaseEntry],
             compound_token: EvmToken,
-    ) -> Tuple[Optional[HistoryBaseEntry], Optional[ActionItem]]:
+    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
         minter = hex_or_bytes_to_address(tx_log.data[0:32])
         if not self.base.is_tracked(minter):
-            return None, None
+            return None, []
 
         mint_amount_raw = hex_or_bytes_to_int(tx_log.data[32:64])
         minted_amount_raw = hex_or_bytes_to_int(tx_log.data[64:96])
@@ -58,7 +58,7 @@ class CompoundDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             evm_chain=compound_token.chain,
         )
         if underlying_asset is None:
-            return None, None
+            return None, []
         underlying_asset = underlying_asset.resolve_to_crypto_asset()
 
         mint_amount = asset_normalized_value(mint_amount_raw, underlying_asset)
@@ -76,7 +76,7 @@ class CompoundDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
 
         if out_event is None:
             log.debug(f'At compound mint decoding of tx {transaction.tx_hash.hex()} the out event was not found')  # noqa: E501
-            return None, None
+            return None, []
 
         # also create an action item for the receive of the cTokens
         action_item = ActionItem(
@@ -91,17 +91,17 @@ class CompoundDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             to_counterparty=CPT_COMPOUND,
             paired_event_data=(out_event, True),
         )
-        return None, action_item
+        return None, [action_item]
 
     def _decode_redeem(
             self,
             tx_log: EthereumTxReceiptLog,
             decoded_events: List[HistoryBaseEntry],
             compound_token: EvmToken,
-    ) -> Tuple[Optional[HistoryBaseEntry], Optional[ActionItem]]:
+    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
         redeemer = hex_or_bytes_to_address(tx_log.data[0:32])
         if not self.base.is_tracked(redeemer):
-            return None, None
+            return None, []
 
         redeem_amount_raw = hex_or_bytes_to_int(tx_log.data[32:64])
         redeem_tokens_raw = hex_or_bytes_to_int(tx_log.data[64:96])
@@ -110,7 +110,7 @@ class CompoundDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             evm_chain=compound_token.chain,
         )
         if underlying_token is None:
-            return None, None
+            return None, []
 
         underlying_token = underlying_token.resolve_to_crypto_asset()
         redeem_amount = asset_normalized_value(redeem_amount_raw, underlying_token)
@@ -132,7 +132,7 @@ class CompoundDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                 out_event = event
 
         maybe_reshuffle_events(out_event=out_event, in_event=in_event, events_list=decoded_events)
-        return None, None
+        return None, []
 
     def decode_compound_token_movement(
             self,
@@ -142,7 +142,7 @@ class CompoundDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[List[ActionItem]],  # pylint: disable=unused-argument
             compound_token: EvmToken,
-    ) -> Tuple[Optional[HistoryBaseEntry], Optional[ActionItem]]:
+    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
         if tx_log.topics[0] == MINT_COMPOUND_TOKEN:
             log.debug(f'Hash: {transaction.tx_hash.hex()}')
             return self._decode_mint(transaction=transaction, tx_log=tx_log, decoded_events=decoded_events, compound_token=compound_token)  # noqa: E501
@@ -150,7 +150,7 @@ class CompoundDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
         if tx_log.topics[0] == REDEEM_COMPOUND_TOKEN:
             return self._decode_redeem(tx_log=tx_log, decoded_events=decoded_events, compound_token=compound_token)  # noqa: E501
 
-        return None, None
+        return None, []
 
     def decode_comp_claim(
             self,
@@ -159,20 +159,20 @@ class CompoundDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
             all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[List[ActionItem]],  # pylint: disable=unused-argument
-    ) -> Tuple[Optional[HistoryBaseEntry], Optional[ActionItem]]:
+    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
         """Example tx:
         https://etherscan.io/tx/0x024bd402420c3ba2f95b875f55ce2a762338d2a14dac4887b78174254c9ab807
         """
         if tx_log.topics[0] != DISTRIBUTED_SUPPLIER_COMP:
-            return None, None
+            return None, []
 
         supplier_address = hex_or_bytes_to_address(tx_log.topics[2])
         if not self.base.is_tracked(supplier_address):
-            return None, None
+            return None, []
 
         comp_raw_amount = hex_or_bytes_to_int(tx_log.data[0:32])
         if comp_raw_amount == 0:
-            return None, None  # do not count zero comp collection
+            return None, []  # do not count zero comp collection
 
         # A DistributedSupplierComp event can happen without a transfer. Just accrues
         # comp in the Comptroller until enough for a transfer is there. We should only
@@ -184,7 +184,7 @@ class CompoundDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                 event.notes = f'Collect {event.balance.amount} COMP from compound'
                 break
 
-        return None, None
+        return None, []
 
     # -- DecoderInterface methods
 

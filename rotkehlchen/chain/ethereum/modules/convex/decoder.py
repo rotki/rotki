@@ -61,7 +61,7 @@ class ConvexDecoder(DecoderInterface):
             decoded_events: List[HistoryBaseEntry],
             all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
             action_items: List[ActionItem],  # pylint: disable=unused-argument
-    ) -> Tuple[Optional[HistoryBaseEntry], Optional[ActionItem]]:
+    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
         amount_raw = hex_or_bytes_to_int(tx_log.data[0:32])
         interacted_address = hex_or_bytes_to_address(tx_log.topics[1])
 
@@ -114,7 +114,7 @@ class ConvexDecoder(DecoderInterface):
                         event.notes = f'Claim {event.balance.amount} {crypto_asset.symbol} reward from convex {CONVEX_POOLS[tx_log.address]} pool'  # noqa: E501
                     else:
                         event.notes = f'Claim {event.balance.amount} {crypto_asset.symbol} reward from convex'  # noqa: E501
-        return None, None
+        return None, []
 
     @staticmethod
     def _maybe_enrich_convex_transfers(
