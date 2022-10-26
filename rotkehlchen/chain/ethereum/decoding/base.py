@@ -120,6 +120,7 @@ class BaseDecoderTools():
         if direction_result is None:
             return None
 
+        extra_data = None
         event_type, location_label, counterparty, verb = direction_result
         amount_raw_or_token_id = hex_or_bytes_to_int(tx_log.data)
         if token.token_kind == EvmTokenKind.ERC20:
@@ -131,10 +132,12 @@ class BaseDecoderTools():
         elif token.token_kind == EvmTokenKind.ERC721:
             token_id = hex_or_bytes_to_int(tx_log.topics[3])
             amount = ONE
+            name = 'ERC721 token' if token.name == '' else token.name
+            extra_data = {'token_id': token_id, 'token_name': name}
             if event_type == HistoryEventType.SPEND:
-                notes = f'{verb} {token.name} with id {token_id} from {location_label} to {counterparty}'  # noqa: E501
+                notes = f'{verb} {name} with id {token_id} from {location_label} to {counterparty}'  # noqa: E501
             else:
-                notes = f'{verb} {token.name} with id {token_id} from {counterparty} to {location_label}'  # noqa: E501
+                notes = f'{verb} {name} with id {token_id} from {counterparty} to {location_label}'  # noqa: E501
         else:
             return None  # unknown kind
 
@@ -150,4 +153,5 @@ class BaseDecoderTools():
             event_type=event_type,
             event_subtype=HistoryEventSubType.NONE,
             counterparty=counterparty,
+            extra_data=extra_data,
         )

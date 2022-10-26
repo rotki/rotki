@@ -234,6 +234,7 @@ def test_weth_interaction_with_protocols_deposit(database, ethereum_manager):
         location_label='0xC4DdFf531132d32b47eC938AcfA28E354769A806',
         notes='Receive Uniswap V3 Positions NFT-V1 with id 343053 from 0x0000000000000000000000000000000000000000 to 0xC4DdFf531132d32b47eC938AcfA28E354769A806',  # noqa: E501
         counterparty='0x0000000000000000000000000000000000000000',
+        extra_data={'token_id': 343053, 'token_name': 'Uniswap V3 Positions NFT-V1'},
     )
 
 
@@ -280,7 +281,7 @@ def test_weth_interaction_with_protocols_withdrawal(database, ethereum_manager):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.764522981784947382')),
             location_label='0xDea6866A866C60d68fFDFc6178C12fCFdb9d0D47',
-            notes='Receive 0.764522981784947382 ETH 0xC36442b4a4522E871399CD717aBDD847Ab11FE88 -> 0xDea6866A866C60d68fFDFc6178C12fCFdb9d0D47',  # noqa: E501
+            notes='Receive 0.764522981784947382 ETH from 0xC36442b4a4522E871399CD717aBDD847Ab11FE88',  # noqa: E501
             counterparty='0xC36442b4a4522E871399CD717aBDD847Ab11FE88',
         ), HistoryBaseEntry(
             event_identifier=HistoryBaseEntry.deserialize_event_identifier(

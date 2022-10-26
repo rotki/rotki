@@ -328,11 +328,11 @@ class EVMTransactionDecoder():
         return events
 
     def _maybe_decode_internal_transactions(
-        self,
-        tx: EvmTransaction,
-        tx_receipt: EthereumTxReceipt,
-        events: List[HistoryBaseEntry],
-        ts_ms: TimestampMS,
+            self,
+            tx: EvmTransaction,
+            tx_receipt: EthereumTxReceipt,
+            events: List[HistoryBaseEntry],
+            ts_ms: TimestampMS,
     ) -> None:
         """
         check for internal transactions if the transaction is not canceled. This function mutates
@@ -356,6 +356,7 @@ class EVMTransactionDecoder():
                 continue
 
             event_type, location_label, counterparty, verb = direction_result
+            preposition = 'to' if verb == 'Send' else 'from'
             events.append(HistoryBaseEntry(
                 event_identifier=tx.tx_hash,
                 sequence_index=self.base.get_next_sequence_counter(),
@@ -364,7 +365,7 @@ class EVMTransactionDecoder():
                 location_label=location_label,
                 asset=A_ETH,
                 balance=Balance(amount=amount),
-                notes=f'{verb} {amount} ETH {internal_tx.from_address} -> {internal_tx.to_address}',  # noqa: E501
+                notes=f'{verb} {amount} ETH {preposition} {counterparty}',
                 event_type=event_type,
                 event_subtype=HistoryEventSubType.NONE,
                 counterparty=counterparty,
