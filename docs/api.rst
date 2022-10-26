@@ -2815,7 +2815,6 @@ Querying all balances
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 409: User is not logged in.
    :statuscode 500: Internal rotki error
-   :statuscode 502: Problem contacting a remote service
 
 Querying all supported assets
 ================================
