@@ -76,6 +76,7 @@ class WethDecoder(DecoderInterface):
         deposited_amount_raw = hex_or_bytes_to_int(tx_log.data[:32])
         deposited_amount = asset_normalized_value(amount=deposited_amount_raw, asset=self.eth)
 
+        out_event = None
         for event in decoded_events:
             if (
                 event.event_type == HistoryEventType.SPEND and
@@ -90,6 +91,10 @@ class WethDecoder(DecoderInterface):
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                 event.notes = f'Wrap {deposited_amount} {self.eth.symbol} in {self.weth.symbol}'  # noqa: E501
+                out_event = event
+
+        if out_event is None:
+            return None, None
 
         in_event = HistoryBaseEntry(
             event_identifier=transaction.tx_hash,

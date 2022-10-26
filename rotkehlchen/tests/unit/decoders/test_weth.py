@@ -299,3 +299,59 @@ def test_weth_interaction_with_protocols_withdrawal(database, ethereum_manager):
         ),
     ]
     assert events == expected_events
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0xF5f5C8924db9aa5E70Bdf7842473Ee8C7F1F4c9d']])  # noqa: E501
+def test_weth_interaction_errors(database, ethereum_manager):
+    # check that if no out event occurs, an in event should not be created for deposit event
+    # https://etherscan.io/tx/0x4ca19c97b7533e74f36dff18acf0115055f63f9d8ae078dfc8ab15ceb14d2f2d
+    msg_aggregator = MessagesAggregator()
+    tx_hex = '0x4ca19c97b7533e74f36dff18acf0115055f63f9d8ae078dfc8ab15ceb14d2f2d'
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    events = get_decoded_events_of_transaction(
+        ethereum_manager=ethereum_manager,
+        database=database,
+        msg_aggregator=msg_aggregator,
+        tx_hash=evmhash,
+    )
+    assert len(events) == 3
+    expected_events = [
+        HistoryBaseEntry(
+            event_identifier=evmhash,
+            sequence_index=0,
+            timestamp=1666800983000,
+            location=Location.BLOCKCHAIN,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(0.003535483550478045)),
+            location_label='0xF5f5C8924db9aa5E70Bdf7842473Ee8C7F1F4c9d',
+            notes='Burned 0.003535483550478045 ETH for gas',
+            counterparty=CPT_GAS,
+        ), HistoryBaseEntry(
+            event_identifier=evmhash,
+            sequence_index=1,
+            timestamp=1666800983000,
+            location=Location.BLOCKCHAIN,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(0.06693824468797216)),
+            location_label='0xF5f5C8924db9aa5E70Bdf7842473Ee8C7F1F4c9d',
+            notes='Send 0.06693824468797216 ETH to 0xe66B31678d6C16E9ebf358268a790B763C133750',
+            counterparty='0xe66B31678d6C16E9ebf358268a790B763C133750',
+        ), HistoryBaseEntry(
+            event_identifier=evmhash,
+            timestamp=1666800983000,
+            sequence_index=181,
+            location=Location.BLOCKCHAIN,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_USDC,
+            balance=Balance(amount=FVal(103.562282)),
+            location_label='0xF5f5C8924db9aa5E70Bdf7842473Ee8C7F1F4c9d',
+            notes='Receive 103.562282 USDC from 0xe66B31678d6C16E9ebf358268a790B763C133750 to 0xF5f5C8924db9aa5E70Bdf7842473Ee8C7F1F4c9d',  # noqa: E501,
+            counterparty='0xe66B31678d6C16E9ebf358268a790B763C133750',
+        ),
+    ]
+    assert events == expected_events
