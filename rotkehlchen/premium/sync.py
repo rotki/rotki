@@ -115,20 +115,25 @@ class PremiumSyncManager():
 
         return True, ''
 
-    def maybe_upload_data_to_server(self, force_upload: bool = False) -> bool:
+    def check_if_should_sync(self, force_upload: bool) -> bool:
         # if user has no premium do nothing
         if self.premium is None:
             return False
 
-        with self.data.db.user_write() as cursor:
+        with self.data.db.conn.read_ctx() as cursor:
             if not self.data.db.get_setting(cursor, 'premium_should_sync') and not force_upload:
                 return False
 
-            # upload only once per hour
-            diff = ts_now() - self.last_data_upload_ts
-            if diff < 3600 and not force_upload:
-                return False
+        # upload only once per hour
+        diff = ts_now() - self.last_data_upload_ts
+        if diff < 3600 and not force_upload:
+            return False
 
+        return True
+
+    def maybe_upload_data_to_server(self, force_upload: bool = False) -> bool:
+        assert self.premium is not None, 'caller should make sure premium exists'
+        with self.data.db.user_write() as cursor:
             try:
                 metadata = self.premium.query_last_data_metadata()
             except (RemoteError, PremiumAuthenticationError) as e:
@@ -187,7 +192,10 @@ class PremiumSyncManager():
         msg = ''
 
         if action == 'upload':
-            success = self.maybe_upload_data_to_server(force_upload=True)
+            if self.check_if_should_sync(force_upload=True) is False:
+                success = False
+            else:
+                success = self.maybe_upload_data_to_server(force_upload=True)
 
             if not success:
                 msg = 'Upload failed'
