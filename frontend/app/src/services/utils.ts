@@ -172,9 +172,11 @@ export function validAuthorizedStatus(status: number): boolean {
 
 /**
  * Used to validate a status. This validation considers valid responses the following
- * codes 200, 400, 404 or 409. This validation method should be used with requests that
- * take parameters or body payload (code 400), and requests that require a logged
- * in user (code 409). The method also checks for not found (code 404).
+ * codes 200, 400, 404, 409 or 502. This validation method should be used with
+ * requests that take parameters or body payload (code 400), and requests that
+ * require a logged-in user (code 409).
+ *
+ * The method also checks for not found (code 404) and remote errors (502)
  *
  * This validation is solely used with the task endpoints.
  *
@@ -182,5 +184,5 @@ export function validAuthorizedStatus(status: number): boolean {
  * @return The validity of the status code
  */
 export function validTaskStatus(status: number): boolean {
-  return isValid([200, 400, 404, 409], status);
+  return isValid([200, 400, 404, 409, 502], status);
 }
