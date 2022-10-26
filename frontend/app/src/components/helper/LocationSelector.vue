@@ -4,6 +4,7 @@
     data-cy="location-input"
     :value="value"
     :items="locations"
+    :attach="attach"
     item-value="identifier"
     item-text="name"
     auto-select-first
@@ -49,6 +50,11 @@ const props = defineProps({
     required: false,
     type: Array as PropType<string[]>,
     default: () => []
+  },
+  attach: {
+    required: false,
+    type: String,
+    default: undefined
   }
 });
 
