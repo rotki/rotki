@@ -1401,13 +1401,13 @@ class EthereumManager():
                 decoded_contract_info.append(contract.decode(method_value[1], method_name)[0])
                 continue
 
-            if token_kind != EvmTokenKind.ERC20:
-                continue
-
-            # for missing erc20 methods, use default decimals for decimals or None for others
-            if method_name == 'decimals':
-                decoded_contract_info.append(DEFAULT_TOKEN_DECIMALS)
-            else:
+            if token_kind == EvmTokenKind.ERC20:
+                # for missing erc20 methods, use default decimals for decimals or None for others
+                if method_name == 'decimals':
+                    decoded_contract_info.append(DEFAULT_TOKEN_DECIMALS)
+                else:
+                    decoded_contract_info.append(None)
+            else:  # for all others default to None
                 decoded_contract_info.append(None)
 
         return decoded_contract_info
