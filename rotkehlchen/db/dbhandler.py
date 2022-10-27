@@ -1312,7 +1312,7 @@ class DBHandler:
             else:  # should be ACCOUNTS_DETAILS_TOKENS
                 try:
                     # This method is used directly when querying the balances and it is easier
-                    # to resolve here the token
+                    # to resolve the token here
                     token = EvmToken(value)
                 except (DeserializationError, UnknownAsset):
                     token = None
@@ -2502,10 +2502,18 @@ class DBHandler:
                         if asset_id is not None:
                             results.add(Asset(asset_id).check_existence())
                     except UnknownAsset:
-                        self.msg_aggregator.add_warning(
-                            f'Unknown/unsupported asset {asset_id} found in the database. '
-                            f'If you believe this should be supported open an issue in github',
-                        )
+                        if table_name == 'manually_tracked_balances':
+                            self.msg_aggregator.add_warning(
+                                f'Unknown/unsupported asset {asset_id} found in the '
+                                f' manually_tracked_balances. Have you modified the assets DB? '
+                                f' Make sure that the aforementioned asset is in there.',
+                            )
+                        else:
+                            log.debug(
+                                f'Unknown/unsupported asset {asset_id} found in the database '
+                                f'If you believe this should be supported open an issue in github',
+                            )
+
                         continue
                     except DeserializationError:
                         self.msg_aggregator.add_error(
