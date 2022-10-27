@@ -15,6 +15,7 @@ from rotkehlchen.chain.ethereum.modules.eth2.structures import (
 from rotkehlchen.chain.ethereum.modules.eth2.utils import scrape_validator_daily_stats
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.constants.misc import ONE, ZERO
+from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery
 from rotkehlchen.fval import FVal
@@ -400,8 +401,7 @@ def test_get_validators_to_query_for_stats(database):
         end_amount=FVal(32),
     )])
     assert db.get_validators_to_query_for_stats(now) == [(2, 0), (3, 1617512800)]
-
-    assert db.get_validators_to_query_for_stats(1617512800 + 100000) == [(2, 0), (3, 1617512800)]
+    assert db.get_validators_to_query_for_stats(1617512800 + DAY_IN_SECONDS * 2 + 2) == [(2, 0), (3, 1617512800)]  # noqa: E501
 
 
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1.55)])
