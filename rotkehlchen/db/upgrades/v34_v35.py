@@ -14,6 +14,7 @@ from rotkehlchen.db.constants import (
     ACCOUNTS_DETAILS_TOKENS,
     HISTORY_MAPPING_CUSTOMIZED,
 )
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.globaldb.upgrades.v2_v3 import OTHER_EVM_CHAINS_ASSETS
 from rotkehlchen.history.types import DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER, HistoricalPriceOracle
 from rotkehlchen.inquirer import DEFAULT_CURRENT_PRICE_ORACLES_ORDER, CurrentPriceOracle
@@ -384,11 +385,17 @@ def _add_defillama_to_all_oracles(write_cursor: 'DBCursor') -> None:
     log.debug('Exit _add_defillama_to_all_oracles')
 
 
-def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
+def _reset_decoded_events(db: 'DBHandler', write_cursor: 'DBCursor') -> None:
     """Reset all non-user customized decoded events"""
     log.debug('Enter _reset_decoded_events')
+    tx_hashes = []
+    with db.conn.read_ctx() as cursor:
+        for entry in cursor:
+            tx_hashes.append(entry[0])
+    db_events = DBHistoryEvents(db)
+    db_events.delete_events_by_tx_hash(write_cursor, tx_hashes)
     write_cursor.execute(
-        'DELETE from evm_tx_mappings WHERE value!=?',
+        'DELETE from evm_tx_mappings WHERE value !=?',
         (HISTORY_MAPPING_CUSTOMIZED,),
     )
     log.debug('Exit _reset_decoded_events')
@@ -415,5 +422,5 @@ def upgrade_v34_to_v35(db: 'DBHandler') -> None:
         _add_manual_current_price_oracle(write_cursor)
         update_spam_assets(write_cursor=write_cursor, db=db, make_remote_query=False)
         _add_defillama_to_all_oracles(write_cursor=write_cursor)
-        _reset_decoded_events(write_cursor=write_cursor)
+        _reset_decoded_events(db=db, write_cursor=write_cursor)
     log.debug('Finished userdb v34->v35 upgrade')
