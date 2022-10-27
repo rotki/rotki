@@ -13,6 +13,7 @@ from rotkehlchen.chain.ethereum.modules.makerdao.vaults import MakerdaoVault
 from rotkehlchen.constants.assets import A_DAI, A_USDC, A_WBTC
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.fval import FVal
+from rotkehlchen.tests.conftest import requires_env
 from rotkehlchen.tests.utils.api import (
     ASYNC_TASK_WAIT_TIMEOUT,
     api_url_for,
@@ -199,6 +200,7 @@ def _check_vault_details_values(details, total_interest_owed_list: List[Optional
             assert FVal(details[idx]['total_interest_owed']) >= entry
 
 
+@requires_env(['nightly'])
 @flaky(max_runs=3, min_passes=1)  # some makerdao vault tests take long time and may time out
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
 @pytest.mark.parametrize('ethereum_modules', [['makerdao_vaults']])
@@ -246,6 +248,7 @@ def test_query_vaults(rotkehlchen_api_server, ethereum_accounts):
     )
 
 
+@requires_env(['nightly'])
 @flaky(max_runs=3, min_passes=1)  # some makerdao vault tests take long time and may time out
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
 @pytest.mark.parametrize('ethereum_modules', [['makerdao_vaults']])
@@ -291,6 +294,7 @@ def test_query_vaults_details_non_premium(rotkehlchen_api_server):
     )
 
 
+@requires_env(['nightly'])
 @pytest.mark.parametrize('number_of_eth_accounts', [3])
 @pytest.mark.parametrize('ethereum_modules', [['makerdao_vaults']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
@@ -426,6 +430,7 @@ def test_query_vaults_details_liquidation(rotkehlchen_api_server, ethereum_accou
     )
 
 
+@requires_env(['nightly'])
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
 @pytest.mark.parametrize('ethereum_modules', [['makerdao_vaults']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
@@ -618,6 +623,7 @@ def test_query_vaults_usdc(rotkehlchen_api_server, ethereum_accounts):
     assert_serialized_lists_equal(expected_details, details, ignore_keys=['liquidation_ratio'])
 
 
+@requires_env(['nightly'])
 @flaky(max_runs=3, min_passes=1)  # some makerdao vault tests take long time and may time out
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
 @pytest.mark.parametrize('ethereum_modules', [['makerdao_vaults']])
@@ -803,6 +809,7 @@ def test_two_vaults_same_account_same_collateral(rotkehlchen_api_server, ethereu
     )
 
 
+@requires_env(['nightly'])
 @pytest.mark.skip('This vault is special and does not work. needs investigation')
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
 @pytest.mark.parametrize('ethereum_modules', [['makerdao_vaults']])

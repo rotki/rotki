@@ -16,6 +16,7 @@ jobs:
   test-backend:
     env:
       CI: true
+      TEST_ENVIRONMENT: nightly
     strategy:
       fail-fast: false
       matrix:
