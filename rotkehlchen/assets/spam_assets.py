@@ -738,6 +738,26 @@ KNOWN_ETH_SPAM_TOKENS: Dict[ChecksumEvmAddress, Dict[str, Any]] = {
         'symbol': 'EthFork2.com',
         'decimals': 18,
     },
+    string_to_evm_address('0x70c18F2fDcb00d27494f767503874788e35c9940'): {
+        'name': 'lenusd.shop',
+        'symbol': 'Claim at [lenusd.shop]',
+        'decimals': 6,
+    },
+    string_to_evm_address('0xc9dA518dB3AbdB90A82c4d1838B7Cf9b0C945E7e'): {
+        'name': '(apord.site)',
+        'symbol': 'This token holders can claim reward token. Please Visit https://apord.site and claim rewards.',  # noqa: E501
+        'decimals': 18,
+    },
+    string_to_evm_address('0xCdC94877E4164D2e915fC5E8310155D661A995F1'): {
+        'name': 'spingame.me',
+        'symbol': 'Enjoy [https://spingame.me]',
+        'decimals': 6,
+    },
+    string_to_evm_address('0x38715Ab4b9d4e00890773D7338d94778b0dFc0a8'): {
+        'name': 'ausd.shop',
+        'symbol': 'Visit [ausd.shop] and supply or borrow USDT',
+        'decimals': 6,
+    },
 }
 
 
