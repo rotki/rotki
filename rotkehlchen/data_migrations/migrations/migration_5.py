@@ -21,7 +21,11 @@ def _rename_icons(rotki: 'Rotkehlchen') -> None:
     for file_path in old_files:
         old_name = file_path.stem
         new_name = old_name.replace('_ceth_', new_prefix)
-        file_path.rename(Path(file_path.parent, f'{new_name}{file_path.suffix}'))
+        try:
+            file_path.rename(Path(file_path.parent, f'{new_name}{file_path.suffix}'))
+        except FileExistsError:
+            file_path.unlink()
+            log.debug(f'Skipping {old_name} because {new_name} already exists')
 
 
 def data_migration_5(write_cursor: 'DBCursor', rotki: 'Rotkehlchen') -> None:  # pylint: disable=unused-argument # noqa: E501
