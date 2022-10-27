@@ -21,7 +21,7 @@ def test_gitcoin_old_donation(database, ethereum_manager, function_scope_message
     """
     # TODO: For faster tests hard-code the transaction and the logs here so no remote query needed
     tx_hash = deserialize_evm_tx_hash('0x811ba23a10c76111289133ec6f90d3c33a604baa50053739210e870687a456d9')  # noqa: E501
-    events = get_decoded_events_of_transaction(
+    events, _ = get_decoded_events_of_transaction(
         ethereum_manager=ethereum_manager,
         database=database,
         msg_aggregator=function_scope_messages_aggregator,

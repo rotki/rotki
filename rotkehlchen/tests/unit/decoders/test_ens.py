@@ -22,12 +22,13 @@ def test_mint_ens_name(database, ethereum_manager, function_scope_messages_aggre
     """
     # TODO: For faster tests hard-code the transaction and the logs here so no remote query needed
     tx_hash = deserialize_evm_tx_hash('0x74e72600c6cd5a1f0170a3ca38ecbf7d59edeb8ceb48adab2ed9b85d12cc2b99')  # noqa: E501
-    events = get_decoded_events_of_transaction(
+    events, decoder = get_decoded_events_of_transaction(
         ethereum_manager=ethereum_manager,
         database=database,
         msg_aggregator=function_scope_messages_aggregator,
         tx_hash=tx_hash,
     )
+    expires_timestamp = 2142055301
     expected_events = [
         HistoryBaseEntry(
             event_identifier=tx_hash,
@@ -51,7 +52,7 @@ def test_mint_ens_name(database, ethereum_manager, function_scope_messages_aggre
             asset=A_ETH,
             balance=Balance(amount=FVal('0.021279711243535527')),
             location_label=ADDY,
-            notes='Register ENS name hania.eth for 0.019345192039577752 ETH until 17/11/2037 08:21:41',  # noqa: E501
+            notes=f'Register ENS name hania.eth for 0.019345192039577752 ETH until {decoder.decoders["Ens"].timestamp_to_date(expires_timestamp)}',  # noqa: E501
             counterparty=CPT_ENS,
         )]
     assert expected_events == events[0:2]

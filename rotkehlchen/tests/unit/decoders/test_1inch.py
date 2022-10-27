@@ -23,7 +23,7 @@ def test_1inchv1_swap(database, ethereum_manager, function_scope_messages_aggreg
     """
     # TODO: For faster tests hard-code the transaction and the logs here so no remote query needed
     tx_hash = deserialize_evm_tx_hash('0x8b8652c502e80ce7c5441cdedc9184ea8f07a9c13b4c3446a47ae08c6c1d6efa')  # noqa: E501
-    events = get_decoded_events_of_transaction(
+    events, _ = get_decoded_events_of_transaction(
         ethereum_manager=ethereum_manager,
         database=database,
         msg_aggregator=function_scope_messages_aggregator,
@@ -106,7 +106,7 @@ def test_1inchv2_swap_for_eth(database, ethereum_manager, function_scope_message
     """
     # TODO: For faster tests hard-code the transaction and the logs here so no remote query needed
     tx_hash = deserialize_evm_tx_hash('0x5edc23d5a05e347afc60e64a4d5831ed2551985c21dceb85d267926ca2e2c13e')  # noqa: E501
-    events = get_decoded_events_of_transaction(
+    events, _ = get_decoded_events_of_transaction(
         ethereum_manager=ethereum_manager,
         database=database,
         msg_aggregator=function_scope_messages_aggregator,
