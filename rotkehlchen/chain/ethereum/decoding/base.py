@@ -1,8 +1,10 @@
+import logging
 from typing import TYPE_CHECKING, Optional, Tuple
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.chain.ethereum.decoding.constants import NAUGHTY_ERC721
 from rotkehlchen.constants import ONE
 from rotkehlchen.types import ChecksumEvmAddress
 
@@ -13,10 +15,14 @@ if TYPE_CHECKING:
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import EvmTokenKind, EvmTransaction, Location
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int, ts_sec_to_ms
 
 from .utils import address_is_exchange
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 class BaseDecoderTools():
@@ -130,7 +136,18 @@ class BaseDecoderTools():
             else:
                 notes = f'{verb} {amount} {token.symbol} from {counterparty} to {location_label}'
         elif token.token_kind == EvmTokenKind.ERC721:
-            token_id = hex_or_bytes_to_int(tx_log.topics[3])
+            try:
+                if token.evm_address in NAUGHTY_ERC721:  # id is in the data
+                    token_id = hex_or_bytes_to_int(tx_log.data[0:32])
+                else:
+                    token_id = hex_or_bytes_to_int(tx_log.topics[3])
+            except IndexError as e:
+                log.debug(
+                    f'At decoding of token {token.evm_address} as ERC721 got '
+                    f'insufficient number of topics: {tx_log.topics} and error: {str(e)}',
+                )
+                return None
+
             amount = ONE
             name = 'ERC721 token' if token.name == '' else token.name
             extra_data = {'token_id': token_id, 'token_name': name}
