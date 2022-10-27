@@ -20,7 +20,7 @@ def test_hop_l2_deposit(database, ethereum_manager, function_scope_messages_aggr
     """
     # TODO: For faster tests hard-code the transaction and the logs here so no remote query needed
     tx_hash = deserialize_evm_tx_hash('0xd46640417a686b399b2f2a920b0c58a35095759365cbe7b795bddec34b8c5eee')  # noqa: E501
-    events = get_decoded_events_of_transaction(
+    events, _ = get_decoded_events_of_transaction(
         ethereum_manager=ethereum_manager,
         database=database,
         msg_aggregator=function_scope_messages_aggregator,

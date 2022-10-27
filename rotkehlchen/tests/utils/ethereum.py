@@ -289,8 +289,11 @@ def get_decoded_events_of_transaction(
         database: DBHandler,
         msg_aggregator: MessagesAggregator,
         tx_hash: EVMTxHash,
-) -> List[HistoryBaseEntry]:
-    """A convenience function to ask get transaction, receipt and decoded event for a tx_hash"""
+) -> Tuple[List[HistoryBaseEntry], EVMTransactionDecoder]:
+    """A convenience function to ask get transaction, receipt and decoded event for a tx_hash
+
+    Returns the list of decoded events and the EVMTransactionDecoder
+    """
     transactions = EthTransactions(ethereum=ethereum_manager, database=database)
     with database.user_write() as cursor:
         transactions.get_or_query_transaction_receipt(cursor, tx_hash=tx_hash)
@@ -300,4 +303,4 @@ def get_decoded_events_of_transaction(
         transactions=transactions,
         msg_aggregator=msg_aggregator,
     )
-    return decoder.decode_transaction_hashes(ignore_cache=True, tx_hashes=[tx_hash])
+    return decoder.decode_transaction_hashes(ignore_cache=True, tx_hashes=[tx_hash]), decoder

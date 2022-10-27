@@ -23,7 +23,7 @@ def test_weth_deposit(database, ethereum_manager):
     msg_aggregator = MessagesAggregator()
     tx_hex = '0x5bb623b365def9650816dcbaf1babde8fd0ebed737db36d3a033d7cf63792daf'
     evmhash = deserialize_evm_tx_hash(tx_hex)
-    events = get_decoded_events_of_transaction(
+    events, _ = get_decoded_events_of_transaction(
         ethereum_manager=ethereum_manager,
         database=database,
         msg_aggregator=msg_aggregator,
@@ -96,7 +96,7 @@ def test_weth_withdrawal(database, ethereum_manager):
     msg_aggregator = MessagesAggregator()
     tx_hex = '0x1f3aa6f7d33bfaaaf9cdd92b16fecdf911341601c02ad89b4ec0b80c66c28a07'
     evmhash = deserialize_evm_tx_hash(tx_hex)
-    events = get_decoded_events_of_transaction(
+    events, _ = get_decoded_events_of_transaction(
         ethereum_manager=ethereum_manager,
         database=database,
         msg_aggregator=msg_aggregator,
@@ -163,7 +163,7 @@ def test_weth_interaction_with_protocols_deposit(database, ethereum_manager):
     msg_aggregator = MessagesAggregator()
     tx_hex = '0xab0dec3785632c567365c48ea1fd1178f0998773136a555912625d2668ef53e9'
     evmhash = deserialize_evm_tx_hash(tx_hex)
-    events = get_decoded_events_of_transaction(
+    events, _ = get_decoded_events_of_transaction(
         ethereum_manager=ethereum_manager,
         database=database,
         msg_aggregator=msg_aggregator,
@@ -247,7 +247,7 @@ def test_weth_interaction_with_protocols_withdrawal(database, ethereum_manager):
     msg_aggregator = MessagesAggregator()
     tx_hex = '0x4a811e8cfa58cb5bd57d92d62e1f01c8578859705243fe69c6bd9e59f3dcd167'
     evmhash = deserialize_evm_tx_hash(tx_hex)
-    events = get_decoded_events_of_transaction(
+    events, _ = get_decoded_events_of_transaction(
         ethereum_manager=ethereum_manager,
         database=database,
         msg_aggregator=msg_aggregator,
@@ -309,7 +309,7 @@ def test_weth_interaction_errors(database, ethereum_manager):
     msg_aggregator = MessagesAggregator()
     tx_hex = '0x4ca19c97b7533e74f36dff18acf0115055f63f9d8ae078dfc8ab15ceb14d2f2d'
     evmhash = deserialize_evm_tx_hash(tx_hex)
-    events = get_decoded_events_of_transaction(
+    events, _ = get_decoded_events_of_transaction(
         ethereum_manager=ethereum_manager,
         database=database,
         msg_aggregator=msg_aggregator,
