@@ -1,8 +1,10 @@
 import datetime
+import os
 import re
 import sys
 import tempfile
 from pathlib import Path
+from typing import List
 
 import py
 import pytest
@@ -110,3 +112,12 @@ def profiler(request):
 
     if profiler_instance is not None:
         profiler_instance.stop()
+
+
+def requires_env(allowed_envs: List[str]):
+    """Conditionally run tests if the environment is in the list of alloweds"""
+    env = os.environ.get('TEST_ENVIRONMENT', 'standard')
+    return pytest.mark.skipif(
+        env not in allowed_envs,
+        reason=f"Not suitable envrionment {env} for current test",
+    )
