@@ -28,7 +28,7 @@ export const useBalancesStore = defineStore('balances', () => {
   const { queryBalancesAsync } = useBalancesApi();
   const priceStore = useBalancePricesStore();
   const { prices } = storeToRefs(priceStore);
-  const { getAssetPrice } = priceStore;
+  const { getAssetPrice, fetchPrices, fetchExchangeRates } = priceStore;
   const { notify } = useNotifications();
   const { isTaskRunning, addTask } = useTasks();
   const { tc } = useI18n();
@@ -47,9 +47,9 @@ export const useBalancesStore = defineStore('balances', () => {
     const { setStatus } = useStatusUpdater(Section.PRICES);
     setStatus(Status.LOADING);
     if (ignoreCache) {
-      await priceStore.fetchExchangeRates();
+      await fetchExchangeRates();
     }
-    await priceStore.fetchPrices({
+    await fetchPrices({
       ignoreCache,
       selectedAssets: get(unique && unique.length > 0 ? unique : assets())
     });
@@ -90,18 +90,23 @@ export const useBalancesStore = defineStore('balances', () => {
   };
 
   const fetch = async (): Promise<void> => {
-    await fetchManualBalances();
-    await priceStore.fetchExchangeRates();
+    await fetchExchangeRates();
     await fetchBalances();
-    await refreshAccounts();
-    await fetchConnectedExchangeBalances();
-    await fetchNonFungibleBalances();
+    await Promise.allSettled([
+      fetchManualBalances(),
+      refreshAccounts(),
+      fetchConnectedExchangeBalances(),
+      fetchNonFungibleBalances()
+    ]);
   };
 
   const autoRefresh = async () => {
-    await fetchManualBalances();
-    await refreshAccounts();
-    await fetchConnectedExchangeBalances();
+    await Promise.allSettled([
+      fetchManualBalances(),
+      refreshAccounts(),
+      fetchConnectedExchangeBalances()
+    ]);
+
     await refreshPrices(true);
   };
 
