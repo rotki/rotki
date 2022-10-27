@@ -88,6 +88,7 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import from_wei, get_chunks, hex_or_bytes_to_str
+from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
 from rotkehlchen.utils.network import request_get_dict
 
 from .constants import DEFAULT_TOKEN_DECIMALS, ETHERSCAN_NODE
@@ -206,7 +207,7 @@ def _query_web3_get_logs(
     return events
 
 
-class EthereumManager():
+class EthereumManager(LockableQueryMixIn):
     def __init__(
             self,
             etherscan: Etherscan,
@@ -217,6 +218,7 @@ class EthereumManager():
             eth_rpc_timeout: int = DEFAULT_EVM_RPC_TIMEOUT,
     ) -> None:
         log.debug(f'Initializing Ethereum Manager. Nodes to connect {connect_at_start}')
+        super().__init__()
         self.greenlet_manager = greenlet_manager
         self.web3_mapping: Dict[NodeName, Web3] = {}
         self.etherscan = etherscan
@@ -1342,6 +1344,7 @@ class EthereumManager():
         new_mappings = curve_decoder.reload()
         tx_decoder.address_mappings.update(new_mappings)
 
+    @protect_with_lock()
     def curve_protocol_cache_is_queried(
             self,
             tx_decoder: Optional['EVMTransactionDecoder'],
