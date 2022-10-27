@@ -2505,8 +2505,8 @@ class DBHandler:
                         if table_name == 'manually_tracked_balances':
                             self.msg_aggregator.add_warning(
                                 f'Unknown/unsupported asset {asset_id} found in the '
-                                f' manually tracked balances. Have you modified the assets DB? '
-                                f' Make sure that the aforementioned asset is in there.',
+                                f'manually tracked balances. Have you modified the assets DB? '
+                                f'Make sure that the aforementioned asset is in there.',
                             )
                         else:
                             log.debug(

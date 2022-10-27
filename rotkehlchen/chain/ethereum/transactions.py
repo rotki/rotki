@@ -474,4 +474,8 @@ class EthTransactions:
             with self.database.user_write() as cursor:
                 for entry in hash_results:
                     tx_receipt_data = self.ethereum.get_transaction_receipt(tx_hash=entry)
-                    dbethtx.add_receipt_data(cursor, tx_receipt_data)
+                    try:
+                        dbethtx.add_receipt_data(cursor, tx_receipt_data)
+                    except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
+                        if 'UNIQUE constraint failed: ethtx_receipts.tx_hash' not in str(e):
+                            raise  # if receipt is already added by other greenlet it's fine
