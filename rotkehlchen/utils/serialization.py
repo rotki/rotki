@@ -90,9 +90,11 @@ def deserialize_asset_with_oracles_from_db(
     identifier = asset_data[0]
     if asset_type == AssetType.EVM_TOKEN:
         decimals = asset_data[3]
+        if decimals is None:
+            decimals = 18
         name = asset_data[4]
         symbol = asset_data[5]
-        missing_basic_data = name is None or symbol is None or decimals is None
+        missing_basic_data = name is None or symbol is None
         if missing_basic_data and form_with_incomplete_data is False:
             raise UnknownAsset(identifier=identifier)
 
@@ -100,9 +102,9 @@ def deserialize_asset_with_oracles_from_db(
             address=asset_data[2],
             chain=ChainID(asset_data[12]),
             token_kind=EvmTokenKind.deserialize_from_db(asset_data[13]),
-            decimals=asset_data[3],
-            name=asset_data[4],
-            symbol=asset_data[5],
+            decimals=decimals,
+            name=name,
+            symbol=symbol,
             started=Timestamp(asset_data[6]),
             swapped_for=CryptoAsset(asset_data[8]) if asset_data[8] is not None else None,
             coingecko=asset_data[9],
