@@ -703,6 +703,41 @@ KNOWN_ETH_SPAM_TOKENS: Dict[ChecksumEvmAddress, Dict[str, Any]] = {
         'symbol': 'VOTEFORK.COM',
         'decimals': 18,
     },
+    string_to_evm_address('0xF511123fdf2F13811abf4edDb493860101471729'): {
+        'name': 'aave-sr.xyz',
+        'symbol': 'Visit [aave-sr.xyz] and claim special rewards',
+        'decimals': 6,
+    },
+    string_to_evm_address('0xe3C6F9D0d731C2Eb6B6D3eBFb6732fCd26a365d0'): {
+        'name': 'ClaimSLP.com',
+        'symbol': '[ https://ClaimSLP.com] Visit and claim rewards',
+        'decimals': 18,
+    },
+    string_to_evm_address('0x0bF377fb3b5F1dD601e693B8fAF6b0bD249f37D3'): {
+        'name': '(apum.xyz)',
+        'symbol': 'Invitation token. Please Visit https://apum.xyz and claim rewards.',
+        'decimals': 18,
+    },
+    string_to_evm_address('0xb0B1d4732eFE32AEA466ED6BC3c79181eD4810c4'): {
+        'name': 'ApeCoinV2.com',
+        'symbol': 'ApeCoinV2.com',
+        'decimals': 18,
+    },
+    string_to_evm_address('0x2F87445C3c81a5b268adAB1915235a94aA27bF54'): {
+        'name': 'as-uni.org',
+        'symbol': '[https://as-uni.org] Visit and claim rewards',
+        'decimals': 18,
+    },
+    string_to_evm_address('0xFBcf72e38325a9fA14d4d4D6eC3a7471A312fcEe'): {
+        'name': '$',
+        'symbol': 'LPLido.com',
+        'decimals': 18,
+    },
+    string_to_evm_address('0x1f068a896560632a4d2E05044BD7F03834f1A465'): {
+        'name': 'EthFork2.com',
+        'symbol': 'EthFork2.com',
+        'decimals': 18,
+    },
 }
 
 

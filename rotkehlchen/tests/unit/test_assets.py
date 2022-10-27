@@ -500,6 +500,8 @@ def test_coingecko_identifiers_are_reachable():
         'MMC',
         # lendconnect but cc has localtraders
         ethaddress_to_identifier('0x05C7065d644096a4E4C3FE24AF86e36dE021074b'),
+        # tether GBPT but cc has poundtoken
+        'GBPT',
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         identifier = asset_data.identifier
