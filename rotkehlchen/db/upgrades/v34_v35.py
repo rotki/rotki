@@ -390,6 +390,7 @@ def _reset_decoded_events(db: 'DBHandler', write_cursor: 'DBCursor') -> None:
     log.debug('Enter _reset_decoded_events')
     tx_hashes = []
     with db.conn.read_ctx() as cursor:
+        cursor.execute('SELECT tx_hash from evm_tx_mappings')
         for entry in cursor:
             tx_hashes.append(entry[0])
     db_events = DBHistoryEvents(db)
