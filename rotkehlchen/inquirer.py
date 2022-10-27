@@ -721,8 +721,8 @@ class Inquirer():
         )
 
     def find_curve_pool_price(
-        self,
-        lp_token: EvmToken,
+            self,
+            lp_token: EvmToken,
     ) -> Optional[Price]:
         """
         1. Obtain the pool for this token
