@@ -1520,7 +1520,9 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         self.flush_cache('query_balances')
         self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN)
         self.flush_cache('query_balances', blockchain=None, ignore_cache=False, beaconchain_fetch_eth1=False)  # noqa: E501
+        self.flush_cache('query_balances', blockchain=None, ignore_cache=True, beaconchain_fetch_eth1=True)  # noqa: E501
         self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN, ignore_cache=False, beaconchain_fetch_eth1=False)  # noqa: E501
+        self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN, ignore_cache=True, beaconchain_fetch_eth1=True)  # noqa: E501
 
     def delete_eth2_validator(
             self,
