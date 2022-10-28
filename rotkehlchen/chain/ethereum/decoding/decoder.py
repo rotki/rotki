@@ -134,7 +134,7 @@ class EVMTransactionDecoder():
                             msg_aggregator=self.msg_aggregator,
                         )
                     except (UnknownAsset, WrongAssetType) as e:
-                        log.error(f'Failed at initialization of {class_name} decoder due to asset mismatch: {str(e)}')  # noqa: E501
+                        self.msg_aggregator.add_error(f'Failed at initialization of {class_name} decoder due to asset mismatch: {str(e)}')  # noqa: E501
                         continue
 
                     address_results.update(self.decoders[class_name].addresses_to_decoders())
