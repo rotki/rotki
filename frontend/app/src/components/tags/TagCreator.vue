@@ -114,9 +114,7 @@
 </template>
 
 <script setup lang="ts">
-import { get } from '@vueuse/core';
-import { PropType, Ref, ref, toRefs } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { PropType, Ref } from 'vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
 import { TagEvent } from '@/types/tags';
 import { Tag } from '@/types/user';

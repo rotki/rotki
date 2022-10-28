@@ -1,5 +1,4 @@
 import { Severity } from '@rotki/common/lib/messages';
-import { get, set } from '@vueuse/core';
 import * as logger from 'loglevel';
 import { Ref } from 'vue';
 import { useStatusUpdater } from '@/composables/status';

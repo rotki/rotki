@@ -3,11 +3,9 @@
 </template>
 
 <script setup lang="ts">
-import { get } from '@vueuse/core';
-import TabNavigation, {
-  TabContent
-} from '@/components/helper/TabNavigation.vue';
+import TabNavigation from '@/components/helper/TabNavigation.vue';
 import { routesRef } from '@/router/routes';
+import { TabContent } from '@/types/tabs';
 
 const Routes = get(routesRef);
 

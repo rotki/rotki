@@ -52,7 +52,6 @@
 </template>
 <script setup lang="ts">
 import { PropType } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 
 type UserDbInfo = {
   version: string;

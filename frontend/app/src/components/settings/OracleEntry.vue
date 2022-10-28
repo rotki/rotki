@@ -27,9 +27,6 @@
 </template>
 
 <script setup lang="ts">
-import { get } from '@vueuse/core';
-import { computed, toRefs } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import { PriceOracle } from '@/types/price-oracle';
 import { toSentenceCase } from '@/utils/text';

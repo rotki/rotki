@@ -151,7 +151,7 @@
       </template>
       <template #item.expand="{ item }">
         <row-expander
-          v-if="isEth && (get(accountHasDetails(item.address)) || loopring)"
+          v-if="isEth && (accountHasDetails(item.address).value || loopring)"
           :expanded="expanded.includes(item)"
           @click="expanded = expanded.includes(item) ? [] : [item]"
         />
@@ -177,10 +177,8 @@
 <script setup lang="ts">
 import { Balance } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { get } from '@vueuse/core';
 import isEqual from 'lodash/isEqual';
 import sortBy from 'lodash/sortBy';
-import { storeToRefs } from 'pinia';
 import { PropType, useListeners } from 'vue';
 import { DataTableHeader } from 'vuetify';
 import AccountGroupHeader from '@/components/accounts/AccountGroupHeader.vue';

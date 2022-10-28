@@ -114,10 +114,7 @@
 </template>
 <script setup lang="ts">
 import { BigNumber } from '@rotki/common';
-import { get, set } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { computed, PropType, ref, toRefs, useCssModule } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { PropType } from 'vue';
 import { DataTableHeader } from 'vuetify';
 import EditBalancesSnapshotForm from '@/components/dashboard/EditBalancesSnapshotForm.vue';
 import EditBalancesSnapshotLocationSelector from '@/components/dashboard/EditBalancesSnapshotLocationSelector.vue';

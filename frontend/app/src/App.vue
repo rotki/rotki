@@ -27,10 +27,6 @@
 </template>
 
 <script setup lang="ts">
-import { get, set } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { computed, defineAsyncComponent, onBeforeMount, ref, watch } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 import { useBackendManagement } from '@/composables/backend';
 import { useTheme } from '@/composables/common';
 import { useDarkMode } from '@/composables/dark-mode';

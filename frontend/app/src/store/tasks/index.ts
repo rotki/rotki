@@ -1,10 +1,8 @@
 import { ActionResult } from '@rotki/common/lib/data';
-import { get, set } from '@vueuse/core';
 import dayjs from 'dayjs';
 import find from 'lodash/find';
 import toArray from 'lodash/toArray';
-import { acceptHMRUpdate, defineStore } from 'pinia';
-import { computed, ref, Ref } from 'vue';
+import { Ref } from 'vue';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { TaskNotFoundError } from '@/services/types-api';

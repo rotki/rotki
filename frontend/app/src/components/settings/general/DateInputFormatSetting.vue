@@ -21,10 +21,6 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
-import { get, set } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { onMounted, ref } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 import { useValidation } from '@/composables/validation';
 import { displayDateFormatter } from '@/data/date_formatter';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';

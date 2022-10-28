@@ -32,9 +32,6 @@
   </setting-category>
 </template>
 <script setup lang="ts">
-import { get, set } from '@vueuse/core';
-import { ref } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import PurgeSelector from '@/components/settings/data-security/PurgeSelector.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';

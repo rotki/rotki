@@ -10,14 +10,11 @@
 </template>
 
 <script setup lang="ts">
-import { get } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
 import DefiWizard from '@/components/defi/wizard/DefiWizard.vue';
-import TabNavigation, {
-  TabContent
-} from '@/components/helper/TabNavigation.vue';
+import TabNavigation from '@/components/helper/TabNavigation.vue';
 import { routesRef } from '@/router/routes';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { TabContent } from '@/types/tabs';
 
 const Routes = get(routesRef);
 

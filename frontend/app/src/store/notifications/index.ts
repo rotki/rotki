@@ -4,9 +4,6 @@ import {
   NotificationPayload,
   Severity
 } from '@rotki/common/lib/messages';
-import { get, set } from '@vueuse/core';
-import { defineStore } from 'pinia';
-import { computed, ref } from 'vue';
 import { useSessionApi } from '@/services/session';
 import { SocketMessageType } from '@/types/websocket-messages';
 import { backoff } from '@/utils/backoff';

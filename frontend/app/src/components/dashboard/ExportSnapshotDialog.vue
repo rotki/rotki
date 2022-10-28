@@ -60,11 +60,7 @@
 <script setup lang="ts">
 import { BigNumber } from '@rotki/common';
 import { Message } from '@rotki/common/lib/messages';
-import { get, set } from '@vueuse/core';
 import dayjs from 'dayjs';
-import { storeToRefs } from 'pinia';
-import { computed, ref, toRefs } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 import EditSnapshotDialog from '@/components/dashboard/EditSnapshotDialog.vue';
 import { interop } from '@/electron-interop';
 import { api } from '@/services/rotkehlchen-api';

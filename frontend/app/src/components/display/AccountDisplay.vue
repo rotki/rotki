@@ -26,8 +26,7 @@
 
 <script setup lang="ts">
 import { GeneralAccount } from '@rotki/common/lib/account';
-import { storeToRefs } from 'pinia';
-import { computed, defineAsyncComponent, PropType, toRefs } from 'vue';
+import { PropType } from 'vue';
 import { truncateAddress } from '@/filters';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
 import { useSessionSettingsStore } from '@/store/settings/session';

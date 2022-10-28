@@ -43,9 +43,6 @@
   </card>
 </template>
 <script setup lang="ts">
-import { get } from '@vueuse/core';
-import { computed, ref } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import BinanceImport from '@/components/import/BinanceImport.vue';
 import BisqImport from '@/components/import/Bisq.vue';

@@ -85,19 +85,9 @@
     <slot name="actions" :items="formattedItems" />
   </div>
 </template>
-<script lang="ts">
+<script setup lang="ts">
 import { BigNumber } from '@rotki/common';
-import { get, set } from '@vueuse/core';
-import {
-  computed,
-  defineComponent,
-  onMounted,
-  PropType,
-  Ref,
-  ref,
-  toRefs
-} from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { PropType, Ref } from 'vue';
 import { DataTableHeader } from 'vuetify';
 import {
   HistoricalPrice,
@@ -107,184 +97,159 @@ import {
 import { deserializeApiErrorMessage } from '@/services/converters';
 import { api } from '@/services/rotkehlchen-api';
 import { useBalancePricesStore } from '@/store/balances/prices';
+import { EditableMissingPrice } from '@/types/prices';
 import { MissingPrice } from '@/types/reports';
 
-export type EditableMissingPrice = MissingPrice & {
-  price: string;
-  saved: boolean;
-  useRefreshedHistoricalPrice: boolean;
+const props = defineProps({
+  items: { required: true, type: Array as PropType<MissingPrice[]> },
+  isPinned: { required: true, type: Boolean, default: false }
+});
+
+const { t, tc } = useI18n();
+const { items } = toRefs(props);
+const prices = ref<HistoricalPrice[]>([]);
+const errorMessages: Ref<Record<string, string[]>> = ref({});
+
+const createKey = (item: MissingPrice) => {
+  return item.fromAsset + item.toAsset + item.time;
 };
 
-export default defineComponent({
-  name: 'ReportMissingPrices',
-  props: {
-    items: { required: true, type: Array as PropType<MissingPrice[]> },
-    isPinned: { required: true, type: Boolean, default: false }
-  },
-  setup(props) {
-    const { t, tc } = useI18n();
-    const { items } = toRefs(props);
-    const prices = ref<HistoricalPrice[]>([]);
-    const errorMessages: Ref<Record<string, string[]>> = ref({});
+const fetchHistoricalPrices = async () => {
+  set(prices, await api.assets.historicalPrices());
+};
 
-    const createKey = (item: MissingPrice) => {
-      return item.fromAsset + item.toAsset + item.time;
-    };
+onMounted(async () => {
+  await fetchHistoricalPrices();
+});
 
-    const fetchHistoricalPrices = async () => {
-      set(prices, await api.assets.historicalPrices());
-    };
+const refreshedHistoricalPrices: Ref<Record<string, BigNumber>> = ref({});
 
-    onMounted(async () => {
-      await fetchHistoricalPrices();
+const formattedItems = computed<EditableMissingPrice[]>(() => {
+  return get(items).map(item => {
+    const savedHistoricalPrice = get(prices).find(price => {
+      return (
+        price.fromAsset === item.fromAsset &&
+        price.toAsset === item.toAsset &&
+        price.timestamp === item.time
+      );
     });
 
-    const refreshedHistoricalPrices: Ref<Record<string, BigNumber>> = ref({});
+    const key = createKey(item);
+    const savedPrice = savedHistoricalPrice?.price;
+    const refreshedHistoricalPrice = get(refreshedHistoricalPrices)[key];
 
-    const formattedItems = computed<EditableMissingPrice[]>(() => {
-      return get(items).map(item => {
-        const savedHistoricalPrice = get(prices).find(price => {
-          return (
-            price.fromAsset === item.fromAsset &&
-            price.toAsset === item.toAsset &&
-            price.timestamp === item.time
-          );
-        });
+    const useRefreshedHistoricalPrice =
+      !savedPrice && !!refreshedHistoricalPrice;
 
-        const key = createKey(item);
-        const savedPrice = savedHistoricalPrice?.price;
-        const refreshedHistoricalPrice = get(refreshedHistoricalPrices)[key];
-
-        const useRefreshedHistoricalPrice =
-          !savedPrice && !!refreshedHistoricalPrice;
-
-        const price =
-          (useRefreshedHistoricalPrice
-            ? refreshedHistoricalPrice
-            : savedPrice
-          )?.toFixed() ?? '';
-
-        return {
-          ...item,
-          saved: !!savedPrice,
-          price,
-          useRefreshedHistoricalPrice
-        };
-      });
-    });
-
-    const updatePrice = async (item: EditableMissingPrice) => {
-      if (item.useRefreshedHistoricalPrice) return;
-
-      const payload: HistoricalPriceDeletePayload = {
-        fromAsset: item.fromAsset,
-        toAsset: item.toAsset,
-        timestamp: item.time
-      };
-
-      try {
-        if (item.price) {
-          const formPayload: HistoricalPriceFormPayload = {
-            ...payload,
-            price: item.price
-          };
-
-          if (item.saved) {
-            await api.assets.editHistoricalPrice(formPayload);
-          } else {
-            await api.assets.addHistoricalPrice(formPayload);
-          }
-        } else {
-          if (item.saved) {
-            await api.assets.deleteHistoricalPrice(payload);
-          }
-        }
-      } catch (e: any) {
-        const message = deserializeApiErrorMessage(e.message) as any;
-        const errorMessage = message ? message.price[0] : e.message;
-
-        set(errorMessages, {
-          ...get(errorMessages),
-          [createKey(item)]: errorMessage
-        });
-      }
-
-      await fetchHistoricalPrices();
-    };
-
-    const tableRef = ref<any>(null);
-
-    const tableContainer = computed(() => {
-      return get(tableRef)?.$el;
-    });
-
-    const headers = computed<DataTableHeader[]>(() => [
-      {
-        text: t(
-          'profit_loss_report.actionable.missing_prices.headers.from_asset'
-        ).toString(),
-        value: 'fromAsset'
-      },
-      {
-        text: t(
-          'profit_loss_report.actionable.missing_prices.headers.to_asset'
-        ).toString(),
-        value: 'toAsset'
-      },
-      {
-        text: t('common.datetime').toString(),
-        value: 'time'
-      },
-      {
-        text: t('common.price').toString(),
-        value: 'price',
-        sortable: false
-      }
-    ]);
-
-    const { getHistoricPrice } = useBalancePricesStore();
-
-    const refreshing = ref<boolean>(false);
-
-    const refreshHistoricalPrice = async (item: EditableMissingPrice) => {
-      set(refreshing, true);
-      const rateFromHistoricPrice = await getHistoricPrice({
-        timestamp: item.time,
-        fromAsset: item.fromAsset,
-        toAsset: item.toAsset
-      });
-
-      const key = createKey(item);
-      if (rateFromHistoricPrice && rateFromHistoricPrice.gt(0)) {
-        const refreshedHistoricalPricesVal = get(refreshedHistoricalPrices);
-        refreshedHistoricalPricesVal[key] = rateFromHistoricPrice;
-        set(refreshedHistoricalPrices, refreshedHistoricalPricesVal);
-      } else {
-        set(errorMessages, {
-          ...get(errorMessages),
-          [key]: t(
-            'profit_loss_report.actionable.missing_prices.price_not_found'
-          )
-        });
-      }
-      set(refreshing, false);
-    };
+    const price =
+      (useRefreshedHistoricalPrice
+        ? refreshedHistoricalPrice
+        : savedPrice
+      )?.toFixed() ?? '';
 
     return {
-      t,
-      tc,
-      headers,
-      refreshing,
-      refreshHistoricalPrice,
-      updatePrice,
-      formattedItems,
-      errorMessages,
-      createKey,
-      tableRef,
-      tableContainer
+      ...item,
+      saved: !!savedPrice,
+      price,
+      useRefreshedHistoricalPrice
     };
-  }
+  });
 });
+
+const updatePrice = async (item: EditableMissingPrice) => {
+  if (item.useRefreshedHistoricalPrice) return;
+
+  const payload: HistoricalPriceDeletePayload = {
+    fromAsset: item.fromAsset,
+    toAsset: item.toAsset,
+    timestamp: item.time
+  };
+
+  try {
+    if (item.price) {
+      const formPayload: HistoricalPriceFormPayload = {
+        ...payload,
+        price: item.price
+      };
+
+      if (item.saved) {
+        await api.assets.editHistoricalPrice(formPayload);
+      } else {
+        await api.assets.addHistoricalPrice(formPayload);
+      }
+    } else {
+      if (item.saved) {
+        await api.assets.deleteHistoricalPrice(payload);
+      }
+    }
+  } catch (e: any) {
+    const message = deserializeApiErrorMessage(e.message) as any;
+    const errorMessage = message ? message.price[0] : e.message;
+
+    set(errorMessages, {
+      ...get(errorMessages),
+      [createKey(item)]: errorMessage
+    });
+  }
+
+  await fetchHistoricalPrices();
+};
+
+const tableRef = ref<any>(null);
+
+const tableContainer = computed(() => {
+  return get(tableRef)?.$el;
+});
+
+const headers = computed<DataTableHeader[]>(() => [
+  {
+    text: t(
+      'profit_loss_report.actionable.missing_prices.headers.from_asset'
+    ).toString(),
+    value: 'fromAsset'
+  },
+  {
+    text: t(
+      'profit_loss_report.actionable.missing_prices.headers.to_asset'
+    ).toString(),
+    value: 'toAsset'
+  },
+  {
+    text: t('common.datetime').toString(),
+    value: 'time'
+  },
+  {
+    text: t('common.price').toString(),
+    value: 'price',
+    sortable: false
+  }
+]);
+
+const { getHistoricPrice } = useBalancePricesStore();
+
+const refreshing = ref<boolean>(false);
+
+const refreshHistoricalPrice = async (item: EditableMissingPrice) => {
+  set(refreshing, true);
+  const rateFromHistoricPrice = await getHistoricPrice({
+    timestamp: item.time,
+    fromAsset: item.fromAsset,
+    toAsset: item.toAsset
+  });
+
+  const key = createKey(item);
+  if (rateFromHistoricPrice && rateFromHistoricPrice.gt(0)) {
+    const refreshedHistoricalPricesVal = get(refreshedHistoricalPrices);
+    refreshedHistoricalPricesVal[key] = rateFromHistoricPrice;
+    set(refreshedHistoricalPrices, refreshedHistoricalPricesVal);
+  } else {
+    set(errorMessages, {
+      ...get(errorMessages),
+      [key]: t('profit_loss_report.actionable.missing_prices.price_not_found')
+    });
+  }
+  set(refreshing, false);
+};
 </script>
 
 <style module lang="scss">

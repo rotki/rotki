@@ -24,19 +24,9 @@
     />
   </div>
 </template>
-<script lang="ts">
+<script setup lang="ts">
 import { NotificationPayload, Severity } from '@rotki/common/lib/messages';
-import { get, set } from '@vueuse/core';
-import {
-  computed,
-  defineComponent,
-  onBeforeMount,
-  PropType,
-  Ref,
-  ref,
-  toRefs
-} from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { PropType, Ref } from 'vue';
 import { DataTableHeader } from 'vuetify';
 import RowActions from '@/components/helper/RowActions.vue';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
@@ -88,74 +78,66 @@ const addressBookDeletion = (location: Ref<EthAddressBookLocation>) => {
   };
 };
 
-export default defineComponent({
-  name: 'EthAddressBookTable',
-  components: { RowActions },
-  props: {
-    location: {
-      required: true,
-      type: String as PropType<EthAddressBookLocation>
-    },
-    search: { required: false, type: String, default: '' }
+const props = defineProps({
+  location: {
+    required: true,
+    type: String as PropType<EthAddressBookLocation>
   },
-  emits: ['edit'],
-  setup(props, { emit }) {
-    const { location, search } = toRefs(props);
-    const ethNamesStore = useEthNamesStore();
-    const { fetchEthAddressBook } = ethNamesStore;
-    const { ethAddressBook } = toRefs(ethNamesStore);
-    const loading = ref<boolean>(false);
-
-    const { t, tc } = useI18n();
-
-    const data = computed<EthNamesEntries>(() => {
-      return get(ethAddressBook)[get(location)];
-    });
-
-    const filteredData = computed<EthNamesEntries>(() => {
-      if (!get(search)) return get(data);
-      const keyword = get(search).toLowerCase();
-      return get(data).filter(
-        item =>
-          item.address.includes(keyword) ||
-          item.name.toLowerCase().includes(keyword)
-      );
-    });
-
-    const edit = (item: EthNamesEntry) => {
-      emit('edit', item);
-    };
-
-    onBeforeMount(async () => {
-      set(loading, true);
-      await fetchEthAddressBook(get(location));
-      set(loading, false);
-    });
-
-    const tableHeaders = computed<DataTableHeader[]>(() => [
-      {
-        text: t('common.address').toString(),
-        value: 'address'
-      },
-      {
-        text: t('common.name').toString(),
-        value: 'name'
-      },
-      {
-        text: '',
-        value: 'actions',
-        sortable: false
-      }
-    ]);
-
-    return {
-      loading,
-      tableHeaders,
-      filteredData,
-      ...addressBookDeletion(location),
-      edit,
-      tc
-    };
-  }
+  search: { required: false, type: String, default: '' }
 });
+
+const emit = defineEmits<{
+  (e: 'edit', item: EthNamesEntry): void;
+}>();
+
+const { location, search } = toRefs(props);
+const ethNamesStore = useEthNamesStore();
+const { fetchEthAddressBook } = ethNamesStore;
+const { ethAddressBook } = toRefs(ethNamesStore);
+const loading = ref<boolean>(false);
+
+const { t, tc } = useI18n();
+
+const data = computed<EthNamesEntries>(() => {
+  return get(ethAddressBook)[get(location)];
+});
+
+const filteredData = computed<EthNamesEntries>(() => {
+  if (!get(search)) return get(data);
+  const keyword = get(search).toLowerCase();
+  return get(data).filter(
+    item =>
+      item.address.includes(keyword) ||
+      item.name.toLowerCase().includes(keyword)
+  );
+});
+
+const edit = (item: EthNamesEntry) => {
+  emit('edit', item);
+};
+
+onBeforeMount(async () => {
+  set(loading, true);
+  await fetchEthAddressBook(get(location));
+  set(loading, false);
+});
+
+const tableHeaders = computed<DataTableHeader[]>(() => [
+  {
+    text: t('common.address').toString(),
+    value: 'address'
+  },
+  {
+    text: t('common.name').toString(),
+    value: 'name'
+  },
+  {
+    text: '',
+    value: 'actions',
+    sortable: false
+  }
+]);
+
+const { showConfirmation, pending, deleteAddressBook, dismiss } =
+  addressBookDeletion(location);
 </script>

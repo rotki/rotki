@@ -17,7 +17,7 @@
 
 <script setup lang="ts">
 import { PropType } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+
 import Fragment from '@/components/helper/Fragment';
 
 defineProps({

@@ -115,9 +115,7 @@
   </div>
 </template>
 <script setup lang="ts">
-import { get, set } from '@vueuse/core';
-import { computed, PropType, ref, toRefs } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { PropType } from 'vue';
 import ActionStatusIndicator from '@/components/error/ActionStatusIndicator.vue';
 import OracleEntry from '@/components/settings/OracleEntry.vue';
 import { Nullable } from '@/types';

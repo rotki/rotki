@@ -31,11 +31,11 @@
         class="tab-navigation__tabs__tab-item"
       >
         <div v-if="isDev">
-          <router-view v-if="isRouterVisible($route.path, tab)" />
+          <router-view v-if="isRouterVisible(route.path, tab)" />
         </div>
         <keep-alive v-else>
           <div>
-            <router-view v-if="isRouterVisible($route.path, tab)" />
+            <router-view v-if="isRouterVisible(route.path, tab)" />
           </div>
         </keep-alive>
       </v-tab-item>
@@ -43,51 +43,34 @@
   </v-container>
 </template>
 
-<script lang="ts">
-import { get } from '@vueuse/core';
-import { computed, defineComponent, PropType, ref, toRefs } from 'vue';
+<script setup lang="ts">
+import { PropType } from 'vue';
 import { useTheme } from '@/composables/common';
+import { useRoute } from '@/composables/router';
+import { TabContent, getClass } from '@/types/tabs';
 import { checkIfDevelopment } from '@/utils/env-utils';
 
-export interface TabContent {
-  readonly text: string;
-  readonly route: string;
-  readonly hidden?: boolean;
-  readonly hideHeader?: boolean;
-}
-
-export default defineComponent({
-  name: 'TabNavigation',
-  props: {
-    tabContents: { required: true, type: Array as PropType<TabContent[]> },
-    noContentMargin: { required: false, type: Boolean, default: false }
-  },
-  setup(props) {
-    const { tabContents } = toRefs(props);
-    const visibleTabs = computed(() => {
-      return get(tabContents).filter(({ hidden }) => !hidden);
-    });
-    const getClass = (route: string) => {
-      return route.toLowerCase().replace('/', '').replace(/\//g, '__');
-    };
-    const selectedTab = ref('');
-    const isRouterVisible = (route: string, tab: TabContent) => {
-      return route.indexOf(tab.route) >= 0 && tab.route === get(selectedTab);
-    };
-
-    const { currentBreakpoint } = useTheme();
-    const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
-
-    return {
-      xsOnly,
-      isDev: checkIfDevelopment(),
-      visibleTabs,
-      selectedTab,
-      getClass,
-      isRouterVisible
-    };
-  }
+const props = defineProps({
+  tabContents: { required: true, type: Array as PropType<TabContent[]> },
+  noContentMargin: { required: false, type: Boolean, default: false }
 });
+
+const { tabContents } = toRefs(props);
+const selectedTab = ref('');
+
+const route = useRoute();
+const { currentBreakpoint } = useTheme();
+const isDev = checkIfDevelopment();
+
+const visibleTabs = computed(() => {
+  return get(tabContents).filter(({ hidden }) => !hidden);
+});
+
+const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
+
+const isRouterVisible = (route: string, tab: TabContent) => {
+  return route.indexOf(tab.route) >= 0 && tab.route === get(selectedTab);
+};
 </script>
 
 <style scoped lang="scss">

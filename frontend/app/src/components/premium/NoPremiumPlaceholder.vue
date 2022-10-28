@@ -40,7 +40,6 @@
 </template>
 
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n-composable';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import FullSizeContent from '@/components/common/FullSizeContent.vue';
 import { interop } from '@/electron-interop';

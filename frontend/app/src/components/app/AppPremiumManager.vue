@@ -3,7 +3,6 @@
 </template>
 
 <script setup lang="ts">
-import { storeToRefs } from 'pinia';
 import { loadLibrary } from '@/premium/premium';
 import { setupPremium } from '@/premium/setup-premium';
 import { usePremiumStore } from '@/store/session/premium';

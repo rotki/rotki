@@ -72,11 +72,8 @@
 
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { get, useClipboard } from '@vueuse/core';
 import makeBlockie from 'ethereum-blockies-base64';
-import { storeToRefs } from 'pinia';
-import { computed, PropType, toRefs } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { PropType } from 'vue';
 import { useTheme } from '@/composables/common';
 import { useLinks } from '@/composables/links';
 import { truncateAddress } from '@/filters';

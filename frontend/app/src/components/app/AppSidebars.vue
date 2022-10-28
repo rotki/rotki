@@ -21,8 +21,6 @@
 </template>
 
 <script setup lang="ts">
-import { storeToRefs } from 'pinia';
-import { defineAsyncComponent } from 'vue';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
 
 const HelpSidebar = defineAsyncComponent(

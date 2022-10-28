@@ -51,9 +51,6 @@
   </full-size-content>
 </template>
 <script setup lang="ts">
-import { get } from '@vueuse/core';
-import { computed, toRefs } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 import FullSizeContent from '@/components/common/FullSizeContent.vue';
 
 const props = defineProps({

@@ -82,10 +82,7 @@
 </template>
 <script setup lang="ts">
 import { BigNumber } from '@rotki/common';
-import { get, set } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { onBeforeMount, PropType, ref, toRefs, watch } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { PropType } from 'vue';
 import EditBalancesSnapshotLocationSelector from '@/components/dashboard/EditBalancesSnapshotLocationSelector.vue';
 import BalanceTypeInput from '@/components/inputs/BalanceTypeInput.vue';
 import { useGeneralSettingsStore } from '@/store/settings/general';

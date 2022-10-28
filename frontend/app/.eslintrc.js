@@ -100,7 +100,7 @@ module.exports = {
       }
     ],
     // vue 3 migration rules
-    'vue/component-api-style': ['warn', ['script-setup']],
+    'vue/component-api-style': ['error', ['script-setup']],
     'vue/no-deprecated-dollar-listeners-api': 'error',
     'vue/no-deprecated-events-api': 'error',
     'vue/no-deprecated-filter': 'error',

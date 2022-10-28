@@ -40,10 +40,6 @@
 </template>
 
 <script setup lang="ts">
-import { get, set } from '@vueuse/core';
-import { computed, ref, toRefs, watch } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
-
 const props = defineProps({
   title: { required: true, type: String },
   message: { required: true, type: String },

@@ -98,10 +98,7 @@
 </template>
 
 <script setup lang="ts">
-import { get, set } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { computed, ComputedRef, onBeforeMount, Ref, ref } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { ComputedRef, Ref } from 'vue';
 import { DataTableHeader } from 'vuetify';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';

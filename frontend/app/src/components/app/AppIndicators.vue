@@ -38,9 +38,6 @@
 </template>
 
 <script setup lang="ts">
-import { get } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { computed, defineAsyncComponent } from 'vue';
 import Fragment from '@/components/helper/Fragment';
 import { useTheme } from '@/composables/common';
 import { useDarkMode } from '@/composables/dark-mode';

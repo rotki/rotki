@@ -80,10 +80,6 @@
 </template>
 
 <script setup lang="ts">
-import { get, set, useLocalStorage } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { computed, ref } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import ThemeControl from '@/components/premium/ThemeControl.vue';

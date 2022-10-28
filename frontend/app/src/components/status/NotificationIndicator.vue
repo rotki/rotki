@@ -28,7 +28,6 @@
 </template>
 
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n-composable';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import { setupNotifications } from '@/composables/notifications';
 import { setupTaskStatus } from '@/composables/tasks';

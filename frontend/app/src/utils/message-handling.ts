@@ -1,6 +1,5 @@
 import { SemiPartial } from '@rotki/common';
 import { NotificationPayload, Severity } from '@rotki/common/lib/messages';
-import { get } from '@vueuse/core';
 import VueI18n from 'vue-i18n';
 import { usePremium } from '@/composables/premium';
 import { useTxQueryStatus } from '@/store/history/query-status';

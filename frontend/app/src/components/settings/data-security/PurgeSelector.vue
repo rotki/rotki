@@ -39,7 +39,6 @@
 
 <script setup lang="ts">
 import { PropType } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 import ActionStatusIndicator from '@/components/error/ActionStatusIndicator.vue';
 import {
   ALL_CENTRALIZED_EXCHANGES,

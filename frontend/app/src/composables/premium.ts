@@ -1,4 +1,3 @@
-import { storeToRefs } from 'pinia';
 import { usePremiumStore } from '@/store/session/premium';
 
 export const usePremium = () => {

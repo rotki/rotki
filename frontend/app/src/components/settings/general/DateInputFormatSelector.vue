@@ -28,8 +28,7 @@
 </template>
 
 <script setup lang="ts">
-import { useAttrs, useListeners } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { useListeners } from 'vue';
 import { displayDateFormatter } from '@/data/date_formatter';
 import { DateFormat } from '@/types/date-format';
 

@@ -72,9 +72,7 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { between, required, requiredIf } from '@vuelidate/validators';
-import { get } from '@vueuse/core';
-import { onMounted, PropType, reactive, toRefs, watch } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { PropType } from 'vue';
 import { EthereumRpcNode, getPlaceholderNode } from '@/types/settings';
 
 const { t, tc } = useI18n();

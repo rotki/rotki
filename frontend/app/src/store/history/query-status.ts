@@ -1,6 +1,3 @@
-import { get, set } from '@vueuse/core';
-import { acceptHMRUpdate, defineStore } from 'pinia';
-import { ref } from 'vue';
 import {
   EthereumTransactionQueryData,
   EthereumTransactionsQueryStatus

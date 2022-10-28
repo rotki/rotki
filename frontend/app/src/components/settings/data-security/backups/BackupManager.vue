@@ -57,11 +57,9 @@
   </fragment>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { Severity } from '@rotki/common/lib/messages';
-import { get, set } from '@vueuse/core';
-import { computed, defineComponent, onMounted, Ref, ref } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { Ref } from 'vue';
 import Fragment from '@/components/helper/Fragment';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import DatabaseBackups from '@/components/settings/data-security/backups/DatabaseBackups.vue';
@@ -111,15 +109,15 @@ const setupBackupInfo = () => {
     const info = get(backupInfo);
     return {
       size: info ? size(info.userdb.info.size) : '0',
-      version: info ? info.userdb.info.version : '0'
+      version: info ? info.userdb.info.version.toString() : '0'
     };
   });
 
   const globalDb = computed(() => {
     const info = get(backupInfo);
     return {
-      schema: info ? info.globaldb.globaldbSchemaVersion : '0',
-      assets: info ? info.globaldb.globaldbAssetsVersion : '0'
+      schema: info ? info.globaldb.globaldbSchemaVersion.toString() : '0',
+      assets: info ? info.globaldb.globaldbAssetsVersion.toString() : '0'
     };
   });
 
@@ -262,43 +260,22 @@ const setupBackupActions = (
   return { remove, massRemove, backup, saving };
 };
 
-const BackupManager = defineComponent({
-  name: 'BackupManager',
-  components: {
-    Fragment,
-    RefreshButton,
-    DatabaseInfoDisplay,
-    DatabaseBackups
-  },
-  setup() {
-    const getBackupInfo = setupBackupInfo();
-    const { backupInfo, directory } = getBackupInfo;
+const showConfirmMassDelete = ref<boolean>(false);
+const selected = ref<UserDbBackup[]>([]);
 
-    const showConfirmMassDelete = ref<boolean>(false);
+const { t, tc } = useI18n();
+const { backupInfo, directory, loadInfo, loading, backups, userDb, globalDb } =
+  setupBackupInfo();
 
-    const selected = ref<UserDbBackup[]>([]);
-    const onSelectedChange = (newSelected: UserDbBackup[]) => {
-      set(selected, newSelected);
-    };
+const onSelectedChange = (newSelected: UserDbBackup[]) => {
+  set(selected, newSelected);
+};
 
-    const { t, tc } = useI18n();
-
-    return {
-      t,
-      tc,
-      ...getBackupInfo,
-      ...setupBackupActions(
-        directory,
-        backupInfo,
-        getBackupInfo.loadInfo,
-        selected,
-        showConfirmMassDelete
-      ),
-      selected,
-      showConfirmMassDelete,
-      onSelectedChange
-    };
-  }
-});
-export default BackupManager;
+const { backup, saving, remove, massRemove } = setupBackupActions(
+  directory,
+  backupInfo,
+  loadInfo,
+  selected,
+  showConfirmMassDelete
+);
 </script>

@@ -1,5 +1,4 @@
-import { get } from '@vueuse/core';
-import { computed, Ref } from 'vue';
+import { Ref } from 'vue';
 import { usePremium } from '@/composables/premium';
 import { Collection, CollectionResponse } from '@/types/collection';
 

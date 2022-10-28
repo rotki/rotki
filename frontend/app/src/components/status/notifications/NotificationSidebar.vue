@@ -82,8 +82,6 @@
 
 <script setup lang="ts">
 import orderBy from 'lodash/orderBy';
-import { computed, ref } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import Notification from '@/components/status/notifications/Notification.vue';
 import PendingTasks from '@/components/status/notifications/PendingTasks.vue';

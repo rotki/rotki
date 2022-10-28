@@ -3,6 +3,7 @@ import { createPinia, PiniaVuePlugin, setActivePinia } from 'pinia';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import TabNavigation from '@/components/helper/TabNavigation.vue';
+import { getClass } from '@/types/tabs';
 
 Vue.use(Vuetify);
 Vue.use(PiniaVuePlugin);
@@ -34,11 +35,11 @@ describe('TabNavigation.vue', () => {
   });
 
   test('gets proper class out of path', async () => {
-    const className = nav.getClass('/dashboard/info');
+    const className = getClass('/dashboard/info');
     expect(className).toEqual('dashboard__info');
   });
 
   test('do not return any tabs that are hidden', async () => {
-    expect(nav.visibleTabs).toMatchObject([]);
+    expect(wrapper.findAll('.tab-navigation__tabs__tab')).toHaveLength(0);
   });
 });

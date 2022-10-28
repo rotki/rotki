@@ -1,6 +1,3 @@
-import { get } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { computed } from 'vue';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Module } from '@/types/modules';
 

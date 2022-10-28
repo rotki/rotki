@@ -59,8 +59,7 @@
 </template>
 
 <script setup lang="ts">
-import { get, set } from '@vueuse/core';
-import { computed, onMounted, ref, toRefs, useAttrs, useListeners } from 'vue';
+import { useListeners } from 'vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
 
 const props = defineProps({

@@ -69,10 +69,6 @@
 </template>
 
 <script setup lang="ts">
-import { get, useCounter } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { computed, onMounted } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 import ModuleQueriedAddress from '@/components/defi/wizard/ModuleQueriedAddress.vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import { useQueriedAddressesStore } from '@/store/session/queried-addresses';

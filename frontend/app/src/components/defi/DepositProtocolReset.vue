@@ -32,9 +32,6 @@
 </template>
 <script setup lang="ts">
 import { DefiProtocol } from '@rotki/common/lib/blockchain';
-import { get } from '@vueuse/core';
-import { ref } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 import ConfirmableReset from '@/components/helper/ConfirmableReset.vue';
 import { usePremium } from '@/composables/premium';
 

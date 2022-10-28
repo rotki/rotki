@@ -1,5 +1,3 @@
-import { get } from '@vueuse/core';
-import { computed, getCurrentInstance } from 'vue';
 import { getStatus, useStatusStore } from '@/store/status';
 import { Section, Status } from '@/types/status';
 import { assert } from '@/utils/assertions';

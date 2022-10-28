@@ -73,7 +73,6 @@
 </template>
 
 <script setup lang="ts">
-import { get } from '@vueuse/core';
 import NavigationMenuItem from '@/components/NavigationMenuItem.vue';
 import { routesRef } from '@/router/routes';
 

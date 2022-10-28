@@ -71,9 +71,7 @@
 </template>
 
 <script setup lang="ts">
-import { get, set } from '@vueuse/core';
-import { computed, onMounted, PropType, ref, toRefs, watch } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { PropType } from 'vue';
 import { HistoricalPriceFormPayload } from '@/services/assets/types';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';

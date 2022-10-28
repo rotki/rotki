@@ -40,9 +40,7 @@
 <script setup lang="ts">
 import { BigNumber } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { get } from '@vueuse/core';
-import { computed, ComputedRef, PropType, toRefs } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { ComputedRef, PropType } from 'vue';
 import BlockchainBalanceCardDetails from '@/components/dashboard/BlockchainBalanceCardDetails.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';

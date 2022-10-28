@@ -2,6 +2,7 @@ import { Balance, BigNumber, NumericString } from '@rotki/common';
 import { forEach } from 'lodash';
 import { z } from 'zod';
 import { PriceOracle, PriceOracleEnum } from '@/types/price-oracle';
+import { MissingPrice } from '@/types/reports';
 
 export const AssetPriceInput = z.tuple([NumericString, z.number()]);
 export const AssetPrice = z.object({
@@ -58,3 +59,9 @@ export type HistoricPricePayload = {
 export interface AssetPriceInfo extends Balance {
   readonly usdPrice: BigNumber;
 }
+
+export type EditableMissingPrice = MissingPrice & {
+  price: string;
+  saved: boolean;
+  useRefreshedHistoricalPrice: boolean;
+};

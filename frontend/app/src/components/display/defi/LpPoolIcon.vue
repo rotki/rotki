@@ -34,8 +34,7 @@
 </template>
 <script setup lang="ts">
 import { LpType } from '@rotki/common/lib/defi';
-import { get } from '@vueuse/core';
-import { computed, PropType, toRefs, useCssModule } from 'vue';
+import { PropType } from 'vue';
 
 const props = defineProps({
   assets: {

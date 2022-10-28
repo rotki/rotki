@@ -22,9 +22,7 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
-import { get, set } from '@vueuse/core';
-import { computed, PropType, ref, toRefs, watch } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { PropType } from 'vue';
 import { UserNote } from '@/types/notes';
 
 const props = defineProps({

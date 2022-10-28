@@ -48,7 +48,6 @@
 </template>
 
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n-composable';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import { usePrivacyMode } from '@/composables/privacy';
 

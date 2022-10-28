@@ -193,9 +193,7 @@ import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
 import TableFilter from '@/components/history/filtering/TableFilter.vue';
 import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import LedgerActionDetails from '@/components/history/ledger-actions/LedgerActionDetails.vue';
-import LedgerActionForm, {
-  LedgerActionFormInstance
-} from '@/components/history/LedgerActionForm.vue';
+import LedgerActionForm from '@/components/history/LedgerActionForm.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import { isSectionLoading } from '@/composables/common';
@@ -243,7 +241,7 @@ const ledgerActionsToDelete: Ref<LedgerActionEntry[]> = ref([]);
 const confirmationMessage: Ref<string> = ref('');
 const expanded: Ref<LedgerActionEntry[]> = ref([]);
 const valid: Ref<boolean> = ref(false);
-const form = ref<LedgerActionFormInstance | null>(null);
+const form = ref<InstanceType<typeof LedgerActionForm> | null>(null);
 
 const fetch = (refresh: boolean = false) => emit('fetch', refresh);
 

@@ -45,10 +45,6 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, minValue, required } from '@vuelidate/validators';
-import { get, set } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { onMounted, ref } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 import { useAccountingSettingsStore } from '@/store/settings/accounting';
 
 const taxFreeAfterPeriod = ref<number | null>(null);

@@ -1,5 +1,4 @@
-import { get } from '@vueuse/core';
-import { computed, Ref } from 'vue';
+import { Ref } from 'vue';
 import { useInterop } from '@/electron-interop';
 
 export const useLinks = (url?: Ref<string>) => {

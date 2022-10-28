@@ -44,10 +44,6 @@
 </template>
 
 <script setup lang="ts">
-import { set } from '@vueuse/core';
-import { ref } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
-
 defineProps({
   tooltip: { required: false, type: String, default: '' },
   loading: { required: false, type: Boolean, default: false },

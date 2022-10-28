@@ -240,12 +240,12 @@
 <script setup lang="ts">
 import { Nullable } from '@rotki/common';
 import { PropType } from 'vue';
-import { EditableMissingPrice } from '@/components/profitloss/ReportMissingPrices.vue';
 import { useRouter } from '@/composables/router';
 import { Routes } from '@/router/routes';
 import { useReports } from '@/store/reports';
 import { Pinned } from '@/store/session/types';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
+import { EditableMissingPrice } from '@/types/prices';
 import { SelectedReport } from '@/types/reports';
 import { toSentenceCase } from '@/utils/text';
 

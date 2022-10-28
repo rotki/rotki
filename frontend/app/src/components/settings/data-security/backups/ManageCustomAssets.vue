@@ -55,9 +55,6 @@
 </template>
 
 <script setup lang="ts">
-import { get, set, useTimeoutFn } from '@vueuse/core';
-import { computed, ref } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 import FileUpload from '@/components/import/FileUpload.vue';
 import { useAssets } from '@/store/assets';
 import { assert } from '@/utils/assertions';

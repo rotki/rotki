@@ -1,7 +1,5 @@
 import { Severity } from '@rotki/common/lib/messages';
-import { get, MaybeRef } from '@vueuse/core';
-import { acceptHMRUpdate, defineStore } from 'pinia';
-import { useI18n } from 'vue-i18n-composable';
+import { MaybeRef } from '@vueuse/core';
 import { balanceKeys } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
 import { SYNC_DOWNLOAD, SyncAction } from '@/services/types-api';

@@ -216,9 +216,6 @@
   </tr>
 </template>
 <script setup lang="ts">
-import { get } from '@vueuse/core';
-import { computed, ref, toRefs } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 import { useTxQueryStatus } from '@/store/history/query-status';
 import {
   EthereumTransactionQueryData,
