@@ -17,7 +17,7 @@ from typing import (
     Union,
 )
 
-from rotkehlchen.assets.asset import Asset, CryptoAsset, EvmToken, FiatAsset
+from rotkehlchen.assets.asset import Asset, EvmToken, FiatAsset
 from rotkehlchen.chain.ethereum.defi.price import handle_defi_price_query
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
@@ -288,7 +288,6 @@ class Inquirer():
     # save only the identifier of the special tokens since we only check if assets are in this set
     special_tokens: Set[str]
     weth: EvmToken
-    bsq: CryptoAsset
     usd: FiatAsset
 
     def __new__(
@@ -352,9 +351,14 @@ class Inquirer():
             A_FARM_CRVRENWBTC.identifier,
             A_3CRV.identifier,
         }
-        Inquirer.usd = A_USD.resolve_to_fiat_asset()
-        Inquirer.weth = A_WETH.resolve_to_evm_token()
-        Inquirer.bsq = A_BSQ.resolve_to_crypto_asset()
+        try:
+            Inquirer.usd = A_USD.resolve_to_fiat_asset()
+            Inquirer.weth = A_WETH.resolve_to_evm_token()
+        except UnknownAsset as e:
+            message = f'One of the base assets was deleted from the DB: {str(e)}'
+            log.critical(message)
+            raise RuntimeError(message + '. Add it back manually or contact support') from e
+
         return Inquirer.__instance
 
     @staticmethod
@@ -679,7 +683,13 @@ class Inquirer():
         # BSQ is a special asset that doesnt have oracle information but its custom API
         if asset == A_BSQ:
             try:
-                price_in_btc = get_bisq_market_price(instance.bsq)
+                bsq = A_BSQ.resolve_to_crypto_asset()
+            except UnknownAsset:
+                log.error('Asked for BSQ price but BSQ is missing from the global DB')
+                return Price(ZERO), oracle
+
+            try:
+                price_in_btc = get_bisq_market_price(bsq)
                 btc_price, oracle = Inquirer().find_usd_price_and_oracle(A_BTC)
                 usd_price = Price(price_in_btc * btc_price)
                 Inquirer._cached_current_price[cache_key] = CachedPriceEntry(

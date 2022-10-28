@@ -185,10 +185,10 @@ class UniswapOracle(CurrentPriceOracleInterface, CacheableMixIn):
         return []
 
     def get_price(
-        self,
-        from_asset: AssetWithOracles,
-        to_asset: AssetWithOracles,
-        block_identifier: BlockIdentifier,
+            self,
+            from_asset: AssetWithOracles,
+            to_asset: AssetWithOracles,
+            block_identifier: BlockIdentifier,
     ) -> Price:
         """
         Return the price of from_asset to to_asset at the block block_identifier.
