@@ -448,8 +448,8 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                 msg_aggregator=self.msg_aggregator,
                 **kwargs,
             )
-        except ModuleInitializationFailure as e:
-            log.error(f'Failed to activate {module_name} due to: {str(e)}')
+        except (ModuleInitializationFailure, UnknownAsset, WrongAssetType) as e:
+            self.msg_aggregator.add_error(f'Failed to activate {module_name} due to: {str(e)}')
             return None
 
         self.eth_modules[module_name] = instance
