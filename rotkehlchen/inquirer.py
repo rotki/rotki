@@ -354,8 +354,8 @@ class Inquirer():
         try:
             Inquirer.usd = A_USD.resolve_to_fiat_asset()
             Inquirer.weth = A_WETH.resolve_to_evm_token()
-        except UnknownAsset as e:
-            message = f'One of the base assets was deleted from the DB: {str(e)}'
+        except (UnknownAsset, WrongAssetType) as e:
+            message = f'One of the base assets was deleted/modified from the DB: {str(e)}'
             log.critical(message)
             raise RuntimeError(message + '. Add it back manually or contact support') from e
 
@@ -684,8 +684,8 @@ class Inquirer():
         if asset == A_BSQ:
             try:
                 bsq = A_BSQ.resolve_to_crypto_asset()
-            except UnknownAsset:
-                log.error('Asked for BSQ price but BSQ is missing from the global DB')
+            except (UnknownAsset, WrongAssetType):
+                log.error('Asked for BSQ price but BSQ is missing or misclassified in the global DB')  # noqa: E501
                 return Price(ZERO), oracle
 
             try:
