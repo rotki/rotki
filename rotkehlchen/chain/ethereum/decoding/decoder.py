@@ -127,11 +127,16 @@ class EVMTransactionDecoder():
                 if submodule_decoder:
                     if class_name in self.decoders:
                         raise ModuleLoadingError(f'Decoder with name {class_name} already loaded')
-                    self.decoders[class_name] = submodule_decoder(
-                        ethereum_manager=self.ethereum_manager,
-                        base_tools=self.base,
-                        msg_aggregator=self.msg_aggregator,
-                    )
+                    try:
+                        self.decoders[class_name] = submodule_decoder(
+                            ethereum_manager=self.ethereum_manager,
+                            base_tools=self.base,
+                            msg_aggregator=self.msg_aggregator,
+                        )
+                    except (UnknownAsset, WrongAssetType) as e:
+                        log.error(f'Failed at initialization of {class_name} decoder due to asset mismatch: {str(e)}')  # noqa: E501
+                        continue
+
                     address_results.update(self.decoders[class_name].addresses_to_decoders())
                     rules_results.extend(self.decoders[class_name].decoding_rules())
                     enricher_results.extend(self.decoders[class_name].enricher_rules())
