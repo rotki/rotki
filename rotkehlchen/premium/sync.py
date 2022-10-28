@@ -133,6 +133,7 @@ class PremiumSyncManager():
 
     def maybe_upload_data_to_server(self, force_upload: bool = False) -> bool:
         assert self.premium is not None, 'caller should make sure premium exists'
+        log.debug('Starting maybe_upload_data_to_server')
         with self.data.db.user_write() as cursor:
             try:
                 metadata = self.premium.query_last_data_metadata()
@@ -190,7 +191,6 @@ class PremiumSyncManager():
 
     def sync_data(self, action: Literal['upload', 'download']) -> Tuple[bool, str]:
         msg = ''
-
         if action == 'upload':
             if self.check_if_should_sync(force_upload=True) is False:
                 success = False

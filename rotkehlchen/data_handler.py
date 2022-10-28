@@ -193,8 +193,8 @@ class DataHandler():
         Returns a b64 encoded binary blob"""
         log.info('Compress and encrypt DB')
         compressor = zlib.compressobj(level=9)
-        with tempfile.TemporaryDirectory() as tmpdirname:
-            tempdb = Path(tmpdirname) / 'temp.db'
+        with tempfile.NamedTemporaryFile(delete=True, suffix='.db') as tempdbfile:
+            tempdb = Path(tempdbfile.name)
             self.db.export_unencrypted(tempdb)
             source_data = bytearray()
             compressed_data = bytearray()
@@ -226,7 +226,6 @@ class DataHandler():
         - SystemPermissionError if the DB file permissions are not correct
         """
         log.info('Decompress and decrypt DB')
-
         # First make a backup of the DB we are about to replace
         date = timestamp_to_date(ts=ts_now(), formatstr='%Y_%m_%d_%H_%M_%S', treat_as_local=True)
         shutil.copyfile(
