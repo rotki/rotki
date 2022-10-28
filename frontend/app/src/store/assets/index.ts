@@ -32,7 +32,7 @@ export const useAssets = defineStore('assets', () => {
       );
 
       return {
-        updateAvailable: result.local < result.remote,
+        updateAvailable: result.local < result.remote && result.newChanges > 0,
         versions: result
       };
     } catch (e: any) {
