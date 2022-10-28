@@ -145,18 +145,7 @@
     </big-dialog>
   </fragment>
 </template>
-<script lang="ts">
-import { debouncedWatch, get, set } from '@vueuse/core';
-import {
-  computed,
-  defineComponent,
-  nextTick,
-  onMounted,
-  ref,
-  toRefs,
-  watch
-} from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+<script setup lang="ts">
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import Fragment from '@/components/helper/Fragment';
 import UserNoteForm from '@/components/UserNoteForm.vue';
@@ -181,214 +170,175 @@ const getDefaultForm = () => {
   };
 };
 
-export default defineComponent({
-  name: 'UserNotesList',
-  components: { Fragment, UserNoteForm, BigDialog },
-  props: {
-    location: {
-      required: false,
-      type: String,
-      default: ''
-    }
-  },
-  setup(props) {
-    const { location } = toRefs(props);
-    const wrapper = ref<any>(null);
-
-    const notes = ref<Collection<UserNote>>(defaultCollectionState<UserNote>());
-
-    const animateDelete = ref<boolean>(false);
-    const showDeleteConfirmation = ref<boolean>(false);
-    const idToDelete = ref<number | null>(null);
-    const showForm = ref<boolean>(false);
-    const form = ref<Partial<UserNote>>(getDefaultForm());
-    const editMode = ref<boolean>(false);
-    const valid = ref<boolean>(false);
-    const loading = ref<boolean>(false);
-    const search = ref<string>('');
-    const itemsPerPage = 10;
-
-    const filter = ref<UserNotesFilter>({
-      limit: itemsPerPage,
-      offset: 0,
-      titleSubstring: '',
-      location: get(location),
-      orderByAttributes: ['is_pinned', 'last_update_timestamp'],
-      ascending: [false, false]
-    });
-
-    const { tc } = useI18n();
-    const { premiumURL } = useInterop();
-
-    const api = useUserNotesApi();
-
-    const updateValid = (_valid: boolean) => {
-      set(valid, _valid);
-    };
-
-    const fetchNotes = async (loadingIndicator: boolean = false) => {
-      if (loadingIndicator) set(loading, true);
-      set(notes, await api.fetchUserNotes(get(filter)));
-      if (loadingIndicator) set(loading, false);
-      nextTick(() => {
-        if (get(wrapper)) {
-          get(wrapper).scrollTop = 0;
-        }
-      });
-    };
-
-    const page = computed<number>(() => {
-      const offset = get(filter).offset;
-
-      return offset / itemsPerPage + 1;
-    });
-
-    const { limit, found, total } = getCollectionData(notes);
-
-    const { showUpgradeRow } = setupEntryLimit(limit, found, total);
-
-    const totalPage = computed<number>(() => {
-      const foundVal = get(found);
-      const limitVal = get(limit);
-      const shown = limitVal !== -1 ? limitVal : foundVal;
-
-      return Math.ceil(shown / itemsPerPage);
-    });
-
-    watch([page, totalPage], ([page, totalPage]) => {
-      if (page > 1 && page > totalPage) {
-        changePage(page - 1);
-      }
-    });
-
-    const togglePin = async (note: UserNote) => {
-      const payload = {
-        ...note,
-        isPinned: !note.isPinned
-      };
-
-      await callUpdateNote(payload);
-    };
-
-    const resetForm = () => {
-      set(editMode, false);
-      set(showForm, false);
-      set(valid, false);
-      set(form, getDefaultForm());
-    };
-
-    const addNote = () => {
-      resetForm();
-      set(showForm, true);
-    };
-
-    const editNote = (note: UserNote) => {
-      set(editMode, true);
-      set(form, { ...note });
-      set(valid, true);
-      set(showForm, true);
-    };
-
-    const callUpdateNote = async (payload: Partial<UserNote>) => {
-      await api.updateUserNote(payload);
-      await fetchNotes();
-    };
-
-    const save = async () => {
-      try {
-        if (get(editMode)) {
-          await callUpdateNote(get(form));
-        } else {
-          await api.addUserNote({ ...get(form), location: get(location) });
-          await fetchNotes();
-        }
-        resetForm();
-      } catch (e) {
-        logger.error(e);
-      }
-    };
-
-    const deleteNote = async (identifier: number) => {
-      set(showDeleteConfirmation, true);
-      set(idToDelete, identifier);
-    };
-
-    const clearDeleteDialog = () => {
-      set(showDeleteConfirmation, false);
-      set(idToDelete, null);
-      set(animateDelete, false);
-    };
-
-    const confirmDelete = async () => {
-      const id = get(idToDelete);
-      if (id === null) return;
-      set(animateDelete, true);
-      setTimeout(async () => {
-        await api.deleteUserNote(id);
-        clearDeleteDialog();
-        await fetchNotes();
-      }, 200);
-    };
-
-    const premium = usePremium();
-
-    watch([filter, premium], async () => {
-      await fetchNotes();
-    });
-
-    debouncedWatch(
-      search,
-      () => {
-        set(filter, {
-          ...get(filter),
-          titleSubstring: get(search),
-          offset: 0
-        });
-      },
-      { debounce: 400 }
-    );
-
-    const changePage = (page: number) => {
-      set(filter, {
-        ...get(filter),
-        offset: (page - 1) * itemsPerPage
-      });
-    };
-
-    onMounted(async () => {
-      await fetchNotes(true);
-    });
-
-    return {
-      itemsPerPage,
-      wrapper,
-      page,
-      showUpgradeRow,
-      totalPage,
-      changePage,
-      search,
-      loading,
-      notes,
-      togglePin,
-      showDeleteConfirmation,
-      idToDelete,
-      animateDelete,
-      showForm,
-      editMode,
-      valid,
-      form,
-      premiumURL,
-      updateValid,
-      save,
-      resetForm,
-      addNote,
-      editNote,
-      clearDeleteDialog,
-      confirmDelete,
-      deleteNote,
-      tc
-    };
+const props = defineProps({
+  location: {
+    required: false,
+    type: String,
+    default: ''
   }
+});
+
+const { location } = toRefs(props);
+const wrapper = ref<any>(null);
+
+const notes = ref<Collection<UserNote>>(defaultCollectionState<UserNote>());
+
+const animateDelete = ref<boolean>(false);
+const showDeleteConfirmation = ref<boolean>(false);
+const idToDelete = ref<number | null>(null);
+const showForm = ref<boolean>(false);
+const form = ref<Partial<UserNote>>(getDefaultForm());
+const editMode = ref<boolean>(false);
+const valid = ref<boolean>(false);
+const loading = ref<boolean>(false);
+const search = ref<string>('');
+const itemsPerPage = 10;
+
+const filter = ref<UserNotesFilter>({
+  limit: itemsPerPage,
+  offset: 0,
+  titleSubstring: '',
+  location: get(location),
+  orderByAttributes: ['is_pinned', 'last_update_timestamp'],
+  ascending: [false, false]
+});
+
+const { tc } = useI18n();
+const { premiumURL } = useInterop();
+
+const api = useUserNotesApi();
+
+const fetchNotes = async (loadingIndicator: boolean = false) => {
+  if (loadingIndicator) set(loading, true);
+  set(notes, await api.fetchUserNotes(get(filter)));
+  if (loadingIndicator) set(loading, false);
+  nextTick(() => {
+    if (get(wrapper)) {
+      get(wrapper).scrollTop = 0;
+    }
+  });
+};
+
+const page = computed<number>(() => {
+  const offset = get(filter).offset;
+
+  return offset / itemsPerPage + 1;
+});
+
+const { limit, found, total } = getCollectionData(notes);
+
+const { showUpgradeRow } = setupEntryLimit(limit, found, total);
+
+const totalPage = computed<number>(() => {
+  const foundVal = get(found);
+  const limitVal = get(limit);
+  const shown = limitVal !== -1 ? limitVal : foundVal;
+
+  return Math.ceil(shown / itemsPerPage);
+});
+
+watch([page, totalPage], ([page, totalPage]) => {
+  if (page > 1 && page > totalPage) {
+    changePage(page - 1);
+  }
+});
+
+const togglePin = async (note: UserNote) => {
+  const payload = {
+    ...note,
+    isPinned: !note.isPinned
+  };
+
+  await callUpdateNote(payload);
+};
+
+const resetForm = () => {
+  set(editMode, false);
+  set(showForm, false);
+  set(valid, false);
+  set(form, getDefaultForm());
+};
+
+const addNote = () => {
+  resetForm();
+  set(showForm, true);
+};
+
+const editNote = (note: UserNote) => {
+  set(editMode, true);
+  set(form, { ...note });
+  set(valid, true);
+  set(showForm, true);
+};
+
+const callUpdateNote = async (payload: Partial<UserNote>) => {
+  await api.updateUserNote(payload);
+  await fetchNotes();
+};
+
+const save = async () => {
+  try {
+    if (get(editMode)) {
+      await callUpdateNote(get(form));
+    } else {
+      await api.addUserNote({ ...get(form), location: get(location) });
+      await fetchNotes();
+    }
+    resetForm();
+  } catch (e) {
+    logger.error(e);
+  }
+};
+
+const deleteNote = async (identifier: number) => {
+  set(showDeleteConfirmation, true);
+  set(idToDelete, identifier);
+};
+
+const clearDeleteDialog = () => {
+  set(showDeleteConfirmation, false);
+  set(idToDelete, null);
+  set(animateDelete, false);
+};
+
+const confirmDelete = async () => {
+  const id = get(idToDelete);
+  if (id === null) return;
+  set(animateDelete, true);
+  setTimeout(async () => {
+    await api.deleteUserNote(id);
+    clearDeleteDialog();
+    await fetchNotes();
+  }, 200);
+};
+
+const premium = usePremium();
+
+watch([filter, premium], async () => {
+  await fetchNotes();
+});
+
+debouncedWatch(
+  search,
+  () => {
+    set(filter, {
+      ...get(filter),
+      titleSubstring: get(search),
+      offset: 0
+    });
+  },
+  { debounce: 400 }
+);
+
+const changePage = (page: number) => {
+  set(filter, {
+    ...get(filter),
+    offset: (page - 1) * itemsPerPage
+  });
+};
+
+onMounted(async () => {
+  await fetchNotes(true);
 });
 </script>
 <style lang="scss" scoped>

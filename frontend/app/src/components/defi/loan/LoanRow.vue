@@ -14,14 +14,9 @@
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue';
-
-export default defineComponent({
-  name: 'LoanRow',
-  props: {
-    title: { required: false, type: String, default: '' },
-    medium: { required: false, type: Boolean, default: true }
-  }
+<script setup lang="ts">
+defineProps({
+  title: { required: false, type: String, default: '' },
+  medium: { required: false, type: Boolean, default: true }
 });
 </script>

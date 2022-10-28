@@ -14,24 +14,19 @@
   </div>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { BigNumber } from '@rotki/common';
-import { defineComponent } from 'vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import { Zero } from '@/utils/bignumbers';
 
-export default defineComponent({
-  name: 'InfoRow',
-  components: { AmountDisplay },
-  props: {
-    loading: { required: false, type: Boolean },
-    title: { required: true, type: String },
-    value: {
-      required: false,
-      type: BigNumber,
-      default: () => Zero
-    },
-    fiat: { required: false, type: Boolean }
-  }
+defineProps({
+  loading: { required: false, type: Boolean },
+  title: { required: true, type: String },
+  value: {
+    required: false,
+    type: BigNumber,
+    default: () => Zero
+  },
+  fiat: { required: false, type: Boolean }
 });
 </script>

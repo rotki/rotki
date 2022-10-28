@@ -17,15 +17,12 @@
   </v-chip>
 </template>
 
-<script lang="ts">
-import { defineComponent, PropType } from 'vue';
+<script setup lang="ts">
+import { PropType } from 'vue';
 import { Tag } from '@/types/user';
 
-export default defineComponent({
-  name: 'TagIcon',
-  props: {
-    tag: { required: true, type: Object as PropType<Tag> },
-    small: { required: false, type: Boolean, default: false }
-  }
+defineProps({
+  tag: { required: true, type: Object as PropType<Tag> },
+  small: { required: false, type: Boolean, default: false }
 });
 </script>

@@ -61,21 +61,9 @@
   </div>
 </template>
 
-<script lang="ts">
-import { get, set } from '@vueuse/core';
+<script setup lang="ts">
 import dayjs from 'dayjs';
-import { storeToRefs } from 'pinia';
-import {
-  computed,
-  defineComponent,
-  onMounted,
-  PropType,
-  Ref,
-  ref,
-  toRefs,
-  watch
-} from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { PropType, Ref } from 'vue';
 import { timezones } from '@/data/timezones';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { DateFormat } from '@/types/date-format';
@@ -148,206 +136,196 @@ const useRules = (
 
 type ValidationRules = ((v: string) => boolean | string)[];
 
-export default defineComponent({
-  name: 'DateTimePicker',
-  props: {
-    label: { required: true, type: String },
-    hint: { required: false, default: '', type: String },
-    persistentHint: { required: false, default: false, type: Boolean },
-    value: { default: '', required: false, type: String },
-    rules: {
-      default: () => [],
-      required: false,
-      type: Array as PropType<ValidationRules>
-    },
-    limitNow: { required: false, default: false, type: Boolean },
-    allowEmpty: { required: false, default: false, type: Boolean },
-    seconds: { required: false, default: false, type: Boolean },
-    outlined: { required: false, default: false, type: Boolean },
-    disabled: { required: false, default: false, type: Boolean },
-    errorMessages: {
-      required: false,
-      default: () => [],
-      type: Array as PropType<string[]>
-    }
+const props = defineProps({
+  label: { required: true, type: String },
+  hint: { required: false, default: '', type: String },
+  persistentHint: { required: false, default: false, type: Boolean },
+  value: { default: '', required: false, type: String },
+  rules: {
+    default: () => [],
+    required: false,
+    type: Array as PropType<ValidationRules>
   },
-  emits: ['input'],
-  setup(props, { emit }) {
-    const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
-
-    const { seconds, rules, limitNow, value, allowEmpty } = toRefs(props);
-    const timeFormat = computed(() => {
-      let format = 'HH:mm';
-      if (get(seconds)) {
-        format += ':ss';
-      }
-      return format;
-    });
-    const showMenu = ref(false);
-    const inputtedDate = ref('');
-    const selectedTimezone = ref('');
-    const timeModel = ref(dayjs().format(get(timeFormat)));
-    const dateModel = ref('');
-    const inputField = ref();
-
-    const maxDate = computed(() => {
-      if (get(limitNow)) {
-        return dayjs().format(defaultDateFormat);
-      }
-      return '';
-    });
-
-    const maxTime = computed(() => {
-      if (get(limitNow) && dayjs(get(dateModel)).isToday()) {
-        return dayjs().format(get(timeFormat));
-      }
-      return '';
-    });
-
-    function onValueChange(value: string) {
-      const changedDateTimezone = convertDateByTimezone(
-        value,
-        DateFormat.DateMonthYearHourMinuteSecond,
-        dayjs.tz.guess(),
-        get(selectedTimezone)
-      );
-      set(
-        inputtedDate,
-        changeDateFormat(
-          changedDateTimezone,
-          DateFormat.DateMonthYearHourMinuteSecond,
-          get(dateInputFormat)
-        )
-      );
-
-      if (!value) {
-        set(dateModel, '');
-        set(timeModel, '');
-      } else if (
-        isValid(value, DateFormat.DateMonthYearHourMinuteSecond, get(seconds))
-      ) {
-        const [date, time] = changedDateTimezone.split(' ');
-        const [day, month, year] = date.split('/');
-        const formattedDate = `${year}-${month}-${day}`;
-        if (formattedDate !== get(dateModel)) {
-          set(dateModel, formattedDate);
-        }
-        if (time !== get(timeModel)) {
-          set(timeModel, time);
-        }
-      }
-    }
-
-    watch(value, onValueChange);
-    watch(selectedTimezone, () => onValueChange(get(value)));
-    onMounted(() => onValueChange(get(value)));
-
-    const getDefaultTimezoneName = (offset: number) => {
-      let hour = offset / 60;
-      if (!Number.isInteger(offset)) hour = 0;
-
-      const isPositive = hour > 0;
-      return `Etc/GMT${isPositive ? '+' : ''}hour`;
-    };
-
-    const setCurrentTimezone = () => {
-      const guessedTimezone = dayjs.tz.guess();
-      const offset = dayjs().utcOffset() / 60;
-
-      const doesTimezoneExist = timezones.filter(
-        timezone => timezone === guessedTimezone
-      );
-
-      set(
-        selectedTimezone,
-        doesTimezoneExist ? guessedTimezone : getDefaultTimezoneName(offset)
-      );
-    };
-
-    const formatDate = (date: string) => {
-      if (!date) return '';
-
-      const [year, month, day] = date.split('-');
-      return `${day}/${month}/${year}`;
-    };
-
-    const input = (dateTime: string) => {
-      emit('input', dateTime);
-    };
-
-    const emitIfValid = (
-      value: string,
-      format: DateFormat = get(dateInputFormat)
-    ) => {
-      if (isValid(value, format, get(seconds))) {
-        const formattedDate = changeDateFormat(
-          value,
-          format,
-          DateFormat.DateMonthYearHourMinuteSecond
-        );
-        input(
-          convertDateByTimezone(
-            formattedDate,
-            DateFormat.DateMonthYearHourMinuteSecond,
-            get(selectedTimezone),
-            dayjs.tz.guess()
-          )
-        );
-      }
-    };
-
-    const updateActualDate = () => {
-      let value = formatDate(get(dateModel));
-      const time = get(timeModel);
-      if (time) {
-        value += ` ${time}`;
-      }
-
-      emitIfValid(value, DateFormat.DateMonthYearHourMinuteSecond);
-    };
-
-    const onTimeChange = (time: string) => {
-      set(timeModel, time);
-      updateActualDate();
-    };
-
-    const onDateChange = (date: string) => {
-      set(dateModel, date);
-      updateActualDate();
-    };
-
-    const setNow = () => {
-      const now = dayjs();
-      set(timeModel, now.format(get(timeFormat)));
-      set(dateModel, now.format(defaultDateFormat));
-      updateActualDate();
-    };
-
-    const reset = () => {
-      const field = get(inputField);
-      field?.reset();
-    };
-
-    setCurrentTimezone();
-
-    return {
-      dateModel,
-      timeModel,
-      maxDate,
-      maxTime,
-      inputtedDate,
-      selectedTimezone,
-      timezones,
-      showMenu,
-      inputField,
-      ...useRules(rules, dateInputFormat, seconds, allowEmpty),
-      setNow,
-      onTimeChange,
-      onDateChange,
-      reset,
-      emitIfValid
-    };
+  limitNow: { required: false, default: false, type: Boolean },
+  allowEmpty: { required: false, default: false, type: Boolean },
+  seconds: { required: false, default: false, type: Boolean },
+  outlined: { required: false, default: false, type: Boolean },
+  disabled: { required: false, default: false, type: Boolean },
+  errorMessages: {
+    required: false,
+    default: () => [],
+    type: Array as PropType<string[]>
   }
+});
+
+const emit = defineEmits<{ (e: 'input', value: string): void }>();
+
+const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
+
+const { seconds, rules, limitNow, value, allowEmpty } = toRefs(props);
+const { allRules, timezoneRule } = useRules(
+  rules,
+  dateInputFormat,
+  seconds,
+  allowEmpty
+);
+
+const timeFormat = computed(() => {
+  let format = 'HH:mm';
+  if (get(seconds)) {
+    format += ':ss';
+  }
+  return format;
+});
+const showMenu = ref(false);
+const inputtedDate = ref('');
+const selectedTimezone = ref('');
+const timeModel = ref(dayjs().format(get(timeFormat)));
+const dateModel = ref('');
+const inputField = ref();
+
+const maxDate = computed(() => {
+  if (get(limitNow)) {
+    return dayjs().format(defaultDateFormat);
+  }
+  return '';
+});
+
+const maxTime = computed(() => {
+  if (get(limitNow) && dayjs(get(dateModel)).isToday()) {
+    return dayjs().format(get(timeFormat));
+  }
+  return '';
+});
+
+function onValueChange(value: string) {
+  const changedDateTimezone = convertDateByTimezone(
+    value,
+    DateFormat.DateMonthYearHourMinuteSecond,
+    dayjs.tz.guess(),
+    get(selectedTimezone)
+  );
+  set(
+    inputtedDate,
+    changeDateFormat(
+      changedDateTimezone,
+      DateFormat.DateMonthYearHourMinuteSecond,
+      get(dateInputFormat)
+    )
+  );
+
+  if (!value) {
+    set(dateModel, '');
+    set(timeModel, '');
+  } else if (
+    isValid(value, DateFormat.DateMonthYearHourMinuteSecond, get(seconds))
+  ) {
+    const [date, time] = changedDateTimezone.split(' ');
+    const [day, month, year] = date.split('/');
+    const formattedDate = `${year}-${month}-${day}`;
+    if (formattedDate !== get(dateModel)) {
+      set(dateModel, formattedDate);
+    }
+    if (time !== get(timeModel)) {
+      set(timeModel, time);
+    }
+  }
+}
+
+watch(value, onValueChange);
+watch(selectedTimezone, () => onValueChange(get(value)));
+onMounted(() => onValueChange(get(value)));
+
+const getDefaultTimezoneName = (offset: number) => {
+  let hour = offset / 60;
+  if (!Number.isInteger(offset)) hour = 0;
+
+  const isPositive = hour > 0;
+  return `Etc/GMT${isPositive ? '+' : ''}hour`;
+};
+
+const setCurrentTimezone = () => {
+  const guessedTimezone = dayjs.tz.guess();
+  const offset = dayjs().utcOffset() / 60;
+
+  const doesTimezoneExist = timezones.filter(
+    timezone => timezone === guessedTimezone
+  );
+
+  set(
+    selectedTimezone,
+    doesTimezoneExist ? guessedTimezone : getDefaultTimezoneName(offset)
+  );
+};
+
+const formatDate = (date: string) => {
+  if (!date) return '';
+
+  const [year, month, day] = date.split('-');
+  return `${day}/${month}/${year}`;
+};
+
+const input = (dateTime: string) => {
+  emit('input', dateTime);
+};
+
+const emitIfValid = (
+  value: string,
+  format: DateFormat = get(dateInputFormat)
+) => {
+  if (isValid(value, format, get(seconds))) {
+    const formattedDate = changeDateFormat(
+      value,
+      format,
+      DateFormat.DateMonthYearHourMinuteSecond
+    );
+    input(
+      convertDateByTimezone(
+        formattedDate,
+        DateFormat.DateMonthYearHourMinuteSecond,
+        get(selectedTimezone),
+        dayjs.tz.guess()
+      )
+    );
+  }
+};
+
+const updateActualDate = () => {
+  let value = formatDate(get(dateModel));
+  const time = get(timeModel);
+  if (time) {
+    value += ` ${time}`;
+  }
+
+  emitIfValid(value, DateFormat.DateMonthYearHourMinuteSecond);
+};
+
+const onTimeChange = (time: string) => {
+  set(timeModel, time);
+  updateActualDate();
+};
+
+const onDateChange = (date: string) => {
+  set(dateModel, date);
+  updateActualDate();
+};
+
+const setNow = () => {
+  const now = dayjs();
+  set(timeModel, now.format(get(timeFormat)));
+  set(dateModel, now.format(defaultDateFormat));
+  updateActualDate();
+};
+
+const reset = () => {
+  const field = get(inputField);
+  field?.reset();
+};
+
+setCurrentTimezone();
+
+defineExpose({
+  reset
 });
 </script>
 

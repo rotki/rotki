@@ -19,7 +19,7 @@
   />
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { PropType } from 'vue';
@@ -27,43 +27,36 @@ import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSele
 import ValidatorFilterInput from '@/components/helper/filter/ValidatorFilterInput.vue';
 import { useEthAccountsStore } from '@/store/blockchain/accounts/eth';
 
-export default defineComponent({
-  name: 'Eth2ValidatorFilter',
-  components: { ValidatorFilterInput, BlockchainAccountSelector },
-  props: {
-    value: {
-      required: true,
-      type: Array as PropType<string[]>
-    },
-    usableAddresses: {
-      required: false,
-      type: Array as PropType<string[]>,
-      default: () => []
-    },
-    filterType: {
-      required: false,
-      type: String as PropType<'address' | 'key'>,
-      default: 'address'
-    }
+defineProps({
+  value: {
+    required: true,
+    type: Array as PropType<string[]>
   },
-  emits: ['input'],
-  setup(props, { emit }) {
-    const { eth2Validators } = storeToRefs(useEthAccountsStore());
-    const account = ref<GeneralAccount[]>([]);
-    const { tc } = useI18n();
-    const input = (selection: string[]) => {
-      emit('input', selection);
-    };
-    watch(account, account => {
-      input(account.length === 0 ? [] : [account[0].address]);
-    });
-    return {
-      account,
-      input,
-      chains: [Blockchain.ETH],
-      eth2Validators,
-      tc
-    };
+  usableAddresses: {
+    required: false,
+    type: Array as PropType<string[]>,
+    default: () => []
+  },
+  filterType: {
+    required: false,
+    type: String as PropType<'address' | 'key'>,
+    default: 'address'
   }
+});
+
+const emit = defineEmits<{ (e: 'input', value: string[]): void }>();
+
+const chains = [Blockchain.ETH];
+const account = ref<GeneralAccount[]>([]);
+
+const { eth2Validators } = storeToRefs(useEthAccountsStore());
+const { tc } = useI18n();
+
+const input = (selection: string[]) => {
+  emit('input', selection);
+};
+
+watch(account, account => {
+  input(account.length === 0 ? [] : [account[0].address]);
 });
 </script>

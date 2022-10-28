@@ -8,18 +8,13 @@
   </v-card>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue';
-import PremiumLock from '../premium/PremiumLock.vue';
+<script setup lang="ts">
+import PremiumLock from '@/components/premium/PremiumLock.vue';
 
-export default defineComponent({
-  name: 'PremiumCard',
-  components: { PremiumLock },
-  props: {
-    title: {
-      required: true,
-      type: String
-    }
+defineProps({
+  title: {
+    required: true,
+    type: String
   }
 });
 </script>

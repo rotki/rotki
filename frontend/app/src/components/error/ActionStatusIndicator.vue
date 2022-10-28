@@ -16,18 +16,15 @@
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent, PropType } from 'vue';
+<script setup lang="ts">
+import { PropType } from 'vue';
 import { BaseMessage } from '@/types/messages';
 
-export default defineComponent({
-  name: 'ActionStatusIndicator',
-  props: {
-    status: {
-      required: false,
-      type: Object as PropType<BaseMessage | null>,
-      default: null
-    }
+defineProps({
+  status: {
+    required: false,
+    type: Object as PropType<BaseMessage | null>,
+    default: null
   }
 });
 </script>

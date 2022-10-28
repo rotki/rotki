@@ -29,20 +29,15 @@
   </fragment>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue';
+<script setup lang="ts">
 import Fragment from '@/components/helper/Fragment';
 
-export default defineComponent({
-  name: 'TableExpandContainer',
-  components: { Fragment },
-  props: {
-    visible: { required: true, type: Boolean },
-    colspan: { required: true, type: Number },
-    padded: { required: false, type: Boolean, default: true },
-    offset: { required: false, type: Number, default: 0 },
-    offsetClassName: { required: false, type: String, default: '' }
-  }
+defineProps({
+  visible: { required: true, type: Boolean },
+  colspan: { required: true, type: Number },
+  padded: { required: false, type: Boolean, default: true },
+  offset: { required: false, type: Number, default: 0 },
+  offsetClassName: { required: false, type: String, default: '' }
 });
 </script>
 

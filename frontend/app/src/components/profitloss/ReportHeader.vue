@@ -24,17 +24,14 @@
     </v-col>
   </v-row>
 </template>
-<script lang="ts">
-import { defineComponent, PropType } from 'vue';
+<script setup lang="ts">
+import { PropType } from 'vue';
 import { ProfitLossReportPeriod } from '@/types/reports';
 
-export default defineComponent({
-  name: 'ReportHeader',
-  props: {
-    period: {
-      required: true,
-      type: Object as PropType<ProfitLossReportPeriod>
-    }
+defineProps({
+  period: {
+    required: true,
+    type: Object as PropType<ProfitLossReportPeriod>
   }
 });
 </script>
