@@ -12,15 +12,15 @@
               v-model="selection"
               prepend-inner-icon="mdi-magnify"
               outlined
-              :no-data-text="t('price_oracle_selection.all_added')"
+              :no-data-text="tc('prioritized_list.all_added', 0, itemNameTr)"
               :items="missing"
               hide-details
             >
               <template #selection="{ item }">
-                <oracle-entry :identifier="item" />
+                <prioritized-list-entry :data="item" />
               </template>
               <template #item="{ item }">
-                <oracle-entry :identifier="item" />
+                <prioritized-list-entry :data="item" />
               </template>
             </v-autocomplete>
           </v-col>
@@ -38,18 +38,19 @@
                   <v-icon>mdi-plus</v-icon>
                 </v-btn>
               </template>
-              <span>{{ t('price_oracle_selection.add_tooltip') }}</span>
+              <span>
+                {{ tc('prioritized_list.add_tooltip', 0, itemNameTr) }}
+              </span>
             </v-tooltip>
           </v-col>
         </v-row>
       </div>
-
       <v-simple-table>
         <thead>
           <tr>
-            <th class="price-oracle-selection__move" />
-            <th class="price-oracle-selection__priority text-center">
-              {{ t('price_oracle_selection.header.priority') }}
+            <th class="prioritized-list-selection__move" />
+            <th class="prioritized-list-selection__priority text-center">
+              {{ t('common.priority') }}
             </th>
             <th class="ps-6">{{ t('common.name') }}</th>
             <th />
@@ -60,7 +61,7 @@
             <td colspan="4">
               <v-row class="pa-3 text-h6" justify="center">
                 <v-col cols="auto">
-                  {{ t('price_oracle_selection.item.empty') }}
+                  {{ tc('prioritized_list.item.empty', 0, itemNameTr) }}
                 </v-col>
               </v-row>
             </td>
@@ -90,7 +91,7 @@
             </td>
             <td class="text-center">{{ index + 1 }}</td>
             <td>
-              <oracle-entry :identifier="identifier" />
+              <prioritized-list-entry :data="itemData(identifier)" />
             </td>
             <td class="text-end">
               <v-tooltip open-delay="400" top>
@@ -104,7 +105,9 @@
                     <v-icon>mdi-delete-outline</v-icon>
                   </v-btn>
                 </template>
-                <span>{{ t('price_oracle_selection.item.delete') }}</span>
+                <span>
+                  {{ tc('prioritized_list.item.delete', 0, itemNameTr) }}
+                </span>
               </v-tooltip>
             </td>
           </tr>
@@ -114,17 +117,27 @@
     <action-status-indicator class="mt-4" :status="status" />
   </div>
 </template>
+
 <script setup lang="ts">
 import { PropType } from 'vue';
 import ActionStatusIndicator from '@/components/error/ActionStatusIndicator.vue';
-import OracleEntry from '@/components/settings/OracleEntry.vue';
+import PrioritizedListEntry from '@/components/helper/PrioritizedListEntry.vue';
 import { Nullable } from '@/types';
 import { BaseMessage } from '@/types/messages';
+import {
+  PrioritizedListData,
+  PrioritizedListItemData
+} from '@/types/prioritized-list-data';
 import { assert } from '@/utils/assertions';
+import { pluralize } from '@/utils/text';
 
 const props = defineProps({
   value: { required: true, type: Array as PropType<string[]> },
-  allItems: { required: true, type: Array as PropType<string[]> },
+  allItems: {
+    required: true,
+    type: PrioritizedListData
+  },
+  itemDataName: { required: true, type: String },
   status: {
     required: false,
     type: Object as PropType<BaseMessage>,
@@ -133,13 +146,21 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['input']);
-const { value, allItems } = toRefs(props);
+const { value, allItems, itemDataName } = toRefs(props);
 const selection = ref<Nullable<string>>(null);
 
 const input = (items: string[]) => emit('input', items);
 
+const itemNameTr = computed(() => {
+  let name = get(itemDataName);
+  return {
+    name: name,
+    name_pluralized: pluralize(name, 2)
+  };
+});
+
 const missing = computed<string[]>(() => {
-  return get(allItems).filter(item => !get(value).includes(item));
+  return get(allItems).itemIdsNotIn(get(value));
 });
 
 const noResults = computed<boolean>(() => {
@@ -153,6 +174,11 @@ const isFirst = (item: string): boolean => {
 const isLast = (item: string): boolean => {
   const items = get(value);
   return items[items.length - 1] === item;
+};
+
+const itemData = (identifier: string): PrioritizedListItemData => {
+  const data = get(allItems);
+  return data.itemDataForId(identifier) ?? new PrioritizedListItemData();
 };
 
 const addItem = () => {
@@ -181,10 +207,11 @@ const remove = (item: string) => {
 };
 
 const { t } = useI18n();
+const { tc } = useI18n();
 </script>
 
 <style scoped lang="scss">
-.price-oracle-selection {
+.prioritized-list-selection {
   &__move {
     width: 48px;
   }
