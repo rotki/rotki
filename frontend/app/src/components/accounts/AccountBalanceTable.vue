@@ -4,7 +4,7 @@
       v-bind="rootAttrs"
       :headers="tableHeaders"
       :items="visibleBalances"
-      :loading="accountOperation || loading || detectingTokens(null).value"
+      :loading="accountOperation || loading || detectingTokens"
       :loading-text="tc('account_balances.data_table.loading')"
       single-expand
       item-key="index"
@@ -56,53 +56,7 @@
         <percentage-display :value="item.ownershipPercentage" />
       </template>
       <template v-if="isEth && !loopring" #item.numOfDetectedTokens="{ item }">
-        <div class="d-flex align-center justify-end">
-          <div class="mr-2">
-            {{ getEthDetectedTokensInfo(item.address).value.total }}
-          </div>
-          <div>
-            <v-tooltip top>
-              <template #activator="{ on }">
-                <v-btn
-                  text
-                  icon
-                  :disabled="detectingTokens(item.address).value || loading"
-                  v-on="on"
-                  @click="fetchDetectedTokensAndQueryBalance(item.address)"
-                >
-                  <v-progress-circular
-                    v-if="detectingTokens(item.address).value"
-                    indeterminate
-                    color="primary"
-                    width="2"
-                    size="20"
-                  />
-                  <v-icon v-else small>mdi-refresh</v-icon>
-                </v-btn>
-              </template>
-              <div class="text-center">
-                <div>
-                  {{ tc('account_balances.detect_tokens.tooltip.redetect') }}
-                </div>
-                <div
-                  v-if="getEthDetectedTokensInfo(item.address).value.timestamp"
-                >
-                  <i18n
-                    path="account_balances.detect_tokens.tooltip.last_detected"
-                  >
-                    <template #time>
-                      <date-display
-                        :timestamp="
-                          getEthDetectedTokensInfo(item.address).value.timestamp
-                        "
-                      />
-                    </template>
-                  </i18n>
-                </div>
-              </div>
-            </v-tooltip>
-          </div>
-        </div>
+        <token-detection :address="item.address" :loading="loading" />
       </template>
       <template v-if="!loopring" #item.actions="{ item }">
         <row-actions
@@ -151,7 +105,7 @@
       </template>
       <template #item.expand="{ item }">
         <row-expander
-          v-if="isEth && (accountHasDetails(item.address).value || loopring)"
+          v-if="isEth && (accountHasDetails(item.address) || loopring)"
           :expanded="expanded.includes(item)"
           @click="expanded = expanded.includes(item) ? [] : [item]"
         />
@@ -184,11 +138,13 @@ import { DataTableHeader } from 'vuetify';
 import AccountGroupHeader from '@/components/accounts/AccountGroupHeader.vue';
 import AccountBalanceDetails from '@/components/accounts/balances/AccountBalanceDetails.vue';
 import Eth2ValidatorLimitRow from '@/components/accounts/blockchain/eth2/Eth2ValidatorLimitRow.vue';
+import TokenDetection from '@/components/accounts/blockchain/TokenDetection.vue';
 import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import RowExpander from '@/components/helper/RowExpander.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
+import { useTokenDetection } from '@/composables/balances/token-detection';
 import { useTheme } from '@/composables/common';
 import { useStatusUpdater } from '@/composables/status';
 import { bigNumberSum } from '@/filters';
@@ -197,9 +153,7 @@ import {
   XpubAccountWithBalance,
   XpubPayload
 } from '@/store/balances/types';
-import { useBlockchainBalancesStore } from '@/store/blockchain/balances';
 import { useEthBalancesStore } from '@/store/blockchain/balances/eth';
-import { useBlockchainTokensStore } from '@/store/blockchain/tokens';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTasks } from '@/store/tasks';
 import { Properties } from '@/types';
@@ -241,6 +195,11 @@ const {
   accountLiabilities,
   getLoopringBalances
 } = useEthBalancesStore();
+const {
+  getEthDetectedTokensInfo,
+  detectingTokens,
+  detectTokensAndQueryBalances
+} = useTokenDetection();
 
 const { tc } = useI18n();
 
@@ -570,32 +529,6 @@ const accountOperation = computed<boolean>(() => {
   );
 });
 
-const { getEthDetectedTokensInfo, fetchDetectedTokens } =
-  useBlockchainTokensStore();
-const { fetchBlockchainBalances } = useBlockchainBalancesStore();
-
-const detectingTokens = (address: string | null = null) =>
-  isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, address ? { address } : {});
-
-const detectingAllTokens = detectingTokens();
-
-const fetchDetectedTokensAndQueryBalance = async (address: string) => {
-  await fetchDetectedTokens(address);
-  await fetchBlockchainBalances({
-    blockchain: Blockchain.ETH,
-    ignoreCache: true
-  });
-};
-
-const fetchAllDetectedTokensAndQueryBalance = async () => {
-  const promises = get(visibleBalances).map(async balance => {
-    const address = balance.address;
-    await fetchDetectedTokensAndQueryBalance(address);
-  });
-
-  await Promise.allSettled(promises);
-};
-
 const assets = (address: string) => {
   return get(accountAssets(address));
 };
@@ -617,10 +550,14 @@ const removeCollapsed = ({ derivationPath, xpub }: XpubPayload) => {
   }
 };
 
+const fetchAllDetectedTokensAndQueryBalance = async () => {
+  const addresses = get(visibleBalances).map(balance => balance.address);
+  await detectTokensAndQueryBalances(addresses);
+};
+
 defineExpose({
   removeCollapsed,
-  fetchAllDetectedTokensAndQueryBalance,
-  detectingAllTokens
+  fetchAllDetectedTokensAndQueryBalance
 });
 </script>
 
