@@ -4,7 +4,6 @@ import json
 import logging
 import sys
 import tempfile
-import time
 import traceback
 from collections import defaultdict
 from http import HTTPStatus
@@ -66,10 +65,9 @@ from rotkehlchen.balances.manual import (
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.airdrops import check_airdrops
 from rotkehlchen.chain.ethereum.modules.eth2.constants import FREE_VALIDATORS_LIMIT
-from rotkehlchen.chain.ethereum.names import search_for_addresses_names
+from rotkehlchen.chain.ethereum.names import find_ens_mappings, search_for_addresses_names
 from rotkehlchen.chain.ethereum.types import WeightedNode
 from rotkehlchen.chain.evm.tokens import EvmTokens
-from rotkehlchen.constants import ENS_UPDATE_INTERVAL
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.limits import (
     FREE_ASSET_MOVEMENTS_LIMIT,
@@ -93,7 +91,6 @@ from rotkehlchen.data_import.manager import DataImportSource
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.constants import HISTORY_MAPPING_CUSTOMIZED
 from rotkehlchen.db.custom_assets import DBCustomAssets
-from rotkehlchen.db.ens import DBEns
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
@@ -124,7 +121,6 @@ from rotkehlchen.errors.api import (
 )
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import (
-    BlockchainQueryError,
     DBUpgradeError,
     EthSyncError,
     InputError,
@@ -159,7 +155,6 @@ from rotkehlchen.types import (
     AssetAmount,
     BlockchainAccountData,
     ChecksumEvmAddress,
-    EnsMapping,
     Eth2PubKey,
     EvmTokenKind,
     EVMTxHash,
@@ -4373,35 +4368,14 @@ class RestAPI():
         ignore_cache: bool,
     ) -> Dict[str, Any]:
         mappings_to_send: Dict[ChecksumEvmAddress, str] = {}
-        dbens = DBEns(self.rotkehlchen.data.db)
-
-        with self.rotkehlchen.data.db.user_write() as cursor:
-            if ignore_cache:
-                addresses_to_query = addresses
-            else:
-                addresses_to_query = []
-                cached_data = dbens.get_reverse_ens(cursor, addresses)
-                cur_time = Timestamp(int(time.time()))
-                for address, cached_value in cached_data.items():
-                    has_name = isinstance(cached_value, EnsMapping)
-                    last_update: Timestamp = cached_value.last_update if has_name else cached_value  # type: ignore  # noqa: E501
-                    if cur_time - last_update > ENS_UPDATE_INTERVAL:
-                        addresses_to_query.append(address)
-                    elif has_name:
-                        mappings_to_send[cached_value.address] = cached_value.name  # type: ignore
-                addresses_to_query += list(set(addresses) - set(cached_data.keys()))
-
-            try:
-                query_results = self.rotkehlchen.chain_manager.ethereum.ens_reverse_lookup(addresses_to_query)  # noqa: E501
-            except (RemoteError, BlockchainQueryError) as e:
-                msg = f'Error occurred while querying ens names: {str(e)}'
-                return wrap_in_fail_result(message=msg, status_code=HTTPStatus.CONFLICT)
-
-            mappings_to_send = dbens.update_values(
-                write_cursor=cursor,
-                ens_lookup_results=query_results,
-                mappings_to_send=mappings_to_send,
+        try:
+            mappings_to_send = find_ens_mappings(
+                ethereum_manager=self.rotkehlchen.chain_manager.ethereum,
+                addresses=addresses,
+                ignore_cache=ignore_cache,
             )
+        except RemoteError as e:
+            return wrap_in_fail_result(message=str(e), status_code=HTTPStatus.CONFLICT)
 
         return {'result': mappings_to_send, 'message': '', 'status_code': HTTPStatus.OK}
 

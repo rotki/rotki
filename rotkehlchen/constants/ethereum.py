@@ -193,6 +193,8 @@ UNISWAP_V3_NFT_MANAGER = EthereumConstants.contract('UNISWAP_V3_NFT_POSITIONS_MA
 SADDLE_ALETH_POOL = EthereumConstants().contract('SADDLE_ALETH_POOL')
 
 ENS_REVERSE_RECORDS = EthereumConstants.contract('ENS_REVERSE_RECORDS')
+ENS_REVERSE_RESOLVER = EthereumConstants().contract('ENS_REVERSE_RESOLVER')
+ENS_PUBLIC_RESOLVER_2 = EthereumConstants().contract('ENS_PUBLIC_RESOLVER_2')
 
 CURVE_ADDRESS_PROVIDER = EthereumConstants.contract('CURVE_ADDRESS_PROVIDER')
 CURVE_REGISTRY_ABI = EthereumConstants.abi('CURVE_REGISTRY')
