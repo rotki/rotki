@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <fragment>
     <v-card class="mt-8">
       <v-card-title>
@@ -14,12 +14,14 @@
           prepend-inner-icon="mdi-magnify"
           outlined
           :items="oracles"
+          item-value="identifier"
+          item-text="identifier"
         >
           <template #selection="{ item }">
-            <oracle-entry :identifier="item" />
+            <prioritized-list-entry :data="item" />
           </template>
           <template #item="{ item }">
-            <oracle-entry :identifier="item" />
+            <prioritized-list-entry :data="item" />
           </template>
         </v-autocomplete>
         <div class="pb-8">
@@ -126,13 +128,17 @@ import { DataTableHeader } from 'vuetify';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import Fragment from '@/components/helper/Fragment';
-import OracleEntry from '@/components/settings/OracleEntry.vue';
+import PrioritizedListEntry from '@/components/helper/PrioritizedListEntry.vue';
 import { OracleCacheMeta } from '@/services/balances/types';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useNotifications } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
-import { PriceOracle } from '@/types/price-oracle';
+import {
+  CRYPTOCOMPARE_PRIO_LIST_ITEM,
+  PriceOracle
+} from '@/types/price-oracle';
+import { PrioritizedListItemData } from '@/types/prioritized-list-data';
 import { TaskType } from '@/types/task-type';
 import { assert } from '@/utils/assertions';
 
@@ -165,7 +171,7 @@ const { isTaskRunning } = useTasks();
 const { createOracleCache, getPriceCache, deletePriceCache } =
   useBalancePricesStore();
 
-const oracles: PriceOracle[] = [PriceOracle.CRYPTOCOMPARE];
+const oracles: PrioritizedListItemData[] = [CRYPTOCOMPARE_PRIO_LIST_ITEM];
 
 const loading = ref<boolean>(false);
 const confirmClear = ref<boolean>(false);

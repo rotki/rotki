@@ -14,16 +14,17 @@
           setting="currentPriceOracles"
           @finished="resetCurrentPriceOracles"
         >
-          <price-oracle-selection
+          <prioritized-list
             :value="currentOracles"
-            :all-items="availableCurrentOracles"
+            :all-items="availableCurrentOracles()"
             :status="{ error, success }"
+            :item-data-name="'price oracle'"
             @input="update"
           >
             <template #title>
               {{ t('price_oracle_settings.latest_prices') }}
             </template>
-          </price-oracle-selection>
+          </prioritized-list>
         </settings-option>
       </v-col>
 
@@ -33,16 +34,17 @@
           setting="historicalPriceOracles"
           @finished="resetHistoricalPriceOracles"
         >
-          <price-oracle-selection
+          <prioritized-list
             :value="historicOracles"
-            :all-items="availableHistoricOracles"
+            :all-items="availableHistoricOracles()"
             :status="{ error, success }"
+            :item-data-name="'price oracle'"
             @input="update"
           >
             <template #title>
               {{ t('price_oracle_settings.historic_prices') }}
             </template>
-          </price-oracle-selection>
+          </prioritized-list>
         </settings-option>
       </v-col>
     </v-row>
@@ -55,25 +57,27 @@
 </template>
 
 <script setup lang="ts">
+import { get, set } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
+import { onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
+import PrioritizedList from '@/components/helper/PrioritizedList.vue';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
-import PriceOracleSelection from '@/components/settings/PriceOracleSelection.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { PriceOracle } from '@/types/price-oracle';
-
-const baseAvailableOracles = [
-  PriceOracle.CRYPTOCOMPARE,
-  PriceOracle.COINGECKO,
-  PriceOracle.DEFILLAMA
-];
-const availableCurrentOracles: string[] = [
-  ...baseAvailableOracles,
-  PriceOracle.UNISWAP2,
-  PriceOracle.UNISWAP3,
-  PriceOracle.SADDLE,
-  PriceOracle.MANUALCURRENT
-];
-const availableHistoricOracles = [...baseAvailableOracles, PriceOracle.MANUAL];
+import {
+  CRYPTOCOMPARE_PRIO_LIST_ITEM,
+  COINGECKO_PRIO_LIST_ITEM,
+  UNISWAP2_PRIO_LIST_ITEM,
+  UNISWAP3_PRIO_LIST_ITEM,
+  SADDLE_PRIO_LIST_ITEM,
+  MANUALCURRENT_PRIO_LIST_ITEM,
+  MANUAL_PRIO_LIST_ITEM
+} from '@/types/price-oracle';
+import {
+  PrioritizedListData,
+  PrioritizedListItemData
+} from '@/types/prioritized-list-data';
 
 const currentOracles = ref<string[]>([]);
 const historicOracles = ref<string[]>([]);
@@ -84,6 +88,32 @@ const { currentPriceOracles, historicalPriceOracles } = storeToRefs(
 
 const resetCurrentPriceOracles = () => {
   set(currentOracles, get(currentPriceOracles));
+};
+
+const baseAvailableOraclesTyped: Array<PrioritizedListItemData> = [
+  CRYPTOCOMPARE_PRIO_LIST_ITEM,
+  COINGECKO_PRIO_LIST_ITEM
+];
+
+const availableCurrentOracles = (): PrioritizedListData => {
+  let itemData: Array<PrioritizedListItemData> = [
+    ...baseAvailableOraclesTyped,
+    UNISWAP2_PRIO_LIST_ITEM,
+    UNISWAP3_PRIO_LIST_ITEM,
+    SADDLE_PRIO_LIST_ITEM,
+    MANUALCURRENT_PRIO_LIST_ITEM
+  ];
+
+  return new PrioritizedListData(itemData);
+};
+
+const availableHistoricOracles = (): PrioritizedListData => {
+  let itemData: Array<PrioritizedListItemData> = [
+    ...baseAvailableOraclesTyped,
+    MANUAL_PRIO_LIST_ITEM
+  ];
+
+  return new PrioritizedListData(itemData);
 };
 
 const resetHistoricalPriceOracles = () => {

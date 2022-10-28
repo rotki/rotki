@@ -3359,17 +3359,16 @@
     },
     "to_asset": "To Asset"
   },
-  "price_oracle_selection": {
-    "add_tooltip": "Add the oracle to the list",
-    "all_added": "No missing price oracles",
-    "header": {
-      "priority": "Priority"
-    },
-    "hint": "* Removing all the oracles will make it impossible to query prices for assets.",
+  "prioritized_list": {
+    "add_tooltip": "Add the {name} to the list",
+    "all_added": "No missing {name_pluralized}",
     "item": {
-      "delete": "Remove the oracle entry",
-      "empty": "No price oracles found!"
+      "delete": "Remove the {name} entry",
+      "empty": "No price {name_pluralized} found!"
     }
+  },
+  "price_oracle_selection": {
+    "hint": "* Removing all the oracles will make it impossible to query prices for assets."
   },
   "price_oracle_settings": {
     "historic_prices": "Historic Prices",

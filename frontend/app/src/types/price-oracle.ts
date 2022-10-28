@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { PrioritizedListItemData } from '@/types/prioritized-list-data';
 
 export enum PriceOracle {
   BLOCKCHAIN = 'blockchain',
