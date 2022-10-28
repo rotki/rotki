@@ -141,6 +141,8 @@ class TaskManager():
         assert self.premium_sync_manager is not None, 'caller should make sure premium sync manager exists'  # noqa: E501
         if self.premium_sync_manager.check_if_should_sync(force_upload=False) is False:
             return None
+
+        log.debug('Scheduling task for DB upload to server')
         return self.greenlet_manager.spawn_and_track(
             after_seconds=None,
             task_name='Upload data to server',
