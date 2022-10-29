@@ -2,6 +2,8 @@ import json
 import logging
 from typing import TYPE_CHECKING, List, Literal, Sequence, Tuple, Type
 
+from pysqlcipher3 import dbapi2 as sqlcipher
+
 from rotkehlchen.assets.spam_assets import update_spam_assets
 from rotkehlchen.constants.resolver import (
     ETHEREUM_DIRECTIVE,
@@ -249,7 +251,8 @@ def _update_history_event_assets_identifiers_to_caip_format(cursor: 'DBCursor') 
     FOREIGN KEY(asset) REFERENCES assets(identifier) ON UPDATE CASCADE,
     UNIQUE(event_identifier, sequence_index)
     );""")
-    cursor.executemany(
+
+    insertion_query = (
         'INSERT INTO history_events( '
         'identifier, '
         'event_identifier, '
@@ -264,9 +267,23 @@ def _update_history_event_assets_identifiers_to_caip_format(cursor: 'DBCursor') 
         'type, '
         'subtype, '
         'counterparty, '
-        'extra_data) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        new_entries,
+        'extra_data) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
     )
+    try:
+        cursor.executemany(insertion_query, new_entries)
+    except sqlcipher.IntegrityError:  # pylint: disable=no-member
+        # handle https://github.com/rotki/rotki/issues/5052
+        for entry in new_entries:
+            try:
+                cursor.execute(insertion_query, entry)
+            except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
+                if 'UNIQUE constraint failed: history_events.identifier' in str(e):
+                    continue  # already input by executemany
+
+                # otherwise can only be foreign key error. insert the missing asset that lead to it
+                cursor.execute('INSERT OR IGNORE INTO assets(identifier) VALUES(?)', (entry[6],))
+                cursor.execute(insertion_query, entry)
+
     log.debug('Exit _update_history_event_assets_identifiers_to_caip_format')
 
 
