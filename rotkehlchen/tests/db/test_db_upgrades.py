@@ -818,12 +818,21 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument 
         assert tokens['tokens'] == ['_ceth_0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e']
         # check that history events contain a transaction with an old style token identifier
         old_tx_assets_ids = cursor.execute('SELECT DISTINCT asset FROM history_events;').fetchall()  # noqa: E501
+        asset_missing_from_assets_table = '_ceth_0xb3d608c31ACa7a1c7D6DAcec5978E5493181b67A'
         assert old_tx_assets_ids == [
             ('ETH',),
             ('AVAX',),
             ('BTC',),
             ('_ceth_0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5',),
+            (asset_missing_from_assets_table,),
         ]
+
+        # check that _ceth_0xb3d608c31ACa7a1c7D6DAcec5978E5493181b67A is not in assets table
+        # essentially reproduce: https://github.com/rotki/rotki/issues/5052
+        asset_in_table = cursor.execute(
+            'SELECT COUNT(*) FROM assets WHERE identifier=?', (asset_missing_from_assets_table,),
+        ).fetchone()[0]
+        assert asset_in_table == 0, 'asset should be in history event but not in assets table'
 
         # Check that oracles exist in the test db
         oracles_before_upgrade = cursor.execute(
@@ -944,6 +953,7 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument 
             assert new_ignored_assets_id in new_ignored_assets_ids
         assert len(new_ignored_assets_ids) >= 135
 
+        fixed_asset_id = 'eip155:1/erc20:0xb3d608c31ACa7a1c7D6DAcec5978E5493181b67A'
         # check that history events contain a transaction with new style token identifier
         new_tx_assets_ids = cursor.execute('SELECT DISTINCT asset FROM history_events;').fetchall()  # noqa: E501
         assert new_tx_assets_ids == [
@@ -951,7 +961,12 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument 
             ('AVAX',),
             ('BTC',),
             ('eip155:1/erc20:0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5',),
+            (fixed_asset_id,),
         ]
+        asset_in_table = cursor.execute(
+            'SELECT COUNT(*) FROM assets WHERE identifier=?', (fixed_asset_id,),
+        ).fetchone()[0]
+        assert asset_in_table == 1, 'asset should now be in both history events and asset table'
 
         # Check that token_list for accounts has been correctly upgraded
         cursor.execute('SELECT value from accounts_details WHERE account="0x45E6CA515E840A4e9E02A3062F99216951825eB2" AND blockchain="eth" AND key="tokens"')  # noqa: E501
