@@ -193,12 +193,13 @@ class DataHandler():
         Returns a b64 encoded binary blob"""
         log.info('Compress and encrypt DB')
         compressor = zlib.compressobj(level=9)
-        with tempfile.NamedTemporaryFile(delete=True, suffix='.db') as tempdbfile:
-            tempdb = Path(tempdbfile.name)
-            self.db.export_unencrypted(tempdb)
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.db') as tempdbfile:
+            tempdbpath = Path(tempdbfile.name)
+            tempdbfile.close()  # close the file to allow re-opening by export_unencrypted in windows https://github.com/rotki/rotki/issues/5051  # noqa: E501
+            self.db.export_unencrypted(tempdbpath)
             source_data = bytearray()
             compressed_data = bytearray()
-            with open(tempdb, 'rb') as src_f:
+            with open(tempdbpath, 'rb') as src_f:
                 block = src_f.read(BUFFERSIZE)
                 while block:
                     source_data += block
@@ -211,6 +212,8 @@ class DataHandler():
             hashlib.sha256(source_data).digest(),
         ).decode()
         encrypted_data = encrypt(password.encode(), bytes(compressed_data))
+        # cleanup temp file to avoid windows problem (https://github.com/rotki/rotki/issues/5051)
+        tempdbpath.unlink()
         return B64EncodedBytes(encrypted_data.encode()), original_data_hash
 
     def decompress_and_decrypt_db(self, password: str, encrypted_data: B64EncodedString) -> None:
