@@ -17,7 +17,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, Price
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
-from rotkehlchen.utils.mixins.cacheable import CacheableMixIn, cache_response_timewise
+from rotkehlchen.utils.mixins.cacheable import CacheableMixIn, cache_response_timewise_immutable
 from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
 
 if TYPE_CHECKING:
@@ -61,7 +61,7 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):  # lgtm [py/miss
         self.opensea = Opensea(database=database, msg_aggregator=msg_aggregator)
 
     @protect_with_lock()
-    @cache_response_timewise()
+    @cache_response_timewise_immutable()
     def _get_all_nft_data(
             self,  # pylint: disable=unused-argument
             addresses: List[ChecksumEvmAddress],
@@ -325,12 +325,10 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):  # lgtm [py/miss
             # convert to set to allow O(1) during `in` conditional below.
             ignored_nfts = set(self.db.get_ignored_assets(cursor=cursor, only_nfts=True))
 
-        # make a copy to avoid mutating the cached data.
-        nfts_data_copy = nfts_data.copy()
-        for address, nfts in nfts_data_copy.items():
-            nfts_data_copy[address] = [x for x in nfts if x.token_identifier not in ignored_nfts]
+        for address, nfts in nfts_data.items():
+            nfts_data[address] = [x for x in nfts if x.token_identifier not in ignored_nfts]
 
-        return nfts_data_copy
+        return nfts_data
 
     # -- Methods following the EthereumModule interface -- #
     def on_account_addition(self, address: ChecksumEvmAddress) -> None:
