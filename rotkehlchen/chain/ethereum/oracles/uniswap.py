@@ -280,9 +280,9 @@ class UniswapV3Oracle(UniswapOracle):
 
     @cache_response_timewise()
     def get_pool(
-        self,
-        token_0: EvmToken,
-        token_1: EvmToken,
+            self,
+            token_0: EvmToken,
+            token_1: EvmToken,
     ) -> List[str]:
         result = self.eth_manager.multicall_specific(
             contract=UNISWAP_V3_FACTORY,

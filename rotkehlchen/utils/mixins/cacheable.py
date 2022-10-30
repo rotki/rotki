@@ -53,7 +53,7 @@ def _cache_response_timewise_base(
         forward_ignore_cache: bool,
         *args: Any,
         **kwargs: Any,
-) -> Tuple[bool, int, 'Timestamp']:
+) -> Tuple[bool, int, 'Timestamp', Dict]:
     """Base code used in the 2 cache_response_timewise decorators"""
     if forward_ignore_cache:
         ignore_cache = kwargs.get('ignore_cache', False)
@@ -77,7 +77,7 @@ def _cache_response_timewise_base(
         cache_key not in wrappingobj.results_cache or
         cache_life_secs >= wrappingobj.cache_ttl_secs
     )
-    return cache_miss, cache_key, now
+    return cache_miss, cache_key, now, kwargs
 
 
 def cache_response_timewise(
@@ -88,8 +88,10 @@ def cache_response_timewise(
     The objects must adhere to the CachableOject interface.
 
     **Important note**: The returned dict is mutable and if mutated will mutate the
-    cache itself. So handle with care. There is a version of the decorator
-    cache_response_timewise_immutable which protects against this.
+    cache itself. So handle with care. Caller should never mutate the result.
+    There is a version of the decorator
+    cache_response_timewise_immutable which protects against this and allows caller
+    to mutate the result.
 
     Objects adhering to this interface are:
         - all the exchanges
@@ -108,7 +110,7 @@ def cache_response_timewise(
     def _cache_response_timewise(f: Callable) -> Callable:
         @wraps(f)
         def wrapper(wrappingobj: CacheableMixIn, *args: Any, **kwargs: Any) -> Any:
-            cache_miss, cache_key, now = _cache_response_timewise_base(
+            cache_miss, cache_key, now, kwargs = _cache_response_timewise_base(
                 wrappingobj,
                 f,
                 arguments_matter,
@@ -139,7 +141,7 @@ def cache_response_timewise_immutable(
     def _cache_response_timewise(f: Callable) -> Callable:
         @wraps(f)
         def wrapper(wrappingobj: CacheableMixIn, *args: Any, **kwargs: Any) -> Any:
-            cache_miss, cache_key, now = _cache_response_timewise_base(
+            cache_miss, cache_key, now, kwargs = _cache_response_timewise_base(
                 wrappingobj,
                 f,
                 arguments_matter,
@@ -148,14 +150,12 @@ def cache_response_timewise_immutable(
                 **kwargs,
             )
             if cache_miss:
-                # Call the function, write the result in cache and return it
+                # Call the function, and write the result in cache
                 result = f(wrappingobj, *args, **kwargs)
-                cache_copy = deepcopy(result)
-                wrappingobj.results_cache[cache_key] = ResultCache(cache_copy, now)
-                return result
+                wrappingobj.results_cache[cache_key] = ResultCache(result, now)
 
-            # else hit the cache and return it
-            return wrappingobj.results_cache[cache_key].result
+            # in any case return a copy of the cache to avoid potential mutation
+            return deepcopy(wrappingobj.results_cache[cache_key].result)
 
         return wrapper
     return _cache_response_timewise
