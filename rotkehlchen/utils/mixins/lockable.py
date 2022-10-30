@@ -30,7 +30,7 @@ def protect_with_lock(arguments_matter: bool = False) -> Callable:
         - all the exchanges
         - the Blockchain object
     """
-    def _cache_response_timewise(f: Callable) -> Callable:
+    def _protect_with_lock(f: Callable) -> Callable:
         @wraps(f)
         def wrapper(wrappingobj: LockableQueryMixIn, *args: Any, **kwargs: Any) -> Any:
             lock_key = function_sig_key(
@@ -47,4 +47,4 @@ def protect_with_lock(arguments_matter: bool = False) -> Callable:
                 return result
 
         return wrapper
-    return _cache_response_timewise
+    return _protect_with_lock

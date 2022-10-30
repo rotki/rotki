@@ -1,5 +1,6 @@
+from copy import deepcopy
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Callable, Dict, NamedTuple
+from typing import TYPE_CHECKING, Any, Callable, Dict, NamedTuple, Tuple
 
 from rotkehlchen.utils.misc import ts_now
 
@@ -45,12 +46,50 @@ class CacheableMixIn:
         self.results_cache.pop(cache_key, None)
 
 
+def _cache_response_timewise_base(
+        wrappingobj: CacheableMixIn,
+        f: Callable,
+        arguments_matter: bool,
+        forward_ignore_cache: bool,
+        *args: Any,
+        **kwargs: Any,
+) -> Tuple[bool, int, 'Timestamp']:
+    """Base code used in the 2 cache_response_timewise decorators"""
+    if forward_ignore_cache:
+        ignore_cache = kwargs.get('ignore_cache', False)
+    else:
+        ignore_cache = kwargs.pop('ignore_cache', False)
+    cache_key = function_sig_key(
+        f.__name__,        # name
+        arguments_matter,  # arguments_matter
+        True,              # skip_ignore_cache
+        *args,
+        **kwargs,
+    )
+    now = ts_now()
+    if ignore_cache is False:
+        # Check the cache
+        if cache_key in wrappingobj.results_cache:
+            cache_life_secs = now - wrappingobj.results_cache[cache_key].timestamp
+
+    cache_miss = (
+        ignore_cache is True or
+        cache_key not in wrappingobj.results_cache or
+        cache_life_secs >= wrappingobj.cache_ttl_secs
+    )
+    return cache_miss, cache_key, now
+
+
 def cache_response_timewise(
         arguments_matter: bool = True,
         forward_ignore_cache: bool = False,
 ) -> Callable:
     """ This is a decorator for caching results of functions of objects.
     The objects must adhere to the CachableOject interface.
+
+    **Important note**: The returned dict is mutable and if mutated will mutate the
+    cache itself. So handle with care. There is a version of the decorator
+    cache_response_timewise_immutable which protects against this.
 
     Objects adhering to this interface are:
         - all the exchanges
@@ -69,33 +108,50 @@ def cache_response_timewise(
     def _cache_response_timewise(f: Callable) -> Callable:
         @wraps(f)
         def wrapper(wrappingobj: CacheableMixIn, *args: Any, **kwargs: Any) -> Any:
-            if forward_ignore_cache:
-                ignore_cache = kwargs.get('ignore_cache', False)
-            else:
-                ignore_cache = kwargs.pop('ignore_cache', False)
-            cache_key = function_sig_key(
-                f.__name__,        # name
-                arguments_matter,  # arguments_matter
-                True,              # skip_ignore_cache
+            cache_miss, cache_key, now = _cache_response_timewise_base(
+                wrappingobj,
+                f,
+                arguments_matter,
+                forward_ignore_cache,
                 *args,
                 **kwargs,
             )
-            now = ts_now()
-            if ignore_cache is False:
-                # Check the cache
-                if cache_key in wrappingobj.results_cache:
-                    cache_life_secs = now - wrappingobj.results_cache[cache_key].timestamp
-
-            cache_miss = (
-                ignore_cache is True or
-                cache_key not in wrappingobj.results_cache or
-                cache_life_secs >= wrappingobj.cache_ttl_secs
-            )
-
             if cache_miss:
                 # Call the function, write the result in cache and return it
                 result = f(wrappingobj, *args, **kwargs)
                 wrappingobj.results_cache[cache_key] = ResultCache(result, now)
+                return result
+
+            # else hit the cache and return it
+            return wrappingobj.results_cache[cache_key].result
+
+        return wrapper
+    return _cache_response_timewise
+
+
+def cache_response_timewise_immutable(
+        arguments_matter: bool = True,
+        forward_ignore_cache: bool = False,
+) -> Callable:
+    """ Same as cache_response_timewise but resulting dict is a copy so, the cache
+    itself can't be mutated.
+    """
+    def _cache_response_timewise(f: Callable) -> Callable:
+        @wraps(f)
+        def wrapper(wrappingobj: CacheableMixIn, *args: Any, **kwargs: Any) -> Any:
+            cache_miss, cache_key, now = _cache_response_timewise_base(
+                wrappingobj,
+                f,
+                arguments_matter,
+                forward_ignore_cache,
+                *args,
+                **kwargs,
+            )
+            if cache_miss:
+                # Call the function, write the result in cache and return it
+                result = f(wrappingobj, *args, **kwargs)
+                cache_copy = deepcopy(result)
+                wrappingobj.results_cache[cache_key] = ResultCache(cache_copy, now)
                 return result
 
             # else hit the cache and return it
