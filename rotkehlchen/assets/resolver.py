@@ -1,7 +1,9 @@
+import logging
 from typing import TYPE_CHECKING, Optional, Type, TypeVar
 
 from rotkehlchen.assets.types import AssetType
-from rotkehlchen.errors.asset import WrongAssetType
+from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.data_structures import LRUCacheWithRemove
 
 if TYPE_CHECKING:
@@ -17,6 +19,8 @@ if TYPE_CHECKING:
     )
 
 
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 T = TypeVar('T', 'FiatAsset', 'CryptoAsset', 'EvmToken', 'Nft', 'AssetWithNameAndType', 'AssetWithSymbol', 'AssetWithOracles')  # noqa: E501
 
 
@@ -62,6 +66,7 @@ class AssetResolver():
         """
         # TODO: This is ugly here but is here to avoid a cyclic import in the Assets file
         # Couldn't find a reorg that solves this cyclic import
+        from rotkehlchen.constants.assets import CONSTANT_ASSETS  # pylint: disable=import-outside-toplevel  # isort:skip  # noqa: E501
         from rotkehlchen.globaldb.handler import GlobalDBHandler  # pylint: disable=import-outside-toplevel  # isort:skip  # noqa: E501
 
         instance = AssetResolver()
@@ -70,10 +75,21 @@ class AssetResolver():
             return cached_data
 
         # If was not found in the cache try querying it in the globaldb
-        asset = GlobalDBHandler().resolve_asset(
-            identifier=identifier,
-            form_with_incomplete_data=form_with_incomplete_data,
-        )
+        try:
+            asset = GlobalDBHandler().resolve_asset(
+                identifier=identifier,
+                form_with_incomplete_data=form_with_incomplete_data,
+            )
+        except UnknownAsset:
+            if identifier not in CONSTANT_ASSETS:
+                raise
+
+            log.debug(f'Attempt to resolve asset with {identifier} using the packaged database')
+            asset = GlobalDBHandler().resolve_asset(
+                identifier=identifier,
+                form_with_incomplete_data=form_with_incomplete_data,
+                use_packaged_db=True,
+            )
         # Save it in the cache
         instance.assets_cache.set(identifier, asset)
         return asset
@@ -82,6 +98,7 @@ class AssetResolver():
     def get_asset_type(identifier: str) -> AssetType:
         # TODO: This is ugly here but is here to avoid a cyclic import in the Assets file
         # Couldn't find a reorg that solves this cyclic import
+        from rotkehlchen.constants.assets import CONSTANT_ASSETS  # pylint: disable=import-outside-toplevel  # isort:skip  # noqa: E501
         from rotkehlchen.globaldb.handler import GlobalDBHandler   # pylint: disable=import-outside-toplevel  # isort:skip  # noqa: E501
 
         instance = AssetResolver()
@@ -89,7 +106,18 @@ class AssetResolver():
         if cached_data is not None:
             return cached_data
 
-        asset_type = GlobalDBHandler().get_asset_type(identifier)
+        try:
+            asset_type = GlobalDBHandler().get_asset_type(identifier)
+        except UnknownAsset:
+            if identifier not in CONSTANT_ASSETS:
+                raise
+
+            log.debug(f'Attempt to get asset_type for asset with {identifier} using the packaged database')  # noqa: E501
+            asset_type = GlobalDBHandler().get_asset_type(
+                identifier=identifier,
+                use_packaged_db=True,
+            )
+
         instance.types_cache.set(identifier, asset_type)
         return asset_type
 
