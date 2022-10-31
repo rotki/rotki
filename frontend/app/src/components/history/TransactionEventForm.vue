@@ -175,19 +175,8 @@
 import { BigNumber } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
-import { get, set, useLocalStorage } from '@vueuse/core';
 import dayjs from 'dayjs';
-import { storeToRefs } from 'pinia';
-import {
-  computed,
-  defineProps,
-  onMounted,
-  PropType,
-  ref,
-  toRefs,
-  watch
-} from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { PropType } from 'vue';
 import ValueAccuracyHint from '@/components/helper/hint/ValueAccuracyHint.vue';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';

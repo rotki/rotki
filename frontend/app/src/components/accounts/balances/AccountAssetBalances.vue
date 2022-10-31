@@ -39,10 +39,7 @@
 
 <script setup lang="ts">
 import { AssetBalance } from '@rotki/common';
-import { get } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { computed, PropType } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { PropType } from 'vue';
 import { DataTableHeader } from 'vuetify';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';

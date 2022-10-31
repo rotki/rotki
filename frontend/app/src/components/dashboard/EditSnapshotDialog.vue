@@ -82,9 +82,7 @@
   </v-dialog>
 </template>
 <script setup lang="ts">
-import { get, set } from '@vueuse/core';
-import { computed, ComputedRef, onMounted, Ref, ref, toRefs } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { ComputedRef, Ref } from 'vue';
 import EditBalancesSnapshotTable from '@/components/dashboard/EditBalancesSnapshotTable.vue';
 import EditLocationDataSnapshotTable from '@/components/dashboard/EditLocationDataSnapshotTable.vue';
 import EditSnapshotTotal from '@/components/dashboard/EditSnapshotTotal.vue';

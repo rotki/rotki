@@ -51,8 +51,6 @@
 </template>
 
 <script setup lang="ts">
-import { storeToRefs } from 'pinia';
-import { useI18n } from 'vue-i18n-composable';
 import EthNamesHint from '@/components/EthNamesHint.vue';
 import ThemeManagerLock from '@/components/premium/ThemeManagerLock.vue';
 import Explorers from '@/components/settings/explorers/Explorers.vue';

@@ -1,5 +1,5 @@
 import { Validation } from '@vuelidate/core';
-import { get, MaybeRef } from '@vueuse/core';
+import { MaybeRef } from '@vueuse/core';
 
 export const useValidation = <V>(v$: MaybeRef<Validation<V>>) => {
   const hasError = () => {

@@ -1,5 +1,4 @@
-import { get } from '@vueuse/core';
-import { computed, Ref } from 'vue';
+import { Ref } from 'vue';
 import { Collateral, CollateralizedLoan } from '@/types/defi';
 import { Zero } from '@/utils/bignumbers';
 

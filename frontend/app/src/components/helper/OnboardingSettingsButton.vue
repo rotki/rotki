@@ -23,8 +23,6 @@
 </template>
 
 <script setup lang="ts">
-import { ref, toRefs } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 import OnboardingSettings from '@/components/settings/OnboardingSettings.vue';
 import { useMainStore } from '@/store/main';
 

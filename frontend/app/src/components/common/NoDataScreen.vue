@@ -22,16 +22,9 @@
   </component>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue';
-import FullSizeContent from '@/components/common/FullSizeContent.vue';
-
-export default defineComponent({
-  name: 'NoDataScreen',
-  components: { FullSizeContent },
-  props: {
-    full: { required: false, type: Boolean, default: true }
-  }
+<script setup lang="ts">
+defineProps({
+  full: { required: false, type: Boolean, default: true }
 });
 </script>
 

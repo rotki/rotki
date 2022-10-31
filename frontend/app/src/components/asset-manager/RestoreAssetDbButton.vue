@@ -24,9 +24,6 @@
 
 <script setup lang="ts">
 import { Severity } from '@rotki/common/lib/messages';
-import { set } from '@vueuse/core';
-import { ref } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 import { useBackendManagement } from '@/composables/backend';
 import { api } from '@/services/rotkehlchen-api';
 import { useMainStore } from '@/store/main';

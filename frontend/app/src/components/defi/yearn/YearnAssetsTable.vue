@@ -29,9 +29,7 @@
 </template>
 
 <script setup lang="ts">
-import { get } from '@vueuse/core';
-import { computed, PropType, toRefs } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { PropType } from 'vue';
 import { DataTableHeader } from 'vuetify';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';

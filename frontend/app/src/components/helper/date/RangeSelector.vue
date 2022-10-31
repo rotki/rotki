@@ -35,16 +35,11 @@
 </template>
 
 <script setup lang="ts">
-import { get } from '@vueuse/core';
 import dayjs from 'dayjs';
-import { storeToRefs } from 'pinia';
-import { computed } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
-import ReportPeriodSelector, {
-  PeriodChangedEvent,
-  SelectionChangedEvent
-} from '@/components/profitloss/ReportPeriodSelector.vue';
+
+import ReportPeriodSelector from '@/components/profitloss/ReportPeriodSelector.vue';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { PeriodChangedEvent, SelectionChangedEvent } from '@/types/reports';
 import { convertToTimestamp } from '@/utils/date';
 
 defineProps({

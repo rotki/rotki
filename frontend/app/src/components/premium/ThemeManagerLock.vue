@@ -14,7 +14,6 @@
 </template>
 
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n-composable';
 import PremiumLock from '@/components/premium/PremiumLock.vue';
 
 const { t } = useI18n();

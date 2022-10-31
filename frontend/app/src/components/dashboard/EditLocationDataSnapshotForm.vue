@@ -26,10 +26,7 @@
   </v-form>
 </template>
 <script setup lang="ts">
-import { get } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { computed, PropType, toRefs } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { PropType } from 'vue';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { LocationDataSnapshotPayload } from '@/types/snapshots';

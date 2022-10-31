@@ -34,8 +34,7 @@
 </template>
 
 <script setup lang="ts">
-import { get } from '@vueuse/core';
-import { computed, PropType, toRefs, useAttrs, useListeners } from 'vue';
+import { PropType, useListeners } from 'vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
 import { TradeLocationData, tradeLocations } from '@/types/trades';
 

@@ -19,10 +19,6 @@
 </template>
 
 <script setup lang="ts">
-import { get, set } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { onMounted, ref } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { useAccountingSettingsStore } from '@/store/settings/accounting';
 

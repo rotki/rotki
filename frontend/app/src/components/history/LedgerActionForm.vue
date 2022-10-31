@@ -139,11 +139,9 @@
   </v-form>
 </template>
 
-<script lang="ts">
-import { get, set, useLocalStorage } from '@vueuse/core';
+<script setup lang="ts">
 import dayjs from 'dayjs';
-import { defineComponent, onMounted, PropType, ref, toRefs, watch } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { PropType } from 'vue';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import { convertKeys } from '@/services/axios-tranformers';
@@ -157,175 +155,147 @@ import { LedgerActionType } from '@/types/ledger-actions';
 import { bigNumberifyFromRef, Zero } from '@/utils/bignumbers';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 
-const LedgerActionForm = defineComponent({
-  name: 'LedgerActionForm',
-  components: { LocationSelector },
-  props: {
-    value: { required: false, type: Boolean, default: false },
-    edit: {
-      required: false,
-      type: Object as PropType<LedgerAction | null>,
-      default: null
-    },
-    saveData: {
-      required: true,
-      type: Function as PropType<
-        (trade: NewLedgerAction | LedgerActionEntry) => Promise<ActionStatus>
-      >
-    }
+const props = defineProps({
+  value: { required: false, type: Boolean, default: false },
+  edit: {
+    required: false,
+    type: Object as PropType<LedgerAction | null>,
+    default: null
   },
-  emits: ['input'],
-  setup(props, { emit }) {
-    const { edit, saveData } = toRefs(props);
-
-    const input = (valid: boolean) => emit('input', valid);
-
-    const lastLocation = useLocalStorage(
-      'rotki.ledger_action.location',
-      TRADE_LOCATION_EXTERNAL
-    );
-
-    const id = ref<number | null>(null);
-    const location = ref<string>('');
-    const datetime = ref<string>('');
-    const asset = ref<string>('');
-    const amount = ref<string>('');
-    const actionType = ref<string>('');
-    const rate = ref<string>('');
-    const rateAsset = ref<string>('');
-    const link = ref<string>('');
-    const notes = ref<string>('');
-
-    const errorMessages = ref<{ [field: string]: string[] }>({});
-
-    const { t, tc } = useI18n();
-
-    const amountRules = [
-      (v: string) =>
-        !!v || t('ledger_action_form.amount.validation.non_empty').toString()
-    ];
-    const assetRules = [
-      (v: string) =>
-        !!v || t('ledger_action_form.asset.validation.non_empty').toString()
-    ];
-    const locationRules = [
-      (v: string) =>
-        !!v || t('ledger_action_form.location.validation.non_empty').toString()
-    ];
-
-    const reset = () => {
-      set(id, null);
-      set(location, get(lastLocation));
-      set(datetime, convertFromTimestamp(dayjs().unix(), true));
-      set(asset, '');
-      set(amount, '0');
-      set(actionType, LedgerActionType.ACTION_INCOME);
-      set(rate, '');
-      set(rateAsset, '');
-      set(link, '');
-      set(notes, '');
-      set(errorMessages, {});
-    };
-
-    const setEditMode = () => {
-      const ledgerAction = get(edit);
-      if (!ledgerAction) {
-        reset();
-        return;
-      }
-
-      set(location, ledgerAction.location);
-      set(datetime, convertFromTimestamp(ledgerAction.timestamp, true));
-      set(asset, ledgerAction.asset);
-      set(amount, ledgerAction.amount.toFixed());
-      set(actionType, ledgerAction.actionType.toString());
-      set(rate, ledgerAction.rate?.toFixed() ?? '');
-      set(rateAsset, ledgerAction.rateAsset ?? '');
-      set(link, ledgerAction.link ?? '');
-      set(notes, ledgerAction.notes ?? '');
-      set(id, ledgerAction.identifier);
-    };
-
-    const save = async (): Promise<boolean> => {
-      const numericAmount = get(bigNumberifyFromRef(amount));
-      const numericRate = get(bigNumberifyFromRef(rate));
-
-      const ledgerActionPayload: Writeable<NewLedgerAction> = {
-        location: get(location),
-        timestamp: convertToTimestamp(get(datetime)),
-        asset: get(asset),
-        amount: numericAmount.isNaN() ? Zero : numericAmount,
-        actionType: get(actionType) as LedgerActionType,
-        rate:
-          numericRate.isNaN() || numericRate.isZero() ? undefined : numericRate,
-        rateAsset: get(rateAsset) ? get(rateAsset) : undefined,
-        link: get(link) ? get(link) : undefined,
-        notes: get(notes) ? get(notes) : undefined
-      };
-
-      const save = get(saveData);
-      const result = !get(id)
-        ? await save(ledgerActionPayload)
-        : await save({ ...ledgerActionPayload, identifier: get(id)! });
-
-      if (result.success) {
-        reset();
-        return true;
-      }
-
-      if (result.message) {
-        set(
-          errorMessages,
-          convertKeys(
-            deserializeApiErrorMessage(result.message) ?? {},
-            true,
-            false
-          )
-        );
-      }
-
-      return false;
-    };
-
-    watch(edit, () => {
-      setEditMode();
-    });
-
-    watch(location, (location: string) => {
-      if (location) {
-        set(lastLocation, location);
-      }
-    });
-
-    onMounted(() => {
-      setEditMode();
-    });
-
-    return {
-      ledgerActionsData,
-      input,
-      id,
-      location,
-      datetime,
-      asset,
-      amount,
-      actionType,
-      rate,
-      rateAsset,
-      link,
-      notes,
-      errorMessages,
-      amountRules,
-      assetRules,
-      locationRules,
-      save,
-      reset,
-      tc
-    };
+  saveData: {
+    required: true,
+    type: Function as PropType<
+      (trade: NewLedgerAction | LedgerActionEntry) => Promise<ActionStatus>
+    >
   }
 });
 
-export type LedgerActionFormInstance = InstanceType<typeof LedgerActionForm>;
+const emit = defineEmits<{
+  (e: 'input', valid: boolean): void;
+}>();
 
-export default LedgerActionForm;
+const { edit, saveData } = toRefs(props);
+
+const input = (valid: boolean) => emit('input', valid);
+
+const lastLocation = useLocalStorage(
+  'rotki.ledger_action.location',
+  TRADE_LOCATION_EXTERNAL
+);
+
+const id = ref<number | null>(null);
+const location = ref<string>('');
+const datetime = ref<string>('');
+const asset = ref<string>('');
+const amount = ref<string>('');
+const actionType = ref<string>('');
+const rate = ref<string>('');
+const rateAsset = ref<string>('');
+const link = ref<string>('');
+const notes = ref<string>('');
+
+const errorMessages = ref<{ [field: string]: string[] }>({});
+
+const { t, tc } = useI18n();
+
+const amountRules = [
+  (v: string) =>
+    !!v || t('ledger_action_form.amount.validation.non_empty').toString()
+];
+const assetRules = [
+  (v: string) =>
+    !!v || t('ledger_action_form.asset.validation.non_empty').toString()
+];
+const locationRules = [
+  (v: string) =>
+    !!v || t('ledger_action_form.location.validation.non_empty').toString()
+];
+
+const reset = () => {
+  set(id, null);
+  set(location, get(lastLocation));
+  set(datetime, convertFromTimestamp(dayjs().unix(), true));
+  set(asset, '');
+  set(amount, '0');
+  set(actionType, LedgerActionType.ACTION_INCOME);
+  set(rate, '');
+  set(rateAsset, '');
+  set(link, '');
+  set(notes, '');
+  set(errorMessages, {});
+};
+
+const setEditMode = () => {
+  const ledgerAction = get(edit);
+  if (!ledgerAction) {
+    reset();
+    return;
+  }
+
+  set(location, ledgerAction.location);
+  set(datetime, convertFromTimestamp(ledgerAction.timestamp, true));
+  set(asset, ledgerAction.asset);
+  set(amount, ledgerAction.amount.toFixed());
+  set(actionType, ledgerAction.actionType.toString());
+  set(rate, ledgerAction.rate?.toFixed() ?? '');
+  set(rateAsset, ledgerAction.rateAsset ?? '');
+  set(link, ledgerAction.link ?? '');
+  set(notes, ledgerAction.notes ?? '');
+  set(id, ledgerAction.identifier);
+};
+
+const save = async (): Promise<boolean> => {
+  const numericAmount = get(bigNumberifyFromRef(amount));
+  const numericRate = get(bigNumberifyFromRef(rate));
+
+  const ledgerActionPayload: Writeable<NewLedgerAction> = {
+    location: get(location),
+    timestamp: convertToTimestamp(get(datetime)),
+    asset: get(asset),
+    amount: numericAmount.isNaN() ? Zero : numericAmount,
+    actionType: get(actionType) as LedgerActionType,
+    rate: numericRate.isNaN() || numericRate.isZero() ? undefined : numericRate,
+    rateAsset: get(rateAsset) ? get(rateAsset) : undefined,
+    link: get(link) ? get(link) : undefined,
+    notes: get(notes) ? get(notes) : undefined
+  };
+
+  const save = get(saveData);
+  const result = !get(id)
+    ? await save(ledgerActionPayload)
+    : await save({ ...ledgerActionPayload, identifier: get(id)! });
+
+  if (result.success) {
+    reset();
+    return true;
+  }
+
+  if (result.message) {
+    set(
+      errorMessages,
+      convertKeys(deserializeApiErrorMessage(result.message) ?? {}, true, false)
+    );
+  }
+
+  return false;
+};
+
+watch(edit, () => {
+  setEditMode();
+});
+
+watch(location, (location: string) => {
+  if (location) {
+    set(lastLocation, location);
+  }
+});
+
+onMounted(() => {
+  setEditMode();
+});
+
+defineExpose({
+  reset,
+  save
+});
 </script>

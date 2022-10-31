@@ -1,6 +1,3 @@
-import { get, set } from '@vueuse/core';
-import { defineStore } from 'pinia';
-import { computed, ref } from 'vue';
 import { useStatusUpdater } from '@/composables/status';
 import { useKrakenApi } from '@/services/staking/kraken';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';

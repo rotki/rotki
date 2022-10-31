@@ -12,13 +12,8 @@
   </dl>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue';
-
-export default defineComponent({
-  name: 'StatCardColumn',
-  props: {
-    lock: { required: false, type: Boolean, default: false }
-  }
+<script setup lang="ts">
+defineProps({
+  lock: { required: false, type: Boolean, default: false }
 });
 </script>

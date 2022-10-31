@@ -10,8 +10,6 @@
   </component>
 </template>
 <script setup lang="ts">
-import { get } from '@vueuse/core';
-import { computed, toRefs } from 'vue';
 import { useTheme } from '@/composables/common';
 
 const props = defineProps({

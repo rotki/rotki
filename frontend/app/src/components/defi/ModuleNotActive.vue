@@ -48,9 +48,8 @@
 </template>
 
 <script setup lang="ts">
-import { set } from '@vueuse/core';
 import { getCurrentInstance, onMounted, PropType, ref } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+
 import { Module, SUPPORTED_MODULES } from '@/types/modules';
 import { assert } from '@/utils/assertions';
 

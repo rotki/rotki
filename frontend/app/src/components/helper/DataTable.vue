@@ -51,9 +51,7 @@
 </template>
 
 <script setup lang="ts">
-import { get, useElementBounding } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { PropType, ref, toRefs, useAttrs, useListeners } from 'vue';
+import { PropType, useListeners } from 'vue';
 import { DataTableHeader } from 'vuetify';
 import { footerProps } from '@/config/datatable.common';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';

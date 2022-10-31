@@ -39,8 +39,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 import { interop } from '@/electron-interop';
 import { api } from '@/services/rotkehlchen-api';
 import { useMessageStore } from '@/store/message';

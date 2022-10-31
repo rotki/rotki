@@ -1,4 +1,3 @@
-import { acceptHMRUpdate, defineStore } from 'pinia';
 import { api } from '@/services/rotkehlchen-api';
 import { useUsersApi } from '@/services/session/users.api';
 import { Version } from '@/store/types';

@@ -1,9 +1,5 @@
 import { SemiPartial } from '@rotki/common';
 import { Message } from '@rotki/common/lib/messages';
-import { get, set } from '@vueuse/core';
-import { acceptHMRUpdate, defineStore } from 'pinia';
-import { computed } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 
 const emptyMessage = (): Message => ({
   title: '',

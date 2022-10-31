@@ -50,10 +50,7 @@
   </v-container>
 </template>
 <script setup lang="ts">
-import { get, set } from '@vueuse/core';
 import { omit } from 'lodash';
-import { onMounted, ref } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import LatestPriceForm from '@/components/price-manager/latest/LatestPriceForm.vue';
 import LatestPriceTable from '@/components/price-manager/latest/LatestPriceTable.vue';

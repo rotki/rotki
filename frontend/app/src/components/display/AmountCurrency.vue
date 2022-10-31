@@ -27,8 +27,7 @@
 </template>
 
 <script setup lang="ts">
-import { get } from '@vueuse/core';
-import { computed, PropType, toRefs } from 'vue';
+import { PropType } from 'vue';
 import { Currency } from '@/types/currencies';
 
 const props = defineProps({

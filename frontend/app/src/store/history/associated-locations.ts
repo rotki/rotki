@@ -1,4 +1,3 @@
-import { set } from '@vueuse/core';
 import { Ref } from 'vue';
 import { api } from '@/services/rotkehlchen-api';
 import { useNotifications } from '@/store/notifications';

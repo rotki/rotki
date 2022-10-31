@@ -31,18 +31,8 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { get, set } from '@vueuse/core';
 import Cleave from 'cleave.js';
-import { storeToRefs } from 'pinia';
-import {
-  onMounted,
-  ref,
-  toRefs,
-  useAttrs,
-  useListeners,
-  useSlots,
-  watch
-} from 'vue';
+import { useListeners } from 'vue';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const props = defineProps({

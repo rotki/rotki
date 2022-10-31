@@ -96,9 +96,8 @@
 </template>
 
 <script setup lang="ts">
-import { get, set, useCounter } from '@vueuse/core';
-import { PropType, ref, toRefs, watch } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { PropType } from 'vue';
+
 import { ImportSourceType, SOURCES } from '@/types/upload-types';
 
 const props = defineProps({

@@ -20,10 +20,6 @@
   </card>
 </template>
 <script setup lang="ts">
-import { get } from '@vueuse/core';
-import { toRefs } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
-
 const props = defineProps({
   value: {
     required: true,

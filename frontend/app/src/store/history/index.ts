@@ -1,7 +1,3 @@
-import { set } from '@vueuse/core';
-import { acceptHMRUpdate, defineStore } from 'pinia';
-import { ref } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 import { useHistoryIgnoringApi } from '@/services/history/history-ignoring-api';
 import { useAssetMovements } from '@/store/history/asset-movements';
 import { useAssociatedLocationsStore } from '@/store/history/associated-locations';

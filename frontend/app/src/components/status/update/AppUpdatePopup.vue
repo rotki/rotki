@@ -97,10 +97,6 @@
 </template>
 
 <script setup lang="ts">
-import { set } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { onMounted, ref } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import { useInterop } from '@/electron-interop';
 import { useSessionStore } from '@/store/session';

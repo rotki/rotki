@@ -16,7 +16,6 @@
   <div v-else class="back-button__placeholder" />
 </template>
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n-composable';
 import { useRouter } from '@/composables/router';
 
 defineProps({

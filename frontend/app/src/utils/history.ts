@@ -1,4 +1,3 @@
-import { get } from '@vueuse/core';
 import makeBlockie from 'ethereum-blockies-base64';
 import i18n from '@/i18n';
 import {

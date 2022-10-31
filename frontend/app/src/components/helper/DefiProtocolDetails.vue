@@ -10,15 +10,12 @@
     <span class="ml-1">{{ item.name }}</span>
   </span>
 </template>
-<script lang="ts">
-import { defineComponent, PropType } from 'vue';
+<script setup lang="ts">
+import { PropType } from 'vue';
 
 type Item = { icon: string; name: string };
 
-export default defineComponent({
-  name: 'DefiProtocolDetails',
-  props: {
-    item: { required: true, type: Object as PropType<Item> }
-  }
+defineProps({
+  item: { required: true, type: Object as PropType<Item> }
 });
 </script>

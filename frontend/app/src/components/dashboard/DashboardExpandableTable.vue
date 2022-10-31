@@ -38,9 +38,6 @@
   </card>
 </template>
 <script setup lang="ts">
-import { get } from '@vueuse/core';
-import { computed, ref } from 'vue';
-
 const expanded = ref<boolean>(true);
 
 const panel = computed<number>(() => {

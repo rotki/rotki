@@ -1,4 +1,4 @@
-import { set } from '@vueuse/core';
+import { MaybeRef } from '@vueuse/core';
 import isEqual from 'lodash/isEqual';
 import { ComputedRef, Ref } from 'vue';
 import {
@@ -69,10 +69,12 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
   };
 
   const getEthDetectedTokensInfo = (
-    address: string
+    address: MaybeRef<string | null>
   ): ComputedRef<EthDetectedTokensInfo> =>
     computed(() => {
-      const info = get(ethTokens)?.[address] || null;
+      const detected = get(ethTokens);
+      const addr = get(address);
+      const info = (addr && detected?.[addr]) || null;
       if (!info) {
         return {
           tokens: [],

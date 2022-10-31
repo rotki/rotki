@@ -20,9 +20,7 @@
 
 <script setup lang="ts">
 import { Eth2ValidatorEntry } from '@rotki/common/lib/staking/eth2';
-import { get } from '@vueuse/core';
-import { computed, PropType, toRefs } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { PropType } from 'vue';
 import { truncateAddress } from '@/filters';
 
 const props = defineProps({

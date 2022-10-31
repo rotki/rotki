@@ -1,6 +1,6 @@
 import isEqual from 'lodash/isEqual';
 import { Ref } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+
 import { useStatusUpdater } from '@/composables/status';
 import { api } from '@/services/rotkehlchen-api';
 import { useAssociatedLocationsStore } from '@/store/history/associated-locations';

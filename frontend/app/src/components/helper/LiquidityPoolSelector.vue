@@ -56,9 +56,7 @@
 <script setup lang="ts">
 import { LpType } from '@rotki/common/lib/defi';
 import { XswapPool } from '@rotki/common/lib/defi/xswap';
-import { get } from '@vueuse/core';
-import { PropType, toRefs } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { PropType } from 'vue';
 import { setupLiquidityPosition } from '@/composables/defi';
 
 const props = defineProps({

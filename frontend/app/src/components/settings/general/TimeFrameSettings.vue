@@ -89,159 +89,141 @@
   </fragment>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import {
   TimeFramePeriod,
   TimeFramePersist,
   TimeFrameSetting
 } from '@rotki/common/lib/settings/graphs';
-import { get } from '@vueuse/core';
-import { computed, defineComponent, PropType, toRefs } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { PropType } from 'vue';
 import Fragment from '@/components/helper/Fragment';
 import { usePremium } from '@/composables/premium';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { isPeriodAllowed } from '@/store/settings/utils';
 
-const validator = (value: any) =>
-  Object.values(TimeFramePeriod).includes(value) ||
-  value === TimeFramePersist.REMEMBER;
-
-export default defineComponent({
-  name: 'TimeFrameSettings',
-  components: { Fragment },
-  props: {
-    message: {
-      required: true,
-      type: Object as PropType<{ error: string; success: string }>
-    },
-    value: {
-      required: true,
-      type: String,
-      validator
-    },
-    visibleTimeframes: {
-      required: true,
-      type: Array as PropType<TimeFramePeriod[]>
-    },
-    currentSessionTimeframe: {
-      required: true,
-      type: String as PropType<TimeFramePeriod>,
-      validator
-    }
+const props = defineProps({
+  message: {
+    required: true,
+    type: Object as PropType<{ error: string; success: string }>
   },
-  emits: ['timeframe-change', 'visible-timeframes-change'],
-  setup(props, { emit }) {
-    const { t } = useI18n();
-    const { message, visibleTimeframes, value, currentSessionTimeframe } =
-      toRefs(props);
-
-    const appendedVisibleTimeframes = computed(() => {
-      return [TimeFramePersist.REMEMBER, ...get(visibleTimeframes)];
-    });
-
-    const timeframes = Object.values(TimeFramePeriod);
-
-    const invisibleTimeframes = computed(() => {
-      return timeframes.filter(item => {
-        return !isTimeframeVisible(item);
-      });
-    });
-
-    const isTimeframeVisible = (timeframe: TimeFramePeriod): boolean => {
-      return get(visibleTimeframes).includes(timeframe);
-    };
-
-    const isTimeframesToggleable = (timeframe: TimeFrameSetting) => {
-      return timeframe !== TimeFramePersist.REMEMBER;
-    };
-
-    const premium = usePremium();
-
-    const worksWithoutPremium = (period: TimeFrameSetting): boolean => {
-      return isPeriodAllowed(period) || period === TimeFramePersist.REMEMBER;
-    };
-
-    const isTimeframeDisabled = (timeframe: TimeFrameSetting) => {
-      return !get(premium) && !worksWithoutPremium(timeframe);
-    };
-
-    const selectableTimeframes = computed(() => {
-      return timeframes.filter(item => {
-        return !isTimeframeDisabled(item) && isTimeframeVisible(item);
-      });
-    });
-
-    const text = computed<string>(() => {
-      const { success, error } = get(message);
-      return success ? success : error;
-    });
-
-    const chipClass = (timeframePeriod: TimeFrameSetting): string => {
-      return timeframePeriod === get(value) ? 'timeframe-settings--active' : '';
-    };
-
-    const visibleTimeframesChange = (_timeframes: TimeFrameSetting[]) => {
-      emit('visible-timeframes-change', _timeframes);
-    };
-
-    const updateVisibleTimeframes = async (
-      newTimeFrames: TimeFramePeriod[],
-      replaceCurrentSessionTimeframe: boolean = false
-    ) => {
-      newTimeFrames.sort((a: TimeFramePeriod, b: TimeFramePeriod) => {
-        return timeframes.indexOf(a) - timeframes.indexOf(b);
-      });
-
-      if (replaceCurrentSessionTimeframe) {
-        const { updateSetting } = useFrontendSettingsStore();
-        const { update } = useSessionSettingsStore();
-        const value = newTimeFrames[0];
-        await update({ timeframe: value });
-        await updateSetting({ lastKnownTimeframe: value });
-      }
-
-      visibleTimeframesChange(newTimeFrames);
-    };
-
-    const addVisibleTimeframe = async (timeframe: TimeFramePeriod) => {
-      await updateVisibleTimeframes([...get(visibleTimeframes), timeframe]);
-    };
-
-    const timeframeChange = (_timeframe: TimeFrameSetting) => {
-      emit('timeframe-change', _timeframe);
-    };
-
-    const removeVisibleTimeframe = async (timeframe: TimeFrameSetting) => {
-      if (timeframe === get(value)) {
-        timeframeChange(TimeFramePersist.REMEMBER);
-      }
-      await updateVisibleTimeframes(
-        get(visibleTimeframes).filter(item => {
-          return item !== timeframe;
-        }),
-        timeframe === get(currentSessionTimeframe)
-      );
-    };
-
-    return {
-      t,
-      premium,
-      appendedVisibleTimeframes,
-      chipClass,
-      isTimeframesToggleable,
-      isTimeframeDisabled,
-      selectableTimeframes,
-      removeVisibleTimeframe,
-      timeframeChange,
-      invisibleTimeframes,
-      addVisibleTimeframe,
-      text
-    };
+  value: {
+    required: true,
+    type: String,
+    validator: (value: any) =>
+      Object.values(TimeFramePeriod).includes(value) ||
+      value === TimeFramePersist.REMEMBER
+  },
+  visibleTimeframes: {
+    required: true,
+    type: Array as PropType<TimeFramePeriod[]>
+  },
+  currentSessionTimeframe: {
+    required: true,
+    type: String as PropType<TimeFramePeriod>,
+    validator: (value: any) =>
+      Object.values(TimeFramePeriod).includes(value) ||
+      value === TimeFramePersist.REMEMBER
   }
 });
+
+const emit = defineEmits<{
+  (e: 'timeframe-change', timeframe: TimeFrameSetting): void;
+  (e: 'visible-timeframes-change', timeframes: TimeFrameSetting[]): void;
+}>();
+
+const { message, visibleTimeframes, value, currentSessionTimeframe } =
+  toRefs(props);
+
+const timeframes = Object.values(TimeFramePeriod);
+const { t } = useI18n();
+const premium = usePremium();
+
+const appendedVisibleTimeframes = computed(() => {
+  return [TimeFramePersist.REMEMBER, ...get(visibleTimeframes)];
+});
+
+const invisibleTimeframes = computed(() => {
+  return timeframes.filter(item => {
+    return !isTimeframeVisible(item);
+  });
+});
+
+const selectableTimeframes = computed(() => {
+  return timeframes.filter(item => {
+    return !isTimeframeDisabled(item) && isTimeframeVisible(item);
+  });
+});
+
+const text = computed<string>(() => {
+  const { success, error } = get(message);
+  return success ? success : error;
+});
+
+const isTimeframeVisible = (timeframe: TimeFramePeriod): boolean => {
+  return get(visibleTimeframes).includes(timeframe);
+};
+
+const isTimeframesToggleable = (timeframe: TimeFrameSetting) => {
+  return timeframe !== TimeFramePersist.REMEMBER;
+};
+
+const worksWithoutPremium = (period: TimeFrameSetting): boolean => {
+  return isPeriodAllowed(period) || period === TimeFramePersist.REMEMBER;
+};
+
+const isTimeframeDisabled = (timeframe: TimeFrameSetting) => {
+  return !get(premium) && !worksWithoutPremium(timeframe);
+};
+
+const chipClass = (timeframePeriod: TimeFrameSetting): string => {
+  return timeframePeriod === get(value) ? 'timeframe-settings--active' : '';
+};
+
+const timeframeChange = (timeframe: TimeFrameSetting) => {
+  emit('timeframe-change', timeframe);
+};
+
+const visibleTimeframesChange = (timeframes: TimeFrameSetting[]) => {
+  emit('visible-timeframes-change', timeframes);
+};
+
+const updateVisibleTimeframes = async (
+  newTimeFrames: TimeFramePeriod[],
+  replaceCurrentSessionTimeframe: boolean = false
+) => {
+  newTimeFrames.sort((a: TimeFramePeriod, b: TimeFramePeriod) => {
+    return timeframes.indexOf(a) - timeframes.indexOf(b);
+  });
+
+  if (replaceCurrentSessionTimeframe) {
+    const { updateSetting } = useFrontendSettingsStore();
+    const { update } = useSessionSettingsStore();
+    const value = newTimeFrames[0];
+    await update({ timeframe: value });
+    await updateSetting({ lastKnownTimeframe: value });
+  }
+
+  visibleTimeframesChange(newTimeFrames);
+};
+
+const addVisibleTimeframe = async (timeframe: TimeFramePeriod) => {
+  await updateVisibleTimeframes([...get(visibleTimeframes), timeframe]);
+};
+
+const removeVisibleTimeframe = async (timeframe: TimeFrameSetting) => {
+  if (timeframe === get(value)) {
+    timeframeChange(TimeFramePersist.REMEMBER);
+  }
+  await updateVisibleTimeframes(
+    get(visibleTimeframes).filter(item => {
+      return item !== timeframe;
+    }),
+    timeframe === get(currentSessionTimeframe)
+  );
+};
 </script>
+
 <style scoped lang="scss">
 .timeframe-settings {
   :deep() {

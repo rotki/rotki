@@ -13,7 +13,7 @@ import {
   isAaveLiquidationEvent
 } from '@rotki/common/lib/defi/aave';
 import sortBy from 'lodash/sortBy';
-import { computed, ComputedRef } from 'vue';
+import { ComputedRef } from 'vue';
 import { usePremium } from '@/composables/premium';
 import { truncateAddress } from '@/filters';
 import { ProtocolVersion } from '@/services/defi/consts';

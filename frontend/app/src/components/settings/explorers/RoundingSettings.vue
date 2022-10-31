@@ -37,8 +37,6 @@
 
 <script setup lang="ts">
 import { BigNumber } from '@rotki/common';
-import { storeToRefs } from 'pinia';
-import { useI18n } from 'vue-i18n-composable';
 import RoundingSelector from '@/components/settings/explorers/RoundingSelector.vue';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { RoundingMode } from '@/types/frontend-settings';

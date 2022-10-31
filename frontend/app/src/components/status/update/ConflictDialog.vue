@@ -101,17 +101,7 @@
 
 <script setup lang="ts">
 import { SupportedAsset } from '@rotki/common/lib/data';
-import { get, set } from '@vueuse/core';
-import {
-  computed,
-  PropType,
-  Ref,
-  ref,
-  toRefs,
-  useAttrs,
-  useListeners
-} from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { PropType, Ref, useListeners } from 'vue';
 import { DataTableHeader } from 'vuetify';
 import ConflictRow from '@/components/status/update/ConflictRow.vue';
 import {

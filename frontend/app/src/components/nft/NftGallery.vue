@@ -114,17 +114,7 @@
 import { BigNumber } from '@rotki/common';
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { get, set } from '@vueuse/core';
-import {
-  computed,
-  onMounted,
-  PropType,
-  Ref,
-  ref,
-  useCssModule,
-  watch
-} from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { PropType, Ref } from 'vue';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import NoDataScreen from '@/components/common/NoDataScreen.vue';
 import ActiveModules from '@/components/defi/ActiveModules.vue';

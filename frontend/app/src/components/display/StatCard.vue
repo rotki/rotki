@@ -38,20 +38,15 @@
   </v-card>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue';
+<script setup lang="ts">
 import PremiumLock from '@/components/premium/PremiumLock.vue';
 
-export default defineComponent({
-  name: 'StatCard',
-  components: { PremiumLock },
-  props: {
-    title: { required: false, type: String, default: '' },
-    locked: { required: false, type: Boolean, default: false },
-    loading: { required: false, type: Boolean, default: false },
-    protocolIcon: { required: false, type: String, default: '' },
-    bordered: { required: false, type: Boolean, default: false }
-  }
+defineProps({
+  title: { required: false, type: String, default: '' },
+  locked: { required: false, type: Boolean, default: false },
+  loading: { required: false, type: Boolean, default: false },
+  protocolIcon: { required: false, type: String, default: '' },
+  bordered: { required: false, type: Boolean, default: false }
 });
 </script>
 

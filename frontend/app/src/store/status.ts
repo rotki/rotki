@@ -1,6 +1,4 @@
-import { get, MaybeRef } from '@vueuse/core';
-import { acceptHMRUpdate, defineStore } from 'pinia';
-import { computed } from 'vue';
+import { MaybeRef } from '@vueuse/core';
 import { StatusPayload } from '@/store/types';
 import { defiSections, Section, Status } from '@/types/status';
 

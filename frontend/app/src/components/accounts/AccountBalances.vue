@@ -46,8 +46,8 @@
                 class="ml-2"
                 text
                 outlined
-                :loading="detectingAllTokens"
-                :disabled="detectingAllTokens || isLoading"
+                :loading="detectingTokens"
+                :disabled="detectingTokens || isLoading"
                 v-on="on"
                 @click="redetectAllTokens"
               >
@@ -89,13 +89,14 @@
 
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { ComputedRef, PropType } from 'vue';
+import { PropType } from 'vue';
 import AccountBalanceTable from '@/components/accounts/AccountBalanceTable.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import TagFilter from '@/components/inputs/TagFilter.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
 import { useRefresh } from '@/composables/balances/refresh';
+import { useTokenDetection } from '@/composables/balances/token-detection';
 import {
   AccountWithBalance,
   BlockchainAccountWithBalance,
@@ -124,14 +125,11 @@ const { blockchain } = toRefs(props);
 
 const { isTaskRunning } = useTasks();
 const { refreshBlockchainBalances } = useRefresh(blockchain);
+const { detectingTokens } = useTokenDetection();
 
 const redetectAllTokens = () => {
   get(balanceTable)?.fetchAllDetectedTokensAndQueryBalance();
 };
-
-const detectingAllTokens: ComputedRef<boolean> = computed(() => {
-  return get(balanceTable)?.detectingAllTokens || false;
-});
 
 const selectedAddresses = ref<string[]>([]);
 const visibleTags = ref<string[]>([]);

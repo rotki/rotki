@@ -60,9 +60,6 @@
 </template>
 
 <script setup lang="ts">
-import { get, set } from '@vueuse/core';
-import { onMounted, reactive, ref } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import HistoricPriceForm from '@/components/price-manager/historic/HistoricPriceForm.vue';
 import HistoricPriceTable from '@/components/price-manager/historic/HistoricPriceTable.vue';

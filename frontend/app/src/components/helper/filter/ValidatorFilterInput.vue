@@ -45,9 +45,7 @@
 
 <script setup lang="ts">
 import { Eth2ValidatorEntry } from '@rotki/common/lib/staking/eth2';
-import { get } from '@vueuse/core';
-import { PropType, ref, toRefs } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { PropType } from 'vue';
 import ValidatorDisplay from '@/components/helper/display/icons/ValidatorDisplay.vue';
 import { useTheme } from '@/composables/common';
 

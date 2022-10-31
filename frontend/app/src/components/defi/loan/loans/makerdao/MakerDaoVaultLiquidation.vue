@@ -63,9 +63,7 @@
 </template>
 <script setup lang="ts">
 import { assetSymbolToIdentifierMap } from '@rotki/common/lib/data';
-import { get } from '@vueuse/core';
-import { computed, PropType, toRefs } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { PropType } from 'vue';
 import LoanRow from '@/components/defi/loan/LoanRow.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';

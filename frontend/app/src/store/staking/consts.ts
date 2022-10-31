@@ -1,4 +1,3 @@
-import { computed } from 'vue';
 import i18n from '@/i18n';
 import { ActionDataEntry } from '@/store/types';
 import { KrakenStakingEventType } from '@/types/staking';

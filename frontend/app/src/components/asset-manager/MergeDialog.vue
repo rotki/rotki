@@ -56,9 +56,6 @@
 </template>
 
 <script setup lang="ts">
-import { get, set } from '@vueuse/core';
-import { ref } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 import { useAssets } from '@/store/assets';
 
 defineProps({

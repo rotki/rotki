@@ -1,6 +1,7 @@
 import { NumericString } from '@rotki/common';
 import { z } from 'zod';
 import { Entries } from '@/types/common';
+import { Quarter } from '@/types/frontend-settings';
 import { BaseAccountingSettings } from '@/types/user';
 
 export enum ProfitLossEventTypeEnum {
@@ -157,3 +158,13 @@ export const ReportActionableItem = z.object({
 });
 
 export type ReportActionableItem = z.infer<typeof ReportActionableItem>;
+
+export type PeriodChangedEvent = {
+  start: string;
+  end: string;
+};
+
+export type SelectionChangedEvent = {
+  readonly year: string | 'custom';
+  readonly quarter: Quarter;
+};

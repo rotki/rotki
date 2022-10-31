@@ -42,9 +42,6 @@
 
 <script setup lang="ts">
 import { Severity } from '@rotki/common/lib/messages';
-import { get, set } from '@vueuse/core';
-import { ref } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 import Fragment from '@/components/helper/Fragment';
 import { useBackendManagement } from '@/composables/backend';
 import { api } from '@/services/rotkehlchen-api';

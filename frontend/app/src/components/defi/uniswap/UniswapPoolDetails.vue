@@ -69,9 +69,7 @@
 
 <script setup lang="ts">
 import { XswapAsset, XswapBalance } from '@rotki/common/lib/defi/xswap';
-import { storeToRefs } from 'pinia';
-import { PropType, ref } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { PropType } from 'vue';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { One } from '@/utils/bignumbers';
 

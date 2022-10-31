@@ -70,10 +70,7 @@
 </template>
 
 <script setup lang="ts">
-import { get, set } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { computed, ComputedRef, PropType, ref, toRefs } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { ComputedRef, PropType } from 'vue';
 import { DataTableHeader } from 'vuetify';
 import Fragment from '@/components/helper/Fragment';
 import RowAppend from '@/components/helper/RowAppend.vue';

@@ -1,6 +1,5 @@
 import { AssetBalance, AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 import { MaybeRef } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
 import { ComputedRef } from 'vue';
 import { bigNumberSum } from '@/filters';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';

@@ -59,8 +59,7 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
-import { get, set } from '@vueuse/core';
-import { PropType, watch } from 'vue';
+import { PropType } from 'vue';
 import { ManualPriceFormPayload } from '@/services/assets/types';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';

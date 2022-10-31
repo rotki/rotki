@@ -35,7 +35,6 @@
 </template>
 
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n-composable';
 import { displayDateFormatter } from '@/data/date_formatter';
 
 defineProps({

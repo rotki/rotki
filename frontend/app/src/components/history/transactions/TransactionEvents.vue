@@ -74,17 +74,7 @@
 </template>
 
 <script setup lang="ts">
-import { get } from '@vueuse/core';
-import {
-  computed,
-  defineAsyncComponent,
-  PropType,
-  ref,
-  toRefs,
-  useCssModule,
-  watch
-} from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { PropType } from 'vue';
 import { DataTableHeader } from 'vuetify';
 import {
   EthTransactionEntry,

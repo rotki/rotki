@@ -10,7 +10,6 @@
   </import-source>
 </template>
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n-composable';
 import ImportSource from '@/components/import/ImportSource.vue';
 
 const { t } = useI18n();

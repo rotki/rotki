@@ -1,4 +1,3 @@
-import { computed } from 'vue';
 import { useTasks } from '@/store/tasks';
 
 export const setupTaskStatus = () => {

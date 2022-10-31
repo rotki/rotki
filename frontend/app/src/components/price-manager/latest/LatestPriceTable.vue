@@ -66,7 +66,6 @@
 <script setup lang="ts">
 import { NotificationPayload, Severity } from '@rotki/common/lib/messages';
 import { ComputedRef, PropType } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 import { DataTableHeader } from 'vuetify';
 import PriceRefresh from '@/components/helper/PriceRefresh.vue';
 import RowActions from '@/components/helper/RowActions.vue';

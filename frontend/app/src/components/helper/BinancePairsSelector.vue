@@ -52,9 +52,6 @@
 
 <script setup lang="ts">
 import { Severity } from '@rotki/common/lib/messages';
-import { get, set } from '@vueuse/core';
-import { onMounted, ref, toRefs, watch } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 import { useTheme } from '@/composables/common';
 import { useExchangeApi } from '@/services/balances/exchanges';
 import { useNotifications } from '@/store/notifications';

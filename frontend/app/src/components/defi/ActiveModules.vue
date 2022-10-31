@@ -64,10 +64,7 @@
 </template>
 
 <script setup lang="ts">
-import { get, set } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { computed, onMounted, PropType, ref, Ref, toRefs } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { PropType, Ref } from 'vue';
 import QueriedAddressDialog from '@/components/defi/QueriedAddressDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import { useTheme } from '@/composables/common';

@@ -10,10 +10,6 @@
 </template>
 
 <script setup lang="ts">
-import { get, set, useIntervalFn } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { computed, onMounted, watch } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 import { useInterop } from '@/electron-interop';
 import { useMainStore } from '@/store/main';
 import { useSessionStore } from '@/store/session';
