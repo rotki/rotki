@@ -186,9 +186,8 @@ def test_nft_balances_and_prices(rotkehlchen_api_server):
 @pytest.mark.parametrize('endpoint', ['nftsbalanceresource', 'nftsresource'])
 def test_nfts_ignoring_works(rotkehlchen_api_server, endpoint):
     """Check that ignoring NFTs work as expected"""
-    # return data of `_get_all_nft_data`
-    result = (
-        {
+    def mock_get_all_nft_data(addresses, **kwargs):  # pylint: disable=unused-argument
+        nft_map = {
             '0xc37b40ABdB939635068d3c5f13E7faF686F03B65': [
                 NFT(
                     token_identifier='_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_26612040215479394739615825115912800930061094786769410446114278812336794170041',  # noqa: E501
@@ -208,10 +207,10 @@ def test_nfts_ignoring_works(rotkehlchen_api_server, endpoint):
                     ),
                 ),
             ],
-        },
-        1,
-    )
-    get_all_nft_data_patch = patch('rotkehlchen.chain.ethereum.modules.nfts.Nfts._get_all_nft_data', return_value=result)  # noqa: E501
+        }
+        return nft_map, 1
+
+    get_all_nft_data_patch = patch('rotkehlchen.chain.ethereum.modules.nfts.Nfts._get_all_nft_data', side_effect=mock_get_all_nft_data)  # noqa: E501
 
     # ignore the nft
     response = requests.put(
