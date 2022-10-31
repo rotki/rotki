@@ -1757,6 +1757,7 @@ class AssetsPostSchema(DBPaginationSchema, DBOrderBySchema):
     symbol = fields.String(load_default=None)
     asset_type = SerializableEnumField(enum_class=AssetType, load_default=None)
     include_ignored_assets = fields.Boolean(load_default=True)
+    only_ignored_assets = fields.Boolean(load_default=False)
     show_user_owned_assets_only = fields.Boolean(load_default=False)
     identifiers = DelimitedOrNormalList(fields.String(required=True), load_default=None)
 
@@ -1776,6 +1777,11 @@ class AssetsPostSchema(DBPaginationSchema, DBOrderBySchema):
                 message='Multiple fields ordering is not allowed.',
                 field_name='order_by_attributes',
             )
+        if data['include_ignored_assets'] is False and data['only_ignored_assets'] is True:
+            raise ValidationError(
+                message='Cannot use only_ignored_assets=True with include_ignored_assets=False',
+                field_name='only_ignored_assets',
+            )
 
     @post_load
     def make_assets_post_query(
@@ -1785,7 +1791,10 @@ class AssetsPostSchema(DBPaginationSchema, DBOrderBySchema):
     ) -> Dict[str, Any]:
         ignored_assets_identifiers = None
         with self.db.user_write() as write_cursor, GlobalDBHandler().conn.read_ctx() as globaldb_read_cursor:  # noqa: E501
-            if data['include_ignored_assets'] is False:
+            ignored_assets_operator: Optional[Literal['IN', 'NOT IN']] = None
+            ignored_assets_operator = 'IN' if data['only_ignored_assets'] is True else 'NOT IN' if data['include_ignored_assets'] is False else None  # noqa: E501
+
+            if ignored_assets_operator is not None:
                 ignored_assets_identifiers = [asset.identifier for asset in self.db.get_ignored_assets(write_cursor)]  # noqa: E501
 
             if data['show_user_owned_assets_only'] is True:
@@ -1806,6 +1815,7 @@ class AssetsPostSchema(DBPaginationSchema, DBOrderBySchema):
                 symbol=data['symbol'],
                 asset_type=data['asset_type'],
                 identifiers=identifiers,
+                ignored_assets_operator=ignored_assets_operator,
                 ignored_assets_identifiers=ignored_assets_identifiers,
             )
         return {'filter_query': filter_query, 'identifiers': data['identifiers']}
