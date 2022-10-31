@@ -138,9 +138,10 @@ def cache_response_timewise_immutable(
     """ Same as cache_response_timewise but resulting dict is a copy so, the cache
     itself can't be mutated.
     """
-    def _cache_response_timewise(f: Callable) -> Callable:
+    def _cache_response_timewise_immutable(f: Callable) -> Callable:
         @wraps(f)
         def wrapper(wrappingobj: CacheableMixIn, *args: Any, **kwargs: Any) -> Any:
+            # return f(wrappingobj, *args, **kwargs)
             cache_miss, cache_key, now, kwargs = _cache_response_timewise_base(
                 wrappingobj,
                 f,
@@ -158,4 +159,4 @@ def cache_response_timewise_immutable(
             return deepcopy(wrappingobj.results_cache[cache_key].result)
 
         return wrapper
-    return _cache_response_timewise
+    return _cache_response_timewise_immutable
