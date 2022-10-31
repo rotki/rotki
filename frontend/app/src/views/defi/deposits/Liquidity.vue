@@ -30,15 +30,19 @@
 <script setup lang="ts">
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import { useRoute } from '@/composables/router';
-import { routesRef } from '@/router/routes';
+import { useAppRoutes } from '@/router/routes';
 
-const Routes = get(routesRef);
-const providers = [
-  Routes.DEFI_DEPOSITS_LIQUIDITY_UNISWAP_V2,
-  Routes.DEFI_DEPOSITS_LIQUIDITY_UNISWAP_V3,
-  Routes.DEFI_DEPOSITS_LIQUIDITY_BALANCER,
-  Routes.DEFI_DEPOSITS_LIQUIDITY_SUSHISWAP
-];
+const { appRoutes } = useAppRoutes();
+
+const providers = computed(() => {
+  const Routes = get(appRoutes);
+  return [
+    Routes.DEFI_DEPOSITS_LIQUIDITY_UNISWAP_V2,
+    Routes.DEFI_DEPOSITS_LIQUIDITY_UNISWAP_V3,
+    Routes.DEFI_DEPOSITS_LIQUIDITY_BALANCER,
+    Routes.DEFI_DEPOSITS_LIQUIDITY_SUSHISWAP
+  ];
+});
 const route = useRoute();
 const path = ref('');
 onMounted(() => {

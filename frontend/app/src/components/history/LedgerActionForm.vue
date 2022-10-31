@@ -146,7 +146,7 @@ import LocationSelector from '@/components/helper/LocationSelector.vue';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import { convertKeys } from '@/services/axios-tranformers';
 import { deserializeApiErrorMessage } from '@/services/converters';
-import { ledgerActionsData } from '@/store/history/consts';
+import { useLedgerActionData } from '@/store/history/consts';
 import { LedgerActionEntry } from '@/store/history/types';
 import { ActionStatus } from '@/store/types';
 import { Writeable } from '@/types';
@@ -182,6 +182,8 @@ const lastLocation = useLocalStorage(
   'rotki.ledger_action.location',
   TRADE_LOCATION_EXTERNAL
 );
+
+const { ledgerActionsData } = useLedgerActionData();
 
 const id = ref<number | null>(null);
 const location = ref<string>('');

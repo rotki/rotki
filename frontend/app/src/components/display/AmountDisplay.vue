@@ -112,7 +112,7 @@ import { useBalancePricesStore } from '@/store/balances/prices';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';
-import { findCurrency, Currency } from '@/types/currencies';
+import { useCurrencies, Currency } from '@/types/currencies';
 import { bigNumberify } from '@/utils/bignumbers';
 import RoundingMode = BigNumber.RoundingMode;
 
@@ -183,6 +183,7 @@ const {
 } = storeToRefs(useFrontendSettingsStore());
 
 const { assetSymbol } = useAssetInfoRetrieval();
+const { findCurrency } = useCurrencies();
 
 const symbol = computed<string>(() => {
   const identifier = get(asset);

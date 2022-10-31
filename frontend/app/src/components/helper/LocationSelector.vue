@@ -36,7 +36,7 @@
 <script setup lang="ts">
 import { PropType, useListeners } from 'vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
-import { TradeLocationData, tradeLocations } from '@/types/trades';
+import { TradeLocationData, useTradeLocations } from '@/types/trades';
 
 const props = defineProps({
   value: { required: false, type: String, default: '' },
@@ -68,11 +68,13 @@ const { items, excludes } = toRefs(props);
 
 const change = (_value: string) => emit('change', _value);
 
+const { tradeLocations } = useTradeLocations();
+
 const locations = computed<TradeLocationData[]>(() => {
   const itemsVal = get(items);
   const excludesVal = get(excludes);
 
-  return tradeLocations.filter(item => {
+  return get(tradeLocations).filter(item => {
     const included =
       itemsVal && itemsVal.length > 0
         ? itemsVal.includes(item.identifier)

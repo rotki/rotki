@@ -1,7 +1,7 @@
 import { ComputedRef, Ref } from 'vue';
 import { useAssetInfoApi } from '@/services/assets/info';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { krakenStakingEventTypeData } from '@/store/staking/consts';
+import { useKrakenStakingEventTypes } from '@/store/staking/consts';
 import { MatchedKeyword, SearchMatcher } from '@/types/filtering';
 import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
 
@@ -22,19 +22,20 @@ enum KrakenStakingValueKeys {
 type Matcher = SearchMatcher<KrakenStakingKeys, KrakenStakingValueKeys>;
 type Filters = MatchedKeyword<KrakenStakingValueKeys>;
 
-const getEventTypeIdentifier = (label: string) => {
-  return (
-    get(krakenStakingEventTypeData).find(data => data.label === label)
-      ?.identifier ?? label
-  );
-};
-
 export const useKrakenStakingFilter = () => {
   const filters: Ref<Filters> = ref({});
 
   const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
   const { assetSearch } = useAssetInfoApi();
+  const { krakenStakingEventTypeData } = useKrakenStakingEventTypes();
   const { tc } = useI18n();
+
+  const getEventTypeIdentifier = (label: string) => {
+    return (
+      get(krakenStakingEventTypeData).find(data => data.label === label)
+        ?.identifier ?? label
+    );
+  };
 
   const matchers: ComputedRef<Matcher[]> = computed(() => {
     const krakenStakingEventTypeValues = get(krakenStakingEventTypeData).map(

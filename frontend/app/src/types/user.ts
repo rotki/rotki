@@ -2,7 +2,7 @@ import { NumericString } from '@rotki/common';
 import { z } from 'zod';
 import { Constraints } from '@/data/constraints';
 import { axiosCamelCaseTransformer } from '@/services/axios-tranformers';
-import { findCurrency } from '@/types/currencies';
+import { useCurrencies } from '@/types/currencies';
 import { Exchange, KrakenAccountType } from '@/types/exchanges';
 import { FrontendSettings } from '@/types/frontend-settings';
 import { LedgerActionEnum } from '@/types/ledger-actions';
@@ -35,7 +35,10 @@ const GeneralSettings = z.object({
     z.number().int().max(Constraints.MAX_HOURS_DELAY)
   ),
   dateDisplayFormat: z.string(),
-  mainCurrency: z.string().transform(currency => findCurrency(currency)),
+  mainCurrency: z.string().transform(currency => {
+    const { findCurrency } = useCurrencies();
+    return findCurrency(currency);
+  }),
   activeModules: z.array(ModuleEnum),
   btcDerivationGapLimit: z.number(),
   displayDateInLocaltime: z.boolean(),

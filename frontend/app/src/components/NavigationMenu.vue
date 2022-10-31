@@ -74,7 +74,7 @@
 
 <script setup lang="ts">
 import NavigationMenuItem from '@/components/NavigationMenuItem.vue';
-import { routesRef } from '@/router/routes';
+import { useAppRoutes } from '@/router/routes';
 
 type NavItemDetails = {
   readonly text: string;
@@ -96,7 +96,8 @@ defineProps({
   isMini: { required: false, type: Boolean, default: false }
 });
 
-const Routes = get(routesRef);
+const { appRoutes } = useAppRoutes();
+const Routes = get(appRoutes);
 const navItems: MenuItem[] = [
   {
     type: 'item',

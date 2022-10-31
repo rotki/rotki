@@ -75,7 +75,7 @@ import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import { useKrakenStakingFilter } from '@/composables/filters/kraken-staking';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { krakenStakingEventTypeData } from '@/store/staking/consts';
+import { useKrakenStakingEventTypes } from '@/store/staking/consts';
 import {
   KrakenStakingEvents,
   KrakenStakingEventType,
@@ -100,6 +100,7 @@ const { events } = toRefs(props);
 
 const { itemsPerPage } = storeToRefs(useFrontendSettingsStore());
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+const { krakenStakingEventTypeData } = useKrakenStakingEventTypes();
 
 const options = ref<KrakenStakingPaginationOptions>({
   page: 1,

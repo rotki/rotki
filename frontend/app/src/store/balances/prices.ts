@@ -9,7 +9,7 @@ import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTasks } from '@/store/tasks';
 import { ActionStatus } from '@/store/types';
 import { Balances } from '@/types/blockchain/balances';
-import { currencies, CURRENCY_USD } from '@/types/currencies';
+import { useCurrencies, CURRENCY_USD } from '@/types/currencies';
 import {
   AssetPriceResponse,
   AssetPrices,
@@ -41,6 +41,7 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
     queryPrices
   } = usePriceApi();
   const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+  const { currencies } = useCurrencies();
 
   const fetchPrices = async (payload: FetchPricePayload): Promise<void> => {
     const taskType = TaskType.UPDATE_PRICES;
@@ -108,7 +109,7 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
   const fetchExchangeRates = async (): Promise<void> => {
     try {
       const { taskId } = await queryFiatExchangeRates(
-        currencies.map(value => value.tickerSymbol)
+        get(currencies).map(value => value.tickerSymbol)
       );
 
       const meta: TaskMeta = {

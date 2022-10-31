@@ -98,7 +98,7 @@ onMounted(async () => {
   }
   const success = await fetchReport(reportId);
   if (!success) {
-    await router.push(Routes.PROFIT_LOSS_REPORTS.route);
+    await router.push(Routes.PROFIT_LOSS_REPORTS);
   }
 
   if (get(route).query.openReportActionable) {

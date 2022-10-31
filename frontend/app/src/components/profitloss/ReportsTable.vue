@@ -178,7 +178,7 @@ const showUpgradeMessage = computed(
 );
 
 const getReportUrl = (identifier: number) => {
-  const url = Routes.PROFIT_LOSS_REPORT.route;
+  const url = Routes.PROFIT_LOSS_REPORT;
   return url.replace(':id', identifier.toString());
 };
 

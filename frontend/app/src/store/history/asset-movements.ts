@@ -23,7 +23,7 @@ import { TradeLocation } from '@/types/history/trade-location';
 import { Section, Status } from '@/types/status';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { exchangeName } from '@/types/trades';
+import { useTradeLocations } from '@/types/trades';
 import {
   defaultCollectionState,
   mapCollectionResponse
@@ -42,6 +42,7 @@ export const useAssetMovements = defineStore('history/assetMovements', () => {
   const locationsStore = useAssociatedLocationsStore();
   const { associatedLocations } = storeToRefs(locationsStore);
   const { fetchAssociatedLocations } = locationsStore;
+  const { exchangeName } = useTradeLocations();
   const { tc } = useI18n();
 
   const fetchAssetMovements = async (

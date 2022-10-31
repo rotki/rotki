@@ -310,5 +310,5 @@ watch(filters, async (filter, oldValue) => {
   await updatePaginationHandler(newOptions);
 });
 
-const pageRoute = Routes.HISTORY_DEPOSITS_WITHDRAWALS.route;
+const pageRoute = Routes.HISTORY_DEPOSITS_WITHDRAWALS;
 </script>

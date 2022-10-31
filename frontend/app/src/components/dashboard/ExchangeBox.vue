@@ -29,12 +29,14 @@
 import { BigNumber } from '@rotki/common';
 import { PropType } from 'vue';
 import { TradeLocation } from '@/types/history/trade-location';
-import { exchangeName } from '@/types/trades';
+import { useTradeLocations } from '@/types/trades';
 
 defineProps({
   location: { required: true, type: String as PropType<TradeLocation> },
   amount: { required: true, type: BigNumber }
 });
+
+const { exchangeName } = useTradeLocations();
 </script>
 <style scoped lang="scss">
 .exchange-box {

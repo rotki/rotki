@@ -1,13 +1,15 @@
 import { ComputedRef } from 'vue';
 import { defaultGeneralSettings } from '@/data/factories';
-import { Currency, SupportedCurrency } from '@/types/currencies';
+import { Currency, SupportedCurrency, useCurrencies } from '@/types/currencies';
 import { Exchange } from '@/types/exchanges';
 import { Module } from '@/types/modules';
 import { PriceOracle } from '@/types/price-oracle';
 import { GeneralSettings } from '@/types/user';
 
 export const useGeneralSettingsStore = defineStore('settings/general', () => {
-  const settings = reactive(defaultGeneralSettings());
+  const { defaultCurrency } = useCurrencies();
+  const settings = reactive(defaultGeneralSettings(get(defaultCurrency)));
+
   const uiFloatingPrecision: ComputedRef<number> = computed(
     () => settings.uiFloatingPrecision
   );
@@ -69,7 +71,7 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
   };
 
   const reset = (): void => {
-    update(defaultGeneralSettings());
+    update(defaultGeneralSettings(get(defaultCurrency)));
   };
 
   return {

@@ -62,7 +62,7 @@ const navigate = async () => {
   }
   const id = encodeURIComponent(get(asset).identifier);
   await router.push({
-    path: Routes.ASSETS.route.replace(':identifier', id)
+    path: Routes.ASSETS.replace(':identifier', id)
   });
 };
 </script>

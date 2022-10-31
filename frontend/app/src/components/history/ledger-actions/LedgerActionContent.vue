@@ -400,7 +400,7 @@ watch(filters, async (filter, oldValue) => {
 const getId = (item: LedgerActionEntry) => item.identifier.toString();
 const selected: Ref<LedgerActionEntry[]> = ref([]);
 
-const pageRoute = Routes.HISTORY_LEDGER_ACTIONS.route;
+const pageRoute = Routes.HISTORY_LEDGER_ACTIONS;
 
 const router = useRouter();
 const route = useRoute();

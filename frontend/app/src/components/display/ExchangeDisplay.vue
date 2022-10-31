@@ -11,7 +11,7 @@
 import { PropType } from 'vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import { SupportedExchange } from '@/types/exchanges';
-import { TradeLocationData, tradeLocations } from '@/types/trades';
+import { TradeLocationData, useTradeLocations } from '@/types/trades';
 import { toSentenceCase } from '@/utils/text';
 
 const props = defineProps({
@@ -19,10 +19,12 @@ const props = defineProps({
 });
 
 const { exchange } = toRefs(props);
-const locations = tradeLocations;
+const { tradeLocations } = useTradeLocations();
 
 const location = computed<TradeLocationData | undefined>(() => {
-  return locations.find(({ identifier }) => identifier === get(exchange));
+  return get(tradeLocations).find(
+    ({ identifier }) => identifier === get(exchange)
+  );
 });
 
 const name = computed<string>(() => {

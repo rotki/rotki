@@ -10,19 +10,23 @@
 </template>
 
 <script setup lang="ts">
+import { ComputedRef } from 'vue';
 import TabNavigation from '@/components/helper/TabNavigation.vue';
 import { useTheme } from '@/composables/common';
-import { routesRef } from '@/router/routes';
+import { useAppRoutes } from '@/router/routes';
 import { TabContent } from '@/types/tabs';
 
-const Routes = get(routesRef);
+const { appRoutes } = useAppRoutes();
 
-const tabs: TabContent[] = [
-  Routes.HISTORY_TRADES,
-  Routes.HISTORY_DEPOSITS_WITHDRAWALS,
-  Routes.HISTORY_TRANSACTIONS,
-  Routes.HISTORY_LEDGER_ACTIONS
-];
+const tabs: ComputedRef<TabContent[]> = computed(() => {
+  const Routes = get(appRoutes);
+  return [
+    Routes.HISTORY_TRADES,
+    Routes.HISTORY_DEPOSITS_WITHDRAWALS,
+    Routes.HISTORY_TRANSACTIONS,
+    Routes.HISTORY_LEDGER_ACTIONS
+  ];
+});
 
 const { dark } = useTheme();
 </script>

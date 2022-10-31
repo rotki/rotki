@@ -44,7 +44,7 @@
 import { PropType } from 'vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
 import { TradeLocation } from '@/types/history/trade-location';
-import { TradeLocationData, tradeLocations } from '@/types/trades';
+import { TradeLocationData, useTradeLocations } from '@/types/trades';
 
 const { t } = useI18n();
 
@@ -60,17 +60,18 @@ const props = defineProps({
 
 const emit = defineEmits(['input']);
 const { availableLocations, value } = toRefs(props);
+const { tradeLocations } = useTradeLocations();
 
 const locations = computed<TradeLocationData[]>(() => {
-  return tradeLocations.filter(location =>
+  return get(tradeLocations).filter(location =>
     get(availableLocations).includes(location.identifier)
   );
 });
 
 const name = computed<string>(() => {
   return (
-    tradeLocations.find(location => location.identifier === get(value))?.name ??
-    ''
+    get(tradeLocations).find(location => location.identifier === get(value))
+      ?.name ?? ''
   );
 });
 

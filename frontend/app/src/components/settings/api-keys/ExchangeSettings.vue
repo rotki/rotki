@@ -99,7 +99,7 @@ import {
   ExchangePayload,
   SupportedExchange
 } from '@/types/exchanges';
-import { exchangeName } from '@/types/trades';
+import { useTradeLocations } from '@/types/trades';
 import { assert } from '@/utils/assertions';
 
 const placeholder: () => ExchangePayload = () => ({
@@ -185,6 +185,8 @@ const toggleSync = async (exchange: Exchange) => {
 
   resetNonSyncingExchanges();
 };
+
+const { exchangeName } = useTradeLocations();
 
 const message = computed(() => {
   const exchange = get(pendingRemoval);

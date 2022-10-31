@@ -65,7 +65,7 @@
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import { useSettingsStore } from '@/store/settings';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { currencies, Currency } from '@/types/currencies';
+import { useCurrencies, Currency } from '@/types/currencies';
 
 const { update } = useSettingsStore();
 const { currency } = storeToRefs(useGeneralSettingsStore());
@@ -74,13 +74,15 @@ const filter = ref<string>('');
 const visible = ref<boolean>(false);
 
 const { tc } = useI18n();
+const { currencies } = useCurrencies();
 
 const filteredCurrencies = computed<Currency[]>(() => {
   const filterValue = get(filter).toLocaleLowerCase();
+  const supportedCurrencies = get(currencies);
   if (!filterValue) {
-    return currencies;
+    return supportedCurrencies;
   }
-  return currencies.filter(({ name, tickerSymbol }) => {
+  return supportedCurrencies.filter(({ name, tickerSymbol }) => {
     const currencyName = name.toLocaleLowerCase();
     const symbol = tickerSymbol.toLocaleLowerCase();
     return (

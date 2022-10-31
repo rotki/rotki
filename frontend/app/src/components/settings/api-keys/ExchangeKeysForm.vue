@@ -160,7 +160,7 @@ import {
   SUPPORTED_EXCHANGES,
   SupportedExchange
 } from '@/types/exchanges';
-import { tradeLocations } from '@/types/trades';
+import { useTradeLocations } from '@/types/trades';
 import { trimOnPaste } from '@/utils/event';
 
 const props = defineProps({
@@ -210,8 +210,10 @@ const passphraseRules = computed(() => [
   (v: string) => !!v || tc('exchange_keys_form.passphrase.non_empty')
 ]);
 
+const { tradeLocations } = useTradeLocations();
+
 const suggestedName = function (exchange: SupportedExchange): string {
-  const location = tradeLocations.find(
+  const location = get(tradeLocations).find(
     ({ identifier }) => identifier === exchange
   );
   const nonce = get(getExchangeNonce(exchange));

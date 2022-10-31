@@ -45,9 +45,10 @@
 
 <script setup lang="ts">
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { currencies, Currency } from '@/types/currencies';
+import { useCurrencies, Currency } from '@/types/currencies';
 
-const selectedCurrency = ref<Currency>(currencies[0]);
+const { currencies } = useCurrencies();
+const selectedCurrency = ref<Currency>(get(currencies)[0]);
 const { currency } = storeToRefs(useGeneralSettingsStore());
 const { tc } = useI18n();
 

@@ -40,7 +40,7 @@
 import ActionStatusIndicator from '@/components/error/ActionStatusIndicator.vue';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
-import { ledgerActionsData } from '@/store/history/consts';
+import { useLedgerActionData } from '@/store/history/consts';
 import { useAccountingSettingsStore } from '@/store/settings/accounting';
 import { LedgerActionType } from '@/types/ledger-actions';
 
@@ -56,6 +56,8 @@ const defaultTaxable: () => TaxableState = () => {
 type TaxableState = { [key in LedgerActionType]: boolean };
 
 const taxable = ref<TaxableState>(defaultTaxable());
+
+const { ledgerActionsData } = useLedgerActionData();
 
 const changed = async (update: (value: any) => void) => {
   const taxableActions: LedgerActionType[] = [];

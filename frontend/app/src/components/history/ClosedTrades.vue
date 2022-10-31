@@ -258,6 +258,7 @@ const props = defineProps({
 const emit = defineEmits(['fetch']);
 
 const { locationOverview } = toRefs(props);
+
 const selected: Ref<TradeEntry[]> = ref([]);
 const options: Ref<PaginationOptions | null> = ref(null);
 const dialogTitle: Ref<string> = ref('');
@@ -269,7 +270,8 @@ const confirmationMessage: Ref<string> = ref('');
 const expanded: Ref<TradeEntry[]> = ref([]);
 const valid: Ref<boolean> = ref(false);
 const form: Ref<InstanceType<typeof ExternalTradeForm> | null> = ref(null);
-const pageRoute = Routes.HISTORY_TRADES.route;
+
+const pageRoute = Routes.HISTORY_TRADES;
 
 const { filters, matchers, updateFilter } = useTradeFilters();
 const router = useRouter();

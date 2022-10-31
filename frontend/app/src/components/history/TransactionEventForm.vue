@@ -183,10 +183,7 @@ import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import { convertKeys } from '@/services/axios-tranformers';
 import { deserializeApiErrorMessage } from '@/services/converters';
 import { useBalancePricesStore } from '@/store/balances/prices';
-import {
-  historyEventSubTypeData,
-  historyEventTypeData
-} from '@/store/history/consts';
+import { useHistoryEventTypeData } from '@/store/history/consts';
 import {
   EthTransactionEntry,
   EthTransactionEventEntry
@@ -205,7 +202,7 @@ import { TaskType } from '@/types/task-type';
 import { HistoryEventSubType, HistoryEventType } from '@/types/transaction';
 import { bigNumberifyFromRef, One, Zero } from '@/utils/bignumbers';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
-import { getEventTypeData } from '@/utils/history';
+import { useEventTypeData } from '@/utils/history';
 
 const props = defineProps({
   value: { required: false, type: Boolean, default: false },
@@ -238,6 +235,9 @@ const input = (valid: boolean) => emit('input', valid);
 const { isTaskRunning } = useTasks();
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { exchangeRate, getHistoricPrice } = useBalancePricesStore();
+const { getEventTypeData } = useEventTypeData();
+const { historyEventTypeData, historyEventSubTypeData } =
+  useHistoryEventTypeData();
 
 const lastLocation = useLocalStorage(
   'rotki.ledger_action.location',

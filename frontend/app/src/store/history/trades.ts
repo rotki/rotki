@@ -1,6 +1,5 @@
 import isEqual from 'lodash/isEqual';
 import { Ref } from 'vue';
-
 import { useStatusUpdater } from '@/composables/status';
 import { api } from '@/services/rotkehlchen-api';
 import { useAssociatedLocationsStore } from '@/store/history/associated-locations';
@@ -25,7 +24,7 @@ import {
 import { Section, Status } from '@/types/status';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { exchangeName } from '@/types/trades';
+import { useTradeLocations } from '@/types/trades';
 import {
   defaultCollectionState,
   mapCollectionResponse
@@ -44,6 +43,7 @@ export const useTrades = defineStore('history/trades', () => {
   const locationsStore = useAssociatedLocationsStore();
   const { associatedLocations } = storeToRefs(locationsStore);
   const { fetchAssociatedLocations } = locationsStore;
+  const { exchangeName } = useTradeLocations();
   const { tc } = useI18n();
 
   const fetchTrades = async (

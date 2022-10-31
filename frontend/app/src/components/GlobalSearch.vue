@@ -118,11 +118,11 @@ import { Ref } from 'vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
-import { setupLocationInfo } from '@/composables/balances';
+import { useLocationInfo } from '@/composables/balances';
 import { useTheme } from '@/composables/common';
 import { useRouter } from '@/composables/router';
 import { interop } from '@/electron-interop';
-import { routesRef } from '@/router/routes';
+import { useAppRoutes } from '@/router/routes';
 import { useAssetInfoApi } from '@/services/assets/info';
 import { useAggregatedBalancesStore } from '@/store/balances/aggregated';
 import { useBalancesBreakdownStore } from '@/store/balances/breakdown';
@@ -149,8 +149,8 @@ type SearchItem = {
 type SearchItemWithoutValue = Omit<SearchItem, 'value'>;
 
 const { t, tc } = useI18n();
-
-const Routes = get(routesRef);
+const { appRoutes } = useAppRoutes();
+const Routes = get(appRoutes);
 const open = ref<boolean>(false);
 const isMac = ref<boolean>(false);
 
@@ -169,7 +169,7 @@ const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { connectedExchanges } = storeToRefs(useExchangeBalancesStore());
 const { balances } = useAggregatedBalancesStore();
 const { balancesByLocation } = storeToRefs(useBalancesBreakdownStore());
-const { getLocation } = setupLocationInfo();
+const { getLocation } = useLocationInfo();
 const { assetSearch } = useAssetInfoApi();
 const { dark } = useTheme();
 

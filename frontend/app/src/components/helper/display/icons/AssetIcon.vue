@@ -79,7 +79,7 @@ import { useTheme } from '@/composables/common';
 import { api } from '@/services/rotkehlchen-api';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { getChainIcon } from '@/types/blockchain/chains';
-import { currencies } from '@/types/currencies';
+import { useCurrencies } from '@/types/currencies';
 
 const AdaptiveWrapper = defineAsyncComponent(
   () => import('@/components/display/AdaptiveWrapper.vue')
@@ -116,13 +116,15 @@ const pending = ref<boolean>(true);
 const { t } = useI18n();
 const css = useCssModule();
 
+const { currencies } = useCurrencies();
+
 const currency = computed<string | undefined>(() => {
   const id = get(identifier);
   if ([Blockchain.BTC, Blockchain.ETH].includes(id as Blockchain)) {
     return undefined;
   }
 
-  return currencies.find(({ tickerSymbol }) => tickerSymbol === id)
+  return get(currencies).find(({ tickerSymbol }) => tickerSymbol === id)
     ?.unicodeSymbol;
 });
 

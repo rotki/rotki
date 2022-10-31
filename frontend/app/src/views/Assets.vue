@@ -84,14 +84,12 @@ const isCustomAsset = computed(() => get(assetInfo(identifier))?.isCustomAsset);
 
 const { t } = useI18n();
 
-const editRoute = computed<RawLocation>(() => {
-  return {
-    path: get(isCustomAsset)
-      ? Routes.ASSET_MANAGER_CUSTOM.route
-      : Routes.ASSET_MANAGER_MANAGED.route,
-    query: {
-      id: get(identifier)
-    }
-  };
-});
+const editRoute = computed<RawLocation>(() => ({
+  path: get(isCustomAsset)
+    ? Routes.ASSET_MANAGER_CUSTOM
+    : Routes.ASSET_MANAGER_MANAGED,
+  query: {
+    id: get(identifier)
+  }
+}));
 </script>

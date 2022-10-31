@@ -112,7 +112,7 @@
 
 <script setup lang="ts">
 import { PropType } from 'vue';
-import { costBasisMethodData } from '@/store/reports/consts';
+import { useCostBasisMethod } from '@/store/reports/consts';
 import { ActionDataEntry } from '@/store/types';
 import { BaseAccountingSettings, CostBasisMethod } from '@/types/user';
 
@@ -125,6 +125,7 @@ const props = defineProps({
 
 const { accountingSettings } = toRefs(props);
 const { tc } = useI18n();
+const { costBasisMethodData } = useCostBasisMethod();
 const color = (enabled: boolean | null) => {
   return enabled
     ? 'accounting-settings-display--yes'
@@ -144,7 +145,9 @@ const costBasisMethodItem = computed<ActionDataEntry<CostBasisMethod> | null>(
   () => {
     const method = get(accountingSettings).costBasisMethod;
     if (!method) return null;
-    return costBasisMethodData.find(item => item.identifier === method) || null;
+    return (
+      get(costBasisMethodData).find(item => item.identifier === method) || null
+    );
   }
 );
 </script>
