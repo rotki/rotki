@@ -46,7 +46,7 @@ import { usePremiumStore } from '@/store/session/premium';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
 import { checkIfDevelopment } from '@/utils/env-utils';
 import { logger } from '@/utils/logging';
-import 'chartjs-adapter-moment';
+import '@/utils/chartjs-adapter-dayjs';
 
 const AppHost = defineAsyncComponent(
   () => import('@/components/app/AppHost.vue')
