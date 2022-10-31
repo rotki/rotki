@@ -918,3 +918,25 @@ def test_search_assets_with_levenshtein(rotkehlchen_api_server):
         },
     )
     assert_error_response(response, contained_in_msg='Failed to deserialize ChainID value near')
+
+
+def test_only_ignored_assets(rotkehlchen_api_server):
+    ignored_assets = [A_GNO.identifier, A_RDN.identifier]
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ignoredassetsresource',
+        ), json={'assets': ignored_assets},
+    )
+    assert_proper_response(response)
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'allassetsresource',
+        ),
+        json={
+            'only_ignored_assets': True,
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    assert {entry['identifier'] for entry in result['entries']} == set(ignored_assets)

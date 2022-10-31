@@ -949,6 +949,7 @@ class AssetsFilterQuery(DBFilterQuery):
             identifiers: Optional[List[str]] = None,
             return_exact_matches: bool = False,
             evm_chain: Optional[ChainID] = None,
+            ignored_assets_operator: Optional[Literal['IN', 'NOT IN']] = None,
     ) -> 'AssetsFilterQuery':
         if order_by_rules is None:
             order_by_rules = [('name', True)]
@@ -1004,7 +1005,7 @@ class AssetsFilterQuery(DBFilterQuery):
             filters.append(DBMultiStringFilter(
                 and_op=True,
                 column='identifier',
-                operator='NOT IN',
+                operator=ignored_assets_operator,  # type: ignore  # ignored_assets_operator is definitely not None  # noqa: E501
                 values=ignored_assets_identifiers,
             ))
         if evm_chain is not None:
