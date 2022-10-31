@@ -171,6 +171,7 @@ class Rotkehlchen():
         to sync premium databases we relogged in
         """
         self.cryptocompare.db = None
+        self.exchange_manager.delete_all_exchanges()
         self.data.logout()
 
     def unlock_user(
