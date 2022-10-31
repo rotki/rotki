@@ -240,6 +240,8 @@
 <script setup lang="ts">
 import { Nullable } from '@rotki/common';
 import { PropType } from 'vue';
+import ReportMissingAcquisitions from '@/components/profitloss/ReportMissingAcquisitions.vue';
+import ReportMissingPrices from '@/components/profitloss/ReportMissingPrices.vue';
 import { useRouter } from '@/composables/router';
 import { Routes } from '@/router/routes';
 import { useReports } from '@/store/reports';
@@ -328,7 +330,7 @@ const stepperContents = computed(() => {
       hint: t(
         'profit_loss_report.actionable.missing_acquisitions.hint'
       ).toString(),
-      selector: 'report-missing-acquisitions',
+      selector: ReportMissingAcquisitions,
       items: get(actionableItems).missingAcquisitions
     });
   }
@@ -341,7 +343,7 @@ const stepperContents = computed(() => {
         total: missingPricesLength
       }).toString(),
       hint: t('profit_loss_report.actionable.missing_prices.hint').toString(),
-      selector: 'report-missing-prices',
+      selector: ReportMissingPrices,
       items: get(actionableItems).missingPrices
     });
   }
