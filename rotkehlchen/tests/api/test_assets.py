@@ -365,7 +365,7 @@ def test_get_all_assets(rotkehlchen_api_server):
             'asset_type': 'fiat',
             'order_by_attributes': ['name'],
             'ascending': [True],
-            'include_ignored_assets': False,
+            'ignored_assets_handling': 'exclude',
         },
     )
     result = assert_proper_response_with_result(response)
@@ -921,6 +921,7 @@ def test_search_assets_with_levenshtein(rotkehlchen_api_server):
 
 
 def test_only_ignored_assets(rotkehlchen_api_server):
+    """Test it's possible to ask to only see the ignored assets"""
     ignored_assets = [A_GNO.identifier, A_RDN.identifier]
     response = requests.put(
         api_url_for(
@@ -935,7 +936,7 @@ def test_only_ignored_assets(rotkehlchen_api_server):
             'allassetsresource',
         ),
         json={
-            'only_ignored_assets': True,
+            'ignored_assets_handling': 'show_only',
         },
     )
     result = assert_proper_response_with_result(response)
