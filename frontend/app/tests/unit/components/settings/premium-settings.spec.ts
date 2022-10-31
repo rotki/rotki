@@ -1,20 +1,13 @@
 import { mount, Wrapper } from '@vue/test-utils';
 import { set } from '@vueuse/core';
 import flushPromises from 'flush-promises/index';
-import {
-  createPinia,
-  PiniaVuePlugin,
-  setActivePinia,
-  storeToRefs
-} from 'pinia';
-import Vue from 'vue';
+import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import Vuetify from 'vuetify';
 import Card from '@/components/helper/Card.vue';
 import PremiumSettings from '@/components/settings/PremiumSettings.vue';
 import { interop } from '@/electron-interop';
 import { api } from '@/services/rotkehlchen-api';
 import { usePremiumStore } from '@/store/session/premium';
-import '../../i18n';
 
 vi.mock('@/electron-interop', () => {
   const mockInterop = {
@@ -26,17 +19,6 @@ vi.mock('@/electron-interop', () => {
   };
 });
 vi.mock('@/services/rotkehlchen-api');
-vi.mock('vue', async () => {
-  const mod = await vi.importActual<typeof import('vue')>('vue');
-  return {
-    ...mod,
-    useListeners: vi.fn(),
-    useAttrs: vi.fn()
-  };
-});
-
-Vue.use(Vuetify);
-Vue.use(PiniaVuePlugin);
 
 describe('PremiumSettings.vue', () => {
   let wrapper: Wrapper<PremiumSettings>;

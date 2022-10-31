@@ -1,14 +1,7 @@
 import { BigNumber } from '@rotki/common';
 import { mount, Wrapper } from '@vue/test-utils';
 import { set } from '@vueuse/core';
-import {
-  createPinia,
-  Pinia,
-  PiniaVuePlugin,
-  setActivePinia,
-  storeToRefs
-} from 'pinia';
-import Vue from 'vue';
+import { createPinia, Pinia, setActivePinia, storeToRefs } from 'pinia';
 import Vuetify from 'vuetify';
 import { VTooltip } from 'vuetify/lib/components';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
@@ -18,14 +11,11 @@ import { useSessionStore } from '@/store/session';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';
-import { currencies } from '@/types/currencies';
+import { useCurrencies } from '@/types/currencies';
 import { CurrencyLocation } from '@/types/currency-location';
+import { FrontendSettings } from '@/types/frontend-settings';
 import { bigNumberify } from '@/utils/bignumbers';
 import '@/filters';
-import '../../i18n';
-
-Vue.use(Vuetify);
-Vue.use(PiniaVuePlugin);
 
 // This is workaround used because stubs is somehow not working,
 // Eager prop will render the <slot /> immediately
@@ -64,9 +54,11 @@ describe('AmountDisplay.vue', () => {
     setActivePinia(pinia);
     document.body.setAttribute('data-app', 'true');
     const store = useGeneralSettingsStore();
+    const { findCurrency } = useCurrencies();
+    const mainCurrency = findCurrency('EUR');
     store.update({
-      ...defaultGeneralSettings(),
-      mainCurrency: currencies[1],
+      ...defaultGeneralSettings(mainCurrency),
+      mainCurrency,
       uiFloatingPrecision: 2
     });
 
@@ -80,7 +72,7 @@ describe('AmountDisplay.vue', () => {
   });
 
   describe('Common case', () => {
-    test('displays amount converted to selected fiat currency', async () => {
+    test('displays amount converted to selected fiat currency', () => {
       wrapper = createWrapper(bigNumberify(1.20440001), {
         fiatCurrency: 'USD'
       });
@@ -90,7 +82,7 @@ describe('AmountDisplay.vue', () => {
       );
     });
 
-    test('displays amount converted to selected fiat currency (does not double-convert)', async () => {
+    test('displays amount converted to selected fiat currency (does not double-convert)', () => {
       wrapper = createWrapper(bigNumberify(1.20440001), {
         amount: bigNumberify(1.20440001),
         fiatCurrency: 'EUR'
@@ -101,7 +93,7 @@ describe('AmountDisplay.vue', () => {
       );
     });
 
-    test('displays amount as it is without fiat conversion', async () => {
+    test('displays amount as it is without fiat conversion', () => {
       wrapper = createWrapper(bigNumberify(1.20540001));
       expect(wrapper.find('[data-cy="display-comparison-symbol"]').text()).toBe(
         '<'
@@ -112,12 +104,12 @@ describe('AmountDisplay.vue', () => {
       );
     });
 
-    test('display amount do not show decimal when `integer=true`', async () => {
+    test('display amount do not show decimal when `integer=true`', () => {
       wrapper = createWrapper(bigNumberify(128.205), { integer: true });
       expect(wrapper.find('[data-cy="display-amount"]').text()).toBe('129');
     });
 
-    test('displays amount do not converted to selected fiat currency when `forceCurrency=true`', async () => {
+    test('displays amount do not converted to selected fiat currency when `forceCurrency=true`', () => {
       wrapper = createWrapper(bigNumberify(1.20440001), {
         fiatCurrency: 'USD',
         forceCurrency: true
@@ -146,7 +138,7 @@ describe('AmountDisplay.vue', () => {
       useSessionSettingsStore().update({ scrambleData: true });
     });
 
-    test('displays amount converted to selected fiat currency as scrambled', async () => {
+    test('displays amount converted to selected fiat currency as scrambled', () => {
       wrapper = createWrapper(bigNumberify(1.20440001), {
         fiatCurrency: 'USD'
       });
@@ -158,7 +150,7 @@ describe('AmountDisplay.vue', () => {
       );
     });
 
-    test('displays amount converted to selected fiat currency (does not double-convert) as scrambled', async () => {
+    test('displays amount converted to selected fiat currency (does not double-convert) as scrambled', () => {
       wrapper = createWrapper(bigNumberify(1.20440001), {
         amount: bigNumberify(1.20440001),
         fiatCurrency: 'EUR'
@@ -171,7 +163,7 @@ describe('AmountDisplay.vue', () => {
       );
     });
 
-    test('displays amount as it is without fiat conversion as scrambled', async () => {
+    test('displays amount as it is without fiat conversion as scrambled', () => {
       wrapper = createWrapper(bigNumberify(1.20540001));
       expect(wrapper.find('[data-cy="display-amount"]').text()).not.toBe(
         '1.21'
@@ -186,6 +178,7 @@ describe('AmountDisplay.vue', () => {
     describe('Before', () => {
       beforeEach(() => {
         useFrontendSettingsStore().update({
+          ...FrontendSettings.parse({}),
           currencyLocation: CurrencyLocation.BEFORE
         });
       });
@@ -217,6 +210,7 @@ describe('AmountDisplay.vue', () => {
     describe('After', () => {
       beforeEach(() => {
         useFrontendSettingsStore().update({
+          ...FrontendSettings.parse({}),
           currencyLocation: CurrencyLocation.AFTER
         });
       });
@@ -249,6 +243,7 @@ describe('AmountDisplay.vue', () => {
   describe('Check separator', () => {
     test('`Thousand separator=,` & `Decimal separator=.`', () => {
       useFrontendSettingsStore().update({
+        ...FrontendSettings.parse({}),
         thousandSeparator: ',',
         decimalSeparator: '.'
       });
@@ -261,6 +256,7 @@ describe('AmountDisplay.vue', () => {
 
     test('`Thousand separator=.` & `Decimal separator=,`', () => {
       useFrontendSettingsStore().update({
+        ...FrontendSettings.parse({}),
         thousandSeparator: '.',
         decimalSeparator: ','
       });
@@ -275,6 +271,7 @@ describe('AmountDisplay.vue', () => {
   describe('Check rounding', () => {
     test('`amountRoundingMode=up`', () => {
       useFrontendSettingsStore().update({
+        ...FrontendSettings.parse({}),
         amountRoundingMode: BigNumber.ROUND_UP
       });
 
@@ -284,6 +281,7 @@ describe('AmountDisplay.vue', () => {
 
     test('`amountRoundingMode=down`', () => {
       useFrontendSettingsStore().update({
+        ...FrontendSettings.parse({}),
         amountRoundingMode: BigNumber.ROUND_DOWN
       });
 
@@ -293,6 +291,7 @@ describe('AmountDisplay.vue', () => {
 
     test('`valueRoundingMode=up`', () => {
       useFrontendSettingsStore().update({
+        ...FrontendSettings.parse({}),
         valueRoundingMode: BigNumber.ROUND_UP
       });
 
@@ -304,6 +303,7 @@ describe('AmountDisplay.vue', () => {
 
     test('`valueRoundingMode=down`', () => {
       useFrontendSettingsStore().update({
+        ...FrontendSettings.parse({}),
         valueRoundingMode: BigNumber.ROUND_DOWN
       });
 

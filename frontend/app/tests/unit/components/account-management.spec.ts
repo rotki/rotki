@@ -2,8 +2,7 @@ import { createTestingPinia } from '@pinia/testing';
 import { mount, Wrapper } from '@vue/test-utils';
 import { set } from '@vueuse/core';
 import flushPromises from 'flush-promises/index';
-import { PiniaVuePlugin, setActivePinia, storeToRefs } from 'pinia';
-import Vue from 'vue';
+import { setActivePinia, storeToRefs } from 'pinia';
 import Vuetify from 'vuetify';
 import { VDialog } from 'vuetify/lib/components';
 import AccountManagement from '@/components/AccountManagement.vue';
@@ -13,23 +12,11 @@ import { useAggregatedBalancesStore } from '@/store/balances/aggregated';
 import { useMainStore } from '@/store/main';
 import { useSessionStore } from '@/store/session';
 import { usePremiumStore } from '@/store/session/premium';
-import '../i18n';
 import { bigNumberify } from '@/utils/bignumbers';
 
 vi.mock('@/electron-interop');
 vi.mock('@/services/rotkehlchen-api');
 vi.mock('@/composables/defi');
-vi.mock('vue', async () => {
-  const mod = await vi.importActual<typeof import('vue')>('vue');
-  return {
-    ...mod,
-    useListeners: vi.fn(),
-    useAttrs: vi.fn()
-  };
-});
-
-Vue.use(Vuetify);
-Vue.use(PiniaVuePlugin);
 
 // This is workaround used because stubs is somehow not working,
 // Eager prop will render the <slot /> immediately

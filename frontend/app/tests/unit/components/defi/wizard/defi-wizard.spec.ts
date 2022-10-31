@@ -1,10 +1,8 @@
 import { mount, Wrapper } from '@vue/test-utils';
-import { createPinia, PiniaVuePlugin, setActivePinia } from 'pinia';
-import Vue from 'vue';
+import { createPinia, setActivePinia } from 'pinia';
 import Vuetify from 'vuetify';
 import DefiWizard from '@/components/defi/wizard/DefiWizard.vue';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
-import '../../../i18n';
 import { useSettingsApi } from '@/services/settings/settings-api';
 import { FrontendSettings } from '@/types/frontend-settings';
 
@@ -13,18 +11,6 @@ vi.mock('@/services/settings/settings-api', () => ({
     setSettings: vi.fn()
   })
 }));
-
-vi.mock('vue', async () => {
-  const mod = await vi.importActual<typeof import('vue')>('vue');
-  return {
-    ...mod,
-    useListeners: vi.fn(),
-    useAttrs: vi.fn()
-  };
-});
-
-Vue.use(Vuetify);
-Vue.use(PiniaVuePlugin);
 
 describe('DefiWizard.vue', () => {
   let wrapper: Wrapper<any>;

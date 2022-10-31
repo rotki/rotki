@@ -1,11 +1,9 @@
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { mount, Wrapper } from '@vue/test-utils';
-import { createPinia, Pinia, PiniaVuePlugin, setActivePinia } from 'pinia';
-import Vue from 'vue';
+import { createPinia, Pinia, setActivePinia } from 'pinia';
 import Vuetify from 'vuetify';
 import AccountDisplay from '@/components/display/AccountDisplay.vue';
-import '../../i18n';
 import { useSessionStore } from '@/store/session';
 import { PrivacyMode } from '@/store/session/types';
 import { useSessionSettingsStore } from '@/store/settings/session';
@@ -16,9 +14,6 @@ vi.mock('@/services/rotkehlchen-api', () => ({
   }
 }));
 vi.mock('@/services/websocket/websocket-service');
-
-Vue.use(Vuetify);
-Vue.use(PiniaVuePlugin);
 
 describe('AccountDisplay.vue', () => {
   let wrapper: Wrapper<any>;

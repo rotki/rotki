@@ -1,22 +1,9 @@
 import { mount, Wrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
-import { createPinia, PiniaVuePlugin, setActivePinia } from 'pinia';
-import Vue from 'vue';
+import { createPinia, setActivePinia } from 'pinia';
 import Vuetify from 'vuetify';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import { useSessionStore } from '@/store/session';
-
-vi.mock('vue', async () => {
-  const mod = await vi.importActual<typeof import('vue')>('vue');
-  return {
-    ...mod,
-    useListeners: vi.fn(),
-    useAttrs: vi.fn()
-  };
-});
-
-Vue.use(Vuetify);
-Vue.use(PiniaVuePlugin);
 
 describe('RevealableInput.vue', () => {
   let wrapper: Wrapper<any>;
