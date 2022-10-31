@@ -10,9 +10,10 @@ from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import AssetData, AssetType
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_BAT, A_CRV, A_DAI, A_PICKLE
+from rotkehlchen.constants.assets import A_BAT, A_CRV, A_DAI, A_LUSD, A_PICKLE
 from rotkehlchen.constants.misc import NFT_DIRECTIVE, ONE
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.globaldb.handler import GLOBAL_DB_VERSION, GlobalDBHandler
@@ -988,3 +989,31 @@ def test_general_cache(globaldb):
             key_parts=[GeneralCacheType.CURVE_POOL_TOKENS, '123'],
         )
         assert values_8 == values_1
+
+
+def test_packaged_db_check_for_constant_assets(globaldb):
+    """
+    Check if UnknownAsset is raised for an asset in CONSTANT_ASSETS, the packaged global db
+    is queried to check for it.
+    """
+    # delete one entry in `CONSTANT_ASSETS`
+    with globaldb.conn.write_ctx() as cursor:
+        cursor.execute('DELETE FROM assets WHERE identifier=?;', (A_LUSD.identifier,))
+        assert cursor.rowcount == 1
+    # now resolve the asset and check that no error is raised
+    lusd = A_LUSD.resolve_to_evm_token()
+    assert lusd.asset_type == AssetType.EVM_TOKEN
+    assert lusd.identifier == A_LUSD.identifier
+
+    # delete another asset and try checking its existence
+    with globaldb.conn.write_ctx() as cursor:
+        cursor.execute('DELETE FROM assets WHERE identifier=?;', (A_DAI.identifier, ))  # noqa: E501
+        assert cursor.rowcount == 1
+
+    # now check the asset type is correct and does not raise an error
+    assert A_DAI.is_evm_token() is True
+
+    # check that UnknownAsset is properly raised for an asset that does not
+    # truly exist
+    with pytest.raises(UnknownAsset):
+        Asset('i-dont-exist').resolve()
