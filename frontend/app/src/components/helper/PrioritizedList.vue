@@ -17,10 +17,10 @@
               hide-details
             >
               <template #selection="{ item }">
-                <prioritized-list-entry :data="item" />
+                <prioritized-list-entry :data="itemData(item)" />
               </template>
               <template #item="{ item }">
-                <prioritized-list-entry :data="item" />
+                <prioritized-list-entry :data="itemData(item)" />
               </template>
             </v-autocomplete>
           </v-col>
@@ -28,6 +28,7 @@
             <v-tooltip open-delay="400" top>
               <template #activator="{ on, attrs }">
                 <v-btn
+                  id="add-item-btn"
                   color="primary"
                   v-bind="attrs"
                   icon
@@ -71,6 +72,7 @@
               <div class="flex flex-column pt-3 pb-3">
                 <div>
                   <v-btn
+                    :id="'move-up-' + identifier"
                     icon
                     :disabled="isFirst(identifier)"
                     @click="move(identifier, false)"
@@ -80,6 +82,7 @@
                 </div>
                 <div>
                   <v-btn
+                    :id="'move-down-' + identifier"
                     icon
                     :disabled="isLast(identifier)"
                     @click="move(identifier, true)"
@@ -97,6 +100,7 @@
               <v-tooltip v-if="!disableDelete" open-delay="400" top>
                 <template #activator="{ on, attrs }">
                   <v-btn
+                    :id="'delete-' + identifier"
                     icon
                     v-bind="attrs"
                     v-on="on"
