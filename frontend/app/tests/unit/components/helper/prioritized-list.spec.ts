@@ -5,27 +5,13 @@ import {
   WrapperArray
 } from '@vue/test-utils';
 import { PiniaVuePlugin } from 'pinia';
-import Vue, {ref} from 'vue';
+import { expect } from 'vitest';
+import Vue from 'vue';
 import Vuetify from 'vuetify';
 import PrioritizedList from '@/components/helper/PrioritizedList.vue';
 import PrioritizedListEntry from '@/components/helper/PrioritizedListEntry.vue';
 import { PrioritizedListData } from '@/types/prioritized-list-data';
-import { mockT, mockTc } from '../../i18n';
-import {expect} from "vitest";
-
-vi.mock('vue-i18n-composable', async () => {
-  const mod = await vi.importActual<typeof import('vue-i18n-composable')>(
-    'vue-i18n-composable'
-  );
-
-  return {
-    ...mod,
-    useI18n: () => ({
-      t: mockT,
-      tc: mockTc
-    })
-  };
-});
+import '../../i18n';
 
 Vue.use(Vuetify);
 Vue.use(PiniaVuePlugin);
@@ -78,32 +64,40 @@ describe('PrioritizedList.vue', () => {
   });
 
   test('show "first up" and "last down" buttons disabled', () => {
-    const firstUp =  wrapper.find('#move-up-value1');
+    const firstUp = wrapper.find('#move-up-value1');
     expect(firstUp.element.disabled).toBe(true);
-    const lastDown =  wrapper.find('#move-down-value3');
+    const lastDown = wrapper.find('#move-down-value3');
     expect(lastDown.element.disabled).toBe(true);
   });
 
   test('move entry up', async () => {
-    const button =  wrapper.find('#move-up-value2');
+    const button = wrapper.find('#move-up-value2');
     expect(button.exists()).toBe(true);
     await button.trigger('click');
-    expect(emittedInputEventItems()).toStrictEqual(['value2', 'value1', 'value3'])
+    expect(emittedInputEventItems()).toStrictEqual([
+      'value2',
+      'value1',
+      'value3'
+    ]);
   });
 
   test('move entry down', async () => {
-    const button =  wrapper.find('#move-down-value2');
+    const button = wrapper.find('#move-down-value2');
     expect(button.exists()).toBe(true);
     await button.trigger('click');
-    expect(emittedInputEventItems()).toStrictEqual(['value1', 'value3', 'value2'])
+    expect(emittedInputEventItems()).toStrictEqual([
+      'value1',
+      'value3',
+      'value2'
+    ]);
   });
 
   test('delete entry', async () => {
-    const button =  wrapper.find('#delete-value2');
+    const button = wrapper.find('#delete-value2');
     expect(button.exists()).toBe(true);
     await button.trigger('click');
 
-    expect(emittedInputEventItems()).toStrictEqual(['value1', 'value3'])
+    expect(emittedInputEventItems()).toStrictEqual(['value1', 'value3']);
   });
 
   const entryOrderOf = (
@@ -120,9 +114,9 @@ describe('PrioritizedList.vue', () => {
 
   const emittedInputEventItems = (): string[] => {
     // @ts-ignore
-    expect(wrapper.emitted().input.length).toBe(1)
+    expect(wrapper.emitted().input.length).toBe(1);
     // @ts-ignore
     const emitted = wrapper.emitted().input[0];
-    return emitted[0]
-  }
+    return emitted[0];
+  };
 });
