@@ -84,11 +84,10 @@ class AssetResolver():
             if identifier not in CONSTANT_ASSETS:
                 raise
 
-            log.debug(f'Attempt to resolve asset with {identifier} using the packaged database')
-            asset = GlobalDBHandler().resolve_asset(
+            log.debug(f'Attempt to resolve asset {identifier} using the packaged database')
+            asset = GlobalDBHandler().resolve_asset_from_packaged_and_store(
                 identifier=identifier,
                 form_with_incomplete_data=form_with_incomplete_data,
-                use_packaged_db=True,
             )
         # Save it in the cache
         instance.assets_cache.set(identifier, asset)
@@ -112,12 +111,12 @@ class AssetResolver():
             if identifier not in CONSTANT_ASSETS:
                 raise
 
-            log.debug(f'Attempt to get asset_type for asset with {identifier} using the packaged database')  # noqa: E501
-            asset_type = GlobalDBHandler().get_asset_type(
+            log.debug(f'Attempt to get asset_type for asset {identifier} using the packaged database')  # noqa: E501
+            asset = GlobalDBHandler().resolve_asset_from_packaged_and_store(
                 identifier=identifier,
-                use_packaged_db=True,
+                form_with_incomplete_data=False,
             )
-
+            asset_type = asset.asset_type
         instance.types_cache.set(identifier, asset_type)
         return asset_type
 
@@ -133,15 +132,31 @@ class AssetResolver():
         - WrongAssetType: if the asset is resolved but the class is not the expected one.
         - UnknownAsset: if the asset was not found in the database.
         """
+        from rotkehlchen.constants.assets import CONSTANT_ASSETS  # pylint: disable=import-outside-toplevel  # isort:skip  # noqa: E501
+        from rotkehlchen.globaldb.handler import GlobalDBHandler   # pylint: disable=import-outside-toplevel  # isort:skip  # noqa: E501
+
         resolved_asset = AssetResolver().resolve_asset(
             identifier=identifier,
             form_with_incomplete_data=form_with_incomplete_data,
         )
-        if isinstance(resolved_asset, expected_type) is False:
-            raise WrongAssetType(
+        if isinstance(resolved_asset, expected_type) is True:
+            # resolve_asset returns Asset, but we already narrow type with the if check above
+            return resolved_asset  # type: ignore
+
+        if identifier in CONSTANT_ASSETS:
+            # Check if the version in the packaged globaldb is correct
+            log.debug(f'Attempt to get asset_type for asset with {identifier} using the packaged database')  # noqa: E501
+            resolved_asset = GlobalDBHandler().resolve_asset_from_packaged_and_store(
                 identifier=identifier,
-                expected_type=expected_type,
-                real_type=type(resolved_asset),
+                form_with_incomplete_data=form_with_incomplete_data,
             )
-        # resolve_asset returns Asset but we already narrow type with the if check above
-        return resolved_asset  # type: ignore
+            AssetResolver().assets_cache.set(identifier, resolved_asset)
+            if isinstance(resolved_asset, expected_type) is True:
+                # resolve_asset returns Asset, but we already narrow type with the if check above
+                return resolved_asset  # type: ignore
+
+        raise WrongAssetType(
+            identifier=identifier,
+            expected_type=expected_type,
+            real_type=type(resolved_asset),
+        )
