@@ -354,11 +354,6 @@ export const useExchangeBalancesStore = defineStore(
       set(exchangeBalances, exchanges);
     };
 
-    const reset = () => {
-      set(connectedExchanges, []);
-      set(exchangeBalances, {});
-    };
-
     return {
       exchanges,
       connectedExchanges,
@@ -376,8 +371,7 @@ export const useExchangeBalancesStore = defineStore(
       getBreakdown,
       getLocationBreakdown,
       getByLocationBalances,
-      updatePrices,
-      reset
+      updatePrices
     };
   }
 );

@@ -171,18 +171,13 @@ export const useStatisticsStore = defineStore('statistics', () => {
       };
     });
 
-  const reset = () => {
-    set(netValue, defaultNetValue());
-  };
-
   return {
     netValue,
     totalNetWorth,
     totalNetWorthUsd,
     overall,
     fetchNetValue,
-    getNetValue,
-    reset
+    getNetValue
   };
 });
 

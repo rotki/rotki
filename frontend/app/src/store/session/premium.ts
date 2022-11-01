@@ -50,20 +50,13 @@ export const usePremiumStore = defineStore('session/premium', () => {
     }
   };
 
-  const reset = () => {
-    set(premium, false);
-    set(premiumSync, false);
-    set(componentsReady, false);
-  };
-
   return {
     premium,
     premiumSync,
     componentsReady,
     showComponents,
     setup,
-    deletePremium,
-    reset
+    deletePremium
   };
 });
 

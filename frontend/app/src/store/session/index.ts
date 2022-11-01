@@ -1,5 +1,4 @@
 import { BigNumber } from '@rotki/common';
-import { ActionResult } from '@rotki/common/lib/data';
 import { TimeFramePersist } from '@rotki/common/lib/settings/graphs';
 import { ComputedRef } from 'vue';
 import { useLastLanguage } from '@/composables/session/language';
@@ -9,7 +8,6 @@ import { EXTERNAL_EXCHANGES } from '@/data/defaults';
 import { interop, useInterop } from '@/electron-interop';
 import { useExchangeApi } from '@/services/balances/exchanges';
 import { SupportedExternalExchanges } from '@/services/balances/types';
-import { api } from '@/services/rotkehlchen-api';
 import {
   ALL_CENTRALIZED_EXCHANGES,
   ALL_DECENTRALIZED_EXCHANGES,
@@ -29,11 +27,7 @@ import { useMessageStore } from '@/store/message';
 import { useMonitorStore } from '@/store/monitor';
 import { usePremiumStore } from '@/store/session/premium';
 import { useTagStore } from '@/store/session/tags';
-import {
-  ChangePasswordPayload,
-  NftResponse,
-  SyncConflict
-} from '@/store/session/types';
+import { ChangePasswordPayload, SyncConflict } from '@/store/session/types';
 import { useWatchersStore } from '@/store/session/watchers';
 import { useAccountingSettingsStore } from '@/store/settings/accounting';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
@@ -41,7 +35,6 @@ import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { useStakingStore } from '@/store/staking';
 import { useStatisticsStore } from '@/store/statistics';
-import { useTasks } from '@/store/tasks';
 import { ActionStatus } from '@/store/types';
 import {
   Exchange,
@@ -57,8 +50,6 @@ import {
 } from '@/types/login';
 import { Module } from '@/types/modules';
 import { Section, Status } from '@/types/status';
-import { TaskMeta } from '@/types/task';
-import { TaskType } from '@/types/task-type';
 import { UserSettingsModel } from '@/types/user';
 import { startPromise } from '@/utils';
 import { lastLogin } from '@/utils/account-management';
@@ -83,7 +74,6 @@ export const useSessionStore = defineStore('session', () => {
   const exchangeApi = useExchangeApi();
 
   const { setMessage } = useMessageStore();
-  const { awaitTask } = useTasks();
   const { fetchWatchers } = useWatchersStore();
   const { premium, premiumSync } = storeToRefs(usePremiumStore());
   const { fetchTags } = useTagStore();
@@ -234,16 +224,12 @@ export const useSessionStore = defineStore('session', () => {
     }
   };
 
-  async function cleanup() {
-    stop();
-    reset();
-  }
-
   const logout = async () => {
     interop.resetTray();
     try {
       await usersApi.logout(get(username));
-      await cleanup();
+      stop();
+      set(logged, false);
     } catch (e: any) {
       setMessage({
         title: 'Logout failed',
@@ -312,32 +298,6 @@ export const useSessionStore = defineStore('session', () => {
     }
   };
 
-  const fetchNfts = async (
-    ignoreCache: boolean
-  ): Promise<ActionResult<NftResponse | null>> => {
-    try {
-      const taskType = TaskType.FETCH_NFTS;
-      const { taskId } = await api.fetchNfts(ignoreCache);
-      const { result } = await awaitTask<NftResponse, TaskMeta>(
-        taskId,
-        taskType,
-        {
-          title: t('actions.session.fetch_nfts.task.title').toString(),
-          numericKeys: []
-        }
-      );
-      return {
-        result: NftResponse.parse(result),
-        message: ''
-      };
-    } catch (e: any) {
-      return {
-        result: null,
-        message: e.message
-      };
-    }
-  };
-
   const purgeCache = async (purgeable: Purgeable) => {
     const { purgeExchange } = usePurgeStore();
     const { resetState } = useDefiStore();
@@ -374,16 +334,6 @@ export const useSessionStore = defineStore('session', () => {
       : get(language);
   });
 
-  const reset = () => {
-    set(newAccount, false);
-    set(logged, false);
-    set(loginComplete, false);
-    set(username, '');
-    set(syncConflict, defaultSyncConflict());
-    set(showUpdatePopup, false);
-    set(darkModeEnabled, false);
-  };
-
   return {
     adaptiveLanguage,
     newAccount,
@@ -399,9 +349,7 @@ export const useSessionStore = defineStore('session', () => {
     createAccount,
     changePassword,
     checkForUpdate,
-    purgeCache,
-    fetchNfts, //TODO Move it, this does not feel like the right place
-    reset
+    purgeCache
   };
 });
 

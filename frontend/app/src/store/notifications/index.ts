@@ -164,10 +164,6 @@ export const useNotifications = defineStore('notifications', () => {
     }
   };
 
-  const reset = () => {
-    set(data, []);
-  };
-
   return {
     data,
     count,
@@ -176,7 +172,6 @@ export const useNotifications = defineStore('notifications', () => {
     notify,
     displayed,
     remove,
-    consume,
-    reset
+    consume
   };
 });

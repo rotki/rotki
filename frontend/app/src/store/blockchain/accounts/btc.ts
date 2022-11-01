@@ -75,18 +75,12 @@ export const useBtcAccountsStore = defineStore(
       set(bch, removeBtcTags(bch, tag));
     };
 
-    const reset = () => {
-      set(btc, defaultAccountState());
-      set(bch, defaultAccountState());
-    };
-
     return {
       btc,
       bch,
       deleteXpub,
       removeTag,
-      update,
-      reset
+      update
     };
   }
 );

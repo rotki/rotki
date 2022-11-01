@@ -27,19 +27,12 @@ export const useChainsAccountsStore = defineStore(
       }
     };
 
-    const reset = () => {
-      set(ksm, []);
-      set(dot, []);
-      set(avax, []);
-    };
-
     return {
       ksm,
       dot,
       avax,
       update,
-      removeTag,
-      reset
+      removeTag
     };
   }
 );

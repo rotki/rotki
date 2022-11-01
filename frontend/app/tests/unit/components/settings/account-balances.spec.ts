@@ -1,5 +1,5 @@
 import { mount, Wrapper } from '@vue/test-utils';
-import { createPinia, setActivePinia } from 'pinia';
+import { setActivePinia } from 'pinia';
 import Vuetify from 'vuetify';
 import AccountBalances from '@/components/accounts/AccountBalances.vue';
 import { useSessionStore } from '@/store/session';
@@ -7,13 +7,14 @@ import { useStatusStore } from '@/store/status';
 import { useTasks } from '@/store/tasks';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
+import createCustomPinia from '../../utils/create-pinia';
 
 describe('AccountBalances.vue', () => {
   let wrapper: Wrapper<any>;
 
   beforeEach(() => {
     const vuetify = new Vuetify();
-    const pinia = createPinia();
+    const pinia = createCustomPinia();
     setActivePinia(pinia);
     wrapper = mount(AccountBalances, {
       vuetify,
@@ -27,7 +28,7 @@ describe('AccountBalances.vue', () => {
   });
 
   afterEach(() => {
-    useSessionStore().reset();
+    useSessionStore().$reset();
   });
 
   test('table enters into loading state when balances load', async () => {

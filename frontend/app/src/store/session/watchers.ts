@@ -52,18 +52,13 @@ export const useWatchersStore = defineStore('session/watchers', () => {
     set(watchers, await api.editWatcher(editedWatchers));
   };
 
-  const reset = () => {
-    set(watchers, []);
-  };
-
   return {
     watchers,
     loanWatchers,
     fetchWatchers,
     addWatchers,
     editWatchers,
-    deleteWatchers,
-    reset
+    deleteWatchers
   };
 });
 

@@ -59,16 +59,11 @@ export const useQueriedAddressesStore = defineStore(
       }
     }
 
-    const reset = () => {
-      set(queriedAddresses, {});
-    };
-
     return {
       queriedAddresses,
       addQueriedAddress,
       deleteQueriedAddress,
-      fetchQueriedAddresses,
-      reset
+      fetchQueriedAddresses
     };
   }
 );

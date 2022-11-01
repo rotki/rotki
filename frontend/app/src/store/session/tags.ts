@@ -69,10 +69,6 @@ export const useTagStore = defineStore('session/tags', () => {
     }
   };
 
-  const reset = () => {
-    set(allTags, {});
-  };
-
   return {
     allTags,
     tags,
@@ -80,8 +76,7 @@ export const useTagStore = defineStore('session/tags', () => {
     fetchTags,
     addTag,
     editTag,
-    deleteTag,
-    reset
+    deleteTag
   };
 });
 

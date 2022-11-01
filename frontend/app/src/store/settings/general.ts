@@ -70,10 +70,6 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
     Object.assign(settings, generalSettings);
   };
 
-  const reset = (): void => {
-    update(defaultGeneralSettings(get(defaultCurrency)));
-  };
-
   return {
     floatingPrecision,
     submitUsageAnalytics,
@@ -91,8 +87,7 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
     ssf0graphMultiplier,
     nonSyncingExchanges,
     treatEth2AsEth,
-    update,
-    reset
+    update
   };
 });
 

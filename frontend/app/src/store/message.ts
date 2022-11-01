@@ -27,15 +27,10 @@ export const useMessageStore = defineStore('message', () => {
     });
   };
 
-  const reset = () => {
-    set(message, emptyMessage());
-  };
-
   return {
     message,
     showMessage,
-    setMessage,
-    reset
+    setMessage
   };
 });
 

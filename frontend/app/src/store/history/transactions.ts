@@ -300,13 +300,6 @@ export const useTransactions = defineStore('history/transactions', () => {
   const getNotesAddresses = (transactions: EthTransactionEntry[]): string[] =>
     filterAddressesFromWords(getTransactionsNotesWords(transactions));
 
-  const reset = () => {
-    set(transactions, defaultCollectionState<EthTransactionEntry>());
-    set(fetchedTxHashesEvents, {});
-    set(transactionsPayload, defaultHistoricPayloadState<EthTransaction>());
-    set(counterparties, []);
-  };
-
   const fetchCounterparties = async () => {
     const result = await api.history.fetchAvailableCounterparties();
 
@@ -323,8 +316,7 @@ export const useTransactions = defineStore('history/transactions', () => {
     addTransactionEvent,
     editTransactionEvent,
     deleteTransactionEvent,
-    fetchCounterparties,
-    reset
+    fetchCounterparties
   };
 });
 

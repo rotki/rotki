@@ -222,11 +222,6 @@ export const useTrades = defineStore('history/trades', () => {
     return { success, message };
   };
 
-  const reset = () => {
-    set(trades, defaultCollectionState<TradeEntry>());
-    set(tradesPayload, defaultHistoricPayloadState<Trade>());
-  };
-
   return {
     trades,
     tradesPayload,
@@ -234,8 +229,7 @@ export const useTrades = defineStore('history/trades', () => {
     fetchTrades,
     addExternalTrade,
     editExternalTrade,
-    deleteExternalTrade,
-    reset
+    deleteExternalTrade
   };
 });
 

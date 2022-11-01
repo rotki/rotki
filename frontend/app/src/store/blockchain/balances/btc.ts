@@ -56,19 +56,12 @@ export const useBtcBalancesStore = defineStore('balances/btc', () => {
     set(balances, updateBtcPrices(balances, prices));
   };
 
-  const reset = () => {
-    set(balances, defaultBalances());
-    set(totals, defaultTotals());
-    set(liabilities, defaultTotals());
-  };
-
   return {
     balances,
     totals,
     liabilities,
     update,
-    updatePrices,
-    reset
+    updatePrices
   };
 });
 

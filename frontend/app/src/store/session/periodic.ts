@@ -52,17 +52,11 @@ export const usePeriodicStore = defineStore('session/periodic', () => {
     }
   };
 
-  const reset = () => {
-    set(lastBalanceSave, 0);
-    set(lastDataUpload, 0);
-    set(connectedEthNodes, []);
-  };
   return {
     lastBalanceSave,
     lastDataUpload,
     connectedEthNodes,
-    check,
-    reset
+    check
   };
 });
 

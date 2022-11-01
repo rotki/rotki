@@ -1,7 +1,7 @@
 import { BigNumber } from '@rotki/common';
 import { mount, Wrapper } from '@vue/test-utils';
 import { set } from '@vueuse/core';
-import { createPinia, Pinia, setActivePinia, storeToRefs } from 'pinia';
+import { Pinia, setActivePinia, storeToRefs } from 'pinia';
 import Vuetify from 'vuetify';
 import { VTooltip } from 'vuetify/lib/components';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
@@ -16,6 +16,7 @@ import { CurrencyLocation } from '@/types/currency-location';
 import { FrontendSettings } from '@/types/frontend-settings';
 import { bigNumberify } from '@/utils/bignumbers';
 import '@/filters';
+import createCustomPinia from '../../utils/create-pinia';
 
 // This is workaround used because stubs is somehow not working,
 // Eager prop will render the <slot /> immediately
@@ -50,7 +51,7 @@ describe('AmountDisplay.vue', () => {
   };
 
   beforeEach(async () => {
-    pinia = createPinia();
+    pinia = createCustomPinia();
     setActivePinia(pinia);
     document.body.setAttribute('data-app', 'true');
     const store = useGeneralSettingsStore();
@@ -68,7 +69,7 @@ describe('AmountDisplay.vue', () => {
   });
 
   afterEach(() => {
-    useSessionStore().reset();
+    useSessionStore().$reset();
   });
 
   describe('Common case', () => {

@@ -204,17 +204,11 @@ export const useAssetMovements = defineStore('history/assetMovements', () => {
     }
   };
 
-  const reset = () => {
-    set(assetMovements, defaultCollectionState<AssetMovementEntry>());
-    set(assetMovementsPayload, defaultHistoricPayloadState<AssetMovement>());
-  };
-
   return {
     assetMovements,
     assetMovementsPayload,
     updateAssetMovementsPayload,
-    fetchAssetMovements,
-    reset
+    fetchAssetMovements
   };
 });
 

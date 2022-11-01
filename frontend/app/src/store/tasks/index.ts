@@ -236,11 +236,6 @@ export const useTasks = defineStore('tasks', () => {
     isRunning = false;
   };
 
-  const reset = () => {
-    set(tasks, {});
-    set(locked, []);
-  };
-
   return {
     tasks: taskList,
     taskById: tasks,
@@ -254,8 +249,7 @@ export const useTasks = defineStore('tasks', () => {
     metadata,
     addTask,
     awaitTask,
-    monitor,
-    reset
+    monitor
   };
 });
 

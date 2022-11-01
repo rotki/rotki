@@ -1,12 +1,13 @@
 import { mount, Wrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
-import { createPinia, Pinia, setActivePinia } from 'pinia';
+import { Pinia, setActivePinia } from 'pinia';
 import Vuetify from 'vuetify';
 import ExternalServices from '@/components/settings/api-keys/ExternalServices.vue';
 import { useExternalServicesApi } from '@/services/settings/external-services-api';
 import { useMessageStore } from '@/store/message';
 import { useSessionStore } from '@/store/session';
 import { ExternalServiceKeys } from '@/types/user';
+import createCustomPinia from '../../../utils/create-pinia';
 
 vi.mock('@/services/settings/external-services-api', () => ({
   useExternalServicesApi: vi.fn().mockReturnValue({
@@ -44,13 +45,13 @@ describe('ExternalServices.vue', () => {
 
   beforeEach(() => {
     document.body.setAttribute('data-app', 'true');
-    pinia = createPinia();
+    pinia = createCustomPinia();
     setActivePinia(pinia);
     api = useExternalServicesApi();
   });
 
   afterEach(() => {
-    useSessionStore().reset();
+    useSessionStore().$reset();
   });
 
   describe('first time', () => {

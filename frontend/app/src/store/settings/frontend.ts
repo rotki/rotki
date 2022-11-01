@@ -143,10 +143,6 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
 
   const { lastLanguage, forceUpdateMachineLanguage } = useLastLanguage();
 
-  const reset = () => {
-    update(FrontendSettings.parse({}));
-  };
-
   const checkMachineLanguage = () => {
     if (get(forceUpdateMachineLanguage) === 'true') {
       set(lastLanguage, get(language));
@@ -187,8 +183,7 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
     versionUpdateCheckFrequency,
     enableEthNames,
     updateSetting,
-    update,
-    reset
+    update
   };
 });
 

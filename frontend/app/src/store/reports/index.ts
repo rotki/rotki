@@ -312,15 +312,6 @@ export const useReports = defineStore('reports', () => {
     set(report, defaultReport());
   };
 
-  const reset = () => {
-    set(report, defaultReport());
-    set(reports, defaultReports());
-    set(loaded, false);
-    set(accountingSettings, null);
-    set(reportProgress, defaultProgress());
-    set(reportError, emptyError());
-  };
-
   return {
     reports,
     report,
@@ -338,8 +329,7 @@ export const useReports = defineStore('reports', () => {
     fetchReports,
     clearReport,
     clearError,
-    isLatestReport,
-    reset
+    isLatestReport
   };
 });
 
