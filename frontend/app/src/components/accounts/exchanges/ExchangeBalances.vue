@@ -164,7 +164,7 @@ const exchangeBalance = (exchange: SupportedExchange): BigNumber => {
 
 const openExchangeDetails = async () => {
   await router.push({
-    path: `${Routes.ACCOUNTS_BALANCES_EXCHANGE.route}/${get(selectedExchange)}`
+    path: `${Routes.ACCOUNTS_BALANCES_EXCHANGE}/${get(selectedExchange)}`
   });
 };
 

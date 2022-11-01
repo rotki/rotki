@@ -51,7 +51,7 @@ import { Purgeable } from '@/services/session/types';
 import { BaseMessage } from '@/types/messages';
 import { SUPPORTED_MODULES } from '@/types/modules';
 import { PurgeParams } from '@/types/purge';
-import { tradeLocations } from '@/types/trades';
+import { useTradeLocations } from '@/types/trades';
 
 defineProps({
   value: { required: true, type: String as PropType<Purgeable> },
@@ -72,9 +72,10 @@ const input = (value: Purgeable) => emit('input', value);
 const purge = (payload: PurgeParams) => emit('purge', payload);
 
 const { tc } = useI18n();
+const { tradeLocations } = useTradeLocations();
 
 const text = (source: Purgeable) => {
-  const location = tradeLocations.find(
+  const location = get(tradeLocations).find(
     ({ identifier }) => identifier === source
   );
   if (location) {

@@ -23,7 +23,7 @@ import { ComputedRef, PropType } from 'vue';
 import ListItem from '@/components/helper/ListItem.vue';
 import NavigatorLink from '@/components/helper/NavigatorLink.vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
-import { setupLocationInfo } from '@/composables/balances';
+import { useLocationInfo } from '@/composables/balances';
 import { Routes } from '@/router/routes';
 import { TradeLocation } from '@/types/history/trade-location';
 import { TradeLocationData } from '@/types/trades';
@@ -38,7 +38,7 @@ const props = defineProps({
 
 const { identifier, detailPath } = toRefs(props);
 
-const { getLocation } = setupLocationInfo();
+const { getLocation } = useLocationInfo();
 
 const location: ComputedRef<TradeLocationData> = computed(() =>
   getLocation(get(identifier))
@@ -51,10 +51,7 @@ const route = computed<{ path: string }>(() => {
   if (path) return { path };
 
   return {
-    path: Routes.LOCATIONS.route.replace(
-      ':identifier',
-      get(location).identifier
-    )
+    path: Routes.LOCATIONS.replace(':identifier', get(location).identifier)
   };
 });
 </script>

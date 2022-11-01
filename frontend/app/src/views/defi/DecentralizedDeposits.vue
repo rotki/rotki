@@ -3,13 +3,15 @@
 </template>
 
 <script setup lang="ts">
+import { ComputedRef } from 'vue';
 import TabNavigation from '@/components/helper/TabNavigation.vue';
-import { routesRef } from '@/router/routes';
+import { useAppRoutes } from '@/router/routes';
 import { TabContent } from '@/types/tabs';
 
-const Routes = get(routesRef);
-const tabs: TabContent[] = [
-  Routes.DEFI_DEPOSITS_PROTOCOLS,
-  Routes.DEFI_DEPOSITS_LIQUIDITY
-];
+const { appRoutes } = useAppRoutes();
+
+const tabs: ComputedRef<TabContent[]> = computed(() => {
+  const Routes = get(appRoutes);
+  return [Routes.DEFI_DEPOSITS_PROTOCOLS, Routes.DEFI_DEPOSITS_LIQUIDITY];
+});
 </script>

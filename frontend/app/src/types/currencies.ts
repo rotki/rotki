@@ -1,4 +1,4 @@
-import i18n from '@/i18n';
+import { ComputedRef } from 'vue';
 
 export class Currency {
   constructor(
@@ -60,38 +60,51 @@ const SUPPORTED_CURRENCIES = [
 
 export type SupportedCurrency = typeof SUPPORTED_CURRENCIES[number];
 
-export const currencies: Currency[] = [
-  new Currency(i18n.t('currencies.usd').toString(), CURRENCY_USD, '$'),
-  new Currency(i18n.t('currencies.eur').toString(), CURRENCY_EUR, '€'),
-  new Currency(i18n.t('currencies.gbp').toString(), CURRENCY_GBP, '£'),
-  new Currency(i18n.t('currencies.jpy').toString(), CURRENCY_JPY, '¥'),
-  new Currency(i18n.t('currencies.cny').toString(), CURRENCY_CNY, '¥'),
-  new Currency(i18n.t('currencies.krw').toString(), CURRENCY_KRW, '₩'),
-  new Currency(i18n.t('currencies.cad').toString(), CURRENCY_CAD, '$'),
-  new Currency(i18n.t('currencies.aud').toString(), CURRENCY_AUD, '$'),
-  new Currency(i18n.t('currencies.nzd').toString(), CURRENCY_NZD, '$'),
-  new Currency(i18n.t('currencies.brl').toString(), CURRENCY_BRL, 'R$'),
-  new Currency(i18n.t('currencies.rub').toString(), CURRENCY_RUB, '₽'),
-  new Currency(i18n.t('currencies.zar').toString(), CURRENCY_ZAR, 'R'),
-  new Currency(i18n.t('currencies.try').toString(), CURRENCY_TRY, '₺'),
-  new Currency(i18n.t('currencies.chf').toString(), CURRENCY_CHF, 'Fr.'),
-  new Currency(i18n.t('currencies.sgd').toString(), CURRENCY_SGD, 'S$'),
-  new Currency(i18n.t('currencies.sek').toString(), CURRENCY_SEK, 'kr'),
-  new Currency(i18n.t('currencies.twd').toString(), CURRENCY_TWD, 'NT$'),
-  new Currency(i18n.t('currencies.nok').toString(), CURRENCY_NOK, 'kr'),
-  new Currency(i18n.t('currencies.inr').toString(), CURRENCY_INR, '₹'),
-  new Currency(i18n.t('currencies.dkk').toString(), CURRENCY_DKK, 'kr'),
-  new Currency(i18n.t('currencies.pln').toString(), CURRENCY_PLN, 'zł'),
-  new Currency('Bitcoin', CURRENCY_BTC, '₿'),
-  new Currency('Ether', CURRENCY_ETH, 'Ξ')
-];
+export const useCurrencies = createSharedComposable(() => {
+  const { tc } = useI18n();
+  const currencies: ComputedRef<Currency[]> = computed(() => [
+    new Currency(tc('currencies.usd'), CURRENCY_USD, '$'),
+    new Currency(tc('currencies.eur'), CURRENCY_EUR, '€'),
+    new Currency(tc('currencies.gbp'), CURRENCY_GBP, '£'),
+    new Currency(tc('currencies.jpy'), CURRENCY_JPY, '¥'),
+    new Currency(tc('currencies.cny'), CURRENCY_CNY, '¥'),
+    new Currency(tc('currencies.krw'), CURRENCY_KRW, '₩'),
+    new Currency(tc('currencies.cad'), CURRENCY_CAD, '$'),
+    new Currency(tc('currencies.aud'), CURRENCY_AUD, '$'),
+    new Currency(tc('currencies.nzd'), CURRENCY_NZD, '$'),
+    new Currency(tc('currencies.brl'), CURRENCY_BRL, 'R$'),
+    new Currency(tc('currencies.rub'), CURRENCY_RUB, '₽'),
+    new Currency(tc('currencies.zar'), CURRENCY_ZAR, 'R'),
+    new Currency(tc('currencies.try'), CURRENCY_TRY, '₺'),
+    new Currency(tc('currencies.chf'), CURRENCY_CHF, 'Fr.'),
+    new Currency(tc('currencies.sgd'), CURRENCY_SGD, 'S$'),
+    new Currency(tc('currencies.sek'), CURRENCY_SEK, 'kr'),
+    new Currency(tc('currencies.twd'), CURRENCY_TWD, 'NT$'),
+    new Currency(tc('currencies.nok'), CURRENCY_NOK, 'kr'),
+    new Currency(tc('currencies.inr'), CURRENCY_INR, '₹'),
+    new Currency(tc('currencies.dkk'), CURRENCY_DKK, 'kr'),
+    new Currency(tc('currencies.pln'), CURRENCY_PLN, 'zł'),
+    new Currency('Bitcoin', CURRENCY_BTC, '₿'),
+    new Currency('Ether', CURRENCY_ETH, 'Ξ')
+  ]);
 
-export const findCurrency = (currencySymbol: string) => {
-  const currency: Currency | undefined = currencies.find(
-    currency => currency.tickerSymbol === currencySymbol
-  );
-  if (!currency) {
-    throw new Error(`Could not find ${currencySymbol}`);
-  }
-  return currency;
-};
+  const defaultCurrency: ComputedRef<Currency> = computed(() => {
+    return get(currencies)[0];
+  });
+
+  const findCurrency = (currencySymbol: string) => {
+    const currency: Currency | undefined = get(currencies).find(
+      currency => currency.tickerSymbol === currencySymbol
+    );
+    if (!currency) {
+      throw new Error(`Could not find ${currencySymbol}`);
+    }
+    return currency;
+  };
+
+  return {
+    currencies,
+    defaultCurrency,
+    findCurrency
+  };
+});

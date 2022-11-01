@@ -1,22 +1,8 @@
 import { mount, Wrapper } from '@vue/test-utils';
-import { createPinia, PiniaVuePlugin, setActivePinia } from 'pinia';
-import Vue from 'vue';
+import { createPinia, setActivePinia } from 'pinia';
 import Vuetify from 'vuetify';
 import AssetBalances from '@/components/AssetBalances.vue';
 import { useSessionStore } from '@/store/session';
-import '../../i18n';
-
-vi.mock('vue', async () => {
-  const mod = await vi.importActual<typeof import('vue')>('vue');
-  return {
-    ...mod,
-    useListeners: vi.fn(),
-    useAttrs: vi.fn()
-  };
-});
-
-Vue.use(Vuetify);
-Vue.use(PiniaVuePlugin);
 
 describe('AssetBalances.vue', () => {
   let wrapper: Wrapper<any>;

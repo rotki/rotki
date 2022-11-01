@@ -27,7 +27,7 @@
 import { BigNumber } from '@rotki/common';
 import { PropType } from 'vue';
 import { SupportedExchange } from '@/types/exchanges';
-import { exchangeName } from '@/types/trades';
+import { useTradeLocations } from '@/types/trades';
 
 const props = defineProps({
   balance: { required: true, type: BigNumber },
@@ -35,9 +35,10 @@ const props = defineProps({
 });
 
 const { exchange } = toRefs(props);
+const { exchangeName } = useTradeLocations();
 
 const name = computed<string>(() => {
   if (!get(exchange)) return '';
-  return exchangeName(get(exchange));
+  return exchangeName(exchange);
 });
 </script>

@@ -60,7 +60,7 @@
 <script setup lang="ts">
 import UserNotesList from '@/components/UserNotesList.vue';
 import { useRoute } from '@/composables/router';
-import { routesRef } from '@/router/routes';
+import { useAppRoutes } from '@/router/routes';
 
 const { t } = useI18n();
 
@@ -90,8 +90,10 @@ const location = computed<string>(() => {
   return noteLocation;
 });
 
-const Routes = get(routesRef);
+const { appRoutes } = useAppRoutes();
+
 const locationName = computed<string>(() => {
+  const Routes = get(appRoutes);
   // @ts-ignore
   return Routes[get(location)]?.text ?? '';
 });

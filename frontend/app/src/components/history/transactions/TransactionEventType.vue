@@ -57,7 +57,7 @@ import { PropType } from 'vue';
 import { useTheme } from '@/composables/common';
 import { EthTransactionEventEntry } from '@/store/history/types';
 import { ActionDataEntry } from '@/store/types';
-import { getEventCounterpartyData, getEventTypeData } from '@/utils/history';
+import { getEventCounterpartyData, useEventTypeData } from '@/utils/history';
 
 const props = defineProps({
   event: {
@@ -69,6 +69,7 @@ const props = defineProps({
 const { event } = toRefs(props);
 
 const { dark } = useTheme();
+const { getEventTypeData } = useEventTypeData();
 
 const attrs = computed<ActionDataEntry>(() => {
   return getEventTypeData(get(event));

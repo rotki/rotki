@@ -104,7 +104,7 @@ import { Section } from '@/types/status';
 import { TableColumn } from '@/types/table-column';
 import { calculatePercentage } from '@/utils/calculation';
 
-const nonFungibleRoute = Routes.ACCOUNTS_BALANCES_NON_FUNGIBLE.route;
+const nonFungibleRoute = Routes.ACCOUNTS_BALANCES_NON_FUNGIBLE;
 
 const statistics = useStatisticsStore();
 const { totalNetWorthUsd } = storeToRefs(statistics);

@@ -97,7 +97,7 @@ const loading = computed<boolean>(() => {
   return get(total).loading;
 });
 
-const balanceBlockchainRoute = Routes.ACCOUNTS_BALANCES_BLOCKCHAIN.route;
+const balanceBlockchainRoute = Routes.ACCOUNTS_BALANCES_BLOCKCHAIN;
 </script>
 <style scoped lang="scss">
 .blockchain-balance-box {

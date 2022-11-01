@@ -53,7 +53,7 @@
 <script setup lang="ts">
 import { PropType, useListeners } from 'vue';
 import { DataTableHeader } from 'vuetify';
-import { footerProps } from '@/config/datatable.common';
+import { useFooterProps } from '@/config/datatable.common';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const props = defineProps({
@@ -76,6 +76,7 @@ const { itemsPerPage } = storeToRefs(frontendSettingsStore);
 const { container } = toRefs(props);
 
 const tableRef = ref<any>(null);
+const { footerProps } = useFooterProps();
 
 const onItemsPerPageChange = async (newValue: number) => {
   if (get(itemsPerPage) === newValue) return;

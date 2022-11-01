@@ -3,16 +3,20 @@
 </template>
 
 <script setup lang="ts">
+import { ComputedRef } from 'vue';
 import TabNavigation from '@/components/helper/TabNavigation.vue';
-import { routesRef } from '@/router/routes';
+import { useAppRoutes } from '@/router/routes';
 import { TabContent } from '@/types/tabs';
 
-const Routes = get(routesRef);
+const { appRoutes } = useAppRoutes();
 
-const tabs: TabContent[] = [
-  Routes.ACCOUNTS_BALANCES_BLOCKCHAIN,
-  Routes.ACCOUNTS_BALANCES_EXCHANGE,
-  Routes.ACCOUNTS_BALANCES_MANUAL,
-  Routes.ACCOUNTS_BALANCES_NON_FUNGIBLE
-];
+const tabs: ComputedRef<TabContent[]> = computed(() => {
+  const Routes = get(appRoutes);
+  return [
+    Routes.ACCOUNTS_BALANCES_BLOCKCHAIN,
+    Routes.ACCOUNTS_BALANCES_EXCHANGE,
+    Routes.ACCOUNTS_BALANCES_MANUAL,
+    Routes.ACCOUNTS_BALANCES_NON_FUNGIBLE
+  ];
+});
 </script>

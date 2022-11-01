@@ -1,16 +1,11 @@
 import { mount, ThisTypedMountOptions, Wrapper } from '@vue/test-utils';
-import { createPinia, PiniaVuePlugin, setActivePinia } from 'pinia';
-import Vue from 'vue';
+import { createPinia, setActivePinia } from 'pinia';
 import Vuetify from 'vuetify';
 import TabNavigation from '@/components/helper/TabNavigation.vue';
 import { getClass } from '@/types/tabs';
 
-Vue.use(Vuetify);
-Vue.use(PiniaVuePlugin);
-
 describe('TabNavigation.vue', () => {
   let wrapper: Wrapper<any>;
-  let nav: any;
   const data = [{ name: 'tab', routeTo: '/route/to/tab', hidden: true }];
 
   function createWrapper(options: ThisTypedMountOptions<any> = {}) {
@@ -31,7 +26,6 @@ describe('TabNavigation.vue', () => {
       },
       mocks: { $route: { path: '/dashboard/info/' } }
     });
-    nav = wrapper.vm as any;
   });
 
   test('gets proper class out of path', async () => {

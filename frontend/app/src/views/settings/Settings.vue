@@ -3,16 +3,20 @@
 </template>
 
 <script setup lang="ts">
+import { ComputedRef } from 'vue';
 import TabNavigation from '@/components/helper/TabNavigation.vue';
-import { routesRef } from '@/router/routes';
+import { useAppRoutes } from '@/router/routes';
 import { TabContent } from '@/types/tabs';
 
-const Routes = get(routesRef);
+const { appRoutes } = useAppRoutes();
 
-const tabs: TabContent[] = [
-  Routes.SETTINGS_GENERAL,
-  Routes.SETTINGS_ACCOUNTING,
-  Routes.SETTINGS_DATA_SECURITY,
-  Routes.SETTINGS_MODULES
-];
+const tabs: ComputedRef<TabContent[]> = computed(() => {
+  const Routes = get(appRoutes);
+  return [
+    Routes.SETTINGS_GENERAL,
+    Routes.SETTINGS_ACCOUNTING,
+    Routes.SETTINGS_DATA_SECURITY,
+    Routes.SETTINGS_MODULES
+  ];
+});
 </script>

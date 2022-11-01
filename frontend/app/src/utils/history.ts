@@ -1,8 +1,7 @@
 import makeBlockie from 'ethereum-blockies-base64';
-import i18n from '@/i18n';
 import {
   transactionEventProtocolData,
-  transactionEventTypeData,
+  useTransactionEventTypeData,
   transactionEventTypeMapping
 } from '@/store/history/consts';
 import { EthTransactionEventEntry } from '@/store/history/types';
@@ -26,33 +25,41 @@ export const getEventType = (event: {
   return subTypes?.[eventSubtype || HistoryEventSubType.NONE] ?? undefined;
 };
 
-export const getEventTypeData = (
-  event: {
-    eventType?: string | null;
-    eventSubtype?: string | null;
-  },
-  showFallbackLabel: boolean = true
-): ActionDataEntry => {
-  const type = getEventType(event);
+export const useEventTypeData = createSharedComposable(() => {
+  const { tc } = useI18n();
+  const { transactionEventTypeData } = useTransactionEventTypeData();
+  const getEventTypeData = (
+    event: {
+      eventType?: string | null;
+      eventSubtype?: string | null;
+    },
+    showFallbackLabel: boolean = true
+  ): ActionDataEntry => {
+    const type = getEventType(event);
 
-  if (type) {
-    return get(transactionEventTypeData).find((data: ActionDataEntry) => {
-      return data.identifier.toLowerCase() === type.toLowerCase();
-    })!;
-  }
+    if (type) {
+      return get(transactionEventTypeData).find((data: ActionDataEntry) => {
+        return data.identifier.toLowerCase() === type.toLowerCase();
+      })!;
+    }
 
-  const unknownLabel = i18n.t('transactions.events.type.unknown').toString();
-  const label = showFallbackLabel
-    ? event.eventSubtype || event.eventType || unknownLabel
-    : unknownLabel;
+    const unknownLabel = tc('transactions.events.type.unknown');
+    const label = showFallbackLabel
+      ? event.eventSubtype || event.eventType || unknownLabel
+      : unknownLabel;
+
+    return {
+      identifier: '',
+      label,
+      icon: 'mdi-help',
+      color: 'red'
+    };
+  };
 
   return {
-    identifier: '',
-    label,
-    icon: 'mdi-help',
-    color: 'red'
+    getEventTypeData
   };
-};
+});
 
 export const getEventCounterpartyData = (
   event: EthTransactionEventEntry

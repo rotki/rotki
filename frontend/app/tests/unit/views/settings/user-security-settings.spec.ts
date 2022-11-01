@@ -1,25 +1,15 @@
 import { mount, Wrapper } from '@vue/test-utils';
 import { set } from '@vueuse/core';
-import {
-  createPinia,
-  PiniaVuePlugin,
-  setActivePinia,
-  storeToRefs
-} from 'pinia';
-import Vue from 'vue';
+import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import Vuetify from 'vuetify';
 import { usePremiumStore } from '@/store/session/premium';
 import UserSecuritySettings from '@/views/settings/UserSecuritySettings.vue';
-import '../../i18n';
 
 vi.mock('@/services/backup', () => ({
   useBackupApi: () => ({
     info: vi.fn()
   })
 }));
-
-Vue.use(Vuetify);
-Vue.use(PiniaVuePlugin);
 
 describe('UserSecuritySettings.vue', () => {
   let wrapper: Wrapper<any>;

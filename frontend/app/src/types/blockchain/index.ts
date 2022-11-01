@@ -25,7 +25,7 @@ export const SupportedSubBlockchainProtocolData: ActionDataEntry[] = [
     identifier: L2_LOOPRING,
     label: 'Loopring',
     icon: '/assets/images/modules/loopring.svg',
-    detailPath: `${Routes.ACCOUNTS_BALANCES_BLOCKCHAIN.route}#blockchain-balances-LRC`
+    detailPath: `${Routes.ACCOUNTS_BALANCES_BLOCKCHAIN}#blockchain-balances-LRC`
   }
 ];
 

@@ -3,7 +3,7 @@ import dayjs from 'dayjs';
 import find from 'lodash/find';
 import toArray from 'lodash/toArray';
 import { Ref } from 'vue';
-import i18n from '@/i18n';
+
 import { api } from '@/services/rotkehlchen-api';
 import { TaskNotFoundError } from '@/services/types-api';
 import { Task, TaskMeta } from '@/types/task';
@@ -22,25 +22,31 @@ const unlockTask = (lockedTasks: Ref<number[]>, taskId: number) => {
   return locked;
 };
 
-const error: (task: Task<TaskMeta>, message?: string) => ActionResult<{}> = (
-  task,
-  error
-) => ({
-  result: {},
-  message: i18n
-    .t('task_manager.error', {
+const useError = () => {
+  const { tc } = useI18n();
+  const error: (task: Task<TaskMeta>, message?: string) => ActionResult<{}> = (
+    task,
+    error
+  ) => ({
+    result: {},
+    message: tc('task_manager.error', 0, {
       taskId: task.id,
       title: task.meta.title,
       error
     })
-    .toString()
-});
+  });
+  return {
+    error
+  };
+};
 
 export const useTasks = defineStore('tasks', () => {
   const locked = ref<number[]>([]);
   const tasks = ref<TaskMap<TaskMeta>>({});
   const handlers: Record<string, (result: any, meta: any) => void> = {};
   let isRunning = false;
+
+  const { error } = useError();
 
   const registerHandler = <R, M extends TaskMeta>(
     task: TaskType,

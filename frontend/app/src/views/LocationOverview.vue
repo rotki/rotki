@@ -28,7 +28,7 @@ import LedgerActionContent from '@/components/history/ledger-actions/LedgerActio
 import LocationIcon from '@/components/history/LocationIcon.vue';
 import LocationAssets from '@/components/locations/LocationAssets.vue';
 import LocationValueRow from '@/components/locations/LocationValueRow.vue';
-import { setupLocationInfo } from '@/composables/balances';
+import { useLocationInfo } from '@/composables/balances';
 import { isSectionLoading } from '@/composables/common';
 import { useAssetMovements } from '@/store/history/asset-movements';
 import { useLedgerActions } from '@/store/history/ledger-actions';
@@ -42,7 +42,7 @@ const props = defineProps({
 
 const { identifier } = toRefs(props);
 
-const { getLocation } = setupLocationInfo();
+const { getLocation } = useLocationInfo();
 
 const tradeStore = useTrades();
 const { updateTradesPayload } = tradeStore;

@@ -28,10 +28,11 @@
 
 <script setup lang="ts">
 import { useAttrs, useListeners } from 'vue';
-import { costBasisMethodData } from '@/store/reports/consts';
+import { useCostBasisMethod } from '@/store/reports/consts';
 
 const rootAttrs = useAttrs();
 const rootListeners = useListeners();
+const { costBasisMethodData } = useCostBasisMethod();
 </script>
 <style module lang="scss">
 .title {

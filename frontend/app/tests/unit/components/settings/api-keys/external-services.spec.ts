@@ -1,18 +1,12 @@
 import { mount, Wrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
-import { createPinia, Pinia, PiniaVuePlugin, setActivePinia } from 'pinia';
-import Vue from 'vue';
+import { createPinia, Pinia, setActivePinia } from 'pinia';
 import Vuetify from 'vuetify';
 import ExternalServices from '@/components/settings/api-keys/ExternalServices.vue';
-import i18n from '@/i18n';
 import { useExternalServicesApi } from '@/services/settings/external-services-api';
 import { useMessageStore } from '@/store/message';
 import { useSessionStore } from '@/store/session';
 import { ExternalServiceKeys } from '@/types/user';
-import '../../../i18n';
-
-Vue.use(Vuetify);
-Vue.use(PiniaVuePlugin);
 
 vi.mock('@/services/settings/external-services-api', () => ({
   useExternalServicesApi: vi.fn().mockReturnValue({
@@ -21,15 +15,6 @@ vi.mock('@/services/settings/external-services-api', () => ({
     deleteExternalServices: vi.fn()
   })
 }));
-
-vi.mock('vue', async () => {
-  const mod = await vi.importActual<typeof import('vue')>('vue');
-  return {
-    ...mod,
-    useListeners: vi.fn(),
-    useAttrs: vi.fn()
-  };
-});
 
 describe('ExternalServices.vue', () => {
   let wrapper: Wrapper<ExternalServices>;
@@ -50,11 +35,10 @@ describe('ExternalServices.vue', () => {
     return mount(ExternalServices, {
       pinia,
       vuetify,
-      stubs: ['v-dialog', 'card-title', 'card'],
+      stubs: ['v-dialog', 'card-title', 'card', 'i18n'],
       propsData: {
         value: ''
-      },
-      i18n
+      }
     });
   }
 

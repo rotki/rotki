@@ -1,6 +1,5 @@
 import { mount, Wrapper } from '@vue/test-utils';
-import { createPinia, PiniaVuePlugin, setActivePinia } from 'pinia';
-import Vue from 'vue';
+import { createPinia, setActivePinia } from 'pinia';
 import Vuetify from 'vuetify';
 import AccountBalances from '@/components/accounts/AccountBalances.vue';
 import { useSessionStore } from '@/store/session';
@@ -8,17 +7,6 @@ import { useStatusStore } from '@/store/status';
 import { useTasks } from '@/store/tasks';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
-import '../../i18n';
-vi.mock('vue', async () => {
-  const mod = await vi.importActual<typeof import('vue')>('vue');
-  return {
-    ...mod,
-    useListeners: vi.fn()
-  };
-});
-
-Vue.use(Vuetify);
-Vue.use(PiniaVuePlugin);
 
 describe('AccountBalances.vue', () => {
   let wrapper: Wrapper<any>;

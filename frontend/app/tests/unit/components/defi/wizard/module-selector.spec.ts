@@ -1,22 +1,18 @@
 import { mount, Wrapper } from '@vue/test-utils';
-import { createPinia, Pinia, PiniaVuePlugin, setActivePinia } from 'pinia';
-import Vue from 'vue';
+import { createPinia, Pinia, setActivePinia } from 'pinia';
 import Vuetify from 'vuetify';
 import ModuleSelector from '@/components/defi/wizard/ModuleSelector.vue';
 import { defaultGeneralSettings } from '@/data/factories';
 import { useSettingsApi } from '@/services/settings/settings-api';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useCurrencies } from '@/types/currencies';
 import { Module } from '@/types/modules';
-import '../../../i18n';
 
 vi.mock('@/services/settings/settings-api', () => ({
   useSettingsApi: vi.fn().mockReturnValue({
     setSettings: vi.fn()
   })
 }));
-
-Vue.use(Vuetify);
-Vue.use(PiniaVuePlugin);
 
 describe('ModuleSelector.vue', () => {
   let wrapper: Wrapper<ModuleSelector>;
@@ -38,10 +34,11 @@ describe('ModuleSelector.vue', () => {
     setActivePinia(pinia);
     settingsStore = useGeneralSettingsStore(pinia);
     api = useSettingsApi();
+    const { defaultCurrency } = useCurrencies();
 
     document.body.setAttribute('data-app', 'true');
     settingsStore.update({
-      ...defaultGeneralSettings(),
+      ...defaultGeneralSettings(get(defaultCurrency)),
       activeModules: [Module.AAVE]
     });
     wrapper = createWrapper();

@@ -1,19 +1,21 @@
 import { Defaults } from '@/data/defaults';
-import { currencies } from '@/types/currencies';
+import { Currency } from '@/types/currencies';
 import {
   AccountingSettings,
   CostBasisMethod,
   GeneralSettings
 } from '@/types/user';
 
-export const defaultGeneralSettings = (): GeneralSettings => ({
+export const defaultGeneralSettings = (
+  mainCurrency: Currency
+): GeneralSettings => ({
   uiFloatingPrecision: Defaults.FLOATING_PRECISION,
   ksmRpcEndpoint: Defaults.KSM_RPC_ENDPOINT,
   dotRpcEndpoint: Defaults.DOT_RPC_ENDPOINT,
   balanceSaveFrequency: Defaults.BALANCE_SAVE_FREQUENCY,
   dateDisplayFormat: Defaults.DEFAULT_DATE_DISPLAY_FORMAT,
   submitUsageAnalytics: Defaults.ANONYMOUS_USAGE_ANALYTICS,
-  mainCurrency: currencies[0],
+  mainCurrency: mainCurrency,
   activeModules: [],
   btcDerivationGapLimit: Defaults.BTC_DERIVATION_GAP_LIMIT,
   displayDateInLocaltime: Defaults.DISPLAY_DATE_IN_LOCALTIME,

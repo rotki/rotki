@@ -378,7 +378,7 @@ const ignoreIssues = () => {
 
 const regenerateReport = async () => {
   await router.push({
-    path: Routes.PROFIT_LOSS_REPORTS.route,
+    path: Routes.PROFIT_LOSS_REPORTS,
     query: {
       regenerate: 'true',
       start: get(report).start.toString(),

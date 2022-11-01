@@ -20,10 +20,7 @@ const router = useRouter();
 
 const navigateToDetails = async () => {
   await router.push({
-    path: Routes.ASSETS.route.replace(
-      ':identifier',
-      encodeURIComponent(get(asset))
-    )
+    path: Routes.ASSETS.replace(':identifier', encodeURIComponent(get(asset)))
   });
 };
 </script>

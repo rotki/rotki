@@ -1,4 +1,4 @@
-import i18n from '@/i18n';
+import { ComputedRef } from 'vue';
 import { ActionDataEntry } from '@/store/types';
 import { LedgerActionType } from '@/types/ledger-actions';
 import {
@@ -8,298 +8,296 @@ import {
   TransactionEventType
 } from '@/types/transaction';
 
-export const ledgerActionsData = computed(() => [
-  {
-    identifier: LedgerActionType.ACTION_INCOME,
-    label: i18n.t('ledger_actions.actions.income').toString()
-  },
-  {
-    identifier: LedgerActionType.ACTION_LOSS,
-    label: i18n.t('ledger_actions.actions.loss').toString()
-  },
-  {
-    identifier: LedgerActionType.ACTION_DONATION,
-    label: i18n.t('ledger_actions.actions.donation').toString()
-  },
-  {
-    identifier: LedgerActionType.ACTION_EXPENSE,
-    label: i18n.t('ledger_actions.actions.expense').toString()
-  },
-  {
-    identifier: LedgerActionType.ACTION_DIVIDENDS,
-    label: i18n.t('ledger_actions.actions.dividends').toString()
-  },
-  {
-    identifier: LedgerActionType.ACTION_AIRDROP,
-    label: i18n.t('ledger_actions.actions.airdrop').toString()
-  },
-  {
-    identifier: LedgerActionType.ACTION_GIFT,
-    label: i18n.t('ledger_actions.actions.gift').toString()
-  },
-  {
-    identifier: LedgerActionType.ACTION_GRANT,
-    label: i18n.t('ledger_actions.actions.grant').toString()
-  }
-]);
+export const useLedgerActionData = createSharedComposable(() => {
+  const { tc } = useI18n();
+  const ledgerActionsData = computed(() => [
+    {
+      identifier: LedgerActionType.ACTION_INCOME,
+      label: tc('ledger_actions.actions.income')
+    },
+    {
+      identifier: LedgerActionType.ACTION_LOSS,
+      label: tc('ledger_actions.actions.loss')
+    },
+    {
+      identifier: LedgerActionType.ACTION_DONATION,
+      label: tc('ledger_actions.actions.donation')
+    },
+    {
+      identifier: LedgerActionType.ACTION_EXPENSE,
+      label: tc('ledger_actions.actions.expense')
+    },
+    {
+      identifier: LedgerActionType.ACTION_DIVIDENDS,
+      label: tc('ledger_actions.actions.dividends')
+    },
+    {
+      identifier: LedgerActionType.ACTION_AIRDROP,
+      label: tc('ledger_actions.actions.airdrop')
+    },
+    {
+      identifier: LedgerActionType.ACTION_GIFT,
+      label: tc('ledger_actions.actions.gift')
+    },
+    {
+      identifier: LedgerActionType.ACTION_GRANT,
+      label: tc('ledger_actions.actions.grant')
+    }
+  ]);
+  return {
+    ledgerActionsData
+  };
+});
 
-export const historyEventTypeData = computed<ActionDataEntry[]>(() => [
-  {
-    identifier: HistoryEventType.TRADE,
-    label: i18n.t('transactions.events.history_event_type.trade').toString()
-  },
-  {
-    identifier: HistoryEventType.STAKING,
-    label: i18n.t('transactions.events.history_event_type.staking').toString()
-  },
-  {
-    identifier: HistoryEventType.DEPOSIT,
-    label: i18n.t('transactions.events.history_event_type.deposit').toString()
-  },
-  {
-    identifier: HistoryEventType.WITHDRAWAL,
-    label: i18n
-      .t('transactions.events.history_event_type.withdrawal')
-      .toString()
-  },
-  {
-    identifier: HistoryEventType.TRANSFER,
-    label: i18n.t('transactions.events.history_event_type.transfer').toString()
-  },
-  {
-    identifier: HistoryEventType.SPEND,
-    label: i18n.t('transactions.events.history_event_type.spend').toString()
-  },
-  {
-    identifier: HistoryEventType.RECEIVE,
-    label: i18n.t('transactions.events.history_event_type.receive').toString()
-  },
-  {
-    identifier: HistoryEventType.ADJUSTMENT,
-    label: i18n
-      .t('transactions.events.history_event_type.adjustment')
-      .toString()
-  },
-  {
-    identifier: HistoryEventType.UNKNOWN,
-    label: i18n.t('transactions.events.history_event_type.unknown').toString()
-  },
-  {
-    identifier: HistoryEventType.INFORMATIONAL,
-    label: i18n
-      .t('transactions.events.history_event_type.informational')
-      .toString()
-  },
-  {
-    identifier: HistoryEventType.MIGRATE,
-    label: i18n.t('transactions.events.history_event_type.migrate').toString()
-  },
-  {
-    identifier: HistoryEventType.RENEW,
-    label: i18n.t('transactions.events.history_event_type.renew').toString()
-  }
-]);
+export const useHistoryEventTypeData = createSharedComposable(() => {
+  const { tc } = useI18n();
+  const historyEventTypeData: ComputedRef<ActionDataEntry[]> = computed(() => [
+    {
+      identifier: HistoryEventType.TRADE,
+      label: tc('transactions.events.history_event_type.trade')
+    },
+    {
+      identifier: HistoryEventType.STAKING,
+      label: tc('transactions.events.history_event_type.staking')
+    },
+    {
+      identifier: HistoryEventType.DEPOSIT,
+      label: tc('transactions.events.history_event_type.deposit')
+    },
+    {
+      identifier: HistoryEventType.WITHDRAWAL,
+      label: tc('transactions.events.history_event_type.withdrawal')
+    },
+    {
+      identifier: HistoryEventType.TRANSFER,
+      label: tc('transactions.events.history_event_type.transfer')
+    },
+    {
+      identifier: HistoryEventType.SPEND,
+      label: tc('transactions.events.history_event_type.spend')
+    },
+    {
+      identifier: HistoryEventType.RECEIVE,
+      label: tc('transactions.events.history_event_type.receive')
+    },
+    {
+      identifier: HistoryEventType.ADJUSTMENT,
+      label: tc('transactions.events.history_event_type.adjustment')
+    },
+    {
+      identifier: HistoryEventType.UNKNOWN,
+      label: tc('transactions.events.history_event_type.unknown')
+    },
+    {
+      identifier: HistoryEventType.INFORMATIONAL,
+      label: tc('transactions.events.history_event_type.informational')
+    },
+    {
+      identifier: HistoryEventType.MIGRATE,
+      label: tc('transactions.events.history_event_type.migrate')
+    },
+    {
+      identifier: HistoryEventType.RENEW,
+      label: tc('transactions.events.history_event_type.renew')
+    }
+  ]);
 
-export const historyEventSubTypeData = computed<ActionDataEntry[]>(() => [
-  {
-    identifier: HistoryEventSubType.NONE,
-    label: i18n.t('transactions.events.history_event_subtype.none').toString()
-  },
-  {
-    identifier: HistoryEventSubType.REWARD,
-    label: i18n.t('transactions.events.history_event_subtype.reward').toString()
-  },
-  {
-    identifier: HistoryEventSubType.DEPOSIT_ASSET,
-    label: i18n
-      .t('transactions.events.history_event_subtype.deposit_asset')
-      .toString()
-  },
-  {
-    identifier: HistoryEventSubType.REMOVE_ASSET,
-    label: i18n
-      .t('transactions.events.history_event_subtype.remove_asset')
-      .toString()
-  },
-  {
-    identifier: HistoryEventSubType.FEE,
-    label: i18n.t('transactions.events.history_event_subtype.fee').toString()
-  },
-  {
-    identifier: HistoryEventSubType.SPEND,
-    label: i18n.t('transactions.events.history_event_subtype.spend').toString()
-  },
-  {
-    identifier: HistoryEventSubType.RECEIVE,
-    label: i18n
-      .t('transactions.events.history_event_subtype.receive')
-      .toString()
-  },
-  {
-    identifier: HistoryEventSubType.APPROVE,
-    label: i18n
-      .t('transactions.events.history_event_subtype.approve')
-      .toString()
-  },
-  {
-    identifier: HistoryEventSubType.DEPLOY,
-    label: i18n.t('transactions.events.history_event_subtype.deploy').toString()
-  },
-  {
-    identifier: HistoryEventSubType.AIRDROP,
-    label: i18n
-      .t('transactions.events.history_event_subtype.airdrop')
-      .toString()
-  },
-  {
-    identifier: HistoryEventSubType.BRIDGE,
-    label: i18n.t('transactions.events.history_event_subtype.bridge').toString()
-  },
-  {
-    identifier: HistoryEventSubType.GOVERNANCE_PROPOSE,
-    label: i18n
-      .t('transactions.events.history_event_subtype.governance_propose')
-      .toString()
-  },
-  {
-    identifier: HistoryEventSubType.GENERATE_DEBT,
-    label: i18n
-      .t('transactions.events.history_event_subtype.generate_debt')
-      .toString()
-  },
-  {
-    identifier: HistoryEventSubType.PAYBACK_DEBT,
-    label: i18n
-      .t('transactions.events.history_event_subtype.payback_debt')
-      .toString()
-  },
-  {
-    identifier: HistoryEventSubType.RECEIVE_WRAPPED,
-    label: i18n
-      .t('transactions.events.history_event_subtype.receive_wrapped')
-      .toString()
-  },
-  {
-    identifier: HistoryEventSubType.RETURN_WRAPPED,
-    label: i18n
-      .t('transactions.events.history_event_subtype.return_wrapped')
-      .toString()
-  },
-  {
-    identifier: HistoryEventSubType.REWARD,
-    label: i18n.t('transactions.events.history_event_subtype.reward').toString()
-  },
-  {
-    identifier: HistoryEventSubType.NFT,
-    label: i18n.t('transactions.events.history_event_subtype.nft').toString()
-  }
-]);
+  const historyEventSubTypeData: ComputedRef<ActionDataEntry[]> = computed(
+    () => [
+      {
+        identifier: HistoryEventSubType.NONE,
+        label: tc('transactions.events.history_event_subtype.none')
+      },
+      {
+        identifier: HistoryEventSubType.REWARD,
+        label: tc('transactions.events.history_event_subtype.reward')
+      },
+      {
+        identifier: HistoryEventSubType.DEPOSIT_ASSET,
+        label: tc('transactions.events.history_event_subtype.deposit_asset')
+      },
+      {
+        identifier: HistoryEventSubType.REMOVE_ASSET,
+        label: tc('transactions.events.history_event_subtype.remove_asset')
+      },
+      {
+        identifier: HistoryEventSubType.FEE,
+        label: tc('transactions.events.history_event_subtype.fee')
+      },
+      {
+        identifier: HistoryEventSubType.SPEND,
+        label: tc('transactions.events.history_event_subtype.spend')
+      },
+      {
+        identifier: HistoryEventSubType.RECEIVE,
+        label: tc('transactions.events.history_event_subtype.receive')
+      },
+      {
+        identifier: HistoryEventSubType.APPROVE,
+        label: tc('transactions.events.history_event_subtype.approve')
+      },
+      {
+        identifier: HistoryEventSubType.DEPLOY,
+        label: tc('transactions.events.history_event_subtype.deploy')
+      },
+      {
+        identifier: HistoryEventSubType.AIRDROP,
+        label: tc('transactions.events.history_event_subtype.airdrop')
+      },
+      {
+        identifier: HistoryEventSubType.BRIDGE,
+        label: tc('transactions.events.history_event_subtype.bridge')
+      },
+      {
+        identifier: HistoryEventSubType.GOVERNANCE_PROPOSE,
+        label: tc(
+          'transactions.events.history_event_subtype.governance_propose'
+        )
+      },
+      {
+        identifier: HistoryEventSubType.GENERATE_DEBT,
+        label: tc('transactions.events.history_event_subtype.generate_debt')
+      },
+      {
+        identifier: HistoryEventSubType.PAYBACK_DEBT,
+        label: tc('transactions.events.history_event_subtype.payback_debt')
+      },
+      {
+        identifier: HistoryEventSubType.RECEIVE_WRAPPED,
+        label: tc('transactions.events.history_event_subtype.receive_wrapped')
+      },
+      {
+        identifier: HistoryEventSubType.RETURN_WRAPPED,
+        label: tc('transactions.events.history_event_subtype.return_wrapped')
+      },
+      {
+        identifier: HistoryEventSubType.REWARD,
+        label: tc('transactions.events.history_event_subtype.reward')
+      },
+      {
+        identifier: HistoryEventSubType.NFT,
+        label: tc('transactions.events.history_event_subtype.nft')
+      }
+    ]
+  );
 
-export const transactionEventTypeData = computed<ActionDataEntry[]>(() => [
-  {
-    identifier: TransactionEventType.GAS,
-    label: i18n.t('transactions.events.type.gas_fee').toString(),
-    icon: 'mdi-fire'
-  },
-  {
-    identifier: TransactionEventType.SEND,
-    label: i18n.t('transactions.events.type.send').toString(),
-    icon: 'mdi-arrow-up'
-  },
-  {
-    identifier: TransactionEventType.RECEIVE,
-    label: i18n.t('transactions.events.type.receive').toString(),
-    icon: 'mdi-arrow-down',
-    color: 'green'
-  },
-  {
-    identifier: TransactionEventType.SWAP_OUT,
-    label: i18n.t('transactions.events.type.swap_out').toString(),
-    icon: 'mdi-arrow-u-right-bottom'
-  },
-  {
-    identifier: TransactionEventType.SWAP_IN,
-    label: i18n.t('transactions.events.type.swap_in').toString(),
-    icon: 'mdi-arrow-u-left-top',
-    color: 'green'
-  },
-  {
-    identifier: TransactionEventType.APPROVAL,
-    label: i18n.t('transactions.events.type.approval').toString(),
-    icon: 'mdi-lock-open-outline'
-  },
-  {
-    identifier: TransactionEventType.DEPOSIT,
-    label: i18n.t('transactions.events.type.deposit').toString(),
-    icon: 'mdi-arrow-expand-up',
-    color: 'green'
-  },
-  {
-    identifier: TransactionEventType.WITHDRAW,
-    label: i18n.t('transactions.events.type.withdraw').toString(),
-    icon: 'mdi-arrow-expand-down'
-  },
-  {
-    identifier: TransactionEventType.AIRDROP,
-    label: i18n.t('transactions.events.type.airdrop').toString(),
-    icon: 'mdi-airballoon-outline'
-  },
-  {
-    identifier: TransactionEventType.BORROW,
-    label: i18n.t('transactions.events.type.borrow').toString(),
-    icon: 'mdi-hand-coin-outline'
-  },
-  {
-    identifier: TransactionEventType.REPAY,
-    label: i18n.t('transactions.events.type.repay').toString(),
-    icon: 'mdi-history'
-  },
-  {
-    identifier: TransactionEventType.DEPLOY,
-    label: i18n.t('transactions.events.type.deploy').toString(),
-    icon: 'mdi-swap-horizontal'
-  },
-  {
-    identifier: TransactionEventType.BRIDGE,
-    label: i18n.t('transactions.events.type.bridge').toString(),
-    icon: 'mdi-bridge'
-  },
-  {
-    identifier: TransactionEventType.GOVERNANCE_PROPOSE,
-    label: i18n.t('transactions.events.type.governance_propose').toString(),
-    icon: 'mdi-bank'
-  },
-  {
-    identifier: TransactionEventType.DONATE,
-    label: i18n.t('transactions.events.type.donate').toString(),
-    icon: 'mdi-hand-heart-outline'
-  },
-  {
-    identifier: TransactionEventType.RECEIVE_DONATION,
-    label: i18n.t('transactions.events.type.receive_donation').toString(),
-    icon: 'mdi-hand-heart-outline'
-  },
-  {
-    identifier: TransactionEventType.RENEW,
-    label: i18n.t('transactions.events.type.renew').toString(),
-    icon: 'mdi-calendar-refresh'
-  },
-  {
-    identifier: TransactionEventType.PLACE_ORDER,
-    label: i18n.t('transactions.events.type.place_order').toString(),
-    icon: 'mdi-briefcase-arrow-up-down'
-  },
-  {
-    identifier: TransactionEventType.TRANSFER,
-    label: i18n.t('transactions.events.type.transfer').toString(),
-    icon: 'mdi-swap-horizontal'
-  },
-  {
-    identifier: TransactionEventType.CLAIM_REWARD,
-    label: i18n.t('transactions.events.type.claim_reward').toString(),
-    icon: 'mdi-gift'
-  }
-]);
+  return { historyEventTypeData, historyEventSubTypeData };
+});
+
+export const useTransactionEventTypeData = createSharedComposable(() => {
+  const { tc } = useI18n();
+  const transactionEventTypeData: ComputedRef<ActionDataEntry[]> = computed(
+    () => [
+      {
+        identifier: TransactionEventType.GAS,
+        label: tc('transactions.events.type.gas_fee'),
+        icon: 'mdi-fire'
+      },
+      {
+        identifier: TransactionEventType.SEND,
+        label: tc('transactions.events.type.send'),
+        icon: 'mdi-arrow-up'
+      },
+      {
+        identifier: TransactionEventType.RECEIVE,
+        label: tc('transactions.events.type.receive'),
+        icon: 'mdi-arrow-down',
+        color: 'green'
+      },
+      {
+        identifier: TransactionEventType.SWAP_OUT,
+        label: tc('transactions.events.type.swap_out'),
+        icon: 'mdi-arrow-u-right-bottom'
+      },
+      {
+        identifier: TransactionEventType.SWAP_IN,
+        label: tc('transactions.events.type.swap_in'),
+        icon: 'mdi-arrow-u-left-top',
+        color: 'green'
+      },
+      {
+        identifier: TransactionEventType.APPROVAL,
+        label: tc('transactions.events.type.approval'),
+        icon: 'mdi-lock-open-outline'
+      },
+      {
+        identifier: TransactionEventType.DEPOSIT,
+        label: tc('transactions.events.type.deposit'),
+        icon: 'mdi-arrow-expand-up',
+        color: 'green'
+      },
+      {
+        identifier: TransactionEventType.WITHDRAW,
+        label: tc('transactions.events.type.withdraw'),
+        icon: 'mdi-arrow-expand-down'
+      },
+      {
+        identifier: TransactionEventType.AIRDROP,
+        label: tc('transactions.events.type.airdrop'),
+        icon: 'mdi-airballoon-outline'
+      },
+      {
+        identifier: TransactionEventType.BORROW,
+        label: tc('transactions.events.type.borrow'),
+        icon: 'mdi-hand-coin-outline'
+      },
+      {
+        identifier: TransactionEventType.REPAY,
+        label: tc('transactions.events.type.repay'),
+        icon: 'mdi-history'
+      },
+      {
+        identifier: TransactionEventType.DEPLOY,
+        label: tc('transactions.events.type.deploy'),
+        icon: 'mdi-swap-horizontal'
+      },
+      {
+        identifier: TransactionEventType.BRIDGE,
+        label: tc('transactions.events.type.bridge'),
+        icon: 'mdi-bridge'
+      },
+      {
+        identifier: TransactionEventType.GOVERNANCE_PROPOSE,
+        label: tc('transactions.events.type.governance_propose'),
+        icon: 'mdi-bank'
+      },
+      {
+        identifier: TransactionEventType.DONATE,
+        label: tc('transactions.events.type.donate'),
+        icon: 'mdi-hand-heart-outline'
+      },
+      {
+        identifier: TransactionEventType.RECEIVE_DONATION,
+        label: tc('transactions.events.type.receive_donation'),
+        icon: 'mdi-hand-heart-outline'
+      },
+      {
+        identifier: TransactionEventType.RENEW,
+        label: tc('transactions.events.type.renew'),
+        icon: 'mdi-calendar-refresh'
+      },
+      {
+        identifier: TransactionEventType.PLACE_ORDER,
+        label: tc('transactions.events.type.place_order'),
+        icon: 'mdi-briefcase-arrow-up-down'
+      },
+      {
+        identifier: TransactionEventType.TRANSFER,
+        label: tc('transactions.events.type.transfer'),
+        icon: 'mdi-swap-horizontal'
+      },
+      {
+        identifier: TransactionEventType.CLAIM_REWARD,
+        label: tc('transactions.events.type.claim_reward'),
+        icon: 'mdi-gift'
+      }
+    ]
+  );
+
+  return {
+    transactionEventTypeData
+  };
+});
 
 export const transactionEventTypeMapping: {
   [type: string]: { [subType: string]: TransactionEventType };

@@ -187,7 +187,7 @@ const updateLocation = async (location: string) => {
   if (location) {
     set(lastLocation, location);
   }
-  await router.push(Routes.STAKING.route.replace(':location*', location));
+  await router.push(Routes.STAKING.replace(':location*', location));
 };
 
 onBeforeMount(async () => {

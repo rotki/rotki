@@ -1,4 +1,12 @@
+import { PiniaVuePlugin } from 'pinia';
+import Vue from 'vue';
+import Vuetify from 'vuetify';
+import { mockT, mockTc } from '../i18n';
+
 beforeAll(() => {
+  Vue.use(Vuetify);
+  Vue.use(PiniaVuePlugin);
+
   vi.mock('@/services/assets/info', () => ({
     useAssetInfoApi: vi.fn().mockReturnValue({
       assetMapping: vi.fn().mockResolvedValue({})
@@ -19,6 +27,20 @@ beforeAll(() => {
       ...mod,
       useListeners: vi.fn(),
       useAttrs: vi.fn()
+    };
+  });
+
+  vi.mock('vue-i18n-composable', async () => {
+    const mod = await vi.importActual<typeof import('vue-i18n-composable')>(
+      'vue-i18n-composable'
+    );
+
+    return {
+      ...mod,
+      useI18n: () => ({
+        t: mockT,
+        tc: mockTc
+      })
     };
   });
 });

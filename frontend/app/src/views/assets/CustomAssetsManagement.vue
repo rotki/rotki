@@ -202,7 +202,7 @@ const route = useRoute();
 
 const closeDialog = async () => {
   set(showForm, false);
-  await router.push(Routes.ASSET_MANAGER_CUSTOM.route);
+  await router.push(Routes.ASSET_MANAGER_CUSTOM);
 };
 
 onMounted(async () => {

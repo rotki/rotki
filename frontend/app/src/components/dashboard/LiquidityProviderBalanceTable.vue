@@ -191,7 +191,7 @@ const createTableHeaders = (
   });
 };
 
-const route = Routes.DEFI_DEPOSITS_LIQUIDITY.route;
+const route = Routes.DEFI_DEPOSITS_LIQUIDITY;
 const expanded = ref<XswapBalance[]>([]);
 
 const {

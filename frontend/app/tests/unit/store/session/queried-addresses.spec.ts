@@ -8,14 +8,6 @@ import { useMessageStore } from '@/store/message';
 import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
 import { Module } from '@/types/modules';
 
-vi.mock('vue-i18n-composable', () => ({
-  createI18n: vi.fn(),
-  useI18n: () => ({
-    t: vi.fn().mockImplementation(args => args),
-    tc: vi.fn().mockImplementation(args => args)
-  })
-}));
-
 vi.mock('@/services/session/queried-addresses-api', () => ({
   useQueriedAddressApi: vi.fn().mockReturnValue({})
 }));

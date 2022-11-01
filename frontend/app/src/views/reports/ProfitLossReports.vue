@@ -130,7 +130,7 @@ const generate = async (period: ProfitLossReportPeriod) => {
   const reportId = await generateReport(period);
   if (reportId > 0) {
     await router.push({
-      path: Routes.PROFIT_LOSS_REPORT.route.replace(':id', reportId.toString()),
+      path: Routes.PROFIT_LOSS_REPORT.replace(':id', reportId.toString()),
       query: {
         openReportActionable: 'true'
       }
