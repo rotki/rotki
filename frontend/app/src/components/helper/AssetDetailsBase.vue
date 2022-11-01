@@ -32,7 +32,6 @@
 import { ComputedRef, PropType } from 'vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import ListItem from '@/components/helper/ListItem.vue';
-import { useRouter } from '@/composables/router';
 import { Routes } from '@/router/routes';
 import { NftAsset } from '@/store/assets/nft';
 

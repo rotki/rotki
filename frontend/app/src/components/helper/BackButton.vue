@@ -16,8 +16,6 @@
   <div v-else class="back-button__placeholder" />
 </template>
 <script setup lang="ts">
-import { useRouter } from '@/composables/router';
-
 defineProps({
   canNavigateBack: { required: true, type: Boolean, default: false }
 });

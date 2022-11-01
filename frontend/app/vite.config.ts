@@ -69,7 +69,16 @@ export default defineConfig({
         '@vueuse/core',
         'pinia',
         { 'vue-i18n-composable': ['useI18n'] },
-        { '@vueuse/shared': ['get', 'set'] }
+        { '@vueuse/shared': ['get', 'set'] },
+        {
+          'vue-router/composables': [
+            'useRoute',
+            'useRouter',
+            'useLink',
+            'onBeforeRouteUpdate',
+            'onBeforeRouteLeave'
+          ]
+        }
       ],
       dts: 'src/auto-imports.d.ts',
       //todo: cleanup export before enabling

@@ -31,7 +31,6 @@ import { useBackendManagement } from '@/composables/backend';
 import { useTheme } from '@/composables/common';
 import { useDarkMode } from '@/composables/dark-mode';
 import { useSessionStateCleaner } from '@/composables/logout';
-import { useRoute, useRouter } from '@/composables/router';
 import { useInterop } from '@/electron-interop';
 import { BackendCode } from '@/electron-main/backend-code';
 import { ThemeChecker } from '@/premium/premium';

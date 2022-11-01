@@ -82,7 +82,6 @@ import MergeDialog from '@/components/asset-manager/MergeDialog.vue';
 import RestoreAssetDbButton from '@/components/asset-manager/RestoreAssetDbButton.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
-import { useRoute, useRouter } from '@/composables/router';
 import { Routes } from '@/router/routes';
 import { EVM_TOKEN } from '@/services/assets/consts';
 import { useAssetManagementApi } from '@/services/assets/management-api';

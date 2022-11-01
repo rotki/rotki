@@ -70,7 +70,6 @@ import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import FileUpload from '@/components/import/FileUpload.vue';
 import ReportGenerator from '@/components/profitloss/ReportGenerator.vue';
 import ReportsTable from '@/components/profitloss/ReportsTable.vue';
-import { useRoute, useRouter } from '@/composables/router';
 import { interop } from '@/electron-interop';
 import { Routes } from '@/router/routes';
 import { api } from '@/services/rotkehlchen-api';

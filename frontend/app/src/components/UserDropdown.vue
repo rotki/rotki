@@ -86,7 +86,6 @@ import ThemeControl from '@/components/premium/ThemeControl.vue';
 import { useTheme } from '@/composables/common';
 import { useDarkMode } from '@/composables/dark-mode';
 import { usePrivacyMode } from '@/composables/privacy';
-import { useRoute, useRouter } from '@/composables/router';
 import { interop } from '@/electron-interop';
 import { useSessionStore } from '@/store/session';
 

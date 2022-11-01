@@ -109,7 +109,6 @@ import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
 import { useSectionLoading } from '@/composables/common';
 import { usePremium } from '@/composables/premium';
-import { useRoute } from '@/composables/router';
 import { useInterop } from '@/electron-interop';
 import {
   AaveEarnedDetails,

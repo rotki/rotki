@@ -120,7 +120,6 @@ import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
 import { useLocationInfo } from '@/composables/balances';
 import { useTheme } from '@/composables/common';
-import { useRouter } from '@/composables/router';
 import { interop } from '@/electron-interop';
 import { useAppRoutes } from '@/router/routes';
 import { useAssetInfoApi } from '@/services/assets/info';

@@ -134,7 +134,6 @@ import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import CostBasisTable from '@/components/profitloss/CostBasisTable.vue';
 import ProfitLossEventType from '@/components/profitloss/ProfitLossEventType.vue';
 import { usePremium } from '@/composables/premium';
-import { useRoute } from '@/composables/router';
 import {
   ProfitLossEvent,
   ProfitLossEvents,
