@@ -92,7 +92,8 @@ const baseAvailableOraclesTyped: Array<
   PrioritizedListItemData<PrioritizedListId>
 > = [
   CRYPTOCOMPARE_PRIO_LIST_ITEM,
-  COINGECKO_PRIO_LIST_ITEM
+  COINGECKO_PRIO_LIST_ITEM,
+  DEFILAMA_PRIO_LIST_ITEM
 ];
 
 const availableCurrentOracles = (): PrioritizedListData<PrioritizedListId> => {
