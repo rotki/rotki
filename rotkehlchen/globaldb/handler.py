@@ -932,9 +932,10 @@ class GlobalDBHandler():
                     ),
                 )
                 write_cursor.execute(
-                    'UPDATE assets SET name=? WHERE identifier=?;',
+                    'UPDATE assets SET name=?, type=? WHERE identifier=?;',
                     (
                         entry.name,
+                        AssetType.EVM_TOKEN.serialize_for_db(),
                         entry.identifier,
                     ),
                 )
@@ -1804,6 +1805,54 @@ class GlobalDBHandler():
                 underlying_tokens=underlying_tokens,
                 form_with_incomplete_data=form_with_incomplete_data,
             )
+
+    def resolve_asset_from_packaged_and_store(
+            self,
+            identifier: str,
+            form_with_incomplete_data: bool,
+    ) -> AssetWithNameAndType:
+        """
+        Reads an asset from the packaged globaldb and adds it to the database if missing or edits
+        the local version of the asset.
+        May raise:
+        - UnknownAsset
+        """
+        asset = self.resolve_asset(
+            identifier=identifier,
+            form_with_incomplete_data=form_with_incomplete_data,
+            use_packaged_db=True,
+        )
+        # make sure that the asset is saved on the user's global db. First check if it exists
+        with self.conn.read_ctx() as cursor:
+            asset_count = cursor.execute(
+                'SELECT COUNT(*) FROM assets WHERE identifier=?',
+                (identifier,),
+            ).fetchone()[0]
+
+        asset_data: Union[EvmToken, Dict[str, Any]]
+        if asset.asset_type == AssetType.EVM_TOKEN:
+            evm_asset = cast(EvmToken, asset)
+            asset_data = evm_asset
+        else:
+            asset_data = asset.to_dict()
+            # asset type is converted to string in the dictionary so we overwrite it
+            asset_data['asset_type'] = asset.asset_type
+
+        if asset_count == 0:
+            # the asset doesn't exists and need to be added
+            GlobalDBHandler().add_asset(
+                asset_id=asset.identifier,
+                asset_type=asset.asset_type,
+                data=asset_data,
+            )
+        else:
+            # in this case the asset exists and needs to be updated
+            if asset.asset_type == AssetType.EVM_TOKEN:
+                self.edit_evm_token(evm_asset)
+            else:
+                self.edit_user_asset(cast(Dict[str, Any], asset_data))
+
+        return asset
 
     @staticmethod
     def get_asset_type(identifier: str, use_packaged_db: bool = False) -> AssetType:
