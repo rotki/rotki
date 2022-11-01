@@ -62,7 +62,9 @@ class AssetResolver():
         Get all asset data for a valid asset identifier. May return any valid subclass of the
         Asset class.
 
-        Raises UnknownAsset if no data can be found
+        May raise:
+        - UnknownAsset
+        - WrongAssetType
         """
         # TODO: This is ugly here but is here to avoid a cyclic import in the Assets file
         # Couldn't find a reorg that solves this cyclic import
@@ -80,6 +82,7 @@ class AssetResolver():
                 identifier=identifier,
                 form_with_incomplete_data=form_with_incomplete_data,
             )
+        # `WrongAssetType` exception is handled by `resolve_asset_to_class`
         except UnknownAsset:
             if identifier not in CONSTANT_ASSETS:
                 raise
@@ -111,7 +114,7 @@ class AssetResolver():
             if identifier not in CONSTANT_ASSETS:
                 raise
 
-            log.debug(f'Attempt to get asset_type for asset {identifier} using the packaged database')  # noqa: E501
+            log.debug(f'Attempt to get asset_type for {identifier} using the packaged database')  # noqa: E501
             asset = GlobalDBHandler().resolve_asset_from_packaged_and_store(
                 identifier=identifier,
                 form_with_incomplete_data=False,
@@ -128,6 +131,10 @@ class AssetResolver():
     ) -> T:
         """
         Try to resolve an identifier to the Asset subclass defined in expected_type.
+
+        Whenever `WrongAssetType` is encountered for an asset present in `CONSTANT_ASSETS`
+        we use the packaged global db to resolve the asset.
+
         May raise:
         - WrongAssetType: if the asset is resolved but the class is not the expected one.
         - UnknownAsset: if the asset was not found in the database.
@@ -145,7 +152,6 @@ class AssetResolver():
 
         if identifier in CONSTANT_ASSETS:
             # Check if the version in the packaged globaldb is correct
-            log.debug(f'Attempt to get asset_type for asset with {identifier} using the packaged database')  # noqa: E501
             resolved_asset = GlobalDBHandler().resolve_asset_from_packaged_and_store(
                 identifier=identifier,
                 form_with_incomplete_data=form_with_incomplete_data,

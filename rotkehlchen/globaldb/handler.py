@@ -1761,6 +1761,7 @@ class GlobalDBHandler():
         If `use_packaged_db` is True, it checks the packaged global db.
         May raise:
         - UnknownAsset if the asset is not found in the database
+        - WrongAssetType
         """
         if identifier.startswith(NFT_DIRECTIVE):
             return Nft(identifier)
@@ -1806,8 +1807,8 @@ class GlobalDBHandler():
                 form_with_incomplete_data=form_with_incomplete_data,
             )
 
+    @staticmethod
     def resolve_asset_from_packaged_and_store(
-            self,
             identifier: str,
             form_with_incomplete_data: bool,
     ) -> AssetWithNameAndType:
@@ -1817,13 +1818,13 @@ class GlobalDBHandler():
         May raise:
         - UnknownAsset
         """
-        asset = self.resolve_asset(
+        asset = GlobalDBHandler().resolve_asset(
             identifier=identifier,
             form_with_incomplete_data=form_with_incomplete_data,
             use_packaged_db=True,
         )
         # make sure that the asset is saved on the user's global db. First check if it exists
-        with self.conn.read_ctx() as cursor:
+        with GlobalDBHandler().conn.read_ctx() as cursor:
             asset_count = cursor.execute(
                 'SELECT COUNT(*) FROM assets WHERE identifier=?',
                 (identifier,),
@@ -1831,15 +1832,15 @@ class GlobalDBHandler():
 
         asset_data: Union[EvmToken, Dict[str, Any]]
         if asset.asset_type == AssetType.EVM_TOKEN:
-            evm_asset = cast(EvmToken, asset)
-            asset_data = evm_asset
+            asset_data = cast(EvmToken, asset)
         else:
             asset_data = asset.to_dict()
-            # asset type is converted to string in the dictionary so we overwrite it
             asset_data['asset_type'] = asset.asset_type
+            asset_data['forked'] = getattr(asset, 'forked', None)
+            asset_data['swapped_for'] = getattr(asset, 'swapped_for', None)
 
         if asset_count == 0:
-            # the asset doesn't exists and need to be added
+            # the asset doesn't exist and need to be added
             GlobalDBHandler().add_asset(
                 asset_id=asset.identifier,
                 asset_type=asset.asset_type,
@@ -1848,9 +1849,9 @@ class GlobalDBHandler():
         else:
             # in this case the asset exists and needs to be updated
             if asset.asset_type == AssetType.EVM_TOKEN:
-                self.edit_evm_token(evm_asset)
+                GlobalDBHandler().edit_evm_token(cast(EvmToken, asset_data))
             else:
-                self.edit_user_asset(cast(Dict[str, Any], asset_data))
+                GlobalDBHandler().edit_user_asset(cast(Dict[str, Any], asset_data))
 
         return asset
 

@@ -13,7 +13,7 @@ from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_BAT, A_CRV, A_DAI, A_LUSD, A_PICKLE, A_USD
 from rotkehlchen.constants.misc import NFT_DIRECTIVE, ONE
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
-from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.globaldb.handler import GLOBAL_DB_VERSION, GlobalDBHandler
@@ -992,10 +992,7 @@ def test_general_cache(globaldb):
 
 
 def test_packaged_db_check_for_constant_assets(globaldb):
-    """
-    Check if UnknownAsset is raised for an asset in CONSTANT_ASSETS, the packaged global db
-    is queried to check for it.
-    """
+    """Check that UnknownAsset & WrongAssetType is not raised for an asset in CONSTANT_ASSETS"""
     # delete one entry in `CONSTANT_ASSETS`
     with globaldb.conn.write_ctx() as cursor:
         cursor.execute('DELETE FROM assets WHERE identifier=?;', (A_LUSD.identifier,))
@@ -1009,7 +1006,6 @@ def test_packaged_db_check_for_constant_assets(globaldb):
     with globaldb.conn.write_ctx() as cursor:
         cursor.execute('DELETE FROM assets WHERE identifier=?;', (A_DAI.identifier, ))  # noqa: E501
         assert cursor.rowcount == 1
-
     # now check the asset type is correct and does not raise an error
     assert A_DAI.is_evm_token() is True
 
@@ -1018,22 +1014,18 @@ def test_packaged_db_check_for_constant_assets(globaldb):
     with pytest.raises(UnknownAsset):
         Asset('i-dont-exist').resolve()
 
+    # check that if the type of asset is changed, resolving to the real type
+    # does not raise a `WrongAssetType` exception
     with globaldb.conn.read_ctx() as cursor:
         cursor.execute('UPDATE assets SET type=? WHERE identifier=?;', (AssetType.FIAT.serialize_for_db(), A_DAI.identifier))  # noqa: E501
-        assert cursor.rowcount == 1
         cursor.execute('UPDATE assets SET type=? WHERE identifier=?;', (AssetType.EVM_TOKEN.serialize_for_db(), A_USD.identifier))  # noqa: E501
         assert cursor.rowcount == 1
 
-    # now resolve and check that no error was raised
-    dai = A_DAI.resolve_to_crypto_asset()
+    dai = A_DAI.resolve_to_evm_token()
+    usd = A_USD.resolve_to_fiat_asset()
     assert dai.asset_type == AssetType.EVM_TOKEN
     assert dai.identifier == A_DAI.identifier
-
-    # check that if we try to resolve to the wrong type the asset is updated and the error raised
-    with pytest.raises(WrongAssetType):
-        usd = A_USD.resolve_to_evm_token()
-
-    usd = A_USD.resolve_to_fiat_asset()
+    assert usd.identifier == A_USD.identifier
     assert usd.asset_type == AssetType.FIAT
 
     # check that the information was correctly updated locally
@@ -1042,3 +1034,5 @@ def test_packaged_db_check_for_constant_assets(globaldb):
         assert AssetType.deserialize_from_db(cursor.fetchone()[0]) == AssetType.EVM_TOKEN
         cursor.execute('SELECT type FROM assets WHERE identifier=?;', (A_USD.identifier,))  # noqa: E501
         assert AssetType.deserialize_from_db(cursor.fetchone()[0]) == AssetType.FIAT
+        cursor.execute('SELECT type FROM assets WHERE identifier=?;', (A_LUSD.identifier,))  # noqa: E501
+        assert AssetType.deserialize_from_db(cursor.fetchone()[0]) == AssetType.EVM_TOKEN

@@ -127,8 +127,8 @@ def deserialize_asset_with_oracles_from_db(
         name=asset_data[4],
         symbol=asset_data[5],
         started=asset_data[6],
-        forked=asset_data[7],
-        swapped_for=asset_data[8],
+        forked=CryptoAsset(asset_data[7]) if asset_data[7] is not None else None,
+        swapped_for=CryptoAsset(asset_data[8]) if asset_data[8] is not None else None,
         coingecko=asset_data[9],
         cryptocompare=asset_data[10],
     )
