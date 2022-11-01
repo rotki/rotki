@@ -39,14 +39,14 @@ export default new Router({
       path: Routes.DASHBOARD,
       alias: Routes.ROOT,
       name: 'dashboard',
-      component: async () => import('../views/Dashboard.vue'),
+      component: async () => import('../pages/dashboard/index.vue'),
       meta: {
         noteLocation: NoteLocation.DASHBOARD
       }
     },
     {
       path: Routes.ACCOUNTS_BALANCES,
-      component: async () => import('../views/AccountsBalances.vue'),
+      component: async () => import('../pages/balances/index.vue'),
       children: [
         {
           path: '',
@@ -56,8 +56,7 @@ export default new Router({
         {
           path: Routes.ACCOUNTS_BALANCES_BLOCKCHAIN,
           name: 'accounts-balances-blockchain',
-          component: () =>
-            import('../components/accounts/BlockchainBalances.vue'),
+          component: () => import('../pages/balances/blockchain/index.vue'),
           meta: {
             noteLocation: NoteLocation.ACCOUNTS_BALANCES_BLOCKCHAIN
           }
@@ -65,16 +64,14 @@ export default new Router({
         {
           path: Routes.ACCOUNTS_BALANCES_EXCHANGE,
           name: 'accounts-balances-exchange',
-          component: () =>
-            import('../components/accounts/exchanges/ExchangeBalances.vue'),
+          component: () => import('../pages/balances/exchange/index.vue'),
           meta: {
             noteLocation: NoteLocation.ACCOUNTS_BALANCES_EXCHANGE
           }
         },
         {
           path: `${Routes.ACCOUNTS_BALANCES_EXCHANGE}/:exchange`,
-          component: () =>
-            import('../components/accounts/exchanges/ExchangeBalances.vue'),
+          component: () => import('../pages/balances/exchange/index.vue'),
           meta: {
             noteLocation: NoteLocation.ACCOUNTS_BALANCES_EXCHANGE
           },
@@ -86,8 +83,7 @@ export default new Router({
           meta: {
             noteLocation: NoteLocation.ACCOUNTS_BALANCES_NON_FUNGIBLE
           },
-          component: () =>
-            import('../views/accountsbalances/NonFungibleBalancePage.vue')
+          component: () => import('../pages/balances/non-fungible/index.vue')
         },
         {
           path: Routes.ACCOUNTS_BALANCES_MANUAL,
@@ -95,8 +91,7 @@ export default new Router({
           meta: {
             noteLocation: NoteLocation.ACCOUNTS_BALANCES_MANUAL
           },
-          component: () =>
-            import('../components/accounts/manual-balances/ManualBalances.vue')
+          component: () => import('../pages/balances/manual/index.vue')
         }
       ]
     },
@@ -106,11 +101,11 @@ export default new Router({
       meta: {
         noteLocation: NoteLocation.NFTS
       },
-      component: async () => import('../views/Nft.vue')
+      component: async () => import('../pages/nfts/index.vue')
     },
     {
       path: Routes.HISTORY,
-      component: async () => import('../views/history/History.vue'),
+      component: async () => import('../pages/history/index.vue'),
       children: [
         {
           path: '',
@@ -123,8 +118,7 @@ export default new Router({
           meta: {
             noteLocation: NoteLocation.HISTORY_TRADES
           },
-          component: async () =>
-            import('../views/history/trades/TradeHistory.vue')
+          component: async () => import('../pages/history/trades/index.vue')
         },
         {
           path: Routes.HISTORY_DEPOSITS_WITHDRAWALS,
@@ -133,9 +127,7 @@ export default new Router({
             noteLocation: NoteLocation.HISTORY_DEPOSITS_WITHDRAWALS
           },
           component: () =>
-            import(
-              '../views/history/deposits-withdrawals/DepositsWithdrawals.vue'
-            )
+            import('../pages/history/deposits-withdrawals/index.vue')
         },
         {
           path: Routes.HISTORY_TRANSACTIONS,
@@ -143,8 +135,7 @@ export default new Router({
           meta: {
             noteLocation: NoteLocation.HISTORY_TRANSACTIONS
           },
-          component: () =>
-            import('../views/history/transactions/Transactions.vue')
+          component: () => import('../pages/history/transactions/index.vue')
         },
         {
           path: Routes.HISTORY_LEDGER_ACTIONS,
@@ -152,14 +143,13 @@ export default new Router({
           meta: {
             noteLocation: NoteLocation.HISTORY_LEDGER_ACTIONS
           },
-          component: () =>
-            import('../views/history/ledger-actions/LedgerActions.vue')
+          component: () => import('../pages/history/ledger-actions/index.vue')
         }
       ]
     },
     {
       path: Routes.DEFI,
-      component: async () => import('../views/defi/DecentralizedFinance.vue'),
+      component: async () => import('../pages/defi/index.vue'),
       meta: {
         noteLocation: NoteLocation.DEFI
       },
@@ -172,13 +162,11 @@ export default new Router({
         {
           path: Routes.DEFI_OVERVIEW,
           name: 'defi-overview',
-          component: async () =>
-            import('../views/defi/DecentralizedOverview.vue')
+          component: async () => import('../pages/defi/overview/index.vue')
         },
         {
           path: Routes.DEFI_DEPOSITS,
-          component: async () =>
-            import('../views/defi/DecentralizedDeposits.vue'),
+          component: async () => import('../pages/defi/deposits/index.vue'),
           children: [
             {
               path: '',
@@ -189,12 +177,12 @@ export default new Router({
               path: Routes.DEFI_DEPOSITS_PROTOCOLS,
               name: 'defi-deposits-protocols',
               component: async () =>
-                import('../views/defi/deposits/Protocols.vue')
+                import('../pages/defi/deposits/protocols/index.vue')
             },
             {
               path: Routes.DEFI_DEPOSITS_LIQUIDITY,
               component: async () =>
-                import('../views/defi/deposits/Liquidity.vue'),
+                import('../pages/defi/deposits/liquidity/index.vue'),
               children: [
                 {
                   path: '',
@@ -203,22 +191,30 @@ export default new Router({
                 {
                   path: Routes.DEFI_DEPOSITS_LIQUIDITY_UNISWAP_V2,
                   component: () =>
-                    import('../components/defi/uniswap/UniswapV2.vue')
+                    import(
+                      '../pages/defi/deposits/liquidity/uniswap_v2/index.vue'
+                    )
                 },
                 {
                   path: Routes.DEFI_DEPOSITS_LIQUIDITY_UNISWAP_V3,
                   component: () =>
-                    import('../components/defi/uniswap/UniswapV3.vue')
+                    import(
+                      '../pages/defi/deposits/liquidity/uniswap_v3/index.vue'
+                    )
                 },
                 {
                   path: Routes.DEFI_DEPOSITS_LIQUIDITY_BALANCER,
                   component: () =>
-                    import('../components/defi/balancer/Balancer.vue')
+                    import(
+                      '../pages/defi/deposits/liquidity/balancer/index.vue'
+                    )
                 },
                 {
                   path: Routes.DEFI_DEPOSITS_LIQUIDITY_SUSHISWAP,
                   component: () =>
-                    import('../components/defi/sushiswap/Sushiswap.vue')
+                    import(
+                      '../pages/defi/deposits/liquidity/sushiswap/index.vue'
+                    )
                 }
               ]
             }
@@ -227,12 +223,11 @@ export default new Router({
         {
           path: Routes.DEFI_LIABILITIES,
           name: 'defi-liabilities',
-          component: async () =>
-            import('../views/defi/DecentralizedBorrowing.vue')
+          component: async () => import('../pages/defi/liabilities/index.vue')
         },
         {
           path: Routes.DEFI_AIRDROPS,
-          component: async () => import('../views/defi/Airdrops.vue')
+          component: async () => import('../pages/defi/airdrops/index.vue')
         }
       ]
     },
@@ -242,14 +237,14 @@ export default new Router({
       meta: {
         noteLocation: NoteLocation.STATISTICS
       },
-      component: async () => import('../views/Statistics.vue')
+      component: async () => import('../pages/statistics/index.vue')
     },
     {
       path: Routes.STAKING,
       meta: {
         noteLocation: NoteLocation.STAKING
       },
-      component: async () => import('../views/staking/StakingPage.vue'),
+      component: async () => import('../pages/staking/index.vue'),
       props: route => ({ location: route.params.location ?? null })
     },
     {
@@ -257,11 +252,11 @@ export default new Router({
       meta: {
         noteLocation: NoteLocation.PROFIT_LOSS_REPORTS
       },
-      component: async () => import('../views/reports/ProfitLossReports.vue')
+      component: async () => import('../pages/reports/index.vue')
     },
     {
       path: Routes.PROFIT_LOSS_REPORT,
-      component: async () => import('../views/reports/ProfitLossReport.vue'),
+      component: async () => import('../pages/report/[id].vue'),
       meta: {
         canNavigateBack: true,
         noteLocation: NoteLocation.PROFIT_LOSS_REPORTS
@@ -272,7 +267,7 @@ export default new Router({
       meta: {
         noteLocation: NoteLocation.ASSETS
       },
-      component: async () => import('../views/assets/AssetManager.vue'),
+      component: async () => import('../pages/asset-manager/index.vue'),
       children: [
         {
           path: '',
@@ -283,21 +278,21 @@ export default new Router({
           path: Routes.ASSET_MANAGER_MANAGED,
           name: 'asset-manager-managed',
           component: async () =>
-            import('../views/assets/ManagedAssetsManagement.vue'),
+            import('../pages/asset-manager/managed/index.vue'),
           props: route => ({ identifier: route.query.id ?? null })
         },
         {
           path: Routes.ASSET_MANAGER_CUSTOM,
           name: 'asset-manager-custom',
           component: async () =>
-            import('../views/assets/CustomAssetsManagement.vue'),
+            import('../pages/asset-manager/custom/index.vue'),
           props: route => ({ identifier: route.query.id ?? null })
         }
       ]
     },
     {
       path: Routes.PRICE_MANAGER,
-      component: async () => import('../views/prices/PriceManager.vue'),
+      component: async () => import('../pages/price-manager/index.vue'),
       meta: {
         canNavigateBack: true,
         noteLocation: NoteLocation.PRICE_MANAGER
@@ -313,13 +308,13 @@ export default new Router({
           path: Routes.PRICE_MANAGER_LATEST,
           name: 'price-manager-current',
           component: async () =>
-            import('../views/prices/LatestPriceManagement.vue')
+            import('../pages/price-manager/latest/index.vue')
         },
         {
           path: Routes.PRICE_MANAGER_HISTORIC,
           name: 'price-manager-historic',
           component: async () =>
-            import('../views/prices/HistoricPriceManagement.vue')
+            import('../pages/price-manager/historic/index.vue')
         }
       ]
     },
@@ -328,14 +323,15 @@ export default new Router({
       meta: {
         noteLocation: NoteLocation.ETH_ADDRESS_BOOK_MANAGER
       },
-      component: async () => import('../views/EthAddressBookManager.vue')
+      component: async () =>
+        import('../pages/eth-address-book-manager/index.vue')
     },
     {
       path: Routes.API_KEYS,
       meta: {
         noteLocation: NoteLocation.API_KEYS
       },
-      component: async () => import('../views/settings/ApiKeys.vue'),
+      component: async () => import('../pages/settings/api-keys/index.vue'),
       children: [
         {
           path: '',
@@ -344,17 +340,17 @@ export default new Router({
         {
           path: Routes.API_KEYS_ROTKI_PREMIUM,
           component: async () =>
-            import('../components/settings/PremiumSettings.vue')
+            import('../pages/settings/api-keys/premium/index.vue')
         },
         {
           path: Routes.API_KEYS_EXCHANGES,
           component: () =>
-            import('../components/settings/api-keys/ExchangeSettings.vue')
+            import('../pages/settings/api-keys/exchanges/index.vue')
         },
         {
           path: Routes.API_KEYS_EXTERNAL_SERVICES,
           component: () =>
-            import('../components/settings/api-keys/ExternalServices.vue')
+            import('../pages/settings/api-keys/external/index.vue')
         }
       ]
     },
@@ -364,11 +360,11 @@ export default new Router({
       meta: {
         noteLocation: NoteLocation.IMPORT
       },
-      component: async () => import('../views/ImportData.vue')
+      component: async () => import('../pages/import/index.vue')
     },
     {
       path: Routes.SETTINGS,
-      component: async () => import('../views/settings/Settings.vue'),
+      component: async () => import('../pages/settings/index.vue'),
       children: [
         {
           path: '',
@@ -379,7 +375,7 @@ export default new Router({
           meta: {
             noteLocation: NoteLocation.SETTINGS_GENERAL
           },
-          component: async () => import('../views/settings/GeneralSettings.vue')
+          component: async () => import('../pages/settings/general/index.vue')
         },
         {
           path: Routes.SETTINGS_ACCOUNTING,
@@ -387,7 +383,7 @@ export default new Router({
             noteLocation: NoteLocation.SETTINGS_ACCOUNTING
           },
           component: async () =>
-            import('../views/settings/AccountingSettings.vue')
+            import('../pages/settings/accounting/index.vue')
         },
         {
           path: Routes.SETTINGS_DATA_SECURITY,
@@ -395,20 +391,20 @@ export default new Router({
             noteLocation: NoteLocation.SETTINGS_DATA_SECURITY
           },
           component: async () =>
-            import('../views/settings/UserSecuritySettings.vue')
+            import('../pages/settings/data-security/index.vue')
         },
         {
           path: Routes.SETTINGS_MODULES,
           meta: {
             noteLocation: NoteLocation.SETTINGS_MODULES
           },
-          component: async () => import('../views/settings/ModuleSettings.vue')
+          component: async () => import('../pages/settings/modules/index.vue')
         }
       ]
     },
     {
       path: Routes.ASSETS,
-      component: async () => import('../views/Assets.vue'),
+      component: async () => import('../pages/assets/[identifier].vue'),
       meta: {
         canNavigateBack: true,
         noteLocation: NoteLocation.ASSETS
@@ -417,7 +413,7 @@ export default new Router({
     },
     {
       path: Routes.LOCATIONS,
-      component: async () => import('../views/LocationOverview.vue'),
+      component: async () => import('../pages/locations/[identifier].vue'),
       meta: {
         canNavigateBack: true,
         noteLocation: NoteLocation.LOCATIONS
@@ -429,7 +425,7 @@ export default new Router({
           {
             path: '/playground',
             name: 'playground',
-            component: async () => import('../views/dev/Playground.vue')
+            component: async () => import('../pages/playground/index.vue')
           }
         ]
       : [])

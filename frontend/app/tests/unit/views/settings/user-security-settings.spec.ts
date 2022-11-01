@@ -2,8 +2,8 @@ import { mount, Wrapper } from '@vue/test-utils';
 import { set } from '@vueuse/core';
 import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import Vuetify from 'vuetify';
+import UserSecuritySettings from '@/pages/settings/data-security/index.vue';
 import { usePremiumStore } from '@/store/session/premium';
-import UserSecuritySettings from '@/views/settings/UserSecuritySettings.vue';
 
 vi.mock('@/services/backup', () => ({
   useBackupApi: () => ({

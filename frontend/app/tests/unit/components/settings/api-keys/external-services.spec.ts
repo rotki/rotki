@@ -2,7 +2,7 @@ import { mount, Wrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
 import { Pinia, setActivePinia } from 'pinia';
 import Vuetify from 'vuetify';
-import ExternalServices from '@/components/settings/api-keys/ExternalServices.vue';
+import ExternalServices from '@/pages/settings/api-keys/external/index.vue';
 import { useExternalServicesApi } from '@/services/settings/external-services-api';
 import { useMessageStore } from '@/store/message';
 import { useSessionStore } from '@/store/session';
