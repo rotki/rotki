@@ -52,7 +52,6 @@ import { Ref } from 'vue';
 import CustomAssetForm from '@/components/asset-manager/CustomAssetForm.vue';
 import CustomAssetTable from '@/components/asset-manager/CustomAssetTable.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
-import { useRoute, useRouter } from '@/composables/router';
 import { Routes } from '@/router/routes';
 import { useAssetManagementApi } from '@/services/assets/management-api';
 import { api } from '@/services/rotkehlchen-api';

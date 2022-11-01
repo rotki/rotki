@@ -4,6 +4,20 @@ import Vuetify from 'vuetify';
 import TabNavigation from '@/components/helper/TabNavigation.vue';
 import { getClass } from '@/types/tabs';
 
+vi.mock('vue-router/composables', () => ({
+  useRoute: vi.fn().mockReturnValue({
+    path: '/dashboard/info/'
+  })
+}));
+
+vi.mock('@/composables/common', () => ({
+  useTheme: vi.fn().mockReturnValue({
+    currentBreakpoint: computed(() => ({
+      xsOnly: false
+    }))
+  })
+}));
+
 describe('TabNavigation.vue', () => {
   let wrapper: Wrapper<any>;
   const data = [{ name: 'tab', routeTo: '/route/to/tab', hidden: true }];
@@ -23,8 +37,7 @@ describe('TabNavigation.vue', () => {
     wrapper = createWrapper({
       propsData: {
         tabContents: data
-      },
-      mocks: { $route: { path: '/dashboard/info/' } }
+      }
     });
   });
 

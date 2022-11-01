@@ -5,7 +5,6 @@
 </template>
 
 <script setup lang="ts">
-import { useRouter } from '@/composables/router';
 import { Routes } from '@/router/routes';
 
 const props = defineProps({

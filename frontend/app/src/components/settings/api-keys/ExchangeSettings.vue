@@ -87,7 +87,6 @@ import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import ExchangeKeysForm from '@/components/settings/api-keys/ExchangeKeysForm.vue';
-import { useRouter } from '@/composables/router';
 import { useInterop } from '@/electron-interop';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { useNotifications } from '@/store/notifications';

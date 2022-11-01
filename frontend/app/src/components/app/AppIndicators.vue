@@ -41,7 +41,6 @@
 import Fragment from '@/components/helper/Fragment';
 import { useTheme } from '@/composables/common';
 import { useDarkMode } from '@/composables/dark-mode';
-import { useRoute } from '@/composables/router';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
 import { checkIfDevelopment } from '@/utils/env-utils';
 

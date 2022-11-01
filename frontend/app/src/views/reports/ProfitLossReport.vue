@@ -62,7 +62,6 @@ import ProfitLossEvents from '@/components/profitloss/ProfitLossEvents.vue';
 import ProfitLossOverview from '@/components/profitloss/ProfitLossOverview.vue';
 import ReportActionable from '@/components/profitloss/ReportActionable.vue';
 import ReportHeader from '@/components/profitloss/ReportHeader.vue';
-import { useRoute, useRouter } from '@/composables/router';
 import { useInterop } from '@/electron-interop';
 import { Routes } from '@/router/routes';
 import { useReports } from '@/store/reports';

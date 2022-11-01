@@ -108,7 +108,6 @@ import { PropType } from 'vue';
 import ExchangeAmountRow from '@/components/accounts/exchanges/ExchangeAmountRow.vue';
 import AssetBalances from '@/components/AssetBalances.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
-import { useRoute, useRouter } from '@/composables/router';
 import { Routes } from '@/router/routes';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { useTasks } from '@/store/tasks';

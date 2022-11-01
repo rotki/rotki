@@ -78,7 +78,6 @@ import ManualBalanceTable from '@/components/accounts/manual-balances/ManualBala
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import Fragment from '@/components/helper/Fragment';
 import PriceRefresh from '@/components/helper/PriceRefresh.vue';
-import { useRouter } from '@/composables/router';
 import { BalanceType } from '@/services/balances/types';
 import { useManualBalancesStore } from '@/store/balances/manual';
 import { ManualBalance } from '@/types/manual-balances';

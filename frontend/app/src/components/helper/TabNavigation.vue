@@ -46,7 +46,6 @@
 <script setup lang="ts">
 import { PropType } from 'vue';
 import { useTheme } from '@/composables/common';
-import { useRoute } from '@/composables/router';
 import { TabContent, getClass } from '@/types/tabs';
 import { checkIfDevelopment } from '@/utils/env-utils';
 

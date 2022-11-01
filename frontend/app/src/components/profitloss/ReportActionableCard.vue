@@ -242,7 +242,6 @@ import { Nullable } from '@rotki/common';
 import { PropType } from 'vue';
 import ReportMissingAcquisitions from '@/components/profitloss/ReportMissingAcquisitions.vue';
 import ReportMissingPrices from '@/components/profitloss/ReportMissingPrices.vue';
-import { useRouter } from '@/composables/router';
 import { Routes } from '@/router/routes';
 import { useReports } from '@/store/reports';
 import { Pinned } from '@/store/session/types';

@@ -11,7 +11,6 @@
 <script setup lang="ts">
 import { PropType } from 'vue';
 import { RawLocation } from 'vue-router';
-import { useRouter } from '@/composables/router';
 
 const props = defineProps({
   component: { required: false, type: String, default: 'span' },

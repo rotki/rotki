@@ -228,7 +228,6 @@ import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import { isSectionLoading } from '@/composables/common';
 import { useTradeFilters } from '@/composables/filters/trades';
 import { setupIgnore } from '@/composables/history';
-import { useRoute, useRouter } from '@/composables/router';
 import { Routes } from '@/router/routes';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useTrades } from '@/store/history/trades';

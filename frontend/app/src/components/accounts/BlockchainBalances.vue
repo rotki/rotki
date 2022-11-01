@@ -215,7 +215,6 @@ import AccountForm from '@/components/accounts/AccountForm.vue';
 import AssetBalances from '@/components/AssetBalances.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import PriceRefresh from '@/components/helper/PriceRefresh.vue';
-import { useRoute, useRouter } from '@/composables/router';
 import { BlockchainAccountWithBalance } from '@/store/balances/types';
 import { useBtcAccountBalancesStore } from '@/store/blockchain/accountbalances/btc';
 import { useChainAccountBalancesStore } from '@/store/blockchain/accountbalances/chain';

@@ -199,7 +199,6 @@ import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import { isSectionLoading } from '@/composables/common';
 import { useLedgerActionsFilter } from '@/composables/filters/ledger-actions';
 import { setupIgnore } from '@/composables/history';
-import { useRoute, useRouter } from '@/composables/router';
 import { Routes } from '@/router/routes';
 import { useLedgerActions } from '@/store/history/ledger-actions';
 import { IgnoreActionType, LedgerActionEntry } from '@/store/history/types';
