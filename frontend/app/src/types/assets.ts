@@ -53,7 +53,7 @@ export interface AssetPagination extends ApiPagination<SupportedAsset> {
   name?: string;
   symbol?: string;
   showUserOwnedAssetsOnly?: boolean;
-  includeIgnoredAssets?: boolean;
+  ignoredAssetsHandling?: string;
   identifiers?: string[];
 }
 
@@ -62,7 +62,7 @@ export interface AssetPaginationOptions
   name?: string;
   symbol?: string;
   showUserOwnedAssetsOnly?: boolean;
-  includeIgnoredAssets?: boolean;
+  ignoredAssetsHandling?: string;
 }
 
 export const defaultAssetPagination = (
