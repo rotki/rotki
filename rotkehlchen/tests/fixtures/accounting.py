@@ -246,10 +246,12 @@ def _create_inquirer(
             to_asset,
             ignore_cache: bool = False,  # pylint: disable=unused-argument
     ):
-        return mocked_prices.get((from_asset, to_asset), (FVal('1.5'), CurrentPriceOracle.BLOCKCHAIN))  # noqa: E501
+        price, oracle = mocked_prices.get((from_asset, to_asset), (FVal('1.5'), CurrentPriceOracle.BLOCKCHAIN))  # noqa: E501
+        return price, oracle, False
 
     def mock_find_usd_price_with_oracle(asset, ignore_cache: bool = False):  # pylint: disable=unused-argument  # noqa: E501
-        return mocked_prices.get(asset, (FVal('1.5'), CurrentPriceOracle.BLOCKCHAIN))
+        price, oracle = mocked_prices.get(asset, (FVal('1.5'), CurrentPriceOracle.BLOCKCHAIN))
+        return price, oracle, False
 
     if ignore_mocked_prices_for is None:
         inquirer.find_price = mock_find_price  # type: ignore
@@ -294,39 +296,43 @@ def _create_inquirer(
                 coming_from_latest_price=coming_from_latest_price,
             )
 
-        def mock_prices_with_oracles(from_asset, to_asset, ignore_cache=False, coming_from_latest_price=False):  # noqa: E501
+        def mock_prices_with_oracles(from_asset, to_asset, ignore_cache=False, coming_from_latest_price=False, match_main_currency=False):  # noqa: E501
             if from_asset.identifier in ignore_mocked_prices_for:
                 return inquirer.find_price_and_oracle_old(
                     from_asset=from_asset,
                     to_asset=to_asset,
                     ignore_cache=ignore_cache,
                     coming_from_latest_price=coming_from_latest_price,
+                    match_main_currency=match_main_currency,
                 )
             if len(mocked_current_prices_with_oracles) != 0:
-                return mocked_current_prices_with_oracles.get((from_asset, to_asset), (FVal('1.5'), CurrentPriceOracle.BLOCKCHAIN))  # noqa: E501
+                price, oracle = mocked_current_prices_with_oracles.get((from_asset, to_asset), (FVal('1.5'), CurrentPriceOracle.BLOCKCHAIN))  # noqa: E501
+                return price, oracle, False
             price = mock_find_price(
                 from_asset=from_asset,
                 to_asset=to_asset,
                 ignore_cache=ignore_cache,
                 coming_from_latest_price=coming_from_latest_price,
             )
-            return price, CurrentPriceOracle.BLOCKCHAIN
+            return price, CurrentPriceOracle.BLOCKCHAIN, False
 
-        def mock_usd_prices_with_oracles(asset, ignore_cache=False, coming_from_latest_price=False):  # noqa: E501
+        def mock_usd_prices_with_oracles(asset, ignore_cache=False, coming_from_latest_price=False, match_main_currency=False):  # noqa: E501
             if asset.identifier in ignore_mocked_prices_for:
                 return inquirer.find_usd_price_and_oracle_old(
                     asset=asset,
                     ignore_cache=ignore_cache,
                     coming_from_latest_price=coming_from_latest_price,
+                    match_main_currency=match_main_currency,
                 )
             if len(mocked_current_prices_with_oracles) != 0:
-                return mocked_current_prices_with_oracles.get(asset, (FVal('1.5'), CurrentPriceOracle.BLOCKCHAIN))  # noqa: E501
+                price, oracle = mocked_current_prices_with_oracles.get(asset, (FVal('1.5'), CurrentPriceOracle.BLOCKCHAIN))  # noqa: E501
+                return price, oracle, False
             price = mock_find_usd_price(
                 asset=asset,
                 ignore_cache=ignore_cache,
                 coming_from_latest_price=coming_from_latest_price,
             )
-            return price, CurrentPriceOracle.BLOCKCHAIN
+            return price, CurrentPriceOracle.BLOCKCHAIN, False
 
         inquirer.find_price_old = inquirer.find_price  # type: ignore
         inquirer.find_usd_price_old = inquirer.find_usd_price  # type: ignore

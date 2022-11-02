@@ -1,7 +1,7 @@
 import json
 import logging
 from http import HTTPStatus
-from typing import Any, Dict, List, Literal, NamedTuple, Optional, Union, overload
+from typing import Any, Dict, List, Literal, NamedTuple, Optional, Tuple, Union, overload
 from urllib.parse import urlencode
 
 import requests
@@ -518,8 +518,10 @@ class Coingecko(HistoricalPriceOracleInterface):
             self,
             from_asset: AssetWithOracles,
             to_asset: AssetWithOracles,
-    ) -> Price:
-        """Returns a simple price for from_asset to to_asset in coingecko
+            match_main_currency: bool,
+    ) -> Tuple[Price, bool]:
+        """Returns a simple price for from_asset to to_asset in coingecko and `False` value
+        since it never tries to match main currency.
 
         Uses the simple/price endpoint of coingecko. If to_asset is not part of the
         coingecko simple vs currencies or if from_asset is not supported in coingecko
@@ -534,7 +536,7 @@ class Coingecko(HistoricalPriceOracleInterface):
             location='simple price',
         )
         if not vs_currency:
-            return Price(ZERO)
+            return Price(ZERO), False
 
         try:
             from_coingecko_id = from_asset.to_coingecko()
@@ -543,7 +545,7 @@ class Coingecko(HistoricalPriceOracleInterface):
                 f'Tried to query coingecko simple price from {from_asset.identifier} '
                 f'to {to_asset.identifier}. But from_asset is not supported in coingecko',
             )
-            return Price(ZERO)
+            return Price(ZERO), False
 
         result = self._query(
             module='simple/price',
@@ -554,14 +556,14 @@ class Coingecko(HistoricalPriceOracleInterface):
 
         # https://github.com/PyCQA/pylint/issues/4739
         try:
-            return Price(FVal(result[from_coingecko_id][vs_currency]))  # pylint: disable=unsubscriptable-object  # noqa: E501
+            return Price(FVal(result[from_coingecko_id][vs_currency])), False  # pylint: disable=unsubscriptable-object  # noqa: E501
         except KeyError as e:
             log.warning(
                 f'Queried coingecko simple price from {from_asset.identifier} '
                 f'to {to_asset.identifier}. But got key error for {str(e)} when '
                 f'processing the result.',
             )
-            return Price(ZERO)
+            return Price(ZERO), False
 
     def can_query_history(  # pylint: disable=no-self-use
             self,

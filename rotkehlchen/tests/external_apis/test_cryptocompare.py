@@ -302,9 +302,10 @@ def test_cryptocompare_query_compound_tokens(
         timestamp=1584662400,
     )
     assert price == expected_price2
-    price = cryptocompare.query_current_price(
+    price, _ = cryptocompare.query_current_price(
         from_asset=asset.resolve(),
         to_asset=usd,
+        match_main_currency=False,
     )
     assert price is not None
 
@@ -319,8 +320,9 @@ def test_cryptocompare_query_with_api_key(cryptocompare):
     response = cryptocompare._api_query('v2/news/')
     assert response and isinstance(response, list)
     # call to endpoint with args
-    price = cryptocompare.query_current_price(
+    price, _ = cryptocompare.query_current_price(
         from_asset=A_ETH.resolve_to_asset_with_oracles(),
         to_asset=A_USD.resolve_to_asset_with_oracles(),
+        match_main_currency=False,
     )
     assert price is not None

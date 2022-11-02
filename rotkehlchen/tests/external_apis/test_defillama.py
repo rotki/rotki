@@ -54,36 +54,42 @@ def test_defillama_current_price(inquirer, session_defillama, session_coingecko)
     eur = A_EUR.resolve()
 
     # Test cryptoasset
-    price_defillama = session_defillama.query_current_price(
+    price_defillama, _ = session_defillama.query_current_price(
         from_asset=eth,
         to_asset=usd,
+        match_main_currency=False,
     )
-    price_coingecko = session_coingecko.query_current_price(
+    price_coingecko, _ = session_coingecko.query_current_price(
         from_asset=eth,
         to_asset=usd,
+        match_main_currency=False,
     )
     assert price_coingecko.is_close(price_defillama, max_diff='10')
 
     # Test evm assets
-    price_defillama = session_defillama.query_current_price(
+    price_defillama, _ = session_defillama.query_current_price(
         from_asset=dai,
         to_asset=usd,
+        match_main_currency=False,
     )
-    price_coingecko = session_coingecko.query_current_price(
+    price_coingecko, _ = session_coingecko.query_current_price(
         from_asset=dai,
         to_asset=usd,
+        match_main_currency=False,
     )
     assert price_coingecko.is_close(price_defillama, max_diff='0.1')
 
     # Test a non usd pair
     # Test evm assets
-    price_defillama = session_defillama.query_current_price(
+    price_defillama, _ = session_defillama.query_current_price(
         from_asset=dai,
         to_asset=eur,
+        match_main_currency=False,
     )
-    price_coingecko = session_coingecko.query_current_price(
+    price_coingecko, _ = session_coingecko.query_current_price(
         from_asset=dai,
         to_asset=eur,
+        match_main_currency=False,
     )
     # Multiply by 1.5 because we are mocking rates queries
     assert (price_coingecko * FVal('1.5')).is_close(price_defillama, max_diff='0.1')

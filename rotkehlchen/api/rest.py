@@ -3370,7 +3370,7 @@ class RestAPI():
             f'{", ".join([asset.identifier for asset in assets])}',
         )
         # Type is list instead of tuple here because you can't serialize a tuple
-        assets_price: Dict[Asset, List[Union[Price, Optional[int]]]] = {}
+        assets_price: Dict[Asset, List[Union[Price, Optional[int], bool]]] = {}
         oracle: Optional[CurrentPriceOracle]
         for asset in assets:
             if asset != target_asset:
@@ -3381,16 +3381,17 @@ class RestAPI():
                         query_specific_balances_before=None,
                     )
                     oracle = CurrentPriceOracle.MANUALCURRENT if nft_price_data['manually_input'] is True else CurrentPriceOracle.BLOCKCHAIN  # noqa: E501
-                    assets_price[asset] = [Price(nft_price_data['usd_price']), oracle.value]
+                    assets_price[asset] = [Price(nft_price_data['usd_price']), oracle.value, False]
                 else:
-                    price, oracle = Inquirer().find_price_and_oracle(
+                    price, oracle, used_main_currency = Inquirer().find_price_and_oracle(  # noqa: E501
                         from_asset=asset,
                         to_asset=target_asset,
                         ignore_cache=ignore_cache,
+                        match_main_currency=True,
                     )
-                    assets_price[asset] = [price, oracle.value]
+                    assets_price[asset] = [price, oracle.value, used_main_currency]
             else:
-                assets_price[asset] = [Price(ONE), CurrentPriceOracle.BLOCKCHAIN.value]
+                assets_price[asset] = [Price(ONE), CurrentPriceOracle.BLOCKCHAIN.value, False]
 
         result = {
             'assets': assets_price,
