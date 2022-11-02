@@ -3300,16 +3300,7 @@
     "to_asset": "To Asset"
   },
   "price_oracle_selection": {
-    "add_tooltip": "Add the oracle to the list",
-    "all_added": "No missing price oracles",
-    "header": {
-      "priority": "Priority"
-    },
-    "hint": "* Removing all the oracles will make it impossible to query prices for assets.",
-    "item": {
-      "delete": "Remove the oracle entry",
-      "empty": "No price oracles found!"
-    }
+    "hint": "* Removing all the oracles will make it impossible to query prices for assets."
   },
   "price_oracle_settings": {
     "historic_prices": "Historic Prices",

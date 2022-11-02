@@ -1,5 +1,6 @@
 import { ComputedRef } from 'vue';
 import { defaultGeneralSettings } from '@/data/factories';
+import { AddressNamePriority } from '@/types/address-name-priorities';
 import { Currency, SupportedCurrency, useCurrencies } from '@/types/currencies';
 import { Exchange } from '@/types/exchanges';
 import { Module } from '@/types/modules';
@@ -55,6 +56,9 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
   const treatEth2AsEth: ComputedRef<boolean> = computed(
     () => settings.treatEth2AsEth
   );
+  const addressNamePriority: ComputedRef<AddressNamePriority[]> = computed(
+    () => settings.addressNamePriority
+  );
 
   const currencySymbol: ComputedRef<SupportedCurrency> = computed(() => {
     const currency = get(mainCurrency);
@@ -85,6 +89,7 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
     ssf0graphMultiplier,
     nonSyncingExchanges,
     treatEth2AsEth,
+    addressNamePriority,
     update
   };
 });
