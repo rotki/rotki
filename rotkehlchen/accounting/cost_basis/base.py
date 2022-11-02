@@ -1,6 +1,8 @@
+import heapq
 import logging
+import time
 from abc import ABCMeta, abstractmethod
-from collections import defaultdict, deque
+from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import (
     TYPE_CHECKING,
@@ -16,6 +18,7 @@ from typing import (
     Set,
     Tuple,
     Type,
+    Union,
     overload,
 )
 
@@ -101,10 +104,15 @@ class AssetSpendEvent:
 
 
 class BaseAcquisitionsOrder(metaclass=ABCMeta):
-    _acquisitions: deque[AssetAcquisitionEvent]
+    # For FIFO, the time at the point of insertion is used
+    # For LIFO, the time at the point of insertion is used with a negation
+    # For HIFO, the amount of the acquisition event is used with a negation
+    # The reason for the negation is because of Python's `heapq` implementation
+    Priority = Union[FVal, Timestamp]
+    _acquisitions: list[Tuple[Priority, AssetAcquisitionEvent]]
 
     def __init__(self) -> None:
-        self._acquisitions = deque()
+        self._acquisitions = []
 
     @abstractmethod
     def add_acquisition(self, acquisition: AssetAcquisitionEvent) -> None:
@@ -120,11 +128,11 @@ class BaseAcquisitionsOrder(metaclass=ABCMeta):
         the first event each time but _acquisitions may be not modified between iterations.
         """
         while len(self._acquisitions) > 0:
-            yield self._acquisitions[0]
+            yield self._acquisitions[0][1]
 
     def get_acquisitions(self) -> Tuple[AssetAcquisitionEvent, ...]:
         """Returns read-only _acquisitions"""
-        return tuple(self._acquisitions)
+        return tuple(entry[1] for entry in self._acquisitions)
 
     def consume_result(self, used_amount: FVal) -> None:
         """This function should be used to consume results of the
@@ -136,12 +144,12 @@ class BaseAcquisitionsOrder(metaclass=ABCMeta):
         """
         # this is a temporary assertion to test that new accounting tools work properly.
         # Written on 06.06.2022 and can be removed after a couple of months if everything goes well
-        assert ZERO <= used_amount <= self._acquisitions[0].remaining_amount, \
-            f'Used amount must be in the interval [0, {self._acquisitions[0].remaining_amount}] but it was {used_amount}'  # noqa: E501
+        assert ZERO <= used_amount <= self._acquisitions[0][1].remaining_amount, \
+            f'Used amount must be in the interval [0, {self._acquisitions[0][1].remaining_amount}] but it was {used_amount}'  # noqa: E501
 
-        self._acquisitions[0].remaining_amount -= used_amount
-        if self._acquisitions[0].remaining_amount == ZERO:
-            self._acquisitions.popleft()
+        self._acquisitions[0][1].remaining_amount -= used_amount
+        if self._acquisitions[0][1].remaining_amount == ZERO:
+            heapq.heappop(self._acquisitions)
 
     def __len__(self) -> int:
         return len(self._acquisitions)
@@ -150,13 +158,19 @@ class BaseAcquisitionsOrder(metaclass=ABCMeta):
 class FIFOAcquisitionsOrder(BaseAcquisitionsOrder):
     """Accounting in FIFO (first-in-first-out) order"""
     def add_acquisition(self, acquisition: AssetAcquisitionEvent) -> None:
-        self._acquisitions.append(acquisition)
+        heapq.heappush(self._acquisitions, (Timestamp(time.time_ns()), acquisition))
 
 
 class LIFOAcquisitionsOrder(BaseAcquisitionsOrder):
     """Accounting in LIFO (last-in-first-out) order"""
     def add_acquisition(self, acquisition: AssetAcquisitionEvent) -> None:
-        self._acquisitions.appendleft(acquisition)
+        heapq.heappush(self._acquisitions, (Timestamp(-time.time_ns()), acquisition))
+
+
+class HIFOAcquisitionsOrder(BaseAcquisitionsOrder):
+    """Accounting in HIFO (highest-in-first-out) order"""
+    def add_acquisition(self, acquisition: AssetAcquisitionEvent) -> None:
+        heapq.heappush(self._acquisitions, (-acquisition.amount, acquisition))
 
 
 class CostBasisEvents:
@@ -172,6 +186,8 @@ class CostBasisEvents:
             self.acquisitions_manager = FIFOAcquisitionsOrder()
         elif cost_basis_method == CostBasisMethod.LIFO:
             self.acquisitions_manager = LIFOAcquisitionsOrder()
+        elif cost_basis_method == CostBasisMethod.HIFO:
+            self.acquisitions_manager = HIFOAcquisitionsOrder()
         self.spends = []
         self.used_acquisitions = []
 

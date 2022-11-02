@@ -525,6 +525,108 @@ def test_accounting_lifo_order(accountant):
     ]
 
 
+def test_accounting_hifo_order(accountant):
+    asset = A_BTC
+    cost_basis = accountant.pots[0].cost_basis
+    cost_basis.reset(DBSettings(cost_basis_method=CostBasisMethod.HIFO))
+    asset_events = cost_basis.get_events(asset)
+    # first we do a simple test that from 2 events the one with the highest amount is used
+    event1 = AssetAcquisitionEvent(
+        amount=ONE,
+        timestamp=1,
+        rate=ONE,
+        index=1,
+    )
+    event2 = AssetAcquisitionEvent(
+        amount=FVal('2.0000'),
+        timestamp=2,
+        rate=ONE,
+        index=2,
+    )
+    asset_events.acquisitions_manager.add_acquisition(event1)
+    asset_events.acquisitions_manager.add_acquisition(event2)
+    assert cost_basis.reduce_asset_amount(asset, ONE, 0)
+    acquisitions = asset_events.acquisitions_manager.get_acquisitions()
+    assert len(acquisitions) == 2 and acquisitions[0] == event2 and acquisitions[1] == event1
+
+    # then test to reset
+    cost_basis.reset(DBSettings(cost_basis_method=CostBasisMethod.HIFO))
+    asset_events = cost_basis.get_events(asset)
+    # checking what happens if one of the events has non-zero remaining_amount
+    event3 = AssetAcquisitionEvent(
+        amount=FVal(2),
+        timestamp=1,
+        rate=ONE,
+        index=1,
+    )
+    event4 = AssetAcquisitionEvent(
+        amount=FVal(5),
+        timestamp=2,
+        rate=ONE,
+        index=2,
+    )
+    asset_events.acquisitions_manager.add_acquisition(event3)
+    asset_events.acquisitions_manager.add_acquisition(event4)
+    assert cost_basis.calculate_spend_cost_basis(
+        spending_amount=3,
+        spending_asset=asset,
+        timestamp=1,
+    ).is_complete is True
+    acquisitions = asset_events.acquisitions_manager.get_acquisitions()
+    assert acquisitions[0].remaining_amount == FVal(2) and acquisitions[1] == event3
+    # checking that new event after processing previous is added properly
+    event5 = AssetAcquisitionEvent(
+        amount=ONE,
+        timestamp=1,
+        rate=ONE,
+        index=1,
+    )
+    asset_events.acquisitions_manager.add_acquisition(event5)
+    assert cost_basis.calculate_spend_cost_basis(
+        spending_amount=4,
+        spending_asset=asset,
+        timestamp=2,
+    ).is_complete is True
+    acquisitions = asset_events.acquisitions_manager.get_acquisitions()
+    assert len(acquisitions) == 1 and acquisitions[0].amount == ONE and acquisitions[0].remaining_amount == ONE  # noqa: E501
+    # check what happens if we use all remaining events
+    event6 = AssetAcquisitionEvent(
+        amount=ONE,
+        timestamp=1,
+        rate=ONE,
+        index=1,
+    )
+    asset_events.acquisitions_manager.add_acquisition(event6)
+    assert cost_basis.calculate_spend_cost_basis(
+        spending_amount=2,
+        spending_asset=asset,
+        timestamp=3,
+    ).is_complete is True
+    acquisitions = asset_events.acquisitions_manager.get_acquisitions()
+    assert len(acquisitions) == 0
+    # check what happens if we try to use more than available
+    event7 = AssetAcquisitionEvent(
+        amount=ONE,
+        timestamp=1,
+        rate=ONE,
+        index=1,
+    )
+    asset_events.acquisitions_manager.add_acquisition(event7)
+    assert cost_basis.calculate_spend_cost_basis(
+        spending_amount=2,
+        spending_asset=asset,
+        timestamp=4,
+    ).is_complete is False
+    assert cost_basis.missing_acquisitions == [
+        MissingAcquisition(
+            asset=asset,
+            time=4,
+            found_amount=ONE,
+            missing_amount=ONE,
+        ),
+    ]
+
+
 def test_missing_acquisitions(accountant):
     """Test that missing acquisitions are added properly by
     reduce_asset_amount and calculate_spend_cost_basis
