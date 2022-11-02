@@ -15,8 +15,8 @@
         class="amount-display"
         :class="{
           'blur-content': !shouldShowAmount,
-          'amount-display--profit': pnl && value.gt(0),
-          'amount-display--loss': pnl && value.lt(0)
+          'amount-display--profit': pnl && realValue.gt(0),
+          'amount-display--loss': pnl && realValue.lt(0)
         }"
         @click="copy()"
       >
@@ -54,16 +54,16 @@
                   v-bind="attrs"
                   v-on="on"
                 >
-                  {{ formattedValue }}
+                  {{ renderedValue }}
                 </span>
               </template>
               <div class="text-center">
                 <div
-                  v-if="showFullValue"
+                  v-if="showTooltipValue"
                   class="amount-display__full-value"
                   data-cy="display-full-value"
                 >
-                  {{ fullFormattedValue }}
+                  {{ tooltipValue }}
                 </div>
                 <div class="amount-display__copy-instruction">
                   <div
@@ -104,6 +104,7 @@
 
 <script setup lang="ts">
 import { BigNumber } from '@rotki/common';
+import { MaybeRef } from '@vueuse/core';
 import { ComputedRef, PropType } from 'vue';
 import AmountCurrency from '@/components/display/AmountCurrency.vue';
 import { displayAmountFormatter } from '@/data/amount_formatter';
@@ -112,8 +113,8 @@ import { useBalancePricesStore } from '@/store/balances/prices';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';
-import { findCurrency, Currency } from '@/types/currencies';
-import { bigNumberify } from '@/utils/bignumbers';
+import { findCurrency, Currency, CURRENCY_USD } from '@/types/currencies';
+import { One } from '@/utils/bignumbers';
 import RoundingMode = BigNumber.RoundingMode;
 
 const CurrencyType = ['none', 'ticker', 'symbol', 'name'] as const;
@@ -127,8 +128,10 @@ const props = defineProps({
   amount: {
     required: false,
     type: BigNumber,
-    default: null
+    default: () => One
   },
+
+  // This is what the fiat currency is `value` in. If it is null, it means we want to show it the way it is, no conversion, e.g. amount of an asset.
   fiatCurrency: {
     required: false,
     type: String as PropType<string | null>,
@@ -141,6 +144,11 @@ const props = defineProps({
   },
   forceCurrency: { required: false, type: Boolean, default: false },
   asset: { required: false, type: String, default: '' },
+
+  // This is price of `priceAsset`
+  priceOfAsset: { required: false, type: BigNumber, default: null },
+
+  // This is asset we want to calculate the value from, instead get it directly from `value`
   priceAsset: { required: false, type: String, default: '' },
   integer: { required: false, type: Boolean, default: false },
   assetPadding: {
@@ -149,30 +157,34 @@ const props = defineProps({
     default: 0,
     validator: (chars: number) => chars >= 0 && chars <= 5
   },
-  pnl: { required: false, type: Boolean, default: false },
-  tooltip: { required: false, type: Boolean, default: false }
+
+  // This prop to give color to the text based on the value
+  pnl: { required: false, type: Boolean, default: false }
 });
 
 const {
   amount,
   value,
   asset,
-  fiatCurrency,
+  fiatCurrency: sourceCurrency,
   showCurrency,
+  priceOfAsset,
   priceAsset,
   integer,
-  forceCurrency,
-  tooltip
+  forceCurrency
 } = toRefs(props);
-const { currency, currencySymbol, floatingPrecision } = storeToRefs(
-  useGeneralSettingsStore()
-);
+
+const {
+  currency,
+  currencySymbol: currentCurrency,
+  floatingPrecision
+} = storeToRefs(useGeneralSettingsStore());
 
 const { scrambleData, shouldShowAmount } = storeToRefs(
   useSessionSettingsStore()
 );
 
-const { exchangeRate } = useBalancePricesStore();
+const { exchangeRate, assetPrice } = useBalancePricesStore();
 
 const {
   thousandSeparator,
@@ -181,6 +193,12 @@ const {
   amountRoundingMode,
   valueRoundingMode
 } = storeToRefs(useFrontendSettingsStore());
+
+const { isManualAssetPrice, isAssetPriceInCurrentCurrency } =
+  useBalancePricesStore();
+
+const isManualPrice = isManualAssetPrice(priceAsset);
+const isCurrentCurrency = isAssetPriceInCurrentCurrency(priceAsset);
 
 const { assetSymbol } = useAssetInfoRetrieval();
 
@@ -193,21 +211,25 @@ const symbol = computed<string>(() => {
   return get(assetSymbol(identifier));
 });
 
-const copied = ref<boolean>(false);
+const convertFiat = (
+  value: MaybeRef<BigNumber>,
+  to: MaybeRef<string>,
+  from: MaybeRef<string> = CURRENCY_USD
+): BigNumber => {
+  const valueVal = get(value);
+  const toVal = get(to);
+  const fromVal = get(from);
 
-const shownCurrency = computed<ShownCurrency>(() => {
-  const show = get(showCurrency);
-  return show === 'none' && !!get(fiatCurrency) ? 'symbol' : show;
-});
+  if (toVal === fromVal) return valueVal;
+  const multiplierRate = to === CURRENCY_USD ? One : get(exchangeRate(toVal));
+  const dividerRate = from === CURRENCY_USD ? One : get(exchangeRate(fromVal));
 
-const isPriceAsset = computed<boolean>(() => {
-  return get(currencySymbol) === get(priceAsset);
-});
+  if (!multiplierRate || !dividerRate) return valueVal;
+  return valueVal.multipliedBy(multiplierRate).dividedBy(dividerRate);
+};
 
-const renderValue = computed<BigNumber>(() => {
-  let valueToRender;
-
-  // return a random number if scrambleData is on
+const realValue = computed<BigNumber>(() => {
+  // Return a random number if scrambleData is on
   if (get(scrambleData) || !get(shouldShowAmount)) {
     const multiplier = [10, 100, 1000];
 
@@ -216,51 +238,68 @@ const renderValue = computed<BigNumber>(() => {
     );
   }
 
-  if (get(amount) && get(fiatCurrency) === get(currencySymbol)) {
-    valueToRender = get(amount);
-  } else {
-    valueToRender = get(value);
+  // If there is no `sourceCurrency`, it means that no fiat currency, or the unit is asset not fiat, hence we should just show the `value` passed.
+  // If `forceCurrency` is true, we should also just return the value.
+  if (!get(sourceCurrency) || get(forceCurrency)) return get(value);
+
+  const sourceCurrencyVal = get(sourceCurrency)!;
+  const currentCurrencyVal = get(currentCurrency);
+  const priceAssetVal = get(priceAsset);
+  const isCurrentCurrencyVal = get(isCurrentCurrency);
+
+  // If `priceAsset` is defined, it means we will not use value from `value`, but calculate it ourself from the price of `priceAsset`
+  if (priceAssetVal) {
+    if (priceAssetVal === currentCurrencyVal) {
+      return get(amount);
+    }
+
+    // If `isCurrentCurrency` is true, we should calculate the value by `amount * priceOfAsset`
+    if (isCurrentCurrencyVal) {
+      const priceOfAssetVal = get(priceOfAsset) || get(assetPrice(priceAsset));
+      return get(amount).multipliedBy(priceOfAssetVal);
+    }
   }
 
-  // in certain cases where what is passed as a value is a string and not BigNumber, convert it
-  if (typeof valueToRender === 'string') {
-    return bigNumberify(valueToRender);
+  // If `sourceCurrency` and `currentCurrency` is not equal, we should convert the value
+  if (sourceCurrencyVal !== currentCurrencyVal) {
+    return convertFiat(value, currentCurrencyVal, sourceCurrencyVal);
   }
-  return valueToRender;
+
+  return get(value);
 });
 
-const isRenderValueNaN = computed<boolean>(() => get(renderValue).isNaN());
+// Check if the `realValue` is NaN
+const isNaN: ComputedRef<boolean> = computed(() => get(realValue).isNaN());
 
-const renderValueDecimalPlaces = computed<number>(
-  () => get(renderValue).decimalPlaces() ?? 0
+// Decimal place of `realValue`
+const decimalPlaces = computed<number>(
+  () => get(realValue).decimalPlaces() ?? 0
 );
 
-const convertFiat = computed<boolean>(() => {
-  return (
-    !get(forceCurrency) &&
-    !!get(fiatCurrency) &&
-    get(fiatCurrency) !== get(currencySymbol)
-  );
-});
-
-// Set exponential notation when the number is too big
+// Set exponential notation when the `realValue` is too big
 const showExponential = computed<boolean>(() => {
-  return get(renderValue).gt(1e15);
+  return get(realValue).gt(1e15);
 });
 
-const formatValue = (value: BigNumber): string => {
-  const floatingPrecisionUsed = get(integer) ? 0 : get(floatingPrecision);
-  const price = get(convertFiat) ? convertValue(value) : value;
-
-  if (price.isNaN()) {
-    return '-';
+const rounding = computed<RoundingMode | undefined>(() => {
+  const isValue = get(sourceCurrency);
+  if (isValue) {
+    return get(valueRoundingMode);
   }
-  let formattedValue = '';
+  return get(amountRoundingMode);
+});
+
+const renderedValue: ComputedRef<string> = computed(() => {
+  const floatingPrecisionUsed = get(integer) ? 0 : get(floatingPrecision);
+
+  if (get(isNaN)) return '-';
+
   if (get(showExponential)) {
-    let exponentialValue = price.toExponential(
+    let exponentialValue = get(realValue).toExponential(
       floatingPrecisionUsed,
       get(rounding)
     );
+
     if (get(thousandSeparator) !== ',' || get(decimalSeparator) !== '.') {
       exponentialValue = exponentialValue.replace(/[,.]/g, $1 => {
         if ($1 === ',') return get(thousandSeparator);
@@ -268,36 +307,43 @@ const formatValue = (value: BigNumber): string => {
         return $1;
       });
     }
-    formattedValue = exponentialValue;
-  } else {
-    formattedValue = displayAmountFormatter.format(
-      price,
-      floatingPrecisionUsed,
-      get(thousandSeparator),
-      get(decimalSeparator),
-      get(rounding)
-    );
+
+    return exponentialValue;
   }
 
-  return formattedValue;
-};
+  return displayAmountFormatter.format(
+    get(realValue),
+    floatingPrecisionUsed,
+    get(thousandSeparator),
+    get(decimalSeparator),
+    get(rounding)
+  );
+});
+
+const tooltipValue: ComputedRef<string> = computed(() => {
+  const value = get(realValue);
+  return value.toFormat(value.decimalPlaces() ?? 0);
+});
+
+const renderedCurrency = computed<Currency>(() => {
+  const fiat = get(sourceCurrency);
+  if (get(forceCurrency) && fiat) {
+    return findCurrency(fiat);
+  }
+
+  return get(currency);
+});
 
 const comparisonSymbol = computed(() => {
-  if (get(isPriceAsset)) {
-    return '';
-  }
-
-  const value = get(renderValue);
-
+  const realValueVal = get(realValue);
   const floatingPrecisionUsed = get(integer) ? 0 : get(floatingPrecision);
-  const price = get(convertFiat) ? convertValue(value) : value;
-  const decimals = price.decimalPlaces() ?? 0;
+  const decimals = get(decimalPlaces);
   const hiddenDecimals = decimals > floatingPrecisionUsed;
 
   if (hiddenDecimals && get(rounding) === BigNumber.ROUND_UP) {
     return '<';
   } else if (
-    price.abs().lt(1) &&
+    realValueVal.abs().lt(1) &&
     hiddenDecimals &&
     get(rounding) === BigNumber.ROUND_DOWN
   ) {
@@ -307,46 +353,30 @@ const comparisonSymbol = computed(() => {
   return '';
 });
 
-const formattedValue = computed(() => {
-  if (get(isPriceAsset)) {
-    return bigNumberify(1).toFormat(get(floatingPrecision));
-  }
-  return formatValue(get(renderValue));
+const showTooltipValue: ComputedRef<boolean> = computed(() => {
+  return get(decimalPlaces) > get(floatingPrecision) || get(showExponential);
 });
 
-const convertValue = (value: BigNumber): BigNumber => {
-  const rate = get(exchangeRate(get(currencySymbol)));
-  return rate ? value.multipliedBy(rate) : value;
-};
-
-const fullValue = computed<BigNumber>(() => {
-  return get(convertFiat) ? convertValue(get(renderValue)) : get(renderValue);
+const shownCurrency = computed<ShownCurrency>(() => {
+  const show = get(showCurrency);
+  return show === 'none' && !!get(sourceCurrency) ? 'symbol' : show;
 });
 
-const fullFormattedValue = computed<string>(() => {
-  const value = get(fullValue);
-  return value.toFormat(value.decimalPlaces() ?? 0);
+const shouldShowCurrency: ComputedRef<boolean> = computed(() => {
+  return !get(isNaN) && !!(get(shownCurrency) !== 'none' || get(symbol));
 });
 
-const rounding = computed<RoundingMode | undefined>(() => {
-  const isValue = get(fiatCurrency);
-  let rounding: RoundingMode | undefined = undefined;
-  if (isValue) {
-    rounding = get(valueRoundingMode);
-  } else if (!get(convertFiat)) {
-    rounding = get(amountRoundingMode);
-  }
-  return rounding;
-});
-
-const valueToCopy = computed<string>(() => {
-  return get(fullValue).toString();
+// Copy
+const realValueInString: ComputedRef<string> = computed(() => {
+  if (get(isNaN)) return '-';
+  return get(realValue).toString();
 });
 
 const { copy: copyText } = useClipboard({
-  source: valueToCopy
+  source: realValueInString
 });
 
+const copied = ref<boolean>(false);
 const { start, stop, isPending } = useTimeoutFn(
   () => {
     set(copied, false);
@@ -372,39 +402,6 @@ const copy = async () => {
   }
   startAnimation();
 };
-
-const renderedCurrency = computed<Currency>(() => {
-  const fiat = get(fiatCurrency);
-  if (get(forceCurrency) && fiat) {
-    return findCurrency(fiat);
-  }
-
-  return get(currency);
-});
-
-const { prices } = storeToRefs(useBalancePricesStore());
-
-const isManualPrice: ComputedRef<boolean> = computed(() => {
-  const asset = get(priceAsset);
-  if (!asset) return false;
-  return get(prices)[asset]?.isManualPrice || false;
-});
-
-const showFullValue: ComputedRef<boolean> = computed(() => {
-  return (
-    !(
-      get(renderValueDecimalPlaces) <= get(floatingPrecision) && !get(tooltip)
-    ) ||
-    get(isPriceAsset) ||
-    get(showExponential)
-  );
-});
-
-const shouldShowCurrency: ComputedRef<boolean> = computed(() => {
-  return (
-    !get(isRenderValueNaN) && !!(get(shownCurrency) !== 'none' || get(symbol))
-  );
-});
 </script>
 
 <style scoped lang="scss">

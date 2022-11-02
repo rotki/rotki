@@ -56,6 +56,8 @@
       </template>
       <template #item.usdPrice="{ item }">
         <amount-display
+          :price-asset="item.priceAsset"
+          :amount="item.priceInAsset"
           :value="item.usdPrice"
           show-currency="symbol"
           fiat-currency="USD"

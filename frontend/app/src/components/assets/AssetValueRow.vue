@@ -9,9 +9,9 @@
           <amount-display
             v-if="info.usdPrice && info.usdPrice.gte(0)"
             show-currency="symbol"
-            fiat-currency="USD"
-            tooltip
             :price-asset="identifier"
+            :price-of-asset="info.usdPrice"
+            fiat-currency="USD"
             :value="info.usdPrice"
           />
           <div v-else class="pt-3 d-flex justify-end">
@@ -38,8 +38,10 @@
         <v-card-text class="text-end text-h5 font-weight-medium pt-4">
           <amount-display
             show-currency="symbol"
-            :fiat-currency="identifier"
             :amount="info.amount"
+            :price-asset="identifier"
+            :price-of-asset="info.usdPrice"
+            fiat-currency="USD"
             :value="info.usdValue"
           />
         </v-card-text>

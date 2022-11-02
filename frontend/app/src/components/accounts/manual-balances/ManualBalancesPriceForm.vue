@@ -63,8 +63,12 @@ const fetchedPrice = ref<string>('');
 const isCustomPrice = ref<boolean>(false);
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { fetchPrices, toSelectedCurrency, getAssetPrice } =
-  useBalancePricesStore();
+const {
+  fetchPrices,
+  toSelectedCurrency,
+  assetPrice,
+  isAssetPriceInCurrentCurrency
+} = useBalancePricesStore();
 
 const searchAssetPrice = async (asset: string) => {
   if (!asset) {
@@ -75,19 +79,34 @@ const searchAssetPrice = async (asset: string) => {
     return;
   }
 
+  const mainCurrency = get(currencySymbol);
+  if (mainCurrency === asset) {
+    set(price, '1');
+    set(priceAsset, mainCurrency);
+    set(fetchedPrice, '1');
+    set(isCustomPrice, false);
+    return;
+  }
+
   set(fetchingPrice, true);
   await fetchPrices({
-    ignoreCache: false,
+    ignoreCache: true,
     selectedAssets: [asset]
   });
   set(fetchingPrice, false);
 
-  const priceInUsd = getAssetPrice(asset);
-  if (priceInUsd && !priceInUsd.eq(0)) {
-    const priceInCurrentRate = get(toSelectedCurrency(priceInUsd)).toFixed();
-    set(price, priceInCurrentRate);
-    set(priceAsset, get(currencySymbol));
-    set(fetchedPrice, priceInCurrentRate);
+  const priceInFiat = get(assetPrice(asset));
+
+  if (priceInFiat && !priceInFiat.eq(0)) {
+    const priceInCurrentRate = get(toSelectedCurrency(priceInFiat)).toFixed();
+    const isCurrentCurrency = get(isAssetPriceInCurrentCurrency(asset));
+
+    const usedPrice = isCurrentCurrency
+      ? priceInFiat.toFixed()
+      : priceInCurrentRate;
+    set(price, usedPrice);
+    set(priceAsset, mainCurrency);
+    set(fetchedPrice, usedPrice);
     set(isCustomPrice, false);
   } else {
     set(isCustomPrice, true);

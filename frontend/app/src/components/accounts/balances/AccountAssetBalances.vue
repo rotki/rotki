@@ -13,7 +13,7 @@
         </template>
         <template #item.price="{ item }">
           <amount-display
-            v-if="getAssetPrice(item.asset)"
+            v-if="assetPrice(item.asset).value"
             tooltip
             show-currency="symbol"
             fiat-currency="USD"
@@ -56,7 +56,7 @@ defineProps({
 });
 
 const { t } = useI18n();
-const { getAssetPrice } = useBalancePricesStore();
+const { assetPrice } = useBalancePricesStore();
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
 const headers = computed<DataTableHeader[]>(() => [
@@ -92,7 +92,7 @@ const headers = computed<DataTableHeader[]>(() => [
 ]);
 
 const getPrice = (asset: string) => {
-  return getAssetPrice(asset) ?? Zero;
+  return get(assetPrice(asset)) ?? Zero;
 };
 </script>
 

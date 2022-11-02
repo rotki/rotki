@@ -46,10 +46,10 @@
       <template #item.usdPrice="{ item }">
         <amount-display
           v-if="item.usdPrice && item.usdPrice.gte(0)"
-          tooltip
           show-currency="symbol"
-          fiat-currency="USD"
           :price-asset="item.asset"
+          :price-of-asset="item.usdPrice"
+          fiat-currency="USD"
           :value="item.usdPrice"
         />
         <div v-else class="d-flex justify-end">
@@ -66,7 +66,9 @@
         <amount-display
           show-currency="symbol"
           :amount="item.amount"
-          :fiat-currency="item.asset"
+          :price-asset="item.asset"
+          :price-of-asset="item.usdPrice"
+          fiat-currency="USD"
           :value="item.usdValue"
         />
       </template>
@@ -87,7 +89,7 @@
       </template>
       <template v-if="visibleBalances.length > 0" #body.append="{ isMobile }">
         <row-append
-          label-colspan="4"
+          label-colspan="5"
           :label="tc('common.total')"
           :is-mobile="isMobile"
           :right-patch-colspan="1"
@@ -158,7 +160,7 @@ const deleteBalance = async () => {
   await deleteManualBalance(id);
 };
 
-const { getAssetPrice } = useBalancePricesStore();
+const { assetPrice } = useBalancePricesStore();
 
 const visibleBalances = computed<ManualBalance[]>(() => {
   let mappedBalances = [];
@@ -176,7 +178,7 @@ const visibleBalances = computed<ManualBalance[]>(() => {
 
   return mappedBalances.map(item => ({
     ...item,
-    usdPrice: getAssetPrice(item.asset)
+    usdPrice: get(assetPrice(item.asset))
   }));
 });
 

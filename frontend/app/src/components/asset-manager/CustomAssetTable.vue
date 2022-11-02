@@ -18,7 +18,16 @@
         </v-col>
       </v-row>
     </template>
-    <v-btn absolute fab top right dark color="primary" @click="add">
+    <v-btn
+      absolute
+      fab
+      top
+      right
+      dark
+      color="primary"
+      data-cy="add-manual-asset"
+      @click="add"
+    >
       <v-icon> mdi-plus </v-icon>
     </v-btn>
     <data-table
@@ -29,6 +38,7 @@
       :expanded="expanded"
       item-key="identifier"
       sort-by="name"
+      class="custom-assets-table"
       :sort-desc="false"
       :server-items-length="serverItemLength"
       @update:options="updatePaginationHandler($event)"

@@ -3,6 +3,7 @@
     <v-row class="mt-2">
       <v-col cols="12" md="6">
         <v-text-field
+          data-cy="name"
           :value="value.name"
           outlined
           persistent-hint
@@ -14,6 +15,7 @@
       </v-col>
       <v-col cols="12" md="6">
         <v-combobox
+          data-cy="type"
           :items="types"
           :value="value.customAssetType"
           outlined
@@ -27,6 +29,7 @@
       </v-col>
       <v-col cols="12">
         <v-textarea
+          data-cy="notes"
           :value="value.notes"
           outlined
           persistent-hint

@@ -14,9 +14,9 @@
         <amount-display
           v-if="item.usdPrice && item.usdPrice.gte(0)"
           show-currency="symbol"
-          fiat-currency="USD"
-          tooltip
           :price-asset="item.asset"
+          :price-of-asset="item.usdPrice"
+          fiat-currency="USD"
           :value="item.usdPrice"
         />
         <span v-else>-</span>
@@ -27,8 +27,10 @@
       <template #item.usdValue="{ item }">
         <amount-display
           show-currency="symbol"
-          :fiat-currency="item.asset"
           :amount="item.amount"
+          :price-asset="item.asset"
+          :price-of-asset="item.usdPrice"
+          fiat-currency="USD"
           :value="item.usdValue"
         />
       </template>
@@ -122,13 +124,13 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
 const { dark } = useTheme();
 const premium = usePremium();
 
-const { getAssetPrice } = useBalancePricesStore();
+const { assetPrice } = useBalancePricesStore();
 
 const transformAssets = (assets: XswapAsset[]): AssetBalanceWithPrice[] => {
   return assets.map(item => {
     return {
       asset: item.asset,
-      usdPrice: item.usdPrice ?? getAssetPrice(item.asset) ?? Zero,
+      usdPrice: item.usdPrice ?? get(assetPrice(item.asset)) ?? Zero,
       amount: item.userBalance.amount,
       usdValue: item.userBalance.usdValue
     };
