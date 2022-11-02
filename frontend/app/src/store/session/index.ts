@@ -25,9 +25,10 @@ import { usePurgeStore } from '@/store/history/purge';
 import { useTransactions } from '@/store/history/transactions';
 import { useMessageStore } from '@/store/message';
 import { useMonitorStore } from '@/store/monitor';
+import { useSessionAuthStore } from '@/store/session/auth';
 import { usePremiumStore } from '@/store/session/premium';
 import { useTagStore } from '@/store/session/tags';
-import { ChangePasswordPayload, SyncConflict } from '@/store/session/types';
+import { ChangePasswordPayload } from '@/store/session/types';
 import { useWatchersStore } from '@/store/session/watchers';
 import { useAccountingSettingsStore } from '@/store/settings/accounting';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
@@ -55,19 +56,13 @@ import { startPromise } from '@/utils';
 import { lastLogin } from '@/utils/account-management';
 import { logger } from '@/utils/logging';
 
-const defaultSyncConflict = (): SyncConflict => ({
-  message: '',
-  payload: null
-});
-
 export const useSessionStore = defineStore('session', () => {
-  const newAccount = ref(false);
-  const logged = ref(false);
-  const loginComplete = ref(false);
-  const username = ref('');
-  const syncConflict = ref<SyncConflict>(defaultSyncConflict());
   const showUpdatePopup = ref(false);
   const darkModeEnabled = ref(false);
+
+  const authStore = useSessionAuthStore();
+  const { newAccount, logged, loginComplete, username, syncConflict } =
+    storeToRefs(authStore);
 
   const usersApi = useUsersApi();
   const settingsApi = useSettingsApi();
@@ -205,7 +200,7 @@ export const useSessionStore = defineStore('session', () => {
         if (!credentials.username) {
           return { success: false, message: '' };
         }
-        set(syncConflict, defaultSyncConflict());
+        authStore.resetSyncConflict();
         ({ settings, exchanges } = await usersApi.login(credentials));
       }
 

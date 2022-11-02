@@ -20,7 +20,8 @@
     "types": [
       "vuetify",
       "vue-i18n",
-      "vite/client"
+      "vite/client",
+      "vite-plugin-vue-layouts/client"
     ],
     "paths": {
       "@/*": [

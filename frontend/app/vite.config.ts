@@ -10,6 +10,7 @@ import { checker } from 'vite-plugin-checker';
 // @ts-ignore
 import istanbul from 'vite-plugin-istanbul';
 import { VitePWA } from 'vite-plugin-pwa';
+import Layouts from 'vite-plugin-vue-layouts';
 
 const PACKAGE_ROOT = __dirname;
 const envPath = process.env.VITE_PUBLIC_PATH;
@@ -98,6 +99,10 @@ export default defineConfig({
           names: ['RouterLink', 'RouterView']
         }
       ]
+    }),
+    Layouts({
+      layoutsDirs: ['src/layouts'],
+      defaultLayout: 'default'
     }),
     ...(isTest
       ? [

@@ -2,6 +2,7 @@ import { useInterop } from '@/electron-interop';
 import { BackendOptions } from '@/electron-main/ipc';
 import { useMainStore } from '@/store/main';
 import { Writeable } from '@/types';
+import { deleteBackendUrl, getBackendUrl } from '@/utils/account-management';
 import { LogLevel } from '@/utils/log-level';
 import { getDefaultLogLevel, setLevel } from '@/utils/logging';
 
@@ -32,6 +33,9 @@ export const saveUserOptions = (config: Partial<BackendOptions>) => {
 
 export const useBackendManagement = (loaded: () => void = () => {}) => {
   const interop = useInterop();
+  const store = useMainStore();
+  const { connected } = storeToRefs(store);
+  const { setConnected, connect } = store;
 
   const defaultLogLevel = computed<LogLevel>(() => getDefaultLogLevel());
   const logLevel = ref<LogLevel>(get(defaultLogLevel));
@@ -97,6 +101,35 @@ export const useBackendManagement = (loaded: () => void = () => {}) => {
     await restartBackendWithOptions(get(options));
   };
 
+  const resetSessionBackend = async () => {
+    const { sessionOnly } = getBackendUrl();
+    if (sessionOnly) {
+      deleteBackendUrl();
+      await restartBackend();
+    }
+  };
+
+  const setupBackend = async () => {
+    if (get(connected)) {
+      return;
+    }
+
+    const { sessionOnly, url } = getBackendUrl();
+    if (!!url && !sessionOnly) {
+      await backendChanged(url);
+    } else {
+      await restartBackend();
+    }
+  };
+
+  const backendChanged = async (url: string | null) => {
+    setConnected(false);
+    if (!url) {
+      await restartBackend();
+    }
+    await connect(url);
+  };
+
   return {
     logLevel,
     defaultLogLevel,
@@ -105,6 +138,9 @@ export const useBackendManagement = (loaded: () => void = () => {}) => {
     fileConfig,
     saveOptions,
     resetOptions,
-    restartBackend
+    restartBackend,
+    resetSessionBackend,
+    setupBackend,
+    backendChanged
   };
 };

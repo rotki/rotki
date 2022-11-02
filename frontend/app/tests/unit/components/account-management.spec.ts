@@ -5,7 +5,7 @@ import flushPromises from 'flush-promises/index';
 import { setActivePinia, storeToRefs } from 'pinia';
 import Vuetify from 'vuetify';
 import { VDialog } from 'vuetify/lib/components';
-import AccountManagement from '@/components/AccountManagement.vue';
+import AccountManagement from '@/components/user/LoginHost.vue';
 import { setupLiquidityPosition } from '@/composables/defi';
 import { interop, useInterop } from '@/electron-interop';
 import { useAggregatedBalancesStore } from '@/store/balances/aggregated';
