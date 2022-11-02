@@ -19,7 +19,11 @@ from rotkehlchen.constants.assets import (
     A_EUR,
     A_USD,
 )
-from rotkehlchen.externalapis.cryptocompare import CRYPTOCOMPARE_HOURQUERYLIMIT, Cryptocompare
+from rotkehlchen.externalapis.cryptocompare import (
+    CRYPTOCOMPARE_HOURQUERYLIMIT,
+    CRYPTOCOMPARE_SPECIAL_CASES_MAPPING,
+    Cryptocompare,
+)
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
@@ -324,5 +328,13 @@ def test_cryptocompare_query_with_api_key(cryptocompare):
         from_asset=A_ETH.resolve_to_asset_with_oracles(),
         to_asset=A_USD.resolve_to_asset_with_oracles(),
         match_main_currency=False,
+    )
+    assert price is not None
+    # call to endpoint for a special asset to go into the special asset handling
+    special_asset = A_CDAI
+    assert special_asset in CRYPTOCOMPARE_SPECIAL_CASES_MAPPING
+    price, _ = cryptocompare.query_current_price(
+        from_asset=special_asset.resolve_to_asset_with_oracles(),
+        to_asset=A_USD.resolve_to_asset_with_oracles(),
     )
     assert price is not None
