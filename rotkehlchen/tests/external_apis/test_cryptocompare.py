@@ -336,5 +336,6 @@ def test_cryptocompare_query_with_api_key(cryptocompare):
     price, _ = cryptocompare.query_current_price(
         from_asset=special_asset.resolve_to_asset_with_oracles(),
         to_asset=A_USD.resolve_to_asset_with_oracles(),
+        match_main_currency=False,
     )
     assert price is not None
