@@ -388,7 +388,9 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleInterface):
             result['Data'] = data
             return result
 
-        if method_name in ('query_current_price', 'query_endpoint_pricehistorical'):
+        if method_name == 'query_current_price':
+            return result1[0] * result2[0]
+        if method_name == 'query_endpoint_pricehistorical':
             return result1 * result2
 
         raise RuntimeError(f'Illegal method_name: {method_name}. Should never happen')
@@ -456,6 +458,7 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleInterface):
                 method_name='query_current_price',
                 from_asset=from_asset,
                 to_asset=to_asset,
+                match_main_currency=False,
             )
             return price, False
 
