@@ -2,6 +2,7 @@ import { NumericString } from '@rotki/common';
 import { z } from 'zod';
 import { Constraints } from '@/data/constraints';
 import { axiosCamelCaseTransformer } from '@/services/axios-tranformers';
+import { AddressNamePriorityEnum } from '@/types/address-name-priorities';
 import { useCurrencies } from '@/types/currencies';
 import { Exchange, KrakenAccountType } from '@/types/exchanges';
 import { FrontendSettings } from '@/types/frontend-settings';
@@ -46,7 +47,8 @@ const GeneralSettings = z.object({
   historicalPriceOracles: z.array(PriceOracleEnum),
   ssf0graphMultiplier: z.number().default(0),
   nonSyncingExchanges: z.array(Exchange),
-  treatEth2AsEth: z.boolean()
+  treatEth2AsEth: z.boolean(),
+  addressNamePriority: z.array(AddressNamePriorityEnum)
 });
 
 export type GeneralSettings = z.infer<typeof GeneralSettings>;
@@ -139,7 +141,8 @@ const getGeneralSettings = (settings: UserSettings): GeneralSettings => ({
   historicalPriceOracles: settings.historicalPriceOracles,
   ssf0graphMultiplier: settings.ssf0graphMultiplier,
   nonSyncingExchanges: settings.nonSyncingExchanges,
-  treatEth2AsEth: settings.treatEth2AsEth
+  treatEth2AsEth: settings.treatEth2AsEth,
+  addressNamePriority: settings.addressNamePriority
 });
 
 const getOtherSettings = (settings: UserSettings): OtherSettings => ({

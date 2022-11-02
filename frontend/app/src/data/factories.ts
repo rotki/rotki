@@ -23,7 +23,8 @@ export const defaultGeneralSettings = (
   historicalPriceOracles: [],
   ssf0graphMultiplier: 0,
   nonSyncingExchanges: [],
-  treatEth2AsEth: false
+  treatEth2AsEth: false,
+  addressNamePriority: []
 });
 
 export const defaultAccountingSettings = (): AccountingSettings => ({

@@ -1277,6 +1277,7 @@
     "of": "of",
     "price": "Price",
     "price_in_symbol": "Price in {symbol}",
+    "priority": "Priority",
     "protocol": "Protocol",
     "select_address": "Select address(es)",
     "total": "Total",
@@ -1776,7 +1777,7 @@
           "hardcoded_mappings": "Hardcoded mappings",
           "private_address_book": "Private address book"
         },
-        "title": "The priority of the returned names adheres to the following order:"
+        "title": "The priority of the returned names adheres to the following order. "
       },
       "private": "Private",
       "private_description": "address book is saved only for this account."
@@ -4054,5 +4055,10 @@
       "version": "Version"
     },
     "title": "Yearn Vaults"
+  },
+  "address_name_priority_selection": {
+    "item": {
+      "empty": "No address name priorities found!"
+    }
   }
 }

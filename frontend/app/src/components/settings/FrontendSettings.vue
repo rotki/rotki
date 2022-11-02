@@ -17,6 +17,7 @@
         </div>
       </div>
       <enable-ens-names-setting />
+      <address-name-priority-setting />
     </div>
 
     <time-frame-setting />
@@ -54,6 +55,7 @@
 import EthNamesHint from '@/components/EthNamesHint.vue';
 import ThemeManagerLock from '@/components/premium/ThemeManagerLock.vue';
 import Explorers from '@/components/settings/explorers/Explorers.vue';
+import AddressNamePrioritySetting from '@/components/settings/frontend/AddressNamePrioritySetting.vue';
 import AnimationsEnabledSetting from '@/components/settings/frontend/AnimationsEnabledSetting.vue';
 import EnableEnsNamesSetting from '@/components/settings/frontend/EnableEnsNamesSetting.vue';
 import NftsInNetValueSetting from '@/components/settings/frontend/NftsInNetValueSetting.vue';
