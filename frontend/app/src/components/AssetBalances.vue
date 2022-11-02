@@ -13,10 +13,10 @@
     <template #item.usdPrice="{ item }">
       <amount-display
         v-if="item.usdPrice && item.usdPrice.gte(0)"
-        tooltip
         show-currency="symbol"
-        fiat-currency="USD"
         :price-asset="item.asset"
+        :price-of-asset="item.usdPrice"
+        fiat-currency="USD"
         :value="item.usdPrice"
       />
       <div v-else class="d-flex justify-end">
@@ -29,8 +29,10 @@
     <template #item.usdValue="{ item }">
       <amount-display
         show-currency="symbol"
-        :fiat-currency="item.asset"
         :amount="item.amount"
+        :price-asset="item.asset"
+        :price-of-asset="item.usdPrice"
+        fiat-currency="USD"
         :value="item.usdValue"
       />
     </template>

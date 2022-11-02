@@ -34,8 +34,9 @@
           <amount-display
             v-if="item.usdPrice && item.usdPrice.gte(0)"
             show-currency="symbol"
+            :price-asset="item.fromAsset"
+            :price-of-asset="item.usdPrice"
             fiat-currency="USD"
-            tooltip
             :value="item.usdPrice"
           />
           <div v-else class="d-flex justify-end">
@@ -189,7 +190,7 @@ const refresh = async () => {
   await refreshPrices(false, [...get(latestAssets), ...get(assets())]);
 };
 
-const { getAssetPrice } = useBalancePricesStore();
+const { assetPrice } = useBalancePricesStore();
 
 const latestAssets: ComputedRef<string[]> = computed(() => {
   return get(latestPrices)
@@ -200,12 +201,12 @@ const latestAssets: ComputedRef<string[]> = computed(() => {
 
 const filteredPrices = computed(() => {
   const filter = get(assetFilter);
-  const data = [...get(latestPrices)].filter(({ fromAsset }) => {
+  const data = get(latestPrices).filter(({ fromAsset }) => {
     return !isNft(fromAsset) && (!filter || fromAsset === filter);
   });
   return data.map(item => ({
     ...item,
-    usdPrice: getAssetPrice(item.fromAsset)
+    usdPrice: get(assetPrice(item.fromAsset))
   }));
 });
 

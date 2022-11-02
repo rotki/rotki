@@ -267,7 +267,7 @@ const save = async () => {
     : addManualBalance({ ...balance, asset: usedAsset }));
 
   set(pending, false);
-  startPromise(refreshPrices(false));
+  startPromise(refreshPrices(true));
 
   if (status.success) {
     clear();

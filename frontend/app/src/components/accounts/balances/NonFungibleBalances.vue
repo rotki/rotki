@@ -22,13 +22,6 @@
       <template #item.name="{ item }">
         <nft-details :identifier="item.id" />
       </template>
-      <template #item.usdPrice="{ item }">
-        <amount-display
-          :value="item.usdPrice"
-          show-currency="symbol"
-          fiat-currency="USD"
-        />
-      </template>
       <template #item.priceInAsset="{ item }">
         <amount-display
           v-if="item.priceAsset !== currencySymbol"
@@ -36,6 +29,15 @@
           :asset="item.priceAsset"
         />
         <span v-else>-</span>
+      </template>
+      <template #item.usdPrice="{ item }">
+        <amount-display
+          :price-asset="item.priceAsset"
+          :amount="item.priceInAsset"
+          :value="item.usdPrice"
+          show-currency="symbol"
+          fiat-currency="USD"
+        />
       </template>
       <template #item.actions="{ item }">
         <row-action

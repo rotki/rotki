@@ -3,10 +3,17 @@ import { forEach } from 'lodash';
 import { z } from 'zod';
 import { PriceOracle, PriceOracleEnum } from '@/types/price-oracle';
 
-export const AssetPriceInput = z.tuple([NumericString, z.number()]);
+export const AssetPriceInput = z.tuple([
+  NumericString,
+  z.number(),
+  z.boolean()
+]);
+
 export const AssetPrice = z.object({
   value: NumericString,
-  isManualPrice: z.boolean()
+  usdPrice: NumericString.nullish(),
+  isManualPrice: z.boolean(),
+  isCurrentCurrency: z.boolean()
 });
 
 export const AssetPrices = z.record(AssetPrice);
@@ -22,9 +29,11 @@ export const AssetPriceResponse = z
     const mappedAssets: AssetPrices = {};
     const assets = response.assets;
     forEach(assets, (val, asset) => {
+      const [value, oracle, isCurrentCurrency] = val;
       mappedAssets[asset] = {
-        value: val[0],
-        isManualPrice: val[1] === response.oracles.manualcurrent
+        value,
+        isManualPrice: oracle === response.oracles.manualcurrent,
+        isCurrentCurrency
       };
     });
 

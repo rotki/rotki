@@ -59,10 +59,8 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
     return currency.tickerSymbol;
   });
 
-  const floatingPrecision: ComputedRef<number> = computed(() =>
-    get(uiFloatingPrecision)
-  );
-  const currency: ComputedRef<Currency> = computed(() => get(mainCurrency));
+  const floatingPrecision: ComputedRef<number> = uiFloatingPrecision;
+  const currency: ComputedRef<Currency> = mainCurrency;
 
   const update = (generalSettings: GeneralSettings): void => {
     Object.assign(settings, generalSettings);

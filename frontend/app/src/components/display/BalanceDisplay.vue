@@ -9,14 +9,13 @@
   >
     <div :class="`d-flex flex-column align-${align}`">
       <amount-display
-        :loading-="!!!value"
+        :loading="priceLoading"
         :asset="asset"
         :asset-padding="assetPadding"
         :value="value.amount"
         class="d-block font-weight-medium"
       />
       <amount-display
-        :loading-="!!!value"
         fiat-currency="USD"
         :asset-padding="assetPadding"
         :value="value.usdValue"
