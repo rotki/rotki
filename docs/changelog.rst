@@ -5,6 +5,7 @@ Changelog
 * :feature:`5046` Users who deleted important assets from their rotki instance will now have a fallback and won't get their rotki stuck.
 * :bug:`5041` Add an option to only show ignored assets in assets table.
 * :bug:`5050` Provide a fix for the edge case at 1.25.3->1.26.0 (v34->v35) DB upgrade that caused a FOREIGN key error and botched the upgrade.
+* :bug:`-` Assets from bitcoin.de have been correctly mapped.
 * :bug:`5051` Windows users with a premium subscription should be able to upload their user DB for backup to our server properly again.
 * :bug:`4821` Provide a fix for an infinite loop querying FTX trades if many trades were made in a short time.
 * :bug:`5073` Rotki won't fail to start at an edge case of starting the app again after more than a year when a particular global DB table that is expected is missing.
