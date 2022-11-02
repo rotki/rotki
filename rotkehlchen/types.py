@@ -556,6 +556,7 @@ class EnsMapping(NamedTuple):
 class CostBasisMethod(SerializableEnumMixin):
     FIFO = 1
     LIFO = 2
+    HIFO = 3
 
 
 class AddressbookEntry(NamedTuple):
