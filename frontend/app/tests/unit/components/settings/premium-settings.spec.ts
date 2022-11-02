@@ -4,8 +4,8 @@ import flushPromises from 'flush-promises/index';
 import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import Vuetify from 'vuetify';
 import Card from '@/components/helper/Card.vue';
-import PremiumSettings from '@/components/settings/PremiumSettings.vue';
 import { interop } from '@/electron-interop';
+import PremiumSettings from '@/pages/settings/api-keys/premium/index.vue';
 import { api } from '@/services/rotkehlchen-api';
 import { usePremiumStore } from '@/store/session/premium';
 
