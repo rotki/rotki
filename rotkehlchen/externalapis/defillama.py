@@ -1,7 +1,7 @@
 import json
 import logging
 from http import HTTPStatus
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 from urllib.parse import urlencode
 
 import requests
@@ -145,9 +145,11 @@ class Defillama(HistoricalPriceOracleInterface):
             self,
             from_asset: AssetWithOracles,
             to_asset: AssetWithOracles,
-    ) -> Price:
+            match_main_currency: bool,
+    ) -> Tuple[Price, bool]:
         """
-        Returns a simple price for from_asset to to_asset in Defillama.
+        Returns a simple price for from_asset to to_asset in Defillama and `False` value
+        since it never tries to match main currency.
 
         May raise:
         - RemoteError if there is a problem querying defillama
@@ -160,7 +162,7 @@ class Defillama(HistoricalPriceOracleInterface):
                 f'{to_asset} but {from_asset} is not an EVM token and is not '
                 f'suppported by defillama',
             )
-            return Price(ZERO)
+            return Price(ZERO), False
 
         result = self._query(
             module='prices',
@@ -169,12 +171,12 @@ class Defillama(HistoricalPriceOracleInterface):
 
         usd_price = self._deserialize_price(result, coin_id, from_asset, to_asset)
         if usd_price == ZERO or to_asset == A_USD:
-            return usd_price
+            return usd_price, False
 
         # We got the price in usd but that is not what we need we should query for the next
         # step in the chain of prices
         rate_price = Inquirer().find_price(from_asset=A_USD, to_asset=to_asset)
-        return Price(usd_price * rate_price)
+        return Price(usd_price * rate_price), False
 
     def can_query_history(  # pylint: disable=no-self-use
             self,

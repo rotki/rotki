@@ -181,7 +181,7 @@ def test_fallback_to_coingecko(inquirer):  # pylint: disable=unused-argument
 def test_find_usd_price_cache(inquirer, freezer):  # pylint: disable=unused-argument
     call_count = 0
 
-    def mock_query_price(from_asset, to_asset):
+    def mock_query_price(from_asset, to_asset, match_main_currency):  # pylint: disable=unused-argument  # noqa: E501
         assert from_asset.identifier == 'ETH'
         assert to_asset.identifier == 'USD'
         nonlocal call_count
@@ -193,7 +193,7 @@ def test_find_usd_price_cache(inquirer, freezer):  # pylint: disable=unused-argu
             raise AssertionError('Called too many times for this test')
 
         call_count += 1
-        return price
+        return price, False
 
     cc_patch = patch.object(
         inquirer._cryptocompare,
@@ -264,7 +264,7 @@ def test_find_usd_price_no_price_found(inquirer):
     inquirer._oracle_instances = [MagicMock() for _ in inquirer._oracles]
 
     for oracle_instance in inquirer._oracle_instances:
-        oracle_instance.query_current_price.return_value = Price(ZERO)
+        oracle_instance.query_current_price.return_value = (Price(ZERO), False)
 
     price = inquirer.find_usd_price(A_BTC)
 
@@ -283,7 +283,7 @@ def test_find_usd_price_via_second_oracle(inquirer):
 
     expected_price = Price(FVal('30000'))
     inquirer._oracle_instances[0].query_current_price.side_effect = RemoteError
-    inquirer._oracle_instances[1].query_current_price.return_value = expected_price
+    inquirer._oracle_instances[1].query_current_price.return_value = (expected_price, False)
 
     price = inquirer.find_usd_price(A_BTC)
 

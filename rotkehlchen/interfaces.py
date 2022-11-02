@@ -1,5 +1,5 @@
 import abc
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.types import Price, Timestamp
@@ -25,9 +25,16 @@ class CurrentPriceOracleInterface(metaclass=abc.ABCMeta):
             self,
             from_asset: AssetWithOracles,
             to_asset: AssetWithOracles,
-    ) -> Price:
-        """Returns the price from_asset to to_asset at the current timestamp
+            match_main_currency: bool,
+    ) -> Tuple[Price, bool]:
+        """
+        Accepts a pair of assets to find price for and a flag. If `match_main_currency` is True
+        and there is a manual latest price that has value in `main_currency`, then it will be
+        returned without the conversion to `to_asset`.
+        Returns:
+        1. The price of from_asset at the current timestamp
         for the current oracle
+        2. Whether returned price is in main currency
         """
         ...
 

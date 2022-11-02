@@ -46,9 +46,9 @@ def test_get_current_assets_price_in_usd(rotkehlchen_api_server):
         result = assert_proper_response_with_result(response)
 
     assert len(result) == 3
-    assert result['assets']['BTC'] == ['33183.98', CurrentPriceOracle.BLOCKCHAIN.value]
-    assert result['assets']['GBP'] == ['1.367', CurrentPriceOracle.FIAT.value]
-    assert result['assets']['USD'] == ['1', CurrentPriceOracle.BLOCKCHAIN.value]
+    assert result['assets']['BTC'] == ['33183.98', CurrentPriceOracle.BLOCKCHAIN.value, False]
+    assert result['assets']['GBP'] == ['1.367', CurrentPriceOracle.FIAT.value, False]
+    assert result['assets']['USD'] == ['1', CurrentPriceOracle.BLOCKCHAIN.value, False]
     assert result['target_asset'] == 'USD'
     assert result['oracles'] == {str(oracle): oracle.value for oracle in CurrentPriceOracle}
 
@@ -78,9 +78,9 @@ def test_get_current_assets_price_in_btc(rotkehlchen_api_server):
         result = assert_proper_response_with_result(response)
 
     assert len(result) == 3
-    assert result['assets']['BTC'] == ['1', CurrentPriceOracle.BLOCKCHAIN.value]
-    assert result['assets']['GBP'] == ['0.00004119457641910343485018976024', CurrentPriceOracle.COINGECKO.value]  # noqa: E501
-    assert result['assets']['USD'] == ['0.00003013502298398202988309419184', CurrentPriceOracle.COINGECKO.value]  # noqa: E501
+    assert result['assets']['BTC'] == ['1', CurrentPriceOracle.BLOCKCHAIN.value, False]
+    assert result['assets']['GBP'] == ['0.00004119457641910343485018976024', CurrentPriceOracle.COINGECKO.value, False]  # noqa: E501
+    assert result['assets']['USD'] == ['0.00003013502298398202988309419184', CurrentPriceOracle.COINGECKO.value, False]  # noqa: E501
     assert result['target_asset'] == 'BTC'
 
 
@@ -103,7 +103,7 @@ def test_add_manual_latest_price(rotkehlchen_api_server):
         },
     )
     result = assert_proper_response_with_result(response)
-    assert result['assets']['ETH'] == ['100', CurrentPriceOracle.MANUALCURRENT.value]  # check that manual current price was used  # noqa: E501
+    assert result['assets']['ETH'] == ['100', CurrentPriceOracle.MANUALCURRENT.value, True]  # check that manual current price was used  # noqa: E501
     assert result['assets']['USD'][0] != '100'
 
     response = requests.post(
@@ -146,8 +146,8 @@ def test_add_manual_latest_price(rotkehlchen_api_server):
         },
     )
     result = assert_proper_response_with_result(response)
-    assert result['assets']['ETH'] == ['100', CurrentPriceOracle.MANUALCURRENT.value]
-    assert result['assets']['USD'] == ['23', CurrentPriceOracle.MANUALCURRENT.value]
+    assert result['assets']['ETH'] == ['100', CurrentPriceOracle.MANUALCURRENT.value, True]
+    assert result['assets']['USD'] == ['23', CurrentPriceOracle.MANUALCURRENT.value, True]
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
