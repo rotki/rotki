@@ -1,4 +1,3 @@
-import json
 import logging
 from typing import (
     TYPE_CHECKING,
@@ -20,16 +19,14 @@ from ens.main import ENS_MAINNET_ADDR
 from ens.utils import is_none_or_zero_address, normal_name_to_hash, normalize_name
 from eth_typing import BlockNumber, HexStr
 from web3 import Web3
-from web3.types import FilterParams
 
 from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
-from rotkehlchen.chain.ethereum.constants import DEFAULT_TOKEN_DECIMALS, ETHERSCAN_NODE
+from rotkehlchen.chain.ethereum.constants import ETHERSCAN_NODE
 from rotkehlchen.chain.ethereum.modules.curve.pools_cache import (
     clear_curve_pools_cache,
     update_curve_metapools_cache,
     update_curve_registry_pools_cache,
 )
-from rotkehlchen.chain.ethereum.modules.eth2.constants import ETH2_DEPOSIT
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.chain.evm.manager import EvmManager
 from rotkehlchen.constants.ethereum import (
@@ -48,10 +45,11 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, SupportedBlockchain
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import from_wei, get_chunks, hex_or_bytes_to_str
+from rotkehlchen.utils.misc import get_chunks
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
+from rotkehlchen.utils.network import request_get_dict
 
-from .types import ETHERSCAN_NODE_NAME, NodeName, WeightedNode
+from .types import ETHERSCAN_NODE_NAME, WeightedNode
 from .utils import ENS_RESOLVER_ABI_MULTICHAIN_ADDRESS, should_update_curve_cache
 
 if TYPE_CHECKING:
@@ -146,84 +144,6 @@ class EthereumManager(EvmManager):
             log.debug('ETH highest block result', block=block_number)
 
         return BlockNumber(block_number)
-
-    def _query_web3_get_logs(
-            self,
-            web3: Web3,
-            filter_args: FilterParams,
-            from_block: int,
-            to_block: Union[int, Literal['latest']],
-            contract_address: ChecksumEvmAddress,
-            event_name: str,
-            argument_filters: Dict[str, Any],
-    ) -> List[Dict[str, Any]]:
-        until_block = web3.eth.block_number if to_block == 'latest' else to_block
-        events: List[Dict[str, Any]] = []
-        start_block = from_block
-        # we know that in most of its early life the Eth2 contract address returns a
-        # a lot of results. So limit the query range to not hit the infura limits every time
-        # supress https://lgtm.com/rules/1507386916281/ since it does not apply here
-        infura_eth2_log_query = (
-            'infura.io' in web3.manager.provider.endpoint_uri and  # type: ignore # noqa: E501 lgtm [py/incomplete-url-substring-sanitization]
-            contract_address == ETH2_DEPOSIT.address
-        )
-        block_range = initial_block_range = WEB3_LOGQUERY_BLOCK_RANGE
-        if infura_eth2_log_query:
-            block_range = initial_block_range = 75000
-
-        while start_block <= until_block:
-            filter_args['fromBlock'] = start_block
-            end_block = min(start_block + block_range, until_block)
-            filter_args['toBlock'] = end_block
-            log.debug(
-                'Querying web3 node for contract event',
-                contract_address=contract_address,
-                event_name=event_name,
-                argument_filters=argument_filters,
-                from_block=filter_args['fromBlock'],
-                to_block=filter_args['toBlock'],
-            )
-            # As seen in https://github.com/rotki/rotki/issues/1787, the json RPC, if it
-            # is infura can throw an error here which we can only parse by catching the exception
-            try:
-                new_events_web3: List[Dict[str, Any]] = [dict(x) for x in web3.eth.get_logs(filter_args)]  # noqa: E501
-            except (ValueError, KeyError) as e:
-                if isinstance(e, ValueError):
-                    try:
-                        decoded_error = json.loads(str(e).replace("'", '"'))
-                    except json.JSONDecodeError:
-                        # reraise the value error if the error is not json
-                        raise e from None
-
-                    msg = decoded_error.get('message', '')
-                else:  # temporary hack for key error seen from pokt
-                    msg = 'query returned more than 10000 results'
-
-                # errors from: https://infura.io/docs/ethereum/json-rpc/eth-getLogs
-                if msg in ('query returned more than 10000 results', 'query timeout exceeded'):
-                    block_range = block_range // 2
-                    if block_range < 50:
-                        raise  # stop retrying if block range gets too small
-                    # repeat the query with smaller block range
-                    continue
-                # else, well we tried .. reraise the error
-                raise e
-
-            # Turn all HexBytes into hex strings
-            for e_idx, event in enumerate(new_events_web3):
-                new_events_web3[e_idx]['blockHash'] = event['blockHash'].hex()
-                new_topics = []
-                for topic in event['topics']:
-                    new_topics.append(topic.hex())
-                new_events_web3[e_idx]['topics'] = new_topics
-                new_events_web3[e_idx]['transactionHash'] = event['transactionHash'].hex()
-
-            start_block = end_block + 1
-            events.extend(new_events_web3)
-            # end of the loop, end of 1 query. Reset the block range to max
-            block_range = initial_block_range
-
-        return events
 
     def ens_reverse_lookup(self, addresses: List[ChecksumEvmAddress]) -> Dict[ChecksumEvmAddress, Optional[str]]:  # noqa: E501
         """Performs a reverse ENS lookup on a list of addresses
@@ -377,3 +297,52 @@ class EthereumManager(EvmManager):
         except DeserializationError:
             log.error(f'Error deserializing address {address}')
             return None
+
+    def _update_curve_decoder(self, tx_decoder: 'EVMTransactionDecoder') -> None:
+        try:
+            curve_decoder = tx_decoder.decoders['Curve']
+        except KeyError as e:
+            raise InputError(
+                'Expected to find Curve decoder but it was not loaded. '
+                'Please open an issue on github.com/rotki/rotki/issues if you saw this.',
+            ) from e
+        new_mappings = curve_decoder.reload()
+        tx_decoder.address_mappings.update(new_mappings)
+
+    @protect_with_lock()
+    def curve_protocol_cache_is_queried(
+            self,
+            tx_decoder: Optional['EVMTransactionDecoder'],
+    ) -> bool:
+        """
+        Make sure that information that needs to be queried is queried and if not query it.
+        Returns true if the cache was modified or false otherwise.
+        If the tx_decoder provided is None no information for the decoders is reloaded
+        Updates curve pools cache.
+        1. Deletes all previous cache values
+        2. Queries information about curve pools' addresses, lp tokens and used coins
+        3. Saves queried information in the cache in globaldb
+        """
+        if should_update_curve_cache() is False:
+            if tx_decoder is not None:
+                self._update_curve_decoder(tx_decoder)
+            return False
+
+        # Using shared cursor to not end up having partially populated cache
+        with GlobalDBHandler().conn.write_ctx() as write_cursor:
+            # Delete current cache. Need to do this in case curve removes some pools
+            clear_curve_pools_cache(write_cursor=write_cursor)
+            # write new values to the cache
+            update_curve_registry_pools_cache(
+                write_cursor=write_cursor,
+                ethereum_manager=self,
+            )
+            update_curve_metapools_cache(
+                write_cursor=write_cursor,
+                ethereum_manager=self,
+            )
+
+        if tx_decoder is not None:
+            self._update_curve_decoder(tx_decoder)
+
+        return True
