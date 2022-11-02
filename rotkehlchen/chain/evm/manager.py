@@ -1,3 +1,4 @@
+import json
 import logging
 import random
 from abc import ABCMeta, abstractmethod
@@ -33,13 +34,15 @@ from web3.exceptions import (
 from web3.types import BlockIdentifier, FilterParams
 
 from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
+from rotkehlchen.chain.ethereum.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.ethereum.graph import Graph
+from rotkehlchen.chain.ethereum.modules.eth2.constants import ETH2_DEPOSIT
 from rotkehlchen.chain.ethereum.types import NodeName, WeightedNode
 from rotkehlchen.chain.ethereum.utils import MULTICALL_CHUNKS
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants import ONE
-from rotkehlchen.constants.ethereum import ERC20TOKEN_ABI, UNIV1_LP_ABI
-from rotkehlchen.errors.misc import BlockchainQueryError, RemoteError
+from rotkehlchen.constants.ethereum import ERC20TOKEN_ABI, ERC721TOKEN_ABI, UNIV1_LP_ABI
+from rotkehlchen.errors.misc import BlockchainQueryError, NotERC721Conformant, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
@@ -54,13 +57,15 @@ from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.types import (
     SUPPORTED_BLOCKCHAIN_TO_CHAINID,
     ChecksumEvmAddress,
+    EvmTokenKind,
+    EvmTransaction,
     EVMTxHash,
     SupportedBlockchain,
+    Timestamp,
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import from_wei, get_chunks, hex_or_bytes_to_str
 from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn
-from rotkehlchen.utils.network import request_get_dict
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -92,11 +97,90 @@ def _is_synchronized(current_block: int, latest_block: int) -> Tuple[bool, str]:
 WEB3_LOGQUERY_BLOCK_RANGE = 250000
 
 
-class EvmManager(metaclass=ABCMeta, LockableQueryMixIn):
+def _query_web3_get_logs(
+        web3: Web3,
+        filter_args: FilterParams,
+        from_block: int,
+        to_block: Union[int, Literal['latest']],
+        contract_address: ChecksumEvmAddress,
+        event_name: str,
+        argument_filters: Dict[str, Any],
+) -> List[Dict[str, Any]]:
+    until_block = web3.eth.block_number if to_block == 'latest' else to_block
+    events: List[Dict[str, Any]] = []
+    start_block = from_block
+    # we know that in most of its early life the Eth2 contract address returns a
+    # a lot of results. So limit the query range to not hit the infura limits every time
+    # supress https://lgtm.com/rules/1507386916281/ since it does not apply here
+    infura_eth2_log_query = (
+        'infura.io' in web3.manager.provider.endpoint_uri and  # type: ignore # noqa: E501 lgtm [py/incomplete-url-substring-sanitization]
+        contract_address == ETH2_DEPOSIT.address
+    )
+    block_range = initial_block_range = WEB3_LOGQUERY_BLOCK_RANGE
+    if infura_eth2_log_query:
+        block_range = initial_block_range = 75000
+
+    while start_block <= until_block:
+        filter_args['fromBlock'] = start_block
+        end_block = min(start_block + block_range, until_block)
+        filter_args['toBlock'] = end_block
+        log.debug(
+            'Querying web3 node for contract event',
+            contract_address=contract_address,
+            event_name=event_name,
+            argument_filters=argument_filters,
+            from_block=filter_args['fromBlock'],
+            to_block=filter_args['toBlock'],
+        )
+        # As seen in https://github.com/rotki/rotki/issues/1787, the json RPC, if it
+        # is infura can throw an error here which we can only parse by catching the  exception
+        try:
+            new_events_web3: List[Dict[str, Any]] = [dict(x) for x in web3.eth.get_logs(filter_args)]  # noqa: E501
+        except (ValueError, KeyError) as e:
+            if isinstance(e, ValueError):
+                try:
+                    decoded_error = json.loads(str(e).replace("'", '"'))
+                except json.JSONDecodeError:
+                    # reraise the value error if the error is not json
+                    raise e from None
+
+                msg = decoded_error.get('message', '')
+            else:  # temporary hack for key error seen from pokt
+                msg = 'query returned more than 10000 results'
+
+            # errors from: https://infura.io/docs/ethereum/json-rpc/eth-getLogs
+            if msg in ('query returned more than 10000 results', 'query timeout exceeded'):
+                block_range = block_range // 2
+                if block_range < 50:
+                    raise  # stop retrying if block range gets too small
+                # repeat the query with smaller block range
+                continue
+            # else, well we tried .. reraise the error
+            raise e
+
+        # Turn all HexBytes into hex strings
+        for e_idx, event in enumerate(new_events_web3):
+            new_events_web3[e_idx]['blockHash'] = event['blockHash'].hex()
+            new_topics = []
+            for topic in event['topics']:
+                new_topics.append(topic.hex())
+            new_events_web3[e_idx]['topics'] = new_topics
+            new_events_web3[e_idx]['transactionHash'] = event['transactionHash'].hex()
+
+        start_block = end_block + 1
+        events.extend(new_events_web3)
+        # end of the loop, end of 1 query. Reset the block range to max
+        block_range = initial_block_range
+
+    return events
+
+
+class EvmManager(LockableQueryMixIn, metaclass=ABCMeta):
     """EvmManager defines a basic implementation for EVM chains.
 
     The child class must implement the following methods:
-    query_highest_block(), have_archive(), _query_web3_get_logs()
+    - query_highest_block
+    - have_archive
     """
     def __init__(
             self,
@@ -672,8 +756,7 @@ class EvmManager(metaclass=ABCMeta, LockableQueryMixIn):
             from_block: int,
             to_block: Union[int, Literal['latest']] = 'latest',
     ) -> List[Dict[str, Any]]:
-        """Queries logs of an evm contract
-
+        """Queries logs of an ethereum contract
         May raise:
         - RemoteError if etherscan is used and there is a problem with
         reaching it or with the returned result
@@ -693,7 +776,7 @@ class EvmManager(metaclass=ABCMeta, LockableQueryMixIn):
         events: List[Dict[str, Any]] = []
         start_block = from_block
         if web3 is not None:
-            events = self._query_web3_get_logs(
+            events = _query_web3_get_logs(
                 web3=web3,
                 filter_args=filter_args,
                 from_block=from_block,
@@ -977,7 +1060,8 @@ class EvmManager(metaclass=ABCMeta, LockableQueryMixIn):
 
     @abstractmethod
     def query_highest_block(self) -> BlockNumber:
-        """ Attempts to query an external service for the block height
+        """
+        Attempts to query an external service for the block height
 
         Returns the highest blockNumber
 
@@ -987,21 +1071,150 @@ class EvmManager(metaclass=ABCMeta, LockableQueryMixIn):
 
     @abstractmethod
     def have_archive(self, requery: bool = False) -> bool:
-        """Checks to see if our own connected node is an archive node
+        """
+        Checks to see if our own connected node is an archive node
 
         If requery is True it always queries the node. Otherwise it remembers last query.
         """
         ...
 
-    def _query_web3_get_logs(  # pylint: disable=unused-argument
+    def get_erc20_contract_info(self, address: ChecksumEvmAddress) -> Dict[str, Any]:
+        """
+        Query an erc20 contract address and return basic information as:
+        - Decimals
+        - name
+        - symbol
+        At all times, the dictionary returned contains the keys; decimals, name & symbol.
+        Although the values might be None.
+        if it is provided in the contract. This method may raise:
+        - BadFunctionCallOutput: If there is an error calling a bad address
+        """
+        cache = self.contract_info_cache.get(address)
+        if cache is not None:
+            return cache
+
+        properties = ('decimals', 'symbol', 'name')
+        info: Dict[str, Any] = {}
+
+        contract = EvmContract(address=address, abi=ERC20TOKEN_ABI, deployed_block=0)
+        try:
+            # Output contains call status and result
+            output = self.multicall_2(
+                require_success=False,
+                calls=[(address, contract.encode(method_name=prop)) for prop in properties],
+            )
+        except RemoteError:
+            # If something happens in the connection the output should have
+            # the same length as the tuple of properties
+            output = [(False, b'')] * len(properties)
+        try:
+            decoded = self._process_contract_info(
+                output=output,
+                properties=properties,
+                contract=contract,
+                token_kind=EvmTokenKind.ERC20,
+            )
+        except (OverflowError, InsufficientDataBytes) as e:
+            # This can happen when contract follows the ERC20 standard methods
+            # but name and symbol return bytes instead of string. UNIV1 LP is such a case
+            # It can also happen if the method is missing and they are all hitting
+            # the fallback function. old WETH contract is such a case
+            log.error(
+                f'{address} failed to decode as ERC20 token. '
+                f'Trying with token ABI using bytes. {str(e)}',
+            )
+            contract = EvmContract(address=address, abi=UNIV1_LP_ABI, deployed_block=0)
+            decoded = self._process_contract_info(
+                output=output,
+                properties=properties,
+                contract=contract,
+                token_kind=EvmTokenKind.ERC20,
+            )
+            log.debug(f'{address} was succesfuly decoded as ERC20 token')
+
+        for prop, value in zip(properties, decoded):
+            if isinstance(value, bytes):
+                value = value.rstrip(b'\x00').decode()
+            info[prop] = value
+
+        self.contract_info_cache[address] = info
+        return info
+
+    def get_erc721_contract_info(self, address: ChecksumEvmAddress) -> Dict[str, Any]:
+        """
+        Query an erc721 contract address and return basic information.
+        - name
+        - symbol
+        At all times, the dictionary returned contains the keys; name & symbol.
+        Although the values might be None. https://eips.ethereum.org/EIPS/eip-721
+        According to the standard both name and symbol are optional.
+        if it is provided in the contract. This method may raise:
+        - BadFunctionCallOutput: If there is an error calling a bad address
+        - NotERC721Conformant: If the address can't be decoded as an ERC721 contract
+        """
+        cache = self.contract_info_cache.get(address)
+        if cache is not None:
+            return cache
+
+        properties = ('symbol', 'name')
+        info: Dict[str, Any] = {}
+
+        contract = EvmContract(address=address, abi=ERC721TOKEN_ABI, deployed_block=0)
+        try:
+            # Output contains call status and result
+            output = self.multicall_2(
+                require_success=False,
+                calls=[(address, contract.encode(method_name=prop)) for prop in properties],
+            )
+        except RemoteError:
+            # If something happens in the connection the output should have
+            # the same length as the tuple of properties
+            output = [(False, b'')] * len(properties)
+        try:
+            decoded = self._process_contract_info(
+                output=output,
+                properties=properties,
+                contract=contract,
+                token_kind=EvmTokenKind.ERC721,
+            )
+        except (OverflowError, InsufficientDataBytes) as e:
+            raise NotERC721Conformant(f'{address} token does not conform to the ERC721 spec') from e  # noqa: E501
+
+        for prop, value in zip(properties, decoded):
+            if isinstance(value, bytes):
+                value = value.rstrip(b'\x00').decode()
+            info[prop] = value
+
+        self.contract_info_cache[address] = info
+        return info
+
+    def _process_contract_info(
             self,
-            web3: Web3,
-            filter_args: FilterParams,
-            from_block: int,
-            to_block: Union[int, Literal['latest']],
-            contract_address: ChecksumEvmAddress,
-            event_name: str,
-            argument_filters: Dict[str, Any],
-    ) -> List[Dict[str, Any]]:
-        log.warning("EvmManager._query_web3_get_logs() is not implemented. Returning 0 events.")
-        return [{}]
+            output: List[Tuple[bool, bytes]],
+            properties: Tuple[str, ...],
+            contract: EvmContract,
+            token_kind: EvmTokenKind,
+    ) -> List[Optional[Union[int, str, bytes]]]:
+        """Decodes information i.e. (decimals, symbol, name) about the token contract.
+        - `decimals` property defaults to 18.
+        - `name` and `symbol` default to None.
+        May raise:
+        - OverflowError
+        - InsufficientDataBytes
+        """
+        decoded_contract_info = []
+        for method_name, method_value in zip(properties, output):
+            if method_value[0] is True and len(method_value[1]) != 0:
+                decoded_contract_info.append(contract.decode(method_value[1], method_name)[0])
+                continue
+
+            if token_kind == EvmTokenKind.ERC20:
+                # for missing erc20 methods, use default decimals for decimals or None for others
+                if method_name == 'decimals':
+                    decoded_contract_info.append(DEFAULT_TOKEN_DECIMALS)
+                else:
+                    decoded_contract_info.append(None)
+            else:  # for all others default to None
+                decoded_contract_info.append(None)
+
+        return decoded_contract_info
