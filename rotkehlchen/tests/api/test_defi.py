@@ -2,11 +2,13 @@ import warnings as test_warnings
 
 import pytest
 import requests
+from flaky import flaky
 
 from rotkehlchen.tests.utils.aave import AAVE_TEST_ACC_1
 from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response_with_result
 
 
+@flaky(max_runs=3, min_passes=1)  # failed in a flaky way sometimes in the CI due to etherscan
 @pytest.mark.parametrize('ethereum_accounts', [[AAVE_TEST_ACC_1]])
 def test_query_defi_balances(rotkehlchen_api_server, ethereum_accounts):  # pylint: disable=unused-argument  # noqa: E501
     """Check querying the defi balances endpoint works. Uses real data.
