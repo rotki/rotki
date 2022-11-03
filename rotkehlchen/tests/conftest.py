@@ -115,9 +115,9 @@ def profiler(request):
 
 
 def requires_env(allowed_envs: List[str]):
-    """Conditionally run tests if the environment is in the list of alloweds"""
+    """Conditionally run tests if the environment is in the list of allowed environments"""
     env = os.environ.get('TEST_ENVIRONMENT', 'standard')
     return pytest.mark.skipif(
         env not in allowed_envs,
-        reason=f"Not suitable envrionment {env} for current test",
+        reason=f'Not suitable envrionment {env} for current test',
     )

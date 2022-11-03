@@ -22,13 +22,15 @@ from web3 import Web3
 
 from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
 from rotkehlchen.chain.ethereum.constants import ETHERSCAN_NODE
+from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.ethereum.modules.curve.pools_cache import (
     clear_curve_pools_cache,
     update_curve_metapools_cache,
     update_curve_registry_pools_cache,
 )
+from rotkehlchen.chain.ethereum.modules.eth2.constants import ETH2_DEPOSIT
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
-from rotkehlchen.chain.evm.manager import EvmManager
+from rotkehlchen.chain.evm.manager import WEB3_LOGQUERY_BLOCK_RANGE, EvmManager
 from rotkehlchen.constants.ethereum import (
     ENS_REVERSE_RECORDS,
     ETH_MULTICALL,
@@ -43,7 +45,7 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, SupportedBlockchain
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, SupportedBlockchain, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import get_chunks
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
@@ -71,7 +73,6 @@ CURVE_POOLS_MAPPING_TYPE = Dict[
 ]
 
 
-WEB3_LOGQUERY_BLOCK_RANGE = 250000
 MAX_ADDRESSES_IN_REVERSE_ENS_QUERY = 80
 
 
@@ -101,7 +102,6 @@ class EthereumManager(EvmManager):
             contract_scan=ETH_SCAN[ChainID.ETHEREUM],
             contract_multicall=ETH_MULTICALL,
             contract_multicall_2=ETH_MULTICALL_2,
-            graph_url='https://api.thegraph.com/subgraphs/name/blocklytics/ethereum-blocks',
             rpc_timeout=rpc_timeout,
         )
         self.contract_info_cache: Dict[ChecksumEvmAddress, Dict[str, Any]] = {
@@ -113,6 +113,7 @@ class EthereumManager(EvmManager):
                 'decimals': 18,
             },
         }
+        self.blocks_subgraph = Graph('https://api.thegraph.com/subgraphs/name/blocklytics/ethereum-blocks')  # noqa: E501
 
     def have_archive(self, requery: bool = False) -> bool:
         if self.queried_archive_connection and requery is False:
@@ -346,3 +347,57 @@ class EthereumManager(EvmManager):
             self._update_curve_decoder(tx_decoder)
 
         return True
+
+    def logquery_block_range(
+            self,
+            web3: Web3,
+            contract_address: ChecksumEvmAddress,
+    ) -> int:
+        """We know that in most of its early life the Eth2 contract address returns a
+        a lot of results. So limit the query range to not hit the infura limits every time
+        """
+        # supress https://lgtm.com/rules/1507386916281/ since it does not apply here
+        infura_eth2_log_query = (
+            'infura.io' in web3.manager.provider.endpoint_uri and  # type: ignore # noqa: E501 lgtm [py/incomplete-url-substring-sanitization]
+            contract_address == ETH2_DEPOSIT.address
+        )
+        return WEB3_LOGQUERY_BLOCK_RANGE if infura_eth2_log_query is False else 75000
+
+    def _get_blocknumber_by_time_from_subgraph(self, ts: Timestamp) -> int:
+        """Queries Ethereum Blocks Subgraph for closest block at or before given timestamp"""
+        response = self.blocks_subgraph.query(
+            f"""
+            {{
+                blocks(
+                    first: 1, orderBy: timestamp, orderDirection: desc,
+                    where: {{timestamp_lte: "{ts}"}}
+                ) {{
+                    id
+                    number
+                    timestamp
+                }}
+            }}
+            """,
+        )
+        try:
+            result = int(response['blocks'][0]['number'])
+        except (IndexError, KeyError) as e:
+            raise RemoteError(
+                f'Got unexpected ethereum blocks subgraph response: {response}',
+            ) from e
+        else:
+            return result
+
+    def get_blocknumber_by_time(self, ts: Timestamp, etherscan: bool = True) -> int:
+        """Searches for the blocknumber of a specific timestamp
+        - Performs the etherscan api call by default first
+        - If RemoteError raised or etherscan flag set to false
+            -> queries blocks subgraph
+        """
+        if etherscan:
+            try:
+                return self.etherscan.get_blocknumber_by_time(ts)
+            except RemoteError:
+                pass
+
+        return self._get_blocknumber_by_time_from_subgraph(ts)
