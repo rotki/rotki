@@ -377,9 +377,12 @@ class Inquirer():
         Inquirer()._saddle = saddle
 
     @staticmethod
-    def get_cached_current_price_entry(cache_key: Tuple[Asset, Asset]) -> Optional[CachedPriceEntry]:  # noqa: E501
+    def get_cached_current_price_entry(
+            cache_key: Tuple[Asset, Asset],
+            match_main_currency: bool,
+    ) -> Optional[CachedPriceEntry]:
         cache = Inquirer()._cached_current_price.get(cache_key, None)
-        if cache is None or ts_now() - cache.time > CURRENT_PRICE_CACHE_SECS:
+        if cache is None or ts_now() - cache.time > CURRENT_PRICE_CACHE_SECS or cache.used_main_currency != match_main_currency:  # noqa: E501
             return None
 
         return cache
@@ -537,7 +540,7 @@ class Inquirer():
             return price, oracle, used_main_currency
 
         if ignore_cache is False:
-            cache = instance.get_cached_current_price_entry(cache_key=(from_asset, to_asset))
+            cache = instance.get_cached_current_price_entry(cache_key=(from_asset, to_asset), match_main_currency=match_main_currency)  # noqa: E501
             if cache is not None:
                 return cache.price, cache.oracle, cache.used_main_currency
 
@@ -646,7 +649,7 @@ class Inquirer():
         instance = Inquirer()
         cache_key = (asset, A_USD)
         if ignore_cache is False:
-            cache = instance.get_cached_current_price_entry(cache_key=cache_key)
+            cache = instance.get_cached_current_price_entry(cache_key=cache_key, match_main_currency=match_main_currency)  # noqa: E501
             if cache is not None:
                 return cache.price, cache.oracle, cache.used_main_currency
 
