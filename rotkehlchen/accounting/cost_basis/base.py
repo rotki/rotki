@@ -58,7 +58,7 @@ class AssetAcquisitionEvent:
     @classmethod
     def from_processed_event(cls: Type['AssetAcquisitionEvent'], event: 'ProcessedAccountingEvent') -> 'AssetAcquisitionEvent':  # noqa: E501
         return cls(
-            amount=event.taxable_amount,
+            amount=event.taxable_amount + event.free_amount,
             timestamp=event.timestamp,
             rate=event.price,
             index=event.index,

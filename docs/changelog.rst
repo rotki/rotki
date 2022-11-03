@@ -9,6 +9,7 @@ Changelog
 * :bug:`5051` Windows users with a premium subscription should be able to upload their user DB for backup to our server properly again.
 * :bug:`4821` Provide a fix for an infinite loop querying FTX trades if many trades were made in a short time.
 * :bug:`5073` Rotki won't fail to start at an edge case of starting the app again after more than a year when a particular global DB table that is expected is missing.
+* :bug:`-` Acquisitions in swaps won't be taxable in PnL reports.
 
 * :release:`1.26.0 <2022-10-28>`
 * :feature:`2607` Users can now add general and section specific notes in rotki by clicking on the note icon on the top right menu.
