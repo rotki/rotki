@@ -35,8 +35,6 @@ from web3.types import BlockIdentifier, FilterParams
 
 from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
 from rotkehlchen.chain.ethereum.constants import DEFAULT_TOKEN_DECIMALS
-from rotkehlchen.chain.ethereum.graph import Graph
-from rotkehlchen.chain.ethereum.modules.eth2.constants import ETH2_DEPOSIT
 from rotkehlchen.chain.ethereum.types import NodeName, WeightedNode
 from rotkehlchen.chain.ethereum.utils import MULTICALL_CHUNKS
 from rotkehlchen.chain.evm.contracts import EvmContract
@@ -105,20 +103,12 @@ def _query_web3_get_logs(
         contract_address: ChecksumEvmAddress,
         event_name: str,
         argument_filters: Dict[str, Any],
+        initial_block_range: int,
 ) -> List[Dict[str, Any]]:
     until_block = web3.eth.block_number if to_block == 'latest' else to_block
     events: List[Dict[str, Any]] = []
     start_block = from_block
-    # we know that in most of its early life the Eth2 contract address returns a
-    # a lot of results. So limit the query range to not hit the infura limits every time
-    # supress https://lgtm.com/rules/1507386916281/ since it does not apply here
-    infura_eth2_log_query = (
-        'infura.io' in web3.manager.provider.endpoint_uri and  # type: ignore # noqa: E501 lgtm [py/incomplete-url-substring-sanitization]
-        contract_address == ETH2_DEPOSIT.address
-    )
-    block_range = initial_block_range = WEB3_LOGQUERY_BLOCK_RANGE
-    if infura_eth2_log_query:
-        block_range = initial_block_range = 75000
+    block_range = initial_block_range
 
     while start_block <= until_block:
         filter_args['fromBlock'] = start_block
@@ -181,6 +171,10 @@ class EvmManager(LockableQueryMixIn, metaclass=ABCMeta):
     The child class must implement the following methods:
     - query_highest_block
     - have_archive
+    - get_blocknumber_by_time
+
+    The child class may optionally implement the following:
+    - logquery_block_range
     """
     def __init__(
             self,
@@ -195,7 +189,6 @@ class EvmManager(LockableQueryMixIn, metaclass=ABCMeta):
             contract_scan: EvmContract,
             contract_multicall: EvmContract,
             contract_multicall_2: EvmContract,
-            graph_url: str,
             rpc_timeout: int = DEFAULT_EVM_RPC_TIMEOUT,
     ) -> None:
         super().__init__()
@@ -216,7 +209,6 @@ class EvmManager(LockableQueryMixIn, metaclass=ABCMeta):
         self.archive_connection = False
         self.queried_archive_connection = False
         self.connect_to_multiple_nodes(connect_at_start)
-        self.blocks_subgraph = Graph(graph_url)
 
         # A cache for the erc20 contract info to not requery same one
         self.contract_info_cache: Dict[ChecksumEvmAddress, Dict[str, Any]] = {}
@@ -309,7 +301,7 @@ class EvmManager(LockableQueryMixIn, metaclass=ABCMeta):
     def attempt_connect(
             self,
             node: NodeName,
-            mainnet_check: bool = True,
+            connectivity_check: bool = True,
     ) -> Tuple[bool, str]:
         """Attempt to connect to a particular node type
 
@@ -344,11 +336,11 @@ class EvmManager(LockableQueryMixIn, metaclass=ABCMeta):
             is_connected = False
 
         if is_connected:
-            # Also make sure we are actually connected to mainnet
+            # Also make sure we are actually connected to the right network
             synchronized = True
             msg = ''
             try:
-                if mainnet_check:
+                if connectivity_check:
                     try:
                         network_id = int(web3.net.version)
                     except requests.exceptions.RequestException as e:
@@ -362,8 +354,8 @@ class EvmManager(LockableQueryMixIn, metaclass=ABCMeta):
                     if network_id != self.chain_id.value:
                         message = (
                             f'Connected to {self.chain_name} node {node} at endpoint {rpc_endpoint} but '  # noqa: E501
-                            f'it is not on mainnet. The chain id '
-                            f'the node is in is {network_id}.'
+                            f'it is not on the expected network value {self.chain_id.value}. '
+                            f'The chain id the node is in is {network_id}.'
                         )
                         log.warning(message)
                         return False, message
@@ -387,7 +379,7 @@ class EvmManager(LockableQueryMixIn, metaclass=ABCMeta):
             if not synchronized:
                 self.msg_aggregator.add_warning(
                     f'We could not verify that {self.chain_name} node {node} is '
-                    'synchronized with mainnet. Balances and other queries '
+                    'synchronized with the network. Balances and other queries '
                     'may be incorrect.',
                 )
 
@@ -413,11 +405,11 @@ class EvmManager(LockableQueryMixIn, metaclass=ABCMeta):
                 exception_is_error=True,
                 method=self.attempt_connect,
                 node=weighted_node.node_info,
-                mainnet_check=True,
+                connectivity_check=True,
             )
 
     def query(self, method: Callable, call_order: Sequence[WeightedNode], **kwargs: Any) -> Any:
-        """Queries evm related data by performing the provided method to all given nodes
+        """Queries evm related data by performing a query of the provided method to all given nodes
 
         The first node in the call order that gets a successful response returns.
         If none get a result then RemoteError is raised
@@ -565,7 +557,8 @@ class EvmManager(LockableQueryMixIn, metaclass=ABCMeta):
         if result == '0x':
             raise BlockchainQueryError(
                 f'Error doing call on contract {contract_address} for {method_name} '
-                f'with arguments: {str(arguments)} via etherscan. Returned 0x result',
+                f'and chain {self.chain_name} with arguments: {str(arguments)} '
+                f'via etherscan. Returned 0x result',
             )
 
         fn_abi = contract._find_matching_fn_abi(
@@ -756,7 +749,7 @@ class EvmManager(LockableQueryMixIn, metaclass=ABCMeta):
             from_block: int,
             to_block: Union[int, Literal['latest']] = 'latest',
     ) -> List[Dict[str, Any]]:
-        """Queries logs of an ethereum contract
+        """Queries logs of an evm contract
         May raise:
         - RemoteError if etherscan is used and there is a problem with
         reaching it or with the returned result
@@ -784,6 +777,7 @@ class EvmManager(LockableQueryMixIn, metaclass=ABCMeta):
                 contract_address=contract_address,
                 event_name=event_name,
                 argument_filters=argument_filters,
+                initial_block_range=self.logquery_block_range(web3=web3, contract_address=contract_address),  # noqa: E501
             )
         else:  # etherscan
             until_block = (
@@ -881,7 +875,7 @@ class EvmManager(LockableQueryMixIn, metaclass=ABCMeta):
         Etherscan events contain a timestamp. Normal web3 events don't so it needs to
         be queried from the block number
 
-        WE could also add this to the get_logs() call but would add unnecessary
+        We could also add this to the get_logs() call but would add unnecessary
         rpc calls for get_block_by_number() for each log entry. Better have it
         lazy queried like this.
 
@@ -895,105 +889,6 @@ class EvmManager(LockableQueryMixIn, metaclass=ABCMeta):
         block_number = event['blockNumber']
         block_data = self.get_block_by_number(block_number)
         return Timestamp(block_data['timestamp'])
-
-    def _get_blocknumber_by_time_from_subgraph(self, ts: Timestamp) -> int:
-        """Queries Ethereum Blocks Subgraph for closest block at or before given timestamp"""
-        response = self.blocks_subgraph.query(
-            f"""
-            {{
-                blocks(
-                    first: 1, orderBy: timestamp, orderDirection: desc,
-                    where: {{timestamp_lte: "{ts}"}}
-                ) {{
-                    id
-                    number
-                    timestamp
-                }}
-            }}
-            """,
-        )
-        try:
-            result = int(response['blocks'][0]['number'])
-        except (IndexError, KeyError) as e:
-            raise RemoteError(
-                f'Got unexpected ethereum blocks subgraph response: {response}',
-            ) from e
-        else:
-            return result
-
-    def get_blocknumber_by_time(self, ts: Timestamp, etherscan: bool = True) -> int:
-        """Searches for the blocknumber of a specific timestamp
-        - Performs the etherscan api call by default first
-        - If RemoteError raised or etherscan flag set to false
-            -> queries blocks subgraph
-        """
-        if etherscan:
-            try:
-                return self.etherscan.get_blocknumber_by_time(ts)
-            except RemoteError:
-                pass
-        return self._get_blocknumber_by_time_from_subgraph(ts)
-
-    def get_basic_contract_info(self, address: ChecksumEvmAddress) -> Dict[str, Any]:
-        """
-        Query a contract address and return basic information as:
-        - Decimals
-        - name
-        - symbol
-        At all times, the dictionary returned contains the keys; decimals, name & symbol.
-        Although the values might be empty.
-
-        if it is provided in the contract. This method may raise:
-        - BadFunctionCallOutput: If there is an error calling a bad address
-        """
-        cache = self.contract_info_cache.get(address)
-        if cache is not None:
-            return cache
-
-        properties = ('decimals', 'symbol', 'name')
-        info: Dict[str, Any] = {}
-
-        contract = EvmContract(address=address, abi=ERC20TOKEN_ABI, deployed_block=0)
-        try:
-            # Output contains call status and result
-            output = self.multicall_2(
-                require_success=False,
-                calls=[(address, contract.encode(method_name=prop)) for prop in properties],
-            )
-        except RemoteError:
-            # If something happens in the connection the output should have
-            # the same length as the tuple of properties
-            output = [(False, b'')] * len(properties)
-        try:
-            decoded = [
-                contract.decode(x[1], method_name)[0]  # pylint: disable=E1136
-                if x[0] and len(x[1]) else None
-                for (x, method_name) in zip(output, properties)
-            ]
-        except (OverflowError, InsufficientDataBytes) as e:
-            # This can happen when contract follows the ERC20 standard methods
-            # but name and symbol return bytes instead of string. UNIV1 LP is such a case
-            # It can also happen if the method is missing and they are all hitting
-            # the fallback function. old WETH contract is such a case
-            log.error(
-                f'{address} failed to decode as ERC20 token. '
-                f'Trying with token ABI using bytes. {str(e)}',
-            )
-            contract = EvmContract(address=address, abi=UNIV1_LP_ABI, deployed_block=0)
-            decoded = [
-                contract.decode(x[1], method_name)[0]  # pylint: disable=E1136
-                if x[0] and len(x[1]) else None
-                for (x, method_name) in zip(output, properties)
-            ]
-            log.debug(f'{address} was succesfuly decoded as ERC20 token')
-
-        for prop, value in zip(properties, decoded):
-            if isinstance(value, bytes):
-                value = value.rstrip(b'\x00').decode()
-            info[prop] = value
-
-        self.contract_info_cache[address] = info
-        return info
 
     def multicall(
             self,
@@ -1057,26 +952,6 @@ class EvmManager(LockableQueryMixIn, metaclass=ABCMeta):
         if decode_result is False:
             return output
         return [contract.decode(x, method_name, arguments[0]) for x in output]
-
-    @abstractmethod
-    def query_highest_block(self) -> BlockNumber:
-        """
-        Attempts to query an external service for the block height
-
-        Returns the highest blockNumber
-
-        May Raise RemoteError if querying fails
-        """
-        ...
-
-    @abstractmethod
-    def have_archive(self, requery: bool = False) -> bool:
-        """
-        Checks to see if our own connected node is an archive node
-
-        If requery is True it always queries the node. Otherwise it remembers last query.
-        """
-        ...
 
     def get_erc20_contract_info(self, address: ChecksumEvmAddress) -> Dict[str, Any]:
         """
@@ -1218,3 +1093,39 @@ class EvmManager(LockableQueryMixIn, metaclass=ABCMeta):
                 decoded_contract_info.append(None)
 
         return decoded_contract_info
+
+    @abstractmethod
+    def query_highest_block(self) -> BlockNumber:
+        """
+        Attempts to query an external service for the block height
+
+        Returns the highest blockNumber
+
+        May Raise RemoteError if querying fails
+        """
+        ...
+
+    @abstractmethod
+    def have_archive(self, requery: bool = False) -> bool:
+        """
+        Checks to see if our own connected node is an archive node
+
+        If requery is True it always queries the node. Otherwise it remembers last query.
+        """
+        ...
+
+    @abstractmethod
+    def get_blocknumber_by_time(self, ts: Timestamp, etherscan: bool = True) -> int:
+        """Searches for the blocknumber of a specific timestamp"""
+        ...
+
+    def logquery_block_range(
+            self,
+            web3: Web3,  # pylint: disable=unused-argument
+            contract_address: ChecksumEvmAddress,  # pylint: disable=unused-argument
+    ) -> int:
+        """
+        May be optionally implemented by subclasses to set special rules on how to
+        decide the block range for a specific logquery.
+        """
+        return WEB3_LOGQUERY_BLOCK_RANGE
