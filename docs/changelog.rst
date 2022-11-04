@@ -6,7 +6,7 @@ Changelog
 * :feature:`5080` For custom assets with custom price there should no longer be any double conversion. So 1 euro should always be one euro.
 * :feature:`5046` Users who deleted important assets from their rotki instance will now have a fallback and won't get their rotki stuck.
 * :bug:`5041` Add an option to only show ignored assets in assets table.
-* :bug:`5050` Provide a fix for the edge case at 1.25.3->1.26.0 (v34->v35) DB upgrade that caused a FOREIGN key error and botched the upgrade.
+* :bug:`5052` Provide a fix for the edge case at 1.25.3->1.26.0 (v34->v35) DB upgrade that caused a FOREIGN key error and botched the upgrade.
 * :bug:`-` Having SOL in custody of bitcoin.de will now work properly again.
 * :bug:`5051` Windows users with a premium subscription should be able to upload their user DB for backup to our server properly again.
 * :bug:`4821` Provide a fix for an infinite loop querying FTX trades if many trades were made in a short time.
