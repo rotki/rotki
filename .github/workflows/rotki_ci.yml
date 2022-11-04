@@ -24,6 +24,7 @@ jobs:
       backend_tasks: ${{ steps.checker.outputs.backend_tasks }}
       frontend_tasks: ${{ steps.checker.outputs.frontend_tasks }}
       documentation_tasks: ${{ steps.checker.outputs.documentation_tasks }}
+      test_environment: ${{env.TEST_ENVIRONMENT}}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -41,11 +42,6 @@ jobs:
             requirements_lint.txt
           frontend_paths: |
             frontend/app
-      - name: Set TEST_ENVIRONMENT
-        run: | 
-          echo "TEST_ENVIRONMENT=${TEST_ENVIRONMENT}"
-          echo "TEST_ENVIRONMENT=${TEST_ENVIRONMENT}" >> $GITHUB_ENV
-
 
   lint-frontend:
     name: 'Frontend lint'
@@ -172,6 +168,7 @@ jobs:
     timeout-minutes: 60
     env:
       CI: true
+      TEST_ENVIRONMENT: ${{needs.check-changes.outputs.test_environment}}
     environment: test
     runs-on: ubuntu-latest
     steps:
@@ -200,7 +197,8 @@ jobs:
         run: |
           COVERAGE_ARGS='--cov=./'
           PYTEST_ARGS='--durations=150'
-          python pytestgeventwrapper.py $PYTEST_ARGS $COVERAGE_ARGS rotkehlchen/tests  && python pytestgeventwrapper.py --dead-fixtures
+          echo "Test environment set to ${TEST_ENVIRONMENT}"
+          python pytestgeventwrapper.py $PYTEST_ARGS $COVERAGE_ARGS rotkehlchen/tests && python pytestgeventwrapper.py --dead-fixtures
       - name: Upload coverage
         run: ./.github/.codecov -F backend
 

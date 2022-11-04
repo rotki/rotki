@@ -10,6 +10,7 @@ from rotkehlchen.chain.ethereum.modules.nfts import FREE_NFT_LIMIT
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.externalapis.opensea import NFT, Collection
 from rotkehlchen.fval import FVal
+from rotkehlchen.tests.conftest import TestEnvironment, requires_env
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_ok_async_response,
@@ -24,6 +25,7 @@ TEST_ACC4 = '0xc37b40ABdB939635068d3c5f13E7faF686F03B65'  # yabir.eth
 NFT_ID_FOR_TEST_ACC4 = '_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_26612040215479394739615825115912800930061094786769410446114278812336794170041'  # noqa: E501
 
 
+@requires_env([TestEnvironment.NIGHTLY, TestEnvironment.NFTS])
 @flaky(max_runs=3, min_passes=1)  # all opensea calls have become quite flaky
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC1]])
 @pytest.mark.parametrize('start_with_valid_premium', [bool(random.getrandbits(1))])
@@ -77,6 +79,7 @@ def test_nft_query(rotkehlchen_api_server, start_with_valid_premium):
     assert nft_found, 'Could not find and verify the test NFT'
 
 
+@requires_env([TestEnvironment.NIGHTLY, TestEnvironment.NFTS])
 @flaky(max_runs=3, min_passes=1)  # all opensea calls have become quite flaky
 @pytest.mark.parametrize('ethereum_accounts', [[]])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
@@ -120,6 +123,7 @@ def test_nft_query_after_account_add(rotkehlchen_api_server):
     assert TEST_ACC2 in result['addresses']
 
 
+@requires_env([TestEnvironment.NIGHTLY, TestEnvironment.NFTS])
 @flaky(max_runs=3, min_passes=1)  # all opensea calls have become quite flaky
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC2, TEST_ACC3]])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
@@ -144,6 +148,7 @@ def test_nft_ids_are_unique(rotkehlchen_api_server):
     assert len(all_ids) == len(set_of_ids)
 
 
+@requires_env([TestEnvironment.NIGHTLY, TestEnvironment.NFTS])
 @flaky(max_runs=3, min_passes=1)  # all opensea calls have become quite flaky
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC4]])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
@@ -180,6 +185,7 @@ def test_nft_balances_and_prices(rotkehlchen_api_server):
     assert FVal(price_usd) > 0
 
 
+@requires_env([TestEnvironment.NIGHTLY, TestEnvironment.NFTS])
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC4]])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('ethereum_modules', [['nfts']])
