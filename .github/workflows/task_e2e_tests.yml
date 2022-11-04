@@ -1,0 +1,86 @@
+on:
+  workflow_call:
+
+jobs:
+  load_env:
+    uses: ./.github/workflows/task_env.yml
+  e2e:
+    name: 'Frontend e2e tests'
+    needs: load_env
+    env:
+      CI: true
+    environment: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+      - name: Setup python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ needs.load_env.outputs.python_version }}
+          cache: 'pip'
+      - name: Setup node
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ needs.load_env.outputs.node_version }}
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
+      - name: Store frontend cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/Cypress  
+            frontend/app/components.d.ts
+          key: ${{ runner.os }}-e2e-js-${{ hashFiles('frontend/package-lock.json') }}
+      - name: Store test data
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/rotki-e2e/icons
+            ~/rotki-e2e/global_data
+          key: ${{ runner.os }}-e2e-data-${{ hashFiles('rotkehlchen/data/global.db') }}
+      - name: Setup backend
+        run: |
+          pip install --upgrade pip==${{ needs.load_env.outputs.pip_version }} wheel
+          pip install -r requirements.txt
+          pip install -e .
+      - name: Restore dependencies
+        working-directory: ./frontend
+        run: |
+          npm install -g npm@8
+          if ! npm ci --exit-code; then
+            npm ci
+          fi
+          npm run build -w @rotki/common
+      - name: Run e2e tests
+        uses: cypress-io/github-action@v4
+        env:
+          ARGS: "--browser chrome"
+          CYPRESS_ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
+        with:
+          install: false
+          command: npm run test:integration-ci
+          working-directory: ./frontend/app
+      - name: Upload coverage
+        working-directory: ./frontend/app
+        run: cd ../.. && ./.github/.codecov -F frontend_integration
+      - name: Upload screenshots
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: screenshots-${{ runner.os }}
+          path: ./frontend/app/tests/e2e/screenshots
+      - name: Upload backend logs
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: backend-logs-${{ runner.os }}
+          path: ~/rotki-e2e-logs/*.log
+      - name: Upload videos
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: videos-${{ runner.os }}
+          path: ./frontend/app/tests/e2e/videos

@@ -61,15 +61,6 @@ jobs:
           path: |
             dist/*.AppImage
             dist/*.AppImage.sha512
-      - name: Notify on failure
-        if: ${{ failure() }}
-        run: |
-          curl --request POST \
-            --url ${{ secrets.WEBHOOK }} \
-            --header 'Content-Type: application/json' \
-            --data '{
-          	"content": ":construction_site: **Github Actions:** ${{ github.job }} failed :x: \r\n\r\n  <@&735068019440615516> please have a look at [${{ github.run_id }}](https://github.com/rotki/rotki/actions/runs/${{ github.run_id }}) :cry:"
-          }'
 
   build-macos:
     name: 'Build macOS binary'
@@ -179,15 +170,6 @@ jobs:
           path: |
             dist/rotki-darwin_x64*.dmg
             dist/rotki-darwin_x64*.dmg.sha512
-      - name: Notify on failure
-        if: ${{ failure() }}
-        run: |
-          curl --request POST \
-            --url ${{ secrets.WEBHOOK }} \
-            --header 'Content-Type: application/json' \
-            --data '{
-          	"content": ":construction_site: **Github Actions:** ${{ github.job }} failed :x: \r\n\r\n  <@&735068019440615516> please have a look at [${{ github.run_id }}](https://github.com/rotki/rotki/actions/runs/${{ github.run_id }}) :cry:"
-          }'
       
 
   build-windows:
@@ -239,14 +221,6 @@ jobs:
           path: |
             dist\rotki-win32*.exe
             dist\rotki-win32*.exe.sha512
-      - name: Notify on failure
-        if: ${{ failure() }}
-        run: |
-          $uri="${{ secrets.WEBHOOK }}"
-          $body = @{
-            "content" = ":construction_site: **Github Actions:** ${{ github.job }} failed :x: <@&735068019440615516> please have a look at [${{ github.run_id }}](https://github.com/rotki/rotki/actions/runs/${{ github.run_id }}) :cry:"
-          } | ConvertTo-Json
-          Invoke-RestMethod -Method Post -Uri $uri -ContentType "application/json" -Body $body
 
   build-docker:
     name: Build docker images
@@ -303,12 +277,26 @@ jobs:
           cache-to: type=gha,mode=max
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
-      - name: Notify on failure
-        if: ${{ failure() }}
+
+  notify:
+    name: 'Success check'
+    if: ${{ always() }}
+    needs: [ 'build-linux', 'build-windows', 'build-macos', 'build-docker' ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+      - name: Check if any task failed
         run: |
-          curl --request POST \
-            --url ${{ secrets.WEBHOOK }} \
-            --header 'Content-Type: application/json' \
-            --data '{
-          	"content": ":construction_site: **Github Actions:** ${{ github.job }} failed :x: \r\n\r\n  <@&735068019440615516> please have a look at [${{ github.run_id }}](https://github.com/rotki/rotki/actions/runs/${{ github.run_id }}) :cry:"
-          }'
+          pip install requests
+          
+          data=($(echo "${{ toJSON(needs.*.result) }}" | sed 's/[][,]//g'))
+          for i in "${data[@]}"
+          do
+            if [[ $i == "failure" ]]; then
+                ./.github/scripts/notifier.py --webhook ${{ secrets.WEBHOOK }} --run-id ${{ github.run_id }}
+                exit 1;
+            fi
+          done

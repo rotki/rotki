@@ -1,0 +1,84 @@
+on:
+  workflow_call:
+    inputs:
+      os:
+        required: true
+        type: string
+      test_environment:
+        required: true
+        type: string
+
+jobs:
+  load_env:
+    uses: ./.github/workflows/task_env.yml
+  test-backend:
+    env:
+      CI: true
+      TEST_ENVIRONMENT: ${{ inputs.test_environment }}
+    needs: load_env
+    runs-on: ${{ inputs.os }}
+    name: 'Backend tests'
+    timeout-minutes: 70
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+      - name: Setup python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ needs.load_env.outputs.python_version }}
+          cache: 'pip'
+      - name: Cache rotkehlchen test directory
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/.rotkehlchen-test-dir
+          key: ${{ runner.os }}-testdir
+      - name: Setup minupnpc
+        if: runner.os == 'Windows'
+        run: |          
+          $MINIUPNPC_ZIP = "miniupnpc_64bit_py39-2.2.24.zip"
+          echo "`nFetching miniupnpc for windows`n"
+          $PYTHON_LOCATION = ((python -c "import os, sys; print(os.path.dirname(sys.executable))") | Out-String).trim()
+          $PYTHON_DIRECTORY = Split-Path -Path $PYTHON_LOCATION -Leaf        
+                    
+          $DLL_PATH = (Join-Path $PYTHON_LOCATION "miniupnpc.dll")
+          
+          echo "miniupnpc.dll will be installled in $PYTHON_LOCATION"
+          curl.exe -L -O "https://github.com/mrx23dot/miniupnp/releases/download/miniupnpd_2_2_24/$MINIUPNPC_ZIP"
+          
+          echo "Downloaded miniupnpc.zip"
+          
+          Expand-Archive -Force -Path ".\$MINIUPNPC_ZIP" -DestinationPath $PYTHON_LOCATION
+          
+          echo "Unzipped miniupnpc to $PYTHON_LOCATION`nDone with miniupnpc"
+          Get-ChildItem -Path $PYTHON_LOCATION
+          (Get-Command python).Path
+      - name: Install dependencies
+        run: |          
+          pip install --upgrade pip==${{ needs.load_env.outputs.pip_version }} wheel
+          pip install codecov pytest-cov
+          pip install -r requirements_dev.txt
+          pip install -e .
+      - name: Install pytest annotation plugin
+        run: |     
+          pip install pytest-github-actions-annotate-failures
+      - name: Run tests
+        env:
+          PYTEST_ARGS: '--durations=150'
+          PYTHONDONTWRITEBYTECODE: 1
+          FORCE_COLOR: 1
+        run: |
+          if [ "${{ runner.os }}" == 'macOS' ];
+          then
+            COVERAGE_ARGS=''
+          else
+            COVERAGE_ARGS='--cov=./'
+          fi          
+          
+          python pytestgeventwrapper.py $PYTEST_ARGS $COVERAGE_ARGS rotkehlchen/tests
+          python pytestgeventwrapper.py --dead-fixtures
+        shell: bash
+      - name: Upload coverage
+        run: bash ./.github/.codecov -F backend
+        shell: bash
