@@ -3604,10 +3604,14 @@ class RestAPI():
         result_dict = _wrap_in_ok_result(data)
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
-    def _get_token_info(self, address: ChecksumEvmAddress) -> Dict[str, Any]:
-        eth_manager = self.rotkehlchen.chains_aggregator.ethereum
+    def _get_token_info(
+            self,
+            blockchain: EVMChain,
+            address: ChecksumEvmAddress,
+    ) -> Dict[str, Any]:
+        manager = self.rotkehlchen.chains_aggregator.get_chain_manager(blockchain)  # type: ignore
         try:
-            info = eth_manager.get_erc20_contract_info(address=address)
+            info = manager.get_erc20_contract_info(address=address)
         except BadFunctionCallOutput:
             return wrap_in_fail_result(
                 f'Address {address} seems to not be a deployed contract',
@@ -3617,14 +3621,19 @@ class RestAPI():
 
     def get_token_information(
         self,
+        blockchain: EVMChain,
         token_address: ChecksumEvmAddress,
         async_query: bool,
     ) -> Response:
 
         if async_query is True:
-            return self._query_async(command=self._get_token_info, address=token_address)
+            return self._query_async(
+                command=self._get_token_info,
+                blockchain=blockchain,
+                address=token_address,
+            )
 
-        response = self._get_token_info(token_address)
+        response = self._get_token_info(blockchain, token_address)
 
         result = response['result']
         msg = response['message']

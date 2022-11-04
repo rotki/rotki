@@ -2379,9 +2379,14 @@ class ERC20TokenInfo(BaseMethodView):
     get_schema = ERC20InfoSchema()
 
     @require_loggedin_user()
-    @use_kwargs(get_schema, location='json_and_query')
-    def get(self, address: ChecksumEvmAddress, async_query: bool) -> Response:
-        return self.rest_api.get_token_information(address, async_query)
+    @use_kwargs(get_schema, location='json_and_query_and_view_args')
+    def get(
+            self,
+            blockchain: EVMChain,
+            address: ChecksumEvmAddress,
+            async_query: bool,
+    ) -> Response:
+        return self.rest_api.get_token_information(blockchain, address, async_query)
 
 
 class BinanceAvailableMarkets(BaseMethodView):

@@ -10524,7 +10524,7 @@ Data imports
 ERC20 token info
 ====================
 
-.. http:get:: /api/(version)/blockchains/ETH/erc20details
+.. http:get:: /api/(version)/blockchains/(blockchain)/erc20details
 
    Doing a GET to this endpoint will return basic information about a token by calling the ``decimals/name/symbol`` methods.
 

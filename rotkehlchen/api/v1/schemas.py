@@ -2157,6 +2157,7 @@ class NamedOracleCacheGetSchema(AsyncQueryArgumentSchema):
 
 
 class ERC20InfoSchema(AsyncQueryArgumentSchema):
+    blockchain = BlockchainField(required=True, exclude_types=list(NON_EVM_CHAINS))
     address = EthereumAddressField(required=True)
 
 
