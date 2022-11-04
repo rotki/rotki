@@ -189,7 +189,7 @@ const { filters, matchers, updateFilter } = useAssetFilter();
 const expanded: Ref<SupportedAsset[]> = ref([]);
 const selected: Ref<SupportedAsset[]> = ref([]);
 const onlyShowOwned = ref<boolean>(false);
-const ignoredAssetsHandling = ref<'none' | 'exclude' | 'show_only'>('none');
+const ignoredAssetsHandling = ref<'none' | 'exclude' | 'show_only'>('exclude');
 const options: Ref<AssetPaginationOptions> = ref(
   defaultAssetPagination(get(itemsPerPage))
 );
@@ -306,21 +306,9 @@ const massIgnore = async (ignored: boolean) => {
 
 const updatePaginationHandler = (updateOptions: AssetPaginationOptions) => {
   set(options, updateOptions);
-};
 
-watch([filters, onlyShowOwned, ignoredAssetsHandling], () => {
-  const pageOptions = get(options);
-  if (pageOptions) {
-    updatePaginationHandler({
-      ...pageOptions,
-      page: 1
-    });
-  }
-});
-
-watch(options, options => {
   let apiPagination = convertPagination<SupportedAsset>(
-    options,
+    updateOptions,
     'symbol'
   ) as AssetPagination;
   const filter = get(filters);
@@ -334,6 +322,16 @@ watch(options, options => {
     showUserOwnedAssetsOnly: onlyOwned,
     ignoredAssetsHandling: ignored
   });
+};
+
+watch([filters, onlyShowOwned, ignoredAssetsHandling], () => {
+  const pageOptions = get(options);
+  if (pageOptions) {
+    updatePaginationHandler({
+      ...pageOptions,
+      page: 1
+    });
+  }
 });
 
 const css = useCssModule();
