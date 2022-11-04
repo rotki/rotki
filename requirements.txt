@@ -29,7 +29,7 @@ webargs==8.2.0
 werkzeug==2.2.2
 
 # for icon validation
-filetype==1.1.0
+filetype==1.2.0
 
 # for fuzzy search of assets
 polyleven==0.8
