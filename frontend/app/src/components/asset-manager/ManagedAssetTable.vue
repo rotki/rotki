@@ -85,6 +85,7 @@
       :server-items-length="serverItemLength"
       :single-select="false"
       show-select
+      :options="options"
       @update:options="updatePaginationHandler($event)"
     >
       <template #item.symbol="{ item }">
@@ -307,23 +308,33 @@ const updatePaginationHandler = (updateOptions: AssetPaginationOptions) => {
   set(options, updateOptions);
 };
 
-watch(
-  [options, filters, onlyShowOwned, ignoredAssetsHandling] as const,
-  ([options, filters, onlyOwned, ignoredAssetsHandling]) => {
-    let apiPagination = convertPagination<SupportedAsset>(
-      options,
-      'symbol'
-    ) as AssetPagination;
-
-    emit('update:pagination', {
-      ...apiPagination,
-      symbol: filters.symbol as string | undefined,
-      name: filters.name as string | undefined,
-      showUserOwnedAssetsOnly: onlyOwned,
-      ignoredAssetsHandling
+watch([filters, onlyShowOwned, ignoredAssetsHandling], () => {
+  const pageOptions = get(options);
+  if (pageOptions) {
+    updatePaginationHandler({
+      ...pageOptions,
+      page: 1
     });
   }
-);
+});
+
+watch(options, options => {
+  let apiPagination = convertPagination<SupportedAsset>(
+    options,
+    'symbol'
+  ) as AssetPagination;
+  const filter = get(filters);
+  const onlyOwned = get(onlyShowOwned);
+  const ignored = get(ignoredAssetsHandling);
+
+  emit('update:pagination', {
+    ...apiPagination,
+    symbol: filter.symbol as string | undefined,
+    name: filter.name as string | undefined,
+    showUserOwnedAssetsOnly: onlyOwned,
+    ignoredAssetsHandling: ignored
+  });
+});
 
 const css = useCssModule();
 </script>
