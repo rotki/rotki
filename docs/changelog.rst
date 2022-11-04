@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.26.1 <2022-11-04>`
 * :feature:`5080` For custom assets with custom price there should no longer be any double conversion. So 1 euro should always be one euro.
 * :feature:`5046` Users who deleted important assets from their rotki instance will now have a fallback and won't get their rotki stuck.
 * :bug:`5041` Add an option to only show ignored assets in assets table.
@@ -10,7 +11,7 @@ Changelog
 * :bug:`5051` Windows users with a premium subscription should be able to upload their user DB for backup to our server properly again.
 * :bug:`4821` Provide a fix for an infinite loop querying FTX trades if many trades were made in a short time.
 * :bug:`5073` Rotki won't fail to start at an edge case of starting the app again after more than a year when a particular global DB table that is expected is missing.
-* :bug:`-` Acquisitions in swaps won't be taxable in PnL reports.
+* :bug:`-` Acquisitions in onchain swaps won't be taxable in PnL reports.
 
 * :release:`1.26.0 <2022-10-28>`
 * :feature:`2607` Users can now add general and section specific notes in rotki by clicking on the note icon on the top right menu.
