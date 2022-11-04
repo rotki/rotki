@@ -67,6 +67,8 @@
           <v-col cols="auto" class="text-subtitle-2">
             <amount-display
               class="text--secondary"
+              :price-asset="item.priceAsset"
+              :amount="item.priceInAsset"
               :value="item.priceUsd"
               show-currency="ticker"
               fiat-currency="USD"

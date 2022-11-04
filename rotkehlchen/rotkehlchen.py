@@ -171,6 +171,7 @@ class Rotkehlchen():
         to sync premium databases we relogged in
         """
         self.cryptocompare.db = None
+        self.exchange_manager.delete_all_exchanges()
         self.data.logout()
 
     def unlock_user(
@@ -220,6 +221,7 @@ class Rotkehlchen():
         self.premium_sync_manager = PremiumSyncManager(data=self.data, password=password)
         # set the DB in the external services instances that need it
         self.cryptocompare.set_database(self.data.db)
+        Inquirer()._manualcurrent.set_database(database=self.data.db)
 
         # Anything that was set above here has to be cleaned in case of failure in the next step
         # by reset_after_failed_account_creation_or_login()

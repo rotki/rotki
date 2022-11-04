@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Tuple
 
 from web3.types import BlockIdentifier
 
@@ -72,14 +72,20 @@ class SaddleOracle(CurrentPriceOracleInterface):
             self,
             from_asset: AssetWithOracles,
             to_asset: AssetWithOracles,
-    ) -> Price:
+            match_main_currency: bool,
+    ) -> Tuple[Price, bool]:
         """At the moment until more pools get implemented this function is limited to ALETH
         Refer to the docstring of `get_price`.
         May raise:
         - PriceQueryUnsupportedAsset: If an asset not supported by saddle is used in the oracle
+        Returns:
+        1. The price of from_asset at the current timestamp
+        for the current oracle
+        2. False value, since it never tries to match main currency
         """
-        return self.get_price(
+        price = self.get_price(
             from_asset=from_asset,
             to_asset=to_asset,
             block_identifier='latest',
         )
+        return price, False

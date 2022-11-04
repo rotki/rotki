@@ -31,7 +31,7 @@ export const useAggregatedBlockchainBalancesStore = defineStore(
     const { totals: chainTotals, liabilities: chainLiabilities } = storeToRefs(
       useChainBalancesStore()
     );
-    const { getAssetPrice } = useBalancePricesStore();
+    const { assetPrice } = useBalancePricesStore();
 
     const totals: ComputedRef<AssetBalances> = computed(() => {
       const balances: AssetBalances = {};
@@ -105,7 +105,7 @@ export const useAggregatedBlockchainBalancesStore = defineStore(
         return toStoredAssetBalanceWithPrice(
           get(ownedAssets),
           asset => get(isAssetIgnored(asset)),
-          getAssetPrice
+          assetPrice
         );
       }
     );

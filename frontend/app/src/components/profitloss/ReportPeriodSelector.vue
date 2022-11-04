@@ -13,17 +13,15 @@
           v-for="period in periods"
           :key="period"
           :color="year === period ? 'primary' : null"
-          class="ma-2"
+          class="ma-2 px-4"
           :value="period"
           label
-          small
         >
           {{ period }}
         </v-chip>
         <v-chip
           value="custom"
-          class="ma-2"
-          small
+          class="ma-2 px-4"
           label
           :color="isCustom ? 'primary' : null"
         >
@@ -46,8 +44,7 @@
           :value="subPeriod.id"
           :disabled="isStartAfterNow(subPeriod.id)"
           label
-          class="ma-2"
-          small
+          class="ma-2 px-4"
         >
           {{ subPeriod.name }}
         </v-chip>

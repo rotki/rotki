@@ -1,12 +1,20 @@
 import pytest
 
 from rotkehlchen.accounting.cost_basis import AssetAcquisitionEvent
+from rotkehlchen.accounting.mixins.event import AccountingEventType
+from rotkehlchen.accounting.pnl import PNL, PnlTotals
+from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.accounting.types import MissingAcquisition
-from rotkehlchen.constants.assets import A_BTC, A_ETH, A_WETH
+from rotkehlchen.chain.ethereum.accounting.structures import TxEventSettings, TxMultitakeTreatment
+from rotkehlchen.chain.ethereum.modules.uniswap.constants import CPT_UNISWAP_V2
+from rotkehlchen.constants.assets import A_3CRV, A_BTC, A_ETH, A_EUR, A_WETH
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import CostBasisMethod
+from rotkehlchen.tests.utils.factories import make_ethereum_address, make_random_bytes
+from rotkehlchen.types import CostBasisMethod, Location, Timestamp, make_evm_tx_hash
 
 
 @pytest.mark.parametrize('accounting_initialize_parameters', [True])
@@ -580,3 +588,96 @@ def test_missing_acquisitions(accountant):
         time=4,
     ))
     assert cost_basis.missing_acquisitions == expected_missing_acquisitions
+
+
+@pytest.mark.parametrize('mocked_price_queries', [{
+    A_ETH: {A_EUR: {1469020840: ONE}},
+    A_3CRV: {A_EUR: {1469020840: ONE}},
+}])
+@pytest.mark.parametrize('taxable', [True, False])
+def test_swaps_taxability(accountant, taxable):
+    """Check taxable parameter works and acquisition part of swaps doesn't count as taxable."""
+    pot = accountant.pots[0]
+    transactions_accountant = pot.transactions
+    transactions_accountant._process_tx_swap(
+        timestamp=1469020840,
+        out_event=HistoryBaseEntry(
+            event_identifier=make_evm_tx_hash(make_random_bytes(42)),
+            sequence_index=1,
+            timestamp=Timestamp(1469020840),
+            location=Location.BLOCKCHAIN,
+            location_label=make_ethereum_address(),
+            asset=A_ETH,
+            balance=Balance(amount=ONE, usd_value=ONE),
+            notes='Swap 0.15 ETH in uniswap-v2 from 0x3CAdf2cA458376a6a5feA2EF3612346037D5A787',
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.SPEND,
+            counterparty=CPT_UNISWAP_V2,
+        ),
+        in_event=HistoryBaseEntry(
+            event_identifier=make_evm_tx_hash(make_random_bytes(42)),
+            sequence_index=2,
+            timestamp=Timestamp(1469020840),
+            location=Location.BLOCKCHAIN,
+            location_label=make_ethereum_address(),
+            asset=A_3CRV,
+            balance=Balance(amount=ONE, usd_value=ONE),
+            notes='Receive 462.967761432322996701 3CRV in uniswap-v2 from 0x3CAdf2cA458376a6a5feA2EF3612346037D5A787',  # noqa: E501
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            counterparty=CPT_UNISWAP_V2,
+        ),
+        event_settings=TxEventSettings(
+            taxable=taxable,
+            count_entire_amount_spend=False,
+            count_cost_basis_pnl=True,
+            method='spend',
+            take=2,
+            multitake_treatment=TxMultitakeTreatment.SWAP,
+        ),
+    )
+    if taxable is True:
+        expected_pnl_taxable = ONE
+        expected_pnl_totals = PnlTotals(
+            totals={AccountingEventType.TRANSACTION_EVENT: PNL(taxable=ONE)},
+        )
+    else:
+        expected_pnl_taxable = ZERO
+        expected_pnl_totals = PnlTotals()
+
+    assert pot.pnls == expected_pnl_totals
+    assert len(pot.processed_events) == 2
+    assert pot.processed_events[0].taxable_amount == ONE
+    assert pot.processed_events[0].free_amount == ZERO
+    # Check that dependping on whether is taxable or not, we see different values for spend event
+    assert pot.processed_events[0].pnl.taxable == expected_pnl_taxable
+    assert pot.processed_events[0].pnl.free == ZERO
+    # Check that no matter whether taxable flag is True or not, acquisitions are never taxable
+    assert pot.processed_events[1].taxable_amount == ZERO
+    assert pot.processed_events[1].free_amount == ONE
+    assert pot.processed_events[1].pnl.taxable == ZERO
+    assert pot.processed_events[1].pnl.free == ZERO
+
+
+@pytest.mark.parametrize('mocked_price_queries', [{A_ETH: {A_EUR: {1469020840: ONE}}}])
+def test_taxable_acquisition(accountant):
+    """Make sure that taxable acquisitions are processed properly"""
+    pot = accountant.pots[0]
+    pot.add_acquisition(
+        event_type=AccountingEventType.TRANSACTION_EVENT,
+        notes='Swap 0.15 ETH in uniswap-v2 from 0x3CAdf2cA458376a6a5feA2EF3612346037D5A787',
+        location=Location.BLOCKCHAIN,
+        timestamp=Timestamp(1469020840),
+        asset=A_ETH,
+        amount=ONE,
+        taxable=True,
+    )
+    expected_pnl_totals = PnlTotals(
+        totals={AccountingEventType.TRANSACTION_EVENT: PNL(taxable=ONE)},
+    )
+    assert pot.pnls == expected_pnl_totals
+    assert len(pot.processed_events) == 1
+    assert pot.processed_events[0].taxable_amount == ONE
+    assert pot.processed_events[0].free_amount == ZERO
+    assert pot.processed_events[0].pnl.taxable == ONE
+    assert pot.processed_events[0].pnl.free == ZERO

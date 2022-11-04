@@ -313,6 +313,23 @@ def translate_owned_assets(cursor: 'DBCursor') -> List[Tuple[str]]:
 
 def translate_binance_pairs(cursor: 'DBCursor') -> List[Tuple[str, str, str, str]]:
     """Collect and update assets in the binance_pairs tables to use the new id format"""
+    table_exists = cursor.execute(
+        'SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name="binance_pairs"',
+    ).fetchone()[0]
+    if table_exists == 0:  # handle binance_pairs not having been created
+        cursor.execute(  # fix https://github.com/rotki/rotki/issues/5073
+            """CREATE TABLE IF NOT EXISTS binance_pairs (
+            pair TEXT NOT NULL,
+            base_asset TEXT NOT NULL,
+            quote_asset TEXT NOT NULL,
+            location TEXT NOT NULL,
+            FOREIGN KEY(base_asset) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE CASCADE,
+            FOREIGN KEY(quote_asset) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE CASCADE,
+            PRIMARY KEY(pair, location)
+            );""",  # noqa: E501
+        )
+        return []
+
     cursor.execute('SELECT pair, base_asset, quote_asset, location from binance_pairs;')
     binance_pairs = []
     for entry in cursor:

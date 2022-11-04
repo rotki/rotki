@@ -2,7 +2,7 @@ import abc
 import logging
 from functools import reduce
 from operator import mul
-from typing import TYPE_CHECKING, List, NamedTuple, Optional
+from typing import TYPE_CHECKING, List, NamedTuple, Optional, Tuple
 
 from eth_utils import to_checksum_address
 from web3.types import BlockIdentifier
@@ -254,23 +254,29 @@ class UniswapOracle(CurrentPriceOracleInterface, CacheableMixIn):
             self,
             from_asset: AssetWithOracles,
             to_asset: AssetWithOracles,
-    ) -> Price:
+            match_main_currency: bool,
+    ) -> Tuple[Price, bool]:
         """
         This method gets the current price for two ethereum tokens finding a pool
         or a path of pools in the uniswap protocol. The special case of USD as asset
         is handled using USDC instead of USD since is one of the most used stables
         right now for pools.
+        Returns:
+        1. The price of from_asset at the current timestamp
+        for the current oracle
+        2. False value, since it never tries to match main currency
         """
         if to_asset == A_USD:
             to_asset = A_USDC.resolve_to_asset_with_oracles()
         elif from_asset == A_USD:
             from_asset = A_USDC.resolve_to_asset_with_oracles()
 
-        return self.get_price(
+        price = self.get_price(
             from_asset=from_asset,
             to_asset=to_asset,
             block_identifier='latest',
         )
+        return price, False
 
 
 class UniswapV3Oracle(UniswapOracle):

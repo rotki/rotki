@@ -1,7 +1,9 @@
+import logging
 from typing import TYPE_CHECKING, Optional, Type, TypeVar
 
 from rotkehlchen.assets.types import AssetType
-from rotkehlchen.errors.asset import WrongAssetType
+from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.data_structures import LRUCacheWithRemove
 
 if TYPE_CHECKING:
@@ -17,6 +19,8 @@ if TYPE_CHECKING:
     )
 
 
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 T = TypeVar('T', 'FiatAsset', 'CryptoAsset', 'EvmToken', 'Nft', 'AssetWithNameAndType', 'AssetWithSymbol', 'AssetWithOracles')  # noqa: E501
 
 
@@ -58,10 +62,13 @@ class AssetResolver():
         Get all asset data for a valid asset identifier. May return any valid subclass of the
         Asset class.
 
-        Raises UnknownAsset if no data can be found
+        May raise:
+        - UnknownAsset
+        - WrongAssetType
         """
         # TODO: This is ugly here but is here to avoid a cyclic import in the Assets file
         # Couldn't find a reorg that solves this cyclic import
+        from rotkehlchen.constants.assets import CONSTANT_ASSETS  # pylint: disable=import-outside-toplevel  # isort:skip  # noqa: E501
         from rotkehlchen.globaldb.handler import GlobalDBHandler  # pylint: disable=import-outside-toplevel  # isort:skip  # noqa: E501
 
         instance = AssetResolver()
@@ -70,10 +77,21 @@ class AssetResolver():
             return cached_data
 
         # If was not found in the cache try querying it in the globaldb
-        asset = GlobalDBHandler().resolve_asset(
-            identifier=identifier,
-            form_with_incomplete_data=form_with_incomplete_data,
-        )
+        try:
+            asset = GlobalDBHandler().resolve_asset(
+                identifier=identifier,
+                form_with_incomplete_data=form_with_incomplete_data,
+            )
+        # `WrongAssetType` exception is handled by `resolve_asset_to_class`
+        except UnknownAsset:
+            if identifier not in CONSTANT_ASSETS:
+                raise
+
+            log.debug(f'Attempt to resolve asset {identifier} using the packaged database')
+            asset = GlobalDBHandler().resolve_asset_from_packaged_and_store(
+                identifier=identifier,
+                form_with_incomplete_data=form_with_incomplete_data,
+            )
         # Save it in the cache
         instance.assets_cache.set(identifier, asset)
         return asset
@@ -82,6 +100,7 @@ class AssetResolver():
     def get_asset_type(identifier: str) -> AssetType:
         # TODO: This is ugly here but is here to avoid a cyclic import in the Assets file
         # Couldn't find a reorg that solves this cyclic import
+        from rotkehlchen.constants.assets import CONSTANT_ASSETS  # pylint: disable=import-outside-toplevel  # isort:skip  # noqa: E501
         from rotkehlchen.globaldb.handler import GlobalDBHandler   # pylint: disable=import-outside-toplevel  # isort:skip  # noqa: E501
 
         instance = AssetResolver()
@@ -89,7 +108,18 @@ class AssetResolver():
         if cached_data is not None:
             return cached_data
 
-        asset_type = GlobalDBHandler().get_asset_type(identifier)
+        try:
+            asset_type = GlobalDBHandler().get_asset_type(identifier)
+        except UnknownAsset:
+            if identifier not in CONSTANT_ASSETS:
+                raise
+
+            log.debug(f'Attempt to get asset_type for {identifier} using the packaged database')  # noqa: E501
+            asset = GlobalDBHandler().resolve_asset_from_packaged_and_store(
+                identifier=identifier,
+                form_with_incomplete_data=False,
+            )
+            asset_type = asset.asset_type
         instance.types_cache.set(identifier, asset_type)
         return asset_type
 
@@ -101,19 +131,38 @@ class AssetResolver():
     ) -> T:
         """
         Try to resolve an identifier to the Asset subclass defined in expected_type.
+
+        Whenever `WrongAssetType` is encountered for an asset present in `CONSTANT_ASSETS`
+        we use the packaged global db to resolve the asset.
+
         May raise:
         - WrongAssetType: if the asset is resolved but the class is not the expected one.
         - UnknownAsset: if the asset was not found in the database.
         """
+        from rotkehlchen.constants.assets import CONSTANT_ASSETS  # pylint: disable=import-outside-toplevel  # isort:skip  # noqa: E501
+        from rotkehlchen.globaldb.handler import GlobalDBHandler   # pylint: disable=import-outside-toplevel  # isort:skip  # noqa: E501
+
         resolved_asset = AssetResolver().resolve_asset(
             identifier=identifier,
             form_with_incomplete_data=form_with_incomplete_data,
         )
-        if isinstance(resolved_asset, expected_type) is False:
-            raise WrongAssetType(
+        if isinstance(resolved_asset, expected_type) is True:
+            # resolve_asset returns Asset, but we already narrow type with the if check above
+            return resolved_asset  # type: ignore
+
+        if identifier in CONSTANT_ASSETS:
+            # Check if the version in the packaged globaldb is correct
+            resolved_asset = GlobalDBHandler().resolve_asset_from_packaged_and_store(
                 identifier=identifier,
-                expected_type=expected_type,
-                real_type=type(resolved_asset),
+                form_with_incomplete_data=form_with_incomplete_data,
             )
-        # resolve_asset returns Asset but we already narrow type with the if check above
-        return resolved_asset  # type: ignore
+            AssetResolver().assets_cache.set(identifier, resolved_asset)
+            if isinstance(resolved_asset, expected_type) is True:
+                # resolve_asset returns Asset, but we already narrow type with the if check above
+                return resolved_asset  # type: ignore
+
+        raise WrongAssetType(
+            identifier=identifier,
+            expected_type=expected_type,
+            real_type=type(resolved_asset),
+        )

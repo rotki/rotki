@@ -260,3 +260,5 @@ A_FPIS = Asset('eip155:1/erc20:0xc2544A32872A91F4A553b404C6950e89De901fdb')
 A_ALETH = Asset('eip155:1/erc20:0x0100546F2cD4C9D97f798fFC9755E47865FF7Ee6')
 A_STETH = Asset('eip155:1/erc20:0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84')
 A_SAND = Asset('eip155:1/erc20:0x3845badAde8e6dFF049820680d1F14bD3903a5d0')
+
+CONSTANT_ASSETS = {var_data for var_name, var_data in locals().items() if var_name.startswith('A_')}  # noqa: E501

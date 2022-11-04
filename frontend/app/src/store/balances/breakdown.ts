@@ -28,7 +28,7 @@ export const useBalancesBreakdownStore = defineStore(
     const { getBreakdown: getBlockchainBreakdown } = useAccountBalancesStore();
     const { locationBreakdown: blockchainLocationBreakdown, blockchainTotal } =
       storeToRefs(useAggregatedBlockchainBalancesStore());
-    const { toSelectedCurrency, getAssetPrice } = useBalancePricesStore();
+    const { toSelectedCurrency, assetPrice } = useBalancePricesStore();
     const { isAssetIgnored } = useIgnoredAssetsStore();
 
     const assetBreakdown = (asset: string): ComputedRef<AssetBreakdown[]> =>
@@ -61,7 +61,7 @@ export const useBalancesBreakdownStore = defineStore(
             asset,
             amount: balances[asset].amount,
             usdValue: balances[asset].usdValue,
-            usdPrice: getAssetPrice(asset) ?? NoPrice
+            usdPrice: get(assetPrice(asset)) ?? NoPrice
           }))
           .sort((a, b) => sortDesc(a.usdValue, b.usdValue));
       });

@@ -10,10 +10,13 @@ import { AllBalancePayload } from '@/store/balances/types';
 import { useBlockchainStore } from '@/store/blockchain';
 import { useBlockchainBalancesStore } from '@/store/blockchain/balances';
 import { useNotifications } from '@/store/notifications';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTasks } from '@/store/tasks';
+import { CURRENCY_USD } from '@/types/currencies';
 import { AssetPrices } from '@/types/prices';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
+import { One } from '@/utils/bignumbers';
 import { uniqueStrings } from '@/utils/data';
 
 export const useBalancesStore = defineStore('balances', () => {
@@ -28,15 +31,32 @@ export const useBalancesStore = defineStore('balances', () => {
   const { queryBalancesAsync } = useBalancesApi();
   const priceStore = useBalancePricesStore();
   const { prices } = storeToRefs(priceStore);
-  const { getAssetPrice, fetchPrices, fetchExchangeRates } = priceStore;
+  const { assetPrice, fetchPrices, fetchExchangeRates, exchangeRate } =
+    priceStore;
   const { notify } = useNotifications();
   const { isTaskRunning, addTask } = useTasks();
   const { tc } = useI18n();
+  const { currencySymbol, currency } = storeToRefs(useGeneralSettingsStore());
 
   const adjustPrices = (prices: MaybeRef<AssetPrices>) => {
-    updateChainPrices(prices);
-    updateManualPrices(prices);
-    updateExchangePrices(prices);
+    const pricesConvertedToUsd = { ...get(prices) };
+
+    const mainCurrency = get(currencySymbol);
+    if (mainCurrency !== CURRENCY_USD) {
+      const rate = get(exchangeRate(mainCurrency)) ?? One;
+
+      for (const asset in pricesConvertedToUsd) {
+        const price = pricesConvertedToUsd[asset];
+
+        if (price.isCurrentCurrency) {
+          price.usdPrice = price.value.dividedBy(rate);
+        }
+      }
+    }
+
+    updateChainPrices(pricesConvertedToUsd);
+    updateManualPrices(pricesConvertedToUsd);
+    updateExchangePrices(pricesConvertedToUsd);
   };
 
   const refreshPrices = async (
@@ -60,7 +80,7 @@ export const useBalancesStore = defineStore('balances', () => {
   watchThrottled(
     assets(),
     async assets => {
-      const noPriceAssets = assets.filter(asset => !getAssetPrice(asset));
+      const noPriceAssets = assets.filter(asset => !get(assetPrice(asset)));
       if (noPriceAssets.length > 0) {
         await refreshPrices(false, noPriceAssets);
       }
@@ -110,10 +130,16 @@ export const useBalancesStore = defineStore('balances', () => {
     await refreshPrices(true);
   };
 
+  // TODO: This is temporary fix for double conversion issue. Future solutions should try to eliminate this part.
+  watch(currency, async () => {
+    await refreshPrices(true);
+  });
+
   return {
     autoRefresh,
     refreshPrices,
     fetchBalances,
+    adjustPrices,
     fetch
   };
 });

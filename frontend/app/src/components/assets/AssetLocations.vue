@@ -36,10 +36,11 @@
       </template>
       <template #item.balance.usdValue="{ item }">
         <amount-display
-          :fiat-currency="identifier"
-          :amount="item.balance.amount"
-          :value="item.balance.usdValue"
           show-currency="symbol"
+          :amount="item.balance.amount"
+          :price-asset="identifier"
+          fiat-currency="USD"
+          :value="item.balance.usdValue"
         />
       </template>
       <template #item.percentage="{ item }">

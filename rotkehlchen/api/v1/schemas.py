@@ -1,4 +1,5 @@
 import logging
+from enum import auto
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -102,6 +103,7 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 from rotkehlchen.utils.misc import create_order_by_rules_list, ts_now
+from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 
 from .fields import (
     AmountField,
@@ -1752,11 +1754,17 @@ class CryptoAssetSchema(BaseCryptoAssetSchema):
         _validate_single_oracle_id(data, 'cryptocompare', self.cryptocompare_obj)
 
 
+class IgnoredAssetsHandling(SerializableEnumMixin):
+    NONE = auto()
+    EXCLUDE = auto()
+    SHOW_ONLY = auto()
+
+
 class AssetsPostSchema(DBPaginationSchema, DBOrderBySchema):
     name = fields.String(load_default=None)
     symbol = fields.String(load_default=None)
     asset_type = SerializableEnumField(enum_class=AssetType, load_default=None)
-    include_ignored_assets = fields.Boolean(load_default=True)
+    ignored_assets_handling = SerializableEnumField(enum_class=IgnoredAssetsHandling, load_default=IgnoredAssetsHandling.NONE)  # noqa: E501
     show_user_owned_assets_only = fields.Boolean(load_default=False)
     identifiers = DelimitedOrNormalList(fields.String(required=True), load_default=None)
 
@@ -1783,10 +1791,18 @@ class AssetsPostSchema(DBPaginationSchema, DBOrderBySchema):
             data: Dict[str, Any],
             **_kwargs: Any,
     ) -> Dict[str, Any]:
-        ignored_assets_identifiers = None
         with self.db.user_write() as write_cursor, GlobalDBHandler().conn.read_ctx() as globaldb_read_cursor:  # noqa: E501
-            if data['include_ignored_assets'] is False:
-                ignored_assets_identifiers = [asset.identifier for asset in self.db.get_ignored_assets(write_cursor)]  # noqa: E501
+            ignored_assets_filter_params: Optional[Tuple[Literal['IN', 'NOT IN'], List[str]]] = None  # noqa: E501
+            if data['ignored_assets_handling'] == IgnoredAssetsHandling.EXCLUDE:
+                ignored_assets_filter_params = (
+                    'NOT IN',
+                    [asset.identifier for asset in self.db.get_ignored_assets(write_cursor)],
+                )
+            elif data['ignored_assets_handling'] == IgnoredAssetsHandling.SHOW_ONLY:
+                ignored_assets_filter_params = (
+                    'IN',
+                    [asset.identifier for asset in self.db.get_ignored_assets(write_cursor)],
+                )
 
             if data['show_user_owned_assets_only'] is True:
                 globaldb_read_cursor.execute('SELECT asset_id FROM user_owned_assets;')
@@ -1806,7 +1822,7 @@ class AssetsPostSchema(DBPaginationSchema, DBOrderBySchema):
                 symbol=data['symbol'],
                 asset_type=data['asset_type'],
                 identifiers=identifiers,
-                ignored_assets_identifiers=ignored_assets_identifiers,
+                ignored_assets_filter_params=ignored_assets_filter_params,
             )
         return {'filter_query': filter_query, 'identifiers': data['identifiers']}
 

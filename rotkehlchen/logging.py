@@ -176,6 +176,7 @@ def configure_logging(args: argparse.Namespace) -> None:
             'backupCount': backups_num,
             'level': loglevel,
             'formatter': 'default',
+            'encoding': 'utf-8',
         }
     else:
         selected_handlers = ['console']

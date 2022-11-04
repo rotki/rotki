@@ -365,7 +365,7 @@ def test_get_all_assets(rotkehlchen_api_server):
             'asset_type': 'fiat',
             'order_by_attributes': ['name'],
             'ascending': [True],
-            'include_ignored_assets': False,
+            'ignored_assets_handling': 'exclude',
         },
     )
     result = assert_proper_response_with_result(response)
@@ -918,3 +918,26 @@ def test_search_assets_with_levenshtein(rotkehlchen_api_server):
         },
     )
     assert_error_response(response, contained_in_msg='Failed to deserialize ChainID value near')
+
+
+def test_only_ignored_assets(rotkehlchen_api_server):
+    """Test it's possible to ask to only see the ignored assets"""
+    ignored_assets = [A_GNO.identifier, A_RDN.identifier]
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ignoredassetsresource',
+        ), json={'assets': ignored_assets},
+    )
+    assert_proper_response(response)
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'allassetsresource',
+        ),
+        json={
+            'ignored_assets_handling': 'show_only',
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    assert {entry['identifier'] for entry in result['entries']} == set(ignored_assets)

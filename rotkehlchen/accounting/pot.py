@@ -159,14 +159,20 @@ class AccountingPot(CustomizableDateMixin):
         for prefork_event in prefork_events:
             self._add_processed_event(prefork_event)
 
+        if taxable is True:
+            taxable_amount = amount
+            free_amount = ZERO
+        else:
+            taxable_amount = ZERO
+            free_amount = amount
         event = ProcessedAccountingEvent(
             type=event_type,
             notes=notes,
             location=location,
             timestamp=timestamp,
             asset=asset,
-            taxable_amount=amount,
-            free_amount=ZERO,
+            taxable_amount=taxable_amount,
+            free_amount=free_amount,
             price=price,
             pnl=PNL(),  # filled out later
             cost_basis=None,

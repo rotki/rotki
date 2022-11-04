@@ -31,7 +31,7 @@ from rotkehlchen.assets.asset import (
 from rotkehlchen.assets.types import AssetData, AssetType
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_ETH2
-from rotkehlchen.constants.misc import NFT_DIRECTIVE
+from rotkehlchen.constants.misc import DEFAULT_SQL_VM_INSTRUCTIONS_CB, NFT_DIRECTIVE
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType, DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
@@ -112,6 +112,7 @@ class GlobalDBHandler():
     """A singleton class controlling the global DB"""
     __instance: Optional['GlobalDBHandler'] = None
     _data_directory: Optional[Path] = None
+    _packaged_db_conn: Optional[DBConnection] = None
     conn: DBConnection
 
     def __new__(
@@ -134,6 +135,21 @@ class GlobalDBHandler():
         GlobalDBHandler.__instance._data_directory = data_dir
         GlobalDBHandler.__instance.conn = _initialize_global_db_directory(data_dir, sql_vm_instructions_cb)  # noqa: E501
         return GlobalDBHandler.__instance
+
+    @staticmethod
+    def packaged_db_conn() -> DBConnection:
+        """Return a DBConnection instance for the packaged global db."""
+        if GlobalDBHandler()._packaged_db_conn is not None:
+            # mypy does not recognize the initialization as that of a singleton
+            return GlobalDBHandler()._packaged_db_conn  # type: ignore
+
+        packaged_db_path = Path(__file__).resolve().parent.parent / 'data' / 'global.db'
+        packaged_db_conn = initialize_globaldb(
+            dbpath=packaged_db_path,
+            sql_vm_instructions_cb=DEFAULT_SQL_VM_INSTRUCTIONS_CB,
+        )
+        GlobalDBHandler()._packaged_db_conn = packaged_db_conn
+        return packaged_db_conn
 
     @staticmethod
     def get_schema_version() -> int:
@@ -916,9 +932,10 @@ class GlobalDBHandler():
                     ),
                 )
                 write_cursor.execute(
-                    'UPDATE assets SET name=? WHERE identifier=?;',
+                    'UPDATE assets SET name=?, type=? WHERE identifier=?;',
                     (
                         entry.name,
+                        AssetType.EVM_TOKEN.serialize_for_db(),
                         entry.identifier,
                     ),
                 )
@@ -1733,11 +1750,18 @@ class GlobalDBHandler():
         return user_ids - shipped_ids
 
     @staticmethod
-    def resolve_asset(identifier: str, form_with_incomplete_data: bool) -> AssetWithNameAndType:
+    def resolve_asset(
+            identifier: str,
+            form_with_incomplete_data: bool,
+            use_packaged_db: bool = False,
+    ) -> AssetWithNameAndType:
         """
         Resolve asset in only one query to the database
+
+        If `use_packaged_db` is True, it checks the packaged global db.
         May raise:
         - UnknownAsset if the asset is not found in the database
+        - WrongAssetType
         """
         if identifier.startswith(NFT_DIRECTIVE):
             return Nft(identifier)
@@ -1750,7 +1774,8 @@ class GlobalDBHandler():
         UNION ALL
         SELECT A.identifier, A.type, null, null, A.name, null, null, null, null, null, null, null, null, null, B.notes, B.type FROM assets AS A JOIN custom_assets AS B on A.identifier=B.identifier WHERE A.identifier = ?
         """  # noqa: E501
-        with GlobalDBHandler().conn.read_ctx() as cursor:
+        connection = GlobalDBHandler().packaged_db_conn() if use_packaged_db is True else GlobalDBHandler().conn  # noqa: E501
+        with connection.read_ctx() as cursor:
             cursor.execute(
                 query,
                 (
@@ -1783,15 +1808,67 @@ class GlobalDBHandler():
             )
 
     @staticmethod
-    def get_asset_type(identifier: str) -> AssetType:
+    def resolve_asset_from_packaged_and_store(
+            identifier: str,
+            form_with_incomplete_data: bool,
+    ) -> AssetWithNameAndType:
+        """
+        Reads an asset from the packaged globaldb and adds it to the database if missing or edits
+        the local version of the asset.
+        May raise:
+        - UnknownAsset
+        """
+        asset = GlobalDBHandler().resolve_asset(
+            identifier=identifier,
+            form_with_incomplete_data=form_with_incomplete_data,
+            use_packaged_db=True,
+        )
+        # make sure that the asset is saved on the user's global db. First check if it exists
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            asset_count = cursor.execute(
+                'SELECT COUNT(*) FROM assets WHERE identifier=?',
+                (identifier,),
+            ).fetchone()[0]
+
+        asset_data: Union[EvmToken, Dict[str, Any]]
+        if asset.asset_type == AssetType.EVM_TOKEN:
+            asset_data = cast(EvmToken, asset)
+        else:
+            asset_data = asset.to_dict()
+            asset_data['asset_type'] = asset.asset_type
+            asset_data['forked'] = getattr(asset, 'forked', None)
+            asset_data['swapped_for'] = getattr(asset, 'swapped_for', None)
+
+        if asset_count == 0:
+            # the asset doesn't exist and need to be added
+            GlobalDBHandler().add_asset(
+                asset_id=asset.identifier,
+                asset_type=asset.asset_type,
+                data=asset_data,
+            )
+        else:
+            # in this case the asset exists and needs to be updated
+            if asset.asset_type == AssetType.EVM_TOKEN:
+                GlobalDBHandler().edit_evm_token(cast(EvmToken, asset_data))
+            else:
+                GlobalDBHandler().edit_user_asset(cast(Dict[str, Any], asset_data))
+
+        return asset
+
+    @staticmethod
+    def get_asset_type(identifier: str, use_packaged_db: bool = False) -> AssetType:
         """
         For a given identifier return the type of the asset associated to that identifier.
+        If `use_packaged_db` is True, it checks the packaged global db.
+
         May raise:
         - UnknownAsset: if the asset is not present in the database
         """
         if identifier.startswith(NFT_DIRECTIVE):
             return AssetType.NFT
-        with GlobalDBHandler().conn.read_ctx() as cursor:
+
+        connection = GlobalDBHandler().packaged_db_conn() if use_packaged_db is True else GlobalDBHandler().conn  # noqa: E501
+        with connection.read_ctx() as cursor:
             type_in_db = cursor.execute(
                 'SELECT type FROM assets WHERE identifier=?',
                 (identifier,),

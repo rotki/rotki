@@ -447,7 +447,7 @@ class DBMultiValueFilter(Generic[T], DBFilter):
     """Filter a column having a string value out of a selection of values"""
     column: str
     values: List[T]
-    operator: str = 'IN'
+    operator: Literal['IN', 'NOT IN'] = 'IN'
 
     def prepare(self) -> Tuple[List[str], List[T]]:
         return (
@@ -945,10 +945,10 @@ class AssetsFilterQuery(DBFilterQuery):
             substring_search: Optional[str] = None,
             search_column: Optional[str] = None,
             asset_type: Optional[AssetType] = None,
-            ignored_assets_identifiers: Optional[List[str]] = None,
             identifiers: Optional[List[str]] = None,
             return_exact_matches: bool = False,
             evm_chain: Optional[ChainID] = None,
+            ignored_assets_filter_params: Optional[Tuple[Literal['IN', 'NOT IN'], List[str]]] = None,  # noqa: E501
     ) -> 'AssetsFilterQuery':
         if order_by_rules is None:
             order_by_rules = [('name', True)]
@@ -1000,12 +1000,12 @@ class AssetsFilterQuery(DBFilterQuery):
                 column='identifier',
                 values=identifiers,
             ))
-        if ignored_assets_identifiers is not None:
+        if ignored_assets_filter_params is not None:
             filters.append(DBMultiStringFilter(
                 and_op=True,
                 column='identifier',
-                operator='NOT IN',
-                values=ignored_assets_identifiers,
+                operator=ignored_assets_filter_params[0],
+                values=ignored_assets_filter_params[1],
             ))
         if evm_chain is not None:
             filters.append(DBEqualsFilter(

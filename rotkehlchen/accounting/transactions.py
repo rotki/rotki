@@ -142,7 +142,7 @@ class TransactionsAccountant():
             timestamp=timestamp,
             asset=in_event.asset,
             amount=in_event.balance.amount,
-            taxable=event_settings.taxable,
+            taxable=False,  # acquisitions in swaps are never taxable
             given_price=prices[1],
             extra_data={
                 'tx_hash': in_event.serialized_event_identifier,

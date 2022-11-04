@@ -22,18 +22,43 @@
         </v-col>
         <v-col />
         <v-col cols="12" md="auto">
-          <v-checkbox
-            v-model="onlyShowOwned"
-            class="mt-0"
-            :label="tc('asset_table.only_show_owned')"
-            hide-details
-          />
-          <v-checkbox
-            v-model="hideIgnoredAssets"
-            class="mt-0"
-            :label="tc('asset_table.hide_ignored_assets')"
-            hide-details
-          />
+          <v-menu offset-y :close-on-content-click="false">
+            <template #activator="{ on }">
+              <v-btn outlined text height="40px" v-on="on">
+                {{ tc('common.actions.filter') }}
+                <v-icon class="ml-2">mdi-chevron-down</v-icon>
+              </v-btn>
+            </template>
+            <v-list>
+              <v-list-item link @click="onlyShowOwned = !onlyShowOwned">
+                <v-checkbox
+                  :input-value="onlyShowOwned"
+                  class="mt-0 py-2"
+                  :label="tc('asset_table.only_show_owned')"
+                  hide-details
+                />
+              </v-list-item>
+              <v-list-item
+                :class="css['filter-heading']"
+                class="font-weight-bold text-uppercase py-2"
+              >
+                {{ tc('asset_table.filter_by_ignored_status') }}
+              </v-list-item>
+              <v-list-item>
+                <v-radio-group v-model="ignoredAssetsHandling" class="mt-0">
+                  <v-radio value="none" :label="tc('asset_table.show_all')" />
+                  <v-radio
+                    value="exclude"
+                    :label="tc('asset_table.only_show_unignored')"
+                  />
+                  <v-radio
+                    value="show_only"
+                    :label="tc('asset_table.only_show_ignored')"
+                  />
+                </v-radio-group>
+              </v-list-item>
+            </v-list>
+          </v-menu>
         </v-col>
         <v-col cols="12" md="4" class="pb-md-8">
           <table-filter
@@ -60,6 +85,7 @@
       :server-items-length="serverItemLength"
       :single-select="false"
       show-select
+      :options="options"
       @update:options="updatePaginationHandler($event)"
     >
       <template #item.symbol="{ item }">
@@ -163,7 +189,7 @@ const { filters, matchers, updateFilter } = useAssetFilter();
 const expanded: Ref<SupportedAsset[]> = ref([]);
 const selected: Ref<SupportedAsset[]> = ref([]);
 const onlyShowOwned = ref<boolean>(false);
-const hideIgnoredAssets = ref<boolean>(false);
+const ignoredAssetsHandling = ref<'none' | 'exclude' | 'show_only'>('exclude');
 const options: Ref<AssetPaginationOptions> = ref(
   defaultAssetPagination(get(itemsPerPage))
 );
@@ -280,23 +306,40 @@ const massIgnore = async (ignored: boolean) => {
 
 const updatePaginationHandler = (updateOptions: AssetPaginationOptions) => {
   set(options, updateOptions);
+
+  let apiPagination = convertPagination<SupportedAsset>(
+    updateOptions,
+    'symbol'
+  ) as AssetPagination;
+  const filter = get(filters);
+  const onlyOwned = get(onlyShowOwned);
+  const ignored = get(ignoredAssetsHandling);
+
+  emit('update:pagination', {
+    ...apiPagination,
+    symbol: filter.symbol as string | undefined,
+    name: filter.name as string | undefined,
+    showUserOwnedAssetsOnly: onlyOwned,
+    ignoredAssetsHandling: ignored
+  });
 };
 
-watch(
-  [options, filters, hideIgnoredAssets, onlyShowOwned] as const,
-  ([options, filters, hideIgnored, onlyOwned]) => {
-    let apiPagination = convertPagination<SupportedAsset>(
-      options,
-      'symbol'
-    ) as AssetPagination;
-
-    emit('update:pagination', {
-      ...apiPagination,
-      symbol: filters.symbol as string | undefined,
-      name: filters.name as string | undefined,
-      includeIgnoredAssets: !hideIgnored,
-      showUserOwnedAssetsOnly: onlyOwned
+watch([filters, onlyShowOwned, ignoredAssetsHandling], () => {
+  const pageOptions = get(options);
+  if (pageOptions) {
+    updatePaginationHandler({
+      ...pageOptions,
+      page: 1
     });
   }
-);
+});
+
+const css = useCssModule();
 </script>
+
+<style module lang="scss">
+.filter-heading {
+  font-size: 0.875rem;
+  min-height: auto;
+}
+</style>

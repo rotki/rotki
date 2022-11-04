@@ -247,18 +247,33 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
       return currentExchangeRate ? val.multipliedBy(currentExchangeRate) : val;
     });
 
-  const getAssetPrice = (asset: string): BigNumber | undefined => {
-    return get(prices)[asset]?.value;
-  };
+  const assetPrice = (
+    asset: MaybeRef<string>
+  ): ComputedRef<BigNumber | undefined> =>
+    computed(() => {
+      return get(prices)[get(asset)]?.value;
+    });
+
+  const isManualAssetPrice = (asset: MaybeRef<string>): ComputedRef<boolean> =>
+    computed(() => {
+      return get(prices)[get(asset)]?.isManualPrice || false;
+    });
+
+  const isAssetPriceInCurrentCurrency = (
+    asset: MaybeRef<string>
+  ): ComputedRef<boolean> =>
+    computed(() => {
+      return get(prices)[get(asset)]?.isCurrentCurrency || false;
+    });
 
   const reset = (): void => {
     set(prices, {});
     set(exchangeRates, {});
   };
 
-  watch([exchangeRates, currencySymbol], ([a, b]) => {
-    if (Object.keys(a).length > 0) {
-      const rate = get(exchangeRate(b));
+  watch([exchangeRates, currencySymbol], ([rates, symbol]) => {
+    if (Object.keys(rates).length > 0) {
+      const rate = get(exchangeRate(symbol));
       if (!rate || rate.eq(0)) {
         notify({
           title: t('missing_exchange_rate.title').toString(),
@@ -272,7 +287,7 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
   return {
     prices,
     exchangeRates,
-    getAssetPrice,
+    assetPrice,
     fetchPrices,
     updateBalancesPrices,
     fetchExchangeRates,
@@ -282,6 +297,8 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
     getPriceCache,
     deletePriceCache,
     toSelectedCurrency,
+    isManualAssetPrice,
+    isAssetPriceInCurrentCurrency,
     reset
   };
 });

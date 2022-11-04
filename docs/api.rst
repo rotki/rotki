@@ -2846,7 +2846,7 @@ Querying all supported assets
    :reqjson string symbol: An asset symbol to be used to filter the result data. Optional.
    :reqjson string asset_type: The category of an asset to be used to filter the result data. Optional.
    :reqjson bool show_user_owned_assets_only: A flag to specify if only user owned assets should be returned. Defaults to ``"false"``. Optional.
-   :reqjson string include_ignored_assets: A flag to specify if ignored assets should be included in the result. Defaults to ``"true"``. Optional.
+   :reqjson string ignored_assets_handling: A flag to specify how to handle ignored assets. Possible values are `'none'`, `'exclude'` and `'show_only'`. You can write 'none' in order to not handle them in any special way (meaning to show them too). This is the default. You can write 'exclude' if you want to exlude them from the result. And you can write 'show_only' if you want to only see the ignored assets in the result.
 
    **Example Response**:
 

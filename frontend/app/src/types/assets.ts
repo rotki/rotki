@@ -53,7 +53,7 @@ export interface AssetPagination extends ApiPagination<SupportedAsset> {
   name?: string;
   symbol?: string;
   showUserOwnedAssetsOnly?: boolean;
-  includeIgnoredAssets?: boolean;
+  ignoredAssetsHandling?: string;
   identifiers?: string[];
 }
 
@@ -62,13 +62,13 @@ export interface AssetPaginationOptions
   name?: string;
   symbol?: string;
   showUserOwnedAssetsOnly?: boolean;
-  includeIgnoredAssets?: boolean;
+  ignoredAssetsHandling?: string;
 }
 
 export const defaultAssetPagination = (
   itemsPerPage: number
 ): AssetPaginationOptions => ({
-  page: 0,
+  page: 1,
   itemsPerPage: itemsPerPage,
   sortBy: ['symbol' as keyof SupportedAsset],
   sortDesc: [false]
