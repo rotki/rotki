@@ -612,7 +612,7 @@ def test_swaps_taxability(accountant, taxable):
             notes='Swap 0.15 ETH in uniswap-v2 from 0x3CAdf2cA458376a6a5feA2EF3612346037D5A787',
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
-            counterparty='counterparty',
+            counterparty=CPT_UNISWAP_V2,
         ),
         in_event=HistoryBaseEntry(
             event_identifier=make_evm_tx_hash(make_random_bytes(42)),
