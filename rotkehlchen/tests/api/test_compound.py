@@ -14,7 +14,7 @@ from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_CDAI, A_CUSDC, A_DAI, A_ETH, A_USDC
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.serialize import process_result_list
-from rotkehlchen.tests.conftest import requires_env
+from rotkehlchen.tests.conftest import TestEnvironment, requires_env
 from rotkehlchen.tests.utils.api import (
     ASYNC_TASK_WAIT_TIMEOUT,
     api_url_for,
@@ -171,7 +171,7 @@ TEST_ACCOUNTS = [
 ]
 
 
-@requires_env(['nightly'])
+@requires_env([TestEnvironment.NIGHTLY])
 @pytest.mark.parametrize('ethereum_accounts', [TEST_ACCOUNTS])
 @pytest.mark.parametrize('ethereum_modules', [['compound']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
