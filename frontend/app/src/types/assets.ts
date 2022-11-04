@@ -68,7 +68,7 @@ export interface AssetPaginationOptions
 export const defaultAssetPagination = (
   itemsPerPage: number
 ): AssetPaginationOptions => ({
-  page: 0,
+  page: 1,
   itemsPerPage: itemsPerPage,
   sortBy: ['symbol' as keyof SupportedAsset],
   sortDesc: [false]
