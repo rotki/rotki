@@ -177,6 +177,7 @@ from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
     Eth2PubKey,
+    EVMChain,
     EVMTxHash,
     ExternalService,
     ExternalServiceApiCredentials,
@@ -2651,7 +2652,7 @@ class DetectTokensResource(BaseMethodView):
     @use_kwargs(post_schema, location='json_and_view_args')
     def post(
             self,
-            blockchain: SupportedBlockchain,
+            blockchain: EVMChain,
             async_query: bool,
             only_cache: bool,
             addresses: Optional[List[ChecksumEvmAddress]],

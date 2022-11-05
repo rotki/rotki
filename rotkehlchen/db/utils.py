@@ -30,6 +30,7 @@ from rotkehlchen.types import (
     BlockchainAccountData,
     BTCAddress,
     ChecksumEvmAddress,
+    EVMChain,
     HexColorCode,
     ListOfBlockchainAddresses,
     Location,
@@ -129,6 +130,14 @@ class BlockchainAccounts(NamedTuple):
     ksm: List[KusamaAddress]
     dot: List[PolkadotAddress]
     avax: List[ChecksumEvmAddress]
+
+    @overload
+    def get(self, blockchain: EVMChain) -> List[ChecksumEvmAddress]:
+        ...
+
+    @overload
+    def get(self, blockchain: SupportedBlockchain) -> ListOfBlockchainAddresses:
+        ...
 
     def get(self, blockchain: SupportedBlockchain) -> ListOfBlockchainAddresses:
         if blockchain == SupportedBlockchain.BITCOIN:

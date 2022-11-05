@@ -260,8 +260,8 @@ def test_query_all_balances_ignore_cache(
     )
     tokens_query_patch = patch.object(
         rotki.chain_manager,
-        'query_tokens',
-        wraps=rotki.chain_manager.query_tokens,
+        'query_evm_tokens',
+        wraps=rotki.chain_manager.query_evm_tokens,
     )
     original_binance_query_dict = binance.api_query_dict
     binance_query_patch = patch.object(binance, 'api_query_dict', wraps=binance.api_query_dict)
