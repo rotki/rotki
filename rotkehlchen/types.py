@@ -347,7 +347,7 @@ class SupportedBlockchain(SerializableEnumValueMixin):
     OPTIMISM = 'OPTIMISM'
     BINANCE = 'BINANCE'
     GNOSIS = 'GNOSIS'
-    MATIC = 'MATIC'
+    POLYGON = 'MATIC'
     FANTOM = 'FANTOM'
     ARBITRUM = 'ARBITRUM'
 
@@ -397,7 +397,7 @@ SUPPORTED_BLOCKCHAIN_TO_CHAINID = {
     SupportedBlockchain.OPTIMISM: ChainID.OPTIMISM,
     SupportedBlockchain.BINANCE: ChainID.BINANCE,
     SupportedBlockchain.GNOSIS: ChainID.GNOSIS,
-    SupportedBlockchain.MATIC: ChainID.MATIC,
+    SupportedBlockchain.POLYGON: ChainID.MATIC,
     SupportedBlockchain.FANTOM: ChainID.FANTOM,
     SupportedBlockchain.ARBITRUM: ChainID.ARBITRUM,
     SupportedBlockchain.AVALANCHE: ChainID.AVALANCHE,
@@ -411,7 +411,7 @@ EVMChain = Literal[  # keep in sync with SUPPORTED_BLOCKCHAIN_TO_CHAINID
     SupportedBlockchain.OPTIMISM,
     SupportedBlockchain.BINANCE,
     SupportedBlockchain.GNOSIS,
-    SupportedBlockchain.MATIC,
+    SupportedBlockchain.POLYGON,
     SupportedBlockchain.FANTOM,
     SupportedBlockchain.ARBITRUM,
     SupportedBlockchain.AVALANCHE,
