@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`-` Uniswap V3 oracle will now correctly skip assets with no liquidity when querying prices.
+
 * :release:`1.26.1 <2022-11-04>`
 * :feature:`5080` For custom assets with custom price there should no longer be any double conversion. So 1 euro should always be one euro.
 * :feature:`5046` Users who deleted important assets from their rotki instance will now have a fallback and won't get their rotki stuck.

@@ -319,7 +319,11 @@ class UniswapV3Oracle(UniswapOracle):
             )
             if pool_liquidity > max_liquidity:
                 best_pool = pool_address
+                max_liquidity = pool_liquidity
 
+        if max_liquidity == 0:
+            # if there is no pool with assets don't return any pool
+            return []
         return [best_pool]
 
     def get_pool_price(
