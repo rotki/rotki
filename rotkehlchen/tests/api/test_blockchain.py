@@ -109,7 +109,7 @@ def test_query_bitcoin_blockchain_bech32_balances(
     caplog.set_level(logging.DEBUG)
     # Disable caching of query results
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    rotki.chain_manager.cache_ttl_secs = 0
+    rotki.chains_aggregator.cache_ttl_secs = 0
 
     btc_balances = ['111110', '3232223', '555555333']
     setup = setup_balances(
@@ -151,7 +151,7 @@ def test_query_blockchain_balances(
     """
     # Disable caching of query results
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    rotki.chain_manager.cache_ttl_secs = 0
+    rotki.chains_aggregator.cache_ttl_secs = 0
 
     async_query = random.choice([False, True])
     setup = setup_balances(rotki, ethereum_accounts=ethereum_accounts, btc_accounts=btc_accounts)
@@ -247,14 +247,14 @@ def test_query_blockchain_balances_ignore_cache(
 
     setup = setup_balances(rotki, ethereum_accounts=ethereum_accounts, btc_accounts=btc_accounts)
     eth_query = patch.object(
-        rotki.chain_manager,
+        rotki.chains_aggregator,
         'query_ethereum_balances',
-        wraps=rotki.chain_manager.query_ethereum_balances,
+        wraps=rotki.chains_aggregator.query_ethereum_balances,
     )
     tokens_query = patch.object(
-        rotki.chain_manager,
+        rotki.chains_aggregator,
         'query_evm_tokens',
-        wraps=rotki.chain_manager.query_evm_tokens,
+        wraps=rotki.chains_aggregator.query_evm_tokens,
     )
 
     with ExitStack() as stack:
@@ -325,7 +325,7 @@ def _add_blockchain_accounts_test_start(
 ):
     # Disable caching of query results
     rotki = api_server.rest_api.rotkehlchen
-    rotki.chain_manager.cache_ttl_secs = 0
+    rotki.chains_aggregator.cache_ttl_secs = 0
 
     if query_balances_before_first_modification:
         # Also test by having balances queried before adding an account
@@ -483,7 +483,7 @@ def test_add_blockchain_accounts(
         also_eth=False,
     )
 
-    assert rotki.chain_manager.accounts.btc[-1] == UNIT_BTC_ADDRESS3
+    assert rotki.chains_aggregator.accounts.btc[-1] == UNIT_BTC_ADDRESS3
     # Also make sure it's added in the DB
     with rotki.data.db.conn.read_ctx() as cursor:
         accounts = rotki.data.db.get_blockchain_accounts(cursor)
@@ -545,7 +545,7 @@ def test_add_blockchain_accounts(
         '12tkqA9xSoowkzoERHMWNKsTey55YEBqkv',
         'pp8skudq3x5hzw8ew7vzsw8tn4k8wxsqsv0lt0mf3g',
     ]
-    assert rotki.chain_manager.accounts.bch == expected_bch_accounts
+    assert rotki.chains_aggregator.accounts.bch == expected_bch_accounts
     assert_proper_response(response)
 
     # Check that the BCH accounts are present in the DB
@@ -659,7 +659,7 @@ def test_add_blockchain_accounts_concurrent(
                 assert 'already exist' in result['message']
                 continue
 
-    assert set(rotki.chain_manager.accounts.eth) == set(ethereum_accounts)
+    assert set(rotki.chains_aggregator.accounts.eth) == set(ethereum_accounts)
 
 
 @pytest.mark.parametrize('include_etherscan_key', [False])
@@ -732,7 +732,7 @@ def test_adding_editing_ens_account_works(rotkehlchen_api_server):
 
     result = assert_proper_response_with_result(response)
     assert result == [resolved_account]
-    assert rotki.chain_manager.accounts.eth[-1] == resolved_account
+    assert rotki.chains_aggregator.accounts.eth[-1] == resolved_account
 
     # Add an unresolvable account and see it errors
     request_data = {'accounts': [{'address': 'ishouldnotexistforrealz.eth'}]}
@@ -788,7 +788,7 @@ def test_deleting_ens_account_works(rotkehlchen_api_server):
         blockchain='ETH',
     ), json=request_data)
     assert_proper_response(response)
-    assert rotki.chain_manager.accounts.eth == []
+    assert rotki.chains_aggregator.accounts.eth == []
 
     request_data = {'accounts': ['ishouldnotexistforrealz.eth']}
     response = requests.delete(api_url_for(
@@ -811,7 +811,7 @@ def test_blockchain_accounts_endpoint_errors(rotkehlchen_api_server, rest_api_po
     Test for errors when both adding and removing a blockchain account. Both put/delete
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    rotki.chain_manager.cache_ttl_secs = 0
+    rotki.chains_aggregator.cache_ttl_secs = 0
 
     # Provide unsupported blockchain name
     account = '0x00d74c25bbf93df8b2a41d82b0076843b4db0349'
@@ -866,7 +866,7 @@ def test_blockchain_accounts_endpoint_errors(rotkehlchen_api_server, rest_api_po
         response=response,
         contained_in_msg=message,
     )
-    assert 'foo' not in rotki.chain_manager.accounts.eth
+    assert 'foo' not in rotki.chains_aggregator.accounts.eth
 
     # Provide empty list
     data = {'accounts': []}
@@ -916,7 +916,7 @@ def test_blockchain_accounts_endpoint_errors(rotkehlchen_api_server, rest_api_po
         contained_in_msg=msg,
     )
     assert_msg = 'Invalid BTC account should not have been added'
-    assert invalid_btc_account not in rotki.chain_manager.accounts.btc, assert_msg
+    assert invalid_btc_account not in rotki.chains_aggregator.accounts.btc, assert_msg
 
     # Provide not existing but valid ETH account for removal
     unknown_account = make_ethereum_address()
@@ -947,7 +947,7 @@ def test_blockchain_accounts_endpoint_errors(rotkehlchen_api_server, rest_api_po
     msg = 'Given value 142 is not an ethereum address'
     if method == 'DELETE':
         # Account should be an existing account
-        account = rotki.chain_manager.accounts.eth[0]
+        account = rotki.chains_aggregator.accounts.eth[0]
         data = {'accounts': ['142', account]}
     else:
         # else keep the new account to add
@@ -1431,7 +1431,7 @@ def _remove_blockchain_accounts_test_start(
 ):
     # Disable caching of query results
     rotki = api_server.rest_api.rotkehlchen
-    rotki.chain_manager.cache_ttl_secs = 0
+    rotki.chains_aggregator.cache_ttl_secs = 0
     removed_eth_accounts = [ethereum_accounts[0], ethereum_accounts[2]]
     eth_accounts_after_removal = [ethereum_accounts[1], ethereum_accounts[3]]
     all_eth_balances = ['1000000', '2000000', '3000000', '4000000']
@@ -1504,7 +1504,7 @@ def _remove_blockchain_accounts_test_start(
                 api_server,
                 'blockchainbalancesresource',
             )))
-        assert rotki.chain_manager.defi_balances == defi_balances  # check that defi balances were populated  # noqa: E501
+        assert rotki.chains_aggregator.defi_balances == defi_balances  # check that defi balances were populated  # noqa: E501
 
     setup = setup_balances(
         rotki,
@@ -1543,7 +1543,7 @@ def _remove_blockchain_accounts_test_start(
 
     # check that after removing ethereum account defi balances were updated
     if query_balances_before_first_modification:
-        assert rotki.chain_manager.defi_balances == {eth_accounts_after_removal[0]: defi_balances[eth_accounts_after_removal[0]]}  # noqa: E501
+        assert rotki.chains_aggregator.defi_balances == {eth_accounts_after_removal[0]: defi_balances[eth_accounts_after_removal[0]]}  # noqa: E501
 
     # Also make sure they are removed from the DB
     with rotki.data.db.conn.read_ctx() as cursor:
@@ -1810,7 +1810,7 @@ def test_remove_blockchain_account_with_tags_removes_mapping(rotkehlchen_api_ser
     ), json={'accounts': [UNIT_BTC_ADDRESS1]})
     assert_proper_response(response)
 
-    assert rotki.chain_manager.accounts.btc == [UNIT_BTC_ADDRESS2]
+    assert rotki.chains_aggregator.accounts.btc == [UNIT_BTC_ADDRESS2]
 
     # Now check the DB directly and see that tag mappings of the deleted account are gone
     cursor = rotki.data.db.conn.cursor()
@@ -1845,7 +1845,7 @@ def test_add_btc_blockchain_account_ens_domain(rotkehlchen_api_server):
         result = assert_proper_response_with_result(response)
 
     assert result == [ENS_BRUNO_BTC_ADDR]
-    assert rotki.chain_manager.accounts.btc == [ENS_BRUNO_BTC_ADDR]
+    assert rotki.chains_aggregator.accounts.btc == [ENS_BRUNO_BTC_ADDR]
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
@@ -1999,7 +1999,7 @@ def test_add_ksm_blockchain_account_ens_domain(rotkehlchen_api_server):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     async_query = random.choice([False, True])
     # check that we are not connected to the nodes in the beginning
-    assert rotki.chain_manager.kusama.available_nodes_call_order == []
+    assert rotki.chains_aggregator.kusama.available_nodes_call_order == []
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
@@ -2018,9 +2018,9 @@ def test_add_ksm_blockchain_account_ens_domain(rotkehlchen_api_server):
         result = assert_proper_response_with_result(response)
 
     assert result == [ENS_BRUNO_KSM_ADDR]
-    assert rotki.chain_manager.accounts.ksm == [ENS_BRUNO_KSM_ADDR]
+    assert rotki.chains_aggregator.accounts.ksm == [ENS_BRUNO_KSM_ADDR]
     # check that we did connect to the nodes after account addition
-    assert rotki.chain_manager.kusama.available_nodes_call_order != []
+    assert rotki.chains_aggregator.kusama.available_nodes_call_order != []
 
 
 @flaky(max_runs=3, min_passes=1)  # Kusama open nodes some times time out
@@ -2049,7 +2049,7 @@ def test_remove_ksm_blockchain_account_ens_domain(rotkehlchen_api_server):
     else:
         assert_proper_response(response)
 
-    assert rotki.chain_manager.accounts.ksm == [SUBSTRATE_ACC1_KSM_ADDR]
+    assert rotki.chains_aggregator.accounts.ksm == [SUBSTRATE_ACC1_KSM_ADDR]
 
     # Also make sure it's removed from the DB
     with rotki.data.db.conn.read_ctx() as cursor:

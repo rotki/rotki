@@ -466,7 +466,7 @@ def test_query_vaults_wbtc(rotkehlchen_api_server, ethereum_accounts):
     expected_vaults = [vault_8913.serialize()]
     assert_serialized_lists_equal(expected_vaults, vaults, ignore_keys=['stability_fee'])
     # And also make sure that the internal mapping will only query details of 8913
-    makerdao_vaults = rotki.chain_manager.get_module('makerdao_vaults')
+    makerdao_vaults = rotki.chains_aggregator.get_module('makerdao_vaults')
     makerdao_vaults.vault_mappings = {ethereum_accounts[0]: [vault_8913]}
 
     response = requests.get(api_url_for(
@@ -846,7 +846,7 @@ def test_query_vaults_usdc_strange(rotkehlchen_api_server, ethereum_accounts):
     expected_vaults = [vault_7538.serialize()]
     assert_serialized_lists_equal(expected_vaults, vaults)
     # And also make sure that the internal mapping will only query details of 7538
-    makerdao_vaults = rotki.chain_manager.get_module('makerdao_vaults')
+    makerdao_vaults = rotki.chains_aggregator.get_module('makerdao_vaults')
     makerdao_vaults.vault_mappings = {ethereum_accounts[0]: [vault_7538]}
 
     response = requests.get(api_url_for(

@@ -25,8 +25,8 @@ from rotkehlchen.utils.misc import timestamp_to_date
 if TYPE_CHECKING:
     from rotkehlchen.accounting.ledger_actions import LedgerAction
     from rotkehlchen.accounting.mixins.event import AccountingEventMixin
+    from rotkehlchen.chain.aggregator import ChainsAggregator
     from rotkehlchen.chain.ethereum.decoding.decoder import EVMTransactionDecoder
-    from rotkehlchen.chain.manager import ChainManager
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
 
@@ -53,7 +53,7 @@ class EventsHistorian:
             db: 'DBHandler',
             msg_aggregator: MessagesAggregator,
             exchange_manager: ExchangeManager,
-            chain_manager: 'ChainManager',
+            chains_aggregator: 'ChainsAggregator',
             eth_tx_decoder: 'EVMTransactionDecoder',
     ) -> None:
 
@@ -61,7 +61,7 @@ class EventsHistorian:
         self.user_directory = user_directory
         self.db = db
         self.exchange_manager = exchange_manager
-        self.chain_manager = chain_manager
+        self.chains_aggregator = chains_aggregator
         self.eth_tx_decoder = eth_tx_decoder
         self._reset_variables()
 
@@ -109,7 +109,7 @@ class EventsHistorian:
                     )
 
         db = DBLedgerActions(self.db, self.msg_aggregator)
-        has_premium = self.chain_manager.premium is not None
+        has_premium = self.chains_aggregator.premium is not None
         actions, filter_total_found = db.get_ledger_actions_and_limit_info(
             filter_query=filter_query,
             has_premium=has_premium,
@@ -157,7 +157,7 @@ class EventsHistorian:
         if only_cache is False:
             self._query_services_for_trades(filter_query=filter_query)
 
-        has_premium = self.chain_manager.premium is not None
+        has_premium = self.chains_aggregator.premium is not None
         with self.db.conn.read_ctx() as cursor:
             trades, filter_total_found = self.db.get_trades_and_limit_info(
                 cursor=cursor,
@@ -239,7 +239,7 @@ class EventsHistorian:
         if only_cache is False:
             self._query_services_for_asset_movements(filter_query=filter_query)
 
-        has_premium = self.chain_manager.premium is not None
+        has_premium = self.chains_aggregator.premium is not None
         asset_movements, filter_total_found = self.db.get_asset_movements_and_limit_info(
             filter_query=filter_query,
             has_premium=has_premium,
@@ -270,7 +270,7 @@ class EventsHistorian:
                 )
 
         db = DBHistoryEvents(self.db)
-        has_premium = self.chain_manager.premium is not None
+        has_premium = self.chains_aggregator.premium is not None
         events, filter_total_found = db.get_history_events_and_limit_info(
             cursor=cursor,
             filter_query=filter_query,
@@ -387,11 +387,11 @@ class EventsHistorian:
         step = self._increase_progress(step, total_steps)
 
         # include eth2 staking events
-        eth2 = self.chain_manager.get_module('eth2')
+        eth2 = self.chains_aggregator.get_module('eth2')
         if eth2 is not None and has_premium:
             self.processing_state_name = 'Querying ETH2 staking history'
             try:
-                eth2_events = self.chain_manager.get_eth2_history_events(
+                eth2_events = self.chains_aggregator.get_eth2_history_events(
                     from_timestamp=Timestamp(0),
                     to_timestamp=end_ts,
                 )

@@ -102,7 +102,7 @@ def test_add_delete_xpub(rotkehlchen_api_server):
     """
     # Disable caching of query results
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    rotki.chain_manager.cache_ttl_secs = 0
+    rotki.chains_aggregator.cache_ttl_secs = 0
     async_query = random.choice([False, True])
 
     tag1 = {
@@ -247,8 +247,8 @@ def test_add_delete_xpub(rotkehlchen_api_server):
     else:
         assert_proper_response(response)
 
-    assert rotki.chain_manager.accounts.btc[:2] == [UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]
-    assert rotki.chain_manager.accounts.btc == [UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]
+    assert rotki.chains_aggregator.accounts.btc[:2] == [UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]
+    assert rotki.chains_aggregator.accounts.btc == [UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]
 
     # Also make sure all mappings are gone from the DB
     cursor = rotki.data.db.conn.cursor()
@@ -262,7 +262,7 @@ def test_add_delete_xpub(rotkehlchen_api_server):
 def test_add_delete_xpub_multiple_chains(rotkehlchen_api_server):
     # Disable caching of query results
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    rotki.chain_manager.cache_ttl_secs = 0
+    rotki.chains_aggregator.cache_ttl_secs = 0
     async_query = random.choice([False, True])
 
     # Test that adding a BCH xpub works
@@ -292,19 +292,19 @@ def test_add_delete_xpub_multiple_chains(rotkehlchen_api_server):
             gevent.sleep(1)
 
     # Check that bch accounts were detected while btc accounts were not affected
-    assert rotki.chain_manager.accounts.bch != []
-    assert rotki.chain_manager.accounts.btc == []
+    assert rotki.chains_aggregator.accounts.bch != []
+    assert rotki.chains_aggregator.accounts.btc == []
     with rotki.data.db.conn.read_ctx() as cursor:
         result = rotki.data.db.get_addresses_to_xpub_mapping(
             cursor=cursor,
             blockchain=SupportedBlockchain.BITCOIN_CASH,
-            addresses=rotki.chain_manager.accounts.bch,
+            addresses=rotki.chains_aggregator.accounts.bch,
         )
-        assert len(result) == len(rotki.chain_manager.accounts.bch)
+        assert len(result) == len(rotki.chains_aggregator.accounts.bch)
         result = rotki.data.db.get_addresses_to_xpub_mapping(
             cursor=cursor,
             blockchain=SupportedBlockchain.BITCOIN,
-            addresses=rotki.chain_manager.accounts.bch,
+            addresses=rotki.chains_aggregator.accounts.bch,
         )
         assert len(result) == 0
 
@@ -327,28 +327,28 @@ def test_add_delete_xpub_multiple_chains(rotkehlchen_api_server):
 
     # Check that addresses that have balances on both bitcoin and bitcoin cash are stored properly
     with rotki.data.db.conn.read_ctx() as cursor:
-        mutual_in_chain_manager = 0
-        for btc_addr in rotki.chain_manager.accounts.btc:
-            if btc_addr in rotki.chain_manager.accounts.bch:
-                mutual_in_chain_manager += 1
+        mutual_in_chains_aggregator = 0
+        for btc_addr in rotki.chains_aggregator.accounts.btc:
+            if btc_addr in rotki.chains_aggregator.accounts.bch:
+                mutual_in_chains_aggregator += 1
         # get mutual by querying BCH accounts from known BTC accounts
         # this checks that bitcoin mappings in the db are not broken
         mutual_in_db_1 = len(rotki.data.db.get_addresses_to_xpub_mapping(
             cursor=cursor,
             blockchain=SupportedBlockchain.BITCOIN,
-            addresses=rotki.chain_manager.accounts.bch,
+            addresses=rotki.chains_aggregator.accounts.bch,
         ))
         # get mutual by querying BTC accounts from known BCH accounts
         # this checks that bitcoin cash mappings in the db are not broken
         mutual_in_db_2 = len(rotki.data.db.get_addresses_to_xpub_mapping(
             cursor=cursor,
             blockchain=SupportedBlockchain.BITCOIN_CASH,
-            addresses=rotki.chain_manager.accounts.btc,
+            addresses=rotki.chains_aggregator.accounts.btc,
         ))
         # Check that there are some accounts that are used on both btc and bch
-        assert mutual_in_chain_manager > 0
+        assert mutual_in_chains_aggregator > 0
         # Check that information about these accounts matches between chain manager and the db
-        assert mutual_in_chain_manager == mutual_in_db_1 == mutual_in_db_2
+        assert mutual_in_chains_aggregator == mutual_in_db_1 == mutual_in_db_2
 
     # Test that editing one xpub doesn't affect other if the only difference is chain
     json_data_patch = {
@@ -403,11 +403,11 @@ def test_add_delete_xpub_multiple_chains(rotkehlchen_api_server):
     result = cursor.execute('SELECT object_reference from tag_mappings;').fetchall()
     assert len(result) == 0, 'all tag mappings should have been deleted'
     result = cursor.execute('SELECT * from xpub_mappings WHERE xpub=?', (xpub,)).fetchall()
-    assert rotki.chain_manager.accounts.bch == []
+    assert rotki.chains_aggregator.accounts.bch == []
     # Check that we still have derived BTC addresses
     assert len(result) >= 23
     for address, xpub, _, _, _, blockchain in result:
-        assert address in rotki.chain_manager.accounts.btc
+        assert address in rotki.chains_aggregator.accounts.btc
         assert xpub == xpub
         assert blockchain == 'BTC'
 
@@ -463,7 +463,7 @@ def test_add_delete_xpub_multiple_chains(rotkehlchen_api_server):
 def test_delete_nonexisting_xpub(rotkehlchen_api_server):
     # Disable caching of query results
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    rotki.chain_manager.cache_ttl_secs = 0
+    rotki.chains_aggregator.cache_ttl_secs = 0
 
     xpub = 'xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk'  # noqa : E501
     json_data = {
@@ -504,7 +504,7 @@ def test_add_xpub_with_conversion_works(rotkehlchen_api_server):
     """Test that an xpub is being converted to ypub/zpub if the prefix does not match"""
     # Disable caching of query results
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    rotki.chain_manager.cache_ttl_secs = 0
+    rotki.chains_aggregator.cache_ttl_secs = 0
 
     # Test xpub asking conversion to ypub
     xpub = 'xpub6CjniigyzMWgVDHvDpgvsroPkTJeqUbrHJaLHARHmAM8zuAbCjmHpp3QhKTcnnscd6iBDrqmABCJjnpwUW42cQjtvKjaEZRcShHKEVh35Y8'  # noqa : E501
@@ -544,7 +544,7 @@ def test_xpub_addition_errors(rotkehlchen_api_server):
     """Test that errors at xpub addition are handled correctly"""
     # Disable caching of query results
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    rotki.chain_manager.cache_ttl_secs = 0
+    rotki.chains_aggregator.cache_ttl_secs = 0
 
     # illegal xpub type
     xpub = 'xpub6CjniigyzMWgVDHvDpgvsroPkTJeqUbrHJaLHARHmAM8zuAbCjmHpp3QhKTcnnscd6iBDrqmABCJjnpwUW42cQjtvKjaEZRcShHKEVh35Y8'  # noqa : E501

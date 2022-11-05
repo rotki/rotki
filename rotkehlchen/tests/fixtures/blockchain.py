@@ -2,12 +2,12 @@ from typing import List, Optional, Sequence
 
 import pytest
 
+from rotkehlchen.chain.aggregator import ChainsAggregator
 from rotkehlchen.chain.avalanche.manager import AvalancheManager
 from rotkehlchen.chain.ethereum.decoding import EVMTransactionDecoder
 from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.chain.ethereum.types import NodeName
-from rotkehlchen.chain.manager import ChainManager
 from rotkehlchen.chain.substrate.manager import SubstrateChainProperties, SubstrateManager
 from rotkehlchen.chain.substrate.types import KusamaAddress, PolkadotAddress, SubstrateChain
 from rotkehlchen.constants.assets import A_DOT, A_KSM
@@ -331,7 +331,7 @@ def blockchain(
     if start_with_valid_premium:
         premium = Premium(rotki_premium_credentials)
 
-    chain_manager = ChainManager(
+    chains_aggregator = ChainsAggregator(
         blockchain_accounts=blockchain_accounts,
         ethereum_manager=ethereum_manager,
         kusama_manager=kusama_manager,
@@ -347,4 +347,4 @@ def blockchain(
         btc_derivation_gap_limit=btc_derivation_gap_limit,
     )
 
-    return chain_manager
+    return chains_aggregator

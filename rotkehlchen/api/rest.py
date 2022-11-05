@@ -658,7 +658,7 @@ class RestAPI():
         status_code = HTTPStatus.OK
         result = None
         try:
-            balances = self.rotkehlchen.chain_manager.query_balances(
+            balances = self.rotkehlchen.chains_aggregator.query_balances(
                 blockchain=blockchain,
                 ignore_cache=ignore_cache,
                 beaconchain_fetch_eth1=ignore_cache,
@@ -1846,7 +1846,7 @@ class RestAPI():
         xpub_data: 'XpubData',
     ) -> Dict[str, Any]:
         try:
-            XpubManager(self.rotkehlchen.chain_manager).add_bitcoin_xpub(xpub_data=xpub_data)
+            XpubManager(self.rotkehlchen.chains_aggregator).add_bitcoin_xpub(xpub_data=xpub_data)
         except InputError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_REQUEST}
         except TagConstraintError as e:
@@ -1886,7 +1886,7 @@ class RestAPI():
     ) -> Dict[str, Any]:
         try:
             with self.rotkehlchen.data.db.user_write() as cursor:
-                XpubManager(self.rotkehlchen.chain_manager).delete_bitcoin_xpub(
+                XpubManager(self.rotkehlchen.chains_aggregator).delete_bitcoin_xpub(
                     write_cursor=cursor,
                     xpub_data=xpub_data,
                 )
@@ -1925,7 +1925,7 @@ class RestAPI():
     ) -> Response:
         try:
             with self.rotkehlchen.data.db.user_write() as cursor:
-                XpubManager(self.rotkehlchen.chain_manager).edit_bitcoin_xpub(
+                XpubManager(self.rotkehlchen.chains_aggregator).edit_bitcoin_xpub(
                     write_cursor=cursor,
                     xpub_data=xpub_data,
                 )
@@ -2028,7 +2028,7 @@ class RestAPI():
                 blockchain=blockchain,
                 accounts=accounts,
             )
-            balances_update = self.rotkehlchen.chain_manager.get_balances_update()
+            balances_update = self.rotkehlchen.chains_aggregator.get_balances_update()
         except EthSyncError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
         except InputError as e:
@@ -2333,7 +2333,7 @@ class RestAPI():
 
     def _get_eth2_stake_deposits(self) -> Dict[str, Any]:
         try:
-            result = self.rotkehlchen.chain_manager.get_eth2_staking_deposits()
+            result = self.rotkehlchen.chains_aggregator.get_eth2_staking_deposits()
         except RemoteError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
         except ModuleInactive as e:
@@ -2358,7 +2358,7 @@ class RestAPI():
 
     def _get_eth2_stake_details(self) -> Dict[str, Any]:
         try:
-            result = self.rotkehlchen.chain_manager.get_eth2_staking_details()
+            result = self.rotkehlchen.chains_aggregator.get_eth2_staking_details()
         except RemoteError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
         except ModuleInactive as e:
@@ -2391,7 +2391,7 @@ class RestAPI():
             only_cache: bool,
     ) -> Dict[str, Any]:
         try:
-            stats, filter_total_found, sum_pnl, sum_usd_value = self.rotkehlchen.chain_manager.get_eth2_daily_stats(  # noqa: E501
+            stats, filter_total_found, sum_pnl, sum_usd_value = self.rotkehlchen.chains_aggregator.get_eth2_daily_stats(  # noqa: E501
                 filter_query=filter_query,
                 only_cache=only_cache,
             )
@@ -2436,7 +2436,7 @@ class RestAPI():
 
     def get_eth2_validators(self) -> Response:
         try:
-            validators = self.rotkehlchen.chain_manager.get_eth2_validators()
+            validators = self.rotkehlchen.chains_aggregator.get_eth2_validators()
         except ModuleInactive as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
@@ -2463,7 +2463,7 @@ class RestAPI():
             ownership_proportion: FVal,
     ) -> Dict[str, Any]:
         try:
-            self.rotkehlchen.chain_manager.add_eth2_validator(
+            self.rotkehlchen.chains_aggregator.add_eth2_validator(
                 validator_index=validator_index,
                 public_key=public_key,
                 ownership_proportion=ownership_proportion,
@@ -2506,7 +2506,7 @@ class RestAPI():
 
     def edit_eth2_validator(self, validator_index: int, ownership_proportion: FVal) -> Response:
         try:
-            self.rotkehlchen.chain_manager.edit_eth2_validator(
+            self.rotkehlchen.chains_aggregator.edit_eth2_validator(
                 validator_index=validator_index,
                 ownership_proportion=ownership_proportion,
             )
@@ -2520,7 +2520,7 @@ class RestAPI():
     ) -> Response:
         try:
             for validator in validators:
-                self.rotkehlchen.chain_manager.delete_eth2_validator(
+                self.rotkehlchen.chains_aggregator.delete_eth2_validator(
                     validator_index=validator.get('validator_index'),
                     public_key=validator.get('public_key'),
                 )
@@ -2541,7 +2541,7 @@ class RestAPI():
         extra status code argument for errors
         """
         try:
-            balances = self.rotkehlchen.chain_manager.query_defi_balances()
+            balances = self.rotkehlchen.chains_aggregator.query_defi_balances()
         except EthSyncError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
         except RemoteError as e:
@@ -2567,7 +2567,7 @@ class RestAPI():
     def _get_ethereum_airdrops(self) -> Dict[str, Any]:
         try:
             data = check_airdrops(
-                addresses=self.rotkehlchen.chain_manager.accounts.eth,
+                addresses=self.rotkehlchen.chains_aggregator.accounts.eth,
                 data_dir=self.rotkehlchen.data_dir,
             )
         except (RemoteError, UnableToDecryptRemoteData) as e:
@@ -2608,7 +2608,7 @@ class RestAPI():
             blockchain=node.node_info.blockchain,
             only_active=True,
         )
-        manager = self.rotkehlchen.chain_manager.get_chain_manager(node.node_info.blockchain)
+        manager = self.rotkehlchen.chains_aggregator.get_chain_manager(node.node_info.blockchain)
         manager.connect_to_multiple_nodes(nodes_to_connect)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
@@ -2623,7 +2623,7 @@ class RestAPI():
             blockchain=node.node_info.blockchain,
             only_active=True,
         )
-        manager = self.rotkehlchen.chain_manager.get_chain_manager(node.node_info.blockchain)
+        manager = self.rotkehlchen.chains_aggregator.get_chain_manager(node.node_info.blockchain)
         manager.connect_to_multiple_nodes(nodes_to_connect)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
@@ -2638,7 +2638,7 @@ class RestAPI():
             blockchain=blockchain,
             only_active=True,
         )
-        manager = self.rotkehlchen.chain_manager.get_chain_manager(blockchain)  # type: ignore
+        manager = self.rotkehlchen.chains_aggregator.get_chain_manager(blockchain)  # type: ignore
         manager.connect_to_multiple_nodes(nodes_to_connect)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
@@ -2667,13 +2667,13 @@ class RestAPI():
             # Make sure ethereum balances are queried (this is protected by lock and by time cache)
             # so most of the times it should have already ran
             try:
-                self.rotkehlchen.chain_manager.query_balances(
+                self.rotkehlchen.chains_aggregator.query_balances(
                     blockchain=SupportedBlockchain.ETHEREUM,
                 )
             except (RemoteError, EthSyncError) as e:
                 return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
 
-        module_obj = self.rotkehlchen.chain_manager.get_module(module_name)
+        module_obj = self.rotkehlchen.chains_aggregator.get_module(module_name)
         if module_obj is None:
             return {
                 'result': None,
@@ -2762,7 +2762,7 @@ class RestAPI():
             # Giving the defi balances as a lambda function here so that they
             # are retrieved only after we are sure the defi balances have been
             # queried.
-            given_defi_balances=lambda: self.rotkehlchen.chain_manager.defi_balances,
+            given_defi_balances=lambda: self.rotkehlchen.chains_aggregator.defi_balances,
         )
 
     def get_aave_history(
@@ -2778,14 +2778,14 @@ class RestAPI():
             method='get_history',
             # We need to query defi balances before since defi_balances must be populated
             query_specific_balances_before=['defi'],
-            addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('aave'),
+            addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('aave'),
             reset_db_data=reset_db_data,
             from_timestamp=from_timestamp,
             to_timestamp=to_timestamp,
             # Giving the defi balances as a lambda function here so that they
             # are retrieved only after we are sure the defi balances have been
             # queried.
-            given_defi_balances=lambda: self.rotkehlchen.chain_manager.defi_balances,
+            given_defi_balances=lambda: self.rotkehlchen.chains_aggregator.defi_balances,
         )
 
     def get_compound_balances(self, async_query: bool) -> Response:
@@ -2799,7 +2799,7 @@ class RestAPI():
             # Giving the defi balances as a lambda function here so that they
             # are retrieved only after we are sure the defi balances have been
             # queried.
-            given_defi_balances=lambda: self.rotkehlchen.chain_manager.defi_balances,
+            given_defi_balances=lambda: self.rotkehlchen.chains_aggregator.defi_balances,
         )
 
     def get_compound_history(
@@ -2818,8 +2818,8 @@ class RestAPI():
             # Giving the defi balances as a lambda function here so that they
             # are retrieved only after we are sure the defi balances have been
             # queried.
-            given_defi_balances=lambda: self.rotkehlchen.chain_manager.defi_balances,
-            addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('compound'),
+            given_defi_balances=lambda: self.rotkehlchen.chains_aggregator.defi_balances,
+            addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('compound'),
             reset_db_data=reset_db_data,
             from_timestamp=from_timestamp,
             to_timestamp=to_timestamp,
@@ -2836,7 +2836,7 @@ class RestAPI():
             # Giving the defi balances as a lambda function here so that they
             # are retrieved only after we are sure the defi balances have been
             # queried.
-            given_defi_balances=lambda: self.rotkehlchen.chain_manager.defi_balances,
+            given_defi_balances=lambda: self.rotkehlchen.chains_aggregator.defi_balances,
         )
 
     def get_yearn_vaults_v2_balances(self, async_query: bool) -> Response:
@@ -2850,7 +2850,7 @@ class RestAPI():
             # Giving the eth balances as a lambda function here so that they
             # are retrieved only after we are sure the eth balances have been
             # queried.
-            given_eth_balances=lambda: self.rotkehlchen.chain_manager.balances.eth,
+            given_eth_balances=lambda: self.rotkehlchen.chains_aggregator.balances.eth,
         )
 
     def get_yearn_vaults_history(
@@ -2869,8 +2869,8 @@ class RestAPI():
             # Giving the defi balances as a lambda function here so that they
             # are retrieved only after we are sure the defi balances have been
             # queried.
-            given_defi_balances=lambda: self.rotkehlchen.chain_manager.defi_balances,
-            addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('yearn_vaults'),
+            given_defi_balances=lambda: self.rotkehlchen.chains_aggregator.defi_balances,
+            addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('yearn_vaults'),  # noqa: E501
             reset_db_data=reset_db_data,
             from_timestamp=from_timestamp,
             to_timestamp=to_timestamp,
@@ -2891,8 +2891,8 @@ class RestAPI():
             # Giving the eth balances as a lambda function here so that they
             # are retrieved only after we are sure the eth balances have been
             # queried.
-            given_eth_balances=lambda: self.rotkehlchen.chain_manager.balances.eth,
-            addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module(
+            given_eth_balances=lambda: self.rotkehlchen.chains_aggregator.balances.eth,
+            addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module(
                 'yearn_vaults_v2',
             ),
             reset_db_data=reset_db_data,
@@ -2906,7 +2906,7 @@ class RestAPI():
             module_name='uniswap',
             method='get_balances',
             query_specific_balances_before=None,
-            addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('uniswap'),
+            addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('uniswap'),
         )
 
     def get_uniswap_v3_balances(self, async_query: bool) -> Response:
@@ -2915,7 +2915,7 @@ class RestAPI():
             module_name='uniswap',
             method='get_v3_balances',
             query_specific_balances_before=None,
-            addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('uniswap'),
+            addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('uniswap'),
         )
 
     def get_uniswap_events_history(
@@ -2930,7 +2930,7 @@ class RestAPI():
             module_name='uniswap',
             method='get_events_history',
             query_specific_balances_before=None,
-            addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('uniswap'),
+            addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('uniswap'),
             reset_db_data=reset_db_data,
             from_timestamp=from_timestamp,
             to_timestamp=to_timestamp,
@@ -2942,7 +2942,7 @@ class RestAPI():
             module_name='sushiswap',
             method='get_balances',
             query_specific_balances_before=None,
-            addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('sushiswap'),
+            addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('sushiswap'),
         )
 
     def get_sushiswap_events_history(
@@ -2957,7 +2957,7 @@ class RestAPI():
             module_name='sushiswap',
             method='get_events_history',
             query_specific_balances_before=None,
-            addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('sushiswap'),
+            addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('sushiswap'),
             reset_db_data=reset_db_data,
             from_timestamp=from_timestamp,
             to_timestamp=to_timestamp,
@@ -2969,7 +2969,7 @@ class RestAPI():
             module_name='adex',
             method='get_balances_dont_break_frontend',
             query_specific_balances_before=None,
-            addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('adex'),
+            addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('adex'),
         )
 
     def get_adex_history(
@@ -2984,7 +2984,7 @@ class RestAPI():
             module_name='adex',
             method='get_history',
             query_specific_balances_before=None,
-            addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('adex'),
+            addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('adex'),
             reset_db_data=reset_db_data,
             from_timestamp=from_timestamp,
             to_timestamp=to_timestamp,
@@ -2996,7 +2996,7 @@ class RestAPI():
             module_name='loopring',
             method='get_balances',
             query_specific_balances_before=None,
-            addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('loopring'),
+            addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('loopring'),
         )
 
     def get_balancer_balances(self, async_query: bool) -> Response:
@@ -3005,7 +3005,7 @@ class RestAPI():
             module_name='balancer',
             method='get_balances',
             query_specific_balances_before=None,
-            addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('balancer'),
+            addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('balancer'),
         )
 
     def get_balancer_events_history(
@@ -3020,14 +3020,14 @@ class RestAPI():
             module_name='balancer',
             method='get_events_history',
             query_specific_balances_before=None,
-            addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('balancer'),
+            addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('balancer'),
             reset_db_data=reset_db_data,
             from_timestamp=from_timestamp,
             to_timestamp=to_timestamp,
         )
 
     def get_dill_balance(self, async_query: bool) -> Response:
-        addresses = self.rotkehlchen.chain_manager.queried_addresses_for_module('pickle_finance')
+        addresses = self.rotkehlchen.chains_aggregator.queried_addresses_for_module('pickle_finance')  # noqa: E501
         return self._api_query_for_eth_module(
             async_query=async_query,
             module_name='pickle_finance',
@@ -3042,7 +3042,7 @@ class RestAPI():
             module_name='liquity',
             method='get_positions',
             query_specific_balances_before=None,
-            addresses_list=self.rotkehlchen.chain_manager.queried_addresses_for_module('liquity'),
+            addresses_list=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('liquity'),  # noqa: E501
         )
 
     def get_liquity_staked(self, async_query: bool) -> Response:
@@ -3051,7 +3051,7 @@ class RestAPI():
             module_name='liquity',
             method='liquity_staking_balances',
             query_specific_balances_before=None,
-            addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('liquity'),
+            addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('liquity'),
         )
 
     def get_liquity_stability_pool_positions(self, async_query: bool) -> Response:
@@ -3060,7 +3060,7 @@ class RestAPI():
             module_name='liquity',
             method='get_stability_pool_positions',
             query_specific_balances_before=None,
-            addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('liquity'),
+            addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('liquity'),
         )
 
     def get_liquity_trove_events(
@@ -3075,7 +3075,7 @@ class RestAPI():
             module_name='liquity',
             method='get_trove_history',
             query_specific_balances_before=None,
-            addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('liquity'),
+            addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('liquity'),
             from_timestamp=from_timestamp,
             to_timestamp=to_timestamp,
         )
@@ -3092,7 +3092,7 @@ class RestAPI():
             module_name='liquity',
             method='get_staking_history',
             query_specific_balances_before=None,
-            addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('liquity'),
+            addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('liquity'),
             from_timestamp=from_timestamp,
             to_timestamp=to_timestamp,
         )
@@ -3605,7 +3605,7 @@ class RestAPI():
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
     def _get_token_info(self, address: ChecksumEvmAddress) -> Dict[str, Any]:
-        eth_manager = self.rotkehlchen.chain_manager.ethereum
+        eth_manager = self.rotkehlchen.chains_aggregator.ethereum
         try:
             info = eth_manager.get_erc20_contract_info(address=address)
         except BadFunctionCallOutput:
@@ -3796,7 +3796,7 @@ class RestAPI():
         from_timestamp: Timestamp,
         to_timestamp: Timestamp,
     ) -> Dict[str, Any]:
-        avalanche = self.rotkehlchen.chain_manager.avalanche
+        avalanche = self.rotkehlchen.chains_aggregator.avalanche
         response = avalanche.covalent.get_transactions(
             account=address,
             from_ts=from_timestamp,
@@ -3861,7 +3861,7 @@ class RestAPI():
             module_name='nfts',
             method='get_all_info',
             query_specific_balances_before=None,
-            addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('nfts'),
+            addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('nfts'),
             ignore_cache=ignore_cache,
         )
 
@@ -3870,13 +3870,13 @@ class RestAPI():
             module_name='uniswap',
             method='get_v3_balances',
             query_specific_balances_before=None,
-            addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('uniswap'),
+            addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('uniswap'),
         )
         return self._eth_module_query(
             module_name='nfts',
             method='get_balances',
             query_specific_balances_before=None,
-            addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('nfts'),
+            addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('nfts'),
             uniswap_nfts=uniswap_result['result'],
             return_zero_values=True,
             ignore_cache=ignore_cache,
@@ -4373,7 +4373,7 @@ class RestAPI():
         mappings_to_send: Dict[ChecksumEvmAddress, str] = {}
         try:
             mappings_to_send = find_ens_mappings(
-                ethereum_manager=self.rotkehlchen.chain_manager.ethereum,
+                ethereum_manager=self.rotkehlchen.chains_aggregator.ethereum,
                 addresses=addresses,
                 ignore_cache=ignore_cache,
             )
@@ -4560,9 +4560,9 @@ class RestAPI():
             addresses: Optional[List[ChecksumEvmAddress]],
             blockchain: EVMChain,
     ) -> Response:
-        manager = self.rotkehlchen.chain_manager.get_chain_manager(blockchain)  # type: ignore
+        manager = self.rotkehlchen.chains_aggregator.get_chain_manager(blockchain)  # type: ignore
         if addresses is None:
-            addresses = self.rotkehlchen.chain_manager.accounts.get(blockchain)
+            addresses = self.rotkehlchen.chains_aggregator.accounts.get(blockchain)
         if async_query is True:
             return self._query_async(
                 command=self._detect_evm_tokens,

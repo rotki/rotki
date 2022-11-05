@@ -16,7 +16,7 @@ def test_set_own_rpc_endpoint(rotkehlchen_api_server):
     NB: `set_rpc_endpoint()` is synchronous therefore no need to sleep/wait.
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    kusama_manager = rotki.chain_manager.kusama
+    kusama_manager = rotki.chains_aggregator.kusama
 
     # No nodes connected
     assert kusama_manager.own_rpc_endpoint is None  # from `ksm_rpc_endpoint` fixture
@@ -54,7 +54,7 @@ def test_unset_own_rpc_endpoint(ksm_rpc_endpoint, rotkehlchen_api_server):
     NB: `set_rpc_endpoint()` is synchronous therefore no need to sleep/wait.
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    kusama_manager = rotki.chain_manager.kusama
+    kusama_manager = rotki.chains_aggregator.kusama
 
     # Property exists (own node connected)
     assert kusama_manager.own_rpc_endpoint == ksm_rpc_endpoint

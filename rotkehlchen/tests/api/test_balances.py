@@ -159,7 +159,7 @@ def test_query_all_balances(
     async_query = random.choice([False, True])
     # Disable caching of query results
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
-    rotki.chain_manager.cache_ttl_secs = 0
+    rotki.chains_aggregator.cache_ttl_secs = 0
     setup = setup_balances(
         rotki=rotki,
         ethereum_accounts=ethereum_accounts,
@@ -249,27 +249,27 @@ def test_query_all_balances_ignore_cache(
     binance = try_get_first_exchange(rotki.exchange_manager, Location.BINANCE)
     poloniex = try_get_first_exchange(rotki.exchange_manager, Location.POLONIEX)
     eth_query_patch = patch.object(
-        rotki.chain_manager,
+        rotki.chains_aggregator,
         'query_ethereum_balances',
-        wraps=rotki.chain_manager.query_ethereum_balances,
+        wraps=rotki.chains_aggregator.query_ethereum_balances,
     )
     btc_query_patch = patch.object(
-        rotki.chain_manager,
+        rotki.chains_aggregator,
         'query_btc_balances',
-        wraps=rotki.chain_manager.query_btc_balances,
+        wraps=rotki.chains_aggregator.query_btc_balances,
     )
     tokens_query_patch = patch.object(
-        rotki.chain_manager,
+        rotki.chains_aggregator,
         'query_evm_tokens',
-        wraps=rotki.chain_manager.query_evm_tokens,
+        wraps=rotki.chains_aggregator.query_evm_tokens,
     )
     original_binance_query_dict = binance.api_query_dict
     binance_query_patch = patch.object(binance, 'api_query_dict', wraps=binance.api_query_dict)
     poloniex_query_patch = patch.object(poloniex, 'api_query_list', wraps=poloniex.api_query_list)
     derive_new_addresses_from_xpubs_patch = patch.object(
-        rotki.chain_manager,
+        rotki.chains_aggregator,
         'derive_new_addresses_from_xpubs',
-        wraps=rotki.chain_manager.derive_new_addresses_from_xpubs,
+        wraps=rotki.chains_aggregator.derive_new_addresses_from_xpubs,
     )
 
     with ExitStack() as stack:
@@ -306,7 +306,7 @@ def test_query_all_balances_ignore_cache(
             if fn._mock_wraps == original_binance_query_dict:
                 assert fn.call_count == 3
             # addresses are not derived from xpubs when `ignore_cache` is False
-            elif fn == rotki.chain_manager.derive_new_addresses_from_xpubs:
+            elif fn == rotki.chains_aggregator.derive_new_addresses_from_xpubs:
                 assert fn.call_count == 0
             else:
                 assert fn.call_count == 1
@@ -331,7 +331,7 @@ def test_query_all_balances_ignore_cache(
             if fn._mock_wraps == original_binance_query_dict:
                 assert fn.call_count == 3, msg
             # addresses are not derived from xpubs when `ignore_cache` is False
-            elif fn == rotki.chain_manager.derive_new_addresses_from_xpubs:
+            elif fn == rotki.chains_aggregator.derive_new_addresses_from_xpubs:
                 assert fn.call_count == 0, msg
             else:
                 assert fn.call_count == 1, msg
@@ -357,7 +357,7 @@ def test_query_all_balances_ignore_cache(
             if fn._mock_wraps == original_binance_query_dict:
                 assert fn.call_count == 6, msg
             # addresses are derived from xpubs when `ignore_cache` is True
-            elif fn == rotki.chain_manager.derive_new_addresses_from_xpubs:
+            elif fn == rotki.chains_aggregator.derive_new_addresses_from_xpubs:
                 assert fn.call_count == 1, msg
             else:
                 assert fn.call_count == 2, msg
@@ -385,7 +385,7 @@ def test_query_all_balances_with_manually_tracked_balances(
     """Test that using the query all balances endpoint also includes manually tracked balances"""
     # Disable caching of query results
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
-    rotki.chain_manager.cache_ttl_secs = 0
+    rotki.chains_aggregator.cache_ttl_secs = 0
     manually_tracked_balances = [ManuallyTrackedBalance(
         id=-1,
         asset=A_BTC,
@@ -550,12 +550,12 @@ def test_multiple_balance_queries_not_concurrent(
     setup = setup_balances(rotki, ethereum_accounts, btc_accounts)
 
     multieth_balance_patch = patch.object(
-        rotki.chain_manager.ethereum,
+        rotki.chains_aggregator.ethereum,
         'get_multi_balance',
-        wraps=rotki.chain_manager.ethereum.get_multi_balance,
+        wraps=rotki.chains_aggregator.ethereum.get_multi_balance,
     )
     btc_balances_patch = patch(
-        'rotkehlchen.chain.manager.get_bitcoin_addresses_balances',
+        'rotkehlchen.chain.aggregator.get_bitcoin_addresses_balances',
         wraps=get_bitcoin_addresses_balances,
     )
     binance = try_get_first_exchange(rotki.exchange_manager, Location.BINANCE)

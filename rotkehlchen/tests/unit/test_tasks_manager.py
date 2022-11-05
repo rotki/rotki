@@ -55,7 +55,7 @@ def fixture_task_manager(
         database=database,
         cryptocompare=cryptocompare,
         premium_sync_manager=MockPremiumSyncManager(),  # type: ignore
-        chain_manager=blockchain,
+        chains_aggregator=blockchain,
         exchange_manager=exchange_manager,
         eth_tx_decoder=evm_transaction_decoder,
         deactivate_premium=lambda: None,

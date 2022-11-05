@@ -8,8 +8,8 @@ import gevent
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
+from rotkehlchen.chain.aggregator import ChainsAggregator
 from rotkehlchen.chain.ethereum.utils import should_update_curve_cache
-from rotkehlchen.chain.manager import ChainManager
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.ethtx import DBEthTx
@@ -82,7 +82,7 @@ class TaskManager():
             database: DBHandler,
             cryptocompare: Cryptocompare,
             premium_sync_manager: Optional[PremiumSyncManager],
-            chain_manager: ChainManager,
+            chains_aggregator: ChainsAggregator,
             exchange_manager: ExchangeManager,
             eth_tx_decoder: 'EVMTransactionDecoder',
             deactivate_premium: Callable[[], None],
@@ -99,7 +99,7 @@ class TaskManager():
         self.exchange_manager = exchange_manager
         self.eth_tx_decoder = eth_tx_decoder
         self.cryptocompare_queries: Set[CCHistoQuery] = set()
-        self.chain_manager = chain_manager
+        self.chains_aggregator = chains_aggregator
         self.last_xpub_derivation_ts = 0
         self.last_eth_tx_query_ts: DefaultDict[ChecksumEvmAddress, int] = defaultdict(int)
         self.last_exchange_query_ts: DefaultDict[ExchangeLocationID, int] = defaultdict(int)
@@ -257,7 +257,7 @@ class TaskManager():
             after_seconds=None,
             task_name='Derive new xpub addresses for BTC & BCH',
             exception_is_error=True,
-            method=self.chain_manager.derive_new_addresses_from_xpubs,
+            method=self.chains_aggregator.derive_new_addresses_from_xpubs,
             should_derive_btc_xpubs=should_derive_btc_xpubs,
             should_derive_bch_xpubs=should_derive_bch_xpubs,
         )
