@@ -54,5 +54,29 @@
         "owned": false,
         "active": true,
         "blockchain": "ETH"
+    },
+    {
+        "name": "polygon rpc",
+        "endpoint": "https://polygon-rpc.com",
+        "weight": 0.34,
+        "owned": false,
+        "active": true,
+        "blockchain": "MATIC"
+    },
+    {
+        "name": "polygon chainstacklabs",
+        "endpoint": "https://matic-mainnet.chainstacklabs.com",
+        "weight": 0.33,
+        "owned": false,
+        "active": true,
+        "blockchain": "MATIC"
+    },
+    {
+        "name": "polygon ankr",
+        "endpoint": "https://rpc.ankr.com/polygon",
+        "weight": 0.33,
+        "owned": false,
+        "active": true,
+        "blockchain": "MATIC"
     }
 ]
