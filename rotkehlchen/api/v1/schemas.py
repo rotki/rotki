@@ -84,6 +84,7 @@ from rotkehlchen.inquirer import CurrentPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
+    NON_EVM_CHAINS,
     AddressbookEntry,
     AddressbookType,
     AssetMovementCategory,
@@ -2591,7 +2592,7 @@ class DetectTokensSchema(
     OnlyCacheQuerySchema,
     OptionalAddressesListSchema,
 ):
-    blockchain = BlockchainField(required=True, exclude_types=(SupportedBlockchain.ETHEREUM_BEACONCHAIN,))  # noqa: E501
+    blockchain = BlockchainField(required=True, exclude_types=list(NON_EVM_CHAINS))
 
 
 class UserNotesPutSchema(Schema):

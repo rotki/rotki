@@ -1067,12 +1067,12 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                 else:
                     balances[account].assets[token] = balance
 
-    def query_tokens(
+    def query_evm_tokens(
             self,
             manager: 'EvmManager',
             balances: DefaultDict[ChecksumEvmAddress, BalanceSheet],
     ) -> None:
-        """Queries ethereum token balance via either etherscan or ethereum node
+        """Queries evm token balance via either etherscan or ethereum node
 
         Should come here during addition of a new account or querying of all token
         balances.
@@ -1154,7 +1154,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             )
 
         self.query_defi_balances()
-        self.query_tokens(manager=self.ethereum, balances=eth_balances)
+        self.query_evm_tokens(manager=self.ethereum, balances=eth_balances)
         self._add_protocol_balances(balances=eth_balances)
 
     def query_ethereum_lp_balances(

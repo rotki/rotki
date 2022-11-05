@@ -157,6 +157,7 @@ from rotkehlchen.types import (
     BlockchainAccountData,
     ChecksumEvmAddress,
     Eth2PubKey,
+    EVMChain,
     EvmTokenKind,
     EVMTxHash,
     ExternalService,
@@ -4557,11 +4558,11 @@ class RestAPI():
             async_query: bool,
             only_cache: bool,
             addresses: Optional[List[ChecksumEvmAddress]],
-            blockchain: SupportedBlockchain,
+            blockchain: EVMChain,
     ) -> Response:
         manager = self.rotkehlchen.chain_manager.get_chain_manager(blockchain)  # type: ignore
         if addresses is None:
-            addresses = self.rotkehlchen.chain_manager.accounts.get(blockchain)  # type: ignore
+            addresses = self.rotkehlchen.chain_manager.accounts.get(blockchain)
         if async_query is True:
             return self._query_async(
                 command=self._detect_evm_tokens,
@@ -4572,7 +4573,7 @@ class RestAPI():
 
         response = self._detect_evm_tokens(
             only_cache=only_cache,
-            addresses=addresses,  # type: ignore
+            addresses=addresses,
             manager=manager,
         )
         status_code = _get_status_code_from_async_response(response)

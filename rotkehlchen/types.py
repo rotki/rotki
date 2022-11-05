@@ -406,6 +406,17 @@ CHAINID_TO_SUPPORTED_BLOCKCHAIN = {
     value: key
     for key, value in SUPPORTED_BLOCKCHAIN_TO_CHAINID.items()
 }
+EVMChain = Literal[  # keep in sync with SUPPORTED_BLOCKCHAIN_TO_CHAINID
+    SupportedBlockchain.ETHEREUM,
+    SupportedBlockchain.OPTIMISM,
+    SupportedBlockchain.BINANCE,
+    SupportedBlockchain.GNOSIS,
+    SupportedBlockchain.MATIC,
+    SupportedBlockchain.FANTOM,
+    SupportedBlockchain.ARBITRUM,
+    SupportedBlockchain.AVALANCHE,
+]
+NON_EVM_CHAINS = set(SupportedBlockchain) - set(SUPPORTED_BLOCKCHAIN_TO_CHAINID.keys())
 
 
 class TradeType(DBEnumMixIn):
