@@ -21,7 +21,7 @@ def test_no_events_no_balances(rotkehlchen_api_server):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     events: List[LiquidityPoolEvent] = []
     balances: List[LiquidityPool] = []
-    events_balances = rotki.chain_manager.get_module('uniswap')._calculate_events_balances(
+    events_balances = rotki.chains_aggregator.get_module('uniswap')._calculate_events_balances(
         address=TEST_ADDRESS_1,
         events=events,
         balances=balances,
@@ -33,7 +33,7 @@ def test_no_events_no_balances(rotkehlchen_api_server):
 def test_single_pool_without_balances(rotkehlchen_api_server):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     balances: List[LiquidityPool] = []
-    events_balances = rotki.chain_manager.get_module('uniswap')._calculate_events_balances(
+    events_balances = rotki.chains_aggregator.get_module('uniswap')._calculate_events_balances(
         address=TEST_ADDRESS_1,
         events=const_lp_1_events(),
         balances=balances,
@@ -47,7 +47,7 @@ def test_multiple_pools_without_balances(rotkehlchen_api_server):
     events = list(const_lp_1_events())
     events.extend(const_lp_2_events())
     balances: List[LiquidityPool] = []
-    events_balances = rotki.chain_manager.get_module('uniswap')._calculate_events_balances(
+    events_balances = rotki.chains_aggregator.get_module('uniswap')._calculate_events_balances(
         address=TEST_ADDRESS_1,
         events=events,
         balances=balances,
@@ -60,7 +60,7 @@ def test_single_pool_with_balances(rotkehlchen_api_server):
     """Test LP current balances are factorized in the pool events balance
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    events_balances = rotki.chain_manager.get_module('uniswap')._calculate_events_balances(
+    events_balances = rotki.chains_aggregator.get_module('uniswap')._calculate_events_balances(
         address=TEST_ADDRESS_1,
         events=const_lp_3_events(),
         balances=[const_lp_3_balance()],

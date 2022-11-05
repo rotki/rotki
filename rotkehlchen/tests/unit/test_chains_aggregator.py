@@ -1,6 +1,6 @@
 import pytest
 
-from rotkehlchen.chain.manager import _module_name_to_class
+from rotkehlchen.chain.aggregator import _module_name_to_class
 from rotkehlchen.types import AVAILABLE_MODULES_MAP
 
 

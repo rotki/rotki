@@ -98,7 +98,7 @@ def test_curve_pools_cache(rotkehlchen_instance):
 
     future_timestamp = datetime.datetime.now() + datetime.timedelta(seconds=WEEK_IN_SECONDS)
     with freeze_time(future_timestamp), call_contract_patch:
-        rotkehlchen_instance.chain_manager.ethereum.curve_protocol_cache_is_queried(
+        rotkehlchen_instance.chains_aggregator.ethereum.curve_protocol_cache_is_queried(
             tx_decoder=None,
         )
 

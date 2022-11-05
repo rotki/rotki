@@ -151,11 +151,11 @@ def setup_balances(
     if liabilities is not None:
         def mock_add_defi_balances_to_account():
             # super hacky way of mocking this but well fuck it
-            if len(rotki.chain_manager.balances.eth) == 4:
+            if len(rotki.chains_aggregator.balances.eth) == 4:
                 d_liabilities = liabilities.copy()
             else:  # we know the only test this is used removes index 0 and 2
                 msg = 'Should be at removal of accounts and only have 2 left'
-                assert len(rotki.chain_manager.balances.eth) == 2, msg
+                assert len(rotki.chains_aggregator.balances.eth) == 2, msg
                 d_liabilities = {
                     k: [
                         x for idx, x in enumerate(v) if idx not in (0, 2)
@@ -169,19 +169,19 @@ def setup_balances(
                         continue
 
                     account = ethereum_accounts[idx]
-                    rotki.chain_manager.balances.eth[account].liabilities[token] = Balance(balance)
+                    rotki.chains_aggregator.balances.eth[account].liabilities[token] = Balance(balance)  # noqa: E501
 
             # need this to not get randomized behaviour when defi balances are added or not
             # depending on whether liabilities are mocked
-            if rotki.chain_manager.defi_balances is not None:
-                for account, single_defi_balances in rotki.chain_manager.defi_balances.items():
-                    rotki.chain_manager._add_account_defi_balances_to_token(
+            if rotki.chains_aggregator.defi_balances is not None:
+                for account, single_defi_balances in rotki.chains_aggregator.defi_balances.items():
+                    rotki.chains_aggregator._add_account_defi_balances_to_token(
                         account=account,
                         balances=single_defi_balances,
                     )
 
         defi_balances_addition_method_patch = patch.object(
-            rotki.chain_manager,
+            rotki.chains_aggregator,
             'add_defi_balances_to_account',
             side_effect=mock_add_defi_balances_to_account,
         )
@@ -195,7 +195,7 @@ def setup_balances(
             return result
 
         defichad_query_balances_patch = patch.object(
-            rotki.chain_manager.defichad,
+            rotki.chains_aggregator.defichad,
             'query_defi_balances',
             side_effect=mock_defichad_query_balances,
         )
@@ -218,7 +218,7 @@ def setup_balances(
         extra_flags=extra_flags,
     )
     beaconchain_patch = mock_beaconchain(
-        beaconchain=rotki.chain_manager.beaconchain,
+        beaconchain=rotki.chains_aggregator.beaconchain,
         original_queries=original_queries,
         original_requests_get=requests.get,
     )

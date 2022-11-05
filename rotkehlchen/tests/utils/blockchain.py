@@ -129,7 +129,7 @@ def assert_eth_balances_result(
             assert FVal(result['totals']['liabilities'][token.identifier]['amount']) == total_amount  # noqa: E501
 
     # Check our owned eth tokens here since the test may have changed their number
-    owned_assets = set(rotki.chain_manager.totals.assets.keys())
+    owned_assets = set(rotki.chains_aggregator.totals.assets.keys())
     if not also_btc:
         owned_assets.discard(A_BTC)
     assert len(totals) == len(owned_assets)

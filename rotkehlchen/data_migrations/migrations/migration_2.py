@@ -10,15 +10,15 @@ if TYPE_CHECKING:
 def _do_query_validator_data(rotki: 'Rotkehlchen') -> None:
     """Queries validator data if needed. Also captures the lock of beacon chain
     balance queries so that they do not start unless this is finished"""
-    eth2 = rotki.chain_manager.get_module('eth2')
+    eth2 = rotki.chains_aggregator.get_module('eth2')
     if eth2 is None:
         return
 
     lock_key = function_sig_key('query_ethereum_beaconchain_balances', arguments_matter=False, skip_ignore_cache=False)  # noqa: E501
-    lock = rotki.chain_manager.query_locks_map[lock_key]
+    lock = rotki.chains_aggregator.query_locks_map[lock_key]
 
     with lock:
-        addresses = rotki.chain_manager.queried_addresses_for_module('eth2')
+        addresses = rotki.chains_aggregator.queried_addresses_for_module('eth2')
         eth2.fetch_eth1_validator_data(addresses)
 
 

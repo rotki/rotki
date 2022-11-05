@@ -16,7 +16,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import BlockchainAccountData, BTCAddress, SupportedBlockchain
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.manager import ChainManager
+    from rotkehlchen.chain.aggregator import ChainsAggregator
     from rotkehlchen.db.drivers.gevent import DBCursor
 
 
@@ -169,9 +169,9 @@ def _derive_addresses_from_xpub_data(
 
 class XpubManager():
 
-    def __init__(self, chain_manager: 'ChainManager'):
-        self.chain_manager = chain_manager
-        self.db = chain_manager.database
+    def __init__(self, chains_aggregator: 'ChainsAggregator'):
+        self.chains_aggregator = chains_aggregator
+        self.db = chains_aggregator.database
         self.lock = Semaphore()
 
     def _derive_xpub_addresses(
@@ -193,7 +193,7 @@ class XpubManager():
                 xpub_data=xpub_data,
                 start_receiving_index=last_receiving_idx,
                 start_change_index=last_change_idx,
-                gap_limit=self.chain_manager.btc_derivation_gap_limit,
+                gap_limit=self.chains_aggregator.btc_derivation_gap_limit,
             )
             known_addresses = getattr(self.db.get_blockchain_accounts(cursor), xpub_data.blockchain.value.lower())  # noqa: E501
 
@@ -224,7 +224,7 @@ class XpubManager():
                 )
 
             if len(new_addresses) != 0:
-                self.chain_manager.add_blockchain_accounts(
+                self.chains_aggregator.add_blockchain_accounts(
                     blockchain=xpub_data.blockchain,
                     accounts=new_addresses,
                 )
@@ -245,10 +245,10 @@ class XpubManager():
 
         # also add queried balances
         if xpub_data.blockchain == SupportedBlockchain.BITCOIN:
-            balances = self.chain_manager.balances.btc
+            balances = self.chains_aggregator.balances.btc
             asset_usd_price = Inquirer.find_usd_price(A_BTC)
         else:  # BCH
-            balances = self.chain_manager.balances.bch
+            balances = self.chains_aggregator.balances.bch
             asset_usd_price = Inquirer.find_usd_price(A_BCH)
 
         for entry in derived_addresses_data:
@@ -257,7 +257,7 @@ class XpubManager():
                 usd_value=entry.balance * asset_usd_price,
             )
             balances[entry.address] = new_balance
-        self.chain_manager.totals = self.chain_manager.balances.recalculate_totals()
+        self.chains_aggregator.totals = self.chains_aggregator.balances.recalculate_totals()
 
     def add_bitcoin_xpub(
         self,
@@ -296,7 +296,7 @@ class XpubManager():
         with self.lock:
             # First try to delete the xpub, and if it does not exist raise InputError
             self.db.delete_bitcoin_xpub(write_cursor, xpub_data)
-            self.chain_manager.sync_bitcoin_accounts_with_db(write_cursor, xpub_data.blockchain)
+            self.chains_aggregator.sync_bitcoin_accounts_with_db(write_cursor, xpub_data.blockchain)  # noqa: E501
 
     def check_for_new_xpub_addresses(
         self,

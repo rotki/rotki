@@ -218,10 +218,10 @@ def initialize_mock_rotkehlchen_instance(
     if start_with_valid_premium:
         rotki.premium = Premium(rotki_premium_credentials)
         rotki.premium_sync_manager.premium = rotki.premium
-        rotki.chain_manager.premium = rotki.premium
+        rotki.chains_aggregator.premium = rotki.premium
         # Add premium to all the modules
         for module_name in AVAILABLE_MODULES_MAP:
-            module = rotki.chain_manager.get_module(module_name)
+            module = rotki.chains_aggregator.get_module(module_name)
             if module is not None:
                 module.premium = rotki.premium
 
@@ -230,7 +230,7 @@ def initialize_mock_rotkehlchen_instance(
 
     # After unlocking when all objects are created we need to also include
     # customized fixtures that may have been set by the tests
-    rotki.chain_manager.accounts = blockchain_accounts
+    rotki.chains_aggregator.accounts = blockchain_accounts
 
     if perform_nodes_insertion:
         with rotki.data.db.user_write() as cursor:
@@ -244,11 +244,11 @@ def initialize_mock_rotkehlchen_instance(
     )
     wait_until_all_nodes_connected(
         ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
-        ethereum=rotki.chain_manager.ethereum,
+        ethereum=rotki.chains_aggregator.ethereum,
     )
     wait_until_all_substrate_nodes_connected(
         substrate_manager_connect_at_start=kusama_manager_connect_at_start,
-        substrate_manager=rotki.chain_manager.kusama,
+        substrate_manager=rotki.chains_aggregator.kusama,
     )
 
 

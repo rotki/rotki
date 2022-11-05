@@ -89,7 +89,7 @@ def events_historian(
         db=database,
         msg_aggregator=function_scope_messages_aggregator,
         exchange_manager=exchange_manager,
-        chain_manager=blockchain,
+        chains_aggregator=blockchain,
         eth_tx_decoder=evm_transaction_decoder,
     )
     return historian

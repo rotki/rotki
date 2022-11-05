@@ -153,6 +153,6 @@ def mock_proxies(
     def mock_get_proxies() -> Dict[ChecksumEvmAddress, ChecksumEvmAddress]:
         return mapping
 
-    module = rotki.chain_manager.get_module(given_module)
+    module = rotki.chains_aggregator.get_module(given_module)
     assert module, f'module {module} not found in chain manager'
     module._get_accounts_having_proxy = mock_get_proxies

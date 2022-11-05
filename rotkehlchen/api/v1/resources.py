@@ -1379,17 +1379,17 @@ class BlockchainsAccountsResource(BaseMethodView):
 
     def make_put_schema(self) -> BlockchainAccountsPutSchema:
         return BlockchainAccountsPutSchema(
-            self.rest_api.rotkehlchen.chain_manager.ethereum,
+            self.rest_api.rotkehlchen.chains_aggregator.ethereum,
         )
 
     def make_patch_schema(self) -> BlockchainAccountsPatchSchema:
         return BlockchainAccountsPatchSchema(
-            self.rest_api.rotkehlchen.chain_manager.ethereum,
+            self.rest_api.rotkehlchen.chains_aggregator.ethereum,
         )
 
     def make_delete_schema(self) -> BlockchainAccountsDeleteSchema:
         return BlockchainAccountsDeleteSchema(
-            self.rest_api.rotkehlchen.chain_manager.ethereum,
+            self.rest_api.rotkehlchen.chains_aggregator.ethereum,
         )
 
     @require_loggedin_user()

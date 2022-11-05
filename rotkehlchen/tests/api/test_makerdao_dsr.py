@@ -587,7 +587,7 @@ def test_query_historical_dsr_with_a_zero_withdrawal(
     problem seems to be just because he tried a zero DAI withdrawal
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    original_get_logs = rotki.chain_manager.ethereum.get_logs
+    original_get_logs = rotki.chains_aggregator.ethereum.get_logs
     proxies_mapping = {
         # proxy for 0x714696C5a872611F76655Bc163D0131cBAc60a70
         ethereum_accounts[0]: '0xAe9996b76bdAa003ace6D66328A6942565f5768d',
@@ -614,7 +614,7 @@ def test_query_historical_dsr_with_a_zero_withdrawal(
         )
 
     patched_get_logs = patch.object(
-        rotki.chain_manager.ethereum,
+        rotki.chains_aggregator.ethereum,
         'get_logs',
         side_effect=mock_get_logs,
     )

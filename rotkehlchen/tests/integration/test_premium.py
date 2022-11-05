@@ -457,7 +457,7 @@ def test_premium_credentials():
 
 @pytest.mark.parametrize('ethereum_modules', [['uniswap', 'sushiswap', 'compound']])
 @pytest.mark.parametrize('start_with_valid_premium', [False])
-def test_premium_toggle_chain_manager(blockchain, rotki_premium_credentials):
+def test_premium_toggle_chains_aggregator(blockchain, rotki_premium_credentials):
     """Tests that modules receive correctly the premium status when it's toggled"""
     for _, module in blockchain.iterate_modules():
         assert module.premium is None

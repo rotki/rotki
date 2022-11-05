@@ -323,7 +323,7 @@ class BlockchainBalancesUpdate:
         }
 
 
-class ChainManager(CacheableMixIn, LockableQueryMixIn):
+class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
     def __init__(
             self,
@@ -341,7 +341,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             btc_derivation_gap_limit: int,
             eth_modules: List[ModuleName],
     ):
-        log.debug('Initializing ChainManager')
+        log.debug('Initializing ChainsAggregator')
         super().__init__()
         self.ethereum = ethereum_manager
         self.kusama = kusama_manager
@@ -647,7 +647,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             should_derive_bch_xpubs: bool = False,
     ) -> None:
         """Derive new addresses from xpubs."""
-        xpub_manager = XpubManager(chain_manager=self)
+        xpub_manager = XpubManager(chains_aggregator=self)
         if should_derive_btc_xpubs is True:
             xpub_manager.check_for_new_xpub_addresses(blockchain=SupportedBlockchain.BITCOIN)
         if should_derive_bch_xpubs is True:

@@ -254,7 +254,7 @@ def test_set_settings_errors(rotkehlchen_api_server):
     """set settings errors and edge cases test"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     # set timeout to 1 second to timeout faster
-    rotki.chain_manager.ethereum.rpc_timeout = 1
+    rotki.chains_aggregator.ethereum.rpc_timeout = 1
 
     # Invalid type for premium_should_sync
     data = {
