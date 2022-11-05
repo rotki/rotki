@@ -41,6 +41,10 @@ jobs:
             requirements_lint.txt
           frontend_paths: |
             frontend/app
+      - name: Set TEST_ENVIRONMENT
+        run: | 
+          echo "TEST_ENVIRONMENT=${TEST_ENVIRONMENT}"
+          echo "TEST_ENVIRONMENT=${TEST_ENVIRONMENT}" >> $GITHUB_ENV
 
 
   lint-frontend:
