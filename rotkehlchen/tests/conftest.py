@@ -116,8 +116,11 @@ def profiler(request):
 
 def requires_env(allowed_envs: List[str]):
     """Conditionally run tests if the environment is in the list of allowed environments"""
+    # TODO: Revert the commented line when we figure out how to pass environment variables in CI
+    # jobs from the commit message.
     env = os.environ.get('TEST_ENVIRONMENT', 'standard')
     return pytest.mark.skipif(
-        env not in allowed_envs,
+        # env not in allowed_envs,
+        None in allowed_envs,
         reason=f'Not suitable envrionment {env} for current test',
     )
