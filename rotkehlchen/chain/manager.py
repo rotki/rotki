@@ -1141,21 +1141,19 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             return
 
         # Query ethereum ETH balances
-        eth_accounts = self.accounts.eth
-        eth_balances = self.balances.eth
         eth_usd_price = Inquirer().find_usd_price(A_ETH)
-        balances = self.ethereum.get_multi_balance(eth_accounts)
+        balances = self.ethereum.get_multi_balance(self.accounts.eth)
         for account, balance in balances.items():
             usd_value = balance * eth_usd_price
-            eth_balances[account] = BalanceSheet(
+            self.balances.eth[account] = BalanceSheet(
                 assets=defaultdict(Balance, {
                     self.eth_asset: Balance(balance, usd_value),
                 }),
             )
 
         self.query_defi_balances()
-        self.query_evm_tokens(manager=self.ethereum, balances=eth_balances)
-        self._add_protocol_balances(balances=eth_balances)
+        self.query_evm_tokens(manager=self.ethereum, balances=self.balances.eth)
+        self._add_eth_protocol_balances(eth_balances=self.balances.eth)
 
     def query_ethereum_lp_balances(
             self,
@@ -1216,8 +1214,8 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                 else:
                     balances[loc_key][EvmToken(ethaddress_to_identifier(lp.address))] = lp.user_balance  # noqa: E501
 
-    def _add_protocol_balances(self, balances: DefaultDict[ChecksumEvmAddress, BalanceSheet]) -> None:  # noqa: E501
-        """Also count token balances that may come from various protocols"""
+    def _add_eth_protocol_balances(self, eth_balances: DefaultDict[ChecksumEvmAddress, BalanceSheet]) -> None:  # noqa: E501
+        """Also count token balances that may come from various eth protocols"""
         # If we have anything in DSR also count it towards total blockchain balances
         dsr_module = self.get_module('makerdao_dsr')
         if dsr_module is not None:
@@ -1227,20 +1225,20 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                 if balance_entry.amount == ZERO:
                     continue
 
-                balances[dsr_account].assets[A_DAI] += balance_entry
+                eth_balances[dsr_account].assets[A_DAI] += balance_entry
 
         # Also count the vault balance and defi saver wallets and add it to the totals
         vaults_module = self.get_module('makerdao_vaults')
         if vaults_module is not None:
             vault_balances = vaults_module.get_balances()
             for address, entry in vault_balances.items():
-                if address not in balances:
+                if address not in eth_balances:
                     self.msg_aggregator.add_error(
                         f'The owner of a vault {address} was not in the tracked addresses.'
                         f' This should not happen and is probably a bug. Please report it.',
                     )
                 else:
-                    balances[address] += entry
+                    eth_balances[address] += entry
 
             proxy_mappings = vaults_module._get_accounts_having_proxy()
             proxy_to_address = {}
@@ -1269,7 +1267,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                 dsr_proxy_append=True,
                 balance_result=new_result,
                 token_usd_price=token_usd_price,
-                balances=balances,
+                balances=eth_balances,
             )
 
             # also query defi balances to get liabilities
@@ -1284,7 +1282,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         if adex_module is not None and self.premium is not None:
             adex_balances = adex_module.get_balances(addresses=self.queried_addresses_for_module('adex'))  # noqa: E501
             for address, balance in adex_balances.items():
-                balances[address].assets[A_ADX] += balance
+                eth_balances[address].assets[A_ADX] += balance
 
         pickle_module = self.get_module('pickle_finance')
         if pickle_module is not None:
@@ -1293,7 +1291,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             )
             for address, pickle_balances in pickle_balances_per_address.items():
                 for asset_balance in pickle_balances:
-                    balances[address].assets[asset_balance.asset] += asset_balance.balance  # noqa: E501
+                    eth_balances[address].assets[asset_balance.asset] += asset_balance.balance  # noqa: E501
 
         liquity_module = self.get_module('liquity')
         if liquity_module is not None:
@@ -1303,14 +1301,14 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             )
             for address, deposits in liquity_balances.items():
                 collateral = deposits.collateral.balance
-                balances[address].assets[A_ETH] += collateral
+                eth_balances[address].assets[A_ETH] += collateral
             # Get staked amounts
             liquity_staked = liquity_module.liquity_staking_balances(
                 addresses=self.queried_addresses_for_module('liquity'),
             )
             for address, staked_info in liquity_staked.items():
                 deposited_lqty = staked_info.staked.balance
-                balances[address].assets[A_LQTY] += deposited_lqty
+                eth_balances[address].assets[A_LQTY] += deposited_lqty
 
         # Finally count the balances detected in various protocols in defi balances
         self.add_defi_balances_to_account()
