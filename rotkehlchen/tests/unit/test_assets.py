@@ -143,7 +143,7 @@ def test_cryptocompare_asset_support(cryptocompare):
         'eip155:56/erc20:0x42F6f551ae042cBe50C739158b4f0CAC0Edb9096',  # noqa: E501 # Nerve Finance (NRV) but another NRV in CC
         'EDR-2',   # Endor Protocol Token but we have E-Dinar Coin
         ethaddress_to_identifier('0xDa007777D86AC6d989cC9f79A73261b3fC5e0DA0'),  # noqa: E501 # Dappnode (NODE) but another NODE in CC
-        'QI',
+        'QI',  # BENQI (QI) but another QI in CC
         ethaddress_to_identifier('0x1A4b46696b2bB4794Eb3D4c26f1c55F9170fa4C5'),  # noqa: E501 # BitDao (BIT) but another BIT in CC
         ethaddress_to_identifier('0x993864E43Caa7F7F12953AD6fEb1d1Ca635B875F'),  # noqa: E501 # Singularity DAO (SDAO) but another SDAO in CC
         'eip155:56/erc20:0x90Ed8F1dc86388f14b64ba8fb4bbd23099f18240',  # noqa: E501 # Singularity DAO (SDAO) but another SDAO in CC
@@ -153,7 +153,7 @@ def test_cryptocompare_asset_support(cryptocompare):
         ethaddress_to_identifier('0x2d94AA3e47d9D5024503Ca8491fcE9A2fB4DA198'),  # noqa: E501 # Bankless token (BANK) but another BANK in CC
         'eip155:137/erc20:0xDB7Cb471dd0b49b29CAB4a1C14d070f27216a0Ab',  # noqa: E501 # Bankless token (BANK) but another BANK in CC
         ethaddress_to_identifier('0x1456688345527bE1f37E9e627DA0837D6f08C925'),  # noqa: E501 # USDP stablecoin (USDP) but another USDP in CC
-        'POLIS',
+        'POLIS',  # Star Atlas DAO (POLIS) but another POLIS in CC
         ethaddress_to_identifier('0x670f9D9a26D3D42030794ff035d35a67AA092ead'),  # noqa: E501 # XBullion Token (GOLD) but another GOLD in CC
         ethaddress_to_identifier('0x3b58c52C03ca5Eb619EBa171091c86C34d603e5f'),  # noqa: E501 # MCI Coin (MCI) but another MCI in CC
         ethaddress_to_identifier('0x5dD57Da40e6866C9FcC34F4b6DDC89F1BA740DfE'),  # noqa: E501 # Bright(BRIGHT) but another BRIGHT in CC

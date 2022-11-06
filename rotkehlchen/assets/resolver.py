@@ -31,7 +31,7 @@ class AssetResolver():
     assets_cache: LRUCacheWithRemove['Asset'] = LRUCacheWithRemove(maxsize=512)
     types_cache: LRUCacheWithRemove[AssetType] = LRUCacheWithRemove(maxsize=512)
 
-    def __new__(cls) -> 'AssetResolver':  # noqa: 
+    def __new__(cls) -> 'AssetResolver':  # noqa: N805
         """Lazily initializes AssetResolver
 
         It always uses the GlobalDB to resolve assets

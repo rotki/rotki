@@ -81,7 +81,7 @@ class PriceHistorian():
     _oracle_instances: Optional[List[HistoricalPriceOracleInstance]] = None
 
     def __new__(
-            cls,
+            cls,  # noqa: N805
             data_directory: Path = None,
             cryptocompare: 'Cryptocompare' = None,
             coingecko: 'Coingecko' = None,

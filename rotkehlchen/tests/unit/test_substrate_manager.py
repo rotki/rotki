@@ -129,11 +129,8 @@ def test_set_available_nodes_call_order(kusama_manager):
             weight_block=1000,
         ),
     )
-    available_node_attributes_map = dict([  # noqa: C406
-        node_attrs_item_3,
-        node_attrs_item_2,
-        node_attrs_item_1,
-    ])
+    node_attrs_items = [node_attrs_item_3, node_attrs_item_2, node_attrs_item_1]
+    available_node_attributes_map = dict(node_attrs_items)
     kusama_manager.available_node_attributes_map = available_node_attributes_map
     kusama_manager._set_available_nodes_call_order()
 
