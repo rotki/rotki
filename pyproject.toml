@@ -1,3 +1,45 @@
+
+# -- Mypy config section --
+
+[tool.mypy]
+# Docs: https://mypy.readthedocs.io/en/latest/config_file.html
+ignore_missing_imports = true
+check_untyped_defs = true
+disallow_untyped_defs = true
+warn_unused_configs = true
+warn_unused_ignores = true
+warn_unreachable = true
+warn_redundant_casts = true
+disallow_untyped_decorators = true
+disallow_untyped_calls = true
+mypy_path="./stubs/"
+
+[[tool.mypy.overrides]]
+module = "rotkehlchen.*"
+ignore_missing_imports = false
+
+# -- These modules still need to have proper type definitions given --
+[[tool.mypy.overrides]]
+module = "rotkehlchen.tests.*"
+check_untyped_defs = false
+disallow_untyped_defs = false
+# Pytest's fixture decorators are not typed
+disallow_untyped_decorators = false
+
+# custom pylint checkers still need to be typed
+[[tool.mypy.overrides]]
+module = "tools.pylint.*"
+check_untyped_defs = false
+disallow_untyped_defs = false
+
+# profiling is not typed
+[[tool.mypy.overrides]]
+module = "tools.profiling.*"
+check_untyped_defs = false
+disallow_untyped_defs = false
+
+# -- ruff config section --
+
 [tool.ruff]
 line-length = 99
 
