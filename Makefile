@@ -1,7 +1,7 @@
 COMMON_LINT_PATHS = rotkehlchen/ setup.py package.py
 TOOLS_LINT_PATH = tools/
 ALL_LINT_PATHS = $(COMMON_LINT_PATHS) $(TOOLS_LINT_PATH)
-ISORT_PARAMS = --ignore-whitespace --settings-path ./ --skip-glob '*/node_modules/*' $(ALL_LINT_PATHS)
+ISORT_PARAMS = --ignore-whitespace --skip-glob '*/node_modules/*' $(ALL_LINT_PATHS)
 ISORT_CHECK_PARAMS = --diff --check-only
 
 lint:
