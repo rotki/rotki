@@ -42,7 +42,7 @@ disallow_untyped_defs = false
 [tool.ruff]
 line-length = 99
 
-select = ["E", "F", "W", "C", "N"]
+select = ["E", "F", "W", "C", "N", "B", "T"]
 extend-select = [
     "M001",  # detect unused noqa
 ]
@@ -75,6 +75,7 @@ exclude = [
 # Allow unused variables when underscore-prefixed.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 target-version = "py39"
+per-file-ignores = {"tools/*" = ["T201"],"rotkehlchen/__main__.py" = ["T201"],"rotkehlchen/api/server.py" = ["T201"],"rotkehlchen/args.py" = ["T201"]}
 
 # -- isort config section --
 
