@@ -321,9 +321,9 @@ class DBConnection:
     ) -> Generator['DBCursor', None, None]:
         """
         Creates a savepoint context with the provided name. If the code inside the savepoint fails,
-        rolls back this savepoint, otherwise releases it (aka forgets it -- this is not commited to the DB).  # noqa: E501
-        Savepoints work like nested transactions, more information here: https://www.sqlite.org/lang_savepoint.html  # noqa: E501
-        """
+        rolls back this savepoint, otherwise releases it (aka forgets it -- this is not commited to the DB).
+        Savepoints work like nested transactions, more information here: https://www.sqlite.org/lang_savepoint.html
+        """    # noqa: E501
         cursor, savepoint_name = self.enter_savepoint(savepoint_name)
         try:
             yield cursor

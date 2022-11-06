@@ -875,7 +875,6 @@ def test_exporting_user_assets_list(rotkehlchen_api_server, globaldb, with_custo
                 'asset_type': 'evm token',
                 'decimals': 18,
                 'symbol': 'YAB',
-                'asset_type': 'evm token',
                 'started': None,
                 'forked': None,
                 'swapped_for': None,
