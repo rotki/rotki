@@ -116,7 +116,7 @@ class GlobalDBHandler():
     conn: DBConnection
 
     def __new__(
-            cls,  # noqa: N805
+            cls,
             data_dir: Path = None,
             sql_vm_instructions_cb: int = None,
     ) -> 'GlobalDBHandler':

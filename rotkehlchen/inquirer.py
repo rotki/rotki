@@ -292,7 +292,7 @@ class Inquirer():
     usd: FiatAsset
 
     def __new__(
-            cls,  # noqa: N805
+            cls,
             data_dir: Path = None,
             cryptocompare: 'Cryptocompare' = None,
             coingecko: 'Coingecko' = None,
