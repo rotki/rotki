@@ -1,4 +1,3 @@
-
 # -- Mypy config section --
 
 [tool.mypy]
@@ -51,7 +50,6 @@ ignore = [
     "E402",  # module level import at file top. https://www.flake8rules.com/rules/E402.html
     "N818",  # error suffix in exception names
 ]
-
 # Exclude a variety of commonly ignored directories.
 exclude = [
     ".bzr",
@@ -74,8 +72,17 @@ exclude = [
     "node_modules",
     "venv",
 ]
-
 # Allow unused variables when underscore-prefixed.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
-
 target-version = "py39"
+
+# -- isort config section --
+
+[tool.isort]
+line_length = 99
+known_future_library = "future"
+multi_line_output = "3"
+known_first_party = ["rotkehlchen"]
+include_trailing_comma = "1"
+default_section = "THIRDPARTY"
+combine_as_imports = "1"
