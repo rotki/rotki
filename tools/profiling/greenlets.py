@@ -39,8 +39,8 @@ def install_switch_log():
                         "target": str(target),
                         "target_callstack": callstack,
                         "time": datetime.utcnow().isoformat(),
-                    }
-                )
+                    },
+                ),
             )
 
         if previous_callback is not None:

@@ -47,7 +47,7 @@ def upload(path: str, headers: dict):
 
 
 def main(directory: str):
-    files = list(os.path.join(directory, file) for file in os.listdir(directory))
+    files = [os.path.join(directory, file) for file in os.listdir(directory)]
 
     if not files:
         print('No screenshots to upload')

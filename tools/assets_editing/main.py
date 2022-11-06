@@ -233,7 +233,7 @@ for key, entry in assets.items():
             if distance <= 1 and 'coingecko' not in new_assets[key]:
                 print(
                     f'Similar names. Our-id: {key}. Coingecko-id: {coingecko_entry["id"]}.'
-                    f' Our-name: {entry["name"]}. Coingecko-name: {coingecko_entry["name"]}'
+                    f' Our-name: {entry["name"]}. Coingecko-name: {coingecko_entry["name"]}',
                 )
 
     # if 'coingecko' not in new_assets[key]:

@@ -25,6 +25,7 @@ using ImageMagick:
     convert -append memory_timeline.png latency_scatter.png memory_objcount.png collage.png
 """
 
+import argparse
 # Improvements:
 # - Draw the composite graphs with matplotlib instead of using convert and make
 #   sure to aling all the points
@@ -35,6 +36,9 @@ import pickle
 from datetime import datetime
 from itertools import chain
 from typing import Any, Dict, Optional
+
+import matplotlib.pyplot as plt
+from matplotlib import dates
 
 from .constants import INTERVAL_SECONDS, ONESECOND_TIMEDELTA
 
@@ -49,8 +53,6 @@ def ts_to_dt(string_ts):
 
 
 def plot_date_axis(axes):
-    from matplotlib import dates
-
     date_fmt = dates.DateFormatter("%d/%b")
     hour_fmt = dates.DateFormatter("%H:%M")
 
@@ -70,7 +72,6 @@ def plot_configure(figure):
 
 
 def memory_objcount(output, data_list, topn=10):
-    import matplotlib.pyplot as plt
 
     # make sure we are sorted by timestamp
     data_list = sorted(data_list, key=lambda el: el[0][TIMESTAMP])
@@ -81,7 +82,9 @@ def memory_objcount(output, data_list, topn=10):
     alltime_count = sum(len(data) for data in data_list)
     # extra points points to create the valleys in the graph
     alltime_count += len(data_list) * 2
-    alltime_factory = lambda: [0.0 for __ in range(alltime_count)]
+
+    def alltime_factory():
+        return [0.0 for __ in range(alltime_count)]
 
     position = 0
     alltime_data: Dict = {}
@@ -92,7 +95,10 @@ def memory_objcount(output, data_list, topn=10):
         # some classes might not appear on all samples, nevertheless the list
         # must have the same length
         sample_count = len(data)
-        sample_factory = lambda: [0.0 for __ in range(sample_count)]
+
+        def sample_factory(count_arg=sample_count):
+            return [0.0 for __ in range(count_arg)]
+
         objcount: Dict = collections.defaultdict(sample_factory)
 
         # group the samples by class
@@ -106,7 +112,7 @@ def memory_objcount(output, data_list, topn=10):
         # get the topn classes with the highest object count, the idea to show
         # spikes
         topn_classes = sorted(
-            ((count, klass) for klass, count in sample_highcount.items()), reverse=True
+            ((count, klass) for klass, count in sample_highcount.items()), reverse=True,
         )[:topn]
 
         # this creates the valley in the graph, we assume that there is a
@@ -157,8 +163,6 @@ def memory_timeline(output, data_list):
     This plot was created to compare multiple executions of the application,
     removing skew in both axes.
     """
-    import matplotlib.pyplot as plt
-
     data_list = sorted(data_list, key=lambda list_: list_[0][TIMESTAMP])
 
     fig, memory_axes = plt.subplots()
@@ -193,9 +197,6 @@ def memory_subplot(output, data_list):
     """Plots all data in separated axes, a simple way to look at distinct
     executions, keep in mind that the time-axis will be skewed, since each plot
     has a differente running time but the same plotting area."""
-    import matplotlib.pyplot as plt
-    from matplotlib import dates
-
     number_plots = len(data_list)
     fig, all_memory_axes = plt.subplots(1, number_plots, sharey="row")
 
@@ -234,8 +235,6 @@ def memory_subplot(output, data_list):
 
 
 def latency_scatter(output, data_list):
-    import matplotlib.pyplot as plt
-
     fig, axes = plt.subplots()
 
     data_list = sorted(data_list, key=lambda list_: list_[0])
@@ -315,7 +314,6 @@ def latency_data(filepath):
 
 
 def main():
-    import argparse
 
     parser = argparse.ArgumentParser()
 
@@ -349,10 +347,6 @@ def main():
     latency_scatter_parser.add_argument("--output", default="latency_scatter.png", type=str)
 
     arguments = parser.parse_args()
-
-    # consistent styling
-    import matplotlib.pyplot as plt
-
     plt.style.use("ggplot")
 
     if arguments.action == "memory" and arguments.plot == "subplot":

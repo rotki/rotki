@@ -1,4 +1,5 @@
 import os
+
 import pkg_resources
 
 datas = []
@@ -27,5 +28,5 @@ while required_packages:
     try:
         datas.extend(copy_metadata(req_name))
         processed.add(req_name)
-    except AssertionError as e:
+    except AssertionError:
         pass

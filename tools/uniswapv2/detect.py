@@ -12,6 +12,7 @@ from rotkehlchen.chain.ethereum.uniswap.utils import uniswap_lp_token_balances
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.dbhandler import DBHandler
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
@@ -26,28 +27,32 @@ DB_USERNAME_VAR = 'DB_USERNAME'
 DB_PASSWORD_VAR = 'DB_PASSWORD'
 
 
-def init_ethereum(rpc_endpoint: str, use_other_nodes: bool, database: DBHandler) -> EthereumManager:
-    nodes_to_connect = database.get_web3_nodes(blockchain=SupportedBlockchain.ETHEREUM, only_active=True) if use_other_nodes else (WeightedNode(node=NodeName.OWN,weight=ONE))
-    msg_aggregator = MessagesAggregator()
+def init_ethereum(
+        rpc_endpoint: str,
+        use_other_nodes: bool,
+        db: DBHandler,
+) -> EthereumManager:
+    nodes_to_connect = db.get_web3_nodes(blockchain=SupportedBlockchain.ETHEREUM, only_active=True) if use_other_nodes else (WeightedNode(node_info=NodeName(name='own', endpoint=rpc_endpoint, owned=True, blockchain=SupportedBlockchain.ETHEREUM), weight=ONE, active=True),)  # noqa: E501
+    messages = MessagesAggregator()
     etherscan = Etherscan(database=None, msg_aggregator=msg_aggregator)
     api_key = os.environ.get('ETHERSCAN_API_KEY', None)
     greenlet_manager = GreenletManager(msg_aggregator=msg_aggregator)
     etherscan.api_key = api_key
-    ethereum = EthereumManager(
+    eth_manager = EthereumManager(
         etherscan=etherscan,
-        msg_aggregator=msg_aggregator,
+        msg_aggregator=messages,
         greenlet_manager=greenlet_manager,
         connect_at_start=nodes_to_connect,
-        database=database,
+        database=db,
     )
     wait_until_all_nodes_connected(
         ethereum_manager_connect_at_start=nodes_to_connect,
-        ethereum=ethereum,
+        ethereum=eth_manager,
     )
-    return ethereum
+    return eth_manager
 
 
-def pairs_from_ethereum(ethereum: EthereumManager) -> Dict[str, Any]:
+def pairs_from_ethereum(ethereum_manager: EthereumManager) -> Dict[str, Any]:
     """Detect the uniswap v2 pool tokens by using an ethereum node"""
     contracts_file = Path(__file__).resolve().parent / 'contracts.json'
     with contracts_file.open('r') as f:
@@ -58,12 +63,12 @@ def pairs_from_ethereum(ethereum: EthereumManager) -> Dict[str, Any]:
         abi=contracts['UNISWAPV2FACTORY']['abi'],
         deployed_block=0,  # whatever
     )
-    pairs_num = univ2factory.call(ethereum, 'allPairsLength')
+    pairs_num = univ2factory.call(ethereum_manager, 'allPairsLength')
     chunks = list(get_chunks([[x] for x in range(pairs_num)], n=500))
     pairs = []
     for idx, chunk in enumerate(chunks):
         print(f'Querying univ2 pairs chunk {idx + 1} / {len(chunks)}')
-        result = ethereum.multicall_specific(univ2factory, 'allPairs', chunk)
+        result = ethereum_manager.multicall_specific(univ2factory, 'allPairs', chunk)
         try:
             pairs.extend([deserialize_evm_address(x[0]) for x in result])
         except DeserializationError:
@@ -195,9 +200,9 @@ if __name__ == "__main__":
         if saved_data and args.force_query is False:
             results['graph'] = saved_data
         else:
-            result = pairs_and_token_details_from_graph()
-            results['graph'] = result
-            write_result_to_file(result, 'uniswap_lp_tokens_graph.json')
+            result_pairs = pairs_and_token_details_from_graph()
+            results['graph'] = result_pairs
+            write_result_to_file(result_pairs, 'uniswap_lp_tokens_graph.json')
 
     if args.source in ('ethereum', 'both'):
         msg_aggregator = MessagesAggregator()
@@ -214,15 +219,15 @@ if __name__ == "__main__":
         ethereum = init_ethereum(
             rpc_endpoint=args.eth_rpc_endpoint,
             use_other_nodes=args.use_other_nodes,
-            database=database,
+            db=database,
         )
         saved_data = read_file_if_exists('uniswap_lp_tokens_ethereum.json')
         if saved_data and args.force_query is False:
             results['ethereum'] = saved_data
         else:
-            result = pairs_from_ethereum(ethereum)
-            results['ethereum'] = result
-            write_result_to_file(result, 'uniswap_lp_tokens_ethereum.json')
+            result_pairs = pairs_from_ethereum(ethereum)
+            results['ethereum'] = result_pairs
+            write_result_to_file(result_pairs, 'uniswap_lp_tokens_ethereum.json')
 
         if args.no_query_balances is False:
             start = ts_now()
@@ -241,5 +246,5 @@ if __name__ == "__main__":
             print(balances)
 
     if args.source == 'both':
-        for entry in results['graph']:
-            assert entry['address'] in results['ethereum']
+        for graph_entry in results['graph']:
+            assert graph_entry['address'] in results['ethereum']

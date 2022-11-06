@@ -228,7 +228,7 @@ class SignalSampler:
         )
 
     def _timer_callback(
-        self, signum: int, frame: FrameType  # pylint: disable=unused-argument
+            self, signum: int, frame: FrameType,  # pylint: disable=unused-argument
     ) -> None:
         # Sample can be called one last time after sample_stop
         if self.collector is not None:
