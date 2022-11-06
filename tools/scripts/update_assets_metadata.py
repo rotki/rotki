@@ -23,7 +23,7 @@ if new_md5.hexdigest() == old_meta['md5']:
 
 new_meta = json.dumps({
     'md5': new_md5.hexdigest(),
-    'version': old_meta['version'] + 1
+    'version': old_meta['version'] + 1,
 })
 
 with open(ASSETS_META, 'w') as assets_meta:

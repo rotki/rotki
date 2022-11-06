@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import pathlib
 from os import environ
@@ -11,8 +10,8 @@ directory = pathlib.Path(__file__).parent
 
 # Load install_requires from requirements.txt.
 # https://stackoverflow.com/a/59971236/4651668
-requirements = directory.joinpath('requirements.txt').read_text()
-requirements = [str(r) for r in parse_requirements(requirements)]
+requirements_txt = directory.joinpath('requirements.txt').read_text()
+requirements = [str(r) for r in parse_requirements(requirements_txt)]
 
 version = '1.26.1'  # Do not edit: this is maintained by bumpversion (see .bumpversion.cfg)
 
