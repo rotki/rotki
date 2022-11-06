@@ -1,4 +1,5 @@
 import os
+import warnings as test_warnings
 from typing import Set
 
 
@@ -28,12 +29,12 @@ def test_no_missing_init():
     """
 
     rotki_path = os.path.abspath(os.path.join(os.path.abspath(__file__), "..", ".."))
-    print(f"\nScanning {rotki_path}")
     directories_with_missing_init = find_directories_with_missing_init(rotki_path)
 
     if directories_with_missing_init:
-        print("The following directories are missing '__init__.py' files:")
         for directory in directories_with_missing_init:
-            print(directory)
+            test_warnings.warn(UserWarning(
+                f'Found directory {directory} missing an init',
+            ))
 
     assert not directories_with_missing_init, "some directories are missing __init__.py files"

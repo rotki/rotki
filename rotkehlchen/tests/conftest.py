@@ -3,6 +3,7 @@ import os
 import re
 import sys
 import tempfile
+import warnings as test_warnings
 from pathlib import Path
 from typing import List
 
@@ -103,7 +104,9 @@ def profiler(request):
         now = datetime.datetime.now()
         tmpdirname = tempfile.gettempdir()
         stack_path = Path(tmpdirname) / f'{now:%Y%m%d_%H%M}_stack.data'
-        print(f'Stack data is saved at: {stack_path}')
+        test_warnings.warn(UserWarning(
+            f'Stack data is saved at: {stack_path}',
+        ))
         stack_stream = open(stack_path, 'w')
         flame = FlameGraphCollector(stack_stream)
         profiler_instance = TraceSampler(flame)
