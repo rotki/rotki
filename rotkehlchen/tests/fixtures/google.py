@@ -159,7 +159,7 @@ class GoogleService:
                     'fields': 'userEnteredFormat.numberFormat',
                 },
             })
-        self.sheets_service.spreadsheets().batchUpdate(
+        self.sheets_service.spreadsheets().batchUpdate(  # pylint: disable=no-member
             spreadsheetId=sheet_id,
             body={'requests': requests},
         ).execute()
