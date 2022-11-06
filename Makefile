@@ -5,6 +5,7 @@ ISORT_CHECK_PARAMS = --diff --check-only
 lint:
 	isort $(ISORT_PARAMS) $(ISORT_CHECK_PARAMS)
 	flake8 rotkehlchen/ package.py
+	ruff rotkehlchen/ package.py
 	mypy rotkehlchen/ package.py --install-types --non-interactive
 	pylint --rcfile .pylint.rc rotkehlchen/ package.py
 

@@ -382,7 +382,7 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
         'non_syncing_exchanges': [],
         'cost_basis_method': CostBasisMethod.FIFO,
         'treat_eth2_as_eth': DEFAULT_TREAT_ETH2_AS_ETH,
-        'eth_staking_taxable_after_withdrawal_enabled': DEFAULT_ETH_STAKING_TAXABLE_AFTER_WITHDRAWAL_ENABLED,  # noqa: 501
+        'eth_staking_taxable_after_withdrawal_enabled': DEFAULT_ETH_STAKING_TAXABLE_AFTER_WITHDRAWAL_ENABLED,  # noqa: E501
     }
     assert len(expected_dict) == len(DBSettings()), 'One or more settings are missing'
 

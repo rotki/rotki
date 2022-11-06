@@ -773,7 +773,7 @@ INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protoco
         # TODO: Needs to be fixed as described in # 4876
         """
         gnt = EvmToken('eip155:1/erc20:0xa74476443119A942dE498590Fe1f2454d7D4aC0d')
-        assert gnt.identifier == strethaddress_to_identifier('0xa74476443119A942dE498590Fe1f2454d7D4aC0d')  # noqa: E501
+        assert gnt.identifier == strethaddress_to_identifier('0xa74476443119A942dE498590Fe1f2454d7D4aC0d')
         assert gnt.name == 'Golem'
         assert gnt.symbol == 'GNT'
         assert gnt.asset_type == AssetType.EVM_TOKEN
@@ -785,7 +785,7 @@ INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protoco
         assert gnt.evm_address == '0xa74476443119A942dE498590Fe1f2454d7D4aC0d'
         assert gnt.decimals == 18
         assert gnt.protocol is None
-        """
+        """    # noqa: E501
 
         new_asset = CryptoAsset('121-ada-FADS-as')
         assert new_asset.identifier == '121-ada-FADS-as'
