@@ -30,7 +30,7 @@ def validate_import_data(
     # check if the headers match the type stored in the db
     has_invalid_headers = (
         tuple(balances_data[0].keys()) != ('timestamp', 'category', 'asset_identifier', 'amount', 'usd_value') or  # noqa: E501
-        tuple(location_data[0].keys()) != ('timestamp', 'location', 'usd_value')  # noqa: E501
+        tuple(location_data[0].keys()) != ('timestamp', 'location', 'usd_value')
     )
     if has_invalid_headers:
         return False, 'csv file has invalid headers'

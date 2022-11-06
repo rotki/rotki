@@ -442,7 +442,7 @@ class MakerdaoDsr(HasDSProxy):
                 if movement.timestamp > to_timestamp:
                     break
 
-                pnl = got_asset = got_balance = spent_asset = spent_balance = None  # noqa: E501
+                pnl = got_asset = got_balance = spent_asset = spent_balance = None
                 balance = Balance(
                     amount=_dsrdai_to_dai(movement.amount),
                     usd_value=movement.amount_usd_value,

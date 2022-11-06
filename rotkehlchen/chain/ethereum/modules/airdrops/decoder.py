@@ -98,7 +98,7 @@ class AirdropsDecoder(DecoderInterface):
                 event.event_type = HistoryEventType.RECEIVE
                 event.event_subtype = HistoryEventSubType.AIRDROP
                 event.counterparty = CPT_UNISWAP
-                event.notes = f'Claim {amount} UNI from uniswap airdrop'  # noqa: E501
+                event.notes = f'Claim {amount} UNI from uniswap airdrop'
                 break
 
         return None, []
@@ -123,7 +123,7 @@ class AirdropsDecoder(DecoderInterface):
                 event.event_type = HistoryEventType.RECEIVE
                 event.event_subtype = HistoryEventSubType.AIRDROP
                 event.counterparty = CPT_SHAPESHIFT
-                event.notes = f'Claim {amount} FOX from shapeshift airdrop'  # noqa: E501
+                event.notes = f'Claim {amount} FOX from shapeshift airdrop'
                 break
 
         return None, []
@@ -151,7 +151,7 @@ class AirdropsDecoder(DecoderInterface):
                 event.event_type = HistoryEventType.RECEIVE
                 event.event_subtype = HistoryEventSubType.AIRDROP
                 event.counterparty = CPT_BADGER
-                event.notes = f'Claim {amount} BADGER from badger airdrop'  # noqa: E501
+                event.notes = f'Claim {amount} BADGER from badger airdrop'
                 break
 
         return None, []
@@ -176,7 +176,7 @@ class AirdropsDecoder(DecoderInterface):
                 event.event_type = HistoryEventType.RECEIVE
                 event.event_subtype = HistoryEventSubType.AIRDROP
                 event.counterparty = CPT_ONEINCH
-                event.notes = f'Claim {amount} 1INCH from 1inch airdrop'  # noqa: E501
+                event.notes = f'Claim {amount} 1INCH from 1inch airdrop'
                 break
 
         return None, []
@@ -220,7 +220,7 @@ class AirdropsDecoder(DecoderInterface):
                 except (UnknownAsset, WrongAssetType):
                     self.notify_user(event=event, counterparty=counterparty)
                     continue
-                event.notes = f'Claim {amount} {crypto_asset.symbol} {note_location}'  # noqa: E501
+                event.notes = f'Claim {amount} {crypto_asset.symbol} {note_location}'
                 break
 
         return None, []

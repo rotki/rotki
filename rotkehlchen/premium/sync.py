@@ -238,7 +238,7 @@ class PremiumSyncManager():
             self.data.data_directory / f'auto_backup_{username}_{ts_now()}',
         )
         raise PremiumAuthenticationError(
-            f'Could not verify keys for the new account. {str(original_exception)}',  # noqa: E501
+            f'Could not verify keys for the new account. {str(original_exception)}',
         ) from original_exception
 
     def try_premium_at_start(

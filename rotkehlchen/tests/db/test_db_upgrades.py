@@ -339,7 +339,7 @@ def test_upgrade_db_29_to_30(user_data_dir):  # pylint: disable=unused-argument
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_upgrade_db_30_to_31(user_data_dir):  # pylint: disable=unused-argument  # noqa: E501
+def test_upgrade_db_30_to_31(user_data_dir):  # pylint: disable=unused-argument
     """Test upgrading the DB from version 30 to version 31.
 
     Also checks that this code upgrade works even if the DB is affected by
@@ -412,7 +412,7 @@ def test_upgrade_db_30_to_31(user_data_dir):  # pylint: disable=unused-argument 
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument  # noqa: E501
+def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument
     """Test upgrading the DB from version 31 to version 32.
 
     - Check that subtype is correctly updated
@@ -604,7 +604,7 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument 
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_upgrade_db_32_to_33(user_data_dir):  # pylint: disable=unused-argument  # noqa: E501
+def test_upgrade_db_32_to_33(user_data_dir):  # pylint: disable=unused-argument
     """Test upgrading the DB from version 32 to version 33.
     """
     msg_aggregator = MessagesAggregator()
@@ -656,7 +656,7 @@ def test_upgrade_db_32_to_33(user_data_dir):  # pylint: disable=unused-argument 
     old_combined_trades_views = cursor.execute('SELECT * FROM combined_trades_view;').fetchall()
     assert len(old_combined_trades_views) == 7
     # get history events
-    old_history_events = cursor.execute('SELECT * FROM history_events').fetchall()  # noqa: 501
+    old_history_events = cursor.execute('SELECT * FROM history_events').fetchall()
     assert len(old_history_events) == 5
     db_v32.logout()
     # Execute upgrade
@@ -716,7 +716,7 @@ def test_upgrade_db_32_to_33(user_data_dir):  # pylint: disable=unused-argument 
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_upgrade_db_33_to_34(user_data_dir):  # pylint: disable=unused-argument  # noqa: E501
+def test_upgrade_db_33_to_34(user_data_dir):  # pylint: disable=unused-argument
     """Test upgrading the DB from version 33 to version 34.
 
     - Change the combined_trades_view so a valid string is returned in the link field instead
@@ -749,7 +749,7 @@ def test_upgrade_db_33_to_34(user_data_dir):  # pylint: disable=unused-argument 
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument  # noqa: E501
+def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument
     """Test upgrading the DB from version 34 to version 35.
 
     - Check that expected information for the changes in timestamps exists and is correct

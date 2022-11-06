@@ -536,7 +536,7 @@ def test_cvxcrv_withdraw(database, ethereum_manager, eth_transactions):
             asset=EvmToken('eip155:1/erc20:0x62B9c7356A2Dc64a1969e19C23e4f579F9810Aa7'),
             balance=Balance(amount=FVal('15719.844875963195659251'), usd_value=ZERO),
             location_label='0xe81FC42336c9314A9Be1EDB3F50eA9e275C93df3',
-            notes='Withdraw 15719.844875963195659251 cvxCRV from convex',  # noqa: E501
+            notes='Withdraw 15719.844875963195659251 cvxCRV from convex',
             counterparty=CPT_CONVEX,
             identifier=None,
             extra_data=None,
@@ -561,7 +561,7 @@ def test_cvxcrv_stake(database, ethereum_manager, eth_transactions):
         gas=0,
         gas_price=0,
         gas_used=0,
-        input_data=b'',  # noqa: E501
+        input_data=b'',
         nonce=0,
     )
     receipt = EthereumTxReceipt(

@@ -89,7 +89,7 @@ class CurveDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                 event.event_type = HistoryEventType.SPEND
                 event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
                 event.counterparty = CPT_CURVE
-                event.notes = f'Return {event.balance.amount} {crypto_asset.symbol}'  # noqa: E501
+                event.notes = f'Return {event.balance.amount} {crypto_asset.symbol}'
             elif (  # Withdraw receive asset
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and

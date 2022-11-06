@@ -356,7 +356,7 @@ class GlobalDBHandler():
     ) -> List[Dict[str, Any]]:
         """Returns a list of asset details that match the search query provided."""
         search_result = []
-        query, bindings = GlobalDBHandler()._prepare_search_assets_query(filter_query)  # noqa:E501
+        query, bindings = GlobalDBHandler()._prepare_search_assets_query(filter_query)
         resolved_eth = A_ETH.resolve_to_crypto_asset()
         with db.conn.read_ctx() as cursor, GlobalDBHandler().conn.read_ctx() as global_db_cursor:
             global_db_cursor.execute(query, bindings)
@@ -398,7 +398,7 @@ class GlobalDBHandler():
         """Returns a list of asset details that match the search keyword using the Levenshtein distance approach."""  # noqa: E501
         search_result = []
         levenshtein_distances: List[int] = []
-        query, bindings = GlobalDBHandler()._prepare_search_assets_query(filter_query)  # noqa:E501
+        query, bindings = GlobalDBHandler()._prepare_search_assets_query(filter_query)
         resolved_eth = A_ETH.resolve_to_crypto_asset()
         with GlobalDBHandler().conn.read_ctx() as globaldb_cursor, db.conn.read_ctx() as cursor:
             globaldb_cursor.execute(query, bindings)
@@ -842,7 +842,7 @@ class GlobalDBHandler():
                     underlying_tokens = GlobalDBHandler().fetch_underlying_tokens(other_cursor, entry[0])  # noqa: E501
 
                 try:
-                    token = EvmToken.deserialize_from_db(entry, underlying_tokens)  # noqa: E501
+                    token = EvmToken.deserialize_from_db(entry, underlying_tokens)
                     tokens.append(token)
                 except UnknownAsset as e:
                     log.error(

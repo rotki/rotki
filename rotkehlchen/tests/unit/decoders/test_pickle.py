@@ -148,7 +148,7 @@ def test_pickle_withdraw(database, ethereum_manager, eth_transactions):
         gas=171249,
         gas_price=22990000000,
         gas_used=171249,
-        input_data=hexstring_to_bytes('0x853828b6'),  # noqa: E501
+        input_data=hexstring_to_bytes('0x853828b6'),
         nonce=23,
     )
     receipt = EthereumTxReceipt(

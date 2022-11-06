@@ -1543,7 +1543,7 @@ class RestAPI():
                     chain=chain,
                     token_type=EvmTokenKind.ERC20,
                 )
-                self.rotkehlchen.data.db.delete_asset_identifier(cursor, identifier)  # noqa: E501
+                self.rotkehlchen.data.db.delete_asset_identifier(cursor, identifier)
                 with GlobalDBHandler().conn.write_ctx() as gcursor:
                     identifier = GlobalDBHandler().delete_evm_token(write_cursor=gcursor, address=address, chain=chain)  # noqa: E501
         except InputError as e:
@@ -3127,7 +3127,7 @@ class RestAPI():
     def delete_watchers(self, watchers: List[str]) -> Response:
         return self._watcher_query(method='DELETE', data={'watchers': watchers})
 
-    def purge_exchange_data(self, location: Optional[Location]) -> Response:  # noqa: E501
+    def purge_exchange_data(self, location: Optional[Location]) -> Response:
         with self.rotkehlchen.data.db.user_write() as cursor:
             if location:
                 self.rotkehlchen.data.db.purge_exchange_data(cursor, location)

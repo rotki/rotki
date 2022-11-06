@@ -191,7 +191,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
             uri: str = BINANCE_BASE_URL,
-            binance_selected_trade_pairs: Optional[List[str]] = None,  # noqa: N803
+            binance_selected_trade_pairs: Optional[List[str]] = None,
     ):
         exchange_location = Location.BINANCE
         if uri == BINANCEUS_BASE_URL:

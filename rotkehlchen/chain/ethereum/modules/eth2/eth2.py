@@ -222,7 +222,7 @@ class Eth2(EthereumModule):
                 continue  # should not happen
             ownership_proportion = index_to_ownership.get(validator_index, ONE)
             amount = from_gwei(entry.balance) * ownership_proportion
-            balance_mapping[pubkey] += Balance(amount, amount * usd_price)  # noqa: E501
+            balance_mapping[pubkey] += Balance(amount, amount * usd_price)
 
         return balance_mapping
 

@@ -160,14 +160,14 @@ TEST_EVENTS_ADDRESS_1 = '0x6C0F75eb3D69B9Ea2fB88dbC37fc086a12bBC93F'
 
 def get_expected_events_balances_2():
     """Function so no price (unknown) assets can be resolved only when existing in the DB"""
-    A_DICE = EvmToken('eip155:1/erc20:0xCF67CEd76E8356366291246A9222169F4dBdBe64')  # noqa: N806
+    dice_token = EvmToken('eip155:1/erc20:0xCF67CEd76E8356366291246A9222169F4dBdBe64')
     return [
         # Response index 0
         UniswapPoolEventsBalance(
             address=string_to_evm_address(TEST_EVENTS_ADDRESS_1),
             pool_address=string_to_evm_address("0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55"),
             token0=A_WETH,
-            token1=A_DICE,
+            token1=dice_token,
             events=[
                 UniswapPoolEvent(
                     tx_hash=TXHASH_HEX_TO_BYTES['0x1e7fd116b316af49f6c52b3ca44f3c5d24c2a6f80a5b5e674b5f94155bd2cec4'],  # noqa: 501
@@ -177,7 +177,7 @@ def get_expected_events_balances_2():
                     event_type=EventType.MINT_UNISWAP,
                     pool_address=string_to_evm_address("0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55"),  # noqa: E501
                     token0=A_WETH,
-                    token1=A_DICE,
+                    token1=dice_token,
                     amount0=AssetAmount(FVal('1.580431277572006656')),
                     amount1=AssetAmount(FVal('3')),
                     usd_price=Price(FVal('1281.249386421513581165086356450817')),
@@ -191,7 +191,7 @@ def get_expected_events_balances_2():
                     event_type=EventType.BURN_UNISWAP,
                     pool_address=string_to_evm_address("0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55"),  # noqa: E501
                     token0=A_WETH,
-                    token1=A_DICE,
+                    token1=dice_token,
                     amount0=AssetAmount(FVal('0.970300671842796406')),
                     amount1=AssetAmount(FVal('4.971799615456732408')),
                     usd_price=Price(FVal('928.8590296681781753390482605315881')),

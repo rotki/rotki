@@ -125,7 +125,7 @@ class Aavev1Decoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
 
     def addresses_to_decoders(self) -> Dict[ChecksumEvmAddress, Tuple[Any, ...]]:
         return {
-            AAVE_V1_LENDING_POOL.address: (self._decode_pool_event,),  # noqa: E501
+            AAVE_V1_LENDING_POOL.address: (self._decode_pool_event,),
         }
 
     def counterparties(self) -> List[str]:

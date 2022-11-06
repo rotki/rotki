@@ -75,7 +75,7 @@ class ZksyncDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
 
     def addresses_to_decoders(self) -> Dict[ChecksumEvmAddress, Tuple[Any, ...]]:
         return {
-            ZKSYNC_BRIDGE: (self._decode_event,),  # noqa: E501
+            ZKSYNC_BRIDGE: (self._decode_event,),
         }
 
     def counterparties(self) -> List[str]:

@@ -20,7 +20,7 @@ class DBCustomAssets:
         Queries the custom_assets table using the filter query and returns a list of `CustomAsset`.
         May raise:
         - DeserializationError
-        """  # noqa: E501
+        """
         query, bindings = filter_query.prepare()
         query = 'SELECT B.identifier, B.name, A.type as custom_asset_type, A.notes from custom_assets `A` JOIN assets `B` ON A.identifier = B.identifier ' + query  # noqa: E501
         with GlobalDBHandler().conn.read_ctx() as cursor:
@@ -53,7 +53,7 @@ class DBCustomAssets:
         self._raise_if_custom_asset_exists(custom_asset)
         with GlobalDBHandler().conn.write_ctx() as global_db_write_cursor:
             global_db_write_cursor.execute(
-                'INSERT INTO assets(identifier, name, type) VALUES (?, ?, ?)',  # noqa: E501
+                'INSERT INTO assets(identifier, name, type) VALUES (?, ?, ?)',
                 (
                     custom_asset.identifier,
                     custom_asset.name,

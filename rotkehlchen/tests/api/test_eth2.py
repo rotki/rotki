@@ -604,7 +604,7 @@ def test_add_delete_validator_errors(rotkehlchen_api_server, method):
         url=api_url_for(
             rotkehlchen_api_server,
             'eth2validatorsresource',
-        ), json=unknown_public_key,  # noqa: E501
+        ), json=unknown_public_key,
     )
     assert_error_response(
         response=response,

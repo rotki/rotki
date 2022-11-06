@@ -155,7 +155,7 @@ def fixture_evm_transaction_decoder(
 def fixture_eth_transactions(
         database,
         ethereum_manager,
-):  # noqa: E501
+):
     return EthTransactions(
         ethereum=ethereum_manager,
         database=database,
