@@ -44,7 +44,7 @@ class HexBytes(bytes):
         3. The representation at console is in hex
     """
     def __new__(
-            cls: Type[bytes],    # noqa: N805
+            cls: Type[bytes],
             val: Union[Web3HexBytes, bytearray, bytes, str],
     ) -> 'HexBytes':
         bytesval = to_bytes(val)

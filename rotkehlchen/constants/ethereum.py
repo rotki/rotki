@@ -17,7 +17,7 @@ class EthereumConstants():
     contracts: Dict[str, Dict[str, Any]] = {}
     abi_entries: Dict[str, List[Dict[str, Any]]] = {}
 
-    def __new__(cls) -> 'EthereumConstants':  # noqa: N805
+    def __new__(cls) -> 'EthereumConstants':
         if EthereumConstants.__instance is not None:
             return EthereumConstants.__instance  # type: ignore
 

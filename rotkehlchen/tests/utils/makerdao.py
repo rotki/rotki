@@ -107,7 +107,7 @@ def mock_spot_ilks(self, ilk) -> Tuple[int, FVal]:
     raise AssertionError(f'Could not find a mock for spot ilks for ilk {ilk}')
 
 
-def mock_jug_ilks(_, ilk) -> Tuple[int, int]:  # noqa: N803
+def mock_jug_ilks(_, ilk) -> Tuple[int, int]:
     if 'ETH-A' in str(ilk):
         duty = 1000000000000000000000000000  # 0%
     elif 'BAT-A' in str(ilk):

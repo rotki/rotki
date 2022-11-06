@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 
 from rotkehlchen.tests.fixtures.accounting import *  # noqa: F403
 from rotkehlchen.tests.fixtures.assets import *  # noqa: F403
