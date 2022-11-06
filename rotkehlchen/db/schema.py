@@ -311,7 +311,7 @@ CREATE TABLE IF NOT EXISTS xpub_mappings (
     ) ON DELETE CASCADE
     PRIMARY KEY (address, xpub, derivation_path, blockchain)
 );
-"""  # noqa: E501
+"""
 
 
 # Store information about the tokens queried for each combination of account and blockchain.

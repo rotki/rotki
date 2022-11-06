@@ -114,7 +114,7 @@ def upgrade_v28_to_v29(db: 'DBHandler') -> None:
     input_data BLOB NOT NULL,
     nonce INTEGER NOT NULL
     );
-    """)  # noqa: E501
+    """)
     cursor.executemany(
         'INSERT INTO ethereum_transactions(tx_hash, timestamp, block_number, from_address, to_address, value, gas, gas_price, gas_used, input_data, nonce) '  # noqa: E501
         'VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);',

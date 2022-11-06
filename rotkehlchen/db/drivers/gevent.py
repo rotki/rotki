@@ -44,7 +44,7 @@ class ContextError(Exception):
 
 class DBCursor:
 
-    def __init__(self, connection: 'DBConnection', cursor: UnderlyingCursor) -> None:  # noqa: E501
+    def __init__(self, connection: 'DBConnection', cursor: UnderlyingCursor) -> None:
         self._cursor = cursor
         self.connection = connection
 
@@ -58,7 +58,7 @@ class DBCursor:
         We type this and other function returning Any since anything else has
         too many false positives. Same as typeshed:
         https://github.com/python/typeshed/blob/a750a42c65b77963ff097b6cbb6d36cef5912eb7/stdlib/sqlite3/dbapi2.pyi#L397
-        """  # noqa: E501
+        """
         if __debug__:
             logger.trace(f'Get next item for cursor {self._cursor}')
         result = next(self._cursor, None)

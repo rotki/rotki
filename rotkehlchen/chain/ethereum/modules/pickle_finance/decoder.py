@@ -87,7 +87,7 @@ class PickleFinanceDecoder(DecoderInterface):
                 amount=amount_raw,
                 asset=event.asset.resolve_to_crypto_asset(),
             )
-            if event.balance.amount == amount:  # noqa: E501
+            if event.balance.amount == amount:
                 event.event_type = HistoryEventType.RECEIVE
                 event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
                 event.counterparty = CPT_PICKLE
@@ -106,7 +106,7 @@ class PickleFinanceDecoder(DecoderInterface):
                 amount=amount_raw,
                 asset=event.asset.resolve_to_crypto_asset(),
             )
-            if event.balance.amount == amount:  # noqa: E501
+            if event.balance.amount == amount:
                 event.event_type = HistoryEventType.SPEND
                 event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
                 event.counterparty = CPT_PICKLE
@@ -125,7 +125,7 @@ class PickleFinanceDecoder(DecoderInterface):
                 amount=amount_raw,
                 asset=event.asset.resolve_to_crypto_asset(),
             )
-            if event.balance.amount == amount:  # noqa: E501
+            if event.balance.amount == amount:
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.REMOVE_ASSET
                 event.counterparty = CPT_PICKLE

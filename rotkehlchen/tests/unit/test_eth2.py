@@ -259,7 +259,7 @@ def test_get_eth2_staking_deposits_fetch_from_db(  # pylint: disable=unused-argu
         eth2.get_staking_deposits([ADDR1])
         assert get_address_validator_patch.call_count == 1
         assert get_deposits_patch.call_count == 2
-        get_deposits_patch.assert_called_with([])  # noqa: E501
+        get_deposits_patch.assert_called_with([])
 
         # NB: Move time to ts_now + REQUEST_DELTA_TS + 2
         freezer.move_to(datetime.fromtimestamp(start_ts + REQUEST_DELTA_TS + 2))
@@ -267,7 +267,7 @@ def test_get_eth2_staking_deposits_fetch_from_db(  # pylint: disable=unused-argu
         assert get_address_validator_patch.call_count == 2
         get_address_validator_patch.assert_called_with(ADDR1)
         assert get_deposits_patch.call_count == 3
-        get_deposits_patch.assert_called_with([])  # noqa: E501
+        get_deposits_patch.assert_called_with([])
 
 
 def test_eth2_deposits_serialization():

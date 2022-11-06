@@ -30,7 +30,7 @@ class MockEth():
         self.block_number = block_number
         self.chainId = 1
 
-    def get_block(  # noqa: N802 pylint: disable=no-self-use
+    def get_block(
             self,
             _number: int,
     ) -> Dict[str, HexBytes]:
@@ -54,7 +54,7 @@ class MockWeb3():
         self.eth = MockEth(0)
         self.middleware_onion = MockMiddlewareOnion()
 
-    def isConnected(self) -> bool:  # noqa: N802 pylint: disable=no-self-use
+    def isConnected(self) -> bool:  # mocking existing function # noqa: N802
         return True
 
     @property

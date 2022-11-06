@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS underlying_tokens_list (
     FOREIGN KEY(identifier) REFERENCES evm_tokens(identifier) ON UPDATE CASCADE ON DELETE CASCADE
     PRIMARY KEY(identifier, parent_token_entry)
 );
-"""  # noqa: E501
+"""
 
 # Custom enum table for asset types
 DB_CREATE_ASSET_TYPES = """

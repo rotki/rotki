@@ -329,7 +329,7 @@ class ETHTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
             order_by_rules: Optional[List[Tuple[str, bool]]] = None,
             limit: Optional[int] = None,
             offset: Optional[int] = None,
-            addresses: Optional[List[ChecksumEvmAddress]] = None,  # noqa: E501
+            addresses: Optional[List[ChecksumEvmAddress]] = None,
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
             tx_hash: Optional[EVMTxHash] = None,

@@ -925,7 +925,7 @@ class Adex(EthereumModule):
         events = []
         for _, history in mapping.items():
             for event in history.events:
-                pnl = got_asset = got_balance = spent_asset = spent_balance = None  # noqa: E501
+                pnl = got_asset = got_balance = spent_asset = spent_balance = None
                 if isinstance(event, Bond):
                     spent_asset = self.adx
                     spent_balance = event.value

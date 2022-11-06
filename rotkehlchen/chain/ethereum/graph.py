@@ -24,7 +24,7 @@ RETRY_BACKOFF_FACTOR = 0.2
 SUBGRAPH_REMOTE_ERROR_MSG = (
     "Failed to request the {protocol} subgraph due to {error_msg}. "
     "All the deposits and withdrawals history queries are not functioning until this is fixed. "  # noqa: E501
-    "Probably will get fixed with time. If not report it to rotki's support channel"  # noqa: E501
+    "Probably will get fixed with time. If not report it to rotki's support channel"
 )
 
 

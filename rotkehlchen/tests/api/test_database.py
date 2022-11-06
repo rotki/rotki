@@ -40,7 +40,7 @@ def test_query_db_info(rotkehlchen_api_server, data_dir, username, start_with_lo
         assert userdb['info']['version'] == ROTKEHLCHEN_DB_VERSION
         assert len(userdb['backups']) == 3
         assert {'size': len(backup2_contents), 'time': 1626382287, 'version': 27} in userdb['backups']  # noqa: E501
-        assert {'size': 0, 'time': 1633042045, 'version': 28} in userdb['backups']  # noqa: E501
+        assert {'size': 0, 'time': 1633042045, 'version': 28} in userdb['backups']
         assert {'size': len(backup1_contents), 'time': 1624053928, 'version': 26} in userdb['backups']  # noqa: E501
 
 

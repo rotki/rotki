@@ -1,7 +1,7 @@
 [tool.ruff]
 line-length = 99
 
-select = ["E", "F", "W"]
+select = ["E", "F", "W", "C", "N"]
 extend-select = [
     "M001",  # detect unused noqa
 ]

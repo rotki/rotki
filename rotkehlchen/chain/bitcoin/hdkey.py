@@ -382,7 +382,7 @@ class HDKey():
 
         mac = hmac.new(own_chain_code, digestmod=hashlib.sha512)
         mac.update(data)
-        digest = mac.digest()  # noqa: E741
+        digest = mac.digest()
         tweak, chain_code = digest[:32], digest[32:]
         # end key derivation process
 

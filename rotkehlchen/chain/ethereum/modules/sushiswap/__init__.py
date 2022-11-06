@@ -1,4 +1,4 @@
-from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (  # noqa: F401
+from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (
     LiquidityPool as SushiswapPool,
     LiquidityPoolAsset as SushiswapPoolAsset,
     LiquidityPoolEvent as SushiswapPoolEvent,
@@ -7,7 +7,7 @@ from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (  # noqa: F401
 
 from .accountant import SushiswapAccountant  # noqa: F401
 from .decoder import SushiswapDecoder  # noqa: F401
-from .sushiswap import SUSHISWAP_EVENTS_PREFIX, Sushiswap  # noqa: F401
+from .sushiswap import SUSHISWAP_EVENTS_PREFIX, Sushiswap
 
 __all__ = [
     'SUSHISWAP_EVENTS_PREFIX',

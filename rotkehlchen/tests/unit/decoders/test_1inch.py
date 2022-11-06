@@ -16,7 +16,7 @@ from rotkehlchen.types import Location, deserialize_evm_tx_hash
 ADDY = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
 
 
-@pytest.mark.parametrize('ethereum_accounts', [[ADDY]])  # noqa: E501
+@pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
 def test_1inchv1_swap(database, ethereum_manager, function_scope_messages_aggregator):
     """Data taken from
     https://etherscan.io/tx/0x8b8652c502e80ce7c5441cdedc9184ea8f07a9c13b4c3446a47ae08c6c1d6efa
@@ -96,7 +96,7 @@ def test_1inchv1_swap(database, ethereum_manager, function_scope_messages_aggreg
     assert expected_events == events
 
 
-@pytest.mark.parametrize('ethereum_accounts', [[ADDY]])  # noqa: E501
+@pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
 def test_1inchv2_swap_for_eth(database, ethereum_manager, function_scope_messages_aggregator):
     """
     Test an 1inchv2 swap for ETH.

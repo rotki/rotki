@@ -17,7 +17,7 @@ configure_logging(default_args())
 # sql instructions for global DB are customizable here:
 # https://github.com/rotki/rotki/blob/eb5bef269207e8b84075ee36ce7c3804115ed6a0/rotkehlchen/tests/fixtures/globaldb.py#L33
 
-from rotkehlchen.tests.fixtures import *  # noqa: F401,F403
+from rotkehlchen.tests.fixtures import *  # noqa: F403
 
 # monkey patch web3's non-thread safe lru cache with our own version
 from rotkehlchen.chain.ethereum import patch_web3  # isort:skip # pylint: disable=unused-import # lgtm[py/unused-import] # noqa

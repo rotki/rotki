@@ -1855,7 +1855,7 @@ class DBHandler:
             cursor.execute(
                 'SELECT setting_value FROM user_credentials_mappings WHERE '
                 'credential_name=? AND credential_location=? AND setting_name=?',
-                (name, location.serialize_for_db(), BINANCE_MARKETS_KEY),  # noqa: E501
+                (name, location.serialize_for_db(), BINANCE_MARKETS_KEY),
             )
             data = cursor.fetchone()
             if data and data[0] != '':

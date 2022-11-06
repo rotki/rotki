@@ -422,7 +422,7 @@ def test_request_transaction_decoding_errors(rotkehlchen_api_server):
             'ethereumtransactionsresource',
         ), json={
             'async_query': False,
-            'tx_hashes': [nonexisting_hash],  # noqa: E501
+            'tx_hashes': [nonexisting_hash],
         },
     )
     assert_error_response(
@@ -1033,7 +1033,7 @@ def test_query_transactions_check_decoded_events(
         'event_type': 'receive',
         'location': 'blockchain',
         'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
-        'notes': 'Receive 0.125 ETH from 0xeB2629a2734e272Bcc07BDA959863f316F4bD4Cf',  # noqa: E501
+        'notes': 'Receive 0.125 ETH from 0xeB2629a2734e272Bcc07BDA959863f316F4bD4Cf',
         'sequence_index': 0,
         'timestamp': 1642802651,
     }, 'customized': False}]

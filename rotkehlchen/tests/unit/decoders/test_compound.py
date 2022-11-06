@@ -15,7 +15,7 @@ ADDY = '0x5727c0481b90a129554395937612d8b9301D6c7b'
 ADDY2 = '0x87Dd56068Af560B0D8472C4EF41CB902FCbF5ebE'
 
 
-@pytest.mark.parametrize('ethereum_accounts', [[ADDY]])  # noqa: E501
+@pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
 def test_compound_ether_deposit(database, ethereum_manager, function_scope_messages_aggregator):
     """Data taken from:
     https://etherscan.io/tx/0x06a8b9f758b0471886186c2a48dea189b3044916c7f94ee7f559026fefd91c39
@@ -69,7 +69,7 @@ def test_compound_ether_deposit(database, ethereum_manager, function_scope_messa
     assert events == expected_events
 
 
-@pytest.mark.parametrize('ethereum_accounts', [[ADDY]])  # noqa: E501
+@pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
 def test_compound_ether_withdraw(database, ethereum_manager, function_scope_messages_aggregator):
     """Data taken from:
     https://etherscan.io/tx/0x024bd402420c3ba2f95b875f55ce2a762338d2a14dac4887b78174254c9ab807
@@ -123,7 +123,7 @@ def test_compound_ether_withdraw(database, ethereum_manager, function_scope_mess
     assert events == expected_events
 
 
-@pytest.mark.parametrize('ethereum_accounts', [[ADDY2]])  # noqa: E501
+@pytest.mark.parametrize('ethereum_accounts', [[ADDY2]])
 def test_compound_deposit_with_comp_claim(
         database,
         ethereum_manager,

@@ -237,7 +237,7 @@ class Aave(EthereumModule):
             for event in history.events:
                 got_asset: Optional[CryptoAsset]
                 spent_asset: Optional[CryptoAsset]
-                pnl = got_asset = got_balance = spent_asset = spent_balance = None  # noqa: E501
+                pnl = got_asset = got_balance = spent_asset = spent_balance = None
                 if event.event_type == 'deposit':
                     event = cast(AaveDepositWithdrawalEvent, event)
                     spent_asset = event.asset

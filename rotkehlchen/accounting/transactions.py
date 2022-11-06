@@ -76,7 +76,7 @@ class TransactionsAccountant():
                 other_events=other_events,
             )
 
-        if event_settings.multitake_treatment == TxMultitakeTreatment.SWAP:  # noqa: E501
+        if event_settings.multitake_treatment == TxMultitakeTreatment.SWAP:
             return self._process_tx_swap(
                 timestamp=timestamp,
                 out_event=event,
@@ -105,7 +105,7 @@ class TransactionsAccountant():
             out_event: HistoryBaseEntry,
             in_event: HistoryBaseEntry,
             event_settings: TxEventSettings,
-    ) -> int:  # noqa: E501
+    ) -> int:
         prices = self.pot.get_prices_for_swap(
             timestamp=timestamp,
             amount_in=in_event.balance.amount,

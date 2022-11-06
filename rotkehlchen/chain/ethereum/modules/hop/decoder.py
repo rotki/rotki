@@ -68,7 +68,7 @@ class HopDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
 
     def addresses_to_decoders(self) -> Dict[ChecksumEvmAddress, Tuple[Any, ...]]:
         return {
-            ETH_BRIDGE: (self._decode_send_eth,),  # noqa: E501
+            ETH_BRIDGE: (self._decode_send_eth,),
         }
 
     def counterparties(self) -> List[str]:

@@ -259,7 +259,7 @@ class BinanceTradeEntry(BinanceMultipleEntry):
         for trades_group in grouped_trades.values():
             result_trade = trades_group[0]
             for trade in trades_group[1:]:
-                result_trade.amount = AssetAmount(result_trade.amount + trade.amount)  # noqa: E501
+                result_trade.amount = AssetAmount(result_trade.amount + trade.amount)
                 if result_trade.fee is not None and trade.fee is not None:
                     result_trade.fee = Fee(result_trade.fee + trade.fee)
             unique_trades.append(result_trade)

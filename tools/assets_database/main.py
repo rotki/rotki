@@ -6,8 +6,8 @@ import shutil
 import sys
 from pathlib import Path
 
-from gevent import monkey  # isort:skip # noqa
-monkey.patch_all()  # isort:skip # noqa
+from gevent import monkey  # isort:skip
+monkey.patch_all()  # isort:skip
 import requests
 
 from rotkehlchen.globaldb.handler import GlobalDBHandler

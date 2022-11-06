@@ -187,7 +187,7 @@ def test_query_trade_history(function_scope_independentreserve):
  "PageSize": 50,
  "TotalItems": 2,
  "TotalPages": 1}
-"""  # noqa: E501
+"""
         return MockResponse(200, response)
 
     with patch.object(exchange.session, 'request', side_effect=mock_api_return):

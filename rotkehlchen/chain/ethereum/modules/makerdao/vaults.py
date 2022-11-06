@@ -766,7 +766,7 @@ class MakerdaoVaults(HasDSProxy):
 
                 got_asset: Optional[CryptoAsset]
                 spent_asset: Optional[CryptoAsset]
-                pnl = got_asset = got_balance = spent_asset = spent_balance = None  # noqa: E501
+                pnl = got_asset = got_balance = spent_asset = spent_balance = None
                 count_spent_got_cost_basis = False
                 if event.event_type == VaultEventType.GENERATE_DEBT:
                     count_spent_got_cost_basis = True

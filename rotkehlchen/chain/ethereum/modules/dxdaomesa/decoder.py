@@ -214,7 +214,7 @@ class DxdaomesaDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
 
     def addresses_to_decoders(self) -> Dict[ChecksumEvmAddress, Tuple[Any, ...]]:
         return {
-            self.contract.address: (self._decode_events,),  # noqa: E501
+            self.contract.address: (self._decode_events,),
         }
 
     def counterparties(self) -> List[str]:

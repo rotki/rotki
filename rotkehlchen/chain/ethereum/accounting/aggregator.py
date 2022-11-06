@@ -59,11 +59,11 @@ class EVMAccountingAggregator():
                         msg_aggregator=self.msg_aggregator,
                     )
 
-                self._recursively_initialize_accountants(full_name)  # noqa: E501
+                self._recursively_initialize_accountants(full_name)
 
     def initialize_all_accountants(self) -> None:
         """Recursively check all submodules to get all accountants and initialize them"""
-        self._recursively_initialize_accountants(MODULES_PACKAGE)  # noqa: E501
+        self._recursively_initialize_accountants(MODULES_PACKAGE)
 
     def get_accounting_settings(self, pot: 'AccountingPot') -> Dict[str, TxEventSettings]:
         """Iterate through loaded accountants and get accounting settings for each event type"""

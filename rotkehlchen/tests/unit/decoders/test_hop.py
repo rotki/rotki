@@ -13,7 +13,7 @@ from rotkehlchen.types import Location, deserialize_evm_tx_hash
 ADDY = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
 
 
-@pytest.mark.parametrize('ethereum_accounts', [[ADDY]])  # noqa: E501
+@pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
 def test_hop_l2_deposit(database, ethereum_manager, function_scope_messages_aggregator):
     """Data taken from
     https://etherscan.io/tx/0xd46640417a686b399b2f2a920b0c58a35095759365cbe7b795bddec34b8c5eee

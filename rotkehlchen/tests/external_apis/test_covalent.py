@@ -16,7 +16,7 @@ def test_deserialize_transaction_from_covalent():
         'gas_price': 225000000000,
         'input_data': '0x',
         'nonce': 0,
-    }  # noqa: E501
+    }
     transaction = convert_transaction_from_covalent(data)
     assert transaction == CovalentTransaction(
         tx_hash="0x2e7dcb4bde3b66954d315084fa556da75ba21c596db3d64addb6bbd04ac963cf",

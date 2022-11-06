@@ -624,7 +624,7 @@ class Balancer(EthereumModule):
         for events in address_to_events_data.values():
             # Create a map that allows getting the invest events by (tx_hash, pool address)
             tx_hash_and_pool_addr_to_invest_events = defaultdict(list)
-            for invest_event in getattr(events, attr_invest_events):  # noqa: E501
+            for invest_event in getattr(events, attr_invest_events):
                 key = (invest_event.tx_hash, invest_event.pool_address_token)
                 tx_hash_and_pool_addr_to_invest_events[key].append(invest_event)
 

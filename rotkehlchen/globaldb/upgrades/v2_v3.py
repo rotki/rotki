@@ -184,7 +184,7 @@ def upgrade_ethereum_asset_ids_v3(cursor: 'DBCursor') -> EVM_TUPLES_CREATION_TYP
         'B.swapped_for, B.coingecko, B.cryptocompare FROM assets '
         'AS B JOIN ethereum_tokens '
         'AS A ON A.address = B.details_reference WHERE B.type="C";',
-    )  # noqa: E501
+    )
     query = result.fetchall()
     old_ethereum_data = []
     old_ethereum_id_to_new = {}
@@ -246,7 +246,7 @@ def upgrade_other_assets(cursor: 'DBCursor') -> ASSET_CREATION_TYPE:
         f'SELECT A.identifier, A.type, A.name, A.symbol, A.started, A.swapped_for, A.coingecko, '
         f'A.cryptocompare, B.forked FROM assets as A JOIN common_asset_details AS B '
         f'ON B.asset_id=A.identifier WHERE A.type NOT IN ({chains})',
-    )  # noqa: E501
+    )
 
     assets_tuple = []
     common_asset_details = []
@@ -421,7 +421,7 @@ def migrate_to_v3(connection: 'DBConnection') -> None:
             name TEXT,
             type CHAR(1) NOT NULL DEFAULT('A') REFERENCES asset_types(type)
         );
-        """)  # noqa: E501
+        """)
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS common_asset_details(
             identifier TEXT PRIMARY KEY NOT NULL COLLATE NOCASE,

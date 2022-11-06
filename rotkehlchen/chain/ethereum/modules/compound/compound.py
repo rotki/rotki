@@ -756,7 +756,7 @@ class Compound(EthereumModule):
 
         events = []
         for event in history['events']:
-            pnl = got_asset = got_balance = spent_asset = spent_balance = None  # noqa: E501
+            pnl = got_asset = got_balance = spent_asset = spent_balance = None
             if event.event_type == 'mint':
                 spent_asset = event.asset
                 spent_balance = event.value

@@ -1,5 +1,5 @@
-from .adex import Adex  # noqa: F401
-from .types import (  # noqa: F401
+from .adex import Adex
+from .types import (
     AdexEventDBTuple,
     AdexEventType,
     ADXStakingHistory,
@@ -8,7 +8,7 @@ from .types import (  # noqa: F401
     Unbond,
     UnbondRequest,
 )
-from .utils import ADEX_EVENTS_PREFIX, deserialize_adex_event_from_db  # noqa: F401
+from .utils import ADEX_EVENTS_PREFIX, deserialize_adex_event_from_db
 
 __all__ = [
     'ADEX_EVENTS_PREFIX',
