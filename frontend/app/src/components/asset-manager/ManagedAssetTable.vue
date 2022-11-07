@@ -24,7 +24,13 @@
         <v-col cols="12" md="auto">
           <v-menu offset-y :close-on-content-click="false">
             <template #activator="{ on }">
-              <v-btn outlined text height="40px" v-on="on">
+              <v-btn
+                outlined
+                text
+                height="40px"
+                data-cy="asset-filter"
+                v-on="on"
+              >
                 {{ tc('common.actions.filter') }}
                 <v-icon class="ml-2">mdi-chevron-down</v-icon>
               </v-btn>
@@ -32,6 +38,7 @@
             <v-list>
               <v-list-item link @click="onlyShowOwned = !onlyShowOwned">
                 <v-checkbox
+                  data-cy="asset-filter-only-show-owned"
                   :input-value="onlyShowOwned"
                   class="mt-0 py-2"
                   :label="tc('asset_table.only_show_owned')"
@@ -45,7 +52,11 @@
                 {{ tc('asset_table.filter_by_ignored_status') }}
               </v-list-item>
               <v-list-item>
-                <v-radio-group v-model="ignoredAssetsHandling" class="mt-0">
+                <v-radio-group
+                  v-model="ignoredAssetsHandling"
+                  class="mt-0"
+                  data-cy="asset-filter-ignored"
+                >
                   <v-radio value="none" :label="tc('asset_table.show_all')" />
                   <v-radio
                     value="exclude"

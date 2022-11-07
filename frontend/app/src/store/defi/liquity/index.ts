@@ -2,7 +2,8 @@ import {
   LiquityBalances,
   LiquityStaking,
   LiquityStakingEvents,
-  TroveEvents
+  TroveEvents,
+  LiquityPoolDetails
 } from '@rotki/common/lib/liquity';
 import { Ref } from 'vue';
 import { usePremium } from '@/composables/premium';
@@ -23,10 +24,49 @@ export const useLiquityStore = defineStore('defi/liquity', () => {
   const stakingEvents = ref<LiquityStakingEvents>(
     {}
   ) as Ref<LiquityStakingEvents>;
+  const stakingPools = ref<LiquityPoolDetails>({}) as Ref<LiquityPoolDetails>;
 
   const isPremium = usePremium();
   const { activeModules } = useModules();
   const { t } = useI18n();
+
+  async function fetchPools(refresh: boolean = false) {
+    const meta: TaskMeta = {
+      title: 'pool task title',
+      numericKeys: []
+    };
+
+    const onError: OnError = {
+      title: t('actions.defi.liquity_balances.error.title').toString(),
+      error: message =>
+        t('actions.defi.liquity_balances.error.description', {
+          message
+        }).toString()
+    };
+
+    await fetchDataAsync(
+      {
+        task: {
+          type: TaskType.LIQUITY_STAKING_POOLS,
+          section: Section.DEFI_LIQUITY_STAKING_POOLS,
+          meta,
+          query: async () => await api.defi.fetchLiquityStakingPools(),
+          parser: result => LiquityPoolDetails.parse(result),
+          onError
+        },
+        state: {
+          isPremium,
+          activeModules
+        },
+        requires: {
+          premium: false,
+          module: Module.LIQUITY
+        },
+        refresh
+      },
+      stakingPools
+    );
+  }
 
   async function fetchBalances(refresh: boolean = false) {
     const meta: TaskMeta = {
@@ -60,7 +100,6 @@ export const useLiquityStore = defineStore('defi/liquity', () => {
           premium: false,
           module: Module.LIQUITY
         },
-
         refresh
       },
       balances
@@ -201,10 +240,12 @@ export const useLiquityStore = defineStore('defi/liquity', () => {
     events,
     staking,
     stakingEvents,
+    stakingPools,
     fetchBalances,
     fetchEvents,
     fetchStaking,
     fetchStakingEvents,
+    fetchPools,
     reset
   };
 });

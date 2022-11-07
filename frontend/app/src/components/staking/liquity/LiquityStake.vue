@@ -1,21 +1,28 @@
 <template>
   <stat-card :title="tc('loan_stake.title')">
-    <loan-row medium :title="tc('loan_stake.stake')">
-      <balance-display :asset="stake.asset" :value="stake" />
-    </loan-row>
+    <div v-if="stakings.length > 0" class="d-flex justify-space-between">
+      <div class="grey--text">{{ tc('loan_stake.stake') }}</div>
+      <div>
+        <div v-for="stake in stakings" :key="stake.asset" class="mb-4">
+          <balance-display :asset="stake.asset" :value="stake" />
+        </div>
+      </div>
+    </div>
+    <div v-else class="text-center grey--text pt-4">
+      {{ tc('loan_stake.no_lqty_staked') }}
+    </div>
   </stat-card>
 </template>
 
 <script setup lang="ts">
 import { AssetBalance } from '@rotki/common';
 import { PropType } from 'vue';
-import LoanRow from '@/components/defi/loan/LoanRow.vue';
 import StatCard from '@/components/display/StatCard.vue';
 
 defineProps({
-  stake: {
+  stakings: {
     required: true,
-    type: Object as PropType<AssetBalance>
+    type: Array as PropType<AssetBalance[]>
   }
 });
 
