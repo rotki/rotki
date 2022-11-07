@@ -870,14 +870,18 @@ class BackendBuilder:
             shutil.rmtree(storage.dist_directory)
 
     @log_group('pip install')
-    def pip_install(self, what: str) -> None:
+    def pip_install(self, what: str, use_pep_517: bool = True) -> None:
         """
         Calls pip install using subprocess.
 
         :param what: anything that goes after pip install
         """
+        base_command = 'pip install '
+        if use_pep_517 is False:
+            base_command += '--no-use-pep517 '
+
         ret_code = subprocess.call(
-            f'pip install {what}',
+            f'{base_command} {what}',
             shell=True,
             cwd=self.__storage.working_directory,
         )
@@ -988,7 +992,7 @@ class BackendBuilder:
         # This flag only works with the patched version of pip.
         # https://github.com/kelsos/pip/tree/patched
         os.environ.setdefault('PIP_FORCE_MACOS_UNIVERSAL2', '1')
-        self.pip_install('-e .')
+        self.pip_install('-e .', use_pep_517=False)
         os.environ.pop('PIP_FORCE_MACOS_UNIVERSAL2', None)
 
         if github_ref is not None:
