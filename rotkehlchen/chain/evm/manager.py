@@ -262,9 +262,10 @@ class EvmManager(LockableQueryMixIn, metaclass=ABCMeta):
         ---> Average: 70 seconds
         """
         open_nodes = self.database.get_web3_nodes(blockchain=self.blockchain, only_active=True)  # noqa: E501
-        selection = list(open_nodes)
         if skip_etherscan:
-            selection = [wnode for wnode in open_nodes if wnode.node_info.name != self.etherscan_node_name]  # noqa: E501
+            selection = [wnode for wnode in open_nodes if wnode.node_info.name != self.etherscan_node_name and wnode.node_info.owned is False]  # noqa: E501
+        else:
+            selection = [wnode for wnode in open_nodes if wnode.node_info.owned is False]
 
         ordered_list = []
         while len(selection) != 0:
