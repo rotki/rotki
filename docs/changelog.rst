@@ -8,6 +8,7 @@ Changelog
 * :bug:`-` Uniswap V3 oracle will now correctly skip assets with no liquidity when querying prices.
 
 * :release:`1.26.1 <2022-11-04>`
+* :feature:`5144` Add HIFO and ACB options for cost basis method.
 * :feature:`5114` Add an option to reset the global DB assets that are known by the app to their original state. A so called soft-reset.
 * :feature:`5102` Show stability pool to liquity module.
 * :feature:`5080` For custom assets with custom price there should no longer be any double conversion. So 1 euro should always be one euro.

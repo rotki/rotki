@@ -184,9 +184,11 @@ const chainIcon = computed(() =>
   get(showChain) ? getChainIcon(get(chain)) : null
 );
 
-watch([symbol, changeable, identifier], () => {
+watch([symbol, changeable, identifier], (curr, prev) => {
   set(error, false);
-  set(pending, true);
+  if (curr[1] !== prev[1]) {
+    set(pending, true);
+  }
 });
 </script>
 <style module lang="scss">

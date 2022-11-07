@@ -33,7 +33,7 @@ import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { useAccountingSettingsStore } from '@/store/settings/accounting';
 import { CostBasisMethod } from '@/types/user';
 
-const costBasisMethod = ref<CostBasisMethod>(CostBasisMethod.Fifo);
+const costBasisMethod = ref<CostBasisMethod>(CostBasisMethod.FIFO);
 const { costBasisMethod: method } = storeToRefs(useAccountingSettingsStore());
 
 onMounted(() => {

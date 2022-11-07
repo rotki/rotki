@@ -7,12 +7,20 @@ export const useCostBasisMethod = () => {
   const costBasisMethodData: ComputedRef<ActionDataEntry<CostBasisMethod>[]> =
     computed(() => [
       {
-        identifier: CostBasisMethod.Fifo,
+        identifier: CostBasisMethod.FIFO,
         label: tc('account_settings.cost_basis_method_settings.labels.fifo')
       },
       {
-        identifier: CostBasisMethod.Lifo,
+        identifier: CostBasisMethod.LIFO,
         label: tc('account_settings.cost_basis_method_settings.labels.lifo')
+      },
+      {
+        identifier: CostBasisMethod.HIFO,
+        label: tc('account_settings.cost_basis_method_settings.labels.hifo')
+      },
+      {
+        identifier: CostBasisMethod.ACB,
+        label: tc('account_settings.cost_basis_method_settings.labels.acb')
       }
     ]);
 

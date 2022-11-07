@@ -86,8 +86,10 @@
   "account_settings": {
     "cost_basis_method_settings": {
       "labels": {
-        "fifo": "First In First Out",
-        "lifo": "Last In First Out"
+        "acb": "Adjusted Cost Basis",
+        "fifo": "First In, First Out",
+        "hifo": "Highest In, First Out",
+        "lifo": "Last In, First Out"
       }
     },
     "csv_export_settings": {
