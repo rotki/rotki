@@ -1,6 +1,5 @@
 import heapq
 import logging
-import time
 from abc import ABCMeta, abstractmethod
 from collections import defaultdict
 from dataclasses import dataclass, field
@@ -30,6 +29,7 @@ from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.types import CostBasisMethod, Location, Price, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
@@ -40,6 +40,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+ACQUISITION_PRIORITY = Union[FVal, int]
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -88,6 +89,18 @@ class AssetAcquisitionEvent:
             'index': self.index,
         }
 
+    def __gt__(self, other: Any) -> bool:
+        if isinstance(other, AssetAcquisitionEvent):
+            return self.timestamp > other.timestamp
+
+        return self.timestamp > other
+
+    def __lt__(self, other: Any) -> bool:
+        if isinstance(other, AssetAcquisitionEvent):
+            return self.timestamp < other.timestamp
+
+        return self.timestamp < other
+
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class AssetSpendEvent:
@@ -103,13 +116,12 @@ class AssetSpendEvent:
         )
 
 
-class BaseAcquisitionsOrder(metaclass=ABCMeta):
+class BaseCostBasisMethod(metaclass=ABCMeta):
     # For FIFO, the time at the point of insertion is used
     # For LIFO, the time at the point of insertion is used with a negation
     # For HIFO, the amount of the acquisition event is used with a negation
     # The reason for the negation is because of Python's `heapq` implementation
-    Priority = Union[FVal, Timestamp]
-    _acquisitions: list[Tuple[Priority, AssetAcquisitionEvent]]
+    _acquisitions: list[Tuple[ACQUISITION_PRIORITY, AssetAcquisitionEvent]]
 
     def __init__(self) -> None:
         self._acquisitions = []
@@ -144,50 +156,268 @@ class BaseAcquisitionsOrder(metaclass=ABCMeta):
         """
         # this is a temporary assertion to test that new accounting tools work properly.
         # Written on 06.06.2022 and can be removed after a couple of months if everything goes well
-        assert ZERO <= used_amount <= self._acquisitions[0][1].remaining_amount, \
-            f'Used amount must be in the interval [0, {self._acquisitions[0][1].remaining_amount}] but it was {used_amount}'  # noqa: E501
+        assert ZERO <= used_amount <= self._acquisitions[0][1].remaining_amount, f'Used amount must be in the interval [0, {self._acquisitions[0][1].remaining_amount}] but it was {used_amount}'  # noqa: E501
 
         self._acquisitions[0][1].remaining_amount -= used_amount
         if self._acquisitions[0][1].remaining_amount == ZERO:
             heapq.heappop(self._acquisitions)
 
+    def calculate_spend_cost_basis(
+            self,
+            spending_amount: FVal,
+            spending_asset: Asset,
+            timestamp: Timestamp,
+            missing_acquisitions: List[MissingAcquisition],
+            used_acquisitions: List[AssetAcquisitionEvent],
+            settings: DBSettings,
+            timestamp_to_date: Callable[[Timestamp], str],
+            average_cost_base: Optional[FVal] = None,  # pylint: disable=unused-argument
+    ) -> 'CostBasisInfo':
+        """
+        When spending `spending_amount` of `spending_asset` at `timestamp` this function
+        calculates using the method defined by class the corresponding buy(s) from which to do profit calculation.
+        It also applies the "free after given time period" rule
+        which applies for some jurisdictions such as 1 year for Germany.
+
+        If `average_cost_base` is provided, it is used as the acquistion cost.
+
+        Returns the information in a CostBasisInfo object if enough acquisitions have
+        been found.
+        """  # noqa: E501
+        remaining_sold_amount = spending_amount
+        taxfree_bought_cost = taxable_bought_cost = taxable_amount = taxfree_amount = ZERO  # noqa: E501
+        matched_acquisitions = []
+
+        for acquisition_event in self.processing_iterator():
+            if settings.taxfree_after_period is None:
+                at_taxfree_period = False
+            else:
+                at_taxfree_period = acquisition_event.timestamp + settings.taxfree_after_period < timestamp  # noqa: E501
+
+            if remaining_sold_amount < acquisition_event.remaining_amount:
+                acquisition_cost = acquisition_event.rate * remaining_sold_amount if average_cost_base is None else average_cost_base  # noqa: E501
+
+                taxable = True
+                if at_taxfree_period:
+                    taxfree_amount += remaining_sold_amount
+                    taxfree_bought_cost += acquisition_cost
+                    taxable = False
+                else:
+                    taxable_amount += remaining_sold_amount
+                    taxable_bought_cost += acquisition_cost
+
+                log.debug(
+                    'Spend uses up part of historical acquisition',
+                    tax_status='TAX-FREE' if at_taxfree_period else 'TAXABLE',
+                    used_amount=remaining_sold_amount,
+                    from_amount=acquisition_event.amount,
+                    asset=spending_asset,
+                    acquisition_rate=acquisition_event.rate,
+                    profit_currency=settings.main_currency,
+                    time=timestamp_to_date(acquisition_event.timestamp),
+                )
+                matched_acquisitions.append(MatchedAcquisition(
+                    amount=remaining_sold_amount,
+                    event=acquisition_event,
+                    taxable=taxable,
+                ))
+                self.consume_result(remaining_sold_amount)
+                remaining_sold_amount = ZERO
+                # stop iterating since we found all acquisitions to satisfy this spend
+                break
+
+            remaining_sold_amount -= acquisition_event.remaining_amount
+            acquisition_cost = acquisition_event.rate * acquisition_event.remaining_amount if average_cost_base is None else average_cost_base  # noqa: E501
+            taxable = True
+            if at_taxfree_period:
+                taxfree_amount += acquisition_event.remaining_amount
+                taxfree_bought_cost += acquisition_cost
+                taxable = False
+            else:
+                taxable_amount += acquisition_event.remaining_amount
+                taxable_bought_cost += acquisition_cost
+
+            log.debug(
+                'Spend uses up entire historical acquisition',
+                tax_status='TAX-FREE' if at_taxfree_period else 'TAXABLE',
+                bought_amount=acquisition_event.remaining_amount,
+                asset=spending_asset,
+                acquisition_rate=acquisition_event.rate,
+                profit_currency=settings.main_currency,
+                time=timestamp_to_date(acquisition_event.timestamp),
+            )
+            matched_acquisitions.append(MatchedAcquisition(
+                amount=acquisition_event.remaining_amount,
+                event=acquisition_event,
+                taxable=taxable,
+            ))
+            used_acquisitions.append(acquisition_event)
+            self.consume_result(acquisition_event.remaining_amount)
+            # and since this event is going to be removed, reduce its remaining to zero
+            acquisition_event.remaining_amount = ZERO
+
+        is_complete = True
+        if remaining_sold_amount != ZERO:
+            # if we still have sold amount but no acquisitions to satisfy it then we only
+            # found acquisitions to partially satisfy the sell
+            adjusted_amount = spending_amount - taxfree_amount
+            missing_acquisitions.append(
+                MissingAcquisition(
+                    asset=spending_asset,
+                    time=timestamp,
+                    found_amount=taxable_amount + taxfree_amount,
+                    missing_amount=remaining_sold_amount,
+                ),
+            )
+            taxable_amount = adjusted_amount
+            is_complete = False
+
+        return CostBasisInfo(
+            taxable_amount=taxable_amount,
+            taxable_bought_cost=taxable_bought_cost,
+            taxfree_bought_cost=taxfree_bought_cost,
+            matched_acquisitions=matched_acquisitions,
+            is_complete=is_complete,
+        )
+
     def __len__(self) -> int:
         return len(self._acquisitions)
 
 
-class FIFOAcquisitionsOrder(BaseAcquisitionsOrder):
-    """Accounting in FIFO (first-in-first-out) order"""
+class FIFOCostBasisMethod(BaseCostBasisMethod):
+    """Accounting in FIFO (first-in-first-out) method"""
+    _count: int
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._count = 0
+
     def add_acquisition(self, acquisition: AssetAcquisitionEvent) -> None:
-        heapq.heappush(self._acquisitions, (Timestamp(time.time_ns()), acquisition))
+        heapq.heappush(self._acquisitions, (self._count, acquisition))
+        self._count += 1
 
 
-class LIFOAcquisitionsOrder(BaseAcquisitionsOrder):
-    """Accounting in LIFO (last-in-first-out) order"""
+class LIFOCostBasisMethod(BaseCostBasisMethod):
+    """Accounting in LIFO (last-in-first-out) method"""
+    _count: int
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._count = 0
+
     def add_acquisition(self, acquisition: AssetAcquisitionEvent) -> None:
-        heapq.heappush(self._acquisitions, (Timestamp(-time.time_ns()), acquisition))
+        heapq.heappush(self._acquisitions, (-self._count, acquisition))
+        self._count += 1
 
 
-class HIFOAcquisitionsOrder(BaseAcquisitionsOrder):
-    """Accounting in HIFO (highest-in-first-out) order"""
+class HIFOCostBasisMethod(BaseCostBasisMethod):
+    """Accounting in HIFO (highest-in-first-out) method"""
     def add_acquisition(self, acquisition: AssetAcquisitionEvent) -> None:
         heapq.heappush(self._acquisitions, (-acquisition.amount, acquisition))
 
 
+class AverageCostBasisMethod(BaseCostBasisMethod):
+    """Accounting in Average Cost Base(ACB) method"""
+    # the average cost base of last event(buy/sell) that occurred
+    current_average_cost_base: FVal
+    # keeps track of the amount of the asset remaining after evert acquisition or spend
+    remaining_amount: FVal
+    _count: int
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._count = 0
+        self.remaining_amount = ZERO
+        self.current_average_cost_base = ZERO
+
+    def add_acquisition(self, acquisition: AssetAcquisitionEvent) -> None:
+        """
+        This method appends an acquisition to the acquisitions list in FIFO order.
+        It also calculates the average cost base of that acquisition with respect to the
+        previous average cost base.
+
+        The formula used to calculate the average cost base of an acquisition is:
+        [Previous Total ACB] + [Cost of New Shares] + [Transaction Costs]
+        """
+        heapq.heappush(self._acquisitions, (self._count, acquisition))
+        self.current_average_cost_base += (acquisition.rate * acquisition.amount)
+        self.remaining_amount += acquisition.amount
+        self._count += 1
+
+    def consume_result(self, used_amount: FVal) -> None:
+        assert ZERO <= used_amount <= self._acquisitions[0][1].remaining_amount, f'Used amount must be in the interval [0, {self._acquisitions[0][1].remaining_amount}] but it was {used_amount}'  # noqa: E501
+
+        self._acquisitions[0][1].remaining_amount -= used_amount
+        self.remaining_amount -= used_amount
+        if self._acquisitions[0][1].remaining_amount == ZERO:
+            heapq.heappop(self._acquisitions)
+
+    def calculate_spend_cost_basis(
+            self,
+            spending_amount: FVal,
+            spending_asset: Asset,
+            timestamp: Timestamp,
+            missing_acquisitions: List[MissingAcquisition],
+            used_acquisitions: List[AssetAcquisitionEvent],  # pylint: disable=unused-argument
+            settings: DBSettings,
+            timestamp_to_date: Callable[[Timestamp], str],  # pylint: disable=unused-argument
+            average_cost_base: Optional[FVal] = None,  # pylint: disable=unused-argument
+    ) -> 'CostBasisInfo':
+        """
+        Calculates the cost basis of the spend using the average cost base method.
+
+        Formula is taken from:
+        https://www.adjustedcostbase.ca/blog/how-to-calculate-adjusted-cost-base-acb-and-capital-gains/
+        """
+        if self.remaining_amount == ZERO:
+            missing_acquisitions.append(
+                MissingAcquisition(
+                    asset=spending_asset,
+                    time=timestamp,
+                    found_amount=self.remaining_amount,
+                    missing_amount=spending_amount,
+                ),
+            )
+
+            return CostBasisInfo(
+                taxable_amount=ZERO,
+                taxable_bought_cost=ZERO,
+                taxfree_bought_cost=ZERO,
+                matched_acquisitions=[],
+                is_complete=False,
+            )
+
+        self.current_average_cost_base *= ((self.remaining_amount - spending_amount) / self.remaining_amount)  # noqa: E501
+        return super().calculate_spend_cost_basis(
+            spending_amount=spending_amount,
+            spending_asset=spending_asset,
+            timestamp=timestamp,
+            missing_acquisitions=missing_acquisitions,
+            used_acquisitions=used_acquisitions,
+            settings=settings,
+            timestamp_to_date=timestamp_to_date,
+            average_cost_base=self.current_average_cost_base,
+        )
+
+
 class CostBasisEvents:
     used_acquisitions: List[AssetAcquisitionEvent]
-    acquisitions_manager: BaseAcquisitionsOrder
+    acquisitions_manager: BaseCostBasisMethod
     spends: List[AssetSpendEvent]
 
     def __init__(self, cost_basis_method: CostBasisMethod) -> None:
-        """This class contains data about acquisitions and spends. `acquisitions` field contains
+        """
+        This class contains data about acquisitions and spends. `acquisitions` field contains
         custom Iterable that provides acquisitions in the order defined by `cost_basis_method`
         """
         if cost_basis_method == CostBasisMethod.FIFO:
-            self.acquisitions_manager = FIFOAcquisitionsOrder()
+            self.acquisitions_manager = FIFOCostBasisMethod()
         elif cost_basis_method == CostBasisMethod.LIFO:
-            self.acquisitions_manager = LIFOAcquisitionsOrder()
+            self.acquisitions_manager = LIFOCostBasisMethod()
         elif cost_basis_method == CostBasisMethod.HIFO:
-            self.acquisitions_manager = HIFOAcquisitionsOrder()
+            self.acquisitions_manager = HIFOCostBasisMethod()
+        elif cost_basis_method == CostBasisMethod.ACB:
+            self.acquisitions_manager = AverageCostBasisMethod()
         self.spends = []
         self.used_acquisitions = []
 
@@ -210,7 +440,11 @@ class MatchedAcquisition(NamedTuple):
         """May raise DeserializationError"""
         try:
             event = AssetAcquisitionEvent.deserialize(data['event'])
-            amount = FVal(data['amount'])  # TODO: deserialize_fval
+            amount = deserialize_fval(
+                value=data['amount'],
+                name='amount',
+                location='cost_basis',
+            )
             taxable = data['taxable']
         except KeyError as e:
             raise DeserializationError(f'Missing key {str(e)}') from e
@@ -435,128 +669,18 @@ class CostBasisCalculator(CustomizableDateMixin):
         asset_events = self.get_events(asset)
         asset_events.spends.append(event)
         if not asset.is_fiat() and taxable_spend:
-            return self.calculate_spend_cost_basis(
+            return asset_events.acquisitions_manager.calculate_spend_cost_basis(
                 spending_amount=amount,
                 spending_asset=asset,
                 timestamp=timestamp,
+                missing_acquisitions=self.missing_acquisitions,
+                used_acquisitions=asset_events.used_acquisitions,
+                settings=self.settings,
+                timestamp_to_date=self.timestamp_to_date,
             )
         # just reduce the amount's acquisition without counting anything
         self.reduce_asset_amount(asset=asset, amount=amount, timestamp=timestamp)
         return None
-
-    def calculate_spend_cost_basis(
-            self,
-            spending_amount: FVal,
-            spending_asset: Asset,
-            timestamp: Timestamp,
-    ) -> CostBasisInfo:
-        """
-        When spending `spending_amount` of `spending_asset` at `timestamp` this function
-        calculates using the first-in-first-out rule the corresponding buy/s from
-        which to do profit calculation. Also applies the "free after given time period"
-        rule which applies for some jurisdictions such as 1 year for Germany.
-
-        Returns the information in a CostBasisInfo object if enough acquisitions have
-        been found.
-        """
-        remaining_sold_amount = spending_amount
-        taxfree_bought_cost = taxable_bought_cost = taxable_amount = taxfree_amount = ZERO  # noqa: E501
-        matched_acquisitions = []
-        asset_events = self.get_events(spending_asset)
-
-        for acquisition_event in asset_events.acquisitions_manager.processing_iterator():
-            if self.settings.taxfree_after_period is None:
-                at_taxfree_period = False
-            else:
-                at_taxfree_period = (
-                    acquisition_event.timestamp + self.settings.taxfree_after_period < timestamp
-                )
-
-            if remaining_sold_amount < acquisition_event.remaining_amount:
-                acquisition_cost = acquisition_event.rate * remaining_sold_amount
-
-                taxable = True
-                if at_taxfree_period:
-                    taxfree_amount += remaining_sold_amount
-                    taxfree_bought_cost += acquisition_cost
-                    taxable = False
-                else:
-                    taxable_amount += remaining_sold_amount
-                    taxable_bought_cost += acquisition_cost
-
-                log.debug(
-                    'Spend uses up part of historical acquisition',
-                    tax_status='TAX-FREE' if at_taxfree_period else 'TAXABLE',
-                    used_amount=remaining_sold_amount,
-                    from_amount=acquisition_event.amount,
-                    asset=spending_asset,
-                    acquisition_rate=acquisition_event.rate,
-                    profit_currency=self.profit_currency,
-                    time=self.timestamp_to_date(acquisition_event.timestamp),
-                )
-                matched_acquisitions.append(MatchedAcquisition(
-                    amount=remaining_sold_amount,
-                    event=acquisition_event,
-                    taxable=taxable,
-                ))
-                asset_events.acquisitions_manager.consume_result(remaining_sold_amount)
-                remaining_sold_amount = ZERO
-                # stop iterating since we found all acquisitions to satisfy this spend
-                break
-
-            remaining_sold_amount -= acquisition_event.remaining_amount
-            acquisition_cost = acquisition_event.rate * acquisition_event.remaining_amount
-            taxable = True
-            if at_taxfree_period:
-                taxfree_amount += acquisition_event.remaining_amount
-                taxfree_bought_cost += acquisition_cost
-                taxable = False
-            else:
-                taxable_amount += acquisition_event.remaining_amount
-                taxable_bought_cost += acquisition_cost
-
-            log.debug(
-                'Spend uses up entire historical acquisition',
-                tax_status='TAX-FREE' if at_taxfree_period else 'TAXABLE',
-                bought_amount=acquisition_event.remaining_amount,
-                asset=spending_asset,
-                acquisition_rate=acquisition_event.rate,
-                profit_currency=self.profit_currency,
-                time=self.timestamp_to_date(acquisition_event.timestamp),
-            )
-            matched_acquisitions.append(MatchedAcquisition(
-                amount=acquisition_event.remaining_amount,
-                event=acquisition_event,
-                taxable=taxable,
-            ))
-            asset_events.used_acquisitions.append(acquisition_event)
-            asset_events.acquisitions_manager.consume_result(acquisition_event.remaining_amount)
-            # and since this event is going to be removed, reduce its remaining to zero
-            acquisition_event.remaining_amount = ZERO
-
-        is_complete = True
-        if remaining_sold_amount != ZERO:
-            # if we still have sold amount but no acquisitions to satisfy it then we only
-            # found acquisitions to partially satisfy the sell
-            adjusted_amount = spending_amount - taxfree_amount
-            self.missing_acquisitions.append(
-                MissingAcquisition(
-                    asset=spending_asset,
-                    time=timestamp,
-                    found_amount=taxable_amount + taxfree_amount,
-                    missing_amount=remaining_sold_amount,
-                ),
-            )
-            taxable_amount = adjusted_amount
-            is_complete = False
-
-        return CostBasisInfo(
-            taxable_amount=taxable_amount,
-            taxable_bought_cost=taxable_bought_cost,
-            taxfree_bought_cost=taxfree_bought_cost,
-            matched_acquisitions=matched_acquisitions,
-            is_complete=is_complete,
-        )
 
     def get_calculated_asset_amount(self, asset: Asset) -> Optional[FVal]:
         """Get the amount of asset accounting has calculated we should have after

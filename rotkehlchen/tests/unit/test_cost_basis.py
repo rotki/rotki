@@ -48,9 +48,12 @@ def test_calculate_spend_cost_basis_after_year(accountant):
     )
 
     spending_amount = FVal(8)
-    cinfo = cost_basis.calculate_spend_cost_basis(
-        spending_amount=spending_amount,
-        spending_asset=asset,
+    cinfo = cost_basis.spend_asset(
+        amount=spending_amount,
+        location=Location.BLOCKCHAIN,
+        asset=asset,
+        rate=FVal(455.1),
+        taxable_spend=True,
         timestamp=1480683904,  # 02/12/2016
     )
 
@@ -92,9 +95,12 @@ def test_calculate_spend_cost_basis_1_buy_consumed_by_1_sell(accountant):
     )
 
     spending_amount = FVal(5)
-    cinfo = cost_basis.calculate_spend_cost_basis(
-        spending_amount=spending_amount,
-        spending_asset=asset,
+    cinfo = cost_basis.spend_asset(
+        amount=spending_amount,
+        location=Location.BLOCKCHAIN,
+        asset=asset,
+        rate=FVal(455.1),
+        taxable_spend=True,
         timestamp=1467378304,  # 31/06/2016
     )
     assert cinfo.taxable_amount == 5, '5 out of 5 should be taxable (within a year)'
@@ -130,9 +136,12 @@ def test_calculate_spend_cost_basis1_buy_used_by_2_sells_taxable(accountant):
     )
 
     spending_amount = FVal(3)
-    cinfo = cost_basis.calculate_spend_cost_basis(
-        spending_amount=spending_amount,
-        spending_asset=asset,
+    cinfo = cost_basis.spend_asset(
+        amount=spending_amount,
+        location=Location.BLOCKCHAIN,
+        asset=asset,
+        rate=FVal(455.1),
+        taxable_spend=True,
         timestamp=1467378304,  # 31/06/2016
     )
     assert cinfo.taxable_amount == 3, '3 out of 3 should be taxable (within a year)'
@@ -153,9 +162,12 @@ def test_calculate_spend_cost_basis1_buy_used_by_2_sells_taxable(accountant):
 
     # now eat up all the rest
     spending_amount = FVal(2)
-    cinfo = cost_basis.calculate_spend_cost_basis(
-        spending_amount=spending_amount,
-        spending_asset=asset,
+    cinfo = cost_basis.spend_asset(
+        amount=spending_amount,
+        location=Location.BLOCKCHAIN,
+        asset=asset,
+        rate=FVal(455.1),
+        taxable_spend=True,
         timestamp=1467378404,  # bit after previous sell
     )
     assert cinfo.taxable_amount == 2, '2 out of 2 should be taxable (within a year)'
@@ -192,9 +204,12 @@ def test_calculate_spend_cost_basis_1_buy_used_by_2_sells_taxfree(accountant):
     )
 
     spending_amount = FVal(3)
-    cinfo = cost_basis.calculate_spend_cost_basis(
-        spending_amount=spending_amount,
-        spending_asset=asset,
+    cinfo = cost_basis.spend_asset(
+        amount=spending_amount,
+        location=Location.BLOCKCHAIN,
+        asset=asset,
+        rate=FVal(455.1),
+        taxable_spend=True,
         timestamp=1480683904,  # 02/12/2016
     )
     assert cinfo.taxable_amount == 0, '0 out of 3 should be taxable (after a year)'
@@ -214,9 +229,12 @@ def test_calculate_spend_cost_basis_1_buy_used_by_2_sells_taxfree(accountant):
     assert remaining_amount == FVal(2), '3 of 5 should have been consumed'
 
     spending_amount = FVal(2)
-    cinfo = cost_basis.calculate_spend_cost_basis(
-        spending_amount=spending_amount,
-        spending_asset=asset,
+    cinfo = cost_basis.spend_asset(
+        amount=spending_amount,
+        location=Location.BLOCKCHAIN,
+        asset=asset,
+        rate=FVal(455.1),
+        taxable_spend=True,
         timestamp=1480683954,  # bit after previous sell
     )
     assert cinfo.taxable_amount == 0, '0 out of 2 should be taxable (after a year)'
@@ -256,9 +274,12 @@ def test_calculate_spend_cost_basis_sell_more_than_bought_within_year(accountant
     )
 
     spending_amount = FVal(3)
-    cinfo = cost_basis.calculate_spend_cost_basis(
-        spending_amount=spending_amount,
-        spending_asset=asset,
+    cinfo = cost_basis.spend_asset(
+        amount=spending_amount,
+        location=Location.BLOCKCHAIN,
+        asset=asset,
+        rate=FVal(455.1),
+        taxable_spend=True,
         timestamp=1467478304,  # bit after 31/06/2016
     )
     assert cinfo.taxable_amount == 3, '3 out of 3 should be taxable (within a year)'
@@ -302,9 +323,12 @@ def test_calculate_spend_cost_basis_sell_more_than_bought_after_year(accountant)
     )
 
     spending_amount = FVal(3)
-    cinfo = cost_basis.calculate_spend_cost_basis(
-        spending_amount=spending_amount,
-        spending_asset=asset,
+    cinfo = cost_basis.spend_asset(
+        amount=spending_amount,
+        location=Location.BLOCKCHAIN,
+        asset=asset,
+        rate=FVal(455.1),
+        taxable_spend=True,
         timestamp=1523399409,  # 10/04/2018
     )
     assert cinfo.taxable_amount == 1, '1 out of 3 should be taxable (after a year)'
@@ -465,9 +489,12 @@ def test_accounting_lifo_order(accountant):
     )
     asset_events.acquisitions_manager.add_acquisition(event3)
     asset_events.acquisitions_manager.add_acquisition(event4)
-    assert cost_basis.calculate_spend_cost_basis(
-        spending_amount=3,
-        spending_asset=A_ETH,
+    assert cost_basis.spend_asset(
+        amount=3,
+        location=Location.BLOCKCHAIN,
+        asset=asset,
+        rate=FVal(455.1),
+        taxable_spend=True,
         timestamp=1,
     ).is_complete is True
     acquisitions = asset_events.acquisitions_manager.get_acquisitions()
@@ -480,9 +507,12 @@ def test_accounting_lifo_order(accountant):
         index=1,
     )
     asset_events.acquisitions_manager.add_acquisition(event5)
-    assert cost_basis.calculate_spend_cost_basis(
-        spending_amount=4,
-        spending_asset=A_ETH,
+    assert cost_basis.spend_asset(
+        amount=4,
+        location=Location.BLOCKCHAIN,
+        asset=asset,
+        rate=FVal(455.1),
+        taxable_spend=True,
         timestamp=2,
     ).is_complete is True
     acquisitions = asset_events.acquisitions_manager.get_acquisitions()
@@ -495,9 +525,12 @@ def test_accounting_lifo_order(accountant):
         index=1,
     )
     asset_events.acquisitions_manager.add_acquisition(event6)
-    assert cost_basis.calculate_spend_cost_basis(
-        spending_amount=2,
-        spending_asset=A_ETH,
+    assert cost_basis.spend_asset(
+        amount=2,
+        location=Location.BLOCKCHAIN,
+        asset=asset,
+        rate=FVal(455.1),
+        taxable_spend=True,
         timestamp=3,
     ).is_complete is True
     acquisitions = asset_events.acquisitions_manager.get_acquisitions()
@@ -510,9 +543,12 @@ def test_accounting_lifo_order(accountant):
         index=1,
     )
     asset_events.acquisitions_manager.add_acquisition(event7)
-    assert cost_basis.calculate_spend_cost_basis(
-        spending_amount=2,
-        spending_asset=A_ETH,
+    assert cost_basis.spend_asset(
+        amount=2,
+        location=Location.BLOCKCHAIN,
+        asset=asset,
+        rate=FVal(455.1),
+        taxable_spend=True,
         timestamp=4,
     ).is_complete is False
     assert cost_basis.missing_acquisitions == [
@@ -567,9 +603,12 @@ def test_accounting_hifo_order(accountant):
     )
     asset_events.acquisitions_manager.add_acquisition(event3)
     asset_events.acquisitions_manager.add_acquisition(event4)
-    assert cost_basis.calculate_spend_cost_basis(
-        spending_amount=3,
-        spending_asset=asset,
+    assert cost_basis.spend_asset(
+        amount=3,
+        location=Location.BLOCKCHAIN,
+        asset=asset,
+        rate=FVal(455.1),
+        taxable_spend=True,
         timestamp=1,
     ).is_complete is True
     acquisitions = asset_events.acquisitions_manager.get_acquisitions()
@@ -582,9 +621,12 @@ def test_accounting_hifo_order(accountant):
         index=1,
     )
     asset_events.acquisitions_manager.add_acquisition(event5)
-    assert cost_basis.calculate_spend_cost_basis(
-        spending_amount=4,
-        spending_asset=asset,
+    assert cost_basis.spend_asset(
+        amount=4,
+        location=Location.BLOCKCHAIN,
+        asset=asset,
+        rate=FVal(455.1),
+        taxable_spend=True,
         timestamp=2,
     ).is_complete is True
     acquisitions = asset_events.acquisitions_manager.get_acquisitions()
@@ -597,9 +639,12 @@ def test_accounting_hifo_order(accountant):
         index=1,
     )
     asset_events.acquisitions_manager.add_acquisition(event6)
-    assert cost_basis.calculate_spend_cost_basis(
-        spending_amount=2,
-        spending_asset=asset,
+    assert cost_basis.spend_asset(
+        amount=2,
+        location=Location.BLOCKCHAIN,
+        asset=asset,
+        rate=FVal(455.1),
+        taxable_spend=True,
         timestamp=3,
     ).is_complete is True
     acquisitions = asset_events.acquisitions_manager.get_acquisitions()
@@ -612,9 +657,12 @@ def test_accounting_hifo_order(accountant):
         index=1,
     )
     asset_events.acquisitions_manager.add_acquisition(event7)
-    assert cost_basis.calculate_spend_cost_basis(
-        spending_amount=2,
-        spending_asset=asset,
+    assert cost_basis.spend_asset(
+        amount=2,
+        location=Location.BLOCKCHAIN,
+        asset=asset,
+        rate=FVal(455.1),
+        taxable_spend=True,
         timestamp=4,
     ).is_complete is False
     assert cost_basis.missing_acquisitions == [
@@ -641,9 +689,12 @@ def test_missing_acquisitions(accountant):
         timestamp=1,
     )
     assert cost_basis.missing_acquisitions == expected_missing_acquisitions
-    cost_basis.calculate_spend_cost_basis(
-        spending_asset=A_ETH,
-        spending_amount=1,
+    cost_basis.spend_asset(
+        amount=1,
+        location=Location.BLOCKCHAIN,
+        asset=A_ETH,
+        rate=FVal(455.1),
+        taxable_spend=True,
         timestamp=1,
     )
     expected_missing_acquisitions.append(MissingAcquisition(
@@ -678,9 +729,12 @@ def test_missing_acquisitions(accountant):
         index=2,
         timestamp=3,
     ))
-    cost_basis.calculate_spend_cost_basis(
-        spending_asset=A_ETH,
-        spending_amount=3,
+    cost_basis.spend_asset(
+        amount=3,
+        location=Location.BLOCKCHAIN,
+        asset=A_ETH,
+        rate=FVal(455.1),
+        taxable_spend=True,
         timestamp=4,
     )
     expected_missing_acquisitions.append(MissingAcquisition(
@@ -690,6 +744,94 @@ def test_missing_acquisitions(accountant):
         time=4,
     ))
     assert cost_basis.missing_acquisitions == expected_missing_acquisitions
+
+
+def test_accounting_average_cost_base(accountant):
+    """
+    Test data is gotten from:
+    https://www.adjustedcostbase.ca/blog/how-to-calculate-adjusted-cost-base-acb-and-capital-gains/
+    """
+    asset = A_ETH
+    cost_basis = accountant.pots[0].cost_basis
+    cost_basis.reset(DBSettings(cost_basis_method=CostBasisMethod.ACB))
+    asset_events = cost_basis.get_events(asset)
+
+    event1 = AssetAcquisitionEvent(
+        amount=FVal(100),
+        timestamp=1,
+        rate=FVal(50),
+        index=1,
+    )
+    asset_events.acquisitions_manager.add_acquisition(event1)
+    assert asset_events.acquisitions_manager.current_average_cost_base == FVal(5000)
+    cost_basis_result = cost_basis.spend_asset(
+        amount=FVal(50),
+        location=Location.BLOCKCHAIN,
+        asset=asset,
+        rate=FVal(455.1),
+        taxable_spend=True,
+        timestamp=0,
+    )
+    assert asset_events.acquisitions_manager.current_average_cost_base == FVal(2500)
+    assert cost_basis_result.taxable_bought_cost == FVal(2500)
+    assert cost_basis_result.is_complete is True
+
+    asset_events.acquisitions_manager.add_acquisition(AssetAcquisitionEvent(
+        amount=FVal(50),
+        timestamp=3,
+        rate=FVal(130),
+        index=3,
+    ))
+    assert asset_events.acquisitions_manager.current_average_cost_base == FVal(9000)
+    cost_basis_result = cost_basis.spend_asset(
+        amount=FVal(40),
+        location=Location.BLOCKCHAIN,
+        asset=asset,
+        rate=FVal(455.1),
+        taxable_spend=True,
+        timestamp=0,
+    )
+    assert asset_events.acquisitions_manager.current_average_cost_base == FVal(5400)
+    assert cost_basis_result.taxable_bought_cost == FVal(5400)
+    assert cost_basis_result.is_complete is True
+
+    # then test to reset
+    cost_basis.reset(DBSettings(cost_basis_method=CostBasisMethod.ACB))
+    asset_events = cost_basis.get_events(asset)
+    event3 = AssetAcquisitionEvent(
+        amount=FVal(1),
+        timestamp=3,
+        rate=FVal(100),
+        index=3,
+    )
+    event4 = AssetAcquisitionEvent(
+        amount=FVal(1),
+        timestamp=4,
+        rate=FVal(200),
+        index=4,
+    )
+    asset_events.acquisitions_manager.add_acquisition(event3)
+    assert asset_events.acquisitions_manager.current_average_cost_base == FVal(100)
+    asset_events.acquisitions_manager.add_acquisition(event4)
+    assert asset_events.acquisitions_manager.current_average_cost_base == FVal(300)
+    cost_basis_result = cost_basis.spend_asset(
+        amount=FVal(0.5),
+        location=Location.BLOCKCHAIN,
+        asset=asset,
+        rate=FVal(455.1),
+        taxable_spend=True,
+        timestamp=0,
+    )
+    assert asset_events.acquisitions_manager.current_average_cost_base == FVal(225)
+    assert cost_basis_result.is_complete is True
+    assert cost_basis_result.taxable_bought_cost == FVal(225)
+    asset_events.acquisitions_manager.add_acquisition(AssetAcquisitionEvent(
+        amount=FVal(0.5),
+        timestamp=5,
+        rate=FVal(500),
+        index=5,
+    ))
+    assert asset_events.acquisitions_manager.current_average_cost_base == FVal(475)
 
 
 @pytest.mark.parametrize('mocked_price_queries', [{
