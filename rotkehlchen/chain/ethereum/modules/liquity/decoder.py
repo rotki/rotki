@@ -1,5 +1,6 @@
 import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from rotkehlchen.accounting.structures.balance import Balance
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
@@ -12,8 +13,8 @@ from rotkehlchen.constants.assets import A_ETH, A_LQTY, A_LUSD
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
-from rotkehlchen.utils.misc import hex_or_bytes_to_int
+from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction, Location
+from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from .constants import CPT_LIQUITY
 
@@ -25,10 +26,16 @@ if TYPE_CHECKING:
 BALANCE_UPDATE = b'\xca#+Z\xbb\x98\x8cT\x0b\x95\x9f\xf6\xc3\xbf\xae>\x97\xff\xf9d\xfd\t\x8cP\x8f\x96\x13\xc0\xa6\xbf\x1a\x80'  # noqa: E501
 ACTIVE_POOL = string_to_evm_address('0xDf9Eb223bAFBE5c5271415C75aeCD68C21fE3D7F')
 STABILITY_POOL = string_to_evm_address('0x66017D22b0f8556afDd19FC67041899Eb65a21bb')
+LIQUITY_STAKING = string_to_evm_address('0x4f9Fbb3f1E99B56e0Fe2892e623Ed36A76Fc605d')
 
 STABILITY_POOL_GAIN_WITHDRAW = b'QEr"\xeb\xca\x92\xc35\xc9\xc8n+\xaa\x1c\xc0\xe4\x0f\xfa\xa9\x08JQE)\x80\xd5\xba\x8d\xec/c'  # noqa: E501
 STABILITY_POOL_LQTY_PAID = b'&\x08\xb9\x86\xa6\xac\x0flb\x9c\xa3p\x18\xe8\n\xf5V\x1e6bR\xae\x93`*\x96\xd3\xab.s\xe4-'  # noqa: E501
 STABILITY_POOL_EVENTS = {STABILITY_POOL_GAIN_WITHDRAW, STABILITY_POOL_LQTY_PAID}
+STAKING_LQTY_CHANGE = b'9\xdf\x0eR\x86\xa3\xef/B\xa0\xbfR\xf3,\xfe,X\xe5\xb0@_G\xfeQ/,$9\xe4\xcf\xe2\x04'  # noqa: E501
+STAKING_GAINS = b'\xf7D\xd3L\xa1\xcb%\xac\xfaA\x80\xdf_\t\xa6s\x06\x10q\x10\xa9\xf4\xb6\xed\x99\xbb;\xe2Ys\x82\x15'  # noqa: E501
+STAKING_ETH_SENT = b'a\t\xe2U\x9d\xfavj\xae\xc7\x11\x83Q\xd4\x8aR?\nAW\xf4\x9c\x8dht\x9c\x8a\xc4\x13\x18\xad\x12'  # noqa: E501
+STAKING_LQTY_EVENTS = {STAKING_LQTY_CHANGE, STAKING_ETH_SENT}
+STAKING_REWARDS_ASSETS = {A_ETH, A_LUSD}
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -47,6 +54,7 @@ class LiquityDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
         )
+        self.base_tools = base_tools
         self.lusd = A_LUSD.resolve_to_crypto_asset()
         self.eth = A_ETH.resolve_to_crypto_asset()
         self.lqty = A_LQTY.resolve_to_evm_token()
@@ -115,7 +123,7 @@ class LiquityDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
 
         for event in decoded_events:
             if event.event_type == HistoryEventType.SPEND and event.asset == A_LUSD:
-                event.event_type = HistoryEventType.DEPOSIT
+                event.event_type = HistoryEventType.STAKING
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                 event.counterparty = CPT_LIQUITY
                 event.notes = f"Deposit {event.balance.amount} {self.lusd.symbol} in liquity's stability pool"  # noqa: E501
@@ -131,10 +139,76 @@ class LiquityDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                     tx_log.topics[0] == STABILITY_POOL_LQTY_PAID
                 )
             ):
+                event.event_type = HistoryEventType.STAKING
                 event.event_subtype = HistoryEventSubType.REWARD
                 event.counterparty = CPT_LIQUITY
                 event.notes = f"Collect {event.balance.amount} {event.asset.resolve_to_crypto_asset().symbol} from liquity's stability pool"  # noqa: E501
         return None, []
+
+    def _decode_lqty_staking_deposits(
+            self,
+            tx_log: EthereumTxReceiptLog,
+            transaction: EvmTransaction,  # pylint: disable=unused-argument
+            decoded_events: List[HistoryBaseEntry],
+            all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
+            action_items: List[ActionItem],  # pylint: disable=unused-argument
+    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
+        if tx_log.topics[0] not in STAKING_LQTY_EVENTS:
+            return None, []
+
+        informational_event = None
+        for event in decoded_events:
+            if tx_log.topics[0] == STAKING_LQTY_CHANGE:
+                user = hex_or_bytes_to_address(tx_log.topics[1])
+                lqty_amount = asset_normalized_value(
+                    amount=hex_or_bytes_to_int(tx_log.data[0:32]),
+                    asset=self.lqty,
+                )
+                if (
+                    tx_log.topics[0] == STAKING_LQTY_CHANGE and
+                    event.asset == A_LQTY and
+                    event.location_label == user and
+                    event.event_type == HistoryEventType.SPEND
+                ):
+                    event.event_type = HistoryEventType.STAKING
+                    event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                    event.counterparty = CPT_LIQUITY
+                    event.notes = f'Stake {event.balance.amount} {self.lqty.symbol}'
+                elif (
+                    tx_log.topics[0] == STAKING_LQTY_CHANGE and
+                    event.asset == A_LQTY and
+                    event.location_label == user and
+                    event.event_type == HistoryEventType.RECEIVE
+                ):
+                    event.event_type = HistoryEventType.STAKING
+                    event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                    event.counterparty = CPT_LIQUITY
+                    event.notes = f'Unstake {event.balance.amount} {self.lqty.symbol}'
+
+                informational_event = HistoryBaseEntry(
+                    event_identifier=transaction.tx_hash,
+                    timestamp=event.timestamp,
+                    sequence_index=self.base_tools.get_next_sequence_counter(),
+                    location=Location.BLOCKCHAIN,
+                    event_type=HistoryEventType.INFORMATIONAL,
+                    event_subtype=HistoryEventSubType.NONE,
+                    asset=A_ETH,
+                    balance=Balance(amount=lqty_amount),
+                    location_label=event.location_label,
+                    counterparty=CPT_LIQUITY,
+                    notes=f'The new amount of {self.lqty.symbol} staked is {lqty_amount}',
+                )
+            elif (
+                tx_log.topics[0] == STAKING_ETH_SENT and
+                event.asset in STAKING_REWARDS_ASSETS and
+                event.event_type == HistoryEventType.RECEIVE
+            ):
+                event.event_type = HistoryEventType.STAKING
+                event.event_subtype = HistoryEventSubType.REWARD
+                event.counterparty = CPT_LIQUITY
+                event.notes = f'Receive reward of {event.balance.amount} {event.asset.resolve_to_crypto_asset().symbol}'  # noqa: E501
+
+        return informational_event, []
 
     # -- DecoderInterface methods
 
@@ -142,6 +216,7 @@ class LiquityDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
         return {
             ACTIVE_POOL: (self._decode_trove_operations,),
             STABILITY_POOL: (self._decode_stability_pool_event,),
+            LIQUITY_STAKING: (self._decode_lqty_staking_deposits,),
         }
 
     def counterparties(self) -> List[str]:

@@ -7487,23 +7487,47 @@ Getting Liquity stability pool infomration
       {
         "result":{
             "0x3DdfA8eC3052539b6C9549F12cEA2C295cfF5296":{
-              "eth_gain":"43.180853032438783295",
-              "lqty_gain":"94477.70111867384658505",
-              "deposited":"10211401.723115634393264567"
+              gains: {
+                "asset": "ETH",
+                "amount": "43.180853032438783295",
+                "usd_value": "43.180853032438783295",
+              },
+              rewards: {
+                "asset": "eip155:1/erc20:0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D",
+                "amount": "94477.70111867384658505",
+                "usd_value": "94477.70111867384658505",
+              },
+              deposited: {
+                "asset": "eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0",
+                "amount": "10211401.723115634393264567",
+                "usd_value": "10211401.723115634393264567",
+              },
             },
             "0xFBcAFB005695afa660836BaC42567cf6917911ac":{
-              "eth_gain":"0.012830143966323228",
-              "lqty_gain":"1430.186501693619414912",
-              "deposited":"546555.36725208608367891"
+              gains: {
+                "asset": "ETH",
+                "amount": "0.012830143966323228",
+                "usd_value": "0.012830143966323228",
+              },
+              "rewards": {
+                "asset": "eip155:1/erc20:0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D",
+                "amount": "1430.186501693619414912",
+                "usd_value": "1430.186501693619414912",
+              },
+              "deposited": {
+                "asset": "eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0",
+                "amount": "546555.36725208608367891",
+                "usd_value": "546555.36725208608367891",
+              },
             }
         },
         "message":""
       }
 
    :resjson object result: A mapping of the addresses having the liquity module enabled and their positions.
-   :resjson string deposited: The amount of LUSD owned by the address deposited in the pool.
-   :resjson string eth_gain: The amount of ETH gained in the pool.
-   :resjson string lqty_gain: The amount of LQTY gained in the pool.
+   :resjson object deposited: Information about the amount and usd value of the LUSD deposited.
+   :resjson object gains: Information about the amount and usd value of the ETH gained as reward for liquidations.
+   :resjson object rewards: Information about the amount and usd value of the LQTY rewards gained.
 
    :statuscode 200: Liquity information successfully queried.
    :statuscode 409: User is not logged in or Liquity module is not activated.
