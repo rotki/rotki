@@ -2,7 +2,7 @@
 import { NumericString } from '@rotki/common';
 import { z } from 'zod';
 import { getCollectionResponseType } from '@/types/collection';
-import { HistoryRequestPayload } from '@/types/history/index';
+import { PaginationRequestPayload } from '@/types/common';
 import { getEntryWithMeta } from '@/types/history/meta';
 import { TradeLocation } from '@/types/history/trade-location';
 
@@ -25,10 +25,11 @@ export type AssetMovement = z.infer<typeof AssetMovement>;
 export const AssetMovementCollectionResponse = getCollectionResponseType(
   getEntryWithMeta(AssetMovement)
 );
-export type AssetMovementRequestPayload = {
+export interface AssetMovementRequestPayload
+  extends PaginationRequestPayload<AssetMovement> {
   readonly fromTimestamp?: string | number;
   readonly toTimestamp?: string | number;
   readonly location?: string;
   readonly asset?: string;
   readonly action?: string;
-} & HistoryRequestPayload<AssetMovement>;
+}

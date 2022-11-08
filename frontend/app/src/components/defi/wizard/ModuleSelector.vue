@@ -89,16 +89,15 @@ const { activeModules } = storeToRefs(useGeneralSettingsStore());
 const { update: updateSettings } = useSettingsStore();
 
 const balancesStore = useNonFungibleBalancesStore();
-const { balances } = storeToRefs(balancesStore);
 const { fetchNonFungibleBalances } = balancesStore;
 
 const fetch = () => {
-  const callback = () => fetchNonFungibleBalances({ ignoreCache: false });
+  const callback = () => fetchNonFungibleBalances();
   setTimeout(callback, 800);
 };
 
 const clearNfBalances = () => {
-  const callback = () => set(balances, {});
+  const callback = () => balancesStore.$reset();
   setTimeout(callback, 800);
 };
 

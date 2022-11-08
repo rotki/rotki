@@ -65,118 +65,124 @@
         </v-row>
       </template>
 
-      <data-table
-        v-model="selected"
-        :expanded.sync="expanded"
-        :headers="tableHeaders"
-        :items="data"
-        :loading="loading"
-        :options="options"
-        :server-items-length="itemLength"
-        class="closed-trades"
-        :single-select="false"
-        :show-select="!locationOverview"
-        :item-class="getClass"
-        item-key="tradeId"
-        show-expand
-        single-expand
-        multi-sort
-        :must-sort="false"
-        @update:options="updatePaginationHandler($event)"
-      >
-        <template #item.ignoredInAccounting="{ item, isMobile }">
-          <div v-if="item.ignoredInAccounting">
-            <badge-display v-if="isMobile" color="grey">
-              <v-icon small> mdi-eye-off </v-icon>
-              <span class="ml-2">
-                {{ tc('common.ignored_in_accounting') }}
-              </span>
-            </badge-display>
-            <v-tooltip v-else bottom>
-              <template #activator="{ on }">
-                <badge-display color="grey" v-on="on">
-                  <v-icon small> mdi-eye-off </v-icon>
-                </badge-display>
-              </template>
-              <span>
-                {{ tc('common.ignored_in_accounting') }}
-              </span>
-            </v-tooltip>
-          </div>
-        </template>
-        <template #item.location="{ item }">
-          <location-display
-            data-cy="trade-location"
-            :identifier="item.location"
-          />
-        </template>
-        <template #item.type="{ item }">
-          <badge-display
-            :color="item.tradeType.toLowerCase() === 'sell' ? 'red' : 'green'"
+      <collection-handler :collection="trades">
+        <template #default="{ data, limit, total, showUpgradeRow, itemLength }">
+          <data-table
+            v-model="selected"
+            :expanded.sync="expanded"
+            :headers="tableHeaders"
+            :items="data"
+            :loading="loading"
+            :options="options"
+            :server-items-length="itemLength"
+            class="closed-trades"
+            :single-select="false"
+            :show-select="!locationOverview"
+            :item-class="getClass"
+            item-key="tradeId"
+            show-expand
+            single-expand
+            multi-sort
+            :must-sort="false"
+            @update:options="updatePaginationHandler($event)"
           >
-            {{ item.tradeType }}
-          </badge-display>
+            <template #item.ignoredInAccounting="{ item, isMobile }">
+              <div v-if="item.ignoredInAccounting">
+                <badge-display v-if="isMobile" color="grey">
+                  <v-icon small> mdi-eye-off </v-icon>
+                  <span class="ml-2">
+                    {{ tc('common.ignored_in_accounting') }}
+                  </span>
+                </badge-display>
+                <v-tooltip v-else bottom>
+                  <template #activator="{ on }">
+                    <badge-display color="grey" v-on="on">
+                      <v-icon small> mdi-eye-off </v-icon>
+                    </badge-display>
+                  </template>
+                  <span>
+                    {{ tc('common.ignored_in_accounting') }}
+                  </span>
+                </v-tooltip>
+              </div>
+            </template>
+            <template #item.location="{ item }">
+              <location-display
+                data-cy="trade-location"
+                :identifier="item.location"
+              />
+            </template>
+            <template #item.type="{ item }">
+              <badge-display
+                :color="
+                  item.tradeType.toLowerCase() === 'sell' ? 'red' : 'green'
+                "
+              >
+                {{ item.tradeType }}
+              </badge-display>
+            </template>
+            <template #item.baseAsset="{ item }">
+              <asset-details
+                data-cy="trade-base"
+                opens-details
+                hide-name
+                :asset="item.baseAsset"
+              />
+            </template>
+            <template #item.quoteAsset="{ item }">
+              <asset-details
+                hide-name
+                opens-details
+                :asset="item.quoteAsset"
+                data-cy="trade-quote"
+              />
+            </template>
+            <template #item.description="{ item }">
+              {{
+                item.tradeType === 'buy'
+                  ? tc('closed_trades.description.with')
+                  : tc('closed_trades.description.for')
+              }}
+            </template>
+            <template #item.rate="{ item }">
+              <amount-display
+                class="closed-trades__trade__rate"
+                :value="item.rate"
+              />
+            </template>
+            <template #item.amount="{ item }">
+              <amount-display
+                class="closed-trades__trade__amount"
+                :value="item.amount"
+              />
+            </template>
+            <template #item.timestamp="{ item }">
+              <date-display :timestamp="item.timestamp" />
+            </template>
+            <template #item.actions="{ item }">
+              <row-actions
+                v-if="item.location === 'external'"
+                :disabled="loading"
+                :edit-tooltip="tc('closed_trades.edit_tooltip')"
+                :delete-tooltip="tc('closed_trades.delete_tooltip')"
+                @edit-click="editTradeHandler(item)"
+                @delete-click="promptForDelete(item)"
+              />
+            </template>
+            <template #expanded-item="{ headers, item }">
+              <trade-details :span="headers.length" :item="item" />
+            </template>
+            <template v-if="showUpgradeRow" #body.prepend="{ headers }">
+              <upgrade-row
+                :limit="limit"
+                :total="total"
+                :colspan="headers.length"
+                :label="tc('closed_trades.label')"
+              />
+            </template>
+          </data-table>
         </template>
-        <template #item.baseAsset="{ item }">
-          <asset-details
-            data-cy="trade-base"
-            opens-details
-            hide-name
-            :asset="item.baseAsset"
-          />
-        </template>
-        <template #item.quoteAsset="{ item }">
-          <asset-details
-            hide-name
-            opens-details
-            :asset="item.quoteAsset"
-            data-cy="trade-quote"
-          />
-        </template>
-        <template #item.description="{ item }">
-          {{
-            item.tradeType === 'buy'
-              ? tc('closed_trades.description.with')
-              : tc('closed_trades.description.for')
-          }}
-        </template>
-        <template #item.rate="{ item }">
-          <amount-display
-            class="closed-trades__trade__rate"
-            :value="item.rate"
-          />
-        </template>
-        <template #item.amount="{ item }">
-          <amount-display
-            class="closed-trades__trade__amount"
-            :value="item.amount"
-          />
-        </template>
-        <template #item.timestamp="{ item }">
-          <date-display :timestamp="item.timestamp" />
-        </template>
-        <template #item.actions="{ item }">
-          <row-actions
-            v-if="item.location === 'external'"
-            :disabled="loading"
-            :edit-tooltip="tc('closed_trades.edit_tooltip')"
-            :delete-tooltip="tc('closed_trades.delete_tooltip')"
-            @edit-click="editTradeHandler(item)"
-            @delete-click="promptForDelete(item)"
-          />
-        </template>
-        <template #expanded-item="{ headers, item }">
-          <trade-details :span="headers.length" :item="item" />
-        </template>
-        <template v-if="showUpgradeRow" #body.prepend="{ headers }">
-          <upgrade-row
-            :limit="limit"
-            :total="total"
-            :colspan="headers.length"
-            :label="tc('closed_trades.label')"
-          />
-        </template>
-      </data-table>
+      </collection-handler>
     </card>
     <big-dialog
       :display="openDialog"
@@ -233,11 +239,9 @@ import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useTrades } from '@/store/history/trades';
 import { IgnoreActionType, TradeEntry } from '@/store/history/types';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { Collection } from '@/types/collection';
 import { TradeLocation } from '@/types/history/trade-location';
 import { NewTrade, Trade, TradeRequestPayload } from '@/types/history/trades';
 import { Section } from '@/types/status';
-import { getCollectionData, setupEntryLimit } from '@/utils/collection';
 
 interface PaginationOptions {
   page: number;
@@ -361,12 +365,6 @@ const {
   deleteExternalTrade,
   updateTradesPayload
 } = tradeStore;
-
-const { data, limit, found, total } = getCollectionData<TradeEntry>(
-  trades as Ref<Collection<TradeEntry>>
-);
-
-const { itemLength, showUpgradeRow } = setupEntryLimit(limit, found, total);
 
 const newExternalTrade = () => {
   set(dialogTitle, tc('closed_trades.dialog.add.title'));

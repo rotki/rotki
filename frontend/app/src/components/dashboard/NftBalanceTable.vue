@@ -32,63 +32,76 @@
     </template>
     <template #shortDetails>
       <amount-display
-        :value="total"
+        :value="totalUsdValue"
         show-currency="symbol"
         fiat-currency="USD"
       />
     </template>
-    <data-table
-      :headers="tableHeaders"
-      :items="filteredBalances"
-      sort-by="usdPrice"
-      :loading="loading"
-    >
-      <template #item.name="{ item }">
-        <nft-details :identifier="item.id" />
-      </template>
-      <template #item.priceInAsset="{ item }">
-        <amount-display
-          v-if="item.priceAsset !== currencySymbol"
-          :value="item.priceInAsset"
-          :asset="item.priceAsset"
-        />
-        <span v-else>-</span>
-      </template>
-      <template #item.usdPrice="{ item }">
-        <amount-display
-          :price-asset="item.priceAsset"
-          :amount="item.priceInAsset"
-          :value="item.usdPrice"
-          show-currency="symbol"
-          fiat-currency="USD"
-        />
-      </template>
-      <template #item.percentageOfTotalNetValue="{ item }">
-        <percentage-display :value="percentageOfTotalNetValue(item.usdPrice)" />
-      </template>
-      <template #item.percentageOfTotalCurrentGroup="{ item }">
-        <percentage-display :value="percentageOfCurrentGroup(item.usdPrice)" />
-      </template>
-      <template #body.append="{ isMobile }">
-        <row-append
-          label-colspan="2"
-          :label="tc('common.total')"
-          :right-patch-colspan="tableHeaders.length - 3"
-          :is-mobile="isMobile"
+
+    <collection-handler :collection="balances">
+      <template #default="{ data, itemLength }">
+        <data-table
+          :headers="tableHeaders"
+          :items="data"
+          :loading="loading"
+          :options="options"
+          :server-items-length="itemLength"
+          @update:options="updatePaginationHandler($event)"
         >
-          <amount-display
-            :value="total"
-            show-currency="symbol"
-            fiat-currency="USD"
-          />
-        </row-append>
+          <template #item.name="{ item }">
+            <nft-details :identifier="item.id" />
+          </template>
+          <template #item.priceInAsset="{ item }">
+            <amount-display
+              v-if="item.priceAsset !== currencySymbol"
+              :value="item.priceInAsset"
+              :asset="item.priceAsset"
+            />
+            <span v-else>-</span>
+          </template>
+          <template #item.usdPrice="{ item }">
+            <amount-display
+              :price-asset="item.priceAsset"
+              :amount="item.priceInAsset"
+              :value="item.usdPrice"
+              show-currency="symbol"
+              fiat-currency="USD"
+            />
+          </template>
+          <template #item.percentageOfTotalNetValue="{ item }">
+            <percentage-display
+              :value="percentageOfTotalNetValue(item.usdPrice)"
+            />
+          </template>
+          <template #item.percentageOfTotalCurrentGroup="{ item }">
+            <percentage-display
+              :value="percentageOfCurrentGroup(item.usdPrice)"
+            />
+          </template>
+          <template #body.append="{ isMobile }">
+            <row-append
+              label-colspan="2"
+              :label="tc('common.total')"
+              :right-patch-colspan="tableHeaders.length - 3"
+              :is-mobile="isMobile"
+            >
+              <amount-display
+                :value="totalUsdValue"
+                show-currency="symbol"
+                fiat-currency="USD"
+              />
+            </row-append>
+          </template>
+        </data-table>
       </template>
-    </data-table>
+    </collection-handler>
   </dashboard-expandable-table>
 </template>
 
 <script setup lang="ts">
 import { BigNumber } from '@rotki/common';
+import { dropRight } from 'lodash';
+import { Ref } from 'vue';
 import { DataTableHeader } from 'vuetify';
 import DashboardExpandableTable from '@/components/dashboard/DashboardExpandableTable.vue';
 import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
@@ -101,22 +114,34 @@ import { useNonFungibleBalancesStore } from '@/store/balances/non-fungible';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatisticsStore } from '@/store/statistics';
+import { Collection } from '@/types/collection';
 import { DashboardTableType } from '@/types/frontend-settings';
+import {
+  NonFungibleBalance,
+  NonFungibleBalancesRequestPayload
+} from '@/types/nfbalances';
 import { Section } from '@/types/status';
 import { TableColumn } from '@/types/table-column';
 import { calculatePercentage } from '@/utils/calculation';
+import { getCollectionData } from '@/utils/collection';
+
+interface PaginationOptions {
+  page: number;
+  itemsPerPage: number;
+  sortBy: (keyof NonFungibleBalance)[];
+  sortDesc: boolean[];
+}
 
 const nonFungibleRoute = Routes.ACCOUNTS_BALANCES_NON_FUNGIBLE;
 
 const statistics = useStatisticsStore();
 const { totalNetWorthUsd } = storeToRefs(statistics);
 const balancesStore = useNonFungibleBalancesStore();
-const { nonFungibleBalances } = storeToRefs(balancesStore);
-const { nonFungibleTotalValue, fetchNonFungibleBalances } = balancesStore;
+const { balances } = storeToRefs(balancesStore);
+const { fetchNonFungibleBalances, updateRequestPayload } = balancesStore;
 const { isSectionRefreshing } = useSectionLoading();
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const total = nonFungibleTotalValue();
 const { tc } = useI18n();
 
 const group = DashboardTableType.NFT;
@@ -129,7 +154,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
     {
       text: tc('common.name'),
       value: 'name',
-      cellClass: 'text-no-wrap'
+      class: 'text-no-wrap'
     },
     {
       text: tc('nft_balance_table.column.price_in_asset'),
@@ -177,23 +202,60 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
   return headers;
 });
 
+const { totalUsdValue } = getCollectionData<NonFungibleBalance>(
+  balances as Ref<Collection<NonFungibleBalance>>
+);
+
 const percentageOfTotalNetValue = (value: BigNumber) => {
   return calculatePercentage(value, get(totalNetWorthUsd) as BigNumber);
 };
 
 const percentageOfCurrentGroup = (value: BigNumber) => {
-  return calculatePercentage(value, get(total));
+  return calculatePercentage(value, get(totalUsdValue) as BigNumber);
 };
 
 const refresh = async () => {
-  return await fetchNonFungibleBalances({ ignoreCache: true });
+  return await fetchNonFungibleBalances(true);
 };
 
 const { dashboardTablesVisibleColumns } = storeToRefs(
   useFrontendSettingsStore()
 );
+const options: Ref<PaginationOptions | null> = ref(null);
 
-const filteredBalances = computed(() => {
-  return get(nonFungibleBalances).filter(item => !item.isLp);
+const updatePaginationHandler = async (
+  newOptions: PaginationOptions | null
+) => {
+  set(options, newOptions);
+  await updatePayloadHandler();
+};
+
+const updatePayloadHandler = async () => {
+  let paginationOptions = {};
+
+  const optionsVal = get(options);
+  if (optionsVal) {
+    const { itemsPerPage, page, sortBy, sortDesc } = optionsVal;
+    const offset = (page - 1) * itemsPerPage;
+
+    paginationOptions = {
+      limit: itemsPerPage,
+      offset,
+      orderByAttributes: sortBy.length > 0 ? sortBy : ['name'],
+      ascending:
+        sortDesc.length > 1 ? dropRight(sortDesc).map(bool => !bool) : [true]
+    };
+  }
+
+  const payload: Partial<NonFungibleBalancesRequestPayload> = {
+    ignoredAssetsHandling: 'exclude',
+    ...paginationOptions
+  };
+
+  await updateRequestPayload(payload);
+};
+
+onMounted(async () => {
+  await updatePayloadHandler();
 });
 </script>

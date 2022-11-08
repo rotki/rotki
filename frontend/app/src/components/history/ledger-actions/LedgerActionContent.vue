@@ -64,91 +64,95 @@
           </v-col>
         </v-row>
       </template>
-      <data-table
-        v-model="selected"
-        :expanded.sync="expanded"
-        :headers="tableHeaders"
-        :items="data"
-        :loading="loading"
-        :options="options"
-        :server-items-length="itemLength"
-        class="ledger_actions"
-        :single-select="false"
-        :show-select="!locationOverview"
-        item-key="identifier"
-        show-expand
-        single-expand
-        multi-sort
-        :must-sort="false"
-        :item-class="getClass"
-        @update:options="updatePaginationHandler($event)"
-      >
-        <template #item.ignoredInAccounting="{ item, isMobile }">
-          <div v-if="item.ignoredInAccounting">
-            <badge-display v-if="isMobile" color="grey">
-              <v-icon small> mdi-eye-off </v-icon>
-              <span class="ml-2">
-                {{ tc('common.ignored_in_accounting') }}
-              </span>
-            </badge-display>
-            <v-tooltip v-else bottom>
-              <template #activator="{ on }">
-                <badge-display color="grey" v-on="on">
+      <collection-handler :collection="ledgerActions">
+        <template #default="{ data, limit, total, showUpgradeRow, itemLength }">
+          <data-table
+            v-model="selected"
+            :expanded.sync="expanded"
+            :headers="tableHeaders"
+            :items="data"
+            :loading="loading"
+            :options="options"
+            :server-items-length="itemLength"
+            class="ledger_actions"
+            :single-select="false"
+            :show-select="!locationOverview"
+            item-key="identifier"
+            show-expand
+            single-expand
+            multi-sort
+            :must-sort="false"
+            :item-class="getClass"
+            @update:options="updatePaginationHandler($event)"
+          >
+            <template #item.ignoredInAccounting="{ item, isMobile }">
+              <div v-if="item.ignoredInAccounting">
+                <badge-display v-if="isMobile" color="grey">
                   <v-icon small> mdi-eye-off </v-icon>
+                  <span class="ml-2">
+                    {{ tc('common.ignored_in_accounting') }}
+                  </span>
                 </badge-display>
-              </template>
-              <span>
-                {{ tc('common.ignored_in_accounting') }}
-              </span>
-            </v-tooltip>
-          </div>
+                <v-tooltip v-else bottom>
+                  <template #activator="{ on }">
+                    <badge-display color="grey" v-on="on">
+                      <v-icon small> mdi-eye-off </v-icon>
+                    </badge-display>
+                  </template>
+                  <span>
+                    {{ tc('common.ignored_in_accounting') }}
+                  </span>
+                </v-tooltip>
+              </div>
+            </template>
+            <template #item.type="{ item }">
+              <event-type-display
+                data-cy="ledger-action-type"
+                :event-type="item.actionType"
+              />
+            </template>
+            <template #item.location="{ item }">
+              <location-display
+                data-cy="ledger-action-location"
+                :identifier="item.location"
+              />
+            </template>
+            <template #item.asset="{ item }">
+              <asset-details
+                data-cy="ledger-action-asset"
+                opens-details
+                :asset="item.asset"
+              />
+            </template>
+            <template #item.amount="{ item }">
+              <amount-display :value="item.amount" />
+            </template>
+            <template #item.timestamp="{ item }">
+              <date-display :timestamp="item.timestamp" />
+            </template>
+            <template #item.actions="{ item }">
+              <row-actions
+                :disabled="loading"
+                :edit-tooltip="tc('ledger_actions.edit_tooltip')"
+                :delete-tooltip="tc('ledger_actions.delete_tooltip')"
+                @edit-click="editLedgerActionHandler(item)"
+                @delete-click="promptForDelete(item)"
+              />
+            </template>
+            <template #expanded-item="{ headers, item }">
+              <ledger-action-details :span="headers.length" :item="item" />
+            </template>
+            <template v-if="showUpgradeRow" #body.prepend="{ headers }">
+              <upgrade-row
+                :limit="limit"
+                :total="total"
+                :colspan="headers.length"
+                :label="tc('ledger_actions.label')"
+              />
+            </template>
+          </data-table>
         </template>
-        <template #item.type="{ item }">
-          <event-type-display
-            data-cy="ledger-action-type"
-            :event-type="item.actionType"
-          />
-        </template>
-        <template #item.location="{ item }">
-          <location-display
-            data-cy="ledger-action-location"
-            :identifier="item.location"
-          />
-        </template>
-        <template #item.asset="{ item }">
-          <asset-details
-            data-cy="ledger-action-asset"
-            opens-details
-            :asset="item.asset"
-          />
-        </template>
-        <template #item.amount="{ item }">
-          <amount-display :value="item.amount" />
-        </template>
-        <template #item.timestamp="{ item }">
-          <date-display :timestamp="item.timestamp" />
-        </template>
-        <template #item.actions="{ item }">
-          <row-actions
-            :disabled="loading"
-            :edit-tooltip="tc('ledger_actions.edit_tooltip')"
-            :delete-tooltip="tc('ledger_actions.delete_tooltip')"
-            @edit-click="editLedgerActionHandler(item)"
-            @delete-click="promptForDelete(item)"
-          />
-        </template>
-        <template #expanded-item="{ headers, item }">
-          <ledger-action-details :span="headers.length" :item="item" />
-        </template>
-        <template v-if="showUpgradeRow" #body.prepend="{ headers }">
-          <upgrade-row
-            :limit="limit"
-            :total="total"
-            :colspan="headers.length"
-            :label="tc('ledger_actions.label')"
-          />
-        </template>
-      </data-table>
+      </collection-handler>
     </card>
     <big-dialog
       :display="openDialog"
@@ -202,7 +206,6 @@ import { setupIgnore } from '@/composables/history';
 import { Routes } from '@/router/routes';
 import { useLedgerActions } from '@/store/history/ledger-actions';
 import { IgnoreActionType, LedgerActionEntry } from '@/store/history/types';
-import { Collection } from '@/types/collection';
 import {
   LedgerAction,
   LedgerActionRequestPayload,
@@ -210,7 +213,6 @@ import {
 } from '@/types/history/ledger-actions';
 import { TradeLocation } from '@/types/history/trade-location';
 import { Section } from '@/types/status';
-import { getCollectionData, setupEntryLimit } from '@/utils/collection';
 
 interface PaginationOptions {
   page: number;
@@ -253,11 +255,6 @@ const {
   updateLedgerActionsPayload
 } = ledgerActionStore;
 
-const { data, limit, found, total } = getCollectionData<LedgerActionEntry>(
-  ledgerActions as Ref<Collection<LedgerActionEntry>>
-);
-
-const { itemLength, showUpgradeRow } = setupEntryLimit(limit, found, total);
 const { filters, matchers, updateFilter } = useLedgerActionsFilter();
 
 const { tc } = useI18n();

@@ -27,8 +27,17 @@
           width="100"
           type="text"
         />
-        <div v-else-if="name" class="font-weight-medium" :class="css.name">
-          {{ name }}
+        <div v-else-if="name" :class="css['nft-details']">
+          <div class="font-weight-medium" :class="css['nft-details__entry']">
+            {{ name }}
+          </div>
+          <div
+            v-if="collectionName"
+            class="grey--text"
+            :class="css['nft-details__entry']"
+          >
+            {{ collectionName }}
+          </div>
         </div>
         <div v-else>
           <div class="d-flex">
@@ -49,8 +58,9 @@
   </div>
 </template>
 <script setup lang="ts">
+import { ComputedRef } from 'vue';
 import { useSectionLoading } from '@/composables/common';
-import { NftAsset, useNftAssetInfoStore } from '@/store/assets/nft';
+import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { Section } from '@/types/status';
 import { isVideo } from '@/utils/nft';
 
@@ -59,31 +69,33 @@ const props = defineProps({
     required: true,
     type: String
   },
-  styled: { required: false, type: Object, default: () => null }
+  styled: { required: false, type: Object, default: () => null },
+  size: { required: false, type: String, default: '50px' }
 });
 
 const css = useCssModule();
 
 const { identifier } = toRefs(props);
-const { getNftDetails } = useNftAssetInfoStore();
+const { assetInfo } = useAssetInfoRetrieval();
 
-const balanceData = getNftDetails(identifier);
+const balanceData = assetInfo(identifier);
 
 const imageUrl = computed<string | null>(() => {
   return get(balanceData)?.imageUrl ?? '/assets/images/placeholder.svg';
 });
 
-const getCollectionName = (data: NftAsset | null): string | null => {
+const collectionName: ComputedRef<string | null> = computed(() => {
+  const data = get(balanceData);
   if (!data || !data.collectionName) {
     return null;
   }
-  const tokenId = data.identifier.split('_')[3];
+  const tokenId = get(identifier).split('_')[3];
   return `${data.collectionName} #${tokenId}`;
-};
+});
 
-const name = computed<string | null>(() => {
+const name: ComputedRef<string | null> = computed(() => {
   const data = get(balanceData);
-  return data?.name || getCollectionName(data) || null;
+  return data?.name || get(collectionName);
 });
 
 const { shouldShowLoadingScreen: isLoading } = useSectionLoading();
@@ -109,13 +121,20 @@ const { t } = useI18n();
 
 .preview {
   background: #f5f5f5;
-  width: 50px;
-  height: 50px;
-  max-width: 50px;
-  min-width: 50px;
+  width: v-bind(size);
+  height: v-bind(size);
+  max-width: v-bind(size);
+  min-width: v-bind(size);
 }
 
-.name {
+.nft-details {
   flex: 1;
+  max-width: 400px;
+
+  &__entry {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+  }
 }
 </style>

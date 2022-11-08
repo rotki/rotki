@@ -298,8 +298,9 @@ export class AssetApi {
   }
 
   async fetchNftsPrices(): Promise<AssetPriceArray> {
-    const response = await this.axios.get<ActionResult<AssetPriceArray>>(
+    const response = await this.axios.post<ActionResult<AssetPriceArray>>(
       '/nfts/prices',
+      null,
       {
         validateStatus: validStatus,
         transformResponse: this.baseTransformer

@@ -1,6 +1,8 @@
+import { BigNumber } from '@rotki/common';
 import { Ref } from 'vue';
 import { usePremium } from '@/composables/premium';
 import { Collection, CollectionResponse } from '@/types/collection';
+import { Zero } from '@/utils/bignumbers';
 
 export const mapCollectionResponse = <T>(
   response: CollectionResponse<T>
@@ -9,7 +11,8 @@ export const mapCollectionResponse = <T>(
     data: response.entries,
     found: response.entriesFound,
     limit: response.entriesLimit,
-    total: response.entriesTotal
+    total: response.entriesTotal,
+    totalUsdValue: response.totalUsdValue
   };
 };
 
@@ -17,7 +20,8 @@ export const defaultCollectionState = <T>(): Collection<T> => ({
   found: 0,
   limit: 0,
   data: [],
-  total: 0
+  total: 0,
+  totalUsdValue: Zero
 });
 
 export const getCollectionData = <T>(collection: Ref<Collection<T>>) => {
@@ -27,12 +31,16 @@ export const getCollectionData = <T>(collection: Ref<Collection<T>>) => {
   const limit = computed<number>(() => get(collection).limit);
   const found = computed<number>(() => get(collection).found);
   const total = computed<number>(() => get(collection).total);
+  const totalUsdValue = computed<BigNumber | undefined | null>(
+    () => get(collection).totalUsdValue
+  );
 
   return {
     data,
     limit,
     found,
-    total
+    total,
+    totalUsdValue
   };
 };
 

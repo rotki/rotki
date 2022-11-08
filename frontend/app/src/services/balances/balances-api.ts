@@ -5,15 +5,11 @@ import {
   Eth2Validators
 } from '@rotki/common/lib/staking/eth2';
 import { AxiosInstance } from 'axios';
-import {
-  axiosSnakeCaseTransformer,
-  setupTransformer
-} from '@/services/axios-tranformers';
+import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
 import { EthDetectedTokensRecord } from '@/services/balances/types';
 import { basicAxiosTransformer } from '@/services/consts';
-import { ApiImplementation, PendingTask } from '@/services/types-api';
+import { PendingTask } from '@/services/types-api';
 import {
-  fetchExternalAsync,
   handleResponse,
   validStatus,
   validWithParamsSessionAndExternalService,
@@ -34,13 +30,6 @@ export class BalancesApi {
 
   constructor(axios: AxiosInstance) {
     this.axios = axios;
-  }
-
-  private get api(): ApiImplementation {
-    return {
-      axios: this.axios,
-      baseTransformer: setupTransformer()
-    };
   }
 
   deleteExchangeData(name: SupportedExchange | '' = ''): Promise<boolean> {
@@ -171,17 +160,6 @@ export class BalancesApi {
         }
       )
       .then(handleResponse);
-  }
-
-  async fetchNfBalances(payload?: {
-    ignoreCache: boolean;
-  }): Promise<PendingTask> {
-    const url = '/nfts/balances';
-    let params = undefined;
-    if (payload) {
-      params = axiosSnakeCaseTransformer(payload);
-    }
-    return fetchExternalAsync(this.api, url, params);
   }
 
   async addEth2Validator(payload: Eth2Validator): Promise<PendingTask> {

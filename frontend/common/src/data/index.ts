@@ -70,7 +70,9 @@ export const AssetInfo = z.object({
   evmChain: EvmChainEnum.nullish(),
   assetType: z.string().nullish(),
   isCustomAsset: z.boolean().nullish(),
-  customAssetType: z.string().nullish()
+  customAssetType: z.string().nullish(),
+  collectionName: z.string().nullish(),
+  imageUrl: z.string().nullish()
 });
 
 export const AssetInfoWithTransformer = AssetInfo.transform((data) => {
