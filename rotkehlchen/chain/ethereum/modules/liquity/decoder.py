@@ -1,6 +1,5 @@
 import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
-from rotkehlchen.accounting.structures.balance import Balance
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
@@ -13,7 +12,7 @@ from rotkehlchen.constants.assets import A_ETH, A_LQTY, A_LUSD
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction, Location
+from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from .constants import CPT_LIQUITY
@@ -156,48 +155,33 @@ class LiquityDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
         if tx_log.topics[0] not in STAKING_LQTY_EVENTS:
             return None, []
 
+        user, lqty_amount = None, ZERO
+        if tx_log.topics[0] == STAKING_LQTY_CHANGE:
+            user = hex_or_bytes_to_address(tx_log.topics[1])
+            lqty_amount = asset_normalized_value(
+                amount=hex_or_bytes_to_int(tx_log.data[0:32]),
+                asset=self.lqty,
+            )
+
         informational_event = None
         for event in decoded_events:
-            if tx_log.topics[0] == STAKING_LQTY_CHANGE:
-                user = hex_or_bytes_to_address(tx_log.topics[1])
-                lqty_amount = asset_normalized_value(
-                    amount=hex_or_bytes_to_int(tx_log.data[0:32]),
-                    asset=self.lqty,
-                )
-                if (
-                    tx_log.topics[0] == STAKING_LQTY_CHANGE and
-                    event.asset == A_LQTY and
-                    event.location_label == user and
-                    event.event_type == HistoryEventType.SPEND
-                ):
+            if (
+                tx_log.topics[0] == STAKING_LQTY_CHANGE and
+                event.asset == A_LQTY
+            ):
+                extra_data = {'staked_amount': str(lqty_amount), 'asset': self.lqty.identifier}
+                if event.location_label == user and event.event_type == HistoryEventType.SPEND:
                     event.event_type = HistoryEventType.STAKING
                     event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                     event.counterparty = CPT_LIQUITY
-                    event.notes = f'Stake {event.balance.amount} {self.lqty.symbol}'
-                elif (
-                    tx_log.topics[0] == STAKING_LQTY_CHANGE and
-                    event.asset == A_LQTY and
-                    event.location_label == user and
-                    event.event_type == HistoryEventType.RECEIVE
-                ):
+                    event.notes = f'Stake {event.balance.amount} {self.lqty.symbol} in the Liquity protocol'  # noqa: E501
+                    event.extra_data = extra_data
+                elif event.location_label == user and event.event_type == HistoryEventType.RECEIVE:
                     event.event_type = HistoryEventType.STAKING
                     event.event_subtype = HistoryEventSubType.REMOVE_ASSET
                     event.counterparty = CPT_LIQUITY
-                    event.notes = f'Unstake {event.balance.amount} {self.lqty.symbol}'
-
-                informational_event = HistoryBaseEntry(
-                    event_identifier=transaction.tx_hash,
-                    timestamp=event.timestamp,
-                    sequence_index=self.base_tools.get_next_sequence_counter(),
-                    location=Location.BLOCKCHAIN,
-                    event_type=HistoryEventType.INFORMATIONAL,
-                    event_subtype=HistoryEventSubType.NONE,
-                    asset=A_ETH,
-                    balance=Balance(amount=lqty_amount),
-                    location_label=event.location_label,
-                    counterparty=CPT_LIQUITY,
-                    notes=f'The new amount of {self.lqty.symbol} staked is {lqty_amount}',
-                )
+                    event.notes = f'Unstake {event.balance.amount} {self.lqty.symbol} from the Liquity protocol'  # noqa: E501
+                    event.extra_data = extra_data
             elif (
                 tx_log.topics[0] == STAKING_ETH_SENT and
                 event.asset in STAKING_REWARDS_ASSETS and
@@ -206,7 +190,7 @@ class LiquityDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                 event.event_type = HistoryEventType.STAKING
                 event.event_subtype = HistoryEventSubType.REWARD
                 event.counterparty = CPT_LIQUITY
-                event.notes = f'Receive reward of {event.balance.amount} {event.asset.resolve_to_crypto_asset().symbol}'  # noqa: E501
+                event.notes = f"Receive reward of {event.balance.amount} {event.asset.resolve_to_crypto_asset().symbol} from Liquity's staking"  # noqa: E501
 
         return informational_event, []
 
