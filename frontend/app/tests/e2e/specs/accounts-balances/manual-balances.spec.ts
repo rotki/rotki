@@ -77,7 +77,14 @@ describe('balances', () => {
         expect($overallBalance.minus(total).abs().isLessThan(0.01));
       });
       dashboardPage.getLocationBalances().then($dashboardBalances => {
-        expect($dashboardBalances).to.eql($manualBalances);
+        $dashboardBalances.forEach((dashboardBalances, index) => {
+          const balance = $manualBalances[index].renderedValue;
+          const dashboardBalance = dashboardBalances.renderedValue;
+          expect(dashboardBalance.toNumber()).within(
+            balance.minus(0.01).toNumber(),
+            balance.plus(0.01).toNumber()
+          );
+        });
       });
     });
   });
