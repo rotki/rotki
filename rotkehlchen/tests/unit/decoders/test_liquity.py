@@ -712,7 +712,7 @@ def test_increase_liquity_staking(database, ethereum_manager, eth_transactions):
         )
         events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
 
-    assert len(events) == 5
+    assert len(events) == 4
     expected_events = [
         HistoryBaseEntry(
             event_identifier=evmhash,
@@ -739,19 +739,7 @@ def test_increase_liquity_staking(database, ethereum_manager, eth_transactions):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.000047566872899089'), usd_value=ZERO),
             location_label=user_address,
-            notes='Receive reward of 0.000047566872899089 ETH',
-            counterparty='liquity',
-        ), HistoryBaseEntry(
-            event_identifier=evmhash,
-            sequence_index=4,
-            timestamp=TimestampMS(1646375440000),
-            location=Location.BLOCKCHAIN,
-            event_type=HistoryEventType.INFORMATIONAL,
-            event_subtype=HistoryEventSubType.NONE,
-            asset=A_ETH,
-            balance=Balance(amount=FVal('171.95999999999998'), usd_value=ZERO),
-            location_label=user_address,
-            notes='The new amount of LQTY staked is 171.95999999999998',
+            notes="Receive reward of 0.000047566872899089 ETH from Liquity's staking",
             counterparty='liquity',
         ), HistoryBaseEntry(
             event_identifier=evmhash,
@@ -763,11 +751,12 @@ def test_increase_liquity_staking(database, ethereum_manager, eth_transactions):
             asset=A_LQTY,
             balance=Balance(amount=FVal('89.99999999999997'), usd_value=ZERO),
             location_label=user_address,
-            notes='Stake 89.99999999999997 LQTY',
+            notes='Stake 89.99999999999997 LQTY in the Liquity protocol',
             counterparty='liquity',
+            extra_data={'staked_amount': '171.95999999999998', 'asset': A_LQTY},
         ), HistoryBaseEntry(
             event_identifier=evmhash,
-            sequence_index=183,
+            sequence_index=180,
             timestamp=TimestampMS(1646375440000),
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.STAKING,
@@ -775,7 +764,7 @@ def test_increase_liquity_staking(database, ethereum_manager, eth_transactions):
             asset=A_LUSD,
             balance=Balance(amount=FVal('1.134976028981709316'), usd_value=ZERO),
             location_label=user_address,
-            notes='Receive reward of 1.134976028981709316 LUSD',
+            notes="Receive reward of 1.134976028981709316 LUSD from Liquity's staking",
             counterparty='liquity',
         )]
     assert events == expected_events
@@ -881,7 +870,7 @@ def test_remove_liquity_staking(database, ethereum_manager, eth_transactions):
         )
         events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
 
-    assert len(events) == 5
+    assert len(events) == 4
     expected_events = [
         HistoryBaseEntry(
             event_identifier=evmhash,
@@ -908,19 +897,7 @@ def test_remove_liquity_staking(database, ethereum_manager, eth_transactions):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.000215197741630696'), usd_value=ZERO),
             location_label=user_address,
-            notes='Receive reward of 0.000215197741630696 ETH',
-            counterparty='liquity',
-        ), HistoryBaseEntry(
-            event_identifier=evmhash,
-            sequence_index=4,
-            timestamp=TimestampMS(1646375440000),
-            location=Location.BLOCKCHAIN,
-            event_type=HistoryEventType.INFORMATIONAL,
-            event_subtype=HistoryEventSubType.NONE,
-            asset=A_ETH,
-            balance=Balance(amount=FVal('0'), usd_value=ZERO),
-            location_label=user_address,
-            notes='The new amount of LQTY staked is 0',
+            notes="Receive reward of 0.000215197741630696 ETH from Liquity's staking",
             counterparty='liquity',
         ), HistoryBaseEntry(
             event_identifier=evmhash,
@@ -932,11 +909,12 @@ def test_remove_liquity_staking(database, ethereum_manager, eth_transactions):
             asset=A_LQTY,
             balance=Balance(amount=FVal('372.883717436930835121'), usd_value=ZERO),
             location_label=user_address,
-            notes='Unstake 372.883717436930835121 LQTY',
+            notes='Unstake 372.883717436930835121 LQTY from the Liquity protocol',
             counterparty='liquity',
+            extra_data={'staked_amount': '0', 'asset': A_LQTY},
         ), HistoryBaseEntry(
             event_identifier=evmhash,
-            sequence_index=125,
+            sequence_index=122,
             timestamp=TimestampMS(1646375440000),
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.STAKING,
@@ -944,7 +922,7 @@ def test_remove_liquity_staking(database, ethereum_manager, eth_transactions):
             asset=A_LUSD,
             balance=Balance(amount=FVal('2.476877599503048728'), usd_value=ZERO),
             location_label=user_address,
-            notes='Receive reward of 2.476877599503048728 LUSD',
+            notes="Receive reward of 2.476877599503048728 LUSD from Liquity's staking",
             counterparty='liquity',
         )]
     assert events == expected_events
