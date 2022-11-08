@@ -262,6 +262,7 @@ def test_account_with_proxy(rotkehlchen_api_server, inquirer):  # pylint: disabl
 @pytest.mark.parametrize('ethereum_accounts', [[JUSTIN, LIQUITY_POOL_DEPOSITOR]])
 @pytest.mark.parametrize('ethereum_modules', [['liquity']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [True])
 def test_stability_pool(rotkehlchen_api_server):
     """Test that we can get the status of the deposits in the stability pool"""
     def mock_etherscan_transaction_response(etherscan: 'Etherscan'):
@@ -291,6 +292,15 @@ def test_stability_pool(rotkehlchen_api_server):
 
     assert JUSTIN in result
     assert LIQUITY_POOL_DEPOSITOR in result
-    assert FVal(result[JUSTIN]['deposited']) == FVal('10211401.723115634393264567')
-    assert FVal(result[JUSTIN]['eth_gain']) == FVal('43.180853032438783295')
-    assert FVal(result[JUSTIN]['lqty_gain']) == FVal('114160.573902982554552744')
+    expected_amount = FVal('43.180853032438783295')
+    assert result[JUSTIN]['gains']['asset'] == A_ETH
+    assert FVal(result[JUSTIN]['gains']['amount']) == expected_amount
+    assert FVal(result[JUSTIN]['gains']['usd_value']) == expected_amount * FVal(1.5)
+    expected_amount = FVal('114160.573902982554552744')
+    assert result[JUSTIN]['rewards']['asset'] == A_LQTY
+    assert FVal(result[JUSTIN]['rewards']['amount']) == expected_amount
+    assert FVal(result[JUSTIN]['rewards']['usd_value']) == expected_amount * FVal(1.5)
+    expected_amount = FVal('10211401.723115634393264567')
+    assert result[JUSTIN]['deposited']['asset'] == A_LUSD
+    assert FVal(result[JUSTIN]['deposited']['amount']) == expected_amount
+    assert FVal(result[JUSTIN]['deposited']['usd_value']) == expected_amount * FVal(1.5)

@@ -328,7 +328,7 @@ class Liquity(HasDSProxy):
             )
             return {}
 
-        data: DefaultDict[ChecksumEvmAddress, Dict[str, FVal]] = defaultdict(dict)
+        data: DefaultDict[ChecksumEvmAddress, Dict[str, Any]] = defaultdict(dict)
         for idx, output in enumerate(outputs):
             current_address = addresses[idx // 3]
             status, result = output
@@ -336,19 +336,27 @@ class Liquity(HasDSProxy):
                 continue
 
             if idx % 3 == 0:
-                key = 'eth_gain'
+                key = 'gains'
+                asset = A_ETH
                 gain_info = self.stability_pool_contract.decode(result, 'getDepositorETHGain', arguments=[current_address])  # noqa: E501
             elif idx % 3 == 1:
-                key = 'lqty_gain'
+                key = 'rewards'
+                asset = A_LQTY
                 gain_info = self.stability_pool_contract.decode(result, 'getDepositorLQTYGain', arguments=[current_address])  # noqa: E501
             else:
                 key = 'deposited'
+                asset = A_LUSD
                 gain_info = self.stability_pool_contract.decode(result, 'getCompoundedLUSDDeposit', arguments=[current_address])  # noqa: E501
 
+            asset_price = Inquirer().find_usd_price(asset)
             amount = deserialize_asset_amount(
                 token_normalized_value_decimals(gain_info[0], 18),
             )
-            data[current_address][key] = amount
+            data[current_address][key] = {
+                'asset': asset.identifier,
+                'amount': amount,
+                'usd_value': asset_price * amount,
+            }
         return data
 
     def liquity_staking_balances(
