@@ -641,6 +641,10 @@ def test_query_yearn_vault_v2_balances(rotkehlchen_api_server, ethereum_accounts
         assert FVal(vault['underlying_value']['usd_value']) > ZERO
 
 
+@pytest.mark.skipif(
+    'CI' in os.environ,
+    reason='Subgraph is broken at the moment',
+)
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_V2_ACC2]])
 @pytest.mark.parametrize('ethereum_modules', [['yearn_vaults_v2']])
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
