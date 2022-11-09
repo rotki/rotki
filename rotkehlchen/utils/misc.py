@@ -9,6 +9,7 @@ import sys
 import time
 from itertools import zip_longest
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     DefaultDict,
@@ -29,6 +30,9 @@ from eth_utils.address import to_checksum_address
 from rotkehlchen.errors.serialization import ConversionError, DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import ChecksumEvmAddress, Timestamp, TimestampMS
+
+if TYPE_CHECKING:
+    from requests import Session
 
 log = logging.getLogger(__name__)
 
@@ -241,6 +245,11 @@ def get_system_spec() -> Dict[str, str]:
         'system': system_info,
     }
     return system_spec
+
+
+def set_user_agent(session: 'Session') -> None:
+    """update the given session headers by adding our user agent string"""
+    session.headers.update({'User-Agent': f'rotki/{get_system_spec()["rotkehlchen"]}'})
 
 
 def hexstr_to_int(value: str) -> int:

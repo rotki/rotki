@@ -51,7 +51,7 @@ from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.interfaces import HistoricalPriceOracleInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ExternalService, Price, Timestamp
-from rotkehlchen.utils.misc import pairwise, ts_now
+from rotkehlchen.utils.misc import pairwise, set_user_agent, ts_now
 from rotkehlchen.utils.serialization import jsonloads_dict, rlk_jsondumps
 
 if TYPE_CHECKING:
@@ -198,7 +198,7 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleInterface):
         )
         self.data_directory = data_directory
         self.session = requests.session()
-        self.session.headers.update({'User-Agent': 'rotkehlchen'})
+        set_user_agent(self.session)
         self.last_histohour_query_ts = 0
         self.last_rate_limit = 0
 

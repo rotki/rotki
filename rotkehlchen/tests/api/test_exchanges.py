@@ -114,7 +114,7 @@ def test_setup_exchange(rotkehlchen_api_server):
             'name': f'my_{str(location)}',
             'api_key': api_key,
             'api_secret': api_secret,
-        }  # noqa: E501
+        }
         if location in (Location.COINBASEPRO, Location.KUCOIN):
             data['passphrase'] = '123'
         response = requests.put(

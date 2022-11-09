@@ -21,7 +21,7 @@ from rotkehlchen.errors.api import (
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import B64EncodedBytes, Timestamp
-from rotkehlchen.utils.misc import get_system_spec
+from rotkehlchen.utils.misc import set_user_agent
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 logger = logging.getLogger(__name__)
@@ -142,10 +142,8 @@ class Premium():
 
     def reset_credentials(self, credentials: PremiumCredentials) -> None:
         self.credentials = credentials
-        self.session.headers.update({
-            'API-KEY': self.credentials.serialize_key(),
-            'User-Agent': f'rotki/{get_system_spec()["rotkehlchen"]}',
-        })
+        self.session.headers.update({'API-KEY': self.credentials.serialize_key()})
+        set_user_agent(self.session)
 
     def set_credentials(self, credentials: PremiumCredentials) -> None:
         """Try to set the credentials for a premium rotkehlchen subscription

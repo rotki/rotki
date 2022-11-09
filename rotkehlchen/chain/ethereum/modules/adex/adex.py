@@ -32,7 +32,7 @@ from rotkehlchen.serialization.deserialize import deserialize_evm_address, deser
 from rotkehlchen.types import ChecksumEvmAddress, Timestamp, deserialize_evm_tx_hash
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
-from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.utils.misc import set_user_agent, ts_now
 
 from .graph import BONDS_QUERY, CHANNEL_WITHDRAWS_QUERY, UNBOND_REQUESTS_QUERY, UNBONDS_QUERY
 from .types import (
@@ -85,7 +85,7 @@ class Adex(EthereumModule):
         self.premium = premium
         self.msg_aggregator = msg_aggregator
         self.session = requests.session()
-        self.session.headers.update({'User-Agent': 'rotkehlchen'})
+        set_user_agent(self.session)
         self.staking_pool = EthereumConstants().contract('ADEX_STAKING_POOL')
         self.adx = A_ADX.resolve_to_evm_token()
         self.dai = A_DAI.resolve_to_evm_token()

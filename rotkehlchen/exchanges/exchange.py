@@ -25,6 +25,7 @@ from rotkehlchen.types import (
     T_ApiSecret,
     Timestamp,
 )
+from rotkehlchen.utils.misc import set_user_agent
 from rotkehlchen.utils.mixins.cacheable import CacheableMixIn
 from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
 
@@ -68,7 +69,7 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
         self.secret = secret
         self.first_connection_made = False
         self.session = requests.session()
-        self.session.headers.update({'User-Agent': 'rotkehlchen'})
+        set_user_agent(self.session)
         log.info(f'Initialized {str(location)} exchange {name}')
 
     def location_id(self) -> ExchangeLocationID:
