@@ -464,6 +464,14 @@ in a different instance of rotki to easily transfer your user asset entries.
     This archive cannot be used as a backup/restore across different versions of rotki since there is
     absolutely no guarantee that there will be no breaking format changes across versions.
 
+Reset assets database
+-------------------------------------
+
+There is two options to reset assets database:
+
+1. ``Soft Reset`` This option will not reset assets that were added by the user.
+2. ``Hard Reset`` This option will also reset assets that were added by the user.
+
 Purging data
 -----------------
 

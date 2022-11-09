@@ -26,7 +26,7 @@
         </v-tooltip>
       </v-col>
       <v-col cols="auto">
-        <restore-asset-db-button />
+        <restore-asset-db-button dropdown />
       </v-col>
     </v-row>
 
