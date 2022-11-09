@@ -1,3 +1,4 @@
+import os
 import random
 from http import HTTPStatus
 from unittest.mock import patch
@@ -39,6 +40,7 @@ from rotkehlchen.tests.utils.exchanges import (
     patch_poloniex_balances_query,
     try_get_first_exchange,
 )
+from rotkehlchen.tests.utils.factories import make_random_uppercasenumeric_string
 from rotkehlchen.tests.utils.history import (
     assert_binance_trades_result,
     assert_kraken_asset_movements,
@@ -85,19 +87,34 @@ def mock_validate_api_key_failure(location: Location):
     )
 
 
+@pytest.mark.skipif(
+    'CI' in os.environ,
+    reason='Dont query all production exchanges when CI runs',
+)
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_setup_exchange(rotkehlchen_api_server):
-    """Test that setting up an exchange via the api works"""
+    """Test that setting up an exchange via the api works
+
+    Hits all production exchange servers with a query to make sure that the api key
+    validation error of each exchange is handled properly.
+    """
     # Check that no exchanges are registered
-    response = requests.get(api_url_for(rotkehlchen_api_server, "exchangesresource"))
+    response = requests.get(api_url_for(rotkehlchen_api_server, 'exchangesresource'))
     assert_proper_response(response)
     json_data = response.json()
     assert json_data['message'] == ''
     assert json_data['result'] == []
 
     # First test that if api key validation fails we get an error, for every exchange
+    api_key = make_random_uppercasenumeric_string(size=10)
+    api_secret = make_random_uppercasenumeric_string(size=10)
     for location in SUPPORTED_EXCHANGES:
-        data = {'location': str(location), 'name': f'my_{str(location)}', 'api_key': 'ddddd', 'api_secret': 'fffffff'}  # noqa: E501
+        data = {
+            'location': str(location),
+            'name': f'my_{str(location)}',
+            'api_key': api_key,
+            'api_secret': api_secret,
+        }  # noqa: E501
         if location in (Location.COINBASEPRO, Location.KUCOIN):
             data['passphrase'] = '123'
         response = requests.put(
@@ -126,7 +143,7 @@ def test_setup_exchange(rotkehlchen_api_server):
     assert len(rotki.exchange_manager.connected_exchanges) == 0
 
     # Mock the api pair validation and make sure that the exchange is setup
-    data = {'location': 'kraken', 'name': 'my_kraken', 'api_key': 'ddddd', 'api_secret': 'fffffff'}  # noqa: E501
+    data = {'location': 'kraken', 'name': 'my_kraken', 'api_key': api_key, 'api_secret': api_secret}  # noqa: E501
     with mock_validate_api_key_success(Location.KRAKEN):
         response = requests.put(
             api_url_for(rotkehlchen_api_server, 'exchangesresource'), json=data,
@@ -139,7 +156,7 @@ def test_setup_exchange(rotkehlchen_api_server):
     assert result == [{'location': 'kraken', 'name': 'my_kraken', KRAKEN_ACCOUNT_TYPE_KEY: 'starter'}]  # noqa: E501
 
     # Check that we get an error if we try to re-setup an already setup exchange
-    data = {'location': 'kraken', 'name': 'my_kraken', 'api_key': 'ddddd', 'api_secret': 'fffffff'}  # noqa: E501
+    data = {'location': 'kraken', 'name': 'my_kraken', 'api_key': api_key, 'api_secret': api_secret}  # noqa: E501
     with mock_validate_api_key_success(Location.KRAKEN):
         response = requests.put(
             api_url_for(rotkehlchen_api_server, 'exchangesresource'), json=data,
@@ -167,7 +184,7 @@ def test_setup_exchange(rotkehlchen_api_server):
     ]
 
     # Check that giving a passphrase is fine
-    data = {'location': 'coinbasepro', 'name': 'my_coinbasepro', 'api_key': 'ddddd', 'api_secret': 'fffff', 'passphrase': 'sdf'}  # noqa: E501
+    data = {'location': 'coinbasepro', 'name': 'my_coinbasepro', 'api_key': api_key, 'api_secret': api_secret, 'passphrase': 'sdf'}  # noqa: E501
     with mock_validate_api_key_success(Location.COINBASEPRO):
         response = requests.put(
             api_url_for(rotkehlchen_api_server, 'exchangesresource'), json=data,
