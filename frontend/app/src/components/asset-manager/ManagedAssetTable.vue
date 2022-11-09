@@ -90,7 +90,7 @@
     >
       <template #item.symbol="{ item }">
         <asset-details-base
-          :changeable="change"
+          :changeable="!loading"
           opens-details
           :asset="getAsset(item)"
         />
@@ -172,7 +172,6 @@ import { toSentenceCase } from '@/utils/text';
 defineProps({
   tokens: { required: true, type: Array as PropType<SupportedAsset[]> },
   loading: { required: false, type: Boolean, default: false },
-  change: { required: true, type: Boolean },
   serverItemLength: { required: true, type: Number }
 });
 

@@ -5,7 +5,6 @@
       :loading="loading"
       @refresh="refresh"
     />
-
     <custom-asset-table
       class="mt-12"
       :assets="assets"
@@ -28,6 +27,7 @@
       @cancel="closeDialog()"
     >
       <custom-asset-form
+        ref="assetForm"
         v-model="formData"
         :types="types"
         :edit="editMode"
@@ -122,18 +122,24 @@ const edit = (editAsset: CustomAsset) => {
   set(showForm, true);
 };
 
+const assetForm: Ref<InstanceType<typeof CustomAssetForm> | null> = ref(null);
+
 const save = async () => {
   set(saving, true);
   const form = get(formData);
   let success: boolean = false;
+  let identifier = get(formData).identifier;
+
   try {
     if (get(editMode)) {
       success = await api.assets.editCustomAsset(form);
     } else {
-      const identifier = await api.assets.addCustomAsset(
-        omit(form, 'identifier')
-      );
+      identifier = await api.assets.addCustomAsset(omit(form, 'identifier'));
       success = !!identifier;
+    }
+
+    if (identifier) {
+      await get(assetForm)?.saveIcon(identifier);
     }
   } catch (e: any) {
     const obj = { message: e.message };
@@ -181,10 +187,12 @@ onMounted(async () => {
 watch(pagination, () => refresh());
 
 const refresh = async () => {
+  set(loading, true);
   let supportedAssets = await queryAllCustomAssets(get(pagination));
   set(assets, supportedAssets.entries);
   set(totalEntries, supportedAssets.entriesFound);
   set(types, await api.assets.getCustomAssetTypes());
+  set(loading, false);
 };
 
 const editAsset = (identifier: Nullable<string>) => {

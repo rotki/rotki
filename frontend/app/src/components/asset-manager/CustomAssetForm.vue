@@ -39,12 +39,17 @@
         />
       </v-col>
     </v-row>
+
+    <div class="my-4">
+      <asset-icon-form ref="assetIconForm" :identifier="value.identifier" />
+    </div>
   </v-form>
 </template>
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
-import { PropType } from 'vue';
+import { PropType, Ref } from 'vue';
+import AssetIconForm from '@/components/asset-manager/AssetIconForm.vue';
 import { CustomAsset } from '@/types/assets';
 
 const props = defineProps({
@@ -73,6 +78,8 @@ const valid = ref(false);
 const input = (asset: Partial<CustomAsset>) => {
   emit('input', { ...get(value), ...asset });
 };
+
+const assetIconForm: Ref<InstanceType<typeof AssetIconForm> | null> = ref(null);
 
 watch(valid, value => emit('valid', value));
 
@@ -111,5 +118,13 @@ const v$ = useVuelidate(
 
 watch(v$, ({ $invalid }) => {
   set(valid, !$invalid);
+});
+
+const saveIcon = (identifier: string) => {
+  get(assetIconForm)?.saveIcon(identifier);
+};
+
+defineExpose({
+  saveIcon
 });
 </script>

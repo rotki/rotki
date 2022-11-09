@@ -237,50 +237,12 @@
       </v-expansion-panels>
     </v-sheet>
 
-    <div class="mb-4">
-      <v-row class="mt-4">
-        <v-col cols="auto">
-          <v-sheet outlined rounded class="asset-form__icon">
-            <v-tooltip v-if="preview" right>
-              <template #activator="{ on }">
-                <v-btn
-                  fab
-                  x-small
-                  depressed
-                  class="asset-form__icon__refresh"
-                  color="primary"
-                  :loading="refreshIconLoading"
-                  v-on="on"
-                  @click="refreshIcon"
-                >
-                  <v-icon>mdi-refresh</v-icon>
-                </v-btn>
-              </template>
-              {{ t('asset_form.fetch_latest_icon.title') }}
-            </v-tooltip>
-
-            <asset-icon
-              v-if="preview"
-              :identifier="preview"
-              size="72px"
-              changeable
-              :timestamp="timestamp"
-            />
-          </v-sheet>
-        </v-col>
-        <v-col>
-          <file-upload
-            source="icon"
-            file-filter="image/*"
-            @selected="icon = $event"
-          />
-        </v-col>
-      </v-row>
-      <v-row v-if="icon">
-        <v-col class="text-caption">
-          {{ t('asset_form.replaced', { name: icon.name }) }}
-        </v-col>
-      </v-row>
+    <div class="my-4">
+      <asset-icon-form
+        ref="assetIconForm"
+        :identifier="identifier"
+        refreshable
+      />
     </div>
   </fragment>
 </template>
@@ -294,13 +256,13 @@ import {
   UnderlyingToken
 } from '@rotki/common/lib/data';
 import { omit } from 'lodash';
-import { ComputedRef, PropType } from 'vue';
+import { ComputedRef, PropType, Ref } from 'vue';
+import AssetIconForm from '@/components/asset-manager/AssetIconForm.vue';
 import UnderlyingTokenManager from '@/components/asset-manager/UnderlyingTokenManager.vue';
 import CopyButton from '@/components/helper/CopyButton.vue';
 import Fragment from '@/components/helper/Fragment';
 import HelpLink from '@/components/helper/HelpLink.vue';
-import FileUpload from '@/components/import/FileUpload.vue';
-import { interop, useInterop } from '@/electron-interop';
+import { useInterop } from '@/electron-interop';
 import {
   CUSTOM_ASSET,
   EVM_TOKEN,
@@ -311,7 +273,6 @@ import { deserializeApiErrorMessage } from '@/services/converters';
 import { api } from '@/services/rotkehlchen-api';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useMessageStore } from '@/store/message';
-import { useNotifications } from '@/store/notifications';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import {
   isValidEthAddress,
@@ -362,12 +323,10 @@ const coingeckoEnabled = ref<boolean>(false);
 const cryptocompareEnabled = ref<boolean>(false);
 const fetching = ref<boolean>(false);
 const dontAutoFetch = ref<boolean>(false);
-const refreshIconLoading = ref<boolean>(false);
-const timestamp = ref<number | null>(null);
 
 const underlyingTokens = ref<UnderlyingToken[]>([]);
-const icon = ref<File | null>(null);
 
+const assetIconForm: Ref<InstanceType<typeof AssetIconForm> | null> = ref(null);
 const errors = ref<{ [key: string]: string[] }>({});
 
 const isEvmToken = computed<boolean>(() => {
@@ -398,10 +357,6 @@ watch(address, async () => {
   set(name, newName || get(name));
   set(symbol, newSymbol || get(symbol));
   set(fetching, false);
-});
-
-const preview = computed<string | null>(() => {
-  return get(identifier) ?? get(symbol) ?? null;
 });
 
 const asset: ComputedRef<Omit<SupportedAsset, 'identifier' | 'type'>> =
@@ -468,34 +423,6 @@ onMounted(() => {
   set(chain, token.chain);
   set(tokenKind, token.tokenKind);
 });
-
-const saveIcon = async (identifier: string) => {
-  if (!get(icon)) {
-    return;
-  }
-
-  let success = false;
-  let message = '';
-  try {
-    if (interop.appSession) {
-      await api.assets.setIcon(identifier, get(icon)!.path);
-    } else {
-      await api.assets.uploadIcon(identifier, get(icon)!);
-    }
-    success = true;
-  } catch (e: any) {
-    message = e.message;
-  }
-
-  if (!success) {
-    setMessage({
-      title: tc('asset_form.icon_upload.title'),
-      description: tc('asset_form.icon_upload.description', 0, {
-        message
-      })
-    });
-  }
-};
 
 const saveEthereumToken = async () => {
   let newIdentifier: string;
@@ -570,7 +497,7 @@ const save = async () => {
       ? await saveEthereumToken()
       : await saveAsset();
     set(identifier, newIdentifier);
-    await saveIcon(newIdentifier);
+    await get(assetIconForm)?.saveIcon(newIdentifier);
     return true;
   } catch (e: any) {
     const message = deserializeApiErrorMessage(e.message) as any;
@@ -591,46 +518,5 @@ defineExpose({
   save
 });
 
-const { notify } = useNotifications();
-
-const refreshIcon = async () => {
-  set(refreshIconLoading, true);
-  const identifierVal = get(identifier);
-  try {
-    await api.assets.refreshIcon(identifierVal);
-  } catch (e: any) {
-    notify({
-      title: tc('asset_form.fetch_latest_icon.title'),
-      message: tc('asset_form.fetch_latest_icon.description', 0, {
-        identifier: identifierVal,
-        message: e.message
-      }),
-      display: true
-    });
-  }
-  set(refreshIconLoading, false);
-  set(timestamp, Date.now());
-};
-
 const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
 </script>
-
-<style scoped lang="scss">
-.asset-form {
-  &__icon {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    width: 96px;
-    height: 100%;
-    position: relative;
-
-    &__refresh {
-      position: absolute;
-      right: -1rem;
-      top: -1rem;
-    }
-  }
-}
-</style>

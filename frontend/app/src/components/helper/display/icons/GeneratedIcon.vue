@@ -1,5 +1,7 @@
 <template>
+  <v-icon v-if="customAsset" :size="size"> mdi-pencil-circle-outline </v-icon>
   <span
+    v-else
     :style="wrapperStyle"
     class="d-flex align-center justify-center generated-icon"
     :class="currency ? ' font-weight-medium' : 'font-weight-bold'"
@@ -22,7 +24,8 @@ const props = defineProps({
   size: { required: true, type: String },
   backgroundColor: { required: false, type: String, default: '#fff' },
   asset: { required: false, type: String, default: '' },
-  currency: { required: false, type: Boolean, default: false }
+  currency: { required: false, type: Boolean, default: false },
+  customAsset: { required: false, type: Boolean, default: false }
 });
 
 const { size, backgroundColor, asset, currency } = toRefs(props);

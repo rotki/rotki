@@ -8,7 +8,7 @@
     </template>
     <template #actions>
       <v-row>
-        <v-col />
+        <v-col class="d-none d-md-block" />
         <v-col cols="12" md="6" class="pb-md-8">
           <table-filter
             :matchers="matchers"
@@ -43,6 +43,13 @@
       :server-items-length="serverItemLength"
       @update:options="updatePaginationHandler($event)"
     >
+      <template #item.name="{ item }">
+        <asset-details-base
+          :changeable="!loading"
+          opens-details
+          :asset="getAsset(item)"
+        />
+      </template>
       <template #item.custom_asset_type="{ item }">
         <badge-display>
           {{ item.customAssetType }}
@@ -85,6 +92,7 @@
 import { SupportedAsset } from '@rotki/common/lib/data';
 import { PropType, Ref } from 'vue';
 import { DataTableHeader } from 'vuetify';
+import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
 import CopyButton from '@/components/helper/CopyButton.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import RowExpander from '@/components/helper/RowExpander.vue';
@@ -152,6 +160,16 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
 const add = () => emit('add');
 const edit = (asset: CustomAsset) => emit('edit', asset);
 const deleteAsset = (asset: CustomAsset) => emit('delete-asset', asset);
+
+const getAsset = (item: CustomAsset) => {
+  return {
+    name: item.name,
+    symbol: item.customAssetType,
+    identifier: item.identifier,
+    isCustomAsset: true,
+    customAssetType: item.customAssetType
+  };
+};
 
 const updatePaginationHandler = (
   updateOptions: CustomAssetPaginationOptions
