@@ -43,7 +43,7 @@ from rotkehlchen.types import (
     Timestamp,
 )
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import hex_or_bytes_to_int
+from rotkehlchen.utils.misc import hex_or_bytes_to_int, set_user_agent
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 ETHERSCAN_TX_QUERY_LIMIT = 10000
@@ -67,7 +67,7 @@ class Etherscan(ExternalServiceWithApiKey):
         self.msg_aggregator = msg_aggregator
         self.session = requests.session()
         self.warning_given = False
-        self.session.headers.update({'User-Agent': 'rotkehlchen'})
+        set_user_agent(self.session)
 
     @overload
     def _query(  # pylint: disable=no-self-use

@@ -29,7 +29,7 @@ from rotkehlchen.types import (
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import from_gwei, get_chunks
+from rotkehlchen.utils.misc import from_gwei, get_chunks, set_user_agent
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
@@ -74,7 +74,7 @@ class BeaconChain(ExternalServiceWithApiKey):
         self.msg_aggregator = msg_aggregator
         self.session = requests.session()
         self.warning_given = False
-        self.session.headers.update({'User-Agent': 'rotkehlchen'})
+        set_user_agent(self.session)
         self.url = 'https://beaconcha.in/api/v1/'
 
     def _query(

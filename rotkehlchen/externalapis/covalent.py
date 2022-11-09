@@ -19,7 +19,7 @@ from rotkehlchen.types import (
     Timestamp,
 )
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import create_timestamp, ts_now
+from rotkehlchen.utils.misc import create_timestamp, set_user_agent, ts_now
 
 COVALENT_QUERY_LIMIT = 1000
 CONST_RETRY = 1
@@ -84,7 +84,7 @@ class Covalent(ExternalServiceWithApiKey):
     ) -> None:
         super().__init__(database=database, service_name=ExternalService.COVALENT)
         self.session = requests.session()
-        self.session.headers.update({'User-Agent': 'rotkehlchen'})
+        set_user_agent(self.session)
         self.msg_aggregator = msg_aggregator
         self.chain_id = chain_id
 
