@@ -43,6 +43,7 @@ import LiquidityPoolSelector from '@/components/helper/LiquidityPoolSelector.vue
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
 import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
+import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
 import TableFilter from '@/components/history/filtering/TableFilter.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import TradeLocationSelector from '@/components/history/TradeLocationSelector.vue';
@@ -129,6 +130,8 @@ export function registerComponents() {
   Vue.component('GraphTooltipWrapper', GraphTooltipWrapper);
   // Version 19 - 1.26
   Vue.component('LpPoolIcon', LpPoolIcon);
+  // Version 20 - 1.27
+  Vue.component('BadgeDisplay', BadgeDisplay);
   vuetifyRegister();
   logger.info('Components registered');
 }

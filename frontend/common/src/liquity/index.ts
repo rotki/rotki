@@ -44,6 +44,7 @@ const LiquityStakingEvent = z.object({
   tx: z.string(),
   address: z.string(),
   timestamp: z.number(),
+  sequenceNumber: z.string(),
   stakeAfter: AssetBalance,
   stakeChange: AssetBalance,
   issuanceGain: AssetBalance,
@@ -57,3 +58,14 @@ export const LiquityStakingEvents = z.record(z.array(LiquityStakingEvent))
 
 export type LiquityStakingEvents = z.infer<typeof LiquityStakingEvents>
 
+export const LiquityPoolDetail = z.object({
+  gains: AssetBalance,
+  rewards: AssetBalance,
+  deposited: AssetBalance,
+});
+
+export type LiquityPoolDetail = z.infer<typeof LiquityPoolDetail>;
+
+export const LiquityPoolDetails = z.record(LiquityPoolDetail);
+
+export type LiquityPoolDetails = z.infer<typeof LiquityPoolDetails>;

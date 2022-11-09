@@ -16,7 +16,7 @@ import { useBtcBalancesStore } from '@/store/blockchain/balances/btc';
 import { useEthBalancesStore } from '@/store/blockchain/balances/eth';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { BtcBalances } from '@/types/blockchain/balances';
-import { currencies } from '@/types/currencies';
+import { useCurrencies } from '@/types/currencies';
 import { SupportedExchange } from '@/types/exchanges';
 import { bigNumberify, zeroBalance } from '@/utils/bignumbers';
 import '../../i18n';
@@ -320,8 +320,9 @@ describe('balances:getters', () => {
     set(exchangeRates, { EUR: bigNumberify(1.2) });
 
     const generalSettingsStore = useGeneralSettingsStore();
+    const { currencies } = useCurrencies();
     generalSettingsStore.update({
-      mainCurrency: currencies[1]
+      mainCurrency: get(currencies)[1]
     });
 
     set(prices, {

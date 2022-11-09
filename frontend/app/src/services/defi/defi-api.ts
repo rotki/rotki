@@ -147,6 +147,11 @@ export class DefiApi {
     return fetchExternalAsync(this.api, url);
   }
 
+  fetchLiquityStakingPools(): Promise<PendingTask> {
+    const url = 'blockchains/ETH/modules/liquity/pool';
+    return fetchExternalAsync(this.api, url);
+  }
+
   async fetchAirdrops(): Promise<PendingTask> {
     const response = await this.axios.get<ActionResult<PendingTask>>(
       '/blockchains/ETH/airdrops',

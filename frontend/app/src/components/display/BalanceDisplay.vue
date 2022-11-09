@@ -25,7 +25,7 @@
       />
     </div>
     <asset-link v-if="!noIcon" class="ml-4" icon :asset="asset">
-      <asset-icon :identifier="asset" size="24px" />
+      <asset-icon :identifier="asset" :size="iconSize" />
     </asset-link>
   </div>
 </template>
@@ -52,7 +52,8 @@ const props = defineProps({
   },
   assetPadding: { required: false, type: Number, default: 0 },
   ticker: { required: false, type: Boolean, default: true },
-  priceLoading: { required: false, type: Boolean, default: false }
+  priceLoading: { required: false, type: Boolean, default: false },
+  iconSize: { required: false, type: String, default: '24px' }
 });
 
 const { asset } = toRefs(props);

@@ -2620,6 +2620,12 @@
     "loading": "Liquity Staking information is loading",
     "no_premium": "Liquity Staking"
   },
+  "liquity_pools": {
+    "liquidation_gains": "Liquidation gains",
+    "no_lusd_deposited": "No LUSD deposited",
+    "rewards": "Rewards",
+    "title": "Stability pool deposits"
+  },
   "liquity_staking_details": {
     "refresh_tooltip": "Refresh the staked amounts and events",
     "select_account": "Select account"
@@ -2662,6 +2668,7 @@
     "total_value_lost": "Total value lost"
   },
   "loan_stake": {
+    "no_lqty_staked": "No LQTY staked",
     "stake": "Staked amount",
     "title": "Stake"
   },

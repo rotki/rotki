@@ -43,6 +43,10 @@ export class AssetsManagerPage {
   }
 
   removeIgnoredAsset(asset: string) {
+    cy.get('[data-cy=asset-filter').scrollIntoView().click();
+    cy.get('[data-cy=asset-filter-ignored] .v-radio:first-child')
+      .scrollIntoView()
+      .click();
     this.searchAsset(asset);
     cy.wait(1000);
     cy.get(
