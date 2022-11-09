@@ -576,11 +576,11 @@ def test_query_yearn_vault_history(rotkehlchen_api_server, ethereum_accounts):
     ))
     assert_simple_ok_response(response)
     with rotki.data.db.conn.read_ctx() as cursor:
-        events = rotki.data.db.get_yearn_vaults_events(
-            cursor,
-            TEST_ACC1,
-            test_vault,
-            rotki.data.msg_aggregator,
+        events = get_yearn_vaults_events(
+            cursor=cursor,
+            address=TEST_ACC1,
+            vault=test_vault,
+            msg_aggregator=rotki.data.msg_aggregator,
         )
     assert len(events) == 0
 
