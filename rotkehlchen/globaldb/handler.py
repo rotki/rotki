@@ -1557,6 +1557,12 @@ class GlobalDBHandler():
             return [entry[0] for entry in cursor]
 
     @staticmethod
+    def get_yearn_v2_addresses() -> Set[ChecksumEvmAddress]:
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            cursor.execute('SELECT address FROM evm_tokens WHERE protocol="yearn_vaults_v2"')
+            return {string_to_evm_address(address_tup[0]) for address_tup in cursor}
+
+    @staticmethod
     def get_general_cache_last_queried_ts(
             key_parts: Iterable[Union[str, GeneralCacheType]],
             value: str,
