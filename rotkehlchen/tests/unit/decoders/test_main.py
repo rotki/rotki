@@ -38,6 +38,7 @@ def test_decoders_initialization(ethereum_transaction_decoder):
         'Hop',
         'Convex',
         'Weth',
+        'Yearn',
     }
 
     assert ethereum_transaction_decoder.all_counterparties == {
@@ -72,6 +73,8 @@ def test_decoders_initialization(ethereum_transaction_decoder):
         '1inch-v1',
         'sushiswap-v2',
         'weth',
+        'yearn-v1',
+        'yearn-v2',
     }
 
 

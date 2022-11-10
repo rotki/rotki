@@ -78,9 +78,9 @@ from rotkehlchen.types import (
     YEARN_VAULTS_V2_PROTOCOL,
     ChainID,
     GeneralCacheType,
-    KnownProtocolsAssets,
     OracleSource,
     Price,
+    ProtocolsWithPriceLogic,
     Timestamp,
 )
 from rotkehlchen.user_messages import MessagesAggregator
@@ -667,7 +667,7 @@ class Inquirer():
         try:
             token = asset.resolve_to_evm_token()
             if token.protocol is not None:
-                is_known_protocol = token.protocol in KnownProtocolsAssets
+                is_known_protocol = token.protocol in ProtocolsWithPriceLogic
             underlying_tokens = token.underlying_tokens
         except (UnknownAsset, WrongAssetType):
             pass
