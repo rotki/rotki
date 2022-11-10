@@ -1254,6 +1254,7 @@
     "location": "Ubicación",
     "name": "Name",
     "no_premium": "No premium subscription detected. ",
+    "of": "de",
     "price": "Precio",
     "price_in_symbol": "Precio en {symbol}",
     "protocol": "Protocol",
@@ -1502,6 +1503,7 @@
     "title": "Manage Data"
   },
   "data_table": {
+    "items_no": "Artículos #",
     "rows_per_page": "Filas por página"
   },
   "database_backups": {

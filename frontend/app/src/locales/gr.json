@@ -1260,6 +1260,7 @@
     "location": "Location",
     "name": "Name",
     "no_premium": "No premium subscription detected. ",
+    "of": "of",
     "price": "Price",
     "price_in_symbol": "Price in {symbol}",
     "protocol": "Protocol",
@@ -1508,6 +1509,7 @@
     "title": "Manage Data"
   },
   "data_table": {
+    "items_no": "Items #",
     "rows_per_page": "Rows per page"
   },
   "database_backups": {
