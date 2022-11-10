@@ -9,6 +9,7 @@
     :headers="headers"
     :expanded="expanded"
     :footer-props="footerProps"
+    :page.sync="currentPage"
     :items-per-page="itemsPerPage"
     :hide-default-footer="hideDefaultFooter"
     :loading="loading"
@@ -35,6 +36,26 @@
     <!-- Pass on all named slots -->
     <slot v-for="slot in Object.keys($slots)" :slot="slot" :name="slot" />
 
+    <template #footer.page-text="footerPageTextProps">
+      <div class="d-flex align-center items-page-select">
+        <span>{{ tc('data_table.items_no') }}</span>
+        <v-select
+          v-if="footerPageTextProps.itemsLength > 0"
+          v-model="currentPage"
+          auto
+          hide-details
+          :disabled="footerPageTextProps.itemsLength <= itemsPerPage"
+          :items="pageSelectorData(footerPageTextProps)"
+          item-value="value"
+          item-text="text"
+        />
+        <span v-else class="mr-1">{{ footerPageTextProps.itemsLength }}</span>
+        <span>
+          {{ tc('common.of') }} {{ footerPageTextProps.itemsLength }}
+        </span>
+      </div>
+    </template>
+
     <template
       v-if="!hideDefaultFooter"
       #top="{ pagination, options, updateOptions }"
@@ -44,7 +65,29 @@
         :pagination="pagination"
         :options="options"
         @update:options="updateOptions"
-      />
+      >
+        <template #page-text="footerPageTextProps">
+          <div class="d-flex align-center items-page-select">
+            <span>{{ tc('data_table.items_no') }}</span>
+            <v-select
+              v-if="footerPageTextProps.itemsLength > 0"
+              v-model="currentPage"
+              auto
+              hide-details
+              :disabled="footerPageTextProps.itemsLength <= itemsPerPage"
+              :items="pageSelectorData(footerPageTextProps)"
+              item-value="value"
+              item-text="text"
+            />
+            <span v-else class="mr-1">
+              {{ footerPageTextProps.itemsLength }}
+            </span>
+            <span>
+              {{ tc('common.of') }} {{ footerPageTextProps.itemsLength }}
+            </span>
+          </div>
+        </template>
+      </v-data-footer>
       <v-divider />
     </template>
   </v-data-table>
@@ -76,6 +119,7 @@ const { itemsPerPage } = storeToRefs(frontendSettingsStore);
 const { container } = toRefs(props);
 
 const tableRef = ref<any>(null);
+const currentPage = ref<number>(1);
 const { footerProps } = useFooterProps();
 
 const onItemsPerPageChange = async (newValue: number) => {
@@ -104,6 +148,28 @@ const scrollToTop = () => {
     wrapper.scrollTop = tableTop + wrapper.scrollTop - 64;
   }
 };
+
+const pageSelectorData = (props: {
+  pageStart: number;
+  pageStop: number;
+  itemsLength: number;
+}) => {
+  const itemsLength = props.itemsLength;
+  const perPage = get(itemsPerPage);
+  const totalPage = Math.ceil(itemsLength / perPage);
+
+  return new Array(totalPage).fill(0).map((item, index) => {
+    return {
+      value: index + 1,
+      text: `${index * perPage + 1} - ${Math.min(
+        (index + 1) * perPage,
+        itemsLength
+      )}`
+    };
+  });
+};
+
+const { tc } = useI18n();
 </script>
 
 <style scoped lang="scss">
@@ -142,6 +208,29 @@ const scrollToTop = () => {
           &__content {
             background-color: var(--v-dark-lighten1) !important;
           }
+        }
+      }
+    }
+  }
+}
+
+.items-page-select {
+  display: flex;
+
+  :deep() {
+    .v-input {
+      margin: 13px 0.5rem;
+      font-size: 0.75rem;
+      width: 100px;
+      max-width: 100%;
+      flex: 0 1 0;
+      padding: 0;
+      position: initial;
+
+      .v-select__selections {
+        .v-select__selection {
+          overflow: visible;
+          padding-right: 0.5rem;
         }
       }
     }
