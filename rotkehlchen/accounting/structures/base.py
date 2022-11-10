@@ -200,6 +200,7 @@ class HistoryBaseEntry(AccountingEventMixin):
             'location_label': self.location_label,
             'notes': self.notes,
             'counterparty': self.counterparty,
+            'extra_data': self.extra_data,
         }
 
     @classmethod
