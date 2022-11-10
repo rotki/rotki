@@ -28,19 +28,13 @@
               :class="{ [css.circle]: circle }"
               v-on="on"
             >
-              <v-icon
-                v-if="isCustomAsset"
-                :color="dark ? 'black' : 'gray'"
-                :size="size"
-              >
-                mdi-pencil-circle-outline
-              </v-icon>
-              <div v-else :class="css.wrapper">
+              <div :class="css.wrapper">
                 <div v-if="pending" class="black--text">
                   <token-placeholder :size="size" />
                 </div>
                 <generated-icon
                   v-if="currency || error"
+                  :custom-asset="isCustomAsset"
                   :asset="displayAsset"
                   :currency="!!currency"
                   :size="size"
@@ -75,7 +69,6 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import TokenPlaceholder from '@/components/svgs/TokenPlaceholder.vue';
-import { useTheme } from '@/composables/common';
 import { api } from '@/services/rotkehlchen-api';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { getChainIcon } from '@/types/blockchain/chains';
@@ -164,8 +157,6 @@ const url = computed<string>(() => {
   }
   const currentTimestamp = get(timestamp) || Date.now();
 
-  if (get(isCustomAsset)) return '';
-
   return api.assets.assetImageUrl(
     id,
     get(changeable) ? currentTimestamp : undefined
@@ -194,11 +185,11 @@ const placeholderStyle = computed(() => {
 const chainIcon = computed(() =>
   get(showChain) ? getChainIcon(get(chain)) : null
 );
+
 watch([symbol, changeable, identifier], () => {
   set(error, false);
+  set(pending, true);
 });
-
-const { dark } = useTheme();
 </script>
 <style module lang="scss">
 .circle {

@@ -232,8 +232,10 @@ watch(identifier, async identifier => {
 watch(pagination, () => refresh());
 
 const refresh = async () => {
+  set(loading, true);
   let supportedAssets = await queryAllAssets(get(pagination));
   set(assets, supportedAssets.entries);
   set(totalEntries, supportedAssets.entriesFound);
+  set(loading, false);
 };
 </script>
