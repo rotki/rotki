@@ -6,7 +6,7 @@ from rotkehlchen.accounting.structures.types import HistoryEventSubType, History
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.decoding.decoder import EVMTransactionDecoder
-from rotkehlchen.chain.ethereum.modules.yearn.constants import CPT_YEARN_V2
+from rotkehlchen.chain.ethereum.modules.yearn.constants import CPT_YEARN_V1, CPT_YEARN_V2
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_YFI
@@ -125,7 +125,7 @@ def test_deposit_yearn_v2(database, ethereum_manager, eth_transactions):
             asset=A_YFI,
             balance=Balance(amount=FVal('0.02192084'), usd_value=ZERO),
             location_label=user_address,
-            notes='Deposit 0.02192084 YFI in YearnV2 vault YFI yVault',
+            notes='Deposit 0.02192084 YFI in yearn-v2 vault YFI yVault',
             counterparty=CPT_YEARN_V2,
         ), HistoryBaseEntry(
             event_identifier=evmhash,
@@ -137,7 +137,7 @@ def test_deposit_yearn_v2(database, ethereum_manager, eth_transactions):
             asset=Asset('eip155:1/erc20:0xdb25cA703181E7484a155DD612b06f57E12Be5F0'),
             balance=Balance(amount=FVal('0.02164738945170483'), usd_value=ZERO),
             location_label=user_address,
-            notes='Recive 0.02164738945170483 YFI yVault after deposit in YearnV2',
+            notes='Recieve 0.02164738945170483 YFI yVault after deposit in yearn-v2',
             counterparty=CPT_YEARN_V2,
         )]
     assert events == expected_events
@@ -234,7 +234,7 @@ def test_withdraw_yearn_v2(database, ethereum_manager, eth_transactions):
             asset=Asset('eip155:1/erc20:0xB8C3B7A2A618C552C23B1E4701109a9E756Bab67'),
             balance=Balance(amount=FVal('86.244532826510255848'), usd_value=ZERO),
             location_label=user_address,
-            notes='Return 86.244532826510255848 yv1INCH to the YearnV2 vault',
+            notes='Return 86.244532826510255848 yv1INCH to the yearn-v2 vault',
             counterparty=CPT_YEARN_V2,
         ), HistoryBaseEntry(
             event_identifier=evmhash,
@@ -246,7 +246,225 @@ def test_withdraw_yearn_v2(database, ethereum_manager, eth_transactions):
             asset=Asset('eip155:1/erc20:0x111111111117dC0aa78b770fA6A738034120C302'),
             balance=Balance(amount=FVal('92.236538270354905336'), usd_value=ZERO),
             location_label=user_address,
-            notes='Withdraw 92.236538270354905336 1INCH from YearnV2 contract 1INCH yVault',
+            notes='Withdraw 92.236538270354905336 1INCH from yearn-v2 vault 1INCH yVault',
             counterparty=CPT_YEARN_V2,
+        )]
+    assert events == expected_events
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0x3380d0FA7355a6ACB40089Db837a740c4c1dDc85']])  # noqa: E501
+def test_deposit_yearn_v1(database, ethereum_manager, eth_transactions):
+    """
+    Data taken from
+    https://etherscan.io/tx/0x521a39061231eb8fa7f96675a1e65f74b90350b4fedc0e430a2279945e162979
+    """
+    msg_aggregator = MessagesAggregator()
+    tx_hex = '0x521a39061231eb8fa7f96675a1e65f74b90350b4fedc0e430a2279945e162979'
+    user_address = string_to_evm_address('0x3380d0FA7355a6ACB40089Db837a740c4c1dDc85')
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    transaction = EvmTransaction(
+        tx_hash=evmhash,
+        timestamp=Timestamp(1646375440),
+        block_number=14318825,
+        from_address=user_address,
+        to_address=string_to_evm_address('0x5334e150B938dd2b6bd040D9c4a03Cff0cED3765'),
+        value=0,
+        gas=171249,
+        gas_price=22990000000,
+        gas_used=171249,
+        input_data=hexstring_to_bytes('0xb6b55f250000000000000000000000000000000000000000000000000d9bb1b0ec3a2780'),  # noqa: E501
+        nonce=507,
+    )
+    receipt = EthereumTxReceipt(
+        tx_hash=evmhash,
+        contract_address=None,
+        status=True,
+        type=0,
+        logs=[
+            EthereumTxReceiptLog(
+                log_index=289,
+                data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000d9bb1b0ec3a2780'),  # noqa: E501
+                address=string_to_evm_address('0x49849C98ae39Fff122806C06791Fa73784FB3675'),
+                removed=False,
+                topics=[
+                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
+                    hexstring_to_bytes('0x0000000000000000000000003380d0fa7355a6acb40089db837a740c4c1ddc85'),  # noqa: E501
+                    hexstring_to_bytes('0x0000000000000000000000005334e150b938dd2b6bd040d9c4a03cff0ced3765'),  # noqa: E501
+                ],
+            ), EthereumTxReceiptLog(
+                log_index=290,
+                data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000d8eec0cf565f2e5'),  # noqa: E501
+                address=string_to_evm_address('0x5334e150B938dd2b6bd040D9c4a03Cff0cED3765'),
+                removed=False,
+                topics=[
+                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
+                    hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000000000000'),  # noqa: E501
+                    hexstring_to_bytes('0x0000000000000000000000003380d0fa7355a6acb40089db837a740c4c1ddc85'),  # noqa: E501
+                ],
+            ),
+        ],
+    )
+
+    dbethtx = DBEthTx(database)
+    with database.user_write() as cursor:
+        dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
+        decoder = EVMTransactionDecoder(
+            database=database,
+            ethereum_manager=ethereum_manager,
+            transactions=eth_transactions,
+            msg_aggregator=msg_aggregator,
+        )
+        events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
+
+    assert len(events) == 3
+    expected_events = [
+        HistoryBaseEntry(
+            event_identifier=evmhash,
+            sequence_index=0,
+            timestamp=TimestampMS(1646375440000),
+            location=Location.BLOCKCHAIN,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(
+                amount=FVal(0.00393701451),
+                usd_value=ZERO,
+            ),
+            location_label=user_address,
+            notes='Burned 0.00393701451 ETH for gas',
+            counterparty=CPT_GAS,
+        ), HistoryBaseEntry(
+            event_identifier=evmhash,
+            sequence_index=290,
+            timestamp=TimestampMS(1646375440000),
+            location=Location.BLOCKCHAIN,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=Asset('eip155:1/erc20:0x49849C98ae39Fff122806C06791Fa73784FB3675'),
+            balance=Balance(amount=FVal('0.980572717318809472'), usd_value=ZERO),
+            location_label=user_address,
+            notes='Deposit 0.980572717318809472 crvRenWBTC in yearn-v1 vault yearn Curve.fi renBTC/wBTC',  # noqa: E501
+            counterparty=CPT_YEARN_V1,
+        ), HistoryBaseEntry(
+            event_identifier=evmhash,
+            sequence_index=291,
+            timestamp=TimestampMS(1646375440000),
+            location=Location.BLOCKCHAIN,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=Asset('eip155:1/erc20:0x5334e150B938dd2b6bd040D9c4a03Cff0cED3765'),
+            balance=Balance(amount=FVal('0.976977709586838245'), usd_value=ZERO),
+            location_label=user_address,
+            notes='Recieve 0.976977709586838245 yearn Curve.fi renBTC/wBTC after deposit in yearn-v1',  # noqa: E501
+            counterparty=CPT_YEARN_V1,
+        )]
+    assert events == expected_events
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0xaf7B5d7f84b7DD6b960aC6aDF2D763DD49686992']])  # noqa: E501
+def test_withdraw_yearn_v1(database, ethereum_manager, eth_transactions):
+    """
+    Data taken from
+    https://etherscan.io/tx/0x6f518f5160beb181f33c813bd6bdc6ebc586f18ca4eca6e24fef6309836bedee
+    """
+    msg_aggregator = MessagesAggregator()
+    tx_hex = '0xfaf3edf9fc4130e003468787d0d21cad89107bb2d648d3cd810864dd2854b76a'
+    user_address = string_to_evm_address('0xaf7B5d7f84b7DD6b960aC6aDF2D763DD49686992')
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    transaction = EvmTransaction(
+        tx_hash=evmhash,
+        timestamp=Timestamp(1646375440),
+        block_number=14318825,
+        from_address=user_address,
+        to_address=string_to_evm_address('0x5334e150B938dd2b6bd040D9c4a03Cff0cED3765'),
+        value=0,
+        gas=171249,
+        gas_price=22990000000,
+        gas_used=171249,
+        input_data=hexstring_to_bytes('0x2e1a7d4d00000000000000000000000000000000000000000000000001811d39c5a70000'),  # noqa: E501
+        nonce=507,
+    )
+    receipt = EthereumTxReceipt(
+        tx_hash=evmhash,
+        contract_address=None,
+        status=True,
+        type=0,
+        logs=[
+            EthereumTxReceiptLog(
+                log_index=78,
+                data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000000001811d39c5a70000'),  # noqa: E501
+                address=string_to_evm_address('0x5334e150B938dd2b6bd040D9c4a03Cff0cED3765'),
+                removed=False,
+                topics=[
+                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
+                    hexstring_to_bytes('0x000000000000000000000000af7b5d7f84b7dd6b960ac6adf2d763dd49686992'),  # noqa: E501
+                    hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000000000000'),  # noqa: E501
+                ],
+            ), EthereumTxReceiptLog(
+                log_index=79,
+                data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000186a6aeafe845e8'),  # noqa: E501
+                address=string_to_evm_address('0x49849C98ae39Fff122806C06791Fa73784FB3675'),
+                removed=False,
+                topics=[
+                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
+                    hexstring_to_bytes('0x0000000000000000000000005334e150b938dd2b6bd040d9c4a03cff0ced3765'),  # noqa: E501
+                    hexstring_to_bytes('0x000000000000000000000000af7b5d7f84b7dd6b960ac6adf2d763dd49686992'),  # noqa: E501
+                ],
+            ),
+        ],
+    )
+
+    dbethtx = DBEthTx(database)
+    with database.user_write() as cursor:
+        dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
+        decoder = EVMTransactionDecoder(
+            database=database,
+            ethereum_manager=ethereum_manager,
+            transactions=eth_transactions,
+            msg_aggregator=msg_aggregator,
+        )
+        events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
+
+    assert len(events) == 3
+    expected_events = [
+        HistoryBaseEntry(
+            event_identifier=evmhash,
+            sequence_index=0,
+            timestamp=TimestampMS(1646375440000),
+            location=Location.BLOCKCHAIN,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(
+                amount=FVal(0.00393701451),
+                usd_value=ZERO,
+            ),
+            location_label=user_address,
+            notes='Burned 0.00393701451 ETH for gas',
+            counterparty=CPT_GAS,
+        ), HistoryBaseEntry(
+            event_identifier=evmhash,
+            sequence_index=79,
+            timestamp=TimestampMS(1646375440000),
+            location=Location.BLOCKCHAIN,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+            asset=Asset('eip155:1/erc20:0x5334e150B938dd2b6bd040D9c4a03Cff0cED3765'),
+            balance=Balance(amount=FVal('0.1084'), usd_value=ZERO),
+            location_label=user_address,
+            notes='Return 0.1084 yvcrvRenWBTC to the yearn-v1 vault',
+            counterparty=CPT_YEARN_V1,
+        ), HistoryBaseEntry(
+            event_identifier=evmhash,
+            sequence_index=80,
+            timestamp=TimestampMS(1646375440000),
+            location=Location.BLOCKCHAIN,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=Asset('eip155:1/erc20:0x49849C98ae39Fff122806C06791Fa73784FB3675'),
+            balance=Balance(amount=FVal('0.109958510122911208'), usd_value=ZERO),
+            location_label=user_address,
+            notes='Withdraw 0.109958510122911208 crvRenWBTC from yearn-v1 vault yearn Curve.fi renBTC/wBTC',  # noqa: E501
+            counterparty=CPT_YEARN_V1,
         )]
     assert events == expected_events

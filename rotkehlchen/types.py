@@ -53,13 +53,15 @@ DEFAULT_OFF_MODULES = {'makerdao_dsr', 'yearn_vaults'}
 
 
 UNISWAP_PROTOCOL = 'UNI-V2'
+YEARN_VAULTS_V1_PROTOCOL = 'yearn-v1'
 YEARN_VAULTS_V2_PROTOCOL = 'yearn_vaults_v2'
 CURVE_POOL_PROTOCOL = 'curve_pool'
 PICKLE_JAR_PROTOCOL = 'pickle_jar'
 SPAM_PROTOCOL = 'spam'
 
 
-KnownProtocolsAssets = (
+# The protocols for which we know how to calculate their prices
+ProtocolsWithPriceLogic = (
     UNISWAP_PROTOCOL,
     YEARN_VAULTS_V2_PROTOCOL,
     CURVE_POOL_PROTOCOL,
