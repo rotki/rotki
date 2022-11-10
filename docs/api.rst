@@ -2260,6 +2260,89 @@ Querying ethereum transactions
               "customized": false
             }, {
               "entry": {
+                "tx_hash": "0x867119d6c66cab26561ccc5775c9cd215389efb2e3832e54baed2a0a34498c4b",
+                "timestamp": 1661993636,
+                "block_number": 15449856,
+                "from_address": "0xF2Eb18a344b2a9dC769b1914ad035Cbb614Fd238",
+                "to_address": "0x4f9Fbb3f1E99B56e0Fe2892e623Ed36A76Fc605d",
+                "value": "0",
+                "gas": "118197",
+                "gas_price": "17961480822",
+                "gas_used": "111201",
+                "input_data": "0xa694fc3a0000000000000000000000000000000000000000000000162069b9d8ad5c348a",
+                "nonce": 88
+              },
+              "decoded_events": [
+                {
+                  "entry": {
+                    "identifier": 594,
+                    "event_identifier": "0x867119d6c66cab26561ccc5775c9cd215389efb2e3832e54baed2a0a34498c4b",
+                    "sequence_index": 1,
+                    "timestamp": 1661993636,
+                    "location": "blockchain",
+                    "asset": "ETH",
+                    "balance": {
+                      "amount": "0.002916189466526136",
+                      "usd_value": "4.62501817012112117328"
+                    },
+                    "event_type": "staking",
+                    "event_subtype": "reward",
+                    "location_label": "0xF2Eb18a344b2a9dC769b1914ad035Cbb614Fd238",
+                    "notes": "Receive reward of 0.002916189466526136 ETH from Liquity's staking",
+                    "counterparty": "liquity",
+                    "extra_data": null
+                  },
+                  "customized": false
+                },
+                {
+                  "entry": {
+                    "identifier": 595,
+                    "event_identifier": "0x867119d6c66cab26561ccc5775c9cd215389efb2e3832e54baed2a0a34498c4b",
+                    "sequence_index": 403,
+                    "timestamp": 1661993636,
+                    "location": "blockchain",
+                    "asset": "eip155:1/erc20:0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D",
+                    "balance": {
+                      "amount": "408.16397184365102401",
+                      "usd_value": "371.4292143777224318491"
+                    },
+                    "event_type": "staking",
+                    "event_subtype": "deposit asset",
+                    "location_label": "0xF2Eb18a344b2a9dC769b1914ad035Cbb614Fd238",
+                    "notes": "Stake 408.16397184365102401 LQTY in the Liquity protocol",
+                    "counterparty": "liquity",
+                    "extra_data": {
+                      "staked_amount": "1477.541875499512958985",
+                      "asset": "eip155:1/erc20:0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D"
+                    }
+                  },
+                  "customized": false
+                },
+                {
+                  "entry": {
+                    "identifier": 596,
+                    "event_identifier": "0x867119d6c66cab26561ccc5775c9cd215389efb2e3832e54baed2a0a34498c4b",
+                    "sequence_index": 406,
+                    "timestamp": 1661993636,
+                    "location": "blockchain",
+                    "asset": "eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0",
+                    "balance": {
+                      "amount": "21.405502592141755289",
+                      "usd_value": "21.23806917172022328115288721"
+                    },
+                    "event_type": "staking",
+                    "event_subtype": "reward",
+                    "location_label": "0xF2Eb18a344b2a9dC769b1914ad035Cbb614Fd238",
+                    "notes": "Receive reward of 21.405502592141755289 LUSD from Liquity's staking",
+                    "counterparty": "liquity",
+                    "extra_data": null
+                  },
+                  "customized": false
+                }
+              ],
+              "ignored_in_accounting": false
+            }, {
+              "entry": {
                 "identifier": 2,
                 "asset": "ETH",
                 "balance": {"amount": "0.096809163374771208", "usd_value": "0"},
@@ -2272,7 +2355,7 @@ Querying ethereum transactions
                 "notes": "Send 0.096809163374771208 ETH 0x6e15887E2CEC81434C16D587709f64603b39b545 -> 0xA090e606E30bD747d4E6245a1517EbE430F0057e",
                 "sequence_index": 1,
                 "timestamp": 1642802807,
-                "extra_notes": {"example_extra_note": "extra note content"}
+                "extra_notes": null
               },
               "customized": true
             }]
