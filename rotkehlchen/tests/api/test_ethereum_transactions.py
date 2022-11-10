@@ -980,6 +980,7 @@ def test_query_transactions_check_decoded_events(
         'notes': 'Burned 0.00863351371344 ETH for gas',
         'sequence_index': 0,
         'timestamp': 1642802807,
+        'extra_data': None,
     }, 'customized': False}, {'entry': {
         'identifier': 5,
         'asset': 'ETH',
@@ -993,6 +994,7 @@ def test_query_transactions_check_decoded_events(
         'notes': 'Send 0.096809163374771208 ETH to 0xA090e606E30bD747d4E6245a1517EbE430F0057e',  # noqa: E501
         'sequence_index': 1,
         'timestamp': 1642802807,
+        'extra_data': None,
     }, 'customized': False}]
     assert entries[0]['decoded_events'] == tx1_events
     tx2_events = [{'entry': {
@@ -1008,6 +1010,7 @@ def test_query_transactions_check_decoded_events(
         'notes': 'Burned 0.017690836625228792 ETH for gas',
         'sequence_index': 0,
         'timestamp': 1642802735,
+        'extra_data': None,
     }, 'customized': False}, {'entry': {
         'identifier': 2,
         'asset': A_USDT.identifier,
@@ -1021,6 +1024,7 @@ def test_query_transactions_check_decoded_events(
         'notes': 'Send 1166 USDT from 0x6e15887E2CEC81434C16D587709f64603b39b545 to 0xb5d85CBf7cB3EE0D56b3bB207D5Fc4B82f43F511',  # noqa: E501
         'sequence_index': 308,
         'timestamp': 1642802735,
+        'extra_data': None,
     }, 'customized': False}]
     assert entries[1]['decoded_events'] == tx2_events
     tx3_events = [{'entry': {
@@ -1036,6 +1040,7 @@ def test_query_transactions_check_decoded_events(
         'notes': 'Receive 0.125 ETH from 0xeB2629a2734e272Bcc07BDA959863f316F4bD4Cf',
         'sequence_index': 0,
         'timestamp': 1642802651,
+        'extra_data': None,
     }, 'customized': False}]
     assert entries[2]['decoded_events'] == tx3_events
     tx4_events = [{'entry': {
@@ -1051,6 +1056,7 @@ def test_query_transactions_check_decoded_events(
         'notes': 'Receive 1166 USDT from 0xE21c192cD270286DBBb0fBa10a8B8D9957d431E5 to 0x6e15887E2CEC81434C16D587709f64603b39b545',  # noqa: E501
         'sequence_index': 385,
         'timestamp': 1642802286,
+        'extra_data': None,
     }, 'customized': False}]
     assert entries[3]['decoded_events'] == tx4_events
 
@@ -1064,7 +1070,7 @@ def test_query_transactions_check_decoded_events(
     tx2_events[1]['customized'] = True
     response = requests.patch(
         api_url_for(rotkehlchen_api_server, 'historybaseentryresource'),
-        json=event,
+        json={key: value for key, value in event.items() if key != 'extra_data'},
     )
     assert_simple_ok_response(response)
 
@@ -1080,10 +1086,11 @@ def test_query_transactions_check_decoded_events(
         'notes': 'Some kind of deposit',
         'sequence_index': 1,
         'timestamp': 1642802286,
+        'extra_data': None,
     }, 'customized': True})
     response = requests.put(
         api_url_for(rotkehlchen_api_server, 'historybaseentryresource'),
-        json=tx4_events[0]['entry'],
+        json={key: value for key, value in tx4_events[0]['entry'].items() if key != 'extra_data'},
     )
     result = assert_proper_response_with_result(response)
     tx4_events[0]['entry']['identifier'] = result['identifier']
@@ -1299,3 +1306,43 @@ def test_ignored_assets(rotkehlchen_api_server, ethereum_accounts):
     assert result['entries_found'] == 2
     assert result['entries_total'] == 3
     assert result['entries_limit'] == FREE_ETH_TX_LIMIT
+
+
+@pytest.mark.parametrize('should_mock_price_queries', [True])
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
+def test_extra_notes_serialization(rotkehlchen_api_server, ethereum_accounts):
+    """This test tests that decoded transactions correctly include the extra_data key"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    db = rotki.data.db
+    dbethtx = DBEthTx(db)
+    dbevents = DBHistoryEvents(db)
+    tx1 = make_ethereum_transaction()
+    tx2 = make_ethereum_transaction()
+    event1 = make_ethereum_event(tx_hash=tx1.tx_hash, index=1, asset=A_ETH)
+    event2 = make_ethereum_event(tx_hash=tx2.tx_hash, index=2, asset=A_DAI)
+    extra_data = {'new_staked': str(FVal(1.2344)), 'staked_asset': A_MKR.identifier}
+    event1.extra_data = extra_data
+    with db.user_write() as cursor:
+        dbethtx.add_ethereum_transactions(cursor, [tx1, tx2, tx2], relevant_address=ethereum_accounts[0])  # noqa: E501
+        dbevents.add_history_events(cursor, [event1, event2])
+
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ethereumtransactionsresource',
+        ),
+        json={
+            'only_cache': True,  # only deal with the DB
+            'exclude_ignored_assets': False,
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    expected = generate_tx_entries_response(data=[
+        (tx1, [event1]),
+        (tx2, [event2]),
+    ])
+    assert result['entries'] == expected
+    # explicit verification that extra_data is present to avoid future errors if any of the
+    # logic used to generate the output changes
+    assert result['entries'][0]['decoded_events'][0]['entry']['extra_data'] == extra_data
+    assert result['entries'][1]['decoded_events'][0]['entry']['extra_data'] is None

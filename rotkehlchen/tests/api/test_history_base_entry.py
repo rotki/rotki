@@ -19,7 +19,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response_with_result,
     assert_simple_ok_response,
 )
-from rotkehlchen.types import Location, Timestamp, TimestampMS
+from rotkehlchen.types import Location, TimestampMS
 
 
 def entry_to_input_dict(entry: HistoryBaseEntry, include_identifier: bool) -> Dict[str, Any]:
@@ -27,6 +27,7 @@ def entry_to_input_dict(entry: HistoryBaseEntry, include_identifier: bool) -> Di
     if include_identifier:
         assert entry.identifier is not None
         serialized['identifier'] = entry.identifier
+    serialized.pop('extra_data')
     return serialized
 
 
@@ -132,7 +133,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server):
     )
     # test editing by making sequence index same as an existing one fails
     entry.sequence_index = 3
-    entry.timestamp = Timestamp(1649924575000)
+    entry.timestamp = TimestampMS(1649924575000)
     json_data = entry_to_input_dict(entry, include_identifier=True)
     response = requests.patch(
         api_url_for(rotkehlchen_api_server, 'historybaseentryresource'),
@@ -145,7 +146,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server):
     )
     # test adding event with  sequence index same as an existing one fails
     entry.sequence_index = 3
-    entry.timestamp = Timestamp(1649924575000)
+    entry.timestamp = TimestampMS(1649924575000)
     json_data = entry_to_input_dict(entry, include_identifier=True)
     response = requests.put(
         api_url_for(rotkehlchen_api_server, 'historybaseentryresource'),
@@ -158,7 +159,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server):
     )
     # test editing works
     entry.sequence_index = 4
-    entry.timestamp = Timestamp(1639924575000)
+    entry.timestamp = TimestampMS(1639924575000)
     entry.location = Location.UNISWAP
     entry.event_type = HistoryEventType.DEPOSIT
     entry.asset = A_USDT
