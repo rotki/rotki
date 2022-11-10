@@ -1,7 +1,6 @@
 import {
   LiquityBalances,
   LiquityStaking,
-  LiquityStakingEvents,
   TroveEvents,
   LiquityPoolDetails
 } from '@rotki/common/lib/liquity';
@@ -21,9 +20,6 @@ export const useLiquityStore = defineStore('defi/liquity', () => {
   const balances = ref<LiquityBalances>({}) as Ref<LiquityBalances>;
   const events = ref<TroveEvents>({}) as Ref<TroveEvents>;
   const staking = ref<LiquityStaking>({}) as Ref<LiquityStaking>;
-  const stakingEvents = ref<LiquityStakingEvents>(
-    {}
-  ) as Ref<LiquityStakingEvents>;
   const stakingPools = ref<LiquityPoolDetails>({}) as Ref<LiquityPoolDetails>;
 
   const isPremium = usePremium();
@@ -183,68 +179,26 @@ export const useLiquityStore = defineStore('defi/liquity', () => {
     );
   }
 
-  async function fetchStakingEvents(refresh = false) {
-    const meta: TaskMeta = {
-      title: t('actions.defi.liquity_staking_events.task.title').toString(),
-      numericKeys: []
-    };
-
-    const onError: OnError = {
-      title: t('actions.defi.liquity_staking_events.error.title').toString(),
-      error: message =>
-        t('actions.defi.liquity_staking_events.error.description', {
-          message
-        }).toString()
-    };
-
-    await fetchDataAsync(
-      {
-        task: {
-          type: TaskType.LIQUITY_STAKING_EVENTS,
-          section: Section.DEFI_LIQUITY_STAKING_EVENTS,
-          meta,
-          query: async () => await api.defi.fetchLiquityStakingEvents(),
-          parser: result => LiquityStakingEvents.parse(result),
-          onError
-        },
-        state: {
-          isPremium,
-          activeModules
-        },
-        requires: {
-          premium: true,
-          module: Module.LIQUITY
-        },
-        refresh
-      },
-      stakingEvents
-    );
-  }
-
   const reset = () => {
     const { resetStatus } = useStatusUpdater(Section.DEFI_LIQUITY_BALANCES);
 
     set(balances, {});
     set(events, {});
     set(staking, {});
-    set(stakingEvents, {});
 
     resetStatus(Section.DEFI_LIQUITY_BALANCES);
     resetStatus(Section.DEFI_LIQUITY_EVENTS);
     resetStatus(Section.DEFI_LIQUITY_STAKING);
-    resetStatus(Section.DEFI_LIQUITY_STAKING_EVENTS);
   };
 
   return {
     balances,
     events,
     staking,
-    stakingEvents,
     stakingPools,
     fetchBalances,
     fetchEvents,
     fetchStaking,
-    fetchStakingEvents,
     fetchPools,
     reset
   };

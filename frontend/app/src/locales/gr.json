@@ -449,15 +449,6 @@
           "title": "Querying Liquity staking"
         }
       },
-      "liquity_staking_events": {
-        "error": {
-          "description": "Failed to retrieve Liquity staking events: {message}",
-          "title": "Liquity staking events"
-        },
-        "task": {
-          "title": "Querying Liquity staking events"
-        }
-      },
       "makerdao_vault_details": {
         "error": {
           "description": "Failed to retrieve MakerDAO Vault details: {error}",
@@ -2629,6 +2620,9 @@
     "refresh_tooltip": "Refresh the staked amounts and events",
     "select_account": "Select account"
   },
+  "liquity_staking_events": {
+    "title": "Stake Events"
+  },
   "loan_collateral": {
     "apy": "APY",
     "current_ratio": "Current ratio",
@@ -3719,6 +3713,9 @@
         "edit": {
           "title": "Edit Event"
         }
+      },
+      "extra": {
+        "total_staked_by_this_tx": "Total staked by this tx"
       },
       "form": {
         "amount": {

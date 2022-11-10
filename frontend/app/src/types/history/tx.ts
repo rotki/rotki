@@ -12,6 +12,10 @@ export const EthTransactionEvent = z.object({
   locationLabel: z.string().nullish(),
   eventType: z.string().nullish(),
   eventSubtype: z.string().nullish(),
+  extraData: z
+    .object({ asset: z.string(), stakedAmount: NumericString })
+    .partial()
+    .nullish(),
   asset: z.string(),
   balance: Balance,
   notes: z.string().nullish(),
@@ -51,6 +55,7 @@ export type TransactionRequestPayload = {
   readonly address?: string;
   readonly asset?: string;
   readonly protocols?: string | string[];
+  readonly eventTypes?: string | string[];
 } & HistoryRequestPayload<EthTransaction>;
 export interface TransactionEventRequestPayload {
   readonly txHashes?: string[] | null;

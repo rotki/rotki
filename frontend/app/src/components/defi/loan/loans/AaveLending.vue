@@ -4,12 +4,12 @@
       <loan-header v-if="loan.owner" class="mt-8 mb-6" :owner="loan.owner">
         {{ tc('aave_lending.header', 0, { asset: symbol }) }}
       </loan-header>
-      <v-row no-gutters>
-        <v-col cols="12" md="6" class="pe-md-4">
+      <v-row>
+        <v-col cols="12" md="6">
           <aave-collateral :loan="loan" />
         </v-col>
 
-        <v-col cols="12" md="6" class="pt-8 pt-md-0 ps-md-4">
+        <v-col cols="12" md="6">
           <loan-debt :debt="loan.debt" :asset="loan.asset" />
         </v-col>
       </v-row>

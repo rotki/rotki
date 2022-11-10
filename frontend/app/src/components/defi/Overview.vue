@@ -4,7 +4,7 @@
     :title="summary.protocol.name"
     :protocol-icon="icon"
     bordered
-    :class="$style.overview"
+    :class="css.overview"
   >
     <div v-if="summary.liabilities">
       <span
@@ -54,7 +54,7 @@
     bordered
     :title="summary.protocol.name"
     :protocol-icon="icon"
-    :class="$style.overview"
+    :class="css.overview"
   >
     <span
       v-if="summary.tokenInfo"
@@ -64,37 +64,39 @@
     </span>
     <info-row :title="tc('common.balance')" fiat :value="summary.balanceUsd" />
     <v-divider class="my-4" />
-    <v-dialog v-model="details" scrollable max-width="450px">
-      <template #activator="{ on, attrs }">
-        <v-btn small v-bind="attrs" block text class="justify-end" v-on="on">
-          {{ tc('common.details') }}
-          <v-icon color="primary" right>mdi-launch</v-icon>
-        </v-btn>
-      </template>
-      <v-card>
-        <v-card-title class="mb-2">
-          <v-img
-            aspect-ratio="1"
-            :src="icon"
-            max-width="32px"
-            max-height="32px"
-            contain
-          />
-          <span class="ml-2">
-            {{ summary.protocol.name }}
-          </span>
-        </v-card-title>
-        <v-card-subtitle>
-          {{ tc('overview.details_dialog.subtitle') }}
-        </v-card-subtitle>
-        <v-card-text :class="$style.details">
-          <div v-for="(asset, index) in assets" :key="index">
-            <defi-asset :asset="asset" />
-            <v-divider />
-          </div>
-        </v-card-text>
-      </v-card>
-    </v-dialog>
+    <div class="d-flex justify-end">
+      <v-dialog v-model="details" scrollable max-width="450px">
+        <template #activator="{ on, attrs }">
+          <v-btn small v-bind="attrs" text class="justify-end" v-on="on">
+            {{ tc('common.details') }}
+            <v-icon color="primary" right>mdi-launch</v-icon>
+          </v-btn>
+        </template>
+        <v-card>
+          <v-card-title class="mb-2">
+            <v-img
+              aspect-ratio="1"
+              :src="icon"
+              max-width="32px"
+              max-height="32px"
+              contain
+            />
+            <span class="ml-2">
+              {{ summary.protocol.name }}
+            </span>
+          </v-card-title>
+          <v-card-subtitle>
+            {{ tc('overview.details_dialog.subtitle') }}
+          </v-card-subtitle>
+          <v-card-text :class="css.details">
+            <div v-for="(asset, index) in assets" :key="index">
+              <defi-asset :asset="asset" />
+              <v-divider />
+            </div>
+          </v-card-text>
+        </v-card>
+      </v-dialog>
+    </div>
   </stat-card>
 </template>
 
@@ -134,6 +136,8 @@ const assets = computed(() => {
     }
   );
 });
+
+const css = useCssModule();
 </script>
 
 <style module lang="scss">
