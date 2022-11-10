@@ -1694,13 +1694,20 @@ class GlobalDBHandler():
                     return False, msg
                 # Get the list of ids that we will restore
                 query = write_cursor.execute('SELECT identifier from clean_db.assets;')
-                shipped_ids = set(query.fetchall())
-                ids = ', '.join([f'"{id[0]}"' for id in shipped_ids])
+                shipped_asset_ids = set(query.fetchall())
+                asset_ids = ', '.join([f'"{id[0]}"' for id in shipped_asset_ids])
+                query = write_cursor.execute('SELECT id FROM clean_db.asset_collections')
+                shipped_collection_ids = set(query.fetchall())
+                collection_ids = ', '.join([f'"{id[0]}"' for id in shipped_collection_ids])
                 # If versions match drop tables
-                write_cursor.execute(f'DELETE FROM assets WHERE identifier IN ({ids});')
-                write_cursor.execute('DELETE FROM asset_collections')
-                # Copy assets
                 write_cursor.execute('PRAGMA foreign_keys = OFF;')
+                write_cursor.execute(f'DELETE FROM assets WHERE identifier IN ({asset_ids});')
+                write_cursor.execute(f'DELETE FROM evm_tokens WHERE identifier IN ({asset_ids});')
+                write_cursor.execute(f'DELETE FROM underlying_tokens_list WHERE parent_token_entry IN ({asset_ids});')  # noqa: E501
+                write_cursor.execute(f'DELETE FROM common_asset_details WHERE identifier IN ({asset_ids});')  # noqa: E501
+                write_cursor.execute(f'DELETE FROM asset_collections WHERE id IN ({collection_ids})')  # noqa: E501
+                write_cursor.execute(f'DELETE FROM multiasset_mappings WHERE collection_id IN ({collection_ids})')  # noqa: E501
+                # Copy assets
                 write_cursor.execute('INSERT INTO assets SELECT * FROM clean_db.assets;')
                 write_cursor.execute('INSERT INTO evm_tokens SELECT * FROM clean_db.evm_tokens;')  # noqa: E501
                 write_cursor.execute('INSERT INTO underlying_tokens_list SELECT * FROM clean_db.underlying_tokens_list;')  # noqa: E501

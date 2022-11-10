@@ -2,22 +2,25 @@ import itertools
 import sqlite3
 from pathlib import Path
 from shutil import copyfile
+from uuid import uuid4
 
 import pytest
 
-from rotkehlchen.assets.asset import Asset, CryptoAsset, EvmToken, UnderlyingToken
+from rotkehlchen.assets.asset import Asset, CryptoAsset, CustomAsset, EvmToken, UnderlyingToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import AssetData, AssetType
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_BAT, A_CRV, A_DAI, A_LUSD, A_PICKLE, A_USD
+from rotkehlchen.constants.assets import A_BAT, A_CRV, A_DAI, A_ETH, A_LUSD, A_PICKLE, A_USD
 from rotkehlchen.constants.misc import NFT_DIRECTIVE, ONE
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
+from rotkehlchen.db.custom_assets import DBCustomAssets
+from rotkehlchen.db.filtering import CustomAssetsFilterQuery
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.globaldb.handler import GLOBAL_DB_VERSION, GlobalDBHandler
-from rotkehlchen.history.types import HistoricalPriceOracle
+from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.serialization.deserialize import deserialize_asset_amount
 from rotkehlchen.tests.fixtures.globaldb import create_globaldb
 from rotkehlchen.tests.utils.factories import make_ethereum_address
@@ -92,6 +95,9 @@ bidr_asset = CryptoAsset.initialize(
     cryptocompare=None,
     coingecko='binanceidr',
 )
+
+
+A_yDAI = Asset('eip155:1/erc20:0x19D3364A399d251E894aC732651be8B0E4e85001')
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -697,7 +703,7 @@ def test_global_db_restore(globaldb, database):
     conn.close()
 
 
-def test_global_db_reset(globaldb):
+def test_global_db_reset(globaldb, database):
     """
     Check that the user can recreate assets information from the packaged
     database with rotki (soft reset). The test adds a new asset, restores
@@ -761,6 +767,56 @@ def test_global_db_reset(globaldb):
     )
     GlobalDBHandler().edit_evm_token(one_inch_update)
 
+    # Add some data to the tables that reference assets to make sure that it is not
+    # touched by the reset
+    historical_price = HistoricalPrice(
+        from_asset=A_ETH,
+        to_asset=A_DAI,
+        source=HistoricalPriceOracle.COINGECKO,
+        timestamp=1337,
+        price=ONE,
+    )
+    GlobalDBHandler().add_single_historical_price(historical_price)
+    GlobalDBHandler().add_user_owned_assets([A_ETH, A_DAI, A_CRV])
+    db_custom_assets = DBCustomAssets(database)
+    custom_asset = CustomAsset.initialize(
+        identifier=str(uuid4()),
+        name='My favorite lamborgini',
+        custom_asset_type='Sport car',
+        notes='It is so fast and so furious!',
+    )
+    db_custom_assets.add_custom_asset(custom_asset)
+    with GlobalDBHandler().conn.write_ctx() as cursor:
+        # TODO: when we fill data about collections into our packaged db, also add a check
+        # that collections are properly reset.
+
+        # Create a new collection
+        cursor.execute(
+            'INSERT INTO asset_collections (name, symbol) VALUES (?, ?)',
+            ('New collection', 'NEWCOLLECTION'),
+        )
+        new_collection_id = cursor.lastrowid
+        cursor.executemany(
+            'INSERT INTO multiasset_mappings(collection_id, asset) VALUES (?, ?)',
+            (
+                (new_collection_id, A_CRV.identifier),  # put some assets into the new collection
+                (new_collection_id, A_LUSD.identifier),
+            ),
+        )
+
+        # Read original information from underlying tokens before the reset
+        # get yDAI's underlying tokens
+        ydai_underlying_tokens = cursor.execute(
+            'SELECT * FROM underlying_tokens_list WHERE parent_token_entry=?',
+            (A_yDAI.identifier,),
+        ).fetchall()
+        assert len(ydai_underlying_tokens) > 0
+        # And put someting extra in there which should be deleted by the reset
+        cursor.execute(
+            'INSERT INTO underlying_tokens_list(identifier, weight, parent_token_entry) VALUES (?, ?, ?)',  # noqa: E501
+            (A_CRV.identifier, '1.0', A_yDAI.identifier),
+        )
+
     status, _ = GlobalDBHandler().soft_reset_assets_list()
     assert status
     cursor = globaldb.conn.cursor()
@@ -792,7 +848,42 @@ def test_global_db_reset(globaldb):
     cursor_clean_db = conn.cursor()
     tokens_expected = cursor_clean_db.execute('SELECT COUNT(*) FROM assets;')
     tokens_local = cursor.execute('SELECT COUNT(*) FROM assets;')
-    assert tokens_expected.fetchone()[0] + 3 == tokens_local.fetchone()[0]
+    assert tokens_expected.fetchone()[0] + 4 == tokens_local.fetchone()[0]
+
+    # Check that data that was not supposed to be reset was not touched
+    historical_price_after_reset = GlobalDBHandler().get_historical_price(
+        from_asset=historical_price.from_asset,
+        to_asset=historical_price.to_asset,
+        timestamp=historical_price.timestamp,
+        max_seconds_distance=0,
+    )
+    assert historical_price_after_reset == historical_price
+    expected_owned_assets = [(A_ETH.identifier,), (A_DAI.identifier,), (A_CRV.identifier,)]
+    assert cursor.execute('SELECT * FROM user_owned_assets').fetchall() == expected_owned_assets
+    entries, _, entries_total = db_custom_assets.get_custom_assets_and_limit_info(
+        CustomAssetsFilterQuery.make(),
+    )
+    assert entries == [custom_asset]
+    assert entries_total == 1
+
+    # Check that manually added collection was not touched
+    new_collection_after_reset = cursor.execute(
+        'SELECT name, symbol FROM asset_collections WHERE id=?',
+        (new_collection_id,),
+    ).fetchall()
+    assert new_collection_after_reset == [('New collection', 'NEWCOLLECTION')]
+    new_collection_assets = cursor.execute(
+        'SELECT asset FROM multiasset_mappings WHERE collection_id=?',
+        (new_collection_id,),
+    ).fetchall()
+    assert new_collection_assets == [(A_CRV.identifier,), (A_LUSD.identifier,)]
+
+    # Check that extra underlying token was deleted
+    ydai_underlying_tokens_after_upgrade = cursor.execute(
+        'SELECT * FROM underlying_tokens_list WHERE parent_token_entry=?',
+        (A_yDAI.identifier,),
+    ).fetchall()
+    assert ydai_underlying_tokens_after_upgrade == ydai_underlying_tokens
     conn.close()
 
 
