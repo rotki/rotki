@@ -16,6 +16,7 @@ from rotkehlchen.db.upgrade_manager import MIN_SUPPORTED_USER_DB_VERSION, UPGRAD
 from rotkehlchen.errors.misc import DBUpgradeError
 from rotkehlchen.tests.utils.database import (
     _use_prepared_db,
+    mock_db_schema_sanity_check,
     mock_dbhandler_add_globaldb_assetids,
     mock_dbhandler_update_owned_assets,
 )
@@ -85,6 +86,7 @@ def _init_db_with_target_version(
     )
     with ExitStack() as stack:
         stack.enter_context(target_patch(target_version=target_version))
+        stack.enter_context(mock_db_schema_sanity_check())
         if target_version not in (2, 4):
             # Some early upgrade tests rely on a mocked creation so we need to not touch it
             # for others do not allow latest tables to be created after init

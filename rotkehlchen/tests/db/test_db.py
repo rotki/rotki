@@ -51,7 +51,7 @@ from rotkehlchen.db.utils import (
     SingleDBAssetBalance,
 )
 from rotkehlchen.errors.api import AuthenticationError
-from rotkehlchen.errors.misc import InputError
+from rotkehlchen.errors.misc import DBSchemaError, InputError
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.premium.premium import PremiumCredentials
@@ -1518,3 +1518,27 @@ def test_fresh_db_adds_version(user_data_dir, sql_vm_instructions_cb):
     query = query.fetchall()
     assert len(query) != 0
     assert int(query[0][0]) == ROTKEHLCHEN_DB_VERSION
+
+
+def test_db_schema_sanity_check(database):
+    connection = database.conn
+    # by default should run without problems
+    connection.schema_sanity_check()
+    with pytest.raises(DBSchemaError) as exception_info:
+        with database.user_write() as cursor:
+            cursor.execute('DROP TABLE web3_nodes')
+            cursor.execute('CREATE TABLE web3_nodes(column1 INTEGER)')
+            cursor.execute('DROP TABLE ens_mappings')
+            cursor.execute('CREATE TABLE ens_mappings(column2 TEXT)')
+            connection.schema_sanity_check()
+    assert 'in your user database differ' in str(exception_info.value)
+    with pytest.raises(DBSchemaError) as exception_info:
+        with database.user_write() as cursor:
+            cursor.execute('CREATE TABLE new_table(some_column integer)')
+            connection.schema_sanity_check()
+    assert 'unexpected tables: {\'new_table\'}' in str(exception_info.value)
+    with pytest.raises(DBSchemaError) as exception_info:
+        with database.user_write() as cursor:
+            cursor.execute('DROP TABLE user_notes;')
+            connection.schema_sanity_check()
+    assert 'Tables {\'user_notes\'} are missing' in str(exception_info.value)

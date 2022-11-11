@@ -130,6 +130,13 @@ def mock_dbhandler_add_globaldb_assetids() -> _patch:
     )
 
 
+def mock_db_schema_sanity_check() -> _patch:
+    return patch(
+        'rotkehlchen.db.drivers.gevent.DBConnection.schema_sanity_check',
+        new=lambda x: None,
+    )
+
+
 def _use_prepared_db(user_data_dir: Path, filename: str) -> None:
     dir_path = os.path.dirname(os.path.realpath(__file__))
     copyfile(

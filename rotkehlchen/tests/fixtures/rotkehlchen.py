@@ -24,6 +24,7 @@ from rotkehlchen.tests.utils.database import (
     add_tags_to_test_db,
     maybe_include_cryptocompare_key,
     maybe_include_etherscan_key,
+    mock_db_schema_sanity_check,
 )
 from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
 from rotkehlchen.tests.utils.factories import make_random_b64bytes
@@ -188,6 +189,8 @@ def initialize_mock_rotkehlchen_instance(
         stack.enter_context(ksm_rpcconnect_patch)
         stack.enter_context(size_patch)
         stack.enter_context(sleep_patch)
+        if use_custom_database is not None:
+            stack.enter_context(mock_db_schema_sanity_check())
 
         if perform_migrations_at_unlock is False:
             migrations_patch = patch.object(

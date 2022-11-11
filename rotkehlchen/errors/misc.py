@@ -64,3 +64,7 @@ class BlockchainQueryError(Exception):
 
     For example a VM Execution error in ethereum contract calls
     """
+
+
+class DBSchemaError(Exception):
+    """May be raised during database sanity check"""

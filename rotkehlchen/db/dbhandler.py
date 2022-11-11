@@ -250,6 +250,7 @@ class DBHandler:
         than the one supported.
         - AuthenticationError if SQLCipher version problems are detected
         - SystemPermissionError if the DB file's permissions are not correct
+        - DBSchemaError if database schema is malformed
         """
         self.msg_aggregator = msg_aggregator
         self.user_data_dir = user_data_dir
@@ -301,6 +302,7 @@ class DBHandler:
         - AuthenticationError if a wrong password is given or if the DB is corrupt
         - DBUpgradeError if there is a problem with DB upgrading or if the version
         is older than the one supported.
+        - DBSchemaError if database schema is malformed.
         """
         # Run upgrades if needed
         fresh_db = DBUpgradeManager(self).run_upgrades()
@@ -337,6 +339,8 @@ class DBHandler:
                 ('version', str(ROTKEHLCHEN_TRANSIENT_DB_VERSION)),
             )
             self.conn_transient.commit()
+
+        self.conn.schema_sanity_check()
 
     def get_md5hash(self, transient: bool = False) -> str:
         """Get the md5hash of the DB

@@ -1,3 +1,4 @@
+from contextlib import ExitStack
 from pathlib import Path
 from shutil import copyfile
 from typing import TYPE_CHECKING, Callable, List, Optional, Union
@@ -13,6 +14,7 @@ from rotkehlchen.globaldb import GlobalDBHandler
 from rotkehlchen.globaldb.upgrades.manager import UPGRADES_LIST
 from rotkehlchen.globaldb.utils import GLOBAL_DB_VERSION
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
+from rotkehlchen.tests.utils.database import mock_db_schema_sanity_check
 from rotkehlchen.types import Price, Timestamp
 
 if TYPE_CHECKING:
@@ -76,13 +78,19 @@ def _initialize_fixture_globaldb(
     new_global_dir = new_data_dir / 'global_data'
     new_global_dir.mkdir(parents=True, exist_ok=True)
     copyfile(source_db_path, new_global_dir / 'global.db')
-    if reload_user_assets is False:
-        with (
-            patch('rotkehlchen.globaldb.upgrades.manager.UPGRADES_LIST', globaldb_upgrades),
-            patch('rotkehlchen.globaldb.utils.GLOBAL_DB_VERSION', target_globaldb_version),
-        ):
-            return create_globaldb(new_data_dir, sql_vm_instructions_cb)
-    return create_globaldb(new_data_dir, sql_vm_instructions_cb)
+    with ExitStack() as stack:
+        if reload_user_assets is False:
+            stack.enter_context(
+                patch('rotkehlchen.globaldb.upgrades.manager.UPGRADES_LIST', globaldb_upgrades),
+            )
+            stack.enter_context(
+                patch('rotkehlchen.globaldb.utils.GLOBAL_DB_VERSION', target_globaldb_version),
+            )
+        if target_globaldb_version != GLOBAL_DB_VERSION:
+            stack.enter_context(mock_db_schema_sanity_check())
+        globaldb = create_globaldb(new_data_dir, sql_vm_instructions_cb)
+
+    return globaldb
 
 
 @pytest.fixture(scope='session', name='session_globaldb')

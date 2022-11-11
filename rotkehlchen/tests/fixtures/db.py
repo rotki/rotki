@@ -1,5 +1,6 @@
 import os
 import sys
+from contextlib import ExitStack
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -19,6 +20,7 @@ from rotkehlchen.tests.utils.database import (
     add_tags_to_test_db,
     maybe_include_cryptocompare_key,
     maybe_include_etherscan_key,
+    mock_db_schema_sanity_check,
 )
 from rotkehlchen.user_messages import MessagesAggregator
 
@@ -134,13 +136,16 @@ def _init_database(
     if use_custom_database is not None:
         _use_prepared_db(data_dir, use_custom_database)
 
-    db = DBHandler(
-        user_data_dir=data_dir,
-        password=password,
-        msg_aggregator=msg_aggregator,
-        initial_settings=None,
-        sql_vm_instructions_cb=sql_vm_instructions_cb,
-    )
+    with ExitStack() as stack:
+        if use_custom_database is not None:
+            stack.enter_context(mock_db_schema_sanity_check())
+        db = DBHandler(
+            user_data_dir=data_dir,
+            password=password,
+            msg_aggregator=msg_aggregator,
+            initial_settings=None,
+            sql_vm_instructions_cb=sql_vm_instructions_cb,
+        )
     # Make sure that the fixture provided data are included in the DB
     add_settings_to_test_db(db, db_settings, ignored_assets, data_migration_version)
     add_blockchain_accounts_to_db(db, blockchain_accounts)
