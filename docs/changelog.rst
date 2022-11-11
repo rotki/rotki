@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`5124` Fix missing history events in menu Defi > Deposits > Protocols.
 * :bug:`-` Uniswap V3 oracle will now correctly skip assets with no liquidity when querying prices.
 
 * :release:`1.26.1 <2022-11-04>`
