@@ -4,7 +4,7 @@ import logging
 import sys
 import traceback
 
-from rotkehlchen.errors.misc import SystemPermissionError
+from rotkehlchen.errors.misc import DBSchemaError, SystemPermissionError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.server import RotkehlchenServer
 
@@ -18,7 +18,7 @@ log = RotkehlchenLogsAdapter(logger)
 def main() -> None:
     try:
         rotkehlchen_server = RotkehlchenServer()
-    except SystemPermissionError as e:
+    except (SystemPermissionError, DBSchemaError) as e:
         print(f'ERROR at initialization: {str(e)}')
         sys.exit(1)
     except SystemExit as e:

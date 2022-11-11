@@ -122,6 +122,7 @@ from rotkehlchen.errors.api import (
 )
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import (
+    DBSchemaError,
     DBUpgradeError,
     EthSyncError,
     InputError,
@@ -1156,7 +1157,12 @@ class RestAPI():
             )
         # not catching RotkehlchenPermissionError here as for new account with premium
         # syncing there is no way that permission needs to be asked by the user
-        except (AuthenticationError, PremiumAuthenticationError, SystemPermissionError) as e:
+        except (
+            AuthenticationError,
+            PremiumAuthenticationError,
+            SystemPermissionError,
+            DBSchemaError,
+        ) as e:
             self.rotkehlchen.reset_after_failed_account_creation_or_login()
             result_dict['message'] = str(e)
             return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
@@ -1203,7 +1209,7 @@ class RestAPI():
             result_dict['result'] = e.message_payload
             result_dict['message'] = e.error_message
             return api_response(result_dict, status_code=HTTPStatus.MULTIPLE_CHOICES)
-        except (DBUpgradeError, SystemPermissionError) as e:
+        except (DBUpgradeError, SystemPermissionError, DBSchemaError) as e:
             self.rotkehlchen.reset_after_failed_account_creation_or_login()
             result_dict['message'] = str(e)
             return api_response(result_dict, status_code=HTTPStatus.CONFLICT)

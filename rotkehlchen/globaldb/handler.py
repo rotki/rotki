@@ -66,6 +66,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 def initialize_globaldb(dbpath: Path, sql_vm_instructions_cb: int) -> DBConnection:
+    """Initialie globaldb. May raise DBSchemaError if GlobalDB's schema is malformed."""
     connection = DBConnection(
         path=dbpath,
         connection_type=DBConnectionType.GLOBAL,
@@ -79,11 +80,12 @@ def initialize_globaldb(dbpath: Path, sql_vm_instructions_cb: int) -> DBConnecti
                 'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
                 ('version', str(GLOBAL_DB_VERSION)),
             )
-    connection.commit()
+    connection.schema_sanity_check()
     return connection
 
 
 def _initialize_global_db_directory(data_dir: Path, sql_vm_instructions_cb: int) -> DBConnection:
+    """Initialize globaldb directory. May raise DBSchemaError if GlobalDB's schema is malformed."""
     global_dir = data_dir / 'global_data'
     global_dir.mkdir(parents=True, exist_ok=True)
     dbname = global_dir / 'global.db'
@@ -125,6 +127,8 @@ class GlobalDBHandler():
 
         If the data dir is given it uses the already existing global DB in that directory,
         of if there is none copies the built-in one there.
+        May raise:
+        - DBSchemaError if GlobalDB's schema is malformed
         """
         if GlobalDBHandler.__instance is not None:
             return GlobalDBHandler.__instance

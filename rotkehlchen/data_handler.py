@@ -77,6 +77,7 @@ class DataHandler():
         - DBUpgradeError if the rotki DB version is newer than the software or
         there is a DB upgrade and there is an error or if the version is older
         than the one supported.
+        - DBSchemaError if database schema is malformed
         """
         user_data_dir = self.data_directory / username
         if create_new:

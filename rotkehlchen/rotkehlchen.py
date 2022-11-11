@@ -113,6 +113,7 @@ class Rotkehlchen():
         May Raise:
         - SystemPermissionError if the given data directory's permissions
         are not correct.
+        - DBSchemaError if GlobalDB's schema is malformed
         """
         # Can also be None after unlock if premium credentials did not
         # authenticate or premium server temporarily offline
@@ -196,6 +197,7 @@ class Rotkehlchen():
         - SystemPermissionError if the directory or DB file can not be accessed
         - sqlcipher.OperationalError: If some very weird error happens with the DB.
         For example unexpected schema.
+        - DBSchemaError if database schema is malformed.
         """
         log.info(
             'Unlocking user',

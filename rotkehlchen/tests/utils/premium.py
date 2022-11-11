@@ -9,6 +9,7 @@ from rotkehlchen.constants import ROTKEHLCHEN_SERVER_TIMEOUT
 from rotkehlchen.premium.premium import Premium, PremiumCredentials
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.constants import A_GBP, DEFAULT_TESTS_MAIN_CURRENCY
+from rotkehlchen.tests.utils.database import mock_db_schema_sanity_check
 from rotkehlchen.tests.utils.mock import MockResponse
 
 # Valid format but not "real" premium api key and secret
@@ -182,7 +183,7 @@ def setup_starting_environment(
         given_premium_credentials = None
         create_new = False
 
-    with patched_premium_at_start, patched_get:
+    with patched_premium_at_start, patched_get, mock_db_schema_sanity_check():
         rotkehlchen_instance.premium_sync_manager.try_premium_at_start(
             given_premium_credentials=given_premium_credentials,
             username=username,

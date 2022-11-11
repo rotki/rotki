@@ -75,7 +75,7 @@ exclude = [
 # Allow unused variables when underscore-prefixed.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 target-version = "py39"
-per-file-ignores = {"tools/*" = ["T201"],"rotkehlchen/__main__.py" = ["T201"],"rotkehlchen/api/server.py" = ["T201"],"rotkehlchen/args.py" = ["T201"]}
+per-file-ignores = {"tools/*" = ["T201"],"rotkehlchen/__main__.py" = ["T201"],"rotkehlchen/api/server.py" = ["T201"],"rotkehlchen/args.py" = ["T201"],"rotkehlchen/db/minimized_schema.py" = ["E501"],"rotkehlchen/globaldb/minimized_schema.py" = ["E501"]}
 
 # -- isort config section --
 
