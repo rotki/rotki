@@ -3069,18 +3069,18 @@ Get asset identifiers mappings
               "eip155:1/erc20:0xB6eD7644C69416d67B522e20bC294A9a9B405B31": {
                   "name": "0xBitcoin",
                   "symbol": "0xBTC",
-                  "is_custom_asset": false
+                  "asset_type": "evm token"
               },
               "DCR": {
                   "name": "Decred",
                   "symbol": "DCR",
-                  "is_custom_asset": false
+                  "asset_type": "own chain"
               },
               "eip155:1/erc20:0xcC4eF9EEAF656aC1a2Ab886743E98e97E090ed38": {
                   "name": "DigitalDevelopersFund",
                   "symbol": "DDF",
                   "evm_chain": "ethereum",
-                  "is_custom_asset": false
+                  "asset_type": "evm token"
               }
           },
           "message": ""
@@ -3161,7 +3161,8 @@ Search for assets
    :resjson string symbol: Symbol of the asset.
    :resjson string evm_chain: This value might not be included in all the results. Full name of the EVM chain where the asset is located if the asset is an EVM token.
    :resjson string custom_asset_type: This value might not be included in all the results. It represents the custom asset type for a custom asset.
-   :resjson bool is_custom_asset: A boolean to represent whether the asset is a custom asset or not.
+   :resjson string asset_type: This value represents the asset type. Can be `custom asset`, `nft`, etc.
+   :resjson string collection_name: This value might not be included in all the results. It represents the nft collection name.
    :statuscode 200: Assets successfully queried.
    :statuscode 400: Provided JSON is in some way malformed.
    :statuscode 500: Internal rotki error.
@@ -3188,11 +3189,13 @@ Search for assets(Levenshtein)
       }
 
    :reqjson int limit: This signifies the limit of records to return as per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
-   :reqjson list[string] order_by_attributes: This is the list of attributes of the asset by which to order the results. By default we sort using ``name``.
-   :reqjson list[bool] ascending: Should the order be ascending? This is the default. If set to false, it will be on descending order.
    :reqjson string value: A string to be used to search the assets. Required.
    :reqjson string[optional] evm_chain: A string representing the name of a supported EVM chain used to filter the result. e.g "ethereum", "optimism", "binance", etc.
-
+   :reqjson list[string][optional] owner_addresses: A list of evm addresses. If provided, only nfts owned by these addresses will be returned.
+   :reqjson string[optional] name: Optional nfts name to filter by.
+   :reqjson string[optional] collection_name: Optional nfts collection_name to filter by.
+   :reqjson string[optional] ignored_assets_handling: A flag to specify how to handle ignored assets. Possible values are `'none'`, `'exclude'` and `'show_only'`. You can write 'none' in order to not handle them in any special way (meaning to show them too). This is the default. You can write 'exclude' if you want to exlude them from the result. And you can write 'show_only' if you want to only see the ignored assets in the result.
+   
    **Example Response**:
 
    .. sourcecode:: http
@@ -3219,7 +3222,7 @@ Search for assets(Levenshtein)
    :resjson string symbol: Symbol of the asset.
    :resjson string evm_chain: This value might not be included in all the results. Full name of the EVM chain where the asset is located if the asset is an EVM token.
    :resjson string custom_asset_type: This value might not be included in all the results. It represents the custom asset type for a custom asset.
-   :resjson bool is_custom_asset: A boolean to represent whether the asset is a custom asset or not.
+   :resjson string asset_type: This value represents the asset type. Can be `custom asset`, `nft`, etc.
    :statuscode 200: Assets successfully queried.
    :statuscode 400: Provided JSON is in some way malformed.
    :statuscode 500: Internal rotki error.
@@ -10844,10 +10847,18 @@ Show NFT Balances
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"async_query": false, "ignore_cache": false}
+      {"async_query": false, "ignore_cache": false, "offset": 3, "limit": 1}
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
    :param bool ignore_cache: Boolean denoting whether to ignore the cache for this query or not.
+   :reqjson list[string][optional] owner_addresses: A list of evm addresses. If provided, only nfts owned by these addresses will be returned.
+   :reqjson string[optional] name: Optional nfts name to filter by.
+   :reqjson string[optional] collection_name: Optional nfts collection_name to filter by.
+   :reqjson string[optional] ignored_assets_handling: A flag to specify how to handle ignored assets. Possible values are `'none'`, `'exclude'` and `'show_only'`. You can write 'none' in order to not handle them in any special way (meaning to show them too). This is the default. You can write 'exclude' if you want to exlude them from the result. And you can write 'show_only' if you want to only see the ignored assets in the result.
+   :reqjson int limit: This signifies the limit of records to return as per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
+   :reqjson int offset: This signifies the offset from which to start the return of records per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
+   :reqjson list[string][optional] order_by_attributes: This is the list of attributes of the nft by which to order the results. By default we sort using ``name``.
+   :reqjson list[bool][optional] ascending: Should the order be ascending? This is the default. If set to false, it will be on descending order.
 
 
    **Example Response**:
@@ -10859,34 +10870,40 @@ Show NFT Balances
 
         {
             "result": {
-                "0xeE3766e4F996DC0e0F8c929954EAAFef3441de87": [
-                    {
-                        "id": "unique id",
-                        "name": "a name",
-                        "collection_name": "A collection name",
-                        "manually_input": true,
-                        "price_asset": "ETH",
-                        "price_in_asset": "1",
-                        "usd_price": "2501.15"
-                        "image_url": "https://storage.opensea.io/files/305952feb5321a50d5d4f6ab6c16da1f.mov",
-                        "is_lp": false
-                    }, {
-                        "id": "unique id 2",
-                        "name": null,
-                        "collection_name": "A collection name",
-                        "manually_input": false,
-                        "price_asset": "USD",
-                        "price_in_asset": "150.55",
-                        "usd_price": "150.55"
-                        "image_url": "https://lh3.googleusercontent.com/xJpOAw7P96jdPgs91w7ZQMTq91tvcCva4J2RYHh7LjFufod_UP9FE0bVjhp1cYpbx2p1qFFj2NDFf3oS0eEcNI3L5w",
-                        "is_lp": true
-                }],
+                "entries": {
+                    "0xeE3766e4F996DC0e0F8c929954EAAFef3441de87": [
+                        {
+                            "id": "unique id",
+                            "name": "a name",
+                            "collection_name": "A collection name",
+                            "manually_input": true,
+                            "price_asset": "ETH",
+                            "price_in_asset": "1",
+                            "usd_price": "2501.15"
+                            "image_url": "https://storage.opensea.io/files/305952feb5321a50d5d4f6ab6c16da1f.mov",
+                            "is_lp": false
+                        }, {
+                            "id": "unique id 2",
+                            "name": null,
+                            "collection_name": "A collection name",
+                            "manually_input": false,
+                            "price_asset": "USD",
+                            "price_in_asset": "150.55",
+                            "usd_price": "150.55"
+                            "image_url": "https://lh3.googleusercontent.com/xJpOAw7P96jdPgs91w7ZQMTq91tvcCva4J2RYHh7LjFufod_UP9FE0bVjhp1cYpbx2p1qFFj2NDFf3oS0eEcNI3L5w",
+                            "is_lp": true
+                    }],
+                },
+                "entries_found": 5,
+                "entries_total": 10
             },
             "message": ""
         }
 
 
-   :resjson object addresses: A mapping of ethereum addresses to list assets and balances. ``name`` can also be null. ``collection_name`` can be null if nft does not have a collection.
+   :resjson object entries: A mapping of ethereum addresses to list assets and balances. ``name`` can also be null. ``collection_name`` can be null if nft does not have a collection.
+   :resjson int entries_found: The number of entries found for the current filter. Ignores pagination.
+   :resjson int entries_total: The number of total entries ignoring all filters.
    :statuscode 200: NFT balances successfully queried
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 409: User is not logged in or nft module is not activated.

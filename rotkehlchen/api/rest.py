@@ -101,6 +101,8 @@ from rotkehlchen.db.filtering import (
     ETHTransactionsFilterQuery,
     HistoryEventFilterQuery,
     LedgerActionsFilterQuery,
+    LevenshteinFilterQuery,
+    NFTFilterQuery,
     ReportDataFilterQuery,
     TradesFilterQuery,
     UserNotesFilterQuery,
@@ -109,6 +111,7 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.reports import DBAccountingReports
+from rotkehlchen.db.search_assets import search_assets_levenshtein
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.db.snapshots import DBSnapshot
 from rotkehlchen.db.utils import DBAssetBalance, LocationData
@@ -1350,13 +1353,17 @@ class RestAPI():
         }
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 
-    @staticmethod
-    def get_assets_mappings(identifier: List[str]) -> Response:
+    def get_assets_mappings(self, identifiers: List[str]) -> Response:
         try:
-            asset_mappings = GlobalDBHandler().get_assets_mappings(identifier)
+            asset_mappings = GlobalDBHandler().get_assets_mappings(identifiers)
+            nft_mappings = self.rotkehlchen.data.db.get_nft_mappings(identifiers)
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
-        return api_response(_wrap_in_ok_result(asset_mappings), status_code=HTTPStatus.OK)
+        return api_response(
+            # Using | is safe since keys in asset_mappings and nft_mappings don't intersect
+            _wrap_in_ok_result(asset_mappings | nft_mappings),
+            status_code=HTTPStatus.OK,
+        )
 
     def search_assets(self, filter_query: AssetsFilterQuery) -> Response:
         result = GlobalDBHandler().search_assets(
@@ -1367,15 +1374,15 @@ class RestAPI():
 
     def search_assets_levenshtein(
             self,
-            filter_query: AssetsFilterQuery,
-            substring_search: str,
+            filter_query: LevenshteinFilterQuery,
             limit: Optional[int],
+            search_nfts: bool,
     ) -> Response:
-        result = GlobalDBHandler().search_assets_levenshtein(
+        result = search_assets_levenshtein(
             db=self.rotkehlchen.data.db,
             filter_query=filter_query,
-            substring_search=substring_search,
             limit=limit,
+            search_nfts=search_nfts,
         )
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 
@@ -3871,31 +3878,50 @@ class RestAPI():
             ignore_cache=ignore_cache,
         )
 
-    def _get_nfts_balances(self, ignore_cache: bool) -> Dict[str, Any]:
-        uniswap_result = self._eth_module_query(
-            module_name='uniswap',
-            method='get_v3_balances',
-            query_specific_balances_before=None,
-            addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('uniswap'),
-        )
+    def _get_nfts_balances(
+            self,
+            filter_query: NFTFilterQuery,
+            ignore_cache: bool,
+    ) -> Dict[str, Any]:
+        if ignore_cache is True:
+            uniswap_result = self._eth_module_query(
+                module_name='uniswap',
+                method='get_v3_balances',
+                query_specific_balances_before=None,
+                addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('uniswap'),  # noqa: E501
+            )
+            self._eth_module_query(
+                module_name='nfts',
+                method='get_balances',
+                query_specific_balances_before=None,
+                addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('nfts'),
+                uniswap_nfts=uniswap_result['result'],
+                return_zero_values=True,
+                ignore_cache=True,
+
+            )
+
         return self._eth_module_query(
             module_name='nfts',
-            method='get_balances',
+            method='get_db_nft_balances',
             query_specific_balances_before=None,
-            addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('nfts'),
-            uniswap_nfts=uniswap_result['result'],
-            return_zero_values=True,
-            ignore_cache=ignore_cache,
+            filter_query=filter_query,
         )
 
-    def get_nfts_balances(self, async_query: bool, ignore_cache: bool) -> Response:
+    def get_nfts_balances(
+            self,
+            async_query: bool,
+            ignore_cache: bool,
+            filter_query: NFTFilterQuery,
+    ) -> Response:
         if async_query is True:
             return self._query_async(
                 command=self._get_nfts_balances,
                 ignore_cache=ignore_cache,
+                filter_query=filter_query,
             )
 
-        response = self._get_nfts_balances(ignore_cache=ignore_cache)
+        response = self._get_nfts_balances(ignore_cache=ignore_cache, filter_query=filter_query)
         status_code = _get_status_code_from_async_response(response)
         result_dict = {'result': response['result'], 'message': response['message']}
         return api_response(process_result(result_dict), status_code=status_code)

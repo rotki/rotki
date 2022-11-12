@@ -6,6 +6,7 @@ from uuid import uuid4
 
 import pytest
 import requests
+from polyleven import levenshtein
 
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.assets.asset import Asset, CustomAsset
@@ -553,14 +554,14 @@ def test_get_assets_mappings(rotkehlchen_api_server):
         if identifier == A_DAI.identifier:
             assert details['evm_chain'] == 'ethereum'
             assert 'custom_asset_type' not in details.keys()
-            assert not details['is_custom_asset']
+            assert details['asset_type'] != 'custom asset'
         elif identifier == custom_asset_id:
             assert details['custom_asset_type'] == 'random'
-            assert details['is_custom_asset']
+            assert details['asset_type'] == 'custom asset'
         else:
             assert 'evm_chain' not in details.keys()
             assert 'custom_asset_type' not in details.keys()
-            assert not details['is_custom_asset']
+            assert details['asset_type'] != 'custom asset'
 
     # check that providing an invalid identifier returns only valid ones if any.
     response = requests.post(
@@ -780,7 +781,7 @@ def test_search_assets_with_levenshtein(rotkehlchen_api_server):
     # check that Bitcoin(BTC) appears at the top of result.
     assert_asset_at_top_position('BTC', max_position_index=1, result=result)
     assert_substring_in_search_result(result, 'Bitcoin')
-    assert all(['custom_asset_type' not in entry.keys() and not entry['is_custom_asset'] for entry in result])  # noqa: E501
+    assert all(['custom_asset_type' not in entry.keys() and entry['asset_type'] != 'custom asset' for entry in result])  # noqa: E501
 
     # use a different keyword
     # but add assets without name/symbol and see that nothing breaks
@@ -818,7 +819,7 @@ def test_search_assets_with_levenshtein(rotkehlchen_api_server):
     assert_asset_at_top_position('ETH', max_position_index=1, result=result)
     assert any([asset_without_name_id == entry['identifier'] for entry in result])
     assert any([asset_without_symbol_id == entry['identifier'] for entry in result])
-    assert all(['custom_asset_type' not in entry.keys() and not entry['is_custom_asset'] for entry in result])  # noqa: E501
+    assert all(['custom_asset_type' not in entry.keys() and entry['asset_type'] != 'custom asset' for entry in result])  # noqa: E501
 
     # check that treat_eth2_as_eth` setting is respected
     # using the test above.
@@ -841,7 +842,7 @@ def test_search_assets_with_levenshtein(rotkehlchen_api_server):
     assert_substring_in_search_result(result, 'ETH')
     # check that Ethereum(ETH) appears at the top of result.
     assert_asset_at_top_position('ETH', max_position_index=1, result=result)
-    assert all(['ETH2' != entry['identifier'] and not entry['is_custom_asset'] and 'custom_asset_type' not in entry.keys() for entry in result])  # noqa: E501
+    assert all(['ETH2' != entry['identifier'] and entry['asset_type'] != 'custom asset' and 'custom_asset_type' not in entry.keys() for entry in result])  # noqa: E501
 
     # check that searching for a non-existent asset returns nothing
     response = requests.post(
@@ -871,7 +872,7 @@ def test_search_assets_with_levenshtein(rotkehlchen_api_server):
     )
     result = assert_proper_response_with_result(response)
     assert 50 >= len(result) > 10
-    assert all(['ethereum' == entry['evm_chain'] and not entry['is_custom_asset'] and 'custom_asset_type' not in entry.keys() for entry in result])  # noqa: E501
+    assert all(['ethereum' == entry['evm_chain'] and entry['asset_type'] != 'custom asset' and 'custom_asset_type' not in entry.keys() for entry in result])  # noqa: E501
 
     assert_substring_in_search_result(result, 'dai')
     # check that Dai(DAI) appears at the top of result.
@@ -903,7 +904,7 @@ def test_search_assets_with_levenshtein(rotkehlchen_api_server):
     )
     result = assert_proper_response_with_result(response)
     assert_substring_in_search_result(result, 'my custom')
-    assert all([custom_asset_id == entry['identifier'] and entry['is_custom_asset'] and 'random' == entry['custom_asset_type'] for entry in result])  # noqa: E501
+    assert all([custom_asset_id == entry['identifier'] and entry['asset_type'] == 'custom asset' and 'random' == entry['custom_asset_type'] for entry in result])  # noqa: E501
 
     # check that using an unsupported evm_chain fails
     response = requests.post(
@@ -918,6 +919,81 @@ def test_search_assets_with_levenshtein(rotkehlchen_api_server):
         },
     )
     assert_error_response(response, contained_in_msg='Failed to deserialize ChainID value near')
+
+
+def test_search_nfts_with_levenshtein(rotkehlchen_api_server):
+    with rotkehlchen_api_server.rest_api.rotkehlchen.data.db.user_write() as cursor:
+        cursor.execute('INSERT INTO assets VALUES (?)', ('my-nft-identifier',))
+        cursor.execute(
+            'INSERT INTO nfts(identifier, name, collection_name, manual_price, is_lp) '
+            'VALUES (?, ?, ?, ?, ?)',
+            ('my-nft-identifier', 'super-duper-nft', 'Bitcoin smth', False, False),
+        )
+
+    # check that searching by nft name works
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'assetssearchlevenshteinresource',
+        ),
+        json={
+            'value': 'super-duper',
+            'limit': 50,
+            'search_nfts': True,
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    assert result == [{
+        'identifier': 'my-nft-identifier',
+        'name': 'super-duper-nft',
+        'collection_name': 'Bitcoin smth',
+        'asset_type': 'nft',
+    }]
+
+    # Check that:
+    # 1. Searching by nft collection name works
+    # 2. Nfts are searched only with search_nfts set to True
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'assetssearchlevenshteinresource',
+        ),
+        json={
+            'value': 'Bitcoin',
+            'limit': 50,
+        },
+    )
+    results_without_nfts = [x['identifier'] for x in assert_proper_response_with_result(response)]
+
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'assetssearchlevenshteinresource',
+        ),
+        json={
+            'value': 'Bitcoin',
+            'limit': 50,
+            'search_nfts': True,
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    results_with_nfts = [x['identifier'] for x in result]
+    assert set(results_with_nfts) - set(results_without_nfts) == {'my-nft-identifier'}
+
+    # Check that the order makes sense
+    previous_levenshtein_distance = 0
+    for entry in result:
+        if entry['asset_type'] == 'nft':
+            current_levenshtein_distance = min(
+                levenshtein('bitcoin', entry['name']),
+                levenshtein('bitcoin', entry['collection_name']),
+            )
+        else:
+            current_levenshtein_distance = min(
+                levenshtein('bitcoin', entry['name']),
+                levenshtein('bitcoin', entry['symbol']),
+            )
+        assert current_levenshtein_distance >= previous_levenshtein_distance
 
 
 def test_only_ignored_assets(rotkehlchen_api_server):

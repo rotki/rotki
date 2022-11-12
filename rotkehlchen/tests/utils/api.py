@@ -68,7 +68,7 @@ def assert_proper_response(
         response.headers["Content-Type"] == "application/json"
     )
     if status_code:
-        assert response.status_code == status_code
+        assert response.status_code == status_code, f'Response contains unexpected status code. Details {response.json()}'  # noqa: E501
 
 
 def assert_simple_ok_response(response: requests.Response) -> None:
