@@ -2215,6 +2215,8 @@ Querying ethereum transactions
    :reqjson string asset: Optional. Serialized asset to filter by.
    :reqjson list protocols: Optional. Protocols (counterparties) to filter by. List of strings.
    :reqjson bool exclude_ignored_assets: Optional. Whether to exclude transactions with ignored assets. Default true.
+   :reqjson list[string] event_types: This is the list of event types by which to filter the decoded events.
+   :reqjson list[string] event_subtypes: This is the list of event types by which to filter the decoded events.
 
 
    **Example Response**:

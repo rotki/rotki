@@ -112,8 +112,8 @@ class DBETHTransactionJoinsFilter(DBFilter):
         query_filters, bindings = [], []
         if self.should_join_events is True:
             query_filters.append(
-                'LEFT JOIN (SELECT event_identifier, counterparty, asset FROM history_events) '
-                'ON ethereum_transactions.tx_hash=event_identifier',
+                'LEFT JOIN (SELECT event_identifier, counterparty, asset, type, subtype '
+                'FROM history_events) ON ethereum_transactions.tx_hash=event_identifier',
             )
         if self.addresses is not None:
             questionmarks = '?' * len(self.addresses)
@@ -336,6 +336,8 @@ class ETHTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
             protocols: Optional[List[str]] = None,
             asset: Optional[EvmToken] = None,
             exclude_ignored_assets: bool = False,
+            event_types: Optional[List[HistoryEventType]] = None,
+            event_subtypes: Optional[List[HistoryEventSubType]] = None,
     ) -> 'ETHTransactionsFilterQuery':
         if order_by_rules is None:
             order_by_rules = [('timestamp', True)]
@@ -351,7 +353,13 @@ class ETHTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
         if tx_hash is not None:  # tx_hash means single result so make it as single filter
             filters.append(DBETHTransactionHashFilter(and_op=False, tx_hash=tx_hash))
         else:
-            should_join_events = asset is not None or protocols is not None or exclude_ignored_assets is True  # noqa: E501
+            should_join_events = (
+                asset is not None or
+                protocols is not None or
+                exclude_ignored_assets is True or
+                event_types is not None or
+                event_subtypes is not None
+            )
             if addresses is not None or should_join_events is True:
                 filter_query.join_clause = DBETHTransactionJoinsFilter(
                     and_op=False,
@@ -365,6 +373,20 @@ class ETHTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
                 filters.append(DBProtocolsFilter(and_op=True, protocols=protocols))
             if exclude_ignored_assets is True:
                 filters.append(DBIgnoredAssetsFilter(and_op=True, asset_key='asset'))
+            if event_types is not None:
+                filters.append(DBMultiStringFilter(
+                    and_op=True,
+                    column='type',
+                    values=[x.serialize() for x in event_types],
+                    operator='IN',
+                ))
+            if event_subtypes is not None:
+                filters.append(DBMultiStringFilter(
+                    and_op=True,
+                    column='subtype',
+                    values=[x.serialize() for x in event_subtypes],
+                    operator='IN',
+                ))
 
             filter_query.timestamp_filter = DBTimestampFilter(
                 and_op=True,
@@ -804,6 +826,7 @@ class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoca
                 and_op=True,
                 column='type',
                 values=[x.serialize() for x in event_types],
+                operator='IN',
             ))
         if event_subtypes is not None:
             filters.append(DBMultiStringFilter(
