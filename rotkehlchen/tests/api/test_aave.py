@@ -10,6 +10,11 @@ from flaky import flaky
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.api.server import APIServer
+from rotkehlchen.chain.ethereum.defi.structures import (
+    DefiBalance,
+    DefiProtocol,
+    DefiProtocolBalances,
+)
 from rotkehlchen.chain.ethereum.modules.aave.structures import (
     AaveBorrowEvent,
     AaveDepositWithdrawalEvent,
@@ -17,6 +22,7 @@ from rotkehlchen.chain.ethereum.modules.aave.structures import (
     AaveLiquidationEvent,
     AaveRepayEvent,
 )
+from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_BUSD, A_DAI, A_ETH, A_LINK, A_USDT, A_WBTC
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.fval import FVal
@@ -880,3 +886,91 @@ def test_query_aave_history_non_premium(rotkehlchen_api_server, ethereum_account
         contained_in_msg='Currently logged in user testuser does not have a premium subscription',
         status_code=HTTPStatus.CONFLICT,
     )
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0x01471dB828Cfb96Dcf215c57a7a6493702031EC1']])
+@pytest.mark.parametrize('ethereum_modules', [['aave']])
+def test_query_aave_defi_borrowing(rotkehlchen_api_server, ethereum_accounts):
+    """Checks that the apr/apy values are correctyly returned from the API for a mocked status"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    addrs = string_to_evm_address('0x01471dB828Cfb96Dcf215c57a7a6493702031EC1')
+    defi_balances = {
+        addrs: [
+            DefiProtocolBalances(
+                protocol=DefiProtocol(
+                    name='Aave V2 • Variable Debt',
+                    description='Decentralized lending & borrowing protocol',
+                    url='aave.com',
+                    version=4,
+                ),
+                balance_type='Debt',
+                base_balance=DefiBalance(
+                    token_address=string_to_evm_address('0xdAC17F958D2ee523a2206206994597C13D831ec7'),  # noqa: E501
+                    token_name='Tether USD',
+                    token_symbol='USDT',
+                    balance=Balance(
+                        amount=FVal(2697.800279),
+                        usd_value=FVal(4046.7004185),
+                    ),
+                ),
+                underlying_balances=[],
+            ),
+            DefiProtocolBalances(
+                protocol=DefiProtocol(
+                    name='Aave V2',
+                    description='Decentralized lending & borrowing protocol',
+                    url='aave.com',
+                    version=3,
+                ),
+                balance_type='Asset',
+                base_balance=DefiBalance(
+                    token_address=string_to_evm_address('0x9ff58f4fFB29fA2266Ab25e75e2A8b3503311656'),  # noqa: E501
+                    token_name='Aave interest bearing WBTC',
+                    token_symbol='aWBTC',
+                    balance=Balance(
+                        amount=FVal(0.59425326),
+                        usd_value=FVal(0.891379890),
+                    ),
+                ),
+                underlying_balances=[
+                    DefiBalance(
+                        token_address=string_to_evm_address('0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599'),  # noqa: E501
+                        token_name='Wrapped BTC',
+                        token_symbol='WBTC',
+                        balance=Balance(
+                            amount=FVal(0.59425326),
+                            usd_value=FVal(0.891379890),
+                        ),
+                    ),
+                ],
+            ),
+        ],
+    }
+
+    setup = setup_balances(
+        rotki,
+        ethereum_accounts=ethereum_accounts,
+        btc_accounts=None,
+        defi_balances=defi_balances,
+    )
+
+    response = None
+    with ExitStack() as stack:
+        setup.enter_ethereum_patches(stack)
+        response = requests.get(api_url_for(
+            rotkehlchen_api_server,
+            "aavebalancesresource",
+        ))
+
+    assert response is not None
+    result = assert_proper_response_with_result(response)
+    account_data = result[addrs]
+    assert len(account_data['lending']) == 1
+    assert len(account_data['borrowing']) == 1
+    variable_borrowing = account_data['borrowing']['eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7']  # noqa: E501
+    assert variable_borrowing['variable_apr'] == '8.85%'
+    assert variable_borrowing['stable_apr'] == '16.85%'
+    assert variable_borrowing['balance']['amount'] == '2697.800279'
+    variable_borrowing = account_data['lending']['eip155:1/erc20:0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599']  # noqa: E501
+    assert variable_borrowing['apy'] == '0.12%'
+    assert variable_borrowing['balance']['amount'] == '0.59425326'
