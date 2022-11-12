@@ -3196,6 +3196,8 @@ class RestAPI():
                             event_identifiers=[entry.tx_hash],
                             assets=asset,
                             protocols=event_params['protocols'],
+                            event_types=event_params['event_types'],
+                            event_subtypes=event_params['event_subtypes'],
                             exclude_ignored_assets=event_params['exclude_ignored_assets'],
                         ),
                         has_premium=True,  # for this function we don't limit. We only limit txs.

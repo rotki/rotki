@@ -229,6 +229,14 @@ class EthereumTransactionQuerySchema(
     protocols = DelimitedOrNormalList(fields.String(), load_default=None)
     asset = AssetField(expected_type=CryptoAsset, load_default=None)
     exclude_ignored_assets = fields.Boolean(load_default=True)
+    event_types = fields.List(
+        SerializableEnumField(enum_class=HistoryEventType),
+        load_default=None,
+    )
+    event_subtypes = fields.List(
+        SerializableEnumField(enum_class=HistoryEventSubType),
+        load_default=None,
+    )
 
     @validates_schema
     def validate_ethtx_query_schema(  # pylint: disable=no-self-use
@@ -265,6 +273,8 @@ class EthereumTransactionQuerySchema(
         address = data.get('address')
         protocols, asset = data['protocols'], data['asset']
         exclude_ignored_assets = data['exclude_ignored_assets']
+        event_types = data['event_types']
+        event_subtypes = data['event_subtypes']
         filter_query = ETHTransactionsFilterQuery.make(
             order_by_rules=create_order_by_rules_list(data),
             limit=data['limit'],
@@ -275,10 +285,14 @@ class EthereumTransactionQuerySchema(
             protocols=protocols,
             asset=asset,
             exclude_ignored_assets=exclude_ignored_assets,
+            event_types=event_types,
+            event_subtypes=event_subtypes,
         )
         event_params = {
             'asset': asset,
             'protocols': protocols,
+            'event_types': event_types,
+            'event_subtypes': event_subtypes,
             'exclude_ignored_assets': exclude_ignored_assets,
         }
 

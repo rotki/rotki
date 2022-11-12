@@ -108,6 +108,8 @@ def make_ethereum_event(
     tx_hash: Optional[bytes] = None,
     asset: CryptoAsset = CUSTOM_USDT,
     counterparty: Optional[str] = None,
+    event_type: HistoryEventType = HistoryEventType.UNKNOWN,
+    event_subtype: HistoryEventSubType = HistoryEventSubType.NONE,
 ) -> HistoryBaseEntry:
     if tx_hash is None:
         tx_hash = make_random_bytes(42)
@@ -117,8 +119,8 @@ def make_ethereum_event(
         identifier=index,
         timestamp=TimestampMS(0),
         location=Location.EXTERNAL,
-        event_type=HistoryEventType.UNKNOWN,
-        event_subtype=HistoryEventSubType.NONE,
+        event_type=event_type,
+        event_subtype=event_subtype,
         asset=asset,
         balance=Balance(amount=ONE, usd_value=ONE),
         counterparty=counterparty,

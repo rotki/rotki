@@ -1,4 +1,3 @@
-import logging
 import os
 import random
 from contextlib import ExitStack
@@ -10,6 +9,7 @@ import gevent
 import pytest
 import requests
 
+from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.api.server import APIServer
 from rotkehlchen.chain.ethereum.constants import (
     RANGE_PREFIX_ETHINTERNALTX,
@@ -18,6 +18,7 @@ from rotkehlchen.chain.ethereum.constants import (
 )
 from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt
+from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_MKR, A_USDT, A_WETH
 from rotkehlchen.constants.limits import FREE_ETH_TX_LIMIT
 from rotkehlchen.constants.misc import ONE
@@ -1146,6 +1147,9 @@ def test_query_transactions_check_decoded_events(
 
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
+@patch.object(EthTransactions, '_get_transactions_for_range', lambda *args, **kargs: None)
+@patch.object(EthTransactions, '_get_internal_transactions_for_ranges', lambda *args, **kargs: None)  # noqa: E501
+@patch.object(EthTransactions, '_get_erc20_transfers_for_ranges', lambda *args, **kargs: None)
 def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
     """Tests filtering by transaction's events' properties
     Test cases:
@@ -1155,23 +1159,30 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
         - Transaction has multiple related events
         - Transaction has no related events
         - Multiple transactions are queried
+        - Filtering by event type
+        - Filtering by event subtype
+    since the transactions filtered here are created in here and don't come from etherscan
+    remove any external query that is not needed
     """
-    logging.getLogger('rotkehlchen.externalapis.etherscan').disabled = True
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = rotki.data.db
     tx1 = make_ethereum_transaction(tx_hash=b'1')
     tx2 = make_ethereum_transaction(tx_hash=b'2')
     tx3 = make_ethereum_transaction(tx_hash=b'3')
+    tx4 = make_ethereum_transaction(tx_hash=b'4')
     event1 = make_ethereum_event(tx_hash=b'1', index=1, asset=A_ETH)
     event2 = make_ethereum_event(tx_hash=b'1', index=2, asset=A_ETH, counterparty='EXAMPLE_PROTOCOL')  # noqa: E501
     event3 = make_ethereum_event(tx_hash=b'1', index=3, asset=A_WETH, counterparty='EXAMPLE_PROTOCOL')  # noqa: E501
     event4 = make_ethereum_event(tx_hash=b'2', index=4, asset=A_WETH)
+    event5 = make_ethereum_event(tx_hash=b'4', index=5, asset=A_DAI, event_type=HistoryEventType.STAKING, event_subtype=HistoryEventSubType.DEPOSIT_ASSET)  # noqa: E501
+    event6 = make_ethereum_event(tx_hash=b'4', index=6, asset=A_DAI, event_type=HistoryEventType.STAKING, event_subtype=HistoryEventSubType.RECEIVE_WRAPPED)  # noqa: E501
     dbethtx = DBEthTx(db)
     dbevents = DBHistoryEvents(db)
     with db.user_write() as cursor:
         dbethtx.add_ethereum_transactions(cursor, [tx1, tx2], relevant_address=ethereum_accounts[0])  # noqa: E501
         dbethtx.add_ethereum_transactions(cursor, [tx3], relevant_address=ethereum_accounts[1])
-        dbevents.add_history_events(cursor, [event1, event2, event3, event4])
+        dbethtx.add_ethereum_transactions(cursor, [tx4], relevant_address=ethereum_accounts[2])
+        dbevents.add_history_events(cursor, [event1, event2, event3, event4, event5, event6])
 
     response = requests.get(
         api_url_for(
@@ -1247,6 +1258,35 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
     )
     result = assert_proper_response_with_result(response)
     expected = generate_tx_entries_response([(tx1, [event3])])
+    assert result['entries'] == expected
+
+    # test that filtering by type works
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ethereumtransactionsresource',
+        ),
+        json={
+            'event_types': ['staking'],
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    expected = generate_tx_entries_response([(tx3, []), (tx4, [event5, event6])])
+    assert result['entries'] == expected
+
+    # test that filtering by subtype works
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ethereumtransactionsresource',
+        ),
+        json={
+            'event_types': ['staking'],
+            'event_subtypes': ['deposit_asset'],
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    expected = generate_tx_entries_response([(tx3, []), (tx4, [event5])])
     assert result['entries'] == expected
 
 
