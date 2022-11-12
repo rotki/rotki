@@ -66,6 +66,27 @@ class DBFilter():
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class DBNestedFilter(DBFilter):
+    """Filter that allows combination of multiple subfilters with different operands."""
+    and_op: bool
+    filters: List[DBFilter]
+
+    def prepare(self) -> Tuple[List[str], List[Any]]:
+        filterstrings = []
+        bindings = []
+        for single_filter in self.filters:
+            filters, single_bindings = single_filter.prepare()
+            if len(filters) == 0:
+                continue
+
+            operator = ' AND ' if single_filter.and_op else ' OR '
+            filterstrings.append(f'({operator.join(filters)})')
+            bindings.extend(single_bindings)
+
+        return filterstrings, bindings
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBTimestampFilter(DBFilter):
     from_ts: Optional[Timestamp] = None
     to_ts: Optional[Timestamp] = None
@@ -947,7 +968,7 @@ class AssetsFilterQuery(DBFilterQuery):
             asset_type: Optional[AssetType] = None,
             identifiers: Optional[List[str]] = None,
             return_exact_matches: bool = False,
-            evm_chain: Optional[ChainID] = None,
+            chain_id: Optional[ChainID] = None,
             ignored_assets_filter_params: Optional[Tuple[Literal['IN', 'NOT IN'], List[str]]] = None,  # noqa: E501
     ) -> 'AssetsFilterQuery':
         if order_by_rules is None:
@@ -1007,11 +1028,11 @@ class AssetsFilterQuery(DBFilterQuery):
                 operator=ignored_assets_filter_params[0],
                 values=ignored_assets_filter_params[1],
             ))
-        if evm_chain is not None:
+        if chain_id is not None:
             filters.append(DBEqualsFilter(
                 and_op=True,
                 column='chain',
-                value=evm_chain.serialize_for_db(),
+                value=chain_id.serialize_for_db(),
             ))
         filter_query.filters = filters
         return filter_query
@@ -1060,5 +1081,153 @@ class CustomAssetsFilterQuery(DBFilterQuery):
                 alias='A',  # custom_assets table
                 value=custom_asset_type,
             ))
+        filter_query.filters = filters
+        return filter_query
+
+
+class NFTFilterQuery(DBFilterQuery):
+    @classmethod
+    def make(
+            cls,
+            order_by_rules: Optional[List[Tuple[str, bool]]] = None,
+            limit: Optional[int] = None,
+            offset: Optional[int] = None,
+            owner_addresses: Optional[List[str]] = None,
+            name: Optional[str] = None,
+            collection_name: Optional[str] = None,
+            ignored_assets_filter_params: Optional[Tuple[Literal['IN', 'NOT IN'], List[str]]] = None,  # noqa: E501
+    ) -> 'NFTFilterQuery':
+        filter_query = cls.create(
+            and_op=True,
+            limit=limit,
+            offset=offset,
+            order_by_rules=order_by_rules,
+        )
+        filter_query = cast('NFTFilterQuery', filter_query)
+        filters: List[DBFilter] = []
+        if owner_addresses is not None:
+            filters.append(DBMultiStringFilter(
+                and_op=True,
+                column='owner_address',
+                values=owner_addresses,
+            ))
+        if name is not None:
+            filters.append(DBSubStringFilter(
+                and_op=True,
+                field='name',
+                search_string=name,
+            ))
+        if collection_name is not None:
+            filters.append(DBSubStringFilter(
+                and_op=True,
+                field='collection_name',
+                search_string=collection_name,
+            ))
+        if ignored_assets_filter_params is not None:
+            filters.append(DBMultiStringFilter(
+                and_op=True,
+                column='identifier',
+                operator=ignored_assets_filter_params[0],
+                values=ignored_assets_filter_params[1],
+            ))
+        filter_query.filters = filters
+        return filter_query
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class MultiTableFilterQuery():
+    """
+    Filter query that allows to reuse filters for different tables structures
+    (e.g. different column names).
+    """
+    and_op: bool
+    filters: List[Tuple[DBFilter, str]]  # filter + table name for which to use it.
+
+    def prepare(self, target_table_name: str) -> Tuple[str, List[Any]]:
+        """Generates query and bindings for table `target_table_name`."""
+        query_parts = []
+        bindings = []
+        filterstrings = []
+
+        for (single_filter, table_name) in self.filters:
+            if table_name != target_table_name:
+                continue
+
+            filters, single_bindings = single_filter.prepare()
+            if len(filters) == 0:
+                continue
+
+            operator = ' AND ' if single_filter.and_op is True else ' OR '
+            filterstrings.append(f'({operator.join(filters)})')
+            bindings.extend(single_bindings)
+
+        if len(filterstrings) != 0:
+            operator = ' AND ' if self.and_op is True else ' OR '
+            filter_query = f'WHERE {operator.join(filterstrings)}'
+            query_parts.append(filter_query)
+
+        return ' '.join(query_parts), bindings
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class LevenshteinFilterQuery(MultiTableFilterQuery):
+    """
+    Filter query for levenshtein search. Accepts a substring to filter by and a chain id.
+    Is used for querying both assets and nfts.
+    """
+    substring_search: str
+
+    @classmethod
+    def make(
+            cls,
+            and_op: bool = True,
+            substring_search: str = '',  # substring is always required for levenstein
+            chain_id: Optional[ChainID] = None,
+    ) -> 'LevenshteinFilterQuery':
+        filter_query = LevenshteinFilterQuery(
+            and_op=and_op,
+            filters=[],
+            substring_search=substring_search,
+        )
+        filters: List[Tuple[DBFilter, str]] = []  # filter + table name for which to use it.
+
+        name_filter = DBSubStringFilter(
+            and_op=True,
+            field='name',
+            search_string=substring_search,
+        )
+        assets_substring_filter = DBNestedFilter(
+            and_op=False,
+            filters=[
+                name_filter,
+                DBSubStringFilter(
+                    and_op=True,
+                    field='symbol',
+                    search_string=substring_search,
+                ),
+            ],
+        )
+        filters.append((assets_substring_filter, 'assets'))
+        nfts_substring_filter = DBNestedFilter(
+            and_op=False,
+            filters=[
+                name_filter,
+                DBSubStringFilter(
+                    and_op=True,
+                    field='collection_name',
+                    search_string=substring_search,
+                ),
+            ],
+        )
+        filters.append((nfts_substring_filter, 'nfts'))
+
+        if chain_id is not None:
+            new_filter = DBEqualsFilter(
+                and_op=True,
+                column='chain',
+                value=chain_id.serialize_for_db(),
+            )
+            filters.append((new_filter, 'assets'))
+
         filter_query.filters = filters
         return filter_query

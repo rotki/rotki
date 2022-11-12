@@ -18,8 +18,6 @@ from typing import (
     overload,
 )
 
-from polyleven import levenshtein
-
 from rotkehlchen.assets.asset import (
     Asset,
     AssetWithNameAndType,
@@ -63,6 +61,13 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+ALL_ASSETS_TABLES_QUERY = """
+SELECT assets.identifier, name, symbol, chain, assets.type, custom_assets.type FROM assets
+LEFT JOIN common_asset_details on assets.identifier = common_asset_details.identifier
+LEFT JOIN evm_tokens ON evm_tokens.identifier= assets.identifier
+LEFT JOIN custom_assets ON custom_assets.identifier= assets.identifier
+"""
 
 
 def initialize_globaldb(dbpath: Path, sql_vm_instructions_cb: int) -> DBConnection:
@@ -333,18 +338,14 @@ class GlobalDBHandler():
         identifiers_query = f'assets.identifier IN ({",".join("?" * len(identifiers))})'
         with GlobalDBHandler().conn.read_ctx() as cursor:
             cursor.execute(
-                'SELECT assets.identifier, name, symbol, chain, assets.type, custom_assets.type FROM assets '  # noqa: E501
-                'LEFT JOIN common_asset_details on assets.identifier = common_asset_details.identifier '  # noqa: E501
-                'LEFT JOIN evm_tokens ON evm_tokens.identifier= assets.identifier '
-                'LEFT JOIN custom_assets ON custom_assets.identifier= assets.identifier '
-                'WHERE ' + identifiers_query,
+                ALL_ASSETS_TABLES_QUERY + 'WHERE ' + identifiers_query,
                 tuple(identifiers),
             )
             for entry in cursor:
                 result[entry[0]] = {
                     'name': entry[1],
                     'symbol': entry[2],
-                    'is_custom_asset': AssetType.deserialize_from_db(entry[4]) == AssetType.CUSTOM_ASSET,  # noqa: E501
+                    'asset_type': AssetType.deserialize_from_db(entry[4]).serialize(),
                 }
                 if entry[3] is not None:
                     result[entry[0]].update({'evm_chain': ChainID.deserialize_from_db(entry[3]).serialize()})  # noqa: E501
@@ -393,83 +394,9 @@ class GlobalDBHandler():
         return search_result
 
     @staticmethod
-    def search_assets_levenshtein(
-            filter_query: 'AssetsFilterQuery',
-            db: 'DBHandler',
-            substring_search: str,
-            limit: Optional[int],
-    ) -> List[Dict[str, Any]]:
-        """Returns a list of asset details that match the search keyword using the Levenshtein distance approach."""  # noqa: E501
-        search_result = []
-        levenshtein_distances: List[int] = []
-        query, bindings = GlobalDBHandler()._prepare_search_assets_query(filter_query)
-        resolved_eth = A_ETH.resolve_to_crypto_asset()
-        with GlobalDBHandler().conn.read_ctx() as globaldb_cursor, db.conn.read_ctx() as cursor:
-            globaldb_cursor.execute(query, bindings)
-            treat_eth2_as_eth = db.get_settings(cursor).treat_eth2_as_eth
-            found_eth = False
-            for entry in globaldb_cursor:
-                # if an asset does not have a name and symbol, skip.
-                if entry[1] is None and entry[2] is None:
-                    continue
-
-                substr_in_name = substr_in_symbol = None
-                # default to a value greater than the threshold to avoid false-positives
-                # and prevent raising `UnboundLocalError` when name/symbol is None.
-                lev_dist_name = lev_dist_symbol = 6
-                if entry[1] is not None:
-                    name_casefold = entry[1].casefold()
-                    lev_dist_name = levenshtein(substring_search, name_casefold)
-                    substr_in_name = substring_search in name_casefold
-
-                if entry[2] is not None:
-                    symbol_casefold = entry[2].casefold()
-                    lev_dist_symbol = levenshtein(substring_search, symbol_casefold)
-                    substr_in_symbol = substring_search in symbol_casefold
-
-                if not substr_in_name and not substr_in_symbol:
-                    continue
-
-                lev_dist_min = min(lev_dist_name, lev_dist_symbol)
-                if treat_eth2_as_eth is True and entry[0] in (A_ETH.identifier, A_ETH2.identifier):  # noqa:E501
-                    if found_eth is False:
-                        search_result.append({
-                            'identifier': resolved_eth.identifier,
-                            'name': resolved_eth.name,
-                            'symbol': resolved_eth.symbol,
-                            'is_custom_asset': False,
-                        })
-                        levenshtein_distances.append(lev_dist_min)
-                        found_eth = True
-                    continue
-
-                entry_info = {
-                    'identifier': entry[0],
-                    'name': entry[1],
-                    'symbol': entry[2],
-                    'is_custom_asset': AssetType.deserialize_from_db(entry[4]) == AssetType.CUSTOM_ASSET,  # noqa: E501
-                }
-                if entry[3] is not None:
-                    entry_info['evm_chain'] = ChainID.deserialize_from_db(entry[3]).serialize()
-                if entry[5] is not None:
-                    entry_info['custom_asset_type'] = entry[5]
-
-                search_result.append(entry_info)
-                levenshtein_distances.append(lev_dist_min)
-
-        search_result = [result for _, result in sorted(zip(levenshtein_distances, search_result), key=lambda item: item[0])]  # noqa: E501
-        return search_result[:limit] if limit is not None else search_result
-
-    @staticmethod
     def _prepare_search_assets_query(filter_query: 'AssetsFilterQuery') -> Tuple[str, list]:
         query, bindings = filter_query.prepare()
-        parent_query = """
-        SELECT assets.identifier, name, symbol, chain, assets.type, custom_assets.type FROM assets
-        LEFT JOIN common_asset_details on assets.identifier = common_asset_details.identifier
-        LEFT JOIN evm_tokens ON evm_tokens.identifier= assets.identifier
-        LEFT JOIN custom_assets ON custom_assets.identifier= assets.identifier
-        """
-        query = parent_query + query
+        query = ALL_ASSETS_TABLES_QUERY + query
         return query, bindings
 
     @overload

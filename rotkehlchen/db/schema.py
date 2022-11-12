@@ -680,6 +680,9 @@ CREATE TABLE IF NOT EXISTS nfts (
     manual_price INTEGER NOT NULL CHECK (manual_price IN (0, 1)),
     owner_address TEXT,
     blockchain TEXT GENERATED ALWAYS AS ("ETH") VIRTUAL,
+    is_lp INTEGER NOT NULL CHECK (is_lp IN (0, 1)),
+    image_url TEXT,
+    collection_name TEXT,
     FOREIGN KEY(blockchain, owner_address) REFERENCES blockchain_accounts(blockchain, account) ON DELETE CASCADE,
     FOREIGN KEY (identifier) REFERENCES assets(identifier) ON UPDATE CASCADE,
     FOREIGN KEY (last_price_asset) REFERENCES assets(identifier) ON UPDATE CASCADE

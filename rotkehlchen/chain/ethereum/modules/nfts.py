@@ -8,6 +8,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.modules.uniswap.v3.types import AddressToUniswapV3LPBalances
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.db.filtering import NFTFilterQuery
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.externalapis.opensea import NFT, Opensea
@@ -29,6 +30,18 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 FREE_NFT_LIMIT = 10
+
+NFT_DB_TUPLE = Tuple[
+    str,  # identifier
+    Optional[str],  # name
+    Optional[str],  # price_in_asset
+    Optional[str],  # price_asset
+    bool,  # whether the price is manually input
+    ChecksumEvmAddress,  # owner address
+    bool,  # whether is an lp
+    Optional[str],  # image_url
+    Optional[str],  # collection_name
+]
 
 
 class NFTResult(NamedTuple):
@@ -119,6 +132,45 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):  # lgtm [py/miss
             entries_limit=FREE_NFT_LIMIT,
         )
 
+    def get_db_nft_balances(self, filter_query: NFTFilterQuery) -> Dict[str, Any]:
+        """Filters (with `filter_query`) and returns cached nft balances in the nfts table"""
+        entries = defaultdict(list)
+        query, bindings = filter_query.prepare()
+        with self.db.conn.read_ctx() as cursor:
+            cursor.execute(
+                'SELECT identifier, name, last_price, last_price_asset, manual_price, '
+                'owner_address, is_lp, image_url, collection_name FROM nfts ' + query,
+                bindings,
+            )
+            for db_entry in cursor:
+                price_in_asset = FVal(db_entry[2])
+                # Asset should always exist since it is guaranteed by the db schema
+                price_asset = Asset(db_entry[3])
+                # find_usd_price should be fast here since in most cases price should be cached
+                usd_price = price_in_asset * Inquirer.find_usd_price(price_asset)
+                entries[db_entry[5]].append({
+                    'id': db_entry[0],
+                    'name': db_entry[1],
+                    'price_in_asset': price_in_asset,
+                    'price_asset': price_asset,
+                    'manually_input': bool(db_entry[4]),
+                    'is_lp': bool(db_entry[6]),
+                    'image_url': db_entry[7],
+                    'usd_price': usd_price,
+                    'collection_name': db_entry[8],
+                })
+            entries_found = cursor.execute(
+                'SELECT COUNT(*) FROM nfts ' + query,
+                bindings,
+            ).fetchone()[0]
+            entries_total = cursor.execute('SELECT COUNT(*) FROM nfts').fetchone()[0]
+
+        return {
+            'entries': entries,
+            'entries_found': entries_found,
+            'entries_total': entries_total,
+        }
+
     def get_balances(
             self,
             addresses: List[ChecksumEvmAddress],
@@ -144,8 +196,8 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):  # lgtm [py/miss
         nft_results = self._filter_ignored_nfts(_nft_results)
         cached_db_result = self.get_nfts_with_price()
         cached_db_prices = {x['asset']: x for x in cached_db_result}
-        db_data: List[Tuple[str, Optional[str], Optional[str], Optional[str], int, ChecksumEvmAddress]] = []  # noqa: E501
-        # get uniswap v3 lp balances and update nfts that are LPs with their worths.
+        db_data: List[NFT_DB_TUPLE] = []
+        # get uniswap v3 lp balances and update nfts that are LPs with their worth.
         for address, nfts in nft_results.items():
             for nft in nfts:
                 cached_price_data = cached_db_prices.get(nft.token_identifier)
@@ -153,11 +205,12 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):  # lgtm [py/miss
                 # then replace the worth with LP value.
                 uniswap_v3_lps = uniswap_nfts.get(address) if uniswap_nfts is not None else None
                 uniswap_v3_lp = next((entry for entry in uniswap_v3_lps if entry.nft_id == nft.token_identifier), None) if uniswap_v3_lps is not None else None  # noqa:E501
+                collection_name = nft.collection.name if nft.collection is not None else None
                 if uniswap_v3_lp is not None:
                     result[address].append({
                         'id': nft.token_identifier,
                         'name': nft.name,
-                        'collection_name': nft.collection.name if nft.collection is not None else None,  # noqa: E501
+                        'collection_name': collection_name,
                         'manually_input': False,
                         'price_asset': 'USD',
                         'price_in_asset': uniswap_v3_lp.user_balance.usd_value,
@@ -165,12 +218,12 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):  # lgtm [py/miss
                         'image_url': nft.image_url,
                         'is_lp': True,
                     })
-                    db_data.append((nft.token_identifier, nft.name, str(uniswap_v3_lp.user_balance.usd_value), 'USD', 0, address))  # noqa: E501
+                    db_data.append((nft.token_identifier, nft.name, str(uniswap_v3_lp.user_balance.usd_value), 'USD', False, address, True, nft.image_url, collection_name))  # noqa: E501
                 elif cached_price_data is not None and cached_price_data['manually_input']:
                     result[address].append({
                         'id': nft.token_identifier,
                         'name': nft.name,
-                        'collection_name': nft.collection.name if nft.collection is not None else None,  # noqa: E501
+                        'collection_name': collection_name,
                         'manually_input': True,
                         'price_asset': cached_price_data['price_asset'],
                         'price_in_asset': FVal(cached_price_data['price_in_asset']),
@@ -182,7 +235,7 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):  # lgtm [py/miss
                     result[address].append({
                         'id': nft.token_identifier,
                         'name': nft.name,
-                        'collection_name': nft.collection.name if nft.collection is not None else None,  # noqa: E501
+                        'collection_name': collection_name,
                         'manually_input': False,
                         'price_asset': 'ETH',
                         'price_in_asset': nft.price_eth,
@@ -190,7 +243,7 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):  # lgtm [py/miss
                         'image_url': nft.image_url,
                         'is_lp': False,
                     })
-                    db_data.append((nft.token_identifier, nft.name, str(nft.price_eth), 'ETH', 0, address))  # noqa: E501
+                    db_data.append((nft.token_identifier, nft.name, str(nft.price_eth), 'ETH', False, address, False, nft.image_url, collection_name))  # noqa: E501
                 else:
                     if return_zero_values:
                         result[address].append({
@@ -205,26 +258,44 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):  # lgtm [py/miss
                             'is_lp': False,
                         })
                     # Always write detected nfts in the DB to have name and address associated
-                    db_data.append((nft.token_identifier, nft.name, None, None, 0, address))  # noqa: E501
-        # save opensea data in the DB
-        if len(db_data) != 0:
-            with self.db.user_write() as cursor:
-                cursor.executemany(
-                    'INSERT OR IGNORE INTO assets(identifier) VALUES(?)',
-                    [(x[0],) for x in db_data],
-                )
-                for entry in db_data:
-                    exist_result = cursor.execute(
-                        'SELECT manual_price FROM nfts WHERE identifier=?',
-                        (entry[0],),
-                    ).fetchone()
-                    if exist_result is None or bool(exist_result[0]) is False:
-                        cursor.execute(
-                            'INSERT OR IGNORE INTO nfts('
-                            'identifier, name, last_price, last_price_asset, manual_price, owner_address'  # noqa: E501
-                            ') VALUES(?, ?, ?, ?, ?, ?)',
-                            entry,
-                        )
+                    db_data.append((nft.token_identifier, nft.name, None, None, False, address, False, nft.image_url, collection_name))  # noqa: E501
+
+        # Update DB cache
+        fresh_nfts_identifiers = [x[0] for x in db_data]
+        with self.db.user_write() as cursor:
+            # Remove NFTs that the user no longer owns from the DB cache
+            cursor.execute(
+                f'DELETE FROM nfts WHERE owner_address IN '
+                f'({",".join("?"*len(addresses))}) AND identifier NOT IN '
+                f'({",".join("?"*len(fresh_nfts_identifiers))})',
+                addresses + fresh_nfts_identifiers,
+            )
+
+            # Add new NFTs to the DB cache
+            cursor.executemany(
+                'INSERT OR IGNORE INTO assets(identifier) VALUES(?)',
+                [(x,) for x in fresh_nfts_identifiers],
+            )
+            cursor.executemany(
+                'INSERT OR IGNORE INTO nfts('
+                'identifier, name, last_price, last_price_asset, manual_price, owner_address, is_lp, image_url, collection_name'  # noqa: E501
+                ') VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                db_data,
+            )
+
+            # Update NFTs that already exist in the cache. First, update everything except price
+            cursor.executemany(
+                'UPDATE nfts SET name=?, owner_address=?, image_url=?, collection_name=? '
+                'WHERE identifier=?',
+                [(x[1], x[5], x[7], x[8], x[0]) for x in db_data],
+            )
+            # Then, update price where it was not manually input.
+            # To preserve user manually input price
+            cursor.executemany(
+                'UPDATE nfts SET last_price=?, last_price_asset=? '
+                'WHERE identifier=? AND manual_price=0',
+                [(x[2], x[3], x[0]) for x in db_data],
+            )
 
         return result
 

@@ -29,6 +29,7 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.assets.asset import Asset, AssetWithOracles, EvmToken
+from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.xpub import (
@@ -3425,3 +3426,25 @@ class DBHandler:
             write_cursor.execute('DELETE FROM user_notes WHERE identifier=?', (identifier,))
             if write_cursor.rowcount == 0:
                 raise InputError(f'User note with identifier {identifier} not found in database')
+
+    def get_nft_mappings(self, identifiers: List[str]) -> Dict[str, dict]:
+        """
+        Given a list of nft identifiers, return a list of nft info (id, name, collection_name)
+        for those identifiers.
+        """
+        result = {}
+        with self.conn.read_ctx() as cursor:
+            cursor.execute(
+                f'SELECT identifier, name, collection_name FROM nfts WHERE '
+                f'identifier IN ({",".join("?" * len(identifiers))})',
+                identifiers,
+            )
+            serialized_nft_type = AssetType.NFT.serialize()
+            for entry in cursor:
+                result[entry[0]] = {
+                    'name': entry[1],
+                    'asset_type': serialized_nft_type,
+                    'collection_name': entry[2],
+                }
+
+        return result

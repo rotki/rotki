@@ -67,6 +67,8 @@ from rotkehlchen.db.filtering import (
     ETHTransactionsFilterQuery,
     HistoryEventFilterQuery,
     LedgerActionsFilterQuery,
+    LevenshteinFilterQuery,
+    NFTFilterQuery,
     ReportDataFilterQuery,
     TradesFilterQuery,
     UserNotesFilterQuery,
@@ -1828,47 +1830,38 @@ class AssetsPostSchema(DBPaginationSchema, DBOrderBySchema):
         return {'filter_query': filter_query, 'identifiers': data['identifiers']}
 
 
-class AssetsSearchLevenshteinSchema(DBOrderBySchema, DBPaginationSchema):
+class AssetsSearchLevenshteinSchema(Schema):
     value = fields.String(required=True)
-    return_exact_matches = fields.Boolean(load_default=False)
     evm_chain = SerializableEnumField(enum_class=ChainID, load_default=None)
-
-    @validates_schema
-    def validate_schema(  # pylint: disable=no-self-use
-            self,
-            data: Dict[str, Any],
-            **_kwargs: Any,
-    ) -> None:
-        # the length of `order_by_attributes` and `ascending` are the same. So check only one.
-        if data['order_by_attributes'] is not None and len(data['order_by_attributes']) > 1:
-            raise ValidationError(
-                message='Multiple fields ordering is not allowed.',
-                field_name='order_by_attributes',
-            )
+    limit = fields.Integer(required=True)
+    search_nfts = fields.Boolean(load_default=False)
 
     @post_load
-    def make_assets_search_query(  # pylint: disable=no-self-use
+    def make_levenshtein_search_query(  # pylint: disable=no-self-use
             self,
             data: Dict[str, Any],
             **_kwargs: Any,
     ) -> Dict[str, Any]:
-        filter_query = AssetsFilterQuery.make(
+        filter_query = LevenshteinFilterQuery.make(
             and_op=True,
-            order_by_rules=create_order_by_rules_list(data=data, default_order_by_field='name'),
-            evm_chain=data['evm_chain'],
+            substring_search=data['value'].strip().casefold(),
+            chain_id=data['evm_chain'],
         )
         return {
             'filter_query': filter_query,
-            'substring_search': data['value'].strip().casefold(),
             'limit': data['limit'],
+            'search_nfts': data['search_nfts'],
         }
 
 
-class AssetsSearchByColumnSchema(AssetsSearchLevenshteinSchema):
+class AssetsSearchByColumnSchema(DBOrderBySchema, DBPaginationSchema):
     search_column = fields.String(
         required=True,
         validate=webargs.validate.OneOf(choices=('name', 'symbol')),
     )
+    value = fields.String(required=True)
+    evm_chain = SerializableEnumField(enum_class=ChainID, load_default=None)
+    return_exact_matches = fields.Boolean(load_default=False)
 
     @post_load
     def make_assets_search_query(  # pylint: disable=no-self-use
@@ -1884,7 +1877,7 @@ class AssetsSearchByColumnSchema(AssetsSearchLevenshteinSchema):
             substring_search=data['value'].strip(),
             search_column=data['search_column'],
             return_exact_matches=data['return_exact_matches'],
-            evm_chain=data['evm_chain'],
+            chain_id=data['evm_chain'],
         )
         return {'filter_query': filter_query}
 
@@ -2698,3 +2691,55 @@ class EditCustomAssetSchema(BaseCustomAssetSchema):
             custom_asset_type=data['custom_asset_type'],
         )
         return {'custom_asset': custom_asset}
+
+
+class NFTFilterQuerySchema(
+        AsyncIgnoreCacheQueryArgumentSchema,
+        DBPaginationSchema,
+        DBOrderBySchema,
+):
+    owner_addresses = fields.List(EthereumAddressField(required=True), load_default=None)
+    name = fields.String(load_default=None)
+    collection_name = fields.String(load_default=None)
+    ignored_assets_handling = SerializableEnumField(enum_class=IgnoredAssetsHandling, load_default=IgnoredAssetsHandling.NONE)  # noqa: E501
+
+    def __init__(self, db: 'DBHandler') -> None:
+        super().__init__()
+        self.db = db
+
+    @post_load
+    def make_nft_filter_query(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> Dict[str, Any]:
+        ignored_assets_filter_params: Optional[Tuple[Literal['IN', 'NOT IN'], List[str]]] = None  # noqa: E501
+        with self.db.conn.read_ctx() as cursor:
+            if data['ignored_assets_handling'] == IgnoredAssetsHandling.EXCLUDE:
+                ignored_assets_filter_params = (
+                    'NOT IN',
+                    [asset.identifier for asset in self.db.get_ignored_assets(cursor)],
+                )
+            elif data['ignored_assets_handling'] == IgnoredAssetsHandling.SHOW_ONLY:
+                ignored_assets_filter_params = (
+                    'IN',
+                    [asset.identifier for asset in self.db.get_ignored_assets(cursor)],
+                )
+
+        filter_query = NFTFilterQuery.make(
+            order_by_rules=create_order_by_rules_list(
+                data=data,
+                default_order_by_field='name',
+            ),
+            limit=data['limit'],
+            offset=data['offset'],
+            owner_addresses=data['owner_addresses'],
+            name=data['name'],
+            collection_name=data['collection_name'],
+            ignored_assets_filter_params=ignored_assets_filter_params,
+        )
+        return {
+            'async_query': data['async_query'],
+            'ignore_cache': data['ignore_cache'],
+            'filter_query': filter_query,
+        }

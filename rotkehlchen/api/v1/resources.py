@@ -101,6 +101,7 @@ from rotkehlchen.api.v1.schemas import (
     NamedOracleCacheGetSchema,
     NamedOracleCacheSchema,
     NewUserSchema,
+    NFTFilterQuerySchema,
     OptionalEthereumAddressSchema,
     QueriedAddressesSchema,
     RequiredEthereumAddressSchema,
@@ -159,6 +160,8 @@ from rotkehlchen.db.filtering import (
     Eth2DailyStatsFilterQuery,
     ETHTransactionsFilterQuery,
     LedgerActionsFilterQuery,
+    LevenshteinFilterQuery,
+    NFTFilterQuery,
     ReportDataFilterQuery,
     TradesFilterQuery,
     UserNotesFilterQuery,
@@ -736,14 +739,14 @@ class AssetsSearchLevenshteinResource(BaseMethodView):
     @use_kwargs(post_schema, location='json')
     def post(
             self,
-            filter_query: AssetsFilterQuery,
-            substring_search: str,
+            filter_query: LevenshteinFilterQuery,
             limit: Optional[int],
+            search_nfts: bool,
     ) -> Response:
         return self.rest_api.search_assets_levenshtein(
             filter_query=filter_query,
-            substring_search=substring_search,
             limit=limit,
+            search_nfts=search_nfts,
         )
 
 
@@ -2432,12 +2435,19 @@ class NFTSResource(BaseMethodView):
 
 
 class NFTSBalanceResource(BaseMethodView):
-    get_schema = AsyncIgnoreCacheQueryArgumentSchema()
+    def make_get_schema(self) -> NFTFilterQuerySchema:
+        return NFTFilterQuerySchema(
+            db=self.rest_api.rotkehlchen.data.db,
+        )
 
     @require_loggedin_user()
-    @use_kwargs(get_schema, location='json_and_query')
-    def get(self, async_query: bool, ignore_cache: bool) -> Response:
-        return self.rest_api.get_nfts_balances(async_query=async_query, ignore_cache=ignore_cache)
+    @resource_parser.use_kwargs(make_get_schema, location='json_and_query')
+    def get(self, async_query: bool, ignore_cache: bool, filter_query: NFTFilterQuery) -> Response:
+        return self.rest_api.get_nfts_balances(
+            async_query=async_query,
+            ignore_cache=ignore_cache,
+            filter_query=filter_query,
+        )
 
 
 class NFTSPricesResource(BaseMethodView):
