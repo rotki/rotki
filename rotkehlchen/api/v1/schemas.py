@@ -1860,6 +1860,7 @@ class AssetsSearchByColumnSchema(DBOrderBySchema, DBPaginationSchema):
         validate=webargs.validate.OneOf(choices=('name', 'symbol')),
     )
     value = fields.String(required=True)
+    # Using name evm_chain and string repr as input to make it easy for the frontend
     evm_chain = SerializableEnumField(enum_class=ChainID, load_default=None)
     return_exact_matches = fields.Boolean(load_default=False)
 
