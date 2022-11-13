@@ -17,6 +17,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response_with_result,
     wait_for_async_task,
 )
+from rotkehlchen.tests.utils.mock import MockResponse
 
 TEST_ACC1 = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
 TEST_ACC2 = '0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF'
@@ -154,7 +155,7 @@ def test_nft_ids_are_unique(rotkehlchen_api_server):
 
 
 @requires_env([TestEnvironment.NIGHTLY, TestEnvironment.NFTS])
-# @flaky(max_runs=3, min_passes=1)  # all opensea calls have become quite flaky
+@flaky(max_runs=3, min_passes=1)  # all opensea calls have become quite flaky
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC4, TEST_ACC5, TEST_ACC6]])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('ethereum_modules', [['nfts', 'uniswap']])
@@ -499,3 +500,160 @@ def test_nfts_ignoring_works(rotkehlchen_api_server, endpoint):
         else:
             all_nfts_ids = {nft['id'] for nft in result['entries'][TEST_ACC4]}
         assert NFT_ID_FOR_TEST_ACC4 in all_nfts_ids
+
+
+@requires_env([TestEnvironment.NIGHTLY, TestEnvironment.NFTS])
+@pytest.mark.parametrize('ethereum_accounts', [["0x7277F7849966426d345D8F6B9AFD1d3d89183083"]])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('ethereum_modules', [['nfts']])
+def test_nft_no_price(rotkehlchen_api_server):
+    """Test for nft with no price and that query works fine"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    nft_module = rotki.chains_aggregator.get_module('nfts')
+
+    def mock_session_get(url, params, timeout):  # pylint: disable=unused-argument
+        if 'assets' in url:
+            response = """
+        {"assets":[{
+        "animation_original_url": "https://resources.smarttokenlabs.com/devcon6/Comp_ETH.mp4",
+        "animation_url": "https://openseauserdata.com/files/8ce39e632261c0d61bb122c314f49ef7.mp4",
+        "asset_contract": {
+            "address": "0x7522dc5a357891b4daec194e285551ea5ea66d09",
+            "asset_contract_type": "non-fungible",
+            "buyer_fee_basis_points": 0,
+            "created_date": "2022-10-14T22:45:02.644744",
+            "default_to_fiat": false,
+            "description": "bla bla",
+            "dev_buyer_fee_basis_points": 0,
+            "dev_seller_fee_basis_points": 0,
+            "external_link": "https://devcon-vi.attest.tickets/",
+            "image_url": "https://i.seadn.io/gae/ED1IC2aJj9RlHheixOlc3CH_oV4I1egLchaDAkqccx5EEC-foJcG0CUZNt9QhkIyLKOS1ZDqvkhPQcxSyvLDCWeytSv-Flv8acRM8g?w=500&auto=format",
+            "name": "Unidentified contract",
+            "nft_version": null,
+            "only_proxied_transfers": false,
+            "opensea_buyer_fee_basis_points": 0,
+            "opensea_seller_fee_basis_points": 250,
+            "opensea_version": null,
+            "owner": null,
+            "payout_address": null,
+            "schema_name": "ERC721",
+            "seller_fee_basis_points": 250,
+            "symbol": "",
+            "total_supply": null
+        },
+        "background_color": null,
+        "collection": {
+            "banner_image_url": null,
+            "chat_url": null,
+            "created_date": "2022-10-15T01:30:47.057694+00:00",
+            "default_to_fiat": false,
+            "description": "bla bla",
+            "dev_buyer_fee_basis_points": "0",
+            "dev_seller_fee_basis_points": "0",
+            "discord_url": null,
+            "display_data": {"card_display_style": "contain", "images": []},
+            "external_url": "https://devcon-vi.attest.tickets/",
+            "featured": false,
+            "featured_image_url": null,
+            "fees": {"opensea_fees": {"0x0000a26b00c1f0df003000390027140000faa719": 250}, "seller_fees": {}},
+            "hidden": false,
+            "image_url": "https://i.seadn.io/gae/ED1IC2aJj9RlHheixOlc3CH_oV4I1egLchaDAkqccx5EEC-foJcG0CUZNt9QhkIyLKOS1ZDqvkhPQcxSyvLDCWeytSv-Flv8acRM8g?w=500&auto=format",
+            "instagram_username": null,
+            "is_nsfw": false,
+            "is_rarity_enabled": false,
+            "is_subject_to_whitelist": false,
+            "large_image_url": "https://i.seadn.io/gae/ED1IC2aJj9RlHheixOlc3CH_oV4I1egLchaDAkqccx5EEC-foJcG0CUZNt9QhkIyLKOS1ZDqvkhPQcxSyvLDCWeytSv-Flv8acRM8g?w=500&auto=format",
+            "medium_username": null,
+            "name": "Devcon VI Souvenir V4",
+            "only_proxied_transfers": false,
+            "opensea_buyer_fee_basis_points": "0",
+            "opensea_seller_fee_basis_points": "250",
+            "payout_address": null,
+            "require_email": false,
+            "safelist_request_status": "not_requested",
+            "short_description": null,
+            "slug": "devcon-vi-souvenir-v4",
+            "telegram_url": null,
+            "twitter_username": null,
+            "wiki_url": null
+        },
+        "creator": {
+            "address": "0xff3efd475907f5c6dc173fe42c2dd3a58ef740bf",
+            "config": "",
+            "profile_img_url": "https://storage.googleapis.com/opensea-static/opensea-profile/10.png",
+            "user": {"username": null}
+        },
+        "decimals": null,
+        "description": "bla bla",
+        "external_link": null,
+        "id": 724471261,
+        "image_original_url": "https://resources.smarttokenlabs.com/devcon6/ETH.webp",
+        "image_preview_url": "https://i.seadn.io/gae/-N3ctyPYwIF0s-pShI-Zcg96KJr7dYG05KyFtI25WG0yIZeOpBxjAIIUBiBmHcbviAFkY57Xfo0-MRaonHHx4a53LS-q2yOoEwzF?w=500&auto=format",
+        "image_thumbnail_url": "https://i.seadn.io/gae/-N3ctyPYwIF0s-pShI-Zcg96KJr7dYG05KyFtI25WG0yIZeOpBxjAIIUBiBmHcbviAFkY57Xfo0-MRaonHHx4a53LS-q2yOoEwzF?w=500&auto=format",
+        "image_url": "https://i.seadn.io/gae/-N3ctyPYwIF0s-pShI-Zcg96KJr7dYG05KyFtI25WG0yIZeOpBxjAIIUBiBmHcbviAFkY57Xfo0-MRaonHHx4a53LS-q2yOoEwzF?w=500&auto=format",
+        "is_nsfw": false,
+        "is_presale": false,
+        "last_sale": null,
+        "listing_date": null,
+        "name": "Devcon VI Souvenir",
+        "num_sales": 0,
+        "owner": {
+            "address": "0x0000000000000000000000000000000000000000",
+            "config": "",
+            "profile_img_url": "https://storage.googleapis.com/opensea-static/opensea-profile/1.png",
+            "user": {"username": "NullAddress"}
+        },
+        "permalink": "https://opensea.io/assets/ethereum/0x7522dc5a357891b4daec194e285551ea5ea66d09/336510496872176433120578",
+        "rarity_data": null,
+        "seaport_sell_orders": null,
+        "supports_wyvern": true,
+        "token_id": "336510496872176433120578",
+        "token_metadata": "https://resources.smarttokenlabs.com/1/0x7522dc5a357891b4daec194e285551ea5ea66d09/336510496872176433120578",
+        "top_bid": null,
+        "traits": [],
+        "transfer_fee": null,
+        "transfer_fee_payment_token": null}]}
+        """  # noqa: E501
+        elif 'collections' in url:
+            response = """[{
+                "primary_asset_contracts": [1, 2, 3],
+                "name": "Devcon VI Souvenir V4",
+                "slug": "devconsouvenir",
+                "banner_image_url": "url",
+                "large_image_url": "url",
+                "description": "bla bla"
+            }]"""
+        elif '/stats' in url:
+            response = """{
+                "stats": {
+                    "floor_price": null
+                }
+            }"""
+        else:
+            raise AssertionError(f'Unexpected url {url} queried in test')
+
+        return MockResponse(200, response)
+
+    patched_opensea = patch.object(nft_module.opensea.session, 'get', wraps=mock_session_get)
+    with patched_opensea:
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server,
+                'nftsbalanceresource',
+            ), json={'ignore_cache': True},
+        )
+    result = assert_proper_response_with_result(response)
+    assert result == {
+        'entries': {'0x7277F7849966426d345D8F6B9AFD1d3d89183083': [{
+            'collection_name': 'Devcon VI Souvenir V4',
+            'id': '_nft_0x7522dc5a357891b4daec194e285551ea5ea66d09_336510496872176433120578',
+            'image_url': 'https://i.seadn.io/gae/-N3ctyPYwIF0s-pShI-Zcg96KJr7dYG05KyFtI25WG0yIZeOpBxjAIIUBiBmHcbviAFkY57Xfo0-MRaonHHx4a53LS-q2yOoEwzF?w=500&auto=format',  # noqa: E501
+            'is_lp': False,
+            'manually_input': False,
+            'name': 'Devcon VI Souvenir',
+            'price_asset': 'USD',
+            'price_in_asset': '0',
+            'usd_price': '0'}]},
+        'entries_found': 1,
+        'entries_total': 1,
+    }
