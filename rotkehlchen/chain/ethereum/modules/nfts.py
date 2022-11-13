@@ -258,7 +258,7 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):  # lgtm [py/miss
                             'is_lp': False,
                         })
                     # Always write detected nfts in the DB to have name and address associated
-                    db_data.append((nft.token_identifier, nft.name, None, None, False, address, False, nft.image_url, collection_name))  # noqa: E501
+                    db_data.append((nft.token_identifier, nft.name, '0', 'USD', False, address, False, nft.image_url, collection_name))  # noqa: E501
 
         # Update DB cache
         fresh_nfts_identifiers = [x[0] for x in db_data]
