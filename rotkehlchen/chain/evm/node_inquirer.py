@@ -39,11 +39,7 @@ from rotkehlchen.chain.ethereum.types import NodeName, WeightedNode
 from rotkehlchen.chain.ethereum.utils import MULTICALL_CHUNKS
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants import ONE
-from rotkehlchen.constants.ethereum import (
-    ERC20TOKEN_ABI,
-    ERC721TOKEN_ABI,
-    UNIV1_LP_ABI,
-)
+from rotkehlchen.constants.ethereum import ERC20TOKEN_ABI, ERC721TOKEN_ABI, UNIV1_LP_ABI
 from rotkehlchen.errors.misc import BlockchainQueryError, NotERC721Conformant, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.etherscan import Etherscan

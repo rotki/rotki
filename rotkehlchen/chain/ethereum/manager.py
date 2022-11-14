@@ -1,15 +1,5 @@
 import logging
-from typing import (
-    TYPE_CHECKING,
-    Dict,
-    List,
-    Literal,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-    overload,
-)
+from typing import TYPE_CHECKING, Dict, List, Literal, Optional, Sequence, Tuple, Union, overload
 
 from ens.abis import ENS as ENS_ABI, RESOLVER as ENS_RESOLVER_ABI
 from ens.exceptions import InvalidName
@@ -25,9 +15,7 @@ from rotkehlchen.chain.ethereum.modules.curve.pools_cache import (
 )
 from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
 from rotkehlchen.chain.evm.manager import EvmManager
-from rotkehlchen.constants.ethereum import (
-    ENS_REVERSE_RECORDS,
-)
+from rotkehlchen.constants.ethereum import ENS_REVERSE_RECORDS
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.handler import GlobalDBHandler

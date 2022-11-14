@@ -1,16 +1,10 @@
 import logging
 from abc import ABCMeta
-from typing import (
-    TYPE_CHECKING,
-    Optional,
-)
-
+from typing import TYPE_CHECKING, Optional
 
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import (
-    ChecksumEvmAddress,
-)
+from rotkehlchen.types import ChecksumEvmAddress
 
 if TYPE_CHECKING:
 

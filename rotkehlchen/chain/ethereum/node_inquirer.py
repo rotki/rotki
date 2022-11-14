@@ -1,11 +1,5 @@
 import logging
-from typing import (
-    TYPE_CHECKING,
-    Dict,
-    Optional,
-    Sequence,
-    cast,
-)
+from typing import TYPE_CHECKING, Dict, Optional, Sequence, cast
 
 import requests
 from eth_typing import BlockNumber
@@ -17,24 +11,12 @@ from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.ethereum.modules.eth2.constants import ETH2_DEPOSIT
 from rotkehlchen.chain.evm.manager import WEB3_LOGQUERY_BLOCK_RANGE
 from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
-from rotkehlchen.constants.ethereum import (
-    ETH_MULTICALL,
-    ETH_MULTICALL_2,
-    ETH_SCAN,
-)
-from rotkehlchen.errors.misc import (
-    RemoteError,
-    UnableToDecryptRemoteData,
-)
+from rotkehlchen.constants.ethereum import ETH_MULTICALL, ETH_MULTICALL_2, ETH_SCAN
+from rotkehlchen.errors.misc import RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import (
-    ChainID,
-    ChecksumEvmAddress,
-    SupportedBlockchain,
-    Timestamp,
-)
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, SupportedBlockchain, Timestamp
 from rotkehlchen.utils.network import request_get_dict
 
 from .types import ETHERSCAN_NODE_NAME, WeightedNode, string_to_evm_address
