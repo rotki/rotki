@@ -18,6 +18,7 @@ from rotkehlchen.chain.ethereum.constants import (
 )
 from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt
+from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_MKR, A_USDT, A_WETH
 from rotkehlchen.constants.limits import FREE_ETH_TX_LIMIT
 from rotkehlchen.constants.misc import ONE
@@ -1299,3 +1300,37 @@ def test_ignored_assets(rotkehlchen_api_server, ethereum_accounts):
     assert result['entries_found'] == 2
     assert result['entries_total'] == 3
     assert result['entries_limit'] == FREE_ETH_TX_LIMIT
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0x59ABf3837Fa962d6853b4Cc0a19513AA031fd32b']])  # noqa: E501
+@patch.object(EthTransactions, '_get_internal_transactions_for_ranges', lambda *args, **kargs: None)  # noqa: E501
+@patch.object(EthTransactions, '_get_erc20_transfers_for_ranges', lambda *args, **kargs: None)
+def test_no_value_eth_transfer(rotkehlchen_api_server: 'APIServer'):
+    """Test that eth transctions with no value are correctly decoded and returned in the API.
+    In this case we don't need any erc20 or internal transaction, this is why they are omitted
+    in this test.
+    """
+    tx_str = '0x6cbae2712ded4254cc0dbd3daa9528b049c27095b5216a4c52e2e3be3d6905a5'
+    # Make sure that the tranasctions get decoded
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ethereumtransactionsresource',
+        ), json={
+            'async_query': False,
+            'tx_hashes': [tx_str],
+        },
+    )
+
+    # retrieve the transaction
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        "ethereumtransactionsresource",
+    ), json={'async_query': False, 'from_timestamp': 1668407732, 'to_timestamp': 1668407737})
+
+    result = assert_proper_response_with_result(response)
+    assert len(result['entries']) == 1
+    assert result['entries'][0]['entry']['tx_hash'] == tx_str
+    assert len(result['entries'][0]['decoded_events']) == 1
+    assert result['entries'][0]['decoded_events'][0]['entry']['asset'] == A_ETH
+    assert result['entries'][0]['decoded_events'][0]['entry']['balance']['amount'] == '0'

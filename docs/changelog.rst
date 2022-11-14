@@ -3,7 +3,8 @@ Changelog
 =========
 
 * :bug:`5124` Users will now correctly see all the events related to lending in the defi view.
-* :bug:`5126` Users will see again their APR and APY for borrowing and lending in Aave.
+* :bug:`5126` APR and APY for borrowing and lending in Aave should properly show again.
+* :bug:`5128` Ethereum transactions where no value was transferred will now be correctly decoded.
 * :bug:`-` Uniswap V3 oracle will now correctly skip assets with no liquidity when querying prices.
 
 * :release:`1.26.1 <2022-11-04>`
