@@ -82,5 +82,18 @@
     "creation": {
       "error": "Kontoerstellung fehlgeschlagen"
     }
+  },
+  "actions": {
+    "defi": {
+      "liquity_pools": {
+        "error": {
+          "description": "Die Abfrage der Liquity Pools ist fehlgeschlagen: {message}",
+          "title": "Liquity Pools"
+        },
+        "task": {
+          "title": "Liquity Pools abfragen"
+        }
+      }
+    }
   }
 }

@@ -429,6 +429,15 @@
           "title": "Querying Liquity Events"
         }
       },
+      "liquity_pools": {
+        "error": {
+          "description": "Αποτυχία ανάκτησης Liquity Pools: {message}",
+          "title": "Liquity Pools"
+        },
+        "task": {
+          "title": "Ανάκτηση Liquity Pools"
+        }
+      },
       "liquity_staking": {
         "error": {
           "description": "Failed to retreive liquity staking: {message}",
@@ -1260,7 +1269,7 @@
     "location": "Location",
     "name": "Name",
     "no_premium": "No premium subscription detected. ",
-    "of": "of",
+    "of": "από",
     "price": "Price",
     "price_in_symbol": "Price in {symbol}",
     "protocol": "Protocol",
@@ -1509,8 +1518,8 @@
     "title": "Manage Data"
   },
   "data_table": {
-    "items_no": "Items #",
-    "rows_per_page": "Rows per page"
+    "items_no": "Αντικείμενα #",
+    "rows_per_page": "Γραμμές ανα σελίδα"
   },
   "database_backups": {
     "action": {

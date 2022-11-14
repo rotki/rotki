@@ -38,16 +38,6 @@ export class AssetApi {
     this.baseTransformer = setupTransformer([]);
   }
 
-  assetImageUrl(identifier: string, randomString?: string | number): string {
-    let url = `${
-      this.axios.defaults.baseURL
-    }assets/icon?asset=${encodeURIComponent(identifier)}`;
-
-    if (randomString) url += `&t=${randomString}`;
-
-    return url;
-  }
-
   addEthereumToken(
     token: Omit<SupportedAsset, 'identifier'>
   ): Promise<AssetIdResponse> {
@@ -83,36 +73,6 @@ export class AssetApi {
       .delete<ActionResult<boolean>>('/assets/ethereum', {
         data: axiosSnakeCaseTransformer({ address, chain }),
         validateStatus: validStatus
-      })
-      .then(handleResponse);
-  }
-
-  uploadIcon(identifier: string, file: File): Promise<boolean> {
-    const data = new FormData();
-    data.append('file', file);
-    data.append('asset', identifier);
-    return this.axios
-      .post<ActionResult<boolean>>(`/assets/icon/modify`, data, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      })
-      .then(handleResponse);
-  }
-
-  setIcon(asset: string, file: string): Promise<boolean> {
-    return this.axios
-      .put<ActionResult<boolean>>(`/assets/icon/modify`, {
-        file,
-        asset
-      })
-      .then(handleResponse);
-  }
-
-  refreshIcon(asset: string): Promise<boolean> {
-    return this.axios
-      .patch<ActionResult<boolean>>(`/assets/icon/modify`, {
-        asset
       })
       .then(handleResponse);
   }

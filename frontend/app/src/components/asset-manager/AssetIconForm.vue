@@ -46,8 +46,8 @@
   </div>
 </template>
 <script setup lang="ts">
-import { interop } from '@/electron-interop';
-import { api } from '@/services/rotkehlchen-api';
+import { useInterop } from '@/electron-interop';
+import { useAssetIconApi } from '@/services/assets/icon-api';
 import { useMessageStore } from '@/store/message';
 import { useNotifications } from '@/store/notifications';
 
@@ -73,7 +73,9 @@ const icon = ref<File | null>(null);
 const refreshIconLoading = ref<boolean>(false);
 const timestamp = ref<number | null>(null);
 const { notify } = useNotifications();
+const { appSession } = useInterop();
 const { setMessage } = useMessageStore();
+const { refreshIcon: refresh, setIcon, uploadIcon } = useAssetIconApi();
 
 const { t, tc } = useI18n();
 
@@ -81,7 +83,7 @@ const refreshIcon = async () => {
   set(refreshIconLoading, true);
   const identifierVal = get(identifier);
   try {
-    await api.assets.refreshIcon(identifierVal);
+    await refresh(identifierVal);
   } catch (e: any) {
     notify({
       title: tc('asset_form.fetch_latest_icon.title'),
@@ -104,10 +106,10 @@ const saveIcon = async (identifier: string) => {
   let success = false;
   let message = '';
   try {
-    if (interop.appSession) {
-      await api.assets.setIcon(identifier, get(icon)!.path);
+    if (appSession) {
+      await setIcon(identifier, get(icon)!.path);
     } else {
-      await api.assets.uploadIcon(identifier, get(icon)!);
+      await uploadIcon(identifier, get(icon)!);
     }
     success = true;
   } catch (e: any) {

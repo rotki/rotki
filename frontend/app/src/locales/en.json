@@ -435,6 +435,15 @@
           "title": "Querying Liquity Events"
         }
       },
+      "liquity_pools": {
+        "error": {
+          "description": "Failed to query Liquity Pools: {message}",
+          "title": "Liquity Pools"
+        },
+        "task": {
+          "title": "Querying Liquity Pools"
+        }
+      },
       "liquity_staking": {
         "error": {
           "description": "Failed to retreive liquity staking: {message}",

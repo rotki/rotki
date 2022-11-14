@@ -1,7 +1,7 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { MaybeRef } from '@vueuse/core';
 import { Routes } from '@/router/routes';
-import { api } from '@/services/rotkehlchen-api';
+import { useAssetIconApi } from '@/services/assets/icon-api';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { TradeLocationData, useTradeLocations } from '@/types/trades';
 import { assert } from '@/utils/assertions';
@@ -13,6 +13,7 @@ export const useLocationInfo = () => {
 
   const { assetName } = useAssetInfoRetrieval();
   const { tradeLocations } = useTradeLocations();
+  const { assetImageUrl } = useAssetIconApi();
 
   const getLocation = (identifier: MaybeRef<string>): TradeLocationData => {
     const id = get(identifier);
@@ -22,7 +23,7 @@ export const useLocationInfo = () => {
         identifier: id,
         exchange: false,
         imageIcon: true,
-        icon: api.assets.assetImageUrl(id),
+        icon: assetImageUrl(id),
         detailPath: `${Routes.ACCOUNTS_BALANCES_BLOCKCHAIN}#blockchain-balances-${id}`
       };
     }

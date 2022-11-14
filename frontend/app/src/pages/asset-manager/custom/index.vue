@@ -126,15 +126,15 @@ const assetForm: Ref<InstanceType<typeof CustomAssetForm> | null> = ref(null);
 
 const save = async () => {
   set(saving, true);
-  const form = get(formData);
+  const data = get(formData);
   let success: boolean = false;
-  let identifier = get(formData).identifier;
+  let identifier = data.identifier;
 
   try {
     if (get(editMode)) {
-      success = await api.assets.editCustomAsset(form);
+      success = await api.assets.editCustomAsset(data);
     } else {
-      identifier = await api.assets.addCustomAsset(omit(form, 'identifier'));
+      identifier = await api.assets.addCustomAsset(omit(data, 'identifier'));
       success = !!identifier;
     }
 

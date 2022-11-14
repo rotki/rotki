@@ -69,7 +69,7 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import TokenPlaceholder from '@/components/svgs/TokenPlaceholder.vue';
-import { api } from '@/services/rotkehlchen-api';
+import { useAssetIconApi } from '@/services/assets/icon-api';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { getChainIcon } from '@/types/blockchain/chains';
 import { useCurrencies } from '@/types/currencies';
@@ -122,6 +122,7 @@ const currency = computed<string | undefined>(() => {
 });
 
 const { assetInfo } = useAssetInfoRetrieval();
+const { assetImageUrl } = useAssetIconApi();
 
 const asset = assetInfo(identifier, enableAssociation);
 const isCustomAsset = computed(() => get(asset)?.isCustomAsset);
@@ -157,10 +158,7 @@ const url = computed<string>(() => {
   }
   const currentTimestamp = get(timestamp) || Date.now();
 
-  return api.assets.assetImageUrl(
-    id,
-    get(changeable) ? currentTimestamp : undefined
-  );
+  return assetImageUrl(id, get(changeable) ? currentTimestamp : undefined);
 });
 
 const chainIconSize = computed(() => `${(parseInt(get(size)) * 50) / 100}px`);
