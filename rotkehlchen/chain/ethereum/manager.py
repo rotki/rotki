@@ -1,7 +1,6 @@
 import logging
 from typing import (
     TYPE_CHECKING,
-    Any,
     Dict,
     List,
     Literal,
@@ -12,54 +11,38 @@ from typing import (
     overload,
 )
 
-import requests
 from ens.abis import ENS as ENS_ABI, RESOLVER as ENS_RESOLVER_ABI
 from ens.exceptions import InvalidName
 from ens.main import ENS_MAINNET_ADDR
 from ens.utils import is_none_or_zero_address, normal_name_to_hash, normalize_name
-from eth_typing import BlockNumber, HexStr
+from eth_typing import HexStr
 from web3 import Web3
 
-from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
-from rotkehlchen.chain.ethereum.constants import ETHERSCAN_NODE
-from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.ethereum.modules.curve.pools_cache import (
     clear_curve_pools_cache,
     update_curve_metapools_cache,
     update_curve_registry_pools_cache,
 )
-from rotkehlchen.chain.ethereum.modules.eth2.constants import ETH2_DEPOSIT
 from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
-from rotkehlchen.chain.ethereum.types import string_to_evm_address
-from rotkehlchen.chain.evm.manager import WEB3_LOGQUERY_BLOCK_RANGE, EvmManager
+from rotkehlchen.chain.evm.manager import EvmManager
 from rotkehlchen.constants.ethereum import (
     ENS_REVERSE_RECORDS,
-    ETH_MULTICALL,
-    ETH_MULTICALL_2,
-    ETH_SCAN,
 )
-from rotkehlchen.errors.misc import InputError, RemoteError, UnableToDecryptRemoteData
+from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.externalapis.etherscan import Etherscan
-from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, SupportedBlockchain, Timestamp
-from rotkehlchen.user_messages import MessagesAggregator
+from rotkehlchen.types import ChecksumEvmAddress, SupportedBlockchain
 from rotkehlchen.utils.misc import get_chunks
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
-from rotkehlchen.utils.network import request_get_dict
 
 from .tokens import EthereumTokens
-from .types import ETHERSCAN_NODE_NAME, WeightedNode
+from .types import WeightedNode
 from .utils import ENS_RESOLVER_ABI_MULTICHAIN_ADDRESS, should_update_curve_cache
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.decoding.decoder import EVMTransactionDecoder
-    from rotkehlchen.chain.evn.transactions import EvmTransactions
-    from rotkehlchen.db.dbhandler import DBHandler
 
     from .node_inquirer import EthereumInquirer
 

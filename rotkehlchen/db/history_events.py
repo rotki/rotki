@@ -151,7 +151,7 @@ class DBHistoryEvents():
             write_cursor: 'DBCursor',
             tx_hashes: List[EVMTxHash],
             chain_id: ChainID,
-    ) -> None:  # noqa: E501
+    ) -> None:
         """Delete all relevant (by event_identifier) history events except those that
         are customized"""
         customized_event_ids = self.get_customized_event_identifiers(cursor=write_cursor, chain_id=chain_id)  # noqa: E501
@@ -168,7 +168,7 @@ class DBHistoryEvents():
             self,
             cursor: 'DBCursor',
             chain_id: Optional[ChainID],
-    ) -> List[int]:      # pylint: disable=no-self-use  # noqa: E501
+    ) -> List[int]:      # pylint: disable=no-self-use
         """Returns the identifiers of all the events in the database that have been customized
 
         Optionally filter by chain_id

@@ -4,9 +4,6 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 from rotkehlchen.chain.ethereum.constants import (
     ETHEREUM_BEGIN,
     GENESIS_HASH,
-    RANGE_PREFIX_ETHINTERNALTX,
-    RANGE_PREFIX_ETHTOKENTX,
-    RANGE_PREFIX_ETHTX,
     ZERO_ADDRESS,
 )
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog

@@ -40,12 +40,8 @@ from rotkehlchen.chain.ethereum.utils import MULTICALL_CHUNKS
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.ethereum import (
-    ENS_REVERSE_RECORDS,
     ERC20TOKEN_ABI,
     ERC721TOKEN_ABI,
-    ETH_MULTICALL,
-    ETH_MULTICALL_2,
-    ETH_SCAN,
     UNIV1_LP_ABI,
 )
 from rotkehlchen.errors.misc import BlockchainQueryError, NotERC721Conformant, RemoteError
@@ -61,17 +57,13 @@ from rotkehlchen.serialization.deserialize import (
 )
 from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.types import (
-    SUPPORTED_BLOCKCHAIN_TO_CHAINID,
-    ChainID,
     ChecksumEvmAddress,
     EVMChain,
     EvmTokenKind,
     EvmTransaction,
     EVMTxHash,
-    SupportedBlockchain,
     Timestamp,
 )
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import from_wei, get_chunks, hex_or_bytes_to_str
 from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn
 

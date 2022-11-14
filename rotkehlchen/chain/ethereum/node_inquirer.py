@@ -1,88 +1,40 @@
-import json
 import logging
-import random
-from abc import ABCMeta, abstractmethod
 from typing import (
     TYPE_CHECKING,
-    Any,
-    Callable,
     Dict,
-    List,
-    Literal,
     Optional,
     Sequence,
-    Tuple,
-    Union,
     cast,
 )
-from urllib.parse import urlparse
 
 import requests
-from ens import ENS
-from eth_abi.exceptions import InsufficientDataBytes
 from eth_typing import BlockNumber
-from web3 import HTTPProvider, Web3
-from web3._utils.abi import get_abi_output_types
-from web3._utils.contracts import find_matching_event_abi
-from web3._utils.filters import construct_event_filter_params
-from web3.datastructures import MutableAttributeDict
-from web3.exceptions import (
-    BadFunctionCallOutput,
-    BadResponseFormat,
-    BlockNotFound,
-    TransactionNotFound,
-)
-from web3.types import BlockIdentifier, FilterParams
+from web3 import Web3
 
 from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
-from rotkehlchen.chain.ethereum.constants import DEFAULT_TOKEN_DECIMALS, ETHERSCAN_NODE
+from rotkehlchen.chain.ethereum.constants import ETHERSCAN_NODE
 from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.ethereum.modules.eth2.constants import ETH2_DEPOSIT
-from rotkehlchen.chain.ethereum.utils import MULTICALL_CHUNKS
-from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.manager import WEB3_LOGQUERY_BLOCK_RANGE
 from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
-from rotkehlchen.constants import ONE
 from rotkehlchen.constants.ethereum import (
-    ENS_REVERSE_RECORDS,
-    ERC20TOKEN_ABI,
-    ERC721TOKEN_ABI,
     ETH_MULTICALL,
     ETH_MULTICALL_2,
     ETH_SCAN,
-    UNIV1_LP_ABI,
 )
 from rotkehlchen.errors.misc import (
-    BlockchainQueryError,
-    InputError,
-    NotERC721Conformant,
     RemoteError,
     UnableToDecryptRemoteData,
 )
-from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import (
-    deserialize_evm_address,
-    deserialize_evm_transaction,
-    deserialize_int_from_hex,
-)
-from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.types import (
-    SUPPORTED_BLOCKCHAIN_TO_CHAINID,
     ChainID,
     ChecksumEvmAddress,
-    EvmTokenKind,
-    EvmTransaction,
-    EVMTxHash,
     SupportedBlockchain,
     Timestamp,
 )
-from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import from_wei, get_chunks, hex_or_bytes_to_str
-from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn
 from rotkehlchen.utils.network import request_get_dict
 
 from .types import ETHERSCAN_NODE_NAME, WeightedNode, string_to_evm_address

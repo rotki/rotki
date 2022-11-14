@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING, List
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.chain.evm.tokens import EvmTokens
-from rotkehlchen.globaldb.handler import GlobalDBHandler
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler

@@ -1,27 +1,12 @@
-import json
 import logging
-from typing import TYPE_CHECKING, List, Literal, Sequence, Tuple, Type
+from typing import TYPE_CHECKING
 
-from pysqlcipher3 import dbapi2 as sqlcipher
 
-from rotkehlchen.assets.spam_assets import update_spam_assets
-from rotkehlchen.constants.resolver import (
-    ETHEREUM_DIRECTIVE,
-    ETHEREUM_DIRECTIVE_LENGTH,
-    ChainID,
-    evm_address_to_identifier,
-)
-from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.globaldb.upgrades.v2_v3 import OTHER_EVM_CHAINS_ASSETS
-from rotkehlchen.history.types import DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER, HistoricalPriceOracle
-from rotkehlchen.inquirer import DEFAULT_CURRENT_PRICE_ORACLES_ORDER, CurrentPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import EvmTokenKind, OracleSource, SupportedBlockchain
-from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBConnection, DBCursor
+    from rotkehlchen.db.drivers.gevent import DBCursor
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
