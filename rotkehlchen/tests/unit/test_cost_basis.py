@@ -561,12 +561,12 @@ def test_accounting_lifo_order(accountant):
     ]
 
 
-def test_accounting_hifo_order(accountant):
+def test_accounting_simple_hifo_order(accountant):
+    """A simple test that checks that from 2 events the one with the highest amount is used."""
     asset = A_BTC
     cost_basis = accountant.pots[0].cost_basis
     cost_basis.reset(DBSettings(cost_basis_method=CostBasisMethod.HIFO))
     asset_events = cost_basis.get_events(asset)
-    # first we do a simple test that from 2 events the one with the highest amount is used
     event1 = AssetAcquisitionEvent(
         amount=ONE,
         timestamp=1,
@@ -581,14 +581,17 @@ def test_accounting_hifo_order(accountant):
     )
     asset_events.acquisitions_manager.add_acquisition(event1)
     asset_events.acquisitions_manager.add_acquisition(event2)
-    assert cost_basis.reduce_asset_amount(asset, ONE, 0)
+    assert cost_basis.reduce_asset_amount(asset, ONE, 0) is True
     acquisitions = asset_events.acquisitions_manager.get_acquisitions()
     assert len(acquisitions) == 2 and acquisitions[0] == event2 and acquisitions[1] == event1
 
-    # then test to reset
+
+def test_accounting_hifo_order(accountant):
+    asset = A_BTC
+    cost_basis = accountant.pots[0].cost_basis
     cost_basis.reset(DBSettings(cost_basis_method=CostBasisMethod.HIFO))
     asset_events = cost_basis.get_events(asset)
-    # checking what happens if one of the events has non-zero remaining_amount
+    # checking that cost basis is correct if one of the events has non-zero remaining_amount
     event3 = AssetAcquisitionEvent(
         amount=FVal(2),
         timestamp=1,
@@ -613,7 +616,7 @@ def test_accounting_hifo_order(accountant):
     ).is_complete is True
     acquisitions = asset_events.acquisitions_manager.get_acquisitions()
     assert acquisitions[0].remaining_amount == FVal(2) and acquisitions[1] == event3
-    # checking that new event after processing previous is added properly
+    # check that adding a new event after processing the previous one is added properly
     event5 = AssetAcquisitionEvent(
         amount=ONE,
         timestamp=1,
@@ -631,7 +634,7 @@ def test_accounting_hifo_order(accountant):
     ).is_complete is True
     acquisitions = asset_events.acquisitions_manager.get_acquisitions()
     assert len(acquisitions) == 1 and acquisitions[0].amount == ONE and acquisitions[0].remaining_amount == ONE  # noqa: E501
-    # check what happens if we use all remaining events
+    # check that using all remaining events uses up all acquisitions
     event6 = AssetAcquisitionEvent(
         amount=ONE,
         timestamp=1,
@@ -649,7 +652,7 @@ def test_accounting_hifo_order(accountant):
     ).is_complete is True
     acquisitions = asset_events.acquisitions_manager.get_acquisitions()
     assert len(acquisitions) == 0
-    # check what happens if we try to use more than available
+    # check that using more than available creates MissingAcquisition
     event7 = AssetAcquisitionEvent(
         amount=ONE,
         timestamp=1,
@@ -746,7 +749,7 @@ def test_missing_acquisitions(accountant):
     assert cost_basis.missing_acquisitions == expected_missing_acquisitions
 
 
-def test_accounting_average_cost_base(accountant):
+def test_accounting_average_cost_basis(accountant):
     """
     Test data is gotten from:
     https://www.adjustedcostbase.ca/blog/how-to-calculate-adjusted-cost-base-acb-and-capital-gains/
@@ -756,6 +759,9 @@ def test_accounting_average_cost_base(accountant):
     cost_basis.reset(DBSettings(cost_basis_method=CostBasisMethod.ACB))
     asset_events = cost_basis.get_events(asset)
 
+    # check that the average cost basis is calculated properly
+    # whenever a spend happens after an acquisition
+    assert asset_events.acquisitions_manager.remaining_amount == ZERO
     event1 = AssetAcquisitionEvent(
         amount=FVal(100),
         timestamp=1,
@@ -763,7 +769,8 @@ def test_accounting_average_cost_base(accountant):
         index=1,
     )
     asset_events.acquisitions_manager.add_acquisition(event1)
-    assert asset_events.acquisitions_manager.current_average_cost_base == FVal(5000)
+    assert asset_events.acquisitions_manager.remaining_amount == FVal(100)
+    assert asset_events.acquisitions_manager.current_average_cost_basis == FVal(5000)
     cost_basis_result = cost_basis.spend_asset(
         amount=FVal(50),
         location=Location.BLOCKCHAIN,
@@ -772,17 +779,21 @@ def test_accounting_average_cost_base(accountant):
         taxable_spend=True,
         timestamp=0,
     )
-    assert asset_events.acquisitions_manager.current_average_cost_base == FVal(2500)
+    assert asset_events.acquisitions_manager.remaining_amount == FVal(50)
+    assert asset_events.acquisitions_manager.current_average_cost_basis == FVal(2500)
     assert cost_basis_result.taxable_bought_cost == FVal(2500)
     assert cost_basis_result.is_complete is True
 
+    # repeat the above process again to see that it works as expected
+    # and the average cost basis calculated is correct.
     asset_events.acquisitions_manager.add_acquisition(AssetAcquisitionEvent(
         amount=FVal(50),
         timestamp=3,
         rate=FVal(130),
         index=3,
     ))
-    assert asset_events.acquisitions_manager.current_average_cost_base == FVal(9000)
+    assert asset_events.acquisitions_manager.remaining_amount == FVal(100)
+    assert asset_events.acquisitions_manager.current_average_cost_basis == FVal(9000)
     cost_basis_result = cost_basis.spend_asset(
         amount=FVal(40),
         location=Location.BLOCKCHAIN,
@@ -791,13 +802,17 @@ def test_accounting_average_cost_base(accountant):
         taxable_spend=True,
         timestamp=0,
     )
-    assert asset_events.acquisitions_manager.current_average_cost_base == FVal(5400)
+    assert asset_events.acquisitions_manager.remaining_amount == FVal(60)
+    assert asset_events.acquisitions_manager.current_average_cost_basis == FVal(5400)
     assert cost_basis_result.taxable_bought_cost == FVal(5400)
     assert cost_basis_result.is_complete is True
 
-    # then test to reset
+    # reset the cost basis and
+    # now see that having two consecutive acquisitions followed by a spend
+    # and see that the average cost basis calculated is correct.
     cost_basis.reset(DBSettings(cost_basis_method=CostBasisMethod.ACB))
     asset_events = cost_basis.get_events(asset)
+    assert asset_events.acquisitions_manager.remaining_amount == ZERO
     event3 = AssetAcquisitionEvent(
         amount=FVal(1),
         timestamp=3,
@@ -811,9 +826,11 @@ def test_accounting_average_cost_base(accountant):
         index=4,
     )
     asset_events.acquisitions_manager.add_acquisition(event3)
-    assert asset_events.acquisitions_manager.current_average_cost_base == FVal(100)
+    assert asset_events.acquisitions_manager.remaining_amount == FVal(1)
+    assert asset_events.acquisitions_manager.current_average_cost_basis == FVal(100)
     asset_events.acquisitions_manager.add_acquisition(event4)
-    assert asset_events.acquisitions_manager.current_average_cost_base == FVal(300)
+    assert asset_events.acquisitions_manager.remaining_amount == FVal(2)
+    assert asset_events.acquisitions_manager.current_average_cost_basis == FVal(300)
     cost_basis_result = cost_basis.spend_asset(
         amount=FVal(0.5),
         location=Location.BLOCKCHAIN,
@@ -822,7 +839,8 @@ def test_accounting_average_cost_base(accountant):
         taxable_spend=True,
         timestamp=0,
     )
-    assert asset_events.acquisitions_manager.current_average_cost_base == FVal(225)
+    assert asset_events.acquisitions_manager.remaining_amount == FVal(1.5)
+    assert asset_events.acquisitions_manager.current_average_cost_basis == FVal(225)
     assert cost_basis_result.is_complete is True
     assert cost_basis_result.taxable_bought_cost == FVal(225)
     asset_events.acquisitions_manager.add_acquisition(AssetAcquisitionEvent(
@@ -831,7 +849,29 @@ def test_accounting_average_cost_base(accountant):
         rate=FVal(500),
         index=5,
     ))
-    assert asset_events.acquisitions_manager.current_average_cost_base == FVal(475)
+    assert asset_events.acquisitions_manager.remaining_amount == FVal(2)
+    assert asset_events.acquisitions_manager.current_average_cost_basis == FVal(475)
+
+    # see that using more than the available acquisitions adds a MissingAcquisition
+    assert cost_basis.spend_asset(
+        amount=FVal(3.5),
+        location=Location.BLOCKCHAIN,
+        asset=asset,
+        rate=FVal(455.1),
+        taxable_spend=True,
+        timestamp=0,
+    ).is_complete is False
+    assert asset_events.acquisitions_manager.remaining_amount == ZERO
+    # it is negative due to the missing acquisition.
+    assert asset_events.acquisitions_manager.current_average_cost_basis == FVal(-356.25)
+    assert cost_basis.missing_acquisitions == [
+        MissingAcquisition(
+            asset=asset,
+            time=0,
+            found_amount=FVal(2),
+            missing_amount=FVal(1.5),
+        ),
+    ]
 
 
 @pytest.mark.parametrize('mocked_price_queries', [{

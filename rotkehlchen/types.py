@@ -554,10 +554,10 @@ class EnsMapping(NamedTuple):
 
 
 class CostBasisMethod(SerializableEnumMixin):
-    FIFO = 1
-    LIFO = 2
-    HIFO = 3
-    ACB = 4
+    FIFO = auto()
+    LIFO = auto()
+    HIFO = auto()
+    ACB = auto()
 
 
 class AddressbookEntry(NamedTuple):
