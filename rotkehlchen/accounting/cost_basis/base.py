@@ -17,7 +17,6 @@ from typing import (
     Set,
     Tuple,
     Type,
-    Union,
     overload,
 )
 
@@ -40,7 +39,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-ACQUISITION_PRIORITY = Union[FVal, int]
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -90,16 +88,16 @@ class AssetAcquisitionEvent:
         }
 
     def __gt__(self, other: Any) -> bool:
-        if isinstance(other, AssetAcquisitionEvent):
-            return self.timestamp > other.timestamp
+        if not isinstance(other, AssetAcquisitionEvent):
+            raise NotImplementedError
 
-        return self.timestamp > other
+        return self.timestamp > other.timestamp
 
     def __lt__(self, other: Any) -> bool:
-        if isinstance(other, AssetAcquisitionEvent):
-            return self.timestamp < other.timestamp
+        if not isinstance(other, AssetAcquisitionEvent):
+            raise NotImplementedError
 
-        return self.timestamp < other
+        return self.timestamp < other.timestamp
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -116,38 +114,49 @@ class AssetSpendEvent:
         )
 
 
-class BaseCostBasisMethod(metaclass=ABCMeta):
-    # For FIFO, the time at the point of insertion is used
-    # For LIFO, the time at the point of insertion is used with a negation
-    # For HIFO, the amount of the acquisition event is used with a negation
-    # The reason for the negation is because of Python's `heapq` implementation
-    _acquisitions: list[Tuple[ACQUISITION_PRIORITY, AssetAcquisitionEvent]]
+class AssetAcquisitionHeap(NamedTuple):
+    """
+    A heap structure for an acquisition.
+    Note:`heapq` uses a min heap implementation i.e. the smallest item comes out first.
 
+    For FIFO, a counter is used as the priority so the first acquisition comes out first.
+    For LIFO, a counter is used but negated, so the acquisition added last comes first.
+    For HIFO, the amount of the acquisition is used although negated so the acquisition with the highest amount comes first.
+    """  # noqa: E501
+    priority: FVal
+    acquisition_event: AssetAcquisitionEvent
+
+
+class BaseCostBasisMethod(metaclass=ABCMeta):
+    """The base class in which every other cost basis method inherits from."""
     def __init__(self) -> None:
-        self._acquisitions = []
+        self._acquisitions_heap: List[AssetAcquisitionHeap] = []
 
     @abstractmethod
     def add_acquisition(self, acquisition: AssetAcquisitionEvent) -> None:
-        """The core method. Should be implemented by subclasses.
+        """
+        The core method. Should be implemented by subclasses.
         This method takes a new acquisition and decides where to insert it
         and thus determines the PnL order.
         """
         ...
 
     def processing_iterator(self) -> Iterator[AssetAcquisitionEvent]:
-        """Iteration method over acquisition events.
+        """
+        Iteration method over acquisition events.
         We can't return here Tuple of AssetAcquisitionEvents as we need to return
         the first event each time but _acquisitions may be not modified between iterations.
         """
-        while len(self._acquisitions) > 0:
-            yield self._acquisitions[0][1]
+        while len(self._acquisitions_heap) > 0:
+            yield self._acquisitions_heap[0].acquisition_event
 
     def get_acquisitions(self) -> Tuple[AssetAcquisitionEvent, ...]:
         """Returns read-only _acquisitions"""
-        return tuple(entry[1] for entry in self._acquisitions)
+        return tuple(entry.acquisition_event for entry in self._acquisitions_heap)
 
     def consume_result(self, used_amount: FVal) -> None:
-        """This function should be used to consume results of the
+        """
+        This function should be used to consume results of the
         currently processed event (received from __next__)
         The current event's remaining_amount will be decreased by used_amount
         If event's remaining_amount will become ZERO, the event will be deleted
@@ -156,11 +165,11 @@ class BaseCostBasisMethod(metaclass=ABCMeta):
         """
         # this is a temporary assertion to test that new accounting tools work properly.
         # Written on 06.06.2022 and can be removed after a couple of months if everything goes well
-        assert ZERO <= used_amount <= self._acquisitions[0][1].remaining_amount, f'Used amount must be in the interval [0, {self._acquisitions[0][1].remaining_amount}] but it was {used_amount}'  # noqa: E501
+        assert ZERO <= used_amount <= self._acquisitions_heap[0].acquisition_event.remaining_amount, f'Used amount must be in the interval [0, {self._acquisitions_heap[0].acquisition_event.remaining_amount}] but it was {used_amount}'  # noqa: E501
 
-        self._acquisitions[0][1].remaining_amount -= used_amount
-        if self._acquisitions[0][1].remaining_amount == ZERO:
-            heapq.heappop(self._acquisitions)
+        self._acquisitions_heap[0].acquisition_event.remaining_amount -= used_amount
+        if self._acquisitions_heap[0].acquisition_event.remaining_amount == ZERO:
+            heapq.heappop(self._acquisitions_heap)
 
     def calculate_spend_cost_basis(
             self,
@@ -171,7 +180,7 @@ class BaseCostBasisMethod(metaclass=ABCMeta):
             used_acquisitions: List[AssetAcquisitionEvent],
             settings: DBSettings,
             timestamp_to_date: Callable[[Timestamp], str],
-            average_cost_base: Optional[FVal] = None,  # pylint: disable=unused-argument
+            average_cost_basis: Optional[FVal] = None,
     ) -> 'CostBasisInfo':
         """
         When spending `spending_amount` of `spending_asset` at `timestamp` this function
@@ -179,7 +188,7 @@ class BaseCostBasisMethod(metaclass=ABCMeta):
         It also applies the "free after given time period" rule
         which applies for some jurisdictions such as 1 year for Germany.
 
-        If `average_cost_base` is provided, it is used as the acquistion cost.
+        If `average_cost_basis` is provided, it is used as the acquisition cost.
 
         Returns the information in a CostBasisInfo object if enough acquisitions have
         been found.
@@ -195,7 +204,7 @@ class BaseCostBasisMethod(metaclass=ABCMeta):
                 at_taxfree_period = acquisition_event.timestamp + settings.taxfree_after_period < timestamp  # noqa: E501
 
             if remaining_sold_amount < acquisition_event.remaining_amount:
-                acquisition_cost = acquisition_event.rate * remaining_sold_amount if average_cost_base is None else average_cost_base  # noqa: E501
+                acquisition_cost = acquisition_event.rate * remaining_sold_amount if average_cost_basis is None else average_cost_basis  # noqa: E501
 
                 taxable = True
                 if at_taxfree_period:
@@ -227,7 +236,7 @@ class BaseCostBasisMethod(metaclass=ABCMeta):
                 break
 
             remaining_sold_amount -= acquisition_event.remaining_amount
-            acquisition_cost = acquisition_event.rate * acquisition_event.remaining_amount if average_cost_base is None else average_cost_base  # noqa: E501
+            acquisition_cost = acquisition_event.rate * acquisition_event.remaining_amount if average_cost_basis is None else average_cost_basis  # noqa: E501
             taxable = True
             if at_taxfree_period:
                 taxfree_amount += acquisition_event.remaining_amount
@@ -281,76 +290,84 @@ class BaseCostBasisMethod(metaclass=ABCMeta):
         )
 
     def __len__(self) -> int:
-        return len(self._acquisitions)
+        return len(self._acquisitions_heap)
 
 
 class FIFOCostBasisMethod(BaseCostBasisMethod):
-    """Accounting in FIFO (first-in-first-out) method"""
-    _count: int
-
+    """
+    Accounting in FIFO (first-in-first-out) method.
+    https://www.investopedia.com/terms/f/fifo.asp
+    """
     def __init__(self) -> None:
         super().__init__()
-        self._count = 0
+        self._count: FVal = FVal(0)
 
     def add_acquisition(self, acquisition: AssetAcquisitionEvent) -> None:
-        heapq.heappush(self._acquisitions, (self._count, acquisition))
+        """Adds an acquisition to the `_acquisitions_heap` using a counter to achieve the FIFO order."""  # noqa: E501
+        heapq.heappush(self._acquisitions_heap, AssetAcquisitionHeap(self._count, acquisition))
         self._count += 1
 
 
 class LIFOCostBasisMethod(BaseCostBasisMethod):
-    """Accounting in LIFO (last-in-first-out) method"""
-    _count: int
-
+    """
+    Accounting in LIFO (last-in-first-out) method.
+    https://www.investopedia.com/terms/l/lifo.asp
+    """
     def __init__(self) -> None:
         super().__init__()
-        self._count = 0
+        self._count: FVal = FVal(0)
 
     def add_acquisition(self, acquisition: AssetAcquisitionEvent) -> None:
-        heapq.heappush(self._acquisitions, (-self._count, acquisition))
+        """Adds an acquisition to the `_acquisitions_heap` using a negated counter to achieve the LIFO order."""  # noqa: E501
+        heapq.heappush(self._acquisitions_heap, AssetAcquisitionHeap(-self._count, acquisition))
         self._count += 1
 
 
 class HIFOCostBasisMethod(BaseCostBasisMethod):
-    """Accounting in HIFO (highest-in-first-out) method"""
+    """
+    Accounting in HIFO (highest-in-first-out) method.
+    https://www.investopedia.com/terms/h/hifo.asp
+    """
     def add_acquisition(self, acquisition: AssetAcquisitionEvent) -> None:
-        heapq.heappush(self._acquisitions, (-acquisition.amount, acquisition))
+        """
+        Adds an acquisition to the `_acquisitions_heap` using the negated amount
+        of the acquisition to achieve the HIFO order.
+        """
+        heapq.heappush(self._acquisitions_heap, AssetAcquisitionHeap(-acquisition.amount, acquisition))  # noqa: E501
 
 
 class AverageCostBasisMethod(BaseCostBasisMethod):
-    """Accounting in Average Cost Base(ACB) method"""
-    # the average cost base of last event(buy/sell) that occurred
-    current_average_cost_base: FVal
-    # keeps track of the amount of the asset remaining after evert acquisition or spend
-    remaining_amount: FVal
-    _count: int
-
+    """
+    Accounting in Average Cost Basis(ACB) method.
+    https://www.investopedia.com/terms/a/averagecostbasismethod.asp
+    """
     def __init__(self) -> None:
         super().__init__()
-        self._count = 0
-        self.remaining_amount = ZERO
-        self.current_average_cost_base = ZERO
+        self._count: FVal = FVal(0)
+        # keeps track of the amount of the asset remaining after every acquisition or spend
+        self.remaining_amount: FVal = ZERO
+        # the average cost base of last event(buy/sell) that occurred
+        self.current_average_cost_basis: FVal = ZERO
 
     def add_acquisition(self, acquisition: AssetAcquisitionEvent) -> None:
         """
-        This method appends an acquisition to the acquisitions list in FIFO order.
+        Adds an acquisition to the `_acquisitions_heap` in order of time seen.
+
         It also calculates the average cost base of that acquisition with respect to the
         previous average cost base.
 
         The formula used to calculate the average cost base of an acquisition is:
         [Previous Total ACB] + [Cost of New Shares] + [Transaction Costs]
         """
-        heapq.heappush(self._acquisitions, (self._count, acquisition))
-        self.current_average_cost_base += (acquisition.rate * acquisition.amount)
+        heapq.heappush(self._acquisitions_heap, AssetAcquisitionHeap(self._count, acquisition))
+        self.current_average_cost_basis += (acquisition.rate * acquisition.amount)
         self.remaining_amount += acquisition.amount
         self._count += 1
 
     def consume_result(self, used_amount: FVal) -> None:
-        assert ZERO <= used_amount <= self._acquisitions[0][1].remaining_amount, f'Used amount must be in the interval [0, {self._acquisitions[0][1].remaining_amount}] but it was {used_amount}'  # noqa: E501
-
-        self._acquisitions[0][1].remaining_amount -= used_amount
+        """Same as its parent function but also deducts `used_amount` from `remaining_amount`."""
         self.remaining_amount -= used_amount
-        if self._acquisitions[0][1].remaining_amount == ZERO:
-            heapq.heappop(self._acquisitions)
+        super().consume_result(used_amount)
 
     def calculate_spend_cost_basis(
             self,
@@ -361,7 +378,7 @@ class AverageCostBasisMethod(BaseCostBasisMethod):
             used_acquisitions: List[AssetAcquisitionEvent],  # pylint: disable=unused-argument
             settings: DBSettings,
             timestamp_to_date: Callable[[Timestamp], str],  # pylint: disable=unused-argument
-            average_cost_base: Optional[FVal] = None,  # pylint: disable=unused-argument
+            average_cost_basis: Optional[FVal] = None,  # pylint: disable=unused-argument
     ) -> 'CostBasisInfo':
         """
         Calculates the cost basis of the spend using the average cost base method.
@@ -387,7 +404,7 @@ class AverageCostBasisMethod(BaseCostBasisMethod):
                 is_complete=False,
             )
 
-        self.current_average_cost_base *= ((self.remaining_amount - spending_amount) / self.remaining_amount)  # noqa: E501
+        self.current_average_cost_basis *= ((self.remaining_amount - spending_amount) / self.remaining_amount)  # noqa: E501
         return super().calculate_spend_cost_basis(
             spending_amount=spending_amount,
             spending_asset=spending_asset,
@@ -396,30 +413,23 @@ class AverageCostBasisMethod(BaseCostBasisMethod):
             used_acquisitions=used_acquisitions,
             settings=settings,
             timestamp_to_date=timestamp_to_date,
-            average_cost_base=self.current_average_cost_base,
+            average_cost_basis=self.current_average_cost_basis,
         )
 
 
 class CostBasisEvents:
-    used_acquisitions: List[AssetAcquisitionEvent]
-    acquisitions_manager: BaseCostBasisMethod
-    spends: List[AssetSpendEvent]
-
     def __init__(self, cost_basis_method: CostBasisMethod) -> None:
-        """
-        This class contains data about acquisitions and spends. `acquisitions` field contains
-        custom Iterable that provides acquisitions in the order defined by `cost_basis_method`
-        """
+        """This class contains data about acquisitions and spends."""
         if cost_basis_method == CostBasisMethod.FIFO:
-            self.acquisitions_manager = FIFOCostBasisMethod()
+            self.acquisitions_manager: BaseCostBasisMethod = FIFOCostBasisMethod()
         elif cost_basis_method == CostBasisMethod.LIFO:
             self.acquisitions_manager = LIFOCostBasisMethod()
         elif cost_basis_method == CostBasisMethod.HIFO:
             self.acquisitions_manager = HIFOCostBasisMethod()
         elif cost_basis_method == CostBasisMethod.ACB:
             self.acquisitions_manager = AverageCostBasisMethod()
-        self.spends = []
-        self.used_acquisitions = []
+        self.spends: List[AssetSpendEvent] = []
+        self.used_acquisitions: List[AssetAcquisitionEvent] = []
 
 
 class MatchedAcquisition(NamedTuple):
