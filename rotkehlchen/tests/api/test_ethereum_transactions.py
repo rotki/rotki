@@ -1350,8 +1350,8 @@ def test_ignored_assets(rotkehlchen_api_server, ethereum_accounts):
 
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
-def test_extra_notes_serialization(rotkehlchen_api_server, ethereum_accounts):
-    """This test tests that decoded transactions correctly include the extra_data key"""
+def test_extra_data_serialization(rotkehlchen_api_server, ethereum_accounts):
+    """Assert decoded transactions correctly include the extra_data key"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = rotki.data.db
     dbethtx = DBEthTx(db)

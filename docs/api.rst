@@ -2257,7 +2257,7 @@ Querying ethereum transactions
                 "notes": "Burned 0.00863351371344 ETH for gas",
                 "sequence_index": 0,
                 "timestamp": 1642802807,
-                "extra_notes": null
+                "extra_data": null
               },
               "customized": false
             }, {
@@ -2357,7 +2357,7 @@ Querying ethereum transactions
                 "notes": "Send 0.096809163374771208 ETH 0x6e15887E2CEC81434C16D587709f64603b39b545 -> 0xA090e606E30bD747d4E6245a1517EbE430F0057e",
                 "sequence_index": 1,
                 "timestamp": 1642802807,
-                "extra_notes": null
+                "extra_data": null
               },
               "customized": true
             }]
@@ -2390,7 +2390,7 @@ Querying ethereum transactions
                 "notes": "Burned 0.00863351371344 ETH for gas",
                 "sequence_index": 0,
                 "timestamp": 1642802807,
-                "extra_notes": null
+                "extra_data": null
               },
               "customized": false
             }]
