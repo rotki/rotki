@@ -105,7 +105,7 @@ from rotkehlchen.types import (
     UserNote,
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
-from rotkehlchen.utils.misc import create_order_by_rules_list, ts_now
+from rotkehlchen.utils.misc import NftLpHandling, create_order_by_rules_list, ts_now
 from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 
 from .fields import (
@@ -2717,6 +2717,7 @@ class NFTFilterQuerySchema(
     name = fields.String(load_default=None)
     collection_name = fields.String(load_default=None)
     ignored_assets_handling = SerializableEnumField(enum_class=IgnoredAssetsHandling, load_default=IgnoredAssetsHandling.NONE)  # noqa: E501
+    lps_handling = SerializableEnumField(enum_class=NftLpHandling, load_default=NftLpHandling.ALL_NFTS)
 
     def __init__(self, db: 'DBHandler') -> None:
         super().__init__()
@@ -2752,9 +2753,18 @@ class NFTFilterQuerySchema(
             name=data['name'],
             collection_name=data['collection_name'],
             ignored_assets_filter_params=ignored_assets_filter_params,
+            lps_handling=data['lps_handling']
         )
         return {
             'async_query': data['async_query'],
             'ignore_cache': data['ignore_cache'],
             'filter_query': filter_query,
         }
+
+
+class NFTFilterQuerySchema2(Schema):
+    lps_handling = SerializableEnumField(enum_class=NftLpHandling, load_default=NftLpHandling.ALL_NFTS)
+
+
+class SingleNftSchema(Schema):
+    nft_id = fields.String(required=True)

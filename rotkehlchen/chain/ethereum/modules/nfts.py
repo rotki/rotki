@@ -18,6 +18,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, Price
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
+from rotkehlchen.utils.misc import NftLpHandling
 from rotkehlchen.utils.mixins.cacheable import CacheableMixIn, cache_response_timewise_immutable
 from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
 
@@ -30,6 +31,10 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 FREE_NFT_LIMIT = 10
+NFT_INFO_SQL_QUERY = (
+    'SELECT identifier, name, last_price, last_price_asset, manual_price, owner_address, is_lp, '
+    'image_url, collection_name FROM nfts '
+)
 
 NFT_DB_TUPLE = Tuple[
     str,  # identifier
@@ -42,6 +47,24 @@ NFT_DB_TUPLE = Tuple[
     Optional[str],  # image_url
     Optional[str],  # collection_name
 ]
+
+def _db_query_to_dict(entry: List[str]) -> Dict[str, Any]:
+    price_in_asset = FVal(entry[2])
+    # Asset should always exist since it is guaranteed by the db schema
+    price_asset = Asset(entry[3])
+    # find_usd_price should be fast here since in most cases price should be cached
+    usd_price = price_in_asset * Inquirer.find_usd_price(price_asset)
+    return {
+        'id': entry[0],
+        'name': entry[1],
+        'price_in_asset': price_in_asset,
+        'price_asset': price_asset,
+        'manually_input': bool(entry[4]),
+        'is_lp': bool(entry[6]),
+        'image_url': entry[7],
+        'usd_price': usd_price,
+        'collection_name': entry[8],
+    }
 
 
 class NFTResult(NamedTuple):
@@ -132,35 +155,42 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):  # lgtm [py/miss
             entries_limit=FREE_NFT_LIMIT,
         )
 
+    def get_single_nft(self, nft_id: str) -> Optional[Dict[str, Any]]:
+        with self.db.conn.read_ctx() as cursor:
+            cursor.execute(NFT_INFO_SQL_QUERY + ' WHERE identifier = ?', (nft_id,))
+            db_entry = cursor.fetchone()
+        if db_entry is None:
+            return None
+
+        price_in_asset = FVal(db_entry[2])
+        # Asset should always exist since it is guaranteed by the db schema
+        price_asset = Asset(db_entry[3])
+        # find_usd_price should be fast here since in most cases price should be cached
+        usd_price = price_in_asset * Inquirer.find_usd_price(price_asset)
+        return {
+            'id': db_entry[0],
+            'name': db_entry[1],
+            'price_in_asset': price_in_asset,
+            'price_asset': price_asset,
+            'manually_input': bool(db_entry[4]),
+            'is_lp': bool(db_entry[6]),
+            'image_url': db_entry[7],
+            'usd_price': usd_price,
+            'collection_name': db_entry[8],
+        }
+
     def get_db_nft_balances(self, filter_query: NFTFilterQuery) -> Dict[str, Any]:
         """Filters (with `filter_query`) and returns cached nft balances in the nfts table"""
         entries = defaultdict(list)
         query, bindings = filter_query.prepare()
+        total_usd_value = ZERO
         with self.db.conn.read_ctx() as cursor:
-            cursor.execute(
-                'SELECT identifier, name, last_price, last_price_asset, manual_price, '
-                'owner_address, is_lp, image_url, collection_name FROM nfts ' + query,
-                bindings,
-            )
+            cursor.execute(NFT_INFO_SQL_QUERY + query, bindings)
             for db_entry in cursor:
-                price_in_asset = FVal(db_entry[2])
-                # Asset should always exist since it is guaranteed by the db schema
-                price_asset = Asset(db_entry[3])
-                # find_usd_price should be fast here since in most cases price should be cached
-                usd_price = price_in_asset * Inquirer.find_usd_price(price_asset)
-                entries[db_entry[5]].append({
-                    'id': db_entry[0],
-                    'name': db_entry[1],
-                    'price_in_asset': price_in_asset,
-                    'price_asset': price_asset,
-                    'manually_input': bool(db_entry[4]),
-                    'is_lp': bool(db_entry[6]),
-                    'image_url': db_entry[7],
-                    'usd_price': usd_price,
-                    'collection_name': db_entry[8],
-                })
+                entries[db_entry[5]].append(_db_query_to_dict(entry=db_entry)
+                total_usd_value += usd_price
             entries_found = cursor.execute(
-                'SELECT COUNT(*) FROM nfts ' + query,
+                'SELECT COUNT(*) FROM (SELECT identifier FROM nfts ' + query + ')',
                 bindings,
             ).fetchone()[0]
             entries_total = cursor.execute('SELECT COUNT(*) FROM nfts').fetchone()[0]
@@ -169,6 +199,7 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):  # lgtm [py/miss
             'entries': entries,
             'entries_found': entries_found,
             'entries_total': entries_total,
+            'total_usd_value': total_usd_value,
         }
 
     def get_balances(
@@ -299,7 +330,11 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):  # lgtm [py/miss
 
         return result
 
-    def get_nfts_with_price(self, identifier: Optional[str] = None) -> List[Dict[str, Any]]:
+    def get_nfts_with_price(
+            self,
+            identifier: Optional[str] = None,
+            lps_handling: NftLpHandling = NftLpHandling.ALL_NFTS,
+    ) -> List[Dict[str, Any]]:
         """
         Given an identifier for an nft asset return information about its manual price and
         price queried.
@@ -310,11 +345,15 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):  # lgtm [py/miss
             query_str += ' AND identifier=?'
             bindings.append(identifier)
 
+        if lps_handling != NftLpHandling.ALL_NFTS:
+            query_str += ' AND is_lp=?'
+            bindings.append(lps_handling == NftLpHandling.ONLY_LPS)
+
         with self.db.conn.read_ctx() as cursor:
             query = cursor.execute(query_str, bindings)
             result = []
             for entry in query:
-                to_asset_id = entry[2] if entry[2] is not None else A_USD
+                to_asset_id = entry[2] if entry[2] is not None else A_USD.identifier
                 try:
                     to_asset = Asset(to_asset_id).check_existence()
                 except UnknownAsset:
