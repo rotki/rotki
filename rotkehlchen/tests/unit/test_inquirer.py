@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 import requests
+from freezegun import freeze_time
 
 from rotkehlchen.assets.asset import Asset, CustomAsset, EvmToken, UnderlyingToken
 from rotkehlchen.assets.types import AssetType
@@ -40,6 +41,7 @@ from rotkehlchen.tests.utils.constants import A_CNY, A_JPY
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import ChainID, EvmTokenKind, GeneralCacheType, Price, Timestamp
 from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.utils.mixins.penalizable_oracle import ORACLE_PENALTY_TS
 
 UNDERLYING_ASSET_PRICES = {
     A_AAVE: FVal('100'),
@@ -502,3 +504,26 @@ def test_coingecko_handles_rate_limit(inquirer):
         inquirer.find_usd_price(A_ETH, ignore_cache=True)
         # Check that the last price query contacted coingecko api
         assert coingecko_api_calls == 2
+
+
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_punishing_of_oracles_works(inquirer):
+    defillama_patch = patch.object(inquirer._defillama.session, 'get', return_value=MockResponse(HTTPStatus.OK, '{"coins":{"coingecko:bitcoin":{"price":100.14,"symbol":"BTC","timestamp":1668592376,"confidence":0.99}}}'))  # noqa: E501
+    coingecko_patch = patch.object(inquirer._coingecko.session, 'get', side_effect=requests.exceptions.RequestException('An unexpected error occurred!'))  # noqa: E501
+    inquirer.set_oracles_order(oracles=[CurrentPriceOracle.COINGECKO, CurrentPriceOracle.DEFILLAMA])  # noqa: E501
+
+    with coingecko_patch as coingecko_mock, defillama_patch as defillama_mock:
+        for counter in range(1, 7):
+            assert inquirer.find_usd_price(A_BTC, ignore_cache=True) > Price(ZERO)
+            # check that coingecko is not called the sixth time and is already penalized.
+            if counter == 6:
+                assert coingecko_mock.call_count == 5
+                assert inquirer._coingecko.is_penalized() is True
+            else:
+                assert coingecko_mock.called is True
+                assert defillama_mock.called is True
+
+        # move the current time forward and check that coingecko is no longer penalized
+        with freeze_time(datetime.fromtimestamp(ts_now() + ORACLE_PENALTY_TS + 1)):
+            assert inquirer._coingecko.is_penalized() is False
+            assert inquirer.find_usd_price(A_BTC, ignore_cache=True) > Price(ZERO)

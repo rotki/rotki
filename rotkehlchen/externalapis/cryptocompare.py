@@ -52,6 +52,7 @@ from rotkehlchen.interfaces import HistoricalPriceOracleInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ExternalService, Price, Timestamp
 from rotkehlchen.utils.misc import pairwise, set_user_agent, ts_now
+from rotkehlchen.utils.mixins.penalizable_oracle import PenalizablePriceOracleMixin
 from rotkehlchen.utils.serialization import jsonloads_dict, rlk_jsondumps
 
 if TYPE_CHECKING:
@@ -188,7 +189,7 @@ def _check_hourly_data_sanity(
         index += 2
 
 
-class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleInterface):
+class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):  # noqa: E501
     def __init__(self, data_directory: Path, database: Optional['DBHandler']) -> None:
         HistoricalPriceOracleInterface.__init__(self, oracle_name='cryptocompare')
         ExternalServiceWithApiKey.__init__(
@@ -196,6 +197,7 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleInterface):
             database=database,
             service_name=ExternalService.CRYPTOCOMPARE,
         )
+        PenalizablePriceOracleMixin.__init__(self)
         self.data_directory = data_directory
         self.session = requests.session()
         set_user_agent(self.session)
@@ -220,6 +222,9 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleInterface):
             source=HistoricalPriceOracle.CRYPTOCOMPARE,
         )
         got_cached_data = data_range is not None and data_range[0] <= timestamp <= data_range[1]
+        if self.is_penalized() is True and got_cached_data is False:
+            return False
+
         rate_limited = self.rate_limited_in_last(seconds)
         can_query = got_cached_data or not rate_limited
         log.debug(
@@ -272,6 +277,7 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleInterface):
             try:
                 response = self.session.get(querystr, timeout=DEFAULT_TIMEOUT_TUPLE)
             except requests.exceptions.RequestException as e:
+                self.penalty_info.note_failure_or_penalize()
                 raise RemoteError(f'Cryptocompare API request failed due to {str(e)}') from e
 
             try:

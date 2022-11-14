@@ -20,6 +20,7 @@ from rotkehlchen.interfaces import HistoricalPriceOracleInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Price, Timestamp
 from rotkehlchen.utils.misc import create_timestamp, set_user_agent, timestamp_to_date, ts_now
+from rotkehlchen.utils.mixins.penalizable_oracle import PenalizablePriceOracleMixin
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -359,10 +360,11 @@ COINGECKO_SIMPLE_VS_CURRENCIES = [
 ]
 
 
-class Coingecko(HistoricalPriceOracleInterface):
+class Coingecko(HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):
 
     def __init__(self) -> None:
-        super().__init__(oracle_name='coingecko')
+        HistoricalPriceOracleInterface.__init__(self, oracle_name='coingecko')
+        PenalizablePriceOracleMixin.__init__(self)
         self.session = requests.session()
         set_user_agent(self.session)
         self.all_coins_cache: Optional[Dict[str, Dict[str, Any]]] = None
@@ -410,6 +412,7 @@ class Coingecko(HistoricalPriceOracleInterface):
                 timeout=DEFAULT_TIMEOUT_TUPLE,
             )
         except requests.exceptions.RequestException as e:
+            self.penalty_info.note_failure_or_penalize()
             raise RemoteError(f'Coingecko API request failed due to {str(e)}') from e
 
         if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
@@ -572,7 +575,7 @@ class Coingecko(HistoricalPriceOracleInterface):
             timestamp: Timestamp,  # pylint: disable=unused-argument
             seconds: Optional[int] = None,  # pylint: disable=unused-argument
     ) -> bool:
-        return True  # noop for coingecko
+        return not self.is_penalized()
 
     def rate_limited_in_last(
             self,
