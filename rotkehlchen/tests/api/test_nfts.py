@@ -19,7 +19,7 @@ from rotkehlchen.tests.utils.api import (
 )
 from rotkehlchen.tests.utils.mock import MockResponse
 
-TEST_ACC1 = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
+TEST_ACC1 = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'  # lefteris.eth
 TEST_ACC2 = '0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF'
 TEST_ACC3 = '0xC21A5ee89D306353e065a6dd5779470DE395DBaC'
 TEST_ACC4 = '0xc37b40ABdB939635068d3c5f13E7faF686F03B65'  # yabir.eth
@@ -69,7 +69,6 @@ def test_nft_query(rotkehlchen_api_server, start_with_valid_premium):
     nft_found = False
     for entry in nfts:
         if entry['token_identifier'] == '_nft_0xc3f733ca98e0dad0386979eb96fb1722a1a05e69_129':
-
             assert entry['name'] == 'MoonCat #129: 0x0082206dcb'
             assert entry['external_link'] == 'https://purrse.mooncat.community/129'
             assert 'image_url' in entry
@@ -84,6 +83,15 @@ def test_nft_query(rotkehlchen_api_server, start_with_valid_premium):
 
     assert nft_found, 'Could not find and verify the test NFT'
 
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        'nftsresource',
+    ), json={
+        'async_query': False,
+        'nft_id': '_nft_0xc3f733ca98e0dad0386979eb96fb1722a1a05e69_129',
+    })
+    result = assert_proper_response_with_result(response)
+    assert 
 
 @requires_env([TestEnvironment.NIGHTLY, TestEnvironment.NFTS])
 @flaky(max_runs=3, min_passes=1)  # all opensea calls have become quite flaky
@@ -215,6 +223,21 @@ def test_nft_balances_and_prices(rotkehlchen_api_server):
     assert result['entries_found'] == 1
     assert result['entries'][TEST_ACC5][0]['id'] == NFT_ID_FOR_TEST_ACC5
 
+    # check that pagination works as expected
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        'nftsbalanceresource',
+    ), json={
+        'async_query': False,
+        'ignore_cache': False,
+        'ignored_assets_handling': 'exclude',
+        'limit': 2,
+        'offset': 2,
+    })
+    result = assert_proper_response_with_result(response)
+    assert result['entries_found'] == 2
+    assert result['entries_total'] == 4
+
     # ignore an nft
     response = requests.put(
         api_url_for(
@@ -252,7 +275,7 @@ def test_nft_balances_and_prices(rotkehlchen_api_server):
     assert result['entries'][TEST_ACC4][0]['id'] == NFT_ID_FOR_TEST_ACC4
     assert result['entries'][TEST_ACC6][0]['id'] == NFT_ID_FOR_TEST_ACC6_2
 
-    response = requests.get(api_url_for(
+    response = requests.post(api_url_for(
         rotkehlchen_api_server,
         'nftspricesresource',
     ))

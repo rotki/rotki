@@ -3900,7 +3900,6 @@ class RestAPI():
                 uniswap_nfts=uniswap_result['result'],
                 return_zero_values=True,
                 ignore_cache=True,
-
             )
 
         return self._eth_module_query(
@@ -3946,13 +3945,25 @@ class RestAPI():
             })
         return api_response(_wrap_in_ok_result(prices_information), status_code=HTTPStatus.OK)
 
-    def get_nfts_with_price(self) -> Response:
+    def get_nfts_with_price(self, lps_handling) -> Response:
         return self._api_query_for_eth_module(
             async_query=False,
             module_name='nfts',
             method='get_nfts_with_price',
             query_specific_balances_before=None,
+            lps_handling=lps_handling,
         )
+
+    def get_nft_by_id(self, nft_id: str) -> Response:
+        response = self._eth_module_query(
+            module_name='nfts',
+            method='get_single_nft',
+            query_specific_balances_before=None,
+            nft_id=nft_id,
+        )
+        status_code = _get_status_code_from_async_response(response)
+        result_dict = {'result': response['result'], 'message': response['message']}
+        return api_response(process_result(result_dict), status_code=status_code)
 
     def add_manual_latest_price(
             self,

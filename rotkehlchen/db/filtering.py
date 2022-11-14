@@ -19,7 +19,7 @@ from rotkehlchen.types import (
     Timestamp,
     TradeType,
 )
-from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.utils.misc import NftLpHandling, ts_now
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -330,6 +330,15 @@ class FilterWithLocation():
             return None
 
         return self.location_filter.location
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class DBBooleanFilter(DBFilter):
+    column: str
+    value: bool
+
+    def prepare(self) -> Tuple[List[str], List[Any]]:
+        return [f'{self.column}=?'], [self.value]
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -1119,6 +1128,8 @@ class NFTFilterQuery(DBFilterQuery):
             name: Optional[str] = None,
             collection_name: Optional[str] = None,
             ignored_assets_filter_params: Optional[Tuple[Literal['IN', 'NOT IN'], List[str]]] = None,  # noqa: E501
+            lps_handling: NftLpHandling = NftLpHandling.ALL_NFTS,
+            nft_id: Optional[str] = None,
     ) -> 'NFTFilterQuery':
         filter_query = cls.create(
             and_op=True,
@@ -1153,6 +1164,20 @@ class NFTFilterQuery(DBFilterQuery):
                 operator=ignored_assets_filter_params[0],
                 values=ignored_assets_filter_params[1],
             ))
+        if lps_handling != NftLpHandling.ALL_NFTS:
+            filters.append(DBBooleanFilter(
+                and_op=True,
+                column='is_lp',
+                value=NftLpHandling.ONLY_LPS == lps_handling,
+            ))
+        if nft_id is not None:
+            filters.append(
+                DBSubStringFilter(
+                    and_op=True,
+                    field='identifier',
+                    search_string=nft_id,
+                )
+            )
         filter_query.filters = filters
         return filter_query
 
