@@ -76,7 +76,7 @@ def test_query_aave_balances(rotkehlchen_api_server, ethereum_accounts):
         setup.enter_ethereum_patches(stack)
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
-            "aavebalancesresource",
+            'aavebalancesresource',
         ), json={'async_query': async_query})
         if async_query:
             task_id = assert_ok_async_response(response)
@@ -154,7 +154,7 @@ def test_query_aave_balances_module_not_activated(
         setup.enter_ethereum_patches(stack)
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
-            "aavebalancesresource",
+            'aavebalancesresource',
         ), json={'async_query': async_query})
 
         if async_query:
@@ -521,7 +521,7 @@ def _query_simple_aave_history_test_v2(
         setup.enter_ethereum_patches(stack)
         response = requests.get(api_url_for(
             server,
-            "aavehistoryresource",
+            'aavehistoryresource',
         ), json={'async_query': async_query})
         if async_query:
             task_id = assert_ok_async_response(response)
@@ -747,7 +747,7 @@ def _query_borrowing_aave_history_test(setup: BalancesTestSetup, server: APIServ
         setup.enter_ethereum_patches(stack)
         response = requests.get(api_url_for(
             server,
-            "aavehistoryresource",
+            'aavehistoryresource',
         ))
         result = assert_proper_response_with_result(response)
 
@@ -829,7 +829,7 @@ def _test_for_duplicates_and_negatives(setup: BalancesTestSetup, server: APIServ
         setup.enter_ethereum_patches(stack)
         response = requests.get(api_url_for(
             server,
-            "aavehistoryresource",
+            'aavehistoryresource',
         ))
         result = assert_proper_response_with_result(response)
 
@@ -879,7 +879,7 @@ def test_query_aave_history_no_duplicates(rotkehlchen_api_server, ethereum_accou
 def test_query_aave_history_non_premium(rotkehlchen_api_server, ethereum_accounts):  # pylint: disable=unused-argument  # noqa: E501
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
-        "aavehistoryresource",
+        'aavehistoryresource',
     ))
     assert_error_response(
         response=response,
@@ -891,7 +891,7 @@ def test_query_aave_history_non_premium(rotkehlchen_api_server, ethereum_account
 @pytest.mark.parametrize('ethereum_accounts', [['0x01471dB828Cfb96Dcf215c57a7a6493702031EC1']])
 @pytest.mark.parametrize('ethereum_modules', [['aave']])
 def test_query_aave_defi_borrowing(rotkehlchen_api_server, ethereum_accounts):
-    """Checks that the apr/apy values are correctyly returned from the API for a mocked status"""
+    """Checks that the apr/apy values are correctly returned from the API for a mocked position"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     addrs = string_to_evm_address('0x01471dB828Cfb96Dcf215c57a7a6493702031EC1')
     defi_balances = {
@@ -959,7 +959,7 @@ def test_query_aave_defi_borrowing(rotkehlchen_api_server, ethereum_accounts):
         setup.enter_ethereum_patches(stack)
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
-            "aavebalancesresource",
+            'aavebalancesresource',
         ))
 
     assert response is not None
