@@ -175,24 +175,22 @@ const { tc } = useI18n();
 <style scoped lang="scss">
 /* stylelint-disable selector-class-pattern,selector-nested-pattern,no-descending-specificity */
 
-:deep() {
-  .v-data-table {
-    &__expanded {
-      &__content {
-        background-color: var(--v-rotki-light-grey-base) !important;
-        box-shadow: none !important;
-      }
+:deep(.v-data-table) {
+  .v-data-table__expanded {
+    &__content {
+      background-color: var(--v-rotki-light-grey-base) !important;
+      box-shadow: none !important;
     }
+  }
 
-    &--mobile {
-      .v-data-table {
-        &__wrapper {
-          tbody {
-            .v-data-table__expanded__content,
-            .table-expand-container {
-              height: auto !important;
-              display: block;
-            }
+  .v-data-table--mobile {
+    .v-data-table {
+      &__wrapper {
+        tbody {
+          .v-data-table__expanded__content,
+          .table-expand-container {
+            height: auto !important;
+            display: block;
           }
         }
       }
@@ -202,12 +200,10 @@ const { tc } = useI18n();
 
 .theme {
   &--dark {
-    :deep() {
-      .v-data-table {
-        &__expanded {
-          &__content {
-            background-color: var(--v-dark-lighten1) !important;
-          }
+    :deep(.v-data-table) {
+      .v-data-table__expanded {
+        &__content {
+          background-color: var(--v-dark-lighten1) !important;
         }
       }
     }
@@ -217,21 +213,19 @@ const { tc } = useI18n();
 .items-page-select {
   display: flex;
 
-  :deep() {
-    .v-input {
-      margin: 13px 0.5rem;
-      font-size: 0.75rem;
-      width: 100px;
-      max-width: 100%;
-      flex: 0 1 0;
-      padding: 0;
-      position: initial;
+  :deep(.v-input) {
+    margin: 13px 0.5rem;
+    font-size: 0.75rem;
+    width: 100px;
+    max-width: 100%;
+    flex: 0 1 0;
+    padding: 0;
+    position: initial;
 
-      .v-select__selections {
-        .v-select__selection {
-          overflow: visible;
-          padding-right: 0.5rem;
-        }
+    .v-select__selections {
+      .v-select__selection {
+        overflow: visible;
+        padding-right: 0.5rem;
       }
     }
   }

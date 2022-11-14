@@ -28,20 +28,20 @@ export const useLiquityStore = defineStore('defi/liquity', () => {
 
   const isPremium = usePremium();
   const { activeModules } = useModules();
-  const { t } = useI18n();
+  const { t, tc } = useI18n();
 
   async function fetchPools(refresh: boolean = false) {
     const meta: TaskMeta = {
-      title: 'pool task title',
+      title: tc('actions.defi.liquity_pools.task.title'),
       numericKeys: []
     };
 
     const onError: OnError = {
-      title: t('actions.defi.liquity_balances.error.title').toString(),
+      title: tc('actions.defi.liquity_pools.error.title'),
       error: message =>
-        t('actions.defi.liquity_balances.error.description', {
+        tc('actions.defi.liquity_pools.error.description', 0, {
           message
-        }).toString()
+        })
     };
 
     await fetchDataAsync(
