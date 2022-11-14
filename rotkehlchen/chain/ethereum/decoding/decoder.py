@@ -19,8 +19,8 @@ from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_1INCH, A_ETH, A_GTC
 from rotkehlchen.db.constants import HISTORY_MAPPING_DECODED
-from rotkehlchen.db.ethtx import DBEthTx
-from rotkehlchen.db.filtering import ETHTransactionsFilterQuery, HistoryEventFilterQuery
+from rotkehlchen.db.evmtx import DBEvmTx
+from rotkehlchen.db.filtering import EvmTransactionsFilterQuery, HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import InputError, ModuleLoadingError, NotERC20Conformant, RemoteError
@@ -35,6 +35,7 @@ from rotkehlchen.types import (
     EvmTransaction,
     EVMTxHash,
     Location,
+    SupportedBlockchain,
     TimestampMS,
 )
 from rotkehlchen.user_messages import MessagesAggregator
@@ -63,8 +64,8 @@ from .utils import maybe_reshuffle_events
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
-    from rotkehlchen.chain.ethereum.transactions import EthTransactions
+    from rotkehlchen.chain.evm.node_inquirer import EvmInquirer
+    from rotkehlchen.chain.evm.transactions import EvmTransactions
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
 
@@ -77,16 +78,16 @@ class EVMTransactionDecoder():
     def __init__(
             self,
             database: 'DBHandler',
-            ethereum_manager: 'EthereumManager',
-            transactions: 'EthTransactions',
+            evm_inquirer: 'EvmInquirer',
+            transactions: 'EvmTransactions',
             msg_aggregator: MessagesAggregator,
     ):
         self.database = database
         self.all_counterparties: Set[str] = set()
-        self.ethereum_manager = ethereum_manager
+        self.evm_inquirer = evm_inquirer
         self.transactions = transactions
         self.msg_aggregator = msg_aggregator
-        self.dbethtx = DBEthTx(self.database)
+        self.dbevmtx = DBEvmTx(self.database)
         self.dbevents = DBHistoryEvents(self.database)
         self.base = BaseDecoderTools(database=database)
         self.event_rules = [  # rules to try for all tx receipt logs decoding
@@ -129,7 +130,7 @@ class EVMTransactionDecoder():
                         raise ModuleLoadingError(f'Decoder with name {class_name} already loaded')
                     try:
                         self.decoders[class_name] = submodule_decoder(
-                            ethereum_manager=self.ethereum_manager,
+                            evm_inquirer=self.evm_inquirer,
                             base_tools=self.base,
                             msg_aggregator=self.msg_aggregator,
                         )
@@ -255,7 +256,10 @@ class EVMTransactionDecoder():
 
         This is protected by concurrent access from a lock"""
         with self.undecoded_tx_query_lock:
-            hashes = self.dbethtx.get_transaction_hashes_not_decoded(limit=limit)
+            hashes = self.dbevmtx.get_transaction_hashes_not_decoded(
+                chain_id=ChainID.ETHEREUM,
+                limit=limit,
+            )
             self.decode_transaction_hashes(ignore_cache=False, tx_hashes=hashes)
 
     def decode_transaction_hashes(self, ignore_cache: bool, tx_hashes: Optional[List[EVMTxHash]]) -> List[HistoryBaseEntry]:  # noqa: E501
@@ -285,9 +289,9 @@ class EVMTransactionDecoder():
                     raise InputError(f'Hash {tx_hash.hex()} does not correspond to a transaction') from e  # noqa: E501
 
                 # TODO: Change this if transaction filter query can accept multiple hashes
-                txs = self.dbethtx.get_ethereum_transactions(
+                txs = self.dbevmtx.get_evm_transactions(
                     cursor=cursor,
-                    filter_=ETHTransactionsFilterQuery.make(tx_hash=tx_hash),
+                    filter_=EvmTransactionsFilterQuery.make(tx_hash=tx_hash, chain_id=ChainID.ETHEREUM),  # noqa: E501
                     has_premium=True,  # ignore limiting here
                 )
                 events.extend(self.get_or_decode_transaction_events(
@@ -346,8 +350,9 @@ class EVMTransactionDecoder():
         if tx_receipt.status is False:
             return
 
-        internal_txs = self.dbethtx.get_ethereum_internal_transactions(
+        internal_txs = self.dbevmtx.get_evm_internal_transactions(
             parent_tx_hash=tx.tx_hash,
+            blockchain=SupportedBlockchain.ETHEREUM,
         )
         for internal_tx in internal_txs:
             if internal_tx.to_address is None:
@@ -542,7 +547,7 @@ class EVMTransactionDecoder():
                     evm_address=tx_log.address,
                     chain=ChainID.ETHEREUM,
                     token_kind=token_kind,
-                    ethereum_manager=self.ethereum_manager,
+                    evm_inquirer=self.evm_inquirer,
                 )
             except NotERC20Conformant:
                 return None  # ignore non-ERC20 transfers for now

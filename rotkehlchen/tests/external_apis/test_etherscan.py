@@ -6,8 +6,8 @@ from eth_utils import to_checksum_address
 
 from rotkehlchen.chain.ethereum.constants import ETHEREUM_BEGIN, GENESIS_HASH, ZERO_ADDRESS
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.db.ethtx import DBEthTx
-from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
+from rotkehlchen.db.evmtx import DBEvmTx
+from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.serialization.deserialize import deserialize_evm_transaction
 from rotkehlchen.tests.utils.mock import MockResponse
@@ -118,14 +118,17 @@ def test_etherscan_get_transactions_genesis_block(eth_transactions):
         start_ts=ETHEREUM_BEGIN,
         end_ts=Timestamp(1451606400),
     )
-    dbtx = DBEthTx(database=db)
+    dbtx = DBEvmTx(database=db)
     with db.conn.read_ctx() as cursor:
-        regular_tx_in_db = dbtx.get_ethereum_transactions(
+        regular_tx_in_db = dbtx.get_evm_transactions(
             cursor=cursor,
-            filter_=ETHTransactionsFilterQuery.make(),
+            filter_=EvmTransactionsFilterQuery.make(),
             has_premium=True,
         )
-        internal_tx_in_db = dbtx.get_ethereum_internal_transactions(parent_tx_hash=GENESIS_HASH)
+        internal_tx_in_db = dbtx.get_evm_internal_transactions(
+            parent_tx_hash=GENESIS_HASH,
+            blockchain=SupportedBlockchain.ETHEREUM,
+        )
 
     assert regular_tx_in_db == [
         EvmTransaction(

@@ -90,15 +90,19 @@ from rotkehlchen.constants.misc import (
 from rotkehlchen.constants.resolver import ChainID, evm_address_to_identifier
 from rotkehlchen.data_import.manager import DataImportSource
 from rotkehlchen.db.addressbook import DBAddressbook
-from rotkehlchen.db.constants import HISTORY_MAPPING_CUSTOMIZED
+from rotkehlchen.db.constants import (
+    HISTORY_MAPPING_KEY_CHAINID,
+    HISTORY_MAPPING_KEY_STATE,
+    HISTORY_MAPPING_STATE_CUSTOMIZED,
+)
 from rotkehlchen.db.custom_assets import DBCustomAssets
-from rotkehlchen.db.ethtx import DBEthTx
+from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
     AssetsFilterQuery,
     CustomAssetsFilterQuery,
     Eth2DailyStatsFilterQuery,
-    ETHTransactionsFilterQuery,
+    EvmTransactionsFilterQuery,
     HistoryEventFilterQuery,
     LedgerActionsFilterQuery,
     ReportDataFilterQuery,
@@ -1009,7 +1013,14 @@ class RestAPI():
         db = DBHistoryEvents(self.rotkehlchen.data.db)
         with self.rotkehlchen.data.db.user_write() as cursor:
             try:
-                identifier = db.add_history_event(cursor, event, mapping_value=HISTORY_MAPPING_CUSTOMIZED)  # noqa: E501
+                identifier = db.add_history_event(
+                    cursor,
+                    event,
+                    mapping_values={
+                        HISTORY_MAPPING_KEY_STATE: HISTORY_MAPPING_STATE_CUSTOMIZED,
+                        HISTORY_MAPPING_KEY_CHAINID: ChainID.ETHEREUM,
+                    },
+                )
             except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
                 error_msg = f'Failed to add event to the DB due to a DB error: {str(e)}'
                 return api_response(wrap_in_fail_result(error_msg), status_code=HTTPStatus.CONFLICT)  # noqa: E501
@@ -1468,17 +1479,17 @@ class RestAPI():
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     @staticmethod
-    def get_custom_ethereum_tokens(
+    def get_custom_evm_tokens(
             address: Optional[ChecksumEvmAddress],
-            chain: Optional[ChainID],
+            chain_id: ChainID,
     ) -> Response:
-        if address is not None and chain is not None:
+        if address is not None:
             token = GlobalDBHandler().get_evm_token(
                 address=address,
-                chain=chain,
+                chain_id=chain_id,
             )
             if token is None:
-                result = wrap_in_fail_result(f'Custom token with address {address} and chain {chain} not found')  # noqa: E501
+                result = wrap_in_fail_result(f'Custom token with address {address} and chain {chain_id.to_name()} not found')  # noqa: E501
                 status_code = HTTPStatus.NOT_FOUND
             else:
                 result = _wrap_in_ok_result(token.to_dict())
@@ -1487,7 +1498,7 @@ class RestAPI():
             return api_response(result, status_code)
 
         # else return all custom tokens
-        tokens = GlobalDBHandler().get_ethereum_tokens()
+        tokens = GlobalDBHandler().get_evm_tokens(chain_id=chain_id)
         return api_response(
             _wrap_in_ok_result([x.to_dict() for x in tokens]),
             status_code=HTTPStatus.OK,
@@ -1506,7 +1517,7 @@ class RestAPI():
 
         with self.rotkehlchen.data.db.user_write() as cursor:
             # clean token detection cache.
-            cursor.execute('DELETE from accounts_details;')
+            cursor.execute('DELETE from evm_accounts_details;')
             self.rotkehlchen.data.db.add_asset_identifiers(cursor, [token.identifier])
 
         return api_response(
@@ -2609,7 +2620,7 @@ class RestAPI():
             only_active=True,
         )
         manager = self.rotkehlchen.chains_aggregator.get_chain_manager(node.node_info.blockchain)
-        manager.connect_to_multiple_nodes(nodes_to_connect)
+        manager.node_inquirer.connect_to_multiple_nodes(nodes_to_connect)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     def update_web3_node(self, node: WeightedNode) -> Response:
@@ -2624,7 +2635,7 @@ class RestAPI():
             only_active=True,
         )
         manager = self.rotkehlchen.chains_aggregator.get_chain_manager(node.node_info.blockchain)
-        manager.connect_to_multiple_nodes(nodes_to_connect)
+        manager.node_inquirer.connect_to_multiple_nodes(nodes_to_connect)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     def delete_web3_node(self, identifier: int, blockchain: SupportedBlockchain) -> Response:
@@ -2639,7 +2650,7 @@ class RestAPI():
             only_active=True,
         )
         manager = self.rotkehlchen.chains_aggregator.get_chain_manager(blockchain)  # type: ignore
-        manager.connect_to_multiple_nodes(nodes_to_connect)
+        manager.node_inquirer.connect_to_multiple_nodes(nodes_to_connect)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     def purge_module_data(self, module_name: Optional[ModuleName]) -> Response:
@@ -3138,13 +3149,13 @@ class RestAPI():
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     def purge_ethereum_transaction_data(self) -> Response:
-        DBEthTx(self.rotkehlchen.data.db).purge_ethereum_transaction_data()
+        DBEvmTx(self.rotkehlchen.data.db).purge_evm_transaction_data(chain=SupportedBlockchain.ETHEREUM)  # noqa: E501
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     def _get_ethereum_transactions(
             self,
             only_cache: bool,
-            filter_query: ETHTransactionsFilterQuery,
+            filter_query: EvmTransactionsFilterQuery,
             event_params: Dict[str, Any],
     ) -> Dict[str, Any]:
         try:
@@ -3188,7 +3199,7 @@ class RestAPI():
                         has_premium=True,  # for this function we don't limit. We only limit txs.
                     )
 
-                    customized_event_ids = dbevents.get_customized_event_identifiers(cursor)
+                    customized_event_ids = dbevents.get_customized_event_identifiers(cursor=cursor, chain_id=ChainID.ETHEREUM)  # noqa: E501
                     entries_result.append({
                         'entry': entry.serialize(),
                         'decoded_events': [
@@ -3219,7 +3230,7 @@ class RestAPI():
             self,
             async_query: bool,
             only_cache: bool,
-            filter_query: ETHTransactionsFilterQuery,
+            filter_query: EvmTransactionsFilterQuery,
             event_params: Dict[str, Any],
     ) -> Response:
         if async_query is True:
@@ -3607,7 +3618,7 @@ class RestAPI():
     def _get_token_info(self, address: ChecksumEvmAddress) -> Dict[str, Any]:
         eth_manager = self.rotkehlchen.chains_aggregator.ethereum
         try:
-            info = eth_manager.get_erc20_contract_info(address=address)
+            info = eth_manager.node_inquirer.get_erc20_contract_info(address=address)
         except BadFunctionCallOutput:
             return wrap_in_fail_result(
                 f'Address {address} seems to not be a deployed contract',

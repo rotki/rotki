@@ -29,6 +29,7 @@ from rotkehlchen.chain.ethereum.modules.curve.pools_cache import (
     update_curve_registry_pools_cache,
 )
 from rotkehlchen.chain.ethereum.modules.eth2.constants import ETH2_DEPOSIT
+from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.chain.evm.manager import WEB3_LOGQUERY_BLOCK_RANGE, EvmManager
 from rotkehlchen.constants.ethereum import (
@@ -51,12 +52,16 @@ from rotkehlchen.utils.misc import get_chunks
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
 from rotkehlchen.utils.network import request_get_dict
 
+from .tokens import EthereumTokens
 from .types import ETHERSCAN_NODE_NAME, WeightedNode
 from .utils import ENS_RESOLVER_ABI_MULTICHAIN_ADDRESS, should_update_curve_cache
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.decoding.decoder import EVMTransactionDecoder
+    from rotkehlchen.chain.evn.transactions import EvmTransactions
     from rotkehlchen.db.dbhandler import DBHandler
+
+    from .node_inquirer import EthereumInquirer
 
 
 logger = logging.getLogger(__name__)
@@ -81,70 +86,19 @@ class EthereumManager(EvmManager):
     such as ENS resolution."""
     def __init__(
             self,
-            etherscan: Etherscan,
-            msg_aggregator: MessagesAggregator,
-            greenlet_manager: GreenletManager,
-            connect_at_start: Sequence[WeightedNode],
-            database: 'DBHandler',
-            rpc_timeout: int = DEFAULT_EVM_RPC_TIMEOUT,
+            node_inquirer: 'EthereumInquirer',
     ) -> None:
-        log.debug(f'Initializing Ethereum Manager. Nodes to connect {connect_at_start}')
-
         super().__init__(
-            etherscan=etherscan,
-            msg_aggregator=msg_aggregator,
-            greenlet_manager=greenlet_manager,
-            connect_at_start=connect_at_start,
-            database=database,
-            etherscan_node=ETHERSCAN_NODE,
-            etherscan_node_name=ETHERSCAN_NODE_NAME,
-            blockchain=SupportedBlockchain.ETHEREUM,
-            contract_scan=ETH_SCAN[ChainID.ETHEREUM],
-            contract_multicall=ETH_MULTICALL,
-            contract_multicall_2=ETH_MULTICALL_2,
-            rpc_timeout=rpc_timeout,
+            node_inquirer=node_inquirer,
+            transactions=EthereumTransactions(
+                ethereum_inquirer=node_inquirer,
+                database=node_inquirer.database,
+            ),
+            tokens=EthereumTokens(
+                database=node_inquirer.database,
+                ethereum_inquirer=node_inquirer,
+            ),
         )
-        self.contract_info_cache: Dict[ChecksumEvmAddress, Dict[str, Any]] = {
-            # hard coding contract info we know can't be queried properly
-            # https://github.com/rotki/rotki/issues/4420
-            string_to_evm_address('0xECF8F87f810EcF450940c9f60066b4a7a501d6A7'): {
-                'name': 'Old Wrapped Ether',
-                'symbol': 'WETH',
-                'decimals': 18,
-            },
-        }
-        self.blocks_subgraph = Graph('https://api.thegraph.com/subgraphs/name/blocklytics/ethereum-blocks')  # noqa: E501
-
-    def have_archive(self, requery: bool = False) -> bool:
-        if self.queried_archive_connection and requery is False:
-            return self.archive_connection
-
-        balance = self.get_historical_balance(
-            address=string_to_evm_address('0x50532e4Be195D1dE0c2E6DfA46D9ec0a4Fee6861'),
-            block_number=87042,
-        )
-        self.archive_connection = balance is not None and balance == FVal('5.1063307')
-        self.queried_archive_connection = True
-        return self.archive_connection
-
-    def query_highest_block(self) -> BlockNumber:
-        url = 'https://api.blockcypher.com/v1/eth/main'
-        log.debug('Querying blockcypher for ETH highest block', url=url)
-        eth_resp: Optional[Dict[str, str]]
-        try:
-            eth_resp = request_get_dict(url)
-        except (RemoteError, UnableToDecryptRemoteData, requests.exceptions.RequestException):
-            eth_resp = None
-
-        block_number: Optional[int]
-        if eth_resp and 'height' in eth_resp:
-            block_number = int(eth_resp['height'])
-            log.debug('ETH highest block result', block=block_number)
-        else:
-            block_number = self.etherscan.get_latest_block_number()
-            log.debug('ETH highest block result', block=block_number)
-
-        return BlockNumber(block_number)
 
     def ens_reverse_lookup(self, addresses: List[ChecksumEvmAddress]) -> Dict[ChecksumEvmAddress, Optional[str]]:  # noqa: E501
         """Performs a reverse ENS lookup on a list of addresses
@@ -160,7 +114,7 @@ class EthereumManager(EvmManager):
         chunks = get_chunks(lst=addresses, n=MAX_ADDRESSES_IN_REVERSE_ENS_QUERY)
         for chunk in chunks:
             result = ENS_REVERSE_RECORDS.call(
-                manager=self,
+                node_inquirer=self.node_inquirer,
                 method_name='getNames',
                 arguments=[chunk],
             )
@@ -200,9 +154,9 @@ class EthereumManager(EvmManager):
             blockchain: SupportedBlockchain = SupportedBlockchain.ETHEREUM,
             call_order: Optional[Sequence[WeightedNode]] = None,
     ) -> Optional[Union[ChecksumEvmAddress, HexStr]]:
-        return self.query(
+        return self.node_inquirer._query(
             method=self._ens_lookup,
-            call_order=call_order if call_order is not None else self.default_call_order(),
+            call_order=call_order if call_order is not None else self.node_inquirer.default_call_order(),  # noqa: E501
             name=name,
             blockchain=blockchain,
         )
@@ -255,7 +209,7 @@ class EthereumManager(EvmManager):
         except InvalidName as e:
             raise InputError(str(e)) from e
 
-        resolver_addr = self._call_contract(
+        resolver_addr = self.node_inquirer._call_contract(
             web3=web3,
             contract_address=ENS_MAINNET_ADDR,
             abi=ENS_ABI,
@@ -280,7 +234,7 @@ class EthereumManager(EvmManager):
             )
             return None
 
-        address = self._call_contract(
+        address = self.node_inquirer._call_contract(
             web3=web3,
             contract_address=deserialized_resolver_addr,
             abi=ens_resolver_abi,
@@ -347,57 +301,3 @@ class EthereumManager(EvmManager):
             self._update_curve_decoder(tx_decoder)
 
         return True
-
-    def logquery_block_range(
-            self,
-            web3: Web3,
-            contract_address: ChecksumEvmAddress,
-    ) -> int:
-        """We know that in most of its early life the Eth2 contract address returns a
-        a lot of results. So limit the query range to not hit the infura limits every time
-        """
-        # supress https://lgtm.com/rules/1507386916281/ since it does not apply here
-        infura_eth2_log_query = (
-            'infura.io' in web3.manager.provider.endpoint_uri and  # type: ignore # noqa: E501 lgtm [py/incomplete-url-substring-sanitization]
-            contract_address == ETH2_DEPOSIT.address
-        )
-        return WEB3_LOGQUERY_BLOCK_RANGE if infura_eth2_log_query is False else 75000
-
-    def _get_blocknumber_by_time_from_subgraph(self, ts: Timestamp) -> int:
-        """Queries Ethereum Blocks Subgraph for closest block at or before given timestamp"""
-        response = self.blocks_subgraph.query(
-            f"""
-            {{
-                blocks(
-                    first: 1, orderBy: timestamp, orderDirection: desc,
-                    where: {{timestamp_lte: "{ts}"}}
-                ) {{
-                    id
-                    number
-                    timestamp
-                }}
-            }}
-            """,
-        )
-        try:
-            result = int(response['blocks'][0]['number'])
-        except (IndexError, KeyError) as e:
-            raise RemoteError(
-                f'Got unexpected ethereum blocks subgraph response: {response}',
-            ) from e
-        else:
-            return result
-
-    def get_blocknumber_by_time(self, ts: Timestamp, etherscan: bool = True) -> int:
-        """Searches for the blocknumber of a specific timestamp
-        - Performs the etherscan api call by default first
-        - If RemoteError raised or etherscan flag set to false
-            -> queries blocks subgraph
-        """
-        if etherscan:
-            try:
-                return self.etherscan.get_blocknumber_by_time(ts)
-            except RemoteError:
-                pass
-
-        return self._get_blocknumber_by_time_from_subgraph(ts)

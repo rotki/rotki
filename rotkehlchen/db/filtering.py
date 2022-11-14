@@ -132,7 +132,7 @@ class DBETHTransactionJoinsFilter(DBFilter):
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class DBETHTransactionHashFilter(DBFilter):
+class DBEvmTransactionHashFilter(DBFilter):
     tx_hash: Optional[EVMTxHash] = None
 
     def prepare(self) -> Tuple[List[str], List[Any]]:
@@ -140,6 +140,17 @@ class DBETHTransactionHashFilter(DBFilter):
             return [], []
 
         return ['tx_hash=?'], [self.tx_hash]
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class DBEvmChainIDFilter(DBFilter):
+    chain_id: Optional[ChainID] = None
+
+    def prepare(self) -> Tuple[List[str], List[Any]]:
+        if self.chain_id is None:
+            return [], []
+
+        return ['chain_id=?'], [self.chain_id.serialize_for_db()]
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -312,7 +323,7 @@ class FilterWithLocation():
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class ETHTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
+class EvmTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
 
     @property
     def addresses(self) -> Optional[List[ChecksumEvmAddress]]:
@@ -321,6 +332,12 @@ class ETHTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
 
         ethaddress_filter = cast('DBETHTransactionJoinsFilter', self.join_clause)
         return ethaddress_filter.addresses
+
+    @property
+    def chain_id(self) -> Optional[ChainID]:
+        if isinstance(self.filters[-1], DBEvmChainIDFilter):
+            return self.filterss[-1].chain_id
+        return None
 
     @classmethod
     def make(
@@ -333,10 +350,11 @@ class ETHTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
             tx_hash: Optional[EVMTxHash] = None,
+            chain_id: Optional[ChainID] = None,
             protocols: Optional[List[str]] = None,
             asset: Optional[EvmToken] = None,
             exclude_ignored_assets: bool = False,
-    ) -> 'ETHTransactionsFilterQuery':
+    ) -> 'EvmTransactionsFilterQuery':
         if order_by_rules is None:
             order_by_rules = [('timestamp', True)]
 
@@ -346,10 +364,10 @@ class ETHTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
             offset=offset,
             order_by_rules=order_by_rules,
         )
-        filter_query = cast('ETHTransactionsFilterQuery', filter_query)
+        filter_query = cast('EvmTransactionsFilterQuery', filter_query)
         filters: List[DBFilter] = []
         if tx_hash is not None:  # tx_hash means single result so make it as single filter
-            filters.append(DBETHTransactionHashFilter(and_op=False, tx_hash=tx_hash))
+            filters.append(DBEvmTransactionHashFilter(and_op=True, tx_hash=tx_hash))
         else:
             should_join_events = asset is not None or protocols is not None or exclude_ignored_assets is True  # noqa: E501
             if addresses is not None or should_join_events is True:
@@ -372,6 +390,9 @@ class ETHTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
                 to_ts=to_ts,
             )
             filters.append(filter_query.timestamp_filter)
+
+        if chain_id is not None:  # keep it always as last (see chain_id property of this filter)
+            filters.append(DBEvmChainIDFilter(and_op=True, chain_id=chain_id))
 
         filter_query.filters = filters
         return filter_query

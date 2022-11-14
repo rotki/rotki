@@ -86,8 +86,8 @@ class YearnVaultsV2(EthereumModule):
             )
             return ZERO, 0
 
-        now_block_number = self.ethereum.get_latest_block_number()
-        price_per_full_share = self.ethereum.call_contract(
+        now_block_number = self.ethereum.node_inquirer.get_latest_block_number()
+        price_per_full_share = self.ethereum.node_inquirer.call_contract(
             contract_address=vault.evm_address,
             abi=YEARN_VAULT_V2_ABI,  # Any vault ABI will do
             method_name='pricePerShare',

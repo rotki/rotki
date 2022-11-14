@@ -60,5 +60,5 @@ def data_migration_4(write_cursor: 'DBCursor', rotki: 'Rotkehlchen') -> None:
     read_and_write_nodes_in_database(write_cursor=write_cursor)
     # Connect to the nodes since the migration happens after the ethereum manager initialization
     nodes_to_connect = rotki.data.db.get_web3_nodes(blockchain=SupportedBlockchain.ETHEREUM, only_active=True)  # noqa: E501
-    rotki.chains_aggregator.ethereum.connect_to_multiple_nodes(nodes_to_connect)
+    rotki.chains_aggregator.ethereum.node_inquirer.connect_to_multiple_nodes(nodes_to_connect)
     copy_ethereum_rpc_endpoint(write_cursor=write_cursor)

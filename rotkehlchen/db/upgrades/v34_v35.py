@@ -11,11 +11,7 @@ from rotkehlchen.constants.resolver import (
     ChainID,
     evm_address_to_identifier,
 )
-from rotkehlchen.db.constants import (
-    ACCOUNTS_DETAILS_LAST_QUERIED_TS,
-    ACCOUNTS_DETAILS_TOKENS,
-    HISTORY_MAPPING_CUSTOMIZED,
-)
+from rotkehlchen.db.constants import HISTORY_MAPPING_CUSTOMIZED
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.globaldb.upgrades.v2_v3 import OTHER_EVM_CHAINS_ASSETS
 from rotkehlchen.history.types import DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER, HistoricalPriceOracle
@@ -318,7 +314,7 @@ def _update_assets_in_user_queried_tokens(cursor: 'DBCursor') -> None:
                 (
                     address,
                     SupportedBlockchain.ETHEREUM.serialize(),
-                    ACCOUNTS_DETAILS_TOKENS,
+                    'tokens',
                     new_id,
                 ),
             )
@@ -326,7 +322,7 @@ def _update_assets_in_user_queried_tokens(cursor: 'DBCursor') -> None:
             (
                 address,
                 SupportedBlockchain.ETHEREUM.serialize(),
-                ACCOUNTS_DETAILS_LAST_QUERIED_TS,
+                'last_queried_timestamp',
                 now,
             ),
         )

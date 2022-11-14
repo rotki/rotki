@@ -22,7 +22,7 @@ from rotkehlchen.types import ChecksumEvmAddress
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
     from rotkehlchen.chain.ethereum.types import WeightedNode
-    from rotkehlchen.chain.evm.manager import EvmManager
+    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
 
 WEB3 = Web3()
 
@@ -34,13 +34,13 @@ class EvmContract(NamedTuple):
 
     def call(
             self,
-            manager: 'EvmManager',
+            node_inquirer: 'EvmNodeInquirer',
             method_name: str,
             arguments: Optional[List[Any]] = None,
             call_order: Optional[Sequence['WeightedNode']] = None,
             block_identifier: BlockIdentifier = 'latest',
     ) -> Any:
-        return manager.call_contract(
+        return node_inquirer.call_contract(
             contract_address=self.address,
             abi=self.abi,
             method_name=method_name,
@@ -51,14 +51,14 @@ class EvmContract(NamedTuple):
 
     def get_logs(
             self,
-            manager: 'EvmManager',
+            node_inquirer: 'EvmNodeInquirer',
             event_name: str,
             argument_filters: Dict[str, Any],
             from_block: int,
             to_block: Union[int, Literal['latest']] = 'latest',
             call_order: Optional[Sequence['WeightedNode']] = None,
     ) -> Any:
-        return manager.get_logs(
+        return node_inquirer.get_logs(
             contract_address=self.address,
             abi=self.abi,
             event_name=event_name,

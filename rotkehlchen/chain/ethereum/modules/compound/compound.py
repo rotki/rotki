@@ -166,7 +166,7 @@ class Compound(EthereumModule):
         method_name = 'supplyRatePerBlock' if supply else 'borrowRatePerBlock'
 
         try:
-            rate = self.ethereum.call_contract(
+            rate = self.ethereum.node_inquirer.call_contract(
                 contract_address=address,
                 abi=CTOKEN_ABI,
                 method_name=method_name,
@@ -530,27 +530,27 @@ class Compound(EthereumModule):
             from_ts: Timestamp,
             to_ts: Timestamp,
     ) -> List[CompoundEvent]:
-        self.ethereum.get_blocknumber_by_time(from_ts)
+        self.ethereum.node_inquirer.get_blocknumber_by_time(from_ts)
         from_block = max(
             COMP_DEPLOYED_BLOCK,
-            self.ethereum.get_blocknumber_by_time(from_ts),
+            self.ethereum.node_inquirer.get_blocknumber_by_time(from_ts),
         )
         argument_filters = {
             'from': COMPTROLLER_PROXY.address,
             'to': address,
         }
-        comp_events = self.ethereum.get_logs(
+        comp_events = self.ethereum.node_inquirer.get_logs(
             contract_address=self.comp.evm_address,
             abi=ERC20TOKEN_ABI,
             event_name='Transfer',
             argument_filters=argument_filters,
             from_block=from_block,
-            to_block=self.ethereum.get_blocknumber_by_time(to_ts),
+            to_block=self.ethereum.node_inquirer.get_blocknumber_by_time(to_ts),
         )
 
         events = []
         for event in comp_events:
-            timestamp = self.ethereum.get_event_timestamp(event)
+            timestamp = self.ethereum.node_inquirer.get_event_timestamp(event)
             tx_hash = event['transactionHash']
             amount = token_normalized_value(
                 hexstr_to_int(event['data']),

@@ -246,7 +246,7 @@ class ZerionSDK():
         return protocol_names
 
     def _query_chain_for_all_balances(self, account: ChecksumEvmAddress) -> List:
-        if (own_node_info := self.ethereum.get_own_node_info()) is not None:
+        if (own_node_info := self.ethereum.node_inquirer.get_own_node_info()) is not None:
             try:
                 # In this case we don't care about the gas limit
                 own_node = WeightedNode(

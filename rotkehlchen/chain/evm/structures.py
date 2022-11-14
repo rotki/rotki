@@ -1,11 +1,11 @@
 import dataclasses
 from typing import List, Optional
 
-from rotkehlchen.types import ChecksumEvmAddress, EVMTxHash
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, EVMTxHash
 
 
 @dataclasses.dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class EthereumTxReceiptLog:
+class EvmTxReceiptLog:
     log_index: int
     data: bytes
     address: ChecksumEvmAddress
@@ -14,9 +14,10 @@ class EthereumTxReceiptLog:
 
 
 @dataclasses.dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class EthereumTxReceipt:
+class EvmxTxReceipt:
     tx_hash: EVMTxHash
+    chain_id: ChainID
     contract_address: Optional[ChecksumEvmAddress]
     status: bool
     type: int
-    logs: List[EthereumTxReceiptLog] = dataclasses.field(default_factory=list)
+    logs: List[EvmTxReceiptLog] = dataclasses.field(default_factory=list)

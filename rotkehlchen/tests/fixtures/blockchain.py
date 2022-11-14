@@ -6,6 +6,7 @@ from rotkehlchen.chain.aggregator import ChainsAggregator
 from rotkehlchen.chain.avalanche.manager import AvalancheManager
 from rotkehlchen.chain.ethereum.decoding import EVMTransactionDecoder
 from rotkehlchen.chain.ethereum.manager import EthereumManager
+from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.chain.ethereum.types import NodeName
 from rotkehlchen.chain.substrate.manager import SubstrateChainProperties, SubstrateManager
@@ -111,6 +112,27 @@ def fixture_etherscan(database, messages_aggregator):
 @pytest.fixture(name='covalent_avalanche')
 def fixture_covalent_avalanche(messages_aggregator, database):
     return Covalent(database=database, msg_aggregator=messages_aggregator, chain_id='43114')
+
+
+@pytest.fixture(name='ethereum_inquirer')
+def fixture_ethereum_inquirer(
+        etherscan,
+        ethereum_manager_connect_at_start,
+        greenlet_manager,
+        database,
+):
+    ethereum_inquirer = EthereumInquirer(
+        etherscan=etherscan,
+        greenlet_manager=greenlet_manager,
+        database=database,
+        connect_at_start=ethereum_manager_connect_at_start,
+    )
+    wait_until_all_nodes_connected(
+        connect_at_start=ethereum_manager_connect_at_start,
+        evm_inquirer=ethereum_inquirer,
+    )
+
+    return ethereum_inquirer
 
 
 @pytest.fixture(name='ethereum_manager')

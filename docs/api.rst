@@ -2934,7 +2934,7 @@ Querying all supported assets
    :resjson string swapped_for: An optional attribute representing another asset for which this asset was swapped for. For example ``VEN`` tokens were at some point swapped for ``VET`` tokens.
    :resjson string symbol: The symbol used for this asset. This is not guaranteed to be unique.
    :resjson string evm_address: If the type is ``evm_token`` then this will be the hexadecimal address of the token's contract.
-   :resjson string chain: If the type is ``evm_token`` then this will be the chain in the form of string in which the token is.
+   :resjson int chain_id: If the type is ``evm_token`` then this will be an integer representing the chain id of the chain.
    :resjson string token_kind:  If the type is ``evm_token`` then this will be the token type, for example ``erc20``.
    :resjson integer decimals: If the type is ``evm_token`` then this will be the number of decimals the token has.
    :resjson string cryptocompare: The cryptocompare identifier for the asset. can be missing if not known. If missing a query by symbol is attempted.

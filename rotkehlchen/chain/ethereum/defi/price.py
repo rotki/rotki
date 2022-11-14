@@ -152,7 +152,7 @@ def handle_underlying_price_harvest_vault(
         token: EvmToken,
         underlying_asset_price: Price,
 ) -> FVal:
-    price_per_full_share = ethereum.call_contract(
+    price_per_full_share = ethereum.node_inquirer.call_contract(
         contract_address=token.evm_address,
         abi=FARM_ASSET_ABI,
         method_name='getPricePerFullShare',

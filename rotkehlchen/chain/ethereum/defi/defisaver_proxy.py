@@ -78,7 +78,7 @@ class HasDSProxy(EthereumModule):
         May raise:
         - RemoteError if query to the node failed
         """
-        output = self.ethereum.multicall(
+        output = self.ethereum.node_inquirer.multicall(
             calls=[(
                 DS_PROXY_REGISTRY.address,
                 DS_PROXY_REGISTRY.encode(method_name='proxies', arguments=[address]),

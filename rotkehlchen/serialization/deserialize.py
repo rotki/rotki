@@ -559,7 +559,7 @@ def deserialize_evm_transaction(
             if manager is None:
                 raise DeserializationError('Got in deserialize evm transaction without gasUsed and without evm manager')  # noqa: E501
             tx_hash = deserialize_evm_tx_hash(data['hash'])
-            receipt_data = manager.get_transaction_receipt(tx_hash)
+            receipt_data = manager.node_inquirer.get_transaction_receipt(tx_hash)
             gas_used = read_integer(receipt_data, 'gasUsed', source)
         else:
             gas_used = read_integer(data, 'gasUsed', source)

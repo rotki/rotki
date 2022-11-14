@@ -350,7 +350,7 @@ class UniswapV3Oracle(UniswapOracle):
                 pool_contract.encode(method_name='token1'),
             ),
         ]
-        output = self.eth_manager.multicall(
+        output = self.eth_manager.node_inquirer.multicall(
             calls=calls,
             require_success=True,
             block_identifier=block_identifier,
@@ -426,7 +426,7 @@ class UniswapV2Oracle(UniswapOracle):
                 pool_contract.encode(method_name='token1'),
             ),
         ]
-        output = self.eth_manager.multicall(
+        output = self.eth_manager.node_inquirer.multicall(
             calls=calls,
             require_success=True,
             block_identifier=block_identifier,

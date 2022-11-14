@@ -145,7 +145,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-
         - RemoteError if query to the node failed
         - DeserializationError if the query returns unexpected output
         """
-        output = self.ethereum.multicall(
+        output = self.ethereum.node_inquirer.multicall(
             calls=[(
                 MAKERDAO_CDP_MANAGER.address,
                 MAKERDAO_CDP_MANAGER.encode(method_name='urns', arguments=[cdp_id]),

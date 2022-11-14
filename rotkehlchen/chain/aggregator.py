@@ -1142,7 +1142,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
         # Query ethereum ETH balances
         eth_usd_price = Inquirer().find_usd_price(A_ETH)
-        balances = self.ethereum.get_multi_balance(self.accounts.eth)
+        balances = self.ethereum.node_inquirer.get_multi_balance(self.accounts.eth)
         for account, balance in balances.items():
             usd_value = balance * eth_usd_price
             self.balances.eth[account] = BalanceSheet(

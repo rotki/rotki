@@ -1672,7 +1672,11 @@ class IgnoredActionsModifySchema(Schema):
 
 class OptionalEthereumAddressSchema(Schema):
     address = EthereumAddressField(required=False, load_default=None)
-    chain = SerializableEnumField(enum_class=ChainID, required=False, load_default=None)
+    chain_id = SerializableEnumField(
+        enum_class=ChainID,
+        required=False,
+        load_default=ChainID.ETHEREUM,
+    )
 
 
 class RequiredEthereumAddressSchema(Schema):

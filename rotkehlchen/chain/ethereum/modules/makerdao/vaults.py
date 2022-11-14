@@ -357,7 +357,7 @@ class MakerdaoVaults(HasDSProxy):
         # They can raise:
         # DeserializationError due to hex_or_bytes_to_address, hexstr_to_int
         # RemoteError due to external query errors
-        events = self.ethereum.get_logs(
+        events = self.ethereum.node_inquirer.get_logs(
             contract_address=MAKERDAO_CDP_MANAGER.address,
             abi=MAKERDAO_CDP_MANAGER.abi,
             event_name='NewCdp',
@@ -379,7 +379,7 @@ class MakerdaoVaults(HasDSProxy):
                 'Multiple events found for a Vault creation. This should never '
                 'happen. Please open a bug report: https://github.com/rotki/rotki/issues',
             )
-        creation_ts = self.ethereum.get_event_timestamp(events[0])
+        creation_ts = self.ethereum.node_inquirer.get_event_timestamp(events[0])
 
         # get vat frob events for cross-checking
         argument_filters = {
@@ -390,7 +390,7 @@ class MakerdaoVaults(HasDSProxy):
             # so don't filter for it
             # 'arg3': address_to_bytes32(proxy),  # proxy - owner
         }
-        frob_events = self.ethereum.get_logs(
+        frob_events = self.ethereum.node_inquirer.get_logs(
             contract_address=MAKERDAO_VAT.address,
             abi=MAKERDAO_VAT.abi,
             event_name='LogNote',
@@ -418,7 +418,7 @@ class MakerdaoVaults(HasDSProxy):
             # 'usr': proxy,
             'arg1': address_to_bytes32(urn),
         }
-        events = self.ethereum.get_logs(
+        events = self.ethereum.node_inquirer.get_logs(
             contract_address=gemjoin.address,
             abi=gemjoin.abi,
             event_name='LogNote',
@@ -432,7 +432,7 @@ class MakerdaoVaults(HasDSProxy):
             'sig': '0x3b4da69f',  # join
             'usr': proxy,
         }
-        events.extend(self.ethereum.get_logs(
+        events.extend(self.ethereum.node_inquirer.get_logs(
             contract_address=gemjoin.address,
             abi=gemjoin.abi,
             event_name='LogNote',
@@ -455,7 +455,7 @@ class MakerdaoVaults(HasDSProxy):
                 amount=hexstr_to_int(event['topics'][3]),
                 asset=vault.collateral_asset,
             )
-            timestamp = self.ethereum.get_event_timestamp(event)
+            timestamp = self.ethereum.node_inquirer.get_event_timestamp(event)
             usd_price = query_usd_price_or_use_default(
                 asset=vault.collateral_asset,
                 time=timestamp,
@@ -474,7 +474,7 @@ class MakerdaoVaults(HasDSProxy):
             'sig': '0xef693bed',  # exit
             'usr': proxy,
         }
-        events = self.ethereum.get_logs(
+        events = self.ethereum.node_inquirer.get_logs(
             contract_address=gemjoin.address,
             abi=gemjoin.abi,
             event_name='LogNote',
@@ -490,7 +490,7 @@ class MakerdaoVaults(HasDSProxy):
                 amount=hexstr_to_int(event['topics'][3]),
                 asset=vault.collateral_asset,
             )
-            timestamp = self.ethereum.get_event_timestamp(event)
+            timestamp = self.ethereum.node_inquirer.get_event_timestamp(event)
             usd_price = query_usd_price_or_use_default(
                 asset=vault.collateral_asset,
                 time=timestamp,
@@ -514,7 +514,7 @@ class MakerdaoVaults(HasDSProxy):
             # filter for it here. Still seems like the urn as arg1 is sufficient
             # 'arg2': address_to_bytes32(proxy),
         }
-        events = self.ethereum.get_logs(
+        events = self.ethereum.node_inquirer.get_logs(
             contract_address=MAKERDAO_VAT.address,
             abi=MAKERDAO_VAT.abi,
             event_name='LogNote',
@@ -528,7 +528,7 @@ class MakerdaoVaults(HasDSProxy):
                 token_amount=given_amount,
                 token=self.dai,
             )
-            timestamp = self.ethereum.get_event_timestamp(event)
+            timestamp = self.ethereum.node_inquirer.get_event_timestamp(event)
             usd_price = query_usd_price_or_use_default(
                 asset=A_DAI,
                 time=timestamp,
@@ -548,7 +548,7 @@ class MakerdaoVaults(HasDSProxy):
             'usr': proxy,
             'arg1': address_to_bytes32(urn),
         }
-        events = self.ethereum.get_logs(
+        events = self.ethereum.node_inquirer.get_logs(
             contract_address=MAKERDAO_DAI_JOIN.address,
             abi=MAKERDAO_DAI_JOIN.abi,
             event_name='LogNote',
@@ -567,7 +567,7 @@ class MakerdaoVaults(HasDSProxy):
                 # withdrawing ETH. So we should ignore these as events
                 continue
 
-            timestamp = self.ethereum.get_event_timestamp(event)
+            timestamp = self.ethereum.node_inquirer.get_event_timestamp(event)
             usd_price = query_usd_price_or_use_default(
                 asset=A_DAI,
                 time=timestamp,
@@ -584,7 +584,7 @@ class MakerdaoVaults(HasDSProxy):
 
         # Get the liquidation events
         argument_filters = {'urn': urn}
-        events = self.ethereum.get_logs(
+        events = self.ethereum.node_inquirer.get_logs(
             contract_address=MAKERDAO_CAT.address,
             abi=MAKERDAO_CAT.abi,
             event_name='Bite',
@@ -602,7 +602,7 @@ class MakerdaoVaults(HasDSProxy):
                 amount=hexstr_to_int(lot),
                 asset=vault.collateral_asset,
             )
-            timestamp = self.ethereum.get_event_timestamp(event)
+            timestamp = self.ethereum.node_inquirer.get_event_timestamp(event)
             sum_liquidation_amount += amount
             usd_price = query_usd_price_or_use_default(
                 asset=vault.collateral_asset,

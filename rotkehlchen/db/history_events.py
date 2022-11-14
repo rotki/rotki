@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, List, Optional, Sequence
+from typing import TYPE_CHECKING, Dict, List, Optional, Sequence
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
@@ -7,14 +7,18 @@ from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.limits import FREE_HISTORY_EVENTS_LIMIT
-from rotkehlchen.db.constants import HISTORY_MAPPING_CUSTOMIZED
+from rotkehlchen.db.constants import (
+    HISTORY_MAPPING_KEY_CHAINID,
+    HISTORY_MAPPING_KEY_STATE,
+    HISTORY_MAPPING_STATE_CUSTOMIZED,
+)
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval
-from rotkehlchen.types import EVMTxHash, Timestamp, TimestampMS, Tuple
+from rotkehlchen.types import ChainID, EVMTxHash, Timestamp, TimestampMS, Tuple
 from rotkehlchen.utils.misc import ts_ms_to_sec
 
 if TYPE_CHECKING:
@@ -38,7 +42,7 @@ class DBHistoryEvents():
             self,
             write_cursor: 'DBCursor',
             event: HistoryBaseEntry,
-            mapping_value: Optional[str] = None,
+            mapping_values: Optional[Dict[str, int]] = None,
     ) -> int:
         """Insert a single history entry to the DB. Returns its identifier.
 
@@ -53,11 +57,11 @@ class DBHistoryEvents():
         write_cursor.execute(HISTORY_INSERT, event.serialize_for_db())
         identifier = write_cursor.lastrowid
 
-        if mapping_value is not None:
-            write_cursor.execute(
-                'INSERT OR IGNORE INTO history_events_mappings(parent_identifier, value) '
-                'VALUES(?, ?)',
-                (identifier, mapping_value),
+        if mapping_values is not None:
+            write_cursor.executemany(
+                'INSERT OR IGNORE INTO history_events_mappings(parent_identifier, name, value) '
+                'VALUES(?, ?, ?)',
+                list(mapping_values.items()),
             )
 
         return identifier
@@ -67,7 +71,7 @@ class DBHistoryEvents():
             write_cursor: 'DBCursor',
             history: Sequence[HistoryBaseEntry],
     ) -> None:
-        """Insert a list of history events in database.
+        """Insert a list of history events in the database.
 
         May raise:
         - InputError if the events couldn't be stored in the database
@@ -103,9 +107,9 @@ class DBHistoryEvents():
                 msg = f'Tried to edit event with id {event.identifier} but could not find it in the DB'  # noqa: E501
                 return False, msg
             cursor.execute(
-                'INSERT OR IGNORE INTO history_events_mappings(parent_identifier, value) '
-                'VALUES(?, ?)',
-                (event.identifier, HISTORY_MAPPING_CUSTOMIZED),
+                'INSERT OR IGNORE INTO history_events_mappings(parent_identifier, name, value) '
+                'VALUES(?, ?, ?)',
+                (event.identifier, HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED),
             )
 
         return True, ''
@@ -142,10 +146,15 @@ class DBHistoryEvents():
 
             return None
 
-    def delete_events_by_tx_hash(self, write_cursor: 'DBCursor', tx_hashes: List[EVMTxHash]) -> None:  # noqa: E501
+    def delete_events_by_tx_hash(
+            self,
+            write_cursor: 'DBCursor',
+            tx_hashes: List[EVMTxHash],
+            chain_id: ChainID,
+    ) -> None:  # noqa: E501
         """Delete all relevant (by event_identifier) history events except those that
         are customized"""
-        customized_event_ids = self.get_customized_event_identifiers(write_cursor)
+        customized_event_ids = self.get_customized_event_identifiers(cursor=write_cursor, chain_id=chain_id)  # noqa: E501
         length = len(customized_event_ids)
         querystr = 'DELETE FROM history_events WHERE event_identifier=?'
         if length != 0:
@@ -155,12 +164,30 @@ class DBHistoryEvents():
             bindings = [(x,) for x in tx_hashes]
         write_cursor.executemany(querystr, bindings)
 
-    def get_customized_event_identifiers(self, cursor: 'DBCursor') -> List[int]:      # pylint: disable=no-self-use  # noqa: E501
-        """Returns the identifiers of all the events in the database that have been customized"""
-        cursor.execute(
-            'SELECT parent_identifier FROM history_events_mappings WHERE value=?',
-            (HISTORY_MAPPING_CUSTOMIZED,),
-        )
+    def get_customized_event_identifiers(
+            self,
+            cursor: 'DBCursor',
+            chain_id: Optional[ChainID],
+    ) -> List[int]:      # pylint: disable=no-self-use  # noqa: E501
+        """Returns the identifiers of all the events in the database that have been customized
+
+        Optionally filter by chain_id
+        """
+        if chain_id is None:
+            cursor.execute(
+                'SELECT parent_identifier FROM history_events_mappings WHERE name=? AND value=?',
+                (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED),
+            )
+        else:
+            cursor.execute(
+                'SELECT DISTINCT parent_identifier FROM history_events_mappings '
+                'WHERE name=? AND value=? AND name=? and value=?',
+                (
+                    HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED,
+                    HISTORY_MAPPING_KEY_CHAINID, chain_id.serialize_for_db(),
+                ),
+            )
+
         return [x[0] for x in cursor]
 
     def get_history_events(

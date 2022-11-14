@@ -194,9 +194,41 @@ T_TradeID = str
 TradeID = NewType('TradeID', T_TradeID)
 
 
+class ChainID(SerializableEnumMixin):
+    """This class maps each EVM chain to their chain id. This is used to correctly idenity EVM
+    assets and use it where these ids are needed.
+
+    This enum implements custom serialize_for_db and deserialize_from_db to make it easier future
+    changes if they are needed.
+    """
+    ETHEREUM = 1
+    OPTIMISM = 10
+    BINANCE = 56
+    GNOSIS = 100
+    MATIC = 137
+    FANTOM = 250
+    ARBITRUM = 42161
+    AVALANCHE = 43114
+    CELO = 42220
+
+    @classmethod
+    def deserialize_from_db(cls, value: int) -> 'ChainID':
+        return cls(value)
+
+    def serialize_for_db(self) -> int:
+        return self.value
+
+    def serialize(self) -> int:
+        return self.value
+
+    def to_name(self) -> str:
+        return str(self).lower()
+
+
 class EvmTransaction(NamedTuple):
     """Represent an EVM transaction"""
     tx_hash: EVMTxHash
+    chain_id: ChainID
     timestamp: Timestamp
     block_number: int
     from_address: ChecksumEvmAddress
@@ -211,6 +243,7 @@ class EvmTransaction(NamedTuple):
     def serialize(self) -> Dict[str, Any]:
         result = self._asdict()  # pylint: disable=no-member
         result['tx_hash'] = result['tx_hash'].hex()
+        result['chain_id'] = result['chain_id'].serialize()
         result['input_data'] = '0x' + result['input_data'].hex()
 
         # Most integers are turned to string to be sent via the API
@@ -231,12 +264,13 @@ class EvmTransaction(NamedTuple):
 
     @property
     def identifier(self) -> str:
-        return self.tx_hash.hex()
+        return str(self.chain_id.serialize()) + self.tx_hash.hex()
 
 
 class EvmInternalTransaction(NamedTuple):
     """Represent an internal EVM transaction"""
     parent_tx_hash: EVMTxHash
+    chain_id: ChainID
     trace_id: int
     timestamp: Timestamp
     block_number: int
@@ -247,6 +281,7 @@ class EvmInternalTransaction(NamedTuple):
     def serialize(self) -> Dict[str, Any]:
         result = self._asdict()  # pylint: disable=no-member
         result['tx_hash'] = result['tx_hash'].hex()
+        result['chain_id'] = result['chain_id'].serialize()
         result['value'] = str(result['value'])
         return result
 
@@ -261,7 +296,7 @@ class EvmInternalTransaction(NamedTuple):
 
     @property
     def identifier(self) -> str:
-        return self.parent_tx_hash.hex() + str(self.trace_id)
+        return str(self.chain_id.serialize()) + self.parent_tx_hash.hex() + str(self.trace_id)  # noqa: E501
 
 
 class CovalentTransaction(NamedTuple):
@@ -308,31 +343,6 @@ class CovalentTransaction(NamedTuple):
     @property
     def identifier(self) -> str:
         return self.tx_hash + self.from_address.replace('0x', '') + str(self.nonce)
-
-
-class ChainID(SerializableEnumMixin):
-    """This class maps each EVM chain to their chain id. This is used to correctly idenity EVM
-    assets and use it where these ids are needed.
-
-    This enum implements custom serialize_for_db and deserialize_from_db to make it easier future
-    changes if they are needed.
-    """
-    ETHEREUM = 1
-    OPTIMISM = 10
-    BINANCE = 56
-    GNOSIS = 100
-    MATIC = 137
-    FANTOM = 250
-    ARBITRUM = 42161
-    AVALANCHE = 43114
-    CELO = 42220
-
-    @classmethod
-    def deserialize_from_db(cls, value: int) -> 'ChainID':
-        return cls(value)
-
-    def serialize_for_db(self) -> int:
-        return self.value
 
 
 class SupportedBlockchain(SerializableEnumValueMixin):
@@ -386,6 +396,10 @@ class SupportedBlockchain(SerializableEnumValueMixin):
 
     def to_chain_id(self) -> ChainID:
         return SUPPORTED_BLOCKCHAIN_TO_CHAINID[self]
+
+    def to_range_prefix(self, range_type: Literal['txs', 'internaltxs', 'tokentxs']) -> str:
+        """Provide the appropriate range prefix for the DB for this chain"""
+        return f'{self.value}{range_type}'
 
     @classmethod
     def from_chain_id(cls, chain: ChainID) -> 'SupportedBlockchain':

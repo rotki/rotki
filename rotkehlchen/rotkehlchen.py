@@ -36,6 +36,7 @@ from rotkehlchen.chain.avalanche.manager import AvalancheManager
 from rotkehlchen.chain.ethereum.accounting.aggregator import EVMAccountingAggregator
 from rotkehlchen.chain.ethereum.decoding import EVMTransactionDecoder
 from rotkehlchen.chain.ethereum.manager import EthereumManager
+from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.ethereum.oracles.saddle import SaddleOracle
 from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
@@ -275,13 +276,13 @@ class Rotkehlchen():
 
         ethereum_nodes = self.data.db.get_web3_nodes(blockchain=SupportedBlockchain.ETHEREUM, only_active=True)  # noqa: E501
         # Initialize blockchain querying modules
-        ethereum_manager = EthereumManager(
-            etherscan=self.etherscan,
-            msg_aggregator=self.msg_aggregator,
+        ethereum_inquirer = EthereumInquirer(
             greenlet_manager=self.greenlet_manager,
             database=self.data.db,
+            etherscan=self.etherscan,
             connect_at_start=ethereum_nodes,
         )
+        ethereum_manager = EthereumManager(ethereum_inquirer)
         kusama_manager = SubstrateManager(
             chain=SubstrateChain.KUSAMA,
             msg_aggregator=self.msg_aggregator,
@@ -298,7 +299,6 @@ class Rotkehlchen():
             connect_on_startup=len(blockchain_accounts.dot) != 0,
             own_rpc_endpoint=settings.dot_rpc_endpoint,
         )
-        self.eth_transactions = EthTransactions(ethereum=ethereum_manager, database=self.data.db)
         self.covalent_avalanche = Covalent(
             database=self.data.db,
             msg_aggregator=self.msg_aggregator,
@@ -950,7 +950,7 @@ class Rotkehlchen():
         if self.user_is_logged_in:
             with self.data.db.conn.read_ctx() as cursor:
                 result['last_balance_save'] = self.data.db.get_last_balance_save_time(cursor)
-                result['connected_eth_nodes'] = [node.name for node in self.chains_aggregator.ethereum.get_connected_nodes()]  # noqa: E501
+                result['connected_eth_nodes'] = [node.name for node in self.chains_aggregator.ethereum.node_inquirer.get_connected_nodes()]  # noqa: E501
                 result['last_data_upload_ts'] = Timestamp(self.premium_sync_manager.last_data_upload_ts)  # noqa : E501
         return result
 

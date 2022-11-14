@@ -761,7 +761,7 @@ class GlobalDBHandler():
         return [x[0] for x in result]
 
     @staticmethod
-    def get_evm_token(address: ChecksumEvmAddress, chain: ChainID) -> Optional[EvmToken]:
+    def get_evm_token(address: ChecksumEvmAddress, chain_id: ChainID) -> Optional[EvmToken]:
         """Gets all details for an evm token by its address
 
         If no token for the given address can be found None is returned.
@@ -773,7 +773,7 @@ class GlobalDBHandler():
                 'FROM evm_tokens AS B JOIN '
                 'common_asset_details AS A ON B.identifier = A.identifier '
                 'JOIN assets AS C on C.identifier=A.identifier WHERE B.address=? AND B.chain=?;',
-                (address, chain.serialize_for_db()),
+                (address, chain_id.serialize_for_db()),
             )
             results = cursor.fetchall()
             if len(results) == 0:
@@ -795,7 +795,8 @@ class GlobalDBHandler():
             return None
 
     @staticmethod
-    def get_ethereum_tokens(
+    def get_evm_tokens(
+            chain_id: ChainID,
             exceptions: Optional[List[ChecksumEvmAddress]] = None,
             except_protocols: Optional[List[str]] = None,
             protocol: Optional[str] = None,
@@ -813,7 +814,7 @@ class GlobalDBHandler():
             'assets AS A on B.identifier = A.identifier JOIN common_asset_details AS C ON '
             'C.identifier = B.identifier WHERE B.chain = ? '
         )
-        bindings_list: List[Union[str, int, ChecksumEvmAddress]] = [ChainID.ETHEREUM.serialize_for_db()]  # noqa: E501
+        bindings_list: List[Union[str, int, ChecksumEvmAddress]] = [chain_id.serialize_for_db()]  # noqa: E501
         if exceptions is not None or protocol is not None or except_protocols is not None:
             querystr_additions = []
             if exceptions is not None:

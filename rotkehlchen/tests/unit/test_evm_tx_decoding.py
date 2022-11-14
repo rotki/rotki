@@ -10,10 +10,10 @@ from rotkehlchen.accounting.structures.base import (
 )
 from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
 from rotkehlchen.constants.assets import A_ETH, A_SAI
-from rotkehlchen.db.ethtx import DBEthTx
-from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
+from rotkehlchen.db.evmtx import DBEvmTx
+from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import Location, deserialize_evm_tx_hash
+from rotkehlchen.types import ChainID, Location, deserialize_evm_tx_hash
 
 
 def assert_events_equal(e1: HistoryBaseEntry, e2: HistoryBaseEntry) -> None:
@@ -27,15 +27,16 @@ def assert_events_equal(e1: HistoryBaseEntry, e2: HistoryBaseEntry) -> None:
 
 @pytest.mark.parametrize('use_custom_database', ['ethtxs.db'])
 def test_tx_decode(evm_transaction_decoder, database):
-    dbethtx = DBEthTx(database)
+    dbevmtx = DBEvmTx(database)
     addr1 = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
     approve_tx_hash = deserialize_evm_tx_hash('0x5cc0e6e62753551313412492296d5e57bea0a9d1ce507cc96aa4aa076c5bde7a')  # noqa: E501
     with database.conn.read_ctx() as cursor:
-        transactions = dbethtx.get_ethereum_transactions(
+        transactions = dbevmtx.get_evm_transactions(
             cursor=cursor,
-            filter_=ETHTransactionsFilterQuery.make(
+            filter_=EvmTransactionsFilterQuery.make(
                 addresses=[addr1],
                 tx_hash=approve_tx_hash,
+                chain_id=ChainID.ETHEREUM,
             ),
             has_premium=True,
         )
@@ -43,7 +44,7 @@ def test_tx_decode(evm_transaction_decoder, database):
     with patch.object(decoder, 'decode_transaction', wraps=decoder.decode_transaction) as decode_mock:  # noqa: E501
         with database.user_write() as cursor:
             for tx in transactions:
-                receipt = dbethtx.get_receipt(cursor, tx.tx_hash)
+                receipt = dbevmtx.get_receipt(cursor, tx.tx_hash, ChainID.ETHEREUM)
                 assert receipt is not None, 'all receipts should be queried in the test DB'
                 events = decoder.get_or_decode_transaction_events(cursor, tx, receipt, ignore_cache=False)  # noqa: E501
                 if tx.tx_hash == approve_tx_hash:
@@ -81,7 +82,7 @@ def test_tx_decode(evm_transaction_decoder, database):
             assert decode_mock.call_count == len(transactions)
             # now go again, and see that no more decoding happens as it's all pulled from the DB
             for tx in transactions:
-                receipt = dbethtx.get_receipt(cursor, tx.tx_hash)
+                receipt = dbevmtx.get_receipt(cursor, tx.tx_hash, ChainID.ETHEREUM)
                 assert receipt is not None, 'all receipts should be queried in the test DB'
                 events = decoder.get_or_decode_transaction_events(cursor, tx, receipt, ignore_cache=False)  # noqa: E501
         assert decode_mock.call_count == len(transactions)

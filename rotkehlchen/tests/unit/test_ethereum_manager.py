@@ -6,7 +6,7 @@ from rotkehlchen.chain.ethereum.constants import ZERO_ADDRESS
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.types import ETHERSCAN_NODE_NAME
 from rotkehlchen.constants.ethereum import ATOKEN_ABI, ERC20TOKEN_ABI, YEARN_YCRV_VAULT
-from rotkehlchen.db.ethtx import DBEthTx
+from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.tests.utils.checks import assert_serialized_dicts_equal
 from rotkehlchen.tests.utils.ethereum import (
     ETHEREUM_FULL_TEST_PARAMETERS,
@@ -16,6 +16,7 @@ from rotkehlchen.tests.utils.ethereum import (
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.types import (
     BlockchainAccountData,
+    ChainID,
     EvmTransaction,
     SupportedBlockchain,
     deserialize_evm_tx_hash,
@@ -38,17 +39,17 @@ def test_get_block_by_number(ethereum_manager, call_order, ethereum_manager_conn
 
 @pytest.mark.parametrize(*ETHEREUM_FULL_TEST_PARAMETERS)
 def test_get_transaction_receipt(
-        ethereum_manager,
+        ethereum_inquirer,
         call_order,
         ethereum_manager_connect_at_start,
         database,
 ):
     wait_until_all_nodes_connected(
-        ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
-        ethereum=ethereum_manager,
+        connect_at_start=ethereum_manager_connect_at_start,
+        evm_inquirer=ethereum_inquirer,
     )
     tx_hash = deserialize_evm_tx_hash('0x12d474b6cbba04fd1a14e55ef45b1eb175985612244631b4b70450c888962a89')  # noqa: E501
-    result = ethereum_manager.get_transaction_receipt(tx_hash, call_order=call_order)
+    result = ethereum_inquirer.get_transaction_receipt(tx_hash, call_order=call_order)
     block_hash = '0x6f3a7838a8788c3371b88df170c3643d19bad896c915a7368681292882b6ad61'
     assert result['blockHash'] == block_hash
     assert len(result['logs']) == 2
@@ -65,7 +66,7 @@ def test_get_transaction_receipt(
 
     from_addy = make_ethereum_address()
     to_addy = make_ethereum_address()
-    db = DBEthTx(database)
+    db = DBEvmTx(database)
     with database.user_write() as cursor:
         database.add_blockchain_accounts(
             cursor,
@@ -75,10 +76,11 @@ def test_get_transaction_receipt(
                 BlockchainAccountData(address=to_addy),
             ],
         )
-        db.add_ethereum_transactions(
+        db.add_evm_transactions(
             cursor,
             [EvmTransaction(  # need to add the tx first
                 tx_hash=tx_hash,
+                chain_id=ChainID.ETHEREUM,
                 timestamp=1,  # all other fields don't matter for this test
                 block_number=1,
                 from_address=from_addy,
@@ -95,8 +97,8 @@ def test_get_transaction_receipt(
 
         # also test receipt can be stored and retrieved from the DB.
         # This tests that all node types (say openethereum) are processed properly
-        db.add_receipt_data(cursor, result)
-        receipt = db.get_receipt(cursor, tx_hash)
+        db.add_receipt_data(cursor, ChainID.ETHEREUM, result)
+        receipt = db.get_receipt(cursor, tx_hash, ChainID.ETHEREUM)
 
     assert receipt == EthereumTxReceipt(
         tx_hash=tx_hash,
@@ -124,12 +126,12 @@ def test_get_transaction_receipt(
 
 
 @pytest.mark.parametrize(*ETHEREUM_TEST_PARAMETERS)
-def test_get_transaction_by_hash(ethereum_manager, call_order, ethereum_manager_connect_at_start):
+def test_get_transaction_by_hash(ethereum_inquirer, call_order, ethereum_manager_connect_at_start):
     wait_until_all_nodes_connected(
-        ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
-        ethereum=ethereum_manager,
+        connect_at_start=ethereum_manager_connect_at_start,
+        evm_inquirer=ethereum_inquirer,
     )
-    result = ethereum_manager.get_transaction_by_hash(
+    result = ethereum_inquirer.get_transaction_by_hash(
         hexstring_to_bytes('0x5b180e3dcc19cd29c918b98c876f19393e07b74c07fd728102eb6241db3c2d5c'),
         call_order=call_order,
     )
@@ -149,7 +151,7 @@ def test_get_transaction_by_hash(ethereum_manager, call_order, ethereum_manager_
     assert result == expected_tx
 
 
-def test_use_open_nodes(ethereum_manager, database):
+def test_use_open_nodes(ethereum_inquirer, database):
     """Test that we can connect to and use the open nodes (except from etherscan)
 
     Note: If this fails with transaction not found probably open nodes started pruning.
@@ -158,12 +160,12 @@ def test_use_open_nodes(ethereum_manager, database):
     # Wait until all nodes are connected
     web3_nodes_all = database.get_web3_nodes(blockchain=SupportedBlockchain.ETHEREUM, only_active=True)  # noqa: E501
     web3_nodes = [node for node in web3_nodes_all if node.node_info.name != ETHERSCAN_NODE_NAME]
-    ethereum_manager.connect_to_multiple_nodes(web3_nodes)
+    ethereum_inquirer.connect_to_multiple_nodes(web3_nodes)
     wait_until_all_nodes_connected(
-        ethereum_manager_connect_at_start=web3_nodes,
-        ethereum=ethereum_manager,
+        connect_at_start=web3_nodes,
+        evm_inquirer=ethereum_inquirer,
     )
-    result = ethereum_manager.get_transaction_receipt(
+    result = ethereum_inquirer.get_transaction_receipt(
         '0x76dbd4fd8769af995b3597733ff6bf5daca619cb55a9d7347d8e3ab949ac5984',
         call_order=web3_nodes,
     )
@@ -172,13 +174,13 @@ def test_use_open_nodes(ethereum_manager, database):
 
 
 @pytest.mark.parametrize(*ETHEREUM_TEST_PARAMETERS)
-def test_call_contract(ethereum_manager, call_order, ethereum_manager_connect_at_start):
+def test_call_contract(ethereum_inquirer, call_order, ethereum_manager_connect_at_start):
     wait_until_all_nodes_connected(
-        ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
-        ethereum=ethereum_manager,
+        connect_at_start=ethereum_manager_connect_at_start,
+        evm_inquirer=ethereum_inquirer,
     )
 
-    result = ethereum_manager.call_contract(
+    result = ethereum_inquirer.call_contract(
         contract_address=YEARN_YCRV_VAULT.address,
         abi=YEARN_YCRV_VAULT.abi,
         method_name='symbol',
@@ -186,9 +188,9 @@ def test_call_contract(ethereum_manager, call_order, ethereum_manager_connect_at
     )
     assert result == 'yyDAI+yUSDC+yUSDT+yTUSD'
     # also test that doing contract.call() has the same result
-    result2 = YEARN_YCRV_VAULT.call(ethereum_manager, 'symbol', call_order=call_order)
+    result2 = YEARN_YCRV_VAULT.call(ethereum_inquirer, 'symbol', call_order=call_order)
     assert result == result2
-    result = ethereum_manager.call_contract(
+    result = ethereum_inquirer.call_contract(
         contract_address=YEARN_YCRV_VAULT.address,
         abi=YEARN_YCRV_VAULT.abi,
         method_name='balanceOf',
@@ -199,17 +201,17 @@ def test_call_contract(ethereum_manager, call_order, ethereum_manager_connect_at
 
 
 @pytest.mark.parametrize(*ETHEREUM_TEST_PARAMETERS)
-def test_get_logs(ethereum_manager, call_order, ethereum_manager_connect_at_start):
+def test_get_logs(ethereum_inquirer, call_order, ethereum_manager_connect_at_start):
     wait_until_all_nodes_connected(
-        ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
-        ethereum=ethereum_manager,
+        connect_at_start=ethereum_manager_connect_at_start,
+        evm_inquirer=ethereum_inquirer,
     )
 
     argument_filters = {
         'from': '0x7780E86699e941254c8f4D9b7eB08FF7e96BBE10',
         'to': YEARN_YCRV_VAULT.address,
     }
-    events = ethereum_manager.get_logs(
+    events = ethereum_inquirer.get_logs(
         contract_address='0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8',
         abi=ERC20TOKEN_ABI,
         event_name='Transfer',
@@ -248,7 +250,7 @@ def test_get_logs(ethereum_manager, call_order, ethereum_manager_connect_at_star
 
 @pytest.mark.parametrize(*ETHEREUM_TEST_PARAMETERS)
 def test_get_log_and_receipt_etherscan_bad_tx_index(
-        ethereum_manager,
+        ethereum_inquirer,
         call_order,
         ethereum_manager_connect_at_start,
 ):
@@ -260,8 +262,8 @@ def test_get_log_and_receipt_etherscan_bad_tx_index(
     This is a regression test for that.
     """
     wait_until_all_nodes_connected(
-        ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
-        ethereum=ethereum_manager,
+        connect_at_start=ethereum_manager_connect_at_start,
+        evm_inquirer=ethereum_inquirer,
     )
 
     # Test getting the offending log entry does not raise
@@ -269,7 +271,7 @@ def test_get_log_and_receipt_etherscan_bad_tx_index(
         'from': ZERO_ADDRESS,
         'to': '0xbA215F7BE6c620dA3F8240B82741eaF3C5f5D786',
     }
-    events = ethereum_manager.get_logs(
+    events = ethereum_inquirer.get_logs(
         contract_address='0xFC4B8ED459e00e5400be803A9BB3954234FD50e3',
         abi=ATOKEN_ABI,
         event_name='Transfer',
@@ -284,19 +286,11 @@ def test_get_log_and_receipt_etherscan_bad_tx_index(
 
     # Test getting the transaction receipt (also containing the log entries) does not raise
     # They seem to all be 0
-    result = ethereum_manager.get_transaction_receipt(
+    result = ethereum_inquirer.get_transaction_receipt(
         hexstring_to_bytes('0x00eea6359d247c9433d32620358555a0fd3265378ff146b9511b7cff1ecb7829'),
         call_order=call_order,
     )
     assert all(x['transactionIndex'] == 0 for x in result['logs'])
-
-
-@pytest.mark.skipif(
-    'CI' in os.environ,
-    reason='This test is only for us to figure out the speed of the open nodes',
-)
-def test_nodes_speed():
-    """TODO"""
 
 
 def _test_get_blocknumber_by_time(eth_manager, etherscan):

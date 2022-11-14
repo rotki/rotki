@@ -318,13 +318,13 @@ CREATE TABLE IF NOT EXISTS xpub_mappings (
 # The table is designed to have a key-value structure where we use the key `token` to
 # identify the tokens queried per address and the key `last_queried_timestamp` to
 # determine when the last query was executed
-DB_CREATE_ACCOUNTS_DETAILS = """
-CREATE TABLE IF NOT EXISTS accounts_details (
+DB_CREATE_EVM_ACCOUNTS_DETAILS = """
+CREATE TABLE IF NOT EXISTS evm_accounts_details (
     account VARCHAR[42] NOT NULL,
-    blockchain TEXT NOT NULL,
+    chain_id INTEGER NOT NULL,
     key TEXT NOT NULL,
     value TEXT NOT NULL,
-    PRIMARY KEY (account, blockchain, key, value)
+    PRIMARY KEY (account, chain_id, key, value)
 );
 """
 
@@ -431,9 +431,10 @@ CREATE TABLE IF NOT EXISTS ledger_actions (
 );
 """
 
-DB_CREATE_ETHEREUM_TRANSACTIONS = """
-CREATE TABLE IF NOT EXISTS ethereum_transactions (
-    tx_hash BLOB NOT NULL PRIMARY KEY,
+DB_CREATE_EVM_TRANSACTIONS = """
+CREATE TABLE IF NOT EXISTS evm_transactions (
+    tx_hash BLOB NOT NULL,
+    chain_id INTEGER NOT NULL
     timestamp INTEGER NOT NULL,
     block_number INTEGER NOT NULL,
     from_address TEXT NOT NULL,
@@ -443,65 +444,71 @@ CREATE TABLE IF NOT EXISTS ethereum_transactions (
     gas_price TEXT NOT NULL,
     gas_used TEXT NOT NULL,
     input_data BLOB NOT NULL,
-    nonce INTEGER NOT NULL
+    nonce INTEGER NOT NULL,
+    PRIMARY KEY(tx_hash, chain_id)
 );
 """
 
-DB_CREATE_ETHEREUM_INTERNAL_TRANSACTIONS = """
-CREATE TABLE IF NOT EXISTS ethereum_internal_transactions (
+DB_CREATE_EVM_INTERNAL_TRANSACTIONS = """
+CREATE TABLE IF NOT EXISTS evm_internal_transactions (
     parent_tx_hash BLOB NOT NULL,
+    chain_id INTEGER NOT NULL,
     trace_id INTEGER NOT NULL,
     timestamp INTEGER NOT NULL,
     block_number INTEGER NOT NULL,
     from_address TEXT NOT NULL,
     to_address TEXT,
     value TEXT NOT NULL,
-    FOREIGN KEY(parent_tx_hash) REFERENCES ethereum_transactions(tx_hash) ON DELETE CASCADE ON UPDATE CASCADE,
-    PRIMARY KEY(parent_tx_hash, trace_id)
+    FOREIGN KEY(parent_tx_hash, chain_id) REFERENCES evm_transactions(tx_hash, chain_id) ON DELETE CASCADE ON UPDATE CASCADE,
+    PRIMARY KEY(parent_tx_hash, chain_id, trace_id)
 );
 """  # noqa: E501
 
-DB_CREATE_ETHTX_RECEIPTS = """
-CREATE TABLE IF NOT EXISTS ethtx_receipts (
-    tx_hash BLOB NOT NULL PRIMARY KEY,
+DB_CREATE_EVMTX_RECEIPTS = """
+CREATE TABLE IF NOT EXISTS evmtx_receipts (
+    tx_hash BLOB NOT NULL,
+    chain_id INTEGER NOT NULL,
     contract_address TEXT, /* can be null */
     status INTEGER NOT NULL CHECK (status IN (0, 1)),
     type INTEGER NOT NULL,
-    FOREIGN KEY(tx_hash) REFERENCES ethereum_transactions(tx_hash) ON DELETE CASCADE ON UPDATE CASCADE
+    FOREIGN KEY(tx_hash, chain_id) REFERENCES evm_transactions(tx_hash, chain_id) ON DELETE CASCADE ON UPDATE CASCADE,
+    PRIMARY KEY(tx_hash, chain_id)
 );
 """  # noqa: E501
 
-DB_CREATE_ETHTX_RECEIPT_LOGS = """
-CREATE TABLE IF NOT EXISTS ethtx_receipt_logs (
+DB_CREATE_EVMTX_RECEIPT_LOGS = """
+CREATE TABLE IF NOT EXISTS evmtx_receipt_logs (
     tx_hash BLOB NOT NULL,
+    chain_id INTEGER NOT NULL,
     log_index INTEGER NOT NULL,
     data BLOB NOT NULL,
     address TEXT NOT NULL,
     removed INTEGER NOT NULL CHECK (removed IN (0, 1)),
-    FOREIGN KEY(tx_hash) REFERENCES ethtx_receipts(tx_hash) ON DELETE CASCADE ON UPDATE CASCADE,
-    PRIMARY KEY(tx_hash, log_index)
-);
-"""
-
-DB_CREATE_ETHTX_RECEIPT_LOG_TOPICS = """
-CREATE TABLE IF NOT EXISTS ethtx_receipt_log_topics (
-    tx_hash BLOB NOT NULL,
-    log_index INTEGER NOT NULL,
-    topic BLOB NOT NULL,
-    topic_index INTEGER NOT NULL,
-    FOREIGN KEY(tx_hash, log_index) REFERENCES ethtx_receipt_logs(tx_hash, log_index) ON DELETE CASCADE ON UPDATE CASCADE,
-    PRIMARY KEY(tx_hash, log_index, topic_index)
+    FOREIGN KEY(tx_hash, chain_id) REFERENCES evmtx_receipts(tx_hash, chain_id) ON DELETE CASCADE ON UPDATE CASCADE,
+    PRIMARY KEY(tx_hash, chain_id, log_index)
 );
 """  # noqa: E501
 
-DB_CREATE_ETHTX_ADDRESS_MAPPINGS = """
-CREATE TABLE IF NOT EXISTS ethtx_address_mappings (
+DB_CREATE_EVMTX_RECEIPT_LOG_TOPICS = """
+CREATE TABLE IF NOT EXISTS evmtx_receipt_log_topics (
+    tx_hash BLOB NOT NULL,
+    chain_id INTEGER NOT NULL,
+    log_index INTEGER NOT NULL,
+    topic BLOB NOT NULL,
+    topic_index INTEGER NOT NULL,
+    FOREIGN KEY(tx_hash, chain_id, log_index) REFERENCES evmtx_receipt_logs(tx_hash, chain_id, log_index) ON DELETE CASCADE ON UPDATE CASCADE,
+    PRIMARY KEY(tx_hash, chain_id, log_index, topic_index)
+);
+"""  # noqa: E501
+
+DB_CREATE_EVMTX_ADDRESS_MAPPINGS = """
+CREATE TABLE IF NOT EXISTS evmtx_address_mappings (
     address TEXT NOT NULL,
     tx_hash BLOB NOT NULL,
-    blockchain TEXT NOT NULL,
-    FOREIGN KEY(blockchain, address) REFERENCES blockchain_accounts(blockchain, account) ON DELETE CASCADE,
-    FOREIGN KEY(tx_hash) references ethereum_transactions(tx_hash) ON UPDATE CASCADE ON DELETE CASCADE,
-    PRIMARY KEY (address, tx_hash, blockchain)
+    chain_id INTEGER NOT NULL,
+    FOREIGN KEY(address) REFERENCES blockchain_accounts(account) ON DELETE CASCADE,
+    FOREIGN KEY(tx_hash, chain_id) references evm_transactions(tx_hash, chain_id) ON UPDATE CASCADE ON DELETE CASCADE,
+    PRIMARY KEY (address, tx_hash, chain_id)
 );
 """  # noqa: E501
 
@@ -516,10 +523,10 @@ CREATE TABLE IF NOT EXISTS used_query_ranges (
 DB_CREATE_EVM_TX_MAPPINGS = """
 CREATE TABLE IF NOT EXISTS evm_tx_mappings (
     tx_hash BLOB NOT NULL,
-    blockchain TEXT NOT NULL,
+    chain_id INTEGER NOT NULL,
     value TEXT NOT NULL,
-    FOREIGN KEY(tx_hash) references ethereum_transactions(tx_hash) ON UPDATE CASCADE ON DELETE CASCADE,
-    PRIMARY KEY (tx_hash, value)
+    FOREIGN KEY(tx_hash, chain_id) references evm_transactions(tx_hash, chain_id) ON UPDATE CASCADE ON DELETE CASCADE,
+    PRIMARY KEY (tx_hash, chain_id, value)
 );
 """  # noqa: E501
 
@@ -620,9 +627,10 @@ CREATE TABLE IF NOT EXISTS history_events (
 DB_CREATE_HISTORY_EVENTS_MAPPINGS = """
 CREATE TABLE IF NOT EXISTS history_events_mappings (
     parent_identifier INTEGER NOT NULL,
-    value TEXT NOT NULL,
+    name TEXT NOT NULL,
+    value INTEGER NOT NULL,
     FOREIGN KEY(parent_identifier) references history_events(identifier) ON UPDATE CASCADE ON DELETE CASCADE,
-    PRIMARY KEY (parent_identifier, value)
+    PRIMARY KEY (parent_identifier, name, value)
 );
 """  # noqa: E501
 
@@ -712,7 +720,7 @@ CREATE TABLE IF NOT EXISTS web3_nodes(
     owned INTEGER NOT NULL CHECK (owned IN (0, 1)),
     active INTEGER NOT NULL CHECK (active IN (0, 1)),
     weight INTEGER NOT NULL,
-    blockchain TEXT NOT NULL
+    chain_id INTEGER NOT NULL
 );
 """
 
@@ -741,16 +749,16 @@ BEGIN TRANSACTION;
 {DB_CREATE_USER_CREDENTIALS_MAPPINGS}
 {DB_CREATE_EXTERNAL_SERVICE_CREDENTIALS}
 {DB_CREATE_BLOCKCHAIN_ACCOUNTS}
-{DB_CREATE_ACCOUNTS_DETAILS}
+{DB_CREATE_EVM_ACCOUNTS_DETAILS}
 {DB_CREATE_MULTISETTINGS}
 {DB_CREATE_MANUALLY_TRACKED_BALANCES}
 {DB_CREATE_TRADES}
-{DB_CREATE_ETHEREUM_TRANSACTIONS}
-{DB_CREATE_ETHEREUM_INTERNAL_TRANSACTIONS}
-{DB_CREATE_ETHTX_RECEIPTS}
-{DB_CREATE_ETHTX_RECEIPT_LOGS}
-{DB_CREATE_ETHTX_RECEIPT_LOG_TOPICS}
-{DB_CREATE_ETHTX_ADDRESS_MAPPINGS}
+{DB_CREATE_EVM_TRANSACTIONS}
+{DB_CREATE_EVM_INTERNAL_TRANSACTIONS}
+{DB_CREATE_EVMTX_RECEIPTS}
+{DB_CREATE_EVMTX_RECEIPT_LOGS}
+{DB_CREATE_EVMTX_RECEIPT_LOG_TOPICS}
+{DB_CREATE_EVMTX_ADDRESS_MAPPINGS}
 {DB_CREATE_MARGIN}
 {DB_CREATE_ASSET_MOVEMENTS}
 {DB_CREATE_USED_QUERY_RANGES}

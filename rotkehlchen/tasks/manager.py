@@ -12,7 +12,7 @@ from rotkehlchen.chain.aggregator import ChainsAggregator
 from rotkehlchen.chain.ethereum.utils import should_update_curve_cache
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.db.ethtx import DBEthTx
+from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import DBEqualsFilter, DBIgnoreValuesFilter, HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.api import PremiumAuthenticationError
@@ -30,6 +30,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium, premium_create_and_verify
 from rotkehlchen.premium.sync import PremiumSyncManager
 from rotkehlchen.types import (
+    ChainID,
     ChecksumEvmAddress,
     ExchangeLocationID,
     Location,
@@ -270,10 +271,10 @@ class TaskManager():
                 return None
 
             now = ts_now()
-            dbethtx = DBEthTx(self.database)
+            dbevmtx = DBEvmTx(self.database)
             queriable_accounts = []
             for account in accounts:
-                _, end_ts = dbethtx.get_queried_range(cursor, account)
+                _, end_ts = dbevmtx.get_queried_range(cursor, account, SupportedBlockchain.ETHEREUM)  # noqa: E501
                 if now - max(self.last_eth_tx_query_ts[account], end_ts) > ETH_TX_QUERY_FREQUENCY:
                     queriable_accounts.append(account)
 
@@ -301,7 +302,7 @@ class TaskManager():
         But the DB query will happen again inside the query task while having the
         lock acquired.
         """
-        dbethtx = DBEthTx(self.database)
+        dbethtx = DBEvmTx(self.database)
         hash_results = dbethtx.get_transaction_hashes_no_receipt(tx_filter_query=None, limit=TX_RECEIPTS_QUERY_LIMIT)  # noqa: E501
         if len(hash_results) == 0:
             return None
@@ -427,8 +428,11 @@ class TaskManager():
         But the DB query will happen again inside the query task while having the
         lock acquired.
         """
-        dbethtx = DBEthTx(self.database)
-        hashes = dbethtx.get_transaction_hashes_not_decoded(limit=TX_DECODING_LIMIT)
+        dbethtx = DBEvmTx(self.database)
+        hashes = dbethtx.get_transaction_hashes_not_decoded(
+            chain_id=ChainID.ETHEREUM,
+            limit=TX_DECODING_LIMIT,
+        )
         hashes_length = len(hashes)
         if hashes_length > 0:
             task_name = f'decode {hashes_length} evm trasactions'

@@ -608,7 +608,7 @@ class AaveGraphInquirer(AaveInquirer):
                 method = 'scaledBalanceOf'
                 abi = ATOKEN_V2_ABI
 
-            principal_balance = self.ethereum.call_contract(
+            principal_balance = self.ethereum.node_inquirer.call_contract(
                 contract_address=atoken.evm_address,
                 abi=abi,
                 method_name=method,

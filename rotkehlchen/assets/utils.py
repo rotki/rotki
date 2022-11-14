@@ -13,7 +13,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.evm.node_inquirer import EvmInquirer
     from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
@@ -47,7 +47,7 @@ def get_or_create_evm_token(
         protocol: Optional[str] = None,
         underlying_tokens: Optional[List[UnderlyingToken]] = None,
         form_with_incomplete_data: bool = False,
-        ethereum_manager: 'EthereumManager' = None,
+        evm_inquirer: 'EvmInquirer' = None,
 ) -> EvmToken:
     """Given a token address return the <EvmToken>
 
@@ -93,9 +93,9 @@ def get_or_create_evm_token(
                 f'{evm_address}. Adding it to the global DB',
             )
 
-            if ethereum_manager is not None:
+            if evm_inquirer is not None:
                 if token_kind == EvmTokenKind.ERC20:
-                    info = ethereum_manager.get_erc20_contract_info(evm_address)
+                    info = evm_inquirer.get_erc20_contract_info(evm_address)
                     decimals = info['decimals'] if decimals is None else decimals
                     symbol = info['symbol'] if symbol is None else symbol
                     name = info['name'] if name is None else name
@@ -103,7 +103,7 @@ def get_or_create_evm_token(
                         raise NotERC20Conformant(f'Token {evm_address} is not ERC20 conformant')  # noqa: E501  # pylint: disable=raise-missing-from
 
                 elif token_kind == EvmTokenKind.ERC721:
-                    info = ethereum_manager.get_erc721_contract_info(evm_address)
+                    info = evm_inquirer.get_erc721_contract_info(evm_address)
                     decimals = 0
                     if symbol is None:
                         symbol = info['symbol'] if info['symbol'] is not None else ''

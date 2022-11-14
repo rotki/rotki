@@ -27,13 +27,13 @@ from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 from rotkehlchen.utils.misc import hex_or_bytes_to_address
 
 
-def test_convex_pools(ethereum_manager):
+def test_convex_pools(ethereum_inquirer):
     """Tests that our hardcoded information about convex pools is up-to-date.
     Queries data about convex pools reward addresses and their names from chain and compares it
     to the current hardcoded info."""
     booster_contract = EthereumConstants.contract('CONVEX_BOOSTER')
     pools_count = booster_contract.call(
-        manager=ethereum_manager,
+        node_inquirer=ethereum_inquirer,
         method_name='poolLength',
     )
     calls_to_booster = []
@@ -44,7 +44,7 @@ def test_convex_pools(ethereum_manager):
                 booster_contract.encode('poolInfo', [i]),
             ),
         )
-    booster_result = ethereum_manager.multicall(
+    booster_result = ethereum_inquirer.multicall(
         calls=calls_to_booster,
     )
     convex_rewards_addrs = []
@@ -67,7 +67,7 @@ def test_convex_pools(ethereum_manager):
     for lp_token_addr in convex_lp_tokens_addrs:
         calls_to_lp_tokens.append((lp_token_addr, lp_tokens_contract.encode('symbol')))
 
-    lp_tokens_result = ethereum_manager.multicall(
+    lp_tokens_result = ethereum_inquirer.multicall(
         calls=calls_to_lp_tokens,
     )
 

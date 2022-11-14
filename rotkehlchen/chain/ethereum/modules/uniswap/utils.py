@@ -55,7 +55,7 @@ def uniswap_lp_token_balances(
         abi=ZERION_ABI,
         deployed_block=1586199170,
     )
-    if (own_node_info := ethereum.get_own_node_info()) is not None:
+    if (own_node_info := ethereum.node_inquirer.get_own_node_info()) is not None:
         chunks = list(get_chunks(lp_addresses, n=4000))
         call_order = [WeightedNode(node_info=own_node_info, weight=ONE, active=True)]
     else:

@@ -775,8 +775,8 @@ class EthereumAssetsResource(BaseMethodView):
         )
 
     @use_kwargs(get_schema, location='json_and_query')
-    def get(self, address: Optional[ChecksumEvmAddress], chain: Optional[ChainID]) -> Response:
-        return self.rest_api.get_custom_ethereum_tokens(address=address, chain=chain)
+    def get(self, address: Optional[ChecksumEvmAddress], chain_id: ChainID) -> Response:
+        return self.rest_api.get_custom_ethereum_tokens(address=address, chain_id=chain_id)
 
     @require_loggedin_user()
     @resource_parser.use_kwargs(make_edit_schema, location='json')

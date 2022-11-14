@@ -52,7 +52,7 @@ def test_ens_lookup_multichain(
 ):
     """Tests that ENS multichain lookup works as expected.
 
-    Testing ENS domain is 'bruno.eth' from Kusama documention (it shouldn't change)
+    Testing ENS domain is 'bruno.eth' from Kusama documentation (it shouldn't change)
     https://app.ens.domains/name/bruno.eth
     """
     wait_until_all_nodes_connected(ethereum_manager_connect_at_start, ethereum_manager)

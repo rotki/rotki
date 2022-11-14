@@ -62,15 +62,15 @@ from rotkehlchen.constants.limits import (
 from rotkehlchen.constants.misc import NFT_DIRECTIVE, ONE, ZERO
 from rotkehlchen.constants.timing import HOUR_IN_SECONDS
 from rotkehlchen.db.constants import (
-    ACCOUNTS_DETAILS_LAST_QUERIED_TS,
-    ACCOUNTS_DETAILS_TOKENS,
     BINANCE_MARKETS_KEY,
+    EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS,
+    EVM_ACCOUNTS_DETAILS_TOKENS,
     KRAKEN_ACCOUNT_TYPE_KEY,
     USER_CREDENTIAL_MAPPING_KEYS,
 )
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType, DBCursor
 from rotkehlchen.db.eth2 import ETH2_DEPOSITS_PREFIX
-from rotkehlchen.db.ethtx import DBEthTx
+from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
     TradesFilterQuery,
@@ -153,7 +153,7 @@ DBTupleType = Literal[
     'trade',
     'asset_movement',
     'margin_position',
-    'ethereum_transaction',
+    'evm_transaction',
     'amm_swap',
     'accounting_event',
     'history_event',
@@ -214,8 +214,8 @@ def db_tuple_to_str(
             f'Margin position with id {data[0]} in  {Location.deserialize_from_db(data[1])} '
             f'for {data[5]} closed at timestamp {data[3]}'
         )
-    if tuple_type == 'ethereum_transaction':
-        return f'Ethereum transaction with hash "{data[0].hex()}"'
+    if tuple_type == 'evm_transaction':
+        return f'EVM transaction with hash "{data[0].hex()}" and chain id {data[1]}'
     if tuple_type == 'amm_swap':
         return (
             f'AMM swap with id {data[0]}-{data[1]} '
@@ -1309,15 +1309,15 @@ class DBHandler:
         ignored_assets = self.get_ignored_assets(cursor)
         last_queried_ts = None
         cursor.execute(
-            'SELECT key, value FROM accounts_details WHERE account=? AND blockchain=? AND (key=? OR key=?)',  # noqa: E501
-            (address, blockchain.serialize(), ACCOUNTS_DETAILS_LAST_QUERIED_TS, ACCOUNTS_DETAILS_TOKENS),  # noqa: E501
+            'SELECT key, value FROM evm_accounts_details WHERE account=? AND chain_id=? AND (key=? OR key=?)',  # noqa: E501
+            (address, blockchain.to_chain_id().serialize_for_db(), EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS, EVM_ACCOUNTS_DETAILS_TOKENS),  # noqa: E501
         )
 
         returned_list = []
         for (key, value) in cursor:
-            if key == ACCOUNTS_DETAILS_LAST_QUERIED_TS:
+            if key == EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS:
                 last_queried_ts = deserialize_timestamp(value)
-            else:  # should be ACCOUNTS_DETAILS_TOKENS
+            else:  # should be EVM_ACCOUNTS_DETAILS_TOKENS
                 try:
                     # This method is used directly when querying the balances and it is easier
                     # to resolve the token here
@@ -1349,11 +1349,12 @@ class DBHandler:
     ) -> None:
         """Saves detected tokens for an address"""
         now = ts_now()
-        insert_rows: List[Tuple[ChecksumEvmAddress, str, str, Union[str, Timestamp]]] = [
+        chain_id = blockchain.to_chain_id().serialize_for_db()
+        insert_rows: List[Tuple[ChecksumEvmAddress, int, str, Union[str, Timestamp]]] = [
             (
                 address,
-                blockchain.serialize(),
-                ACCOUNTS_DETAILS_TOKENS,
+                chain_id,
+                EVM_ACCOUNTS_DETAILS_TOKENS,
                 x.identifier,
             )
             for x in tokens
@@ -1362,15 +1363,15 @@ class DBHandler:
         insert_rows.append(
             (
                 address,
-                blockchain.serialize(),
-                ACCOUNTS_DETAILS_LAST_QUERIED_TS,
+                chain_id,
+                EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS,
                 now,
             ),
         )
         # Delete previous entries for tokens
         write_cursor.execute(
-            'DELETE FROM accounts_details WHERE account=? AND blockchain=? AND KEY=?',
-            (address, blockchain.serialize(), ACCOUNTS_DETAILS_TOKENS),
+            'DELETE FROM evm_accounts_details WHERE account=? AND blockchain=? AND KEY=?',
+            (address, chain_id, EVM_ACCOUNTS_DETAILS_TOKENS),
         )
         # Timestamp will get replaced
         write_cursor.executemany(
@@ -1900,9 +1901,9 @@ class DBHandler:
         try:
             write_cursor.executemany(query, tuples)
             if relevant_address is not None:
-                mapping_tuples = [(relevant_address, x[0], 'ETH') for x in tuples]
+                mapping_tuples = [(relevant_address, x[0], x[1]) for x in tuples]
                 write_cursor.executemany(
-                    'INSERT OR IGNORE INTO ethtx_address_mappings(address, tx_hash, blockchain) '
+                    'INSERT OR IGNORE INTO evmtx_address_mappings(address, tx_hash, chain_id) '
                     'VALUES(?, ?, ?)',
                     mapping_tuples,
                 )
@@ -1915,12 +1916,12 @@ class DBHandler:
                     write_cursor.execute(query, entry)
                     if relevant_address is not None:
                         write_cursor.execute(
-                            'INSERT OR IGNORE INTO ethtx_address_mappings '
-                            '(address, tx_hash, blockchain) VALUES(?, ?, ?)',
-                            (relevant_address, entry[0], 'ETH'),
+                            'INSERT OR IGNORE INTO evmtx_address_mappings '
+                            '(address, tx_hash, chain_id) VALUES(?, ?, ?)',
+                            (relevant_address, entry[0], entry[1]),
                         )
                 except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
-                    if tuple_type == 'ethereum_transaction':
+                    if tuple_type == 'evm_transaction':
                         # if we reach here it means the transaction is already in the DB
                         # But this can't be avoided with the way we query etherscan
                         # right now since we don't query transactions in a specific
@@ -1929,9 +1930,9 @@ class DBHandler:
                         # other and both accounts are being tracked.
                         if relevant_address is not None:
                             write_cursor.execute(
-                                'INSERT OR IGNORE INTO ethtx_address_mappings '
-                                '(address, tx_hash, blockchain) VALUES(?, ?, ?)',
-                                (relevant_address, entry[0], 'ETH'),
+                                'INSERT OR IGNORE INTO evmtx_address_mappings '
+                                '(address, tx_hash, chain_id) VALUES(?, ?, ?)',
+                                (relevant_address, entry[0], entry[1]),
                             )
                         string_repr = db_tuple_to_str(entry, tuple_type)
                         log.debug(
@@ -2166,7 +2167,7 @@ class DBHandler:
             'DELETE FROM used_query_ranges WHERE name = ?',
             (f'{ETH2_DEPOSITS_PREFIX}_{address}',),
         )
-        write_cursor.execute('DELETE FROM accounts_details WHERE account = ?', (address,))
+        write_cursor.execute('DELETE FROM evm_accounts_details WHERE account = ?', (address,))
         write_cursor.execute('DELETE FROM aave_events WHERE address = ?', (address,))
         write_cursor.execute('DELETE FROM adex_events WHERE address = ?', (address,))
         write_cursor.execute('DELETE FROM balancer_events WHERE address=?;', (address,))
@@ -2178,8 +2179,8 @@ class DBHandler:
         loopring = DBLoopring(self)
         loopring.remove_accountid_mapping(write_cursor, address)
 
-        dbtx = DBEthTx(self)
-        dbtx.delete_transactions(write_cursor, address)
+        dbtx = DBEvmTx(self)
+        dbtx.delete_transactions(write_cursor=write_cursor, address=address, chain=SupportedBlockchain.ETHEREUM)  # noqa: E501
         write_cursor.execute('DELETE FROM eth2_deposits WHERE from_address=?;', (address,))
 
     def add_trades(self, write_cursor: 'DBCursor', trades: List[Trade]) -> None:

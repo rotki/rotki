@@ -614,7 +614,7 @@ def test_query_historical_dsr_with_a_zero_withdrawal(
         )
 
     patched_get_logs = patch.object(
-        rotki.chains_aggregator.ethereum,
+        rotki.chains_aggregator.ethereum.node_inquirer,
         'get_logs',
         side_effect=mock_get_logs,
     )

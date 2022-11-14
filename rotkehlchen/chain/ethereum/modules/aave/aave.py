@@ -199,7 +199,7 @@ class Aave(EthereumModule):
             given_defi_balances: GIVEN_DEFI_BALANCES,
     ) -> Dict[ChecksumEvmAddress, AaveHistory]:
         """Detects aave historical data for the given addresses"""
-        latest_block = self.ethereum.get_latest_block_number()
+        latest_block = self.ethereum.node_inquirer.get_latest_block_number()
         with self.history_lock:
             if reset_db_data is True:
                 with self.database.user_write() as cursor:

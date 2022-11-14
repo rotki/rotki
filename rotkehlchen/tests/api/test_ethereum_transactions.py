@@ -46,7 +46,14 @@ from rotkehlchen.tests.utils.factories import (
 )
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
-from rotkehlchen.types import EvmTransaction, EVMTxHash, Timestamp, make_evm_tx_hash
+from rotkehlchen.types import (
+    ChainID,
+    EvmTransaction,
+    EVMTxHash,
+    SupportedBlockchain,
+    Timestamp,
+    make_evm_tx_hash,
+)
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
 EXPECTED_AFB7_TXS = [{
@@ -308,7 +315,7 @@ def test_query_transactions(rotkehlchen_api_server):
     event_ids = set()
     with rotki.data.db.conn.read_ctx() as cursor:
         for tx_hash_hex in hashes:
-            receipt = dbethtx.get_receipt(cursor, hexstring_to_bytes(tx_hash_hex))
+            receipt = dbethtx.get_receipt(cursor, hexstring_to_bytes(tx_hash_hex), ChainID.ETHEREUM)  # noqa: E501
             assert isinstance(receipt, EthereumTxReceipt) and receipt.tx_hash == hexstring_to_bytes(tx_hash_hex)  # noqa: E501
             events = dbevents.get_history_events(
                 cursor=cursor,
@@ -335,7 +342,7 @@ def test_query_transactions(rotkehlchen_api_server):
     with rotki.data.db.conn.read_ctx() as cursor:
         result = assert_proper_response_with_result(response)
         for tx_hash_hex in hashes:
-            receipt = dbethtx.get_receipt(cursor, hexstring_to_bytes(tx_hash_hex))
+            receipt = dbethtx.get_receipt(cursor, hexstring_to_bytes(tx_hash_hex), ChainID.ETHEREUM)  # noqa: E501
             assert isinstance(receipt, EthereumTxReceipt) and receipt.tx_hash == hexstring_to_bytes(tx_hash_hex)  # noqa: E501
             events = dbevents.get_history_events(
                 cursor=cursor,
@@ -1100,7 +1107,7 @@ def test_query_transactions_check_decoded_events(
         # Now purge all transactions of this address and see data is deleted BUT that
         # the edited/added event and all it's tied to is not
         dbethtx = DBEthTx(rotki.data.db)
-        dbethtx.delete_transactions(cursor, ethereum_accounts[0])
+        dbethtx.delete_transactions(cursor, ethereum_accounts[0], SupportedBlockchain.ETHEREUM)
 
         for name, count in (
                 ('ethereum_transactions', 2), ('ethereum_internal_transactions', 0),
@@ -1126,7 +1133,7 @@ def test_query_transactions_check_decoded_events(
         # explicitly delete the customized (added/edited) transactions
         dbevents.delete_history_events_by_identifier([x.identifier for x in customized_events])  # noqa: E501
         # and now purge all transactions again and see everything is deleted
-        dbethtx.delete_transactions(cursor, ethereum_accounts[0])
+        dbethtx.delete_transactions(cursor, ethereum_accounts[0], SupportedBlockchain.ETHEREUM)
         for name in (
                 'ethereum_transactions', 'ethereum_internal_transactions',
                 'ethtx_receipts', 'ethtx_receipt_log_topics',
