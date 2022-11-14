@@ -24,16 +24,18 @@ from rotkehlchen.interfaces import HistoricalPriceOracleInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Price, Timestamp
 from rotkehlchen.utils.misc import create_timestamp, timestamp_to_date, ts_now
+from rotkehlchen.utils.mixins.penalizable_oracle import PenalizablePriceOracleMixin
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 MIN_DEFILLAMA_CONFIDENCE = FVal('0.20')
 
 
-class Defillama(HistoricalPriceOracleInterface):
+class Defillama(HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):
 
     def __init__(self) -> None:
-        super().__init__(oracle_name='defillama')
+        HistoricalPriceOracleInterface.__init__(self, oracle_name='defillama')
+        PenalizablePriceOracleMixin.__init__(self)
         self.session = requests.session()
         self.session.headers.update({'User-Agent': 'rotkehlchen'})
         self.all_coins_cache: Optional[Dict[str, Dict[str, Any]]] = None
@@ -63,6 +65,7 @@ class Defillama(HistoricalPriceOracleInterface):
                 timeout=DEFAULT_TIMEOUT_TUPLE,
             )
         except requests.exceptions.RequestException as e:
+            self.penalty_info.note_failure_or_penalize()
             raise RemoteError(f'Defillama API request failed due to {str(e)}') from e
 
         if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
@@ -185,7 +188,7 @@ class Defillama(HistoricalPriceOracleInterface):
             timestamp: Timestamp,  # pylint: disable=unused-argument
             seconds: Optional[int] = None,  # pylint: disable=unused-argument
     ) -> bool:
-        return True  # noop for Defillama
+        return not self.is_penalized()
 
     def rate_limited_in_last(
             self,

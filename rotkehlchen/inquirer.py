@@ -98,6 +98,7 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import timestamp_to_daystart_timestamp, ts_now
+from rotkehlchen.utils.mixins.penalizable_oracle import PenalizablePriceOracleMixin
 from rotkehlchen.utils.network import request_get_dict
 
 if TYPE_CHECKING:
@@ -459,7 +460,10 @@ class Inquirer():
         for oracle, oracle_instance in zip(oracles, oracle_instances):
             if (
                 isinstance(oracle_instance, CurrentPriceOracleInterface) and
-                oracle_instance.rate_limited_in_last(DEFAULT_RATE_LIMIT_WAITING_TIME) is True
+                (
+                    oracle_instance.rate_limited_in_last(DEFAULT_RATE_LIMIT_WAITING_TIME) is True or  # noqa: E501
+                    isinstance(oracle_instance, PenalizablePriceOracleMixin) and oracle_instance.is_penalized() is True  # noqa: E501
+                )
             ):
                 continue
 
