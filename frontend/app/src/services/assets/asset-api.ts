@@ -285,7 +285,7 @@ export class AssetApi {
   }
 
   restoreAssetsDatabase(
-    reset: String,
+    reset: 'hard' | 'soft',
     ignoreWarnings: boolean
   ): Promise<boolean> {
     return this.axios

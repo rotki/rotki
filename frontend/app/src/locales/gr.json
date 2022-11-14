@@ -980,19 +980,19 @@
     },
     "partially_update": "Partially update",
     "restore": {
-      "action": "Reset",
       "delete_confirmation": {
-        "message": "Do you really want to restore your local assets database? This will keep the assets that you manually added and were not known to rotki before and reset all others to their original state.",
+        "hard_reset_message": "Είστε σίγουροι ότι θέλετε ολική επαναφορά των assets σας? Θα χάσετε οποιαδήποτε assets εισάγατε μόνοι σας χειροκίνητα.",
+        "soft_reset_message": "Είστε σίγουροι ότι θέλετε μερική επαναφορά των assets σας? Αυτο θα κρατήσει ότι assets βάλατε μόνοι σας και τα οποία δεν γνώριζε το rotki πριν και θα επαναφέρει όλα τα άλλα στην αρχική τους κατάσταση.",
         "title": "Reset assets database"
       },
+      "hard_reset": "Ολική Επαναφορά",
+      "hard_reset_hint": "Αυτή η επιλογή εκτος άλλων θα αφαιρέσει όλα τα assets που εισαχθήκανε απο τον χρήστη",
       "hard_restore_confirmation": {
         "message": "There are assets that will be deleted and might cause an inconsistent state in this account or other accounts in the system. Confirm this action only if you know what you are doing.",
         "title": "Dangerous operation"
       },
-      "hard_restore_message": {
-        "message": "Do you really want to reset your local copy of assets? You will lose any custom assets that you may have added manually.",
-        "title": "Reset assets database"
-      },
+      "soft_reset": "Μερική Επαναφορά",
+      "soft_reset_hint": "Αυτή η επιλογή δεν θα επηρεάσει assets που εισαχθήκανε απο τον χρήστη.",
       "subtitle": "Delete custom assets and reset assets database to its initial state. Caution: This operation might affect other users in the same system using the database for assets.",
       "success": {
         "description": "The asset database has been successfully restored. You will now need to re-login to apply the changes.",
