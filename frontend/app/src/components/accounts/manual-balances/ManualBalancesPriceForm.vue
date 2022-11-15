@@ -26,7 +26,6 @@
       <v-col cols="auto">
         <v-checkbox
           v-model="isCustomPrice"
-          :value="isCustomPrice"
           :disabled="pending"
           :label="tc('manual_balances_form.fields.input_manual_price')"
         />

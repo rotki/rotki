@@ -1,7 +1,9 @@
-import { Validation } from '@vuelidate/core';
+import { Validation, ValidationArgs } from '@vuelidate/core';
 import { MaybeRef } from '@vueuse/core';
 
-export const useValidation = <V>(v$: MaybeRef<Validation<V>>) => {
+export const useValidation = <V extends ValidationArgs>(
+  v$: MaybeRef<Validation<V>>
+) => {
   const hasError = () => {
     const validator = get(v$);
     return validator.$error;

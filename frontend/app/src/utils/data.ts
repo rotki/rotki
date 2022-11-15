@@ -16,7 +16,7 @@ export const uniqueStrings = function <T = string>(
   return array.indexOf(value) === index;
 };
 
-export function nonNullProperties<T>(object: T): Partial<T> {
+export function nonNullProperties<T extends object>(object: T): Partial<T> {
   const partial: Partial<T> = {};
   const keys = Object.keys(object);
   for (let i = 0; i < keys.length; i++) {

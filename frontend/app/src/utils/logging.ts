@@ -1,4 +1,4 @@
-import logger, { LogLevelNumbers } from 'loglevel';
+import logger, { LogLevelNames, LogLevelNumbers } from 'loglevel';
 import { interop } from '@/electron-interop';
 import { checkIfDevelopment } from '@/utils/env-utils';
 import IndexedDb from '@/utils/indexed-db';
@@ -39,7 +39,7 @@ if (!isDevelopment) {
   // write log in log file everytime logger called
   const originalFactory = logger.methodFactory;
   logger.methodFactory = function (
-    methodName: string,
+    methodName: LogLevelNames,
     logLevel: LogLevelNumbers,
     loggerName: string | symbol
   ) {

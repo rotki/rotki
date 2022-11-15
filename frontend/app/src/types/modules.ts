@@ -104,8 +104,3 @@ export const SUPPORTED_MODULES: SupportedModule[] = [
     icon: '/assets/images/defi/liquity.svg'
   }
 ];
-
-export function moduleName(module: string): string {
-  const data = SUPPORTED_MODULES.find(value => value.identifier === module);
-  return data?.name ?? '';
-}
