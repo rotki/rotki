@@ -327,7 +327,7 @@ const dontAutoFetch = ref<boolean>(false);
 const underlyingTokens = ref<UnderlyingToken[]>([]);
 
 const assetIconForm: Ref<InstanceType<typeof AssetIconForm> | null> = ref(null);
-const errors = ref<{ [key: string]: string[] }>({});
+const errors = ref<Record<string, string[]>>({});
 
 const isEvmToken = computed<boolean>(() => {
   return get(assetType) === EVM_TOKEN;

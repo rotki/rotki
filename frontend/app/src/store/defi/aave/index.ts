@@ -56,7 +56,7 @@ export const useAaveStore = defineStore('defi/aave', () => {
       return earned;
     });
 
-  const fetchBalances = async (refresh: boolean = false) => {
+  const fetchBalances = async (refresh = false) => {
     if (!get(activeModules).includes(Module.AAVE)) {
       return;
     }

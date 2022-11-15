@@ -299,9 +299,10 @@ export const useTransactionEventTypeData = createSharedComposable(() => {
   };
 });
 
-export const transactionEventTypeMapping: {
-  [type: string]: { [subType: string]: TransactionEventType };
-} = {
+export const transactionEventTypeMapping: Record<
+  string,
+  Record<string, TransactionEventType>
+> = {
   [HistoryEventType.SPEND]: {
     [HistoryEventSubType.FEE]: TransactionEventType.GAS,
     [HistoryEventSubType.PAYBACK_DEBT]: TransactionEventType.REPAY,

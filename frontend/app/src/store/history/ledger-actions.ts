@@ -46,7 +46,7 @@ export const useLedgerActions = defineStore('history/ledgerActions', () => {
   const { tc } = useI18n();
 
   const fetchLedgerActions = async (
-    refresh: boolean = false,
+    refresh = false,
     onlyLocation?: SupportedExchange
   ) => {
     const { awaitTask, isTaskRunning } = useTasks();

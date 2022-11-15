@@ -129,10 +129,10 @@ import {
 } from '@/types/airdrops';
 import { Section } from '@/types/status';
 
-type AirdropSource = {
+interface AirdropSource {
   readonly icon: string;
   readonly name: string;
-};
+}
 
 type AirdropSources = {
   readonly [source in AirdropType]: AirdropSource;

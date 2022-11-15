@@ -83,7 +83,10 @@ module.exports = {
         format: ['PascalCase']
       }
     ],
-    '@typescript-eslint/no-floating-promises': ['error', { ignoreIIFE: true }]
+    '@typescript-eslint/no-floating-promises': ['error', { ignoreIIFE: true }],
+    "@typescript-eslint/consistent-type-definitions": "error",
+    "@typescript-eslint/consistent-indexed-object-style": "error",
+    "@typescript-eslint/no-inferrable-types": "error"
   },
 
   overrides: [

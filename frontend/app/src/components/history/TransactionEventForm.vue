@@ -260,7 +260,7 @@ const notes = ref<string>('');
 const counterparty = ref<string>('');
 
 const rate = ref<string>('');
-const errorMessages = ref<{ [field: string]: string[] }>({});
+const errorMessages = ref<Record<string, string[]>>({});
 
 const rules = {
   location: {

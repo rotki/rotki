@@ -47,7 +47,7 @@ export const useYearnStore = defineStore('defi/yearn', () => {
       const vaultHistory = get(
         version === ProtocolVersion.V1 ? vaultsHistory : vaultsV2History
       );
-      const yearnVaultsProfit: { [vault: string]: YearnVaultProfitLoss } = {};
+      const yearnVaultsProfit: Record<string, YearnVaultProfitLoss> = {};
       const allAddresses = addresses.length === 0;
       for (const address in vaultHistory) {
         if (!allAddresses && !addresses.includes(address)) {
@@ -95,7 +95,7 @@ export const useYearnStore = defineStore('defi/yearn', () => {
       const vaultBalances = get(
         version === ProtocolVersion.V1 ? vaultsBalances : vaultsV2Balances
       );
-      const balances: { [vault: string]: YearnVaultBalance[] } = {};
+      const balances: Record<string, YearnVaultBalance[]> = {};
       const allAddresses = addresses.length === 0;
       for (const address in vaultBalances) {
         if (!allAddresses && !addresses.includes(address)) {

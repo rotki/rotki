@@ -156,12 +156,12 @@ import { TradeLocation } from '@/types/history/trade-location';
 import { Section } from '@/types/status';
 import { getCollectionData, setupEntryLimit } from '@/utils/collection';
 
-type PaginationOptions = {
+interface PaginationOptions {
   page: number;
   itemsPerPage: number;
   sortBy: (keyof AssetMovement)[];
   sortDesc: boolean[];
-};
+}
 
 const props = defineProps({
   locationOverview: {
@@ -245,7 +245,7 @@ const { data, limit, found, total } = getCollectionData<AssetMovementEntry>(
 
 const { itemLength, showUpgradeRow } = setupEntryLimit(limit, found, total);
 
-const fetch = (refresh: boolean = false) => emit('fetch', refresh);
+const fetch = (refresh = false) => emit('fetch', refresh);
 
 const { ignore } = setupIgnore(
   IgnoreActionType.MOVEMENTS,

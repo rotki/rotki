@@ -212,12 +212,12 @@ import { useMainStore } from '@/store/main';
 import { Properties, Writeable } from '@/types';
 import { LogLevel } from '@/utils/log-level';
 
-type Args = {
+interface Args {
   value: string;
   arg: NumericBackendArgument;
   options: Writeable<Partial<BackendOptions>>;
   key: Properties<BackendOptions, number>;
-};
+}
 
 const updateArgument = (args: Args) => {
   if (args.value !== args.arg.value.toString()) {

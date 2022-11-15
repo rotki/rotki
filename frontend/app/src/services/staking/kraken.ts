@@ -19,7 +19,7 @@ import {
 export const useKrakenApi = () => {
   const internalKrakenStaking = async <T>(
     pagination: KrakenStakingPagination,
-    asyncQuery: boolean = false
+    asyncQuery = false
   ): Promise<T> => {
     const response = await api.instance.post<ActionResult<T>>(
       '/staking/kraken',

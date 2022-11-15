@@ -87,12 +87,12 @@ import { downloadFileByUrl } from '@/utils/download';
 import IndexedDb from '@/utils/indexed-db';
 
 const { t } = useI18n();
-type Entry = {
+interface Entry {
   readonly icon: string;
   readonly title: string;
   readonly subtitle: string;
   readonly link: string;
-};
+}
 
 const entries: Entry[] = [
   {

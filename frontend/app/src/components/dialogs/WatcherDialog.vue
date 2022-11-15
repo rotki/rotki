@@ -253,8 +253,8 @@ const existingWatchersIcon = (identifier: string): string => {
 
 const validateSettingChange = (
   targetState: string,
-  message: string = '',
-  timeOut: number = 5500
+  message = '',
+  timeOut = 5500
 ) => {
   if (targetState === 'success' || targetState === 'error') {
     setTimeout(() => {

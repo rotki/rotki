@@ -83,7 +83,7 @@ export const useUniswapStore = defineStore('defi/uniswap', () => {
     return getPools(uniswapBalances, {});
   });
 
-  const fetchV2Balances = async (refresh: boolean = false) => {
+  const fetchV2Balances = async (refresh = false) => {
     const meta: TaskMeta = {
       title: t('actions.defi.uniswap.task.title', { v: 2 }).toString(),
       numericKeys: []
@@ -122,7 +122,7 @@ export const useUniswapStore = defineStore('defi/uniswap', () => {
     );
   };
 
-  const fetchV3Balances = async (refresh: boolean = false) => {
+  const fetchV3Balances = async (refresh = false) => {
     const meta = {
       title: t('actions.defi.uniswap.task.title', { v: 3 }).toString(),
       numericKeys: [],
@@ -163,7 +163,7 @@ export const useUniswapStore = defineStore('defi/uniswap', () => {
     );
   };
 
-  const fetchEvents = async (refresh: boolean = false) => {
+  const fetchEvents = async (refresh = false) => {
     const meta: TaskMeta = {
       title: tc('actions.defi.uniswap_events.task.title'),
       numericKeys: uniswapEventsNumericKeys

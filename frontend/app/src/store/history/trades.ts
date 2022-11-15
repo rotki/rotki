@@ -47,7 +47,7 @@ export const useTrades = defineStore('history/trades', () => {
   const { tc } = useI18n();
 
   const fetchTrades = async (
-    refresh: boolean = false,
+    refresh = false,
     onlyLocation?: SupportedExchange
   ) => {
     const { awaitTask, isTaskRunning } = useTasks();

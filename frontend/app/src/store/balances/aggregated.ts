@@ -33,9 +33,7 @@ export const useAggregatedBalancesStore = defineStore(
 
     const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
 
-    const balances = (
-      hideIgnored: boolean = true
-    ): ComputedRef<AssetBalance[]> =>
+    const balances = (hideIgnored = true): ComputedRef<AssetBalance[]> =>
       computed(() => {
         const ownedAssets = sumAssetBalances(
           [get(totals), get(exchangeBalances), get(manualBalances)],
@@ -50,7 +48,7 @@ export const useAggregatedBalancesStore = defineStore(
       });
 
     const liabilities = (
-      hideIgnored: boolean = true
+      hideIgnored = true
     ): ComputedRef<AssetBalanceWithPrice[]> =>
       computed(() => {
         const liabilities = sumAssetBalances(
@@ -65,7 +63,7 @@ export const useAggregatedBalancesStore = defineStore(
         );
       });
 
-    const assets = (hideIgnored: boolean = true): ComputedRef<string[]> =>
+    const assets = (hideIgnored = true): ComputedRef<string[]> =>
       computed(() => {
         const additional: string[] = [];
         const liabilitiesAsset = get(liabilities(hideIgnored)).map(

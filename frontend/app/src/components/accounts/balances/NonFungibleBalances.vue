@@ -176,7 +176,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
 
 const loading = isSectionLoading(Section.NON_FUNGIBLE_BALANCES);
 
-const setupRefresh = (ignoreCache: boolean = false) => {
+const setupRefresh = (ignoreCache = false) => {
   const payload = ignoreCache ? { ignoreCache: true } : undefined;
 
   return async () => await fetchNonFungibleBalances(payload);

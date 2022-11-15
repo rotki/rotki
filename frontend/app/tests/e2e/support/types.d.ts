@@ -1,4 +1,4 @@
-export type ExternalTrade = {
+export interface ExternalTrade {
   readonly time: string;
   readonly base: string;
   readonly base_id: string;
@@ -13,9 +13,9 @@ export type ExternalTrade = {
   readonly fee_id: string;
   readonly link: string;
   readonly notes: string;
-};
+}
 
-export type ExternalLedgerAction = {
+export interface ExternalLedgerAction {
   readonly datetime: string;
   readonly asset: string;
   readonly asset_id: string;
@@ -27,7 +27,7 @@ export type ExternalLedgerAction = {
   readonly action_type: string;
   readonly link: string;
   readonly notes: string;
-};
+}
 
 declare global {
   namespace Cypress {

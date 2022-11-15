@@ -49,14 +49,14 @@ enum NoteType {
   URL = 'url'
 }
 
-type NoteFormat = {
+interface NoteFormat {
   type: NoteType;
   word?: string;
   address?: string;
   amount?: BigNumber;
   asset?: string;
   url?: string;
-};
+}
 
 const formatNotes = (
   notes: string,

@@ -17,8 +17,11 @@
 <script setup lang="ts">
 import { invertColor } from '@/utils/Color';
 
-type Style = { [key: string]: string };
-type Dimension = { value: number; unit: string };
+type Style = Record<string, string>;
+interface Dimension {
+  value: number;
+  unit: string;
+}
 
 const props = defineProps({
   size: { required: true, type: String },

@@ -94,7 +94,7 @@ export const useKrakenStakingStore = defineStore('staking/kraken', () => {
     );
   };
 
-  const fetchEvents = async (refresh: boolean = false) => {
+  const fetchEvents = async (refresh = false) => {
     const taskType = TaskType.STAKING_KRAKEN;
     try {
       const firstLoad = isFirstLoad();

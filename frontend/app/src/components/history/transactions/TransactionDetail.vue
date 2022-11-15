@@ -95,7 +95,7 @@ const toGwei = (value: BigNumber) => {
   return toUnit(value, Unit.GWEI);
 };
 
-const gwei: string = 'Gwei';
+const gwei = 'Gwei';
 
 const gasFee = computed<BigNumber>(() => {
   const tx = get(transaction);

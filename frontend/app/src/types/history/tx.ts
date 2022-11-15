@@ -52,10 +52,10 @@ export type TransactionRequestPayload = {
   readonly asset?: string;
   readonly protocols?: string | string[];
 } & HistoryRequestPayload<EthTransaction>;
-export type TransactionEventRequestPayload = {
+export interface TransactionEventRequestPayload {
   readonly txHashes?: string[] | null;
   readonly ignoreCache: boolean;
-};
+}
 
 export const TxEntryMeta = EntryMeta.merge(
   z.object({

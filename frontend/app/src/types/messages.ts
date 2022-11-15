@@ -1,1 +1,4 @@
-export type BaseMessage = { success: string; error: string };
+export interface BaseMessage {
+  success: string;
+  error: string;
+}

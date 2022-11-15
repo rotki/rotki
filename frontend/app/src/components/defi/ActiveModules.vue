@@ -75,10 +75,10 @@ import { Nullable } from '@/types';
 import { Module, SUPPORTED_MODULES } from '@/types/modules';
 import { assert } from '@/utils/assertions';
 
-type ModuleWithStatus = {
+interface ModuleWithStatus {
   readonly identifier: Module;
   readonly enabled: boolean;
-};
+}
 
 const props = defineProps({
   modules: { required: true, type: Array as PropType<Module[]> }

@@ -13,7 +13,7 @@ export class RotkiApp {
     cy.visit('/?skip_update=1');
   }
 
-  createAccount(username: string, password: string = '1234') {
+  createAccount(username: string, password = '1234') {
     cy.logout();
     // simulate high scaling / low res by making a very small viewport
     cy.get('.connection-loading__content').should('not.exist');
@@ -38,11 +38,7 @@ export class RotkiApp {
     this.loadEnv();
   }
 
-  fasterLogin(
-    username: string,
-    password: string = '1234',
-    disableModules: boolean = false
-  ) {
+  fasterLogin(username: string, password = '1234', disableModules = false) {
     cy.createAccount(username, password);
     if (disableModules) {
       cy.disableModules();
@@ -66,7 +62,7 @@ export class RotkiApp {
     cy.get('.premium-reminder').should('not.exist');
   }
 
-  login(username: string, password: string = '1234') {
+  login(username: string, password = '1234') {
     cy.get('.login__fields__username').type(username);
     cy.get('.login__fields__password').type(password);
     cy.get('.login__button__sign-in').click();

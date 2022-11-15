@@ -4,18 +4,18 @@ import { UserSettingsModel } from '@/types/user';
 
 export type SyncApproval = 'yes' | 'no' | 'unknown';
 
-export type LoginCredentials = {
+export interface LoginCredentials {
   readonly username: string;
   readonly password: string;
   readonly syncApproval?: SyncApproval;
-};
+}
 
-export type PremiumSetup = {
+export interface PremiumSetup {
   readonly apiKey: string;
   readonly apiSecret: string;
   readonly submitUsageAnalytics: boolean;
   readonly syncDatabase: boolean;
-};
+}
 
 export type AccountSession = Record<string, 'loggedin' | 'loggedout'>;
 
@@ -33,10 +33,10 @@ export interface CreateAccountPayload {
   premiumSetup?: PremiumSetup;
 }
 
-export type UnlockPayload = {
+export interface UnlockPayload {
   settings: UserSettingsModel;
   exchanges: Exchange[];
   username: string;
   newAccount?: boolean;
   sync?: boolean;
-};
+}

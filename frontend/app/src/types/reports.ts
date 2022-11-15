@@ -92,10 +92,10 @@ export const ReportProgress = z.object({
 
 export type ReportProgress = z.infer<typeof ReportProgress>;
 
-export type ReportError = {
+export interface ReportError {
   error: string;
   message: string;
-};
+}
 
 export const Reports = Entries(z.array(Report));
 
@@ -109,7 +109,7 @@ export const ProfitLossReportEvents = Entries(ProfitLossEvents);
 
 export type ProfitLossReportEvents = z.infer<typeof ProfitLossReportEvents>;
 
-export type SelectedReport = {
+export interface SelectedReport {
   overview: ProfitLossOverview;
   entries: ProfitLossEvents;
   entriesLimit: number;
@@ -121,7 +121,7 @@ export type SelectedReport = {
   end: number;
   firstProcessedTimestamp: number;
   settings: BaseAccountingSettings;
-};
+}
 
 export interface ProfitLossReportPeriod {
   readonly start: number;
@@ -159,12 +159,12 @@ export const ReportActionableItem = z.object({
 
 export type ReportActionableItem = z.infer<typeof ReportActionableItem>;
 
-export type PeriodChangedEvent = {
+export interface PeriodChangedEvent {
   start: string;
   end: string;
-};
+}
 
-export type SelectionChangedEvent = {
+export interface SelectionChangedEvent {
   readonly year: string | 'custom';
   readonly quarter: Quarter;
-};
+}

@@ -18,14 +18,14 @@ export type UserNotes = z.infer<typeof UserNotes>;
 
 export const UserNoteCollectionResponse = getCollectionResponseType(UserNote);
 
-export type UserNotesFilter = {
+export interface UserNotesFilter {
   titleSubstring: string;
   limit: number;
   offset: number;
   location: string;
   orderByAttributes: string[];
   ascending: boolean[];
-};
+}
 
 export enum NoteLocation {
   DASHBOARD = 'DASHBOARD',

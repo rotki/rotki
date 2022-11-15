@@ -43,34 +43,34 @@ export const AssetPriceResponse = z
 
 export type AssetPriceResponse = z.infer<typeof AssetPriceResponse>;
 
-export type OracleCachePayload = {
+export interface OracleCachePayload {
   readonly source: PriceOracle;
   readonly fromAsset: string;
   readonly toAsset: string;
   readonly purgeOld: boolean;
-};
+}
 
-type TimedPrices = { [timestamp: string]: BigNumber };
+type TimedPrices = Record<string, BigNumber>;
 
-type AssetTimedPrices = { [asset: string]: TimedPrices };
+type AssetTimedPrices = Record<string, TimedPrices>;
 
-export type HistoricPrices = {
+export interface HistoricPrices {
   readonly assets: AssetTimedPrices;
   readonly targetAsset: string;
-};
+}
 
-export type HistoricPricePayload = {
+export interface HistoricPricePayload {
   readonly fromAsset: string;
   readonly toAsset: string;
   readonly timestamp: number;
-};
+}
 
 export interface AssetPriceInfo extends Balance {
   readonly usdPrice: BigNumber;
 }
 
-export type EditableMissingPrice = MissingPrice & {
+export interface EditableMissingPrice extends MissingPrice {
   price: string;
   saved: boolean;
   useRefreshedHistoricalPrice: boolean;
-};
+}

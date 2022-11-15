@@ -184,7 +184,7 @@ const save = async (): Promise<boolean> => {
     usdValue: item.usdValue.toFixed()
   }));
 
-  let result: boolean = false;
+  let result = false;
 
   const notifyError = (e?: any) => {
     notify({

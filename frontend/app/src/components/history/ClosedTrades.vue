@@ -239,12 +239,12 @@ import { NewTrade, Trade, TradeRequestPayload } from '@/types/history/trades';
 import { Section } from '@/types/status';
 import { getCollectionData, setupEntryLimit } from '@/utils/collection';
 
-type PaginationOptions = {
+interface PaginationOptions {
   page: number;
   itemsPerPage: number;
   sortBy: (keyof Trade)[];
   sortDesc: boolean[];
-};
+}
 
 const props = defineProps({
   locationOverview: {
@@ -521,7 +521,7 @@ watch(filters, async (filters, oldValue) => {
   await updatePaginationHandler(newOptions);
 });
 
-const fetch = (refresh: boolean = false) => emit('fetch', refresh);
+const fetch = (refresh = false) => emit('fetch', refresh);
 
 const { ignore } = setupIgnore(
   IgnoreActionType.TRADES,

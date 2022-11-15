@@ -12,7 +12,7 @@ const isMac = process.platform === 'darwin';
 export class TrayManager {
   private readonly getWindow: WindowProvider;
   private readonly closeApp: () => void;
-  private tooltip: string = '';
+  private tooltip = '';
   private _tray: Nullable<Tray> = null;
 
   private get tray(): Tray {
@@ -34,7 +34,7 @@ export class TrayManager {
       : __dirname;
   }
 
-  private buildMenu(visible: boolean, info: string = '') {
+  private buildMenu(visible: boolean, info = '') {
     return Menu.buildFromTemplate([
       {
         label: 'rotki',

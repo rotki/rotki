@@ -351,7 +351,7 @@ export class AssetApi {
 
   async importCustom(
     file: File,
-    upload: boolean = false
+    upload = false
   ): Promise<ActionResult<boolean>> {
     if (upload) {
       const data = new FormData();

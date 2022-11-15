@@ -13,7 +13,10 @@
 <script setup lang="ts">
 import { PropType } from 'vue';
 
-type Item = { icon: string; name: string };
+interface Item {
+  icon: string;
+  name: string;
+}
 
 defineProps({
   item: { required: true, type: Object as PropType<Item> }

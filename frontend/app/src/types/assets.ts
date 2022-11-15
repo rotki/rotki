@@ -27,10 +27,10 @@ export interface ApplyUpdateResult {
   readonly conflicts?: AssetUpdateConflictResult[];
 }
 
-export type AssetMergePayload = {
+export interface AssetMergePayload {
   readonly sourceIdentifier: string;
   readonly targetIdentifier: string;
-};
+}
 
 export const AssetInfoWithId = AssetInfo.merge(
   z.object({

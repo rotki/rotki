@@ -227,7 +227,7 @@ type Intersections = {
   [key in Blockchain]: boolean;
 };
 
-type BlockchainData = {
+interface BlockchainData {
   btcAccounts: Ref<BlockchainAccountWithBalance[]>;
   bchAccounts: Ref<BlockchainAccountWithBalance[]>;
   dotAccounts: Ref<BlockchainAccountWithBalance[]>;
@@ -236,7 +236,7 @@ type BlockchainData = {
   avaxAccounts: Ref<BlockchainAccountWithBalance[]>;
   ksmAccounts: Ref<BlockchainAccountWithBalance[]>;
   loopringAccounts: Ref<BlockchainAccountWithBalance[]>;
-};
+}
 
 const { t, tc } = useI18n();
 const accountToEdit: Ref<BlockchainAccountWithBalance | null> = ref(null);

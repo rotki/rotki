@@ -133,7 +133,7 @@ export const useExchangeBalancesStore = defineStore(
 
     const getBalances = (
       exchange: SupportedExchange,
-      hideIgnored: boolean = true
+      hideIgnored = true
     ): ComputedRef<AssetBalanceWithPrice[]> =>
       computed(() => {
         const balances = get(exchangeBalances);
@@ -291,7 +291,7 @@ export const useExchangeBalancesStore = defineStore(
     };
 
     const fetchConnectedExchangeBalances = async (
-      refresh: boolean = false
+      refresh = false
     ): Promise<void> => {
       const exchanges = get(connectedExchanges);
       for (const exchange of exchanges) {

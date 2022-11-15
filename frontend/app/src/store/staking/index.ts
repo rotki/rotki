@@ -56,7 +56,7 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
 
   const api = useEth2Api();
 
-  const fetchStakingDetails = async (refresh: boolean = false) => {
+  const fetchStakingDetails = async (refresh = false) => {
     if (!get(premium)) {
       return;
     }
@@ -133,7 +133,7 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
     await Promise.allSettled([fetchDetails(), fetchDeposits()]);
   };
 
-  const fetchDailyStats = async (refresh: boolean = false) => {
+  const fetchDailyStats = async (refresh = false) => {
     if (!get(premium)) {
       return;
     }
@@ -230,7 +230,7 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
     }
   };
 
-  const load = async (refresh: boolean = false) => {
+  const load = async (refresh = false) => {
     await Promise.allSettled([
       fetchStakingDetails(refresh),
       fetchDailyStats(refresh)

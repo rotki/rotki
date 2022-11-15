@@ -63,19 +63,20 @@ interface XpubAccount extends GeneralAccount, XpubPayload {}
 
 export interface XpubAccountWithBalance extends XpubAccount, HasBalance {}
 
-export type AccountWithBalanceAndSharedOwnership = AccountWithBalance & {
+export interface AccountWithBalanceAndSharedOwnership
+  extends AccountWithBalance {
   ownershipPercentage?: string;
-};
+}
 
 export type BlockchainAccountWithBalance =
   | XpubAccountWithBalance
   | AccountWithBalanceAndSharedOwnership;
 
-export type AddAccountsPayload = {
+export interface AddAccountsPayload {
   readonly blockchain: Blockchain;
   readonly payload: AccountPayload[];
   readonly modules?: Module[];
-};
+}
 
 export type ChainSections = {
   readonly [chain in Blockchain]: Section;

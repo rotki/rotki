@@ -28,7 +28,7 @@ export const useAssetInfoApi = () => {
 
   const assetSearch = async (
     keyword: string,
-    limit: number = 25,
+    limit = 25,
     signal?: AbortSignal
   ): Promise<AssetsWithId> => {
     const response = await api.instance.post<ActionResult<AssetsWithId>>(

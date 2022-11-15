@@ -36,7 +36,7 @@ export const useNonFungibleBalancesStore = defineStore(
     );
 
     const nonFungibleTotalValue = (
-      includeLPToken: boolean = false
+      includeLPToken = false
     ): ComputedRef<BigNumber> =>
       computed(() => {
         return bigNumberSum(

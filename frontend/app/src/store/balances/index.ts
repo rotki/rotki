@@ -60,7 +60,7 @@ export const useBalancesStore = defineStore('balances', () => {
   };
 
   const refreshPrices = async (
-    ignoreCache: boolean = false,
+    ignoreCache = false,
     selectedAssets: string[] | null = null
   ): Promise<void> => {
     const unique = selectedAssets ? selectedAssets.filter(uniqueStrings) : null;

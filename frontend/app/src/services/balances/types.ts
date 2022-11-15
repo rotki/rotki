@@ -8,12 +8,12 @@ export enum BalanceType {
   LIABILITY = 'liability'
 }
 
-export type OracleCacheMeta = {
+export interface OracleCacheMeta {
   readonly fromAsset: string;
   readonly toAsset: string;
   readonly fromTimestamp: string;
   readonly toTimestamp: string;
-};
+}
 
 export const EthDetectedTokens = z.object({
   tokens: z.array(z.string()).nullish(),
@@ -24,8 +24,8 @@ export const EthDetectedTokensRecord = z.record(EthDetectedTokens);
 
 export type EthDetectedTokensRecord = z.infer<typeof EthDetectedTokensRecord>;
 
-export type EthDetectedTokensInfo = {
+export interface EthDetectedTokensInfo {
   tokens: string[];
   total: number;
   timestamp: number | null;
-};
+}

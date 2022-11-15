@@ -64,10 +64,10 @@ export const useGraph = (canvasId: string) => {
   };
 };
 
-export type TooltipContent = {
+export interface TooltipContent {
   readonly time: string;
   readonly value: BigNumber;
-};
+}
 
 export const useTooltip = (id: string) => {
   const getDefaultTooltipDisplayOption = (): TooltipDisplayOption => {

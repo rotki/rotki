@@ -11,9 +11,7 @@ import { TaskType } from '@/types/task-type';
 import { assert } from '@/utils/assertions';
 import { logger } from '@/utils/logging';
 
-export interface TaskMap<T extends TaskMeta> {
-  [taskId: number]: Task<T>;
-}
+export type TaskMap<T extends TaskMeta> = Record<number, Task<T>>;
 
 const unlockTask = (lockedTasks: Ref<number[]>, taskId: number) => {
   const locked = [...get(lockedTasks)];
@@ -129,7 +127,7 @@ export const useTasks = defineStore('tasks', () => {
     id: number,
     type: TaskType,
     meta: M,
-    nonUnique: boolean = false
+    nonUnique = false
   ) {
     addTask(id, type, meta);
 

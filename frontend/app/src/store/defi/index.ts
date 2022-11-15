@@ -196,7 +196,7 @@ export const useDefiStore = defineStore('defi', () => {
         get(dsrHistory)
       );
 
-      const accounts: { [address: string]: DefiAccount } = {};
+      const accounts: Record<string, DefiAccount> = {};
       for (const protocol in addresses) {
         const selectedProtocol = protocol as Exclude<
           DefiProtocol,
@@ -270,7 +270,7 @@ export const useDefiStore = defineStore('defi', () => {
           : get(lendingStore.totalLendingDeposit(filter, []))
       };
     };
-    const summary: { [protocol: string]: Writeable<DefiProtocolSummary> } = {};
+    const summary: Record<string, Writeable<DefiProtocolSummary>> = {};
 
     const defiProtocols = get(allProtocols);
     for (const address of Object.keys(defiProtocols)) {
@@ -491,7 +491,7 @@ export const useDefiStore = defineStore('defi', () => {
     setStatus(Status.LOADED, section);
   };
 
-  async function fetchAllDefi(refresh: boolean = false) {
+  async function fetchAllDefi(refresh = false) {
     const section = Section.DEFI_OVERVIEW;
     const currentStatus = getStatus(section);
     if (
@@ -566,7 +566,7 @@ export const useDefiStore = defineStore('defi', () => {
     setStatus(Status.LOADED, premiumSection);
   }
 
-  async function fetchAirdrops(refresh: boolean = false) {
+  async function fetchAirdrops(refresh = false) {
     const section = Section.DEFI_AIRDROPS;
     const currentStatus = getStatus(section);
 

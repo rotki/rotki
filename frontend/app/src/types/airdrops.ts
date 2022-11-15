@@ -32,9 +32,7 @@ type RegularAirdrop = {
   readonly [source in Exclude<AirdropType, 'poap'>]?: AirdropDetail;
 };
 
-export interface Airdrops {
-  readonly [address: string]: AirdropDetails;
-}
+export type Airdrops = Readonly<Record<string, AirdropDetails>>;
 
 export type AirdropType = typeof AIRDROPS[number];
 export const AIRDROP_UNISWAP = 'uniswap';
@@ -72,6 +70,6 @@ export const AIRDROPS = [
   AIRDROP_SADDLE
 ] as const;
 
-type PoapDetails = {
+interface PoapDetails {
   readonly [AIRDROP_POAP]?: PoapDelivery[];
-};
+}

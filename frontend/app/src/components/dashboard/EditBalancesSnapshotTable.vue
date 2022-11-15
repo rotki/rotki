@@ -359,7 +359,7 @@ const previewDeleteLocationBalance = computed<Record<string, BigNumber> | null>(
 
 const updateData = (
   balancesSnapshot: BalanceSnapshot[],
-  location: string = '',
+  location = '',
   calculatedBalance: Record<string, BigNumber> | null = null
 ) => {
   const val = get(value);

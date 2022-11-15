@@ -7,7 +7,7 @@ export async function wait(duration: number): Promise<void> {
 export async function backoff<T>(
   retries: number,
   call: BackoffCall<T>,
-  delay: number = 5000
+  delay = 5000
 ): Promise<T> {
   let result: T;
   try {

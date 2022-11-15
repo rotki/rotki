@@ -45,7 +45,7 @@ export const useSushiswapStore = defineStore('defi/sushiswap', () => {
     getPools(get(balances), get(events) as XswapEvents)
   );
 
-  async function fetchBalances(refresh: boolean = false) {
+  async function fetchBalances(refresh = false) {
     const meta: TaskMeta = {
       title: t('actions.defi.sushiswap_balances.task.title').toString(),
       numericKeys: uniswapNumericKeys
@@ -82,7 +82,7 @@ export const useSushiswapStore = defineStore('defi/sushiswap', () => {
     );
   }
 
-  async function fetchEvents(refresh: boolean = false) {
+  async function fetchEvents(refresh = false) {
     const meta: TaskMeta = {
       title: t('actions.defi.sushiswap_events.task.title').toString(),
       numericKeys: uniswapEventsNumericKeys

@@ -51,7 +51,7 @@ const now: Date = new Date('2018-03-09T21:09:08');
 const { t } = useI18n();
 
 const description = (directive: string): string => {
-  const descriptions: { [directive: string]: string } = {
+  const descriptions: Record<string, string> = {
     a: t('date_format_help.directive.week_day_short').toString(),
     A: t('date_format_help.directive.week_day').toString(),
     w: t('date_format_help.directive.day_of_the_week').toString(),

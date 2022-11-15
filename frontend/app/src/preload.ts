@@ -41,7 +41,9 @@ function ipcAction<T>(message: string, arg?: any): Promise<T> {
 
 const isDevelopment = checkIfDevelopment();
 
-type DebugSettings = { persistStore: boolean };
+interface DebugSettings {
+  persistStore: boolean;
+}
 let debugSettings: DebugSettings | undefined = isDevelopment
   ? ipcRenderer.sendSync(IPC_GET_DEBUG)
   : undefined;

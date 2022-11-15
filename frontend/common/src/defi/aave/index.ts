@@ -18,22 +18,16 @@ interface AaveLendingAsset extends HasBalance {
   readonly apy: string;
 }
 
-interface AaveBorrowing {
-  readonly [asset: string]: AaveBorrowingAsset;
-}
+type AaveBorrowing = Readonly<Record<string, AaveBorrowingAsset>>;
 
-export interface AaveLending {
-  readonly [asset: string]: AaveLendingAsset;
-}
+export type AaveLending = Readonly<Record<string, AaveLendingAsset>>;
 
 interface AaveBalance {
   readonly lending: AaveLending;
   readonly borrowing: AaveBorrowing;
 }
 
-export interface AaveBalances {
-  readonly [address: string]: AaveBalance;
-}
+export type AaveBalances = Readonly<Record<string, AaveBalance>>;
 
 export enum AaveBorrowingEventType {
   REPAY = "repay",
@@ -94,9 +88,7 @@ export type AaveBorrowingEvent =
   | AaveBorrowEvent;
 export type AaveHistoryEvents = AaveEvent | AaveBorrowingEvent;
 
-export interface AaveHistoryTotal {
-  readonly [asset: string]: Balance;
-}
+export type AaveHistoryTotal = Readonly<Record<string, Balance>>;
 
 interface AaveAccountHistory {
   readonly events: AaveHistoryEvents[];
@@ -105,6 +97,4 @@ interface AaveAccountHistory {
   readonly totalLost: AaveHistoryTotal;
 }
 
-export interface AaveHistory {
-  readonly [address: string]: AaveAccountHistory;
-}
+export type AaveHistory = Readonly<Record<string, AaveAccountHistory>>;

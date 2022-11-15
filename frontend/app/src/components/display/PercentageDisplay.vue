@@ -72,7 +72,7 @@ const displayValue = computed<string>(() => {
   return get(value).replace('%', '');
 });
 
-const assetStyle = computed<{ [key: string]: string | undefined }>(() => {
+const assetStyle = computed<Record<string, string | undefined>>(() => {
   if (!get(assetPadding)) {
     return {
       'max-width': '0ch'

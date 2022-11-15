@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export type DebugSettings = { persistStore: boolean };
+export interface DebugSettings { persistStore: boolean };
 
 export interface Themes {
   readonly light: ThemeColors;
@@ -34,7 +34,7 @@ export const SELECTED_THEME = 'selectedTheme' as const;
 export const LIGHT_THEME = 'lightTheme' as const;
 export const DARK_THEME = 'darkTheme' as const;
 
-type FrontendSettings = {
+interface FrontendSettings {
   readonly [SELECTED_THEME]: Theme;
   readonly [LIGHT_THEME]: ThemeColors;
   readonly [DARK_THEME]: ThemeColors;

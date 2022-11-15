@@ -196,7 +196,7 @@ const rateAsset = ref<string>('');
 const link = ref<string>('');
 const notes = ref<string>('');
 
-const errorMessages = ref<{ [field: string]: string[] }>({});
+const errorMessages = ref<Record<string, string[]>>({});
 
 const { t, tc } = useI18n();
 

@@ -33,7 +33,7 @@ export const useEventTypeData = createSharedComposable(() => {
       eventType?: string | null;
       eventSubtype?: string | null;
     },
-    showFallbackLabel: boolean = true
+    showFallbackLabel = true
   ): ActionDataEntry => {
     const type = getEventType(event);
 

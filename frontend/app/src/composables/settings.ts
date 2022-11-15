@@ -17,8 +17,12 @@ export enum SettingLocation {
   GENERAL
 }
 
-type SuccessfulUpdate = { success: string };
-type UnsuccessfulUpdate = { error: string };
+interface SuccessfulUpdate {
+  success: string;
+}
+interface UnsuccessfulUpdate {
+  error: string;
+}
 type UpdateResult = SuccessfulUpdate | UnsuccessfulUpdate;
 
 const getActionStatus = async (
@@ -100,11 +104,11 @@ export const useClearableMessages = () => {
     return base;
   };
 
-  const setSuccess = (message: string, useBase: boolean = true) => {
+  const setSuccess = (message: string, useBase = true) => {
     set(success, formatMessage(useBase ? tc('settings.saved') : '', message));
   };
 
-  const setError = (message: string, useBase: boolean = true) => {
+  const setError = (message: string, useBase = true) => {
     set(error, formatMessage(useBase ? tc('settings.not_saved') : '', message));
   };
 

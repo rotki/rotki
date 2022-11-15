@@ -1,9 +1,9 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 
-export type ExplorerUrls = {
+export interface ExplorerUrls {
   readonly address: string;
   readonly transaction: string;
-};
+}
 
 export type Chains = Blockchain | 'ETC' | 'zksync';
 

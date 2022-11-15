@@ -79,7 +79,7 @@ const defaultDateFormat = 'YYYY-MM-DD';
 const isValid = (
   date: string,
   format: DateFormat,
-  seconds: boolean = false
+  seconds = false
 ): boolean => {
   let dateFormat = getDateInputISOFormat(format);
 

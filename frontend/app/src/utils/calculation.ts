@@ -2,7 +2,7 @@ import { Balance, BigNumber } from '@rotki/common';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { Zero } from '@/utils/bignumbers';
 
-export const assetSum = (balances: { [asset: string]: Balance }) => {
+export const assetSum = (balances: Record<string, Balance>) => {
   const { isAssetIgnored } = useIgnoredAssetsStore();
 
   return Object.entries(balances).reduce((sum, [asset, balance]) => {

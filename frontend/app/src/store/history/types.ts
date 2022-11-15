@@ -8,11 +8,13 @@ import {
   TxEntryMeta
 } from '@/types/history/tx';
 
-export type TradeEntry = Trade & EntryMeta;
-export type AssetMovementEntry = AssetMovement & EntryMeta;
-export type LedgerActionEntry = LedgerAction & EntryMeta;
-export type EthTransactionEntry = EthTransaction & TxEntryMeta;
-export type EthTransactionEventEntry = EthTransactionEvent & EntryMeta;
+export interface TradeEntry extends Trade, EntryMeta {}
+export interface AssetMovementEntry extends AssetMovement, EntryMeta {}
+export interface LedgerActionEntry extends LedgerAction, EntryMeta {}
+export interface EthTransactionEntry extends EthTransaction, TxEntryMeta {}
+export interface EthTransactionEventEntry
+  extends EthTransactionEvent,
+    EntryMeta {}
 
 export enum IgnoreActionType {
   TRADES = 'trade',
@@ -21,7 +23,7 @@ export enum IgnoreActionType {
   LEDGER_ACTIONS = 'ledger_action'
 }
 
-export type IgnoreActionPayload = {
+export interface IgnoreActionPayload {
   readonly actionIds: string[];
   readonly type: IgnoreActionType;
-};
+}

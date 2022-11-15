@@ -10,9 +10,7 @@ export interface AdexBalance {
   readonly poolName: string;
 }
 
-export interface AdexBalances {
-  readonly [address: string]: AdexBalance[];
-}
+export type AdexBalances = Readonly<Record<string, AdexBalance[]>>;
 
 export interface AdexEvent {
   readonly value: BigNumber;
@@ -44,6 +42,4 @@ export interface AdexDetails {
   readonly stakingDetails: AdexStakingDetails[];
 }
 
-export interface AdexHistory {
-  readonly [address: string]: AdexDetails;
-}
+export type AdexHistory = Readonly<Record<string, AdexDetails>>;

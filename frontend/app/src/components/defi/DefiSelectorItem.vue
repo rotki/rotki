@@ -16,10 +16,10 @@ import { DefiProtocol } from '@rotki/common/lib/blockchain';
 import { PropType } from 'vue';
 import { useSessionSettingsStore } from '@/store/settings/session';
 
-type DefiProtocolInfo = {
+interface DefiProtocolInfo {
   readonly identifier: string;
   readonly protocol: DefiProtocol;
-};
+}
 
 const props = defineProps({
   item: { required: true, type: Object as PropType<DefiProtocolInfo> }

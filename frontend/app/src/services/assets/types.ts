@@ -13,9 +13,9 @@ export interface AssetUpdatePayload {
   readonly version: number;
 }
 
-export interface ConflictResolution {
-  readonly [assetId: string]: ConflictResolutionStrategy;
-}
+export type ConflictResolution = Readonly<
+  Record<string, ConflictResolutionStrategy>
+>;
 
 export interface AssetPair {
   readonly fromAsset: string;

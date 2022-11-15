@@ -5,12 +5,12 @@ import { Section } from '@/types/status';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 
-export type OnError = {
+export interface OnError {
   readonly title: string;
   readonly error: (message: string) => string;
-};
+}
 
-export type FetchData<T extends TaskMeta, R> = {
+export interface FetchData<T extends TaskMeta, R> {
   task: {
     type: TaskType;
     meta: T;
@@ -29,4 +29,4 @@ export type FetchData<T extends TaskMeta, R> = {
     module: Module;
   };
   refresh: boolean;
-};
+}

@@ -40,8 +40,8 @@ export const size = (bytes: number) => {
   return `${bytes.toFixed(2)}  ${symbol}B`;
 };
 
-export function randomHex(characters: number = 40): string {
-  let hex: string = '';
+export function randomHex(characters = 40): string {
+  let hex = '';
   for (let i = 0; i < characters - 2; i++) {
     const randByte = parseInt((Math.random() * 16).toString(), 10).toString(16);
     hex += randByte;

@@ -8,25 +8,19 @@ import { Collateral, CollateralizedLoan } from '@/types/defi/index';
 
 interface CompoundReward extends HasBalance {}
 
-interface CompoundRewards {
-  readonly [asset: string]: CompoundReward;
-}
+type CompoundRewards = Readonly<Record<string, CompoundReward>>;
 
 interface CompoundLending extends HasBalance {
   readonly apy: string | null;
 }
 
-interface CompoundLendingEntries {
-  readonly [asset: string]: CompoundLending;
-}
+type CompoundLendingEntries = Readonly<Record<string, CompoundLending>>;
 
 interface CompoundBorrowing extends HasBalance {
   readonly apy: string;
 }
 
-interface CompoundBorrowingEntries {
-  readonly [asset: string]: CompoundBorrowing;
-}
+type CompoundBorrowingEntries = Readonly<Record<string, CompoundBorrowing>>;
 
 interface CompoundBalance {
   readonly rewards: CompoundRewards;
@@ -34,9 +28,7 @@ interface CompoundBalance {
   readonly borrowing: CompoundBorrowingEntries;
 }
 
-export interface CompoundBalances {
-  readonly [address: string]: CompoundBalance;
-}
+export type CompoundBalances = Readonly<Record<string, CompoundBalance>>;
 
 export const COMPOUND_EVENT_TYPES = [
   'mint',
@@ -62,13 +54,11 @@ interface CompoundEvent {
   readonly logIndex: number;
 }
 
-interface CompoundAssetProfitAndLoss {
-  readonly [asset: string]: Balance;
-}
+type CompoundAssetProfitAndLoss = Readonly<Record<string, Balance>>;
 
-export interface CompoundProfitAndLoss {
-  readonly [address: string]: CompoundAssetProfitAndLoss;
-}
+export type CompoundProfitAndLoss = Readonly<
+  Record<string, CompoundAssetProfitAndLoss>
+>;
 
 export interface CompoundHistory {
   readonly events: CompoundEvent[];

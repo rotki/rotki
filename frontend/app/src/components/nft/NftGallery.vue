@@ -268,7 +268,7 @@ const collections = computed(() => {
 
 const { fetchNfts: nftFetch } = useNftAssetInfoStore();
 
-const fetchNfts = async (ignoreCache: boolean = false) => {
+const fetchNfts = async (ignoreCache = false) => {
   set(loading, true);
   const { message, result } = await nftFetch(ignoreCache);
   if (result) {

@@ -15,7 +15,7 @@ export function getPools(
   events: XswapEvents
 ): XswapPool[] {
   const pools: XswapPool[] = [];
-  const known: { [address: string]: boolean } = {};
+  const known: Record<string, boolean> = {};
 
   for (const account in balances) {
     const accountBalances = balances[account];
@@ -79,9 +79,7 @@ export function getPoolProfit(
   events: XswapEvents,
   addresses: string[]
 ): XswapPoolProfit[] {
-  const perPoolProfit: {
-    [poolAddress: string]: Writeable<XswapPoolProfit>;
-  } = {};
+  const perPoolProfit: Record<string, Writeable<XswapPoolProfit>> = {};
   for (const address in events) {
     if (addresses.length > 0 && !addresses.includes(address)) {
       continue;
@@ -110,7 +108,7 @@ export function getPoolProfit(
 export function getBalances(
   xswapBalance: XswapBalances,
   addresses: string[],
-  group: boolean = true
+  group = true
 ): XswapBalance[] {
   if (!group) {
     const balances = [];
@@ -121,7 +119,7 @@ export function getBalances(
     }
     return balances;
   }
-  const balances: { [poolAddress: string]: Writeable<XswapBalance> } = {};
+  const balances: Record<string, Writeable<XswapBalance>> = {};
   for (const account in xswapBalance) {
     if (addresses.length > 0 && !addresses.includes(account)) {
       continue;

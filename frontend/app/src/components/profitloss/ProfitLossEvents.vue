@@ -141,12 +141,12 @@ import {
   SelectedReport
 } from '@/types/reports';
 
-type PaginationOptions = {
+interface PaginationOptions {
   page: number;
   itemsPerPage: number;
   sortBy: any[];
   sortDesc: boolean[];
-};
+}
 
 const props = defineProps({
   loading: {
