@@ -1,3 +1,4 @@
+import os
 import warnings as test_warnings
 from typing import Optional, Set
 from unittest.mock import patch
@@ -561,6 +562,7 @@ def test_query_deposits_withdrawals_unexpected_data(mock_ftx: Ftx):
     )
 
 
+@pytest.mark.skipif('CI' in os.environ, reason='FTX API is unreachable after the incident')
 def test_pagination(mock_ftx: Ftx):
     """Test pagination in the eth/eur market (public endpoint)"""
     # Try pagination good path
