@@ -30,7 +30,7 @@ from rotkehlchen.utils.misc import hexstr_to_int, ts_now
 from .constants import MAKERDAO_REQUERY_PERIOD, RAD, RAY
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
@@ -105,14 +105,14 @@ class MakerdaoDsr(HasDSProxy):
 
     def __init__(
             self,
-            ethereum_manager: 'EthereumManager',
+            ethereum_inquirer: 'EthereumInquirer',
             database: 'DBHandler',
             premium: Optional[Premium],
             msg_aggregator: MessagesAggregator,
     ) -> None:
 
         super().__init__(
-            ethereum_manager=ethereum_manager,
+            ethereum_inquirer=ethereum_inquirer,
             database=database,
             premium=premium,
             msg_aggregator=msg_aggregator,
@@ -189,7 +189,7 @@ class MakerdaoDsr(HasDSProxy):
             'sig': '0x3b4da69f' if movement_type == 'join' else '0xef693bed',
             'usr': proxy_address,
         }
-        events = self.ethereum.node_inquirer.get_logs(
+        events = self.ethereum.get_logs(
             contract_address=MAKERDAO_DAI_JOIN.address,
             abi=MAKERDAO_DAI_JOIN.abi,
             event_name='LogNote',
@@ -232,7 +232,7 @@ class MakerdaoDsr(HasDSProxy):
             'sig': '0x049878f3',  # join
             'usr': proxy,
         }
-        join_events = self.ethereum.node_inquirer.get_logs(
+        join_events = self.ethereum.get_logs(
             contract_address=MAKERDAO_POT.address,
             abi=MAKERDAO_POT.abi,
             event_name='LogNote',
@@ -263,7 +263,7 @@ class MakerdaoDsr(HasDSProxy):
                 )
                 continue
 
-            timestamp = self.ethereum.node_inquirer.get_event_timestamp(join_event)
+            timestamp = self.ethereum.get_event_timestamp(join_event)
             usd_price = query_usd_price_or_use_default(
                 asset=A_DAI,
                 time=timestamp,
@@ -287,7 +287,7 @@ class MakerdaoDsr(HasDSProxy):
             'sig': '0x7f8661a1',  # exit
             'usr': proxy,
         }
-        exit_events = self.ethereum.node_inquirer.get_logs(
+        exit_events = self.ethereum.get_logs(
             contract_address=MAKERDAO_POT.address,
             abi=MAKERDAO_POT.abi,
             event_name='LogNote',
@@ -318,7 +318,7 @@ class MakerdaoDsr(HasDSProxy):
                 )
                 continue
 
-            timestamp = self.ethereum.node_inquirer.get_event_timestamp(exit_event)
+            timestamp = self.ethereum.get_event_timestamp(exit_event)
             usd_price = query_usd_price_or_use_default(
                 asset=A_DAI,
                 time=timestamp,

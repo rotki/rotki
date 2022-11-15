@@ -261,11 +261,11 @@ class EthereumManager(EvmManager):
             # write new values to the cache
             update_curve_registry_pools_cache(
                 write_cursor=write_cursor,
-                ethereum_manager=self,
+                ethereum_inquirer=self.node_inquirer,
             )
             update_curve_metapools_cache(
                 write_cursor=write_cursor,
-                ethereum_manager=self,
+                ethereum_inquirer=self.node_inquirer,
             )
 
         if tx_decoder is not None:

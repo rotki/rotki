@@ -13,7 +13,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.evm.node_inquirer import EvmInquirer
+    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
@@ -47,7 +47,7 @@ def get_or_create_evm_token(
         protocol: Optional[str] = None,
         underlying_tokens: Optional[List[UnderlyingToken]] = None,
         form_with_incomplete_data: bool = False,
-        evm_inquirer: 'EvmInquirer' = None,
+        evm_inquirer: 'EvmNodeInquirer' = None,
 ) -> EvmToken:
     """Given a token address return the <EvmToken>
 

@@ -6,8 +6,8 @@ from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.constants import ZERO_ADDRESS
 from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
-from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
+from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.types import PICKLE_JAR_PROTOCOL, EvmTransaction
@@ -17,7 +17,7 @@ from .constants import CPT_PICKLE
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.decoding.base import BaseDecoderTools
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -25,22 +25,25 @@ class PickleFinanceDecoder(DecoderInterface):
 
     def __init__(
             self,
-            ethereum_manager: 'EthereumManager',
+            ethereum_inquirer: 'EthereumInquirer',
             base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',
     ) -> None:
         super().__init__(
-            ethereum_manager=ethereum_manager,
+            evm_inquirer=ethereum_inquirer,
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
         )
-        jars = GlobalDBHandler().get_ethereum_tokens(protocol=PICKLE_JAR_PROTOCOL)
+        jars = GlobalDBHandler().get_evm_tokens(
+            chain_id=ethereum_inquirer.chain_id,
+            protocol=PICKLE_JAR_PROTOCOL,
+        )
         self.pickle_contracts = {jar.evm_address for jar in jars}
 
     def _maybe_enrich_pickle_transfers(  # pylint: disable=no-self-use
             self,
             token: EvmToken,  # pylint: disable=unused-argument
-            tx_log: EthereumTxReceiptLog,
+            tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
             event: HistoryBaseEntry,
             action_items: List[ActionItem],  # pylint: disable=unused-argument

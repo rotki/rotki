@@ -9,8 +9,8 @@ from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.chain.ethereum.constants import ETHERSCAN_NODE
 from rotkehlchen.chain.ethereum.decoding.decoder import EVMTransactionDecoder
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
-from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.types import NodeName, WeightedNode, string_to_evm_address
+from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.transactions import EvmTransactions
 from rotkehlchen.constants import ONE
 from rotkehlchen.db.dbhandler import DBHandler
@@ -121,7 +121,7 @@ def wait_until_all_nodes_connected(
         )
 
 
-def txreceipt_to_data(receipt: EthereumTxReceipt) -> Dict[str, Any]:
+def txreceipt_to_data(receipt: EvmTxReceipt) -> Dict[str, Any]:
     """Turns it to receipt data as would be returned by web3
 
     Is here since this would only be done in test. In actual
@@ -154,7 +154,7 @@ def setup_ethereum_transactions_test(
         database: DBHandler,
         transaction_already_queried: bool,
         one_receipt_in_db: bool = False,
-) -> Tuple[List[EvmTransaction], List[EthereumTxReceipt]]:
+) -> Tuple[List[EvmTransaction], List[EvmTxReceipt]]:
     dbevmtx = DBEvmTx(database)
     tx_hash1 = deserialize_evm_tx_hash('0x692f9a6083e905bdeca4f0293f3473d7a287260547f8cbccc38c5cb01591fcda')  # noqa: E501
     addr1 = string_to_evm_address('0x443E1f9b1c866E54e914822B7d3d7165EdB6e9Ea')
@@ -204,13 +204,13 @@ def setup_ethereum_transactions_test(
             result = dbevmtx.get_evm_transactions(cursor, EvmTransactionsFilterQuery.make(chain_id=ChainID.ETHEREUM), True)  # noqa: E501
         assert result == transactions
 
-    expected_receipt1 = EthereumTxReceipt(
+    expected_receipt1 = EvmTxReceipt(
         tx_hash=tx_hash1,
         contract_address=None,
         status=True,
         type=0,
         logs=[
-            EthereumTxReceiptLog(
+            EvmTxReceiptLog(
                 log_index=295,
                 data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000008ac7230489e80000'),  # noqa: E501
                 address=string_to_evm_address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
@@ -219,7 +219,7 @@ def setup_ethereum_transactions_test(
                     hexstring_to_bytes('0xe1fffcc4923d04b559f4d29a8bfc6cda04eb5b0d3c460751c2402c5c5cc9109c'),  # noqa: E501
                     hexstring_to_bytes('0x0000000000000000000000007a250d5630b4cf539739df2c5dacb4c659f2488d'),  # noqa: E501
                 ],
-            ), EthereumTxReceiptLog(
+            ), EvmTxReceiptLog(
                 log_index=296,
                 data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000008ac7230489e80000'),  # noqa: E501
                 address=string_to_evm_address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
@@ -229,7 +229,7 @@ def setup_ethereum_transactions_test(
                     hexstring_to_bytes('0x0000000000000000000000007a250d5630b4cf539739df2c5dacb4c659f2488d'),  # noqa: E501
                     hexstring_to_bytes('0x000000000000000000000000caa004418eb42cdf00cb057b7c9e28f0ffd840a5'),  # noqa: E501
                 ],
-            ), EthereumTxReceiptLog(
+            ), EvmTxReceiptLog(
                 log_index=297,
                 data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000036ba1d53baeeda5ed20'),  # noqa: E501
                 address=string_to_evm_address('0x2a3bFF78B79A009976EeA096a51A948a3dC00e34'),
@@ -239,13 +239,13 @@ def setup_ethereum_transactions_test(
                     hexstring_to_bytes('0x000000000000000000000000caa004418eb42cdf00cb057b7c9e28f0ffd840a5'),  # noqa: E501
                     hexstring_to_bytes('0x000000000000000000000000443e1f9b1c866e54e914822b7d3d7165edb6e9ea'),  # noqa: E501
                 ],
-            ), EthereumTxReceiptLog(
+            ), EvmTxReceiptLog(
                 log_index=298,
                 data=hexstring_to_bytes('0x000000000000000000000000000000000000000000007b6ea033189ba7d047e30000000000000000000000000000000000000000000000140bc8194dd0f5e4be'),  # noqa: E501
                 address=string_to_evm_address('0xcaA004418eB42cdf00cB057b7C9E28f0FfD840a5'),
                 removed=False,
                 topics=[hexstring_to_bytes('0x1c411e9a96e071241c2f21f7726b17ae89e3cab4c78be50e062b03a9fffbbad1')],  # noqa: E501
-            ), EthereumTxReceiptLog(
+            ), EvmTxReceiptLog(
                 log_index=299,
                 data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000008ac7230489e8000000000000000000000000000000000000000000000000036ba1d53baeeda5ed200000000000000000000000000000000000000000000000000000000000000000'),  # noqa: E501
                 address=string_to_evm_address('0xcaA004418eB42cdf00cB057b7C9E28f0FfD840a5'),
@@ -258,13 +258,13 @@ def setup_ethereum_transactions_test(
             ),
         ],
     )
-    expected_receipt2 = EthereumTxReceipt(
+    expected_receipt2 = EvmTxReceipt(
         tx_hash=tx_hash2,
         contract_address=None,
         status=True,
         type=2,
         logs=[
-            EthereumTxReceiptLog(
+            EvmTxReceiptLog(
                 log_index=438,
                 data=hexstring_to_bytes('0x000000000000000000000000000000000000000000000000000000003b9deec6'),  # noqa: E501
                 address=string_to_evm_address('0xEaDD9B69F96140283F9fF75DA5FD33bcF54E6296'),

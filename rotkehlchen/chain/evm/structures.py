@@ -14,7 +14,7 @@ class EvmTxReceiptLog:
 
 
 @dataclasses.dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class EvmxTxReceipt:
+class EvmTxReceipt:
     tx_hash: EVMTxHash
     chain_id: ChainID
     contract_address: Optional[ChecksumEvmAddress]

@@ -6,8 +6,8 @@ from rotkehlchen.accounting.structures.types import HistoryEventSubType, History
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.curve.constants import CPT_CURVE
-from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
+from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_LINK, A_USDC, A_USDT
 from rotkehlchen.constants.misc import EXP18, ZERO
 from rotkehlchen.db.ethtx import DBEthTx
@@ -78,13 +78,13 @@ def test_curve_deposit(database, evm_transaction_decoder):
         input_data=hexstring_to_bytes('0x2b6e993a000000000000000000000000000000000000000000005512b9a6a672640100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000060c5f3590000000000000000000000000000000000000000000005255abbd43baa53603f90000000000000000000000000000000000000000000000000000000000000001'),  # noqa: E501
         nonce=599,
     )
-    receipt = EthereumTxReceipt(
+    receipt = EvmTxReceipt(
         tx_hash=evmhash,
         contract_address=None,
         status=True,
         type=0,
         logs=[
-            EthereumTxReceiptLog(
+            EvmTxReceiptLog(
                 log_index=370,
                 data=hexstring_to_bytes('0x000000000000000000000000000000000000000000005512b9a6a67264010000'),  # noqa: E501
                 address=string_to_evm_address('0x6B175474E89094C44Da98b954EedeAC495271d0F'),
@@ -94,7 +94,7 @@ def test_curve_deposit(database, evm_transaction_decoder):
                     hexstring_to_bytes('0x00000000000000000000000057bf3b0f29e37619623994071c9e12091919675c'),  # noqa: E501
                     hexstring_to_bytes('0x000000000000000000000000debf20617708857ebe4f679508e7b7863a8a8eee'),  # noqa: E501
                 ],
-            ), EthereumTxReceiptLog(
+            ), EvmTxReceiptLog(
                 log_index=383,
                 data=hexstring_to_bytes('0x000000000000000000000000000000000000000000000000000000060c5f3590'),  # noqa: E501
                 address=string_to_evm_address('0xdAC17F958D2ee523a2206206994597C13D831ec7'),
@@ -104,7 +104,7 @@ def test_curve_deposit(database, evm_transaction_decoder):
                     hexstring_to_bytes('0x00000000000000000000000057bf3b0f29e37619623994071c9e12091919675c'),  # noqa: E501
                     hexstring_to_bytes('0x000000000000000000000000debf20617708857ebe4f679508e7b7863a8a8eee'),  # noqa: E501
                 ],
-            ), EthereumTxReceiptLog(
+            ), EvmTxReceiptLog(
                 log_index=396,
                 data=hexstring_to_bytes('0x000000000000000000000000000000000000000000005328394d50efea7abaf4'),  # noqa: E501
                 address=string_to_evm_address('0xFd2a8fA60Abd58Efe3EeE34dd494cD491dC14900'),
@@ -114,7 +114,7 @@ def test_curve_deposit(database, evm_transaction_decoder):
                     hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000000000000'),  # noqa: E501
                     hexstring_to_bytes('0x00000000000000000000000057bf3b0f29e37619623994071c9e12091919675c'),  # noqa: E501
                 ],
-            ), EthereumTxReceiptLog(
+            ), EvmTxReceiptLog(
                 log_index=397,
                 data=hexstring_to_bytes('0x000000000000000000000000000000000000000000005512b9a6a672640100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000060c5f3590000000000000000000000000000000000000000000000002038eb27e79fe96ef0000000000000000000000000000000000000000000000000000000002e973710000000000000000000000000000000000000000000000000000000001832b050000000000000000000000000000000000000000002a38dd00eecdefe02a2fcf00000000000000000000000000000000000000000026c6b056a9a8e3b89d5717'),  # noqa: E501
                 address=string_to_evm_address('0xDeBF20617708857ebe4F679508E7b7863a8A8EeE'),
@@ -216,13 +216,13 @@ def test_curve_deposit_eth(database, evm_transaction_decoder):
         input_data=hexstring_to_bytes('0x0b4c7e4d00000000000000000000000000000000000000000000000002c68af0bb14000000000000000000000000000000000000000000000000000002c6526ca273a800000000000000000000000000000000000000000000000000054aaa619fda0c01'),  # noqa: E501
         nonce=5,
     )
-    receipt = EthereumTxReceipt(
+    receipt = EvmTxReceipt(
         tx_hash=evmhash,
         contract_address=None,
         status=True,
         type=0,
         logs=[
-            EthereumTxReceiptLog(
+            EvmTxReceiptLog(
                 log_index=412,
                 data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000000002c6526ca273a800'),  # noqa: E501
                 address=string_to_evm_address('0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84'),
@@ -232,7 +232,7 @@ def test_curve_deposit_eth(database, evm_transaction_decoder):
                     hexstring_to_bytes('0x000000000000000000000000767b35b9f06f6e28e5ed05ee7c27bdf992eba5d2'),  # noqa: E501
                     hexstring_to_bytes('0x000000000000000000000000dc24316b9ae028f1497c275eb9192a3ea0f67022'),  # noqa: E501
                 ],
-            ), EthereumTxReceiptLog(
+            ), EvmTxReceiptLog(
                 log_index=413,
                 data=hexstring_to_bytes('0xfffffffffffffffffffffffffffffffffffffffffffffffffd39ad935d8c57ff'),  # noqa: E501
                 address=string_to_evm_address('0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84'),
@@ -242,7 +242,7 @@ def test_curve_deposit_eth(database, evm_transaction_decoder):
                     hexstring_to_bytes('0x000000000000000000000000767b35b9f06f6e28e5ed05ee7c27bdf992eba5d2'),  # noqa: E501
                     hexstring_to_bytes('0x000000000000000000000000dc24316b9ae028f1497c275eb9192a3ea0f67022'),  # noqa: E501
                 ],
-            ), EthereumTxReceiptLog(
+            ), EvmTxReceiptLog(
                 log_index=414,
                 data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000000005589f42020a37df'),  # noqa: E501
                 address=string_to_evm_address('0x06325440D014e39736583c165C2963BA99fAf14E'),
@@ -252,7 +252,7 @@ def test_curve_deposit_eth(database, evm_transaction_decoder):
                     hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000000000000'),  # noqa: E501
                     hexstring_to_bytes('0x000000000000000000000000767b35b9f06f6e28e5ed05ee7c27bdf992eba5d2'),  # noqa: E501
                 ],
-            ), EthereumTxReceiptLog(
+            ), EvmTxReceiptLog(
                 log_index=415,
                 data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000000002c68af0bb14000000000000000000000000000000000000000000000000000002c6526ca273a80000000000000000000000000000000000000000000000000000000016a92ed4ce00000000000000000000000000000000000000000000000000000016a9b386830000000000000000000000000000000000000000000156e4db21d9cf6a6d4f3f000000000000000000000000000000000000000000014a4959a6fb2bf53a7108'),  # noqa: E501
                 address=string_to_evm_address('0xDC24316b9AE028F1497c275EB9192a3Ea0f67022'),
@@ -365,13 +365,13 @@ def test_curve_remove_liquidity(database, evm_transaction_decoder):
         input_data=hexstring_to_bytes('0x1a4d01d20000000000000000000000000000000000000000000000a8815561fefbe56aa300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a8d15fc942541fea7f'),  # noqa: E501
         nonce=5,
     )
-    receipt = EthereumTxReceipt(
+    receipt = EvmTxReceipt(
         tx_hash=evmhash,
         contract_address=None,
         status=True,
         type=0,
         logs=[
-            EthereumTxReceiptLog(
+            EvmTxReceiptLog(
                 log_index=506,
                 data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000a8815561fefbe56aa3'),  # noqa: E501
                 address=string_to_evm_address('0xcee60cFa923170e4f8204AE08B4fA6A3F5656F3a'),
@@ -381,7 +381,7 @@ def test_curve_remove_liquidity(database, evm_transaction_decoder):
                     hexstring_to_bytes('0x000000000000000000000000df9f0ae722a3919fe7f9cc8805773ef142007ca6'),  # noqa: E501
                     hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000000000000'),  # noqa: E501
                 ],
-            ), EthereumTxReceiptLog(
+            ), EvmTxReceiptLog(
                 log_index=507,
                 data=hexstring_to_bytes('0000000000000000000000000000000000000000000000a93078ae269dbeca10'),  # noqa: E501
                 address=string_to_evm_address('0x514910771AF9Ca656af840dff83E8264EcF986CA'),
@@ -391,7 +391,7 @@ def test_curve_remove_liquidity(database, evm_transaction_decoder):
                     hexstring_to_bytes('0x000000000000000000000000f178c0b5bb7e7abf4e12a4838c7b7c5ba2c623c0'),  # noqa: E501
                     hexstring_to_bytes('0x000000000000000000000000df9f0ae722a3919fe7f9cc8805773ef142007ca6'),  # noqa: E501
                 ],
-            ), EthereumTxReceiptLog(
+            ), EvmTxReceiptLog(
                 log_index=508,
                 data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000a8815561fefbe56aa30000000000000000000000000000000000000000000000a93078ae269dbeca100000000000000000000000000000000000000000000092c009040e68c381c519'),  # noqa: E501
                 address=string_to_evm_address('0xF178C0b5Bb7e7aBF4e12A4838C7b7c5bA2C623c0'),
@@ -400,7 +400,7 @@ def test_curve_remove_liquidity(database, evm_transaction_decoder):
                     hexstring_to_bytes('0x5ad056f2e28a8cec232015406b843668c1e36cda598127ec3b8c59b8c72773a0'),  # noqa: E501
                     hexstring_to_bytes('0x000000000000000000000000df9f0ae722a3919fe7f9cc8805773ef142007ca6'),  # noqa: E501
                 ],
-            ), EthereumTxReceiptLog(
+            ), EvmTxReceiptLog(
                 log_index=415,
                 data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000000002c68af0bb14000000000000000000000000000000000000000000000000000002c6526ca273a80000000000000000000000000000000000000000000000000000000016a92ed4ce00000000000000000000000000000000000000000000000000000016a9b386830000000000000000000000000000000000000000000156e4db21d9cf6a6d4f3f000000000000000000000000000000000000000000014a4959a6fb2bf53a7108'),  # noqa: E501
                 address=string_to_evm_address('0xDC24316b9AE028F1497c275EB9192a3Ea0f67022'),
@@ -489,13 +489,13 @@ def test_curve_remove_liquidity_with_internal(database, evm_transaction_decoder)
         input_data=hexstring_to_bytes('0x1a4d01d20000000000000000000000000000000000000000000000a8815561fefbe56aa300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a8d15fc942541fea7f'),  # noqa: E501
         nonce=5,
     )
-    receipt = EthereumTxReceipt(
+    receipt = EvmTxReceipt(
         tx_hash=evmhash,
         contract_address=None,
         status=True,
         type=0,
         logs=[
-            EthereumTxReceiptLog(
+            EvmTxReceiptLog(
                 log_index=191,
                 data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000dc335d474901e08'),  # noqa: E501
                 address=string_to_evm_address('0x06325440D014e39736583c165C2963BA99fAf14E'),
@@ -505,7 +505,7 @@ def test_curve_remove_liquidity_with_internal(database, evm_transaction_decoder)
                     hexstring_to_bytes('0x000000000000000000000000a8005630cae7b7d2afadd38fd3b3040d13cbe2bc'),  # noqa: E501
                     hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000000000000'),  # noqa: E501
                 ],
-            ), EthereumTxReceiptLog(
+            ), EvmTxReceiptLog(
                 log_index=192,
                 data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000dc335d474901e080000000000000000000000000000000000000000000000000e48d018621788fa'),  # noqa: E501
                 address=string_to_evm_address('0xDC24316b9AE028F1497c275EB9192a3Ea0f67022'),
@@ -603,13 +603,13 @@ def test_curve_remove_imbalanced(database, evm_transaction_decoder):
         input_data=hexstring_to_bytes('0x517a55a300000000000000000000000000000000000000000000001fa9ee7266a543831f00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000003f487c50000000000000000000000000000000000000000000000000000000000000001'),  # noqa: E501
         nonce=5,
     )
-    receipt = EthereumTxReceipt(
+    receipt = EvmTxReceipt(
         tx_hash=evmhash,
         contract_address=None,
         status=True,
         type=0,
         logs=[
-            EthereumTxReceiptLog(
+            EvmTxReceiptLog(
                 log_index=2183,
                 data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000001fa9ee7266a543831f'),  # noqa: E501
                 address=string_to_evm_address('0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8'),
@@ -619,7 +619,7 @@ def test_curve_remove_imbalanced(database, evm_transaction_decoder):
                     hexstring_to_bytes('0x0000000000000000000000002fac74a3a04b031f240923621a578724c40678af'),  # noqa: E501
                     hexstring_to_bytes('0x000000000000000000000000bbc81d23ea2c3ec7e56d39296f0cbb648873a5d3'),  # noqa: E501
                 ],
-            ), EthereumTxReceiptLog(
+            ), EvmTxReceiptLog(
                 log_index=2184,
                 data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000000000000'),  # noqa: E501
                 address=string_to_evm_address('0x16de59092dAE5CcF4A1E6439D611fd0653f0Bd01'),
@@ -629,7 +629,7 @@ def test_curve_remove_imbalanced(database, evm_transaction_decoder):
                     hexstring_to_bytes('0x00000000000000000000000045f783cce6b7ff23b2ab2d70e416cdb7d6055f51'),  # noqa: E501
                     hexstring_to_bytes('0x000000000000000000000000bbc81d23ea2c3ec7e56d39296f0cbb648873a5d3'),  # noqa: E501
                 ],
-            ), EthereumTxReceiptLog(
+            ), EvmTxReceiptLog(
                 log_index=2185,
                 data=hexstring_to_bytes('0x000000000000000000000000000000000000000000000000000000001fdb750a'),  # noqa: E501
                 address=string_to_evm_address('0xd6aD7a6750A7593E092a9B218d66C0A814a3436e'),
@@ -639,7 +639,7 @@ def test_curve_remove_imbalanced(database, evm_transaction_decoder):
                     hexstring_to_bytes('0x00000000000000000000000045f783cce6b7ff23b2ab2d70e416cdb7d6055f51'),  # noqa: E501
                     hexstring_to_bytes('0x000000000000000000000000bbc81d23ea2c3ec7e56d39296f0cbb648873a5d3'),  # noqa: E501
                 ],
-            ), EthereumTxReceiptLog(
+            ), EvmTxReceiptLog(
                 log_index=2186,
                 data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000000000000'),  # noqa: E501
                 address=string_to_evm_address('0x83f798e925BcD4017Eb265844FDDAbb448f1707D'),
@@ -649,7 +649,7 @@ def test_curve_remove_imbalanced(database, evm_transaction_decoder):
                     hexstring_to_bytes('0x00000000000000000000000045f783cce6b7ff23b2ab2d70e416cdb7d6055f51'),  # noqa: E501
                     hexstring_to_bytes('0x000000000000000000000000bbc81d23ea2c3ec7e56d39296f0cbb648873a5d3'),  # noqa: E501
                 ],
-            ), EthereumTxReceiptLog(
+            ), EvmTxReceiptLog(
                 log_index=2187,
                 data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000000000000'),  # noqa: E501
                 address=string_to_evm_address('0x73a052500105205d34Daf004eAb301916DA8190f'),
@@ -659,7 +659,7 @@ def test_curve_remove_imbalanced(database, evm_transaction_decoder):
                     hexstring_to_bytes('0x00000000000000000000000045f783cce6b7ff23b2ab2d70e416cdb7d6055f51'),  # noqa: E501
                     hexstring_to_bytes('0x000000000000000000000000bbc81d23ea2c3ec7e56d39296f0cbb648873a5d3'),  # noqa: E501
                 ],
-            ), EthereumTxReceiptLog(
+            ), EvmTxReceiptLog(
                 log_index=2188,
                 data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000000000000'),  # noqa: E501
                 address=string_to_evm_address('0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8'),
@@ -669,7 +669,7 @@ def test_curve_remove_imbalanced(database, evm_transaction_decoder):
                     hexstring_to_bytes('0x000000000000000000000000bbc81d23ea2c3ec7e56d39296f0cbb648873a5d3'),  # noqa: E501
                     hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000000000000'),  # noqa: E501
                 ],
-            ), EthereumTxReceiptLog(
+            ), EvmTxReceiptLog(
                 log_index=2189,
                 data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001fdb750a000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000045cf4bec2e53f0000000000000000000000000000000000000000000000000000000000000e07e000000000000000000000000000000000000000000000000000000000000570d0000000000000000000000000000000000000000000000000051077d9dc293100000000000000000000000000000000000000000000c740195f187122987a9ef0000000000000000000000000000000000000000000aeddccb3976328f7d90bd'),  # noqa: E501
                 address=string_to_evm_address('0x45F783CCE6B7FF23B2ab2D70e416cdb7D6055f51'),
@@ -679,7 +679,7 @@ def test_curve_remove_imbalanced(database, evm_transaction_decoder):
                     hexstring_to_bytes('0x000000000000000000000000bbc81d23ea2c3ec7e56d39296f0cbb648873a5d3'),  # noqa: E501
                     hexstring_to_bytes('0x000000000000000000000000bbc81d23ea2c3ec7e56d39296f0cbb648873a5d3'),  # noqa: E501
                 ],
-            ), EthereumTxReceiptLog(
+            ), EvmTxReceiptLog(
                 log_index=2189,
                 data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000027a72df9'),  # noqa: E501
                 address=string_to_evm_address('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),

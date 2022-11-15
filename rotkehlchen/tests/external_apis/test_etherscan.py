@@ -13,6 +13,7 @@ from rotkehlchen.serialization.deserialize import deserialize_evm_transaction
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (
     BlockchainAccountData,
+    ChainID,
     EvmInternalTransaction,
     EvmTransaction,
     ExternalService,
@@ -85,9 +86,16 @@ def test_maximum_rate_limit_reached(temp_etherscan, **kwargs):  # pylint: disabl
 def test_deserialize_transaction_from_etherscan():
     # Make sure that a missing to address due to contract creation is handled
     data = {'blockNumber': 54092, 'timeStamp': 1439048640, 'hash': '0x9c81f44c29ff0226f835cd0a8a2f2a7eca6db52a711f8211b566fd15d3e0e8d4', 'nonce': 0, 'blockHash': '0xd3cabad6adab0b52ea632c386ea19403680571e682c62cb589b5abcd76de2159', 'transactionIndex': 0, 'from': '0x5153493bB1E1642A63A098A65dD3913daBB6AE24', 'to': '', 'value': 11901464239480000000000000, 'gas': 2000000, 'gasPrice': 10000000000000, 'isError': 0, 'txreceipt_status': '', 'input': '0x313233', 'contractAddress': '0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae', 'cumulativeGasUsed': 1436963, 'gasUsed': 1436963, 'confirmations': 8569454}  # noqa: E501
-    transaction = deserialize_evm_transaction(data, internal=False, manager=None)
+    chain_id = ChainID.ETHEREUM
+    transaction = deserialize_evm_transaction(
+        data=data,
+        internal=False,
+        chain_id=chain_id,
+        manager=None,
+    )
     assert transaction == EvmTransaction(
         tx_hash=deserialize_evm_tx_hash(data['hash']),
+        chain_id=chain_id,
         timestamp=1439048640,
         block_number=54092,
         from_address='0x5153493bB1E1642A63A098A65dD3913daBB6AE24',

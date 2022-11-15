@@ -324,6 +324,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                         internal_tx = deserialize_evm_transaction(
                             data=entry,
                             internal=True,
+                            chain_id=chain_id,
                             manager=None,
                         )
                         with self.db.user_write() as cursor:  # type: ignore  # db always here

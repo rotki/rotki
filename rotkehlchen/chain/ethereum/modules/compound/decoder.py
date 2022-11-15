@@ -8,12 +8,12 @@ from rotkehlchen.assets.utils import get_crypto_asset_by_symbol
 from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.decoding.utils import maybe_reshuffle_events
-from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_normalized_value
+from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.constants.assets import A_COMP
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from .constants import COMPTROLLER_PROXY, CPT_COMPOUND
@@ -43,7 +43,7 @@ class CompoundDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
     def _decode_mint(
             self,
             transaction: EvmTransaction,
-            tx_log: EthereumTxReceiptLog,
+            tx_log: EvmTxReceiptLog,
             decoded_events: List[HistoryBaseEntry],
             compound_token: EvmToken,
     ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
@@ -95,7 +95,7 @@ class CompoundDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
 
     def _decode_redeem(
             self,
-            tx_log: EthereumTxReceiptLog,
+            tx_log: EvmTxReceiptLog,
             decoded_events: List[HistoryBaseEntry],
             compound_token: EvmToken,
     ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
@@ -136,10 +136,10 @@ class CompoundDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
 
     def decode_compound_token_movement(
             self,
-            tx_log: EthereumTxReceiptLog,
+            tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
             decoded_events: List[HistoryBaseEntry],
-            all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
+            all_logs: List[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[List[ActionItem]],  # pylint: disable=unused-argument
             compound_token: EvmToken,
     ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
@@ -154,10 +154,10 @@ class CompoundDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
 
     def decode_comp_claim(
             self,
-            tx_log: EthereumTxReceiptLog,
+            tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
             decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
-            all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
+            all_logs: List[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[List[ActionItem]],  # pylint: disable=unused-argument
     ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
         """Example tx:
@@ -189,7 +189,10 @@ class CompoundDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
     # -- DecoderInterface methods
 
     def addresses_to_decoders(self) -> Dict[ChecksumEvmAddress, Tuple[Any, ...]]:
-        compound_tokens = GlobalDBHandler().get_ethereum_tokens(protocol='compound')
+        compound_tokens = GlobalDBHandler().get_evm_tokens(
+            chain_id=ChainID.ETHEREUM,
+            protocol='compound',
+        )
         mapping: Dict[ChecksumEvmAddress, Tuple[Any, ...]] = {}
         for token in compound_tokens:
             if token == A_COMP:

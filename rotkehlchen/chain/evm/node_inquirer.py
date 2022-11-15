@@ -688,7 +688,12 @@ class EvmNodeInquirer(LockableQueryMixIn, metaclass=ABCMeta):
             tx_data = web3.eth.get_transaction(tx_hash)  # type: ignore
 
         try:
-            transaction = deserialize_evm_transaction(data=tx_data, internal=False, manager=self)  # noqa: E501
+            transaction = deserialize_evm_transaction(
+                data=tx_data,
+                internal=False,
+                chain_id=self.chain_id,
+                evm_inquirer=self,
+            )
         except (DeserializationError, ValueError) as e:
             raise RemoteError(
                 f'Couldnt deserialize evm transaction data from {tx_data}. Error: {str(e)}',

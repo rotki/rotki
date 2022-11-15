@@ -218,8 +218,8 @@ class ChainID(SerializableEnumMixin):
     def serialize_for_db(self) -> int:
         return self.value
 
-    def serialize(self) -> int:
-        return self.value
+    def serialize(self) -> str:
+        return str(self.value)
 
     def to_name(self) -> str:
         return str(self).lower()

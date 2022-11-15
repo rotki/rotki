@@ -81,7 +81,7 @@ from .constants import CPT_DSR, CPT_MIGRATION, CPT_VAULT
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.decoding.base import BaseDecoderTools
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -99,20 +99,20 @@ CDPMANAGER_FROB = b'E\xe6\xbd\xcd\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x0
 class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-init]
     def __init__(  # pylint: disable=super-init-not-called
             self,
-            ethereum_manager: 'EthereumManager',
+            evm_inquirer: 'EvmNodeInquirer',
             base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',
     ) -> None:
         DecoderInterface.__init__(
             self,
-            ethereum_manager=ethereum_manager,
+            evm_inquirer=evm_inquirer,
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
         )
         self.base = base_tools
         HasDSProxy.__init__(
             self,
-            ethereum_manager=ethereum_manager,
+            ethereum_inquirer=evm_inquirer,
             database=self.base.database,
             premium=None,  # not used here
             msg_aggregator=msg_aggregator,
@@ -145,7 +145,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-
         - RemoteError if query to the node failed
         - DeserializationError if the query returns unexpected output
         """
-        output = self.ethereum.node_inquirer.multicall(
+        output = self.ethereum.multicall(
             calls=[(
                 MAKERDAO_CDP_MANAGER.address,
                 MAKERDAO_CDP_MANAGER.encode(method_name='urns', arguments=[cdp_id]),

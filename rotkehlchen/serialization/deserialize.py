@@ -26,6 +26,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     AssetAmount,
     AssetMovementCategory,
+    ChainID,
     ChecksumEvmAddress,
     EvmInternalTransaction,
     EvmTransaction,
@@ -39,7 +40,7 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import convert_to_int, create_timestamp, iso8601ts_to_timestamp
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.evm.manager import EvmManager
+    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
 
 
 logger = logging.getLogger(__name__)
@@ -498,7 +499,8 @@ def deserialize_optional(input_val: Optional[X], fn: Callable[[X], Y]) -> Option
 def deserialize_evm_transaction(
         data: Dict[str, Any],
         internal: Literal[True],
-        manager: Optional['EvmManager'] = None,
+        chain_id: ChainID,
+        evm_inquirer: Optional['EvmNodeInquirer'] = None,
 ) -> EvmInternalTransaction:
     ...
 
@@ -507,7 +509,8 @@ def deserialize_evm_transaction(
 def deserialize_evm_transaction(
         data: Dict[str, Any],
         internal: Literal[False],
-        manager: Optional['EvmManager'] = None,
+        chain_id: ChainID,
+        evm_inquirer: Optional['EvmNodeInquirer'] = None,
 ) -> EvmTransaction:
     ...
 
@@ -515,23 +518,24 @@ def deserialize_evm_transaction(
 def deserialize_evm_transaction(
         data: Dict[str, Any],
         internal: bool,
-        manager: Optional['EvmManager'] = None,
+        chain_id: ChainID,
+        evm_inquirer: Optional['EvmNodeInquirer'] = None,
 ) -> Union[EvmTransaction, EvmInternalTransaction]:
     """Reads dict data of a transaction and deserializes it.
     If the transaction is not from etherscan then it's missing some data
-    so evm manager is used to fetch it.
+    so evm inquirer is used to fetch it.
 
     Can raise DeserializationError if something is wrong
     """
-    source = 'etherscan' if manager is None else 'web3'
+    source = 'etherscan' if evm_inquirer is None else 'web3'
     try:
         tx_hash = deserialize_evm_tx_hash(data['hash'])
         block_number = read_integer(data, 'blockNumber', source)
         if 'timeStamp' not in data:
-            if manager is None:
-                raise DeserializationError('Got in deserialize evm transaction without timestamp and without evm manager')  # noqa: E501
+            if evm_inquirer is None:
+                raise DeserializationError('Got in deserialize evm transaction without timestamp and without evm inquirer')  # noqa: E501
 
-            block_data = manager.get_block_by_number(block_number)
+            block_data = evm_inquirer.get_block_by_number(block_number)
             timestamp = Timestamp(read_integer(block_data, 'timestamp', source))
         else:
             timestamp = deserialize_timestamp(data['timeStamp'])
@@ -544,6 +548,7 @@ def deserialize_evm_transaction(
         if internal:
             return EvmInternalTransaction(
                 parent_tx_hash=tx_hash,
+                chain_id=chain_id,
                 trace_id=int(data['traceId']),
                 timestamp=timestamp,
                 block_number=block_number,
@@ -556,16 +561,17 @@ def deserialize_evm_transaction(
         gas_price = read_integer(data=data, key='gasPrice', api=source)
         input_data = read_hash(data, 'input', source)
         if 'gasUsed' not in data:
-            if manager is None:
-                raise DeserializationError('Got in deserialize evm transaction without gasUsed and without evm manager')  # noqa: E501
+            if evm_inquirer is None:
+                raise DeserializationError('Got in deserialize evm transaction without gasUsed and without evm inquirer')  # noqa: E501
             tx_hash = deserialize_evm_tx_hash(data['hash'])
-            receipt_data = manager.node_inquirer.get_transaction_receipt(tx_hash)
+            receipt_data = evm_inquirer.get_transaction_receipt(tx_hash)
             gas_used = read_integer(receipt_data, 'gasUsed', source)
         else:
             gas_used = read_integer(data, 'gasUsed', source)
         nonce = read_integer(data, 'nonce', source)
         return EvmTransaction(
             timestamp=timestamp,
+            chain_id=chain_id,
             block_number=block_number,
             tx_hash=tx_hash,
             from_address=from_address,

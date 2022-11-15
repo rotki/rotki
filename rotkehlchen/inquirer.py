@@ -104,6 +104,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.chain.ethereum.oracles.saddle import SaddleOracle
     from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
+    from rotkehlchen.chain.evm.manager import EvmManager
     from rotkehlchen.externalapis.coingecko import Coingecko
     from rotkehlchen.externalapis.cryptocompare import Cryptocompare
     from rotkehlchen.externalapis.defillama import Defillama
@@ -223,7 +224,7 @@ def get_underlying_asset_price(token: EvmToken) -> Tuple[Optional[Price], Curren
 
     custom_token = GlobalDBHandler().get_evm_token(
         address=token.evm_address,
-        chain=ChainID.ETHEREUM,
+        chain_id=ChainID.ETHEREUM,
     )
     if custom_token and custom_token.underlying_tokens is not None:
         usd_price = ZERO
@@ -280,7 +281,7 @@ class Inquirer():
     _uniswapv2: Optional['UniswapV2Oracle'] = None
     _uniswapv3: Optional['UniswapV3Oracle'] = None
     _saddle: Optional['SaddleOracle'] = None
-    _ethereum: Optional['EthereumManager'] = None
+    _evm_managers: Dict[ChainID, 'EvmManager']
     _oracles: Optional[List[CurrentPriceOracle]] = None
     _oracle_instances: Optional[List[CurrentPriceOracleInstance]] = None
     _oracles_not_onchain: Optional[List[CurrentPriceOracle]] = None
@@ -363,8 +364,16 @@ class Inquirer():
         return Inquirer.__instance
 
     @staticmethod
-    def inject_ethereum(ethereum: 'EthereumManager') -> None:
-        Inquirer()._ethereum = ethereum
+    def inject_evm_managers(evm_managers: List[Tuple[ChainID, 'EvmManager']]) -> None:
+        instance = Inquirer()
+        for chain_id, evm_manager in evm_managers:
+            instance._evm_managers[chain_id] = evm_manager
+
+    @staticmethod
+    def get_ethereum_manager() -> 'EthereumManager':
+        ethereum_manager = Inquirer()._evm_managers.get(ChainID.ETHEREUM)
+        assert ethereum_manager is not None, 'ethereum manager should have been injected'
+        return ethereum_manager  # type: ignore  # should be ethereum manager
 
     @staticmethod
     def add_defi_oracles(
@@ -673,12 +682,11 @@ class Inquirer():
 
         # Check if it is a special token
         if asset.identifier in instance.special_tokens:
-            ethereum = instance._ethereum
-            assert ethereum, 'Inquirer should never be called before the injection of ethereum'
+            ethereum = instance.get_ethereum_manager()
             assert token, 'all assets in special tokens are already ethereum tokens'
             underlying_asset_price, oracle = get_underlying_asset_price(token)
             usd_price = handle_defi_price_query(
-                ethereum=ethereum,
+                ethereum_inquirer=ethereum.node_inquirer,
                 token=token,
                 underlying_asset_price=underlying_asset_price,
             )
@@ -695,10 +703,9 @@ class Inquirer():
             result, oracle = get_underlying_asset_price(token)
             if result is None:
                 usd_price = Price(ZERO)
-                if instance._ethereum is not None:
-                    instance._ethereum.msg_aggregator.add_warning(
-                        f'Could not find price for {token}',
-                    )
+                instance._msg_aggregator.add_warning(
+                    f'Could not find price for {token}',
+                )
             else:
                 usd_price = Price(result)
             Inquirer._cached_current_price[cache_key] = CachedPriceEntry(
@@ -730,8 +737,7 @@ class Inquirer():
                 return usd_price, oracle, False
             except (RemoteError, DeserializationError) as e:
                 msg = f'Could not find price for BSQ. {str(e)}'
-                if instance._ethereum is not None:
-                    instance._ethereum.msg_aggregator.add_warning(msg)
+                instance._msg_aggregator.add_warning(msg)
                 return Price(BTC_PER_BSQ * price_in_btc), CurrentPriceOracle.BLOCKCHAIN, False
 
         if asset == A_KFEE:
@@ -751,11 +757,10 @@ class Inquirer():
             self,
             token: EvmToken,
     ) -> Optional[Price]:
-        assert self._ethereum is not None, 'Inquirer ethereum manager should have been initialized'  # noqa: E501
         # BAD BAD BAD. TODO: Need to rethinking placement of modules here
         from rotkehlchen.chain.ethereum.modules.uniswap.utils import find_uniswap_v2_lp_price  # isort:skip  # noqa: E501  # pylint: disable=import-outside-toplevel
         return find_uniswap_v2_lp_price(
-            ethereum=self._ethereum,
+            ethereum=self.get_ethereum_manager().node_inquirer,
             token=token,
             token_price_func=self.find_usd_price,
             token_price_func_args=[],
@@ -775,9 +780,9 @@ class Inquirer():
 
         Returns the price of 1 LP token from the pool
         """
-        assert self._ethereum is not None, 'Inquirer ethereum manager should have been initialized'  # noqa: E501
+        ethereum = self.get_ethereum_manager()
         # Make sure that the curve cache is queried
-        self._ethereum.curve_protocol_cache_is_queried(tx_decoder=None)
+        ethereum.curve_protocol_cache_is_queried(tx_decoder=None)
 
         pool_addresses_in_cache = GlobalDBHandler().get_general_cache_values(
             key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, lp_token.evm_address],
@@ -825,7 +830,7 @@ class Inquirer():
             (pool_address, contract.encode(method_name='balances', arguments=[i]))
             for i in range(len(tokens))
         ]
-        output = self._ethereum.multicall_2(
+        output = ethereum.node_inquirer.multicall_2(
             require_success=False,
             calls=calls,
         )
@@ -887,8 +892,7 @@ class Inquirer():
         Query price for a yearn vault v2 token using the pricePerShare method
         and the price of the underlying token.
         """
-        assert self._ethereum is not None, 'Inquirer ethereum manager should have been initialized'  # noqa: E501
-
+        ethereum = self.get_ethereum_manager()
         globaldb = GlobalDBHandler()
         with globaldb.conn.read_ctx() as cursor:
             maybe_underlying_token = globaldb.fetch_underlying_tokens(cursor, ethaddress_to_identifier(token.evm_address))  # noqa: E501
@@ -905,7 +909,7 @@ class Inquirer():
             deployed_block=0,
         )
         try:
-            price_per_share = contract.call(self._ethereum, 'pricePerShare')
+            price_per_share = contract.call(ethereum.node_inquirer, 'pricePerShare')
             return Price(price_per_share * underlying_token_price / 10 ** token.decimals)
         except (RemoteError, BlockchainQueryError) as e:
             log.error(f'Failed to query pricePerShare method in Yearn v2 Vault. {str(e)}')

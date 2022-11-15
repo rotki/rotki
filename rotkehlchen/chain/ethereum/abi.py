@@ -19,7 +19,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
+    from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -28,7 +28,7 @@ WEB3 = Web3()
 
 
 def decode_event_data_abi_str(
-        tx_log: 'EthereumTxReceiptLog',
+        tx_log: 'EvmTxReceiptLog',
         abi_json: str,
 ) -> Tuple[List, List]:
     """This is an adjustment of web3's event data decoding to work with our code
@@ -47,7 +47,7 @@ def decode_event_data_abi_str(
 
 
 def decode_event_data_abi(
-        tx_log: 'EthereumTxReceiptLog',
+        tx_log: 'EvmTxReceiptLog',
         event_abi: Dict[str, Any],
 ) -> Tuple[List, List]:
     """This is an adjustment of web3's event data decoding to work with our code

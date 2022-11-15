@@ -26,7 +26,7 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import hex_or_bytes_to_address
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 
 
 CURVE_POOLS_MAPPING_TYPE = Dict[
@@ -79,7 +79,7 @@ def read_curve_pools() -> Set[ChecksumEvmAddress]:
 
 
 def ensure_curve_tokens_existence(
-        ethereum_manager: 'EthereumManager',
+        ethereum_inquirer: 'EthereumInquirer',
         pools_mapping: CURVE_POOLS_MAPPING_TYPE,
 ) -> None:
     """This function receives data about curve pools and ensures that lp tokens and pool coins
@@ -88,10 +88,10 @@ def ensure_curve_tokens_existence(
         _, coins, underlying_coins = pool_info
         # ensure lp token exists in the globaldb
         get_or_create_evm_token(
-            userdb=ethereum_manager.database,
+            userdb=ethereum_inquirer.database,
             evm_address=lp_token_address,
             chain=ChainID.ETHEREUM,
-            ethereum_manager=ethereum_manager,
+            evm_inquirer=ethereum_inquirer,
             protocol=CURVE_POOL_PROTOCOL,
         )
 
@@ -105,10 +105,10 @@ def ensure_curve_tokens_existence(
                     continue
                 # ensure token exists
                 get_or_create_evm_token(
-                    userdb=ethereum_manager.database,
+                    userdb=ethereum_inquirer.database,
                     evm_address=token_address,
                     chain=ChainID.ETHEREUM,
-                    ethereum_manager=ethereum_manager,
+                    evm_inquirer=ethereum_inquirer,
                 )
         else:
             # Otherwise, coins and underlying coins lists represent a
@@ -118,17 +118,17 @@ def ensure_curve_tokens_existence(
                     continue
                 # ensure underlying token exists
                 get_or_create_evm_token(
-                    userdb=ethereum_manager.database,
+                    userdb=ethereum_inquirer.database,
                     evm_address=underlying_token_address,
                     chain=ChainID.ETHEREUM,
-                    ethereum_manager=ethereum_manager,
+                    evm_inquirer=ethereum_inquirer,
                 )
                 # and ensure token exists
                 get_or_create_evm_token(
-                    userdb=ethereum_manager.database,
+                    userdb=ethereum_inquirer.database,
                     evm_address=token_address,
                     chain=ChainID.ETHEREUM,
-                    ethereum_manager=ethereum_manager,
+                    evm_inquirer=ethereum_inquirer,
                     underlying_tokens=[UnderlyingToken(
                         address=underlying_token_address,
                         token_kind=EvmTokenKind.ERC20,
@@ -164,7 +164,7 @@ def save_curve_pools_to_cache(
 
 def update_curve_registry_pools_cache(
         write_cursor: DBCursor,
-        ethereum_manager: 'EthereumManager',
+        ethereum_inquirer: 'EthereumInquirer',
 ) -> None:
     """Query pools from curve registry.
     May raise:
@@ -172,7 +172,7 @@ def update_curve_registry_pools_cache(
     - NotERC20Conformant if failed to query info while calling get_or_create_evm_token
     """
     get_registry_result = CURVE_ADDRESS_PROVIDER.call(
-        manager=ethereum_manager,
+        node_inquirer=ethereum_inquirer,
         method_name='get_registry',
     )
     registry_address = to_checksum_address(get_registry_result)
@@ -182,10 +182,10 @@ def update_curve_registry_pools_cache(
         deployed_block=0,  # deployment_block is not used and the contract is dynamic
     )
     registry_pool_count = registry_contract.call(
-        manager=ethereum_manager,
+        node_inquirer=ethereum_inquirer,
         method_name='pool_count',
     )
-    registry_pools_result = ethereum_manager.multicall_specific(
+    registry_pools_result = ethereum_inquirer.multicall_specific(
         contract=registry_contract,
         method_name='pool_list',
         arguments=[(x,) for x in range(registry_pool_count)],
@@ -196,18 +196,18 @@ def update_curve_registry_pools_cache(
         decoded_pool_addr = hex_or_bytes_to_address(pool_addr_encoded)  # already checksumed
         pool_addresses.append(decoded_pool_addr)
 
-    registry_lp_tokens_result = ethereum_manager.multicall_specific(
+    registry_lp_tokens_result = ethereum_inquirer.multicall_specific(
         contract=registry_contract,
         method_name='get_lp_token',
         arguments=[(x,) for x in pool_addresses],
         decode_result=False,  # don't decode since decoding unchecksums address
     )
-    registry_coins_result = ethereum_manager.multicall_specific(
+    registry_coins_result = ethereum_inquirer.multicall_specific(
         contract=registry_contract,
         method_name='get_coins',
         arguments=[(x,) for x in pool_addresses],
     )
-    registry_underlying_coins_result = ethereum_manager.multicall_specific(
+    registry_underlying_coins_result = ethereum_inquirer.multicall_specific(
         contract=registry_contract,
         method_name='get_underlying_coins',
         arguments=[(x,) for x in pool_addresses],
@@ -235,13 +235,13 @@ def update_curve_registry_pools_cache(
 
         pools_mapping[decoded_lp_token] = (pool_addr, pool_coins, pool_underlying_coins)
 
-    ensure_curve_tokens_existence(ethereum_manager=ethereum_manager, pools_mapping=pools_mapping)
+    ensure_curve_tokens_existence(ethereum_inquirer=ethereum_inquirer, pools_mapping=pools_mapping)  # noqa:E501
     save_curve_pools_to_cache(write_cursor=write_cursor, pools_mapping=pools_mapping)
 
 
 def update_curve_metapools_cache(
         write_cursor: DBCursor,
-        ethereum_manager: 'EthereumManager',
+        ethereum_inquirer: 'EthereumInquirer',
 ) -> None:
     """Query pools from curve metapool factory.
     May raise:
@@ -249,7 +249,7 @@ def update_curve_metapools_cache(
     - NotERC20Conformant if failed to query info while calling get_or_create_evm_token
     """
     factory_address_result = CURVE_ADDRESS_PROVIDER.call(
-        manager=ethereum_manager,
+        node_inquirer=ethereum_inquirer,
         method_name='get_address',
         arguments=[3],  # 3 is metapool factory id
     )
@@ -260,10 +260,10 @@ def update_curve_metapools_cache(
         deployed_block=0,  # deployment_block is not used and the contract is dynamic
     )
     pool_count = factory_contract.call(
-        manager=ethereum_manager,
+        node_inquirer=ethereum_inquirer,
         method_name='pool_count',
     )
-    pool_addrs_result = ethereum_manager.multicall_specific(
+    pool_addrs_result = ethereum_inquirer.multicall_specific(
         contract=factory_contract,
         method_name='pool_list',
         arguments=[(x,) for x in range(pool_count)],
@@ -275,7 +275,7 @@ def update_curve_metapools_cache(
 
     # either a pool of stablecoins or a pair `stablecoin - other curve pool token`
     # so no need to query underlying tokens
-    pool_coins_result = ethereum_manager.multicall_specific(
+    pool_coins_result = ethereum_inquirer.multicall_specific(
         contract=factory_contract,
         method_name='get_coins',
         arguments=[(x,) for x in pool_addresses],
@@ -295,5 +295,5 @@ def update_curve_metapools_cache(
         # for metapools pool addr is the lp token as well
         pools_mapping[pool_addr] = (pool_addr, pool_coins, None)
 
-    ensure_curve_tokens_existence(ethereum_manager=ethereum_manager, pools_mapping=pools_mapping)
+    ensure_curve_tokens_existence(ethereum_inquirer=ethereum_inquirer, pools_mapping=pools_mapping)
     save_curve_pools_to_cache(write_cursor=write_cursor, pools_mapping=pools_mapping)

@@ -5,8 +5,8 @@ from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.decoding.decoder import EVMTransactionDecoder
-from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
+from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.constants.assets import A_ETH, A_LQTY, A_LUSD
 from rotkehlchen.constants.misc import EXP18, ZERO
 from rotkehlchen.db.ethtx import DBEthTx
@@ -46,13 +46,13 @@ def test_liquity_trove_adjust(database, ethereum_manager, eth_transactions):
         input_data=hexstring_to_bytes('0xc6a6cf2000000000000000000000000000000000000000000000000000238e8a8455758900000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001018f9e3f8eea75e0100000000000000000000000000000000000000000000000000000000000000001000000000000000000000000e24328e7df3d87c1cbcc9043326f9b20c425a9e6000000000000000000000000de64f98baece7282973ce8d67cd73455d4748673'),  # noqa: E501
         nonce=507,
     )
-    receipt = EthereumTxReceipt(
+    receipt = EvmTxReceipt(
         tx_hash=evmhash,
         contract_address=None,
         status=True,
         type=0,
         logs=[
-            EthereumTxReceiptLog(
+            EvmTxReceiptLog(
                 log_index=91,
                 data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000014a3a4295480654a6'),  # noqa: E501
                 address=string_to_evm_address('0x5f98805A4E8be255a32880FDeC7F6728C6568bA0'),
@@ -62,7 +62,7 @@ def test_liquity_trove_adjust(database, ethereum_manager, eth_transactions):
                     hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000000000000'),  # noqa: E501
                     hexstring_to_bytes('0x0000000000000000000000004f9fbb3f1e99b56e0fe2892e623ed36a76fc605d'),  # noqa: E501
                 ],
-            ), EthereumTxReceiptLog(
+            ), EvmTxReceiptLog(
                 log_index=95,
                 data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000021e19de846fc75de296000000000000000000000000000000000000000000000000429d069189e00000000000000000000000000000000000000000000000000000429d069189e000000000000000000000000000000000000000000000000000000000000000000002'),  # noqa: E501
                 address=string_to_evm_address('0x24179CD81c9e782A4096035f7eC97fB8B783e007'),
@@ -71,7 +71,7 @@ def test_liquity_trove_adjust(database, ethereum_manager, eth_transactions):
                     hexstring_to_bytes('0xc3770d654ed33aeea6bf11ac8ef05d02a6a04ed4686dd2f624d853bbec43cc8b'),  # noqa: E501
                     hexstring_to_bytes('0x0000000000000000000000009ba961989dd6609ed091f512be947118c40f2291'),  # noqa: E501
                 ],
-            ), EthereumTxReceiptLog(
+            ), EvmTxReceiptLog(
                 log_index=98,
                 data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000001018f9e3f8eea75e010'),  # noqa: E501
                 address=string_to_evm_address('0x5f98805A4E8be255a32880FDeC7F6728C6568bA0'),
@@ -81,7 +81,7 @@ def test_liquity_trove_adjust(database, ethereum_manager, eth_transactions):
                     hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000000000000'),  # noqa: E501
                     hexstring_to_bytes('0x0000000000000000000000009ba961989dd6609ed091f512be947118c40f2291'),  # noqa: E501
                 ],
-            ), EthereumTxReceiptLog(
+            ), EvmTxReceiptLog(
                 log_index=99,
                 data=hexstring_to_bytes('0x000000000000000000000000000000000000000000004e97821fe7ced4f8b2fb'),  # noqa: E501
                 address=string_to_evm_address('0xDf9Eb223bAFBE5c5271415C75aeCD68C21fE3D7F'),
@@ -173,13 +173,13 @@ def test_liquity_trove_deposit_lusd(database, ethereum_manager, eth_transactions
         input_data=hexstring_to_bytes('0xc6a6cf200000000000000000000000000000000000000000000000000023c5d78add1ce10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001906c5721af5fbe700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000de9ac8262766e73a1d5f75cc3c37ae495e88d225000000000000000000000000cb926f497763ea5cf993912a442431e6a91d5a64'),  # noqa: E501
         nonce=507,
     )
-    receipt = EthereumTxReceipt(
+    receipt = EvmTxReceipt(
         tx_hash=evmhash,
         contract_address=None,
         status=True,
         type=0,
         logs=[
-            EthereumTxReceiptLog(
+            EvmTxReceiptLog(
                 log_index=204,
                 data=hexstring_to_bytes('0x000000000000000000000000000000000000000000038f9ba4f4e8bb875c546b0000000000000000000000000000000000000000000000aed129e69968ff40000000000000000000000000000000000000000000000000aed129e69968ff40000000000000000000000000000000000000000000000000000000000000000002'),  # noqa: E501
                 address=string_to_evm_address('0x24179CD81c9e782A4096035f7eC97fB8B783e007'),
@@ -188,7 +188,7 @@ def test_liquity_trove_deposit_lusd(database, ethereum_manager, eth_transactions
                     hexstring_to_bytes('0xc3770d654ed33aeea6bf11ac8ef05d02a6a04ed4686dd2f624d853bbec43cc8b'),  # noqa: E501
                     hexstring_to_bytes('0x000000000000000000000000648e180e246741363639b1496762763dd25649db'),  # noqa: E501
                 ],
-            ), EthereumTxReceiptLog(
+            ), EvmTxReceiptLog(
                 log_index=207,
                 data=hexstring_to_bytes('0x000000000000000000000000000000000000000000001906c5721af5fbe70000'),  # noqa: E501
                 address=string_to_evm_address('0x5f98805A4E8be255a32880FDeC7F6728C6568bA0'),
@@ -198,7 +198,7 @@ def test_liquity_trove_deposit_lusd(database, ethereum_manager, eth_transactions
                     hexstring_to_bytes('0x000000000000000000000000648e180e246741363639b1496762763dd25649db'),  # noqa: E501
                     hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000000000000'),  # noqa: E501
                 ],
-            ), EthereumTxReceiptLog(
+            ), EvmTxReceiptLog(
                 log_index=208,
                 data=hexstring_to_bytes('0x000000000000000000000000000000000000000000004e900a6a97e3873abb07'),  # noqa: E501
                 address=string_to_evm_address('0xDf9Eb223bAFBE5c5271415C75aeCD68C21fE3D7F'),
@@ -277,13 +277,13 @@ def test_liquity_trove_remove_eth(database, ethereum_manager, eth_transactions):
         input_data=hexstring_to_bytes('0xc6a6cf2000000000000000000000000000000000000000000000000000238811c2e89e1b000000000000000000000000000000000000000000000001bc16d674ec80000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000cb926f497763ea5cf993912a442431e6a91d5a64000000000000000000000000c68d61757a9894f34871c0ae733ac034d9abf807'),  # noqa: E501
         nonce=507,
     )
-    receipt = EthereumTxReceipt(
+    receipt = EvmTxReceipt(
         tx_hash=evmhash,
         contract_address=None,
         status=True,
         type=0,
         logs=[
-            EthereumTxReceiptLog(
+            EvmTxReceiptLog(
                 log_index=204,
                 data=hexstring_to_bytes('0x000000000000000000000000000000000000000000038f9ba4f4e8bb875c546b0000000000000000000000000000000000000000000000aed129e69968ff40000000000000000000000000000000000000000000000000aed129e69968ff40000000000000000000000000000000000000000000000000000000000000000002'),  # noqa: E501
                 address=string_to_evm_address('0x24179CD81c9e782A4096035f7eC97fB8B783e007'),
@@ -292,7 +292,7 @@ def test_liquity_trove_remove_eth(database, ethereum_manager, eth_transactions):
                     hexstring_to_bytes('0xc3770d654ed33aeea6bf11ac8ef05d02a6a04ed4686dd2f624d853bbec43cc8b'),  # noqa: E501
                     hexstring_to_bytes('0x000000000000000000000000648e180e246741363639b1496762763dd25649db'),  # noqa: E501
                 ],
-            ), EthereumTxReceiptLog(
+            ), EvmTxReceiptLog(
                 log_index=293,
                 data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000000000000'),  # noqa: E501
                 address=string_to_evm_address('0x5f98805A4E8be255a32880FDeC7F6728C6568bA0'),
@@ -302,7 +302,7 @@ def test_liquity_trove_remove_eth(database, ethereum_manager, eth_transactions):
                     hexstring_to_bytes('0x000000000000000000000000648e180e246741363639b1496762763dd25649db'),  # noqa: E501
                     hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000000000000'),  # noqa: E501
                 ],
-            ), EthereumTxReceiptLog(
+            ), EvmTxReceiptLog(
                 log_index=208,
                 data=hexstring_to_bytes('0x000000000000000000000000000000000000000000004e927b246c443a2daac9'),  # noqa: E501
                 address=string_to_evm_address('0xDf9Eb223bAFBE5c5271415C75aeCD68C21fE3D7F'),
@@ -402,13 +402,13 @@ def test_liquity_pool_deposit(database, ethereum_manager, eth_transactions):
         input_data=hexstring_to_bytes('0x5f788d650000000000000000000000000000000000000000000000068155a43676e0000000000000000000000000000030e5d10dc30a0ce2545a4dbe8de4fcba590062c5'),  # noqa: E501
         nonce=507,
     )
-    receipt = EthereumTxReceipt(
+    receipt = EvmTxReceipt(
         tx_hash=evmhash,
         contract_address=None,
         status=True,
         type=0,
         logs=[
-            EthereumTxReceiptLog(
+            EvmTxReceiptLog(
                 log_index=907,
                 data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000068155a43676e00000'),  # noqa: E501
                 address=string_to_evm_address('0x5f98805A4E8be255a32880FDeC7F6728C6568bA0'),
@@ -418,7 +418,7 @@ def test_liquity_pool_deposit(database, ethereum_manager, eth_transactions):
                     hexstring_to_bytes('0x000000000000000000000000f04e6f2d27ed324917ad2098f96f5d4ac52e1684'),  # noqa: E501
                     hexstring_to_bytes('0x00000000000000000000000066017d22b0f8556afdd19fc67041899eb65a21bb'),  # noqa: E501
                 ],
-            ), EthereumTxReceiptLog(
+            ), EvmTxReceiptLog(
                 log_index=911,
                 data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'),  # noqa: E501
                 address=string_to_evm_address('0x66017D22b0f8556afDd19FC67041899Eb65a21bb'),
@@ -497,13 +497,13 @@ def test_liquity_pool_remove_deposits(database, ethereum_manager, eth_transactio
         input_data=hexstring_to_bytes('0x2e54bf950000000000000000000000000000000000000000000000000000000000000000'),  # noqa: E501
         nonce=507,
     )
-    receipt = EthereumTxReceipt(
+    receipt = EvmTxReceipt(
         tx_hash=evmhash,
         contract_address=None,
         status=True,
         type=0,
         logs=[
-            EthereumTxReceiptLog(
+            EvmTxReceiptLog(
                 log_index=131,
                 data=hexstring_to_bytes('0x000000000000000000000000000000000000000000000000bfa91a19de91add4'),  # noqa: E501
                 address=string_to_evm_address('0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D'),
@@ -513,7 +513,7 @@ def test_liquity_pool_remove_deposits(database, ethereum_manager, eth_transactio
                     hexstring_to_bytes('0x000000000000000000000000d8c9d9071123a059c6e0a945cf0e0c82b508d816'),  # noqa: E501
                     hexstring_to_bytes('0x00000000000000000000000003cd116cabe0747f31a71b3565877717097fc06c'),  # noqa: E501
                 ],
-            ), EthereumTxReceiptLog(
+            ), EvmTxReceiptLog(
                 log_index=133,
                 data=hexstring_to_bytes('0x000000000000000000000000000000000000000000000046f454ff5d19ab0efd'),  # noqa: E501
                 address=string_to_evm_address('0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D'),
@@ -523,7 +523,7 @@ def test_liquity_pool_remove_deposits(database, ethereum_manager, eth_transactio
                     hexstring_to_bytes('0x000000000000000000000000d8c9d9071123a059c6e0a945cf0e0c82b508d816'),  # noqa: E501
                     hexstring_to_bytes('0x000000000000000000000000f03639047f75204d00c9314611c2b24570db4405'),  # noqa: E501
                 ],
-            ), EthereumTxReceiptLog(
+            ), EvmTxReceiptLog(
                 log_index=134,
                 data=hexstring_to_bytes('0x000000000000000000000000000000000000000000000046f454ff5d19ab0efd'),  # noqa: E501
                 address=string_to_evm_address('0x66017D22b0f8556afDd19FC67041899Eb65a21bb'),
@@ -532,7 +532,7 @@ def test_liquity_pool_remove_deposits(database, ethereum_manager, eth_transactio
                     hexstring_to_bytes('0x2608b986a6ac0f6c629ca37018e80af5561e366252ae93602a96d3ab2e73e42d'),  # noqa: E501
                     hexstring_to_bytes('0x000000000000000000000000f03639047f75204d00c9314611c2b24570db4405'),  # noqa: E501
                 ],
-            ), EthereumTxReceiptLog(
+            ), EvmTxReceiptLog(
                 log_index=208,
                 data=hexstring_to_bytes('0x000000000000000000000000000000000000000000000000004b0e79ddb72c200000000000000000000000000000000000000000000000014acf0eec96f96a1c'),  # noqa: E501
                 address=string_to_evm_address('0x66017D22b0f8556afDd19FC67041899Eb65a21bb'),

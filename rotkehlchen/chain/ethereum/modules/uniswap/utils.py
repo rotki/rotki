@@ -25,7 +25,7 @@ from rotkehlchen.types import ChecksumEvmAddress, Price
 from rotkehlchen.utils.misc import get_chunks
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
 
 
@@ -36,7 +36,7 @@ log = RotkehlchenLogsAdapter(logger)
 def uniswap_lp_token_balances(
         userdb: 'DBHandler',
         address: ChecksumEvmAddress,
-        ethereum: 'EthereumManager',
+        ethereum: 'EthereumInquirer',
         lp_addresses: List[ChecksumEvmAddress],
         known_tokens: Set[EvmToken],
         unknown_tokens: Set[EvmToken],
@@ -55,7 +55,7 @@ def uniswap_lp_token_balances(
         abi=ZERION_ABI,
         deployed_block=1586199170,
     )
-    if (own_node_info := ethereum.node_inquirer.get_own_node_info()) is not None:
+    if (own_node_info := ethereum.get_own_node_info()) is not None:
         chunks = list(get_chunks(lp_addresses, n=4000))
         call_order = [WeightedNode(node_info=own_node_info, weight=ONE, active=True)]
     else:
@@ -65,7 +65,7 @@ def uniswap_lp_token_balances(
     balances = []
     for chunk in chunks:
         result = zerion_contract.call(
-            manager=ethereum,
+            node_inquirer=ethereum,
             method_name='getAdapterBalance',
             arguments=[address, '0x4EdBac5c8cb92878DD3fd165e43bBb8472f34c3f', chunk],
             call_order=call_order,
@@ -142,7 +142,7 @@ def get_latest_lp_addresses(data_directory: Path) -> List[ChecksumEvmAddress]:
 
 
 def find_uniswap_v2_lp_price(
-        ethereum: 'EthereumManager',
+        ethereum: 'EthereumInquirer',
         token: EvmToken,
         token_price_func: Callable,
         token_price_func_args: List[Any],

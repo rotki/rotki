@@ -7,8 +7,8 @@ from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.decoding.decoder import EVMTransactionDecoder
 from rotkehlchen.chain.ethereum.modules.sushiswap.constants import CPT_SUSHISWAP_V2
-from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
+from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.ethtx import DBEthTx
@@ -39,13 +39,13 @@ def test_sushiswap_single_swap(database, ethereum_manager, eth_transactions):
         input_data=hexstring_to_bytes('0x38ed173900000000000000000000000000000000000000000000000109dccca56ed38b8c000000000000000000000000000000000000000000000000ff1886165de79bd900000000000000000000000000000000000000000000000000000000000000a00000000000000000000000003ba6eb0e4327b96ade6d4f3b578724208a590cef0000000000000000000000000000000000000000000000000000000060ba9a13000000000000000000000000000000000000000000000000000000000000000200000000000000000000000062b9c7356a2dc64a1969e19c23e4f579f9810aa7000000000000000000000000d533a949740bb3306d119cc777fa900ba034cd52'),  # noqa: E501
         nonce=0,
     )
-    receipt = EthereumTxReceipt(
+    receipt = EvmTxReceipt(
         tx_hash=evmhash,
         contract_address=None,
         status=True,
         type=0,
         logs=[
-            EthereumTxReceiptLog(
+            EvmTxReceiptLog(
                 log_index=306,
                 data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000000109dccca56ed38b8c'),  # noqa: E501
                 address=string_to_evm_address('0x62B9c7356A2Dc64a1969e19C23e4f579F9810Aa7'),
@@ -55,7 +55,7 @@ def test_sushiswap_single_swap(database, ethereum_manager, eth_transactions):
                     hexstring_to_bytes('0x0000000000000000000000003ba6eb0e4327b96ade6d4f3b578724208a590cef'),  # noqa: E501
                     hexstring_to_bytes('0x00000000000000000000000033f6ddaea2a8a54062e021873bcaee006cdf4007'),  # noqa: E501
                 ],
-            ), EthereumTxReceiptLog(
+            ), EvmTxReceiptLog(
                 log_index=308,
                 data=hexstring_to_bytes('0x000000000000000000000000000000000000000000000001005f0be0b7f96826'),  # noqa: E501
                 address=string_to_evm_address('0xD533a949740bb3306d119CC777fa900bA034cd52'),
@@ -65,7 +65,7 @@ def test_sushiswap_single_swap(database, ethereum_manager, eth_transactions):
                     hexstring_to_bytes('0x00000000000000000000000033f6ddaea2a8a54062e021873bcaee006cdf4007'),  # noqa: E501
                     hexstring_to_bytes('0x0000000000000000000000003ba6eb0e4327b96ade6d4f3b578724208a590cef'),  # noqa: E501
                 ],
-            ), EthereumTxReceiptLog(
+            ), EvmTxReceiptLog(
                 log_index=310,
                 data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000000109dccca56ed38b8c00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001005f0be0b7f96826'),  # noqa: E501
                 address=string_to_evm_address('0x33F6DDAEa2a8a54062E021873bCaEE006CdF4007'),

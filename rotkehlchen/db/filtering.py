@@ -336,7 +336,7 @@ class EvmTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
     @property
     def chain_id(self) -> Optional[ChainID]:
         if isinstance(self.filters[-1], DBEvmChainIDFilter):
-            return self.filterss[-1].chain_id
+            return self.filters[-1].chain_id
         return None
 
     @classmethod

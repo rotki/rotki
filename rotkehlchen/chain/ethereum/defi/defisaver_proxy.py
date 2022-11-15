@@ -13,7 +13,7 @@ from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
@@ -30,13 +30,13 @@ class HasDSProxy(EthereumModule):
 
     def __init__(
             self,
-            ethereum_manager: 'EthereumManager',
+            ethereum_inquirer: 'EthereumInquirer',
             database: 'DBHandler',
             premium: Optional[Premium],
             msg_aggregator: MessagesAggregator,
     ) -> None:
         self.premium = premium
-        self.ethereum = ethereum_manager
+        self.ethereum = ethereum_inquirer
         self.database = database
         self.msg_aggregator = msg_aggregator
         self.address_to_proxy: Dict[ChecksumEvmAddress, ChecksumEvmAddress] = {}
@@ -54,7 +54,7 @@ class HasDSProxy(EthereumModule):
         - RemoteError if etherscan is used and there is a problem with
         reaching it or with the returned result. Also this error can be raised
         if there is a problem deserializing the result address.
-        - BlockchainQueryError if an ethereum node is used and the contract call
+        - BlockchainQueryError if an evm node is used and the contract call
         queries fail for some reason
         """
         result = DS_PROXY_REGISTRY.call(self.ethereum, 'proxies', arguments=[address])
@@ -78,7 +78,7 @@ class HasDSProxy(EthereumModule):
         May raise:
         - RemoteError if query to the node failed
         """
-        output = self.ethereum.node_inquirer.multicall(
+        output = self.ethereum.multicall(
             calls=[(
                 DS_PROXY_REGISTRY.address,
                 DS_PROXY_REGISTRY.encode(method_name='proxies', arguments=[address]),

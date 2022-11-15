@@ -2,8 +2,8 @@
 import pytest
 
 from rotkehlchen.chain.ethereum.constants import ZERO_ADDRESS
-from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.types import ETHERSCAN_NODE_NAME
+from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.constants.ethereum import ATOKEN_ABI, ERC20TOKEN_ABI, YEARN_YCRV_VAULT
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.tests.utils.checks import assert_serialized_dicts_equal
@@ -25,12 +25,12 @@ from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
 
 @pytest.mark.parametrize(*ETHEREUM_TEST_PARAMETERS)
-def test_get_block_by_number(ethereum_manager, call_order, ethereum_manager_connect_at_start):
+def test_get_block_by_number(ethereum_inquirer, call_order, ethereum_manager_connect_at_start):
     wait_until_all_nodes_connected(
-        ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
-        ethereum=ethereum_manager,
+        connect_at_start=ethereum_manager_connect_at_start,
+        evm_inquirer=ethereum_inquirer,
     )
-    block = ethereum_manager.get_block_by_number(10304885, call_order=call_order)
+    block = ethereum_inquirer.get_block_by_number(10304885, call_order=call_order)
     assert block['timestamp'] == 1592686213
     assert block['number'] == 10304885
     assert block['hash'] == '0xe2217ba1639c6ca2183f40b0f800185b3901faece2462854b3162d4c5077752c'
@@ -99,13 +99,13 @@ def test_get_transaction_receipt(
         db.add_receipt_data(cursor, ChainID.ETHEREUM, result)
         receipt = db.get_receipt(cursor, tx_hash, ChainID.ETHEREUM)
 
-    assert receipt == EthereumTxReceipt(
+    assert receipt == EvmTxReceipt(
         tx_hash=tx_hash,
         contract_address=None,
         status=True,
         type=0,
         logs=[
-            EthereumTxReceiptLog(
+            EvmTxReceiptLog(
                 log_index=235,
                 data=b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02T\x0b\xe4\x00',  # noqa: E501
                 address='0x5bEaBAEBB3146685Dd74176f68a0721F91297D37',
@@ -114,7 +114,7 @@ def test_get_transaction_receipt(
                     b'\xdd\xf2R\xad\x1b\xe2\xc8\x9bi\xc2\xb0h\xfc7\x8d\xaa\x95+\xa7\xf1c\xc4\xa1\x16(\xf5ZM\xf5#\xb3\xef',  # noqa: E501
                     b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00s(*c\xf0\xe3\xd7\xe9`EuB\x0fwsa\xec\xa3\xc8j',  # noqa: E501
                     b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xb6 \xf1\x93ME\x84\xdd\xa6\x99\x9e\xdc\xad\xd3)\x81)dj\xa5',  # noqa: E501
-                ]), EthereumTxReceiptLog(
+                ]), EvmTxReceiptLog(
                     log_index=236,
                     data=b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xb6 \xf1\x93ME\x84\xdd\xa6\x99\x9e\xdc\xad\xd3)\x81)dj\xa5\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xb6 \xf1\x93ME\x84\xdd\xa6\x99\x9e\xdc\xad\xd3)\x81)dj\xa5\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00[\xea\xba\xeb\xb3\x14f\x85\xddt\x17oh\xa0r\x1f\x91)}7\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02T\x0b\xe4\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\r\xe0\xb6\xb3\xa7d\x00\x00',  # noqa: E501
                     address='0x73282A63F0e3D7e9604575420F777361ecA3C86A',

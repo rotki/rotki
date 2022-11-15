@@ -29,7 +29,7 @@ from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import get_chunks
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
@@ -211,11 +211,11 @@ class ZerionSDK():
 
     def __init__(
             self,
-            ethereum_manager: 'EthereumManager',
+            ethereum_inquirer: 'EthereumInquirer',
             msg_aggregator: MessagesAggregator,
             database: 'DBHandler',
     ) -> None:
-        self.ethereum = ethereum_manager
+        self.ethereum = ethereum_inquirer
         self.msg_aggregator = msg_aggregator
         self.contract = EvmContract(
             address=ZERION_ADAPTER_ADDRESS,
@@ -231,7 +231,7 @@ class ZerionSDK():
 
         try:
             protocol_names = self.contract.call(
-                manager=self.ethereum,
+                node_inquirer=self.ethereum,
                 method_name='getProtocolNames',
                 arguments=[],
             )
@@ -255,7 +255,7 @@ class ZerionSDK():
                     weight=ONE,
                 )
                 return self.contract.call(
-                    manager=self.ethereum,
+                    node_inquirer=self.ethereum,
                     method_name='getBalances',
                     arguments=[account],
                     call_order=(own_node, ) + WEIGHTED_NODES_WITH_HIGH_GAS_LIMIT,
@@ -278,7 +278,7 @@ class ZerionSDK():
         ))
         for protocol_names in protocol_chunks:
             contract_result = self.contract.call(
-                manager=self.ethereum,
+                node_inquirer=self.ethereum,
                 method_name='getProtocolBalances',
                 arguments=[account, protocol_names],
             )

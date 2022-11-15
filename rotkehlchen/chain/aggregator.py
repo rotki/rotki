@@ -376,7 +376,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             self.activate_module(given_module)
 
         self.defichad = DefiChad(
-            ethereum_manager=self.ethereum,
+            ethereum_manager=self.ethereum.node_inquirer,
             msg_aggregator=self.msg_aggregator,
             database=self.database,
         )
