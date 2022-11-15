@@ -9,5 +9,5 @@ const char = '.';
 </script>
 
 <style scoped lang="scss">
-@import '~@/scss/loading.scss';
+@import '~@/scss/loading';
 </style>

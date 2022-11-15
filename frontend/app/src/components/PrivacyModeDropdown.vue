@@ -180,7 +180,7 @@ const { privacyModeIcon, privacyMode, togglePrivacyMode, changePrivacyMode } =
             :deep() {
               .v-slider {
                 &__tick {
-                  @for $j from 3-$i through 3 {
+                  @for $j from 3 - $i through 3 {
                     &:nth-child(#{$j}) {
                       --color: var(--v-primary-base);
                     }
