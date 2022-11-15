@@ -968,8 +968,8 @@ def test_query_aave_defi_borrowing(rotkehlchen_api_server, ethereum_accounts):
     assert len(account_data['lending']) == 1
     assert len(account_data['borrowing']) == 1
     variable_borrowing = account_data['borrowing']['eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7']  # noqa: E501
-    assert variable_borrowing['variable_apr'] == '8.85%'
-    assert variable_borrowing['stable_apr'] == '16.85%'
+    assert variable_borrowing['variable_apr'] == '3.75%'
+    assert variable_borrowing['stable_apr'] == '11.87%'
     assert variable_borrowing['balance']['amount'] == '2697.800279'
     variable_borrowing = account_data['lending']['eip155:1/erc20:0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599']  # noqa: E501
     assert variable_borrowing['apy'] == '0.12%'

@@ -241,7 +241,7 @@ class EVMTransactionDecoder():
             if event:
                 events.append(event)
 
-        if len(events) == 0 and (eth_event := self._get_eth_transfer_event(transaction)) is not None:
+        if len(events) == 0 and (eth_event := self._get_eth_transfer_event(transaction)) is not None:  # noqa: E501
             events = [eth_event]
 
         self.dbevents.add_history_events(write_cursor=write_cursor, history=events)
