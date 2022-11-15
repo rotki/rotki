@@ -1,18 +1,26 @@
 <template>
   <login-overlay>
     <div v-if="!isPremiumDialogVisible" :class="css.wrapper">
-      <v-card class="pb-4" :class="css.card" light data-cy="account-management">
-        <login-header />
-        <connection-loading
-          v-if="!hasConnectionFailed"
-          :connected="connected && !autolog"
-        />
-        <connection-failure v-else />
-        <div v-if="connected" data-cy="account-management-forms">
-          <router-view />
-        </div>
-      </v-card>
-      <login-icon>
+      <div :class="css.container">
+        <v-card
+          class="pb-4"
+          :class="css.card"
+          light
+          data-cy="account-management"
+        >
+          <login-header />
+          <connection-loading
+            v-if="!connectionFailure"
+            :connected="connected && !autolog"
+          />
+          <connection-failure v-else />
+          <div v-if="connected" data-cy="account-management-forms">
+            <router-view />
+          </div>
+        </v-card>
+      </div>
+
+      <login-icon left>
         <animations-button />
       </login-icon>
       <privacy-notice />
@@ -41,45 +49,27 @@ import AnimationsButton from '@/components/user/AnimationsButton.vue';
 import LoginHeader from '@/components/user/LoginHeader.vue';
 import LoginIcon from '@/components/user/LoginIcon.vue';
 import LoginOverlay from '@/components/user/LoginOverlay.vue';
-import { useBackendManagement } from '@/composables/backend';
 import { usePremiumReminder } from '@/composables/premium';
+import { useAutoLogin } from '@/composables/user/account';
 import { useInterop } from '@/electron-interop';
 import { useMainStore } from '@/store/main';
-import { useSessionStore } from '@/store/session';
-import { useSessionAuthStore } from '@/store/session/auth';
-
-const autolog = ref(false);
 
 const css = useCssModule();
 
-const { login } = useSessionStore();
-const { logged } = storeToRefs(useSessionAuthStore());
-const { connectionFailure: hasConnectionFailed, connected } = storeToRefs(
-  useMainStore()
-);
-const { showGetPremiumButton, showPremiumDialog, isPremiumDialogVisible } =
-  usePremiumReminder();
-const { resetSessionBackend } = useBackendManagement();
-
-onMounted(async () => {
-  await resetSessionBackend();
-
-  set(autolog, true);
-
-  await login({ username: '', password: '' });
-
-  if (get(logged)) {
-    showPremiumDialog();
-    showGetPremiumButton();
-  }
-
-  set(autolog, false);
-});
-
+const { autolog } = useAutoLogin();
 const { isPackaged } = useInterop();
+const { isPremiumDialogVisible } = usePremiumReminder();
+const { connectionFailure, connected } = storeToRefs(useMainStore());
 </script>
 
 <style module lang="scss">
+.container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
 .wrapper {
   width: 600px;
   max-width: 100%;

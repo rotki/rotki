@@ -87,7 +87,7 @@ import Notification from '@/components/status/notifications/Notification.vue';
 import PendingTasks from '@/components/status/notifications/PendingTasks.vue';
 import { useTheme } from '@/composables/common';
 import { setupNotifications } from '@/composables/notifications';
-import { setupTaskStatus } from '@/composables/tasks';
+import { useTasks } from '@/store/tasks';
 
 defineProps({
   visible: { required: true, type: Boolean }
@@ -121,7 +121,7 @@ const notifications = computed(() => {
 });
 
 const { isMobile } = useTheme();
-const { hasRunningTasks } = setupTaskStatus();
+const { hasRunningTasks } = useTasks();
 </script>
 
 <style module lang="scss">

@@ -18,7 +18,7 @@
         class="premium-reminder__buttons__cancel"
         depressed
         outlined
-        @click="dismiss()"
+        @click="navigateToDashboard()"
       >
         {{ t('common.actions.close') }}
       </v-btn>
@@ -36,22 +36,18 @@
   </v-card>
 </template>
 <script setup lang="ts">
+import { useAppNavigation } from '@/composables/navigation';
 import { useInterop } from '@/electron-interop';
-import { useSessionAuthStore } from '@/store/session/auth';
 
-const { premiumPrompt } = storeToRefs(useSessionAuthStore());
 const { navigateToPremium, premiumURL, isPackaged } = useInterop();
+const { navigateToDashboard } = useAppNavigation();
 
-const dismiss = () => {
-  set(premiumPrompt, false);
-};
-
-const keyHandler = (event: KeyboardEvent) => {
+const keyHandler = async (event: KeyboardEvent) => {
   const keys = ['Escape', 'Esc'];
   if (!keys.includes(event.key)) {
     return;
   }
-  dismiss();
+  await navigateToDashboard();
 };
 
 onBeforeMount(() => {

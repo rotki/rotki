@@ -36,6 +36,7 @@
 <script setup lang="ts">
 import { Chart, registerables } from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
+import AppDrawer from '@/components/app/AppDrawer.vue';
 import AppIndicators from '@/components/app/AppIndicators.vue';
 import AppSidebars from '@/components/app/AppSidebars.vue';
 import NotificationPopup from '@/components/status/notifications/NotificationPopup.vue';
@@ -44,7 +45,6 @@ import { useTheme } from '@/composables/common';
 import { useInterop } from '@/electron-interop';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
 import { useStatisticsStore } from '@/store/statistics';
-import AppDrawer from "@/components/app/AppDrawer.vue";
 
 const visibilityStore = useAreaVisibilityStore();
 const { showDrawer, isMini } = storeToRefs(visibilityStore);

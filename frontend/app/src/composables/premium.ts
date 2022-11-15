@@ -1,3 +1,4 @@
+import { useAppNavigation } from '@/composables/navigation';
 import { useInterop } from '@/electron-interop';
 import { useMessageStore } from '@/store/message';
 import { useSessionAuthStore } from '@/store/session/auth';
@@ -10,6 +11,8 @@ export const usePremium = () => {
 
 export const usePremiumReminder = () => {
   const premium = usePremium();
+  const { navigateToDashboard } = useAppNavigation();
+
   const { premiumUserLoggedIn } = useInterop();
   const { premiumPrompt } = storeToRefs(useSessionAuthStore());
   const { message } = storeToRefs(useMessageStore());
@@ -18,16 +21,13 @@ export const usePremiumReminder = () => {
     () => !get(premium) && !get(message).title && get(premiumPrompt)
   );
 
-  const showPremiumDialog = () => {
+  const showPremiumDialog = async () => {
     if (get(premium)) {
       set(premiumPrompt, false);
+      await navigateToDashboard();
       return;
     }
     set(premiumPrompt, true);
-  };
-
-  const dismissPremiumDialog = () => {
-    set(premiumPrompt, false);
   };
 
   const showGetPremiumButton = () => {
@@ -37,7 +37,6 @@ export const usePremiumReminder = () => {
   return {
     isPremiumDialogVisible,
     showGetPremiumButton,
-    showPremiumDialog,
-    dismissPremiumDialog
+    showPremiumDialog
   };
 };

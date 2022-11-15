@@ -30,7 +30,7 @@
 <script setup lang="ts">
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import { setupNotifications } from '@/composables/notifications';
-import { setupTaskStatus } from '@/composables/tasks';
+import { useTasks } from '@/store/tasks';
 
 defineProps({
   visible: { required: true, type: Boolean }
@@ -42,7 +42,7 @@ const click = () => {
   emit('click');
 };
 
-const { hasRunningTasks } = setupTaskStatus();
+const { hasRunningTasks } = useTasks();
 
 const { tc } = useI18n();
 </script>

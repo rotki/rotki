@@ -6,9 +6,7 @@ const defaultSyncConflict = (): SyncConflict => ({
 });
 
 export const useSessionAuthStore = defineStore('session/auth', () => {
-  const newAccount = ref(false);
   const logged = ref(false);
-  const loginComplete = ref(false);
   const premiumPrompt = ref(false);
   const username = ref('');
   const syncConflict = ref<SyncConflict>(defaultSyncConflict());
@@ -18,9 +16,7 @@ export const useSessionAuthStore = defineStore('session/auth', () => {
   };
 
   return {
-    newAccount,
     logged,
-    loginComplete,
     username,
     premiumPrompt,
     syncConflict,

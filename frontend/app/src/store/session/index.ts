@@ -5,7 +5,7 @@ import { useLastLanguage } from '@/composables/session/language';
 import { useStatusUpdater } from '@/composables/status';
 import { getBnFormat } from '@/data/amount_formatter';
 import { EXTERNAL_EXCHANGES } from '@/data/defaults';
-import { interop, useInterop } from '@/electron-interop';
+import { useInterop } from '@/electron-interop';
 import { useExchangeApi } from '@/services/balances/exchanges';
 import { SupportedExternalExchanges } from '@/services/balances/types';
 import {
@@ -61,8 +61,7 @@ export const useSessionStore = defineStore('session', () => {
   const darkModeEnabled = ref(false);
 
   const authStore = useSessionAuthStore();
-  const { newAccount, logged, loginComplete, username, syncConflict } =
-    storeToRefs(authStore);
+  const { logged, username, syncConflict } = storeToRefs(authStore);
 
   const usersApi = useUsersApi();
   const settingsApi = useSettingsApi();
@@ -83,6 +82,8 @@ export const useSessionStore = defineStore('session', () => {
   const { fetchCounterparties } = useTransactions();
   const { fetch, refreshPrices } = useBalancesStore();
   const { start, stop } = useMonitorStore();
+  const { checkForUpdates, resetTray, isPackaged, clearPassword } =
+    useInterop();
 
   const { t } = useI18n();
 
@@ -135,7 +136,6 @@ export const useSessionStore = defineStore('session', () => {
       start();
       await fetchTags();
 
-      set(newAccount, isNew);
       set(username, user);
       set(logged, true);
       await fetchCounterparties();
@@ -220,7 +220,7 @@ export const useSessionStore = defineStore('session', () => {
   };
 
   const logout = async () => {
-    interop.resetTray();
+    resetTray();
     try {
       await usersApi.logout(get(username));
       stop();
@@ -251,7 +251,6 @@ export const useSessionStore = defineStore('session', () => {
   };
 
   const checkForUpdate = async (): Promise<void> => {
-    const { checkForUpdates } = useInterop();
     set(showUpdatePopup, await checkForUpdates());
   };
 
@@ -259,7 +258,6 @@ export const useSessionStore = defineStore('session', () => {
     currentPassword,
     newPassword
   }: ChangePasswordPayload): Promise<ActionStatus> => {
-    const { isPackaged, clearPassword } = useInterop();
     try {
       const success = await usersApi.changeUserPassword(
         get(username),
@@ -331,9 +329,7 @@ export const useSessionStore = defineStore('session', () => {
 
   return {
     adaptiveLanguage,
-    newAccount,
     logged,
-    loginComplete,
     username,
     syncConflict,
     showUpdatePopup,
