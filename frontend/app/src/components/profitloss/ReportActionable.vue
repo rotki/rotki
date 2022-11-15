@@ -40,7 +40,7 @@ const reportsStore = useReports();
 const { actionableItems } = toRefs(reportsStore);
 
 const actionableItemsLength = computed(() => {
-  let total: number = 0;
+  let total = 0;
 
   const items = get(actionableItems);
 

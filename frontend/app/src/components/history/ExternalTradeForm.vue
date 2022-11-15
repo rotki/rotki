@@ -329,7 +329,7 @@ const link = ref<string>('');
 const notes = ref<string>('');
 const type = ref<TradeType>('buy');
 
-const errorMessages = ref<{ [field: string]: string[] }>({});
+const errorMessages = ref<Record<string, string[]>>({});
 
 const quoteAmountInput = ref<any>(null);
 const rateInput = ref<any>(null);
@@ -486,7 +486,7 @@ const swapAmountInput = () => {
   }
 };
 
-const updateRate = (forceUpdate: boolean = false) => {
+const updateRate = (forceUpdate = false) => {
   if (
     get(amount) &&
     get(rate) &&

@@ -14,7 +14,7 @@ export const setupLiquidityPosition = () => {
   const { balancerBalances } = useBalancerStore();
   const { assetSymbol } = useAssetInfoRetrieval();
 
-  const lpAggregatedBalances = (includeNft: boolean = true) =>
+  const lpAggregatedBalances = (includeNft = true) =>
     computed(() => {
       const mappedUniswapV3Balances = get(uniswapV3Balances([])).map(item => ({
         ...item,
@@ -66,7 +66,7 @@ export const setupLiquidityPosition = () => {
         .map((item, id) => ({ ...item, id }));
     });
 
-  const lpTotal = (includeNft: boolean = false) =>
+  const lpTotal = (includeNft = false) =>
     computed<BigNumber>(() => {
       return bigNumberSum(
         get(lpAggregatedBalances(includeNft)).map(item => item.usdValue)

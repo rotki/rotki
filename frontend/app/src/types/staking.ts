@@ -41,7 +41,7 @@ export const KrakenStakingEvents = z.object({
 
 export type KrakenStakingEvents = z.infer<typeof KrakenStakingEvents>;
 
-export type KrakenStakingPagination = {
+export interface KrakenStakingPagination {
   limit: number;
   offset: number;
   orderByAttributes: (keyof KrakenStakingEvent)[];
@@ -51,7 +51,7 @@ export type KrakenStakingPagination = {
   asset?: string;
   eventSubtypes?: string[];
   onlyCache?: boolean;
-};
+}
 
 export const emptyPagination = (): KrakenStakingPagination => ({
   offset: 0,
@@ -60,9 +60,9 @@ export const emptyPagination = (): KrakenStakingPagination => ({
   orderByAttributes: ['timestamp']
 });
 
-export type KrakenStakingPaginationOptions = {
+export interface KrakenStakingPaginationOptions {
   page: number;
   itemsPerPage: number;
   sortBy: (keyof KrakenStakingEvent)[];
   sortDesc: boolean[];
-};
+}

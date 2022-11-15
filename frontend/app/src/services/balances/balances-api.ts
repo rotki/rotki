@@ -72,7 +72,7 @@ export class BalancesApi {
 
   async internalEnsNames<T>(
     ethereumAddresses: string[],
-    asyncQuery: boolean = false
+    asyncQuery = false
   ): Promise<T> {
     return this.axios
       .post<ActionResult<T>>(

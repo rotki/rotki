@@ -189,7 +189,7 @@ export class RotkehlchenApi {
     return handleResponse(ping);
   }
 
-  async info(checkForUpdates: boolean = false): Promise<BackendInfo> {
+  async info(checkForUpdates = false): Promise<BackendInfo> {
     const response = await this.axios.get<ActionResult<BackendInfo>>('/info', {
       params: axiosSnakeCaseTransformer({
         checkForUpdates
@@ -211,7 +211,7 @@ export class RotkehlchenApi {
   queryTaskResult<T>(
     id: number,
     numericKeys?: string[] | null,
-    transform: boolean = true
+    transform = true
   ): Promise<ActionResult<T>> {
     const requiresSetup = numericKeys || numericKeys === null;
     const transformer = requiresSetup

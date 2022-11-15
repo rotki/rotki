@@ -36,9 +36,7 @@ export const useBalancerStore = defineStore('defi/balancer', () => {
     computed<BalancerBalance[]>(() => {
       const perAddressBalances = get(balances);
 
-      const aggregatedBalances: {
-        [poolAddress: string]: Writeable<BalancerBalance>;
-      } = {};
+      const aggregatedBalances: Record<string, Writeable<BalancerBalance>> = {};
 
       for (const account in perAddressBalances) {
         if (addresses.length > 0 && !addresses.includes(account)) {
@@ -166,7 +164,7 @@ export const useBalancerStore = defineStore('defi/balancer', () => {
       return result;
     });
 
-  const fetchBalances = async (refresh: boolean = false) => {
+  const fetchBalances = async (refresh = false) => {
     const meta: TaskMeta = {
       title: t('actions.defi.balancer_balances.task.title').toString(),
       numericKeys: []
@@ -204,7 +202,7 @@ export const useBalancerStore = defineStore('defi/balancer', () => {
     );
   };
 
-  const fetchEvents = async (refresh: boolean = false) => {
+  const fetchEvents = async (refresh = false) => {
     const meta: TaskMeta = {
       title: t('actions.defi.balancer_events.task.title').toString(),
       numericKeys: []

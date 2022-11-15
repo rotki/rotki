@@ -10,7 +10,9 @@ import { checkIfDevelopment } from '@/utils/env-utils';
 const isDevelopment = checkIfDevelopment();
 const isMac = process.platform === 'darwin';
 
-export type MenuActions = { displayTray: (display: boolean) => void };
+export interface MenuActions {
+  displayTray: (display: boolean) => void;
+}
 
 export const debugSettings = {
   persistStore: false

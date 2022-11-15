@@ -26,10 +26,10 @@ import ChainDisplay from '@/components/accounts/blockchain/ChainDisplay.vue';
 import { useModules } from '@/composables/session/modules';
 import { Module } from '@/types/modules';
 
-type SupportedChain = {
+interface SupportedChain {
   symbol: Blockchain;
   name: string;
-};
+}
 
 const chains: SupportedChain[] = [
   {

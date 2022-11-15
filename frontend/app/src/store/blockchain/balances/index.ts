@@ -34,7 +34,7 @@ export const useBlockchainBalancesStore = defineStore(
 
     const fetch = async (
       chain: Blockchain,
-      ignoreCache: boolean = false
+      ignoreCache = false
     ): Promise<void> => {
       const { loading, setStatus, resetStatus, isFirstLoad } = useStatusUpdater(
         chainSection[chain]

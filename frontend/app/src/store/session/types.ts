@@ -9,7 +9,7 @@ export enum PrivacyMode {
 
 export interface Pinned {
   name: string;
-  props: { [key: string]: any };
+  props: Record<string, any>;
 }
 
 export const SyncConflictPayload = z.object({
@@ -56,11 +56,11 @@ const Nft = z.object({
 
 export type Nft = z.infer<typeof Nft>;
 
-export type GalleryNft = Omit<Nft, 'priceEth'> & {
+export interface GalleryNft extends Omit<Nft, 'priceEth'> {
   address: string;
   priceInAsset: BigNumber;
   priceAsset: string;
-};
+}
 
 const Nfts = z.record(z.array(Nft));
 

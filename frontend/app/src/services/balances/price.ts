@@ -19,7 +19,7 @@ export const usePriceApi = () => {
     source: PriceOracle,
     fromAsset: string,
     toAsset: string,
-    purgeOld: boolean = false
+    purgeOld = false
   ): Promise<PendingTask> =>
     api.instance
       .post<ActionResult<PendingTask>>(

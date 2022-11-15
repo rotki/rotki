@@ -23,7 +23,7 @@ const notificationDefaults = (): NotificationPayload => ({
 });
 
 const createNotification = (
-  id: number = 0,
+  id = 0,
   { display, duration, message, severity, title }: NotificationPayload = {
     title: '',
     message: '',

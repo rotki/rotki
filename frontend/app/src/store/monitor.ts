@@ -95,7 +95,7 @@ export const useMonitorStore = defineStore('monitor', () => {
    * This function is called periodically, queries some data from the
    * client and updates the UI with the response.
    */
-  const start = function (restarting: boolean = false): void {
+  const start = function (restarting = false): void {
     startPromise(connectWebSocket(restarting));
     startTaskMonitoring(restarting);
     startWatcherMonitoring(restarting);

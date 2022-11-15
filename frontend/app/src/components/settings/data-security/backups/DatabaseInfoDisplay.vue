@@ -53,15 +53,15 @@
 <script setup lang="ts">
 import { PropType } from 'vue';
 
-type UserDbInfo = {
+interface UserDbInfo {
   version: string;
   size: string;
-};
+}
 
-type GlobalDbInfo = {
+interface GlobalDbInfo {
   schema: string;
   assets: string;
-};
+}
 
 defineProps({
   directory: {

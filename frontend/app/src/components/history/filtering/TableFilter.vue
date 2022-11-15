@@ -129,7 +129,7 @@ function updateMatches(pairs: Suggestion[]) {
     }
 
     const valueKey = (matcher.keyValue || matcher.key) as string;
-    let transformedKeyword: string = '';
+    let transformedKeyword = '';
     if ('validate' in matcher) {
       if (typeof entry.value !== 'string') {
         continue;

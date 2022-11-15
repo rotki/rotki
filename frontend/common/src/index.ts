@@ -5,9 +5,7 @@ export type Nullable<T> = T | null;
 
 export type SemiPartial<T, Ps extends keyof T> = Pick<T, Ps> & Partial<T>;
 
-export type AddressIndexed<T> = {
-  readonly [address: string]: T
-}
+export type AddressIndexed<T> = Readonly<Record<string, T>>;
 
 export const NumericString = z.number().or(z.string()).transform(arg => new BigNumber(arg));
 

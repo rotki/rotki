@@ -57,9 +57,9 @@ import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import { useSessionStore } from '@/store/session';
 import { usePremiumStore } from '@/store/session/premium';
 
-type Form = {
+interface Form {
   reset: () => boolean;
-};
+}
 
 const currentPassword = ref('');
 const newPassword = ref('');

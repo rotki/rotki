@@ -80,7 +80,7 @@ function createTimeframe(
   amount = 1
 ): Timeframe {
   let start: () => number;
-  let timestampRange: number = 0;
+  let timestampRange = 0;
 
   if (frame === TimeFramePeriod.ALL) {
     start = () => 0;
@@ -171,7 +171,7 @@ export const getTimeframeByRange = (startDate: number, endDate: number): Timefra
   return usedTimeframe;
 }
 
-export type TooltipDisplayOption = {
+export interface TooltipDisplayOption {
   visible: boolean;
   id: string;
   left: number;

@@ -108,7 +108,7 @@ const onModuleActivation = (active: Module[]) => {
   }
 };
 
-const update = async (activeModules: Module[], clearSearch: boolean = true) => {
+const update = async (activeModules: Module[], clearSearch = true) => {
   if (clearSearch) {
     set(search, '');
     setTimeout(() => {

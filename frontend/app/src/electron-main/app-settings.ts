@@ -58,8 +58,8 @@ class AppSettingManager {
   }
 }
 
-export type AppSettings = {
+export interface AppSettings {
   displayTray: boolean;
-};
+}
 
 export const settingsManager = new AppSettingManager(app);

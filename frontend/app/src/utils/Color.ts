@@ -1,6 +1,6 @@
 import { assert } from '@/utils/assertions';
 
-export function invertColor(color: string, bw: boolean = true) {
+export function invertColor(color: string, bw = true) {
   if (color.indexOf('#') === 0) {
     color = color.slice(1);
   }

@@ -91,7 +91,7 @@ export default class PyHandler {
   private childProcess?: ChildProcess;
   private executable?: string;
   private _corsURL?: string;
-  private backendOutput: string = '';
+  private backendOutput = '';
   private onChildError?: (err: Error) => void;
   private onChildExit?: (code: number, signal: any) => void;
   private logDirectory?: string;
@@ -316,7 +316,7 @@ export default class PyHandler {
     this.logToFile('The Python sub-process was not successfully started');
   }
 
-  async exitPyProc(restart: boolean = false) {
+  async exitPyProc(restart = false) {
     const client = this.childProcess;
     this.logToFile(
       restart ? 'Restarting the backend' : 'Terminating the backend'

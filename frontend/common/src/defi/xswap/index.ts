@@ -58,9 +58,7 @@ export const XswapPool = z.object({
 
 export type XswapPool = z.infer<typeof XswapPool>;
 
-export interface XswapEvents {
-  readonly [address: string]: XswapPoolDetails[];
-}
+export type XswapEvents = Readonly<Record<string, XswapPoolDetails[]>>;
 
 export type XswapPoolProfit = Omit<XswapPoolDetails, "events" | "address">
 

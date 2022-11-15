@@ -1,20 +1,18 @@
 import { Balance, BigNumber } from '@rotki/common';
 import { z } from 'zod';
 
-export type Eth2Validator = {
+export interface Eth2Validator {
   readonly validatorIndex?: string;
   readonly publicKey?: string;
   readonly ownershipPercentage?: string;
-};
+}
 
 export interface LocationBalance {
   readonly location: string;
   readonly usdValue: BigNumber;
 }
 
-export interface BalanceByLocation {
-  [location: string]: BigNumber;
-}
+export type BalanceByLocation = Record<string, BigNumber>;
 
 export const AssetBalances = z.record(Balance);
 

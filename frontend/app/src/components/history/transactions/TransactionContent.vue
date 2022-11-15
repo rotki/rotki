@@ -250,19 +250,19 @@ import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { getCollectionData, setupEntryLimit } from '@/utils/collection';
 
-type PaginationOptions = {
+interface PaginationOptions {
   page: number;
   itemsPerPage: number;
   sortBy: (keyof EthTransaction)[];
   sortDesc: boolean[];
-};
+}
 
 const Fragment = defineAsyncComponent(
   () => import('@/components/helper/Fragment')
 );
 
 const emit = defineEmits(['fetch']);
-const fetch = (refresh: boolean = false) => emit('fetch', refresh);
+const fetch = (refresh = false) => emit('fetch', refresh);
 
 const { tc } = useI18n();
 
@@ -323,7 +323,7 @@ const checkEmptyEvents = async () => {
   );
 };
 
-const redecodeEvents = async (all: boolean = false) => {
+const redecodeEvents = async (all = false) => {
   const txHashes = all ? null : get(data).map(item => item.txHash);
   await fetchTransactionEvents(txHashes, true);
 };

@@ -49,14 +49,14 @@ export interface DateUtilities {
   convertToTimestamp(date: string, dateFormat?: string): number;
 }
 
-export type CompoundApi = {
+export interface CompoundApi {
   compoundRewards: Ref<ProfitLossModel[]>
   compoundDebtLoss: Ref<ProfitLossModel[]>
   compoundLiquidationProfit: Ref<ProfitLossModel[]>
   compoundInterestProfit: Ref<ProfitLossModel[]>
 };
 
-export type BalancerApi = {
+export interface BalancerApi {
   balancerProfitLoss: (addresses: string[]) => Ref<BalancerProfitLoss[]>,
   balancerEvents: (addresses: string[]) => Ref<BalancerEvent[]>,
   balancerBalances: (addresses: string[]) => Ref<BalancerBalance[]>,
@@ -66,7 +66,7 @@ export type BalancerApi = {
   fetchBalancerEvents: (refresh: boolean) => Promise<void>
 };
 
-export type SushiApi = {
+export interface SushiApi {
   balances: (addresses: string[]) => Ref<XswapBalance[]>
   events: (addresses: string[]) => Ref<XswapEventDetails[]>;
   poolProfit: (addresses: string[]) => Ref<XswapPoolProfit[]>
@@ -76,22 +76,22 @@ export type SushiApi = {
   fetchEvents: (refresh: boolean) => Promise<void>
 }
 
-export type BalancesApi = {
+export interface BalancesApi {
   byLocation: Ref<Record<string, BigNumber>>
   aggregatedBalances: Ref<AssetBalanceWithPrice[]>
   exchangeRate: (currency: string) => Ref<BigNumber>
-};
+}
 
-export type AssetsApi = {
+export interface AssetsApi {
   assetInfo(identifier: MaybeRef<string>): ComputedRef<AssetInfo | null>;
   assetSymbol(identifier: MaybeRef<string>): ComputedRef<string>;
   tokenAddress(identifier: MaybeRef<string>): ComputedRef<string>;
-};
+}
 
-export type UtilsApi = {
+export interface UtilsApi {
   truncate(text: string, length: number): string,
   getPoolName(type: LpType, assets: string[]): string
-};
+}
 
 export interface DataUtilities {
   readonly assets: AssetsApi
@@ -104,7 +104,7 @@ export interface DataUtilities {
   readonly sushi: SushiApi
 }
 
-export type UserSettingsApi = {
+export interface UserSettingsApi {
   currencySymbol: Ref<string>
   floatingPrecision: Ref<number>
   shouldShowAmount: Ref<boolean>
@@ -128,7 +128,7 @@ export interface SettingsApi {
   };
 }
 
-export type PremiumApi = {
+export interface PremiumApi {
   readonly date: DateUtilities;
   readonly data: DataUtilities;
   readonly settings: SettingsApi;

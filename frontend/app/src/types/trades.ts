@@ -21,7 +21,7 @@ import { SupportedExchange } from '@/types/exchanges';
 import { TradeLocation } from '@/types/history/trade-location';
 import { assert } from '@/utils/assertions';
 
-export type TradeLocationData = {
+export interface TradeLocationData {
   readonly identifier: TradeLocation;
   readonly name: string;
   readonly icon: string;
@@ -29,7 +29,7 @@ export type TradeLocationData = {
   readonly component?: any;
   readonly exchange: boolean;
   readonly detailPath?: string;
-};
+}
 
 export const useTradeLocations = createSharedComposable(() => {
   const { tc } = useI18n();

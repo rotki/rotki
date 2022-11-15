@@ -122,12 +122,12 @@ import KrakenPage from '@/components/staking/KrakenPage.vue';
 import LiquityPage from '@/components/staking/LiquityPage.vue';
 import { Routes } from '@/router/routes';
 
-type StakingInfo = {
+interface StakingInfo {
   id: string;
   icon: string;
   name: string;
   img?: boolean;
-};
+}
 
 const iconSize = '64px';
 

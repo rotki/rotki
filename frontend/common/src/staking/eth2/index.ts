@@ -63,7 +63,7 @@ export const Eth2Details = z.array(Eth2Detail);
 
 export type Eth2Details = z.infer<typeof Eth2Details>
 
-export type Eth2DailyStatsPayload = {
+export interface Eth2DailyStatsPayload {
   readonly limit: number;
   readonly offset: number;
   readonly orderByAttributes: string[];

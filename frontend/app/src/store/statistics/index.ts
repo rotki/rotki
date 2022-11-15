@@ -38,7 +38,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
 
   const { t } = useI18n();
 
-  const calculateTotalValue = (includeNft: boolean = false) =>
+  const calculateTotalValue = (includeNft = false) =>
     computed(() => {
       const aggregatedBalances = get(balances());
       const totalLiabilities = get(liabilities());

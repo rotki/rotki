@@ -505,7 +505,7 @@ export const useDefiSupportedProtocolsStore = defineStore(
           const owner = loan.owner ?? '';
           const asset = loan.asset ?? '';
 
-          let apy: string = '0%';
+          let apy = '0%';
           let debt: Balance = zeroBalance();
           let collateral: Collateral<string>[] = [];
 
@@ -702,7 +702,7 @@ export const useDefiSupportedProtocolsStore = defineStore(
         return sortBy(balances, 'asset');
       });
 
-    async function fetchLending(refresh: boolean = false) {
+    async function fetchLending(refresh = false) {
       const isPremium = get(premium);
       const section = Section.DEFI_LENDING;
       const premiumSection = Section.DEFI_LENDING_HISTORY;
@@ -776,7 +776,7 @@ export const useDefiSupportedProtocolsStore = defineStore(
       setStatus(Status.LOADED, premiumSection);
     }
 
-    async function fetchBorrowing(refresh: boolean = false) {
+    async function fetchBorrowing(refresh = false) {
       const section = Section.DEFI_BORROWING;
       const premiumSection = Section.DEFI_BORROWING_HISTORY;
       const currentStatus = getStatus(section);
@@ -1031,7 +1031,7 @@ export const useDefiSupportedProtocolsStore = defineStore(
 
             return grouped;
           },
-          {} as { [asset: string]: BaseDefiBalance[] }
+          {} as Record<string, BaseDefiBalance[]>
         );
 
         const aggregated: BaseDefiBalance[] = [];

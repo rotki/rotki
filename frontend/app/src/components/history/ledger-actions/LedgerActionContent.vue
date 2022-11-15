@@ -212,12 +212,12 @@ import { TradeLocation } from '@/types/history/trade-location';
 import { Section } from '@/types/status';
 import { getCollectionData, setupEntryLimit } from '@/utils/collection';
 
-type PaginationOptions = {
+interface PaginationOptions {
   page: number;
   itemsPerPage: number;
   sortBy: (keyof LedgerAction)[];
   sortDesc: boolean[];
-};
+}
 
 const props = defineProps({
   locationOverview: {
@@ -242,7 +242,7 @@ const expanded: Ref<LedgerActionEntry[]> = ref([]);
 const valid: Ref<boolean> = ref(false);
 const form = ref<InstanceType<typeof LedgerActionForm> | null>(null);
 
-const fetch = (refresh: boolean = false) => emit('fetch', refresh);
+const fetch = (refresh = false) => emit('fetch', refresh);
 
 const ledgerActionStore = useLedgerActions();
 const { ledgerActions } = storeToRefs(ledgerActionStore);

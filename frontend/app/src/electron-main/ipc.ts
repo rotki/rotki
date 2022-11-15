@@ -3,22 +3,22 @@ import { z } from 'zod';
 import { BackendCode } from '@/electron-main/backend-code';
 import { LogLevel } from '@/utils/log-level';
 
-type MetamaskImportError = {
+interface MetamaskImportError {
   readonly error: string;
-};
+}
 
-type MetamaskImportSupport = {
+interface MetamaskImportSupport {
   readonly addresses: string[];
-};
+}
 
 type MetamaskImport = MetamaskImportError | MetamaskImportSupport;
 
-export type SystemVersion = {
+export interface SystemVersion {
   readonly electron: string;
   readonly osVersion: string;
   readonly os: string;
   readonly arch: string;
-};
+}
 
 export const ActiveLogLevel = z.preprocess(
   s => (typeof s === 'string' ? s.toLowerCase() : s),
@@ -40,14 +40,14 @@ export type StoredBackendOptions = z.infer<typeof BackendOptions>;
 
 export type BackendOptions = Required<StoredBackendOptions>;
 
-export type TrayUpdate = {
+export interface TrayUpdate {
   readonly percentage?: string;
   readonly delta?: string;
   readonly netWorth?: string;
   readonly up?: boolean;
   readonly currency?: string;
   readonly period?: string;
-};
+}
 
 export interface Listeners {
   onError(backendOutput: string, code: BackendCode): void;

@@ -6,7 +6,7 @@ import { ApiImplementation, PendingTask } from '@/services/types-api';
 export function fetchExternalAsync(
   api: ApiImplementation,
   url: string,
-  params?: { [key: string]: any }
+  params?: Record<string, any>
 ) {
   return api.axios
     .get<ActionResult<PendingTask>>(url, {
@@ -33,7 +33,7 @@ export function handleResponse<T>(
   throw new Error(message);
 }
 
-export function paramsSerializer(params: { [key: string]: any }): string {
+export function paramsSerializer(params: Record<string, any>): string {
   const list = [];
   for (const [key, value] of Object.entries(params)) {
     if (value === null || value === undefined) continue;

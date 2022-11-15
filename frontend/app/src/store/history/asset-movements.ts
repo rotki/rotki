@@ -46,7 +46,7 @@ export const useAssetMovements = defineStore('history/assetMovements', () => {
   const { tc } = useI18n();
 
   const fetchAssetMovements = async (
-    refresh: boolean = false,
+    refresh = false,
     onlyLocation?: SupportedExchange
   ) => {
     const { awaitTask, isTaskRunning } = useTasks();

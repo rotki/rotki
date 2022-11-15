@@ -190,7 +190,7 @@ const visibleTimeframesChange = (timeframes: TimeFrameSetting[]) => {
 
 const updateVisibleTimeframes = async (
   newTimeFrames: TimeFramePeriod[],
-  replaceCurrentSessionTimeframe: boolean = false
+  replaceCurrentSessionTimeframe = false
 ) => {
   newTimeFrames.sort((a: TimeFramePeriod, b: TimeFramePeriod) => {
     return timeframes.indexOf(a) - timeframes.indexOf(b);

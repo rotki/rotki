@@ -14,7 +14,7 @@ import { assert } from './utils/assertions';
 const isDevelopment = checkIfDevelopment();
 
 let trayManager: Nullable<TrayManager> = null;
-let forceQuit: boolean = false;
+let forceQuit = false;
 
 const onActivate = async () => {
   // On macOS it's common to re-create a window in the app when the

@@ -1,13 +1,13 @@
 import { Section, Status } from '@/types/status';
 
-type ActionFailure = {
+interface ActionFailure {
   readonly message: string;
   readonly success: false;
-};
+}
 
-type ActionSuccess = {
+interface ActionSuccess {
   readonly success: true;
-};
+}
 
 export type ActionStatus = ActionFailure | ActionSuccess;
 
@@ -22,7 +22,7 @@ export interface Version {
   readonly downloadUrl: string;
 }
 
-export type ActionDataEntry<T = string> = {
+export interface ActionDataEntry<T = string> {
   readonly identifier: T;
   readonly label: string;
   readonly icon?: string | undefined;
@@ -30,4 +30,4 @@ export type ActionDataEntry<T = string> = {
   readonly color?: string | undefined;
   readonly matcher?: (identifier: string) => boolean | undefined;
   readonly detailPath?: string | undefined;
-};
+}

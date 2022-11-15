@@ -45,7 +45,7 @@ interface HistoryExtras<T> {
   readonly realizedPnl?: Balance;
 }
 
-type LendingHistoryExtras = {
+interface LendingHistoryExtras {
   readonly [DefiProtocol.AAVE]: {};
   readonly [DefiProtocol.MAKERDAO_VAULTS]: {};
   readonly [DefiProtocol.MAKERDAO_DSR]: MakerDAOLendingHistoryExtras;
@@ -54,7 +54,7 @@ type LendingHistoryExtras = {
   readonly [DefiProtocol.YEARN_VAULTS_V2]: HistoryExtras<YearnEventType>;
   readonly [DefiProtocol.UNISWAP]: {};
   readonly [DefiProtocol.LIQUITY]: {};
-};
+}
 
 export interface DefiLendingHistory<T extends DefiProtocol> {
   id: string;
@@ -110,6 +110,4 @@ interface DefiProtocolData {
   readonly underlyingBalances: DefiAsset[];
 }
 
-export interface AllDefiProtocols {
-  readonly [asset: string]: DefiProtocolData[];
-}
+export type AllDefiProtocols = Readonly<Record<string, DefiProtocolData[]>>;

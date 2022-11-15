@@ -127,7 +127,7 @@ const assetForm: Ref<InstanceType<typeof CustomAssetForm> | null> = ref(null);
 const save = async () => {
   set(saving, true);
   const data = get(formData);
-  let success: boolean = false;
+  let success = false;
   let identifier = data.identifier;
 
   try {

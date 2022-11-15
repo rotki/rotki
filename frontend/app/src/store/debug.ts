@@ -16,7 +16,7 @@ function convert(data: any): any {
     return `bn::${data.toString()}`;
   }
 
-  const converted: { [key: string]: any } = {};
+  const converted: Record<string, any> = {};
   Object.keys(data).map(key => {
     const datum = data[key];
     converted[key] = convert(datum);

@@ -46,7 +46,7 @@ export const useTransactions = defineStore('history/transactions', () => {
   const { t } = useI18n();
 
   const { ethAddresses } = storeToRefs(useEthBalancesStore());
-  const fetchTransactions = async (refresh: boolean = false) => {
+  const fetchTransactions = async (refresh = false) => {
     const { awaitTask, isTaskRunning } = useTasks();
     const { setStatus, loading, isFirstLoad, resetStatus } = useStatusUpdater(
       Section.TX
@@ -228,7 +228,7 @@ export const useTransactions = defineStore('history/transactions', () => {
     });
 
     if (txHashesToFetch.length > 0) {
-      const txHashesToFetchObj: { [txHash: string]: boolean } = {};
+      const txHashesToFetchObj: Record<string, boolean> = {};
       txHashesToFetch.forEach((txHash: string) => {
         txHashesToFetchObj[txHash] = true;
       });
@@ -244,7 +244,7 @@ export const useTransactions = defineStore('history/transactions', () => {
 
   const fetchTransactionEvents = async (
     txHashes: string[] | null,
-    ignoreCache: boolean = false
+    ignoreCache = false
   ) => {
     const isFetchAll = txHashes === null;
 

@@ -1,7 +1,7 @@
 import { BigNumber } from '@rotki/common';
 import { Zero } from '@/utils/bignumbers';
 
-export const truncationPoints: { [breakpoint: string]: number } = {
+export const truncationPoints: Record<string, number> = {
   xs: 3,
   sm: 6,
   md: 10,
@@ -16,10 +16,7 @@ export const truncationPoints: { [breakpoint: string]: number } = {
  * @param [truncLength]
  * @returns truncated address
  */
-export function truncateAddress(
-  address: string,
-  truncLength: number = 4
-): string {
+export function truncateAddress(address: string, truncLength = 4): string {
   const startPadding = address.startsWith('0x')
     ? 2
     : address.startsWith('xpub')

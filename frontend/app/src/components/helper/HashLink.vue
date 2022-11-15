@@ -133,7 +133,7 @@ const base = computed<string>(() => {
   }
 
   const defaultSetting: ExplorerUrls = explorerUrls[get(chain)];
-  let formattedBaseUrl: string = '';
+  let formattedBaseUrl = '';
   if (get(chain) === 'zksync') {
     formattedBaseUrl = get(tx)
       ? defaultSetting.transaction

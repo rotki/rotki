@@ -69,7 +69,7 @@ export const convertKeys = (
     return data;
   }
 
-  const converted: { [key: string]: any } = {};
+  const converted: Record<string, any> = {};
   Object.keys(data).map(key => {
     const datum = data[key];
     const skipConversion = skipKey || isEvmIdentifier(key);
@@ -116,7 +116,7 @@ export const setupJsonTransformer: (
 
 export function setupTransformer(
   numericKeys: string[] | null = null,
-  skipRoot: boolean = false
+  skipRoot = false
 ) {
   return [
     setupJsonTransformer(numericKeys),

@@ -50,12 +50,12 @@ export enum SocketMessageType {
   PREMIUM_STATUS_UPDATE = 'premium_status_update'
 }
 
-type MessageData = {
+interface MessageData {
   [SocketMessageType.LEGACY]: LegacyMessageData;
   [SocketMessageType.BALANCES_SNAPSHOT_ERROR]: BalanceSnapshotError;
   [SocketMessageType.ETHEREUM_TRANSACTION_STATUS]: EthereumTransactionQueryData;
   [SocketMessageType.PREMIUM_STATUS_UPDATE]: PremiumStatusUpdateData;
-};
+}
 
 export interface WebsocketMessage<T extends SocketMessageType> {
   readonly type: T;

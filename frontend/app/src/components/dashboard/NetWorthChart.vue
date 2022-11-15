@@ -167,10 +167,7 @@ const getRange = (): Chart => {
   return range;
 };
 
-const updateChart = (
-  updateRange: boolean = true,
-  calculate: boolean = true
-) => {
+const updateChart = (updateRange = true, calculate = true) => {
   chart?.update('resize');
   if (updateRange) {
     range?.update('resize');
@@ -181,7 +178,11 @@ const updateChart = (
   }
 };
 
-type Bound = { min: number; max: number; range: number };
+interface Bound {
+  min: number;
+  max: number;
+  range: number;
+}
 
 const displayedXRange = ref<Bound>({
   min: 0,
@@ -310,7 +311,7 @@ const { getCanvasCtx, baseColor, gradient, fontColor, gridColor } =
 
 const { getCanvasCtx: getRangeCanvasCtx } = useGraph(rangeId);
 
-const createDatasets = (isRange: boolean = false) => {
+const createDatasets = (isRange = false) => {
   const dataset = {
     data: [],
     tension: 0.1,
@@ -329,7 +330,7 @@ const createDatasets = (isRange: boolean = false) => {
   return [dataset];
 };
 
-const createScales = (isRange: boolean = false) => {
+const createScales = (isRange = false) => {
   const x: any = {
     type: 'time',
     grid: {

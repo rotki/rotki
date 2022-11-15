@@ -35,7 +35,7 @@ export const pluralize = (word: string, amount?: number): string => {
   if (amount !== undefined && amount === 1) {
     return word;
   }
-  const plural: { [key: string]: string } = {
+  const plural: Record<string, string> = {
     '(quiz)$': '$1zes',
     '^(ox)$': '$1en',
     '([m|l])ouse$': '$1ice',
@@ -55,7 +55,7 @@ export const pluralize = (word: string, amount?: number): string => {
     '(us)$': '$1es',
     '([^s]+)$': '$1s'
   };
-  const irregular: { [key: string]: string } = {
+  const irregular: Record<string, string> = {
     move: 'moves',
     foot: 'feet',
     goose: 'geese',

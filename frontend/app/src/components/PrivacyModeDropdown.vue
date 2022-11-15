@@ -61,7 +61,7 @@ const tickLabels: string[] = [
 
 // TODO: Remove css variable for tick description in Vue3 and use State Driven Dynamic CSS
 // https://v3.vuejs.org/api/sfc-style.html#state-driven-dynamic-css
-const sliderWrapperStyle: { [key: string]: string } = {
+const sliderWrapperStyle: Record<string, string> = {
   '--tick-description-3': `'${t(
     'user_dropdown.change_privacy_mode.normal_mode.description'
   ).toString()}'`,

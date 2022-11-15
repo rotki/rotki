@@ -130,7 +130,7 @@ import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Exchange } from '@/types/exchanges';
 import { TradeLocationData } from '@/types/trades';
 
-type SearchItem = {
+interface SearchItem {
   value: number;
   text?: string;
   texts?: string[];
@@ -143,7 +143,7 @@ type SearchItem = {
   route?: string;
   action?: Function;
   matchedPoints?: number;
-};
+}
 
 type SearchItemWithoutValue = Omit<SearchItem, 'value'>;
 
@@ -188,7 +188,7 @@ const filterItems = (
 ): SearchItemWithoutValue[] =>
   items
     .filter(item => {
-      let matchedPoints: number = 0;
+      let matchedPoints = 0;
       for (const word of keyword.trim().split(' ')) {
         const indexOf = getItemText(item).toLowerCase().indexOf(word);
         if (indexOf > -1) matchedPoints++;

@@ -25,13 +25,9 @@ interface YearnVault {
   readonly profitLoss: Balance;
 }
 
-type AccountYearnVault = {
-  readonly [vault: string]: YearnVault;
-};
+type AccountYearnVault = Readonly<Record<string, YearnVault>>;
 
-export interface YearnVaultsHistory {
-  readonly [address: string]: AccountYearnVault;
-}
+export type YearnVaultsHistory = Readonly<Record<string, AccountYearnVault>>;
 
 export interface YearnVaultProfitLoss {
   readonly value: Balance;
@@ -52,10 +48,8 @@ export interface YearnVaultAsset extends YearnVaultBalance {
   readonly version: ProtocolVersion;
 }
 
-type AccountYearnVaultEntry = {
-  readonly [vault: string]: YearnVaultBalance;
-};
+type AccountYearnVaultEntry = Readonly<Record<string, YearnVaultBalance>>;
 
-export interface YearnVaultsBalances {
-  readonly [address: string]: AccountYearnVaultEntry;
-}
+export type YearnVaultsBalances = Readonly<
+  Record<string, AccountYearnVaultEntry>
+>;

@@ -7,10 +7,10 @@ export enum XpubPrefix {
   ZPUB = 'zpub'
 }
 
-export type XpubType = {
+export interface XpubType {
   readonly label: string;
   readonly value: XpubPrefix;
-};
+}
 
 const P2TR_LABEL = 'P2TR';
 const XPUB_LABEL = 'P2PKH';

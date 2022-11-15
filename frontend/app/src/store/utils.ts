@@ -14,9 +14,7 @@ export function isLoading(status: Status): boolean {
   );
 }
 
-export interface AddressEntries<T> {
-  readonly [address: string]: T;
-}
+export type AddressEntries<T> = Readonly<Record<string, T>>;
 
 export function filterAddresses<T>(
   entries: AddressEntries<T>,

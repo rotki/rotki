@@ -29,12 +29,13 @@ export interface ApiMakerDAOVault {
 
 export interface DSRBalances {
   readonly currentDsr: BigNumber;
-  readonly balances: {
-    [account: string]: {
+  readonly balances: Record<
+    string,
+    {
       amount: BigNumber;
       usdValue: BigNumber;
-    };
-  };
+    }
+  >;
 }
 
 interface DSRHistoryItem {
@@ -42,9 +43,7 @@ interface DSRHistoryItem {
   readonly movements: DSRMovement[];
 }
 
-export interface DSRHistory {
-  readonly [address: string]: DSRHistoryItem;
-}
+export type DSRHistory = Readonly<Record<string, DSRHistoryItem>>;
 
 interface DSRMovement {
   readonly movementType: DSRMovementType;

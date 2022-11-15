@@ -33,7 +33,7 @@ export const useExchangeApi = () => {
 
   const queryExchangeBalances = async (
     location: string,
-    ignoreCache: boolean = false
+    ignoreCache = false
   ): Promise<PendingTask> => {
     const response = await api.instance.get<ActionResult<PendingTask>>(
       `/exchanges/balances/${location}`,

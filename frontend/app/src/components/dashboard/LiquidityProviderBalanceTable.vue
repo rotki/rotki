@@ -256,7 +256,7 @@ const premium = usePremium();
 
 const { ethAddresses } = storeToRefs(useEthBalancesStore());
 
-const fetch = async (refresh: boolean = false) => {
+const fetch = async (refresh = false) => {
   if (get(ethAddresses).length > 0) {
     await fetchUniswapV3Balances(refresh);
     await fetchUniswapV2Balances(refresh);

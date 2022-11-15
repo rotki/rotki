@@ -31,5 +31,5 @@ defineProps({
   asset: { required: true, type: Object as PropType<DefiAsset> }
 });
 
-const assetPadding: number = 1;
+const assetPadding = 1;
 </script>

@@ -154,7 +154,7 @@ const { edit, context } = toRefs(props);
 const valid = ref(false);
 const pending = ref(false);
 
-const errors: Ref<{ [key: string]: string[] }> = ref({});
+const errors: Ref<Record<string, string[]>> = ref({});
 
 const id = ref<number | null>(null);
 const asset = ref<string>('');

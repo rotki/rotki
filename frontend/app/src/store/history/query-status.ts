@@ -6,9 +6,7 @@ import {
 export const useTxQueryStatus = defineStore(
   'history/transactionsQueryStatus',
   () => {
-    const queryStatus = ref<{
-      [address: string]: EthereumTransactionQueryData;
-    }>({});
+    const queryStatus = ref<Record<string, EthereumTransactionQueryData>>({});
 
     const setQueryStatus = (data: EthereumTransactionQueryData) => {
       const status = { ...get(queryStatus) };

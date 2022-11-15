@@ -43,11 +43,11 @@ import { PropType } from 'vue';
 
 import DefiProtocolDetails from '@/components/helper/DefiProtocolDetails.vue';
 
-type Protocol = {
+interface Protocol {
   name: string;
   icon: string;
   identifier: DefiProtocol;
-};
+}
 
 const dual: Protocol[] = [
   {

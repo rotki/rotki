@@ -50,10 +50,7 @@ export const useEthNamesStore = defineStore('ethNames', () => {
     return changed;
   };
 
-  const fetchEnsNames = async (
-    addresses: string[],
-    forceUpdate: boolean = false
-  ) => {
+  const fetchEnsNames = async (addresses: string[], forceUpdate = false) => {
     if (addresses.length < 1) return;
 
     const changed = updateEnsAddresses(addresses);

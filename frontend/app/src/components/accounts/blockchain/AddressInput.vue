@@ -85,7 +85,7 @@ const entries = computed(() => {
     .map(value => value.trim())
     .filter(entry => entry.length > 0);
 
-  const entries: { [address: string]: string } = {};
+  const entries: Record<string, string> = {};
   for (const address of allAddresses) {
     const lowerCase = address.toLocaleLowerCase();
     if (entries[lowerCase]) {

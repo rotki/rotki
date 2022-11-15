@@ -168,7 +168,7 @@ function handleRequests(
   }
 }
 
-export function startHttp(cb: Callback, port: number = 43432): number {
+export function startHttp(cb: Callback, port = 43432): number {
   if (!(server && server.listening)) {
     console.log(
       `Metamask Import Server: Listening at: http://localhost:${port}`

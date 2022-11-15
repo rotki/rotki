@@ -76,20 +76,28 @@
 import NavigationMenuItem from '@/components/NavigationMenuItem.vue';
 import { useAppRoutes } from '@/router/routes';
 
-type NavItemDetails = {
+interface NavItemDetails {
   readonly text: string;
   readonly route: string;
   readonly class?: string;
   readonly icon: string;
   readonly image?: string;
   readonly component?: any;
-};
+}
 
-type NavItem = { readonly type: 'item' } & NavItemDetails;
-type NavGroupItem = {
+interface NavItem extends NavItemDetails {
+  readonly type: 'item';
+}
+
+interface NavGroupItem extends NavItemDetails {
   readonly type: 'group';
-} & NavItemDetails & { items: NavItem[] };
-type DividerItem = { readonly type: 'divider' };
+  items: NavItem[];
+}
+
+interface DividerItem {
+  readonly type: 'divider';
+}
+
 type MenuItem = NavItem | NavGroupItem | DividerItem;
 
 defineProps({

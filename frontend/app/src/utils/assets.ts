@@ -18,7 +18,7 @@ const levenshtein = (a: string, b: string) => {
 
   let i: number,
     j: number,
-    res: number = 0;
+    res = 0;
   const alen = a.length,
     blen = b.length,
     row = Array(alen);
@@ -130,7 +130,7 @@ export const getAddressFromEvmIdentifier = (identifier?: string) => {
 
 export const createEvmIdentifierFromAddress = (
   address: string,
-  chain: string = '1'
+  chain = '1'
 ) => {
   return `eip155:${chain}/erc20:${address}`;
 };

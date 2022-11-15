@@ -2,7 +2,7 @@ import { Interop } from '@/electron-main/ipc';
 
 interface Request {
   readonly method: string;
-  readonly params: { [key: string]: any }[];
+  readonly params: Record<string, any>[];
 }
 
 interface Caveat {

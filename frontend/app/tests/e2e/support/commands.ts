@@ -88,7 +88,7 @@ const disableModules = () => {
     });
 };
 
-const createAccount = (username: string, password: string = '1234') => {
+const createAccount = (username: string, password = '1234') => {
   cy.logout();
   return cy
     .request({

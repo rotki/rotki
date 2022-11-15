@@ -68,7 +68,7 @@ if (!isDevelopment) {
 
 logger.setLevel(logger.getLevel());
 
-const setLevel = (loglevel?: LogLevel, persist: boolean = true) => {
+const setLevel = (loglevel?: LogLevel, persist = true) => {
   logger.setLevel(mapToFrontendLogLevel(loglevel), persist);
 };
 

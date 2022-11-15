@@ -272,9 +272,9 @@ const reportsStore = useReports();
 const { actionableItems } = toRefs(reportsStore);
 
 const actionableItemsLength = computed(() => {
-  let missingAcquisitionsLength: number = 0;
-  let missingPricesLength: number = 0;
-  let total: number = 0;
+  let missingAcquisitionsLength = 0;
+  let missingPricesLength = 0;
+  let total = 0;
 
   const items = get(actionableItems);
 

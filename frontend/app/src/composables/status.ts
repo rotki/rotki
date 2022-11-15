@@ -1,7 +1,7 @@
 import { useStatusStore } from '@/store/status';
 import { Section, Status } from '@/types/status';
 
-export const useStatusUpdater = (section: Section, ignore: boolean = false) => {
+export const useStatusUpdater = (section: Section, ignore = false) => {
   const { setStatus, getStatus, isLoading } = useStatusStore();
   const updateStatus = (status: Status, otherSection?: Section) => {
     if (ignore) {

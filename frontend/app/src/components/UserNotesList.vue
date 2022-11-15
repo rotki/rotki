@@ -208,7 +208,7 @@ const { premiumURL } = useInterop();
 
 const api = useUserNotesApi();
 
-const fetchNotes = async (loadingIndicator: boolean = false) => {
+const fetchNotes = async (loadingIndicator = false) => {
   if (loadingIndicator) set(loading, true);
   set(notes, await api.fetchUserNotes(get(filter)));
   if (loadingIndicator) set(loading, false);

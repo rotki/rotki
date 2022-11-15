@@ -67,13 +67,13 @@ import { DataTableHeader } from 'vuetify';
 import RowExpander from '@/components/helper/RowExpander.vue';
 import { MissingAcquisition, SelectedReport } from '@/types/reports';
 
-type GroupedItems = { [asset: string]: MissingAcquisition[] };
-type MappedGroupedItems = {
+type GroupedItems = Record<string, MissingAcquisition[]>;
+interface MappedGroupedItems {
   asset: string;
   startDate: number;
   endDate: number;
   acquisitions: MissingAcquisition[];
-};
+}
 
 const props = defineProps({
   report: {

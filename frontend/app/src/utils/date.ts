@@ -45,7 +45,7 @@ export function convertToTimestamp(
 
 export function convertFromTimestamp(
   timestamp: number,
-  seconds: boolean = false,
+  seconds = false,
   dateFormat: DateFormat = DateFormat.DateMonthYearHourMinuteSecond
 ): string {
   const time = dayjs(timestamp * 1000);
