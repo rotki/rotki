@@ -81,7 +81,7 @@ describe('blockchain balances', () => {
       dashboardPage.visit();
       dashboardPage.getOverallBalance().then($overallBalance => {
         dashboardPage.getNonFungibleBalances().then($nonFungibleBalance => {
-          // compare overall balance with blockchain balance + non fungible balance,
+          // compare overall balance with blockchain balance + non-fungible balance,
           // with tolerance 0.01 (precision = 2)
           expect(
             $overallBalance
@@ -91,8 +91,16 @@ describe('blockchain balances', () => {
           );
         });
       });
+
       dashboardPage.getBlockchainBalances().then($dashboardBalances => {
-        expect($dashboardBalances).to.eql($blockchainBalances);
+        $dashboardBalances.forEach((dashboardBalances, index) => {
+          const balance = $blockchainBalances[index].renderedValue;
+          const dashboardBalance = dashboardBalances.renderedValue;
+          expect(dashboardBalance.toNumber()).within(
+            balance.minus(0.01).toNumber(),
+            balance.plus(0.01).toNumber()
+          );
+        });
       });
     });
   });

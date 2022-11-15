@@ -1,5 +1,6 @@
 <template>
   <app-host>
+    <frontend-update-notifier v-if="!isPackaged" />
     <app-messages
       :startup-error="startupErrorMessage"
       :macos-unsupported="isMacOsVersionUnsupported"
@@ -22,7 +23,6 @@
     <v-dialog v-if="showAbout" v-model="showAbout" max-width="500">
       <about />
     </v-dialog>
-    <frontend-update-notifier v-if="!isPackaged" />
   </app-host>
 </template>
 

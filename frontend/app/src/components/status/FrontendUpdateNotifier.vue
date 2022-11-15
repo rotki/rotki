@@ -1,13 +1,21 @@
 <template>
   <div v-if="needRefresh">
-    <v-snackbar v-model="needRefresh" :timeout="-1" dark bottom right>
-      {{ t('update_notifier.update_available') }}
-      <template #action>
-        <v-btn text :loading="updating" @click="update">
-          {{ t('common.actions.update') }}
-        </v-btn>
-      </template>
-    </v-snackbar>
+    <v-dialog :value="true" persistent max-width="500">
+      <card>
+        <div class="pt-5 text-center">
+          {{ t('update_notifier.update_available') }}
+          <v-btn
+            depressed
+            class="ml-6"
+            color="primary"
+            :loading="updating"
+            @click="update"
+          >
+            {{ t('common.actions.update') }}
+          </v-btn>
+        </div>
+      </card>
+    </v-dialog>
   </div>
 </template>
 
@@ -22,6 +30,7 @@ const updating = ref<boolean>(false);
 onMounted(async () => {
   // eslint-disable-next-line import/no-unresolved
   const { registerSW } = await import('virtual:pwa-register');
+
   try {
     set(
       updateSW,
@@ -51,12 +60,19 @@ onMounted(async () => {
   }
 });
 
+watch(needRefresh, async needRefresh => {
+  if (needRefresh) {
+    await update();
+  }
+});
+
 const update = async () => {
   set(updating, true);
   const worker = get(updateSW);
   if (worker) {
     await worker(true);
   }
+  set(updating, false);
 };
 
 const { t } = useI18n();
