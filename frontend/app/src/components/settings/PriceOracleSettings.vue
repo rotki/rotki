@@ -18,7 +18,7 @@
             :value="currentOracles"
             :all-items="availableCurrentOracles()"
             :status="{ error, success }"
-            :item-data-name="'price oracle'"
+            :item-data-name="t('price_oracle_settings.data_name').toString()"
             @input="update"
           >
             <template #title>
@@ -57,14 +57,14 @@
 </template>
 
 <script setup lang="ts">
-import { get, set } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { onMounted, ref } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 import PrioritizedList from '@/components/helper/PrioritizedList.vue';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import {
+  PrioritizedListData,
+  PrioritizedListItemData
+} from '@/types/prioritized-list-data';
 import {
   CRYPTOCOMPARE_PRIO_LIST_ITEM,
   COINGECKO_PRIO_LIST_ITEM,
@@ -72,15 +72,13 @@ import {
   UNISWAP3_PRIO_LIST_ITEM,
   SADDLE_PRIO_LIST_ITEM,
   MANUALCURRENT_PRIO_LIST_ITEM,
-  MANUAL_PRIO_LIST_ITEM
-} from '@/types/price-oracle';
-import {
-  PrioritizedListData,
-  PrioritizedListItemData
-} from '@/types/prioritized-list-data';
+  MANUAL_PRIO_LIST_ITEM,
+  DEFILAMA_PRIO_LIST_ITEM,
+  PrioritizedListId
+} from '@/types/prioritized-list-id';
 
-const currentOracles = ref<string[]>([]);
-const historicOracles = ref<string[]>([]);
+const currentOracles = ref<PrioritizedListId[]>([]);
+const historicOracles = ref<PrioritizedListId[]>([]);
 
 const { currentPriceOracles, historicalPriceOracles } = storeToRefs(
   useGeneralSettingsStore()
@@ -90,13 +88,15 @@ const resetCurrentPriceOracles = () => {
   set(currentOracles, get(currentPriceOracles));
 };
 
-const baseAvailableOraclesTyped: Array<PrioritizedListItemData> = [
+const baseAvailableOraclesTyped: Array<
+  PrioritizedListItemData<PrioritizedListId>
+> = [
   CRYPTOCOMPARE_PRIO_LIST_ITEM,
   COINGECKO_PRIO_LIST_ITEM
 ];
 
-const availableCurrentOracles = (): PrioritizedListData => {
-  let itemData: Array<PrioritizedListItemData> = [
+const availableCurrentOracles = (): PrioritizedListData<PrioritizedListId> => {
+  const itemData: Array<PrioritizedListItemData<PrioritizedListId>> = [
     ...baseAvailableOraclesTyped,
     UNISWAP2_PRIO_LIST_ITEM,
     UNISWAP3_PRIO_LIST_ITEM,
@@ -107,8 +107,8 @@ const availableCurrentOracles = (): PrioritizedListData => {
   return new PrioritizedListData(itemData);
 };
 
-const availableHistoricOracles = (): PrioritizedListData => {
-  let itemData: Array<PrioritizedListItemData> = [
+const availableHistoricOracles = (): PrioritizedListData<PrioritizedListId> => {
+  const itemData: Array<PrioritizedListItemData<PrioritizedListId>> = [
     ...baseAvailableOraclesTyped,
     MANUAL_PRIO_LIST_ITEM
   ];

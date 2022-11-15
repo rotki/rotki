@@ -1,19 +1,19 @@
-export class PrioritizedListData {
-  constructor(private itemData: Array<PrioritizedListItemData>) {}
+export class PrioritizedListData<T = string> {
+  constructor(private itemData: Array<PrioritizedListItemData<T>>) {}
 
-  itemIdsNotIn(itemIds: string[]): string[] {
+  itemIdsNotIn(itemIds: T[]): T[] {
     return this.itemData
       .filter(item => !itemIds.includes(item.identifier))
       .map(itemData => itemData.identifier);
   }
 
-  itemDataForId(id: string): PrioritizedListItemData | undefined {
+  itemDataForId(id: T): PrioritizedListItemData<T> | undefined {
     return this.itemData.find(item => item.identifier === id);
   }
 }
 
-export class PrioritizedListItemData {
-  public identifier: string = '';
-  public icon?: string;
-  public extraDisplaySize?: string; // may be a string specifying pixels e.g. 12px
+export interface PrioritizedListItemData<T = string> {
+  identifier: T;
+  icon?: string;
+  extraDisplaySize?: string; // may be a string specifying pixels e.g. 12px
 }

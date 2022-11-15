@@ -52,7 +52,6 @@
 </template>
 
 <script setup lang="ts">
-import EthNamesHint from '@/components/EthNamesHint.vue';
 import ThemeManagerLock from '@/components/premium/ThemeManagerLock.vue';
 import Explorers from '@/components/settings/explorers/Explorers.vue';
 import AddressNamePrioritySetting from '@/components/settings/frontend/AddressNamePrioritySetting.vue';
