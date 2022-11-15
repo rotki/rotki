@@ -1,12 +1,12 @@
 <template>
   <div>
     <v-sheet outlined rounded class="mt-4">
-      <div class="pa-4 pb-0">
-        <div class="text-h5 pt-2 pb-4">
+      <div class="pb-0" :class="slots.title ? 'pa-4' : 'pa-0'">
+        <div v-if="slots.title" class="text-h5 pt-2 pb-4">
           <slot name="title" />
         </div>
 
-        <v-row class="mb-4" no-gutters align="center">
+        <v-row v-if="!disableAdd" class="mb-4" no-gutters align="center">
           <v-col class="pr-4">
             <v-autocomplete
               v-model="selection"
@@ -94,7 +94,7 @@
               <prioritized-list-entry :data="itemData(identifier)" />
             </td>
             <td class="text-end">
-              <v-tooltip open-delay="400" top>
+              <v-tooltip v-if="!disableDelete" open-delay="400" top>
                 <template #activator="{ on, attrs }">
                   <v-btn
                     icon
@@ -128,16 +128,19 @@ import {
   PrioritizedListData,
   PrioritizedListItemData
 } from '@/types/prioritized-list-data';
+import { PrioritizedListId, EmptyListId } from '@/types/prioritized-list-id';
 import { assert } from '@/utils/assertions';
 import { pluralize } from '@/utils/text';
 
 const props = defineProps({
-  value: { required: true, type: Array as PropType<string[]> },
+  value: { required: true, type: Array as PropType<PrioritizedListId[]> },
   allItems: {
     required: true,
-    type: PrioritizedListData
+    type: PrioritizedListData<PrioritizedListId>
   },
   itemDataName: { required: true, type: String },
+  disableAdd: { required: false, type: Boolean, default: false },
+  disableDelete: { required: false, type: Boolean, default: false },
   status: {
     required: false,
     type: Object as PropType<BaseMessage>,
@@ -147,15 +150,16 @@ const props = defineProps({
 
 const emit = defineEmits(['input']);
 const { value, allItems, itemDataName } = toRefs(props);
-const selection = ref<Nullable<string>>(null);
+const slots = useSlots();
+const selection = ref<Nullable<PrioritizedListId>>(null);
 
 const input = (items: string[]) => emit('input', items);
 
 const itemNameTr = computed(() => {
-  let name = get(itemDataName);
+  const name = get(itemDataName);
   return {
     name: name,
-    name_pluralized: pluralize(name, 2)
+    namePluralized: pluralize(name, 2)
   };
 });
 
@@ -176,9 +180,11 @@ const isLast = (item: string): boolean => {
   return items[items.length - 1] === item;
 };
 
-const itemData = (identifier: string): PrioritizedListItemData => {
+const itemData = (
+  identifier: PrioritizedListId
+): PrioritizedListItemData<PrioritizedListId> => {
   const data = get(allItems);
-  return data.itemDataForId(identifier) ?? new PrioritizedListItemData();
+  return data.itemDataForId(identifier) ?? { identifier: EmptyListId };
 };
 
 const addItem = () => {
@@ -189,7 +195,7 @@ const addItem = () => {
   set(selection, null);
 };
 
-const move = (item: string, down: boolean) => {
+const move = (item: PrioritizedListId, down: boolean) => {
   const items = [...get(value)];
   const itemIndex = items.indexOf(item);
   const nextIndex = itemIndex + (down ? 1 : -1);
@@ -199,7 +205,7 @@ const move = (item: string, down: boolean) => {
   input(items);
 };
 
-const remove = (item: string) => {
+const remove = (item: PrioritizedListId) => {
   const items = [...get(value)];
   const itemIndex = items.indexOf(item);
   items.splice(itemIndex, 1);

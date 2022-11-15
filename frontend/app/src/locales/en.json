@@ -3371,6 +3371,7 @@
     "hint": "* Removing all the oracles will make it impossible to query prices for assets."
   },
   "price_oracle_settings": {
+    "data_name": "price oracle",
     "historic_prices": "Historic Prices",
     "latest_prices": "Latest Prices",
     "subtitle": "Manage which price oracles are used, in which order.",
@@ -3418,6 +3419,14 @@
     "on": "on",
     "refresh_tooltip": "Refresh prices",
     "was_worth": "was worth"
+  },
+  "prioritized_list": {
+    "add_tooltip": "Add the {name} to the list",
+    "all_added": "No missing {namePluralized}",
+    "item": {
+      "delete": "Remove the {name} entry",
+      "empty": "No price {namePluralized} found!"
+    }
   },
   "privacy_notice": {
     "message": "rotki accounts are encrypted using your password and saved in your local filesystem.",
@@ -4055,9 +4064,7 @@
     },
     "title": "Yearn Vaults"
   },
-  "address_name_priority_selection": {
-    "item": {
-      "empty": "No address name priorities found!"
-    }
+  "address_name_priority_setting": {
+    "data_name": "priority"
   }
 }

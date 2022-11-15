@@ -134,11 +134,9 @@ import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useNotifications } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
-import {
-  CRYPTOCOMPARE_PRIO_LIST_ITEM,
-  PriceOracle
-} from '@/types/price-oracle';
+import { PriceOracle } from '@/types/price-oracle';
 import { PrioritizedListItemData } from '@/types/prioritized-list-data';
+import { CRYPTOCOMPARE_PRIO_LIST_ITEM } from '@/types/prioritized-list-id';
 import { TaskType } from '@/types/task-type';
 import { assert } from '@/utils/assertions';
 

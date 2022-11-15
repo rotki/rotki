@@ -11,53 +11,8 @@
         />
       </adaptive-wrapper>
     </v-col>
-    <v-col v-if="data.identifier === PriceOracle.UNISWAP2" cols="auto">
-      {{ t('oracles.uniswap_v2') }}
-    </v-col>
-    <v-col v-else-if="data.identifier === PriceOracle.UNISWAP3" cols="auto">
-      {{ t('oracles.uniswap_v3') }}
-    </v-col>
-    <v-col
-      v-else-if="data.identifier === PriceOracle.MANUALCURRENT"
-      cols="auto"
-    >
-      {{ t('oracles.manual_latest') }}
-    </v-col>
-    <v-col
-      v-else-if="data.identifier === AddressNamePriority.BLOCKCHAIN_ACCOUNT"
-      cols="auto"
-    >
-      {{ t('eth_address_book.hint.priority.list.blockchain_account_labels') }}
-    </v-col>
-    <v-col
-      v-else-if="data.identifier === AddressNamePriority.ENS_NAMES"
-      cols="auto"
-    >
-      {{ t('eth_address_book.hint.priority.list.ens_names') }}
-    </v-col>
-    <v-col
-      v-else-if="data.identifier === AddressNamePriority.ETHEREUM_TOKENS"
-      cols="auto"
-    >
-      {{ t('eth_address_book.hint.priority.list.ethereum_tokens') }}
-    </v-col>
-    <v-col
-      v-else-if="data.identifier === AddressNamePriority.GLOBAL_ADDRESSBOOK"
-      cols="auto"
-    >
-      {{ t('eth_address_book.hint.priority.list.global_address_book') }}
-    </v-col>
-    <v-col
-      v-else-if="data.identifier === AddressNamePriority.HARDCODED_MAPPINGS"
-      cols="auto"
-    >
-      {{ t('eth_address_book.hint.priority.list.hardcoded_mappings') }}
-    </v-col>
-    <v-col
-      v-else-if="data.identifier === AddressNamePriority.PRIVATE_ADDRESSBOOK"
-      cols="auto"
-    >
-      {{ t('eth_address_book.hint.priority.list.private_address_book') }}
+    <v-col v-if="labels[data.identifier]" cols="auto">
+      {{ labels[data.identifier] }}
     </v-col>
     <v-col v-else cols="auto">
       {{ toSentenceCase(data.identifier) }}
@@ -66,17 +21,19 @@
 </template>
 
 <script setup lang="ts">
-import { get } from '@vueuse/core';
-import { computed, toRefs } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { PropType } from 'vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import { AddressNamePriority } from '@/types/address-name-priorities';
 import { PriceOracle } from '@/types/price-oracle';
 import { PrioritizedListItemData } from '@/types/prioritized-list-data';
+import { PrioritizedListId } from '@/types/prioritized-list-id';
 import { toSentenceCase } from '@/utils/text';
 
 const props = defineProps({
-  data: { required: true, type: PrioritizedListItemData }
+  data: {
+    required: true,
+    type: Object as PropType<PrioritizedListItemData<PrioritizedListId>>
+  }
 });
 
 const { data } = toRefs(props);
@@ -90,4 +47,36 @@ const size = computed<string>(() => {
 });
 
 const { t } = useI18n();
+
+const labels: { [keys in PrioritizedListId]: string } = {
+  [PriceOracle.UNISWAP2]: t('oracles.uniswap_v2').toString(),
+  [PriceOracle.UNISWAP3]: t('oracles.uniswap_v3').toString(),
+  [PriceOracle.MANUALCURRENT]: t('oracles.manual_latest').toString(),
+  [AddressNamePriority.BLOCKCHAIN_ACCOUNT]: t(
+    'eth_address_book.hint.priority.list.blockchain_account_labels'
+  ).toString(),
+  [AddressNamePriority.ENS_NAMES]: t(
+    'eth_address_book.hint.priority.list.ens_names'
+  ).toString(),
+  [AddressNamePriority.ETHEREUM_TOKENS]: t(
+    'eth_address_book.hint.priority.list.ethereum_tokens'
+  ).toString(),
+  [AddressNamePriority.GLOBAL_ADDRESSBOOK]: t(
+    'eth_address_book.hint.priority.list.global_address_book'
+  ).toString(),
+  [AddressNamePriority.HARDCODED_MAPPINGS]: t(
+    'eth_address_book.hint.priority.list.hardcoded_mappings'
+  ).toString(),
+  [AddressNamePriority.PRIVATE_ADDRESSBOOK]: t(
+    'eth_address_book.hint.priority.list.private_address_book'
+  ).toString(),
+  blockchain: '',
+  coingecko: '',
+  cryptocompare: '',
+  fiat: '',
+  manual: '',
+  saddle: '',
+  defillama: '',
+  empty_list_id: ''
+};
 </script>
