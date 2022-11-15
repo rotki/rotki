@@ -300,7 +300,7 @@ class FIFOCostBasisMethod(BaseCostBasisMethod):
     """
     def __init__(self) -> None:
         super().__init__()
-        self._count: FVal = FVal(0)
+        self._count = FVal(0)
 
     def add_acquisition(self, acquisition: AssetAcquisitionEvent) -> None:
         """Adds an acquisition to the `_acquisitions_heap` using a counter to achieve the FIFO order."""  # noqa: E501
@@ -315,7 +315,7 @@ class LIFOCostBasisMethod(BaseCostBasisMethod):
     """
     def __init__(self) -> None:
         super().__init__()
-        self._count: FVal = FVal(0)
+        self._count = FVal(0)
 
     def add_acquisition(self, acquisition: AssetAcquisitionEvent) -> None:
         """Adds an acquisition to the `_acquisitions_heap` using a negated counter to achieve the LIFO order."""  # noqa: E501
@@ -343,20 +343,20 @@ class AverageCostBasisMethod(BaseCostBasisMethod):
     """
     def __init__(self) -> None:
         super().__init__()
-        self._count: FVal = FVal(0)
+        self._count = FVal(0)
         # keeps track of the amount of the asset remaining after every acquisition or spend
-        self.remaining_amount: FVal = ZERO
-        # the average cost base of last event(buy/sell) that occurred
-        self.current_average_cost_basis: FVal = ZERO
+        self.remaining_amount = ZERO
+        # the average cost basis of last event(buy/sell) that occurred
+        self.current_average_cost_basis = ZERO
 
     def add_acquisition(self, acquisition: AssetAcquisitionEvent) -> None:
         """
         Adds an acquisition to the `_acquisitions_heap` in order of time seen.
 
-        It also calculates the average cost base of that acquisition with respect to the
-        previous average cost base.
+        It also calculates the average cost basis of that acquisition with respect to the
+        previous average cost basis.
 
-        The formula used to calculate the average cost base of an acquisition is:
+        The formula used to calculate the average cost basis of an acquisition is:
         [Previous Total ACB] + [Cost of New Shares] + [Transaction Costs]
         """
         heapq.heappush(self._acquisitions_heap, AssetAcquisitionHeap(self._count, acquisition))
@@ -375,13 +375,13 @@ class AverageCostBasisMethod(BaseCostBasisMethod):
             spending_asset: Asset,
             timestamp: Timestamp,
             missing_acquisitions: List[MissingAcquisition],
-            used_acquisitions: List[AssetAcquisitionEvent],  # pylint: disable=unused-argument
+            used_acquisitions: List[AssetAcquisitionEvent],
             settings: DBSettings,
-            timestamp_to_date: Callable[[Timestamp], str],  # pylint: disable=unused-argument
+            timestamp_to_date: Callable[[Timestamp], str],
             average_cost_basis: Optional[FVal] = None,  # pylint: disable=unused-argument
     ) -> 'CostBasisInfo':
         """
-        Calculates the cost basis of the spend using the average cost base method.
+        Calculates the cost basis of the spend using the average cost basis method.
 
         Formula is taken from:
         https://www.adjustedcostbase.ca/blog/how-to-calculate-adjusted-cost-base-acb-and-capital-gains/
