@@ -49,7 +49,7 @@ log = RotkehlchenLogsAdapter(logger)
 @dataclasses.dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=False)  # noqa: E501
 class Collection:
     name: str
-    banner_image: str
+    banner_image: Optional[str]
     description: Optional[str]
     large_image: str
     floor_price: Optional[FVal] = None

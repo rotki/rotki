@@ -1171,13 +1171,11 @@ class NFTFilterQuery(DBFilterQuery):
                 value=NftLpHandling.ONLY_LPS == lps_handling,
             ))
         if nft_id is not None:
-            filters.append(
-                DBSubStringFilter(
-                    and_op=True,
-                    field='identifier',
-                    search_string=nft_id,
-                )
-            )
+            filters.append(DBSubStringFilter(
+                and_op=True,
+                field='identifier',
+                search_string=nft_id,
+            ))
         filter_query.filters = filters
         return filter_query
 

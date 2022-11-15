@@ -2717,7 +2717,10 @@ class NFTFilterQuerySchema(
     name = fields.String(load_default=None)
     collection_name = fields.String(load_default=None)
     ignored_assets_handling = SerializableEnumField(enum_class=IgnoredAssetsHandling, load_default=IgnoredAssetsHandling.NONE)  # noqa: E501
-    lps_handling = SerializableEnumField(enum_class=NftLpHandling, load_default=NftLpHandling.ALL_NFTS)
+    lps_handling = SerializableEnumField(
+        enum_class=NftLpHandling,
+        load_default=NftLpHandling.ALL_NFTS,
+    )
 
     def __init__(self, db: 'DBHandler') -> None:
         super().__init__()
@@ -2753,7 +2756,7 @@ class NFTFilterQuerySchema(
             name=data['name'],
             collection_name=data['collection_name'],
             ignored_assets_filter_params=ignored_assets_filter_params,
-            lps_handling=data['lps_handling']
+            lps_handling=data['lps_handling'],
         )
         return {
             'async_query': data['async_query'],
@@ -2763,7 +2766,10 @@ class NFTFilterQuerySchema(
 
 
 class NFTFilterQuerySchema2(Schema):
-    lps_handling = SerializableEnumField(enum_class=NftLpHandling, load_default=NftLpHandling.ALL_NFTS)
+    lps_handling = SerializableEnumField(
+        enum_class=NftLpHandling,
+        load_default=NftLpHandling.ALL_NFTS,
+    )
 
 
 class SingleNftSchema(Schema):
