@@ -1,3 +1,4 @@
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
@@ -10,7 +11,11 @@ from rotkehlchen.errors.defi import DefiPoolError
 from rotkehlchen.errors.price import PriceQueryUnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import CurrentPriceOracle
+from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Price
+
+if TYPE_CHECKING:
+    from rotkehlchen.inquirer import Inquirer
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -102,3 +107,27 @@ def test_uniswap_no_decimals(inquirer_defi):
             inquirer_defi._uniswapv2.query_current_price(weth, A_USDC, False)
         with pytest.raises(DefiPoolError):
             inquirer_defi._uniswapv3.query_current_price(weth, A_USDC, False)
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_pool_with_no_liquidity(inquirer_defi: 'Inquirer'):
+    """
+    Test that a pool with no liquidity on range is skipped when using uni-v3 oracle
+    """
+    old_stream = EvmToken('eip155:1/erc20:0x0Cf0Ee63788A0849fE5297F3407f701E122cC023')
+
+    def mock_requests_get(_url, timeout):  # pylint: disable=unused-argument
+        response = """{"jsonrpc":"2.0","id":1,"result":"0x0000000000000000000000000000000000000000000000000000000000f2aa4700000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000003000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000a000000000000000000000000000000000000000000000000000000000000000e0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000"}"""  # noqa: E501
+        return MockResponse(200, response)
+
+    assert inquirer_defi._ethereum is not None
+    assert inquirer_defi._uniswapv3 is not None
+
+    etherscan_patch = patch.object(
+        target=inquirer_defi._ethereum.etherscan.session,
+        attribute='get',
+        wraps=mock_requests_get,
+    )
+    with etherscan_patch:
+        path = inquirer_defi._uniswapv3.get_pool(old_stream, A_USDC.resolve_to_evm_token())
+    assert path == []

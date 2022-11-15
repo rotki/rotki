@@ -241,13 +241,15 @@ class EVMTransactionDecoder():
             if event:
                 events.append(event)
 
+        if len(events) == 0 and (eth_event := self._get_eth_transfer_event(transaction)) is not None:  # noqa: E501
+            events = [eth_event]
+
         self.dbevents.add_history_events(write_cursor=write_cursor, history=events)
         write_cursor.execute(
             'INSERT OR IGNORE INTO evm_tx_mappings(tx_hash, blockchain, value) VALUES(?, ?, ?)',  # noqa: E501
             (transaction.tx_hash, 'ETH', HISTORY_MAPPING_DECODED),
         )
-        if events == [] and (eth_event := self._get_eth_transfer_event(transaction)) is not None:
-            events = [eth_event]
+
         return sorted(events, key=lambda x: x.sequence_index, reverse=False)
 
     def get_and_decode_undecoded_transactions(self, limit: Optional[int] = None) -> None:

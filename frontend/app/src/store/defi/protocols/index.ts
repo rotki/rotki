@@ -50,7 +50,7 @@ import { Zero, zeroBalance } from '@/utils/bignumbers';
 import { uniqueStrings } from '@/utils/data';
 
 const isLendingEvent = (value: AaveHistoryEvents): value is AaveEvent => {
-  const lending: string[] = Object.keys(AaveLendingEventType);
+  const lending: string[] = Object.values(AaveLendingEventType);
   return lending.indexOf(value.eventType) !== -1;
 };
 export const useDefiSupportedProtocolsStore = defineStore(
