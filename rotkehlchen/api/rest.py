@@ -177,7 +177,7 @@ from rotkehlchen.types import (
     TradeType,
     UserNote,
 )
-from rotkehlchen.utils.misc import combine_dicts
+from rotkehlchen.utils.misc import NftLpHandling, combine_dicts
 from rotkehlchen.utils.snapshots import parse_import_snapshot_data
 from rotkehlchen.utils.version_check import get_current_version
 
@@ -3945,7 +3945,7 @@ class RestAPI():
             })
         return api_response(_wrap_in_ok_result(prices_information), status_code=HTTPStatus.OK)
 
-    def get_nfts_with_price(self, lps_handling) -> Response:
+    def get_nfts_with_price(self, lps_handling: NftLpHandling) -> Response:
         return self._api_query_for_eth_module(
             async_query=False,
             module_name='nfts',

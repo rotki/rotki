@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, DefaultDict, Dict, List, NamedTuple, Optional, Tuple
+from typing import TYPE_CHECKING, Any, DefaultDict, Dict, List, NamedTuple, Optional, Tuple, Union
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
@@ -48,7 +48,9 @@ NFT_DB_TUPLE = Tuple[
     Optional[str],  # collection_name
 ]
 
+
 def _db_query_to_dict(entry: List[str]) -> Dict[str, Any]:
+    """From a db tuple extract the information required by the API for a NFT"""
     price_in_asset = FVal(entry[2])
     # Asset should always exist since it is guaranteed by the db schema
     price_asset = Asset(entry[3])
@@ -126,7 +128,6 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):  # lgtm [py/miss
 
                 result[address] = nfts
                 total_nfts_num += nfts_num
-
         return result, total_nfts_num
 
     def get_all_info(
@@ -187,8 +188,9 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):  # lgtm [py/miss
         with self.db.conn.read_ctx() as cursor:
             cursor.execute(NFT_INFO_SQL_QUERY + query, bindings)
             for db_entry in cursor:
-                entries[db_entry[5]].append(_db_query_to_dict(entry=db_entry)
-                total_usd_value += usd_price
+                row_data = _db_query_to_dict(entry=db_entry)
+                entries[db_entry[5]].append(row_data)
+                total_usd_value += row_data['usd_price']
             entries_found = cursor.execute(
                 'SELECT COUNT(*) FROM (SELECT identifier FROM nfts ' + query + ')',
                 bindings,
@@ -340,7 +342,7 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):  # lgtm [py/miss
         price queried.
         """
         query_str = 'SELECT identifier, last_price, last_price_asset, manual_price from nfts WHERE last_price IS NOT NULL'  # noqa: E501
-        bindings = []
+        bindings: List[Union[str, bool]] = []
         if identifier is not None:
             query_str += ' AND identifier=?'
             bindings.append(identifier)

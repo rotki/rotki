@@ -95,7 +95,6 @@ from rotkehlchen.api.v1.schemas import (
     ManualPriceRegisteredSchema,
     ManualPriceSchema,
     ModifyEvmTokenSchema,
-    NFTFilterQuerySchema2,
     NameDeleteSchema,
     NamedEthereumModuleDataSchema,
     NamedOracleCacheCreateSchema,
@@ -103,6 +102,7 @@ from rotkehlchen.api.v1.schemas import (
     NamedOracleCacheSchema,
     NewUserSchema,
     NFTFilterQuerySchema,
+    NFTFilterQuerySchema2,
     OptionalEthereumAddressSchema,
     QueriedAddressesSchema,
     RequiredEthereumAddressSchema,
@@ -197,6 +197,7 @@ from rotkehlchen.types import (
     TradeType,
     UserNote,
 )
+from rotkehlchen.utils.misc import NftLpHandling
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.bitcoin.hdkey import HDKey
@@ -2437,7 +2438,7 @@ class NFTSResource(BaseMethodView):
         return self.rest_api.get_nfts(async_query=async_query, ignore_cache=ignore_cache)
 
     @require_loggedin_user()
-    @use_kwargs(get_schema, location='json_and_query')
+    @use_kwargs(post_schema, location='json_and_query')
     def post(self, nft_id: str) -> Response:
         return self.rest_api.get_nft_by_id(nft_id=nft_id)
 
@@ -2463,7 +2464,7 @@ class NFTSPricesResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(post_schema, location='json_and_query')
-    def post(self, lps_handling) -> Response:
+    def post(self, lps_handling: NftLpHandling) -> Response:
         return self.rest_api.get_nfts_with_price(lps_handling)
 
 

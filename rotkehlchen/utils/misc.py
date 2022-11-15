@@ -1,6 +1,5 @@
 import calendar
 import datetime
-from enum import auto
 import functools
 import logging
 import operator
@@ -8,6 +7,7 @@ import platform
 import re
 import sys
 import time
+from enum import auto
 from itertools import zip_longest
 from typing import (
     TYPE_CHECKING,
