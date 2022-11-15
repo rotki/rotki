@@ -92,7 +92,7 @@ describe('blockchain balances', () => {
         });
       });
       dashboardPage.getBlockchainBalances().then($dashboardBalances => {
-        expect($dashboardBalances).to.deep.eq($blockchainBalances);
+        expect($dashboardBalances).to.eql($blockchainBalances);
       });
     });
   });

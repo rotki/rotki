@@ -77,7 +77,7 @@ describe('balances', () => {
         expect($overallBalance.minus(total).abs().isLessThan(0.01));
       });
       dashboardPage.getLocationBalances().then($dashboardBalances => {
-        expect($dashboardBalances).to.deep.eq($manualBalances);
+        expect($dashboardBalances).to.eql($manualBalances);
       });
     });
   });
