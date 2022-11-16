@@ -287,7 +287,7 @@ class EvmNodeInquirer(LockableQueryMixIn, metaclass=ABCMeta):
             eth_addresses=accounts,
         )
         result = self.contract_scan.call(
-            manager=self,
+            node_inquirer=self,
             method_name='etherBalances',
             arguments=[accounts],
             call_order=call_order if call_order is not None else self.default_call_order(),
@@ -404,7 +404,7 @@ class EvmNodeInquirer(LockableQueryMixIn, metaclass=ABCMeta):
                 return False, message
 
             if not synchronized:
-                self.msg_aggregator.add_warning(
+                self.etherscan.msg_aggregator.add_warning(
                     f'We could not verify that {self.chain_name} node {node} is '
                     'synchronized with the network. Balances and other queries '
                     'may be incorrect.',
@@ -515,7 +515,7 @@ class EvmNodeInquirer(LockableQueryMixIn, metaclass=ABCMeta):
             account: ChecksumEvmAddress,
             call_order: Optional[Sequence[WeightedNode]] = None,
     ) -> str:
-        return self.query(
+        return self._query(
             method=self._get_code,
             call_order=call_order if call_order is not None else self.default_call_order(),
             account=account,
@@ -909,7 +909,7 @@ class EvmNodeInquirer(LockableQueryMixIn, metaclass=ABCMeta):
         output = []
         for call_chunk in calls_chunked:
             multicall_result = self.contract_multicall.call(
-                manager=self,
+                node_inquirer=self,
                 method_name='aggregate',
                 arguments=[call_chunk],
                 call_order=call_order,
@@ -933,7 +933,7 @@ class EvmNodeInquirer(LockableQueryMixIn, metaclass=ABCMeta):
         of calls is allowed to fail.
         source: https://etherscan.io/address/0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696#code"""
         return self.contract_multicall_2.call(
-            manager=self,
+            node_inquirer=self,
             method_name='tryAggregate',
             arguments=[require_success, calls],
             call_order=call_order,

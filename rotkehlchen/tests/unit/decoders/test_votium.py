@@ -10,15 +10,15 @@ from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.db.ethtx import DBEthTx
+from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import EvmTransaction, Location, deserialize_evm_tx_hash
+from rotkehlchen.types import ChainID, EvmTransaction, Location, deserialize_evm_tx_hash
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x362C51b56D3c8f79aecf367ff301d1aFd42EDCEA']])  # noqa: E501
-def test_votium_claim(database, ethereum_manager, eth_transactions):
+def test_votium_claim(database, ethereum_inquirer, eth_transactions):
     """Data for claim taken from
     https://etherscan.io/tx/0x75b81b2edd454a7b564cc55a6b676e2441e155401bde99a38d867028081d2c30
     """
@@ -40,6 +40,7 @@ def test_votium_claim(database, ethereum_manager, eth_transactions):
     )
     receipt = EvmTxReceipt(
         tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
         type=0,
@@ -69,12 +70,12 @@ def test_votium_claim(database, ethereum_manager, eth_transactions):
         ],
     )
 
-    dbethtx = DBEthTx(database)
+    dbethtx = DBEvmTx(database)
     with database.user_write() as cursor:
         dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
     decoder = EVMTransactionDecoder(
         database=database,
-        ethereum_manager=ethereum_manager,
+        evm_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
         msg_aggregator=msg_aggregator,
     )

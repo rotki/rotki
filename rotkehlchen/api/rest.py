@@ -68,7 +68,6 @@ from rotkehlchen.chain.ethereum.modules.eth2.constants import FREE_VALIDATORS_LI
 from rotkehlchen.chain.ethereum.names import find_ens_mappings, search_for_addresses_names
 from rotkehlchen.chain.ethereum.types import WeightedNode
 from rotkehlchen.chain.evm.manager import EvmManager
-from rotkehlchen.chain.evm.tokens import EvmTokens
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.limits import (
     FREE_ASSET_MOVEMENTS_LIMIT,
@@ -1018,7 +1017,7 @@ class RestAPI():
                     event,
                     mapping_values={
                         HISTORY_MAPPING_KEY_STATE: HISTORY_MAPPING_STATE_CUSTOMIZED,
-                        HISTORY_MAPPING_KEY_CHAINID: ChainID.ETHEREUM,
+                        HISTORY_MAPPING_KEY_CHAINID: ChainID.ETHEREUM.serialize_for_db(),
                     },
                 )
             except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
@@ -3132,7 +3131,7 @@ class RestAPI():
             event_params: Dict[str, Any],
     ) -> Dict[str, Any]:
         try:
-            transactions, total_filter_count = self.rotkehlchen.eth_transactions.query(
+            transactions, total_filter_count = self.rotkehlchen.chains_aggregator.ethereum.evm_transactions.query(  # noqa: E501
                 only_cache=only_cache,
                 filter_query=filter_query,
                 has_premium=self.rotkehlchen.premium is not None,
@@ -4513,12 +4512,8 @@ class RestAPI():
             addresses: List[ChecksumEvmAddress],
             manager: EvmManager,
     ) -> Dict[str, Any]:
-        evmtokens = EvmTokens(
-            database=self.rotkehlchen.data.db,
-            manager=manager,
-        )
         try:
-            account_tokens_info = evmtokens.detect_tokens(
+            account_tokens_info = manager.token.detect_tokens(
                 only_cache=only_cache,
                 addresses=addresses,
             )

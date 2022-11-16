@@ -9,8 +9,7 @@ from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
 from rotkehlchen.chain.ethereum.constants import ETHERSCAN_NODE
 from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.ethereum.modules.eth2.constants import ETH2_DEPOSIT
-from rotkehlchen.chain.evm.manager import WEB3_LOGQUERY_BLOCK_RANGE
-from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+from rotkehlchen.chain.evm.node_inquirer import WEB3_LOGQUERY_BLOCK_RANGE, EvmNodeInquirer
 from rotkehlchen.constants.ethereum import ETH_MULTICALL, ETH_MULTICALL_2, ETH_SCAN
 from rotkehlchen.errors.misc import RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.fval import FVal

@@ -47,7 +47,6 @@ from rotkehlchen.chain.ethereum.modules import (
 from rotkehlchen.chain.ethereum.modules.balancer.types import BalancerPoolBalance
 from rotkehlchen.chain.ethereum.modules.eth2.structures import Eth2Validator
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
-from rotkehlchen.chain.evm.tokens import EvmTokens
 from rotkehlchen.chain.substrate.manager import wait_until_a_node_is_available
 from rotkehlchen.chain.substrate.types import KusamaAddress, PolkadotAddress
 from rotkehlchen.chain.substrate.utils import SUBSTRATE_NODE_CONNECTION_TIMEOUT
@@ -1077,9 +1076,8 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         - EthSyncError if querying the token balances through a provided ethereum
         client and the chain is not synced
         """
-        evmtokens = EvmTokens(database=self.database, manager=manager)
         try:
-            balance_result, token_usd_price = evmtokens.query_tokens_for_addresses(
+            balance_result, token_usd_price = manager.tokens.query_tokens_for_addresses(
                 addresses=self.accounts.get(manager.blockchain),  # type: ignore
             )
         except BadFunctionCallOutput as e:
@@ -1088,7 +1086,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 'exception: {}'.format(str(e)),
             )
             raise EthSyncError(
-                f'Tried to use the {manager.blockchain.value} chain of the provided '
+                f'Tried to use the {manager.node_inquirer.blockchain.value} chain of the provided '
                 'client to query token balances but the chain is not synced.',
             ) from e
 
@@ -1241,7 +1239,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 proxy_to_address[proxy_address] = user_address
                 proxy_addresses.append(proxy_address)
 
-            evmtokens = EvmTokens(database=self.database, manager=self.ethereum)
+            evmtokens = self.get_chain_manager(SupportedBlockchain.ETHEREUM).tokens
             try:
                 balance_result, token_usd_price = evmtokens.query_tokens_for_addresses(
                     addresses=proxy_addresses,

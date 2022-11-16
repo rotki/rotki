@@ -11,15 +11,15 @@ from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.db.ethtx import DBEthTx
+from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import EvmTransaction, Location, deserialize_evm_tx_hash
+from rotkehlchen.types import ChainID, EvmTransaction, Location, deserialize_evm_tx_hash
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF']])  # noqa: E501
-def test_sushiswap_single_swap(database, ethereum_manager, eth_transactions):
+def test_sushiswap_single_swap(database, ethereum_inquirer, eth_transactions):
     """Data for swap
     https://etherscan.io/tx/0xbfe3c8a13c325a32736beb34ea170053cdbbd1740a9c3ceca52060906b7f87bd
     """
@@ -41,6 +41,7 @@ def test_sushiswap_single_swap(database, ethereum_manager, eth_transactions):
     )
     receipt = EvmTxReceipt(
         tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
         type=0,
@@ -79,12 +80,12 @@ def test_sushiswap_single_swap(database, ethereum_manager, eth_transactions):
         ],
     )
 
-    dbethtx = DBEthTx(database)
+    dbevmtx = DBEvmTx(database)
     with database.user_write() as cursor:
-        dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
+        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
         decoder = EVMTransactionDecoder(
             database=database,
-            ethereum_manager=ethereum_manager,
+            evm_inquirer=ethereum_inquirer,
             transactions=eth_transactions,
             msg_aggregator=msg_aggregator,
         )

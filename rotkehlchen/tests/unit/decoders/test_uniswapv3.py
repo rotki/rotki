@@ -11,9 +11,10 @@ from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.constants.assets import A_ETH, A_USDC
 from rotkehlchen.constants.misc import EXP18, ZERO
-from rotkehlchen.db.ethtx import DBEthTx
+from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import (
+    ChainID,
     EvmInternalTransaction,
     EvmTransaction,
     Location,
@@ -25,7 +26,7 @@ from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0xb63e0C506dDBa7b0dd106d1937d6D13BE2C62aE2']])  # noqa: E501
-def test_uniswap_v3_swap(database, ethereum_manager, eth_transactions):
+def test_uniswap_v3_swap(database, ethereum_inquirer, eth_transactions):
     """Data for swap
     https://etherscan.io/tx/0x1c50c336329a7ee41f722ce5d848ebd066b72bf44a1eaafcaa92e8c0282049d2
     """
@@ -47,6 +48,7 @@ def test_uniswap_v3_swap(database, ethereum_manager, eth_transactions):
     )
     receipt = EvmTxReceipt(
         tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
         type=0,
@@ -94,12 +96,12 @@ def test_uniswap_v3_swap(database, ethereum_manager, eth_transactions):
         ],
     )
 
-    dbethtx = DBEthTx(database)
+    dbevmtx = DBEvmTx(database)
     with database.user_write() as cursor:
-        dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
+        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
         decoder = EVMTransactionDecoder(
             database=database,
-            ethereum_manager=ethereum_manager,
+            evm_inquirer=ethereum_inquirer,
             transactions=eth_transactions,
             msg_aggregator=msg_aggregator,
         )
@@ -152,7 +154,7 @@ def test_uniswap_v3_swap(database, ethereum_manager, eth_transactions):
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0xeB312F4921aEbbE99faCaCFE92f22b942Cbd7599']])  # noqa: E501
-def test_uniswap_v3_swap_received_token2(database, ethereum_manager, eth_transactions):
+def test_uniswap_v3_swap_received_token2(database, ethereum_inquirer, eth_transactions):
     """This test checks that the logic is correct when the asset leaving the pool is the token2 of
     the pool. Data for swap
     https://etherscan.io/tx/0x116b3a9c0b2a4857605e336438c8e4c91897a9ef2af23178f9dbceba85264bd9
@@ -175,6 +177,7 @@ def test_uniswap_v3_swap_received_token2(database, ethereum_manager, eth_transac
     )
     receipt = EvmTxReceipt(
         tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
         type=0,
@@ -223,13 +226,13 @@ def test_uniswap_v3_swap_received_token2(database, ethereum_manager, eth_transac
         value=FVal('49.523026278486536412') * EXP18,
     )
 
-    dbethtx = DBEthTx(database)
+    dbevmtx = DBEvmTx(database)
     with database.user_write() as cursor:
-        dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
-        dbethtx.add_ethereum_internal_transactions(cursor, [internal_tx], relevant_address='0xeB312F4921aEbbE99faCaCFE92f22b942Cbd7599')  # noqa: E501
+        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        dbevmtx.add_evm_internal_transactions(cursor, [internal_tx], relevant_address='0xeB312F4921aEbbE99faCaCFE92f22b942Cbd7599')  # noqa: E501
         decoder = EVMTransactionDecoder(
             database=database,
-            ethereum_manager=ethereum_manager,
+            evm_inquirer=ethereum_inquirer,
             transactions=eth_transactions,
             msg_aggregator=msg_aggregator,
         )

@@ -618,8 +618,9 @@ class Rotkehlchen():
         with contextlib.ExitStack() as stack:
             cursor = stack.enter_context(self.data.db.user_write())
             if blockchain == SupportedBlockchain.ETHEREUM:
-                stack.enter_context(self.eth_transactions.wait_until_no_query_for(eth_addresses))
-                stack.enter_context(self.eth_transactions.missing_receipts_lock)
+                eth_transactions = self.chains_aggregator.get_chain_manager(blockchain).transactions  # noqa: E501
+                stack.enter_context(eth_transactions.wait_until_no_query_for(eth_addresses))
+                stack.enter_context(eth_transactions.missing_receipts_lock)
                 stack.enter_context(self.eth_tx_decoder.undecoded_tx_query_lock)
             self.data.db.remove_blockchain_accounts(cursor, blockchain, accounts)
 

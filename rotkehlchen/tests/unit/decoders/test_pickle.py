@@ -10,15 +10,15 @@ from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.db.ethtx import DBEthTx
+from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import EvmTransaction, Location, deserialize_evm_tx_hash
+from rotkehlchen.types import ChainID, EvmTransaction, Location, deserialize_evm_tx_hash
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x0f1a748cDF53Bbad378CE2C4429463d01CcE0C3f']])  # noqa: E501
-def test_pickle_deposit(database, ethereum_manager, eth_transactions):
+def test_pickle_deposit(database, ethereum_inquirer, eth_transactions):
     """Data for deposit taken from
     https://etherscan.io/tx/0xba9a52a144d4e79580a557160e9f8269d3e5373ce44bce00ebd609754034b7bd
     """
@@ -40,6 +40,7 @@ def test_pickle_deposit(database, ethereum_manager, eth_transactions):
     )
     receipt = EvmTxReceipt(
         tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
         type=0,
@@ -68,12 +69,12 @@ def test_pickle_deposit(database, ethereum_manager, eth_transactions):
         ],
     )
 
-    dbethtx = DBEthTx(database)
+    dbevmtx = DBEvmTx(database)
     with database.user_write() as cursor:
-        dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
+        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
         decoder = EVMTransactionDecoder(
             database=database,
-            ethereum_manager=ethereum_manager,
+            evm_inquirer=ethereum_inquirer,
             transactions=eth_transactions,
             msg_aggregator=msg_aggregator,
         )
@@ -131,7 +132,7 @@ def test_pickle_deposit(database, ethereum_manager, eth_transactions):
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0xC7Dc4Cd171812a441A30472219d390f4F15f6070']])  # noqa: E501
-def test_pickle_withdraw(database, ethereum_manager, eth_transactions):
+def test_pickle_withdraw(database, ethereum_inquirer, eth_transactions):
     """Data for withdraw taken from
     https://etherscan.io/tx/0x91bc102e1cbb0e4542a10a7a13370b5e591d8d284989bdb0ca4ece4e54e61bab
     """
@@ -153,6 +154,7 @@ def test_pickle_withdraw(database, ethereum_manager, eth_transactions):
     )
     receipt = EvmTxReceipt(
         tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
         type=0,
@@ -181,12 +183,12 @@ def test_pickle_withdraw(database, ethereum_manager, eth_transactions):
         ],
     )
 
-    dbethtx = DBEthTx(database)
+    dbevmtx = DBEvmTx(database)
     with database.user_write() as cursor:
-        dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
+        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
         decoder = EVMTransactionDecoder(
             database=database,
-            ethereum_manager=ethereum_manager,
+            evm_inquirer=ethereum_inquirer,
             transactions=eth_transactions,
             msg_aggregator=msg_aggregator,
         )

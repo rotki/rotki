@@ -171,6 +171,7 @@ def setup_ethereum_transactions_test(
 
     transaction1 = EvmTransaction(
         tx_hash=tx_hash1,
+        chain_id=ChainID.ETHEREUM,
         timestamp=Timestamp(1630532276),
         block_number=13142218,
         from_address=addr1,
@@ -185,6 +186,7 @@ def setup_ethereum_transactions_test(
     tx_hash2 = deserialize_evm_tx_hash('0x6beab9409a8f3bd11f82081e99e856466a7daf5f04cca173192f79e78ed53a77')  # noqa: E501
     transaction2 = EvmTransaction(
         tx_hash=tx_hash2,
+        chain_id=ChainID.ETHEREUM,
         timestamp=Timestamp(1631013757),
         block_number=13178342,
         from_address=addr2,
@@ -206,6 +208,7 @@ def setup_ethereum_transactions_test(
 
     expected_receipt1 = EvmTxReceipt(
         tx_hash=tx_hash1,
+        chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
         type=0,
@@ -260,6 +263,7 @@ def setup_ethereum_transactions_test(
     )
     expected_receipt2 = EvmTxReceipt(
         tx_hash=tx_hash2,
+        chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
         type=2,
@@ -300,7 +304,7 @@ def get_decoded_events_of_transaction(
         transactions.get_or_query_transaction_receipt(cursor, tx_hash=tx_hash)
     decoder = EVMTransactionDecoder(
         database=database,
-        ethereum_manager=ethereum_inquirer,
+        evm_inquirer=ethereum_inquirer,
         transactions=transactions,
         msg_aggregator=msg_aggregator,
     )

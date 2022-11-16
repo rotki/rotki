@@ -130,7 +130,7 @@ class EVMTransactionDecoder():
                         raise ModuleLoadingError(f'Decoder with name {class_name} already loaded')
                     try:
                         self.decoders[class_name] = submodule_decoder(
-                            evm_inquirer=self.evm_inquirer,
+                            etherem_inquirer=self.evm_inquirer,
                             base_tools=self.base,
                             msg_aggregator=self.msg_aggregator,
                         )

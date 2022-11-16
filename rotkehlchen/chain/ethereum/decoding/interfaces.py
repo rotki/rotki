@@ -6,7 +6,7 @@ from rotkehlchen.types import ChecksumEvmAddress
 if TYPE_CHECKING:
     from rotkehlchen.accounting.structures.base import HistoryBaseEntry
     from rotkehlchen.chain.ethereum.decoding.base import BaseDecoderTools
-    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -14,7 +14,7 @@ class DecoderInterface(metaclass=ABCMeta):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',  # pylint: disable=unused-argument
+            ethereum_inquirer: 'EthereumInquirer',  # pylint: disable=unused-argument
             base_tools: 'BaseDecoderTools',  # pylint: disable=unused-argument
             msg_aggregator: 'MessagesAggregator',
     ) -> None:
