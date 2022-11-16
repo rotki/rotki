@@ -38,7 +38,7 @@ from .structures import (
 )
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
 
 
@@ -64,18 +64,18 @@ class Aave(EthereumModule):
 
     def __init__(
             self,
-            ethereum_manager: 'EthereumManager',
+            ethereum_inquirer: 'EthereumInquirer',
             database: 'DBHandler',
             premium: Optional[Premium],
             msg_aggregator: MessagesAggregator,
     ) -> None:
-        self.ethereum = ethereum_manager
+        self.ethereum = ethereum_inquirer
         self.database = database
         self.msg_aggregator = msg_aggregator
         self.premium = premium
         try:
             self.graph_inquirer = AaveGraphInquirer(
-                ethereum_manager=ethereum_manager,
+                ethereum_inquirer=ethereum_inquirer,
                 database=database,
                 premium=premium,
                 msg_aggregator=msg_aggregator,
@@ -145,7 +145,7 @@ class Aave(EthereumModule):
 
                     if balance_entry.protocol.name == 'Aave':
                         reserve_result = AAVE_V1_LENDING_POOL.call(
-                            manager=self.ethereum,
+                            node_inquirer=self.ethereum,
                             method_name='getReserveData',
                             arguments=[reserve_address],
                         )
@@ -156,7 +156,7 @@ class Aave(EthereumModule):
                         )
                     else:  # Aave V2
                         reserve_result = AAVE_V2_LENDING_POOL.call(
-                            manager=self.ethereum,
+                            node_inquirer=self.ethereum,
                             method_name='getReserveData',
                             arguments=[reserve_address],
                         )
@@ -199,7 +199,7 @@ class Aave(EthereumModule):
             given_defi_balances: GIVEN_DEFI_BALANCES,
     ) -> Dict[ChecksumEvmAddress, AaveHistory]:
         """Detects aave historical data for the given addresses"""
-        latest_block = self.ethereum.node_inquirer.get_latest_block_number()
+        latest_block = self.ethereum.get_latest_block_number()
         with self.history_lock:
             if reset_db_data is True:
                 with self.database.user_write() as cursor:

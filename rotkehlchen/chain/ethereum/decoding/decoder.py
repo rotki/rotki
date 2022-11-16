@@ -237,7 +237,7 @@ class EVMTransactionDecoder():
                 events.append(event)
                 continue
 
-            token = GlobalDBHandler.get_evm_token(tx_log.address, chain=ChainID.ETHEREUM)
+            token = GlobalDBHandler.get_evm_token(address=tx_log.address, chain_id=ChainID.ETHEREUM)  # noqa: E501
             event = self.try_all_rules(token=token, tx_log=tx_log, transaction=transaction, decoded_events=events, action_items=action_items)  # noqa: E501
             if event:
                 events.append(event)
@@ -312,7 +312,11 @@ class EVMTransactionDecoder():
     ) -> List[HistoryBaseEntry]:
         """Get a transaction's events if existing in the DB or decode them"""
         if ignore_cache is True:  # delete all decoded events
-            self.dbevents.delete_events_by_tx_hash(write_cursor, [transaction.tx_hash])
+            self.dbevents.delete_events_by_tx_hash(
+                write_cursor=write_cursor,
+                tx_hashes=[transaction.tx_hash],
+                chain_id=ChainID.ETHEREUM,
+            )
             write_cursor.execute(
                 'DELETE from evm_tx_mappings WHERE tx_hash=? AND blockchain=? AND value=?',
                 (transaction.tx_hash, 'ETH', HISTORY_MAPPING_STATE_DECODED),

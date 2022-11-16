@@ -18,7 +18,6 @@ from rotkehlchen.errors.misc import ModuleInitializationFailure, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.premium.premium import Premium
 from rotkehlchen.types import YEARN_VAULTS_V2_PROTOCOL, ChecksumEvmAddress, EvmAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
@@ -31,7 +30,7 @@ from .vaults import YearnVaultBalance, YearnVaultHistory, get_usd_price_zero_if_
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.defi.structures import GIVEN_ETH_BALANCES
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
 
@@ -44,22 +43,17 @@ class YearnVaultsV2(EthereumModule):
 
     def __init__(
             self,
-            ethereum_manager: 'EthereumManager',
+            ethereum_inquirer: 'EthereumInquirer',
             database: 'DBHandler',
-            premium: Optional[Premium],
             msg_aggregator: MessagesAggregator,
     ) -> None:
-        self.ethereum = ethereum_manager
+        self.ethereum = ethereum_inquirer
         self.database = database
         self.msg_aggregator = msg_aggregator
-        self.premium = premium
         self.history_lock = Semaphore()
 
         try:
             self.graph_inquirer: YearnVaultsV2Graph = YearnVaultsV2Graph(
-                ethereum_manager=ethereum_manager,
-                database=database,
-                premium=premium,
                 msg_aggregator=msg_aggregator,
             )
         except RemoteError as e:
@@ -86,8 +80,8 @@ class YearnVaultsV2(EthereumModule):
             )
             return ZERO, 0
 
-        now_block_number = self.ethereum.node_inquirer.get_latest_block_number()
-        price_per_full_share = self.ethereum.node_inquirer.call_contract(
+        now_block_number = self.ethereum.get_latest_block_number()
+        price_per_full_share = self.ethereum.call_contract(
             contract_address=vault.evm_address,
             abi=YEARN_VAULT_V2_ABI,  # Any vault ABI will do
             method_name='pricePerShare',

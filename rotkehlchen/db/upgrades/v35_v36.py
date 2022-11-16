@@ -20,6 +20,13 @@ def _upgrade_events_mappings(write_cursor: 'DBCursor'):
     pass
 
 
+def _remove_adex(write_cursor: 'DBCursor'):
+    """TODO: Remove all adex related tables, events, data in other tables.
+    Check removal commit to see all data that should go
+    """
+    pass
+
+
 def upgrade_v35_to_v36(db: 'DBHandler') -> None:
     """Upgrades the DB from v35 to v36
     - Rename all ethereum transaction tables and add chainid to them
