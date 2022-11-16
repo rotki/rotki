@@ -52,8 +52,10 @@ const GeneralSettings = z.object({
 export type GeneralSettings = z.infer<typeof GeneralSettings>;
 
 export enum CostBasisMethod {
-  Fifo = 'fifo',
-  Lifo = 'lifo'
+  FIFO = 'fifo',
+  LIFO = 'lifo',
+  HIFO = 'hifo',
+  ACB = 'acb'
 }
 
 export const CostBasisMethodEnum = z.nativeEnum(CostBasisMethod);
@@ -76,7 +78,7 @@ const AccountingSettings = z
     pnlCsvWithFormulas: z.boolean(),
     pnlCsvHaveSummary: z.boolean(),
     taxableLedgerActions: z.array(LedgerActionEnum),
-    costBasisMethod: CostBasisMethodEnum.default(CostBasisMethod.Fifo)
+    costBasisMethod: CostBasisMethodEnum.default(CostBasisMethod.FIFO)
   })
   .merge(BaseAccountingSettings);
 

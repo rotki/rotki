@@ -36,5 +36,5 @@ export const defaultAccountingSettings = (): AccountingSettings => ({
   calculatePastCostBasis: true,
   taxableLedgerActions: [],
   ethStakingTaxableAfterWithdrawalEnabled: false,
-  costBasisMethod: CostBasisMethod.Fifo
+  costBasisMethod: CostBasisMethod.FIFO
 });
