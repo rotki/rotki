@@ -31,8 +31,8 @@ export class DashboardPage {
     cy.get('.dashboard__summary-card__blockchain').should('be.visible');
     cy.get('[data-cy=blockchain-balances]').should('not.be.empty');
     const blockchainBalances = [
-      { blockchain: 'Ethereum', symbol: Blockchain.ETH, renderedValue: Zero },
-      { blockchain: 'Bitcoin', symbol: Blockchain.BTC, renderedValue: Zero }
+      { blockchain: 'Ethereum', symbol: Blockchain.ETH, value: Zero },
+      { blockchain: 'Bitcoin', symbol: Blockchain.BTC, value: Zero }
     ];
 
     blockchainBalances.forEach(blockchainBalance => {
@@ -40,10 +40,9 @@ export class DashboardPage {
       cy.get('body').then($body => {
         if ($body.find(rowClass).length > 0) {
           cy.get(`${rowClass} [data-cy="display-amount"]`).each($amount => {
-            blockchainBalance.renderedValue =
-              blockchainBalance.renderedValue.plus(
-                bigNumberify(this.getSanitizedAmountString($amount.text()))
-              );
+            blockchainBalance.value = blockchainBalance.value.plus(
+              bigNumberify(this.getSanitizedAmountString($amount.text()))
+            );
           });
         }
       });
@@ -74,12 +73,12 @@ export class DashboardPage {
     cy.get('.dashboard__summary-card__manual').should('be.visible');
     cy.get('[data-cy=manual-balances]').should('not.be.empty');
     const balanceLocations = [
-      { location: 'blockchain', renderedValue: Zero },
-      { location: 'banks', renderedValue: Zero },
-      { location: 'external', renderedValue: Zero },
-      { location: 'commodities', renderedValue: Zero },
-      { location: 'real estate', renderedValue: Zero },
-      { location: 'equities', renderedValue: Zero }
+      { location: 'blockchain', value: Zero },
+      { location: 'banks', value: Zero },
+      { location: 'external', value: Zero },
+      { location: 'commodities', value: Zero },
+      { location: 'real estate', value: Zero },
+      { location: 'equities', value: Zero }
     ];
 
     balanceLocations.forEach(balanceLocation => {
@@ -87,7 +86,7 @@ export class DashboardPage {
       cy.get('body').then($body => {
         if ($body.find(rowClass).length > 0) {
           cy.get(`${rowClass} [data-cy="display-amount"]`).each($amount => {
-            balanceLocation.renderedValue = balanceLocation.renderedValue.plus(
+            balanceLocation.value = balanceLocation.value.plus(
               bigNumberify(this.getSanitizedAmountString($amount.text()))
             );
           });

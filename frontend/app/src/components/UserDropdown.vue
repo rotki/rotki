@@ -89,6 +89,7 @@ import { useAppNavigation } from '@/composables/navigation';
 import { usePrivacyMode } from '@/composables/privacy';
 import { useInterop } from '@/electron-interop';
 import { useSessionStore } from '@/store/session';
+import { useSessionAuthStore } from '@/store/session/auth';
 
 const { t, tc } = useI18n();
 
@@ -96,8 +97,8 @@ const confirmLogout = ref<boolean>(false);
 
 const KEY_REMEMBER_PASSWORD = 'rotki.remember_password';
 
-const store = useSessionStore();
-const { username } = storeToRefs(store);
+const { logout } = useSessionStore();
+const { username } = storeToRefs(useSessionAuthStore());
 const { isPackaged, clearPassword } = useInterop();
 const { privacyModeIcon, togglePrivacyMode } = usePrivacyMode();
 const { currentBreakpoint } = useTheme();
@@ -111,7 +112,7 @@ const logoutHandler = async () => {
     await clearPassword();
   }
 
-  await store.logout();
+  await logout();
   await navigateToUserLogin();
 };
 

@@ -27,7 +27,6 @@ describe('accounts', () => {
       it('create account', () => {
         app.visit();
         app.createAccount(username);
-        app.drawerIsVisible(size[1] >= 720);
         app.logout();
       });
 

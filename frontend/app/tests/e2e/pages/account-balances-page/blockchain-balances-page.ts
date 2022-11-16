@@ -82,8 +82,8 @@ export class BlockchainBalancesPage extends AccountBalancesPage {
 
   getBlockchainBalances() {
     const blockchainBalances = [
-      { blockchain: 'Ethereum', symbol: Blockchain.ETH, renderedValue: Zero },
-      { blockchain: 'Bitcoin', symbol: Blockchain.BTC, renderedValue: Zero }
+      { blockchain: 'Ethereum', symbol: Blockchain.ETH, value: Zero },
+      { blockchain: 'Bitcoin', symbol: Blockchain.BTC, value: Zero }
     ];
 
     cy.get('[data-cy=blockchain-asset-balances] .v-data-table__empty-wrapper', {
@@ -105,10 +105,9 @@ export class BlockchainBalancesPage extends AccountBalancesPage {
               timeout: 120000
             }
           ).each($amount => {
-            blockchainBalance.renderedValue =
-              blockchainBalance.renderedValue.plus(
-                bigNumberify(this.getSanitizedAmountString($amount.text()))
-              );
+            blockchainBalance.value = blockchainBalance.value.plus(
+              bigNumberify(this.getSanitizedAmountString($amount.text()))
+            );
           });
         }
       });

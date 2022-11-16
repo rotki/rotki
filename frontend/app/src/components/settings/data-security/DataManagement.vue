@@ -44,7 +44,7 @@ import {
   ALL_TRANSACTIONS
 } from '@/services/session/consts';
 import { Purgeable } from '@/services/session/types';
-import { useSessionStore } from '@/store/session';
+import { useSessionPurgeStore } from '@/store/session/purge';
 import { SUPPORTED_EXCHANGES, SupportedExchange } from '@/types/exchanges';
 import { BaseMessage } from '@/types/messages';
 import { Module } from '@/types/modules';
@@ -56,7 +56,7 @@ const confirm = ref<boolean>(false);
 const pending = ref<boolean>(false);
 const sourceLabel = ref<string>('');
 
-const { purgeCache } = useSessionStore();
+const { purgeCache } = useSessionPurgeStore();
 
 const { tc } = useI18n();
 

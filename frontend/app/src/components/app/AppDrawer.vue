@@ -28,13 +28,10 @@
 </template>
 
 <script setup lang="ts">
+import NavigationMenu from '@/components/NavigationMenu.vue';
 import { useTheme } from '@/composables/common';
 import { useMainStore } from '@/store/main';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
-
-const NavigationMenu = defineAsyncComponent(
-  () => import('@/components/NavigationMenu.vue')
-);
 
 const { isMini, showDrawer } = storeToRefs(useAreaVisibilityStore());
 const { appVersion } = toRefs(useMainStore());

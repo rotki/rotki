@@ -66,9 +66,7 @@ describe('balances', () => {
   it('data is reflected in dashboard', () => {
     manualBalancesPage.getLocationBalances().then($manualBalances => {
       const total = $manualBalances.reduce((sum: BigNumber, location) => {
-        return sum.plus(
-          location.renderedValue.toFixed(2, BigNumber.ROUND_DOWN)
-        );
+        return sum.plus(location.value.toFixed(2, BigNumber.ROUND_DOWN));
       }, Zero);
       dashboardPage.visit();
       dashboardPage.getOverallBalance().then($overallBalance => {
@@ -78,11 +76,11 @@ describe('balances', () => {
       });
       dashboardPage.getLocationBalances().then($dashboardBalances => {
         $dashboardBalances.forEach((dashboardBalances, index) => {
-          const balance = $manualBalances[index].renderedValue;
-          const dashboardBalance = dashboardBalances.renderedValue;
-          expect(dashboardBalance.toNumber()).within(
-            balance.minus(0.01).toNumber(),
-            balance.plus(0.01).toNumber()
+          const { location, value } = $manualBalances[index];
+          const dashboardBalance = dashboardBalances.value;
+          expect(dashboardBalance.toNumber(), location).within(
+            value.minus(0.01).toNumber(),
+            value.plus(0.01).toNumber()
           );
         });
       });

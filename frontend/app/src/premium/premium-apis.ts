@@ -91,7 +91,8 @@ export const statisticsApi = (): StatisticsApi => {
 };
 
 export const userSettings = (): UserSettingsApi => {
-  const sessionRefs = storeToRefs(useSessionSettingsStore());
+  const { privacyMode, scrambleData, shouldShowAmount, shouldShowPercentage } =
+    storeToRefs(useSessionSettingsStore());
   const { floatingPrecision, currencySymbol } = storeToRefs(
     useGeneralSettingsStore()
   );
@@ -105,11 +106,14 @@ export const userSettings = (): UserSettingsApi => {
   return {
     floatingPrecision,
     currencySymbol,
-    ...sessionRefs,
     selectedTheme,
     dateInputFormat,
     graphZeroBased,
-    showGraphRangeSelector
+    showGraphRangeSelector,
+    privacyMode,
+    scrambleData,
+    shouldShowAmount,
+    shouldShowPercentage
   };
 };
 

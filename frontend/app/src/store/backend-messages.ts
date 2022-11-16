@@ -3,7 +3,7 @@ import { useInterop } from '@/electron-interop';
 import { BackendCode } from '@/electron-main/backend-code';
 import { useMainStore } from '@/store/main';
 import { useMonitorStore } from '@/store/monitor';
-import { useSessionStore } from '@/store/session';
+import { useSessionAuthStore } from '@/store/session/auth';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
 import { checkIfDevelopment } from '@/utils/env-utils';
 import { logger } from '@/utils/logging';
@@ -20,7 +20,7 @@ export const useBackendMessagesStore = defineStore('backendMessages', () => {
   const { start } = useMonitorStore();
   const { connect } = useMainStore();
   const { showAbout } = storeToRefs(useAreaVisibilityStore());
-  const { logged } = storeToRefs(useSessionStore());
+  const { logged } = storeToRefs(useSessionAuthStore());
 
   onBeforeMount(async () => {
     setupListeners({

@@ -421,8 +421,6 @@ const routes = setupLayouts([
     : [])
 ]);
 
-console.log(routes);
-
 const router = new Router({
   mode: isDocker ? 'hash' : 'history',
   base,

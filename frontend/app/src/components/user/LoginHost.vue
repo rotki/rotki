@@ -13,7 +13,7 @@
             v-if="!connectionFailure"
             :connected="connected && !autolog"
           />
-          <connection-failure v-else />
+          <connection-failure-message v-else />
           <div v-if="connected" data-cy="account-management-forms">
             <router-view />
           </div>
@@ -39,7 +39,7 @@
 </template>
 
 <script setup lang="ts">
-import ConnectionFailure from '@/components/account-management/ConnectionFailure.vue';
+import ConnectionFailureMessage from '@/components/account-management/ConnectionFailureMessage.vue';
 import ConnectionLoading from '@/components/account-management/ConnectionLoading.vue';
 import PremiumReminder from '@/components/account-management/PremiumReminder.vue';
 import BackendSettingsButton from '@/components/helper/OnboardingSettingsButton.vue';
