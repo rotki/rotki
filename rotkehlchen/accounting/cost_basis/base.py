@@ -300,7 +300,7 @@ class FIFOCostBasisMethod(BaseCostBasisMethod):
     """
     def __init__(self) -> None:
         super().__init__()
-        self._count = FVal(0)
+        self._count = ZERO
 
     def add_acquisition(self, acquisition: AssetAcquisitionEvent) -> None:
         """Adds an acquisition to the `_acquisitions_heap` using a counter to achieve the FIFO order."""  # noqa: E501
@@ -315,7 +315,7 @@ class LIFOCostBasisMethod(BaseCostBasisMethod):
     """
     def __init__(self) -> None:
         super().__init__()
-        self._count = FVal(0)
+        self._count = ZERO
 
     def add_acquisition(self, acquisition: AssetAcquisitionEvent) -> None:
         """Adds an acquisition to the `_acquisitions_heap` using a negated counter to achieve the LIFO order."""  # noqa: E501
@@ -343,7 +343,7 @@ class AverageCostBasisMethod(BaseCostBasisMethod):
     """
     def __init__(self) -> None:
         super().__init__()
-        self._count = FVal(0)
+        self._count = ZERO
         # keeps track of the amount of the asset remaining after every acquisition or spend
         self.remaining_amount = ZERO
         # the average cost basis of last event(buy/sell) that occurred
