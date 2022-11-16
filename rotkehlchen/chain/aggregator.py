@@ -31,7 +31,6 @@ from rotkehlchen.chain.ethereum.defi.chad import DefiChad
 from rotkehlchen.chain.ethereum.defi.structures import DefiProtocolBalances
 from rotkehlchen.chain.ethereum.modules import (
     Aave,
-    Adex,
     Balancer,
     Compound,
     Eth2,
@@ -53,7 +52,6 @@ from rotkehlchen.chain.substrate.manager import wait_until_a_node_is_available
 from rotkehlchen.chain.substrate.types import KusamaAddress, PolkadotAddress
 from rotkehlchen.chain.substrate.utils import SUBSTRATE_NODE_CONNECTION_TIMEOUT
 from rotkehlchen.constants.assets import (
-    A_ADX,
     A_AVAX,
     A_BCH,
     A_BTC,
@@ -476,10 +474,6 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
     @overload
     def get_module(self, module_name: Literal['aave']) -> Optional[Aave]:
-        ...
-
-    @overload
-    def get_module(self, module_name: Literal['adex']) -> Optional[Adex]:
         ...
 
     @overload
@@ -1277,12 +1271,6 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                     account=proxy_to_address[proxy_address],
                     balances=defi_balances,
                 )
-
-        adex_module = self.get_module('adex')
-        if adex_module is not None and self.premium is not None:
-            adex_balances = adex_module.get_balances(addresses=self.queried_addresses_for_module('adex'))  # noqa: E501
-            for address, balance in adex_balances.items():
-                eth_balances[address].assets[A_ADX] += balance
 
         pickle_module = self.get_module('pickle_finance')
         if pickle_module is not None:

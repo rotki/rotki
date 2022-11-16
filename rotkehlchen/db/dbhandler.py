@@ -39,15 +39,6 @@ from rotkehlchen.chain.bitcoin.xpub import (
 from rotkehlchen.chain.ethereum.interfaces.ammswap.types import EventType, LiquidityPoolEvent
 from rotkehlchen.chain.ethereum.modules.aave.common import atoken_to_asset
 from rotkehlchen.chain.ethereum.modules.aave.structures import AaveEvent, aave_event_from_db
-from rotkehlchen.chain.ethereum.modules.adex import (
-    ADEX_EVENTS_PREFIX,
-    AdexEventType,
-    Bond,
-    ChannelWithdraw,
-    Unbond,
-    UnbondRequest,
-    deserialize_adex_event_from_db,
-)
 from rotkehlchen.chain.ethereum.modules.balancer import BALANCER_EVENTS_PREFIX
 from rotkehlchen.chain.ethereum.modules.sushiswap import SUSHISWAP_EVENTS_PREFIX
 from rotkehlchen.chain.ethereum.modules.uniswap import UNISWAP_EVENTS_PREFIX
@@ -100,7 +91,6 @@ from rotkehlchen.db.utils import (
     form_query_to_filter_timestamps,
     insert_tag_mappings,
     is_valid_db_blockchain_account,
-    need_cursor,
     need_writable_cursor,
     str_to_bool,
 )
@@ -170,7 +160,6 @@ TABLES_WITH_ASSETS = (
     ('asset_movements', 'asset', 'fee_asset'),
     ('ledger_actions', 'asset', 'rate_asset'),
     ('amm_events', 'token0_identifier', 'token1_identifier'),
-    ('adex_events', 'token'),
     ('balancer_events', 'pool_address_token'),
     ('timed_balances', 'currency'),
 )
@@ -845,99 +834,6 @@ class DBHandler:
         write_cursor.execute('DELETE FROM aave_events;')
         write_cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "aave_events%";')
 
-    def add_adex_events(
-            self,
-            write_cursor: 'DBCursor',
-            events: Sequence[Union[Bond, Unbond, UnbondRequest, ChannelWithdraw]],
-    ) -> None:
-        query = (
-            """
-            INSERT INTO adex_events (
-                tx_hash,
-                address,
-                identity_address,
-                timestamp,
-                type,
-                pool_id,
-                amount,
-                usd_value,
-                bond_id,
-                nonce,
-                slashed_at,
-                unlock_at,
-                channel_id,
-                token,
-                log_index
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """
-        )
-        for event in events:
-            event_tuple = event.to_db_tuple()
-            try:
-                write_cursor.execute(query, event_tuple)
-            except sqlcipher.IntegrityError:  # pylint: disable=no-member
-                self.msg_aggregator.add_warning(
-                    f'Tried to add an AdEx event that already exists in the DB. '
-                    f'Event data: {event_tuple}. Skipping event.',
-                )
-                continue
-
-    # pylint: disable=no-self-use
-    @need_cursor('conn.read_ctx')
-    def get_adex_events(
-            self,
-            cursor: 'DBCursor',
-            from_timestamp: Optional[Timestamp] = None,
-            to_timestamp: Optional[Timestamp] = None,
-            address: Optional[ChecksumEvmAddress] = None,
-            bond_id: Optional[str] = None,
-            event_type: Optional[AdexEventType] = None,
-    ) -> List[Union[Bond, Unbond, UnbondRequest, ChannelWithdraw]]:
-        """Returns a list of AdEx events optionally filtered by time and address.
-        """
-        query = 'SELECT * FROM adex_events '
-        # Timestamp filters are omitted, done via `form_query_to_filter_timestamps`
-        filters = []
-        if address is not None:
-            filters.append(f'address="{address}" ')
-        if bond_id is not None:
-            filters.append(f'bond_id="{bond_id}"')
-        if event_type is not None:
-            filters.append(f'type="{str(event_type)}"')
-
-        if filters:
-            query += 'WHERE '
-            query += 'AND '.join(filters)
-
-        query, bindings = form_query_to_filter_timestamps(
-            query=query,
-            timestamp_attribute='timestamp',
-            from_ts=from_timestamp,
-            to_ts=to_timestamp,
-        )
-        events = []
-        cursor.execute(query, bindings)
-        for event_tuple in cursor:
-            try:
-                event = deserialize_adex_event_from_db(event_tuple)
-            except DeserializationError as e:
-                self.msg_aggregator.add_error(
-                    f'Error deserializing AdEx event from the DB. Skipping event. '
-                    f'Error was: {str(e)}',
-                )
-                continue
-            events.append(event)
-
-        return events
-
-    def delete_adex_events_data(self, write_cursor: 'DBCursor') -> None:
-        """Delete all historical AdEx events data"""
-        write_cursor.execute('DELETE FROM adex_events;')
-        write_cursor.execute(
-            'DELETE FROM used_query_ranges WHERE name LIKE ?', (f'{ADEX_EVENTS_PREFIX}%',),
-        )
-
     def delete_balancer_events_data(self, write_cursor: 'DBCursor') -> None:
         """Delete all historical Balancer events data"""
         write_cursor.execute('DELETE FROM balancer_events;')
@@ -1037,7 +933,6 @@ class DBHandler:
                 self.delete_sushiswap_events_data(cursor)
                 self.delete_balancer_events_data(cursor)
                 self.delete_aave_data(cursor)
-                self.delete_adex_events_data(cursor)
                 self.delete_yearn_vaults_data(write_cursor=cursor, version=1)
                 self.delete_yearn_vaults_data(write_cursor=cursor, version=2)
                 self.delete_loopring_data(cursor)
@@ -1054,8 +949,6 @@ class DBHandler:
                 self.delete_balancer_events_data(cursor)
             elif module_name == 'aave':
                 self.delete_aave_data(cursor)
-            elif module_name == 'adex':
-                self.delete_adex_events_data(cursor)
             elif module_name == 'yearn_vaults':
                 self.delete_yearn_vaults_data(write_cursor=cursor, version=1)
             elif module_name == 'yearn_vaults_v2':
@@ -2153,10 +2046,6 @@ class DBHandler:
         write_cursor.execute('DELETE FROM used_query_ranges WHERE name = ?', (f'aave_events_{address}',))  # noqa: E501
         write_cursor.execute(
             'DELETE FROM used_query_ranges WHERE name = ?',
-            (f'{ADEX_EVENTS_PREFIX}_{address}',),
-        )
-        write_cursor.execute(
-            'DELETE FROM used_query_ranges WHERE name = ?',
             (f'{BALANCER_EVENTS_PREFIX}_{address}',),
         )
         write_cursor.execute(
@@ -2169,7 +2058,6 @@ class DBHandler:
         )
         write_cursor.execute('DELETE FROM evm_accounts_details WHERE account = ?', (address,))
         write_cursor.execute('DELETE FROM aave_events WHERE address = ?', (address,))
-        write_cursor.execute('DELETE FROM adex_events WHERE address = ?', (address,))
         write_cursor.execute('DELETE FROM balancer_events WHERE address=?;', (address,))
         write_cursor.execute('DELETE FROM amm_events WHERE address=?;', (address,))
         write_cursor.execute(

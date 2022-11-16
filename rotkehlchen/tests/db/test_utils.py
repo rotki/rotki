@@ -17,35 +17,35 @@ from rotkehlchen.fval import FVal
     ('query_in, timestamp_attribute, from_ts, to_ts, expected_query_out, expected_bindings'),
     [
         (
-            'SELECT * FROM adex_events',
+            'SELECT * FROM trades',
             'timestamp',
             None,
             None,
-            'SELECT * FROM adex_events ORDER BY timestamp ASC;',
+            'SELECT * FROM trades ORDER BY timestamp ASC;',
             (),
         ),
         (
-            'SELECT * FROM adex_events',
+            'SELECT * FROM trades',
             'timestamp',
             1609336000,
             None,
-            'SELECT * FROM adex_events WHERE timestamp >= ? ORDER BY timestamp ASC;',
+            'SELECT * FROM trades WHERE timestamp >= ? ORDER BY timestamp ASC;',
             (1609336000,),
         ),
         (
-            'SELECT * FROM adex_events',
+            'SELECT * FROM trades',
             'timestamp',
             None,
             1609336240,
-            'SELECT * FROM adex_events WHERE timestamp <= ? ORDER BY timestamp ASC;',
+            'SELECT * FROM trades WHERE timestamp <= ? ORDER BY timestamp ASC;',
             (1609336240,),
         ),
         (
-            'SELECT * FROM adex_events',
+            'SELECT * FROM trades',
             'timestamp',
             1609336000,
             1609336240,
-            'SELECT * FROM adex_events WHERE timestamp >= ? AND timestamp <= ? ORDER BY timestamp ASC;',  # noqa:E501
+            'SELECT * FROM trades WHERE timestamp >= ? AND timestamp <= ? ORDER BY timestamp ASC;',  # noqa:E501
             (1609336000, 1609336240),
         ),
     ],

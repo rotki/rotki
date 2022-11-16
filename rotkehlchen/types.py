@@ -33,7 +33,6 @@ ModuleName = Literal[
     'yearn_vaults',
     'yearn_vaults_v2',
     'uniswap',
-    'adex',
     'loopring',
     'balancer',
     'eth2',
@@ -53,7 +52,6 @@ AVAILABLE_MODULES_MAP = {
     'yearn_vaults': 'Yearn Vaults',
     'yearn_vaults_v2': 'Yearn V2 Vaults',
     'uniswap': 'Uniswap',
-    'adex': 'AdEx',
     'loopring': 'Loopring',
     'balancer': 'Balancer',
     'eth2': 'Eth2',
@@ -63,7 +61,7 @@ AVAILABLE_MODULES_MAP = {
     'nfts': 'NFTs',
 }
 
-DEFAULT_OFF_MODULES = {'makerdao_dsr', 'yearn_vaults', 'adex'}
+DEFAULT_OFF_MODULES = {'makerdao_dsr', 'yearn_vaults'}
 
 
 UNISWAP_PROTOCOL = 'UNI-V2'

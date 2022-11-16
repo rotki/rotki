@@ -2974,33 +2974,6 @@ class RestAPI():
             to_timestamp=to_timestamp,
         )
 
-    def get_adex_balances(self, async_query: bool) -> Response:
-        return self._api_query_for_eth_module(
-            async_query=async_query,
-            module_name='adex',
-            method='get_balances_dont_break_frontend',
-            query_specific_balances_before=None,
-            addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('adex'),
-        )
-
-    def get_adex_history(
-            self,
-            async_query: bool,
-            reset_db_data: bool,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-    ) -> Response:
-        return self._api_query_for_eth_module(
-            async_query=async_query,
-            module_name='adex',
-            method='get_history',
-            query_specific_balances_before=None,
-            addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('adex'),
-            reset_db_data=reset_db_data,
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp,
-        )
-
     def get_loopring_balances(self, async_query: bool) -> Response:
         return self._api_query_for_eth_module(
             async_query=async_query,

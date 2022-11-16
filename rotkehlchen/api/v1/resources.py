@@ -1820,37 +1820,6 @@ class AaveHistoryResource(BaseMethodView):
         )
 
 
-class AdexBalancesResource(BaseMethodView):
-
-    get_schema = AsyncQueryArgumentSchema()
-
-    @require_loggedin_user()
-    @use_kwargs(get_schema, location='json_and_query')
-    def get(self, async_query: bool) -> Response:
-        return self.rest_api.get_adex_balances(async_query=async_query)
-
-
-class AdexHistoryResource(BaseMethodView):
-
-    get_schema = AsyncHistoricalQuerySchema()
-
-    @require_premium_user(active_check=False)
-    @use_kwargs(get_schema, location='json_and_query')
-    def get(
-            self,
-            async_query: bool,
-            reset_db_data: bool,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-    ) -> Response:
-        return self.rest_api.get_adex_history(
-            async_query=async_query,
-            reset_db_data=reset_db_data,
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp,
-        )
-
-
 class CompoundBalancesResource(BaseMethodView):
 
     get_schema = AsyncQueryArgumentSchema()

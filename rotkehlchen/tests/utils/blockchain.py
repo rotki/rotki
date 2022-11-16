@@ -316,20 +316,11 @@ def mock_etherscan_query(
                 response = f'{{"jsonrpc":"2.0","id":1,"result":"{result}"}}'
             else:
                 raise AssertionError(f'Unexpected etherscan call during tests: {url}')
-        elif 'api.etherscan.io/api?module=proxy&action=eth_call&to=0xB6456b57f03352bE48Bf101B46c1752a0813491a' in url:  # noqa: E501  # ADEX Staking contract
-            if 'adex_staking' in original_queries:
-                return original_requests_get(url, *args, **kwargs)
 
-            if 'data=0x447b15f4' in url:  # a mocked share value
-                response = '{"jsonrpc":"2.0","id":1,"result":"0x0000000000000000000000000000000000000000000000000fc4a48782d85b51"}'  # noqa: E501
-            else:
-                raise AssertionError(f'Unknown call to Adex Staking pool during tests: {url}')
         elif f'api.etherscan.io/api?module=proxy&action=eth_call&to={ETH_MULTICALL.address}' in url:  # noqa: E501
             web3 = Web3()
             contract = web3.eth.contract(address=ETH_MULTICALL.address, abi=ETH_MULTICALL.abi)
-            if 'b6456b57f03352be48bf101b46c1752a0813491a' in url:
-                multicall_purpose = 'adex_staking'
-            elif 'c2cb1040220768554cf699b0d863a3cd4324ce3' in url:
+            if 'c2cb1040220768554cf699b0d863a3cd4324ce3' in url:
                 multicall_purpose = 'ds_proxy'
             elif '2bdded18e2ca464355091266b7616956944ee7e' in url:
                 multicall_purpose = 'compound_balances'
@@ -341,15 +332,6 @@ def mock_etherscan_query(
                 raise AssertionError('Unknown multicall in mocked tests')
 
             if 'data=0x252dba42' in url:  # aggregate
-                if multicall_purpose in ('adex_staking', 'ds_proxy', 'compound_balances'):
-                    if 'adex_staking' in original_queries:
-                        return original_requests_get(url, *args, **kwargs)
-
-                    if 'mocked_adex_staking_balance' in extra_flags:
-                        # mock adex staking balance for a single account
-                        response = '{"jsonrpc": "2.0", "id": 1, "result": "0x0000000000000000000000000000000000000000000000000000000000bb45aa000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000152982285d2e4d5aeaa9"}'  # noqa: E501
-                        return MockResponse(200, response)
-
                 data = url.split('data=')[1]
                 if '&apikey' in data:
                     data = data.split('&apikey')[0]
@@ -398,7 +380,7 @@ def mock_etherscan_query(
                     response = f'{{"jsonrpc":"2.0","id":1,"result":"{result}"}}'
                 else:
                     # else has to be the 32 bytes for multicall balance
-                    # of both veCRV and adex staking pool. Return empty response
+                    # of both veCRV and others. Return empty response
                     # all pylint ignores below due to https://github.com/PyCQA/pylint/issues/4114
                     args = [1, [b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' for x in decoded_input[0]]]  # pylint: disable=unsubscriptable-object  # noqa: E501
                     result = '0x' + web3.codec.encode_abi(output_types, args).hex()

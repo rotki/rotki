@@ -18,7 +18,6 @@ class DefiEventType(Enum):
     MAKERDAO_VAULT_EVENT = auto()
     AAVE_EVENT = auto()
     YEARN_VAULTS_EVENT = auto()
-    ADEX_EVENT = auto()
     COMPOUND_EVENT = auto()
     ETH2_EVENT = auto()
     LIQUITY = auto()
@@ -32,8 +31,6 @@ class DefiEventType(Enum):
             return 'Aave event'
         if self == DefiEventType.YEARN_VAULTS_EVENT:
             return 'Yearn vault event'
-        if self == DefiEventType.ADEX_EVENT:
-            return 'AdEx event'
         if self == DefiEventType.COMPOUND_EVENT:
             return 'Compound event'
         if self == DefiEventType.ETH2_EVENT:

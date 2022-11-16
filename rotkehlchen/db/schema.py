@@ -634,28 +634,6 @@ CREATE TABLE IF NOT EXISTS history_events_mappings (
 );
 """  # noqa: E501
 
-DB_CREATE_ADEX_EVENTS = """
-CREATE TABLE IF NOT EXISTS adex_events (
-    tx_hash BLOB NOT NULL,
-    address VARCHAR[42] NOT NULL,
-    identity_address VARCHAR[42] NOT NULL,
-    timestamp INTEGER NOT NULL,
-    type TEXT NOT NULL,
-    pool_id TEXT NOT NULL,
-    amount TEXT NOT NULL,
-    usd_value TEXT NOT NULL,
-    bond_id TEXT,
-    nonce INT,
-    slashed_at INTEGER,
-    unlock_at INTEGER,
-    channel_id TEXT,
-    token TEXT,
-    log_index INTEGER,
-    FOREIGN KEY(token) REFERENCES assets(identifier) ON UPDATE CASCADE,
-    PRIMARY KEY (tx_hash, address, type, log_index)
-);
-"""
-
 DB_CREATE_BALANCER_EVENTS = """
 CREATE TABLE IF NOT EXISTS balancer_events (
     tx_hash BLOB NOT NULL,
@@ -776,7 +754,6 @@ BEGIN TRANSACTION;
 {DB_CREATE_ETH2_DAILY_STAKING_DETAILS}
 {DB_CREATE_HISTORY_EVENTS}
 {DB_CREATE_HISTORY_EVENTS_MAPPINGS}
-{DB_CREATE_ADEX_EVENTS}
 {DB_CREATE_LEDGER_ACTION_TYPE}
 {DB_CREATE_LEDGER_ACTIONS}
 {DB_CREATE_ACTION_TYPE}
