@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from rotkehlchen.chain.ethereum.constants import ETHEREUM_BEGIN, GENESIS_HASH, ZERO_ADDRESS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
-from rotkehlchen.db.constants import HISTORY_MAPPING_DECODED
+from rotkehlchen.db.constants import HISTORY_MAPPING_STATE_DECODED
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.serialization import DeserializationError
@@ -275,7 +275,7 @@ class DBEvmTx():
         )
         bindings = []
         if chain_id is not None:
-            bindings.append(chain_id)
+            bindings.append(chain_id.serialize_for_db())
             querystr += ' AND A.chain_id=?'
         if limit is not None:
             bindings.append(limit)
@@ -442,7 +442,7 @@ class DBEvmTx():
         # Delete all remaining evm_tx_mappings so decoding can happen again for customized events
         write_cursor.executemany(
             'DELETE FROM evm_tx_mappings WHERE tx_hash=? AND chain_id=? AND value=?',
-            [(x, chain_id_serialized, HISTORY_MAPPING_DECODED) for x in tx_hashes],
+            [(x, chain_id_serialized, HISTORY_MAPPING_STATE_DECODED) for x in tx_hashes],
         )
 
     def get_queried_range(
@@ -515,7 +515,7 @@ class DBEvmTx():
             with self.db.user_write() as cursor:
                 self.add_evm_transactions(
                     write_cursor=cursor,
-                    ethereum_transactions=[tx],
+                    evm_transactions=[tx],
                     relevant_address=account,
                 )
         return tx

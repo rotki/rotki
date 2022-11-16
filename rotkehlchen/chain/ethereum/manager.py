@@ -70,6 +70,7 @@ class EthereumManager(EvmManager):
                 ethereum_inquirer=node_inquirer,
             ),
         )
+        self.node_inquirer: 'EthereumInquirer'  # just to make the type specific
 
     def ens_reverse_lookup(self, addresses: List[ChecksumEvmAddress]) -> Dict[ChecksumEvmAddress, Optional[str]]:  # noqa: E501
         """Performs a reverse ENS lookup on a list of addresses

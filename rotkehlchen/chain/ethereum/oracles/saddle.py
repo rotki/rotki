@@ -14,7 +14,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Price
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 
 
 logger = logging.getLogger(__name__)
@@ -25,9 +25,9 @@ class SaddleOracle(CurrentPriceOracleInterface):
     """
     Provides logic to use saddle as oracle for certain assets
     """
-    def __init__(self, eth_manager: 'EthereumManager'):
+    def __init__(self, ethereum_inquirer: 'EthereumInquirer'):
         super().__init__(oracle_name='saddle')
-        self.eth_manager = eth_manager
+        self.ethereum = ethereum_inquirer
 
     def rate_limited_in_last(
             self,
@@ -36,10 +36,10 @@ class SaddleOracle(CurrentPriceOracleInterface):
         return False
 
     def get_price(
-        self,
-        from_asset: AssetWithOracles,
-        to_asset: AssetWithOracles,
-        block_identifier: BlockIdentifier,
+            self,
+            from_asset: AssetWithOracles,
+            to_asset: AssetWithOracles,
+            block_identifier: BlockIdentifier,
     ) -> Price:
         """
         NOTE: This function is limited to be used for ALETH at the moment.
@@ -56,7 +56,7 @@ class SaddleOracle(CurrentPriceOracleInterface):
             )
 
         aleth_eth_price = SADDLE_ALETH_POOL.call(
-            manager=self.eth_manager,
+            node_inquirer=self.ethereum,
             method_name='calculateSwap',
             arguments=[1, 0, 1000000000000000000],
             block_identifier=block_identifier,

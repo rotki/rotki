@@ -11,8 +11,6 @@ from rotkehlchen.constants.resolver import (
     ChainID,
     evm_address_to_identifier,
 )
-from rotkehlchen.db.constants import HISTORY_MAPPING_CUSTOMIZED
-from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.globaldb.upgrades.v2_v3 import OTHER_EVM_CHAINS_ASSETS
 from rotkehlchen.history.types import DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER, HistoricalPriceOracle
 from rotkehlchen.inquirer import DEFAULT_CURRENT_PRICE_ORACLES_ORDER, CurrentPriceOracle
@@ -406,11 +404,24 @@ def _reset_decoded_events(db: 'DBHandler', write_cursor: 'DBCursor') -> None:
         cursor.execute('SELECT tx_hash from evm_tx_mappings')
         for entry in cursor:
             tx_hashes.append(entry[0])
-    db_events = DBHistoryEvents(db)
-    db_events.delete_events_by_tx_hash(write_cursor, tx_hashes)
+
+    #  delete_events_by_tx_hash -- took code out of method at v34 DB version
+    write_cursor.execute(
+        'SELECT parent_identifier FROM history_events_mappings WHERE value=?',
+        ('customized',),
+    )
+    customized_event_ids = [x[0] for x in write_cursor]
+    length = len(customized_event_ids)
+    querystr = 'DELETE FROM history_events WHERE event_identifier=?'
+    if length != 0:
+        querystr += f' AND identifier NOT IN ({", ".join(["?"] * length)})'
+        bindings = [(x, *customized_event_ids) for x in tx_hashes]
+    else:
+        bindings = [(x,) for x in tx_hashes]
+    write_cursor.executemany(querystr, bindings)
     write_cursor.execute(
         'DELETE from evm_tx_mappings WHERE value !=?',
-        (HISTORY_MAPPING_CUSTOMIZED,),
+        ('customized',),
     )
     log.debug('Exit _reset_decoded_events')
 

@@ -524,7 +524,7 @@ DB_CREATE_EVM_TX_MAPPINGS = """
 CREATE TABLE IF NOT EXISTS evm_tx_mappings (
     tx_hash BLOB NOT NULL,
     chain_id INTEGER NOT NULL,
-    value TEXT NOT NULL,
+    value INTEGER NOT NULL,
     FOREIGN KEY(tx_hash, chain_id) references evm_transactions(tx_hash, chain_id) ON UPDATE CASCADE ON DELETE CASCADE,
     PRIMARY KEY (tx_hash, chain_id, value)
 );

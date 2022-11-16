@@ -686,7 +686,7 @@ class Inquirer():
             assert token, 'all assets in special tokens are already ethereum tokens'
             underlying_asset_price, oracle = get_underlying_asset_price(token)
             usd_price = handle_defi_price_query(
-                ethereum_inquirer=ethereum.node_inquirer,
+                ethereum=ethereum.node_inquirer,
                 token=token,
                 underlying_asset_price=underlying_asset_price,
             )

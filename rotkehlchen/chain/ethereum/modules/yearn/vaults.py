@@ -135,7 +135,7 @@ if TYPE_CHECKING:
         GIVEN_DEFI_BALANCES,
         DefiProtocolBalances,
     )
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
 
@@ -194,12 +194,12 @@ class YearnVaults(EthereumModule):
 
     def __init__(
             self,
-            ethereum_manager: 'EthereumManager',
+            ethereum_inquirer: 'EthereumInquirer',
             database: 'DBHandler',
             premium: Optional[Premium],
             msg_aggregator: MessagesAggregator,
     ) -> None:
-        self.ethereum = ethereum_manager
+        self.ethereum = ethereum_inquirer
         self.database = database
         self.msg_aggregator = msg_aggregator
         self.premium = premium
@@ -409,8 +409,8 @@ class YearnVaults(EthereumModule):
         So the numbers you see displayed on http://yearn.finance/vaults
         are ROI since launch of contract. All vaults start with pricePerFullShare = 1e18
         """
-        now_block_number = self.ethereum.node_inquirer.get_latest_block_number()
-        price_per_full_share = self.ethereum.node_inquirer.call_contract(
+        now_block_number = self.ethereum.get_latest_block_number()
+        price_per_full_share = self.ethereum.call_contract(
             contract_address=vault.contract.address,
             abi=YEARN_DAI_VAULT.abi,  # Any vault ABI will do
             method_name='getPricePerFullShare',
@@ -493,7 +493,7 @@ class YearnVaults(EthereumModule):
         """
         events: List[YearnVaultEvent] = []
         argument_filters = {'from': address, 'to': vault.contract.address}
-        deposit_events = self.ethereum.node_inquirer.get_logs(
+        deposit_events = self.ethereum.get_logs(
             contract_address=vault.underlying_token.evm_address,
             abi=ERC20TOKEN_ABI,
             event_name='Transfer',
@@ -502,13 +502,13 @@ class YearnVaults(EthereumModule):
             to_block=to_block,
         )
         for deposit_event in deposit_events:
-            timestamp = self.ethereum.node_inquirer.get_event_timestamp(deposit_event)
+            timestamp = self.ethereum.get_event_timestamp(deposit_event)
             deposit_amount = token_normalized_value(
                 token_amount=hexstr_to_int(deposit_event['data']),
                 token=vault.underlying_token,
             )
             tx_hash = deserialize_evm_tx_hash(deposit_event['transactionHash'])
-            tx_receipt = self.ethereum.node_inquirer.get_transaction_receipt(tx_hash)
+            tx_receipt = self.ethereum.get_transaction_receipt(tx_hash)
             deposit_index = deposit_event['logIndex']
             mint_amount = None
             for log in tx_receipt['logs']:
@@ -579,7 +579,7 @@ class YearnVaults(EthereumModule):
         """
         events: List[YearnVaultEvent] = []
         argument_filters = {'from': vault.contract.address, 'to': address}
-        withdraw_events = self.ethereum.node_inquirer.get_logs(
+        withdraw_events = self.ethereum.get_logs(
             contract_address=vault.underlying_token.evm_address,
             abi=ERC20TOKEN_ABI,
             event_name='Transfer',
@@ -588,13 +588,13 @@ class YearnVaults(EthereumModule):
             to_block=to_block,
         )
         for withdraw_event in withdraw_events:
-            timestamp = self.ethereum.node_inquirer.get_event_timestamp(withdraw_event)
+            timestamp = self.ethereum.get_event_timestamp(withdraw_event)
             withdraw_amount = token_normalized_value(
                 token_amount=hexstr_to_int(withdraw_event['data']),
                 token=vault.token,
             )
             tx_hash = deserialize_evm_tx_hash(withdraw_event['transactionHash'])
-            tx_receipt = self.ethereum.node_inquirer.get_transaction_receipt(tx_hash)
+            tx_receipt = self.ethereum.get_transaction_receipt(tx_hash)
             withdraw_index = withdraw_event['logIndex']
             burn_amount = None
             for log in tx_receipt['logs']:

@@ -24,7 +24,7 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt
+    from rotkehlchen.chain.evm.structures import EvmTxReceipt
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
 
@@ -162,7 +162,7 @@ class EvmTransactions(metaclass=ABCMeta):
 
         If any transactions are found, they are added in the DB
         """
-        location_string = f'{self.evm_inquirer.chain.to_range_prefix("txs")}_{address}'
+        location_string = f'{self.evm_inquirer.blockchain.to_range_prefix("txs")}_{address}'
         ranges = DBQueryRanges(self.database)
         with self.database.conn.read_ctx() as cursor:
             ranges_to_query = ranges.get_location_query_ranges(
@@ -187,7 +187,7 @@ class EvmTransactions(metaclass=ABCMeta):
                         with self.database.user_write() as cursor:
                             dbevmtx.add_evm_transactions(
                                 write_cursor=cursor,
-                                ethereum_transactions=new_transactions,
+                                evm_transactions=new_transactions,
                                 relevant_address=address,
                             )
                             # update last queried time for the address
@@ -235,7 +235,7 @@ class EvmTransactions(metaclass=ABCMeta):
 
         If any internal transactions are found, they are added in the DB
         """
-        location_string = f'{self.evm_inquirer.chain.to_range_prefix("internaltxs")}_{address}'
+        location_string = f'{self.evm_inquirer.blockchain.to_range_prefix("internaltxs")}_{address}'  # noqa: E501
         ranges = DBQueryRanges(self.database)
         dbevmtx = DBEvmTx(self.database)
         with self.database.conn.read_ctx() as cursor:
@@ -328,7 +328,7 @@ class EvmTransactions(metaclass=ABCMeta):
 
         If any transfers are found, they are added in the DB
         """
-        location_string = f'{self.evm_inquirer.chain.to_range_prefix("tokentxs")}_{address}'
+        location_string = f'{self.evm_inquirer.blockchain.to_range_prefix("tokentxs")}_{address}'
         dbevmtx = DBEvmTx(self.database)
         ranges = DBQueryRanges(self.database)
         with self.database.conn.read_ctx() as cursor:
@@ -405,7 +405,7 @@ class EvmTransactions(metaclass=ABCMeta):
             self,
             write_cursor: 'DBCursor',
             tx_hash: EVMTxHash,
-    ) -> 'EthereumTxReceipt':
+    ) -> 'EvmTxReceipt':
         """
         Gets the receipt from the DB if it exists. If not queries the chain for it,
         saves it in the DB and then returns it.

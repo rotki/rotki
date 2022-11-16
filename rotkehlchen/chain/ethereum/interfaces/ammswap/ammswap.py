@@ -63,7 +63,7 @@ from rotkehlchen.user_messages import MessagesAggregator
 from .graph import BURNS_QUERY, LIQUIDITY_POSITIONS_QUERY, MINTS_QUERY, TOKEN_DAY_DATAS_QUERY
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
 
@@ -81,14 +81,14 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
     def __init__(
             self,
             location: Location,
-            ethereum_manager: 'EthereumManager',
+            ethereum_inquirer: 'EthereumInquirer',
             database: 'DBHandler',
             premium: Optional[Premium],
             msg_aggregator: MessagesAggregator,
             graph: Graph,
     ) -> None:
         self.location = location
-        self.ethereum = ethereum_manager
+        self.ethereum = ethereum_inquirer
         self.database = database
         self.premium = premium
         self.msg_aggregator = msg_aggregator

@@ -18,7 +18,7 @@ from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_1INCH, A_ETH, A_GTC
-from rotkehlchen.db.constants import HISTORY_MAPPING_DECODED
+from rotkehlchen.db.constants import HISTORY_MAPPING_STATE_DECODED
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery, HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -245,7 +245,7 @@ class EVMTransactionDecoder():
         self.dbevents.add_history_events(write_cursor=write_cursor, history=events)
         write_cursor.execute(
             'INSERT OR IGNORE INTO evm_tx_mappings(tx_hash, blockchain, value) VALUES(?, ?, ?)',  # noqa: E501
-            (transaction.tx_hash, 'ETH', HISTORY_MAPPING_DECODED),
+            (transaction.tx_hash, 'ETH', HISTORY_MAPPING_STATE_DECODED),
         )
         if events == [] and (eth_event := self._get_eth_transfer_event(transaction)) is not None:
             events = [eth_event]
@@ -315,12 +315,12 @@ class EVMTransactionDecoder():
             self.dbevents.delete_events_by_tx_hash(write_cursor, [transaction.tx_hash])
             write_cursor.execute(
                 'DELETE from evm_tx_mappings WHERE tx_hash=? AND blockchain=? AND value=?',
-                (transaction.tx_hash, 'ETH', HISTORY_MAPPING_DECODED),
+                (transaction.tx_hash, 'ETH', HISTORY_MAPPING_STATE_DECODED),
             )
         else:  # see if events are already decoded and return them
             write_cursor.execute(
                 'SELECT COUNT(*) from evm_tx_mappings WHERE tx_hash=? AND blockchain=? AND value=?',  # noqa: E501
-                (transaction.tx_hash, 'ETH', HISTORY_MAPPING_DECODED),
+                (transaction.tx_hash, 'ETH', HISTORY_MAPPING_STATE_DECODED),
             )
             if write_cursor.fetchone()[0] != 0:  # already decoded and in the DB
                 events = self.dbevents.get_history_events(

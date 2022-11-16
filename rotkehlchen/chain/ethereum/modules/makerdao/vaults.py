@@ -548,7 +548,7 @@ class MakerdaoVaults(HasDSProxy):
             'usr': proxy,
             'arg1': address_to_bytes32(urn),
         }
-        events = self.ethereum.node_inquirer.get_logs(
+        events = self.ethereum.get_logs(
             contract_address=MAKERDAO_DAI_JOIN.address,
             abi=MAKERDAO_DAI_JOIN.abi,
             event_name='LogNote',
@@ -602,7 +602,7 @@ class MakerdaoVaults(HasDSProxy):
                 amount=hexstr_to_int(lot),
                 asset=vault.collateral_asset,
             )
-            timestamp = self.ethereum.node_inquirer.get_event_timestamp(event)
+            timestamp = self.ethereum.get_event_timestamp(event)
             sum_liquidation_amount += amount
             usd_price = query_usd_price_or_use_default(
                 asset=vault.collateral_asset,

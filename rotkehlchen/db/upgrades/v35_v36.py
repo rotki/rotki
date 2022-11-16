@@ -1,7 +1,6 @@
 import logging
 from typing import TYPE_CHECKING
 
-
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:
@@ -16,15 +15,9 @@ def _rename_eth_to_evm_add_chainid(write_cursor: 'DBCursor'):
     pass
 
 
-def _upgrade_history_events_mappings(write_cursor: 'DBCursor'):
+def _upgrade_events_mappings(write_cursor: 'DBCursor'):
+    """TODO: Upgrade both evm_tx_mappings and history_events_mappings"""
     pass
-    # with db.conn.read_ctx() as read_cursor:
-    #     read_cursor.execute('SELECT * from history_events_mappings')
-    #     for entry in read_cursor:
-    #         write_cursor.execute(
-    #             'INSERT OR IGNORE INTO evm_tx_mappings(tx_hash, chain_id, value) VALUES(?, ?, ?)',  # noqa: E501
-    #             (entry),
-    #         )
 
 
 def upgrade_v35_to_v36(db: 'DBHandler') -> None:

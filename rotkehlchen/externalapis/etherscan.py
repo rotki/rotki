@@ -325,7 +325,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                             data=entry,
                             internal=True,
                             chain_id=chain_id,
-                            manager=None,
+                            evm_inquirer=None,
                         )
                         with self.db.user_write() as cursor:  # type: ignore  # db always here
                             dbtx.add_evm_internal_transactions(

@@ -376,7 +376,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             self.activate_module(given_module)
 
         self.defichad = DefiChad(
-            ethereum_manager=self.ethereum.node_inquirer,
+            ethereum_inquirer=self.ethereum.node_inquirer,
             msg_aggregator=self.msg_aggregator,
             database=self.database,
         )
@@ -443,7 +443,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         # TODO: figure out the type here: class EthereumModule not callable.
         try:
             instance = klass(  # type: ignore
-                ethereum_manager=self.ethereum,
+                ethereum_inquirer=self.ethereum.node_inquirer,
                 database=self.database,
                 premium=self.premium,
                 msg_aggregator=self.msg_aggregator,

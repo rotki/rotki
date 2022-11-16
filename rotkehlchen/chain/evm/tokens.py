@@ -153,20 +153,20 @@ class EvmTokens(metaclass=ABCMeta):
             tokens_addrs = [token.evm_address for token in tokens]
             calls.append(
                 (
-                    self.node_inquirer.contract_scan.address,
-                    self.node_inquirer.contract_scan.encode(
+                    self.evm_inquirer.contract_scan.address,
+                    self.evm_inquirer.contract_scan.encode(
                         method_name='tokensBalance',
                         arguments=[address, tokens_addrs],
                     ),
                 ),
             )
-        results = self.node_inquirer.multicall(
+        results = self.evm_inquirer.multicall(
             calls=calls,
             call_order=call_order,
         )
         balances: Dict[ChecksumEvmAddress, Dict[EvmToken, FVal]] = defaultdict(lambda: defaultdict(FVal))  # noqa: E501
         for (address, tokens), result in zip(chunk, results):
-            decoded_result = self.node_inquirer.contract_scan.decode(  # pylint: disable=unsubscriptable-object  # noqa: E501
+            decoded_result = self.evm_inquirer.contract_scan.decode(  # pylint: disable=unsubscriptable-object  # noqa: E501
                 result=result,
                 method_name='tokensBalance',
                 arguments=[address, [token.evm_address for token in tokens]],
@@ -321,7 +321,7 @@ class EvmTokens(metaclass=ABCMeta):
 
     # -- methods to be implemented by child classes
     @abstractmethod
-    def _get_token_exceptions(self) -> List[EvmToken]:
+    def _get_token_exceptions(self) -> List[ChecksumEvmAddress]:
         """
         Returns a list of token addresses that will not be taken into account
         when performing token detection.

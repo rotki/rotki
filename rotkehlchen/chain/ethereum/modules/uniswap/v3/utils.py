@@ -37,7 +37,7 @@ from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import get_chunks
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
 
 
@@ -58,7 +58,7 @@ class UnrecognizedFeeTierException(Exception):
 def uniswap_v3_lp_token_balances(
         userdb: 'DBHandler',
         address: ChecksumEvmAddress,
-        ethereum: 'EthereumManager',
+        ethereum: 'EthereumInquirer',
         msg_aggregator: MessagesAggregator,
         price_known_tokens: Set[EvmToken],
         price_unknown_tokens: Set[EvmToken],
@@ -106,7 +106,7 @@ def uniswap_v3_lp_token_balances(
     balances: List[NFTLiquidityPool] = []
     try:
         amount_of_positions = nft_manager_contract.call(
-            manager=ethereum,
+            node_inquirer=ethereum,
             method_name='balanceOf',
             arguments=[address],
         )
@@ -207,9 +207,9 @@ def uniswap_v3_lp_token_balances(
         tokens_a, tokens_b = [], []
         for position in positions:
             try:
-                token1_info = ethereum.node_inquirer.get_erc20_contract_info(to_checksum_address(position[2]))  # noqa: E501
+                token1_info = ethereum.get_erc20_contract_info(to_checksum_address(position[2]))  # noqa: E501
                 tokens_a.append(token1_info)
-                token2_info = ethereum.node_inquirer.get_erc20_contract_info(to_checksum_address(position[3]))  # noqa: E501
+                token2_info = ethereum.get_erc20_contract_info(to_checksum_address(position[3]))  # noqa: E501
                 tokens_b.append(token2_info)
             except (BadFunctionCallOutput, ValueError) as e:
                 log.error(
@@ -526,11 +526,11 @@ def _decode_uniswap_v3_result(
 
 
 def get_unknown_asset_price_chain(
-        ethereum: 'EthereumManager',
+        ethereum: 'EthereumInquirer',
         unknown_tokens: Set[EvmToken],
 ) -> AssetToPrice:
     """Get token price using Uniswap V3 Oracle."""
-    oracle = UniswapV3Oracle(eth_manager=ethereum)
+    oracle = UniswapV3Oracle(ethereum_inquirer=ethereum)
     asset_price: AssetToPrice = {}
     for from_token in unknown_tokens:
         try:
