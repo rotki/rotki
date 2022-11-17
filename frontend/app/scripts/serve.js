@@ -109,7 +109,7 @@ const setupPreloadPackageWatcher = ({ ws }) =>
   try {
     const viteDevServer = await createServer({
       ...sharedConfig,
-      mode,
+      mode: process.env.CI && process.env.VITE_TEST ? 'production' : mode,
       configFile: 'vite.config.ts'
     });
 
