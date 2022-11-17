@@ -4,30 +4,30 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS, CPT_GNOSIS_CHAIN
-from rotkehlchen.chain.ethereum.decoding.decoder import EVMTransactionDecoder
+from rotkehlchen.chain.ethereum.decoding.constants import CPT_GNOSIS_CHAIN
+from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
 from rotkehlchen.chain.ethereum.modules.airdrops.constants import CPT_ONEINCH
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
+from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.db.ethtx import DBEthTx
+from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import EvmTransaction, Location, deserialize_evm_tx_hash
-from rotkehlchen.user_messages import MessagesAggregator
+from rotkehlchen.types import ChainID, EvmTransaction, Location, deserialize_evm_tx_hash
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0xc931De6d845846E332a52D045072E3feF540Bd5d']])  # noqa: E501
-def test_1inch_claim(database, ethereum_manager, eth_transactions):
+def test_1inch_claim(database, ethereum_inquirer, eth_transactions):
     """Data for claim taken from
     https://etherscan.io/tx/0x0582a0db79de3fa21d3b92a8658e0b1034c51ea54a8e06ea84fbb91d41b8fe17
     """
-    msg_aggregator = MessagesAggregator()
     tx_hex = '0x0582a0db79de3fa21d3b92a8658e0b1034c51ea54a8e06ea84fbb91d41b8fe17'
     evmhash = deserialize_evm_tx_hash(tx_hex)
     transaction = EvmTransaction(
         tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
         timestamp=1646375440,
         block_number=14351442,
         from_address='0xc931De6d845846E332a52D045072E3feF540Bd5d',
@@ -41,6 +41,7 @@ def test_1inch_claim(database, ethereum_manager, eth_transactions):
     )
     receipt = EvmTxReceipt(
         tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
         type=0,
@@ -67,14 +68,13 @@ def test_1inch_claim(database, ethereum_manager, eth_transactions):
         ],
     )
 
-    dbethtx = DBEthTx(database)
+    dbevmtx = DBEvmTx(database)
     with database.user_write() as cursor:
-        dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
-        decoder = EVMTransactionDecoder(
+        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        decoder = EthereumTransactionDecoder(
             database=database,
-            ethereum_manager=ethereum_manager,
+            ethereum_inquirer=ethereum_inquirer,
             transactions=eth_transactions,
-            msg_aggregator=msg_aggregator,
         )
         events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
     assert len(events) == 2
@@ -116,15 +116,15 @@ def test_1inch_claim(database, ethereum_manager, eth_transactions):
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x5EDCf547eCE0EA1765D6C02e9E5bae53b52E09D4']])  # noqa: E501
-def test_gnosis_chain_bridge(database, ethereum_manager, eth_transactions):
+def test_gnosis_chain_bridge(database, ethereum_inquirer, eth_transactions):
     """Data for bridge taken from
     https://etherscan.io/tx/0x52f853d559d83b5303faf044e00e9109bd5c6a05b6633f9df34939f8e7c6de02
     """
-    msg_aggregator = MessagesAggregator()
     tx_hex = '0x52f853d559d83b5303faf044e00e9109bd5c6a05b6633f9df34939f8e7c6de02'
     evmhash = deserialize_evm_tx_hash(tx_hex)
     transaction = EvmTransaction(
         tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
         timestamp=1646375440,
         block_number=14351442,
         from_address='0x5EDCf547eCE0EA1765D6C02e9E5bae53b52E09D4',
@@ -138,6 +138,7 @@ def test_gnosis_chain_bridge(database, ethereum_manager, eth_transactions):
     )
     receipt = EvmTxReceipt(
         tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
         type=0,
@@ -178,14 +179,13 @@ def test_gnosis_chain_bridge(database, ethereum_manager, eth_transactions):
         ],
     )
 
-    dbethtx = DBEthTx(database)
+    dbevmtx = DBEvmTx(database)
     with database.user_write() as cursor:
-        dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
-        decoder = EVMTransactionDecoder(
+        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        decoder = EthereumTransactionDecoder(
             database=database,
-            ethereum_manager=ethereum_manager,
+            ethereum_inquirer=ethereum_inquirer,
             transactions=eth_transactions,
-            msg_aggregator=msg_aggregator,
         )
         events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
     assert len(events) == 2
@@ -227,15 +227,15 @@ def test_gnosis_chain_bridge(database, ethereum_manager, eth_transactions):
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0xdF5CEF8Dc0CEA8DC200F09280915d1CD7a016BDe']])  # noqa: E501
-def test_gitcoin_claim(database, ethereum_manager, eth_transactions):
+def test_gitcoin_claim(database, ethereum_inquirer, eth_transactions):
     """Data for claim taken from
     https://etherscan.io/tx/0x0e22cbdbac56c785f186bec44d715ab0834ceeadd96573c030f2fae1550b64fa
     """
-    msg_aggregator = MessagesAggregator()
     tx_hex = '0x0e22cbdbac56c785f186bec44d715ab0834ceeadd96573c030f2fae1550b64fa'
     evmhash = deserialize_evm_tx_hash(tx_hex)
     transaction = EvmTransaction(
         tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
         timestamp=1646375440,
         block_number=14351442,
         from_address='0xdF5CEF8Dc0CEA8DC200F09280915d1CD7a016BDe',
@@ -249,6 +249,7 @@ def test_gitcoin_claim(database, ethereum_manager, eth_transactions):
     )
     receipt = EvmTxReceipt(
         tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
         type=0,
@@ -275,14 +276,13 @@ def test_gitcoin_claim(database, ethereum_manager, eth_transactions):
         ],
     )
 
-    dbethtx = DBEthTx(database)
+    dbevmtx = DBEvmTx(database)
     with database.user_write() as cursor:
-        dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
-        decoder = EVMTransactionDecoder(
+        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        decoder = EthereumTransactionDecoder(
             database=database,
-            ethereum_manager=ethereum_manager,
+            ethereum_inquirer=ethereum_inquirer,
             transactions=eth_transactions,
-            msg_aggregator=msg_aggregator,
         )
         events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
     assert len(events) == 2

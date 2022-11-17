@@ -4,16 +4,15 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
-from rotkehlchen.chain.ethereum.decoding.decoder import EVMTransactionDecoder
+from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
+from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import ChainID, EvmTransaction, Location, deserialize_evm_tx_hash
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
 
@@ -22,11 +21,11 @@ def test_pickle_deposit(database, ethereum_inquirer, eth_transactions):
     """Data for deposit taken from
     https://etherscan.io/tx/0xba9a52a144d4e79580a557160e9f8269d3e5373ce44bce00ebd609754034b7bd
     """
-    msg_aggregator = MessagesAggregator()
     tx_hex = '0xba9a52a144d4e79580a557160e9f8269d3e5373ce44bce00ebd609754034b7bd'
     evmhash = deserialize_evm_tx_hash(tx_hex)
     transaction = EvmTransaction(
         tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
         timestamp=1646375440,
         block_number=14318825,
         from_address='0x0f1a748cDF53Bbad378CE2C4429463d01CcE0C3f',
@@ -72,11 +71,10 @@ def test_pickle_deposit(database, ethereum_inquirer, eth_transactions):
     dbevmtx = DBEvmTx(database)
     with database.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
-        decoder = EVMTransactionDecoder(
+        decoder = EthereumTransactionDecoder(
             database=database,
-            evm_inquirer=ethereum_inquirer,
+            ethereum_inquirer=ethereum_inquirer,
             transactions=eth_transactions,
-            msg_aggregator=msg_aggregator,
         )
         events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
 
@@ -136,11 +134,11 @@ def test_pickle_withdraw(database, ethereum_inquirer, eth_transactions):
     """Data for withdraw taken from
     https://etherscan.io/tx/0x91bc102e1cbb0e4542a10a7a13370b5e591d8d284989bdb0ca4ece4e54e61bab
     """
-    msg_aggregator = MessagesAggregator()
     tx_hex = '0x91bc102e1cbb0e4542a10a7a13370b5e591d8d284989bdb0ca4ece4e54e61bab'
     evmhash = deserialize_evm_tx_hash(tx_hex)
     transaction = EvmTransaction(
         tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
         timestamp=1646375440,
         block_number=14355951,
         from_address='0xC7Dc4Cd171812a441A30472219d390f4F15f6070',
@@ -186,11 +184,10 @@ def test_pickle_withdraw(database, ethereum_inquirer, eth_transactions):
     dbevmtx = DBEvmTx(database)
     with database.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
-        decoder = EVMTransactionDecoder(
+        decoder = EthereumTransactionDecoder(
             database=database,
-            evm_inquirer=ethereum_inquirer,
+            ethereum_inquirer=ethereum_inquirer,
             transactions=eth_transactions,
-            msg_aggregator=msg_aggregator,
         )
         events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
 

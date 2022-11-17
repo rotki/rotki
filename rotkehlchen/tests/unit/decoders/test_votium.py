@@ -4,16 +4,15 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
-from rotkehlchen.chain.ethereum.decoding.decoder import EVMTransactionDecoder
+from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
+from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import ChainID, EvmTransaction, Location, deserialize_evm_tx_hash
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
 
@@ -22,7 +21,6 @@ def test_votium_claim(database, ethereum_inquirer, eth_transactions):
     """Data for claim taken from
     https://etherscan.io/tx/0x75b81b2edd454a7b564cc55a6b676e2441e155401bde99a38d867028081d2c30
     """
-    msg_aggregator = MessagesAggregator()
     tx_hex = '0x75b81b2edd454a7b564cc55a6b676e2441e155401bde99a38d867028081d2c30'
     evmhash = deserialize_evm_tx_hash(tx_hex)
     transaction = EvmTransaction(
@@ -70,14 +68,13 @@ def test_votium_claim(database, ethereum_inquirer, eth_transactions):
         ],
     )
 
-    dbethtx = DBEvmTx(database)
+    dbevmtx = DBEvmTx(database)
     with database.user_write() as cursor:
-        dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
-    decoder = EVMTransactionDecoder(
+        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+    decoder = EthereumTransactionDecoder(
         database=database,
-        evm_inquirer=ethereum_inquirer,
+        ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
-        msg_aggregator=msg_aggregator,
     )
     with database.user_write() as cursor:
         events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)

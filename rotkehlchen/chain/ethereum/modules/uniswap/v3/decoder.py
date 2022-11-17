@@ -20,7 +20,7 @@ from ..constants import CPT_UNISWAP_V3
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.decoding.base import BaseDecoderTools
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)

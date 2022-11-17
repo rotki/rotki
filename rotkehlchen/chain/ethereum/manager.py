@@ -25,6 +25,7 @@ from rotkehlchen.types import ChecksumEvmAddress, SupportedBlockchain
 from rotkehlchen.utils.misc import get_chunks
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
 
+from .decoding.decoder import EthereumTransactionDecoder
 from .tokens import EthereumTokens
 from .types import WeightedNode
 from .utils import ENS_RESOLVER_ABI_MULTICHAIN_ADDRESS, should_update_curve_cache
@@ -59,15 +60,21 @@ class EthereumManager(EvmManager):
             self,
             node_inquirer: 'EthereumInquirer',
     ) -> None:
+        transactions = EthereumTransactions(
+            ethereum_inquirer=node_inquirer,
+            database=node_inquirer.database,
+        )
         super().__init__(
             node_inquirer=node_inquirer,
-            transactions=EthereumTransactions(
-                ethereum_inquirer=node_inquirer,
-                database=node_inquirer.database,
-            ),
+            transactions=transactions,
             tokens=EthereumTokens(
                 database=node_inquirer.database,
                 ethereum_inquirer=node_inquirer,
+            ),
+            transactions_decoder=EthereumTransactionDecoder(
+                database=node_inquirer.database,
+                ethereum_inquirer=node_inquirer,
+                transactions=transactions,
             ),
         )
         self.node_inquirer: 'EthereumInquirer'  # just to make the type specific

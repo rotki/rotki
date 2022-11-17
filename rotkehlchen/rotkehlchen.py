@@ -34,7 +34,6 @@ from rotkehlchen.balances.manual import (
 from rotkehlchen.chain.aggregator import ChainsAggregator
 from rotkehlchen.chain.avalanche.manager import AvalancheManager
 from rotkehlchen.chain.ethereum.accounting.aggregator import EVMAccountingAggregator
-from rotkehlchen.chain.ethereum.decoding import EVMTransactionDecoder
 from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.ethereum.oracles.saddle import SaddleOracle
@@ -335,12 +334,6 @@ class Rotkehlchen():
             beaconchain=self.beaconchain,
             btc_derivation_gap_limit=settings.btc_derivation_gap_limit,
         )
-        self.eth_tx_decoder = EVMTransactionDecoder(
-            database=self.data.db,
-            ethereum_manager=ethereum_manager,
-            transactions=self.eth_transactions,
-            msg_aggregator=self.msg_aggregator,
-        )
         self.evm_accounting_aggregator = EVMAccountingAggregator(
             ethereum_manager=ethereum_manager,
             msg_aggregator=self.msg_aggregator,
@@ -357,7 +350,6 @@ class Rotkehlchen():
             msg_aggregator=self.msg_aggregator,
             exchange_manager=self.exchange_manager,
             chains_aggregator=self.chains_aggregator,
-            eth_tx_decoder=self.eth_tx_decoder,
         )
         self.task_manager = TaskManager(
             max_tasks_num=DEFAULT_MAX_TASKS_NUM,
@@ -368,7 +360,6 @@ class Rotkehlchen():
             premium_sync_manager=self.premium_sync_manager,
             chains_aggregator=self.chains_aggregator,
             exchange_manager=self.exchange_manager,
-            eth_tx_decoder=self.eth_tx_decoder,
             deactivate_premium=self.deactivate_premium_status,
             activate_premium=self.activate_premium_status,
             query_balances=self.query_balances,
@@ -618,10 +609,10 @@ class Rotkehlchen():
         with contextlib.ExitStack() as stack:
             cursor = stack.enter_context(self.data.db.user_write())
             if blockchain == SupportedBlockchain.ETHEREUM:
-                eth_transactions = self.chains_aggregator.get_chain_manager(blockchain).transactions  # noqa: E501
-                stack.enter_context(eth_transactions.wait_until_no_query_for(eth_addresses))
-                stack.enter_context(eth_transactions.missing_receipts_lock)
-                stack.enter_context(self.eth_tx_decoder.undecoded_tx_query_lock)
+                ethereum = self.chains_aggregator.get_chain_manager(blockchain)
+                stack.enter_context(ethereum.transactions.wait_until_no_query_for(eth_addresses))
+                stack.enter_context(ethereum.transactions_decoder.missing_receipts_lock)
+                stack.enter_context(ethereum.transactions_decoder.undecoded_tx_query_lock)
             self.data.db.remove_blockchain_accounts(cursor, blockchain, accounts)
 
     def get_history_query_status(self) -> Dict[str, str]:

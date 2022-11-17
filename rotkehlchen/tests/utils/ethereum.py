@@ -7,11 +7,11 @@ import gevent
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.chain.ethereum.constants import ETHERSCAN_NODE
-from rotkehlchen.chain.ethereum.decoding.decoder import EVMTransactionDecoder
+from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
 from rotkehlchen.chain.ethereum.types import NodeName, WeightedNode, string_to_evm_address
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
-from rotkehlchen.chain.evm.transactions import EvmTransactions
 from rotkehlchen.constants import ONE
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.evmtx import DBEvmTx
@@ -26,7 +26,6 @@ from rotkehlchen.types import (
     Timestamp,
     deserialize_evm_tx_hash,
 )
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
 NODE_CONNECTION_TIMEOUT = 10
@@ -292,20 +291,18 @@ def setup_ethereum_transactions_test(
 def get_decoded_events_of_transaction(
         ethereum_inquirer: EthereumInquirer,
         database: DBHandler,
-        msg_aggregator: MessagesAggregator,
         tx_hash: EVMTxHash,
-) -> Tuple[List[HistoryBaseEntry], EVMTransactionDecoder]:
+) -> Tuple[List[HistoryBaseEntry], EthereumTransactionDecoder]:
     """A convenience function to ask get transaction, receipt and decoded event for a tx_hash
 
     Returns the list of decoded events and the EVMTransactionDecoder
     """
-    transactions = EvmTransactions(evm_inquirer=ethereum_inquirer, database=database)
+    transactions = EthereumTransactions(ethereum_inquirer=ethereum_inquirer, database=database)
     with database.user_write() as cursor:
         transactions.get_or_query_transaction_receipt(cursor, tx_hash=tx_hash)
-    decoder = EVMTransactionDecoder(
+    decoder = EthereumTransactionDecoder(
         database=database,
-        evm_inquirer=ethereum_inquirer,
+        ethereum_inquirer=ethereum_inquirer,
         transactions=transactions,
-        msg_aggregator=msg_aggregator,
     )
     return decoder.decode_transaction_hashes(ignore_cache=True, tx_hashes=[tx_hash]), decoder

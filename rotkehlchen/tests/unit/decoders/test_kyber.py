@@ -3,35 +3,35 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
-from rotkehlchen.chain.ethereum.decoding.decoder import EVMTransactionDecoder
+from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
+from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_CRV, A_ETH, A_USDC
-from rotkehlchen.db.ethtx import DBEthTx
+from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import (
+    ChainID,
     EvmInternalTransaction,
     EvmTransaction,
     Location,
     Timestamp,
     deserialize_evm_tx_hash,
 )
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x6d379cb5BA04c09293b21Bf314E7aba3FfEAaF5b']])  # noqa: E501
-def test_kyber_legacy_old_contract(database, ethereum_manager, eth_transactions):
+def test_kyber_legacy_old_contract(database, ethereum_inquirer, eth_transactions):
     """Data for trade taken from
     https://etherscan.io/tx/0xe9cc9f27ef2a09fe23abc886a0a0f7ae19d9e2eb73663e1e41e07a3e0c011b87
     """
-    msg_aggregator = MessagesAggregator()
     tx_hex = '0xe9cc9f27ef2a09fe23abc886a0a0f7ae19d9e2eb73663e1e41e07a3e0c011b87'
     evmhash = deserialize_evm_tx_hash(tx_hex)
     transaction = EvmTransaction(
         tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
         timestamp=1591043988,
         block_number=10182160,
         from_address='0x6d379cb5BA04c09293b21Bf314E7aba3FfEAaF5b',
@@ -45,6 +45,7 @@ def test_kyber_legacy_old_contract(database, ethereum_manager, eth_transactions)
     )
     receipt = EvmTxReceipt(
         tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
         type=0,
@@ -80,15 +81,14 @@ def test_kyber_legacy_old_contract(database, ethereum_manager, eth_transactions)
         to_address='0x6d379cb5BA04c09293b21Bf314E7aba3FfEAaF5b',
         value=187603293406027635,
     )
-    dbethtx = DBEthTx(database)
+    dbevmtx = DBEvmTx(database)
     with database.user_write() as cursor:
-        dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
-        dbethtx.add_ethereum_internal_transactions(cursor, [internal_tx], relevant_address='0x6d379cb5BA04c09293b21Bf314E7aba3FfEAaF5b')  # noqa: E501
-        decoder = EVMTransactionDecoder(
+        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        dbevmtx.add_evm_internal_transactions(cursor, [internal_tx], relevant_address='0x6d379cb5BA04c09293b21Bf314E7aba3FfEAaF5b')  # noqa: E501
+        decoder = EthereumTransactionDecoder(
             database=database,
-            ethereum_manager=ethereum_manager,
+            ethereum_inquirer=ethereum_inquirer,
             transactions=eth_transactions,
-            msg_aggregator=msg_aggregator,
         )
         events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
 
@@ -147,15 +147,15 @@ def test_kyber_legacy_old_contract(database, ethereum_manager, eth_transactions)
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x5340F6faff9BF55F66C16Db6Bf9E020d987F87D0']])  # noqa: E501
-def test_kyber_legacy_new_contract(database, ethereum_manager, eth_transactions):
+def test_kyber_legacy_new_contract(database, ethereum_inquirer, eth_transactions):
     """Data for trade taken from
     https://etherscan.io/tx/0xe80928d5e21f9628c047af1f8b191cbffbb6b8b9945adb502cfb3af152552f22
     """
-    msg_aggregator = MessagesAggregator()
     tx_hex = '0xe80928d5e21f9628c047af1f8b191cbffbb6b8b9945adb502cfb3af152552f22'
     evmhash = deserialize_evm_tx_hash(tx_hex)
     transaction = EvmTransaction(
         tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
         timestamp=1644182638,
         block_number=14154915,
         from_address='0x5340F6faff9BF55F66C16Db6Bf9E020d987F87D0',
@@ -169,6 +169,7 @@ def test_kyber_legacy_new_contract(database, ethereum_manager, eth_transactions)
     )
     receipt = EvmTxReceipt(
         tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
         type=0,
@@ -208,14 +209,13 @@ def test_kyber_legacy_new_contract(database, ethereum_manager, eth_transactions)
         ],
     )
 
-    dbethtx = DBEthTx(database)
+    dbevmtx = DBEvmTx(database)
     with database.user_write() as cursor:
-        dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
-        decoder = EVMTransactionDecoder(
+        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        decoder = EthereumTransactionDecoder(
             database=database,
-            ethereum_manager=ethereum_manager,
+            ethereum_inquirer=ethereum_inquirer,
             transactions=eth_transactions,
-            msg_aggregator=msg_aggregator,
         )
         events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
 

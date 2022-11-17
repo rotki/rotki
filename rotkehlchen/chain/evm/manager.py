@@ -8,6 +8,7 @@ from rotkehlchen.types import ChecksumEvmAddress
 
 if TYPE_CHECKING:
 
+    from .decoding.decoder import EVMTransactionDecoder
     from .node_inquirer import EvmNodeInquirer
     from .tokens import EvmTokens
     from .transactions import EvmTransactions
@@ -23,11 +24,13 @@ class EvmManager(metaclass=ABCMeta):
             node_inquirer: 'EvmNodeInquirer',
             transactions: 'EvmTransactions',
             tokens: 'EvmTokens',
+            transactions_decoder: 'EVMTransactionDecoder',
     ) -> None:
         super().__init__()
         self.node_inquirer = node_inquirer
         self.transactions = transactions
         self.tokens = tokens
+        self.transactions_decoder = transactions_decoder
 
     def get_historical_balance(
             self,

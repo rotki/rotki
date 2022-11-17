@@ -4,10 +4,10 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
-from rotkehlchen.chain.ethereum.decoding.decoder import EVMTransactionDecoder
+from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
 from rotkehlchen.chain.ethereum.modules.uniswap.constants import CPT_UNISWAP_V3
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
+from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.constants.assets import A_ETH, A_USDC
 from rotkehlchen.constants.misc import EXP18, ZERO
@@ -21,7 +21,6 @@ from rotkehlchen.types import (
     Timestamp,
     deserialize_evm_tx_hash,
 )
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
 
@@ -30,11 +29,11 @@ def test_uniswap_v3_swap(database, ethereum_inquirer, eth_transactions):
     """Data for swap
     https://etherscan.io/tx/0x1c50c336329a7ee41f722ce5d848ebd066b72bf44a1eaafcaa92e8c0282049d2
     """
-    msg_aggregator = MessagesAggregator()
     tx_hex = '0x1c50c336329a7ee41f722ce5d848ebd066b72bf44a1eaafcaa92e8c0282049d2'
     evmhash = deserialize_evm_tx_hash(tx_hex)
     transaction = EvmTransaction(
         tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
         timestamp=1646375440,
         block_number=14351442,
         from_address='0xb63e0C506dDBa7b0dd106d1937d6D13BE2C62aE2',
@@ -99,11 +98,10 @@ def test_uniswap_v3_swap(database, ethereum_inquirer, eth_transactions):
     dbevmtx = DBEvmTx(database)
     with database.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
-        decoder = EVMTransactionDecoder(
+        decoder = EthereumTransactionDecoder(
             database=database,
-            evm_inquirer=ethereum_inquirer,
+            ethereum_inquirer=ethereum_inquirer,
             transactions=eth_transactions,
-            msg_aggregator=msg_aggregator,
         )
         events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
 
@@ -159,7 +157,6 @@ def test_uniswap_v3_swap_received_token2(database, ethereum_inquirer, eth_transa
     the pool. Data for swap
     https://etherscan.io/tx/0x116b3a9c0b2a4857605e336438c8e4c91897a9ef2af23178f9dbceba85264bd9
     """
-    msg_aggregator = MessagesAggregator()
     tx_hex = '0x116b3a9c0b2a4857605e336438c8e4c91897a9ef2af23178f9dbceba85264bd9'
     evmhash = deserialize_evm_tx_hash(tx_hex)
     transaction = EvmTransaction(
@@ -230,11 +227,10 @@ def test_uniswap_v3_swap_received_token2(database, ethereum_inquirer, eth_transa
     with database.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
         dbevmtx.add_evm_internal_transactions(cursor, [internal_tx], relevant_address='0xeB312F4921aEbbE99faCaCFE92f22b942Cbd7599')  # noqa: E501
-        decoder = EVMTransactionDecoder(
+        decoder = EthereumTransactionDecoder(
             database=database,
-            evm_inquirer=ethereum_inquirer,
+            ethereum_inquirer=ethereum_inquirer,
             transactions=eth_transactions,
-            msg_aggregator=msg_aggregator,
         )
         events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
 

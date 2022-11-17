@@ -16,10 +16,8 @@ from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import EvmTokenKind, EvmTransaction, Location
+from rotkehlchen.types import Callable, EvmTokenKind, EvmTransaction, Location
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int, ts_sec_to_ms
-
-from .utils import address_is_exchange
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -28,8 +26,13 @@ log = RotkehlchenLogsAdapter(logger)
 class BaseDecoderTools():
     """A class that keeps a common state and offers some common decoding functionality"""
 
-    def __init__(self, database: 'DBHandler') -> None:
+    def __init__(
+            self,
+            database: 'DBHandler',
+            address_is_exchange_fn: Callable[[ChecksumEvmAddress], Optional[str]],
+    ) -> None:
         self.database = database
+        self.address_is_exchange = address_is_exchange_fn
         with self.database.conn.read_ctx() as cursor:
             self.tracked_accounts = self.database.get_blockchain_accounts(cursor)
         self.sequence_counter = 0
@@ -69,8 +72,8 @@ class BaseDecoderTools():
         if not tracked_from and not tracked_to:
             return None
 
-        from_exchange = address_is_exchange(from_address)
-        to_exchange = address_is_exchange(to_address) if to_address else None
+        from_exchange = self.address_is_exchange(from_address)
+        to_exchange = self.address_is_exchange(to_address) if to_address else None
 
         counterparty: Optional[str]
         if tracked_from and tracked_to:

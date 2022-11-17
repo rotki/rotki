@@ -3,38 +3,38 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
-from rotkehlchen.chain.ethereum.decoding.decoder import EVMTransactionDecoder
+from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
+from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.constants.assets import A_ETH, A_LQTY, A_LUSD
 from rotkehlchen.constants.misc import EXP18, ZERO
-from rotkehlchen.db.ethtx import DBEthTx
+from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import (
+    ChainID,
     EvmInternalTransaction,
     EvmTransaction,
     Location,
     Timestamp,
     deserialize_evm_tx_hash,
 )
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x9ba961989Dd6609Ed091f512bE947118c40F2291']])  # noqa: E501
-def test_liquity_trove_adjust(database, ethereum_manager, eth_transactions):
+def test_liquity_trove_adjust(database, ethereum_inquirer, eth_transactions):
     """
     Data for deposit taken from
     https://etherscan.io/tx/0xdb9a541a4af7d5d46d7ea5fe4a2a752dcb731d64d052f86f630e97362063602c
     Deposit 2.1 ether and borrow 4752 LUSD
     """
-    msg_aggregator = MessagesAggregator()
     tx_hex = '0xdb9a541a4af7d5d46d7ea5fe4a2a752dcb731d64d052f86f630e97362063602c'
     user_address = '0x9ba961989Dd6609Ed091f512bE947118c40F2291'
     evmhash = deserialize_evm_tx_hash(tx_hex)
     transaction = EvmTransaction(
         tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
         timestamp=1646375440,
         block_number=14318825,
         from_address=user_address,
@@ -48,6 +48,7 @@ def test_liquity_trove_adjust(database, ethereum_manager, eth_transactions):
     )
     receipt = EvmTxReceipt(
         tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
         type=0,
@@ -93,14 +94,13 @@ def test_liquity_trove_adjust(database, ethereum_manager, eth_transactions):
         ],
     )
 
-    dbethtx = DBEthTx(database)
+    dbevmtx = DBEvmTx(database)
     with database.user_write() as cursor:
-        dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
-        decoder = EVMTransactionDecoder(
+        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        decoder = EthereumTransactionDecoder(
             database=database,
-            ethereum_manager=ethereum_manager,
+            ethereum_inquirer=ethereum_inquirer,
             transactions=eth_transactions,
-            msg_aggregator=msg_aggregator,
         )
         events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
 
@@ -150,18 +150,18 @@ def test_liquity_trove_adjust(database, ethereum_manager, eth_transactions):
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x648E180e246741363639B1496762763dd25649db']])  # noqa: E501
-def test_liquity_trove_deposit_lusd(database, ethereum_manager, eth_transactions):
+def test_liquity_trove_deposit_lusd(database, ethereum_inquirer, eth_transactions):
     """
     Data for deposit taken from
     https://etherscan.io/tx/0x40bb08427a3b99fb9896cf14858d82d361a6e7a8fb7dd6d2000511ac3dca5707
     Deposit 2.1 ether and borrow 4752 LUSD
     """
-    msg_aggregator = MessagesAggregator()
     tx_hex = '0x40bb08427a3b99fb9896cf14858d82d361a6e7a8fb7dd6d2000511ac3dca5707'
     user_address = '0x648E180e246741363639B1496762763dd25649db'
     evmhash = deserialize_evm_tx_hash(tx_hex)
     transaction = EvmTransaction(
         tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
         timestamp=1646375440,
         block_number=14318825,
         from_address=user_address,
@@ -175,6 +175,7 @@ def test_liquity_trove_deposit_lusd(database, ethereum_manager, eth_transactions
     )
     receipt = EvmTxReceipt(
         tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
         type=0,
@@ -210,14 +211,13 @@ def test_liquity_trove_deposit_lusd(database, ethereum_manager, eth_transactions
         ],
     )
 
-    dbethtx = DBEthTx(database)
+    dbevmtx = DBEvmTx(database)
     with database.user_write() as cursor:
-        dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
-        decoder = EVMTransactionDecoder(
+        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        decoder = EthereumTransactionDecoder(
             database=database,
-            ethereum_manager=ethereum_manager,
+            ethereum_inquirer=ethereum_inquirer,
             transactions=eth_transactions,
-            msg_aggregator=msg_aggregator,
         )
         events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
     assert len(events) == 2
@@ -254,18 +254,18 @@ def test_liquity_trove_deposit_lusd(database, ethereum_manager, eth_transactions
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x648E180e246741363639B1496762763dd25649db']])  # noqa: E501
-def test_liquity_trove_remove_eth(database, ethereum_manager, eth_transactions):
+def test_liquity_trove_remove_eth(database, ethereum_inquirer, eth_transactions):
     """
     Data for deposit taken from
     https://etherscan.io/tx/0x6be5312c21855c3cc324b5b6ce9f9f65dbd488e270e84ac5e6fb96c74d83fe4e
     Deposit 2.1 ether and borrow 4752 LUSD
     """
-    msg_aggregator = MessagesAggregator()
     tx_hex = '0x6be5312c21855c3cc324b5b6ce9f9f65dbd488e270e84ac5e6fb96c74d83fe4e'
     user_address = '0x648E180e246741363639B1496762763dd25649db'
     evmhash = deserialize_evm_tx_hash(tx_hex)
     transaction = EvmTransaction(
         tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
         timestamp=1646375440,
         block_number=14318825,
         from_address=user_address,
@@ -279,6 +279,7 @@ def test_liquity_trove_remove_eth(database, ethereum_manager, eth_transactions):
     )
     receipt = EvmTxReceipt(
         tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
         type=0,
@@ -323,15 +324,14 @@ def test_liquity_trove_remove_eth(database, ethereum_manager, eth_transactions):
         value=FVal(32) * EXP18,
     )
 
-    dbethtx = DBEthTx(database)
+    dbevmtx = DBEvmTx(database)
     with database.user_write() as cursor:
-        dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
-        dbethtx.add_ethereum_internal_transactions(cursor, [internal_tx], relevant_address=user_address)  # noqa: E501
-        decoder = EVMTransactionDecoder(
+        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        dbevmtx.add_evm_internal_transactions(cursor, [internal_tx], relevant_address=user_address)  # noqa: E501
+        decoder = EthereumTransactionDecoder(
             database=database,
-            ethereum_manager=ethereum_manager,
+            ethereum_inquirer=ethereum_inquirer,
             transactions=eth_transactions,
-            msg_aggregator=msg_aggregator,
         )
         events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
     assert len(events) == 3
@@ -380,12 +380,11 @@ def test_liquity_trove_remove_eth(database, ethereum_manager, eth_transactions):
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0xF04E6f2D27ED324917AD2098F96f5d4ac52e1684']])  # noqa: E501
-def test_liquity_pool_deposit(database, ethereum_manager, eth_transactions):
+def test_liquity_pool_deposit(database, ethereum_inquirer, eth_transactions):
     """
     Data for deposit taken from
     https://etherscan.io/tx/0x1277cb6c2c8e151fe90118cdd738e46f894e18de04ab6af33d567e91597f322b
     """
-    msg_aggregator = MessagesAggregator()
     tx_hex = '0x1277cb6c2c8e151fe90118cdd738e46f894e18de04ab6af33d567e91597f322b'
     user_address = '0xF04E6f2D27ED324917AD2098F96f5d4ac52e1684'
     evmhash = deserialize_evm_tx_hash(tx_hex)
@@ -404,6 +403,7 @@ def test_liquity_pool_deposit(database, ethereum_manager, eth_transactions):
     )
     receipt = EvmTxReceipt(
         tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
         type=0,
@@ -430,14 +430,13 @@ def test_liquity_pool_deposit(database, ethereum_manager, eth_transactions):
             ),
         ],
     )
-    dbethtx = DBEthTx(database)
+    dbevmtx = DBEvmTx(database)
     with database.user_write() as cursor:
-        dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
-        decoder = EVMTransactionDecoder(
+        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        decoder = EthereumTransactionDecoder(
             database=database,
-            ethereum_manager=ethereum_manager,
+            ethereum_inquirer=ethereum_inquirer,
             transactions=eth_transactions,
-            msg_aggregator=msg_aggregator,
         )
         events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
     assert len(events) == 2
@@ -474,13 +473,12 @@ def test_liquity_pool_deposit(database, ethereum_manager, eth_transactions):
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0xF03639047f75204d00c9314611C2b24570db4405']])  # noqa: E501
-def test_liquity_pool_remove_deposits(database, ethereum_manager, eth_transactions):
+def test_liquity_pool_remove_deposits(database, ethereum_inquirer, eth_transactions):
     """
     Data for deposit taken from
     https://etherscan.io/tx/0xad077faf7976504615561ac7fd9fdddc934180f3237f216851136d2327d71196
     Deposit 2.1 ether and borrow 4752 LUSD
     """
-    msg_aggregator = MessagesAggregator()
     tx_hex = '0xad077faf7976504615561ac7fd9fdddc934180f3237f216851136d2327d71196'
     user_address = '0xF03639047f75204d00c9314611C2b24570db4405'
     evmhash = deserialize_evm_tx_hash(tx_hex)
@@ -499,6 +497,7 @@ def test_liquity_pool_remove_deposits(database, ethereum_manager, eth_transactio
     )
     receipt = EvmTxReceipt(
         tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
         type=0,
@@ -554,15 +553,14 @@ def test_liquity_pool_remove_deposits(database, ethereum_manager, eth_transactio
         value=FVal(0.0211265398269) * EXP18,
     )
 
-    dbethtx = DBEthTx(database)
+    dbevmtx = DBEvmTx(database)
     with database.user_write() as cursor:
-        dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
-        dbethtx.add_ethereum_internal_transactions(cursor, [internal_tx], relevant_address=user_address)  # noqa: E501
-        decoder = EVMTransactionDecoder(
+        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        dbevmtx.add_evm_internal_transactions(cursor, [internal_tx], relevant_address=user_address)  # noqa: E501
+        decoder = EthereumTransactionDecoder(
             database=database,
-            ethereum_manager=ethereum_manager,
+            ethereum_inquirer=ethereum_inquirer,
             transactions=eth_transactions,
-            msg_aggregator=msg_aggregator,
         )
         events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
 

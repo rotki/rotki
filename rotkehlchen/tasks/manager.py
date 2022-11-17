@@ -2,7 +2,7 @@ import copy
 import logging
 import random
 from collections import defaultdict
-from typing import TYPE_CHECKING, Callable, DefaultDict, Dict, List, NamedTuple, Set, Tuple
+from typing import Callable, DefaultDict, Dict, List, NamedTuple, Set, Tuple
 
 import gevent
 
@@ -40,9 +40,6 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
-
-if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.decoding import EVMTransactionDecoder
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -85,7 +82,6 @@ class TaskManager():
             premium_sync_manager: Optional[PremiumSyncManager],
             chains_aggregator: ChainsAggregator,
             exchange_manager: ExchangeManager,
-            eth_tx_decoder: 'EVMTransactionDecoder',
             deactivate_premium: Callable[[], None],
             activate_premium: Callable[[Premium], None],
             query_balances: Callable,
@@ -98,7 +94,6 @@ class TaskManager():
         self.database = database
         self.cryptocompare = cryptocompare
         self.exchange_manager = exchange_manager
-        self.eth_tx_decoder = eth_tx_decoder
         self.cryptocompare_queries: Set[CCHistoQuery] = set()
         self.chains_aggregator = chains_aggregator
         self.last_xpub_derivation_ts = 0
@@ -281,6 +276,7 @@ class TaskManager():
         if len(queriable_accounts) == 0:
             return None
 
+        ethereum = self.chains_aggregator.get_chain_manager(SupportedBlockchain.ETHEREUM)
         address = random.choice(queriable_accounts)
         task_name = f'Query ethereum transactions for {address}'
         log.debug(f'Scheduling task to {task_name}')
@@ -289,7 +285,7 @@ class TaskManager():
             after_seconds=None,
             task_name=task_name,
             exception_is_error=True,
-            method=self.eth_tx_decoder.transactions.single_address_query_transactions,
+            method=ethereum.transactions.single_address_query_transactions,
             address=address,
             start_ts=0,
             end_ts=now,
@@ -307,13 +303,14 @@ class TaskManager():
         if len(hash_results) == 0:
             return None
 
+        ethereum = self.chains_aggregator.get_chain_manager(SupportedBlockchain.ETHEREUM)
         task_name = f'Query {len(hash_results)} ethereum transactions receipts'
         log.debug(f'Scheduling task to {task_name}')
         return self.greenlet_manager.spawn_and_track(
             after_seconds=None,
             task_name=task_name,
             exception_is_error=True,
-            method=self.eth_tx_decoder.transactions.get_receipts_for_transactions_missing_them,
+            method=ethereum.transactions.get_receipts_for_transactions_missing_them,
             limit=TX_RECEIPTS_QUERY_LIMIT,
         )
 
@@ -435,13 +432,14 @@ class TaskManager():
         )
         hashes_length = len(hashes)
         if hashes_length > 0:
+            ethereum = self.chains_aggregator.get_chain_manager(SupportedBlockchain.ETHEREUM)
             task_name = f'decode {hashes_length} evm trasactions'
             log.debug(f'Scheduling periodic task to {task_name}')
             return self.greenlet_manager.spawn_and_track(
                 after_seconds=None,
                 task_name=task_name,
                 exception_is_error=True,
-                method=self.eth_tx_decoder.get_and_decode_undecoded_transactions,
+                method=ethereum.transactions_decoder.get_and_decode_undecoded_transactions,
                 limit=TX_DECODING_LIMIT,
             )
         return None
@@ -533,12 +531,13 @@ class TaskManager():
         """Function that schedules curve pools update task if either there is no curve pools cache
         yet or this cache has expired (i.e. it's been more than a week since last update)."""
         if should_update_curve_cache() is True:
+            ethereum = self.chains_aggregator.get_chain_manager(SupportedBlockchain.ETHEREUM)
             return self.greenlet_manager.spawn_and_track(
                 after_seconds=None,
                 task_name='Update curve pools cache',
                 exception_is_error=True,
                 method=self.update_curve_pools_cache,
-                tx_decoder=self.eth_tx_decoder,
+                tx_decoder=ethereum.transactions_decoder,
             )
 
         return None
