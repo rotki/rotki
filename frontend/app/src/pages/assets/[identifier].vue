@@ -80,7 +80,7 @@ const { assetName, assetSymbol, assetInfo } = useAssetInfoRetrieval();
 const name = assetName(identifier);
 const symbol = assetSymbol(identifier);
 const asset = assetInfo(identifier);
-const isCustomAsset = computed(() => get(assetInfo(identifier))?.isCustomAsset);
+const isCustomAsset = computed(() => get(asset)?.isCustomAsset);
 
 const { t } = useI18n();
 

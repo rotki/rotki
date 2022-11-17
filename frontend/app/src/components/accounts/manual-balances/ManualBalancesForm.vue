@@ -22,61 +22,42 @@
       outlined
     />
 
-    <v-radio-group v-model="assetMethod" class="mt-0" row :disabled="pending">
-      <v-radio
-        :value="0"
-        :label="tc('manual_balances_form.fields.select_available_asset')"
-      />
-      <v-radio
-        :value="1"
-        :label="tc('manual_balances_form.fields.create_a_custom_asset')"
-      />
-    </v-radio-group>
-
-    <asset-select
-      v-if="assetMethod === 0"
-      v-model="asset"
-      :label="tc('common.asset')"
-      class="manual-balances-form__asset"
-      outlined
-      :error-messages="toMessages(v$.asset.$errors)"
-      :disabled="pending"
-      @blur="v$.asset.$touch()"
-    />
-
-    <v-row v-else class="mb-n9">
-      <v-col class="col" md="6">
-        <v-text-field
-          v-model="customAssetName"
+    <v-row>
+      <v-col>
+        <asset-select
+          v-model="asset"
+          :label="tc('common.asset')"
+          class="manual-balances-form__asset"
           outlined
-          persistent-hint
-          clearable
+          :error-messages="toMessages(v$.asset.$errors)"
           :disabled="pending"
-          :error-messages="toMessages(v$.customAssetName.$errors)"
-          :label="t('common.name')"
+          @blur="v$.asset.$touch()"
         />
       </v-col>
-
-      <v-col class="col" md="6">
-        <v-combobox
-          v-model="customAssetType"
-          :items="customAssetTypes"
-          outlined
-          persistent-hint
-          clearable
-          :disabled="pending"
-          :label="t('common.type')"
-          :error-messages="toMessages(v$.customAssetType.$errors)"
-          :search-input.sync="search"
-        />
+      <v-col cols="auto">
+        <v-tooltip top>
+          <template #activator="{ on }">
+            <v-btn
+              text
+              color="primary"
+              class="mt-1 py-6"
+              v-on="on"
+              @click="openCustomAssetForm"
+            >
+              <div class="d-flex">
+                <v-icon large>mdi-pencil-circle-outline</v-icon>
+                <v-icon small class="mt-n4">mdi-plus</v-icon>
+              </div>
+            </v-btn>
+          </template>
+          <span>
+            {{ tc('manual_balances_form.fields.create_a_custom_asset') }}
+          </span>
+        </v-tooltip>
       </v-col>
     </v-row>
 
-    <manual-balances-price-form
-      ref="priceForm"
-      :pending="pending"
-      :asset-method="assetMethod"
-    />
+    <manual-balances-price-form ref="priceForm" :pending="pending" />
 
     <amount-input
       v-model="amount"
@@ -107,14 +88,32 @@
       :label="tc('common.location')"
       @blur="v$.location.$touch()"
     />
+
+    <big-dialog
+      :display="showCustomAssetForm"
+      :title="tc('asset_management.add_title')"
+      :action-disabled="!customAssetFormValid || customAssetFormSaving"
+      :primary-action="tc('common.actions.save')"
+      :loading="customAssetFormSaving"
+      @confirm="saveCustomAsset()"
+      @cancel="showCustomAssetForm = false"
+    >
+      <custom-asset-form
+        ref="customAssetForm"
+        :types="customAssetTypes"
+        :edit="false"
+        @valid="customAssetFormValid = $event"
+      />
+    </big-dialog>
   </v-form>
 </template>
 
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
-import { helpers, required, requiredIf } from '@vuelidate/validators';
+import { helpers, required } from '@vuelidate/validators';
 import { PropType, Ref } from 'vue';
 import ManualBalancesPriceForm from '@/components/accounts/manual-balances/ManualBalancesPriceForm.vue';
+import CustomAssetForm from '@/components/asset-manager/CustomAssetForm.vue';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import BalanceTypeInput from '@/components/inputs/BalanceTypeInput.vue';
@@ -164,15 +163,8 @@ const tags: Ref<string[]> = ref([]);
 const location: Ref<TradeLocation> = ref(TRADE_LOCATION_EXTERNAL);
 const balanceType: Ref<BalanceType> = ref(BalanceType.ASSET);
 const form = ref<any>(null);
-const customAssetTypes = ref<string[]>([]);
-const search = ref<string | null>('');
 const priceForm: Ref<InstanceType<typeof ManualBalancesPriceForm> | null> =
   ref(null);
-
-watch(search, search => {
-  if (search === null) search = '';
-  set(customAssetType, search);
-});
 
 const reset = () => {
   get(form)?.reset();
@@ -216,23 +208,6 @@ const { editManualBalance, addManualBalance, manualLabels } =
 const { refreshPrices } = useBalancesStore();
 const { setMessage } = useMessageStore();
 
-const saveCustomAsset = async (): Promise<string | undefined> => {
-  let identifier: string | undefined = undefined;
-  try {
-    const id = await api.assets.addCustomAsset({
-      name: get(customAssetName),
-      customAssetType: get(customAssetType)
-    });
-    if (id) identifier = id;
-  } catch (e: any) {
-    setMessage({
-      description: tc('asset_management.add_error', 0, { message: e.message })
-    });
-  }
-
-  return identifier;
-};
-
 const save = async () => {
   set(pending, true);
   const balance: Omit<ManualBalance, 'id' | 'asset'> = {
@@ -244,17 +219,6 @@ const save = async () => {
   };
 
   let usedAsset: string = get(asset);
-
-  if (get(assetMethod) === 1) {
-    const assetIdentifier = await saveCustomAsset();
-
-    if (assetIdentifier) {
-      usedAsset = assetIdentifier;
-    } else {
-      set(pending, false);
-      return false;
-    }
-  }
 
   const idVal = get(id);
   const isEdit = get(edit) && idVal;
@@ -314,9 +278,35 @@ watch(label, label => {
   }
 });
 
-const assetMethod = ref<number>(0);
-const customAssetName = ref<string>('');
-const customAssetType = ref<string>('');
+const customAssetForm: Ref<InstanceType<typeof CustomAssetForm> | null> =
+  ref(null);
+const showCustomAssetForm: Ref<boolean> = ref(false);
+const customAssetFormValid: Ref<boolean> = ref(false);
+const customAssetFormSaving: Ref<boolean> = ref(false);
+
+const customAssetTypes = ref<string[]>([]);
+
+const openCustomAssetForm = async () => {
+  if (get(customAssetTypes).length === 0) {
+    set(customAssetTypes, await api.assets.getCustomAssetTypes());
+  }
+
+  set(showCustomAssetForm, true);
+};
+
+const saveCustomAsset = async () => {
+  set(customAssetFormSaving, true);
+
+  set(customAssetFormSaving, true);
+  const identifier = await get(customAssetForm)?.save();
+
+  if (identifier) {
+    set(showCustomAssetForm, false);
+    set(asset, identifier);
+  }
+
+  set(customAssetFormSaving, false);
+};
 
 const rules = {
   amount: {
@@ -334,19 +324,7 @@ const rules = {
   asset: {
     required: helpers.withMessage(
       tc('manual_balances_form.validation.asset'),
-      requiredIf(() => get(assetMethod) === 0)
-    )
-  },
-  customAssetName: {
-    required: helpers.withMessage(
-      tc('asset_form.name_non_empty'),
-      requiredIf(() => get(assetMethod) === 1)
-    )
-  },
-  customAssetType: {
-    required: helpers.withMessage(
-      tc('asset_form.type_non_empty'),
-      requiredIf(() => get(assetMethod) === 1)
+      required
     )
   },
   location: {
@@ -360,9 +338,7 @@ const v$ = useVuelidate(
     amount,
     asset,
     label,
-    location,
-    customAssetName,
-    customAssetType
+    location
   },
   { $autoDirty: true, $externalResults: errors }
 );
@@ -379,8 +355,6 @@ watch(asset, async asset => {
 });
 
 onMounted(async () => {
-  set(customAssetTypes, await api.assets.getCustomAssetTypes());
-
   const editPayload = get(edit);
   if (editPayload) {
     const form = get(priceForm);

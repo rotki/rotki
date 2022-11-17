@@ -4,7 +4,7 @@
       <v-col cols="12" md="6">
         <v-text-field
           data-cy="name"
-          :value="value.name"
+          :value="formData.name"
           outlined
           persistent-hint
           clearable
@@ -17,7 +17,7 @@
         <v-combobox
           data-cy="type"
           :items="types"
-          :value="value.customAssetType"
+          :value="formData.customAssetType"
           outlined
           persistent-hint
           clearable
@@ -30,7 +30,7 @@
       <v-col cols="12">
         <v-textarea
           data-cy="notes"
-          :value="value.notes"
+          :value="formData.notes"
           outlined
           persistent-hint
           clearable
@@ -41,54 +41,72 @@
     </v-row>
 
     <div class="my-4">
-      <asset-icon-form ref="assetIconForm" :identifier="value.identifier" />
+      <asset-icon-form ref="assetIconForm" :identifier="formData.identifier" />
     </div>
   </v-form>
 </template>
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
+import { omit } from 'lodash';
 import { PropType, Ref } from 'vue';
 import AssetIconForm from '@/components/asset-manager/AssetIconForm.vue';
+import { api } from '@/services/rotkehlchen-api';
+import { useMessageStore } from '@/store/message';
 import { CustomAsset } from '@/types/assets';
 
 const props = defineProps({
-  value: {
-    required: true,
-    type: Object as PropType<CustomAsset>
-  },
   edit: {
     required: true,
     type: Boolean
   },
   types: {
-    required: true,
-    type: Array as PropType<string[]>
+    required: false,
+    type: Array as PropType<string[]>,
+    default: () => []
   }
 });
 
+const emptyCustomAsset: () => CustomAsset = () => ({
+  identifier: '',
+  name: '',
+  customAssetType: '',
+  notes: ''
+});
+
+const formData = ref<CustomAsset>(emptyCustomAsset());
+
+const setForm = (form?: CustomAsset) => {
+  if (form) {
+    set(search, form.customAssetType);
+    set(formData, form);
+  } else {
+    set(search, '');
+    set(formData, emptyCustomAsset());
+  }
+};
+
 const emit = defineEmits<{
-  (e: 'input', form: Partial<CustomAsset>): void;
   (e: 'valid', valid: boolean): void;
 }>();
 
-const { value } = toRefs(props);
+const { edit } = toRefs(props);
 const valid = ref(false);
 
 const input = (asset: Partial<CustomAsset>) => {
-  emit('input', { ...get(value), ...asset });
+  set(formData, { ...get(formData), ...asset });
 };
 
 const assetIconForm: Ref<InstanceType<typeof AssetIconForm> | null> = ref(null);
 
 watch(valid, value => emit('valid', value));
 
-const { t } = useI18n();
+const { t, tc } = useI18n();
 
 const search = ref<string | null>('');
 
 watch(search, customAssetType => {
-  if (customAssetType === null) customAssetType = '';
+  if (customAssetType === null) customAssetType = get(formData).customAssetType;
   input({ customAssetType });
 });
 
@@ -110,8 +128,8 @@ const rules = {
 const v$ = useVuelidate(
   rules,
   {
-    name: computed(() => get(value).name),
-    type: computed(() => get(value).customAssetType)
+    name: computed(() => get(formData).name),
+    type: computed(() => get(formData).customAssetType)
   },
   { $autoDirty: true }
 );
@@ -124,7 +142,39 @@ const saveIcon = (identifier: string) => {
   get(assetIconForm)?.saveIcon(identifier);
 };
 
+const { setMessage } = useMessageStore();
+const save = async () => {
+  const data = get(formData);
+  let success = false;
+  let identifier = data.identifier;
+  const editMode = get(edit);
+
+  try {
+    if (editMode) {
+      success = await api.assets.editCustomAsset(data);
+    } else {
+      identifier = await api.assets.addCustomAsset(omit(data, 'identifier'));
+      success = !!identifier;
+    }
+
+    if (identifier) {
+      saveIcon(identifier);
+    }
+  } catch (e: any) {
+    const obj = { message: e.message };
+    setMessage({
+      description: editMode
+        ? tc('asset_management.edit_error', 0, obj)
+        : tc('asset_management.add_error', 0, obj)
+    });
+  }
+
+  return success ? identifier : '';
+};
+
 defineExpose({
-  saveIcon
+  saveIcon,
+  setForm,
+  save
 });
 </script>

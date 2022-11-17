@@ -28,7 +28,6 @@
     >
       <custom-asset-form
         ref="assetForm"
-        v-model="formData"
         :types="types"
         :edit="editMode"
         @valid="valid = $event"
@@ -47,7 +46,6 @@
 </template>
 
 <script setup lang="ts">
-import { omit } from 'lodash';
 import { Ref } from 'vue';
 import CustomAssetForm from '@/components/asset-manager/CustomAssetForm.vue';
 import CustomAssetTable from '@/components/asset-manager/CustomAssetTable.vue';
@@ -70,13 +68,6 @@ const props = defineProps({
   identifier: { required: false, type: String, default: null }
 });
 
-const emptyCustomAsset: () => CustomAsset = () => ({
-  identifier: '',
-  name: '',
-  customAssetType: '',
-  notes: ''
-});
-
 const { identifier } = toRefs(props);
 
 const { setMessage } = useMessageStore();
@@ -94,7 +85,6 @@ const pagination: Ref<CustomAssetPagination> = ref(
   convertPagination(defaultCustomAssetPagination(get(itemsPerPage)), 'name')
 );
 const editMode = ref<boolean>(false);
-const formData = ref<CustomAsset>(emptyCustomAsset());
 
 const { tc } = useI18n();
 
@@ -109,52 +99,36 @@ const dialogTitle = computed<string>(() => {
 });
 
 const { queryAllCustomAssets } = useAssetManagementApi();
+const assetForm: Ref<InstanceType<typeof CustomAssetForm> | null> = ref(null);
 
 const add = () => {
-  set(editMode, false);
-  set(formData, emptyCustomAsset());
   set(showForm, true);
+  set(editMode, false);
+
+  nextTick(() => {
+    get(assetForm)?.setForm?.();
+  });
 };
 
 const edit = (editAsset: CustomAsset) => {
-  set(editMode, true);
-  set(formData, editAsset);
   set(showForm, true);
-};
+  set(editMode, true);
 
-const assetForm: Ref<InstanceType<typeof CustomAssetForm> | null> = ref(null);
+  nextTick(() => {
+    get(assetForm)?.setForm?.(editAsset);
+  });
+};
 
 const save = async () => {
   set(saving, true);
-  const data = get(formData);
-  let success = false;
-  let identifier = data.identifier;
+  const identifier = await get(assetForm)?.save();
 
-  try {
-    if (get(editMode)) {
-      success = await api.assets.editCustomAsset(data);
-    } else {
-      identifier = await api.assets.addCustomAsset(omit(data, 'identifier'));
-      success = !!identifier;
-    }
-
-    if (identifier) {
-      await get(assetForm)?.saveIcon(identifier);
-    }
-  } catch (e: any) {
-    const obj = { message: e.message };
-    setMessage({
-      description: get(editMode)
-        ? tc('asset_management.edit_error', 0, obj)
-        : tc('asset_management.add_error', 0, obj)
-    });
-  } finally {
-    if (success) {
-      set(showForm, false);
-      await refresh();
-    }
-    set(saving, false);
+  if (identifier) {
+    set(showForm, false);
+    await refresh();
   }
+
+  set(saving, false);
 };
 
 const deleteAsset = async (identifier: string) => {

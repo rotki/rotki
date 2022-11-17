@@ -138,7 +138,9 @@ const { items, showIgnored, excludes, errorMessages, value, includeNfts } =
   toRefs(props);
 const { isAssetIgnored } = useIgnoredAssetsStore();
 
-const input = (value: string) => emit('input', value || '');
+const input = (value: string) => {
+  emit('input', value || '');
+};
 
 const autoCompleteInput = ref(null);
 const search = ref<string>('');
@@ -253,7 +255,7 @@ const checkValue = async () => {
         ...get(assets),
         {
           ...details,
-          identifier: value
+          identifier: val
         }
       ]);
     }
@@ -262,7 +264,7 @@ const checkValue = async () => {
     set(assets, [
       ...get(assets),
       {
-        identifier: value,
+        identifier: val,
         ...mapping[val]
       }
     ]);
