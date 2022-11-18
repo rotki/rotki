@@ -1,5 +1,6 @@
 import logging
 from collections import defaultdict
+from enum import auto
 from typing import TYPE_CHECKING, Any, DefaultDict, Dict, List, NamedTuple, Optional, Tuple, Union
 
 from pysqlcipher3 import dbapi2 as sqlcipher
@@ -15,12 +16,13 @@ from rotkehlchen.externalapis.opensea import NFT, Opensea
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.serialization.deserialize import deserialize_fval_or_zero
 from rotkehlchen.types import ChecksumEvmAddress, Price
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
-from rotkehlchen.utils.misc import NftLpHandling
 from rotkehlchen.utils.mixins.cacheable import CacheableMixIn, cache_response_timewise_immutable
 from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
+from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
@@ -36,6 +38,7 @@ NFT_INFO_SQL_QUERY = (
     'image_url, collection_name FROM nfts '
 )
 
+
 NFT_DB_TUPLE = Tuple[
     str,  # identifier
     Optional[str],  # name
@@ -49,11 +52,18 @@ NFT_DB_TUPLE = Tuple[
 ]
 
 
-def _db_query_to_dict(entry: List[str]) -> Dict[str, Any]:
+class NftLpHandling(SerializableEnumMixin):
+    ALL_NFTS = auto()
+    ONLY_LPS = auto()
+    EXCLUDE_LPS = auto()
+
+
+def _serialize_nft_from_db(entry: NFT_DB_TUPLE) -> Dict[str, Any]:
     """From a db tuple extract the information required by the API for a NFT"""
-    price_in_asset = FVal(entry[2])
-    # Asset should always exist since it is guaranteed by the db schema
-    price_asset = Asset(entry[3])
+    # TODO: Both last_price and last_price_asset are optional in the current DB schema
+    # but they are not used as such and should not be. We need to change the schema.
+    price_in_asset = deserialize_fval_or_zero(value=entry[2], name='price_in_asset', location='nft_tuple')  # noqa: E501
+    price_asset = Asset(entry[3])  # type: ignore  # due to the asset schema problem
     # find_usd_price should be fast here since in most cases price should be cached
     usd_price = price_in_asset * Inquirer.find_usd_price(price_asset)
     return {
@@ -158,27 +168,15 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):  # lgtm [py/miss
 
     def get_single_nft(self, nft_id: str) -> Optional[Dict[str, Any]]:
         with self.db.conn.read_ctx() as cursor:
-            cursor.execute(NFT_INFO_SQL_QUERY + ' WHERE identifier = ?', (nft_id,))
+            query, bindings = NFTFilterQuery.make(
+                nft_id=nft_id,
+            ).prepare(with_pagination=False)
+            cursor.execute(NFT_INFO_SQL_QUERY + query, bindings)
             db_entry = cursor.fetchone()
         if db_entry is None:
             return None
 
-        price_in_asset = FVal(db_entry[2])
-        # Asset should always exist since it is guaranteed by the db schema
-        price_asset = Asset(db_entry[3])
-        # find_usd_price should be fast here since in most cases price should be cached
-        usd_price = price_in_asset * Inquirer.find_usd_price(price_asset)
-        return {
-            'id': db_entry[0],
-            'name': db_entry[1],
-            'price_in_asset': price_in_asset,
-            'price_asset': price_asset,
-            'manually_input': bool(db_entry[4]),
-            'is_lp': bool(db_entry[6]),
-            'image_url': db_entry[7],
-            'usd_price': usd_price,
-            'collection_name': db_entry[8],
-        }
+        return _serialize_nft_from_db(db_entry)
 
     def get_db_nft_balances(self, filter_query: NFTFilterQuery) -> Dict[str, Any]:
         """Filters (with `filter_query`) and returns cached nft balances in the nfts table"""
@@ -188,7 +186,7 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):  # lgtm [py/miss
         with self.db.conn.read_ctx() as cursor:
             cursor.execute(NFT_INFO_SQL_QUERY + query, bindings)
             for db_entry in cursor:
-                row_data = _db_query_to_dict(entry=db_entry)
+                row_data = _serialize_nft_from_db(entry=db_entry)
                 entries[db_entry[5]].append(row_data)
                 total_usd_value += row_data['usd_price']
             entries_found = cursor.execute(

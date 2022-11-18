@@ -7,6 +7,7 @@ from rotkehlchen.accounting.structures.types import HistoryEventSubType, History
 from rotkehlchen.accounting.types import SchemaEventType
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.types import AssetType
+from rotkehlchen.chain.ethereum.modules.nfts import NftLpHandling
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -19,7 +20,7 @@ from rotkehlchen.types import (
     Timestamp,
     TradeType,
 )
-from rotkehlchen.utils.misc import NftLpHandling, ts_now
+from rotkehlchen.utils.misc import ts_now
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -333,15 +334,6 @@ class FilterWithLocation():
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class DBBooleanFilter(DBFilter):
-    column: str
-    value: bool
-
-    def prepare(self) -> Tuple[List[str], List[Any]]:
-        return [f'{self.column}=?'], [self.value]
-
-
-@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class ETHTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
 
     @property
@@ -484,7 +476,7 @@ class DBTypeFilter(DBFilter):
 class DBEqualsFilter(DBFilter):
     """Filter a column by comparing its column to its value for equality."""
     column: str
-    value: Union[str, bytes, int]
+    value: Union[str, bytes, int, bool]
     alias: Optional[str] = None
 
     def prepare(self) -> Tuple[List[str], List[Any]]:
@@ -1165,7 +1157,7 @@ class NFTFilterQuery(DBFilterQuery):
                 values=ignored_assets_filter_params[1],
             ))
         if lps_handling != NftLpHandling.ALL_NFTS:
-            filters.append(DBBooleanFilter(
+            filters.append(DBEqualsFilter(
                 and_op=True,
                 column='is_lp',
                 value=NftLpHandling.ONLY_LPS == lps_handling,

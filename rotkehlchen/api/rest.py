@@ -65,6 +65,7 @@ from rotkehlchen.balances.manual import (
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.airdrops import check_airdrops
 from rotkehlchen.chain.ethereum.modules.eth2.constants import FREE_VALIDATORS_LIMIT
+from rotkehlchen.chain.ethereum.modules.nfts import NftLpHandling
 from rotkehlchen.chain.ethereum.names import find_ens_mappings, search_for_addresses_names
 from rotkehlchen.chain.ethereum.types import WeightedNode
 from rotkehlchen.chain.evm.manager import EvmManager
@@ -177,7 +178,7 @@ from rotkehlchen.types import (
     TradeType,
     UserNote,
 )
-from rotkehlchen.utils.misc import NftLpHandling, combine_dicts
+from rotkehlchen.utils.misc import combine_dicts
 from rotkehlchen.utils.snapshots import parse_import_snapshot_data
 from rotkehlchen.utils.version_check import get_current_version
 

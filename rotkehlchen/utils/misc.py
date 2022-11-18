@@ -7,7 +7,6 @@ import platform
 import re
 import sys
 import time
-from enum import auto
 from itertools import zip_longest
 from typing import (
     TYPE_CHECKING,
@@ -31,7 +30,6 @@ from eth_utils.address import to_checksum_address
 from rotkehlchen.errors.serialization import ConversionError, DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import ChecksumEvmAddress, Timestamp, TimestampMS
-from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 
 if TYPE_CHECKING:
     from requests import Session
@@ -396,9 +394,3 @@ def create_order_by_rules_list(
     order_by_attribute = data['order_by_attributes'] if data['order_by_attributes'] is not None else [default_order_by_field]  # noqa: E501
     ascending = data['ascending'] if data['ascending'] is not None else [is_ascending_by_default]
     return list(zip(order_by_attribute, ascending))
-
-
-class NftLpHandling(SerializableEnumMixin):
-    ALL_NFTS = auto()
-    ONLY_LPS = auto()
-    EXCLUDE_LPS = auto()

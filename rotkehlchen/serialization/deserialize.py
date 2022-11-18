@@ -257,6 +257,20 @@ def deserialize_optional_to_optional_fval(
     return deserialize_fval(value=value, name=name, location=location)
 
 
+def deserialize_fval_or_zero(
+        value: Optional[AcceptableFValInitInput],
+        name: str,
+        location: str,
+) -> FVal:
+    """
+    Deserializes an FVal from a field that was optional and if None returns ZERO
+    """
+    if value is None:
+        return ZERO
+
+    return deserialize_fval(value=value, name=name, location=location)
+
+
 def deserialize_asset_amount(amount: AcceptableFValInitInput) -> AssetAmount:
     try:
         result = AssetAmount(FVal(amount))
