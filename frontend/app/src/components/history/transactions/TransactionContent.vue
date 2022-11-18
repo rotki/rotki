@@ -307,7 +307,7 @@ const usedTitle: ComputedRef<string> = computed(() => {
   return get(sectionTitle) || tc('transactions.title');
 });
 
-const emit = defineEmits(['fetch']);
+const emit = defineEmits<{ (e: 'fetch', refresh: boolean): void }>();
 const fetch = (refresh = false) => emit('fetch', refresh);
 
 const tableHeaders = computed<DataTableHeader[]>(() => [

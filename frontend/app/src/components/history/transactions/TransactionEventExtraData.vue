@@ -1,33 +1,21 @@
 <template>
-  <div
-    v-if="
-      isStakingProtocol &&
-      event.extraData &&
-      event.extraData.asset &&
-      stakedUsdValue
-    "
-    :class="css['total-staked-indicator']"
-    class="pl-6"
-  >
+  <div :class="css['total-staked-indicator']" class="pl-6">
     <div class="grey--text d-flex align-center py-2">
       {{ tc('transactions.events.extra.total_staked_by_this_tx') }}:
     </div>
     <div class="py-2 d-flex align-center">
       <div class="mr-2">
-        <asset-link :asset="event.extraData.asset" icon>
-          <asset-icon size="32px" :identifier="event.extraData.asset" />
+        <asset-link :asset="staking.asset" icon>
+          <asset-icon size="32px" :identifier="staking.asset" />
         </asset-link>
       </div>
       <div>
         <div>
-          <amount-display
-            :value="event.extraData.stakedAmount"
-            :asset="event.extraData.asset"
-          />
+          <amount-display :value="staking.amount" :asset="staking.asset" />
         </div>
         <div>
           <amount-display
-            :value="stakedUsdValue"
+            :value="staking.usdValue"
             fiat-currency="USD"
             class="grey--text"
           />
@@ -37,35 +25,14 @@
   </div>
 </template>
 <script setup lang="ts">
-import { BigNumber } from '@rotki/common';
-import { ComputedRef, PropType } from 'vue';
-import { EthTransactionEventEntry } from '@/store/history/types';
+import { AssetBalance } from '@rotki/common';
+import { PropType } from 'vue';
 
-const props = defineProps({
-  event: {
+defineProps({
+  staking: {
     required: true,
-    type: Object as PropType<EthTransactionEventEntry>
+    type: Object as PropType<AssetBalance>
   }
-});
-
-const { event } = toRefs(props);
-
-const stakingProtocols = ['liquity'];
-const isStakingProtocol: ComputedRef<boolean> = computed(() => {
-  const protocol = get(event).counterparty;
-  return !!(protocol && stakingProtocols.includes(protocol));
-});
-
-const stakedUsdValue: ComputedRef<BigNumber | null> = computed(() => {
-  const stakedAmount = get(event)?.extraData?.stakedAmount;
-  if (!get(isStakingProtocol) || !stakedAmount) {
-    return null;
-  }
-
-  const { usdValue, amount } = get(event).balance;
-  const usdPrice = usdValue.div(amount);
-
-  return stakedAmount.multipliedBy(usdPrice);
 });
 
 const css = useCssModule();

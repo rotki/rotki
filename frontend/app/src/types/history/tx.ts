@@ -4,6 +4,14 @@ import { getCollectionResponseType } from '@/types/collection';
 import { HistoryRequestPayload } from '@/types/history/index';
 import { EntryMeta, getEntryWithMeta } from '@/types/history/meta';
 
+const EthTransactionEventExtraData = z
+  .object({ asset: z.string(), stakedAmount: NumericString })
+  .partial();
+
+export type EthTransactionEventExtraData = z.infer<
+  typeof EthTransactionEventExtraData
+>;
+
 export const EthTransactionEvent = z.object({
   eventIdentifier: z.string(),
   sequenceIndex: z.number().or(z.string()),
@@ -12,10 +20,7 @@ export const EthTransactionEvent = z.object({
   locationLabel: z.string().nullish(),
   eventType: z.string().nullish(),
   eventSubtype: z.string().nullish(),
-  extraData: z
-    .object({ asset: z.string(), stakedAmount: NumericString })
-    .partial()
-    .nullish(),
+  extraData: EthTransactionEventExtraData.nullish(),
   asset: z.string(),
   balance: Balance,
   notes: z.string().nullish(),

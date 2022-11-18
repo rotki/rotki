@@ -9,6 +9,7 @@ import { TaskNotFoundError } from '@/services/types-api';
 import { Task, TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { assert } from '@/utils/assertions';
+import { checkIfDevelopment } from '@/utils/env-utils';
 import { logger } from '@/utils/logging';
 
 export type TaskMap<T extends TaskMeta> = Record<number, Task<T>>;
@@ -139,9 +140,16 @@ export const useTasks = defineStore('tasks', () => {
             unregisterHandler(type, id.toString());
             const { result, message } = actionResult;
             if (result === null) {
-              const errorMessage = message
-                ? message
-                : `No message returned for ${TaskType[type]} with id ${id}`;
+              let errorMessage: string;
+              if (message) {
+                errorMessage = message;
+              } else {
+                errorMessage = `No message returned for ${TaskType[type]} with id ${id}`;
+              }
+
+              if (checkIfDevelopment()) {
+                errorMessage += `: ${JSON.stringify(meta)}`;
+              }
 
               reject(new Error(errorMessage));
             } else {
