@@ -11,7 +11,6 @@ from rotkehlchen.chain.ethereum.modules.eth2.structures import (
 )
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
-from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery
 from rotkehlchen.db.utils import form_query_to_filter_timestamps
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.fval import FVal
@@ -21,6 +20,7 @@ from rotkehlchen.types import ChecksumEvmAddress, Timestamp, Tuple, Union
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery
 
 ETH2_DEPOSITS_PREFIX = 'eth2_deposits'
 
@@ -154,7 +154,7 @@ class DBEth2():
     def get_validator_daily_stats_and_limit_info(
             self,
             cursor: 'DBCursor',
-            filter_query: Eth2DailyStatsFilterQuery,
+            filter_query: 'Eth2DailyStatsFilterQuery',
     ) -> Tuple[List[ValidatorDailyStats], int, FVal, FVal]:
         """Gets all eth2 daily stats for the query from the DB
 
@@ -186,7 +186,7 @@ class DBEth2():
     def get_validator_daily_stats(
             self,
             cursor: 'DBCursor',
-            filter_query: Eth2DailyStatsFilterQuery,
+            filter_query: 'Eth2DailyStatsFilterQuery',
     ) -> List[ValidatorDailyStats]:
         """Gets all DB entries for validator daily stats according to the given filter"""
         query, bindings = filter_query.prepare()

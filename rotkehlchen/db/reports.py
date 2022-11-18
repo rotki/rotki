@@ -18,7 +18,6 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 from rotkehlchen.accounting.constants import FREE_PNL_EVENTS_LIMIT, FREE_REPORTS_LOOKUP_LIMIT
 from rotkehlchen.accounting.pnl import PnlTotals
 from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
-from rotkehlchen.db.filtering import ReportDataFilterQuery
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -32,6 +31,7 @@ log = RotkehlchenLogsAdapter(logger)
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.filtering import ReportDataFilterQuery
 
 
 @overload
@@ -275,7 +275,7 @@ class DBAccountingReports():
 
     def get_report_data(
             self,
-            filter_: ReportDataFilterQuery,
+            filter_: 'ReportDataFilterQuery',
             with_limit: bool,
     ) -> Tuple[List[ProcessedAccountingEvent], int]:
         """Retrieve the event data of a PnL report depending on the given filter
