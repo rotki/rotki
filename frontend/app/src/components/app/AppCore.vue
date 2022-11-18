@@ -2,7 +2,7 @@
   <div class="app__content rotki-light-grey">
     <asset-update auto />
     <notification-popup />
-    <app-drawer v-if="loginComplete" />
+    <app-drawer />
 
     <v-app-bar
       app
@@ -36,29 +36,16 @@
 <script setup lang="ts">
 import { Chart, registerables } from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
+import AppDrawer from '@/components/app/AppDrawer.vue';
+import AppIndicators from '@/components/app/AppIndicators.vue';
+import AppSidebars from '@/components/app/AppSidebars.vue';
+import NotificationPopup from '@/components/status/notifications/NotificationPopup.vue';
+import AssetUpdate from '@/components/status/update/AssetUpdate.vue';
 import { useTheme } from '@/composables/common';
 import { useInterop } from '@/electron-interop';
-import { useSessionStore } from '@/store/session';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
 import { useStatisticsStore } from '@/store/statistics';
 
-const AppDrawer = defineAsyncComponent(
-  () => import('@/components/app/AppDrawer.vue')
-);
-const AppSidebars = defineAsyncComponent(
-  () => import('@/components/app/AppSidebars.vue')
-);
-const AppIndicators = defineAsyncComponent(
-  () => import('@/components/app/AppIndicators.vue')
-);
-const AssetUpdate = defineAsyncComponent(
-  () => import('@/components/status/update/AssetUpdate.vue')
-);
-const NotificationPopup = defineAsyncComponent(
-  () => import('@/components/status/notifications/NotificationPopup.vue')
-);
-
-const { loginComplete } = storeToRefs(useSessionStore());
 const visibilityStore = useAreaVisibilityStore();
 const { showDrawer, isMini } = storeToRefs(visibilityStore);
 

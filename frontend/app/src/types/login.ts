@@ -37,6 +37,5 @@ export interface UnlockPayload {
   settings: UserSettingsModel;
   exchanges: Exchange[];
   username: string;
-  newAccount?: boolean;
-  sync?: boolean;
+  fetchData?: boolean;
 }

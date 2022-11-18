@@ -1,46 +1,16 @@
-import { BigNumber } from '@rotki/common';
-import { TimeFramePersist } from '@rotki/common/lib/settings/graphs';
 import { ComputedRef } from 'vue';
 import { useLastLanguage } from '@/composables/session/language';
-import { useStatusUpdater } from '@/composables/status';
-import { getBnFormat } from '@/data/amount_formatter';
-import { EXTERNAL_EXCHANGES } from '@/data/defaults';
-import { interop, useInterop } from '@/electron-interop';
+import { useSessionSettings } from '@/composables/session/settings';
+import { useInterop } from '@/electron-interop';
 import { useExchangeApi } from '@/services/balances/exchanges';
-import { SupportedExternalExchanges } from '@/services/balances/types';
-import {
-  ALL_CENTRALIZED_EXCHANGES,
-  ALL_DECENTRALIZED_EXCHANGES,
-  ALL_MODULES
-} from '@/services/session/consts';
-import { Purgeable } from '@/services/session/types';
 import { useUsersApi } from '@/services/session/users.api';
 import { useSettingsApi } from '@/services/settings/settings-api';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useBalancesStore } from '@/store/balances';
-import { useExchangeBalancesStore } from '@/store/balances/exchanges';
-import { useDefiStore } from '@/store/defi';
-import { useHistory } from '@/store/history';
-import { usePurgeStore } from '@/store/history/purge';
-import { useTransactions } from '@/store/history/transactions';
 import { useMessageStore } from '@/store/message';
-import { useMonitorStore } from '@/store/monitor';
-import { usePremiumStore } from '@/store/session/premium';
-import { useTagStore } from '@/store/session/tags';
-import { ChangePasswordPayload, SyncConflict } from '@/store/session/types';
-import { useWatchersStore } from '@/store/session/watchers';
-import { useAccountingSettingsStore } from '@/store/settings/accounting';
+import { useSessionAuthStore } from '@/store/session/auth';
+import { ChangePasswordPayload } from '@/store/session/types';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useSessionSettingsStore } from '@/store/settings/session';
-import { useStakingStore } from '@/store/staking';
-import { useStatisticsStore } from '@/store/statistics';
 import { ActionStatus } from '@/store/types';
-import {
-  Exchange,
-  SUPPORTED_EXCHANGES,
-  SupportedExchange
-} from '@/types/exchanges';
+import { Exchange } from '@/types/exchanges';
 import { SupportedLanguage } from '@/types/frontend-settings';
 import {
   CreateAccountPayload,
@@ -48,110 +18,42 @@ import {
   SyncConflictError,
   UnlockPayload
 } from '@/types/login';
-import { Module } from '@/types/modules';
-import { Section, Status } from '@/types/status';
 import { UserSettingsModel } from '@/types/user';
-import { startPromise } from '@/utils';
 import { lastLogin } from '@/utils/account-management';
 import { logger } from '@/utils/logging';
 
-const defaultSyncConflict = (): SyncConflict => ({
-  message: '',
-  payload: null
-});
-
 export const useSessionStore = defineStore('session', () => {
-  const newAccount = ref(false);
-  const logged = ref(false);
-  const loginComplete = ref(false);
-  const username = ref('');
-  const syncConflict = ref<SyncConflict>(defaultSyncConflict());
   const showUpdatePopup = ref(false);
   const darkModeEnabled = ref(false);
 
+  const authStore = useSessionAuthStore();
+  const { logged, username, syncConflict, shouldFetchData } =
+    storeToRefs(authStore);
+
+  const { initialize } = useSessionSettings();
   const usersApi = useUsersApi();
   const settingsApi = useSettingsApi();
   const exchangeApi = useExchangeApi();
 
   const { setMessage } = useMessageStore();
-  const { fetchWatchers } = useWatchersStore();
-  const { premium, premiumSync } = storeToRefs(usePremiumStore());
-  const { fetchTags } = useTagStore();
-  const frontendSettingsStore = useFrontendSettingsStore();
-  const accountingSettingsStore = useAccountingSettingsStore();
-  const { update: updateGeneralSettings } = useGeneralSettingsStore();
-  const { update: updateSessionSettings } = useSessionSettingsStore();
-  const { setExchanges } = useExchangeBalancesStore();
-  const { fetchIgnored } = useHistory();
-  const { fetchIgnoredAssets } = useIgnoredAssetsStore();
-  const { fetchNetValue } = useStatisticsStore();
-  const { fetchCounterparties } = useTransactions();
-  const { fetch, refreshPrices } = useBalancesStore();
-  const { start, stop } = useMonitorStore();
+
+  const { checkForUpdates, resetTray, isPackaged, clearPassword } =
+    useInterop();
 
   const { t } = useI18n();
-
-  const refreshData = async (): Promise<void> => {
-    logger.info('Refreshing data');
-
-    await Promise.allSettled([
-      fetchIgnored(),
-      fetchIgnoredAssets(),
-      fetchWatchers(),
-      fetch(),
-      fetchNetValue()
-    ]);
-    await refreshPrices();
-  };
 
   const unlock = async ({
     settings,
     exchanges,
-    newAccount: isNew,
-    sync,
+    fetchData,
     username: user
   }: UnlockPayload): Promise<ActionStatus> => {
     try {
-      const other = settings.other;
-      const frontendSettings = other.frontendSettings;
-      if (frontendSettings) {
-        frontendSettingsStore.update(frontendSettings);
-        const { timeframeSetting, lastKnownTimeframe } = frontendSettings;
-        setExchanges(exchanges);
-        updateSessionSettings({
-          timeframe:
-            timeframeSetting !== TimeFramePersist.REMEMBER
-              ? timeframeSetting
-              : lastKnownTimeframe
-        });
-        BigNumber.config({
-          FORMAT: getBnFormat(
-            frontendSettings.thousandSeparator,
-            frontendSettings.decimalSeparator
-          )
-        });
-      }
-
-      set(premium, other.havePremium);
-      set(premiumSync, other.premiumShouldSync);
-      updateGeneralSettings(settings.general);
-      accountingSettingsStore.update(settings.accounting);
-
-      start();
-      await fetchTags();
-
-      set(newAccount, isNew);
+      initialize(settings, exchanges);
       set(username, user);
       set(logged, true);
-      await fetchCounterparties();
-
-      if (!isNew || sync) {
-        startPromise(refreshData());
-      } else {
-        const ethUpdater = useStatusUpdater(Section.BLOCKCHAIN_ETH);
-        const btcUpdater = useStatusUpdater(Section.BLOCKCHAIN_BTC);
-        ethUpdater.setStatus(Status.LOADED);
-        btcUpdater.setStatus(Status.LOADED);
+      if (fetchData) {
+        set(shouldFetchData, true);
       }
 
       return { success: true };
@@ -174,8 +76,7 @@ export const useSessionStore = defineStore('session', () => {
         settings,
         exchanges,
         username: payload.credentials.username,
-        sync: payload.premiumSetup?.syncDatabase,
-        newAccount: true
+        fetchData: payload.premiumSetup?.syncDatabase
       };
       return await unlock(data);
     } catch (e: any) {
@@ -205,14 +106,15 @@ export const useSessionStore = defineStore('session', () => {
         if (!credentials.username) {
           return { success: false, message: '' };
         }
-        set(syncConflict, defaultSyncConflict());
+        authStore.resetSyncConflict();
         ({ settings, exchanges } = await usersApi.login(credentials));
       }
 
       return await unlock({
         settings,
         exchanges,
-        username
+        username,
+        fetchData: true
       });
     } catch (e: any) {
       logger.error(e);
@@ -225,10 +127,9 @@ export const useSessionStore = defineStore('session', () => {
   };
 
   const logout = async () => {
-    interop.resetTray();
+    resetTray();
     try {
       await usersApi.logout(get(username));
-      stop();
       set(logged, false);
     } catch (e: any) {
       setMessage({
@@ -256,7 +157,6 @@ export const useSessionStore = defineStore('session', () => {
   };
 
   const checkForUpdate = async (): Promise<void> => {
-    const { checkForUpdates } = useInterop();
     set(showUpdatePopup, await checkForUpdates());
   };
 
@@ -264,7 +164,6 @@ export const useSessionStore = defineStore('session', () => {
     currentPassword,
     newPassword
   }: ChangePasswordPayload): Promise<ActionStatus> => {
-    const { isPackaged, clearPassword } = useInterop();
     try {
       const success = await usersApi.changeUserPassword(
         get(username),
@@ -298,34 +197,8 @@ export const useSessionStore = defineStore('session', () => {
     }
   };
 
-  const purgeCache = async (purgeable: Purgeable) => {
-    const { purgeExchange } = usePurgeStore();
-    const { resetState } = useDefiStore();
-    const { reset } = useStakingStore();
-
-    if (purgeable === ALL_CENTRALIZED_EXCHANGES) {
-      await purgeExchange(ALL_CENTRALIZED_EXCHANGES);
-    } else if (purgeable === ALL_DECENTRALIZED_EXCHANGES) {
-      resetState(ALL_DECENTRALIZED_EXCHANGES);
-    } else if (purgeable === ALL_MODULES) {
-      reset();
-      resetState(ALL_MODULES);
-    } else if (
-      SUPPORTED_EXCHANGES.includes(purgeable as SupportedExchange) ||
-      EXTERNAL_EXCHANGES.includes(purgeable as SupportedExternalExchanges)
-    ) {
-      await purgeExchange(purgeable as SupportedExchange);
-    } else if (Object.values(Module).includes(purgeable as Module)) {
-      if ([Module.ETH2, Module.ADEX].includes(purgeable as Module)) {
-        reset(purgeable as Module);
-      } else {
-        resetState(purgeable as Module);
-      }
-    }
-  };
-
   const { lastLanguage } = useLastLanguage();
-  const { language } = storeToRefs(frontendSettingsStore);
+  const { language } = storeToRefs(useFrontendSettingsStore());
 
   const adaptiveLanguage: ComputedRef<SupportedLanguage> = computed(() => {
     const selectedLanguageVal = get(lastLanguage);
@@ -336,11 +209,6 @@ export const useSessionStore = defineStore('session', () => {
 
   return {
     adaptiveLanguage,
-    newAccount,
-    logged,
-    loginComplete,
-    username,
-    syncConflict,
     showUpdatePopup,
     darkModeEnabled,
     login,
@@ -348,8 +216,7 @@ export const useSessionStore = defineStore('session', () => {
     logoutRemoteSession,
     createAccount,
     changePassword,
-    checkForUpdate,
-    purgeCache
+    checkForUpdate
   };
 });
 

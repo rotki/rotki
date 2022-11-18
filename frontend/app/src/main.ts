@@ -42,6 +42,7 @@ pinia.use(StoreTrackPlugin);
 if (isDevelopment) {
   pinia.use(storePiniaPlugins);
 }
+setActivePinia(pinia);
 
 new Vue({
   setup() {

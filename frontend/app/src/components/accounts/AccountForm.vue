@@ -79,7 +79,6 @@ import XpubInput from '@/components/accounts/blockchain/XpubInput.vue';
 import InputModeSelect from '@/components/accounts/InputModeSelect.vue';
 import ModuleActivator from '@/components/accounts/ModuleActivator.vue';
 import TagInput from '@/components/inputs/TagInput.vue';
-import { setupTaskStatus } from '@/composables/tasks';
 import { useInterop } from '@/electron-interop';
 import { deserializeApiErrorMessage } from '@/services/converters';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
@@ -94,6 +93,7 @@ import { useBlockchainAccountsStore } from '@/store/blockchain/accounts';
 import { useEthAccountsStore } from '@/store/blockchain/accounts/eth';
 import { useMessageStore } from '@/store/message';
 import { useNotifications } from '@/store/notifications';
+import { useTasks } from '@/store/tasks';
 import {
   AccountInput,
   MANUAL_ADD,
@@ -264,7 +264,7 @@ const input = (isValid: boolean) => {
   emit('input', isValid);
 };
 
-const { isTaskRunning } = setupTaskStatus();
+const { isTaskRunning } = useTasks();
 
 const accountOperation = computed<boolean>(
   () =>

@@ -85,36 +85,35 @@ import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import ThemeControl from '@/components/premium/ThemeControl.vue';
 import { useTheme } from '@/composables/common';
 import { useDarkMode } from '@/composables/dark-mode';
+import { useAppNavigation } from '@/composables/navigation';
 import { usePrivacyMode } from '@/composables/privacy';
-import { interop } from '@/electron-interop';
+import { useInterop } from '@/electron-interop';
 import { useSessionStore } from '@/store/session';
+import { useSessionAuthStore } from '@/store/session/auth';
 
 const { t, tc } = useI18n();
 
+const confirmLogout = ref<boolean>(false);
+
 const KEY_REMEMBER_PASSWORD = 'rotki.remember_password';
 
-const store = useSessionStore();
-const { username } = storeToRefs(store);
-const confirmLogout = ref<boolean>(false);
-const router = useRouter();
-const route = useRoute();
+const { logout } = useSessionStore();
+const { username } = storeToRefs(useSessionAuthStore());
+const { isPackaged, clearPassword } = useInterop();
 const { privacyModeIcon, togglePrivacyMode } = usePrivacyMode();
 const { currentBreakpoint } = useTheme();
+const { navigateToUserLogin } = useAppNavigation();
 const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
 
 const savedRememberPassword = useLocalStorage(KEY_REMEMBER_PASSWORD, null);
 
 const logoutHandler = async () => {
-  if (interop.isPackaged && get(savedRememberPassword)) {
-    await interop.clearPassword();
+  if (isPackaged && get(savedRememberPassword)) {
+    await clearPassword();
   }
 
-  set(confirmLogout, false);
-  await store.logout();
-
-  if (get(route).path !== '/') {
-    await router.replace('/');
-  }
+  await logout();
+  await navigateToUserLogin();
 };
 
 const { darkModeEnabled } = useDarkMode();

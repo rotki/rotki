@@ -108,13 +108,13 @@ import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import { useInterop } from '@/electron-interop';
-import { useSessionStore } from '@/store/session';
+import { useSessionAuthStore } from '@/store/session/auth';
 import { usePremiumStore } from '@/store/session/premium';
 import { PremiumCredentialsPayload } from '@/store/session/types';
 import { useSettingsStore } from '@/store/settings';
 import { trimOnPaste } from '@/utils/event';
 
-const { username } = storeToRefs(useSessionStore());
+const { username } = storeToRefs(useSessionAuthStore());
 const { update } = useSettingsStore();
 const store = usePremiumStore();
 const { premium, premiumSync } = storeToRefs(store);

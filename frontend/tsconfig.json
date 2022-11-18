@@ -17,17 +17,9 @@
     "forceConsistentCasingInFileNames": true,
     "sourceMap": true,
     "isolatedModules": true,
-    "types": [
-      "vuetify",
-      "vue-i18n",
-      "vite/client"
-    ],
     "paths": {
       "@/*": [
         "app/src/*"
-      ],
-      "@rotki/common/*": [
-        "common/src/*"
       ]
     },
     "lib": [
@@ -41,9 +33,6 @@
     {
       "path": "app"
     },
-    {
-      "path": "common"
-    }
   ],
   "include": [
     ".eslintrc.js"

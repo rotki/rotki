@@ -1,5 +1,8 @@
 enum RouteNames {
   ROOT = 'ROOT',
+  USER = 'USER',
+  USER_LOGIN = 'USER_LOGIN',
+  USER_CREATE = 'USER_CREATE',
   DASHBOARD = 'DASHBOARD',
   ACCOUNTS_BALANCES = 'ACCOUNTS_BALANCES',
   ACCOUNTS_BALANCES_BLOCKCHAIN = 'ACCOUNTS_BALANCES_BLOCKCHAIN',
@@ -55,6 +58,9 @@ type AppRouteMap<T> = {
 export const Routes: AppRouteMap<string> = {
   ROOT: '/',
   DASHBOARD: '/dashboard',
+  USER: '/user',
+  USER_LOGIN: '/user/login',
+  USER_CREATE: '/user/create',
   ACCOUNTS_BALANCES: '/accounts-balances',
   ACCOUNTS_BALANCES_BLOCKCHAIN: '/accounts-balances/blockchain-balances',
   ACCOUNTS_BALANCES_EXCHANGE: '/accounts-balances/exchange-balances',
@@ -105,9 +111,6 @@ export const Routes: AppRouteMap<string> = {
 export const useAppRoutes = createSharedComposable(() => {
   const { tc } = useI18n();
   const appRoutes = computed(() => ({
-    ROOT: {
-      route: Routes.ROOT
-    },
     DASHBOARD: {
       route: Routes.DASHBOARD,
       icon: 'mdi-monitor-dashboard',

@@ -1,6 +1,13 @@
 {
   "extends": "../tsconfig.json",
-  "compilerOptions": {},
+  "compilerOptions": {
+    "types": [
+      "vuetify",
+      "vue-i18n",
+      "vite/client",
+      "vite-plugin-vue-layouts/client"
+    ]
+  },
   "include": [
     "src/**/*.ts",
     "src/**/*.tsx",

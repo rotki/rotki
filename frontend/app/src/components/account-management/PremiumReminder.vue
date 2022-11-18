@@ -1,5 +1,5 @@
 <template>
-  <v-card v-if="display" light max-width="500" class="mx-auto premium-reminder">
+  <v-card light max-width="500" class="mx-auto premium-reminder">
     <v-card-title class="premium-reminder__title">
       {{ t('premium_reminder.title') }}
     </v-card-title>
@@ -18,7 +18,7 @@
         class="premium-reminder__buttons__cancel"
         depressed
         outlined
-        @click="loginComplete"
+        @click="navigateToDashboard()"
       >
         {{ t('common.actions.close') }}
       </v-btn>
@@ -26,9 +26,9 @@
         color="primary"
         depressed
         target="_blank"
-        :href="interop.isPackaged ? undefined : interop.premiumURL"
+        :href="isPackaged ? undefined : premiumURL"
         class="premium-reminder__buttons__confirm"
-        @click="upgrade"
+        @click="navigateToPremium()"
       >
         {{ t('common.actions.upgrade') }}
       </v-btn>
@@ -36,28 +36,18 @@
   </v-card>
 </template>
 <script setup lang="ts">
-import { interop } from '@/electron-interop';
+import { useAppNavigation } from '@/composables/navigation';
+import { useInterop } from '@/electron-interop';
 
-const props = defineProps({
-  display: { required: true, type: Boolean }
-});
+const { navigateToPremium, premiumURL, isPackaged } = useInterop();
+const { navigateToDashboard } = useAppNavigation();
 
-const emit = defineEmits(['login-complete', 'upgrade']);
-const { display } = toRefs(props);
-
-const loginComplete = () => emit('login-complete');
-const upgrade = () => emit('upgrade');
-
-const keyHandler = (event: KeyboardEvent) => {
-  if (!display.value) {
-    return;
-  }
-
+const keyHandler = async (event: KeyboardEvent) => {
   const keys = ['Escape', 'Esc'];
   if (!keys.includes(event.key)) {
     return;
   }
-  loginComplete();
+  await navigateToDashboard();
 };
 
 onBeforeMount(() => {

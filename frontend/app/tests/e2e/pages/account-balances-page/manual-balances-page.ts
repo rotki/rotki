@@ -106,12 +106,12 @@ export class ManualBalancesPage extends AccountBalancesPage {
 
   getLocationBalances() {
     const balanceLocations = [
-      { location: 'blockchain', renderedValue: Zero },
-      { location: 'banks', renderedValue: Zero },
-      { location: 'external', renderedValue: Zero },
-      { location: 'commodities', renderedValue: Zero },
-      { location: 'real estate', renderedValue: Zero },
-      { location: 'equities', renderedValue: Zero }
+      { location: 'blockchain', value: Zero },
+      { location: 'banks', value: Zero },
+      { location: 'external', value: Zero },
+      { location: 'commodities', value: Zero },
+      { location: 'real estate', value: Zero },
+      { location: 'equities', value: Zero }
     ];
 
     balanceLocations.forEach(balanceLocation => {
@@ -120,10 +120,9 @@ export class ManualBalancesPage extends AccountBalancesPage {
         if ($body.find(rowClass).length > 0) {
           cy.get(`${rowClass} td:nth-child(6) [data-cy="display-amount"]`).each(
             $amount => {
-              balanceLocation.renderedValue =
-                balanceLocation.renderedValue.plus(
-                  bigNumberify(this.getSanitizedAmountString($amount.text()))
-                );
+              balanceLocation.value = balanceLocation.value.plus(
+                bigNumberify(this.getSanitizedAmountString($amount.text()))
+              );
             }
           );
         }

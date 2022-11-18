@@ -1,14 +1,19 @@
+import { useMonitorStore } from '@/store/monitor';
 import { resetState } from '@/store/plugins';
-import { useSessionStore } from '@/store/session';
+import { useSessionAuthStore } from '@/store/session/auth';
 
 export const useSessionStateCleaner = () => {
-  const { logged } = storeToRefs(useSessionStore());
+  const { logged } = storeToRefs(useSessionAuthStore());
+  const { start, stop } = useMonitorStore();
 
-  watch(logged, logged => {
+  watch(logged, (logged, wasLogged) => {
     if (logged) {
+      if (!wasLogged) {
+        start();
+      }
       return;
     }
-
+    stop();
     resetState();
   });
 };

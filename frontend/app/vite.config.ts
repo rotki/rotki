@@ -10,12 +10,14 @@ import { checker } from 'vite-plugin-checker';
 // @ts-ignore
 import istanbul from 'vite-plugin-istanbul';
 import { VitePWA } from 'vite-plugin-pwa';
+import Layouts from 'vite-plugin-vue-layouts';
 
 const PACKAGE_ROOT = __dirname;
 const envPath = process.env.VITE_PUBLIC_PATH;
 const publicPath = envPath ? envPath : '/';
 const isDevelopment = process.env.NODE_ENV === 'development';
 const isTest = !!process.env.VITE_TEST;
+const hmrEnabled = isDevelopment && !(process.env.CI && isTest);
 
 if (isTest) {
   console.log('Running in test mode. Enabling Coverage');
@@ -23,6 +25,10 @@ if (isTest) {
 
 if (envPath) {
   console.log(`A custom publicPath has been specified, using ${envPath}`);
+}
+
+if (!hmrEnabled) {
+  console.info('HMR is disabled');
 }
 
 export default defineConfig({
@@ -36,6 +42,9 @@ export default defineConfig({
           }
         : {})
     }
+  },
+  optimizeDeps: {
+    include: ['cleave.js', 'lodash/orderBy']
   },
   // @ts-ignore
   test: {
@@ -99,6 +108,10 @@ export default defineConfig({
         }
       ]
     }),
+    Layouts({
+      layoutsDirs: ['src/layouts'],
+      defaultLayout: 'default'
+    }),
     ...(isTest
       ? [
           istanbul({
@@ -116,7 +129,7 @@ export default defineConfig({
   ],
   server: {
     port: 8080,
-    hmr: isDevelopment && !process.env.CI
+    hmr: hmrEnabled
   },
   build: {
     sourcemap: isDevelopment || isTest,

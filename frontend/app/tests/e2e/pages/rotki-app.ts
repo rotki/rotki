@@ -96,7 +96,7 @@ export class RotkiApp {
   }
 
   drawerIsVisible(isVisible: boolean) {
-    cy.get('.app__navigation-drawer').should(
+    cy.get('.app__navigation-drawer', { timeout: 120000 }).should(
       isVisible ? 'be.visible' : 'not.be.visible'
     );
   }
