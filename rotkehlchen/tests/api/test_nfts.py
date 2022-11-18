@@ -232,7 +232,7 @@ def test_nft_balances_and_prices(rotkehlchen_api_server):
         'offset': 2,
     })
     result = assert_proper_response_with_result(response)
-    assert result['entries_found'] == 2
+    assert result['entries_found'] == 4
     assert result['entries_total'] == 4
 
     # ignore an nft
@@ -251,6 +251,7 @@ def test_nft_balances_and_prices(rotkehlchen_api_server):
     ), json={'async_query': False, 'ignore_cache': False, 'ignored_assets_handling': 'none'})
     result = assert_proper_response_with_result(response)
     assert result['entries_found'] == 4
+    assert result['entries_total'] == 4
     assert result['entries'][TEST_ACC4][0]['id'] == NFT_ID_FOR_TEST_ACC4
     assert result['entries'][TEST_ACC5][0]['id'] == NFT_ID_FOR_TEST_ACC5
     assert result['entries'][TEST_ACC6][0]['id'] == NFT_ID_FOR_TEST_ACC6_1
@@ -261,6 +262,7 @@ def test_nft_balances_and_prices(rotkehlchen_api_server):
     ), json={'async_query': False, 'ignore_cache': False, 'ignored_assets_handling': 'exclude'})
     result = assert_proper_response_with_result(response)
     assert result['entries_found'] == 2
+    assert result['entries_total'] == 4
     expected_nfts_without_ignored = {NFT_ID_FOR_TEST_ACC5, NFT_ID_FOR_TEST_ACC6_1}
     assert {entry[0]['id'] for entry in result['entries'].values()} == expected_nfts_without_ignored  # noqa: E501
     response = requests.get(api_url_for(
@@ -269,6 +271,7 @@ def test_nft_balances_and_prices(rotkehlchen_api_server):
     ), json={'async_query': False, 'ignore_cache': False, 'ignored_assets_handling': 'show only'})
     result = assert_proper_response_with_result(response)
     assert result['entries_found'] == 2
+    assert result['entries_total'] == 4
     assert result['entries'][TEST_ACC4][0]['id'] == NFT_ID_FOR_TEST_ACC4
     assert result['entries'][TEST_ACC6][0]['id'] == NFT_ID_FOR_TEST_ACC6_2
 
@@ -293,19 +296,14 @@ def test_nft_balances_and_prices(rotkehlchen_api_server):
     # check that getting information from the database works as expected
     response = requests.post(api_url_for(
         rotkehlchen_api_server,
-        'nftsresource',
+        'assetsmappingresource',
     ), json={
-        'nft_id': NFT_ID_FOR_TEST_ACC4,
+        'identifiers': [NFT_ID_FOR_TEST_ACC4],
     })
-    result = assert_proper_response_with_result(response)
-    result.pop('usd_price')
-    result.pop('price_in_asset')
+    result = assert_proper_response_with_result(response)[NFT_ID_FOR_TEST_ACC4]
     assert result == {
-        'id': '_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_26612040215479394739615825115912800930061094786769410446114278812336794170041',  # noqa: E501
         'name': 'yabir.eth',
-        'price_asset': 'ETH',
-        'manually_input': False,
-        'is_lp': False,
+        'asset_type': 'nft',
         'image_url': 'https://openseauserdata.com/files/3f7c0c7d1ba51e61fe05ef53875f9f7e.svg',
         'collection_name': 'ENS: Ethereum Name Service',
     }

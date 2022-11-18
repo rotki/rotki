@@ -9,7 +9,8 @@ from rotkehlchen.accounting.pnl import PNL, PnlTotals
 from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
-from rotkehlchen.db.reports import DBAccountingReports, ReportDataFilterQuery
+from rotkehlchen.db.filtering import ReportDataFilterQuery
+from rotkehlchen.db.reports import DBAccountingReports
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import AssetAmount, Fee, Location, Price, Timestamp, TradeType

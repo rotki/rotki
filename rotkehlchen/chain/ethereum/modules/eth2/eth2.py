@@ -8,7 +8,6 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.eth2 import ETH2_DEPOSITS_PREFIX, DBEth2
-from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery
 from rotkehlchen.errors.api import PremiumPermissionError
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.fval import FVal
@@ -41,6 +40,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery
     from rotkehlchen.externalapis.beaconchain import BeaconChain
 
 logger = logging.getLogger(__name__)
@@ -368,7 +368,7 @@ class Eth2(EthereumModule):
     def get_validator_daily_stats(
             self,
             cursor: 'DBCursor',
-            filter_query: Eth2DailyStatsFilterQuery,
+            filter_query: 'Eth2DailyStatsFilterQuery',
             only_cache: bool,
             msg_aggregator: MessagesAggregator,
     ) -> Tuple[List[ValidatorDailyStats], int, FVal, FVal]:

@@ -9,7 +9,6 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.modules.uniswap.v3.types import AddressToUniswapV3LPBalances
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.db.filtering import NFTFilterQuery
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.externalapis.opensea import NFT, Opensea
@@ -27,6 +26,7 @@ from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.filtering import NFTFilterQuery
     from rotkehlchen.premium.premium import Premium
 
 logger = logging.getLogger(__name__)
@@ -179,7 +179,7 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):  # lgtm [py/miss
             entries_limit=FREE_NFT_LIMIT,
         )
 
-    def get_db_nft_balances(self, filter_query: NFTFilterQuery) -> Dict[str, Any]:
+    def get_db_nft_balances(self, filter_query: 'NFTFilterQuery') -> Dict[str, Any]:
         """Filters (with `filter_query`) and returns cached nft balances in the nfts table"""
         entries = defaultdict(list)
         query, bindings = filter_query.prepare()
@@ -198,8 +198,8 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):  # lgtm [py/miss
             entries_found = 0
             for db_entry in cursor:
                 _, _, usd_price = _deserialize_nft_price(
-                    last_price=db_entry[2],
-                    last_price_asset=db_entry[3],
+                    last_price=db_entry[0],
+                    last_price_asset=db_entry[1],
                 )
                 total_usd_value += usd_price
                 entries_found += 1
