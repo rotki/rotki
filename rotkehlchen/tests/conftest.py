@@ -135,6 +135,6 @@ def requires_env(allowed_envs: List[TestEnvironment]):
         env = TestEnvironment.STANDARD
 
     return pytest.mark.skipif(
-        env not in allowed_envs,
+        'CI' in os.environ and env not in allowed_envs,
         reason=f'Not suitable envrionment {env} for current test',
     )
