@@ -39,25 +39,6 @@ export const LiquityStaking = z.record(AssetBalance)
 
 export type LiquityStaking = z.infer<typeof LiquityStaking>
 
-const LiquityStakingEvent = z.object({
-  kind: z.literal('stake'),
-  tx: z.string(),
-  address: z.string(),
-  timestamp: z.number(),
-  sequenceNumber: z.string(),
-  stakeAfter: AssetBalance,
-  stakeChange: AssetBalance,
-  issuanceGain: AssetBalance,
-  redemptionGain: AssetBalance,
-  stakeOperation: z.string()
-})
-
-export type LiquityStakingEvent = z.infer<typeof LiquityStakingEvent>
-
-export const LiquityStakingEvents = z.record(z.array(LiquityStakingEvent))
-
-export type LiquityStakingEvents = z.infer<typeof LiquityStakingEvents>
-
 export const LiquityPoolDetail = z.object({
   gains: AssetBalance,
   rewards: AssetBalance,

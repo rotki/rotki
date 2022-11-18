@@ -20,7 +20,7 @@
       <v-col cols="auto" class="pl-2">
         <refresh-button
           :tooltip="tc('liquity_staking_details.refresh_tooltip')"
-          :loading="eventsLoading || loading"
+          :loading="loading"
           @refresh="refresh"
         />
       </v-col>
@@ -36,10 +36,13 @@
       </v-col>
     </v-row>
 
-    <liquity-stake-events
-      :events="stakingEventsList"
-      :loading="eventsLoading"
-      class="mt-8"
+    <transaction-content
+      :section-title="tc('liquity_staking_events.title')"
+      :protocol="TransactionEventProtocol.LIQUITY"
+      :event-type="HistoryEventType.STAKING"
+      :use-external-account-filter="true"
+      :external-account-filter="selectedAccount"
+      @fetch="fetchTransactions"
     />
   </div>
 </template>
@@ -51,29 +54,30 @@ import { Blockchain } from '@rotki/common/lib/blockchain';
 import {
   LiquityPoolDetail,
   LiquityPoolDetails,
-  LiquityStaking,
-  LiquityStakingEvent,
-  LiquityStakingEvents
+  LiquityStaking
 } from '@rotki/common/lib/liquity';
 import { ComputedRef } from 'vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
+import TransactionContent from '@/components/history/transactions/TransactionContent.vue';
 import LiquityPools from '@/components/staking/liquity/LiquityPools.vue';
 import LiquityStake from '@/components/staking/liquity/LiquityStake.vue';
 import { isSectionLoading } from '@/composables/common';
-import { LiquityStakeEvents } from '@/premium/premium';
 import { useLiquityStore } from '@/store/defi/liquity';
+import { useTransactions } from '@/store/history/transactions';
 import { Section } from '@/types/status';
+import {
+  HistoryEventType,
+  TransactionEventProtocol
+} from '@/types/transaction';
 import { balanceSum } from '@/utils/calculation';
 import { uniqueStrings } from '@/utils/data';
 
 const selectedAccount = ref<GeneralAccount | null>(null);
-
 const liquityStore = useLiquityStore();
-const { staking, stakingEvents, stakingPools } = toRefs(liquityStore);
-const { fetchStaking, fetchStakingEvents, fetchPools } = liquityStore;
+const { staking, stakingPools } = toRefs(liquityStore);
+const { fetchStaking, fetchPools } = liquityStore;
 
 const loading = isSectionLoading(Section.DEFI_LIQUITY_STAKING);
-const eventsLoading = isSectionLoading(Section.DEFI_LIQUITY_STAKING_EVENTS);
 const chains = [Blockchain.ETH];
 
 const { tc } = useI18n();
@@ -102,19 +106,6 @@ const stakingList: ComputedRef<AssetBalance[]> = computed(() => {
     }
   }
   return Object.values(staked);
-});
-
-const stakingEventsList: ComputedRef<LiquityStakingEvent[]> = computed(() => {
-  const allEvents = get(stakingEvents) as LiquityStakingEvents;
-  const events: LiquityStakingEvent[] = [];
-  for (const address in allEvents) {
-    const account = get(selectedAccount);
-    if (account && account.address !== address) {
-      continue;
-    }
-    events.push(...allEvents[address]);
-  }
-  return events;
 });
 
 const stakingPoolsList: ComputedRef<LiquityPoolDetail | null> = computed(() => {
@@ -150,14 +141,14 @@ const stakingPoolsList: ComputedRef<LiquityPoolDetail | null> = computed(() => {
 const availableAddresses = computed(() => {
   return [
     ...Object.keys(get(staking)),
-    ...Object.keys(get(stakingEvents)),
     ...Object.keys(get(stakingPools))
   ].filter(uniqueStrings);
 });
 
 const refresh = async () => {
   await fetchStaking(true);
-  await fetchStakingEvents(true);
   await fetchPools(true);
 };
+
+const { fetchTransactions } = useTransactions();
 </script>

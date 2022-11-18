@@ -22,10 +22,13 @@
         {{ symbol }}
       </div>
     </div>
+    <transaction-event-extra-data v-if="staking" :staking="staking" />
   </div>
 </template>
 <script setup lang="ts">
-import { PropType } from 'vue';
+import { AssetBalance } from '@rotki/common';
+import { ComputedRef, PropType } from 'vue';
+import TransactionEventExtraData from '@/components/history/transactions/TransactionEventExtraData.vue';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { EthTransactionEventEntry } from '@/store/history/types';
 import { TransactionEventType } from '@/types/transaction';
@@ -47,4 +50,26 @@ const showBalance = computed<boolean>(() => {
 
 const eventAsset = computed(() => get(event).asset);
 const symbol = assetSymbol(eventAsset);
+
+const staking: ComputedRef<AssetBalance | null> = computed(() => {
+  const stakingProtocols = ['liquity'];
+  const { counterparty: protocol, extraData, balance, asset } = get(event);
+
+  if (!(protocol && stakingProtocols.includes(protocol))) {
+    return null;
+  }
+
+  const stakedAmount = extraData?.stakedAmount;
+  if (!stakedAmount) {
+    return null;
+  }
+  const { usdValue, amount } = balance;
+  const usdPrice = usdValue.div(amount);
+
+  return {
+    asset,
+    usdValue: stakedAmount.multipliedBy(usdPrice),
+    amount: stakedAmount
+  };
+});
 </script>

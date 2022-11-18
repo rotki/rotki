@@ -59,24 +59,25 @@
       :loading="refreshing"
       :selected-addresses="selectedAddresses"
     />
-    <compound-lending-details
-      v-if="premium && isCompound"
-      class="mt-8"
-      :addresses="selectedAddresses"
-    />
-    <yearn-vaults-profit-details
-      v-if="
-        premium &&
-        (isYearnVaults || isYearnVaultsV2 || selectedProtocols.length === 0)
-      "
-      class="mt-8"
-      :profit="yearnProfit"
-    />
-    <aave-earned-details
-      v-if="premium && (isAave || selectedProtocols.length === 0)"
-      class="mt-8"
-      :profit="totalEarnedInAave"
-    />
+    <template v-if="premium">
+      <compound-lending-details
+        v-if="isCompound"
+        class="mt-8"
+        :addresses="selectedAddresses"
+      />
+      <yearn-vaults-profit-details
+        v-if="
+          isYearnVaults || isYearnVaultsV2 || selectedProtocols.length === 0
+        "
+        class="mt-8"
+        :profit="yearnProfit"
+      />
+      <aave-earned-details
+        v-if="isAave || selectedProtocols.length === 0"
+        class="mt-8"
+        :profit="totalEarnedInAave"
+      />
+    </template>
     <v-row class="loans__history mt-8" no-gutters>
       <v-col cols="12">
         <premium-card v-if="!premium" :title="tc('lending.history')" />

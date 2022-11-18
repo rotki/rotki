@@ -35,7 +35,7 @@ import { Section } from '@/types/status';
 
 const modules = [Module.LIQUITY];
 const { isModuleEnabled } = useModules();
-const { fetchStaking, fetchStakingEvents, fetchPools } = useLiquityStore();
+const { fetchStaking, fetchPools } = useLiquityStore();
 const { shouldShowLoadingScreen } = useSectionLoading();
 const moduleEnabled = isModuleEnabled(modules[0]);
 const loading = shouldShowLoadingScreen(Section.DEFI_LIQUITY_STAKING);
@@ -43,7 +43,6 @@ const premium = usePremium();
 
 const load = async () => {
   await fetchStaking();
-  await fetchStakingEvents();
   await fetchPools();
 };
 

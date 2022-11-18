@@ -7,7 +7,7 @@
           :tooltip="tc('transactions.refresh_tooltip')"
           @refresh="fetch(true)"
         />
-        {{ tc('transactions.title') }}
+        {{ usedTitle }}
       </template>
       <template #actions>
         <v-row>
@@ -34,7 +34,7 @@
                   </v-list>
                 </v-menu>
               </v-col>
-              <v-col>
+              <v-col v-if="!useExternalAccountFilter">
                 <div>
                   <blockchain-account-selector
                     v-model="account"
@@ -227,7 +227,7 @@
 
 <script setup lang="ts">
 import { GeneralAccount } from '@rotki/common/lib/account';
-import { Ref } from 'vue';
+import { ComputedRef, PropType, Ref } from 'vue';
 import { DataTableHeader } from 'vuetify';
 import TransactionEventForm from '@/components/history/TransactionEventForm.vue';
 import { isSectionLoading } from '@/composables/common';
@@ -240,6 +240,7 @@ import {
   IgnoreActionType
 } from '@/store/history/types';
 import { useTasks } from '@/store/tasks';
+import { Writeable } from '@/types';
 import { Collection } from '@/types/collection';
 import {
   EthTransaction,
@@ -248,6 +249,10 @@ import {
 } from '@/types/history/tx';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
+import {
+  HistoryEventType,
+  TransactionEventProtocol
+} from '@/types/transaction';
 import { getCollectionData, setupEntryLimit } from '@/utils/collection';
 
 interface PaginationOptions {
@@ -261,10 +266,49 @@ const Fragment = defineAsyncComponent(
   () => import('@/components/helper/Fragment')
 );
 
-const emit = defineEmits(['fetch']);
-const fetch = (refresh = false) => emit('fetch', refresh);
+const props = defineProps({
+  protocol: {
+    required: false,
+    type: String as PropType<TransactionEventProtocol>,
+    default: ''
+  },
+  eventType: {
+    required: false,
+    type: String as PropType<HistoryEventType>,
+    default: ''
+  },
+  externalAccountFilter: {
+    required: false,
+    type: Object as PropType<GeneralAccount | null>,
+    default: null
+  },
+  useExternalAccountFilter: {
+    required: false,
+    type: Boolean,
+    default: false
+  },
+  sectionTitle: {
+    required: false,
+    type: String,
+    default: ''
+  }
+});
 
 const { tc } = useI18n();
+const {
+  protocol,
+  useExternalAccountFilter,
+  externalAccountFilter,
+  sectionTitle,
+  eventType
+} = toRefs(props);
+
+const usedTitle: ComputedRef<string> = computed(() => {
+  return get(sectionTitle) || tc('transactions.title');
+});
+
+const emit = defineEmits<{ (e: 'fetch', refresh: boolean): void }>();
+const fetch = (refresh = false) => emit('fetch', refresh);
 
 const tableHeaders = computed<DataTableHeader[]>(() => [
   {
@@ -350,7 +394,9 @@ const getId = (item: EthTransactionEntry) => item.txHash;
 
 const selected: Ref<EthTransactionEntry[]> = ref([]);
 
-const { filters, matchers, updateFilter } = useTransactionFilter();
+const { filters, matchers, updateFilter } = useTransactionFilter(
+  !!get(protocol)
+);
 
 const { ignore } = setupIgnore(
   IgnoreActionType.ETH_TRANSACTIONS,
@@ -457,11 +503,18 @@ const saveData = async (
 const options: Ref<PaginationOptions | null> = ref(null);
 const account: Ref<GeneralAccount | null> = ref(null);
 
+const usedAccount: ComputedRef<GeneralAccount | null> = computed(() => {
+  if (get(useExternalAccountFilter)) {
+    return get(externalAccountFilter);
+  }
+  return get(account);
+});
+
 const updatePayloadHandler = async () => {
   let paginationOptions = {};
   const optionsVal = get(options);
   if (optionsVal) {
-    const { itemsPerPage, page, sortBy, sortDesc } = get(options)!;
+    const { itemsPerPage, page, sortBy, sortDesc } = optionsVal!;
     const offset = (page - 1) * itemsPerPage;
 
     paginationOptions = {
@@ -473,17 +526,24 @@ const updatePayloadHandler = async () => {
   }
 
   let filterAddress = {};
-  if (get(account)) {
+  const usedAccountVal = get(usedAccount);
+  if (usedAccountVal) {
     filterAddress = {
-      address: get(account)!.address
+      address: usedAccountVal!.address
     };
   }
 
-  const payload: Partial<TransactionRequestPayload> = {
+  const payload: Writeable<Partial<TransactionRequestPayload>> = {
     ...filterAddress,
     ...(get(filters) as Partial<TransactionRequestPayload>),
     ...paginationOptions
   };
+
+  const protocolVal = get(protocol);
+  if (protocolVal) payload.protocols = [protocolVal];
+
+  const eventTypeVal = get(eventType);
+  if (eventTypeVal) payload.eventTypes = [eventTypeVal];
 
   await updateTransactionsPayload(payload);
 };
@@ -513,7 +573,7 @@ watch(filters, async (filter, oldValue) => {
 
   await updatePaginationHandler(newOptions);
 });
-watch(account, async () => {
+watch(usedAccount, async () => {
   let newOptions = null;
   if (get(options)) {
     newOptions = {
@@ -527,6 +587,20 @@ watch(account, async () => {
 
 const loading = isSectionLoading(Section.TX);
 const eventTaskLoading = isTaskRunning(TaskType.TX_EVENTS);
+
+const { pause, resume, isActive } = useIntervalFn(() => fetch(), 10000);
+
+watch([loading, eventTaskLoading], ([sectionLoading, eventTaskLoading]) => {
+  if ((sectionLoading || eventTaskLoading) && !get(isActive)) {
+    resume();
+  } else if (!sectionLoading && !eventTaskLoading && get(isActive)) {
+    pause();
+  }
+});
+
+onUnmounted(() => {
+  pause();
+});
 </script>
 <style module lang="scss">
 .table {

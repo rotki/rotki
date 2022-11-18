@@ -351,6 +351,10 @@ export const transactionEventTypeMapping: Record<
   },
   [HistoryEventType.RENEW]: {
     [HistoryEventSubType.NFT]: TransactionEventType.RENEW
+  },
+  [HistoryEventType.STAKING]: {
+    [HistoryEventSubType.DEPOSIT_ASSET]: TransactionEventType.DEPOSIT,
+    [HistoryEventSubType.REWARD]: TransactionEventType.RECEIVE
   }
 };
 
