@@ -1120,7 +1120,7 @@ Get current price and custom price for NFT assets
 
       {"lps_handling": "all_nfts"}
 
-    :reqjson string[optional] lps_handling: A flag to specify how to handle LP NFTs. Possible values are `'all_nfts'` (default), `'only_lps'` and `'exclude_lps'`. You can use 'only_lps' if you want to only include LPs NFTs in the result or you can use 'exclude_lps' if you want the NFTs not marked as LP positions.
+    :reqjson string[optional] lps_handling: A flag to specify how to handle LP NFTs. Possible values are `'all_nfts'` (default), `'only_lps'` and `'exclude_lps'`. You can use 'only_lps' if you want to only include LPs NFTs in the result or you can use 'exclude_lps' if you want NFTs not marked as LP positions.
 
 
    **Example Response**:
@@ -10923,7 +10923,7 @@ Show NFT Balances
    :reqjson int offset: This signifies the offset from which to start the return of records per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
    :reqjson list[string][optional] order_by_attributes: This is the list of attributes of the nft by which to order the results. By default we sort using ``name``.
    :reqjson list[bool][optional] ascending: Should the order be ascending? This is the default. If set to false, it will be on descending order.
-   :reqjson string[optional] lps_handling: A flag to specify how to handle LP NFTs. Possible values are `'all_nfts'` (default), `'only_lps'` and `'exclude_lps'`. You can use 'only_lps' if you want to only include LPs NFTs in the result or you can use 'exclude_lps' if you want the NFTs not marked as LP positions.
+   :reqjson string[optional] lps_handling: A flag to specify how to handle LP NFTs. Possible values are `'all_nfts'` (default), `'only_lps'` and `'exclude_lps'`. You can use 'only_lps' if you want to only include LPs NFTs in the result or you can use 'exclude_lps' if you want NFTs not marked as LP positions.
 
 
    **Example Response**:

@@ -44,6 +44,7 @@ from rotkehlchen.chain.bitcoin.hdkey import HDKey, XpubType
 from rotkehlchen.chain.bitcoin.utils import is_valid_btc_address, scriptpubkey_to_btc_address
 from rotkehlchen.chain.constants import NON_BITCOIN_CHAINS
 from rotkehlchen.chain.ethereum.manager import EthereumManager
+from rotkehlchen.chain.ethereum.modules.nfts import NftLpHandling
 from rotkehlchen.chain.ethereum.types import ETHERSCAN_NODE_NAME
 from rotkehlchen.chain.substrate.types import (
     KusamaAddress,
@@ -105,7 +106,7 @@ from rotkehlchen.types import (
     UserNote,
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
-from rotkehlchen.utils.misc import NftLpHandling, create_order_by_rules_list, ts_now
+from rotkehlchen.utils.misc import create_order_by_rules_list, ts_now
 from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 
 from .fields import (
@@ -2708,7 +2709,15 @@ class EditCustomAssetSchema(BaseCustomAssetSchema):
         return {'custom_asset': custom_asset}
 
 
+class NFTLpFilterSchema(Schema):
+    lps_handling = SerializableEnumField(
+        enum_class=NftLpHandling,
+        load_default=NftLpHandling.ALL_NFTS,
+    )
+
+
 class NFTFilterQuerySchema(
+        NFTLpFilterSchema,
         AsyncIgnoreCacheQueryArgumentSchema,
         DBPaginationSchema,
         DBOrderBySchema,
@@ -2717,10 +2726,6 @@ class NFTFilterQuerySchema(
     name = fields.String(load_default=None)
     collection_name = fields.String(load_default=None)
     ignored_assets_handling = SerializableEnumField(enum_class=IgnoredAssetsHandling, load_default=IgnoredAssetsHandling.NONE)  # noqa: E501
-    lps_handling = SerializableEnumField(
-        enum_class=NftLpHandling,
-        load_default=NftLpHandling.ALL_NFTS,
-    )
 
     def __init__(self, db: 'DBHandler') -> None:
         super().__init__()
@@ -2763,13 +2768,6 @@ class NFTFilterQuerySchema(
             'ignore_cache': data['ignore_cache'],
             'filter_query': filter_query,
         }
-
-
-class NFTFilterQuerySchema2(Schema):
-    lps_handling = SerializableEnumField(
-        enum_class=NftLpHandling,
-        load_default=NftLpHandling.ALL_NFTS,
-    )
 
 
 class SingleNftSchema(Schema):

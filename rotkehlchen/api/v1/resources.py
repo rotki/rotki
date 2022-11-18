@@ -102,7 +102,7 @@ from rotkehlchen.api.v1.schemas import (
     NamedOracleCacheSchema,
     NewUserSchema,
     NFTFilterQuerySchema,
-    NFTFilterQuerySchema2,
+    NFTLpFilterSchema,
     OptionalEthereumAddressSchema,
     QueriedAddressesSchema,
     RequiredEthereumAddressSchema,
@@ -153,6 +153,7 @@ from rotkehlchen.assets.asset import (
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.xpub import XpubData
+from rotkehlchen.chain.ethereum.modules.nfts import NftLpHandling
 from rotkehlchen.chain.ethereum.types import NodeName, WeightedNode
 from rotkehlchen.data_import.manager import DataImportSource
 from rotkehlchen.db.filtering import (
@@ -197,7 +198,6 @@ from rotkehlchen.types import (
     TradeType,
     UserNote,
 )
-from rotkehlchen.utils.misc import NftLpHandling
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.bitcoin.hdkey import HDKey
@@ -2460,7 +2460,7 @@ class NFTSBalanceResource(BaseMethodView):
 
 
 class NFTSPricesResource(BaseMethodView):
-    post_schema = NFTFilterQuerySchema2
+    post_schema = NFTLpFilterSchema
 
     @require_loggedin_user()
     @use_kwargs(post_schema, location='json_and_query')

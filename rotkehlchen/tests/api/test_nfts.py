@@ -10,7 +10,7 @@ from flaky import flaky
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.interfaces.ammswap.types import LiquidityPoolAsset
-from rotkehlchen.chain.ethereum.modules.nfts import FREE_NFT_LIMIT
+from rotkehlchen.chain.ethereum.modules.nfts import FREE_NFT_LIMIT, NftLpHandling
 from rotkehlchen.chain.ethereum.modules.uniswap.v3.types import NFTLiquidityPool
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.constants.misc import ZERO
@@ -25,7 +25,6 @@ from rotkehlchen.tests.utils.api import (
 )
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Price
-from rotkehlchen.utils.misc import NftLpHandling
 
 TEST_ACC1 = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'  # lefteris.eth
 TEST_ACC2 = '0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF'
