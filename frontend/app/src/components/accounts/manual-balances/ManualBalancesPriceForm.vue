@@ -22,7 +22,7 @@
       </v-col>
     </v-row>
 
-    <v-row v-if="assetMethod === 0 && fetchedPrice" class="mt-n10 mb-0">
+    <v-row v-if="fetchedPrice" class="mt-n10 mb-0">
       <v-col cols="auto">
         <v-checkbox
           v-model="isCustomPrice"
@@ -35,25 +35,16 @@
 </template>
 
 <script setup lang="ts">
-import { PropType } from 'vue';
 import { api } from '@/services/rotkehlchen-api';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { CURRENCY_USD } from '@/types/currencies';
 
-const props = defineProps({
+defineProps({
   pending: {
     required: true,
     type: Boolean
-  },
-  assetMethod: {
-    required: false,
-    type: Number as PropType<number | null>,
-    default: 0
   }
 });
-
-const { assetMethod } = toRefs(props);
 
 const price = ref<string>('');
 const priceAsset = ref<string>('');
@@ -129,18 +120,6 @@ watch(isCustomPrice, isCustomPrice => {
   } else {
     set(price, get(fetchedPrice));
     set(priceAsset, get(currencySymbol));
-  }
-});
-
-watch(assetMethod, assetMethod => {
-  if (assetMethod === 1) {
-    set(price, '');
-    set(priceAsset, '');
-    set(isCustomPrice, true);
-  } else if (get(fetchedPrice)) {
-    set(price, get(fetchedPrice));
-    set(priceAsset, CURRENCY_USD);
-    set(isCustomPrice, false);
   }
 });
 

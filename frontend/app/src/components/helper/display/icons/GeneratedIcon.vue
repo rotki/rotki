@@ -1,5 +1,7 @@
 <template>
-  <v-icon v-if="customAsset" :size="size"> mdi-pencil-circle-outline </v-icon>
+  <v-icon v-if="customAsset" :size="size" color="grey">
+    mdi-pencil-circle-outline
+  </v-icon>
   <span
     v-else
     :style="wrapperStyle"

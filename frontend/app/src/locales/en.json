@@ -2768,7 +2768,6 @@
       "input_manual_price": "Add and use manual price",
       "label": "Label",
       "price_asset": "Asset Price",
-      "select_available_asset": "Select available assets",
       "tags": "Tags"
     },
     "type": {

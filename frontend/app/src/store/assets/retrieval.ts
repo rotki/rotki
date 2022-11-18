@@ -1,6 +1,7 @@
 import { AssetInfo } from '@rotki/common/lib/data';
 import { MaybeRef } from '@vueuse/core';
 import { ComputedRef } from 'vue';
+import { CUSTOM_ASSET } from '@/services/assets/consts';
 import { useAssetInfoApi } from '@/services/assets/info';
 import { useAssetCacheStore } from '@/store/assets/asset-cache';
 import { ERC20Token } from '@/store/balances/types';
@@ -64,10 +65,14 @@ export const useAssetInfoRetrieval = defineStore(
 
         const data = get(retrieve(key));
 
-        if (data && data.isCustomAsset) {
+        const isCustomAsset =
+          data?.isCustomAsset || data?.assetType === CUSTOM_ASSET;
+
+        if (isCustomAsset) {
           return {
             ...data,
-            symbol: data.name
+            symbol: data.name,
+            isCustomAsset
           };
         }
 
@@ -76,6 +81,7 @@ export const useAssetInfoRetrieval = defineStore(
 
         return {
           ...data,
+          isCustomAsset,
           name,
           symbol
         };

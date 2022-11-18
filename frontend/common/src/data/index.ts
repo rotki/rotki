@@ -68,8 +68,16 @@ export const AssetInfo = z.object({
   name: z.string().nullish(),
   symbol: z.string().nullish(),
   evmChain: EvmChainEnum.nullish(),
+  assetType: z.string().nullish(),
   isCustomAsset: z.boolean().nullish(),
   customAssetType: z.string().nullish()
+});
+
+export const AssetInfoWithTransformer = AssetInfo.transform((data) => {
+  return {
+    ...data,
+    isCustomAsset: data.isCustomAsset || data.assetType === 'custom asset'
+  }
 });
 
 export type AssetInfo = z.infer<typeof AssetInfo>;

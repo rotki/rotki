@@ -1,4 +1,8 @@
-import { SupportedAsset, AssetInfo } from '@rotki/common/lib/data';
+import {
+  SupportedAsset,
+  AssetInfo,
+  AssetInfoWithTransformer
+} from '@rotki/common/lib/data';
 import { z } from 'zod';
 import { getCollectionResponseType } from '@/types/collection';
 import { ApiPagination, TablePagination } from '@/types/pagination';
@@ -36,7 +40,12 @@ export const AssetInfoWithId = AssetInfo.merge(
   z.object({
     identifier: z.string().min(1)
   })
-);
+).transform((data: any) => {
+  return {
+    ...data,
+    isCustomAsset: data.isCustomAsset || data.assetType === 'custom asset'
+  };
+});
 
 export type AssetInfoWithId = z.infer<typeof AssetInfoWithId>;
 
@@ -44,7 +53,7 @@ export const AssetsWithId = z.array(AssetInfoWithId);
 
 export type AssetsWithId = z.infer<typeof AssetsWithId>;
 
-export const AssetMap = z.record(AssetInfo);
+export const AssetMap = z.record(AssetInfoWithTransformer);
 
 export type AssetMap = z.infer<typeof AssetMap>;
 
