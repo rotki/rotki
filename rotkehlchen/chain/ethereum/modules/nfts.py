@@ -166,18 +166,6 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):  # lgtm [py/miss
             entries_limit=FREE_NFT_LIMIT,
         )
 
-    def get_single_nft(self, nft_id: str) -> Optional[Dict[str, Any]]:
-        with self.db.conn.read_ctx() as cursor:
-            query, bindings = NFTFilterQuery.make(
-                nft_id=nft_id,
-            ).prepare(with_pagination=False)
-            cursor.execute(NFT_INFO_SQL_QUERY + query, bindings)
-            db_entry = cursor.fetchone()
-        if db_entry is None:
-            return None
-
-        return _serialize_nft_from_db(db_entry)
-
     def get_db_nft_balances(self, filter_query: NFTFilterQuery) -> Dict[str, Any]:
         """Filters (with `filter_query`) and returns cached nft balances in the nfts table"""
         entries = defaultdict(list)
