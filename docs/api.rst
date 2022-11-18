@@ -3057,7 +3057,8 @@ Get asset identifiers mappings
         "identifiers": [
             "eip155:1/erc20:0xB6eD7644C69416d67B522e20bC294A9a9B405B31",
             "DCR",
-            "eip155:1/erc20:0xcC4eF9EEAF656aC1a2Ab886743E98e97E090ed38"
+            "eip155:1/erc20:0xcC4eF9EEAF656aC1a2Ab886743E98e97E090ed38",
+	    "_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_26612040215479394739615825115912800930061094786769410446114278812336794170041"
         ]
       }
 
@@ -3085,17 +3086,24 @@ Get asset identifiers mappings
                   "symbol": "DDF",
                   "evm_chain": "ethereum",
                   "asset_type": "evm token"
-              }
+              },
+	      "_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_26612040215479394739615825115912800930061094786769410446114278812336794170041"": {
+	          "name": "Mooncat 151",
+		  "asset_type": "nft",
+		  "collection_name": "Mooncats",
+		  "image_url": "https://myimg.com"
+	      }
           },
           "message": ""
       }
 
-   :resjson object result: A mapping of identifiers to their name, symbol & chain(if available).
-   :resjson string name: Name of the asset.
-   :resjson string symbol: Symbol of the asset.
-   :resjson string evm_chain: This value might not be included in all the results. Full name of the EVM chain where the asset is located if the asset is an EVM token.
+   :resjson object result: A mapping of identifiers to (1) their name, symbol & chain(if available) if they are assets. And to (2) their name, collection name and image url if they are nfts.
+   :resjson string name: Name of the asset/nft.
+   :resjson string symbol: Symbol of the asset. Will only exist for non-nft assets.
+   :resjson string evm_chain: This value might not be included in all the results. Full name of the EVM chain where the asset is located if the asset is an EVM token. This is not included for NFTs.
    :resjson string custom_asset_type: This value might not be included in all the results. It represents the custom asset type for a custom asset.
-   :resjson bool is_custom_asset: A boolean to represent whether the asset is a custom asset or not.
+   :resjson string collection_name: Only included for NFTs. May be null if nft has no collection. If it does then this is its name.
+   :resjson string image_url: Only included for NFTs. May be null if nft has no image. If it does this is a url to the image.
    :statuscode 200: Assets successfully queried.
    :statuscode 400: One of the identifiers is not valid. Provided JSON is in some way malformed.
    :statuscode 500: Internal rotki error.

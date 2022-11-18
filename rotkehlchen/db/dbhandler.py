@@ -3435,7 +3435,7 @@ class DBHandler:
         result = {}
         with self.conn.read_ctx() as cursor:
             cursor.execute(
-                f'SELECT identifier, name, collection_name FROM nfts WHERE '
+                f'SELECT identifier, name, collection_name, image_url FROM nfts WHERE '
                 f'identifier IN ({",".join("?" * len(identifiers))})',
                 identifiers,
             )
@@ -3445,6 +3445,7 @@ class DBHandler:
                     'name': entry[1],
                     'asset_type': serialized_nft_type,
                     'collection_name': entry[2],
+                    'image_url': entry[3],
                 }
 
         return result
