@@ -58,14 +58,27 @@ class NftLpHandling(SerializableEnumMixin):
     EXCLUDE_LPS = auto()
 
 
-def _serialize_nft_from_db(entry: NFT_DB_TUPLE) -> Dict[str, Any]:
-    """From a db tuple extract the information required by the API for a NFT"""
-    # TODO: Both last_price and last_price_asset are optional in the current DB schema
-    # but they are not used as such and should not be. We need to change the schema.
-    price_in_asset = deserialize_fval_or_zero(value=entry[2], name='price_in_asset', location='nft_tuple')  # noqa: E501
-    price_asset = Asset(entry[3])  # type: ignore  # due to the asset schema problem
+def _deserialize_nft_price(
+        last_price: Optional[str],
+        last_price_asset: Optional[str],
+) -> Tuple[FVal, Asset, FVal]:
+    """Deserialize last price and last price asset from a DB entry
+    TODO: Both last_price and last_price_asset are optional in the current DB schema
+    but they are not used as such and should not be. We need to change the schema.
+    """
+    price_in_asset = deserialize_fval_or_zero(value=last_price, name='price_in_asset', location='nft_tuple')  # noqa: E501
+    price_asset = Asset(last_price_asset)  # type: ignore  # due to the asset schema problem
     # find_usd_price should be fast here since in most cases price should be cached
     usd_price = price_in_asset * Inquirer.find_usd_price(price_asset)
+    return price_in_asset, price_asset, usd_price
+
+
+def _deserialize_nft_from_db(entry: NFT_DB_TUPLE) -> Dict[str, Any]:
+    """From a db tuple extract the information required by the API for a NFT"""
+    price_in_asset, price_asset, usd_price = _deserialize_nft_price(
+        last_price=entry[2],
+        last_price_asset=entry[3],
+    )
     return {
         'id': entry[0],
         'name': entry[1],
@@ -174,13 +187,22 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):  # lgtm [py/miss
         with self.db.conn.read_ctx() as cursor:
             cursor.execute(NFT_INFO_SQL_QUERY + query, bindings)
             for db_entry in cursor:
-                row_data = _serialize_nft_from_db(entry=db_entry)
+                row_data = _deserialize_nft_from_db(entry=db_entry)
                 entries[db_entry[5]].append(row_data)
-                total_usd_value += row_data['usd_price']
-            entries_found = cursor.execute(
-                'SELECT COUNT(*) FROM (SELECT identifier FROM nfts ' + query + ')',
+
+            query, bindings = filter_query.prepare(with_pagination=False)
+            cursor.execute(
+                'SELECT last_price, last_price_asset FROM nfts ' + query,
                 bindings,
-            ).fetchone()[0]
+            )
+            entries_found = 0
+            for db_entry in cursor:
+                _, _, usd_price = _deserialize_nft_price(
+                    last_price=db_entry[2],
+                    last_price_asset=db_entry[3],
+                )
+                total_usd_value += usd_price
+                entries_found += 1
             entries_total = cursor.execute('SELECT COUNT(*) FROM nfts').fetchone()[0]
 
         return {
