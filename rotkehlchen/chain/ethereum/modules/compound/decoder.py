@@ -7,8 +7,8 @@ from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.assets.utils import get_crypto_asset_by_symbol
 from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
-from rotkehlchen.chain.ethereum.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_normalized_value
+from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.constants.assets import A_COMP
 from rotkehlchen.globaldb.handler import GlobalDBHandler
