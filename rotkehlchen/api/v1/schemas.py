@@ -2768,7 +2768,3 @@ class NFTFilterQuerySchema(
             'ignore_cache': data['ignore_cache'],
             'filter_query': filter_query,
         }
-
-
-class SingleNftSchema(Schema):
-    nft_id = fields.String(required=True)

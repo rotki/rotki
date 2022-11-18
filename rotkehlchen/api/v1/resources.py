@@ -110,7 +110,6 @@ from rotkehlchen.api.v1.schemas import (
     SingleAssetIdentifierSchema,
     SingleAssetWithOraclesIdentifierSchema,
     SingleFileSchema,
-    SingleNftSchema,
     SnapshotEditingSchema,
     SnapshotImportingSchema,
     SnapshotQuerySchema,
@@ -2430,17 +2429,11 @@ class AvalancheTransactionsResource(BaseMethodView):
 
 class NFTSResource(BaseMethodView):
     get_schema = AsyncIgnoreCacheQueryArgumentSchema()
-    post_schema = SingleNftSchema()
 
     @require_loggedin_user()
     @use_kwargs(get_schema, location='json_and_query')
     def get(self, async_query: bool, ignore_cache: bool) -> Response:
         return self.rest_api.get_nfts(async_query=async_query, ignore_cache=ignore_cache)
-
-    @require_loggedin_user()
-    @use_kwargs(post_schema, location='json_and_query')
-    def post(self, nft_id: str) -> Response:
-        return self.rest_api.get_nft_by_id(nft_id=nft_id)
 
 
 class NFTSBalanceResource(BaseMethodView):

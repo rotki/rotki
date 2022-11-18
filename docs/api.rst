@@ -10830,66 +10830,6 @@ Querying  NFTs
    :statuscode 502: An external service used in the query such as opensea could not be reached or returned unexpected response.
 
 
-Querying a single NFT
-=====================
-
-.. http:post:: /api/(version)/nfts
-
-   .. note::
-      This endpoint also accepts parameters as query arguments.
-
-   Doing a POST on the NFTs endpoint will query the information for the provided NFT in the local database.
-
-   **Example Request**:
-
-   .. http:example:: curl wget httpie python-requests
-
-      POST /api/1/nfts HTTP/1.1
-      Host: localhost:5042
-      Content-Type: application/json;charset=UTF-8
-
-      {"nft_id": "_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_26612040215479394739615825115912800930061094786769410446114278812336794170041"}
-
-   :param string nft_id: Id of the NFT to query
-
-
-   **Example Response**:
-
-   .. sourcecode:: http
-
-      HTTP/1.1 200 OK
-      Content-Type: application/json
-
-      {
-        "result": {
-          "id": "_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_26612040215479394739615825115912800930061094786769410446114278812336794170041",
-          "name": "yabir.eth",
-          "price_asset': "ETH",
-          "manually_input': false,
-          "is_lp": false,
-          "image_url": "https://openseauserdata.com/files/3f7c0c7d1ba51e61fe05ef53875f9f7e.svg",
-          "collection_name": "ENS Ethereum Name Service",
-          "usd_price": "0",
-          "price_in_asset": "0"
-        },
-        "message": ""
-      }
-
-
-   :resjson string id: The identifier of the specific NFT token for the given contract type. This is not a unique id across all NFTs.
-   :resjson string image_url: [Optional]. Link to the image of the NFT. Can be Null.
-   :resjson string name: [Optional] The name of the NFT. Can be Null.
-   :resjson string price_asset: The asset used to value the NFT.
-   :resjson string price_in_asset: The last known price of the NFT in the `price_asset` asset. Can be zero.
-   :resjson string usd_price: The last known price of the NFT in USD. Can be zero.
-   :reqjson string collection_name: [Optional]. Optional nfts collection_name to filter by.
-   :resjson boolean is_lp: [Optional] Whether the NFT is an LP position or not.
-   :statuscode 200: NFTs successfully queried
-   :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: User is not logged in or nft module is not activated.
-   :statuscode 500: Internal rotki error
-
-
 Show NFT Balances
 =======================
 
