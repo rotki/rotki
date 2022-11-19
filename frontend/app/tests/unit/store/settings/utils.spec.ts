@@ -47,6 +47,7 @@ describe('settings:utils', () => {
       thousandSeparator: Defaults.DEFAULT_THOUSAND_SEPARATOR,
       decimalSeparator: Defaults.DEFAULT_DECIMAL_SEPARATOR,
       currencyLocation: Defaults.DEFAULT_CURRENCY_LOCATION,
+      abbreviateNumber: false,
       refreshPeriod: -1,
       explorers: {},
       itemsPerPage: 10,

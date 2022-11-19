@@ -2068,6 +2068,7 @@
       "refresh": "How often (in minutes) your balances will be automatically refreshed"
     },
     "label": {
+      "abbreviate_number": "Use abbreviations for large numbers.",
       "animations": "Reduce animations effect. This setting will improve app performance. NOTE: You will see animations that are not smooth, which aims to reduce the use of system resources.",
       "enable_eth_names": "Show alias name for ETH addresses.",
       "include_nfts": "Include NFTs in the graphs and total networth",
@@ -2082,6 +2083,7 @@
       "zero_based_hint": "By default the lowest value is the minimum in the selected period"
     },
     "subtitle": {
+      "abbreviate_number": "For example, 1.234.567 will appear as 1.23 M when this setting is enabled",
       "eth_names": "Use ETH alias names",
       "graph_basis": "Graph basis",
       "include_nfts": "Include NFTs in graphs and total amounts",

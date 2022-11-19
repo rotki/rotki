@@ -57,6 +57,7 @@ describe('settings:frontend', () => {
             thousandSeparator: Defaults.DEFAULT_THOUSAND_SEPARATOR,
             decimalSeparator: Defaults.DEFAULT_DECIMAL_SEPARATOR,
             currencyLocation: Defaults.DEFAULT_CURRENCY_LOCATION,
+            abbreviateNumber: false,
             refreshPeriod: -1,
             explorers: {},
             itemsPerPage: 10,
@@ -115,6 +116,7 @@ describe('settings:frontend', () => {
         quarter: Quarter.Q3
       },
       currencyLocation: CurrencyLocation.BEFORE,
+      abbreviateNumber: false,
       thousandSeparator: '|',
       decimalSeparator: '-',
       refreshPeriod: 120,
@@ -179,6 +181,7 @@ describe('settings:frontend', () => {
     expect(store.thousandSeparator).toBe('|');
     expect(store.decimalSeparator).toBe('-');
     expect(store.currencyLocation).toBe(CurrencyLocation.BEFORE);
+    expect(store.abbreviateNumber).toBe(false);
     expect(store.refreshPeriod).toBe(120);
     expect(store.explorers).toStrictEqual({
       ETH: {

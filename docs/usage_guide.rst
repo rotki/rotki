@@ -214,6 +214,11 @@ Decimal separator
 
 This is the symbol that will be separating the floating part of the number. For example in 5.42 the symbol is ``.``.
 
+Use abbreviations for large numbers.
+^^^^^^^^^^^^^^^^^^^^
+
+If this setting is enabled, it will abbreviates large numbers. For example, ``1.234.567`` will be displayed as ``1.23 M``.
+
 Currency location
 ^^^^^^^^^^^^^^^^^^^^
 
@@ -382,8 +387,10 @@ Cost basis method
 
 The method that should be used during the profit and loss execution to calculate cost basis. The methods available at the moment are:
 
-- FIFO: `First In First Out`
-- LIFO: `Last In First Out`
+- FIFO: `First In, First Out`
+- LIFO: `Last In, First Out`
+- HIFO: `Highest In, First Out`
+- ACB: `Adjusted Cost Basis`
 
 .. _ledger_action_settings:
 

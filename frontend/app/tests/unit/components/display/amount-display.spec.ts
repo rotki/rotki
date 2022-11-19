@@ -57,6 +57,7 @@ describe('AmountDisplay.vue', () => {
     setActivePinia(pinia);
     document.body.setAttribute('data-app', 'true');
     const store = useGeneralSettingsStore();
+    const frontendStore = useFrontendSettingsStore();
     const { findCurrency } = useCurrencies();
     const mainCurrency = findCurrency('EUR');
     store.update({
@@ -313,6 +314,18 @@ describe('AmountDisplay.vue', () => {
         fiatCurrency: 'EUR'
       });
       expect(wrapper.find('[data-cy="display-amount"]').text()).toBe('1.20');
+    });
+  });
+
+  describe('Check large number abbreviations', () => {
+    test('`abbreviateNumber=true`', () => {
+      useFrontendSettingsStore().update({
+        ...FrontendSettings.parse({}),
+        abbreviateNumber: true
+      });
+
+      const wrapper = createWrapper(bigNumberify(1234567.89));
+      expect(wrapper.find('[data-cy="display-amount"]').text()).toBe('1.24 M');
     });
   });
 

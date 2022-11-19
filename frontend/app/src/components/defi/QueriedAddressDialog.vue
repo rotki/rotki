@@ -1,5 +1,10 @@
 <template>
-  <v-dialog max-width="450px" @click:outside="close" @close="close">
+  <v-dialog
+    :value="true"
+    max-width="450px"
+    @click:outside="close"
+    @close="close"
+  >
     <card outlined-body>
       <template #title>{{ tc('queried_address_dialog.title') }}</template>
       <template #subtitle>

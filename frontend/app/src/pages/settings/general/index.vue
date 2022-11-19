@@ -24,6 +24,7 @@
       <floating-precision-setting />
       <main-currency-setting />
       <numeric-separators-settings />
+      <abbreviate-number-setting />
       <currency-location-setting />
 
       <div>
@@ -46,6 +47,7 @@
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import RoundingSettings from '@/components/settings/explorers/RoundingSettings.vue';
 import FrontendSettings from '@/components/settings/FrontendSettings.vue';
+import AbbreviateNumberSetting from '@/components/settings/general/AbbreviateNumberSetting.vue';
 import BalanceSaveFrequencySetting from '@/components/settings/general/BalanceSaveFrequencySetting.vue';
 import BtcDerivationGapLimitSetting from '@/components/settings/general/BtcDerivationGapLimitSetting.vue';
 import CurrencyLocationSetting from '@/components/settings/general/CurrencyLocationSetting.vue';

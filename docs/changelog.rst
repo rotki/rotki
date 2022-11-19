@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`5150` Add option to abbreviates large number. For example to show 1.234.567 as 1.23 M.
 * :feature:`4940` Users will now be able to reset the assets database without losing any custom information they may have added.
 * :bug:`5124` Users will now correctly see all the events related to lending in the defi view.
 * :bug:`5126` APR and APY for borrowing and lending in Aave should properly show again.
