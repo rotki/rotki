@@ -26,6 +26,7 @@ def test_name(database):
     assert exchange.name == 'ftx1'
 
 
+@pytest.mark.skipif('CI' in os.environ, reason='FTX API is unreachable after the incident')
 def test_ftx_exchange_assets_are_known(mock_ftx: Ftx):
 
     unknown_assets: Set[str] = set()
