@@ -49,9 +49,8 @@ EVENT_DECODER_FN = Callable[
         EvmTransaction,
         List[HistoryBaseEntry],
         List[ActionItem],
-    ], [
-        Optional[HistoryBaseEntry],
-    ],
+    ], 
+    Optional[HistoryBaseEntry],
 ]
 
 

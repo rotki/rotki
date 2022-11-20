@@ -4,12 +4,12 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import CryptoAsset
-from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
-from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, ethaddress_to_asset
+from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.structures import ActionItem
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
+from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -20,8 +20,8 @@ from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 from .constants import CPT_KYBER
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.decoding.base import BaseDecoderTools
     from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
 
 KYBER_TRADE_LEGACY = b'\xf7$\xb4\xdff\x17G6\x12\xb5=\x7f\x88\xec\xc6\xea\x980t\xb3\t`\xa0I\xfc\xd0e\x7f\xfe\x80\x80\x83'  # noqa: E501
 KYBER_LEGACY_CONTRACT = string_to_evm_address('0x9ae49C0d7F8F9EF4B864e004FE86Ac8294E20950')
@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def _legacy_contracts_basic_info(tx_log: EthereumTxReceiptLog) -> Tuple[ChecksumEvmAddress, Optional[CryptoAsset], Optional[CryptoAsset]]:  # noqa: E501
+def _legacy_contracts_basic_info(tx_log: EvmTxReceiptLog) -> Tuple[ChecksumEvmAddress, Optional[CryptoAsset], Optional[CryptoAsset]]:  # noqa: E501
     """
     Returns:
     - address of the sender
@@ -101,10 +101,10 @@ class KyberDecoder(DecoderInterface):
 
     def _decode_legacy_trade(  # pylint: disable=no-self-use
         self,
-        tx_log: EthereumTxReceiptLog,
+        tx_log: EvmTxReceiptLog,
         transaction: EvmTransaction,  # pylint: disable=unused-argument
         decoded_events: List[HistoryBaseEntry],
-        all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
+        all_logs: List[EvmTxReceiptLog],  # pylint: disable=unused-argument
         action_items: Optional[List[ActionItem]],  # pylint: disable=unused-argument
     ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
         if tx_log.topics[0] == KYBER_TRADE_LEGACY:
@@ -132,10 +132,10 @@ class KyberDecoder(DecoderInterface):
 
     def _decode_legacy_upgraded_trade(  # pylint: disable=no-self-use
         self,
-        tx_log: EthereumTxReceiptLog,
+        tx_log: EvmTxReceiptLog,
         transaction: EvmTransaction,  # pylint: disable=unused-argument
         decoded_events: List[HistoryBaseEntry],
-        all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
+        all_logs: List[EvmTxReceiptLog],  # pylint: disable=unused-argument
         action_items: Optional[List[ActionItem]],  # pylint: disable=unused-argument
     ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
         if tx_log.topics[0] != KYBER_TRADE_LEGACY:

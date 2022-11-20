@@ -16,8 +16,8 @@ from rotkehlchen.chain.ethereum.constants import (
     RANGE_PREFIX_ETHTOKENTX,
     RANGE_PREFIX_ETHTX,
 )
-from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt
+from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_MKR, A_USDT, A_WETH
 from rotkehlchen.constants.limits import FREE_ETH_TX_LIMIT
 from rotkehlchen.constants.misc import ONE
