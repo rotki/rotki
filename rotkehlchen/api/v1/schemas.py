@@ -44,7 +44,7 @@ from rotkehlchen.chain.bitcoin.hdkey import HDKey, XpubType
 from rotkehlchen.chain.bitcoin.utils import is_valid_btc_address, scriptpubkey_to_btc_address
 from rotkehlchen.chain.constants import NON_BITCOIN_CHAINS
 from rotkehlchen.chain.ethereum.manager import EthereumManager
-from rotkehlchen.chain.ethereum.modules.nfts import NftLpHandling
+from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.ethereum.types import ETHERSCAN_NODE_NAME
 from rotkehlchen.chain.substrate.types import (
     KusamaAddress,
@@ -78,8 +78,8 @@ from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.db.utils import DBAssetBalance, LocationData
 from rotkehlchen.errors.misc import InputError, RemoteError, XPUBError
 from rotkehlchen.errors.serialization import DeserializationError, EncodingError
+from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES, SUPPORTED_EXCHANGES
 from rotkehlchen.exchanges.kraken import KrakenAccountType
-from rotkehlchen.exchanges.manager import ALL_SUPPORTED_EXCHANGES, SUPPORTED_EXCHANGES
 from rotkehlchen.globaldb import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.icons import ALLOWED_ICON_EXTENSIONS

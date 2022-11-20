@@ -10,7 +10,8 @@ from flaky import flaky
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.interfaces.ammswap.types import LiquidityPoolAsset
-from rotkehlchen.chain.ethereum.modules.nfts import FREE_NFT_LIMIT, NftLpHandling
+from rotkehlchen.chain.ethereum.modules.nft.constants import FREE_NFT_LIMIT
+from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.ethereum.modules.uniswap.v3.types import NFTLiquidityPool
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.constants.misc import ZERO
@@ -360,7 +361,7 @@ def test_edit_delete_nft(rotkehlchen_api_server):
         return nft_map, sum([len(x) for x in nft_map.values()])
 
     get_all_nft_data_patch = patch(
-        'rotkehlchen.chain.ethereum.modules.nfts.Nfts._get_all_nft_data',
+        'rotkehlchen.chain.ethereum.modules.nft.nfts.Nfts._get_all_nft_data',
         side_effect=mock_get_all_nft_data,
     )
 
@@ -858,7 +859,7 @@ def test_lp_nfts_filtering(rotkehlchen_api_server):
                 ),
             ]}
 
-    get_all_nft_data_patch = patch('rotkehlchen.chain.ethereum.modules.nfts.Nfts._get_all_nft_data', side_effect=mock_get_all_nft_data)  # noqa: E501
+    get_all_nft_data_patch = patch('rotkehlchen.chain.ethereum.modules.nft.nfts.Nfts._get_all_nft_data', side_effect=mock_get_all_nft_data)  # noqa: E501
     get_v3_balances_patch = patch('rotkehlchen.chain.ethereum.modules.uniswap.Uniswap.get_v3_balances', side_effect=mock_uniswap_v3_balances)  # noqa: E501
 
     with get_all_nft_data_patch, get_v3_balances_patch:

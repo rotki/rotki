@@ -1,7 +1,8 @@
 import inspect
 from importlib import import_module
 
-from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES, ExchangeManager
+from rotkehlchen.exchanges.constants import SUPPORTED_EXCHANGES
+from rotkehlchen.exchanges.manager import ExchangeManager
 
 EXCHANGE_METHODS_TO_CHECK = (
     'query_balances',

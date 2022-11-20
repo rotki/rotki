@@ -7,7 +7,7 @@ from rotkehlchen.accounting.structures.types import HistoryEventSubType, History
 from rotkehlchen.accounting.types import SchemaEventType
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.types import AssetType
-from rotkehlchen.chain.ethereum.modules.nfts import NftLpHandling
+from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter

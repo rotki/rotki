@@ -25,7 +25,7 @@ from .l2.loopring import Loopring
 from .liquity.trove import Liquity
 from .makerdao.dsr import MakerdaoDsr
 from .makerdao.vaults import MakerdaoVaults
-from .nfts import Nfts
+from .nft.nfts import Nfts
 from .pickle_finance import PickleFinance
 from .sushiswap.sushiswap import Sushiswap
 from .uniswap.uniswap import Uniswap

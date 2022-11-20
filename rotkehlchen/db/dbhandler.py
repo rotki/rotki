@@ -109,10 +109,10 @@ from rotkehlchen.errors.api import AuthenticationError, IncorrectApiKeyFormat
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import InputError, SystemPermissionError, TagConstraintError
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.exchanges.constants import SUPPORTED_EXCHANGES
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.exchanges.ftx import FTX_SUBACCOUNT_DB_SETTING
 from rotkehlchen.exchanges.kraken import KrakenAccountType
-from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter

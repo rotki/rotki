@@ -109,7 +109,7 @@ if TYPE_CHECKING:
         ValidatorDailyStats,
         ValidatorDetails,
     )
-    from rotkehlchen.chain.ethereum.modules.nfts import Nfts
+    from rotkehlchen.chain.ethereum.modules.nft.nfts import Nfts
     from rotkehlchen.chain.ethereum.modules.uniswap.v3.types import AddressToUniswapV3LPBalances
     from rotkehlchen.chain.evm.manager import EvmManager
     from rotkehlchen.chain.substrate.manager import SubstrateManager

@@ -65,7 +65,7 @@ from rotkehlchen.balances.manual import (
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.airdrops import check_airdrops
 from rotkehlchen.chain.ethereum.modules.eth2.constants import FREE_VALIDATORS_LIMIT
-from rotkehlchen.chain.ethereum.modules.nfts import NftLpHandling
+from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.ethereum.names import find_ens_mappings, search_for_addresses_names
 from rotkehlchen.chain.ethereum.types import WeightedNode
 from rotkehlchen.chain.evm.manager import EvmManager
@@ -138,8 +138,8 @@ from rotkehlchen.errors.misc import (
 )
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES
 from rotkehlchen.exchanges.data_structures import Trade
-from rotkehlchen.exchanges.manager import ALL_SUPPORTED_EXCHANGES
 from rotkehlchen.exchanges.utils import query_binance_exchange_pairs
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb import GlobalDBHandler
