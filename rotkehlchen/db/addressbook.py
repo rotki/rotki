@@ -110,3 +110,20 @@ class DBAddressbook:
                         f'Addressbook entry with address "{address}" '
                         f'doesn\'t exist in the address book. So it cannot be deleted.',
                     )
+
+    def get_addressbook_entry_name(
+            self,
+            book_type: AddressbookType,
+            address: ChecksumEvmAddress,
+    ) -> Optional[str]:
+        with self.write_ctx(book_type) as read_cursor:
+            query = read_cursor.execute(
+                'SELECT name FROM address_book WHERE address=?',
+                (address,),
+            )
+
+            result = query.fetchone()
+            if result:
+                return result[0]
+
+        return None

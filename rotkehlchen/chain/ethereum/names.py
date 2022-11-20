@@ -1,5 +1,4 @@
-from abc import ABC, abstractmethod
-from typing import Dict, List
+from typing import Callable, Dict, List, Optional
 
 from rotkehlchen.chain.ethereum.decoding.constants import ETHADDRESS_TO_KNOWN_NAME
 from rotkehlchen.chain.ethereum.manager import EthereumManager
@@ -11,6 +10,7 @@ from rotkehlchen.errors.misc import BlockchainQueryError, RemoteError
 from rotkehlchen.globaldb import GlobalDBHandler
 from rotkehlchen.types import (
     AddressbookType,
+    AddressNameSource,
     ChecksumEvmAddress,
     EnsMapping,
     SupportedBlockchain,
@@ -45,7 +45,7 @@ def find_ens_mappings(
                 if cur_time - last_update > ENS_UPDATE_INTERVAL:
                     addresses_to_query.append(address)
                 elif has_name:
-                    ens_mappings[cached_value.address] = cached_value.name  # type: ignore  # mypy doesn't see `isinstance` check  # noqa: E501
+                    ens_mappings[cached_value.address] = cached_value.name  # type: ignore
             addresses_to_query += list(set(addresses) - set(cached_data.keys()))
 
         try:
@@ -64,162 +64,146 @@ def find_ens_mappings(
 def search_for_addresses_names(
         database: DBHandler,
         addresses: List[ChecksumEvmAddress],
-) -> Dict[ChecksumEvmAddress, str]:
+) -> Dict[ChecksumEvmAddress, Optional[str]]:
     """This method searches for all names of provided addresses known to rotki. We can show
-    only one name per address, and thus we prioritize known names. Priority is the following:
-    blockchain account labels -> private addressbook -> global addressbook
-    -> ethereum tokens -> hardcoded mappings -> ENS names.
+    only one name per address, and thus we prioritize known names. Priority is read from settings.
     """
 
-    prioritizer = NamePrioritizer()
+    prioritizer = NamePrioritizer(database)
     prioritizer.add_fetchers({
-        'blockchain_account': BlockchainAccountLabelFetcher(database),
-        'global_addressbook': GlobalAddressBookFetcher(database),
-        'private_addressbook': PrivateAddressBookFetcher(database),
-        'ethereum_tokens': TokenMappingsFetcher(database),
-        'hardcoded_mappings': HardcodedAddressFetcher(database),
-        'ens_names': ENSFetcher(database),
+        'blockchain_account': blockchain_address_to_name,
+        'global_addressbook': global_addressbook_address_to_name,
+        'private_addressbook': private_addressbook_address_to_name,
+        'ethereum_tokens': token_mappings_address_to_name,
+        'hardcoded_mappings': hardcoded_address_to_name,
+        'ens_names': ens_address_to_name,
     })
 
-    prioritized_addresses = prioritizer.get_prioritized_names(DEFAULT_ADDRESS_NAME_PRIORITY, addresses)
+    with database.conn.read_ctx() as cursor:
+        settings = database.get_settings(cursor)
+
+    prioritized_addresses = prioritizer.get_prioritized_names(
+        settings.address_name_priority,
+        addresses,
+    )
 
     return prioritized_addresses
 
 
-class NameFetcher(ABC):
-    """
-    Each source, where a name of an address might be stored, is represented by an implementation of this
-    abstract class.
-    """
-    _db: DBHandler
-
-    def __init__(self, db: DBHandler):
-        self._db = db
-
-    @abstractmethod
-    def get_addresses_names(self, addresses: List[ChecksumEvmAddress]) -> Dict[ChecksumEvmAddress, str]:
-        pass
+FetcherFunc = Callable[[DBHandler, ChecksumEvmAddress], Optional[str]]
 
 
 class NamePrioritizer:
-    _fetchers: Dict[str, NameFetcher] = {}
+    _fetchers: Dict[AddressNameSource, FetcherFunc] = {}
+    _db: DBHandler
 
-    def add_fetchers(self, fetchers: Dict[AddressNameSource, NameFetcher]):
+    def __init__(self, database: DBHandler):
+        self._db = database
+
+    def add_fetchers(self, fetchers: Dict[AddressNameSource, FetcherFunc]) -> None:
         self._fetchers.update(fetchers)
 
-    def get_prioritized_names(self, prioritized_name_source: List[AddressNameSource],
-                              addresses: List[ChecksumEvmAddress]) -> Dict[ChecksumEvmAddress, str]:
+    def get_prioritized_names(
+            self,
+            prioritized_name_source: List[AddressNameSource],
+            addresses: List[ChecksumEvmAddress],
+    ) -> Dict[ChecksumEvmAddress, Optional[str]]:
         """
         Gets the name from the name source with the highest priority.
         Name source ids with lower index have a higher priority.
         """
-        top_prio_names: Dict[ChecksumEvmAddress, str] = {}
+        top_prio_names: Dict[ChecksumEvmAddress, Optional[str]] = {}
 
-        for name_source in prioritized_name_source:
-            fetcher = self._fetchers.get(name_source)
-            if not fetcher:
-                raise NotImplementedError(f"address name fetcher for '{name_source}' is not implemented")
+        for address in addresses:
+            for name_source in prioritized_name_source:
+                fetcher = self._fetchers.get(name_source)
+                if not fetcher:
+                    raise NotImplementedError(
+                        f'address name fetcher for "{name_source}" is not implemented',
+                    )
 
-            addresses_names = fetcher.get_addresses_names(addresses)
-            for address_name in addresses_names.items():
-                address, name = address_name
-
-                # Has already found a name with higher prio?
-                if top_prio_names.get(address) is not None:
+                name = fetcher(self._db, address)
+                if not name:
                     continue
-
-                if name:
-                    top_prio_names[address] = name
+                top_prio_names[address] = name
+                break
 
         return top_prio_names
 
 
-class BlockchainAccountLabelFetcher(NameFetcher):
-    _labels: Dict[BlockchainAddress, str]
-
-    def get_addresses_names(self, addresses: List[ChecksumEvmAddress]) -> Dict[ChecksumEvmAddress, str]:
-        result_mappings: Dict[ChecksumEvmAddress, str] = {}
-        addresses_set = set(addresses)
-        with self._db.conn.read_ctx() as cursor:
-            accounts_data = self._db.get_blockchain_account_data(
-                cursor=cursor,
-                blockchain=SupportedBlockchain.ETHEREUM,
-            )
-
-        for account in accounts_data:
-            if account.address in addresses_set and account.label:
-                result_mappings[account.address] = account.label
-
-        return result_mappings
+def blockchain_address_to_name(
+        db: DBHandler,
+        address: ChecksumEvmAddress,
+) -> Optional[str]:
+    """Returns the label of an ethereum blockchain account with the given address or
+    None if there is no such account or the account has no label set.
+    """
+    with db.conn.read_ctx() as cursor:
+        return db.get_blockchain_account_label(
+            cursor,
+            SupportedBlockchain.ETHEREUM,
+            address,
+        )
 
 
-def result_from_addressbook_entries(addressbook_entries: List[AddressbookEntry]) \
-        -> Dict[ChecksumEvmAddress, str]:
-    result_mappings: Dict[ChecksumEvmAddress, str] = {}
-    for addressbook_entry in addressbook_entries:
-        result_mappings[addressbook_entry.address] = addressbook_entry.name
-
-    return result_mappings
-
-
-class PrivateAddressBookFetcher(NameFetcher):
-    def get_addresses_names(self, addresses: List[ChecksumEvmAddress]) -> Dict[ChecksumEvmAddress, str]:
-        db_addressbook = DBAddressbook(self._db)
-        with self._db.conn.read_ctx() as cursor:
-            addressbook_entries = db_addressbook.get_addressbook_entries(
-                cursor=cursor,
-                addresses=addresses,
-            )
-        return result_from_addressbook_entries(addressbook_entries)
+def private_addressbook_address_to_name(
+        db: DBHandler,
+        address: ChecksumEvmAddress,
+) -> Optional[str]:
+    """Returns the name of a private addressbook entry with the given address or
+    None if there is no such entry or the entry has no name set.
+    """
+    db_addressbook = DBAddressbook(db)
+    return db_addressbook.get_addressbook_entry_name(
+        AddressbookType.PRIVATE,
+        address,
+    )
 
 
-class GlobalAddressBookFetcher(NameFetcher):
-
-    def get_addresses_names(self, addresses: List[ChecksumEvmAddress]) -> Dict[ChecksumEvmAddress, str]:
-        db_addressbook = DBAddressbook(self._db)
-        with db_addressbook.read_ctx(AddressbookType.GLOBAL) as global_cursor:
-            addressbook_entries = db_addressbook.get_addressbook_entries(
-                cursor=global_cursor,
-                addresses=addresses,
-            )
-        return result_from_addressbook_entries(addressbook_entries)
-
-
-class HardcodedAddressFetcher(NameFetcher):
-    def get_addresses_names(self, addresses: List[ChecksumEvmAddress]) -> Dict[ChecksumEvmAddress, str]:
-        result_mappings: Dict[ChecksumEvmAddress, str] = {}
-
-        for address in addresses:
-            constant_name = ETHADDRESS_TO_KNOWN_NAME.get(address)
-            if constant_name is not None:
-                result_mappings[address] = constant_name
-
-        return result_mappings
+def global_addressbook_address_to_name(
+        db: DBHandler,
+        address: ChecksumEvmAddress,
+) -> Optional[str]:
+    """Returns the name of a global addressbook entry with the given address or
+    None if there is no such entry or the entry has no name set.
+    """
+    db_addressbook = DBAddressbook(db)
+    return db_addressbook.get_addressbook_entry_name(
+        AddressbookType.GLOBAL,
+        address,
+    )
 
 
-class TokenMappingsFetcher(NameFetcher):
-    def get_addresses_names(self, addresses: List[ChecksumEvmAddress]) -> Dict[ChecksumEvmAddress, str]:
-        result_mappings: Dict[ChecksumEvmAddress, str] = {}
-        token_mappings = GlobalDBHandler().get_tokens_mappings(addresses=addresses)
-
-        for token_address, name in token_mappings.items():
-            if name:
-                result_mappings[token_address] = name
-        return result_mappings
+def hardcoded_address_to_name(
+        _: DBHandler,
+        address: ChecksumEvmAddress,
+) -> Optional[str]:
+    """Returns the name of a known address or None if there is no such address"""
+    return ETHADDRESS_TO_KNOWN_NAME.get(address, None)
 
 
-class ENSFetcher(NameFetcher):
+def token_mappings_address_to_name(
+        _: DBHandler,
+        address: ChecksumEvmAddress,
+) -> Optional[str]:
+    """Returns the token name for a token address in the global database or None
+    if the address is no token address
+    """
+    token_mappings = GlobalDBHandler().get_tokens_mappings(addresses=[address])
+    return token_mappings.get(address, None)
 
-    def get_addresses_names(self, addresses: List[ChecksumEvmAddress]) -> Dict[ChecksumEvmAddress, str]:
-        result_mappings: Dict[ChecksumEvmAddress, str] = {}
-        db_ens = DBEns(self._db)
 
-        with self._db.conn.read_ctx() as cursor:
-            db_reverse_ens = db_ens.get_reverse_ens(cursor, addresses=addresses)
-            reverse_ens = list(db_reverse_ens.values())
+def ens_address_to_name(
+        db: DBHandler,
+        address: ChecksumEvmAddress,
+) -> Optional[str]:
+    """Returns the ens name for an address or None if the address doesn't have one"""
+    db_ens = DBEns(db)
 
-        for mapping in reverse_ens:
-            if isinstance(mapping, EnsMapping):
-                if mapping.name:
-                    result_mappings[mapping.address] = mapping.name
-        return result_mappings
+    with db.conn.read_ctx() as cursor:
+        db_reverse_ens = db_ens.get_reverse_ens(cursor, addresses=[address])
+        address_ens = db_reverse_ens.get(address, None)
+        if isinstance(address_ens, EnsMapping):
+            return address_ens.name
+
+        return None

@@ -11,7 +11,9 @@ from rotkehlchen.history.types import DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER, Hi
 from rotkehlchen.inquirer import DEFAULT_CURRENT_PRICE_ORACLES_ORDER, CurrentPriceOracle
 from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
+    DEFAULT_ADDRESS_NAME_PRIORITY,
     DEFAULT_OFF_MODULES,
+    AddressNameSource,
     CostBasisMethod,
     ExchangeLocationID,
     ModuleName,
@@ -125,6 +127,7 @@ class DBSettings(NamedTuple):
     cost_basis_method: CostBasisMethod = DEFAULT_COST_BASIS_METHOD
     treat_eth2_as_eth: bool = DEFAULT_TREAT_ETH2_AS_ETH
     eth_staking_taxable_after_withdrawal_enabled: bool = DEFAULT_ETH_STAKING_TAXABLE_AFTER_WITHDRAWAL_ENABLED  # noqa: 501
+    address_name_priority: List[AddressNameSource] = DEFAULT_ADDRESS_NAME_PRIORITY
 
     def serialize(self) -> Dict[str, Any]:
         settings_dict = self._asdict()   # pylint: disable=no-member
@@ -168,6 +171,7 @@ class ModifiableDBSettings(NamedTuple):
     cost_basis_method: Optional[CostBasisMethod] = None
     treat_eth2_as_eth: Optional[bool] = None
     eth_staking_taxable_after_withdrawal_enabled: Optional[bool] = None
+    address_name_priority: Optional[List[AddressNameSource]] = None
 
     def serialize(self) -> Dict[str, Any]:
         settings_dict = {}
@@ -244,6 +248,8 @@ def db_settings_from_dict(
             specified_args[key] = [ExchangeLocationID.deserialize(x) for x in values]
         elif key == 'cost_basis_method':
             specified_args[key] = CostBasisMethod.deserialize(value)
+        elif key == 'address_name_priority':
+            specified_args[key] = json.loads(value)
         else:
             if key == 'eth_rpc_endpoint':
                 continue  # temporary since setting is removed in migration and may still get here
@@ -273,6 +279,8 @@ def serialize_db_setting(value: Any, setting: Any, is_modifiable: bool) -> Any:
         value = value.serialize()  # pylint: disable=no-member
     elif setting == 'cost_basis_method':
         value = value.serialize()  # pylint: disable=no-member
+    elif setting == 'address_name_priority' and is_modifiable is True:
+        value = json.dumps(value)
     elif setting in JSON_KEYS:
         if is_modifiable is True:
             value = json.dumps([x.serialize() for x in value])

@@ -407,7 +407,15 @@
     "non_syncing_exchanges": [],
     "cost_basis_method": "lifo",
     "treat_eth2_as_eth": true,
-    "eth_staking_taxable_after_withdrawal_enabled": false
+    "eth_staking_taxable_after_withdrawal_enabled": false,
+    "address_name_priority": [
+      "private_addressbook",
+      "blockchain_account",
+      "global_addressbook",
+      "ethereum_tokens",
+      "hardcoded_mappings",
+      "ens_names"
+    ]
   },
   "ignored_events_ids": {
     "ledger_action": ["2"],
