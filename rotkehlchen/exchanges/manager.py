@@ -10,14 +10,10 @@ from rotkehlchen.exchanges.binance import BINANCE_BASE_URL, BINANCEUS_BASE_URL
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.exchanges.ftx import FTX_BASE_URL, FTXUS_BASE_URL
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import (
-    EXTERNAL_EXCHANGES,
-    ApiKey,
-    ApiSecret,
-    ExchangeApiCredentials,
-    Location,
-)
+from rotkehlchen.types import ApiKey, ApiSecret, ExchangeApiCredentials, Location
 from rotkehlchen.user_messages import MessagesAggregator
+
+from .constants import SUPPORTED_EXCHANGES
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -25,32 +21,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
-
-# Exchanges for which we have supported modules
-SUPPORTED_EXCHANGES = [
-    Location.BINANCE,
-    Location.BINANCEUS,
-    Location.BITCOINDE,
-    Location.BITFINEX,
-    Location.BITMEX,
-    Location.BITPANDA,
-    Location.BITSTAMP,
-    Location.BITTREX,
-    Location.COINBASE,
-    Location.COINBASEPRO,
-    Location.GEMINI,
-    Location.ICONOMI,
-    Location.KRAKEN,
-    Location.KUCOIN,
-    Location.FTX,
-    Location.FTXUS,
-    Location.INDEPENDENTRESERVE,
-    Location.POLONIEX,
-]
-EXCHANGES_WITH_PASSPHRASE = (Location.COINBASEPRO, Location.KUCOIN)
-# Exchanges for which we allow import via CSV
-ALL_SUPPORTED_EXCHANGES = SUPPORTED_EXCHANGES + EXTERNAL_EXCHANGES
 
 
 class ExchangeManager():

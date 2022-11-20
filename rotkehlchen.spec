@@ -7,7 +7,7 @@ from distutils.spawn import find_executable
 
 from PyInstaller.utils.hooks import collect_submodules
 
-from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
+from rotkehlchen.exchanges.constants import SUPPORTED_EXCHANGES
 from rotkehlchen.types import Location
 from rotkehlchen.utils.misc import get_system_spec
 

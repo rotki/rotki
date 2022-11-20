@@ -10,7 +10,7 @@ from rotkehlchen.data_migrations.manager import LAST_DATA_MIGRATION, DataMigrati
 from rotkehlchen.data_migrations.migrations.migration_4 import read_and_write_nodes_in_database
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.db.upgrade_manager import DBUpgradeManager
-from rotkehlchen.exchanges.manager import EXCHANGES_WITH_PASSPHRASE
+from rotkehlchen.exchanges.constants import EXCHANGES_WITH_PASSPHRASE
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.premium.premium import Premium, PremiumCredentials
 from rotkehlchen.rotkehlchen import Rotkehlchen

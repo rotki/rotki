@@ -1,7 +1,6 @@
 import logging
 from collections import defaultdict
-from enum import auto
-from typing import TYPE_CHECKING, Any, DefaultDict, Dict, List, NamedTuple, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, DefaultDict, Dict, List, Optional, Tuple, Union
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
@@ -21,7 +20,9 @@ from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.mixins.cacheable import CacheableMixIn, cache_response_timewise_immutable
 from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
-from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
+
+from .constants import FREE_NFT_LIMIT
+from .structures import NftLpHandling, NFTResult
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
@@ -32,7 +33,6 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-FREE_NFT_LIMIT = 10
 NFT_INFO_SQL_QUERY = (
     'SELECT identifier, name, last_price, last_price_asset, manual_price, owner_address, is_lp, '
     'image_url, collection_name FROM nfts '
@@ -50,12 +50,6 @@ NFT_DB_TUPLE = Tuple[
     Optional[str],  # image_url
     Optional[str],  # collection_name
 ]
-
-
-class NftLpHandling(SerializableEnumMixin):
-    ALL_NFTS = auto()
-    ONLY_LPS = auto()
-    EXCLUDE_LPS = auto()
 
 
 def _deserialize_nft_price(
@@ -90,19 +84,6 @@ def _deserialize_nft_from_db(entry: NFT_DB_TUPLE) -> Dict[str, Any]:
         'usd_price': usd_price,
         'collection_name': entry[8],
     }
-
-
-class NFTResult(NamedTuple):
-    addresses: Dict[ChecksumEvmAddress, List[NFT]]
-    entries_found: int
-    entries_limit: int
-
-    def serialize(self) -> Dict[str, Any]:
-        return {
-            'addresses': {address: [x.serialize() for x in nfts] for address, nfts in self.addresses.items()},  # noqa: E501
-            'entries_found': self.entries_found,
-            'entries_limit': self.entries_limit,
-        }
 
 
 class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):  # lgtm [py/missing-call-to-init]

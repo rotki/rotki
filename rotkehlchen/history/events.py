@@ -14,8 +14,9 @@ from rotkehlchen.db.filtering import (
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.exchanges.constants import SUPPORTED_EXCHANGES
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
-from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES, ExchangeManager
+from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import EXTERNAL_LOCATION, Location, Timestamp
