@@ -104,6 +104,8 @@ def test_set_settings(rotkehlchen_api_server):
             value = [ExchangeLocationID(name='test_name', location=Location.KRAKEN).serialize()]
         elif setting == 'cost_basis_method':
             value = CostBasisMethod.LIFO.serialize()
+        elif setting == 'address_name_priority':
+            value = ['hardcoded_mappings', 'ethereum_tokens']
         else:
             raise AssertionError(f'Unexpected settting {setting} encountered')
 

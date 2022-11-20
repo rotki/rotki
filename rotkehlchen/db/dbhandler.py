@@ -123,6 +123,7 @@ from rotkehlchen.types import (
     ApiSecret,
     AssetMovementCategory,
     BlockchainAccountData,
+    BlockchainAddress,
     BTCAddress,
     ChecksumEvmAddress,
     ExchangeApiCredentials,
@@ -3449,3 +3450,25 @@ class DBHandler:
                 }
 
         return result
+
+    def get_blockchain_account_label(
+            self,
+            cursor: 'DBCursor',
+            blockchain: SupportedBlockchain,
+            address: BlockchainAddress,
+    ) -> Optional[str]:
+        """Returns the label for a specific blockchain account.
+        Returns None if either there is no label set or the account doesn't exist in database.
+        """
+        query = cursor.execute(
+            'SELECT label '
+            'FROM blockchain_accounts '
+            'WHERE blockchain=? '
+            'AND account=?',
+            (blockchain.value, address),
+        )
+        result = query.fetchone()
+        if result:
+            return result[0]
+
+        return None

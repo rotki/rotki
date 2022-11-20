@@ -69,6 +69,7 @@ from rotkehlchen.tests.utils.constants import (
 )
 from rotkehlchen.tests.utils.rotkehlchen import add_starting_balances, add_starting_nfts
 from rotkehlchen.types import (
+    DEFAULT_ADDRESS_NAME_PRIORITY,
     ApiKey,
     ApiSecret,
     AssetAmount,
@@ -383,6 +384,7 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
         'cost_basis_method': CostBasisMethod.FIFO,
         'treat_eth2_as_eth': DEFAULT_TREAT_ETH2_AS_ETH,
         'eth_staking_taxable_after_withdrawal_enabled': DEFAULT_ETH_STAKING_TAXABLE_AFTER_WITHDRAWAL_ENABLED,  # noqa: E501
+        'address_name_priority': DEFAULT_ADDRESS_NAME_PRIORITY,
     }
     assert len(expected_dict) == len(DBSettings()), 'One or more settings are missing'
 

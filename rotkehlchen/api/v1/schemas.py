@@ -87,6 +87,7 @@ from rotkehlchen.inquirer import CurrentPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
+    DEFAULT_ADDRESS_NAME_PRIORITY,
     NON_EVM_CHAINS,
     AddressbookEntry,
     AddressbookType,
@@ -975,6 +976,9 @@ class ModifiableSettingsSchema(Schema):
     )
     cost_basis_method = SerializableEnumField(enum_class=CostBasisMethod, load_default=None)
     eth_staking_taxable_after_withdrawal_enabled = fields.Boolean(load_default=None)
+    address_name_priority = fields.List(fields.String(
+        validate=webargs.validate.OneOf(choices=DEFAULT_ADDRESS_NAME_PRIORITY),
+    ), load_default=None)
 
     @validates_schema
     def validate_settings_schema(  # pylint: disable=no-self-use
@@ -1024,6 +1028,7 @@ class ModifiableSettingsSchema(Schema):
             cost_basis_method=data['cost_basis_method'],
             treat_eth2_as_eth=data['treat_eth2_as_eth'],
             eth_staking_taxable_after_withdrawal_enabled=data['eth_staking_taxable_after_withdrawal_enabled'],  # noqa: 501
+            address_name_priority=data['address_name_priority'],
         )
 
 
