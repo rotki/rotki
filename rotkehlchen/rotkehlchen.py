@@ -50,6 +50,7 @@ from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.data_import.manager import CSVDataImporter
 from rotkehlchen.data_migrations.manager import DataMigrationManager
+from rotkehlchen.db.filtering import NFTFilterQuery
 from rotkehlchen.db.settings import DBSettings, ModifiableDBSettings
 from rotkehlchen.errors.api import PremiumAuthenticationError
 from rotkehlchen.errors.asset import UnknownAsset
@@ -758,25 +759,11 @@ class Rotkehlchen():
                 if len(loopring_balances) != 0:
                     balances[str(Location.LOOPRING)] = loopring_balances
 
-        uniswap_v3_balances = None
-        try:
-            uniswap_v3_balances = self.chains_aggregator.query_ethereum_lp_balances(balances=balances)  # noqa: E501
-        except RemoteError as e:
-            log.error(
-                f'At balance snapshot LP balances query failed due to {str(e)}. Error '
-                f'is ignored and balance snapshot will still be saved.',
-            )
-
         # retrieve nft balances if module is activated
         nfts = self.chains_aggregator.get_module('nfts')
         if nfts is not None:
             try:
-                nft_mapping = nfts.get_balances(
-                    addresses=self.chains_aggregator.queried_addresses_for_module('nfts'),
-                    uniswap_nfts=uniswap_v3_balances,
-                    return_zero_values=False,
-                    ignore_cache=False,
-                )
+                nft_mapping = nfts.get_db_nft_balances(filter_query=NFTFilterQuery.make())['entries']  # noqa: E501
             except RemoteError as e:
                 log.error(
                     f'At balance snapshot NFT balances query failed due to {str(e)}. Error '
@@ -789,6 +776,8 @@ class Rotkehlchen():
 
                     for nft_balances in nft_mapping.values():
                         for balance_entry in nft_balances:
+                            if balance_entry['usd_price'] == ZERO:
+                                continue
                             balances[str(Location.BLOCKCHAIN)][CryptoAsset(
                                 balance_entry['id'])] = Balance(
                                 amount=ONE,

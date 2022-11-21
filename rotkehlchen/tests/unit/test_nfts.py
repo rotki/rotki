@@ -1,4 +1,5 @@
 import pytest
+from rotkehlchen.db.filtering import NFTFilterQuery
 
 TEST_ACC1 = '0xc37b40ABdB939635068d3c5f13E7faF686F03B65'  # yabir.eth
 TEST_ACC2 = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'  # lefteris.eth
@@ -12,11 +13,10 @@ def test_addresses_queried_for_nfts(blockchain):
     IntegrityError described in https://github.com/rotki/rotki/issues/4456
     """
     nft_module = blockchain.get_module('nfts')
-    balances = nft_module.get_balances(
+    nft_module.query_balances(
         addresses=[TEST_ACC1, TEST_ACC2],
         uniswap_nfts=None,
-        return_zero_values=False,
-        ignore_cache=True,
     )
+    balances = nft_module.get_db_nft_balances(filter_query=NFTFilterQuery.make())['entries']
     assert TEST_ACC1 in balances
     assert TEST_ACC2 not in balances

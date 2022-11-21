@@ -245,27 +245,45 @@ def test_nft_balances_and_prices(rotkehlchen_api_server):
         json={'assets': [NFT_ID_FOR_TEST_ACC4, NFT_ID_FOR_TEST_ACC6_2]},
     )
 
-    # Check that filtering ignored nfts works
-    response = requests.get(api_url_for(
+    # Make sure that ignoring cache doesn't remove any NFTs from the app
+    response_with_cache = requests.get(api_url_for(
         rotkehlchen_api_server,
         'nftsbalanceresource',
     ), json={'async_query': False, 'ignore_cache': False, 'ignored_assets_handling': 'none'})
-    result = assert_proper_response_with_result(response)
-    assert result['entries_found'] == 4
-    assert result['entries_total'] == 4
-    assert result['entries'][TEST_ACC4][0]['id'] == NFT_ID_FOR_TEST_ACC4
-    assert result['entries'][TEST_ACC5][0]['id'] == NFT_ID_FOR_TEST_ACC5
-    assert result['entries'][TEST_ACC6][0]['id'] == NFT_ID_FOR_TEST_ACC6_1
-    assert result['entries'][TEST_ACC6][1]['id'] == NFT_ID_FOR_TEST_ACC6_2
-    response = requests.get(api_url_for(
+    response_ignored_cache = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        'nftsbalanceresource',
+    ), json={'async_query': False, 'ignore_cache': True, 'ignored_assets_handling': 'none'})
+    result_with_cache = assert_proper_response_with_result(response_with_cache)
+    result_ignored_cache = assert_proper_response_with_result(response_ignored_cache)
+    assert result_with_cache == result_ignored_cache
+
+    # Check that filtering ignored nfts works
+    assert result_with_cache['entries_found'] == 4
+    assert result_with_cache['entries_total'] == 4
+    assert result_with_cache['entries'][TEST_ACC4][0]['id'] == NFT_ID_FOR_TEST_ACC4
+    assert result_with_cache['entries'][TEST_ACC5][0]['id'] == NFT_ID_FOR_TEST_ACC5
+    assert result_with_cache['entries'][TEST_ACC6][0]['id'] == NFT_ID_FOR_TEST_ACC6_1
+    assert result_with_cache['entries'][TEST_ACC6][1]['id'] == NFT_ID_FOR_TEST_ACC6_2
+
+    # Make sure that after invalidating NFTs cache ignored NFTs remain ignored
+    response_with_cache = requests.get(api_url_for(
         rotkehlchen_api_server,
         'nftsbalanceresource',
     ), json={'async_query': False, 'ignore_cache': False, 'ignored_assets_handling': 'exclude'})
-    result = assert_proper_response_with_result(response)
-    assert result['entries_found'] == 2
-    assert result['entries_total'] == 4
+    result_with_cache = assert_proper_response_with_result(response_with_cache)
+    response_ignored_cache = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        'nftsbalanceresource',
+    ), json={'async_query': False, 'ignore_cache': False, 'ignored_assets_handling': 'exclude'})
+    result_ignored_cache = assert_proper_response_with_result(response_ignored_cache)
+    assert result_with_cache == result_ignored_cache
+
+    # Check that the response is correct
+    assert result_with_cache['entries_found'] == 2
+    assert result_with_cache['entries_total'] == 4
     expected_nfts_without_ignored = {NFT_ID_FOR_TEST_ACC5, NFT_ID_FOR_TEST_ACC6_1}
-    assert {entry[0]['id'] for entry in result['entries'].values()} == expected_nfts_without_ignored  # noqa: E501
+    assert {entry[0]['id'] for entry in result_with_cache['entries'].values()} == expected_nfts_without_ignored  # noqa: E501
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
         'nftsbalanceresource',
