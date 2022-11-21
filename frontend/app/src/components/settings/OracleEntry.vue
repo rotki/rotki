@@ -51,21 +51,21 @@ const size = computed<string>(() => {
 
 const icon = computed<string>(() => {
   if (get(identifier) === PriceOracle.CRYPTOCOMPARE) {
-    return '/assets/images/oracles/cryptocompare.png';
+    return './assets/images/oracles/cryptocompare.png';
   } else if (get(identifier) === PriceOracle.COINGECKO) {
-    return '/assets/images/oracles/coingecko.svg';
+    return './assets/images/oracles/coingecko.svg';
   } else if (get(identifier) === PriceOracle.MANUAL) {
-    return '/assets/images/oracles/book.svg';
+    return './assets/images/oracles/book.svg';
   } else if (get(identifier) === PriceOracle.MANUALCURRENT) {
-    return '/assets/images/oracles/book.svg';
+    return './assets/images/oracles/book.svg';
   } else if (identifier.value === PriceOracle.UNISWAP2) {
-    return '/assets/images/defi/uniswap.svg';
+    return './assets/images/defi/uniswap.svg';
   } else if (identifier.value === PriceOracle.UNISWAP3) {
-    return '/assets/images/defi/uniswap.svg';
+    return './assets/images/defi/uniswap.svg';
   } else if (identifier.value === PriceOracle.SADDLE) {
-    return '/assets/images/airdrops/saddle-finance.svg';
+    return './assets/images/airdrops/saddle-finance.svg';
   } else if (identifier.value === PriceOracle.DEFILLAMA) {
-    return '/assets/images/oracles/defillama.svg';
+    return './assets/images/oracles/defillama.svg';
   }
   return '';
 });

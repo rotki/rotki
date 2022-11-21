@@ -18,15 +18,15 @@ export const isRestChain = (chain: Blockchain): chain is RestChains =>
   RestChains.includes(chain as any);
 
 const chainIcons: Record<EvmChain, string> = {
-  [EvmChain.ETHEREUM]: '/assets/images/modules/eth.svg',
-  [EvmChain.ARBITRUM]: '/assets/images/chains/arbitrum.svg',
-  [EvmChain.BINANCE]: '/assets/images/chains/binance.svg',
-  [EvmChain.FANTOM]: '/assets/images/chains/fantom.svg',
-  [EvmChain.GNOSIS]: '/assets/images/chains/gnosis.svg',
-  [EvmChain.AVALANCHE]: '/assets/images/chains/avalanche.svg',
-  [EvmChain.MATIC]: '/assets/images/chains/polygon.svg',
-  [EvmChain.OPTIMISM]: '/assets/images/chains/optimism.svg',
-  [EvmChain.CELO]: '/assets/images/chains/celo.svg'
+  [EvmChain.ETHEREUM]: './assets/images/modules/eth.svg',
+  [EvmChain.ARBITRUM]: './assets/images/chains/arbitrum.svg',
+  [EvmChain.BINANCE]: './assets/images/chains/binance.svg',
+  [EvmChain.FANTOM]: './assets/images/chains/fantom.svg',
+  [EvmChain.GNOSIS]: './assets/images/chains/gnosis.svg',
+  [EvmChain.AVALANCHE]: './assets/images/chains/avalanche.svg',
+  [EvmChain.MATIC]: './assets/images/chains/polygon.svg',
+  [EvmChain.OPTIMISM]: './assets/images/chains/optimism.svg',
+  [EvmChain.CELO]: './assets/images/chains/celo.svg'
 };
 
 export const getChainIcon = (chain?: Nullable<EvmChain>): string | null => {

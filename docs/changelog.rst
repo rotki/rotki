@@ -6,6 +6,7 @@ Changelog
 * :bug:`5126` APR and APY for borrowing and lending in Aave should properly show again.
 * :bug:`5128` Ethereum transactions where no value was transferred will now be correctly decoded.
 * :bug:`-` Uniswap V3 oracle will now correctly skip assets with no liquidity when querying prices.
+* :bug:`2934` Users will now be able to deploy the docker image on a subpath instead of the root domain.
 
 * :release:`1.26.1 <2022-11-04>`
 * :feature:`5080` For custom assets with custom price there should no longer be any double conversion. So 1 euro should always be one euro.

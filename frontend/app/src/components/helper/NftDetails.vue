@@ -73,7 +73,7 @@ const { getNftDetails } = useNftAssetInfoStore();
 const balanceData = getNftDetails(identifier);
 
 const imageUrl = computed<string | null>(() => {
-  return get(balanceData)?.imageUrl ?? '/assets/images/placeholder.svg';
+  return get(balanceData)?.imageUrl ?? './assets/images/placeholder.svg';
 });
 
 const getCollectionName = (data: NftAsset | null): string | null => {

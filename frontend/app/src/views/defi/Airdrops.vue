@@ -144,67 +144,67 @@ const section = Section.DEFI_AIRDROPS;
 const ETH = Blockchain.ETH;
 const sources: AirdropSources = {
   [AIRDROP_UNISWAP]: {
-    icon: '/assets/images/defi/uniswap.svg',
+    icon: './assets/images/defi/uniswap.svg',
     name: 'Uniswap'
   },
   [AIRDROP_1INCH]: {
-    icon: '/assets/images/1inch.svg',
+    icon: './assets/images/1inch.svg',
     name: '1inch'
   },
   [AIRDROP_TORNADO]: {
-    icon: '/assets/images/airdrops/tornado.svg',
+    icon: './assets/images/airdrops/tornado.svg',
     name: 'Tornado Cash'
   },
   [AIRDROP_CORNICHON]: {
-    icon: '/assets/images/airdrops/cornichon.svg',
+    icon: './assets/images/airdrops/cornichon.svg',
     name: 'Cornichon'
   },
   [AIRDROP_GRAIN]: {
-    icon: '/assets/images/airdrops/grain.png',
+    icon: './assets/images/airdrops/grain.png',
     name: 'Grain'
   },
   [AIRDROP_LIDO]: {
-    icon: '/assets/images/airdrops/lido.svg',
+    icon: './assets/images/airdrops/lido.svg',
     name: 'Lido'
   },
   [AIRDROP_FURUCOMBO]: {
-    icon: '/assets/images/airdrops/furucombo.png',
+    icon: './assets/images/airdrops/furucombo.png',
     name: 'Furucombo'
   },
   [AIRDROP_CURVE]: {
-    icon: '/assets/images/defi/curve.svg',
+    icon: './assets/images/defi/curve.svg',
     name: 'Curve Finance'
   },
   [AIRDROP_POAP]: {
-    icon: '/assets/images/airdrops/poap.svg',
+    icon: './assets/images/airdrops/poap.svg',
     name: 'POAP Delivery'
   },
   [AIRDROP_CONVEX]: {
-    icon: '/assets/images/airdrops/convex.jpeg',
+    icon: './assets/images/airdrops/convex.jpeg',
     name: 'Convex'
   },
   [AIRDROP_FOX]: {
-    icon: '/assets/images/shapeshift.svg',
+    icon: './assets/images/shapeshift.svg',
     name: 'ShapeShift'
   },
   [AIRDROP_ENS]: {
-    icon: '/assets/images/airdrops/ens.svg',
+    icon: './assets/images/airdrops/ens.svg',
     name: 'ENS'
   },
   [AIRDROP_PARASWAP]: {
-    icon: '/assets/images/airdrops/paraswap.svg',
+    icon: './assets/images/airdrops/paraswap.svg',
     name: 'ParaSwap'
   },
   [AIRDROP_SADDLE]: {
-    icon: '/assets/images/airdrops/saddle-finance.svg',
+    icon: './assets/images/airdrops/saddle-finance.svg',
     name: 'SaddleFinance'
   },
   [AIRDROP_COW_MAINNET]: {
-    icon: '/assets/images/airdrops/cow.svg',
+    icon: './assets/images/airdrops/cow.svg',
     name: 'COW (ethereum)'
   },
   [AIRDROP_COW_GNOSIS]: {
-    icon: '/assets/images/airdrops/cow.svg',
+    icon: './assets/images/airdrops/cow.svg',
     name: 'COW (gnosis chain)'
   }
 };

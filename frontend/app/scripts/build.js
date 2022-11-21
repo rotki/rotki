@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 const fs = require('fs');
+const path = require('path');
 const { ArgumentParser } = require('argparse');
 const { build } = require('vite');
 
@@ -12,6 +13,14 @@ const parser = new ArgumentParser({
 });
 parser.add_argument('--mode', { help: 'mode docker', default: 'production' });
 const { mode } = parser.parse_args();
+
+const injectEnv = (envName = '.env') => {
+  const envPath = path.resolve(__dirname, '../' + envName);
+  const envExists = fs.existsSync(envPath);
+  if (envExists) {
+    require('dotenv').config({ path: envPath, override: true });
+  }
+};
 
 /**
  * @param {{name: string; configFile: string }} param0
@@ -52,7 +61,10 @@ const setupRendererBuilder = () => {
       fs.rmSync(OUTPUT_DIR, { recursive: true });
     }
 
-    if (mode !== 'docker') {
+    injectEnv('.env');
+    if (mode === 'docker') {
+      injectEnv('.env.docker');
+    } else {
       await setupPreloadBuilder();
       await setupMainBuilder();
     }

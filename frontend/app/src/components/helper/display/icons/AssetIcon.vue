@@ -158,7 +158,7 @@ const tooltip = computed(() => {
 const url = computed<string>(() => {
   let id = get(identifier);
   if (get(symbol) === 'WETH') {
-    return `/assets/images/defi/weth.svg`;
+    return `./assets/images/defi/weth.svg`;
   }
   const currentTimestamp = get(timestamp) || Date.now();
 

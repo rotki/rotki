@@ -350,7 +350,7 @@ defineExpose({
   left: -450px !important;
   top: -250px !important;
   opacity: 0.5;
-  background: url(/assets/images/rotkipattern2.svg) repeat;
+  background: url(./assets/images/rotkipattern2.svg) repeat;
   background-size: 450px 150px;
   filter: grayscale(0.5);
   -webkit-animation-name: scrollLarge;
