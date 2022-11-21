@@ -52,7 +52,7 @@ const { t } = useI18n();
     min-height: 150px;
     margin-bottom: 15px;
     margin-top: 15px;
-    background: url(/assets/images/rotkehlchen_no_text.png) no-repeat center;
+    background: url(./assets/images/rotkehlchen_no_text.png) no-repeat center;
     background-size: contain;
   }
 

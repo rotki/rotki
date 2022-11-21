@@ -62,49 +62,49 @@ const sources = [
   {
     identifier: 'cointracking.info',
     name: tc('import_data.cointracking.name'),
-    logo: '/assets/images/cointracking.svg',
+    logo: './assets/images/cointracking.svg',
     form: CointrackingImport
   },
   {
     identifier: 'cryptocom',
     name: tc('import_data.cryptocom.name'),
-    logo: '/assets/images/crypto_com.svg',
+    logo: './assets/images/crypto_com.svg',
     form: CryptoComImport
   },
   {
     identifier: 'blockfi',
     name: tc('import_data.blockfi.name'),
-    logo: '/assets/images/blockfi.svg',
+    logo: './assets/images/blockfi.svg',
     form: BlockFiImport
   },
   {
     identifier: 'nexo',
     name: tc('import_data.nexo.name'),
-    logo: '/assets/images/nexo.svg',
+    logo: './assets/images/nexo.svg',
     form: NexoImport
   },
   {
     identifier: 'shapeshift-trades',
     name: tc('import_data.shapeshift.name'),
-    logo: '/assets/images/shapeshift.svg',
+    logo: './assets/images/shapeshift.svg',
     form: ShapeshiftImport
   },
   {
     identifier: 'uphold',
     name: tc('import_data.uphold.name'),
-    logo: '/assets/images/uphold.svg',
+    logo: './assets/images/uphold.svg',
     form: UpholdImport
   },
   {
     identifier: 'bisq',
     name: tc('import_data.bisq.name'),
-    logo: '/assets/images/bisq.svg',
+    logo: './assets/images/bisq.svg',
     form: BisqImport
   },
   {
     identifier: 'binance',
     name: tc('import_data.binance.name'),
-    logo: '/assets/images/exchanges/binance.svg',
+    logo: './assets/images/exchanges/binance.svg',
     form: BinanceImport
   },
   {

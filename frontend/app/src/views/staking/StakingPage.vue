@@ -154,22 +154,22 @@ const { tc } = useI18n();
 const staking = computed<StakingInfo[]>(() => [
   {
     id: 'eth2',
-    icon: '/assets/images/modules/eth.svg',
+    icon: './assets/images/modules/eth.svg',
     name: tc('staking.eth2')
   },
   {
     id: 'adex',
-    icon: '/assets/images/adex.svg',
+    icon: './assets/images/adex.svg',
     name: tc('staking.adex')
   },
   {
     id: 'liquity',
-    icon: '/assets/images/defi/liquity.png',
+    icon: './assets/images/defi/liquity.png',
     name: tc('staking.liquity')
   },
   {
     id: 'kraken',
-    icon: '/assets/images/exchanges/kraken.svg',
+    icon: './assets/images/exchanges/kraken.svg',
     name: tc('staking.kraken')
   }
 ]);

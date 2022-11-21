@@ -106,28 +106,28 @@ export const routesRef = computed(() => ({
   },
   DEFI_DEPOSITS_LIQUIDITY_UNISWAP_V2: {
     route: '/defi/deposits/liquidity/uniswap_v2',
-    image: '/assets/images/defi/uniswap.svg',
+    image: './assets/images/defi/uniswap.svg',
     text: i18n
       .t('navigation_menu.defi_sub.deposits_sub.liquidity_sub.uniswap_v2')
       .toString()
   },
   DEFI_DEPOSITS_LIQUIDITY_UNISWAP_V3: {
     route: '/defi/deposits/liquidity/uniswap_v3',
-    image: '/assets/images/defi/uniswap.svg',
+    image: './assets/images/defi/uniswap.svg',
     text: i18n
       .t('navigation_menu.defi_sub.deposits_sub.liquidity_sub.uniswap_v3')
       .toString()
   },
   DEFI_DEPOSITS_LIQUIDITY_BALANCER: {
     route: '/defi/deposits/liquidity/balancer',
-    image: '/assets/images/defi/balancer.svg',
+    image: './assets/images/defi/balancer.svg',
     text: i18n
       .t('navigation_menu.defi_sub.deposits_sub.liquidity_sub.balancer')
       .toString()
   },
   DEFI_DEPOSITS_LIQUIDITY_SUSHISWAP: {
     route: '/defi/deposits/liquidity/sushiswap',
-    image: '/assets/images/modules/sushiswap.svg',
+    image: './assets/images/modules/sushiswap.svg',
     text: i18n
       .t('navigation_menu.defi_sub.deposits_sub.liquidity_sub.sushiswap')
       .toString()
