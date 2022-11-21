@@ -11,16 +11,16 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def _rename_eth_to_evm_add_chainid(write_cursor: 'DBCursor'):
+def _rename_eth_to_evm_add_chainid(write_cursor: 'DBCursor') -> None:
     pass
 
 
-def _upgrade_events_mappings(write_cursor: 'DBCursor'):
+def _upgrade_events_mappings(write_cursor: 'DBCursor') -> None:
     """TODO: Upgrade both evm_tx_mappings and history_events_mappings"""
     pass
 
 
-def _remove_adex(write_cursor: 'DBCursor'):
+def _remove_adex(write_cursor: 'DBCursor') -> None:
     """TODO: Remove all adex related tables, events, data in other tables.
     Check removal commit to see all data that should go
     """

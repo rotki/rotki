@@ -6,7 +6,7 @@ import pytest
 
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.xpub import XpubData
-from rotkehlchen.db.ethtx import DBEthTx
+from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.premium.premium import Premium, PremiumCredentials, SubscriptionStatus
 from rotkehlchen.tasks.manager import PREMIUM_STATUS_CHECK, TaskManager
@@ -183,7 +183,7 @@ def test_maybe_schedule_ethereum_txreceipts(
         one_receipt_in_db=one_receipt_in_db,
     )
 
-    dbethtx = DBEthTx(database)
+    dbevmtx = DBEvmTx(database)
     timeout = 10
     tx_hash_1 = hexstring_to_bytes('0x692f9a6083e905bdeca4f0293f3473d7a287260547f8cbccc38c5cb01591fcda')  # noqa: E501
     tx_hash_2 = hexstring_to_bytes('0x6beab9409a8f3bd11f82081e99e856466a7daf5f04cca173192f79e78ed53a77')  # noqa: E501
@@ -199,7 +199,7 @@ def test_maybe_schedule_ethereum_txreceipts(
                             break
 
                         for txhash in (tx_hash_1, tx_hash_2):
-                            if dbethtx.get_receipt(cursor, txhash, ChainID.ETHEREUM) is not None:
+                            if dbevmtx.get_receipt(cursor, txhash, ChainID.ETHEREUM) is not None:
                                 queried_receipts.add(txhash)
 
                         gevent.sleep(.3)

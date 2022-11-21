@@ -3131,7 +3131,7 @@ class RestAPI():
             event_params: Dict[str, Any],
     ) -> Dict[str, Any]:
         try:
-            transactions, total_filter_count = self.rotkehlchen.chains_aggregator.ethereum.evm_transactions.query(  # noqa: E501
+            transactions, total_filter_count = self.rotkehlchen.chains_aggregator.ethereum.transactions.query(  # noqa: E501
                 only_cache=only_cache,
                 filter_query=filter_query,
                 has_premium=self.rotkehlchen.premium is not None,
@@ -3240,7 +3240,7 @@ class RestAPI():
         If the tx_hashes argument is provided then the USD price for their events will be queried.
         """
         try:
-            decoded_events = self.rotkehlchen.eth_tx_decoder.decode_transaction_hashes(
+            decoded_events = self.rotkehlchen.chains_aggregator.ethereum.transactions_decoder.decode_transaction_hashes(  # noqa: E501
                 ignore_cache=ignore_cache,
                 tx_hashes=tx_hashes,
             )
@@ -4356,7 +4356,7 @@ class RestAPI():
         mappings_to_send: Dict[ChecksumEvmAddress, str] = {}
         try:
             mappings_to_send = find_ens_mappings(
-                ethereum_manager=self.rotkehlchen.chains_aggregator.ethereum,
+                ethereum_inquirer=self.rotkehlchen.chains_aggregator.ethereum.node_inquirer,
                 addresses=addresses,
                 ignore_cache=ignore_cache,
             )
@@ -4435,7 +4435,7 @@ class RestAPI():
         return api_response(
             result={
                 # Converting to list since set is not json serializable
-                'result': list(self.rotkehlchen.eth_tx_decoder.all_counterparties),
+                'result': list(self.rotkehlchen.chains_aggregator.ethereum.transactions_decoder.all_counterparties),  # noqa: E501
                 'message': '',
             },
         )
@@ -4513,7 +4513,7 @@ class RestAPI():
             manager: EvmManager,
     ) -> Dict[str, Any]:
         try:
-            account_tokens_info = manager.token.detect_tokens(
+            account_tokens_info = manager.tokens.detect_tokens(
                 only_cache=only_cache,
                 addresses=addresses,
             )

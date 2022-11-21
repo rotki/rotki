@@ -24,7 +24,7 @@ from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 from .constants import CPT_ENS
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -49,12 +49,12 @@ TEXT_CHANGED_ABI = '{"anonymous":false,"inputs":[{"indexed":true,"internalType":
 class EnsDecoder(DecoderInterface, CustomizableDateMixin):  # lgtm[py/missing-call-to-init]
     def __init__(  # pylint: disable=super-init-not-called
             self,
-            ethereum_manager: 'EthereumManager',
+            ethereum_inquirer: 'EthereumInquirer',
             base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',  # pylint: disable=unused-argument
     ) -> None:
         self.base = base_tools
-        self.ethereum_manager = ethereum_manager
+        self.ethereum_inquirer = ethereum_inquirer
         CustomizableDateMixin.__init__(self, base_tools.database)
         self.eth = A_ETH.resolve_to_crypto_asset()
 
@@ -179,7 +179,7 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):  # lgtm[py/missing-ca
             node = tx_log.topics[1]
             try:
                 ens_name = ENS_REVERSE_RESOLVER.call(
-                    manager=self.ethereum_manager,
+                    node_inquirer=self.ethereum_inquirer,
                     method_name='name',
                     arguments=[node],
                 )
@@ -233,13 +233,13 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):  # lgtm[py/missing-ca
             node = tx_log.topics[1]
             try:
                 address = ENS_PUBLIC_RESOLVER_2.call(
-                    manager=self.ethereum_manager,
+                    node_inquirer=self.ethereum_inquirer,
                     method_name='addr',
                     arguments=[node],
                 )
                 address = to_checksum_address(address)
                 ens_mapping = find_ens_mappings(
-                    ethereum_manager=self.ethereum_manager,
+                    ethereum_inquirer=self.ethereum_inquirer,
                     addresses=[address],
                     ignore_cache=False,
                 )

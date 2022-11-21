@@ -7,7 +7,7 @@ from rotkehlchen.db.filtering import (
     DBFilterQuery,
     DBLocationFilter,
     DBTimestampFilter,
-    ETHTransactionsFilterQuery,
+    EvmTransactionsFilterQuery,
 )
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.types import Location, Timestamp
@@ -15,7 +15,7 @@ from rotkehlchen.types import Location, Timestamp
 
 def test_ethereum_transaction_filter():
     addresses = [make_ethereum_address()]
-    filter_query = ETHTransactionsFilterQuery.make(
+    filter_query = EvmTransactionsFilterQuery.make(
         limit=10,
         offset=10,
         addresses=addresses,

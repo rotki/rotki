@@ -10,7 +10,7 @@ from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_LINK, A_USDC, A_USDT
 from rotkehlchen.constants.misc import EXP18, ZERO
-from rotkehlchen.db.ethtx import DBEthTx
+from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb import GlobalDBHandler
 from rotkehlchen.tests.utils.factories import make_ethereum_address
@@ -127,9 +127,9 @@ def test_curve_deposit(database, evm_transaction_decoder):
         ],
     )
 
-    dbethtx = DBEthTx(database)
+    dbevmtx = DBEvmTx(database)
     with database.user_write() as cursor:
-        dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
+        dbevmtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
         events = evm_transaction_decoder.decode_transaction(
             write_cursor=cursor,
             transaction=transaction,
@@ -265,9 +265,9 @@ def test_curve_deposit_eth(database, evm_transaction_decoder):
         ],
     )
 
-    dbethtx = DBEthTx(database)
+    dbevmtx = DBEvmTx(database)
     with database.user_write() as cursor:
-        dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
+        dbevmtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
         events = evm_transaction_decoder.decode_transaction(
             write_cursor=cursor,
             transaction=transaction,
@@ -413,9 +413,9 @@ def test_curve_remove_liquidity(database, evm_transaction_decoder):
         ],
     )
 
-    dbethtx = DBEthTx(database)
+    dbevmtx = DBEvmTx(database)
     with database.user_write() as cursor:
-        dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
+        dbevmtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
         events = evm_transaction_decoder.decode_transaction(
             write_cursor=cursor,
             transaction=transaction,
@@ -526,10 +526,10 @@ def test_curve_remove_liquidity_with_internal(database, evm_transaction_decoder)
         to_address='0xa8005630caE7b7d2AFADD38FD3B3040d13cbE2BC',
         value=FVal('1.02930131799766041') * EXP18,
     )
-    dbethtx = DBEthTx(database)
+    dbevmtx = DBEvmTx(database)
     with database.user_write() as cursor:
-        dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
-        dbethtx.add_ethereum_internal_transactions(cursor, [internal_tx], relevant_address=location_label)  # noqa: E501
+        dbevmtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
+        dbevmtx.add_ethereum_internal_transactions(cursor, [internal_tx], relevant_address=location_label)  # noqa: E501
         events = evm_transaction_decoder.decode_transaction(
             write_cursor=cursor,
             transaction=transaction,
@@ -692,9 +692,9 @@ def test_curve_remove_imbalanced(database, evm_transaction_decoder):
             ),
         ],
     )
-    dbethtx = DBEthTx(database)
+    dbevmtx = DBEvmTx(database)
     with database.user_write() as cursor:
-        dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
+        dbevmtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
         events = evm_transaction_decoder.decode_transaction(
             write_cursor=cursor,
             transaction=transaction,

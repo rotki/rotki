@@ -18,7 +18,7 @@ from .constants import CPT_CURVE
 from .pools_cache import read_curve_pools
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -41,12 +41,12 @@ class CurveDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
 
     def __init__(
             self,
-            ethereum_manager: 'EthereumManager',  # pylint: disable=unused-argument
+            ethereum_inquirer: 'EthereumInquirer',  # pylint: disable=unused-argument
             base_tools: 'BaseDecoderTools',  # pylint: disable=unused-argument
             msg_aggregator: 'MessagesAggregator',  # pylint: disable=unused-argument
     ) -> None:
         super().__init__(
-            ethereum_manager=ethereum_manager,
+            evm_inquirer=ethereum_inquirer,
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
         )

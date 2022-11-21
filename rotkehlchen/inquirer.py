@@ -12,6 +12,7 @@ from typing import (
     List,
     NamedTuple,
     Optional,
+    Sequence,
     Set,
     Tuple,
     Union,
@@ -364,7 +365,7 @@ class Inquirer():
         return Inquirer.__instance
 
     @staticmethod
-    def inject_evm_managers(evm_managers: List[Tuple[ChainID, 'EvmManager']]) -> None:
+    def inject_evm_managers(evm_managers: Sequence[Tuple[ChainID, 'EvmManager']]) -> None:
         instance = Inquirer()
         for chain_id, evm_manager in evm_managers:
             instance._evm_managers[chain_id] = evm_manager

@@ -157,7 +157,7 @@ from rotkehlchen.db.filtering import (
     AssetsFilterQuery,
     CustomAssetsFilterQuery,
     Eth2DailyStatsFilterQuery,
-    ETHTransactionsFilterQuery,
+    EvmTransactionsFilterQuery,
     LedgerActionsFilterQuery,
     ReportDataFilterQuery,
     TradesFilterQuery,
@@ -469,7 +469,7 @@ class EthereumTransactionsResource(BaseMethodView):
             self,
             async_query: bool,
             only_cache: bool,
-            filter_query: ETHTransactionsFilterQuery,
+            filter_query: EvmTransactionsFilterQuery,
             event_params: Dict[str, Any],
     ) -> Response:
         return self.rest_api.get_ethereum_transactions(
@@ -776,7 +776,7 @@ class EthereumAssetsResource(BaseMethodView):
 
     @use_kwargs(get_schema, location='json_and_query')
     def get(self, address: Optional[ChecksumEvmAddress], chain_id: ChainID) -> Response:
-        return self.rest_api.get_custom_ethereum_tokens(address=address, chain_id=chain_id)
+        return self.rest_api.get_custom_evm_tokens(address=address, chain_id=chain_id)
 
     @require_loggedin_user()
     @resource_parser.use_kwargs(make_edit_schema, location='json')
@@ -1379,17 +1379,17 @@ class BlockchainsAccountsResource(BaseMethodView):
 
     def make_put_schema(self) -> BlockchainAccountsPutSchema:
         return BlockchainAccountsPutSchema(
-            self.rest_api.rotkehlchen.chains_aggregator.ethereum,
+            self.rest_api.rotkehlchen.chains_aggregator.ethereum.node_inquirer,
         )
 
     def make_patch_schema(self) -> BlockchainAccountsPatchSchema:
         return BlockchainAccountsPatchSchema(
-            self.rest_api.rotkehlchen.chains_aggregator.ethereum,
+            self.rest_api.rotkehlchen.chains_aggregator.ethereum.node_inquirer,
         )
 
     def make_delete_schema(self) -> BlockchainAccountsDeleteSchema:
         return BlockchainAccountsDeleteSchema(
-            self.rest_api.rotkehlchen.chains_aggregator.ethereum,
+            self.rest_api.rotkehlchen.chains_aggregator.ethereum.node_inquirer,
         )
 
     @require_loggedin_user()

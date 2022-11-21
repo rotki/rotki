@@ -16,7 +16,7 @@ from rotkehlchen.utils.misc import ts_sec_to_ms
 from .constants import CPT_DXDAO_MESA
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -30,12 +30,12 @@ class DxdaomesaDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
 
     def __init__(  # pylint: disable=super-init-not-called
             self,
-            ethereum_manager: 'EthereumManager',
+            ethereum_inquirer: 'EthereumInquirer',
             base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',  # pylint: disable=unused-argument
     ) -> None:
         self.base = base_tools
-        self.ethereum = ethereum_manager
+        self.ethereum = ethereum_inquirer
 
         dir_path = os.path.dirname(os.path.realpath(__file__))
         with open(os.path.join(dir_path, 'data', 'contracts.json'), 'r') as f:

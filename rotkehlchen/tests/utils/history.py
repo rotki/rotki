@@ -969,7 +969,7 @@ def mock_history_processing_and_exchanges(
         remote_errors,
     )
     etherscan_patch = mock_etherscan_transaction_response(
-        etherscan=rotki.etherscan,
+        etherscan=rotki.chains_aggregator.ethereum.node_inquirer.etherscan,
         remote_errors=remote_errors,
     )
     return TradesTestSetup(

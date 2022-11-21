@@ -80,8 +80,8 @@ from rotkehlchen.utils.misc import (
 from .constants import CPT_DSR, CPT_MIGRATION, CPT_VAULT
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
-    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -99,20 +99,20 @@ CDPMANAGER_FROB = b'E\xe6\xbd\xcd\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x0
 class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-init]
     def __init__(  # pylint: disable=super-init-not-called
             self,
-            evm_inquirer: 'EvmNodeInquirer',
+            ethereum_inquirer: 'EthereumInquirer',
             base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',
     ) -> None:
         DecoderInterface.__init__(
             self,
-            evm_inquirer=evm_inquirer,
+            evm_inquirer=ethereum_inquirer,
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
         )
         self.base = base_tools
         HasDSProxy.__init__(
             self,
-            ethereum_inquirer=evm_inquirer,
+            ethereum_inquirer=ethereum_inquirer,
             database=self.base.database,
             premium=None,  # not used here
             msg_aggregator=msg_aggregator,

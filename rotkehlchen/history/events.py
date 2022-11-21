@@ -6,7 +6,7 @@ from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
-    ETHTransactionsFilterQuery,
+    EvmTransactionsFilterQuery,
     HistoryEventFilterQuery,
     LedgerActionsFilterQuery,
     TradesFilterQuery,
@@ -18,7 +18,7 @@ from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition,
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES, ExchangeManager
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import EXTERNAL_LOCATION, Location, SupportedBlockchain, Timestamp
+from rotkehlchen.types import EXTERNAL_LOCATION, ChainID, Location, SupportedBlockchain, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import timestamp_to_date
 
@@ -332,13 +332,14 @@ class EventsHistorian:
 
         self.processing_state_name = 'Querying ethereum transactions history'
         ethereum = self.chains_aggregator.get_chain_manager(SupportedBlockchain.ETHEREUM)
-        tx_filter_query = ETHTransactionsFilterQuery.make(
+        tx_filter_query = EvmTransactionsFilterQuery.make(
             limit=None,
             offset=None,
             addresses=None,
             # We need to have history of transactions since before the range
             from_ts=Timestamp(0),
             to_ts=end_ts,
+            chain_id=ChainID.ETHEREUM,
         )
         try:
             _, _ = ethereum.transactions.query(

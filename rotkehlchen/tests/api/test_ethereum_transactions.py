@@ -3,7 +3,7 @@ import os
 import random
 from contextlib import ExitStack
 from http import HTTPStatus
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional
 from unittest.mock import patch
 
 import gevent
@@ -11,17 +11,12 @@ import pytest
 import requests
 
 from rotkehlchen.api.server import APIServer
-from rotkehlchen.chain.ethereum.constants import (
-    RANGE_PREFIX_ETHINTERNALTX,
-    RANGE_PREFIX_ETHTOKENTX,
-    RANGE_PREFIX_ETHTX,
-)
-from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
+from rotkehlchen.chain.evm.structures import EvmTxReceipt
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_MKR, A_USDT, A_WETH
 from rotkehlchen.constants.limits import FREE_ETH_TX_LIMIT
 from rotkehlchen.constants.misc import ONE
-from rotkehlchen.db.ethtx import DBEthTx
+from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.ranges import DBQueryRanges
@@ -48,6 +43,7 @@ from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.types import (
     ChainID,
+    ChecksumEvmAddress,
     EvmTransaction,
     EVMTxHash,
     SupportedBlockchain,
@@ -55,6 +51,9 @@ from rotkehlchen.types import (
     make_evm_tx_hash,
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
 
 EXPECTED_AFB7_TXS = [{
     'tx_hash': '0x13684203a4bf07aaed0112983cb380db6004acac772af2a5d46cb2a28245fbad',
@@ -160,14 +159,14 @@ EXPECTED_4193_TXS = [{
 def assert_force_redecode_txns_works(api_server: APIServer, hashes: Optional[List[EVMTxHash]]):
     rotki = api_server.rest_api.rotkehlchen
     get_eth_txns_patch = patch.object(
-        rotki.eth_tx_decoder.dbethtx,
-        'get_ethereum_transactions',
-        wraps=rotki.eth_tx_decoder.dbethtx.get_ethereum_transactions,
+        rotki.chains_aggregator.ethereum.transactions_decoder.dbevmtx,
+        'get_evm_transactions',
+        wraps=rotki.chains_aggregator.ethereum.transactions_decoder.dbevmtx.get_evm_transactions,  # noqa: E501
     )
     get_or_decode_txn_events_patch = patch.object(
-        rotki.eth_tx_decoder,
+        rotki.chains_aggregator.ethereum.transactions_decoder,
         'get_or_decode_transaction_events',
-        wraps=rotki.eth_tx_decoder.get_or_decode_transaction_events,
+        wraps=rotki.chains_aggregator.ethereum.transactions_decoder.get_or_decode_transaction_events,  # noqa: E501
     )
     get_or_query_txn_receipt_patch = patch('rotkehlchen.chain.ethereum.transactions.EthTransactions.get_or_query_transaction_receipt')  # noqa: 501
     with ExitStack() as stack:
@@ -194,6 +193,29 @@ def assert_force_redecode_txns_works(api_server: APIServer, hashes: Optional[Lis
             txn_hashes_len = len(hashes)
             for fn in function_call_counters:
                 assert fn.call_count == txn_hashes_len
+
+
+def _write_transactions_to_db(
+        db: 'DBHandler',
+        transactions: List[EvmTransaction],
+        extra_transactions: List[EvmTransaction],
+        ethereum_accounts: List[ChecksumEvmAddress],
+        start_ts: Timestamp,
+        end_ts: Timestamp,
+) -> None:
+    """Common function to replicate writing transactions in the DB for tests in this file"""
+    with db.user_write() as cursor:
+        dbevmtx = DBEvmTx(db)
+        dbevmtx.add_evm_transactions(cursor, transactions, relevant_address=ethereum_accounts[0])  # noqa: E501
+        dbevmtx.add_evm_transactions(cursor, extra_transactions, relevant_address=ethereum_accounts[1])  # noqa: E501
+        # Also make sure to update query ranges so as not to query etherscan at all
+        for address in ethereum_accounts:
+            for prefix in (SupportedBlockchain.ETHEREUM.to_range_prefix('txs'), SupportedBlockchain.ETHEREUM.to_range_prefix('internaltxs'), SupportedBlockchain.ETHEREUM.to_range_prefix('tokentxs')):  # noqa: E501
+                DBQueryRanges(db).update_used_query_range(
+                    write_cursor=cursor,
+                    location_string=f'{prefix}_{address}',
+                    queried_ranges=[(start_ts, end_ts)],
+                )
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[
@@ -310,13 +332,13 @@ def test_query_transactions(rotkehlchen_api_server):
         result = assert_proper_response_with_result(response)
     assert result is True
 
-    dbethtx = DBEthTx(rotki.data.db)
+    dbevmtx = DBEvmTx(rotki.data.db)
     dbevents = DBHistoryEvents(rotki.data.db)
     event_ids = set()
     with rotki.data.db.conn.read_ctx() as cursor:
         for tx_hash_hex in hashes:
-            receipt = dbethtx.get_receipt(cursor, hexstring_to_bytes(tx_hash_hex), ChainID.ETHEREUM)  # noqa: E501
-            assert isinstance(receipt, EthereumTxReceipt) and receipt.tx_hash == hexstring_to_bytes(tx_hash_hex)  # noqa: E501
+            receipt = dbevmtx.get_receipt(cursor, hexstring_to_bytes(tx_hash_hex), ChainID.ETHEREUM)  # noqa: E501
+            assert isinstance(receipt, EvmTxReceipt) and receipt.tx_hash == hexstring_to_bytes(tx_hash_hex)  # noqa: E501
             events = dbevents.get_history_events(
                 cursor=cursor,
                 filter_query=HistoryEventFilterQuery.make(
@@ -342,8 +364,8 @@ def test_query_transactions(rotkehlchen_api_server):
     with rotki.data.db.conn.read_ctx() as cursor:
         result = assert_proper_response_with_result(response)
         for tx_hash_hex in hashes:
-            receipt = dbethtx.get_receipt(cursor, hexstring_to_bytes(tx_hash_hex), ChainID.ETHEREUM)  # noqa: E501
-            assert isinstance(receipt, EthereumTxReceipt) and receipt.tx_hash == hexstring_to_bytes(tx_hash_hex)  # noqa: E501
+            receipt = dbevmtx.get_receipt(cursor, hexstring_to_bytes(tx_hash_hex), ChainID.ETHEREUM)  # noqa: E501
+            assert isinstance(receipt, EvmTxReceipt) and receipt.tx_hash == hexstring_to_bytes(tx_hash_hex)  # noqa: E501
             events = dbevents.get_history_events(
                 cursor=cursor,
                 filter_query=HistoryEventFilterQuery.make(
@@ -605,18 +627,7 @@ def test_query_transactions_over_limit(
         nonce=x,
     ) for x in range(60)]
 
-    with db.user_write() as cursor:
-        dbethtx = DBEthTx(db)
-        dbethtx.add_ethereum_transactions(cursor, transactions, relevant_address=ethereum_accounts[0])  # noqa: E501
-        dbethtx.add_ethereum_transactions(cursor, extra_transactions, relevant_address=ethereum_accounts[1])  # noqa: E501
-        # Also make sure to update query ranges so as not to query etherscan at all
-        for address in ethereum_accounts:
-            for prefix in (RANGE_PREFIX_ETHTX, RANGE_PREFIX_ETHINTERNALTX, RANGE_PREFIX_ETHTOKENTX):  # noqa: E501
-                DBQueryRanges(db).update_used_query_range(
-                    write_cursor=cursor,
-                    location_string=f'{prefix}_{address}',
-                    queried_ranges=[(start_ts, end_ts)],
-                )
+    _write_transactions_to_db(db=db, transactions=transactions, extra_transactions=extra_transactions, ethereum_accounts=ethereum_accounts, start_ts=start_ts, end_ts=end_ts)  # noqa: E501
 
     free_expected_entries_total = [FREE_ETH_TX_LIMIT - 35, 35]
     free_expected_entries_found = [FREE_ETH_TX_LIMIT - 10, 60]
@@ -698,18 +709,7 @@ def test_query_transactions_from_to_address(
         nonce=55,
     )]
 
-    with db.user_write() as cursor:
-        dbethtx = DBEthTx(db)
-        dbethtx.add_ethereum_transactions(cursor, transactions, relevant_address=ethereum_accounts[0])  # noqa: E501
-        dbethtx.add_ethereum_transactions(cursor, [transactions[1]], relevant_address=ethereum_accounts[1])  # noqa: E501
-        # Also make sure to update query ranges so as not to query etherscan at all
-        for address in ethereum_accounts:
-            for prefix in (RANGE_PREFIX_ETHTX, RANGE_PREFIX_ETHINTERNALTX, RANGE_PREFIX_ETHTOKENTX):  # noqa: E501
-                DBQueryRanges(db).update_used_query_range(
-                    write_cursor=cursor,
-                    location_string=f'{prefix}_{address}',
-                    queried_ranges=[(start_ts, end_ts)],
-                )
+    _write_transactions_to_db(db=db, transactions=transactions, extra_transactions=[transactions[1]], ethereum_accounts=ethereum_accounts, start_ts=start_ts, end_ts=end_ts)  # noqa: E501
 
     expected_entries = {ethereum_accounts[0]: 3, ethereum_accounts[1]: 1}
     # Check that we get all transactions correctly even if we query two times
@@ -808,18 +808,8 @@ def test_query_transactions_removed_address(
         input_data=b'',
         nonce=0,
     )]
-    dbethtx = DBEthTx(db)
-    with db.user_write() as cursor:
-        dbethtx.add_ethereum_transactions(cursor, transactions[0:2] + transactions[3:], relevant_address=ethereum_accounts[0])  # noqa: E501
-        dbethtx.add_ethereum_transactions(cursor, transactions[2:], relevant_address=ethereum_accounts[1])  # noqa: E501
-        # Also make sure to update query ranges so as not to query etherscan at all
-        for address in ethereum_accounts:
-            for prefix in (RANGE_PREFIX_ETHTX, RANGE_PREFIX_ETHINTERNALTX, RANGE_PREFIX_ETHTOKENTX):  # noqa: E501
-                DBQueryRanges(db).update_used_query_range(
-                    write_cursor=cursor,
-                    location_string=f'{prefix}_{address}',
-                    queried_ranges=[(start_ts, end_ts)],
-                )
+
+    _write_transactions_to_db(db=db, transactions=transactions[0:2] + transactions[3:], extra_transactions=transactions[2:], ethereum_accounts=ethereum_accounts, start_ts=start_ts, end_ts=end_ts)  # noqa: E501
 
     # Now remove the first account (do the mocking to not query etherscan for balances)
     setup = setup_balances(
@@ -1106,8 +1096,8 @@ def test_query_transactions_check_decoded_events(
             assert cursor.execute(f'SELECT COUNT(*) from {name}').fetchone()[0] == count
         # Now purge all transactions of this address and see data is deleted BUT that
         # the edited/added event and all it's tied to is not
-        dbethtx = DBEthTx(rotki.data.db)
-        dbethtx.delete_transactions(cursor, ethereum_accounts[0], SupportedBlockchain.ETHEREUM)
+        dbevmtx = DBEvmTx(rotki.data.db)
+        dbevmtx.delete_transactions(cursor, ethereum_accounts[0], SupportedBlockchain.ETHEREUM)
 
         for name, count in (
                 ('ethereum_transactions', 2), ('ethereum_internal_transactions', 0),
@@ -1133,7 +1123,7 @@ def test_query_transactions_check_decoded_events(
         # explicitly delete the customized (added/edited) transactions
         dbevents.delete_history_events_by_identifier([x.identifier for x in customized_events])  # noqa: E501
         # and now purge all transactions again and see everything is deleted
-        dbethtx.delete_transactions(cursor, ethereum_accounts[0], SupportedBlockchain.ETHEREUM)
+        dbevmtx.delete_transactions(cursor, ethereum_accounts[0], SupportedBlockchain.ETHEREUM)
         for name in (
                 'ethereum_transactions', 'ethereum_internal_transactions',
                 'ethtx_receipts', 'ethtx_receipt_log_topics',
@@ -1166,11 +1156,11 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
     event2 = make_ethereum_event(tx_hash=b'1', index=2, asset=A_ETH, counterparty='EXAMPLE_PROTOCOL')  # noqa: E501
     event3 = make_ethereum_event(tx_hash=b'1', index=3, asset=A_WETH, counterparty='EXAMPLE_PROTOCOL')  # noqa: E501
     event4 = make_ethereum_event(tx_hash=b'2', index=4, asset=A_WETH)
-    dbethtx = DBEthTx(db)
+    dbevmtx = DBEvmTx(db)
     dbevents = DBHistoryEvents(db)
     with db.user_write() as cursor:
-        dbethtx.add_ethereum_transactions(cursor, [tx1, tx2], relevant_address=ethereum_accounts[0])  # noqa: E501
-        dbethtx.add_ethereum_transactions(cursor, [tx3], relevant_address=ethereum_accounts[1])
+        dbevmtx.add_ethereum_transactions(cursor, [tx1, tx2], relevant_address=ethereum_accounts[0])  # noqa: E501
+        dbevmtx.add_ethereum_transactions(cursor, [tx3], relevant_address=ethereum_accounts[1])
         dbevents.add_history_events(cursor, [event1, event2, event3, event4])
 
     response = requests.get(
@@ -1258,7 +1248,7 @@ def test_ignored_assets(rotkehlchen_api_server, ethereum_accounts):
     db = rotki.data.db
     db.add_to_ignored_assets(A_BTC)
     db.add_to_ignored_assets(A_DAI)
-    dbethtx = DBEthTx(db)
+    dbevmtx = DBEvmTx(db)
     dbevents = DBHistoryEvents(db)
     tx1 = make_ethereum_transaction()
     tx2 = make_ethereum_transaction()
@@ -1268,7 +1258,7 @@ def test_ignored_assets(rotkehlchen_api_server, ethereum_accounts):
     event3 = make_ethereum_event(tx_hash=tx1.tx_hash, index=3, asset=A_MKR)
     event4 = make_ethereum_event(tx_hash=tx2.tx_hash, index=4, asset=A_DAI)
     with db.user_write() as cursor:
-        dbethtx.add_ethereum_transactions(cursor, [tx1, tx2, tx3], relevant_address=ethereum_accounts[0])  # noqa: E501
+        dbevmtx.add_ethereum_transactions(cursor, [tx1, tx2, tx3], relevant_address=ethereum_accounts[0])  # noqa: E501
         dbevents.add_history_events(cursor, [event1, event2, event3, event4])
 
     response = requests.get(

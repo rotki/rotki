@@ -298,8 +298,8 @@ class TaskManager():
         But the DB query will happen again inside the query task while having the
         lock acquired.
         """
-        dbethtx = DBEvmTx(self.database)
-        hash_results = dbethtx.get_transaction_hashes_no_receipt(tx_filter_query=None, limit=TX_RECEIPTS_QUERY_LIMIT)  # noqa: E501
+        dbevmtx = DBEvmTx(self.database)
+        hash_results = dbevmtx.get_transaction_hashes_no_receipt(tx_filter_query=None, limit=TX_RECEIPTS_QUERY_LIMIT)  # noqa: E501
         if len(hash_results) == 0:
             return None
 
@@ -425,8 +425,8 @@ class TaskManager():
         But the DB query will happen again inside the query task while having the
         lock acquired.
         """
-        dbethtx = DBEvmTx(self.database)
-        hashes = dbethtx.get_transaction_hashes_not_decoded(
+        dbevmtx = DBEvmTx(self.database)
+        hashes = dbevmtx.get_transaction_hashes_not_decoded(
             chain_id=ChainID.ETHEREUM,
             limit=TX_DECODING_LIMIT,
         )

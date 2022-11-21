@@ -10,7 +10,7 @@ from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ONE, ZERO
-from rotkehlchen.db.ethtx import DBEthTx
+from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
@@ -142,9 +142,9 @@ def test_text_changed(evm_transaction_decoder, ethereum_accounts):
         ],
     )
 
-    dbethtx = DBEthTx(evm_transaction_decoder.database)
-    with dbethtx.db.user_write() as cursor:
-        dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
+    dbevmtx = DBEvmTx(evm_transaction_decoder.database)
+    with dbevmtx.db.user_write() as cursor:
+        dbevmtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
         events = evm_transaction_decoder.decode_transaction(
             write_cursor=cursor,
             transaction=transaction,
@@ -247,9 +247,9 @@ def test_set_resolver(evm_transaction_decoder, ethereum_accounts):
         ],
     )
 
-    dbethtx = DBEthTx(evm_transaction_decoder.database)
-    with dbethtx.db.user_write() as cursor:
-        dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
+    dbevmtx = DBEvmTx(evm_transaction_decoder.database)
+    with dbevmtx.db.user_write() as cursor:
+        dbevmtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
         events = evm_transaction_decoder.decode_transaction(
             write_cursor=cursor,
             transaction=transaction,

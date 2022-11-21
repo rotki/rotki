@@ -2,7 +2,7 @@ import importlib
 import logging
 import pkgutil
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Set, Tuple, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Protocol, Set, Tuple, Union
 
 from gevent.lock import Semaphore
 
@@ -42,16 +42,17 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-EVENT_DECODER_FN = Callable[
-    [
-        Optional[EvmToken],
-        EvmTxReceiptLog,
-        EvmTransaction,
-        List[HistoryBaseEntry],
-        List[ActionItem],
-    ], 
-    Optional[HistoryBaseEntry],
-]
+class EventDecoderFunction(Protocol):
+
+    def __call__(
+            self,
+            token: Optional[EvmToken],
+            tx_log: EvmTxReceiptLog,
+            transaction: EvmTransaction,
+            decoded_events: List[HistoryBaseEntry],
+            action_items: List[ActionItem],
+    ) -> Optional[HistoryBaseEntry]:
+        ...
 
 
 class EVMTransactionDecoder():
@@ -62,7 +63,7 @@ class EVMTransactionDecoder():
             evm_inquirer: 'EvmNodeInquirer',
             transactions: 'EvmTransactions',
             value_asset: AssetWithOracles,
-            event_rules: List[Callable[EVENT_DECODER_FN]],
+            event_rules: List[EventDecoderFunction],
             misc_counterparties: List[str],
             address_is_exchange_fn: Callable[[ChecksumEvmAddress], Optional[str]],
     ):
