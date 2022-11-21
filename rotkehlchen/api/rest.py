@@ -3895,12 +3895,10 @@ class RestAPI():
             )
             self._eth_module_query(
                 module_name='nfts',
-                method='get_balances',
+                method='query_balances',
                 query_specific_balances_before=None,
                 addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('nfts'),
                 uniswap_nfts=uniswap_result['result'],
-                return_zero_values=True,
-                ignore_cache=True,
             )
 
         return self._eth_module_query(
