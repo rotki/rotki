@@ -9,6 +9,7 @@ import {
 import { DashboardPage } from '../../pages/dashboard-page';
 import { GeneralSettingsPage } from '../../pages/general-settings-page';
 import { RotkiApp } from '../../pages/rotki-app';
+import { waitForAsyncQuery } from '../../support/utils';
 
 describe('balances', () => {
   let username: string;
@@ -61,6 +62,11 @@ describe('balances', () => {
     manualBalancesPage.addBalance(manualBalances[2]);
     manualBalancesPage.visibleEntries(3);
     manualBalancesPage.isVisible(2, manualBalances[2]);
+
+    waitForAsyncQuery({
+      method: 'POST',
+      url: '/api/1/assets/prices/latest'
+    });
   });
 
   it('data is reflected in dashboard', () => {
