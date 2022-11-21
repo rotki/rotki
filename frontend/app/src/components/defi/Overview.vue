@@ -122,7 +122,7 @@ const icon = computed(() => {
   if (!protocol.icon) {
     return '';
   }
-  return `/assets/images/defi/${protocol.icon}`;
+  return `./assets/images/defi/${protocol.icon}`;
 });
 
 const assets = computed(() => {

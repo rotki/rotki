@@ -70,7 +70,13 @@ export const useWebsocketStore = defineStore('websocket', () => {
       ) {
         protocol = 'wss';
       }
-      const baseUrl = serverUrl ? serverUrl.split('://')[1] : location.host;
+      const urlSegments = serverUrl.split('://');
+      let baseUrl: string;
+      if (urlSegments.length > 1) {
+        baseUrl = urlSegments[1];
+      } else {
+        baseUrl = `${location.host}${location.pathname}`;
+      }
 
       const url = `${protocol}://${baseUrl}/ws/`;
       logger.debug(`preparing to connect to ${url}`);

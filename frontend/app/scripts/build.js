@@ -18,7 +18,7 @@ const injectEnv = (envName = '.env') => {
   const envPath = path.resolve(__dirname, '../' + envName);
   const envExists = fs.existsSync(envPath);
   if (envExists) {
-    require('dotenv').config({ path: envPath });
+    require('dotenv').config({ path: envPath, override: true });
   }
 };
 
