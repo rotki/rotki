@@ -27,4 +27,8 @@ const { shouldShowLoadingScreen } = useSectionLoading();
 const loading = shouldShowLoadingScreen(Section.TX);
 
 const { t } = useI18n();
+
+onBeforeMount(async () => {
+  await fetchTransactions();
+});
 </script>
