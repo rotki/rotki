@@ -19,20 +19,9 @@
         </v-col>
       </v-row>
     </v-form>
-    <confirm-dialog
-      v-if="confirm"
-      display
-      :title="tc('data_management.confirm.title')"
-      :message="
-        tc('data_management.confirm.message', 0, { source: sourceLabel })
-      "
-      @confirm="purge(source)"
-      @cancel="confirm = false"
-    />
   </setting-category>
 </template>
 <script setup lang="ts">
-import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import PurgeSelector from '@/components/settings/data-security/PurgeSelector.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
 import { EXTERNAL_EXCHANGES } from '@/data/defaults';
@@ -44,6 +33,7 @@ import {
   ALL_TRANSACTIONS
 } from '@/services/session/consts';
 import { Purgeable } from '@/services/session/types';
+import { useConfirmStore } from '@/store/confirm';
 import { useSessionPurgeStore } from '@/store/session/purge';
 import { SUPPORTED_EXCHANGES, SupportedExchange } from '@/types/exchanges';
 import { BaseMessage } from '@/types/messages';
@@ -54,14 +44,20 @@ const source = ref<Purgeable>(ALL_TRANSACTIONS);
 const status = ref<BaseMessage | null>(null);
 const confirm = ref<boolean>(false);
 const pending = ref<boolean>(false);
-const sourceLabel = ref<string>('');
 
 const { purgeCache } = useSessionPurgeStore();
 
 const { tc } = useI18n();
+const { show } = useConfirmStore();
 
 const showConfirmation = (source: PurgeParams) => {
-  set(sourceLabel, source.text);
+  show(
+    {
+      title: tc('data_management.confirm.title'),
+      message: tc('data_management.confirm.message', 0, { source: source.text })
+    },
+    async () => purge(source)
+  );
   set(confirm, true);
 };
 
@@ -90,14 +86,14 @@ const purgeSource = async (source: Purgeable) => {
   await purgeCache(source);
 };
 
-const purge = async (source: string) => {
+const purge = async (source: PurgeParams) => {
   set(confirm, false);
   try {
     set(pending, true);
-    await purgeSource(source);
+    await purgeSource(source.source);
     set(status, {
       success: tc('data_management.success', 0, {
-        source: get(sourceLabel)
+        source: source.text
       }),
       error: ''
     });
@@ -105,7 +101,7 @@ const purge = async (source: string) => {
   } catch (e: any) {
     set(status, {
       error: tc('data_management.error', 0, {
-        source: get(sourceLabel)
+        source: source.text
       }),
       success: ''
     });

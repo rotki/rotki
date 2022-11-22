@@ -7,6 +7,13 @@
       :success="message.success"
       @dismiss="dismissMessage()"
     />
+    <confirm-dialog
+      :display="visible"
+      :title="confirmation.title"
+      :message="confirmation.message"
+      @confirm="confirm()"
+      @cancel="dismiss()"
+    />
     <startup-error-screen
       v-if="startupErrorMessage.length > 0"
       :message="startupErrorMessage"
@@ -24,6 +31,7 @@ import StartupErrorScreen from '@/components/error/StartupErrorScreen.vue';
 import WinVersionUnsupported from '@/components/error/WinVersionUnsupported.vue';
 import Fragment from '@/components/helper/Fragment';
 import { useBackendMessagesStore } from '@/store/backend-messages';
+import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
 
 const {
@@ -35,4 +43,8 @@ const store = useMessageStore();
 const { message } = storeToRefs(store);
 const { setMessage } = store;
 const dismissMessage = () => setMessage();
+
+const confirmStore = useConfirmStore();
+const { dismiss, confirm } = confirmStore;
+const { confirmation, visible } = storeToRefs(confirmStore);
 </script>

@@ -18,7 +18,7 @@
         :loading="loading"
         :tooltip="tc('external_services.etherscan.delete_tooltip')"
         @save="save('etherscan', $event)"
-        @delete-key="deleteKey('etherscan')"
+        @delete-key="showConfirmation('etherscan')"
       />
     </api-key-box>
 
@@ -33,7 +33,7 @@
         :loading="loading"
         :tooltip="tc('external_services.cryptocompare.delete_tooltip')"
         @save="save('cryptocompare', $event)"
-        @delete-key="deleteKey('cryptocompare')"
+        @delete-key="showConfirmation('cryptocompare')"
       />
     </api-key-box>
 
@@ -48,7 +48,7 @@
         :loading="loading"
         :tooltip="tc('external_services.beaconchain.delete_tooltip')"
         @save="save('beaconchain', $event)"
-        @delete-key="deleteKey('beaconchain')"
+        @delete-key="showConfirmation('beaconchain')"
       />
     </api-key-box>
 
@@ -63,7 +63,7 @@
         :loading="loading"
         :tooltip="tc('external_services.covalent.delete_tooltip')"
         @save="save('covalent', $event)"
-        @delete-key="deleteKey('covalent')"
+        @delete-key="showConfirmation('covalent')"
       />
     </api-key-box>
 
@@ -78,7 +78,7 @@
         :loading="loading"
         :tooltip="tc('external_services.loopring.delete_tooltip')"
         @save="save('loopring', $event)"
-        @delete-key="deleteKey('loopring')"
+        @delete-key="showConfirmation('loopring')"
       />
 
       <v-alert
@@ -112,7 +112,7 @@
         :loading="loading"
         :tooltip="tc('external_services.opensea.delete_tooltip')"
         @save="save('opensea', $event)"
-        @delete-key="deleteKey('opensea')"
+        @delete-key="showConfirmation('opensea')"
       >
         <i18n tag="div" path="external_services.opensea.link">
           <template #link>
@@ -125,25 +125,16 @@
         </i18n>
       </service-key>
     </api-key-box>
-
-    <confirm-dialog
-      :title="tc('external_services.confirmation.title')"
-      :message="tc('external_services.confirmation.message')"
-      :display="!!serviceToDelete"
-      @confirm="confirmDelete"
-      @cancel="serviceToDelete = ''"
-    />
   </card>
 </template>
 
 <script setup lang="ts">
-import { Ref } from 'vue';
-import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import ApiKeyBox from '@/components/settings/api-keys/ApiKeyBox.vue';
 import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
 import { useExternalServicesApi } from '@/services/settings/external-services-api';
 import { useEthBalancesStore } from '@/store/blockchain/balances/eth';
+import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Module } from '@/types/modules';
@@ -152,7 +143,6 @@ import {
   ExternalServiceKeys,
   ExternalServiceName
 } from '@/types/user';
-import { assert } from '@/utils/assertions';
 
 const etherscanKey = ref('');
 const cryptocompareKey = ref('');
@@ -160,8 +150,6 @@ const covalentKey = ref('');
 const beaconchainKey = ref('');
 const loopringKey = ref('');
 const openseaKey = ref('');
-
-const serviceToDelete: Ref<ExternalServiceName | ''> = ref('');
 
 const loading = ref(false);
 
@@ -222,16 +210,22 @@ const save = async (serviceName: ExternalServiceName, key: string) => {
   set(loading, false);
 };
 
-const deleteKey = (serviceName: ExternalServiceName) => {
-  set(serviceToDelete, serviceName);
+const { show } = useConfirmStore();
+
+const showConfirmation = (service: ExternalServiceName) => {
+  show(
+    {
+      title: tc('external_services.confirmation.title'),
+      message: tc('external_services.confirmation.message')
+    },
+    async () => await confirm(service)
+  );
 };
 
-const confirmDelete = async () => {
-  const exchangeName = get(serviceToDelete);
-  assert(exchangeName);
+const confirm = async (service: ExternalServiceName) => {
   set(loading, true);
   try {
-    updateKeys(await api.deleteExternalServices(exchangeName));
+    updateKeys(await api.deleteExternalServices(service));
   } catch (e: any) {
     setMessage({
       title: tc('external_services.delete_error.title'),
@@ -243,7 +237,6 @@ const confirmDelete = async () => {
   }
 
   set(loading, false);
-  set(serviceToDelete, '');
 };
 
 onMounted(async () => {
