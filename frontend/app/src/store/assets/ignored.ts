@@ -1,5 +1,5 @@
 import { MaybeRef } from '@vueuse/core';
-import { api } from '@/services/rotkehlchen-api';
+import { useAssetIgnoreApi } from '@/services/assets/ignore';
 import { useMessageStore } from '@/store/message';
 import { useNotifications } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
@@ -13,9 +13,16 @@ export const useIgnoredAssetsStore = defineStore('ignoredAssets', () => {
   const { setMessage } = useMessageStore();
   const { t, tc } = useI18n();
 
+  const {
+    getIgnoredAssets,
+    addIgnoredAssets,
+    removeIgnoredAssets,
+    reQueryIgnoredAssets
+  } = useAssetIgnoreApi();
+
   const fetchIgnoredAssets = async (): Promise<void> => {
     try {
-      const ignored = await api.assets.ignoredAssets();
+      const ignored = await getIgnoredAssets();
       set(ignoredAssets, ignored);
     } catch (e: any) {
       const title = tc('actions.session.ignored_assets.error.title');
@@ -34,8 +41,7 @@ export const useIgnoredAssetsStore = defineStore('ignoredAssets', () => {
     assets: string[] | string
   ): Promise<ActionStatus> => {
     try {
-      const ignored = await api.assets.modifyAsset(
-        true,
+      const ignored = await addIgnoredAssets(
         Array.isArray(assets) ? assets : [assets]
       );
       set(ignoredAssets, ignored);
@@ -57,8 +63,7 @@ export const useIgnoredAssetsStore = defineStore('ignoredAssets', () => {
     assets: string[] | string
   ): Promise<ActionStatus> => {
     try {
-      const ignored = await api.assets.modifyAsset(
-        false,
+      const ignored = await removeIgnoredAssets(
         Array.isArray(assets) ? assets : [assets]
       );
       set(ignoredAssets, ignored);
@@ -81,7 +86,7 @@ export const useIgnoredAssetsStore = defineStore('ignoredAssets', () => {
 
     try {
       const taskType = TaskType.UPDATE_IGNORED_ASSETS;
-      const { taskId } = await api.assets.updateIgnoredAssets();
+      const { taskId } = await reQueryIgnoredAssets();
       const taskMeta = {
         title: t('actions.session.update_ignored_assets.task.title').toString(),
         numericKeys: []

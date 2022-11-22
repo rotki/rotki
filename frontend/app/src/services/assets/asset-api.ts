@@ -85,56 +85,6 @@ export class AssetApi {
       .then(handleResponse);
   }
 
-  ignoredAssets(): Promise<string[]> {
-    return this.axios
-      .get<ActionResult<string[]>>('/assets/ignored', {
-        validateStatus: validStatus
-      })
-      .then(handleResponse);
-  }
-
-  modifyAsset(add: boolean, assets: string[]): Promise<string[]> {
-    if (add) {
-      return this.addIgnoredAsset(assets);
-    }
-    return this.removeIgnoredAsset(assets);
-  }
-
-  addIgnoredAsset(assets: string[]): Promise<string[]> {
-    return this.axios
-      .put<ActionResult<string[]>>(
-        '/assets/ignored',
-        {
-          assets
-        },
-        {
-          validateStatus: validStatus
-        }
-      )
-      .then(handleResponse);
-  }
-
-  removeIgnoredAsset(assets: string[]): Promise<string[]> {
-    return this.axios
-      .delete<ActionResult<string[]>>('/assets/ignored', {
-        data: {
-          assets
-        },
-        validateStatus: validStatus
-      })
-      .then(handleResponse);
-  }
-
-  updateIgnoredAssets(): Promise<PendingTask> {
-    return this.axios
-      .post<ActionResult<PendingTask>>('/assets/ignored', null, {
-        params: axiosSnakeCaseTransformer({ asyncQuery: true }),
-        validateStatus: validWithoutSessionStatus,
-        transformResponse: this.baseTransformer
-      })
-      .then(handleResponse);
-  }
-
   async queryOwnedAssets(): Promise<string[]> {
     const ownedAssets = await this.axios.get<ActionResult<string[]>>(
       '/assets',
