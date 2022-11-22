@@ -5,15 +5,16 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, Optional, Set
 
-from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.chain.ethereum.etherscan import EthereumEtherscan
 from rotkehlchen.chain.ethereum.graph import Graph
-from rotkehlchen.chain.ethereum.manager import EthereumManager, NodeName, WeightedNode
-from rotkehlchen.chain.ethereum.uniswap.utils import uniswap_lp_token_balances
+from rotkehlchen.chain.ethereum.modules.uniswap.utils import uniswap_lp_token_balances
+from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+from rotkehlchen.chain.ethereum.types import NodeName, WeightedNode
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
@@ -31,28 +32,26 @@ def init_ethereum(
         rpc_endpoint: str,
         use_other_nodes: bool,
         db: DBHandler,
-) -> EthereumManager:
+) -> EthereumInquirer:
     nodes_to_connect = db.get_web3_nodes(blockchain=SupportedBlockchain.ETHEREUM, only_active=True) if use_other_nodes else (WeightedNode(node_info=NodeName(name='own', endpoint=rpc_endpoint, owned=True, blockchain=SupportedBlockchain.ETHEREUM), weight=ONE, active=True),)  # noqa: E501
-    messages = MessagesAggregator()
-    etherscan = Etherscan(database=None, msg_aggregator=msg_aggregator)
+    etherscan = EthereumEtherscan(database=None, msg_aggregator=msg_aggregator)
     api_key = os.environ.get('ETHERSCAN_API_KEY', None)
     greenlet_manager = GreenletManager(msg_aggregator=msg_aggregator)
     etherscan.api_key = api_key
-    eth_manager = EthereumManager(
+    eth_inquirer = EthereumInquirer(
         etherscan=etherscan,
-        msg_aggregator=messages,
         greenlet_manager=greenlet_manager,
         connect_at_start=nodes_to_connect,
         database=db,
     )
     wait_until_all_nodes_connected(
-        ethereum_manager_connect_at_start=nodes_to_connect,
-        ethereum=eth_manager,
+        connect_at_start=nodes_to_connect,
+        evm_inquirer=eth_inquirer,
     )
-    return eth_manager
+    return eth_inquirer
 
 
-def pairs_from_ethereum(ethereum_manager: EthereumManager) -> Dict[str, Any]:
+def pairs_from_ethereum(ethereum_inquirer: EthereumInquirer) -> Dict[str, Any]:
     """Detect the uniswap v2 pool tokens by using an ethereum node"""
     contracts_file = Path(__file__).resolve().parent / 'contracts.json'
     with contracts_file.open('r') as f:
@@ -63,12 +62,12 @@ def pairs_from_ethereum(ethereum_manager: EthereumManager) -> Dict[str, Any]:
         abi=contracts['UNISWAPV2FACTORY']['abi'],
         deployed_block=0,  # whatever
     )
-    pairs_num = univ2factory.call(ethereum_manager, 'allPairsLength')
+    pairs_num = univ2factory.call(ethereum_inquirer, 'allPairsLength')
     chunks = list(get_chunks([[x] for x in range(pairs_num)], n=500))
     pairs = []
     for idx, chunk in enumerate(chunks):
         print(f'Querying univ2 pairs chunk {idx + 1} / {len(chunks)}')
-        result = ethereum_manager.multicall_specific(univ2factory, 'allPairs', chunk)
+        result = ethereum_inquirer.multicall_specific(univ2factory, 'allPairs', chunk)
         try:
             pairs.extend([deserialize_evm_address(x[0]) for x in result])
         except DeserializationError:
@@ -231,15 +230,15 @@ if __name__ == "__main__":
 
         if args.no_query_balances is False:
             start = ts_now()
-            known_assets: Set[EthereumToken] = set()
-            unknown_assets: Set[EthereumToken] = set()
+            known_tokens: Set[EvmToken] = set()
+            unknown_tokens: Set[EvmToken] = set()
             balances = uniswap_lp_token_balances(
                 userdb=database,
                 address='0x1554d34D46842778999cB4eb1381b19f651e4a9d',  # test address
                 ethereum=ethereum,
                 lp_addresses=results['ethereum'],
-                known_assets=known_assets,
-                unknown_assets=unknown_assets,
+                known_tokens=known_tokens,
+                unknown_tokens=unknown_tokens,
             )
             end = ts_now()
             print(f'Querying balances took {end-start} seconds')

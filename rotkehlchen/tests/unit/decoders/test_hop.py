@@ -14,16 +14,15 @@ ADDY = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
-def test_hop_l2_deposit(database, ethereum_manager, function_scope_messages_aggregator):
+def test_hop_l2_deposit(database, ethereum_inquirer):
     """Data taken from
     https://etherscan.io/tx/0xd46640417a686b399b2f2a920b0c58a35095759365cbe7b795bddec34b8c5eee
     """
     # TODO: For faster tests hard-code the transaction and the logs here so no remote query needed
     tx_hash = deserialize_evm_tx_hash('0xd46640417a686b399b2f2a920b0c58a35095759365cbe7b795bddec34b8c5eee')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
-        ethereum_manager=ethereum_manager,
+        ethereum_inquirer=ethereum_inquirer,
         database=database,
-        msg_aggregator=function_scope_messages_aggregator,
         tx_hash=tx_hash,
     )
     expected_events = [

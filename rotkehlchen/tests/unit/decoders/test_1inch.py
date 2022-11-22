@@ -17,16 +17,15 @@ ADDY = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
-def test_1inchv1_swap(database, ethereum_manager, function_scope_messages_aggregator):
+def test_1inchv1_swap(database, ethereum_inquirer):
     """Data taken from
     https://etherscan.io/tx/0x8b8652c502e80ce7c5441cdedc9184ea8f07a9c13b4c3446a47ae08c6c1d6efa
     """
     # TODO: For faster tests hard-code the transaction and the logs here so no remote query needed
     tx_hash = deserialize_evm_tx_hash('0x8b8652c502e80ce7c5441cdedc9184ea8f07a9c13b4c3446a47ae08c6c1d6efa')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
-        ethereum_manager=ethereum_manager,
+        ethereum_inquirer=ethereum_inquirer,
         database=database,
-        msg_aggregator=function_scope_messages_aggregator,
         tx_hash=tx_hash,
     )
     chispender_addy = '0xed04A060050cc289d91779A8BB3942C3A6589254'
@@ -97,7 +96,7 @@ def test_1inchv1_swap(database, ethereum_manager, function_scope_messages_aggreg
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
-def test_1inchv2_swap_for_eth(database, ethereum_manager, function_scope_messages_aggregator):
+def test_1inchv2_swap_for_eth(database, ethereum_inquirer):
     """
     Test an 1inchv2 swap for ETH.
 
@@ -107,9 +106,8 @@ def test_1inchv2_swap_for_eth(database, ethereum_manager, function_scope_message
     # TODO: For faster tests hard-code the transaction and the logs here so no remote query needed
     tx_hash = deserialize_evm_tx_hash('0x5edc23d5a05e347afc60e64a4d5831ed2551985c21dceb85d267926ca2e2c13e')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
-        ethereum_manager=ethereum_manager,
+        ethereum_inquirer=ethereum_inquirer,
         database=database,
-        msg_aggregator=function_scope_messages_aggregator,
         tx_hash=tx_hash,
     )
     oneinch_v2_addy = '0x111111125434b319222CdBf8C261674aDB56F3ae'

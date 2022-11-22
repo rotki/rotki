@@ -81,7 +81,6 @@ def events_historian(
         data_dir,
         function_scope_messages_aggregator,
         blockchain,
-        evm_transaction_decoder,
         exchange_manager,
 ):
     historian = EventsHistorian(
@@ -90,6 +89,5 @@ def events_historian(
         msg_aggregator=function_scope_messages_aggregator,
         exchange_manager=exchange_manager,
         chains_aggregator=blockchain,
-        eth_tx_decoder=evm_transaction_decoder,
     )
     return historian

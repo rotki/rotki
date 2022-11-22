@@ -4,7 +4,8 @@ import pytest
 
 from rotkehlchen.chain.aggregator import ChainsAggregator
 from rotkehlchen.chain.avalanche.manager import AvalancheManager
-from rotkehlchen.chain.ethereum.decoding import EVMTransactionDecoder
+from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
+from rotkehlchen.chain.ethereum.etherscan import EthereumEtherscan
 from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
@@ -16,7 +17,6 @@ from rotkehlchen.db.settings import DEFAULT_BTC_DERIVATION_GAP_LIMIT
 from rotkehlchen.db.utils import BlockchainAccounts
 from rotkehlchen.externalapis.beaconchain import BeaconChain
 from rotkehlchen.externalapis.covalent import Covalent
-from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
 from rotkehlchen.tests.utils.factories import make_ethereum_address
@@ -106,7 +106,7 @@ def fixture_ethereum_manager_connect_at_start() -> Sequence[NodeName]:
 
 @pytest.fixture(name='etherscan')
 def fixture_etherscan(database, messages_aggregator):
-    return Etherscan(database=database, msg_aggregator=messages_aggregator)
+    return EthereumEtherscan(database=database, msg_aggregator=messages_aggregator)
 
 
 @pytest.fixture(name='covalent_avalanche')
@@ -136,50 +136,30 @@ def fixture_ethereum_inquirer(
 
 
 @pytest.fixture(name='ethereum_manager')
-def fixture_ethereum_manager(
-        etherscan,
-        messages_aggregator,
-        ethereum_manager_connect_at_start,
-        greenlet_manager,
+def fixture_ethereum_manager(ethereum_inquirer):
+    return EthereumManager(node_inquirer=ethereum_inquirer)
+
+
+@pytest.fixture(name='ethereum_transaction_decoder')
+def fixture_ethereum_transaction_decoder(
         database,
-):
-    manager = EthereumManager(
-        etherscan=etherscan,
-        msg_aggregator=messages_aggregator,
-        greenlet_manager=greenlet_manager,
-        connect_at_start=ethereum_manager_connect_at_start,
-        database=database,
-    )
-    wait_until_all_nodes_connected(
-        ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
-        ethereum=manager,
-    )
-
-    return manager
-
-
-@pytest.fixture(name='evm_transaction_decoder')
-def fixture_evm_transaction_decoder(
-        database,
-        ethereum_manager,
+        ethereum_inquirer,
         eth_transactions,
-        function_scope_messages_aggregator,
 ):
-    return EVMTransactionDecoder(
+    return EthereumTransactionDecoder(
         database=database,
-        ethereum_manager=ethereum_manager,
+        ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
-        msg_aggregator=function_scope_messages_aggregator,
     )
 
 
 @pytest.fixture(name='eth_transactions')
 def fixture_eth_transactions(
         database,
-        ethereum_manager,
+        ethereum_inquirer,
 ):
     return EthereumTransactions(
-        ethereum=ethereum_manager,
+        ethereum_inquirer=ethereum_inquirer,
         database=database,
     )
 
@@ -305,11 +285,11 @@ def fixture_polkadot_manager(
 
 @pytest.fixture(name='avalanche_manager')
 def fixture_avalanche_manager(
-    messages_aggregator,
-    covalent_avalanche,
+        messages_aggregator,
+        covalent_avalanche,
 ):
     avalanche_manager = AvalancheManager(
-        avaxrpc_endpoint="https://api.avax.network/ext/bc/C/rpc",
+        avaxrpc_endpoint='https://api.avax.network/ext/bc/C/rpc',
         covalent=covalent_avalanche,
         msg_aggregator=messages_aggregator,
     )

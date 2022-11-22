@@ -253,7 +253,7 @@ def test_uniswap_v2_swap_eth_returned(database, ethereum_inquirer, eth_transacti
     dbevmtx = DBEvmTx(database)
     decoder = EthereumTransactionDecoder(
         database=database,
-        evm_inquirer=ethereum_inquirer,
+        ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
     )
     with database.user_write() as cursor:

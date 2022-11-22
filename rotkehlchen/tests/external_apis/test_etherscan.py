@@ -5,10 +5,10 @@ import pytest
 from eth_utils import to_checksum_address
 
 from rotkehlchen.chain.ethereum.constants import ETHEREUM_BEGIN, GENESIS_HASH, ZERO_ADDRESS
+from rotkehlchen.chain.ethereum.etherscan import EthereumEtherscan
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
-from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.serialization.deserialize import deserialize_evm_transaction
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (
@@ -41,7 +41,7 @@ def fixture_temp_etherscan(function_scope_messages_aggregator, tmpdir_factory, s
         db.add_external_service_credentials(credentials=[  # pylint: disable=no-value-for-parameter
             ExternalServiceApiCredentials(service=ExternalService.ETHERSCAN, api_key=api_key),
         ])
-    etherscan = Etherscan(database=db, msg_aggregator=function_scope_messages_aggregator)
+    etherscan = EthereumEtherscan(database=db, msg_aggregator=function_scope_messages_aggregator)
     return etherscan
 
 

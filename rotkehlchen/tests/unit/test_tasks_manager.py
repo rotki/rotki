@@ -45,7 +45,6 @@ def fixture_task_manager(
         api_task_greenlets,
         cryptocompare,
         exchange_manager,
-        evm_transaction_decoder,
         messages_aggregator,
 ) -> TaskManager:
     task_manager = TaskManager(
@@ -57,7 +56,6 @@ def fixture_task_manager(
         premium_sync_manager=MockPremiumSyncManager(),  # type: ignore
         chains_aggregator=blockchain,
         exchange_manager=exchange_manager,
-        eth_tx_decoder=evm_transaction_decoder,
         deactivate_premium=lambda: None,
         query_balances=lambda: None,
         update_curve_pools_cache=lambda: None,

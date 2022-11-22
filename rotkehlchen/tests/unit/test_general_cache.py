@@ -77,7 +77,7 @@ def test_curve_pools_cache(rotkehlchen_instance):
     # check that it was deleted successfully
     token = GlobalDBHandler().get_evm_token(
         address='0xD71eCFF9342A5Ced620049e616c5035F1dB98620',
-        chain=ChainID.ETHEREUM,
+        chain_id=ChainID.ETHEREUM,
     )
     assert token is None
 
@@ -123,7 +123,7 @@ def test_curve_pools_cache(rotkehlchen_instance):
     # Check that the token was created
     token = GlobalDBHandler().get_evm_token(
         address='0xD71eCFF9342A5Ced620049e616c5035F1dB98620',
-        chain=ChainID.ETHEREUM,
+        chain_id=ChainID.ETHEREUM,
     )
     assert token.name == 'Synth sEUR'
     assert token.symbol == 'sEUR'

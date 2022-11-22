@@ -35,7 +35,7 @@ def test_query_all_protocol_balances_for_account(
     """
     wait_until_all_nodes_connected(
         connect_at_start=ethereum_manager_connect_at_start,
-        ethereum_inquirer=ethereum_inquirer,
+        evm_inquirer=ethereum_inquirer,
     )
     zerion = ZerionSDK(ethereum_inquirer, function_scope_messages_aggregator, database)
     balances = zerion.all_balances_for_account('0xf753beFE986e8Be8EBE7598C9d2b6297D9DD6662')

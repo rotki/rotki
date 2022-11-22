@@ -61,7 +61,6 @@ from rotkehlchen.types import (
     Timestamp,
 )
 from rotkehlchen.utils.misc import from_wei, get_chunks, hex_or_bytes_to_str
-from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -163,7 +162,7 @@ def _query_web3_get_logs(
     return events
 
 
-class EvmNodeInquirer(LockableQueryMixIn, metaclass=ABCMeta):
+class EvmNodeInquirer(metaclass=ABCMeta):
     """Class containing generic functionality for querying evm nodes
 
     The child class must implement the following methods:

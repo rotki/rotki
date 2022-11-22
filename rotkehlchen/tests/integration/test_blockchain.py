@@ -105,7 +105,7 @@ def test_multiple_concurrent_ethereum_blockchain_queries(blockchain):
             blockchain=SupportedBlockchain.ETHEREUM,
             accounts=[addr1, addr2],
         )
-        evmtokens = EvmTokens(database=blockchain.database, manager=blockchain.ethereum)
+        evmtokens = EvmTokens(database=blockchain.database, evm_inquirer=blockchain.ethereum.node_inquirer)  # noqa: E501
         evmtokens.detect_tokens(
             only_cache=False,
             addresses=[addr1, addr2],

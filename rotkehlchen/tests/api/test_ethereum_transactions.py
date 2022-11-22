@@ -1159,8 +1159,8 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
     dbevmtx = DBEvmTx(db)
     dbevents = DBHistoryEvents(db)
     with db.user_write() as cursor:
-        dbevmtx.add_ethereum_transactions(cursor, [tx1, tx2], relevant_address=ethereum_accounts[0])  # noqa: E501
-        dbevmtx.add_ethereum_transactions(cursor, [tx3], relevant_address=ethereum_accounts[1])
+        dbevmtx.add_evm_transactions(cursor, [tx1, tx2], relevant_address=ethereum_accounts[0])  # noqa: E501
+        dbevmtx.add_evm_transactions(cursor, [tx3], relevant_address=ethereum_accounts[1])
         dbevents.add_history_events(cursor, [event1, event2, event3, event4])
 
     response = requests.get(
@@ -1258,7 +1258,7 @@ def test_ignored_assets(rotkehlchen_api_server, ethereum_accounts):
     event3 = make_ethereum_event(tx_hash=tx1.tx_hash, index=3, asset=A_MKR)
     event4 = make_ethereum_event(tx_hash=tx2.tx_hash, index=4, asset=A_DAI)
     with db.user_write() as cursor:
-        dbevmtx.add_ethereum_transactions(cursor, [tx1, tx2, tx3], relevant_address=ethereum_accounts[0])  # noqa: E501
+        dbevmtx.add_evm_transactions(cursor, [tx1, tx2, tx3], relevant_address=ethereum_accounts[0])  # noqa: E501
         dbevents.add_history_events(cursor, [event1, event2, event3, event4])
 
     response = requests.get(

@@ -26,16 +26,15 @@ ADDY = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
-def test_mint_ens_name(database, ethereum_manager, function_scope_messages_aggregator):
+def test_mint_ens_name(database, ethereum_inquirer):
     """Data taken from
     https://etherscan.io/tx/0x74e72600c6cd5a1f0170a3ca38ecbf7d59edeb8ceb48adab2ed9b85d12cc2b99
     """
     # TODO: For faster tests hard-code the transaction and the logs here so no remote query needed
     tx_hash = deserialize_evm_tx_hash('0x74e72600c6cd5a1f0170a3ca38ecbf7d59edeb8ceb48adab2ed9b85d12cc2b99')  # noqa: E501
     events, decoder = get_decoded_events_of_transaction(
-        ethereum_manager=ethereum_manager,
+        ethereum_inquirer=ethereum_inquirer,
         database=database,
-        msg_aggregator=function_scope_messages_aggregator,
         tx_hash=tx_hash,
     )
     expires_timestamp = 2142055301
@@ -71,7 +70,7 @@ def test_mint_ens_name(database, ethereum_manager, function_scope_messages_aggre
         evm_address='0x57f1887a8BF19b14fC0dF6Fd9B2acc9Af147eA85',
         chain=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC721,
-        ethereum_manager=ethereum_manager,
+        evm_inquirer=ethereum_inquirer,
     )
     assert events[2] == HistoryBaseEntry(
         event_identifier=tx_hash,
@@ -114,6 +113,7 @@ def test_text_changed(evm_transaction_decoder, ethereum_accounts):
     )
     receipt = EvmTxReceipt(
         tx_hash=tx_hash,
+        chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
         type=0,
@@ -144,7 +144,7 @@ def test_text_changed(evm_transaction_decoder, ethereum_accounts):
 
     dbevmtx = DBEvmTx(evm_transaction_decoder.database)
     with dbevmtx.db.user_write() as cursor:
-        dbevmtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
+        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
         events = evm_transaction_decoder.decode_transaction(
             write_cursor=cursor,
             transaction=transaction,
@@ -220,6 +220,7 @@ def test_set_resolver(evm_transaction_decoder, ethereum_accounts):
     )
     receipt = EvmTxReceipt(
         tx_hash=tx_hash,
+        chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
         type=0,
@@ -249,7 +250,7 @@ def test_set_resolver(evm_transaction_decoder, ethereum_accounts):
 
     dbevmtx = DBEvmTx(evm_transaction_decoder.database)
     with dbevmtx.db.user_write() as cursor:
-        dbevmtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
+        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
         events = evm_transaction_decoder.decode_transaction(
             write_cursor=cursor,
             transaction=transaction,

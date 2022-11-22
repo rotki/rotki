@@ -101,6 +101,7 @@ def test_get_transaction_receipt(
 
     assert receipt == EvmTxReceipt(
         tx_hash=tx_hash,
+        chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
         type=0,

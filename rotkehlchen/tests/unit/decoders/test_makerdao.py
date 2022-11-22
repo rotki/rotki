@@ -14,8 +14,7 @@ from rotkehlchen.utils.hexbytes import HexBytes
 @pytest.mark.parametrize('ethereum_accounts', [['0x648aA14e4424e0825A5cE739C8C68610e143FB79']])  # noqa: E501
 def test_makerdao_simple_transaction(
         database,
-        ethereum_manager,
-        function_scope_messages_aggregator,
+        ethereum_inquirer,
 ):
     """Data taken from
     https://etherscan.io/tx/0x95de47059bcc084ebb8bdd60f48fbcf05619c2af84bf612fdc27a6bbf9b5097e
@@ -23,9 +22,8 @@ def test_makerdao_simple_transaction(
     tx_hash = deserialize_evm_tx_hash('0x95de47059bcc084ebb8bdd60f48fbcf05619c2af84bf612fdc27a6bbf9b5097e')  # noqa: E501
     # We don't need any events here, we just check that no errors occure during decoding
     events, _ = get_decoded_events_of_transaction(
-        ethereum_manager=ethereum_manager,
+        ethereum_inquirer=ethereum_inquirer,
         database=database,
-        msg_aggregator=function_scope_messages_aggregator,
         tx_hash=tx_hash,
     )
     assert events == [
