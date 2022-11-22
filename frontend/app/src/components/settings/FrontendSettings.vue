@@ -12,9 +12,6 @@
         <div class="text-h6">
           {{ t('frontend_settings.subtitle.eth_names') }}
         </div>
-        <div class="pl-2">
-          <eth-names-hint />
-        </div>
       </div>
       <enable-ens-names-setting />
       <address-name-priority-setting />

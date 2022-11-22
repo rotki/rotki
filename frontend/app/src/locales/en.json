@@ -854,6 +854,9 @@
     },
     "view_addresses": "View the queried addresses for {name}"
   },
+  "address_name_priority_setting": {
+    "data_name": "priority"
+  },
   "adex_page": {
     "loading": "Please wait while your AdEx staking details are getting loaded..."
   },
@@ -1777,7 +1780,7 @@
           "hardcoded_mappings": "Hardcoded mappings",
           "private_address_book": "Private address book"
         },
-        "title": "The priority of the returned names adheres to the following order. "
+        "title": "The priority of the returned names adheres to the following order. From top to bottom, the first name found will be shown."
       },
       "private": "Private",
       "private_description": "address book is saved only for this account."
@@ -3359,14 +3362,6 @@
     },
     "to_asset": "To Asset"
   },
-  "prioritized_list": {
-    "add_tooltip": "Add the {name} to the list",
-    "all_added": "No missing {name_pluralized}",
-    "item": {
-      "delete": "Remove the {name} entry",
-      "empty": "No price {name_pluralized} found!"
-    }
-  },
   "price_oracle_selection": {
     "hint": "* Removing all the oracles will make it impossible to query prices for assets."
   },
@@ -4063,8 +4058,5 @@
       "version": "Version"
     },
     "title": "Yearn Vaults"
-  },
-  "address_name_priority_setting": {
-    "data_name": "priority"
   }
 }
