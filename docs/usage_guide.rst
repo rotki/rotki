@@ -1725,7 +1725,7 @@ Rotki now provides an addressbook for the Ethereum blockchain. This replaces add
    :alt: Displaying behaviour of an ETH address book
    :align: center
 
-**NOTE:** Address resolution follows this order, Private Address Book -> Blockchain Account Labels -> Global Address Book -> Ethereum Tokens -> Hardcoded Mappings -> ENS names.
+**NOTE:** The address resolution order can be configured in the general user settings. The default order is: Private Address Book -> Blockchain Account Labels -> Global Address Book -> Ethereum Tokens -> Hardcoded Mappings -> ENS names.
 
 
 .. _set-the-backend-s-arguments:

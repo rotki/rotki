@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :feature:`4940` Users will now be able to reset the assets database without losing any custom information they may have added.
+* :feature:`4487` Users can now customize the order of how addresses are resolved to human readable names.
 * :bug:`5124` Users will now correctly see all the events related to lending in the defi view.
 * :bug:`5126` APR and APY for borrowing and lending in Aave should properly show again.
 * :bug:`5128` Ethereum transactions where no value was transferred will now be correctly decoded.

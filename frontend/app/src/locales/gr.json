@@ -1762,7 +1762,7 @@
           "hardcoded_mappings": "Hardcoded mappings",
           "private_address_book": "Private address book"
         },
-        "title": "The priority of the returned names adheres to the following order:"
+        "title": "The priority of the returned names adheres to the following order. From top to bottom, the first name found will be shown."
       },
       "private": "Private",
       "private_description": "address book is saved only for this account."
