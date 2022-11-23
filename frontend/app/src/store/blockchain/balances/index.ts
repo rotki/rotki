@@ -67,7 +67,7 @@ export const useBlockchainBalancesStore = defineStore(
         const balances = BlockchainBalances.parse(result);
         const ethBalances = balances.perAccount[Blockchain.ETH];
 
-        if (ignoreCache && ethBalances) {
+        if (ethBalances) {
           const addresses = [...Object.keys(ethBalances)];
           await fetchEnsNames(addresses, ignoreCache);
         }
