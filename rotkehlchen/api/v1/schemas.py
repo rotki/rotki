@@ -978,7 +978,7 @@ class ModifiableSettingsSchema(Schema):
     eth_staking_taxable_after_withdrawal_enabled = fields.Boolean(load_default=None)
     address_name_priority = fields.List(fields.String(
         validate=webargs.validate.OneOf(choices=DEFAULT_ADDRESS_NAME_PRIORITY),
-    ), load_default=None)
+    ), load_default=DEFAULT_ADDRESS_NAME_PRIORITY)
 
     @validates_schema
     def validate_settings_schema(  # pylint: disable=no-self-use

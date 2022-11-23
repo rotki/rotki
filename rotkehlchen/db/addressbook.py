@@ -116,14 +116,15 @@ class DBAddressbook:
             book_type: AddressbookType,
             address: ChecksumEvmAddress,
     ) -> Optional[str]:
-        with self.write_ctx(book_type) as read_cursor:
+        """Returns the name for a specific address.
+        Returns None if either there is no name set or the address doesn't exist in database.
+        """
+        with self.read_ctx(book_type) as read_cursor:
             query = read_cursor.execute(
                 'SELECT name FROM address_book WHERE address=?',
                 (address,),
             )
 
             result = query.fetchone()
-            if result:
-                return result[0]
 
-        return None
+        return None if result is None else result[0]
