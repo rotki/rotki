@@ -6,7 +6,7 @@
     @click:outside="close"
   >
     <card>
-      <template #title>{{ t('non_fungible_balance_edit.title') }}</template>
+      <template #title>{{ t('non_fungible_balances.edit.title') }}</template>
       <template #subtitle> {{ value.name }}</template>
       <asset-select v-model="asset" outlined />
       <amount-input

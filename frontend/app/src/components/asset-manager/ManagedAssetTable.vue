@@ -173,7 +173,8 @@ import { ActionStatus } from '@/store/types';
 import {
   AssetPagination,
   AssetPaginationOptions,
-  defaultAssetPagination
+  defaultAssetPagination,
+  IgnoredAssetsHandlingType
 } from '@/types/assets';
 import { convertPagination } from '@/types/pagination';
 import { getAddressFromEvmIdentifier, isEvmIdentifier } from '@/utils/assets';
@@ -199,7 +200,7 @@ const { filters, matchers, updateFilter } = useAssetFilter();
 const expanded: Ref<SupportedAsset[]> = ref([]);
 const selected: Ref<SupportedAsset[]> = ref([]);
 const onlyShowOwned = ref<boolean>(false);
-const ignoredAssetsHandling = ref<'none' | 'exclude' | 'show_only'>('exclude');
+const ignoredAssetsHandling = ref<IgnoredAssetsHandlingType>('exclude');
 const options: Ref<AssetPaginationOptions> = ref(
   defaultAssetPagination(get(itemsPerPage))
 );
@@ -242,16 +243,9 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
   }
 ]);
 
-const isIgnored = (identifier: string) => {
-  return isAssetIgnored(identifier);
-};
-
 const add = () => emit('add');
 const edit = (asset: SupportedAsset) => emit('edit', asset);
 const deleteAsset = (asset: SupportedAsset) => emit('delete-asset', asset);
-
-const { setMessage } = useMessageStore();
-const { isAssetIgnored, ignoreAsset, unignoreAsset } = useIgnoredAssetsStore();
 
 const formatType = (string?: string) => {
   return toSentenceCase(string ?? 'EVM token');
@@ -274,11 +268,25 @@ const getAsset = (item: SupportedAsset) => {
   };
 };
 
+const { setMessage } = useMessageStore();
+const { isAssetIgnored, ignoreAsset, unignoreAsset } = useIgnoredAssetsStore();
+
+const isIgnored = (identifier: string) => {
+  return isAssetIgnored(identifier);
+};
+
 const toggleIgnoreAsset = async (identifier: string) => {
+  let success = false;
   if (get(isIgnored(identifier))) {
-    await unignoreAsset(get(identifier));
+    const response = await unignoreAsset(identifier);
+    success = response.success;
   } else {
-    await ignoreAsset(get(identifier));
+    const response = await ignoreAsset(identifier);
+    success = response.success;
+  }
+
+  if (success && get(ignoredAssetsHandling) !== 'none') {
+    updatePaginationHandler(get(options));
   }
 };
 
@@ -311,6 +319,10 @@ const massIgnore = async (ignored: boolean) => {
 
   if (status.success) {
     set(selected, []);
+
+    if (get(ignoredAssetsHandling) !== 'none') {
+      updatePaginationHandler(get(options));
+    }
   }
 };
 

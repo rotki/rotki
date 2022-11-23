@@ -116,3 +116,5 @@ export const defaultCustomAssetPagination = (
   sortBy: ['name' as keyof CustomAsset],
   sortDesc: [false]
 });
+
+export type IgnoredAssetsHandlingType = 'none' | 'exclude' | 'show_only';

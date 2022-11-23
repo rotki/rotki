@@ -29,14 +29,16 @@ export const useAssetInfoApi = () => {
   const assetSearch = async (
     keyword: string,
     limit = 25,
+    searchNfts = false,
     signal?: AbortSignal
   ): Promise<AssetsWithId> => {
     const response = await api.instance.post<ActionResult<AssetsWithId>>(
       '/assets/search/levenshtein',
-      {
+      axiosSnakeCaseTransformer({
         value: keyword,
-        limit
-      },
+        limit,
+        searchNfts
+      }),
       {
         validateStatus: validStatus,
         transformResponse: basicAxiosTransformer,

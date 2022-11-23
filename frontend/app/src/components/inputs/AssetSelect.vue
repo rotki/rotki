@@ -29,43 +29,57 @@
     @blur="blur"
   >
     <template #selection="{ item }">
-      <asset-details-base
-        v-if="item && item.identifier"
-        class="asset-select__details ml-2"
-        :asset="item"
-      />
+      <template v-if="item && item.identifier">
+        <nft-details
+          v-if="item.assetType === 'nft'"
+          :identifier="item.identifier"
+          size="40px"
+        />
+        <asset-details-base
+          v-else
+          class="asset-select__details ml-2"
+          :asset="item"
+        />
+      </template>
     </template>
     <template #item="{ item }">
-      <div class="pr-4">
-        <v-img
-          v-if="item.imageUrl"
-          width="40px"
-          height="40px"
-          contain
-          :src="item.imageUrl"
-        />
-        <asset-icon v-else size="40px" :identifier="item.identifier" />
-      </div>
-      <v-list-item-content
-        :id="`asset-${getValidSelectorFromEvmAddress(
-          item.identifier.toLocaleLowerCase()
-        )}`"
-      >
-        <template v-if="!item.isCustomAsset">
-          <v-list-item-title class="font-weight-medium">
-            {{ item.symbol }}
-          </v-list-item-title>
-          <v-list-item-subtitle>{{ item.name }}</v-list-item-subtitle>
-        </template>
-        <template v-else>
-          <v-list-item-title class="font-weight-medium">
-            {{ item.name }}
-          </v-list-item-title>
-          <v-list-item-subtitle>
-            {{ item.customAssetType }}
-          </v-list-item-subtitle>
-        </template>
-      </v-list-item-content>
+      <nft-details
+        v-if="item.assetType === 'nft'"
+        :identifier="item.identifier"
+        size="40px"
+      />
+      <template v-else>
+        <div class="pr-4">
+          <v-img
+            v-if="item.imageUrl"
+            width="40px"
+            height="40px"
+            contain
+            :src="item.imageUrl"
+          />
+          <asset-icon v-else size="40px" :identifier="item.identifier" />
+        </div>
+        <v-list-item-content
+          :id="`asset-${getValidSelectorFromEvmAddress(
+            item.identifier.toLocaleLowerCase()
+          )}`"
+        >
+          <template v-if="!item.isCustomAsset">
+            <v-list-item-title class="font-weight-medium">
+              {{ item.symbol }}
+            </v-list-item-title>
+            <v-list-item-subtitle>{{ item.name }}</v-list-item-subtitle>
+          </template>
+          <template v-else>
+            <v-list-item-title class="font-weight-medium">
+              {{ item.name }}
+            </v-list-item-title>
+            <v-list-item-subtitle>
+              {{ item.customAssetType }}
+            </v-list-item-subtitle>
+          </template>
+        </v-list-item-content>
+      </template>
     </template>
     <template #no-data>
       <div data-cy="no_assets" class="px-4 py-2">
@@ -90,12 +104,12 @@
 import { PropType, Ref } from 'vue';
 import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
+import NftDetails from '@/components/helper/NftDetails.vue';
 import { useAssetInfoApi } from '@/services/assets/info';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { NftAsset, useNftAssetInfoStore } from '@/store/assets/nft';
+import { NftAsset } from '@/store/assets/nft';
 import { AssetInfoWithId } from '@/types/assets';
 import { getValidSelectorFromEvmAddress } from '@/utils/assets';
-import { isNft } from '@/utils/nft';
 
 const props = defineProps({
   items: {
@@ -149,7 +163,6 @@ const error = ref('');
 const loading = ref(false);
 
 const { assetSearch, assetMapping } = useAssetInfoApi();
-const { getNftDetails, searchNfts } = useNftAssetInfoStore();
 const { tc } = useI18n();
 
 const errors = computed(() => {
@@ -199,13 +212,7 @@ const searchAssets = async (
   signal: AbortSignal
 ): Promise<void> => {
   try {
-    const allAssets = await assetSearch(keyword, 50, signal);
-    if (get(includeNfts)) {
-      const nftAssets = searchNfts(keyword);
-      set(assets, [...allAssets, ...nftAssets]);
-    } else {
-      set(assets, allAssets);
-    }
+    set(assets, await assetSearch(keyword, 50, get(includeNfts), signal));
   } catch (e: any) {
     set(error, e.message);
   }
@@ -248,27 +255,14 @@ const checkValue = async () => {
   if (!val) {
     return;
   }
-  if (get(includeNfts) && isNft(val)) {
-    let details = get(getNftDetails(val));
-    if (details) {
-      set(assets, [
-        ...get(assets),
-        {
-          ...details,
-          identifier: val
-        }
-      ]);
+  const mapping = await assetMapping([val]);
+  set(assets, [
+    ...get(assets),
+    {
+      identifier: val,
+      ...mapping[val]
     }
-  } else {
-    const mapping = await assetMapping([val]);
-    set(assets, [
-      ...get(assets),
-      {
-        identifier: val,
-        ...mapping[val]
-      }
-    ]);
-  }
+  ]);
 };
 
 onMounted(async () => {

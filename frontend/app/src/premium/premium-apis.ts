@@ -1,5 +1,4 @@
 import { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
-import { AssetInfo } from '@rotki/common/lib/data';
 import { ProfitLossModel } from '@rotki/common/lib/defi';
 import {
   AdexApi,
@@ -26,7 +25,6 @@ import { truncateAddress } from '@/filters';
 import { api } from '@/services/rotkehlchen-api';
 import { useStatisticsApi } from '@/services/statistics/statistics-api';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useNftAssetInfoStore } from '@/store/assets/nft';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useAggregatedBalancesStore } from '@/store/balances/aggregated';
 import { useBalancesBreakdownStore } from '@/store/balances/breakdown';
@@ -40,22 +38,20 @@ import { useSessionSettingsStore } from '@/store/settings/session';
 import { useAdexStakingStore } from '@/store/staking';
 import { useStatisticsStore } from '@/store/statistics';
 import { One } from '@/utils/bignumbers';
+import { isNft } from '@/utils/nft';
 
 export const assetsApi = (): AssetsApi => {
-  const { assetInfo, assetSymbol, tokenAddress } = useAssetInfoRetrieval();
-
-  const { getNftDetails } = useNftAssetInfoStore();
+  const { assetInfo, assetSymbol, assetName, tokenAddress } =
+    useAssetInfoRetrieval();
 
   return {
-    assetInfo: (identifier: MaybeRef<string>) =>
-      computed(() => {
-        const nft = get(getNftDetails(identifier)) as AssetInfo | null;
-        return nft ?? get(assetInfo(identifier));
-      }),
+    assetInfo,
     assetSymbol: (identifier: MaybeRef<string>) =>
       computed(() => {
-        const nft = get(getNftDetails(identifier)) as AssetInfo | null;
-        return nft?.symbol ?? get(assetSymbol(identifier));
+        if (isNft(get(identifier))) {
+          return get(assetName(identifier));
+        }
+        return get(assetSymbol(identifier));
       }),
     tokenAddress: (identifier: MaybeRef<string>) => tokenAddress(identifier)
   };

@@ -1,6 +1,6 @@
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { Collection } from '@/types/collection';
-import { HistoryRequestPayload } from '@/types/history';
+import { PaginationRequestPayload } from '@/types/common';
 import { EntryMeta, EntryWithMeta } from '@/types/history/meta';
 import { uniqueStrings } from '@/utils/data';
 import { isValidEthAddress } from '@/utils/text';
@@ -34,7 +34,7 @@ export function filterAddressesFromWords(words: string[]): string[] {
 
 export const defaultHistoricPayloadState = <
   T extends Object
->(): HistoryRequestPayload<T> => {
+>(): PaginationRequestPayload<T> => {
   const store = useFrontendSettingsStore();
 
   return {

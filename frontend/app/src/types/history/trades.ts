@@ -2,7 +2,7 @@
 import { NumericString } from '@rotki/common';
 import { z } from 'zod';
 import { getCollectionResponseType } from '@/types/collection';
-import { HistoryRequestPayload } from '@/types/history/index';
+import { PaginationRequestPayload } from '@/types/common';
 import { getEntryWithMeta } from '@/types/history/meta';
 import { TradeLocation } from '@/types/history/trade-location';
 
@@ -32,11 +32,11 @@ export const TradeCollectionResponse = getCollectionResponseType(
   getEntryWithMeta(Trade)
 );
 export type NewTrade = Omit<Trade, 'tradeId' | 'ignoredInAccounting'>;
-export type TradeRequestPayload = {
+export interface TradeRequestPayload extends PaginationRequestPayload<Trade> {
   readonly fromTimestamp?: string | number;
   readonly toTimestamp?: string | number;
   readonly location?: string;
   readonly baseAsset?: string;
   readonly quoteAsset?: string;
   readonly tradeType?: string;
-} & HistoryRequestPayload<Trade>;
+}

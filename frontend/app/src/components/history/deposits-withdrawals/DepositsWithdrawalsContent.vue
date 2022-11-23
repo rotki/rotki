@@ -37,88 +37,93 @@
         </v-col>
       </v-row>
     </template>
-    <data-table
-      v-model="selected"
-      :expanded.sync="expanded"
-      :headers="tableHeaders"
-      :items="data"
-      :loading="loading"
-      :options="options"
-      :server-items-length="itemLength"
-      class="asset-movements"
-      :single-select="false"
-      :show-select="!locationOverview"
-      item-key="identifier"
-      show-expand
-      single-expand
-      multi-sort
-      :must-sort="false"
-      :item-class="getClass"
-      @update:options="updatePaginationHandler($event)"
-    >
-      <template #item.ignoredInAccounting="{ item, isMobile }">
-        <div v-if="item.ignoredInAccounting">
-          <badge-display v-if="isMobile" color="grey">
-            <v-icon small> mdi-eye-off </v-icon>
-            <span class="ml-2">
-              {{ tc('common.ignored_in_accounting') }}
-            </span>
-          </badge-display>
-          <v-tooltip v-else bottom>
-            <template #activator="{ on }">
-              <badge-display color="grey" v-on="on">
-                <v-icon small> mdi-eye-off </v-icon>
-              </badge-display>
-            </template>
-            <span>
-              {{ tc('common.ignored_in_accounting') }}
-            </span>
-          </v-tooltip>
-        </div>
-      </template>
-      <template #item.location="{ item }">
-        <location-display :identifier="item.location" />
-      </template>
-      <template #item.category="{ item }">
-        <badge-display
-          :color="
-            item.category.toLowerCase() === 'withdrawal' ? 'grey' : 'green'
-          "
+
+    <collection-handler :collection="assetMovements">
+      <template #default="{ data, limit, total, showUpgradeRow, itemLength }">
+        <data-table
+          v-model="selected"
+          :expanded.sync="expanded"
+          :headers="tableHeaders"
+          :items="data"
+          :loading="loading"
+          :options="options"
+          :server-items-length="itemLength"
+          class="asset-movements"
+          :single-select="false"
+          :show-select="!locationOverview"
+          item-key="identifier"
+          show-expand
+          single-expand
+          multi-sort
+          :must-sort="false"
+          :item-class="getClass"
+          @update:options="updatePaginationHandler($event)"
         >
-          {{ item.category }}
-        </badge-display>
+          <template #item.ignoredInAccounting="{ item, isMobile }">
+            <div v-if="item.ignoredInAccounting">
+              <badge-display v-if="isMobile" color="grey">
+                <v-icon small> mdi-eye-off </v-icon>
+                <span class="ml-2">
+                  {{ tc('common.ignored_in_accounting') }}
+                </span>
+              </badge-display>
+              <v-tooltip v-else bottom>
+                <template #activator="{ on }">
+                  <badge-display color="grey" v-on="on">
+                    <v-icon small> mdi-eye-off </v-icon>
+                  </badge-display>
+                </template>
+                <span>
+                  {{ tc('common.ignored_in_accounting') }}
+                </span>
+              </v-tooltip>
+            </div>
+          </template>
+          <template #item.location="{ item }">
+            <location-display :identifier="item.location" />
+          </template>
+          <template #item.category="{ item }">
+            <badge-display
+              :color="
+                item.category.toLowerCase() === 'withdrawal' ? 'grey' : 'green'
+              "
+            >
+              {{ item.category }}
+            </badge-display>
+          </template>
+          <template #item.asset="{ item }">
+            <asset-details opens-details :asset="item.asset" />
+          </template>
+          <template #item.amount="{ item }">
+            <amount-display
+              class="deposits-withdrawals__movement__amount"
+              :value="item.amount"
+            />
+          </template>
+          <template #item.fee="{ item }">
+            <amount-display
+              class="deposits-withdrawals__trade__fee"
+              :asset="item.feeAsset"
+              :value="item.fee"
+            />
+          </template>
+          <template #item.timestamp="{ item }">
+            <date-display :timestamp="item.timestamp" />
+          </template>
+          <template #expanded-item="{ headers, item }">
+            <deposit-withdrawal-details :span="headers.length" :item="item" />
+          </template>
+          <template v-if="showUpgradeRow" #body.prepend="{ headers }">
+            <upgrade-row
+              :limit="limit"
+              :total="total"
+              :colspan="headers.length"
+              :label="tc('deposits_withdrawals.label')"
+            />
+          </template>
+        </data-table>
       </template>
-      <template #item.asset="{ item }">
-        <asset-details opens-details :asset="item.asset" />
-      </template>
-      <template #item.amount="{ item }">
-        <amount-display
-          class="deposits-withdrawals__movement__amount"
-          :value="item.amount"
-        />
-      </template>
-      <template #item.fee="{ item }">
-        <amount-display
-          class="deposits-withdrawals__trade__fee"
-          :asset="item.feeAsset"
-          :value="item.fee"
-        />
-      </template>
-      <template #item.timestamp="{ item }">
-        <date-display :timestamp="item.timestamp" />
-      </template>
-      <template #expanded-item="{ headers, item }">
-        <deposit-withdrawal-details :span="headers.length" :item="item" />
-      </template>
-      <template v-if="showUpgradeRow" #body.prepend="{ headers }">
-        <upgrade-row
-          :limit="limit"
-          :total="total"
-          :colspan="headers.length"
-          :label="tc('deposits_withdrawals.label')"
-        />
-      </template>
-    </data-table>
+    </collection-handler>
   </card>
 </template>
 
@@ -147,14 +152,12 @@ import {
   IgnoreActionType,
   TradeEntry
 } from '@/store/history/types';
-import { Collection } from '@/types/collection';
 import {
   AssetMovement,
   AssetMovementRequestPayload
 } from '@/types/history/movements';
 import { TradeLocation } from '@/types/history/trade-location';
 import { Section } from '@/types/status';
-import { getCollectionData, setupEntryLimit } from '@/utils/collection';
 
 interface PaginationOptions {
   page: number;
@@ -238,12 +241,6 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
 const assetMovementStore = useAssetMovements();
 const { assetMovements } = storeToRefs(assetMovementStore);
 const { updateAssetMovementsPayload } = assetMovementStore;
-
-const { data, limit, found, total } = getCollectionData<AssetMovementEntry>(
-  assetMovements as Ref<Collection<AssetMovementEntry>>
-);
-
-const { itemLength, showUpgradeRow } = setupEntryLimit(limit, found, total);
 
 const fetch = (refresh = false) => emit('fetch', refresh);
 

@@ -14,7 +14,6 @@
 <script setup lang="ts">
 import { ComputedRef } from 'vue';
 import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
-import { useNftAssetInfoStore } from '@/store/assets/nft';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { AssetInfoWithId } from '@/types/assets';
 
@@ -35,22 +34,10 @@ const props = defineProps({
 
 const { asset, enableAssociation } = toRefs(props);
 const { assetInfo } = useAssetInfoRetrieval();
-const { getNftDetails } = useNftAssetInfoStore();
 
 const assetDetails = assetInfo(asset, enableAssociation);
-const nftDetails = getNftDetails(asset);
 
 const currentAsset: ComputedRef<AssetInfoWithId> = computed(() => {
-  const nftAsset = get(nftDetails);
-
-  if (nftAsset) {
-    return {
-      symbol: nftAsset.symbol,
-      name: nftAsset.name,
-      identifier: get(asset)
-    };
-  }
-
   return {
     ...get(assetDetails),
     identifier: get(asset)

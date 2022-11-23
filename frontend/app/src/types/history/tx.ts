@@ -1,7 +1,7 @@
 import { Balance, NumericString } from '@rotki/common';
 import { z } from 'zod';
 import { getCollectionResponseType } from '@/types/collection';
-import { HistoryRequestPayload } from '@/types/history/index';
+import { PaginationRequestPayload } from '@/types/common';
 import { EntryMeta, getEntryWithMeta } from '@/types/history/meta';
 
 const EthTransactionEventExtraData = z
@@ -54,14 +54,17 @@ export const EthTransaction = z.object({
   nonce: z.number()
 });
 export type EthTransaction = z.infer<typeof EthTransaction>;
-export type TransactionRequestPayload = {
+
+export interface TransactionRequestPayload
+  extends PaginationRequestPayload<EthTransaction> {
   readonly fromTimestamp?: string | number;
   readonly toTimestamp?: string | number;
   readonly address?: string;
   readonly asset?: string;
   readonly protocols?: string | string[];
   readonly eventTypes?: string | string[];
-} & HistoryRequestPayload<EthTransaction>;
+}
+
 export interface TransactionEventRequestPayload {
   readonly txHashes?: string[] | null;
   readonly ignoreCache: boolean;
