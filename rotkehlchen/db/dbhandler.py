@@ -3461,14 +3461,10 @@ class DBHandler:
         Returns None if either there is no label set or the account doesn't exist in database.
         """
         query = cursor.execute(
-            'SELECT label '
-            'FROM blockchain_accounts '
-            'WHERE blockchain=? '
-            'AND account=?',
+            'SELECT label FROM blockchain_accounts '
+            'WHERE blockchain=? AND account=?',
             (blockchain.value, address),
         )
         result = query.fetchone()
-        if result:
-            return result[0]
 
-        return None
+        return None if result is None else result[0]

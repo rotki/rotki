@@ -94,10 +94,8 @@ FetcherFunc = Callable[[DBHandler, ChecksumEvmAddress], Optional[str]]
 
 
 class NamePrioritizer:
-    _fetchers: Dict[AddressNameSource, FetcherFunc] = {}
-    _db: DBHandler
-
     def __init__(self, database: DBHandler):
+        self._fetchers: Dict[AddressNameSource, FetcherFunc] = {}
         self._db = database
 
     def add_fetchers(self, fetchers: Dict[AddressNameSource, FetcherFunc]) -> None:
@@ -140,9 +138,9 @@ def blockchain_address_to_name(
     """
     with db.conn.read_ctx() as cursor:
         return db.get_blockchain_account_label(
-            cursor,
-            SupportedBlockchain.ETHEREUM,
-            address,
+            cursor=cursor,
+            blockchain=SupportedBlockchain.ETHEREUM,
+            address=address,
         )
 
 
@@ -155,8 +153,8 @@ def private_addressbook_address_to_name(
     """
     db_addressbook = DBAddressbook(db)
     return db_addressbook.get_addressbook_entry_name(
-        AddressbookType.PRIVATE,
-        address,
+        book_type=AddressbookType.PRIVATE,
+        address=address,
     )
 
 
@@ -169,8 +167,8 @@ def global_addressbook_address_to_name(
     """
     db_addressbook = DBAddressbook(db)
     return db_addressbook.get_addressbook_entry_name(
-        AddressbookType.GLOBAL,
-        address,
+        book_type=AddressbookType.GLOBAL,
+        address=address,
     )
 
 
@@ -201,7 +199,10 @@ def ens_address_to_name(
     db_ens = DBEns(db)
 
     with db.conn.read_ctx() as cursor:
-        db_reverse_ens = db_ens.get_reverse_ens(cursor, addresses=[address])
+        db_reverse_ens = db_ens.get_reverse_ens(
+            cursor=cursor,
+            addresses=[address],
+        )
         address_ens = db_reverse_ens.get(address, None)
         if isinstance(address_ens, EnsMapping):
             return address_ens.name
