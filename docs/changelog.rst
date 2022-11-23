@@ -1,7 +1,7 @@
 =========
 Changelog
 =========
-
+* :bug:`5127` Uniswap V3 swap transactions are now decoded properly.
 * :bug:`5124` Users will now correctly see all the events related to lending in the defi view.
 * :bug:`5126` APR and APY for borrowing and lending in Aave should properly show again.
 * :bug:`5128` Ethereum transactions where no value was transferred will now be correctly decoded.
