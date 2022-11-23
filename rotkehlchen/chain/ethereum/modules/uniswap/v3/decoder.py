@@ -8,6 +8,7 @@ from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
+from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
@@ -29,6 +30,8 @@ log = RotkehlchenLogsAdapter(logger)
 # https://www.4byte.directory/api/v1/event-signatures/?hex_signature=0xc42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca67  # noqa: E501
 # https://docs.uniswap.org/protocol/reference/core/interfaces/pool/IUniswapV3PoolEvents#swap
 SWAP_SIGNATURE = b'\xc4 y\xf9JcP\xd7\xe6#_)\x17I$\xf9(\xcc*\xc8\x18\xebd\xfe\xd8\x00N\x11_\xbc\xcag'  # noqa: E501
+
+UNISWAP_V3_ROUTER = string_to_evm_address('0xE592427A0AEce92De3Edee1F18E0157C05861564')
 
 
 class Uniswapv3Decoder(DecoderInterface):
@@ -131,10 +134,12 @@ class Uniswapv3Decoder(DecoderInterface):
                     event.balance.amount != asset_normalized_value(
                         amount=amount_received,
                         asset=crypto_asset,
-                    )
+                    ) and event.counterparty == UNISWAP_V3_ROUTER
                 ):
+                    # this is to make sure its the amm issuing the refund and not an agreggator making a swap  # noqa: E501
                     # Those are assets returned due to a change in the swap price
                     event.event_type = HistoryEventType.TRANSFER
+                    event.event_subtype = HistoryEventSubType.NONE
                     event.counterparty = CPT_UNISWAP_V3
                     event.notes = f'Refund of {event.balance.amount} {crypto_asset.symbol} in uniswap-v3 due to price change'  # noqa: E501
 

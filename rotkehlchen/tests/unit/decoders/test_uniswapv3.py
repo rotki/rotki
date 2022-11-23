@@ -11,6 +11,7 @@ from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxR
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_USDC
 from rotkehlchen.constants.misc import EXP18, ZERO
+from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import (
@@ -278,4 +279,213 @@ def test_uniswap_v3_swap_received_token2(database, ethereum_manager, eth_transac
             counterparty=CPT_UNISWAP_V3,
         ),
     ]
+    assert events == expected_events
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0xdD84Ce1aDcb3A4908Db61A1dFA3353C3974c5a2B']])  # noqa: E501
+def test_uniswap_v3_swap_by_aggregator(database, ethereum_manager, eth_transactions):
+    """
+    This checks that swap(s) initiated by an aggregator is decoded properly.
+    Data is taken from:
+    https://etherscan.io/tx/0x14e73a3bbced025ae22245eae0045972c1664fc01038b2ba6b1153590f536948
+    """
+    msg_aggregator = MessagesAggregator()
+    tx_hex = '0x14e73a3bbced025ae22245eae0045972c1664fc01038b2ba6b1153590f536948'
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    transaction = EvmTransaction(
+        tx_hash=evmhash,
+        timestamp=1669210175000,
+        block_number=16032999,
+        from_address='0xc9ec550BEA1C64D779124b23A26292cc223327b6',
+        to_address='0xdD84Ce1aDcb3A4908Db61A1dFA3353C3974c5a2B',
+        value=0,
+        gas=171249,
+        gas_price=22990000000,
+        gas_used=171249,
+        input_data=hexstring_to_bytes('0x13d79a0b000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000e0000000000000000000000000000000000000000000000000000000000000014000000000000000000000000000000000000000000000000000000000000003600000000000000000000000000000000000000000000000000000000000000002000000000000000000000000d9fcd98c322942075a5c3860693e9f4f03aae07b000000000000000000000000eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000012171be30000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000dd84ce1adcb3a4908db61a1dfa3353c3974c5a2b00000000000000000000000000000000000000000000000b96bbc3ff3cd324e10000000000000000000000000000000000000000000000000a32c8497eefc38400000000000000000000000000000000000000000000000000000000637e2708fda28b94d496c30e7bf8d159f8e2c4396926574362e79d263e7b37570fb5936100000000000000000000000000000000000000000000000005e9f5d449342740000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000b96bbc3ff3cd324e100000000000000000000000000000000000000000000000000000000000001600000000000000000000000000000000000000000000000000000000000000041ae2a304d26cbf1620faad930a50a4528cb678f106bd9fdad327f90cd0f4681012815da2bf7ff37e7e02c012c894f8c38cbc57fd11788b971ffc64f348b8efa931c0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000032000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000001c00000000000000000000000000d53497746e70c8cc2e5e8d2ac5f0a33f93c93530000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000e46af479b2000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000b96bbc3ff3cd324e10000000000000000000000000000000000000000000000000a3ea020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002bd9fcd98c322942075a5c3860693e9f4f03aae07b002710c02aaa39b223fe8d0a0e5c4f27ead9083c756cc200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc20000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000242e1a7d4d0000000000000000000000000000000000000000000000000a3feffdf3a10c12000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'),  # noqa: E501
+        nonce=29513,
+    )
+    receipt = EthereumTxReceipt(
+        tx_hash=evmhash,
+        contract_address=None,
+        status=True,
+        type=0,
+        logs=[
+            EthereumTxReceiptLog(
+                log_index=249,
+                data=hexstring_to_bytes('0x000000000000000000000000d9fcd98c322942075a5c3860693e9f4f03aae07b000000000000000000000000eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee00000000000000000000000000000000000000000000000b9ca5b9d386074c210000000000000000000000000000000000000000000000000a3feffdf3a10c1200000000000000000000000000000000000000000000000005e9f5d44934274000000000000000000000000000000000000000000000000000000000000000c00000000000000000000000000000000000000000000000000000000000000038f2e988cb71d09a733a32e47090ec8270d3605d0605167c15f61833c46307946edd84ce1adcb3a4908db61a1dfa3353c3974c5a2b637e27080000000000000000'),  # noqa: E501
+                address=string_to_evm_address('0x9008D19f58AAbD9eD0D60971565AA8510560ab41'),
+                removed=False,
+                topics=[
+                    hexstring_to_bytes('0xa07a543ab8a018198e99ca0184c93fe9050a79400a0a723441f84de1d972cc17'),  # noqa: E501
+                    hexstring_to_bytes('0x000000000000000000000000dd84ce1adcb3a4908db61a1dfa3353c3974c5a2b'),  # noqa: E501
+                ],
+            ), EthereumTxReceiptLog(
+                log_index=250,
+                data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000000b9ca5b9d386074c21'),  # noqa: E501
+                address=string_to_evm_address('0xd9Fcd98c322942075A5C3860693e9f4f03AAE07b'),
+                removed=False,
+                topics=[
+                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
+                    hexstring_to_bytes('0x000000000000000000000000dd84ce1adcb3a4908db61a1dfa3353c3974c5a2b'),  # noqa: E501
+                    hexstring_to_bytes('0x0000000000000000000000009008d19f58aabd9ed0d60971565aa8510560ab41'),  # noqa: E501
+                ],
+            ), EthereumTxReceiptLog(
+                log_index=251,
+                data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000000fb72e42ac09146ba30000000000000000000000000000000000000000000000041a8888d8830d1f82'),  # noqa: E501
+                address=string_to_evm_address('0xd9Fcd98c322942075A5C3860693e9f4f03AAE07b'),
+                removed=False,
+                topics=[
+                    hexstring_to_bytes('0xdec2bacdd2f05b59de34da9b523dff8be42e5e38e818c82fdb0bae774387a724'),  # noqa: E501
+                    hexstring_to_bytes('0x000000000000000000000000e6da683076b7ed6ce7ec972f21eb8f91e9137a17'),  # noqa: E501
+                ],
+            ), EthereumTxReceiptLog(
+                log_index=252,
+                data=hexstring_to_bytes('0xffffffffffffffffffffffffffffffffffffffffffffffe427dd9990fb99e04c'),  # noqa: E501
+                address=string_to_evm_address('0xd9Fcd98c322942075A5C3860693e9f4f03AAE07b'),
+                removed=False,
+                topics=[
+                    hexstring_to_bytes('0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925'),  # noqa: E501
+                    hexstring_to_bytes('0x000000000000000000000000dd84ce1adcb3a4908db61a1dfa3353c3974c5a2b'),  # noqa: E501
+                    hexstring_to_bytes('0x000000000000000000000000c92e8bdf79f0507f65a392b0ab4667716bfe0110'),  # noqa: E501
+                ],
+            ), EthereumTxReceiptLog(
+                log_index=253,
+                data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000a3feffd7f24c066'),  # noqa: E501
+                address=string_to_evm_address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
+                removed=False,
+                topics=[
+                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
+                    hexstring_to_bytes('0x000000000000000000000000b003df4b243f938132e8cadbeb237abc5a889fb4'),  # noqa: E501
+                    hexstring_to_bytes('0x0000000000000000000000009008d19f58aabd9ed0d60971565aa8510560ab41'),  # noqa: E501
+                ],
+            ), EthereumTxReceiptLog(
+                log_index=254,
+                data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000000b96bbc3ff3cd324e1'),  # noqa: E501
+                address=string_to_evm_address('0xd9Fcd98c322942075A5C3860693e9f4f03AAE07b'),
+                removed=False,
+                topics=[
+                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
+                    hexstring_to_bytes('0x0000000000000000000000009008d19f58aabd9ed0d60971565aa8510560ab41'),  # noqa: E501
+                    hexstring_to_bytes('0x000000000000000000000000b003df4b243f938132e8cadbeb237abc5a889fb4'),  # noqa: E501
+                ],
+            ), EthereumTxReceiptLog(
+                log_index=255,
+                data=hexstring_to_bytes('0xffffffffffffffffffffffffffffffffffffffffffffff5fcfb0aa366255e470'),  # noqa: E501
+                address=string_to_evm_address('0xd9Fcd98c322942075A5C3860693e9f4f03AAE07b'),
+                removed=False,
+                topics=[
+                    hexstring_to_bytes('0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925'),  # noqa: E501
+                    hexstring_to_bytes('0x0000000000000000000000009008d19f58aabd9ed0d60971565aa8510560ab41'),  # noqa: E501
+                    hexstring_to_bytes('0x0000000000000000000000000d53497746e70c8cc2e5e8d2ac5f0a33f93c9353'),  # noqa: E501
+                ],
+            ), EthereumTxReceiptLog(
+                log_index=256,
+                data=hexstring_to_bytes('fffffffffffffffffffffffffffffffffffffffffffffffff5c0100280db3f9a00000000000000000000000000000000000000000000000b96bbc3ff3cd324e10000000000000000000000000000000000000010fc53ece379d82dde087ced260000000000000000000000000000000000000000000000634af2979832dffc7e000000000000000000000000000000000000000000000000000000000000dd4a'),  # noqa: E501
+                address=string_to_evm_address('0xB003DF4B243f938132e8CAdBEB237AbC5A889FB4'),
+                removed=False,
+                topics=[
+                    hexstring_to_bytes('0xc42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca67'),  # noqa: E501
+                    hexstring_to_bytes('0x0000000000000000000000000d53497746e70c8cc2e5e8d2ac5f0a33f93c9353'),  # noqa: E501
+                    hexstring_to_bytes('0x0000000000000000000000009008d19f58aabd9ed0d60971565aa8510560ab41'),  # noqa: E501
+                ],
+            ), EthereumTxReceiptLog(
+                log_index=257,
+                data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000000000000000000000006af479b200000000000000000000000000000000000000000000000000000000'),  # noqa: E501
+                address=string_to_evm_address('0x9008D19f58AAbD9eD0D60971565AA8510560ab41'),
+                removed=False,
+                topics=[
+                    hexstring_to_bytes('0xed99827efb37016f2275f98c4bcf71c7551c75d59e9b450f79fa32e60be672c2'),  # noqa: E501
+                    hexstring_to_bytes('0x0000000000000000000000000d53497746e70c8cc2e5e8d2ac5f0a33f93c9353'),  # noqa: E501
+                ],
+            ), EthereumTxReceiptLog(
+                log_index=258,
+                data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000a3feffdf3a10c12'),  # noqa: E501
+                address=string_to_evm_address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
+                removed=False,
+                topics=[
+                    hexstring_to_bytes('0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65'),  # noqa: E501
+                    hexstring_to_bytes('0x0000000000000000000000009008d19f58aabd9ed0d60971565aa8510560ab41'),  # noqa: E501
+                ],
+            ), EthereumTxReceiptLog(
+                log_index=259,
+                data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000000000000000000000002e1a7d4d00000000000000000000000000000000000000000000000000000000'),  # noqa: E501
+                address=string_to_evm_address('0x9008D19f58AAbD9eD0D60971565AA8510560ab41'),
+                removed=False,
+                topics=[
+                    hexstring_to_bytes('0xed99827efb37016f2275f98c4bcf71c7551c75d59e9b450f79fa32e60be672c2'),  # noqa: E501
+                    hexstring_to_bytes('0x000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'),  # noqa: E501
+                ],
+            ), EthereumTxReceiptLog(
+                log_index=260,
+                data=hexstring_to_bytes('0x'),
+                address=string_to_evm_address('0x9008D19f58AAbD9eD0D60971565AA8510560ab41'),
+                removed=False,
+                topics=[
+                    hexstring_to_bytes('0x40338ce1a7c49204f0099533b1e9a7ee0a3d261f84974ab7af36105b8c4e9db4'),  # noqa: E501
+                    hexstring_to_bytes('0x000000000000000000000000c9ec550bea1c64d779124b23a26292cc223327b6'),  # noqa: E501
+                ],
+            ),
+        ],
+    )
+    internal_tx = EvmInternalTransaction(
+        parent_tx_hash=evmhash,
+        trace_id=27,
+        timestamp=1669210175000,
+        block_number=16032999,
+        from_address='0x9008D19f58AAbD9eD0D60971565AA8510560ab41',
+        to_address='0xdD84Ce1aDcb3A4908Db61A1dFA3353C3974c5a2B',
+        value=FVal('0.738572737905232914') * EXP18,
+    )
+    dbethtx = DBEthTx(database)
+    with database.user_write() as cursor:
+        dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
+        dbethtx.add_ethereum_internal_transactions(cursor, [internal_tx], relevant_address='0xdD84Ce1aDcb3A4908Db61A1dFA3353C3974c5a2B')  # noqa: E501
+        decoder = EVMTransactionDecoder(
+            database=database,
+            ethereum_manager=ethereum_manager,
+            transactions=eth_transactions,
+            msg_aggregator=msg_aggregator,
+        )
+        events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
+    expected_events = [
+        HistoryBaseEntry(
+            event_identifier=evmhash,
+            sequence_index=0,
+            timestamp=Timestamp(1669210175000000),
+            location=Location.BLOCKCHAIN,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal('0.738572737905232914')),
+            location_label='0xdD84Ce1aDcb3A4908Db61A1dFA3353C3974c5a2B',
+            notes='Receive 0.738572737905232914 ETH from 0x9008D19f58AAbD9eD0D60971565AA8510560ab41',  # noqa: E501
+            counterparty='0x9008D19f58AAbD9eD0D60971565AA8510560ab41',
+        ), HistoryBaseEntry(
+            event_identifier=evmhash,
+            sequence_index=251,
+            timestamp=Timestamp(1669210175000000),
+            location=Location.BLOCKCHAIN,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=EvmToken(ethaddress_to_identifier('0xd9Fcd98c322942075A5C3860693e9f4f03AAE07b')),
+            balance=Balance(amount=FVal('214.201817170016947233')),
+            location_label='0xdD84Ce1aDcb3A4908Db61A1dFA3353C3974c5a2B',
+            notes='Send 214.201817170016947233 EUL from 0xdD84Ce1aDcb3A4908Db61A1dFA3353C3974c5a2B to 0x9008D19f58AAbD9eD0D60971565AA8510560ab41',  # noqa: E501
+            counterparty='0x9008D19f58AAbD9eD0D60971565AA8510560ab41',
+        ), HistoryBaseEntry(
+            event_identifier=evmhash,
+            sequence_index=253,
+            timestamp=Timestamp(1669210175000000),
+            location=Location.BLOCKCHAIN,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=EvmToken(ethaddress_to_identifier('0xd9Fcd98c322942075A5C3860693e9f4f03AAE07b')),
+            balance=Balance(amount=FVal('1.157920892373161954235709850E+59')),
+            location_label='0xdD84Ce1aDcb3A4908Db61A1dFA3353C3974c5a2B',
+            notes='Approve 1.157920892373161954235709850E+59 EUL of 0xdD84Ce1aDcb3A4908Db61A1dFA3353C3974c5a2B for spending by 0xC92E8bdf79f0507f65a392b0ab4667716BFE0110',  # noqa: E501
+            counterparty='0xC92E8bdf79f0507f65a392b0ab4667716BFE0110',
+        ),
+    ]
+    assert len(events) == 3
     assert events == expected_events
