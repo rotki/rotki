@@ -3191,7 +3191,8 @@ class RestAPI():
                 'entries_found': total_filter_count,
                 'entries_total': self.rotkehlchen.data.db.get_entries_count(
                     cursor=cursor,
-                    entries_table='ethereum_transactions',
+                    entries_table='evm_transactions',
+                    kwargs={'chain_id': ChainID.ETHEREUM.serialize_for_db()},
                 ),
                 'entries_limit': FREE_ETH_TX_LIMIT if self.rotkehlchen.premium is None else -1,
             }

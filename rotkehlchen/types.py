@@ -222,6 +222,9 @@ class ChainID(SerializableEnumMixin):
     def to_name(self) -> str:
         return str(self).lower()
 
+    def to_blockchain(self) -> 'SupportedBlockchain':
+        return CHAINID_TO_SUPPORTED_BLOCKCHAIN[self]
+
 
 class EvmTransaction(NamedTuple):
     """Represent an EVM transaction"""

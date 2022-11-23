@@ -113,6 +113,7 @@ from rotkehlchen.types import (
     AssetMovementCategory,
     BlockchainAccountData,
     BTCAddress,
+    ChainID,
     ChecksumEvmAddress,
     ExchangeApiCredentials,
     ExternalService,
@@ -1162,16 +1163,28 @@ class DBHandler:
         May raise:
         - InputError if any of the given accounts to delete did not exist
         """
+        # Assure all are there
+        accounts_number = write_cursor.execute(
+            f'SELECT COUNT(*) from blockchain_accounts WHERE blockchain = ? '
+            f'AND account IN ({",".join("?"*len(accounts))})',
+            (blockchain.value, *accounts),
+        ).fetchone()[0]
+        if accounts_number != len(accounts):
+            raise InputError(
+                f'Tried to remove {len(accounts) - accounts_number} '
+                f'{blockchain.value} accounts that do not exist',
+            )
+
+        tuples = [(blockchain.value, x) for x in accounts]
+        account_tuples = [(x,) for x in accounts]
+
         # First remove all transaction related information for this address.
         # Needs to happen before the address is removed since removing the address
-        # will also remove ethtx_address_mappings, thus making it impossible
+        # will also remove evmtx_address_mappings, thus making it impossible
         # to figure out which transactions are touched by this address
         if blockchain == SupportedBlockchain.ETHEREUM:
             for address in accounts:
                 self.delete_data_for_ethereum_address(write_cursor, address)  # type: ignore
-
-        tuples = [(blockchain.value, x) for x in accounts]
-        account_tuples = [(x,) for x in accounts]
 
         write_cursor.executemany(
             'DELETE FROM tag_mappings WHERE '
@@ -1181,12 +1194,6 @@ class DBHandler:
             'DELETE FROM blockchain_accounts WHERE '
             'blockchain = ? and account = ?;', tuples,
         )
-        affected_rows = write_cursor.rowcount
-        if affected_rows != len(accounts):
-            raise InputError(
-                f'Tried to remove {len(accounts) - affected_rows} '
-                f'{blockchain.value} accounts that do not exist',
-            )
 
     def get_tokens_for_address(
             self,
@@ -1790,14 +1797,18 @@ class DBHandler:
             tuples: Sequence[Tuple[Any, ...]],
             **kwargs: Optional[ChecksumEvmAddress],
     ) -> None:
+        """When used for inputting transactions make sure that for one write it's
+        all for the same chain id"""
         relevant_address = kwargs.get('relevant_address')
         try:
             write_cursor.executemany(query, tuples)
             if relevant_address is not None:
-                mapping_tuples = [(relevant_address, x[0], x[1]) for x in tuples]
+                # chain_id should always be the same so perform lookup out of the loop
+                blockchain = ChainID(tuples[0][1]).to_blockchain()
+                mapping_tuples = [(relevant_address, x[0], x[1], blockchain) for x in tuples]  # noqa: E501
                 write_cursor.executemany(
-                    'INSERT OR IGNORE INTO evmtx_address_mappings(address, tx_hash, chain_id) '
-                    'VALUES(?, ?, ?)',
+                    'INSERT OR IGNORE INTO evmtx_address_mappings(address, tx_hash, chain_id, blockchain) '  # noqa: E501
+                    'VALUES(?, ?, ?, ?)',
                     mapping_tuples,
                 )
         except sqlcipher.IntegrityError:  # pylint: disable=no-member
@@ -1808,10 +1819,11 @@ class DBHandler:
                 try:
                     write_cursor.execute(query, entry)
                     if relevant_address is not None:
+                        blockchain = ChainID(entry[1]).to_blockchain()
                         write_cursor.execute(
                             'INSERT OR IGNORE INTO evmtx_address_mappings '
-                            '(address, tx_hash, chain_id) VALUES(?, ?, ?)',
-                            (relevant_address, entry[0], entry[1]),
+                            '(address, tx_hash, chain_id, blockchain) VALUES(?, ?, ?)',
+                            (relevant_address, entry[0], entry[1], blockchain),
                         )
                 except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
                     if tuple_type == 'evm_transaction':
@@ -1822,10 +1834,11 @@ class DBHandler:
                         # Also if we have transactions of one account sending to the
                         # other and both accounts are being tracked.
                         if relevant_address is not None:
+                            blockchain = ChainID(entry[1]).to_blockchain()
                             write_cursor.execute(
                                 'INSERT OR IGNORE INTO evmtx_address_mappings '
-                                '(address, tx_hash, chain_id) VALUES(?, ?, ?)',
-                                (relevant_address, entry[0], entry[1]),
+                                '(address, tx_hash, chain_id, blockchain) VALUES(?, ?, ?, ?)',
+                                (relevant_address, entry[0], entry[1], blockchain),
                             )
                         string_repr = db_tuple_to_str(entry, tuple_type)
                         log.debug(
@@ -2018,7 +2031,7 @@ class DBHandler:
             entries_table: Literal[
                 'asset_movements',
                 'trades',
-                'ethereum_transactions',
+                'evm_transactions',
                 'ledger_actions',
                 'eth2_daily_staking_details',
                 'entries_notes',

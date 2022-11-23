@@ -170,10 +170,10 @@ class DBEvmTx():
         """
         query, bindings = filter_.prepare()
         if has_premium:
-            query = 'SELECT DISTINCT ethereum_transactions.tx_hash, chain_id, timestamp, block_number, from_address, to_address, value, gas, gas_price, gas_used, input_data, nonce FROM ethereum_transactions ' + query  # noqa: E501
+            query = 'SELECT DISTINCT evm_transactions.tx_hash, chain_id, timestamp, block_number, from_address, to_address, value, gas, gas_price, gas_used, input_data, nonce FROM evm_transactions ' + query  # noqa: E501
             results = cursor.execute(query, bindings)
         else:
-            query = 'SELECT DISTINCT ethereum_transactions.tx_hash, chain_id, timestamp, block_number, from_address, to_address, value, gas, gas_price, gas_used, input_data, nonce FROM (SELECT * from ethereum_transactions ORDER BY timestamp DESC LIMIT ?) ethereum_transactions ' + query  # noqa: E501
+            query = 'SELECT DISTINCT evm_transactions.tx_hash, chain_id, timestamp, block_number, from_address, to_address, value, gas, gas_price, gas_used, input_data, nonce FROM (SELECT * from evm_transactions ORDER BY timestamp DESC LIMIT ?) evm_transactions ' + query  # noqa: E501
             results = cursor.execute(query, [FREE_ETH_TX_LIMIT] + bindings)
 
         evm_transactions = []
@@ -239,7 +239,7 @@ class DBEvmTx():
             limit: Optional[int],
     ) -> List[EVMTxHash]:
         cursor = self.db.conn.cursor()
-        querystr = 'SELECT DISTINCT tx_hash FROM ethereum_transactions '
+        querystr = 'SELECT DISTINCT tx_hash FROM evm_transactions '
         bindings = ()
         if tx_filter_query is not None:
             filter_query, bindings = tx_filter_query.prepare(with_order=False, with_pagination=False)  # type: ignore  # noqa: E501
@@ -302,7 +302,7 @@ class DBEvmTx():
         - pysqlcipher3.dbapi2.IntegrityError if the transaction hash is not in the DB:
         pysqlcipher3.dbapi2.IntegrityError: FOREIGN KEY constraint failed
         If the receipt already exists in the DB:
-        pysqlcipher3.dbapi2.IntegrityError: UNIQUE constraint failed: ethtx_receipts.tx_hash
+        pysqlcipher3.dbapi2.IntegrityError: UNIQUE constraint failed: evmtx_receipts.tx_hash
         """
         tx_hash_b = hexstring_to_bytes(data['transactionHash'])
         # some nodes miss the type field for older non EIP1559 transactions. So assume legacy (0)
@@ -313,7 +313,7 @@ class DBEvmTx():
             status = 1
         contract_address = deserialize_evm_address(data['contractAddress']) if data['contractAddress'] else None  # noqa: E501
         write_cursor.execute(
-            'INSERT INTO ethtx_receipts (tx_hash, chain_id, contract_address, status, type) '
+            'INSERT INTO evmtx_receipts (tx_hash, chain_id, contract_address, status, type) '
             'VALUES(?, ?, ?, ?) ',
             (tx_hash_b, serialized_chain_id, contract_address, status, tx_type),
         )
@@ -432,6 +432,9 @@ class DBEvmTx():
             (address, chain_id_serialized, address, chain_id_serialized),
         )
         tx_hashes = [make_evm_tx_hash(x[0]) for x in result]
+        if len(tx_hashes) == 0:
+            return
+
         dbevents.delete_events_by_tx_hash(write_cursor, tx_hashes, chain_id)
         # Now delete all relevant transactions. By deleting all relevant transactions all tables
         # are cleared thanks to cascading (except for history_events which was cleared above)

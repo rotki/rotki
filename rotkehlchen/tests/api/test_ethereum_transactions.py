@@ -1088,9 +1088,9 @@ def test_query_transactions_check_decoded_events(
     # Now let's check DB tables to see they will get modified at purging
     with rotki.data.db.user_write() as cursor:
         for name, count in (
-                ('ethereum_transactions', 4), ('ethereum_internal_transactions', 0),
-                ('ethtx_receipts', 4), ('ethtx_receipt_log_topics', 6),
-                ('ethtx_address_mappings', 4), ('evm_tx_mappings', 4),
+                ('evm_transactions', 4), ('evm_internal_transactions', 0),
+                ('evmtx_receipts', 4), ('evmtx_receipt_log_topics', 6),
+                ('evmtx_address_mappings', 4), ('evm_tx_mappings', 4),
                 ('history_events_mappings', 2),
         ):
             assert cursor.execute(f'SELECT COUNT(*) from {name}').fetchone()[0] == count
@@ -1100,9 +1100,9 @@ def test_query_transactions_check_decoded_events(
         dbevmtx.delete_transactions(cursor, ethereum_accounts[0], SupportedBlockchain.ETHEREUM)
 
         for name, count in (
-                ('ethereum_transactions', 2), ('ethereum_internal_transactions', 0),
-                ('ethtx_receipts', 2), ('ethtx_receipt_log_topics', 6),
-                ('ethtx_address_mappings', 2), ('evm_tx_mappings', 0),
+                ('evm_transactions', 2), ('evm_internal_transactions', 0),
+                ('evmtx_receipts', 2), ('evmtx_receipt_log_topics', 6),
+                ('evmtx_address_mappings', 2), ('evm_tx_mappings', 0),
                 ('history_events_mappings', 2),
         ):
             assert cursor.execute(f'SELECT COUNT(*) from {name}').fetchone()[0] == count
@@ -1125,9 +1125,9 @@ def test_query_transactions_check_decoded_events(
         # and now purge all transactions again and see everything is deleted
         dbevmtx.delete_transactions(cursor, ethereum_accounts[0], SupportedBlockchain.ETHEREUM)
         for name in (
-                'ethereum_transactions', 'ethereum_internal_transactions',
-                'ethtx_receipts', 'ethtx_receipt_log_topics',
-                'ethtx_address_mappings', 'evm_tx_mappings',
+                'evm_transactions', 'evm_internal_transactions',
+                'evmtx_receipts', 'evmtx_receipt_log_topics',
+                'evmtx_address_mappings', 'evm_tx_mappings',
                 'history_events_mappings',
         ):
             assert cursor.execute(f'SELECT COUNT(*) from {name}').fetchone()[0] == 0

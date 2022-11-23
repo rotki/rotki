@@ -434,7 +434,7 @@ CREATE TABLE IF NOT EXISTS ledger_actions (
 DB_CREATE_EVM_TRANSACTIONS = """
 CREATE TABLE IF NOT EXISTS evm_transactions (
     tx_hash BLOB NOT NULL,
-    chain_id INTEGER NOT NULL
+    chain_id INTEGER NOT NULL,
     timestamp INTEGER NOT NULL,
     block_number INTEGER NOT NULL,
     from_address TEXT NOT NULL,
@@ -501,12 +501,17 @@ CREATE TABLE IF NOT EXISTS evmtx_receipt_log_topics (
 );
 """  # noqa: E501
 
+# TODO: This here shows a weakness of using both chain_id and blockchain to identify
+# the chain. May need to change the schema somehow to either use the string identifier
+# everywhere as the common denominator. Or perhaps it's also good like this if this is
+# the only "bridge" table where both chain_id and blockchain exist for mapping.
 DB_CREATE_EVMTX_ADDRESS_MAPPINGS = """
 CREATE TABLE IF NOT EXISTS evmtx_address_mappings (
     address TEXT NOT NULL,
     tx_hash BLOB NOT NULL,
     chain_id INTEGER NOT NULL,
-    FOREIGN KEY(address) REFERENCES blockchain_accounts(account) ON DELETE CASCADE,
+    blockchain TEXT NOT NULL,
+    FOREIGN KEY(blockchain, address) REFERENCES blockchain_accounts(blockchain, account) ON DELETE CASCADE,
     FOREIGN KEY(tx_hash, chain_id) references evm_transactions(tx_hash, chain_id) ON UPDATE CASCADE ON DELETE CASCADE,
     PRIMARY KEY (address, tx_hash, chain_id)
 );

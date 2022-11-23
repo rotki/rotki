@@ -107,22 +107,38 @@ class DBETHTransactionJoinsFilter(DBFilter):
     """
     addresses: Optional[List[ChecksumEvmAddress]]
     should_join_events: bool = False
+    chain_id: Optional[ChainID] = None
 
     def prepare(self) -> Tuple[List[str], List[Any]]:
-        query_filters, bindings = [], []
+        query_filters: List[str] = []
+        bindings: List[Union[ChecksumEvmAddress, int]] = []
         if self.should_join_events is True:
             query_filters.append(
                 'LEFT JOIN (SELECT event_identifier, counterparty, asset FROM history_events) '
-                'ON ethereum_transactions.tx_hash=event_identifier',
+                'ON evm_transactions.tx_hash=event_identifier',
             )
         if self.addresses is not None:
             questionmarks = '?' * len(self.addresses)
-            query_filters.append(
-                f'INNER JOIN ethtx_address_mappings WHERE '
-                f'ethereum_transactions.tx_hash=ethtx_address_mappings.tx_hash AND '
-                f'ethtx_address_mappings.address IN ({",".join(questionmarks)})',
+            query_filter_str = (
+                f'INNER JOIN evmtx_address_mappings WHERE '
+                f'evm_transactions.tx_hash=evmtx_address_mappings.tx_hash AND '
+                f'evmtx_address_mappings.address IN ({",".join(questionmarks)})'
             )
             bindings += self.addresses
+            if self.chain_id is not None:
+                query_filter_str += ' AND evm_tx_address_mappings.chain_id=?'
+                bindings.append(self.chain_id.serialize_for_db())
+
+            query_filters.append(query_filter_str)
+
+        elif self.chain_id is not None:
+            query_filters.append(
+                'INNER JOIN evmtx_address_mappings WHERE '
+                'evm_transactions.tx_hash=evmtx_address_mappings.tx_hash AND '
+                'evm_tx_address_mappings.chain_id=?',
+            )
+            bindings.append(self.chain_id.serialize_for_db())
+
         else:
             # We need this because other filters expect the join clause to end with a WHERE clause.
             query_filters.append('WHERE 1')
@@ -375,6 +391,7 @@ class EvmTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
                     and_op=False,
                     addresses=addresses,
                     should_join_events=should_join_events,
+                    chain_id=chain_id,
                 )
 
             if asset is not None:
