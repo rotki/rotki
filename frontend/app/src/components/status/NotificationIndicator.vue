@@ -42,7 +42,7 @@ const click = () => {
   emit('click');
 };
 
-const { hasRunningTasks } = useTasks();
+const { hasRunningTasks } = storeToRefs(useTasks());
 
 const { tc } = useI18n();
 </script>

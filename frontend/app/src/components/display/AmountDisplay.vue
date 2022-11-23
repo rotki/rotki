@@ -187,6 +187,7 @@ const { scrambleData, shouldShowAmount } = storeToRefs(
 const { exchangeRate, assetPrice } = useBalancePricesStore();
 
 const {
+  abbreviateNumber,
   thousandSeparator,
   decimalSeparator,
   currencyLocation,
@@ -317,7 +318,8 @@ const renderedValue: ComputedRef<string> = computed(() => {
     floatingPrecisionUsed,
     get(thousandSeparator),
     get(decimalSeparator),
-    get(rounding)
+    get(rounding),
+    get(abbreviateNumber)
   );
 });
 

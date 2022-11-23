@@ -143,6 +143,7 @@ export const FrontendSettings = z.object({
   currencyLocation: CurrencyLocationEnum.default(
     Defaults.DEFAULT_CURRENCY_LOCATION
   ),
+  abbreviateNumber: z.boolean().default(false),
   refreshPeriod: z.preprocess(
     refreshPeriod =>
       Math.min(

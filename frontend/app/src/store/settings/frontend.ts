@@ -54,6 +54,9 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
   const currencyLocation: ComputedRef<CurrencyLocation> = computed(
     () => settings.currencyLocation
   );
+  const abbreviateNumber: ComputedRef<boolean> = computed(
+    () => settings.abbreviateNumber
+  );
   const refreshPeriod: ComputedRef<RefreshPeriod> = computed(
     () => settings.refreshPeriod
   );
@@ -167,6 +170,7 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
     thousandSeparator,
     decimalSeparator,
     currencyLocation,
+    abbreviateNumber,
     refreshPeriod,
     explorers,
     itemsPerPage,

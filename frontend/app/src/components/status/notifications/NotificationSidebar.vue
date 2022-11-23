@@ -121,7 +121,7 @@ const notifications = computed(() => {
 });
 
 const { isMobile } = useTheme();
-const { hasRunningTasks } = useTasks();
+const { hasRunningTasks } = storeToRefs(useTasks());
 </script>
 
 <style module lang="scss">

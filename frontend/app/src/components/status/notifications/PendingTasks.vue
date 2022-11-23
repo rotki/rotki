@@ -21,8 +21,7 @@ const expanded = ref(false);
 const css = useCssModule();
 
 const store = useTasks();
-const { hasRunningTasks } = store;
-const { tasks } = storeToRefs(store);
+const { hasRunningTasks, tasks } = storeToRefs(store);
 </script>
 
 <style module lang="scss">
