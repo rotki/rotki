@@ -4,6 +4,7 @@ import { Pinia, setActivePinia } from 'pinia';
 import Vuetify from 'vuetify';
 import ExternalServices from '@/pages/settings/api-keys/external/index.vue';
 import { useExternalServicesApi } from '@/services/settings/external-services-api';
+import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
 import { useSessionStore } from '@/store/session';
 import { ExternalServiceKeys } from '@/types/user';
@@ -168,14 +169,13 @@ describe('ExternalServices.vue', () => {
         .trigger('click');
       await wrapper.vm.$nextTick();
 
-      await wrapper
-        .find('[data-cy="confirm-dialog"] [data-cy="button-confirm"]')
-        .trigger('click');
+      const confirmStore = useConfirmStore();
+      await confirmStore.confirm();
       await wrapper.vm.$nextTick();
       await flushPromises();
 
       expect(deleteService).toHaveBeenCalledWith('etherscan');
-      expect(wrapper.find('[data-cy="confirm-dialog"]').exists()).toBeFalsy();
+      expect(confirmStore.visible).toBeFalsy();
     });
 
     test('delete cryptocompare fails', async () => {
@@ -188,15 +188,13 @@ describe('ExternalServices.vue', () => {
         .trigger('click');
       await wrapper.vm.$nextTick();
 
-      await wrapper
-        .find('[data-cy="confirm-dialog"] [data-cy="button-confirm"]')
-        .trigger('click');
+      const confirmStore = useConfirmStore();
+      await confirmStore.confirm();
       await wrapper.vm.$nextTick();
       await flushPromises();
 
       expect(deleteService).toHaveBeenCalledWith('cryptocompare');
-
-      expect(wrapper.find('[data-cy="confirm-dialog"]').exists()).toBeFalsy();
+      expect(confirmStore.visible).toBeFalsy();
 
       const store = useMessageStore();
       expect(store.message.description).toMatch('mock failure');

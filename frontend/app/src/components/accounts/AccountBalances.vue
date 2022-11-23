@@ -31,7 +31,7 @@
                     operationRunning ||
                     selectedAddresses.length === 0
                   "
-                  @click="confirmDelete = true"
+                  @click="showConfirmation(selectedAddresses)"
                 >
                   <v-icon> mdi-delete-outline </v-icon>
                   <span>{{ tc('common.actions.delete') }}</span>
@@ -64,6 +64,7 @@
           <tag-filter v-model="visibleTags" hide-details />
         </v-col>
       </v-row>
+
       <account-balance-table
         ref="balanceTable"
         data-cy="blockchain-balances"
@@ -73,15 +74,8 @@
         :visible-tags="visibleTags"
         :selected="selectedAddresses"
         @edit-click="editAccount($event)"
-        @delete-xpub="xpubToDelete = $event"
+        @delete-xpub="showConfirmation($event)"
         @addresses-selected="selectedAddresses = $event"
-      />
-      <confirm-dialog
-        :display="deleteConfirmed"
-        :title="tc('account_balances.confirm_delete.title')"
-        :message="deleteDescription"
-        @cancel="cancelDelete()"
-        @confirm="deleteAccount()"
       />
     </v-card-text>
   </v-card>
@@ -91,7 +85,6 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { PropType } from 'vue';
 import AccountBalanceTable from '@/components/accounts/AccountBalanceTable.vue';
-import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import TagFilter from '@/components/inputs/TagFilter.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
@@ -106,6 +99,7 @@ import { useBlockchainStore } from '@/store/blockchain';
 import { useBlockchainAccountsStore } from '@/store/blockchain/accounts';
 import { useBtcAccountsStore } from '@/store/blockchain/accounts/btc';
 import { useEthAccountsStore } from '@/store/blockchain/accounts/eth';
+import { useConfirmStore } from '@/store/confirm';
 import { useTasks } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 import { startPromise } from '@/utils';
@@ -123,20 +117,19 @@ const emit = defineEmits<{
 
 const { blockchain } = toRefs(props);
 
+const selectedAddresses = ref<string[]>([]);
+const visibleTags = ref<string[]>([]);
+const editedAccount = ref<string>('');
+const balanceTable = ref<any>(null);
+
 const { isTaskRunning } = useTasks();
 const { refreshBlockchainBalances } = useRefresh(blockchain);
 const { detectingTokens } = useTokenDetection();
+const { show } = useConfirmStore();
 
 const redetectAllTokens = () => {
   get(balanceTable)?.fetchAllDetectedTokensAndQueryBalance();
 };
-
-const selectedAddresses = ref<string[]>([]);
-const visibleTags = ref<string[]>([]);
-const editedAccount = ref<string>('');
-const confirmDelete = ref<boolean>(false);
-const xpubToDelete = ref<XpubPayload | null>(null);
-const balanceTable = ref<any>(null);
 
 const { tc } = useI18n();
 
@@ -166,21 +159,6 @@ const operationRunning = computed<boolean>(() => {
   );
 });
 
-const deleteConfirmed = computed<boolean>(() => {
-  return get(confirmDelete) || !!get(xpubToDelete);
-});
-
-const deleteDescription = computed<string>(() => {
-  if (get(xpubToDelete)) {
-    return tc('account_balances.confirm_delete.description_xpub', 0, {
-      address: get(xpubToDelete)!.xpub
-    });
-  }
-  return tc('account_balances.confirm_delete.description_address', 0, {
-    count: get(selectedAddresses).length
-  });
-});
-
 const editAccount = (account: BlockchainAccountWithBalance) => {
   set(editedAccount, account.address);
   emit('edit-account', account);
@@ -191,9 +169,11 @@ const { removeAccount } = useBlockchainAccountsStore();
 const { refreshAccounts } = useBlockchainStore();
 const { deleteXpub } = useBtcAccountsStore();
 
-const deleteAccount = async () => {
-  if (get(selectedAddresses).length > 0) {
-    set(confirmDelete, false);
+const deleteAccount = async (payload: XpubPayload | string[]) => {
+  if (Array.isArray(payload)) {
+    if (payload.length === 0) {
+      return;
+    }
 
     if (get(isEth2)) {
       await deleteEth2Validators(get(selectedAddresses));
@@ -206,9 +186,7 @@ const deleteAccount = async () => {
 
     startPromise(refreshAccounts(blockchain));
     set(selectedAddresses, []);
-  } else if (get(xpubToDelete)) {
-    const payload = { ...get(xpubToDelete)! };
-    set(xpubToDelete, null);
+  } else {
     await deleteXpub(payload);
     get(balanceTable)?.removeCollapsed(payload);
 
@@ -216,8 +194,23 @@ const deleteAccount = async () => {
   }
 };
 
-const cancelDelete = () => {
-  set(confirmDelete, false);
-  set(xpubToDelete, null);
+const showConfirmation = (payload: XpubPayload | string[]) => {
+  let message: string;
+  if (Array.isArray(payload)) {
+    message = tc('account_balances.confirm_delete.description_address', 0, {
+      count: payload.length
+    });
+  } else {
+    message = tc('account_balances.confirm_delete.description_xpub', 0, {
+      address: payload.xpub
+    });
+  }
+  show(
+    {
+      title: tc('account_balances.confirm_delete.title'),
+      message
+    },
+    async () => deleteAccount(payload)
+  );
 };
 </script>

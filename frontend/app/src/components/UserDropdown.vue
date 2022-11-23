@@ -58,7 +58,7 @@
         <v-list-item
           key="logout"
           class="user-dropdown__logout"
-          @click="confirmLogout = true"
+          @click="showConfirmation()"
         >
           <v-list-item-avatar>
             <v-icon color="primary">mdi-logout-variant</v-icon>
@@ -69,18 +69,10 @@
         </v-list-item>
       </v-list>
     </v-menu>
-    <confirm-dialog
-      :display="confirmLogout"
-      :title="tc('user_dropdown.confirmation.title')"
-      :message="tc('user_dropdown.confirmation.message')"
-      @confirm="logoutHandler()"
-      @cancel="confirmLogout = false"
-    />
   </div>
 </template>
 
 <script setup lang="ts">
-import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import ThemeControl from '@/components/premium/ThemeControl.vue';
 import { useTheme } from '@/composables/common';
@@ -88,12 +80,11 @@ import { useDarkMode } from '@/composables/dark-mode';
 import { useAppNavigation } from '@/composables/navigation';
 import { usePrivacyMode } from '@/composables/privacy';
 import { useInterop } from '@/electron-interop';
+import { useConfirmStore } from '@/store/confirm';
 import { useSessionStore } from '@/store/session';
 import { useSessionAuthStore } from '@/store/session/auth';
 
 const { t, tc } = useI18n();
-
-const confirmLogout = ref<boolean>(false);
 
 const KEY_REMEMBER_PASSWORD = 'rotki.remember_password';
 
@@ -107,14 +98,23 @@ const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
 
 const savedRememberPassword = useLocalStorage(KEY_REMEMBER_PASSWORD, null);
 
-const logoutHandler = async () => {
-  if (isPackaged && get(savedRememberPassword)) {
-    await clearPassword();
-  }
+const { show } = useConfirmStore();
 
-  await logout();
-  await navigateToUserLogin();
-};
+const showConfirmation = () =>
+  show(
+    {
+      title: tc('user_dropdown.confirmation.title'),
+      message: tc('user_dropdown.confirmation.message')
+    },
+    async () => {
+      if (isPackaged && get(savedRememberPassword)) {
+        await clearPassword();
+      }
+
+      await logout();
+      await navigateToUserLogin();
+    }
+  );
 
 const { darkModeEnabled } = useDarkMode();
 </script>
