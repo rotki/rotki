@@ -107,6 +107,7 @@ class BinanceTradeEntry(BinanceMultipleEntry):
             - DOESN'T support mixed Fee and Non-fee Trades
             - (Transaction Related + Transaction Related) * N
             - (Small assets exchange BNB + Small assets exchange BNB) * N
+            - (Buy + Transaction Related) * N
         """
         counted = Counter(requested_operations)
         fee = counted.pop('Fee', None)
@@ -120,7 +121,8 @@ class BinanceTradeEntry(BinanceMultipleEntry):
             (keys == {'Sell'} and counted['Sell'] % 2 == 0 and (not fee or counted['Sell'] == fee * 2)) or  # noqa: E501
             (keys == {'Transaction Related'} and counted['Transaction Related'] % 2 == 0) or
             (keys == {'Small assets exchange BNB'} and counted['Small assets exchange BNB'] % 2 == 0) or  # noqa: E501
-            (keys == {'ETH 2.0 Staking'} and counted['ETH 2.0 Staking'] % 2 == 0)
+            (keys == {'ETH 2.0 Staking'} and counted['ETH 2.0 Staking'] % 2 == 0) or
+            (keys == {'Buy', 'Transaction Related'} and counted['Buy'] - counted['Transaction Related'] == 0)  # noqa: E501
         )
 
     @staticmethod
@@ -187,7 +189,7 @@ class BinanceTradeEntry(BinanceMultipleEntry):
         grouped_trade_rows = []
         while len(rows_grouped_by_fee[False]) > 0:
             cur_batch = [rows_grouped_by_fee[False].pop(), rows_grouped_by_fee[False].pop(0)]
-            if True in rows_grouped_by_fee:
+            if True in rows_grouped_by_fee and len(rows_grouped_by_fee[True]) > 0:
                 cur_batch.append(rows_grouped_by_fee[True].pop())
             grouped_trade_rows.append(cur_batch)
 
@@ -500,7 +502,7 @@ class BinanceImporter(BaseExchangeImporter):
             if cur_operations.issubset(BINANCE_TRADE_OPERATIONS):
                 skipped_trade_rows.append(skipped_rows_group)
             else:
-                skipped_nontrade_rows.append(skipped_trade_rows)
+                skipped_nontrade_rows.append(skipped_rows_group)
         total_found = sum(stats.values())
         skipped_count = 0
         for _, rows in skipped_rows:
