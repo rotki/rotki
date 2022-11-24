@@ -32,9 +32,9 @@ jobs:
           changes=$(python3 tools/scripts/generate_changelog.py -f docs/changelog.rst -v $version)
           changes="${changes//'%'/'%25'}"
           changes="${changes//$'\n'/'%0A'}"
-          changes="${changes//$'\r'/'%0D'}"
-          echo "::set-output name=changes::$changes"
-          echo "::set-output name=version::$version"
+          changes="${changes//$'\r'/'%0D'}"        
+          echo "changes=${changes}" >> $GITHUB_OUTPUT
+          echo "version=${version}" >> $GITHUB_OUTPUT
       - name: Create Release
         id: create_release
         uses: rotki/action-gh-release@v1
@@ -336,7 +336,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Rotki Version
         id: rotki_version
-        run: echo "::set-output name=version::${GITHUB_REF#refs/*/}"
+        run: echo "version=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
       - name: Build and push
         id: docker_build
         uses: docker/build-push-action@v3
