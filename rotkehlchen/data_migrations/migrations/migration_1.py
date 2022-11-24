@@ -71,6 +71,6 @@ def data_migration_1(write_cursor: 'DBCursor', rotki: 'Rotkehlchen') -> None:
             db.delete_used_query_range_for_exchange(write_cursor=write_cursor, location=location)
         else:
             write_cursor.execute(
-                'UPDATE used_query_ranges SET name=? WHERE name=?',
+                'UPDATE OR IGNORE used_query_ranges SET name=? WHERE name=?',
                 (f'{location_str}_{entry_type}_{location_to_name[location]}', range_name),
             )
