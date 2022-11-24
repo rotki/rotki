@@ -9,19 +9,26 @@
   >
     <slot name="icon" :class="css.icon" />
     <span v-if="showDetails" :class="css.details">
-      <span :class="css.title" data-cy="details-symbol">
-        {{ title }}
-      </span>
-      <span v-if="subtitle" class="grey--text" :class="css.subtitle">
-        <v-tooltip open-delay="400" top :disabled="large">
-          <template #activator="{ on, attrs }">
-            <span v-bind="attrs" class="text-truncate" v-on="on">
-              {{ visibleSubtitle }}
-            </span>
-          </template>
-          <span> {{ subtitle }}</span>
-        </v-tooltip>
-      </span>
+      <template v-if="loading">
+        <v-skeleton-loader width="30" height="21" type="text" class="pt-1" />
+        <v-skeleton-loader width="70" type="text" height="18" />
+      </template>
+
+      <template v-else>
+        <span :class="css.title" data-cy="details-symbol">
+          {{ title }}
+        </span>
+        <span v-if="subtitle" class="grey--text" :class="css.subtitle">
+          <v-tooltip open-delay="400" top :disabled="large">
+            <template #activator="{ on, attrs }">
+              <span v-bind="attrs" class="text-truncate" v-on="on">
+                {{ visibleSubtitle }}
+              </span>
+            </template>
+            <span> {{ subtitle }}</span>
+          </v-tooltip>
+        </span>
+      </template>
     </span>
   </span>
 </template>
@@ -46,6 +53,11 @@ const props = defineProps({
     required: false,
     type: Boolean,
     default: true
+  },
+  loading: {
+    required: false,
+    type: Boolean,
+    default: false
   }
 });
 
@@ -126,7 +138,7 @@ const click = () => emit('click');
 }
 
 .subtitle {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   text-overflow: ellipsis;
   overflow: hidden;
   white-space: nowrap;
