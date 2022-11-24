@@ -3321,6 +3321,30 @@ class RestAPI():
         result_dict = _wrap_in_result(result, msg)
         return api_response(process_result(result_dict), status_code=status_code)
 
+    def _decode_pending_ethereum_transactions(self) -> Dict[str, Any]:
+        dbethtx = DBEthTx(self.rotkehlchen.data.db)
+        amount_of_tx_to_decode = dbethtx.count_hashes_not_decoded()
+        if amount_of_tx_to_decode > 0:
+            self.rotkehlchen.eth_tx_decoder.get_and_decode_undecoded_transactions()
+
+        return {
+            'result': {'decoded_tx_number': amount_of_tx_to_decode},
+            'message': '',
+            'status_code': HTTPStatus.OK,
+        }
+
+    def decode_pending_ethereum_transactions(self, async_query: bool) -> Response:
+        if async_query is True:
+            return self._query_async(
+                command=self._decode_pending_ethereum_transactions,
+            )
+
+        response = self._decode_pending_ethereum_transactions()
+        status_code = _get_status_code_from_async_response(response)
+        result_dict = _wrap_in_result(result=response['result'], message=response['message'])
+
+        return api_response(result_dict, status_code=status_code)
+
     def get_asset_icon(
             self,
             asset: Asset,

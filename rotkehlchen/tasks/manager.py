@@ -428,10 +428,9 @@ class TaskManager():
         lock acquired.
         """
         dbethtx = DBEthTx(self.database)
-        hashes = dbethtx.get_transaction_hashes_not_decoded(limit=TX_DECODING_LIMIT)
-        hashes_length = len(hashes)
-        if hashes_length > 0:
-            task_name = f'decode {hashes_length} evm trasactions'
+        amount_of_tx_to_decode = dbethtx.count_hashes_not_decoded()
+        if amount_of_tx_to_decode > 0:
+            task_name = f'decode {amount_of_tx_to_decode} evm trasactions'
             log.debug(f'Scheduling periodic task to {task_name}')
             return self.greenlet_manager.spawn_and_track(
                 after_seconds=None,

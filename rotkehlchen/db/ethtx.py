@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
 from rotkehlchen.chain.ethereum.constants import (
     ETHEREUM_BEGIN,
@@ -36,6 +36,11 @@ if TYPE_CHECKING:
     from rotkehlchen.db.drivers.gevent import DBCursor
 
 from rotkehlchen.constants.limits import FREE_ETH_TX_LIMIT
+
+TRANSACTIONS_MISSING_DECODING_QUERY = (
+    'ethtx_receipts AS A LEFT OUTER JOIN evm_tx_mappings AS B ON A.tx_hash=B.tx_hash WHERE '
+    'B.tx_hash is NULL'
+)
 
 
 class DBEthTx():
@@ -259,18 +264,25 @@ class DBEthTx():
         return hashes
 
     def get_transaction_hashes_not_decoded(self, limit: Optional[int]) -> List[EVMTxHash]:
-        cursor = self.db.conn.cursor()
-        querystr = (
-            'SELECT A.tx_hash from ethtx_receipts AS A LEFT OUTER JOIN evm_tx_mappings AS B '
-            'ON A.tx_hash=B.tx_hash WHERE B.tx_hash is NULL'
-        )
-        bindings = ()
+        """
+        Get the transactions hashes for the transactions that have not been decoded. If the limit
+        argument is provided then it is used in the SQL query with the default order.
+        """
+        querystr = 'SELECT A.tx_hash from ' + TRANSACTIONS_MISSING_DECODING_QUERY
+        bindings: Union[Tuple[int], Tuple[()]] = ()
         if limit is not None:
-            bindings = (limit,)  # type: ignore
+            bindings = (limit,)
             querystr += ' LIMIT ?'
 
-        cursor.execute(querystr, bindings)
-        return [make_evm_tx_hash(x[0]) for x in cursor]
+        with self.db.conn.read_ctx() as cursor:
+            cursor.execute(querystr, bindings)
+            return [make_evm_tx_hash(x[0]) for x in cursor]
+
+    def count_hashes_not_decoded(self) -> int:
+        """Count the number of transactions queried that have not been decoded"""
+        with self.db.conn.read_ctx() as cursor:
+            cursor.execute('SELECT COUNT(*) from ' + TRANSACTIONS_MISSING_DECODING_QUERY)
+            return cursor.fetchone()[0]
 
     def add_receipt_data(  # pylint: disable=no-self-use
             self,

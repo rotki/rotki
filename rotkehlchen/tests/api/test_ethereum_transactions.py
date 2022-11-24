@@ -2,7 +2,7 @@ import os
 import random
 from contextlib import ExitStack
 from http import HTTPStatus
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional
 from unittest.mock import patch
 
 import gevent
@@ -10,7 +10,6 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.api.server import APIServer
 from rotkehlchen.chain.ethereum.constants import (
     RANGE_PREFIX_ETHINTERNALTX,
     RANGE_PREFIX_ETHTOKENTX,
@@ -39,6 +38,7 @@ from rotkehlchen.tests.utils.api import (
 )
 from rotkehlchen.tests.utils.checks import assert_serialized_lists_equal
 from rotkehlchen.tests.utils.constants import TXHASH_HEX_TO_BYTES
+from rotkehlchen.tests.utils.ethereum import setup_ethereum_transactions_test
 from rotkehlchen.tests.utils.factories import (
     generate_tx_entries_response,
     make_ethereum_address,
@@ -49,6 +49,9 @@ from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.types import EvmTransaction, EVMTxHash, Timestamp, make_evm_tx_hash
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
+
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
 
 EXPECTED_AFB7_TXS = [{
     'tx_hash': '0x13684203a4bf07aaed0112983cb380db6004acac772af2a5d46cb2a28245fbad',
@@ -151,7 +154,7 @@ EXPECTED_4193_TXS = [{
 }]
 
 
-def assert_force_redecode_txns_works(api_server: APIServer, hashes: Optional[List[EVMTxHash]]):
+def assert_force_redecode_txns_works(api_server: 'APIServer', hashes: Optional[List[EVMTxHash]]):
     rotki = api_server.rest_api.rotkehlchen
     get_eth_txns_patch = patch.object(
         rotki.eth_tx_decoder.dbethtx,
@@ -1420,3 +1423,52 @@ def test_no_value_eth_transfer(rotkehlchen_api_server: 'APIServer'):
     assert len(result['entries'][0]['decoded_events']) == 1
     assert result['entries'][0]['decoded_events'][0]['entry']['asset'] == A_ETH
     assert result['entries'][0]['decoded_events'][0]['entry']['balance']['amount'] == '0'
+
+
+def test_decoding_missing_transactions(rotkehlchen_api_server: 'APIServer') -> None:
+    """Test that decoding all pending transactions works fine"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    transactions, _ = setup_ethereum_transactions_test(
+        database=rotki.data.db,
+        transaction_already_queried=True,
+        one_receipt_in_db=True,
+        second_receipt_in_db=True,
+    )
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ethereumtransactionsdecodingresource',
+        ), json={'async_query': False},
+    )
+    result = assert_proper_response_with_result(response)
+    assert result['decoded_tx_number'] == len(transactions)
+
+    dbevents = DBHistoryEvents(rotki.data.db)
+    with rotki.data.db.conn.read_ctx() as cursor:
+        events = dbevents.get_history_events(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(
+                event_identifiers=[transactions[0].tx_hash],
+            ),
+            has_premium=True,
+        )
+        assert len(events) == 3
+        events = dbevents.get_history_events(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(
+                event_identifiers=[transactions[1].tx_hash],
+            ),
+            has_premium=True,
+        )
+        assert len(events) == 2
+
+    # call again and no new transaction should be decoded
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ethereumtransactionsdecodingresource',
+        ), json={'async_query': True},
+    )
+    result = assert_proper_response_with_result(response)
+    outcome = wait_for_async_task(rotkehlchen_api_server, result['task_id'])
+    assert outcome['result']['decoded_tx_number'] == 0

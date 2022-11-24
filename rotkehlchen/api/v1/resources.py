@@ -503,6 +503,15 @@ class EthereumTransactionsResource(BaseMethodView):
         return self.rest_api.purge_ethereum_transaction_data()
 
 
+class EthereumTransactionsDecodingResource(BaseMethodView):
+    post_schema = AsyncQueryArgumentSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(post_schema, location='json_and_query')
+    def put(self, async_query: bool) -> Response:
+        return self.rest_api.decode_pending_ethereum_transactions(async_query=async_query)
+
+
 class EthereumAirdropsResource(BaseMethodView):
 
     get_schema = AsyncQueryArgumentSchema()
