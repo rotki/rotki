@@ -123,7 +123,8 @@ and releases.
 
 You can find all the available docker images at `DockerHub`_.
 
-   !Warning: It is important to keep in mind that is advisable to run
+.. warning::
+   It is important to keep in mind that is advisable to run
    the docker image in a secure environment. Such an environment would
    be for example running the docker image in the host machine and
    accessing it only via NAT. Under no circumstances should you
