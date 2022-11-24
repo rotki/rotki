@@ -70,6 +70,7 @@ from rotkehlchen.api.v1.resources import (
     EthereumAssetsResource,
     EthereumModuleDataResource,
     EthereumModuleResource,
+    EthereumTransactionsDecodingResource,
     EthereumTransactionsResource,
     ExchangeBalancesResource,
     ExchangeRatesResource,
@@ -218,6 +219,7 @@ URLS_V1: URLS = [
     ),
     ('/queried_addresses', QueriedAddressesResource),
     ('/blockchains/ETH/transactions', EthereumTransactionsResource),
+    ('/blockchains/ETH/transactions/decode', EthereumTransactionsDecodingResource),
     (
         '/blockchains/ETH/transactions/<string:address>',
         EthereumTransactionsResource,

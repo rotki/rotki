@@ -1896,6 +1896,42 @@ Purging locally saved ethereum transactions
    :statuscode 500: Internal rotki error
 
 
+Decode transactions that haven't been decoded yet
+=================================================
+
+.. http:delete:: /api/(version)/blockchains/ETH/transactions/decode
+
+   Doing a POST on the transactions decoding endpoint will start the decoding process for all the transactions that haven't been decoded yet. Transactions already decoded won't be re-decoded.
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      POST /api/1/blockchains/ETH/transactions/decode HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"async_query": false}
+
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      { "result": {"decoded_tx_number": 4}, "message": "" }
+
+   :resjson integer decoded_tx_number: The amount of transactions that have been decoded.
+   :statuscode 200: Transactions successfully decoded.
+   :statuscode 409: User is not logged in or some other error. Check error message for details.
+   :statuscode 500: Internal rotki error
+
+
 Purging locally saved data for ethereum modules
 ====================================================
 

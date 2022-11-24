@@ -153,6 +153,7 @@ def setup_ethereum_transactions_test(
         database: DBHandler,
         transaction_already_queried: bool,
         one_receipt_in_db: bool = False,
+        second_receipt_in_db: bool = False,
 ) -> Tuple[List[EvmTransaction], List[EthereumTxReceipt]]:
     dbethtx = DBEthTx(database)
     tx_hash1 = deserialize_evm_tx_hash('0x692f9a6083e905bdeca4f0293f3473d7a287260547f8cbccc38c5cb01591fcda')  # noqa: E501
@@ -277,9 +278,11 @@ def setup_ethereum_transactions_test(
         ],
     )
 
-    if one_receipt_in_db:
+    if one_receipt_in_db is True:
         with database.user_write() as cursor:
             dbethtx.add_receipt_data(cursor, txreceipt_to_data(expected_receipt1))
+            if second_receipt_in_db is True:
+                dbethtx.add_receipt_data(cursor, txreceipt_to_data(expected_receipt2))
 
     return transactions, [expected_receipt1, expected_receipt2]
 
