@@ -1,5 +1,5 @@
 import isEqual from 'lodash/isEqual';
-import { api } from '@/services/rotkehlchen-api';
+import { useEthNamesApi } from '@/services/balances/ethereum-names';
 import { useNotifications } from '@/store/notifications';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useTasks } from '@/store/tasks';
@@ -34,6 +34,16 @@ export const useEthNamesStore = defineStore('ethNames', () => {
   const { notify } = useNotifications();
   const { t, tc } = useI18n();
 
+  const {
+    getEnsNames,
+    getEnsNamesTask,
+    getEthNames,
+    getEthAddressBook,
+    addEthAddressBook: addAddressBook,
+    deleteEthAddressBook: deleteAddressBook,
+    updateEthAddressBook: updateAddressBook
+  } = useEthNamesApi();
+
   const updateEnsAddresses = (newAddresses: string[]): boolean => {
     const newEnsAddresses = [...get(ensAddresses), ...newAddresses]
       .filter(uniqueStrings)
@@ -62,15 +72,13 @@ export const useEthNamesStore = defineStore('ethNames', () => {
     if (latestEnsAddresses.length > 0) {
       if (forceUpdate) {
         const taskType = TaskType.FETCH_ENS_NAMES;
-        const { taskId } = await api.balances.getEnsNamesTask(
-          latestEnsAddresses
-        );
+        const { taskId } = await getEnsNamesTask(latestEnsAddresses);
         await awaitTask<EthNames, TaskMeta>(taskId, taskType, {
           title: tc('ens_names.task.title'),
           numericKeys: []
         });
       } else {
-        await api.balances.getEnsNames(latestEnsAddresses);
+        await getEnsNames(latestEnsAddresses);
       }
       await fetchEthNames();
     }
@@ -84,7 +92,7 @@ export const useEthNamesStore = defineStore('ethNames', () => {
     ].filter(uniqueStrings);
 
     try {
-      const result = await api.balances.getEthNames(addresses);
+      const result = await getEthNames(addresses);
       set(ethNames, result);
     } catch (e: any) {
       logger.error(e);
@@ -132,7 +140,7 @@ export const useEthNamesStore = defineStore('ethNames', () => {
       });
     };
     try {
-      const result = await api.balances.getEthAddressBook(location, addresses);
+      const result = await getEthAddressBook(location, addresses);
       await updateEthAddressBookState(location, result);
     } catch (e: any) {
       notifyError(e);
@@ -143,7 +151,7 @@ export const useEthNamesStore = defineStore('ethNames', () => {
     location: EthAddressBookLocation,
     entries: EthNamesEntries
   ) => {
-    const result = await api.balances.addEthAddressBook(location, entries);
+    const result = await addAddressBook(location, entries);
 
     if (result) {
       await fetchEthAddressBook(location);
@@ -154,7 +162,7 @@ export const useEthNamesStore = defineStore('ethNames', () => {
     location: EthAddressBookLocation,
     entries: EthNamesEntries
   ) => {
-    const result = await api.balances.updateEthAddressBook(location, entries);
+    const result = await updateAddressBook(location, entries);
 
     if (result) {
       await fetchEthAddressBook(location);
@@ -165,7 +173,7 @@ export const useEthNamesStore = defineStore('ethNames', () => {
     location: EthAddressBookLocation,
     addresses: string[]
   ) => {
-    const result = await api.balances.deleteEthAddressBook(location, addresses);
+    const result = await deleteAddressBook(location, addresses);
 
     if (result) {
       await fetchEthAddressBook(location);
