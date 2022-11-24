@@ -21,12 +21,10 @@
         </template>
       </div>
       <div class="ml-5">
-        <v-skeleton-loader
-          v-if="loading"
-          class="mt-1"
-          width="100"
-          type="text"
-        />
+        <template v-if="isNftDetailLoading">
+          <v-skeleton-loader class="mt-1" width="120" type="text" />
+          <v-skeleton-loader class="mt-1" width="80" type="text" />
+        </template>
         <div v-else-if="name" :class="css['nft-details']">
           <div class="font-weight-medium" :class="css['nft-details__entry']">
             {{ name }}
@@ -60,6 +58,7 @@
 <script setup lang="ts">
 import { ComputedRef } from 'vue';
 import { useSectionLoading } from '@/composables/common';
+import { useAssetCacheStore } from '@/store/assets/asset-cache';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { Section } from '@/types/status';
 import { isVideo } from '@/utils/nft';
@@ -100,6 +99,11 @@ const name: ComputedRef<string | null> = computed(() => {
 
 const { shouldShowLoadingScreen: isLoading } = useSectionLoading();
 const loading = isLoading(Section.NON_FUNGIBLE_BALANCES);
+
+const { isPending } = useAssetCacheStore();
+const isNftDetailLoading: ComputedRef<boolean> = computed(
+  () => get(loading) || get(isPending(get(identifier)))
+);
 
 const fallbackData = computed(() => {
   const id = get(identifier);

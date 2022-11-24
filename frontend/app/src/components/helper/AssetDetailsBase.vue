@@ -3,6 +3,7 @@
     v-bind="rootAttrs"
     :class="opensDetails ? 'asset-details-base--link' : null"
     :dense="dense"
+    :loading="loading"
     :title="asset.isCustomAsset ? name : symbol"
     :subtitle="asset.isCustomAsset ? asset.customAssetType : name"
     @click="navigate"
@@ -33,6 +34,7 @@ import { ComputedRef, PropType } from 'vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import ListItem from '@/components/helper/ListItem.vue';
 import { Routes } from '@/router/routes';
+import { useAssetCacheStore } from '@/store/assets/asset-cache';
 import { NftAsset } from '@/store/assets/nft';
 
 const props = defineProps({
@@ -64,6 +66,11 @@ const navigate = async () => {
     path: Routes.ASSETS.replace(':identifier', id)
   });
 };
+
+const { isPending } = useAssetCacheStore();
+const loading: ComputedRef<boolean> = computed(() =>
+  get(isPending(get(asset).identifier))
+);
 </script>
 
 <style scoped lang="scss">
