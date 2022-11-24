@@ -1343,6 +1343,32 @@ def assert_binance_import_results(rotki: Rotkehlchen):
             link='',
             notes='Imported from binance CSV file. Binance operation: Buy / Sell',
         ),
+        Trade(
+            timestamp=Timestamp(1606837907),
+            location=Location.BINANCE,
+            base_asset=A_BTC,
+            quote_asset=A_ETH,
+            trade_type=TradeType.BUY,
+            amount=AssetAmount(FVal('0.10680859385')),
+            rate=Price(FVal('0.1056829896907216494845360825')),
+            fee=Fee(FVal('-0.0462623227152')),
+            fee_currency=EvmToken('eip155:1/erc20:0xB8c77482e45F1F44dE1745F52C74426C631bDD52'),
+            link='',
+            notes='Imported from binance CSV file. Binance operation: Buy / Sell',
+        ),
+        Trade(
+            timestamp=Timestamp(1606837907),
+            location=Location.BINANCE,
+            base_asset=A_BTC,
+            quote_asset=A_ETH,
+            trade_type=TradeType.BUY,
+            amount=AssetAmount(FVal('0.09564009919439999')),
+            rate=Price(FVal('0.1056829934210526322069222047')),
+            fee=Fee(FVal('-0.041427214681599996')),
+            fee_currency=EvmToken('eip155:1/erc20:0xB8c77482e45F1F44dE1745F52C74426C631bDD52'),
+            link='',
+            notes='Imported from binance CSV file. Binance operation: Buy / Sell',
+        ),
     ]
     expected_asset_movements = [
         AssetMovement(

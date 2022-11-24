@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :bug:`5170` Fix issue where loopring balances is not updated when blockchain balances are manually refreshed.
+* :bug:`-` Users will now be able to import binance trades of type Buy + Transaction Related from CSV exports.
 * :bug:`5127` Uniswap V3 swap transactions are now decoded properly.
 * :bug:`5124` Users will now correctly see all the events related to lending in the defi view.
 * :bug:`5126` APR and APY for borrowing and lending in Aave should properly show again.
