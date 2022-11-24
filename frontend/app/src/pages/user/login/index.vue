@@ -3,7 +3,7 @@
     :loading="loading"
     :sync-conflict="syncConflict"
     :errors="errors"
-    :show-upgrade-message="showUpgradeMessage"
+    :login-status="loginStatus"
     @touched="errors = []"
     @login="userLogin($event)"
     @backend-changed="backendChanged($event)"
@@ -16,12 +16,10 @@ import LoginForm from '@/components/account-management/LoginForm.vue';
 import { useBackendManagement } from '@/composables/backend';
 import { useAppNavigation } from '@/composables/navigation';
 import { useAccountManagement } from '@/composables/user/account';
-import { useUpgradeMessage } from '@/composables/user/upgrade';
 import { useSessionAuthStore } from '@/store/session/auth';
 
 const { navigateToUserCreation } = useAppNavigation();
-const { syncConflict } = storeToRefs(useSessionAuthStore());
+const { syncConflict, loginStatus } = storeToRefs(useSessionAuthStore());
 const { backendChanged } = useBackendManagement();
 const { userLogin, errors, loading } = useAccountManagement();
-const { showUpgradeMessage } = useUpgradeMessage(loading);
 </script>

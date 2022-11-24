@@ -2,10 +2,13 @@ import { SemiPartial } from '@rotki/common';
 import { NotificationPayload, Severity } from '@rotki/common/lib/messages';
 import VueI18n from 'vue-i18n';
 import { usePremium } from '@/composables/premium';
+import { convertKeys } from '@/services/axios-tranformers';
 import { useTxQueryStatus } from '@/store/history/query-status';
+import { useSessionAuthStore } from '@/store/session/auth';
 import {
   BalanceSnapshotError,
   EthereumTransactionQueryData,
+  LoginStatusData,
   PremiumStatusUpdateData,
   SocketMessageType,
   WebsocketMessage
@@ -48,7 +51,7 @@ export const handlePremiumStatusUpdate = (
   data: PremiumStatusUpdateData,
   tc: typeof VueI18n.prototype.tc
 ): SemiPartial<NotificationPayload, 'title' | 'message'> | null => {
-  const { is_premium_active: active, expired } = data;
+  const { isPremiumActive: active, expired } = data;
   const premium = usePremium();
   const isPremium = get(premium);
 
@@ -72,4 +75,12 @@ export const handlePremiumStatusUpdate = (
   }
 
   return null;
+};
+
+export const handleLoginStatus = (
+  message: WebsocketMessage<SocketMessageType>
+) => {
+  const { handleLoginStatus } = useSessionAuthStore();
+  const data = LoginStatusData.parse(convertKeys(message.data, true, false));
+  handleLoginStatus(data);
 };

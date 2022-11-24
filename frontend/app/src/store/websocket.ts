@@ -1,4 +1,5 @@
 import { Ref } from 'vue';
+import { convertKeys } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import { useNotifications } from '@/store/notifications';
 import { Nullable } from '@/types';
@@ -14,6 +15,7 @@ import { logger } from '@/utils/logging';
 import {
   handleEthereumTransactionStatus,
   handleLegacyMessage,
+  handleLoginStatus,
   handlePremiumStatusUpdate,
   handleSnapshotError
 } from '@/utils/message-handling';
@@ -37,13 +39,17 @@ export const useWebsocketStore = defineStore('websocket', () => {
         handleLegacyMessage(data.value, data.verbosity === MESSAGE_WARNING, tc)
       );
     } else if (type === SocketMessageType.ETHEREUM_TRANSACTION_STATUS) {
-      await handleEthereumTransactionStatus(message);
+      handleEthereumTransactionStatus(message);
     } else if (type === SocketMessageType.PREMIUM_STATUS_UPDATE) {
-      const data = PremiumStatusUpdateData.parse(message.data);
+      const data = PremiumStatusUpdateData.parse(
+        convertKeys(message.data, true, false)
+      );
       const notification = handlePremiumStatusUpdate(data, tc);
       if (notification) {
         notify(notification);
       }
+    } else if (type === SocketMessageType.LOGIN_STATUS) {
+      handleLoginStatus(message);
     } else {
       logger.warn(`Unsupported socket message received: ${event.data}`);
     }

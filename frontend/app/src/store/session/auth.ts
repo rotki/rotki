@@ -1,4 +1,5 @@
 import { SyncConflict } from '@/store/session/types';
+import { LoginStatusData } from '@/types/websocket-messages';
 
 const defaultSyncConflict = (): SyncConflict => ({
   message: '',
@@ -11,18 +12,32 @@ export const useSessionAuthStore = defineStore('session/auth', () => {
   const premiumPrompt = ref(false);
   const username = ref('');
   const syncConflict = ref<SyncConflict>(defaultSyncConflict());
+  const loginStatus = ref<LoginStatusData | null>(null);
 
   const resetSyncConflict = () => {
     set(syncConflict, defaultSyncConflict());
   };
 
+  const handleLoginStatus = (data: LoginStatusData) => {
+    if (!get(logged)) {
+      updateLoginStatus(data);
+    }
+  };
+
+  const updateLoginStatus = (status: LoginStatusData | null = null) => {
+    set(loginStatus, status);
+  };
+
   return {
     logged,
+    loginStatus,
     shouldFetchData,
     username,
     premiumPrompt,
     syncConflict,
-    resetSyncConflict
+    resetSyncConflict,
+    handleLoginStatus,
+    updateLoginStatus
   };
 });
 

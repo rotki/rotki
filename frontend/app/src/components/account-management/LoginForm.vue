@@ -138,7 +138,7 @@
           <transition name="bounce">
             <v-alert
               v-if="!!syncConflict.message"
-              class="animate login__sync-error"
+              class="animate login__sync-error mt-4"
               text
               prominent
               outlined
@@ -171,13 +171,13 @@
                 <div class="mt-2">{{ tc('login.sync_error.question') }}</div>
               </div>
 
-              <v-row no-gutters justify="end" class="mt-2">
-                <v-col cols="3" class="shrink">
+              <v-row justify="end" class="mt-2">
+                <v-col cols="auto" class="shrink">
                   <v-btn color="error" depressed @click="login('no')">
                     {{ tc('common.actions.no') }}
                   </v-btn>
                 </v-col>
-                <v-col cols="3" class="shrink">
+                <v-col cols="auto" class="shrink">
                   <v-btn color="success" depressed @click="login('yes')">
                     {{ tc('common.actions.yes') }}
                   </v-btn>
@@ -185,6 +185,7 @@
               </v-row>
             </v-alert>
           </transition>
+
           <transition name="bounce">
             <v-alert
               v-if="errors.length > 0"
@@ -214,8 +215,19 @@
         </v-form>
       </v-card-text>
       <v-card-actions class="login__actions d-block">
-        <v-alert v-if="showUpgradeMessage" type="warning" text>
-          {{ tc('login.upgrading_db_warning') }}
+        <v-alert v-if="loginStatus" type="warning" text>
+          <template #prepend>
+            <div class="mr-4">
+              <v-progress-circular
+                rounded
+                indeterminate
+                size="40"
+                width="3"
+                color="warning"
+              />
+            </div>
+          </template>
+          {{ tc('login.upgrading_db_warning', 0, loginStatus) }}
         </v-alert>
         <span>
           <v-btn
@@ -255,6 +267,7 @@ import { useInterop } from '@/electron-interop';
 import { useSessionStore } from '@/store/session';
 import { SyncConflict } from '@/store/session/types';
 import { LoginCredentials, SyncApproval } from '@/types/login';
+import { LoginStatusData } from '@/types/websocket-messages';
 import {
   deleteBackendUrl,
   getBackendUrl,
@@ -269,7 +282,11 @@ const props = defineProps({
   loading: { required: true, type: Boolean },
   syncConflict: { required: true, type: Object as PropType<SyncConflict> },
   errors: { required: false, type: Array, default: () => [] },
-  showUpgradeMessage: { required: false, type: Boolean, default: false }
+  loginStatus: {
+    required: false,
+    type: Object as PropType<LoginStatusData | null>,
+    default: null
+  }
 });
 
 const emit = defineEmits([

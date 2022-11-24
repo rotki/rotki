@@ -2715,7 +2715,7 @@
       "title": "User action required for DB sync"
     },
     "title": "Sign In",
-    "upgrading_db_warning": "A database upgrade might be in progress. Please wait and don't close the app until it's finished.",
+    "upgrading_db_warning": "The database is being upgraded from version {fromVersion} to {toVersion}. Please wait and don't close the app until it's finished.",
     "validation": {
       "non_empty_password": "Please provide a password",
       "non_empty_username": "Please provide a user name",
