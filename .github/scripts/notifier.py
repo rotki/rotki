@@ -5,8 +5,8 @@ from http import HTTPStatus
 
 import requests
 
-ALL_DEVS = "1044950703795359756"
-BACKEND_DEVS = "1044951412674674758"
+ALL_DEVS = '735068019440615516'
+BACKEND_DEVS = '983289520000737330'
 
 
 def main() -> None:
@@ -39,10 +39,13 @@ def main() -> None:
         emoji = ':construction_site:'
         job_type = 'builds'
 
+    msg = (
+        f'{emoji} **Github Actions:** {job_type} failed :x: \r\n\r\n '
+        f'<@&{group}> please have a look at '
+        f'[{run_id}](https://github.com/rotki/rotki/actions/runs/{run_id}) :cry:'
+    )
     data = {
-        "content": f'{emoji} **Github Actions:** {job_type} failed :x: \r\n\r\n '
-                   f'<@&{group}> please have a look at '
-                   f'[{run_id}](https://github.com/rotki/rotki/actions/runs/{run_id}) :cry:',
+        'content': msg,
     }
 
     response = requests.post(url=url, data=data)
