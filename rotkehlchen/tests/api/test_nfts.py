@@ -502,7 +502,7 @@ def test_nfts_ignoring_works(rotkehlchen_api_server, endpoint):
         }
         return nft_map, 1
 
-    get_all_nft_data_patch = patch('rotkehlchen.chain.ethereum.modules.nfts.Nfts._get_all_nft_data', side_effect=mock_get_all_nft_data)  # noqa: E501
+    get_all_nft_data_patch = patch('rotkehlchen.chain.ethereum.modules.nft.nfts.Nfts._get_all_nft_data', side_effect=mock_get_all_nft_data)  # noqa: E501
 
     # ignore the nft
     response = requests.put(
@@ -713,12 +713,12 @@ def test_nft_no_price(rotkehlchen_api_server):
             'is_lp': False,
             'manually_input': False,
             'name': 'Devcon VI Souvenir',
-            'price_asset': 'USD',
+            'price_asset': 'ETH',
             'price_in_asset': '0',
-            'usd_price': '0'}]},
+            'usd_price': '0.00'}]},
         'entries_found': 1,
         'entries_total': 1,
-        'total_usd_value': '0',
+        'total_usd_value': '0.00',
     }
 
 
