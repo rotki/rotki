@@ -21,7 +21,7 @@ from rotkehlchen.utils.mixins.cacheable import CacheableMixIn, cache_response_ti
 from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.premium.premium import Premium
 
@@ -48,7 +48,7 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):  # lgtm [py/miss
 
     def __init__(
             self,
-            ethereum_manager: 'EthereumManager',
+            ethereum_inquirer: 'EthereumInquirer',
             database: 'DBHandler',
             premium: Optional['Premium'],
             msg_aggregator: MessagesAggregator,
@@ -56,7 +56,7 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):  # lgtm [py/miss
         super().__init__()
         self.msg_aggregator = msg_aggregator
         self.db = database
-        self.ethereum = ethereum_manager
+        self.ethereum = ethereum_inquirer
         self.premium = premium
         self.opensea = Opensea(database=database, msg_aggregator=msg_aggregator)
 

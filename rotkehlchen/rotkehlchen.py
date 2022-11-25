@@ -273,7 +273,7 @@ class Rotkehlchen():
             )
             blockchain_accounts = self.data.db.get_blockchain_accounts(cursor)
 
-        ethereum_nodes = self.data.db.get_web3_nodes(blockchain=SupportedBlockchain.ETHEREUM, only_active=True)  # noqa: E501
+        ethereum_nodes = self.data.db.get_rpc_nodes(blockchain=SupportedBlockchain.ETHEREUM, only_active=True)  # noqa: E501
         # Initialize blockchain querying modules
         ethereum_inquirer = EthereumInquirer(
             greenlet_manager=self.greenlet_manager,

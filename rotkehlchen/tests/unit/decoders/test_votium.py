@@ -25,6 +25,7 @@ def test_votium_claim(database, ethereum_inquirer, eth_transactions):
     evmhash = deserialize_evm_tx_hash(tx_hex)
     transaction = EvmTransaction(
         tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
         timestamp=1646375440,
         block_number=14318825,
         from_address='0x362C51b56D3c8f79aecf367ff301d1aFd42EDCEA',

@@ -33,7 +33,7 @@ def init_ethereum(
         use_other_nodes: bool,
         db: DBHandler,
 ) -> EthereumInquirer:
-    nodes_to_connect = db.get_web3_nodes(blockchain=SupportedBlockchain.ETHEREUM, only_active=True) if use_other_nodes else (WeightedNode(node_info=NodeName(name='own', endpoint=rpc_endpoint, owned=True, blockchain=SupportedBlockchain.ETHEREUM), weight=ONE, active=True),)  # noqa: E501
+    nodes_to_connect = db.get_rpc_nodes(blockchain=SupportedBlockchain.ETHEREUM, only_active=True) if use_other_nodes else (WeightedNode(node_info=NodeName(name='own', endpoint=rpc_endpoint, owned=True, blockchain=SupportedBlockchain.ETHEREUM), weight=ONE, active=True),)  # noqa: E501
     etherscan = EthereumEtherscan(database=None, msg_aggregator=msg_aggregator)
     api_key = os.environ.get('ETHERSCAN_API_KEY', None)
     greenlet_manager = GreenletManager(msg_aggregator=msg_aggregator)

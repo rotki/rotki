@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 from unittest.mock import patch
 
 from web3 import Web3
@@ -7,6 +7,7 @@ from web3._utils.abi import get_abi_input_types, get_abi_output_types
 
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.defi.zerionsdk import ZERION_ADAPTER_ADDRESS
+from rotkehlchen.chain.ethereum.types import NodeName
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.constants.ethereum import ETH_MULTICALL, ETH_SCAN, ZERION_ABI
 from rotkehlchen.constants.misc import ZERO
@@ -20,8 +21,11 @@ from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.tests.utils.eth_tokens import CONTRACT_ADDRESS_TO_TOKEN
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import BTCAddress, ChainID, ChecksumEvmAddress
+from rotkehlchen.types import BTCAddress, ChainID, ChecksumEvmAddress, SupportedBlockchain
 from rotkehlchen.utils.misc import from_wei, satoshis_to_btc
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 
 
 def assert_btc_balances_result(
@@ -558,3 +562,25 @@ def compare_account_data(expected: List[Dict], got: List[Dict]) -> None:
             f'{got_address} in expected data'
         )
         assert found, msg
+
+
+def get_web3_from_inquirer(ethereum_inquirer: 'EthereumInquirer') -> Web3:
+    """Util function to simplify getting the testing web3 object from an ethereum inquirer"""
+    node_name = NodeName(
+        name='own',
+        endpoint='bla',
+        owned=True,
+        blockchain=SupportedBlockchain.ETHEREUM,
+    )
+    return ethereum_inquirer.web3_mapping[node_name]
+
+
+def set_web3_in_inquirer(ethereum_inquirer: 'EthereumInquirer', web3: Web3) -> None:
+    """Util function to simplify setting the testing web3 object from an ethereum inquirer"""
+    node_name = NodeName(
+        name='own',
+        endpoint='bla',
+        owned=True,
+        blockchain=SupportedBlockchain.ETHEREUM,
+    )
+    ethereum_inquirer.web3_mapping[node_name] = web3

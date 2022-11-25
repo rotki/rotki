@@ -308,7 +308,8 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                         tx = deserialize_evm_transaction(  # type: ignore
                             data=entry,
                             internal=is_internal,
-                            manager=None,
+                            chain_id=chain_id,
+                            evm_inquirer=None,
                         )
                     else:
                         # Handling genesis transactions

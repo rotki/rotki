@@ -161,6 +161,7 @@ def test_uniswap_v3_swap_received_token2(database, ethereum_inquirer, eth_transa
     evmhash = deserialize_evm_tx_hash(tx_hex)
     transaction = EvmTransaction(
         tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
         timestamp=1646375440,
         block_number=14351442,
         from_address='0xeB312F4921aEbbE99faCaCFE92f22b942Cbd7599',
@@ -215,6 +216,7 @@ def test_uniswap_v3_swap_received_token2(database, ethereum_inquirer, eth_transa
 
     internal_tx = EvmInternalTransaction(
         parent_tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
         trace_id=27,
         timestamp=Timestamp(1646375440),
         block_number=14351442,

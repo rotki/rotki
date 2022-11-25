@@ -1270,13 +1270,13 @@ class DBHandler:
         )
         # Delete previous entries for tokens
         write_cursor.execute(
-            'DELETE FROM evm_accounts_details WHERE account=? AND blockchain=? AND KEY=?',
+            'DELETE FROM evm_accounts_details WHERE account=? AND chain_id=? AND KEY=?',
             (address, chain_id, EVM_ACCOUNTS_DETAILS_TOKENS),
         )
         # Timestamp will get replaced
         write_cursor.executemany(
-            'INSERT OR REPLACE INTO accounts_details '
-            '(account, blockchain, key, value) VALUES (?, ?, ?, ?)',
+            'INSERT OR REPLACE INTO evm_accounts_details '
+            '(account, chain_id, key, value) VALUES (?, ?, ?, ?)',
             insert_rows,
         )
 
@@ -1804,7 +1804,7 @@ class DBHandler:
             write_cursor.executemany(query, tuples)
             if relevant_address is not None:
                 # chain_id should always be the same so perform lookup out of the loop
-                blockchain = ChainID(tuples[0][1]).to_blockchain()
+                blockchain = ChainID(tuples[0][1]).to_blockchain().value
                 mapping_tuples = [(relevant_address, x[0], x[1], blockchain) for x in tuples]  # noqa: E501
                 write_cursor.executemany(
                     'INSERT OR IGNORE INTO evmtx_address_mappings(address, tx_hash, chain_id, blockchain) '  # noqa: E501
@@ -1819,10 +1819,10 @@ class DBHandler:
                 try:
                     write_cursor.execute(query, entry)
                     if relevant_address is not None:
-                        blockchain = ChainID(entry[1]).to_blockchain()
+                        blockchain = ChainID(entry[1]).to_blockchain().value
                         write_cursor.execute(
                             'INSERT OR IGNORE INTO evmtx_address_mappings '
-                            '(address, tx_hash, chain_id, blockchain) VALUES(?, ?, ?)',
+                            '(address, tx_hash, chain_id, blockchain) VALUES(?, ?, ?, ?)',
                             (relevant_address, entry[0], entry[1], blockchain),
                         )
                 except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
@@ -1834,7 +1834,7 @@ class DBHandler:
                         # Also if we have transactions of one account sending to the
                         # other and both accounts are being tracked.
                         if relevant_address is not None:
-                            blockchain = ChainID(entry[1]).to_blockchain()
+                            blockchain = ChainID(entry[1]).to_blockchain().value
                             write_cursor.execute(
                                 'INSERT OR IGNORE INTO evmtx_address_mappings '
                                 '(address, tx_hash, chain_id, blockchain) VALUES(?, ?, ?, ?)',
@@ -3099,7 +3099,7 @@ class DBHandler:
         now = ts_now()
         return now - last_save > period
 
-    def get_web3_nodes(
+    def get_rpc_nodes(
             self,
             blockchain: SupportedBlockchain,
             only_active: bool = False,
@@ -3110,10 +3110,10 @@ class DBHandler:
         """
         with self.conn.read_ctx() as cursor:
             if only_active:
-                cursor.execute('SELECT identifier, name, endpoint, owned, weight, active, blockchain FROM web3_nodes WHERE blockchain=? AND active=1 AND (CAST(weight as decimal) != 0 OR owned == 1) ORDER BY name;', (blockchain.value,))  # noqa: E501
+                cursor.execute('SELECT identifier, name, endpoint, owned, weight, active, blockchain FROM rpc_nodes WHERE blockchain=? AND active=1 AND (CAST(weight as decimal) != 0 OR owned == 1) ORDER BY name;', (blockchain.value,))  # noqa: E501
             else:
                 cursor.execute(
-                    'SELECT identifier, name, endpoint, owned, weight, active, blockchain FROM web3_nodes WHERE blockchain=? ORDER BY name;', (blockchain.value,),  # noqa: E501
+                    'SELECT identifier, name, endpoint, owned, weight, active, blockchain FROM rpc_nodes WHERE blockchain=? ORDER BY name;', (blockchain.value,),  # noqa: E501
                 )
             return [
                 WeightedNode(
@@ -3130,7 +3130,7 @@ class DBHandler:
                 for entry in cursor
             ]
 
-    def _rebalance_web3_nodes_weights(
+    def _rebalance_rpc_nodes_weights(
             self,
             write_cursor: 'DBCursor',
             proportion_to_share: FVal,
@@ -3145,10 +3145,10 @@ class DBHandler:
         In case of deletion it's omitted and `None`is passed.
         """
         if exclude_identifier is None:
-            write_cursor.execute('SELECT identifier, weight FROM web3_nodes WHERE owned=0 AND blockchain=?', (blockchain.value,))  # noqa: E501
+            write_cursor.execute('SELECT identifier, weight FROM rpc_nodes WHERE owned=0 AND blockchain=?', (blockchain.value,))  # noqa: E501
         else:
             write_cursor.execute(
-                'SELECT identifier, weight FROM web3_nodes WHERE identifier !=? AND owned=0 AND blockchain=?',  # noqa: E501
+                'SELECT identifier, weight FROM rpc_nodes WHERE identifier !=? AND owned=0 AND blockchain=?',  # noqa: E501
                 (exclude_identifier, blockchain.value),
             )
         new_weights = []
@@ -3163,39 +3163,42 @@ class DBHandler:
             new_weights.append((str(new_weight), node_id))
 
         write_cursor.executemany(
-            'UPDATE web3_nodes SET weight=? WHERE identifier=?',
+            'UPDATE rpc_nodes SET weight=? WHERE identifier=?',
             new_weights,
         )
 
-    def add_web3_node(self, node: WeightedNode) -> None:
+    def add_rpc_node(self, node: WeightedNode) -> None:
         """
-        Adds a new web3 node.
+        Adds a new rpc node.
         """
         with self.user_write() as cursor:
             try:
                 cursor.execute(
-                    'INSERT INTO web3_nodes(name, endpoint, owned, active, weight, blockchain) VALUES (?, ?, ?, ?, ?, ?)',   # noqa: E501
+                    'INSERT INTO rpc_nodes(name, endpoint, owned, active, weight, blockchain) VALUES (?, ?, ?, ?, ?, ?)',   # noqa: E501
                     node.serialize_for_db(),
                 )
             except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
-                raise InputError(f'Node with name {node.node_info.name} already exists in db') from e  # noqa: E501
-            self._rebalance_web3_nodes_weights(
+                raise InputError(
+                    f'Node for {node.node_info.blockchain} with name {node.node_info.name} '
+                    f'already exists in db',
+                ) from e
+            self._rebalance_rpc_nodes_weights(
                 write_cursor=cursor,
                 proportion_to_share=ONE - node.weight,
                 exclude_identifier=cursor.lastrowid,
                 blockchain=node.node_info.blockchain,
             )
 
-    def update_web3_node(self, node: WeightedNode) -> None:
+    def update_rpc_node(self, node: WeightedNode) -> None:
         """
-        Edits an existing web3 node.
+        Edits an existing rpc node.
         Note: we don't allow editing the blockchain field.
         May raise:
         - InputError if no entry with such
         """
         with self.user_write() as cursor:
             cursor.execute(
-                'UPDATE web3_nodes SET name=?, endpoint=?, owned=?, active=?, weight=? WHERE identifier=? AND blockchain=?',  # noqa: E501
+                'UPDATE rpc_nodes SET name=?, endpoint=?, owned=?, active=?, weight=? WHERE identifier=? AND blockchain=?',  # noqa: E501
                 (
                     node.node_info.name,
                     node.node_info.endpoint,
@@ -3210,23 +3213,23 @@ class DBHandler:
             if cursor.rowcount == 0:
                 raise InputError(f'Node with identifier {node.identifier} doesn\'t exist')
 
-            self._rebalance_web3_nodes_weights(
+            self._rebalance_rpc_nodes_weights(
                 write_cursor=cursor,
                 proportion_to_share=ONE - node.weight,
                 exclude_identifier=node.identifier,
                 blockchain=node.node_info.blockchain,
             )
 
-    def delete_web3_node(self, identifier: int, blockchain: SupportedBlockchain) -> None:
-        """Delete a web3 node by identifier and blockchain.
+    def delete_rpc_node(self, identifier: int, blockchain: SupportedBlockchain) -> None:
+        """Delete a rpc node by identifier and blockchain.
         May raise:
         - InputError if no entry with such identifier is in the database.
         """
         with self.user_write() as cursor:
-            cursor.execute('DELETE FROM web3_nodes WHERE identifier=? AND blockchain=?', (identifier, blockchain.value))   # noqa: E501
+            cursor.execute('DELETE FROM rpc_nodes WHERE identifier=? AND blockchain=?', (identifier, blockchain.value))   # noqa: E501
             if cursor.rowcount == 0:
                 raise InputError(f'node with id {identifier} and blockchain {blockchain.value} was not found in the database')  # noqa: E501
-            self._rebalance_web3_nodes_weights(
+            self._rebalance_rpc_nodes_weights(
                 write_cursor=cursor,
                 proportion_to_share=ONE,
                 exclude_identifier=None,

@@ -321,6 +321,7 @@ class Inquirer():
         Inquirer._defillama = defillama
         Inquirer._manualcurrent = manualcurrent
         Inquirer._cached_current_price = {}
+        Inquirer._evm_managers = {}
         Inquirer._msg_aggregator = msg_aggregator
         Inquirer.special_tokens = {
             A_YV1_DAIUSDCTBUSD.identifier,

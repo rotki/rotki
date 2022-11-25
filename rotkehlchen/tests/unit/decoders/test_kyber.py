@@ -74,6 +74,7 @@ def test_kyber_legacy_old_contract(database, ethereum_inquirer, eth_transactions
     )
     internal_tx = EvmInternalTransaction(
         parent_tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
         trace_id=27,
         timestamp=Timestamp(1591043988),
         block_number=10182160,

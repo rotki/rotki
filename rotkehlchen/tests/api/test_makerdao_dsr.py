@@ -31,7 +31,7 @@ from rotkehlchen.tests.utils.api import (
 )
 from rotkehlchen.tests.utils.checks import assert_serialized_lists_equal
 from rotkehlchen.tests.utils.factories import make_ethereum_address
-from rotkehlchen.tests.utils.makerdao import mock_proxies
+from rotkehlchen.tests.utils.makerdao import mock_proxies_for
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import ChecksumEvmAddress
 
@@ -592,7 +592,7 @@ def test_query_historical_dsr_with_a_zero_withdrawal(
         # proxy for 0x714696C5a872611F76655Bc163D0131cBAc60a70
         ethereum_accounts[0]: '0xAe9996b76bdAa003ace6D66328A6942565f5768d',
     }
-    mock_proxies(rotki, proxies_mapping, 'makerdao_dsr')
+    mock_proxies_for(rotki, proxies_mapping, 'makerdao_dsr')
 
     # Query only until a block we know DSR is 0 and we know the number
     # of DSR events

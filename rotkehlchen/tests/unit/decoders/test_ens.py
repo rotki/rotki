@@ -92,7 +92,7 @@ def test_mint_ens_name(database, ethereum_inquirer):
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x4bBa290826C253BD854121346c370a9886d1bC26']])  # noqa: E501
-def test_text_changed(evm_transaction_decoder, ethereum_accounts):
+def test_text_changed(ethereum_transaction_decoder, ethereum_accounts):
     """
     Data taken from
     https://etherscan.io/tx/0xaa59cb2029651d2ed2c0d1ee34b9b88f0b90278fc6da5b51446d4abf24d7f598
@@ -100,6 +100,7 @@ def test_text_changed(evm_transaction_decoder, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0xaa59cb2029651d2ed2c0d1ee34b9b88f0b90278fc6da5b51446d4abf24d7f598')  # noqa: E501
     transaction = EvmTransaction(
         tx_hash=tx_hash,
+        chain_id=ChainID.ETHEREUM,
         timestamp=0,
         block_number=0,
         from_address=ethereum_accounts[0],
@@ -142,10 +143,10 @@ def test_text_changed(evm_transaction_decoder, ethereum_accounts):
         ],
     )
 
-    dbevmtx = DBEvmTx(evm_transaction_decoder.database)
+    dbevmtx = DBEvmTx(ethereum_transaction_decoder.database)
     with dbevmtx.db.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
-        events = evm_transaction_decoder.decode_transaction(
+        events = ethereum_transaction_decoder.decode_transaction(
             write_cursor=cursor,
             transaction=transaction,
             tx_receipt=receipt,
@@ -199,7 +200,7 @@ def test_text_changed(evm_transaction_decoder, ethereum_accounts):
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x4bBa290826C253BD854121346c370a9886d1bC26']])  # noqa: E501
-def test_set_resolver(evm_transaction_decoder, ethereum_accounts):
+def test_set_resolver(ethereum_transaction_decoder, ethereum_accounts):
     """
     Data taken from
     https://etherscan.io/tx/0xae2cd848ce02c425bc50a8f46f8430eec32234475efb6fcff28315d2791329f6
@@ -207,6 +208,7 @@ def test_set_resolver(evm_transaction_decoder, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0xae2cd848ce02c425bc50a8f46f8430eec32234475efb6fcff28315d2791329f6')  # noqa: E501
     transaction = EvmTransaction(
         tx_hash=tx_hash,
+        chain_id=ChainID.ETHEREUM,
         timestamp=0,
         block_number=0,
         from_address=ethereum_accounts[0],
@@ -248,10 +250,10 @@ def test_set_resolver(evm_transaction_decoder, ethereum_accounts):
         ],
     )
 
-    dbevmtx = DBEvmTx(evm_transaction_decoder.database)
+    dbevmtx = DBEvmTx(ethereum_transaction_decoder.database)
     with dbevmtx.db.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
-        events = evm_transaction_decoder.decode_transaction(
+        events = ethereum_transaction_decoder.decode_transaction(
             write_cursor=cursor,
             transaction=transaction,
             tx_receipt=receipt,

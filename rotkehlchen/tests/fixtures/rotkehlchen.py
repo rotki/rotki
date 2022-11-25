@@ -163,7 +163,7 @@ def initialize_mock_rotkehlchen_instance(
     data_unlock_patch = patch.object(rotki.data, 'unlock', side_effect=augmented_unlock)
 
     eth_rpcconnect_patch = patch(
-        'rotkehlchen.db.dbhandler.DBHandler.get_web3_nodes',
+        'rotkehlchen.db.dbhandler.DBHandler.get_rpc_nodes',
         return_value=ethereum_manager_connect_at_start,
     )
 

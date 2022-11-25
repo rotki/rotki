@@ -1,7 +1,6 @@
 import logging
 from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
 
-
 from rotkehlchen.chain.ethereum.modules.curve.pools_cache import (
     clear_curve_pools_cache,
     update_curve_metapools_cache,
@@ -13,7 +12,7 @@ from rotkehlchen.errors.misc import InputError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.mixins.lockable import protect_with_lock
+from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
 
 from .decoding.decoder import EthereumTransactionDecoder
 from .tokens import EthereumTokens
@@ -39,7 +38,7 @@ CURVE_POOLS_MAPPING_TYPE = Dict[
 ]
 
 
-class EthereumManager(EvmManager):
+class EthereumManager(EvmManager, LockableQueryMixIn):
     """EthereumManager inherits from EvmManager and defines Ethereum-specific methods
     such as curve cache manipulation."""
     def __init__(

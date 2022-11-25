@@ -131,7 +131,7 @@ def test_deserialize_deployment_ethereum_transaction():
         data=data,
         internal=False,
         chain_id=ChainID.ETHEREUM,
-        manager=None,
+        evm_inquirer=None,
     )
     expected = EvmTransaction(
         chain_id=ChainID.ETHEREUM,

@@ -328,7 +328,7 @@ def test_price_underlying_tokens(inquirer, globaldb):
 def test_find_uniswap_v2_lp_token_price(inquirer, globaldb, ethereum_manager):
     address = '0xa2107FA5B38d9bbd2C461D6EDf11B11A50F6b974'
     identifier = ethaddress_to_identifier(address)
-    inquirer.inject_ethereum(ethereum_manager)
+    inquirer.inject_evm_managers([(ChainID.ETHEREUM, ethereum_manager)])
     token = EvmToken.initialize(
         address=address,
         chain=ChainID.ETHEREUM,
@@ -354,7 +354,7 @@ def test_find_curve_lp_token_price(inquirer_defi, ethereum_manager):
     lp_token_address = '0xA3D87FffcE63B53E0d54fAa1cc983B7eB0b74A9c'
     pool_address = '0xc5424B857f758E906013F3555Dad202e4bdB4567'
     identifier = ethaddress_to_identifier(lp_token_address)
-    inquirer_defi.inject_ethereum(ethereum_manager)
+    inquirer_defi.inject_evm_managers([(ChainID.ETHEREUM, ethereum_manager)])
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
         GlobalDBHandler().set_general_cache_values(
             write_cursor=write_cursor,

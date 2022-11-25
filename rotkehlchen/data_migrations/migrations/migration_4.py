@@ -24,7 +24,7 @@ def read_and_write_nodes_in_database(write_cursor: 'DBCursor') -> None:
         nodes_info = json.loads(f.read())
         for node in nodes_info:
             write_cursor.execute(
-                'INSERT OR IGNORE INTO web3_nodes(name, endpoint, owned, active, weight, blockchain) VALUES (?, ?, ?, ?, ?, ?);',  # noqa: E501
+                'INSERT OR IGNORE INTO rpc_nodes(name, endpoint, owned, active, weight, blockchain) VALUES (?, ?, ?, ?, ?, ?);',  # noqa: E501
                 (
                     node['name'],
                     node['endpoint'],
@@ -40,7 +40,7 @@ def copy_ethereum_rpc_endpoint(write_cursor: 'DBCursor') -> None:
     write_cursor.execute('SELECT value FROM settings WHERE name="eth_rpc_endpoint";')
     if (endpoint := write_cursor.fetchone()) is not None and endpoint[0] != DEFAULT_ETH_RPC:
         write_cursor.execute(
-            'INSERT OR IGNORE INTO web3_nodes(name, endpoint, owned, active, weight, blockchain) VALUES (?, ?, ?, ?, ?, ?);',  # noqa: E501
+            'INSERT OR IGNORE INTO rpc_nodes(name, endpoint, owned, active, weight, blockchain) VALUES (?, ?, ?, ?, ?, ?);',  # noqa: E501
             (
                 "my node",
                 endpoint[0],
@@ -59,6 +59,6 @@ def data_migration_4(write_cursor: 'DBCursor', rotki: 'Rotkehlchen') -> None:
     """
     read_and_write_nodes_in_database(write_cursor=write_cursor)
     # Connect to the nodes since the migration happens after the ethereum manager initialization
-    nodes_to_connect = rotki.data.db.get_web3_nodes(blockchain=SupportedBlockchain.ETHEREUM, only_active=True)  # noqa: E501
+    nodes_to_connect = rotki.data.db.get_rpc_nodes(blockchain=SupportedBlockchain.ETHEREUM, only_active=True)  # noqa: E501
     rotki.chains_aggregator.ethereum.node_inquirer.connect_to_multiple_nodes(nodes_to_connect)
     copy_ethereum_rpc_endpoint(write_cursor=write_cursor)

@@ -28,7 +28,7 @@ from rotkehlchen.utils.misc import hexstr_to_int, ts_now
 from .constants import COMP_DEPLOYED_BLOCK, COMPTROLLER_PROXY
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
 
 ADDRESS_TO_ASSETS = Dict[ChecksumEvmAddress, Dict[CryptoAsset, Balance]]
@@ -140,12 +140,12 @@ class Compound(EthereumModule):
 
     def __init__(
             self,
-            ethereum_manager: 'EthereumManager',
+            ethereum_inquirer: 'EthereumInquirer',
             database: 'DBHandler',
             premium: Optional[Premium],
             msg_aggregator: MessagesAggregator,
     ):
-        self.ethereum = ethereum_manager
+        self.ethereum = ethereum_inquirer
         self.database = database
         self.premium = premium
         self.msg_aggregator = msg_aggregator
@@ -166,7 +166,7 @@ class Compound(EthereumModule):
         method_name = 'supplyRatePerBlock' if supply else 'borrowRatePerBlock'
 
         try:
-            rate = self.ethereum.node_inquirer.call_contract(
+            rate = self.ethereum.call_contract(
                 contract_address=address,
                 abi=CTOKEN_ABI,
                 method_name=method_name,
@@ -530,27 +530,27 @@ class Compound(EthereumModule):
             from_ts: Timestamp,
             to_ts: Timestamp,
     ) -> List[CompoundEvent]:
-        self.ethereum.node_inquirer.get_blocknumber_by_time(from_ts)
+        self.ethereum.get_blocknumber_by_time(from_ts)
         from_block = max(
             COMP_DEPLOYED_BLOCK,
-            self.ethereum.node_inquirer.get_blocknumber_by_time(from_ts),
+            self.ethereum.get_blocknumber_by_time(from_ts),
         )
         argument_filters = {
             'from': COMPTROLLER_PROXY.address,
             'to': address,
         }
-        comp_events = self.ethereum.node_inquirer.get_logs(
+        comp_events = self.ethereum.get_logs(
             contract_address=self.comp.evm_address,
             abi=ERC20TOKEN_ABI,
             event_name='Transfer',
             argument_filters=argument_filters,
             from_block=from_block,
-            to_block=self.ethereum.node_inquirer.get_blocknumber_by_time(to_ts),
+            to_block=self.ethereum.get_blocknumber_by_time(to_ts),
         )
 
         events = []
         for event in comp_events:
-            timestamp = self.ethereum.node_inquirer.get_event_timestamp(event)
+            timestamp = self.ethereum.get_event_timestamp(event)
             tx_hash = event['transactionHash']
             amount = token_normalized_value(
                 hexstr_to_int(event['data']),

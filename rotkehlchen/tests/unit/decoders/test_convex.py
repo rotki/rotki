@@ -185,6 +185,7 @@ def test_booster_withdraw(database, ethereum_inquirer, eth_transactions):
     user_address = string_to_evm_address('0x53913A03a065f685097f8E8f40284D58016bB0F9')
     transaction = EvmTransaction(
         tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
         timestamp=0,
         block_number=0,
         from_address=user_address,

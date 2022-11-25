@@ -316,6 +316,7 @@ def test_liquity_trove_remove_eth(database, ethereum_inquirer, eth_transactions)
     )
     internal_tx = EvmInternalTransaction(
         parent_tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
         trace_id=19,
         timestamp=Timestamp(1646375440),
         block_number=10182160,
@@ -390,6 +391,7 @@ def test_liquity_pool_deposit(database, ethereum_inquirer, eth_transactions):
     evmhash = deserialize_evm_tx_hash(tx_hex)
     transaction = EvmTransaction(
         tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
         timestamp=1646375440,
         block_number=14318825,
         from_address=user_address,
@@ -484,6 +486,7 @@ def test_liquity_pool_remove_deposits(database, ethereum_inquirer, eth_transacti
     evmhash = deserialize_evm_tx_hash(tx_hex)
     transaction = EvmTransaction(
         tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
         timestamp=1646375440,
         block_number=14318825,
         from_address=user_address,
@@ -545,6 +548,7 @@ def test_liquity_pool_remove_deposits(database, ethereum_inquirer, eth_transacti
     )
     internal_tx = EvmInternalTransaction(
         parent_tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
         trace_id=19,
         timestamp=Timestamp(1646375440),
         block_number=10182160,

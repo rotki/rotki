@@ -158,16 +158,16 @@ def test_use_open_nodes(ethereum_inquirer, database):
     Change test to use a more recent transaction.
     """
     # Wait until all nodes are connected
-    web3_nodes_all = database.get_web3_nodes(blockchain=SupportedBlockchain.ETHEREUM, only_active=True)  # noqa: E501
-    web3_nodes = [node for node in web3_nodes_all if node.node_info.name != ETHERSCAN_NODE_NAME]
-    ethereum_inquirer.connect_to_multiple_nodes(web3_nodes)
+    rpc_nodes_all = database.get_rpc_nodes(blockchain=SupportedBlockchain.ETHEREUM, only_active=True)  # noqa: E501
+    rpc_nodes = [node for node in rpc_nodes_all if node.node_info.name != ETHERSCAN_NODE_NAME]
+    ethereum_inquirer.connect_to_multiple_nodes(rpc_nodes)
     wait_until_all_nodes_connected(
-        connect_at_start=web3_nodes,
+        connect_at_start=rpc_nodes,
         evm_inquirer=ethereum_inquirer,
     )
     result = ethereum_inquirer.get_transaction_receipt(
         '0x76dbd4fd8769af995b3597733ff6bf5daca619cb55a9d7347d8e3ab949ac5984',
-        call_order=web3_nodes,
+        call_order=rpc_nodes,
     )
     block_hash = '0xfd7d2542ce9804f3fc4df304bc6ec259db3934d8e75b4f9228c5395e3083cc47'
     assert result['blockHash'] == block_hash

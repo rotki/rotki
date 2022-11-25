@@ -75,8 +75,9 @@ def test_maybe_query_ethereum_transactions(task_manager, ethereum_accounts):
         assert start_ts == 0
         assert end_ts >= now
 
+    ethereum = task_manager.chains_aggregator.get_chain_manager(SupportedBlockchain.ETHEREUM)
     tx_query_patch = patch.object(
-        task_manager.eth_tx_decoder.transactions,
+        ethereum.transactions,
         'single_address_query_transactions',
         wraps=tx_query_mock,
     )

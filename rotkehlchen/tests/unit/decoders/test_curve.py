@@ -57,16 +57,17 @@ def _populate_curve_pools(evm_tx_decoder):
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x57bF3B0f29E37619623994071C9e12091919675c']])  # noqa: E501
-def test_curve_deposit(database, evm_transaction_decoder):
+def test_curve_deposit(database, ethereum_transaction_decoder):
     """Data for deposit taken from
     https://etherscan.io/tx/0x523b7df8e168315e97a836a3d516d639908814785d7df1ef1745de3e55501982
     tests that a deposit for the aave pool in curve works correctly
     """
-    _populate_curve_pools(evm_transaction_decoder)
+    _populate_curve_pools(ethereum_transaction_decoder)
     tx_hex = '0x523b7df8e168315e97a836a3d516d639908814785d7df1ef1745de3e55501982'
     location_label = '0x57bF3B0f29E37619623994071C9e12091919675c'
     evmhash = deserialize_evm_tx_hash(tx_hex)
     transaction = EvmTransaction(
+        chain_id=ChainID.ETHEREUM,
         tx_hash=evmhash,
         timestamp=1650276061,
         block_number=14608535,
@@ -132,7 +133,7 @@ def test_curve_deposit(database, evm_transaction_decoder):
     dbevmtx = DBEvmTx(database)
     with database.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
-        events = evm_transaction_decoder.decode_transaction(
+        events = ethereum_transaction_decoder.decode_transaction(
             write_cursor=cursor,
             transaction=transaction,
             tx_receipt=receipt,
@@ -195,18 +196,19 @@ def test_curve_deposit(database, evm_transaction_decoder):
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x767B35b9F06F6e28e5ed05eE7C27bDf992eba5d2']])  # noqa: E501
-def test_curve_deposit_eth(database, evm_transaction_decoder):
+def test_curve_deposit_eth(database, ethereum_transaction_decoder):
     """Data for deposit taken from
     https://etherscan.io/tx/0x51c052c8fb60f092f98ffc3cab6340c7c5348ee3b339582feba1c17cbd97ea56
     This tests uses the steth/eth pool to verify that deposits including transfer of ETH work
     properly
     """
-    _populate_curve_pools(evm_transaction_decoder)
+    _populate_curve_pools(ethereum_transaction_decoder)
     tx_hex = '0x51c052c8fb60f092f98ffc3cab6340c7c5348ee3b339582feba1c17cbd97ea56'
     location_label = '0x767B35b9F06F6e28e5ed05eE7C27bDf992eba5d2'
     evmhash = deserialize_evm_tx_hash(tx_hex)
     transaction = EvmTransaction(
         tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
         timestamp=1650276061,
         block_number=14608535,
         from_address=location_label,
@@ -271,7 +273,7 @@ def test_curve_deposit_eth(database, evm_transaction_decoder):
     dbevmtx = DBEvmTx(database)
     with database.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
-        events = evm_transaction_decoder.decode_transaction(
+        events = ethereum_transaction_decoder.decode_transaction(
             write_cursor=cursor,
             transaction=transaction,
             tx_receipt=receipt,
@@ -346,17 +348,18 @@ def test_curve_deposit_eth(database, evm_transaction_decoder):
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0xDf9f0AE722A3919fE7f9cC8805773ef142007Ca6']])  # noqa: E501
-def test_curve_remove_liquidity(database, evm_transaction_decoder):
+def test_curve_remove_liquidity(database, ethereum_transaction_decoder):
     """Data for deposit taken from
     https://etherscan.io/tx/0xd63dccdbebeede3a1f50b97c0a8592255203a0559880b80377daa39f915741b0
     This tests uses the link pool to verify that withdrawals are correctly decoded
     """
-    _populate_curve_pools(evm_transaction_decoder)
+    _populate_curve_pools(ethereum_transaction_decoder)
     tx_hex = '0xd63dccdbebeede3a1f50b97c0a8592255203a0559880b80377daa39f915741b0'
     location_label = '0xDf9f0AE722A3919fE7f9cC8805773ef142007Ca6'
     evmhash = deserialize_evm_tx_hash(tx_hex)
     transaction = EvmTransaction(
         tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
         timestamp=1650276061,
         block_number=14608535,
         from_address=location_label,
@@ -420,7 +423,7 @@ def test_curve_remove_liquidity(database, evm_transaction_decoder):
     dbevmtx = DBEvmTx(database)
     with database.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
-        events = evm_transaction_decoder.decode_transaction(
+        events = ethereum_transaction_decoder.decode_transaction(
             write_cursor=cursor,
             transaction=transaction,
             tx_receipt=receipt,
@@ -470,18 +473,19 @@ def test_curve_remove_liquidity(database, evm_transaction_decoder):
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0xa8005630caE7b7d2AFADD38FD3B3040d13cbE2BC']])  # noqa: E501
-def test_curve_remove_liquidity_with_internal(database, evm_transaction_decoder):
+def test_curve_remove_liquidity_with_internal(database, ethereum_transaction_decoder):
     """Data for deposit taken from
     https://etherscan.io/tx/0x30bb99f3e34fb1fbcf009320af7e290caf18b04b207319e15aa8ffbf645f4ad9
     This tests uses the steth pool to verify that withdrawals are correctly decoded when an
     internal transaction is made for eth transfers
     """
-    _populate_curve_pools(evm_transaction_decoder)
+    _populate_curve_pools(ethereum_transaction_decoder)
     tx_hex = '0x30bb99f3e34fb1fbcf009320af7e290caf18b04b207319e15aa8ffbf645f4ad9'
     location_label = '0xa8005630caE7b7d2AFADD38FD3B3040d13cbE2BC'
     evmhash = deserialize_evm_tx_hash(tx_hex)
     transaction = EvmTransaction(
         tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
         timestamp=1650276061,
         block_number=14647221,
         from_address=location_label,
@@ -524,6 +528,7 @@ def test_curve_remove_liquidity_with_internal(database, evm_transaction_decoder)
     )
     internal_tx = EvmInternalTransaction(
         parent_tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
         trace_id=27,
         timestamp=Timestamp(1591043988),
         block_number=14647221,
@@ -535,7 +540,7 @@ def test_curve_remove_liquidity_with_internal(database, evm_transaction_decoder)
     with database.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
         dbevmtx.add_evm_internal_transactions(cursor, [internal_tx], relevant_address=location_label)  # noqa: E501
-        events = evm_transaction_decoder.decode_transaction(
+        events = ethereum_transaction_decoder.decode_transaction(
             write_cursor=cursor,
             transaction=transaction,
             tx_receipt=receipt,
@@ -585,13 +590,13 @@ def test_curve_remove_liquidity_with_internal(database, evm_transaction_decoder)
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x2fac74A3a04B031F240923621a578724C40678af']])  # noqa: E501
-def test_curve_remove_imbalanced(database, evm_transaction_decoder):
+def test_curve_remove_imbalanced(database, ethereum_transaction_decoder):
     """Data for deposit taken from
     https://etherscan.io/tx/0xd8832abcf4773abe24d8cda5581fb53bfb3850c535c1956d1d120a72a4ebcbd8
     This tests uses the steth pool to verify that withdrawals are correctly decoded when an
     internal transaction is made for eth transfers
     """
-    _populate_curve_pools(evm_transaction_decoder)
+    _populate_curve_pools(ethereum_transaction_decoder)
     tx_hex = '0xd8832abcf4773abe24d8cda5581fb53bfb3850c535c1956d1d120a72a4ebcbd8'
     location_label = '0x2fac74A3a04B031F240923621a578724C40678af'
     evmhash = deserialize_evm_tx_hash(tx_hex)
@@ -702,7 +707,7 @@ def test_curve_remove_imbalanced(database, evm_transaction_decoder):
     dbevmtx = DBEvmTx(database)
     with database.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
-        events = evm_transaction_decoder.decode_transaction(
+        events = ethereum_transaction_decoder.decode_transaction(
             write_cursor=cursor,
             transaction=transaction,
             tx_receipt=receipt,

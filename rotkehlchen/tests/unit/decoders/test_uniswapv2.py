@@ -33,6 +33,7 @@ def test_uniswap_v2_swap(database, ethereum_inquirer, eth_transactions):
     evmhash = deserialize_evm_tx_hash(tx_hex)
     transaction = EvmTransaction(
         tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
         timestamp=1646375440,
         block_number=14351442,
         from_address='0x3CAdf2cA458376a6a5feA2EF3612346037D5A787',
@@ -188,6 +189,7 @@ def test_uniswap_v2_swap_eth_returned(database, ethereum_inquirer, eth_transacti
     evmhash = deserialize_evm_tx_hash(tx_hex)
     transaction = EvmTransaction(
         tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
         timestamp=1646375440,
         block_number=14351442,
         from_address='0x3CAdf2cA458376a6a5feA2EF3612346037D5A787',
@@ -242,6 +244,7 @@ def test_uniswap_v2_swap_eth_returned(database, ethereum_inquirer, eth_transacti
 
     internal_tx = EvmInternalTransaction(
         parent_tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
         trace_id=27,
         timestamp=Timestamp(1646375440),
         block_number=14351442,

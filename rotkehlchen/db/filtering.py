@@ -126,7 +126,7 @@ class DBETHTransactionJoinsFilter(DBFilter):
             )
             bindings += self.addresses
             if self.chain_id is not None:
-                query_filter_str += ' AND evm_tx_address_mappings.chain_id=?'
+                query_filter_str += ' AND evmtx_address_mappings.chain_id=?'
                 bindings.append(self.chain_id.serialize_for_db())
 
             query_filters.append(query_filter_str)
@@ -135,7 +135,7 @@ class DBETHTransactionJoinsFilter(DBFilter):
             query_filters.append(
                 'INNER JOIN evmtx_address_mappings WHERE '
                 'evm_transactions.tx_hash=evmtx_address_mappings.tx_hash AND '
-                'evm_tx_address_mappings.chain_id=?',
+                'evmtx_address_mappings.chain_id=?',
             )
             bindings.append(self.chain_id.serialize_for_db())
 
@@ -384,6 +384,9 @@ class EvmTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
         filters: List[DBFilter] = []
         if tx_hash is not None:  # tx_hash means single result so make it as single filter
             filters.append(DBEvmTransactionHashFilter(and_op=True, tx_hash=tx_hash))
+            if chain_id is not None:  # keep it as last (see chain_id property of this filter)
+                filters.append(DBEvmChainIDFilter(and_op=True, chain_id=chain_id))
+
         else:
             should_join_events = asset is not None or protocols is not None or exclude_ignored_assets is True  # noqa: E501
             if addresses is not None or should_join_events is True:
@@ -407,9 +410,6 @@ class EvmTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
                 to_ts=to_ts,
             )
             filters.append(filter_query.timestamp_filter)
-
-        if chain_id is not None:  # keep it always as last (see chain_id property of this filter)
-            filters.append(DBEvmChainIDFilter(and_op=True, chain_id=chain_id))
 
         filter_query.filters = filters
         return filter_query

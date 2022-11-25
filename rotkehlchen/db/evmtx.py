@@ -64,7 +64,7 @@ class DBEvmTx():
             ))
 
         query = """
-            INSERT evm_transactions(
+            INSERT INTO evm_transactions(
               tx_hash,
               chain_id,
               timestamp,
@@ -77,7 +77,7 @@ class DBEvmTx():
               gas_used,
               input_data,
               nonce)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
         self.db.write_tuples(
             write_cursor=write_cursor,
@@ -117,7 +117,7 @@ class DBEvmTx():
               from_address,
               to_address,
               value)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """
         self.db.write_tuples(
             write_cursor=write_cursor,
@@ -133,7 +133,7 @@ class DBEvmTx():
             blockchain: SupportedBlockchain,
     ) -> List[EvmInternalTransaction]:
         """Get all internal transactions under a parent tx_hash for a given chain"""
-        chain_id = blockchain.to_chain_id()
+        chain_id = blockchain.to_chain_id().serialize_for_db()
         cursor = self.db.conn.cursor()
         results = cursor.execute(
             'SELECT * from evm_internal_transactions WHERE parent_tx_hash=? AND chain_id=?',
@@ -170,10 +170,10 @@ class DBEvmTx():
         """
         query, bindings = filter_.prepare()
         if has_premium:
-            query = 'SELECT DISTINCT evm_transactions.tx_hash, chain_id, timestamp, block_number, from_address, to_address, value, gas, gas_price, gas_used, input_data, nonce FROM evm_transactions ' + query  # noqa: E501
+            query = 'SELECT DISTINCT evm_transactions.tx_hash, evm_transactions.chain_id, timestamp, block_number, from_address, to_address, value, gas, gas_price, gas_used, input_data, nonce FROM evm_transactions ' + query  # noqa: E501
             results = cursor.execute(query, bindings)
         else:
-            query = 'SELECT DISTINCT evm_transactions.tx_hash, chain_id, timestamp, block_number, from_address, to_address, value, gas, gas_price, gas_used, input_data, nonce FROM (SELECT * from evm_transactions ORDER BY timestamp DESC LIMIT ?) evm_transactions ' + query  # noqa: E501
+            query = 'SELECT DISTINCT evm_transactions.tx_hash, evm_transactions.chain_id, timestamp, block_number, from_address, to_address, value, gas, gas_price, gas_used, input_data, nonce FROM (SELECT * from evm_transactions ORDER BY timestamp DESC LIMIT ?) evm_transactions ' + query  # noqa: E501
             results = cursor.execute(query, [FREE_ETH_TX_LIMIT] + bindings)
 
         evm_transactions = []
@@ -314,7 +314,7 @@ class DBEvmTx():
         contract_address = deserialize_evm_address(data['contractAddress']) if data['contractAddress'] else None  # noqa: E501
         write_cursor.execute(
             'INSERT INTO evmtx_receipts (tx_hash, chain_id, contract_address, status, type) '
-            'VALUES(?, ?, ?, ?) ',
+            'VALUES(?, ?, ?, ?, ?) ',
             (tx_hash_b, serialized_chain_id, contract_address, status, tx_type),
         )
 
@@ -342,7 +342,7 @@ class DBEvmTx():
 
         if len(log_tuples) != 0:
             write_cursor.executemany(
-                'INSERT INTO evm_receipt_logs (tx_hash, chain_id, log_index, data, address, removed) '  # noqa: E501
+                'INSERT INTO evmtx_receipt_logs (tx_hash, chain_id, log_index, data, address, removed) '  # noqa: E501
                 'VALUES(? ,? ,? ,? ,?, ?)',
                 log_tuples,
             )

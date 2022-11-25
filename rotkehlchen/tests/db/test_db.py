@@ -134,7 +134,7 @@ TABLES_AT_INIT = [
     'history_events_mappings',
     'ens_mappings',
     'address_book',
-    'web3_nodes',
+    'rpc_nodes',
     'user_notes',
 ]
 

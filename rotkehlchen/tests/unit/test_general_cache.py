@@ -81,10 +81,10 @@ def test_curve_pools_cache(rotkehlchen_instance):
     )
     assert token is None
 
-    def mock_call_contract(contract, manager, method_name, **kwargs):
+    def mock_call_contract(contract, node_inquirer, method_name, **kwargs):
         if method_name == 'pool_count':
             return 2  # if we don't limit pools count, the test will run for too long
-        return manager.call_contract(
+        return node_inquirer.call_contract(
             contract_address=contract.address,
             abi=contract.abi,
             method_name=method_name,

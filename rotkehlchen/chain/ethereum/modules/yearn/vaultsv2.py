@@ -18,6 +18,7 @@ from rotkehlchen.errors.misc import ModuleInitializationFailure, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.premium.premium import Premium
 from rotkehlchen.types import YEARN_VAULTS_V2_PROTOCOL, ChecksumEvmAddress, EvmAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
@@ -45,6 +46,7 @@ class YearnVaultsV2(EthereumModule):
             self,
             ethereum_inquirer: 'EthereumInquirer',
             database: 'DBHandler',
+            premium: Optional['Premium'],  # pylint: disable=unused-argument
             msg_aggregator: MessagesAggregator,
     ) -> None:
         self.ethereum = ethereum_inquirer

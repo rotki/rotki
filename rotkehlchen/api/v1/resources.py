@@ -105,6 +105,10 @@ from rotkehlchen.api.v1.schemas import (
     QueriedAddressesSchema,
     RequiredEthereumAddressSchema,
     ReverseEnsSchema,
+    RpcAddNodeSchema,
+    RpcNodeEditSchema,
+    RpcNodeListDeleteSchema,
+    RpcNodeSchema,
     SingleAssetIdentifierSchema,
     SingleAssetWithOraclesIdentifierSchema,
     SingleFileSchema,
@@ -133,10 +137,6 @@ from rotkehlchen.api.v1.schemas import (
     WatchersAddSchema,
     WatchersDeleteSchema,
     WatchersEditSchema,
-    Web3AddNodeSchema,
-    Web3NodeEditSchema,
-    Web3NodeListDeleteSchema,
-    Web3NodeSchema,
     XpubAddSchema,
     XpubPatchSchema,
 )
@@ -508,17 +508,17 @@ class EthereumAirdropsResource(BaseMethodView):
         return self.rest_api.get_ethereum_airdrops(async_query)
 
 
-class Web3NodesResource(BaseMethodView):
+class RpcNodesResource(BaseMethodView):
 
-    get_schema = Web3NodeSchema()
-    put_schema = Web3AddNodeSchema()
-    patch_schema = Web3NodeEditSchema()
-    delete_schema = Web3NodeListDeleteSchema()
+    get_schema = RpcNodeSchema()
+    put_schema = RpcAddNodeSchema()
+    patch_schema = RpcNodeEditSchema()
+    delete_schema = RpcNodeListDeleteSchema()
 
     @require_loggedin_user()
     @use_kwargs(get_schema, location='view_args')
     def get(self, blockchain: SupportedBlockchain) -> Response:
-        return self.rest_api.get_web3_nodes(blockchain=blockchain)
+        return self.rest_api.get_rpc_nodes(blockchain=blockchain)
 
     @require_loggedin_user()
     @use_kwargs(put_schema, location='json_and_query_and_view_args')
@@ -541,7 +541,7 @@ class Web3NodesResource(BaseMethodView):
             weight=weight,
             active=active,
         )
-        return self.rest_api.add_web3_node(node)
+        return self.rest_api.add_rpc_node(node)
 
     @require_loggedin_user()
     @use_kwargs(patch_schema, location='json_and_query_and_view_args')
@@ -566,7 +566,7 @@ class Web3NodesResource(BaseMethodView):
             weight=weight,
             active=active,
         )
-        return self.rest_api.update_web3_node(node)
+        return self.rest_api.update_rpc_node(node)
 
     @require_loggedin_user()
     @use_kwargs(delete_schema, location='json_and_query_and_view_args')
@@ -575,7 +575,7 @@ class Web3NodesResource(BaseMethodView):
             blockchain: SupportedBlockchain,  # pylint: disable=unused-argument
             identifier: int,
     ) -> Response:
-        return self.rest_api.delete_web3_node(identifier=identifier, blockchain=blockchain)
+        return self.rest_api.delete_rpc_node(identifier=identifier, blockchain=blockchain)
 
 
 class ExternalServicesResource(BaseMethodView):

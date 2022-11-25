@@ -2526,11 +2526,11 @@ class SnapshotEditingSchema(Schema):
             )
 
 
-class Web3NodeSchema(Schema):
+class RpcNodeSchema(Schema):
     blockchain = BlockchainField(required=True, exclude_types=(SupportedBlockchain.ETHEREUM_BEACONCHAIN,))  # noqa: E501
 
 
-class Web3AddNodeSchema(Schema):
+class RpcAddNodeSchema(Schema):
     blockchain = BlockchainField(required=True, exclude_types=(SupportedBlockchain.ETHEREUM_BEACONCHAIN,))  # noqa: E501
     name = fields.String(
         required=True,
@@ -2545,7 +2545,7 @@ class Web3AddNodeSchema(Schema):
     active = fields.Boolean(load_default=False)
 
 
-class Web3NodeEditSchema(Web3AddNodeSchema):
+class RpcNodeEditSchema(RpcAddNodeSchema):
     name = fields.String(
         required=True,
         validate=webargs.validate.NoneOf(
@@ -2574,7 +2574,7 @@ class Web3NodeEditSchema(Web3AddNodeSchema):
             )
 
 
-class Web3NodeListDeleteSchema(Schema):
+class RpcNodeListDeleteSchema(Schema):
     blockchain = BlockchainField(required=True, exclude_types=(SupportedBlockchain.ETHEREUM_BEACONCHAIN,))  # noqa: E501
     identifier = fields.Integer(required=True)
 

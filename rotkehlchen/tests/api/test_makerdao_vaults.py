@@ -26,7 +26,7 @@ from rotkehlchen.tests.utils.checks import (
     assert_serialized_dicts_equal,
     assert_serialized_lists_equal,
 )
-from rotkehlchen.tests.utils.makerdao import mock_proxies
+from rotkehlchen.tests.utils.makerdao import mock_proxies_for
 
 mocked_prices = {
     'ETH': {
@@ -212,7 +212,7 @@ def test_query_vaults(rotkehlchen_api_server, ethereum_accounts):
     async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     proxies_mapping = {ethereum_accounts[0]: '0x689D4C2229717f877A644A0aAd742D67E5D0a2FB'}
-    mock_proxies(rotki, proxies_mapping, 'makerdao_vaults')
+    mock_proxies_for(rotki, proxies_mapping, 'makerdao_vaults')
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
         'makerdaovaultsresource',
@@ -259,7 +259,7 @@ def test_query_only_details_and_not_vaults(rotkehlchen_api_server, ethereum_acco
     """Check querying the vaults details endpoint works before even querying vaults"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     proxies_mapping = {ethereum_accounts[0]: '0x689D4C2229717f877A644A0aAd742D67E5D0a2FB'}
-    mock_proxies(rotki, proxies_mapping, 'makerdao_vaults')
+    mock_proxies_for(rotki, proxies_mapping, 'makerdao_vaults')
     # Query the details first
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
@@ -311,7 +311,7 @@ def test_query_vaults_details_liquidation(rotkehlchen_api_server, ethereum_accou
         ethereum_accounts[0]: '0x689D4C2229717f877A644A0aAd742D67E5D0a2FB',
         ethereum_accounts[2]: '0x420F88De6dadA0a77Db7b9EdBe3A0C614346031E',
     }
-    mock_proxies(rotki, proxies_mapping, 'makerdao_vaults')
+    mock_proxies_for(rotki, proxies_mapping, 'makerdao_vaults')
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
         "makerdaovaultsresource",
@@ -443,7 +443,7 @@ def test_query_vaults_wbtc(rotkehlchen_api_server, ethereum_accounts):
         ethereum_accounts[0]: '0x9684e6C1c7B79868839b27F88bA6d5A176367075',  # 8913
     }
 
-    mock_proxies(rotki, proxies_mapping, 'makerdao_vaults')
+    mock_proxies_for(rotki, proxies_mapping, 'makerdao_vaults')
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
         "makerdaovaultsresource",
@@ -539,7 +539,7 @@ def test_query_vaults_usdc(rotkehlchen_api_server, ethereum_accounts):
         ethereum_accounts[0]: '0xBE79958661741079679aFf75DbEd713cE71a979d',  # 7588
     }
 
-    mock_proxies(rotki, proxies_mapping, 'makerdao_vaults')
+    mock_proxies_for(rotki, proxies_mapping, 'makerdao_vaults')
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
         "makerdaovaultsresource",
@@ -640,7 +640,7 @@ def test_two_vaults_same_account_same_collateral(rotkehlchen_api_server, ethereu
         # proxy for 8632 and 8543
         ethereum_accounts[0]: '0xAe9996b76bdAa003ace6D66328A6942565f5768d',
     }
-    mock_proxies(rotki, proxies_mapping, 'makerdao_vaults')
+    mock_proxies_for(rotki, proxies_mapping, 'makerdao_vaults')
 
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
@@ -824,7 +824,7 @@ def test_query_vaults_usdc_strange(rotkehlchen_api_server, ethereum_accounts):
         ethereum_accounts[0]: '0x15fEaFd4358b8C03c889D6661b0CA1Be3389792F',  # 7538
     }
 
-    mock_proxies(rotki, proxies_mapping, 'makerdao_vaults')
+    mock_proxies_for(rotki, proxies_mapping, 'makerdao_vaults')
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
         "makerdaovaultsresource",

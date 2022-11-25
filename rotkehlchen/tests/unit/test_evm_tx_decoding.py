@@ -26,7 +26,7 @@ def assert_events_equal(e1: HistoryBaseEntry, e2: HistoryBaseEntry) -> None:
 
 
 @pytest.mark.parametrize('use_custom_database', ['ethtxs.db'])
-def test_tx_decode(evm_transaction_decoder, database):
+def test_tx_decode(ethereum_transaction_decoder, database):
     dbevmtx = DBEvmTx(database)
     addr1 = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
     approve_tx_hash = deserialize_evm_tx_hash('0x5cc0e6e62753551313412492296d5e57bea0a9d1ce507cc96aa4aa076c5bde7a')  # noqa: E501
@@ -40,7 +40,7 @@ def test_tx_decode(evm_transaction_decoder, database):
             ),
             has_premium=True,
         )
-    decoder = evm_transaction_decoder
+    decoder = ethereum_transaction_decoder
     with patch.object(decoder, 'decode_transaction', wraps=decoder.decode_transaction) as decode_mock:  # noqa: E501
         with database.user_write() as cursor:
             for tx in transactions:

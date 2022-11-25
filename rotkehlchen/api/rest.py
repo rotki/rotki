@@ -2602,19 +2602,19 @@ class RestAPI():
         result_dict = _wrap_in_result(result, msg)
         return api_response(result_dict, status_code=status_code)
 
-    def get_web3_nodes(self, blockchain: SupportedBlockchain) -> Response:
-        nodes = self.rotkehlchen.data.db.get_web3_nodes(blockchain=blockchain)
+    def get_rpc_nodes(self, blockchain: SupportedBlockchain) -> Response:
+        nodes = self.rotkehlchen.data.db.get_rpc_nodes(blockchain=blockchain)
         result_dict = _wrap_in_ok_result(process_result_list(list(nodes)))
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
-    def add_web3_node(self, node: WeightedNode) -> Response:
+    def add_rpc_node(self, node: WeightedNode) -> Response:
         try:
-            self.rotkehlchen.data.db.add_web3_node(node)
+            self.rotkehlchen.data.db.add_rpc_node(node)
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
         # Update the connected nodes
-        nodes_to_connect = self.rotkehlchen.data.db.get_web3_nodes(
+        nodes_to_connect = self.rotkehlchen.data.db.get_rpc_nodes(
             blockchain=node.node_info.blockchain,
             only_active=True,
         )
@@ -2622,14 +2622,14 @@ class RestAPI():
         manager.node_inquirer.connect_to_multiple_nodes(nodes_to_connect)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    def update_web3_node(self, node: WeightedNode) -> Response:
+    def update_rpc_node(self, node: WeightedNode) -> Response:
         try:
-            self.rotkehlchen.data.db.update_web3_node(node)
+            self.rotkehlchen.data.db.update_rpc_node(node)
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
         # Update the connected nodes
-        nodes_to_connect = self.rotkehlchen.data.db.get_web3_nodes(
+        nodes_to_connect = self.rotkehlchen.data.db.get_rpc_nodes(
             blockchain=node.node_info.blockchain,
             only_active=True,
         )
@@ -2637,14 +2637,14 @@ class RestAPI():
         manager.node_inquirer.connect_to_multiple_nodes(nodes_to_connect)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    def delete_web3_node(self, identifier: int, blockchain: SupportedBlockchain) -> Response:
+    def delete_rpc_node(self, identifier: int, blockchain: SupportedBlockchain) -> Response:
         try:
-            self.rotkehlchen.data.db.delete_web3_node(identifier=identifier, blockchain=blockchain)
+            self.rotkehlchen.data.db.delete_rpc_node(identifier=identifier, blockchain=blockchain)
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
         # Update the connected nodes
-        nodes_to_connect = self.rotkehlchen.data.db.get_web3_nodes(
+        nodes_to_connect = self.rotkehlchen.data.db.get_rpc_nodes(
             blockchain=blockchain,
             only_active=True,
         )
