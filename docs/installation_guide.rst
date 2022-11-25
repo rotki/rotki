@@ -123,6 +123,7 @@ and releases.
 
 You can find all the available docker images at `DockerHub`_.
 
+.. _docker warning:
 .. warning::
    It is important to keep in mind that is advisable to run
    the docker image in a secure environment. Such an environment would
@@ -268,7 +269,117 @@ data will be unavailable.
 Docker Compose
 ================
 
-If you prefer to use docker compose, a docker-compose.yml template is provided below for convienence.
+If you prefer to use docker compose, a docker-compose.yml template is provided below for convenience.
+
+Using docker over a public network
+----------------------------------
+
+Since rotki was designed to run over a public network it is :ref:`generally advised <docker warning>` to avoid
+directly exposing your rotki instance over public network.
+
+If you still want to access rotki over a public network it is suggested to use at least a proxy with
+basic authentication as an intermediate layer of security. With this setup anyone that visits your public domain
+will need to authenticate with the basic auth user and password before accessing rotki's user interface.
+
+Additionally treafik will be setup to automatically request and setup an SSL certificate to ensure that your connection
+to your rotki instance is properly encrypted using TLS.
+
+We are going to assume that you have a server provisioned and a domain ``rotki.example.com`` already set to the
+server's IP address.
+
+First we need to create a basic auth user with a password. Use the apache utilities to create a secure
+password using ``bcrypt`` for your user.
+
+.. code-block:: bash
+
+    htpasswd -cB ~/.rotki/.htpasswd user
+
+Then proceed to create an ``.env`` file in the same directory where your ``docker-compose.yml`` will be.
+In the env file set your authentication user, the domain and the e-mail of the where you will receive
+notification about the status of your domain.
+
+.. code-block:: bash
+
+    AUTH_USER=username
+    FQDN=rotki.example.com
+    LETSENCRYPT_EMAIL=user@example.com
+
+
+Next you need to create the ``docker-compose.yml``.
+
+.. code-block:: yaml
+
+    version: "3.9"
+
+    services:
+      proxy:
+        image: traefik:2.9
+        restart: always
+        command:
+          - "--global.sendAnonymousUsage=false"
+          - "--providers.docker"
+          - "--providers.docker.exposedByDefault=false"
+          - "--entrypoints.web.address=:80"
+          - "--entrypoints.websecure.address=:443"
+          - "--certificatesresolvers.le.acme.httpchallenge=true"
+          - "--certificatesresolvers.le.acme.httpchallenge.entrypoint=web"
+          - "--certificatesresolvers.le.acme.email=${LETSENCRYPT_EMAIL}"
+          - "--certificatesresolvers.le.acme.storage=/etc/acme/acme.json"
+        ports:
+          - "80:80"
+          - "443:443"
+        networks:
+          - rotki-net
+        volumes:
+          - $HOME/.rotki/.htpasswd:/auth/.htpasswd
+          - $HOME/.rotki/acme/:/etc/acme/
+          - /var/run/docker.sock:/var/run/docker.sock:ro
+
+      rotki:
+        environment:
+          - TZ=Europe/Berlin  # TimeZone Databases on Wikipedia: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+        image: rotki/rotki:latest
+        networks:
+          - rotki-net
+        volumes:
+          - $HOME/.rotki/data:/data
+          - $HOME/.rotki/logs:/logs
+        labels:
+          - "traefik.enable=true"
+          - "traefik.http.services.rotki.loadbalancer.server.port=80"
+          - "traefik.http.middlewares.redirect.redirectscheme.scheme=https"
+          - "traefik.http.middlewares.rotki-auth.basicauth.realm=`${AUTH_USER}`"
+          - "traefik.http.middlewares.rotki-auth.basicauth.usersfile=/auth/.htpasswd"
+          - "traefik.http.routers.rotki-insecure.rule=Host(`${FQDN}`)"
+          - "traefik.http.routers.rotki-insecure.middlewares=redirect"
+          - "traefik.http.routers.rotki.rule=Host(`${FQDN}`)"
+          - "traefik.http.routers.rotki.middlewares=rotki-auth"
+          - "traefik.http.routers.rotki.entrypoints=websecure"
+          - "traefik.http.routers.rotki.tls.certresolver=le"
+
+    networks:
+      rotki-net:
+
+
+Once the ``docker-compose.yml`` file is saved you will need to run:
+
+.. code-block:: bash
+
+    docker compose up -d
+
+With this  ``traefik`` will act as a proxy with basic authentication that will protect your rotki instance interface
+from unauthorized access. When navigating to ``http://rotki.example.com`` you will get a browser popup where you
+have to insert the ``AUTH_USER`` and the password you created with ``htpasswd``.
+
+After passing the base authentication step you will be greeted with the familiar login page of rotki.
+
+.. note::
+
+    As a bonus you should now be able to also access rotki from your mobile phone.
+
+
+Using docker on a private network
+----------------------------------
 
 Using Docker Defined Volume:
 

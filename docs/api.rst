@@ -3091,12 +3091,12 @@ Get asset identifiers mappings
                   "evm_chain": "ethereum",
                   "asset_type": "evm token"
               },
-	      "_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_26612040215479394739615825115912800930061094786769410446114278812336794170041"": {
-	          "name": "Mooncat 151",
-		  "asset_type": "nft",
-		  "collection_name": "Mooncats",
-		  "image_url": "https://myimg.com"
-	      }
+              "_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_26612040215479394739615825115912800930061094786769410446114278812336794170041": {
+	              "name": "Mooncat 151",
+		          "asset_type": "nft",
+		          "collection_name": "Mooncats",
+		          "image_url": "https://myimg.com"
+	          }
           },
           "message": ""
       }
@@ -7592,24 +7592,24 @@ Getting Liquity stability pool infomration
       {
         "result":{
             "0x3DdfA8eC3052539b6C9549F12cEA2C295cfF5296":{
-              gains: {
+              "gains": {
                 "asset": "ETH",
                 "amount": "43.180853032438783295",
                 "usd_value": "43.180853032438783295",
               },
-              rewards: {
+              "rewards": {
                 "asset": "eip155:1/erc20:0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D",
                 "amount": "94477.70111867384658505",
                 "usd_value": "94477.70111867384658505",
               },
-              deposited: {
+              "deposited": {
                 "asset": "eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0",
                 "amount": "10211401.723115634393264567",
                 "usd_value": "10211401.723115634393264567",
               },
             },
             "0xFBcAFB005695afa660836BaC42567cf6917911ac":{
-              gains: {
+              "gains": {
                 "asset": "ETH",
                 "amount": "0.012830143966323228",
                 "usd_value": "0.012830143966323228",
