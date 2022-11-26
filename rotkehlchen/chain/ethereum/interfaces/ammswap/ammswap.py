@@ -296,7 +296,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
                     userdb=self.database,
                     symbol=token0_['symbol'],
                     evm_address=token0_deserialized,
-                    chain=ChainID.ETHEREUM,
+                    chain_id=ChainID.ETHEREUM,
                     name=token0_['name'],
                     decimals=token0_['decimals'],
                 )
@@ -304,7 +304,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
                     userdb=self.database,
                     symbol=token1_['symbol'],
                     evm_address=token1_deserialized,
-                    chain=ChainID.ETHEREUM,
+                    chain_id=ChainID.ETHEREUM,
                     name=token1_['name'],
                     decimals=int(token1_['decimals']),
                 )
@@ -519,7 +519,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
                         userdb=self.database,
                         symbol=token['symbol'],
                         evm_address=deserialized_eth_address,
-                        chain=ChainID.ETHEREUM,
+                        chain_id=ChainID.ETHEREUM,
                         name=token['name'],
                         decimals=int(token['decimals']),
                     )
@@ -587,7 +587,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
                 get_or_create_evm_token(
                     userdb=self.database,
                     evm_address=lp_balance.address,
-                    chain=ChainID.ETHEREUM,
+                    chain_id=ChainID.ETHEREUM,
                     decimals=18,
                     protocol=protocol,
                     name=name,

@@ -1078,7 +1078,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         """
         try:
             balance_result, token_usd_price = manager.tokens.query_tokens_for_addresses(
-                addresses=self.accounts.get(manager.blockchain),  # type: ignore
+                addresses=self.accounts.get(manager.node_inquirer.blockchain),
             )
         except BadFunctionCallOutput as e:
             log.error(

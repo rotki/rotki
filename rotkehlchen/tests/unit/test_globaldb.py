@@ -42,7 +42,7 @@ selfkey_asset = EvmToken.initialize(
     forked=None,
     swapped_for=None,
     address=selfkey_address,
-    chain=ChainID.ETHEREUM,
+    chain_id=ChainID.ETHEREUM,
     token_kind=EvmTokenKind.ERC20,
     decimals=18,
     cryptocompare=None,
@@ -58,7 +58,7 @@ selfkey_asset_data = AssetData(
     forked=None,
     swapped_for=None,
     address=selfkey_address,
-    chain=ChainID.ETHEREUM,
+    chain_id=ChainID.ETHEREUM,
     token_kind=EvmTokenKind.ERC20,
     decimals=18,
     cryptocompare=None,
@@ -74,7 +74,7 @@ bidr_asset_data = AssetData(
     forked=None,
     swapped_for=None,
     address=None,
-    chain=None,
+    chain_id=None,
     token_kind=None,
     decimals=None,
     cryptocompare=None,
@@ -103,12 +103,12 @@ def test_get_ethereum_token_identifier(globaldb):
         assert globaldb.get_evm_token_identifier(
             cursor=cursor,
             address='0xnotexistingaddress',
-            chain=ChainID.ETHEREUM,
+            chain_id=ChainID.ETHEREUM,
         ) is None
         token_0_id = globaldb.get_evm_token_identifier(
             cursor=cursor,
             address=user_tokens[0].evm_address,
-            chain=ChainID.ETHEREUM,
+            chain_id=ChainID.ETHEREUM,
         )
     assert token_0_id == user_tokens[0].identifier
 
@@ -147,7 +147,7 @@ def test_add_edit_token_with_wrong_swapped_for(globaldb):
     address_to_delete = make_ethereum_address()
     token_to_delete = EvmToken.initialize(
         address=address_to_delete,
-        chain=ChainID.ETHEREUM,
+        chain_id=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
         decimals=18,
         name='willdell',
@@ -164,7 +164,7 @@ def test_add_edit_token_with_wrong_swapped_for(globaldb):
         assert globaldb.delete_evm_token(
             write_cursor=cursor,
             address=address_to_delete,
-            chain=ChainID.ETHEREUM,
+            chain_id=ChainID.ETHEREUM,
         ) == token_to_delete_id
 
     # now try to add a new token with swapped_for pointing to a non existing token in the DB
@@ -174,7 +174,7 @@ def test_add_edit_token_with_wrong_swapped_for(globaldb):
             asset_type=AssetType.EVM_TOKEN,
             data=EvmToken.initialize(
                 address=make_ethereum_address(),
-                chain=ChainID.ETHEREUM,
+                chain_id=ChainID.ETHEREUM,
                 token_kind=EvmTokenKind.ERC20,
                 swapped_for=asset_to_delete,
             ),
@@ -185,7 +185,7 @@ def test_add_edit_token_with_wrong_swapped_for(globaldb):
     bat_custom = globaldb.get_evm_token(address=resolved_bat.evm_address, chain_id=ChainID.ETHEREUM)  # noqa: E501
     bat_custom = EvmToken.initialize(
         address=resolved_bat.evm_address,
-        chain=ChainID.ETHEREUM,
+        chain_id=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
         decimals=resolved_bat.decimals,
         name=resolved_bat.name,
@@ -265,7 +265,7 @@ def test_get_asset_with_symbol(globaldb):
             forked=None,
             swapped_for=None,
             address=bihukey_address,
-            chain=ChainID.ETHEREUM,
+            chain_id=ChainID.ETHEREUM,
             token_kind=EvmTokenKind.ERC20,
             decimals=18,
             cryptocompare='BIHU',
@@ -292,7 +292,7 @@ def test_get_asset_with_symbol(globaldb):
         forked=None,
         swapped_for=None,
         address=aave_address,
-        chain=ChainID.ETHEREUM,
+        chain_id=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
         decimals=18,
         cryptocompare=None,
@@ -305,7 +305,7 @@ def test_get_asset_with_symbol(globaldb):
         forked=None,
         swapped_for=None,
         address='0xD6DF932A45C0f255f85145f286eA0b292B21C90B',
-        chain=ChainID.MATIC,
+        chain_id=ChainID.MATIC,
         token_kind=EvmTokenKind.ERC20,
         decimals=18,
         cryptocompare='',
@@ -318,7 +318,7 @@ def test_get_asset_with_symbol(globaldb):
         forked=None,
         swapped_for=None,
         address='0xfb6115445Bff7b52FeB98650C87f44907E58f802',
-        chain=ChainID.BINANCE,
+        chain_id=ChainID.BINANCE,
         token_kind=EvmTokenKind.ERC20,
         decimals=18,
         cryptocompare='',
@@ -337,7 +337,7 @@ def test_get_asset_with_symbol(globaldb):
         forked=None,
         swapped_for=None,
         address=renbtc_address,
-        chain=ChainID.ETHEREUM,
+        chain_id=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
         decimals=8,
         cryptocompare=None,
@@ -350,7 +350,7 @@ def test_get_asset_with_symbol(globaldb):
         forked=None,
         swapped_for=None,
         address='0xDBf31dF14B66535aF65AaC99C32e9eA844e14501',
-        chain=ChainID.MATIC,
+        chain_id=ChainID.MATIC,
         token_kind=EvmTokenKind.ERC20,
         decimals=8,
         cryptocompare='',
@@ -363,7 +363,7 @@ def test_get_asset_with_symbol(globaldb):
         forked=None,
         swapped_for=None,
         address='0xfCe146bF3146100cfe5dB4129cf6C82b0eF4Ad8c',
-        chain=ChainID.BINANCE,
+        chain_id=ChainID.BINANCE,
         token_kind=EvmTokenKind.ERC20,
         decimals=8,
         cryptocompare='',
@@ -402,7 +402,7 @@ def test_get_all_asset_data_specific_ids(globaldb):
         forked=None,
         swapped_for=None,
         address=None,
-        chain=None,
+        chain_id=None,
         token_kind=None,
         decimals=None,
         cryptocompare=None,
@@ -418,7 +418,7 @@ def test_get_all_asset_data_specific_ids(globaldb):
         forked=None,
         swapped_for=None,
         address=None,
-        chain=None,
+        chain_id=None,
         token_kind=None,
         decimals=None,
         cryptocompare=None,
@@ -571,7 +571,7 @@ def test_global_db_restore(globaldb, database):
     address_to_delete = make_ethereum_address()
     token_to_delete = EvmToken.initialize(
         address=address_to_delete,
-        chain=ChainID.ETHEREUM,
+        chain_id=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
         decimals=18,
         name='willdell',
@@ -586,7 +586,7 @@ def test_global_db_restore(globaldb, database):
     with_underlying_address = make_ethereum_address()
     with_underlying = EvmToken.initialize(
         address=with_underlying_address,
-        chain=ChainID.ETHEREUM,
+        chain_id=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
         decimals=18,
         name="Not a scam",
@@ -708,7 +708,7 @@ def test_global_db_reset(globaldb):
     address_to_delete = make_ethereum_address()
     token_to_delete = EvmToken.initialize(
         address=address_to_delete,
-        chain=ChainID.ETHEREUM,
+        chain_id=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
         decimals=18,
         name='willdell',
@@ -723,7 +723,7 @@ def test_global_db_reset(globaldb):
     with_underlying_address = make_ethereum_address()
     with_underlying = EvmToken.initialize(
         address=with_underlying_address,
-        chain=ChainID.ETHEREUM,
+        chain_id=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
         decimals=18,
         name="Not a scam",
@@ -753,7 +753,7 @@ def test_global_db_reset(globaldb):
     # Edit one token
     one_inch_update = EvmToken.initialize(
         address='0x111111111117dC0aa78b770fA6A738034120C302',
-        chain=ChainID.ETHEREUM,
+        chain_id=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
         name='1inch boi',
         symbol='1INCH',
@@ -846,7 +846,7 @@ def test_asset_deletion(globaldb):
     # Creating custom evm token to also check that underlying tokens are cleared
     token_data = EvmToken.initialize(
         address=make_ethereum_address(),
-        chain=ChainID.ETHEREUM,
+        chain_id=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
         symbol='a',
         name='b',
@@ -875,7 +875,7 @@ def test_asset_deletion(globaldb):
         GlobalDBHandler().delete_evm_token(
             write_cursor=write_cursor,
             address=token_data.evm_address,
-            chain=ChainID.ETHEREUM,
+            chain_id=ChainID.ETHEREUM,
         )
     # Check that it was deleted
     check_tables(

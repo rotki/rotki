@@ -100,7 +100,7 @@ def deserialize_asset_with_oracles_from_db(
 
         return EvmToken.initialize(
             address=asset_data[2],
-            chain=ChainID(asset_data[12]),
+            chain_id=ChainID(asset_data[12]),
             token_kind=EvmTokenKind.deserialize_from_db(asset_data[13]),
             decimals=decimals,
             name=name,

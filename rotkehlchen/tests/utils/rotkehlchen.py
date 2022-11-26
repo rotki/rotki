@@ -212,7 +212,7 @@ def setup_balances(
     poloniex_patch = patch_poloniex_balances_query(poloniex) if poloniex else None  # type: ignore
     etherscan_patch = mock_etherscan_query(
         eth_map=eth_map,
-        etherscan=rotki.etherscan,
+        etherscan=rotki.chains_aggregator.ethereum.node_inquirer.etherscan,
         original_queries=original_queries,
         original_requests_get=requests.get,
         extra_flags=extra_flags,

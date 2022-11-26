@@ -1681,12 +1681,12 @@ class OptionalEthereumAddressSchema(Schema):
 
 class RequiredEthereumAddressSchema(Schema):
     address = EthereumAddressField(required=True)
-    chain = SerializableEnumField(enum_class=ChainID, required=True)
+    chain_id = SerializableEnumField(enum_class=ChainID, required=True)
 
 
 class OptionalEvmTokenInformationSchema(Schema):
     address = EthereumAddressField(required=False)
-    chain = SerializableEnumField(enum_class=ChainID, required=False)
+    chain_id = SerializableEnumField(enum_class=ChainID, required=False)
     token_kind = SerializableEnumField(enum_class=EvmTokenKind, required=False)
 
 
@@ -1835,7 +1835,7 @@ class AssetsPostSchema(DBPaginationSchema, DBOrderBySchema):
 class AssetsSearchLevenshteinSchema(DBOrderBySchema, DBPaginationSchema):
     value = fields.String(required=True)
     return_exact_matches = fields.Boolean(load_default=False)
-    evm_chain = SerializableEnumField(enum_class=ChainID, load_default=None)
+    chain_id = SerializableEnumField(enum_class=ChainID, load_default=None)
 
     @validates_schema
     def validate_schema(  # pylint: disable=no-self-use
@@ -1859,7 +1859,7 @@ class AssetsSearchLevenshteinSchema(DBOrderBySchema, DBPaginationSchema):
         filter_query = AssetsFilterQuery.make(
             and_op=True,
             order_by_rules=create_order_by_rules_list(data=data, default_order_by_field='name'),
-            evm_chain=data['evm_chain'],
+            chain_id=data['chain_id'],
         )
         return {
             'filter_query': filter_query,
@@ -1888,7 +1888,7 @@ class AssetsSearchByColumnSchema(AssetsSearchLevenshteinSchema):
             substring_search=data['value'].strip(),
             search_column=data['search_column'],
             return_exact_matches=data['return_exact_matches'],
-            evm_chain=data['evm_chain'],
+            chain_id=data['chain_id'],
         )
         return {'filter_query': filter_query}
 

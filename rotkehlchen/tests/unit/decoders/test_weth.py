@@ -211,7 +211,7 @@ def test_weth_interaction_with_protocols_deposit(database, ethereum_inquirer):
     expected_erc721 = get_or_create_evm_token(
         userdb=database,
         evm_address='0xC36442b4a4522E871399CD717aBDD847Ab11FE88',
-        chain=ChainID.ETHEREUM,
+        chain_id=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC721,
         evm_inquirer=ethereum_inquirer,
     )

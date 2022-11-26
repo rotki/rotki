@@ -825,7 +825,7 @@ def query_token_spam_list(db: 'DBHandler', make_remote_query: bool) -> Set[EvmTo
             own_token = get_or_create_evm_token(
                 userdb=db,
                 evm_address=token_address,
-                chain=ChainID.ETHEREUM,
+                chain_id=ChainID.ETHEREUM,
                 protocol=SPAM_PROTOCOL,
                 form_with_incomplete_data=True,
                 decimals=info.get('decimals', 18),

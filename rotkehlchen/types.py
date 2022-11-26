@@ -196,8 +196,8 @@ class ChainID(SerializableEnumMixin):
     """This class maps each EVM chain to their chain id. This is used to correctly idenity EVM
     assets and use it where these ids are needed.
 
-    This enum implements custom serialize_for_db and deserialize_from_db to make it easier future
-    changes if they are needed.
+    This enum implements custom serialization/deserialization since it differs from
+    the rest being an int value enum. TODO: Fix types
     """
     ETHEREUM = 1
     OPTIMISM = 10
@@ -211,13 +211,20 @@ class ChainID(SerializableEnumMixin):
 
     @classmethod
     def deserialize_from_db(cls, value: int) -> 'ChainID':
-        return cls(value)
+        try:
+            return cls(value)
+        except ValueError as e:
+            raise DeserializationError(f'Could not deserialize ChainID from value {value}') from e
 
     def serialize_for_db(self) -> int:
         return self.value
 
-    def serialize(self) -> str:
-        return str(self.value)
+    def serialize(self) -> int:  # type: ignore  # supertype is str
+        return self.value
+
+    @classmethod
+    def deserialize(cls, value: int) -> 'ChainID':  # type: ignore  # supertype is str
+        return cls.deserialize_from_db(value)
 
     def to_name(self) -> str:
         return str(self).lower()

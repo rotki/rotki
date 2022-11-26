@@ -230,7 +230,7 @@ def get_underlying_asset_price(token: EvmToken) -> Tuple[Optional[Price], Curren
     if custom_token and custom_token.underlying_tokens is not None:
         usd_price = ZERO
         for underlying_token in custom_token.underlying_tokens:
-            token = EvmToken(underlying_token.get_identifier(parent_chain=custom_token.chain))
+            token = EvmToken(underlying_token.get_identifier(parent_chain=custom_token.chain_id))
             underlying_asset_price, oracle, _ = Inquirer().find_usd_price_and_oracle(token)
             usd_price += underlying_asset_price * underlying_token.weight
 

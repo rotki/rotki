@@ -67,7 +67,7 @@ def _decode_result(
             userdb=userdb,
             symbol=token.symbol,
             evm_address=token.address,
-            chain=ChainID.ETHEREUM,
+            chain_id=ChainID.ETHEREUM,
             name=token.name,
             decimals=token.decimals,
         )

@@ -79,7 +79,7 @@ def test_uniswap_no_decimals(inquirer_defi):
             if identifier == resolved_weth.identifier:
                 fake_weth = EvmToken.initialize(
                     address=resolved_weth.evm_address,
-                    chain=resolved_weth.chain,
+                    chain_id=resolved_weth.chain_id,
                     token_kind=resolved_weth.token_kind,
                     decimals=None,
                     name=resolved_weth.name,

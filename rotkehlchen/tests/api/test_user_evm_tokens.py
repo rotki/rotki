@@ -127,7 +127,7 @@ def test_adding_user_tokens(rotkehlchen_api_server):
         USER_TOKEN3,
         EvmToken.initialize(
             address=underlying_address4,
-            chain=ChainID.ETHEREUM,
+            chain_id=ChainID.ETHEREUM,
             token_kind=EvmTokenKind.ERC20,
         ),
     ]
@@ -172,7 +172,7 @@ def test_adding_user_tokens(rotkehlchen_api_server):
     # now test that adding a token with underlying tokens adding up to more than 100% is caught
     bad_token = EvmToken.initialize(
         address=make_ethereum_address(),
-        chain=ChainID.ETHEREUM,
+        chain_id=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
         decimals=18,
         name='foo',
@@ -205,7 +205,7 @@ def test_adding_user_tokens(rotkehlchen_api_server):
     # and test that adding a token with underlying tokens adding up to less than 100% is caught
     bad_token = EvmToken.initialize(
         address=make_ethereum_address(),
-        chain=ChainID.ETHEREUM,
+        chain_id=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
         decimals=18,
         name='foo',
@@ -238,7 +238,7 @@ def test_adding_user_tokens(rotkehlchen_api_server):
     # and test that adding a token with empty list of underlying tokens and not null is an error
     bad_token = EvmToken.initialize(
         address=make_ethereum_address(),
-        chain=ChainID.ETHEREUM,
+        chain_id=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
         decimals=18,
         name='foo',
@@ -607,5 +607,5 @@ def test_add_non_ethereum_token(rotkehlchen_api_server):
     token = EvmToken(identifier)
     assert token.name == 'Some random name'
     assert token.symbol == 'XYZ'
-    assert token.chain == ChainID.BINANCE
+    assert token.chain_id == ChainID.BINANCE
     assert token.protocol == 'my-own-protocol'

@@ -59,7 +59,7 @@ class AssetData(NamedTuple):
     forked: Optional[str]
     swapped_for: Optional[str]
     address: Optional['ChecksumEvmAddress']
-    chain: Optional[ChainID]
+    chain_id: Optional[ChainID]
     token_kind: Optional[EvmTokenKind]
     decimals: Optional[int]
     # None means, no special mapping. '' means not supported
@@ -71,8 +71,8 @@ class AssetData(NamedTuple):
         result = self._asdict()  # pylint: disable=no-member
         result.pop('identifier')
         result['asset_type'] = str(self.asset_type)
-        if self.chain is not None:
-            result['chain'] = self.chain.serialize()
+        if self.chain_id is not None:
+            result['chain_id'] = self.chain_id.serialize()
         if self.token_kind is not None:
             result['token_kind'] = self.token_kind.serialize()
         return result

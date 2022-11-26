@@ -108,7 +108,7 @@ def _rename_assets_identifiers(write_cursor: 'DBCursor') -> None:
         if identifier.startswith(ETHEREUM_DIRECTIVE):
             old_id_to_new[identifier] = evm_address_to_identifier(
                 address=identifier[ETHEREUM_DIRECTIVE_LENGTH:],
-                chain=ChainID.ETHEREUM,
+                chain_id=ChainID.ETHEREUM,
                 token_type=EvmTokenKind.ERC20,
             )
         elif identifier in OTHER_EVM_CHAINS_ASSETS:
@@ -194,7 +194,7 @@ def _update_ignored_assets_identifiers_to_caip_format(cursor: 'DBCursor') -> Non
                 (
                     evm_address_to_identifier(
                         address=old_identifier[ETHEREUM_DIRECTIVE_LENGTH:],
-                        chain=ChainID.ETHEREUM,
+                        chain_id=ChainID.ETHEREUM,
                         token_type=EvmTokenKind.ERC20,
                     ),
                     old_identifier,
@@ -218,7 +218,7 @@ def _update_history_event_assets_identifiers_to_caip_format(cursor: 'DBCursor') 
         if entry[6].startswith(ETHEREUM_DIRECTIVE):
             new_id = evm_address_to_identifier(
                 address=entry[6][ETHEREUM_DIRECTIVE_LENGTH:],
-                chain=ChainID.ETHEREUM,
+                chain_id=ChainID.ETHEREUM,
                 token_type=EvmTokenKind.ERC20,
             )
         new_entries.append((
@@ -305,7 +305,7 @@ def _update_assets_in_user_queried_tokens(cursor: 'DBCursor') -> None:
         for token in tokens.get('tokens', []):
             new_id = evm_address_to_identifier(
                 address=token[ETHEREUM_DIRECTIVE_LENGTH:],
-                chain=ChainID.ETHEREUM,
+                chain_id=ChainID.ETHEREUM,
                 token_type=EvmTokenKind.ERC20,
             )
             update_rows.append(

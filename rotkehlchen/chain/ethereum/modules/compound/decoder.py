@@ -55,7 +55,7 @@ class CompoundDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
         minted_amount_raw = hex_or_bytes_to_int(tx_log.data[64:96])
         underlying_asset = get_crypto_asset_by_symbol(
             symbol=compound_token.symbol[1:],
-            evm_chain=compound_token.chain,
+            chain_id=compound_token.chain_id,
         )
         if underlying_asset is None:
             return None, []
@@ -107,7 +107,7 @@ class CompoundDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
         redeem_tokens_raw = hex_or_bytes_to_int(tx_log.data[64:96])
         underlying_token = get_crypto_asset_by_symbol(
             symbol=compound_token.symbol[1:],
-            evm_chain=compound_token.chain,
+            chain_id=compound_token.chain_id,
         )
         if underlying_token is None:
             return None, []

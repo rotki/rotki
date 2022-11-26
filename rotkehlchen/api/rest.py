@@ -1542,7 +1542,7 @@ class RestAPI():
     def delete_custom_ethereum_token(
             self,
             address: ChecksumEvmAddress,
-            chain: ChainID,
+            chain_id: ChainID,
     ) -> Response:
         try:
             with self.rotkehlchen.data.db.user_write() as cursor:
@@ -1550,12 +1550,12 @@ class RestAPI():
                 self.rotkehlchen.data.db.update_owned_assets_in_globaldb(cursor)
                 identifier = evm_address_to_identifier(
                     address=address,
-                    chain=chain,
+                    chain_id=chain_id,
                     token_type=EvmTokenKind.ERC20,
                 )
                 self.rotkehlchen.data.db.delete_asset_identifier(cursor, identifier)
                 with GlobalDBHandler().conn.write_ctx() as gcursor:
-                    identifier = GlobalDBHandler().delete_evm_token(write_cursor=gcursor, address=address, chain=chain)  # noqa: E501
+                    identifier = GlobalDBHandler().delete_evm_token(write_cursor=gcursor, address=address, chain_id=chain_id)  # noqa: E501
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 

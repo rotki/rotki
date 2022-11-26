@@ -46,7 +46,7 @@ def decode_uniswap_v2_like_swap(
     pool_token = get_or_create_evm_token(
         userdb=database,
         evm_address=tx_log.address,
-        chain=ChainID.ETHEREUM,
+        chain_id=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
         evm_inquirer=ethereum_inquirer,
     )

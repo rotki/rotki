@@ -2993,7 +2993,7 @@ Get asset identifiers mappings
               "eip155:1/erc20:0xcC4eF9EEAF656aC1a2Ab886743E98e97E090ed38": {
                   "name": "DigitalDevelopersFund",
                   "symbol": "DDF",
-                  "evm_chain": "ethereum",
+                  "chain_id": 1,
                   "is_custom_asset": false
               }
           },
@@ -3003,7 +3003,7 @@ Get asset identifiers mappings
    :resjson object result: A mapping of identifiers to their name, symbol & chain(if available).
    :resjson string name: Name of the asset.
    :resjson string symbol: Symbol of the asset.
-   :resjson string evm_chain: This value might not be included in all the results. Full name of the EVM chain where the asset is located if the asset is an EVM token.
+   :resjson int chain_id: This value might not be included in all the results. Chain id of the chain where the asset is located if the asset is an EVM token.
    :resjson string custom_asset_type: This value might not be included in all the results. It represents the custom asset type for a custom asset.
    :resjson bool is_custom_asset: A boolean to represent whether the asset is a custom asset or not.
    :statuscode 200: Assets successfully queried.
@@ -3040,7 +3040,7 @@ Search for assets
    :reqjson string value: A string to be used search the assets. Required.
    :reqjson string search_column: A column on the assets table to perform the search on. One of ``"name"`` or ``"symbol"``. Required.
    :reqjson bool return_exact_matches: A flag that specifies whether the result returned should match the search keyword. Defaults to ``"false"``.
-   :reqjson string[optional] evm_chain: A string representing the name of a supported EVM chain used to filter the result. e.g "ethereum", "optimism", "binance", etc.
+   :reqjson int[optional] chain_id: Chain id of the chain where the asset is located if the asset is an EVM token.
 
 
    **Example Response**:
@@ -3056,7 +3056,7 @@ Search for assets
                   "identifier": "eip155:1/erc20:0xB6eD7644C69416d67B522e20bC294A9a9B405B31",
                   "name": "0xBitcoin",
                   "symbol": "0xBTC"
-                  "chain": "ethereum",
+                  "chain_id": 1,
                   "is_custom_asset": false
               },
               {
@@ -3073,7 +3073,7 @@ Search for assets
    :resjson string identifier: Identifier of the asset.
    :resjson string name: Name of the asset.
    :resjson string symbol: Symbol of the asset.
-   :resjson string evm_chain: This value might not be included in all the results. Full name of the EVM chain where the asset is located if the asset is an EVM token.
+   :resjson int chain_id: This value might not be included in all the results. Chain id of the chain where the asset is located if the asset is an EVM token.
    :resjson string custom_asset_type: This value might not be included in all the results. It represents the custom asset type for a custom asset.
    :resjson bool is_custom_asset: A boolean to represent whether the asset is a custom asset or not.
    :statuscode 200: Assets successfully queried.
@@ -3105,7 +3105,7 @@ Search for assets(Levenshtein)
    :reqjson list[string] order_by_attributes: This is the list of attributes of the asset by which to order the results. By default we sort using ``name``.
    :reqjson list[bool] ascending: Should the order be ascending? This is the default. If set to false, it will be on descending order.
    :reqjson string value: A string to be used to search the assets. Required.
-   :reqjson string[optional] evm_chain: A string representing the name of a supported EVM chain used to filter the result. e.g "ethereum", "optimism", "binance", etc.
+   :reqjson int[optional] chain_id: Chain id of a supported EVM chain used to filter the result
 
    **Example Response**:
 
@@ -3120,7 +3120,7 @@ Search for assets(Levenshtein)
                   "identifier": "eip155:1/erc20:0xB6eD7644C69416d67B522e20bC294A9a9B405B31",
                   "name": "0xBitcoin",
                   "symbol": "0xBTC"
-                  "evm_chain": "ethereum",
+                  "chain_id": 1,
                   "is_custom_asset": false
               }
           ],
@@ -3131,7 +3131,7 @@ Search for assets(Levenshtein)
    :resjson string identifier: Identifier of the asset.
    :resjson string name: Name of the asset.
    :resjson string symbol: Symbol of the asset.
-   :resjson string evm_chain: This value might not be included in all the results. Full name of the EVM chain where the asset is located if the asset is an EVM token.
+   :resjson int chain_id: This value might not be included in all the results. Chain id of the chain where the asset is located if the asset is an EVM token.
    :resjson string custom_asset_type: This value might not be included in all the results. It represents the custom asset type for a custom asset.
    :resjson bool is_custom_asset: A boolean to represent whether the asset is a custom asset or not.
    :statuscode 200: Assets successfully queried.

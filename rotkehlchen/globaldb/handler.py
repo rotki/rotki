@@ -343,7 +343,7 @@ class GlobalDBHandler():
                     'is_custom_asset': AssetType.deserialize_from_db(entry[4]) == AssetType.CUSTOM_ASSET,  # noqa: E501
                 }
                 if entry[3] is not None:
-                    result[entry[0]].update({'evm_chain': ChainID.deserialize_from_db(entry[3]).serialize()})  # noqa: E501
+                    result[entry[0]].update({'chain_id': ChainID.deserialize_from_db(entry[3]).serialize()})  # noqa: E501
                 if entry[5] is not None:
                     result[entry[0]].update({'custom_asset_type': entry[5]})
 
@@ -381,7 +381,7 @@ class GlobalDBHandler():
                     'is_custom_asset': AssetType.deserialize_from_db(entry[4]) == AssetType.CUSTOM_ASSET,  # noqa: E501
                 }
                 if entry[3] is not None:
-                    entry_info['evm_chain'] = ChainID.deserialize_from_db(entry[3]).serialize()
+                    entry_info['chain_id'] = ChainID.deserialize_from_db(entry[3]).serialize()
                 if entry[5] is not None:
                     entry_info['custom_asset_type'] = entry[5]
 
@@ -446,7 +446,7 @@ class GlobalDBHandler():
                     'is_custom_asset': AssetType.deserialize_from_db(entry[4]) == AssetType.CUSTOM_ASSET,  # noqa: E501
                 }
                 if entry[3] is not None:
-                    entry_info['evm_chain'] = ChainID.deserialize_from_db(entry[3]).serialize()
+                    entry_info['chain_id'] = ChainID.deserialize_from_db(entry[3]).serialize()
                 if entry[5] is not None:
                     entry_info['custom_asset_type'] = entry[5]
 
@@ -532,7 +532,7 @@ class GlobalDBHandler():
                     identifier=entry[0],
                     asset_type=asset_type,
                     address=evm_address,
-                    chain=chain,
+                    chain_id=chain,
                     token_kind=token_kind,
                     decimals=entry[3],
                     name=entry[4],
@@ -631,7 +631,7 @@ class GlobalDBHandler():
             forked=forked,
             swapped_for=swapped_for,
             address=evm_address,
-            chain=chain,
+            chain_id=chain,
             token_kind=token_kind,
             decimals=decimals,
             coingecko=coingecko,
@@ -661,7 +661,7 @@ class GlobalDBHandler():
             write_cursor: DBCursor,
             parent_token_identifier: str,
             underlying_tokens: List[UnderlyingToken],
-            chain: ChainID,
+            chain_id: ChainID,
     ) -> None:
         """Add the underlying tokens for the parent token
 
@@ -672,11 +672,11 @@ class GlobalDBHandler():
             asset_id = GlobalDBHandler.get_evm_token_identifier(
                 cursor=write_cursor,
                 address=underlying_token.address,
-                chain=chain,
+                chain_id=chain_id,
             )
             if asset_id is None:
                 try:  # underlying token does not exist. Track it
-                    asset_id = underlying_token.get_identifier(parent_chain=chain)
+                    asset_id = underlying_token.get_identifier(parent_chain=chain_id)
                     write_cursor.execute(
                         'INSERT INTO assets(identifier, name, type)'
                         'VALUES(?, ?, ?);',
@@ -688,7 +688,7 @@ class GlobalDBHandler():
                         (
                             asset_id,
                             underlying_token.address,
-                            chain.serialize_for_db(),
+                            chain_id.serialize_for_db(),
                             underlying_token.token_kind.serialize_for_db(),
                         ),
                     )
@@ -722,12 +722,12 @@ class GlobalDBHandler():
     def get_evm_token_identifier(
             cursor: DBCursor,
             address: ChecksumEvmAddress,
-            chain: ChainID,
+            chain_id: ChainID,
     ) -> Optional[str]:
         """Returns the asset identifier of an EVM token by address if it can be found"""
         query = cursor.execute(
             'SELECT identifier from evm_tokens WHERE address=? AND chain=?;',
-            (address, chain.serialize_for_db()),
+            (address, chain_id.serialize_for_db()),
         )
         result = query.fetchall()
         if len(result) == 0:
@@ -883,7 +883,7 @@ class GlobalDBHandler():
                 (
                     entry.identifier,
                     entry.token_kind.serialize_for_db(),
-                    entry.chain.serialize_for_db(),
+                    entry.chain_id.serialize_for_db(),
                     entry.evm_address,
                     entry.decimals,
                     entry.protocol,
@@ -906,7 +906,7 @@ class GlobalDBHandler():
                 write_cursor=write_cursor,
                 parent_token_identifier=entry.identifier,
                 underlying_tokens=entry.underlying_tokens,
-                chain=entry.chain,
+                chain_id=entry.chain_id,
             )
 
     @staticmethod
@@ -945,7 +945,7 @@ class GlobalDBHandler():
                     'protocol=? WHERE identifier=?',
                     (
                         entry.token_kind.serialize_for_db(),
-                        entry.chain.serialize_for_db(),
+                        entry.chain_id.serialize_for_db(),
                         entry.evm_address,
                         entry.decimals,
                         entry.protocol,
@@ -954,7 +954,7 @@ class GlobalDBHandler():
                 )
                 if write_cursor.rowcount != 1:
                     raise InputError(
-                        f'Tried to edit non existing EVM token with address {entry.evm_address} at chain {entry.chain}',  # noqa: E501
+                        f'Tried to edit non existing EVM token with address {entry.evm_address} at chain {entry.chain_id}',  # noqa: E501
                     )
 
                 # Since this is editing, make sure no underlying tokens exist
@@ -967,20 +967,20 @@ class GlobalDBHandler():
                         write_cursor=write_cursor,
                         parent_token_identifier=entry.identifier,
                         underlying_tokens=entry.underlying_tokens,
-                        chain=entry.chain,
+                        chain_id=entry.chain_id,
                     )
 
-                rotki_id = GlobalDBHandler().get_evm_token_identifier(write_cursor, entry.evm_address, entry.chain)  # noqa: E501
+                rotki_id = GlobalDBHandler().get_evm_token_identifier(write_cursor, entry.evm_address, entry.chain_id)  # noqa: E501
                 if rotki_id is None:
                     raise InputError(
                         f'Unexpected DB state. EVM token {entry.evm_address} at chain '
-                        f'{entry.chain} exists in the DB but its corresponding asset '
+                        f'{entry.chain_id} exists in the DB but its corresponding asset '
                         f'entry was not found.',
                     )
 
         except sqlite3.IntegrityError as e:
             raise InputError(
-                f'Failed to update DB entry for EVM token with address {entry.evm_address} at chain {entry.chain}'  # noqa: E501
+                f'Failed to update DB entry for EVM token with address {entry.evm_address} at chain {entry.chain_id}'  # noqa: E501
                 f'due to a constraint being hit. Make sure the new values are valid ',
             ) from e
 
@@ -990,7 +990,7 @@ class GlobalDBHandler():
     def delete_evm_token(
             write_cursor: DBCursor,
             address: ChecksumEvmAddress,
-            chain: ChainID,
+            chain_id: ChainID,
     ) -> str:
         """Deletes an EVM token from the global DB
 
@@ -999,12 +999,12 @@ class GlobalDBHandler():
         # first get the identifier for the asset
         write_cursor.execute(
             'SELECT identifier from evm_tokens WHERE address=? AND chain=?',
-            (address, chain.serialize_for_db()),
+            (address, chain_id.serialize_for_db()),
         )
         result = write_cursor.fetchone()
         if result is None:
             raise InputError(
-                f'Tried to delete EVM token with address {address} at chain {chain} '
+                f'Tried to delete EVM token with address {address} at chain {chain_id} '
                 f'but it was not found in the DB',
             )
         asset_identifier = result[0]
@@ -1105,15 +1105,15 @@ class GlobalDBHandler():
     def get_assets_with_symbol(
             symbol: str,
             asset_type: Optional[AssetType] = None,
-            chain: Optional[ChainID] = None,
+            chain_id: Optional[ChainID] = None,
     ) -> List[AssetWithOracles]:
         """Find all asset entries that have the given symbol"""
         eth_token_type = AssetType.EVM_TOKEN.serialize_for_db()    # pylint: disable=no-member
         extra_check_evm = ''
         evm_query_list: List[Union[int, str]] = [eth_token_type, symbol]
-        if chain is not None:
+        if chain_id is not None:
             extra_check_evm += ' AND B.chain=? '
-            evm_query_list.append(chain.serialize_for_db())
+            evm_query_list.append(chain_id.serialize_for_db())
 
         extra_check_common = ''
         common_query_list: List[Union[int, str]] = [

@@ -18,7 +18,7 @@ def create_initial_globaldb_test_tokens() -> List[EvmToken]:
     return [
         EvmToken.initialize(
             address=user_token_address1,
-            chain=ChainID.ETHEREUM,
+            chain_id=ChainID.ETHEREUM,
             token_kind=EvmTokenKind.ERC20,
             decimals=4,
             name='Custom 1',
@@ -36,7 +36,7 @@ def create_initial_globaldb_test_tokens() -> List[EvmToken]:
         ),
         EvmToken.initialize(
             address=user_token_address2,
-            chain=ChainID.ETHEREUM,
+            chain_id=ChainID.ETHEREUM,
             token_kind=EvmTokenKind.ERC20,
             decimals=18,
             name='Custom 2',
@@ -48,9 +48,9 @@ def create_initial_globaldb_test_tokens() -> List[EvmToken]:
 def create_initial_expected_globaldb_test_tokens():
     initial_tokens = create_initial_globaldb_test_tokens()
     return [initial_tokens[0]] + [
-        EvmToken.initialize(underlying_address1, chain=ChainID.ETHEREUM, token_kind=EvmTokenKind.ERC20),  # noqa: E501
-        EvmToken.initialize(underlying_address2, chain=ChainID.ETHEREUM, token_kind=EvmTokenKind.ERC20),  # noqa: E501
-        EvmToken.initialize(underlying_address3, chain=ChainID.ETHEREUM, token_kind=EvmTokenKind.ERC20),  # noqa: E501
+        EvmToken.initialize(underlying_address1, chain_id=ChainID.ETHEREUM, token_kind=EvmTokenKind.ERC20),  # noqa: E501
+        EvmToken.initialize(underlying_address2, chain_id=ChainID.ETHEREUM, token_kind=EvmTokenKind.ERC20),  # noqa: E501
+        EvmToken.initialize(underlying_address3, chain_id=ChainID.ETHEREUM, token_kind=EvmTokenKind.ERC20),  # noqa: E501
     ] + [initial_tokens[1]]
 
 
@@ -58,7 +58,7 @@ underlying_address4 = make_ethereum_address()
 user_token_address3 = make_ethereum_address()
 USER_TOKEN3 = EvmToken.initialize(
     address=user_token_address3,
-    chain=ChainID.ETHEREUM,
+    chain_id=ChainID.ETHEREUM,
     token_kind=EvmTokenKind.ERC20,
     decimals=15,
     name='Custom 3',

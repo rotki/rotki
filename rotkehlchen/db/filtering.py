@@ -985,7 +985,7 @@ class AssetsFilterQuery(DBFilterQuery):
             asset_type: Optional[AssetType] = None,
             identifiers: Optional[List[str]] = None,
             return_exact_matches: bool = False,
-            evm_chain: Optional[ChainID] = None,
+            chain_id: Optional[ChainID] = None,
             ignored_assets_filter_params: Optional[Tuple[Literal['IN', 'NOT IN'], List[str]]] = None,  # noqa: E501
     ) -> 'AssetsFilterQuery':
         if order_by_rules is None:
@@ -1045,11 +1045,11 @@ class AssetsFilterQuery(DBFilterQuery):
                 operator=ignored_assets_filter_params[0],
                 values=ignored_assets_filter_params[1],
             ))
-        if evm_chain is not None:
+        if chain_id is not None:
             filters.append(DBEqualsFilter(
                 and_op=True,
                 column='chain',
-                value=evm_chain.serialize_for_db(),
+                value=chain_id.serialize_for_db(),
             ))
         filter_query.filters = filters
         return filter_query

@@ -68,7 +68,7 @@ def test_mint_ens_name(database, ethereum_inquirer):
     erc721_asset = get_or_create_evm_token(  # TODO: Better way to test than this for ERC721 ...?
         userdb=database,
         evm_address='0x57f1887a8BF19b14fC0dF6Fd9B2acc9Af147eA85',
-        chain=ChainID.ETHEREUM,
+        chain_id=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC721,
         evm_inquirer=ethereum_inquirer,
     )

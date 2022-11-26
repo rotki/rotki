@@ -307,7 +307,7 @@ class Compound(EthereumModule):
             try:
                 underlying_asset = symbol_to_asset_or_token(
                     symbol=underlying_symbol,
-                    evm_chain=ChainID.ETHEREUM,
+                    chain_id=ChainID.ETHEREUM,
                 )
             except UnknownAsset:
                 log.error(
@@ -379,7 +379,7 @@ class Compound(EthereumModule):
             try:
                 underlying_asset = symbol_to_asset_or_token(
                     symbol=underlying_symbol,
-                    evm_chain=ChainID.ETHEREUM,
+                    chain_id=ChainID.ETHEREUM,
                 )
             except UnknownAsset:
                 log.error(
@@ -473,7 +473,7 @@ class Compound(EthereumModule):
             try:
                 underlying_asset = symbol_to_asset_or_token(
                     symbol=underlying_symbol,
-                    evm_chain=ChainID.ETHEREUM,
+                    chain_id=ChainID.ETHEREUM,
                 )
             except (UnknownAsset, WrongAssetType):
                 log.error(

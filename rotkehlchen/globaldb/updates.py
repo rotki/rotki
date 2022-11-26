@@ -246,9 +246,9 @@ class AssetsUpdater():
             insert_text=insert_text,
         )
         if chain_value is not None:
-            chain = ChainID(chain_value)
+            chain_id = ChainID(chain_value)
         else:
-            chain = None
+            chain_id = None
 
         token_kind_value = self._parse_optional_str(
             value=match.group(2),
@@ -264,7 +264,7 @@ class AssetsUpdater():
             deserialize_evm_address(self._parse_str(match.group(4), 'address', insert_text)),
             self._parse_optional_int(match.group(5), 'decimals', insert_text),
             self._parse_optional_str(match.group(6), 'protocol', insert_text),
-            chain,
+            chain_id,
             token_kind,
         )
 
@@ -277,11 +277,11 @@ class AssetsUpdater():
         be properly parsed.
         """
         asset_data = self._parse_asset_data(insert_text)
-        address = decimals = protocol = chain = token_kind = None
+        address = decimals = protocol = chain_id = token_kind = None
         if asset_data.asset_type == AssetType.EVM_TOKEN:
-            address, decimals, protocol, chain, token_kind = self._parse_ethereum_token_data(insert_text)  # noqa: E501
+            address, decimals, protocol, chain_id, token_kind = self._parse_ethereum_token_data(insert_text)  # noqa: E501
 
-        # types are not really proper here (except for asset_type, chain and token_kind)
+        # types are not really proper here (except for asset_type, chain_id and token_kind)
         return AssetData(
             identifier=asset_data.identifier,
             name=asset_data.name,
@@ -291,7 +291,7 @@ class AssetsUpdater():
             forked=asset_data.forked,
             swapped_for=asset_data.swapped_for,
             address=address,
-            chain=chain,
+            chain_id=chain_id,
             token_kind=token_kind,
             decimals=decimals,
             cryptocompare=asset_data.cryptocompare,

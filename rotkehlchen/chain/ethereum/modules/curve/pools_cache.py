@@ -90,7 +90,7 @@ def ensure_curve_tokens_existence(
         get_or_create_evm_token(
             userdb=ethereum_inquirer.database,
             evm_address=lp_token_address,
-            chain=ChainID.ETHEREUM,
+            chain_id=ChainID.ETHEREUM,
             evm_inquirer=ethereum_inquirer,
             protocol=CURVE_POOL_PROTOCOL,
         )
@@ -107,7 +107,7 @@ def ensure_curve_tokens_existence(
                 get_or_create_evm_token(
                     userdb=ethereum_inquirer.database,
                     evm_address=token_address,
-                    chain=ChainID.ETHEREUM,
+                    chain_id=ChainID.ETHEREUM,
                     evm_inquirer=ethereum_inquirer,
                 )
         else:
@@ -120,14 +120,14 @@ def ensure_curve_tokens_existence(
                 get_or_create_evm_token(
                     userdb=ethereum_inquirer.database,
                     evm_address=underlying_token_address,
-                    chain=ChainID.ETHEREUM,
+                    chain_id=ChainID.ETHEREUM,
                     evm_inquirer=ethereum_inquirer,
                 )
                 # and ensure token exists
                 get_or_create_evm_token(
                     userdb=ethereum_inquirer.database,
                     evm_address=token_address,
-                    chain=ChainID.ETHEREUM,
+                    chain_id=ChainID.ETHEREUM,
                     evm_inquirer=ethereum_inquirer,
                     underlying_tokens=[UnderlyingToken(
                         address=underlying_token_address,

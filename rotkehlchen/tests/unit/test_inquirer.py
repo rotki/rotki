@@ -302,7 +302,7 @@ def test_price_underlying_tokens(inquirer, globaldb):
     identifier = ethaddress_to_identifier(address)
     token = EvmToken.initialize(
         address=address,
-        chain=ChainID.ETHEREUM,
+        chain_id=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
         decimals=18,
         name='Test',
@@ -331,7 +331,7 @@ def test_find_uniswap_v2_lp_token_price(inquirer, globaldb, ethereum_manager):
     inquirer.inject_evm_managers([(ChainID.ETHEREUM, ethereum_manager)])
     token = EvmToken.initialize(
         address=address,
-        chain=ChainID.ETHEREUM,
+        chain_id=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
         decimals=18,
         name='Uniswap LINK/ETH',
@@ -433,12 +433,12 @@ def test_price_non_ethereum_evm_token(inquirer_defi, globaldb):
     address = string_to_evm_address('0x2656f02bc30427Ed9d380E20CEc5E04F5a7A50FE')
     identifier = evm_address_to_identifier(
         address=address,
-        chain=ChainID.BINANCE,
+        chain_id=ChainID.BINANCE,
         token_type=EvmTokenKind.ERC20,
     )
     token = EvmToken.initialize(
         address=address,
-        chain=ChainID.BINANCE,
+        chain_id=ChainID.BINANCE,
         token_kind=EvmTokenKind.ERC20,
         decimals=18,
         name='SLOUGI',

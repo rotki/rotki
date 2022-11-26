@@ -52,7 +52,7 @@ def fixture_assets_updater(messages_aggregator):
             forked=None,
             swapped_for=None,
             address=string_to_evm_address('0xD178b20c6007572bD1FD01D205cC20D32B4A6015'),  # noqa: E501
-            chain=ChainID.ETHEREUM,
+            chain_id=ChainID.ETHEREUM,
             token_kind=EvmTokenKind.ERC20,
             decimals=18,
             cryptocompare='AIDU',
@@ -90,7 +90,7 @@ def fixture_assets_updater(messages_aggregator):
             forked='421-bbc-FADS-ks',
             swapped_for=None,
             address=None,
-            chain=None,
+            chain_id=None,
             token_kind=None,
             decimals=None,
             cryptocompare='',
@@ -137,7 +137,7 @@ def fixture_assets_updater(messages_aggregator):
             forked=None,
             swapped_for='eip155:1/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6015',
             address=string_to_evm_address('0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C'),  # noqa: E501
-            chain=ChainID.ETHEREUM,
+            chain_id=ChainID.ETHEREUM,
             token_kind=EvmTokenKind.ERC20,
             decimals=18,
             cryptocompare='',
@@ -184,7 +184,7 @@ def fixture_assets_updater(messages_aggregator):
             forked=None,
             swapped_for='eip155:1/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6015',
             address=string_to_evm_address('0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C'),  # noqa: E501
-            chain=ChainID.ETHEREUM,
+            chain_id=ChainID.ETHEREUM,
             token_kind=EvmTokenKind.ERC20,
             decimals=18,
             cryptocompare='',

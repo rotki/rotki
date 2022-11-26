@@ -39,7 +39,7 @@ def add_ethereum_token_to_db(token_data: EvmToken) -> EvmToken:
 def get_or_create_evm_token(
         userdb: 'DBHandler',
         evm_address: ChecksumEvmAddress,
-        chain: ChainID,
+        chain_id: ChainID,
         token_kind: EvmTokenKind = EvmTokenKind.ERC20,
         symbol: Optional[str] = None,
         name: Optional[str] = None,
@@ -69,7 +69,7 @@ def get_or_create_evm_token(
     """
     identifier = evm_address_to_identifier(
         address=evm_address,
-        chain=chain,
+        chain_id=chain_id,
         token_type=token_kind,
     )
     with userdb.get_or_create_evm_token_lock:
@@ -116,7 +116,7 @@ def get_or_create_evm_token(
             # Store the information in the database
             token_data = EvmToken.initialize(
                 address=evm_address,
-                chain=chain,
+                chain_id=chain_id,
                 token_kind=token_kind,
                 name=name,
                 decimals=decimals,
@@ -143,7 +143,7 @@ def get_or_create_evm_token(
 def get_crypto_asset_by_symbol(
         symbol: str,
         asset_type: Optional[AssetType] = None,
-        evm_chain: Optional[ChainID] = None,
+        chain_id: Optional[ChainID] = None,
 ) -> Optional[AssetWithOracles]:
     """Gets an asset by symbol from the DB.
 
@@ -157,7 +157,7 @@ def get_crypto_asset_by_symbol(
     assets_data = GlobalDBHandler().get_assets_with_symbol(
         symbol=symbol,
         asset_type=asset_type,
-        chain=evm_chain,
+        chain_id=chain_id,
     )
     if len(assets_data) != 1:
         return None
@@ -167,7 +167,7 @@ def get_crypto_asset_by_symbol(
 
 def symbol_to_asset_or_token(
         symbol: str,
-        evm_chain: Optional[ChainID] = None,
+        chain_id: Optional[ChainID] = None,
 ) -> AssetWithOracles:
     """Tries to turn the given symbol to an asset or an ethereum Token
 
@@ -180,7 +180,7 @@ def symbol_to_asset_or_token(
         asset = Asset(symbol).resolve_to_asset_with_oracles()
     except UnknownAsset:
         # Let's search by symbol if a single asset matches
-        maybe_asset = get_crypto_asset_by_symbol(symbol=symbol, evm_chain=evm_chain)
+        maybe_asset = get_crypto_asset_by_symbol(symbol=symbol, chain_id=chain_id)
         if maybe_asset is None:
             raise
         asset = maybe_asset
@@ -188,7 +188,7 @@ def symbol_to_asset_or_token(
     return asset
 
 
-def symbol_to_ethereum_token(symbol: str, evm_chain: Optional[ChainID] = None) -> EvmToken:
+def symbol_to_ethereum_token(symbol: str, chain_id: Optional[ChainID] = None) -> EvmToken:
     """Tries to turn the given symbol to an ethereum token
 
     May raise:
@@ -198,7 +198,7 @@ def symbol_to_ethereum_token(symbol: str, evm_chain: Optional[ChainID] = None) -
     maybe_asset = get_crypto_asset_by_symbol(
         symbol=symbol,
         asset_type=AssetType.EVM_TOKEN,
-        evm_chain=evm_chain,
+        chain_id=chain_id,
     )
     if maybe_asset is None:
         raise UnknownAsset(symbol)

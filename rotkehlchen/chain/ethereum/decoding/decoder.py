@@ -137,7 +137,7 @@ class EthereumTransactionDecoder(EVMTransactionDecoder):
                 found_token = get_or_create_evm_token(
                     userdb=self.database,
                     evm_address=tx_log.address,
-                    chain=ChainID.ETHEREUM,
+                    chain_id=ChainID.ETHEREUM,
                     token_kind=token_kind,
                     evm_inquirer=self.evm_inquirer,
                 )
