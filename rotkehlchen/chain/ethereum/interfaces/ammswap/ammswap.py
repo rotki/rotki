@@ -63,7 +63,7 @@ from rotkehlchen.user_messages import MessagesAggregator
 from .graph import BURNS_QUERY, LIQUIDITY_POSITIONS_QUERY, MINTS_QUERY, TOKEN_DAY_DATAS_QUERY
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
 
@@ -81,14 +81,14 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
     def __init__(
             self,
             location: Location,
-            ethereum_manager: 'EthereumManager',
+            ethereum_inquirer: 'EthereumInquirer',
             database: 'DBHandler',
             premium: Optional[Premium],
             msg_aggregator: MessagesAggregator,
             graph: Graph,
     ) -> None:
         self.location = location
-        self.ethereum = ethereum_manager
+        self.ethereum = ethereum_inquirer
         self.database = database
         self.premium = premium
         self.msg_aggregator = msg_aggregator
@@ -296,7 +296,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
                     userdb=self.database,
                     symbol=token0_['symbol'],
                     evm_address=token0_deserialized,
-                    chain=ChainID.ETHEREUM,
+                    chain_id=ChainID.ETHEREUM,
                     name=token0_['name'],
                     decimals=token0_['decimals'],
                 )
@@ -304,7 +304,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
                     userdb=self.database,
                     symbol=token1_['symbol'],
                     evm_address=token1_deserialized,
-                    chain=ChainID.ETHEREUM,
+                    chain_id=ChainID.ETHEREUM,
                     name=token1_['name'],
                     decimals=int(token1_['decimals']),
                 )
@@ -519,7 +519,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
                         userdb=self.database,
                         symbol=token['symbol'],
                         evm_address=deserialized_eth_address,
-                        chain=ChainID.ETHEREUM,
+                        chain_id=ChainID.ETHEREUM,
                         name=token['name'],
                         decimals=int(token['decimals']),
                     )
@@ -587,7 +587,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
                 get_or_create_evm_token(
                     userdb=self.database,
                     evm_address=lp_balance.address,
-                    chain=ChainID.ETHEREUM,
+                    chain_id=ChainID.ETHEREUM,
                     decimals=18,
                     protocol=protocol,
                     name=name,

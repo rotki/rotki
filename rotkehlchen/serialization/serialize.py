@@ -21,7 +21,6 @@ from rotkehlchen.chain.ethereum.modules.aave.aave import (
     AaveLendingBalance,
 )
 from rotkehlchen.chain.ethereum.modules.aave.structures import AaveEvent
-from rotkehlchen.chain.ethereum.modules.adex import ADXStakingHistory
 from rotkehlchen.chain.ethereum.modules.balancer import (
     BalancerBPTEventPoolToken,
     BalancerEvent,
@@ -144,7 +143,6 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             UniswapPool,
             UniswapPoolAsset,
             UniswapPoolEventsBalance,
-            ADXStakingHistory,
             BalancerBPTEventPoolToken,
             BalancerEvent,
             BalancerPoolEventsBalance,

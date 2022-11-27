@@ -3,11 +3,11 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
-from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
+from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.structures import ActionItem
+from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.constants.assets import A_ETH, A_LQTY, A_LUSD
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
@@ -18,8 +18,8 @@ from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 from .constants import CPT_LIQUITY
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.decoding.base import BaseDecoderTools
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
     from rotkehlchen.user_messages import MessagesAggregator
 
 BALANCE_UPDATE = b'\xca#+Z\xbb\x98\x8cT\x0b\x95\x9f\xf6\xc3\xbf\xae>\x97\xff\xf9d\xfd\t\x8cP\x8f\x96\x13\xc0\xa6\xbf\x1a\x80'  # noqa: E501
@@ -44,12 +44,12 @@ class LiquityDecoder(DecoderInterface):
 
     def __init__(
             self,
-            ethereum_manager: 'EthereumManager',
+            ethereum_inquirer: 'EthereumInquirer',
             base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',
     ) -> None:
         super().__init__(
-            ethereum_manager=ethereum_manager,
+            evm_inquirer=ethereum_inquirer,
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
         )
@@ -60,10 +60,10 @@ class LiquityDecoder(DecoderInterface):
 
     def _decode_trove_operations(
             self,
-            tx_log: EthereumTxReceiptLog,
+            tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
             decoded_events: List[HistoryBaseEntry],
-            all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
+            all_logs: List[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: List[ActionItem],  # pylint: disable=unused-argument
     ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
         if tx_log.topics[0] != BALANCE_UPDATE:
@@ -99,10 +99,10 @@ class LiquityDecoder(DecoderInterface):
 
     def _decode_stability_pool_event(
             self,
-            tx_log: EthereumTxReceiptLog,
+            tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
             decoded_events: List[HistoryBaseEntry],
-            all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
+            all_logs: List[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: List[ActionItem],  # pylint: disable=unused-argument
     ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
         if tx_log.topics[0] not in STABILITY_POOL_EVENTS:
@@ -146,10 +146,10 @@ class LiquityDecoder(DecoderInterface):
 
     def _decode_lqty_staking_deposits(
             self,
-            tx_log: EthereumTxReceiptLog,
+            tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
             decoded_events: List[HistoryBaseEntry],
-            all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
+            all_logs: List[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: List[ActionItem],  # pylint: disable=unused-argument
     ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
         if tx_log.topics[0] not in STAKING_LQTY_EVENTS:

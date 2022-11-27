@@ -39,5 +39,4 @@ ETHADDRESS_TO_KNOWN_NAME = {
     string_to_evm_address('0x340d693ED55d7bA167D184ea76Ea2Fd092a35BDc'): 'Uphold.com',
 }
 
-CPT_GAS = 'gas'
 CPT_GNOSIS_CHAIN = 'gnosis-chain'

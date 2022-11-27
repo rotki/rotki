@@ -835,7 +835,7 @@ def test_exporting_user_assets_list(rotkehlchen_api_server, globaldb, with_custo
         asset_type=AssetType.EVM_TOKEN,
         data=EvmToken.initialize(
             address=eth_address,
-            chain=ChainID.ETHEREUM,
+            chain_id=ChainID.ETHEREUM,
             token_kind=EvmTokenKind.ERC20,
             decimals=18,
             name='yabirtoken',
@@ -871,7 +871,7 @@ def test_exporting_user_assets_list(rotkehlchen_api_server, globaldb, with_custo
             assert data['assets'][0] == {
                 'identifier': identifier,
                 'name': 'yabirtoken',
-                'chain': 'ethereum',
+                'chain_id': 1,  # ethereum
                 'asset_type': 'evm token',
                 'decimals': 18,
                 'symbol': 'YAB',

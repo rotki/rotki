@@ -195,7 +195,7 @@ def upgrade_ethereum_asset_ids_v3(cursor: 'DBCursor') -> EVM_TUPLES_CREATION_TYP
     for entry in query:
         new_id = evm_address_to_identifier(
             address=entry[0],
-            chain=ChainID.ETHEREUM,
+            chain_id=ChainID.ETHEREUM,
             token_type=EvmTokenKind.ERC20,
             collectible_id=None,
         )
@@ -288,13 +288,13 @@ def translate_underlying_table(cursor: 'DBCursor') -> List[Tuple[str, str, str]]
     for row in query:
         new_address = evm_address_to_identifier(
             address=row[0],
-            chain=ChainID.ETHEREUM,
+            chain_id=ChainID.ETHEREUM,
             token_type=EvmTokenKind.ERC20,
             collectible_id=None,
         )
         new_parent = evm_address_to_identifier(
             address=row[2],
-            chain=ChainID.ETHEREUM,
+            chain_id=ChainID.ETHEREUM,
             token_type=EvmTokenKind.ERC20,
             collectible_id=None,
         )

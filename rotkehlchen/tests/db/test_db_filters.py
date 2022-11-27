@@ -7,7 +7,7 @@ from rotkehlchen.db.filtering import (
     DBFilterQuery,
     DBLocationFilter,
     DBTimestampFilter,
-    ETHTransactionsFilterQuery,
+    EvmTransactionsFilterQuery,
 )
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.types import Location, Timestamp
@@ -15,7 +15,7 @@ from rotkehlchen.types import Location, Timestamp
 
 def test_ethereum_transaction_filter():
     addresses = [make_ethereum_address()]
-    filter_query = ETHTransactionsFilterQuery.make(
+    filter_query = EvmTransactionsFilterQuery.make(
         limit=10,
         offset=10,
         addresses=addresses,
@@ -23,7 +23,7 @@ def test_ethereum_transaction_filter():
         to_ts=Timestamp(999),
     )
     query, bindings = filter_query.prepare()
-    assert query == ' INNER JOIN ethtx_address_mappings WHERE ethereum_transactions.tx_hash=ethtx_address_mappings.tx_hash AND ethtx_address_mappings.address IN (?)  AND ((timestamp >= ? AND timestamp <= ?)) ORDER BY timestamp ASC LIMIT 10 OFFSET 10'  # noqa: E501
+    assert query == ' INNER JOIN evmtx_address_mappings WHERE evm_transactions.tx_hash=evmtx_address_mappings.tx_hash AND evmtx_address_mappings.address IN (?)  AND ((timestamp >= ? AND timestamp <= ?)) ORDER BY timestamp ASC LIMIT 10 OFFSET 10'  # noqa: E501
     assert bindings == [
         addresses[0],
         filter_query.from_ts,
@@ -57,9 +57,9 @@ def test_filter_arguments(and_op, order_by, pagination):
     query, bindings = filter_query.prepare()
 
     if and_op:
-        expected_query = ' INNER JOIN ethtx_address_mappings WHERE ethereum_transactions.tx_hash=ethtx_address_mappings.tx_hash AND ethtx_address_mappings.address IN (?,?)  AND ((timestamp >= ? AND timestamp <= ?) AND (location=?))'  # noqa: E501
+        expected_query = ' INNER JOIN evmtx_address_mappings WHERE evm_transactions.tx_hash=evmtx_address_mappings.tx_hash AND evmtx_address_mappings.address IN (?,?)  AND ((timestamp >= ? AND timestamp <= ?) AND (location=?))'  # noqa: E501
     else:
-        expected_query = ' INNER JOIN ethtx_address_mappings WHERE ethereum_transactions.tx_hash=ethtx_address_mappings.tx_hash AND ethtx_address_mappings.address IN (?,?)  AND ((timestamp >= ? AND timestamp <= ?) OR (location=?))'  # noqa: E501
+        expected_query = ' INNER JOIN evmtx_address_mappings WHERE evm_transactions.tx_hash=evmtx_address_mappings.tx_hash AND evmtx_address_mappings.address IN (?,?)  AND ((timestamp >= ? AND timestamp <= ?) OR (location=?))'  # noqa: E501
 
     if order_by:
         expected_query += ' ORDER BY timestamp ASC'

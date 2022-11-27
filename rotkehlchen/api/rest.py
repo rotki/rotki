@@ -69,7 +69,6 @@ from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.ethereum.names import find_ens_mappings, search_for_addresses_names
 from rotkehlchen.chain.ethereum.types import WeightedNode
 from rotkehlchen.chain.evm.manager import EvmManager
-from rotkehlchen.chain.evm.tokens import EvmTokens
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.limits import (
     FREE_ASSET_MOVEMENTS_LIMIT,
@@ -91,15 +90,19 @@ from rotkehlchen.constants.misc import (
 from rotkehlchen.constants.resolver import ChainID, evm_address_to_identifier
 from rotkehlchen.data_import.manager import DataImportSource
 from rotkehlchen.db.addressbook import DBAddressbook
-from rotkehlchen.db.constants import HISTORY_MAPPING_CUSTOMIZED
+from rotkehlchen.db.constants import (
+    HISTORY_MAPPING_KEY_CHAINID,
+    HISTORY_MAPPING_KEY_STATE,
+    HISTORY_MAPPING_STATE_CUSTOMIZED,
+)
 from rotkehlchen.db.custom_assets import DBCustomAssets
-from rotkehlchen.db.ethtx import DBEthTx
+from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
     AssetsFilterQuery,
     CustomAssetsFilterQuery,
     Eth2DailyStatsFilterQuery,
-    ETHTransactionsFilterQuery,
+    EvmTransactionsFilterQuery,
     HistoryEventFilterQuery,
     LedgerActionsFilterQuery,
     LevenshteinFilterQuery,
@@ -1014,10 +1017,21 @@ class RestAPI():
         db = DBHistoryEvents(self.rotkehlchen.data.db)
         with self.rotkehlchen.data.db.user_write() as cursor:
             try:
-                identifier = db.add_history_event(cursor, event, mapping_value=HISTORY_MAPPING_CUSTOMIZED)  # noqa: E501
+                identifier = db.add_history_event(
+                    cursor,
+                    event,
+                    mapping_values={
+                        HISTORY_MAPPING_KEY_STATE: HISTORY_MAPPING_STATE_CUSTOMIZED,
+                        HISTORY_MAPPING_KEY_CHAINID: ChainID.ETHEREUM.serialize_for_db(),
+                    },
+                )
             except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
                 error_msg = f'Failed to add event to the DB due to a DB error: {str(e)}'
                 return api_response(wrap_in_fail_result(error_msg), status_code=HTTPStatus.CONFLICT)  # noqa: E501
+
+        if identifier is None:
+            error_msg = 'Failed to add event to the DB. It already exists'
+            return api_response(wrap_in_fail_result(error_msg), status_code=HTTPStatus.CONFLICT)
 
         # success
         result_dict = _wrap_in_ok_result({'identifier': identifier})
@@ -1482,17 +1496,17 @@ class RestAPI():
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     @staticmethod
-    def get_custom_ethereum_tokens(
+    def get_custom_evm_tokens(
             address: Optional[ChecksumEvmAddress],
-            chain: Optional[ChainID],
+            chain_id: ChainID,
     ) -> Response:
-        if address is not None and chain is not None:
+        if address is not None:
             token = GlobalDBHandler().get_evm_token(
                 address=address,
-                chain=chain,
+                chain_id=chain_id,
             )
             if token is None:
-                result = wrap_in_fail_result(f'Custom token with address {address} and chain {chain} not found')  # noqa: E501
+                result = wrap_in_fail_result(f'Custom token with address {address} and chain {chain_id.to_name()} not found')  # noqa: E501
                 status_code = HTTPStatus.NOT_FOUND
             else:
                 result = _wrap_in_ok_result(token.to_dict())
@@ -1501,7 +1515,7 @@ class RestAPI():
             return api_response(result, status_code)
 
         # else return all custom tokens
-        tokens = GlobalDBHandler().get_ethereum_tokens()
+        tokens = GlobalDBHandler().get_evm_tokens(chain_id=chain_id)
         return api_response(
             _wrap_in_ok_result([x.to_dict() for x in tokens]),
             status_code=HTTPStatus.OK,
@@ -1520,7 +1534,7 @@ class RestAPI():
 
         with self.rotkehlchen.data.db.user_write() as cursor:
             # clean token detection cache.
-            cursor.execute('DELETE from accounts_details;')
+            cursor.execute('DELETE from evm_accounts_details;')
             self.rotkehlchen.data.db.add_asset_identifiers(cursor, [token.identifier])
 
         return api_response(
@@ -1546,7 +1560,7 @@ class RestAPI():
     def delete_custom_ethereum_token(
             self,
             address: ChecksumEvmAddress,
-            chain: ChainID,
+            chain_id: ChainID,
     ) -> Response:
         try:
             with self.rotkehlchen.data.db.user_write() as cursor:
@@ -1554,12 +1568,12 @@ class RestAPI():
                 self.rotkehlchen.data.db.update_owned_assets_in_globaldb(cursor)
                 identifier = evm_address_to_identifier(
                     address=address,
-                    chain=chain,
+                    chain_id=chain_id,
                     token_type=EvmTokenKind.ERC20,
                 )
                 self.rotkehlchen.data.db.delete_asset_identifier(cursor, identifier)
                 with GlobalDBHandler().conn.write_ctx() as gcursor:
-                    identifier = GlobalDBHandler().delete_evm_token(write_cursor=gcursor, address=address, chain=chain)  # noqa: E501
+                    identifier = GlobalDBHandler().delete_evm_token(write_cursor=gcursor, address=address, chain_id=chain_id)  # noqa: E501
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
@@ -2606,54 +2620,54 @@ class RestAPI():
         result_dict = _wrap_in_result(result, msg)
         return api_response(result_dict, status_code=status_code)
 
-    def get_web3_nodes(self, blockchain: SupportedBlockchain) -> Response:
-        nodes = self.rotkehlchen.data.db.get_web3_nodes(blockchain=blockchain)
+    def get_rpc_nodes(self, blockchain: SupportedBlockchain) -> Response:
+        nodes = self.rotkehlchen.data.db.get_rpc_nodes(blockchain=blockchain)
         result_dict = _wrap_in_ok_result(process_result_list(list(nodes)))
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
-    def add_web3_node(self, node: WeightedNode) -> Response:
+    def add_rpc_node(self, node: WeightedNode) -> Response:
         try:
-            self.rotkehlchen.data.db.add_web3_node(node)
+            self.rotkehlchen.data.db.add_rpc_node(node)
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
         # Update the connected nodes
-        nodes_to_connect = self.rotkehlchen.data.db.get_web3_nodes(
+        nodes_to_connect = self.rotkehlchen.data.db.get_rpc_nodes(
             blockchain=node.node_info.blockchain,
             only_active=True,
         )
         manager = self.rotkehlchen.chains_aggregator.get_chain_manager(node.node_info.blockchain)
-        manager.connect_to_multiple_nodes(nodes_to_connect)
+        manager.node_inquirer.connect_to_multiple_nodes(nodes_to_connect)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    def update_web3_node(self, node: WeightedNode) -> Response:
+    def update_rpc_node(self, node: WeightedNode) -> Response:
         try:
-            self.rotkehlchen.data.db.update_web3_node(node)
+            self.rotkehlchen.data.db.update_rpc_node(node)
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
         # Update the connected nodes
-        nodes_to_connect = self.rotkehlchen.data.db.get_web3_nodes(
+        nodes_to_connect = self.rotkehlchen.data.db.get_rpc_nodes(
             blockchain=node.node_info.blockchain,
             only_active=True,
         )
         manager = self.rotkehlchen.chains_aggregator.get_chain_manager(node.node_info.blockchain)
-        manager.connect_to_multiple_nodes(nodes_to_connect)
+        manager.node_inquirer.connect_to_multiple_nodes(nodes_to_connect)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    def delete_web3_node(self, identifier: int, blockchain: SupportedBlockchain) -> Response:
+    def delete_rpc_node(self, identifier: int, blockchain: SupportedBlockchain) -> Response:
         try:
-            self.rotkehlchen.data.db.delete_web3_node(identifier=identifier, blockchain=blockchain)
+            self.rotkehlchen.data.db.delete_rpc_node(identifier=identifier, blockchain=blockchain)
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
         # Update the connected nodes
-        nodes_to_connect = self.rotkehlchen.data.db.get_web3_nodes(
+        nodes_to_connect = self.rotkehlchen.data.db.get_rpc_nodes(
             blockchain=blockchain,
             only_active=True,
         )
         manager = self.rotkehlchen.chains_aggregator.get_chain_manager(blockchain)  # type: ignore
-        manager.connect_to_multiple_nodes(nodes_to_connect)
+        manager.node_inquirer.connect_to_multiple_nodes(nodes_to_connect)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     def purge_module_data(self, module_name: Optional[ModuleName]) -> Response:
@@ -2977,33 +2991,6 @@ class RestAPI():
             to_timestamp=to_timestamp,
         )
 
-    def get_adex_balances(self, async_query: bool) -> Response:
-        return self._api_query_for_eth_module(
-            async_query=async_query,
-            module_name='adex',
-            method='get_balances_dont_break_frontend',
-            query_specific_balances_before=None,
-            addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('adex'),
-        )
-
-    def get_adex_history(
-            self,
-            async_query: bool,
-            reset_db_data: bool,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-    ) -> Response:
-        return self._api_query_for_eth_module(
-            async_query=async_query,
-            module_name='adex',
-            method='get_history',
-            query_specific_balances_before=None,
-            addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('adex'),
-            reset_db_data=reset_db_data,
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp,
-        )
-
     def get_loopring_balances(self, async_query: bool) -> Response:
         return self._api_query_for_eth_module(
             async_query=async_query,
@@ -3152,17 +3139,17 @@ class RestAPI():
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     def purge_ethereum_transaction_data(self) -> Response:
-        DBEthTx(self.rotkehlchen.data.db).purge_ethereum_transaction_data()
+        DBEvmTx(self.rotkehlchen.data.db).purge_evm_transaction_data(chain=SupportedBlockchain.ETHEREUM)  # noqa: E501
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     def _get_ethereum_transactions(
             self,
             only_cache: bool,
-            filter_query: ETHTransactionsFilterQuery,
+            filter_query: EvmTransactionsFilterQuery,
             event_params: Dict[str, Any],
     ) -> Dict[str, Any]:
         try:
-            transactions, total_filter_count = self.rotkehlchen.eth_transactions.query(
+            transactions, total_filter_count = self.rotkehlchen.chains_aggregator.ethereum.transactions.query(  # noqa: E501
                 only_cache=only_cache,
                 filter_query=filter_query,
                 has_premium=self.rotkehlchen.premium is not None,
@@ -3204,7 +3191,7 @@ class RestAPI():
                         has_premium=True,  # for this function we don't limit. We only limit txs.
                     )
 
-                    customized_event_ids = dbevents.get_customized_event_identifiers(cursor)
+                    customized_event_ids = dbevents.get_customized_event_identifiers(cursor=cursor, chain_id=ChainID.ETHEREUM)  # noqa: E501
                     entries_result.append({
                         'entry': entry.serialize(),
                         'decoded_events': [
@@ -3224,7 +3211,8 @@ class RestAPI():
                 'entries_found': total_filter_count,
                 'entries_total': self.rotkehlchen.data.db.get_entries_count(
                     cursor=cursor,
-                    entries_table='ethereum_transactions',
+                    entries_table='evm_transactions',
+                    chain_id=ChainID.ETHEREUM.serialize_for_db(),
                 ),
                 'entries_limit': FREE_ETH_TX_LIMIT if self.rotkehlchen.premium is None else -1,
             }
@@ -3235,7 +3223,7 @@ class RestAPI():
             self,
             async_query: bool,
             only_cache: bool,
-            filter_query: ETHTransactionsFilterQuery,
+            filter_query: EvmTransactionsFilterQuery,
             event_params: Dict[str, Any],
     ) -> Response:
         if async_query is True:
@@ -3273,7 +3261,7 @@ class RestAPI():
         If the tx_hashes argument is provided then the USD price for their events will be queried.
         """
         try:
-            decoded_events = self.rotkehlchen.eth_tx_decoder.decode_transaction_hashes(
+            decoded_events = self.rotkehlchen.chains_aggregator.ethereum.transactions_decoder.decode_transaction_hashes(  # noqa: E501
                 ignore_cache=ignore_cache,
                 tx_hashes=tx_hashes,
             )
@@ -3322,10 +3310,10 @@ class RestAPI():
         return api_response(process_result(result_dict), status_code=status_code)
 
     def _decode_pending_ethereum_transactions(self) -> Dict[str, Any]:
-        dbethtx = DBEthTx(self.rotkehlchen.data.db)
-        amount_of_tx_to_decode = dbethtx.count_hashes_not_decoded()
+        dbevmtx = DBEvmTx(self.rotkehlchen.data.db)
+        amount_of_tx_to_decode = dbevmtx.count_hashes_not_decoded()
         if amount_of_tx_to_decode > 0:
-            self.rotkehlchen.eth_tx_decoder.get_and_decode_undecoded_transactions()
+            self.rotkehlchen.chains_aggregator.ethereum.transactions_decoder.get_and_decode_undecoded_transactions()  # noqa: E501
 
         return {
             'result': {'decoded_tx_number': amount_of_tx_to_decode},
@@ -3647,7 +3635,7 @@ class RestAPI():
     def _get_token_info(self, address: ChecksumEvmAddress) -> Dict[str, Any]:
         eth_manager = self.rotkehlchen.chains_aggregator.ethereum
         try:
-            info = eth_manager.get_erc20_contract_info(address=address)
+            info = eth_manager.node_inquirer.get_erc20_contract_info(address=address)
         except BadFunctionCallOutput:
             return wrap_in_fail_result(
                 f'Address {address} seems to not be a deployed contract',
@@ -4430,7 +4418,7 @@ class RestAPI():
         mappings_to_send: Dict[ChecksumEvmAddress, str] = {}
         try:
             mappings_to_send = find_ens_mappings(
-                ethereum_manager=self.rotkehlchen.chains_aggregator.ethereum,
+                ethereum_inquirer=self.rotkehlchen.chains_aggregator.ethereum.node_inquirer,
                 addresses=addresses,
                 ignore_cache=ignore_cache,
             )
@@ -4509,7 +4497,7 @@ class RestAPI():
         return api_response(
             result={
                 # Converting to list since set is not json serializable
-                'result': list(self.rotkehlchen.eth_tx_decoder.all_counterparties),
+                'result': list(self.rotkehlchen.chains_aggregator.ethereum.transactions_decoder.all_counterparties),  # noqa: E501
                 'message': '',
             },
         )
@@ -4586,12 +4574,8 @@ class RestAPI():
             addresses: List[ChecksumEvmAddress],
             manager: EvmManager,
     ) -> Dict[str, Any]:
-        evmtokens = EvmTokens(
-            database=self.rotkehlchen.data.db,
-            manager=manager,
-        )
         try:
-            account_tokens_info = evmtokens.detect_tokens(
+            account_tokens_info = manager.tokens.detect_tokens(
                 only_cache=only_cache,
                 addresses=addresses,
             )

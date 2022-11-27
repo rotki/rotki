@@ -2,7 +2,7 @@ import copy
 import logging
 import random
 from collections import defaultdict
-from typing import TYPE_CHECKING, Callable, DefaultDict, Dict, List, NamedTuple, Set, Tuple
+from typing import Callable, DefaultDict, Dict, List, NamedTuple, Set, Tuple
 
 import gevent
 
@@ -12,7 +12,7 @@ from rotkehlchen.chain.aggregator import ChainsAggregator
 from rotkehlchen.chain.ethereum.utils import should_update_curve_cache
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.db.ethtx import DBEthTx
+from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import DBEqualsFilter, DBIgnoreValuesFilter, HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.api import PremiumAuthenticationError
@@ -39,9 +39,6 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
-
-if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.decoding import EVMTransactionDecoder
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -84,7 +81,6 @@ class TaskManager():
             premium_sync_manager: Optional[PremiumSyncManager],
             chains_aggregator: ChainsAggregator,
             exchange_manager: ExchangeManager,
-            eth_tx_decoder: 'EVMTransactionDecoder',
             deactivate_premium: Callable[[], None],
             activate_premium: Callable[[Premium], None],
             query_balances: Callable,
@@ -97,7 +93,6 @@ class TaskManager():
         self.database = database
         self.cryptocompare = cryptocompare
         self.exchange_manager = exchange_manager
-        self.eth_tx_decoder = eth_tx_decoder
         self.cryptocompare_queries: Set[CCHistoQuery] = set()
         self.chains_aggregator = chains_aggregator
         self.last_xpub_derivation_ts = 0
@@ -270,16 +265,17 @@ class TaskManager():
                 return None
 
             now = ts_now()
-            dbethtx = DBEthTx(self.database)
+            dbevmtx = DBEvmTx(self.database)
             queriable_accounts = []
             for account in accounts:
-                _, end_ts = dbethtx.get_queried_range(cursor, account)
+                _, end_ts = dbevmtx.get_queried_range(cursor, account, SupportedBlockchain.ETHEREUM)  # noqa: E501
                 if now - max(self.last_eth_tx_query_ts[account], end_ts) > ETH_TX_QUERY_FREQUENCY:
                     queriable_accounts.append(account)
 
         if len(queriable_accounts) == 0:
             return None
 
+        ethereum = self.chains_aggregator.get_chain_manager(SupportedBlockchain.ETHEREUM)
         address = random.choice(queriable_accounts)
         task_name = f'Query ethereum transactions for {address}'
         log.debug(f'Scheduling task to {task_name}')
@@ -288,7 +284,7 @@ class TaskManager():
             after_seconds=None,
             task_name=task_name,
             exception_is_error=True,
-            method=self.eth_tx_decoder.transactions.single_address_query_transactions,
+            method=ethereum.transactions.single_address_query_transactions,
             address=address,
             start_ts=0,
             end_ts=now,
@@ -301,18 +297,19 @@ class TaskManager():
         But the DB query will happen again inside the query task while having the
         lock acquired.
         """
-        dbethtx = DBEthTx(self.database)
-        hash_results = dbethtx.get_transaction_hashes_no_receipt(tx_filter_query=None, limit=TX_RECEIPTS_QUERY_LIMIT)  # noqa: E501
+        dbevmtx = DBEvmTx(self.database)
+        hash_results = dbevmtx.get_transaction_hashes_no_receipt(tx_filter_query=None, limit=TX_RECEIPTS_QUERY_LIMIT)  # noqa: E501
         if len(hash_results) == 0:
             return None
 
+        ethereum = self.chains_aggregator.get_chain_manager(SupportedBlockchain.ETHEREUM)
         task_name = f'Query {len(hash_results)} ethereum transactions receipts'
         log.debug(f'Scheduling task to {task_name}')
         return self.greenlet_manager.spawn_and_track(
             after_seconds=None,
             task_name=task_name,
             exception_is_error=True,
-            method=self.eth_tx_decoder.transactions.get_receipts_for_transactions_missing_them,
+            method=ethereum.transactions.get_receipts_for_transactions_missing_them,
             limit=TX_RECEIPTS_QUERY_LIMIT,
         )
 
@@ -427,16 +424,17 @@ class TaskManager():
         But the DB query will happen again inside the query task while having the
         lock acquired.
         """
-        dbethtx = DBEthTx(self.database)
-        amount_of_tx_to_decode = dbethtx.count_hashes_not_decoded()
+        dbevmtx = DBEvmTx(self.database)
+        amount_of_tx_to_decode = dbevmtx.count_hashes_not_decoded()
         if amount_of_tx_to_decode > 0:
+            ethereum = self.chains_aggregator.get_chain_manager(SupportedBlockchain.ETHEREUM)
             task_name = f'decode {amount_of_tx_to_decode} evm trasactions'
             log.debug(f'Scheduling periodic task to {task_name}')
             return self.greenlet_manager.spawn_and_track(
                 after_seconds=None,
                 task_name=task_name,
                 exception_is_error=True,
-                method=self.eth_tx_decoder.get_and_decode_undecoded_transactions,
+                method=ethereum.transactions_decoder.get_and_decode_undecoded_transactions,
                 limit=TX_DECODING_LIMIT,
             )
         return None
@@ -528,12 +526,13 @@ class TaskManager():
         """Function that schedules curve pools update task if either there is no curve pools cache
         yet or this cache has expired (i.e. it's been more than a week since last update)."""
         if should_update_curve_cache() is True:
+            ethereum = self.chains_aggregator.get_chain_manager(SupportedBlockchain.ETHEREUM)
             return self.greenlet_manager.spawn_and_track(
                 after_seconds=None,
                 task_name='Update curve pools cache',
                 exception_is_error=True,
                 method=self.update_curve_pools_cache,
-                tx_decoder=self.eth_tx_decoder,
+                tx_decoder=ethereum.transactions_decoder,
             )
 
         return None

@@ -43,8 +43,8 @@ from rotkehlchen.chain.bitcoin.bch.utils import validate_bch_address_input
 from rotkehlchen.chain.bitcoin.hdkey import HDKey, XpubType
 from rotkehlchen.chain.bitcoin.utils import is_valid_btc_address, scriptpubkey_to_btc_address
 from rotkehlchen.chain.constants import NON_BITCOIN_CHAINS
-from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
+from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.ethereum.types import ETHERSCAN_NODE_NAME
 from rotkehlchen.chain.substrate.types import (
     KusamaAddress,
@@ -65,7 +65,7 @@ from rotkehlchen.db.filtering import (
     AssetsFilterQuery,
     CustomAssetsFilterQuery,
     Eth2DailyStatsFilterQuery,
-    ETHTransactionsFilterQuery,
+    EvmTransactionsFilterQuery,
     HistoryEventFilterQuery,
     LedgerActionsFilterQuery,
     LevenshteinFilterQuery,
@@ -277,7 +277,7 @@ class EthereumTransactionQuerySchema(
         exclude_ignored_assets = data['exclude_ignored_assets']
         event_types = data['event_types']
         event_subtypes = data['event_subtypes']
-        filter_query = ETHTransactionsFilterQuery.make(
+        filter_query = EvmTransactionsFilterQuery.make(
             order_by_rules=create_order_by_rules_list(data),
             limit=data['limit'],
             offset=data['offset'],
@@ -1418,7 +1418,7 @@ def _validate_blockchain_account_schemas(
 
 
 def _transform_btc_or_bch_address(
-        ethereum: EthereumManager,
+        ethereum_inquirer: EthereumInquirer,
         given_address: str,
         blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
 ) -> BTCAddress:
@@ -1430,7 +1430,7 @@ def _transform_btc_or_bch_address(
         return BTCAddress(given_address)
 
     try:
-        resolved_address = ethereum.ens_lookup(
+        resolved_address = ethereum_inquirer.ens_lookup(
             given_address,
             blockchain=blockchain,
         )
@@ -1462,7 +1462,7 @@ def _transform_btc_or_bch_address(
 
 
 def _transform_eth_address(
-        ethereum: EthereumManager,
+        ethereum_inquirer: EthereumInquirer,
         given_address: str,
 ) -> ChecksumEvmAddress:
     try:
@@ -1471,7 +1471,7 @@ def _transform_eth_address(
         # Validation will only let .eth names come here.
         # So let's see if it resolves to anything
         try:
-            resolved_address = ethereum.ens_lookup(given_address)
+            resolved_address = ethereum_inquirer.ens_lookup(given_address)
         except (RemoteError, InputError) as e:
             raise ValidationError(
                 f'Given ENS address {given_address} could not be resolved for Ethereum'
@@ -1493,7 +1493,7 @@ def _transform_eth_address(
 
 @overload
 def _transform_substrate_address(
-        ethereum: EthereumManager,
+        ethereum_inquirer: EthereumInquirer,
         given_address: str,
         chain: Literal['Kusama'],
 ) -> KusamaAddress:
@@ -1502,7 +1502,7 @@ def _transform_substrate_address(
 
 @overload
 def _transform_substrate_address(
-        ethereum: EthereumManager,
+        ethereum_inquirer: EthereumInquirer,
         given_address: str,
         chain: Literal['Polkadot'],
 ) -> PolkadotAddress:
@@ -1510,7 +1510,7 @@ def _transform_substrate_address(
 
 
 def _transform_substrate_address(
-        ethereum: EthereumManager,
+        ethereum_inquirer: EthereumInquirer,
         given_address: str,
         chain: Literal['Kusama', 'Polkadot'],
 ) -> Union[KusamaAddress, PolkadotAddress]:
@@ -1535,7 +1535,7 @@ def _transform_substrate_address(
             return KusamaAddress(given_address)
 
     try:
-        resolved_address = ethereum.ens_lookup(
+        resolved_address = ethereum_inquirer.ens_lookup(
             given_address,
             blockchain=SupportedBlockchain.POLKADOT if chain == 'Polkadot' else SupportedBlockchain.KUSAMA,  # noqa: E501
         )
@@ -1582,9 +1582,9 @@ class BlockchainAccountsPatchSchema(Schema):
     blockchain = BlockchainField(required=True, exclude_types=(SupportedBlockchain.ETHEREUM_BEACONCHAIN,))  # noqa: E501
     accounts = fields.List(fields.Nested(BlockchainAccountDataSchema), required=True)
 
-    def __init__(self, ethereum_manager: EthereumManager):
+    def __init__(self, ethereum_inquirer: EthereumInquirer):
         super().__init__()
-        self.ethereum_manager = ethereum_manager
+        self.ethereum_inquirer = ethereum_inquirer
 
     @validates_schema
     def validate_schema(  # pylint: disable=no-self-use
@@ -1603,27 +1603,27 @@ class BlockchainAccountsPatchSchema(Schema):
         if data['blockchain'] in (SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH):
             for idx, account in enumerate(data['accounts']):
                 data['accounts'][idx]['address'] = _transform_btc_or_bch_address(
-                    ethereum=self.ethereum_manager,
+                    ethereum_inquirer=self.ethereum_inquirer,
                     given_address=account['address'],
                     blockchain=data['blockchain'],
                 )
         if data['blockchain'] in (SupportedBlockchain.ETHEREUM, SupportedBlockchain.AVALANCHE):
             for idx, account in enumerate(data['accounts']):
                 data['accounts'][idx]['address'] = _transform_eth_address(
-                    ethereum=self.ethereum_manager,
+                    ethereum_inquirer=self.ethereum_inquirer,
                     given_address=account['address'],
                 )
         if data['blockchain'] == SupportedBlockchain.KUSAMA:
             for idx, account in enumerate(data['accounts']):
                 data['accounts'][idx]['address'] = _transform_substrate_address(
-                    ethereum=self.ethereum_manager,
+                    ethereum_inquirer=self.ethereum_inquirer,
                     given_address=account['address'],
                     chain='Kusama',
                 )
         if data['blockchain'] == SupportedBlockchain.POLKADOT:
             for idx, account in enumerate(data['accounts']):
                 data['accounts'][idx]['address'] = _transform_substrate_address(
-                    ethereum=self.ethereum_manager,
+                    ethereum_inquirer=self.ethereum_inquirer,
                     given_address=account['address'],
                     chain='Polkadot',
                 )
@@ -1639,9 +1639,9 @@ class BlockchainAccountsDeleteSchema(AsyncQueryArgumentSchema):
     blockchain = BlockchainField(required=True, exclude_types=(SupportedBlockchain.ETHEREUM_BEACONCHAIN,))  # noqa: E501
     accounts = fields.List(fields.String(), required=True)
 
-    def __init__(self, ethereum_manager: EthereumManager):
+    def __init__(self, ethereum_inquirer: EthereumInquirer):
         super().__init__()
-        self.ethereum_manager = ethereum_manager
+        self.ethereum_inquirer = ethereum_inquirer
 
     @validates_schema
     def validate_blockchain_accounts_delete_schema(  # pylint: disable=no-self-use
@@ -1659,22 +1659,22 @@ class BlockchainAccountsDeleteSchema(AsyncQueryArgumentSchema):
     ) -> Any:
         if data['blockchain'] in (SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH):
             data['accounts'] = [
-                _transform_btc_or_bch_address(self.ethereum_manager, x, data['blockchain'])
+                _transform_btc_or_bch_address(self.ethereum_inquirer, x, data['blockchain'])
                 for x in data['accounts']
             ]
         if data['blockchain'] in (SupportedBlockchain.ETHEREUM, SupportedBlockchain.AVALANCHE):
             data['accounts'] = [
-                _transform_eth_address(self.ethereum_manager, x) for x in data['accounts']
+                _transform_eth_address(self.ethereum_inquirer, x) for x in data['accounts']
             ]
         if data['blockchain'] == SupportedBlockchain.KUSAMA:
             data['accounts'] = [
                 _transform_substrate_address(
-                    self.ethereum_manager, x, 'Kusama') for x in data['accounts']
+                    self.ethereum_inquirer, x, 'Kusama') for x in data['accounts']
             ]
         if data['blockchain'] == SupportedBlockchain.POLKADOT:
             data['accounts'] = [
                 _transform_substrate_address(
-                    self.ethereum_manager, x, 'Polkadot') for x in data['accounts']
+                    self.ethereum_inquirer, x, 'Polkadot') for x in data['accounts']
             ]
         return data
 
@@ -1694,17 +1694,21 @@ class IgnoredActionsModifySchema(Schema):
 
 class OptionalEthereumAddressSchema(Schema):
     address = EthereumAddressField(required=False, load_default=None)
-    chain = SerializableEnumField(enum_class=ChainID, required=False, load_default=None)
+    chain_id = SerializableEnumField(
+        enum_class=ChainID,
+        required=False,
+        load_default=ChainID.ETHEREUM,
+    )
 
 
 class RequiredEthereumAddressSchema(Schema):
     address = EthereumAddressField(required=True)
-    chain = SerializableEnumField(enum_class=ChainID, required=True)
+    chain_id = SerializableEnumField(enum_class=ChainID, required=True)
 
 
 class OptionalEvmTokenInformationSchema(Schema):
     address = EthereumAddressField(required=False)
-    chain = SerializableEnumField(enum_class=ChainID, required=False)
+    chain_id = SerializableEnumField(enum_class=ChainID, required=False)
     token_kind = SerializableEnumField(enum_class=EvmTokenKind, required=False)
 
 
@@ -1852,7 +1856,7 @@ class AssetsPostSchema(DBPaginationSchema, DBOrderBySchema):
 
 class AssetsSearchLevenshteinSchema(Schema):
     value = fields.String(required=True)
-    evm_chain = SerializableEnumField(enum_class=ChainID, load_default=None)
+    chain_id = SerializableEnumField(enum_class=ChainID, load_default=None)
     limit = fields.Integer(required=True)
     search_nfts = fields.Boolean(load_default=False)
 
@@ -1865,7 +1869,7 @@ class AssetsSearchLevenshteinSchema(Schema):
         filter_query = LevenshteinFilterQuery.make(
             and_op=True,
             substring_search=data['value'].strip().casefold(),
-            chain_id=data['evm_chain'],
+            chain_id=data['chain_id'],
         )
         return {
             'filter_query': filter_query,
@@ -1898,7 +1902,7 @@ class AssetsSearchByColumnSchema(DBOrderBySchema, DBPaginationSchema):
             substring_search=data['value'].strip(),
             search_column=data['search_column'],
             return_exact_matches=data['return_exact_matches'],
-            chain_id=data['evm_chain'],
+            chain_id=data['chain_id'],
         )
         return {'filter_query': filter_query}
 
@@ -2536,11 +2540,11 @@ class SnapshotEditingSchema(Schema):
             )
 
 
-class Web3NodeSchema(Schema):
+class RpcNodeSchema(Schema):
     blockchain = BlockchainField(required=True, exclude_types=(SupportedBlockchain.ETHEREUM_BEACONCHAIN,))  # noqa: E501
 
 
-class Web3AddNodeSchema(Schema):
+class RpcAddNodeSchema(Schema):
     blockchain = BlockchainField(required=True, exclude_types=(SupportedBlockchain.ETHEREUM_BEACONCHAIN,))  # noqa: E501
     name = fields.String(
         required=True,
@@ -2555,7 +2559,7 @@ class Web3AddNodeSchema(Schema):
     active = fields.Boolean(load_default=False)
 
 
-class Web3NodeEditSchema(Web3AddNodeSchema):
+class RpcNodeEditSchema(RpcAddNodeSchema):
     name = fields.String(
         required=True,
         validate=webargs.validate.NoneOf(
@@ -2584,7 +2588,7 @@ class Web3NodeEditSchema(Web3AddNodeSchema):
             )
 
 
-class Web3NodeListDeleteSchema(Schema):
+class RpcNodeListDeleteSchema(Schema):
     blockchain = BlockchainField(required=True, exclude_types=(SupportedBlockchain.ETHEREUM_BEACONCHAIN,))  # noqa: E501
     identifier = fields.Integer(required=True)
 

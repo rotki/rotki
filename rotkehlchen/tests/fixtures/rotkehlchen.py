@@ -164,7 +164,7 @@ def initialize_mock_rotkehlchen_instance(
     data_unlock_patch = patch.object(rotki.data, 'unlock', side_effect=augmented_unlock)
 
     eth_rpcconnect_patch = patch(
-        'rotkehlchen.db.dbhandler.DBHandler.get_web3_nodes',
+        'rotkehlchen.db.dbhandler.DBHandler.get_rpc_nodes',
         return_value=ethereum_manager_connect_at_start,
     )
 
@@ -246,8 +246,8 @@ def initialize_mock_rotkehlchen_instance(
         default_mock_value=default_mock_price_value,
     )
     wait_until_all_nodes_connected(
-        ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
-        ethereum=rotki.chains_aggregator.ethereum,
+        connect_at_start=ethereum_manager_connect_at_start,
+        evm_inquirer=rotki.chains_aggregator.ethereum.node_inquirer,
     )
     wait_until_all_substrate_nodes_connected(
         substrate_manager_connect_at_start=kusama_manager_connect_at_start,

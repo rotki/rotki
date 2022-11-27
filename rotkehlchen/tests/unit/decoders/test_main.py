@@ -3,16 +3,16 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt
+from rotkehlchen.chain.evm.structures import EvmTxReceipt
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.db.ethtx import DBEthTx
-from rotkehlchen.types import EvmTransaction, Location, deserialize_evm_tx_hash
+from rotkehlchen.db.evmtx import DBEvmTx
+from rotkehlchen.types import ChainID, EvmTransaction, Location, deserialize_evm_tx_hash
 
 
-def test_decoders_initialization(evm_transaction_decoder):
+def test_decoders_initialization(ethereum_transaction_decoder):
     """Make sure that all decoders we have created are detected and initialized"""
-    assert set(evm_transaction_decoder.decoders.keys()) == {
+    assert set(ethereum_transaction_decoder.decoders.keys()) == {
         'Aavev1',
         'Airdrops',
         'Compound',
@@ -37,7 +37,7 @@ def test_decoders_initialization(evm_transaction_decoder):
         'Weth',
     }
 
-    assert evm_transaction_decoder.all_counterparties == {
+    assert ethereum_transaction_decoder.all_counterparties == {
         'kyber legacy',
         'element-finance',
         'badger',
@@ -67,7 +67,6 @@ def test_decoders_initialization(evm_transaction_decoder):
         'compound',
         'dxdaomesa',
         '1inch-v1',
-        'convex',
         'sushiswap-v2',
         'weth',
     }
@@ -77,7 +76,7 @@ def test_decoders_initialization(evm_transaction_decoder):
 def test_no_logs_and_zero_eth(
         database,
         ethereum_accounts,
-        evm_transaction_decoder,
+        ethereum_transaction_decoder,
 ):
     """
     Data taken from
@@ -88,6 +87,7 @@ def test_no_logs_and_zero_eth(
     sender = '0xF99973C9F33793cb83a4590daF15b36F0ab62228'
     transaction = EvmTransaction(
         tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
         timestamp=0,
         block_number=0,
         from_address=sender,
@@ -99,17 +99,18 @@ def test_no_logs_and_zero_eth(
         input_data=b'',
         nonce=0,
     )
-    receipt = EthereumTxReceipt(
+    receipt = EvmTxReceipt(
         tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
         type=0,
         logs=[],
     )
-    dbethtx = DBEthTx(database)
+    dbevmtx = DBEvmTx(database)
     with database.user_write() as cursor:
-        dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
-        events = evm_transaction_decoder.decode_transaction(
+        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        events = ethereum_transaction_decoder.decode_transaction(
             write_cursor=cursor,
             transaction=transaction,
             tx_receipt=receipt,

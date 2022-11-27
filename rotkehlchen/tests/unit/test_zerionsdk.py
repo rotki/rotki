@@ -17,7 +17,7 @@ from rotkehlchen.tests.utils.ethereum import (
     'USDT': FVal('1'),
 }])
 def test_query_all_protocol_balances_for_account(
-        ethereum_manager,
+        ethereum_inquirer,
         function_scope_messages_aggregator,
         inquirer,  # pylint: disable=unused-argument
         ethereum_manager_connect_at_start,
@@ -34,10 +34,10 @@ def test_query_all_protocol_balances_for_account(
     we can have something stable to check again.
     """
     wait_until_all_nodes_connected(
-        ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
-        ethereum=ethereum_manager,
+        connect_at_start=ethereum_manager_connect_at_start,
+        evm_inquirer=ethereum_inquirer,
     )
-    zerion = ZerionSDK(ethereum_manager, function_scope_messages_aggregator, database)
+    zerion = ZerionSDK(ethereum_inquirer, function_scope_messages_aggregator, database)
     balances = zerion.all_balances_for_account('0xf753beFE986e8Be8EBE7598C9d2b6297D9DD6662')
 
     if len(balances) == 0:
@@ -52,14 +52,14 @@ def test_query_all_protocol_balances_for_account(
 
 
 def test_protocol_names_are_known(
-        ethereum_manager,
+        ethereum_inquirer,
         function_scope_messages_aggregator,
         inquirer,  # pylint: disable=unused-argument
         database,
 ):
-    zerion = ZerionSDK(ethereum_manager, function_scope_messages_aggregator, database)
+    zerion = ZerionSDK(ethereum_inquirer, function_scope_messages_aggregator, database)
     protocol_names = zerion.contract.call(
-        manager=zerion.ethereum,
+        node_inquirer=zerion.ethereum,
         method_name='getProtocolNames',
         arguments=[],
     )

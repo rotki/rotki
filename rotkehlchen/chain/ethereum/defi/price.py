@@ -53,7 +53,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.types import Price
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 
 
 CURVEFI_YSWAP = EthereumConstants().contract('CURVEFI_YSWAP')
@@ -79,7 +79,7 @@ HARVEST_VAULTS = (
 
 
 def _handle_yearn_curve_vault(
-        ethereum: 'EthereumManager',
+        ethereum: 'EthereumInquirer',
         curve_contract: EvmContract,
         yearn_contract: EvmContract,
         div_decimals: int,
@@ -109,7 +109,7 @@ def _handle_yearn_curve_vault(
 
 
 def _handle_curvepool_price(
-        ethereum: 'EthereumManager',
+        ethereum: 'EthereumInquirer',
         contract: EvmContract,
         div_decimals: int,
         asset_price: FVal,
@@ -136,7 +136,7 @@ def _handle_curvepool_price(
 
 
 def handle_underlying_price_yearn_vault(
-        ethereum: 'EthereumManager',
+        ethereum: 'EthereumInquirer',
         contract: EvmContract,
         div_decimals: int,
         asset_price: Price,
@@ -148,7 +148,7 @@ def handle_underlying_price_yearn_vault(
 
 
 def handle_underlying_price_harvest_vault(
-        ethereum: 'EthereumManager',
+        ethereum: 'EthereumInquirer',
         token: EvmToken,
         underlying_asset_price: Price,
 ) -> FVal:
@@ -163,7 +163,7 @@ def handle_underlying_price_harvest_vault(
 
 
 def handle_defi_price_query(
-        ethereum: 'EthereumManager',
+        ethereum: 'EthereumInquirer',
         token: EvmToken,
         underlying_asset_price: Optional[Price],
 ) -> Optional[FVal]:

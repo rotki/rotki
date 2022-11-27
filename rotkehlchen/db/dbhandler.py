@@ -40,15 +40,6 @@ from rotkehlchen.chain.bitcoin.xpub import (
 from rotkehlchen.chain.ethereum.interfaces.ammswap.types import EventType, LiquidityPoolEvent
 from rotkehlchen.chain.ethereum.modules.aave.common import atoken_to_asset
 from rotkehlchen.chain.ethereum.modules.aave.structures import AaveEvent, aave_event_from_db
-from rotkehlchen.chain.ethereum.modules.adex import (
-    ADEX_EVENTS_PREFIX,
-    AdexEventType,
-    Bond,
-    ChannelWithdraw,
-    Unbond,
-    UnbondRequest,
-    deserialize_adex_event_from_db,
-)
 from rotkehlchen.chain.ethereum.modules.balancer import BALANCER_EVENTS_PREFIX
 from rotkehlchen.chain.ethereum.modules.sushiswap import SUSHISWAP_EVENTS_PREFIX
 from rotkehlchen.chain.ethereum.modules.uniswap import UNISWAP_EVENTS_PREFIX
@@ -63,15 +54,15 @@ from rotkehlchen.constants.limits import (
 from rotkehlchen.constants.misc import NFT_DIRECTIVE, ONE, ZERO
 from rotkehlchen.constants.timing import HOUR_IN_SECONDS
 from rotkehlchen.db.constants import (
-    ACCOUNTS_DETAILS_LAST_QUERIED_TS,
-    ACCOUNTS_DETAILS_TOKENS,
     BINANCE_MARKETS_KEY,
+    EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS,
+    EVM_ACCOUNTS_DETAILS_TOKENS,
     KRAKEN_ACCOUNT_TYPE_KEY,
     USER_CREDENTIAL_MAPPING_KEYS,
 )
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType, DBCursor
 from rotkehlchen.db.eth2 import ETH2_DEPOSITS_PREFIX
-from rotkehlchen.db.ethtx import DBEthTx
+from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
     TradesFilterQuery,
@@ -101,7 +92,6 @@ from rotkehlchen.db.utils import (
     form_query_to_filter_timestamps,
     insert_tag_mappings,
     is_valid_db_blockchain_account,
-    need_cursor,
     need_writable_cursor,
     str_to_bool,
 )
@@ -125,6 +115,7 @@ from rotkehlchen.types import (
     BlockchainAccountData,
     BlockchainAddress,
     BTCAddress,
+    ChainID,
     ChecksumEvmAddress,
     ExchangeApiCredentials,
     ExternalService,
@@ -155,10 +146,9 @@ DBTupleType = Literal[
     'trade',
     'asset_movement',
     'margin_position',
-    'ethereum_transaction',
+    'evm_transaction',
     'amm_swap',
     'accounting_event',
-    'history_event',
 ]
 
 # Tuples that contain first the name of a table and then the columns that
@@ -172,7 +162,6 @@ TABLES_WITH_ASSETS = (
     ('asset_movements', 'asset', 'fee_asset'),
     ('ledger_actions', 'asset', 'rate_asset'),
     ('amm_events', 'token0_identifier', 'token1_identifier'),
-    ('adex_events', 'token'),
     ('balancer_events', 'pool_address_token'),
     ('timed_balances', 'currency'),
 )
@@ -216,17 +205,12 @@ def db_tuple_to_str(
             f'Margin position with id {data[0]} in  {Location.deserialize_from_db(data[1])} '
             f'for {data[5]} closed at timestamp {data[3]}'
         )
-    if tuple_type == 'ethereum_transaction':
-        return f'Ethereum transaction with hash "{data[0].hex()}"'
+    if tuple_type == 'evm_transaction':
+        return f'EVM transaction with hash "{data[0].hex()}" and chain id {data[1]}'
     if tuple_type == 'amm_swap':
         return (
             f'AMM swap with id {data[0]}-{data[1]} '
             f'in {Location.deserialize_from_db(data[6])} '
-        )
-    if tuple_type == 'history_event':
-        return (
-            f'History event with event identifier {data[0]} from '
-            f'{Location.deserialize_from_db(data[3])}.'
         )
 
     raise AssertionError('db_tuple_to_str() called with invalid tuple_type {tuple_type}')
@@ -851,99 +835,6 @@ class DBHandler:
         write_cursor.execute('DELETE FROM aave_events;')
         write_cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "aave_events%";')
 
-    def add_adex_events(
-            self,
-            write_cursor: 'DBCursor',
-            events: Sequence[Union[Bond, Unbond, UnbondRequest, ChannelWithdraw]],
-    ) -> None:
-        query = (
-            """
-            INSERT INTO adex_events (
-                tx_hash,
-                address,
-                identity_address,
-                timestamp,
-                type,
-                pool_id,
-                amount,
-                usd_value,
-                bond_id,
-                nonce,
-                slashed_at,
-                unlock_at,
-                channel_id,
-                token,
-                log_index
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """
-        )
-        for event in events:
-            event_tuple = event.to_db_tuple()
-            try:
-                write_cursor.execute(query, event_tuple)
-            except sqlcipher.IntegrityError:  # pylint: disable=no-member
-                self.msg_aggregator.add_warning(
-                    f'Tried to add an AdEx event that already exists in the DB. '
-                    f'Event data: {event_tuple}. Skipping event.',
-                )
-                continue
-
-    # pylint: disable=no-self-use
-    @need_cursor('conn.read_ctx')
-    def get_adex_events(
-            self,
-            cursor: 'DBCursor',
-            from_timestamp: Optional[Timestamp] = None,
-            to_timestamp: Optional[Timestamp] = None,
-            address: Optional[ChecksumEvmAddress] = None,
-            bond_id: Optional[str] = None,
-            event_type: Optional[AdexEventType] = None,
-    ) -> List[Union[Bond, Unbond, UnbondRequest, ChannelWithdraw]]:
-        """Returns a list of AdEx events optionally filtered by time and address.
-        """
-        query = 'SELECT * FROM adex_events '
-        # Timestamp filters are omitted, done via `form_query_to_filter_timestamps`
-        filters = []
-        if address is not None:
-            filters.append(f'address="{address}" ')
-        if bond_id is not None:
-            filters.append(f'bond_id="{bond_id}"')
-        if event_type is not None:
-            filters.append(f'type="{str(event_type)}"')
-
-        if filters:
-            query += 'WHERE '
-            query += 'AND '.join(filters)
-
-        query, bindings = form_query_to_filter_timestamps(
-            query=query,
-            timestamp_attribute='timestamp',
-            from_ts=from_timestamp,
-            to_ts=to_timestamp,
-        )
-        events = []
-        cursor.execute(query, bindings)
-        for event_tuple in cursor:
-            try:
-                event = deserialize_adex_event_from_db(event_tuple)
-            except DeserializationError as e:
-                self.msg_aggregator.add_error(
-                    f'Error deserializing AdEx event from the DB. Skipping event. '
-                    f'Error was: {str(e)}',
-                )
-                continue
-            events.append(event)
-
-        return events
-
-    def delete_adex_events_data(self, write_cursor: 'DBCursor') -> None:
-        """Delete all historical AdEx events data"""
-        write_cursor.execute('DELETE FROM adex_events;')
-        write_cursor.execute(
-            'DELETE FROM used_query_ranges WHERE name LIKE ?', (f'{ADEX_EVENTS_PREFIX}%',),
-        )
-
     def delete_balancer_events_data(self, write_cursor: 'DBCursor') -> None:
         """Delete all historical Balancer events data"""
         write_cursor.execute('DELETE FROM balancer_events;')
@@ -1043,7 +934,6 @@ class DBHandler:
                 self.delete_sushiswap_events_data(cursor)
                 self.delete_balancer_events_data(cursor)
                 self.delete_aave_data(cursor)
-                self.delete_adex_events_data(cursor)
                 self.delete_yearn_vaults_data(write_cursor=cursor, version=1)
                 self.delete_yearn_vaults_data(write_cursor=cursor, version=2)
                 self.delete_loopring_data(cursor)
@@ -1060,8 +950,6 @@ class DBHandler:
                 self.delete_balancer_events_data(cursor)
             elif module_name == 'aave':
                 self.delete_aave_data(cursor)
-            elif module_name == 'adex':
-                self.delete_adex_events_data(cursor)
             elif module_name == 'yearn_vaults':
                 self.delete_yearn_vaults_data(write_cursor=cursor, version=1)
             elif module_name == 'yearn_vaults_v2':
@@ -1275,16 +1163,28 @@ class DBHandler:
         May raise:
         - InputError if any of the given accounts to delete did not exist
         """
+        # Assure all are there
+        accounts_number = write_cursor.execute(
+            f'SELECT COUNT(*) from blockchain_accounts WHERE blockchain = ? '
+            f'AND account IN ({",".join("?"*len(accounts))})',
+            (blockchain.value, *accounts),
+        ).fetchone()[0]
+        if accounts_number != len(accounts):
+            raise InputError(
+                f'Tried to remove {len(accounts) - accounts_number} '
+                f'{blockchain.value} accounts that do not exist',
+            )
+
+        tuples = [(blockchain.value, x) for x in accounts]
+        account_tuples = [(x,) for x in accounts]
+
         # First remove all transaction related information for this address.
         # Needs to happen before the address is removed since removing the address
-        # will also remove ethtx_address_mappings, thus making it impossible
+        # will also remove evmtx_address_mappings, thus making it impossible
         # to figure out which transactions are touched by this address
         if blockchain == SupportedBlockchain.ETHEREUM:
             for address in accounts:
                 self.delete_data_for_ethereum_address(write_cursor, address)  # type: ignore
-
-        tuples = [(blockchain.value, x) for x in accounts]
-        account_tuples = [(x,) for x in accounts]
 
         write_cursor.executemany(
             'DELETE FROM tag_mappings WHERE '
@@ -1294,12 +1194,6 @@ class DBHandler:
             'DELETE FROM blockchain_accounts WHERE '
             'blockchain = ? and account = ?;', tuples,
         )
-        affected_rows = write_cursor.rowcount
-        if affected_rows != len(accounts):
-            raise InputError(
-                f'Tried to remove {len(accounts) - affected_rows} '
-                f'{blockchain.value} accounts that do not exist',
-            )
 
     def get_tokens_for_address(
             self,
@@ -1315,15 +1209,15 @@ class DBHandler:
         ignored_assets = self.get_ignored_assets(cursor)
         last_queried_ts = None
         cursor.execute(
-            'SELECT key, value FROM accounts_details WHERE account=? AND blockchain=? AND (key=? OR key=?)',  # noqa: E501
-            (address, blockchain.serialize(), ACCOUNTS_DETAILS_LAST_QUERIED_TS, ACCOUNTS_DETAILS_TOKENS),  # noqa: E501
+            'SELECT key, value FROM evm_accounts_details WHERE account=? AND chain_id=? AND (key=? OR key=?)',  # noqa: E501
+            (address, blockchain.to_chain_id().serialize_for_db(), EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS, EVM_ACCOUNTS_DETAILS_TOKENS),  # noqa: E501
         )
 
         returned_list = []
         for (key, value) in cursor:
-            if key == ACCOUNTS_DETAILS_LAST_QUERIED_TS:
+            if key == EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS:
                 last_queried_ts = deserialize_timestamp(value)
-            else:  # should be ACCOUNTS_DETAILS_TOKENS
+            else:  # should be EVM_ACCOUNTS_DETAILS_TOKENS
                 try:
                     # This method is used directly when querying the balances and it is easier
                     # to resolve the token here
@@ -1355,11 +1249,12 @@ class DBHandler:
     ) -> None:
         """Saves detected tokens for an address"""
         now = ts_now()
-        insert_rows: List[Tuple[ChecksumEvmAddress, str, str, Union[str, Timestamp]]] = [
+        chain_id = blockchain.to_chain_id().serialize_for_db()
+        insert_rows: List[Tuple[ChecksumEvmAddress, int, str, Union[str, Timestamp]]] = [
             (
                 address,
-                blockchain.serialize(),
-                ACCOUNTS_DETAILS_TOKENS,
+                chain_id,
+                EVM_ACCOUNTS_DETAILS_TOKENS,
                 x.identifier,
             )
             for x in tokens
@@ -1368,20 +1263,20 @@ class DBHandler:
         insert_rows.append(
             (
                 address,
-                blockchain.serialize(),
-                ACCOUNTS_DETAILS_LAST_QUERIED_TS,
+                chain_id,
+                EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS,
                 now,
             ),
         )
         # Delete previous entries for tokens
         write_cursor.execute(
-            'DELETE FROM accounts_details WHERE account=? AND blockchain=? AND KEY=?',
-            (address, blockchain.serialize(), ACCOUNTS_DETAILS_TOKENS),
+            'DELETE FROM evm_accounts_details WHERE account=? AND chain_id=? AND KEY=?',
+            (address, chain_id, EVM_ACCOUNTS_DETAILS_TOKENS),
         )
         # Timestamp will get replaced
         write_cursor.executemany(
-            'INSERT OR REPLACE INTO accounts_details '
-            '(account, blockchain, key, value) VALUES (?, ?, ?, ?)',
+            'INSERT OR REPLACE INTO evm_accounts_details '
+            '(account, chain_id, key, value) VALUES (?, ?, ?, ?)',
             insert_rows,
         )
 
@@ -1902,14 +1797,18 @@ class DBHandler:
             tuples: Sequence[Tuple[Any, ...]],
             **kwargs: Optional[ChecksumEvmAddress],
     ) -> None:
+        """When used for inputting transactions make sure that for one write it's
+        all for the same chain id"""
         relevant_address = kwargs.get('relevant_address')
         try:
             write_cursor.executemany(query, tuples)
             if relevant_address is not None:
-                mapping_tuples = [(relevant_address, x[0], 'ETH') for x in tuples]
+                # chain_id should always be the same so perform lookup out of the loop
+                blockchain = ChainID(tuples[0][1]).to_blockchain().value
+                mapping_tuples = [(relevant_address, x[0], x[1], blockchain) for x in tuples]  # noqa: E501
                 write_cursor.executemany(
-                    'INSERT OR IGNORE INTO ethtx_address_mappings(address, tx_hash, blockchain) '
-                    'VALUES(?, ?, ?)',
+                    'INSERT OR IGNORE INTO evmtx_address_mappings(address, tx_hash, chain_id, blockchain) '  # noqa: E501
+                    'VALUES(?, ?, ?, ?)',
                     mapping_tuples,
                 )
         except sqlcipher.IntegrityError:  # pylint: disable=no-member
@@ -1920,13 +1819,14 @@ class DBHandler:
                 try:
                     write_cursor.execute(query, entry)
                     if relevant_address is not None:
+                        blockchain = ChainID(entry[1]).to_blockchain().value
                         write_cursor.execute(
-                            'INSERT OR IGNORE INTO ethtx_address_mappings '
-                            '(address, tx_hash, blockchain) VALUES(?, ?, ?)',
-                            (relevant_address, entry[0], 'ETH'),
+                            'INSERT OR IGNORE INTO evmtx_address_mappings '
+                            '(address, tx_hash, chain_id, blockchain) VALUES(?, ?, ?, ?)',
+                            (relevant_address, entry[0], entry[1], blockchain),
                         )
                 except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
-                    if tuple_type == 'ethereum_transaction':
+                    if tuple_type == 'evm_transaction':
                         # if we reach here it means the transaction is already in the DB
                         # But this can't be avoided with the way we query etherscan
                         # right now since we don't query transactions in a specific
@@ -1934,10 +1834,11 @@ class DBHandler:
                         # Also if we have transactions of one account sending to the
                         # other and both accounts are being tracked.
                         if relevant_address is not None:
+                            blockchain = ChainID(entry[1]).to_blockchain().value
                             write_cursor.execute(
-                                'INSERT OR IGNORE INTO ethtx_address_mappings '
-                                '(address, tx_hash, blockchain) VALUES(?, ?, ?)',
-                                (relevant_address, entry[0], 'ETH'),
+                                'INSERT OR IGNORE INTO evmtx_address_mappings '
+                                '(address, tx_hash, chain_id, blockchain) VALUES(?, ?, ?, ?)',
+                                (relevant_address, entry[0], entry[1], blockchain),
                             )
                         string_repr = db_tuple_to_str(entry, tuple_type)
                         log.debug(
@@ -2130,7 +2031,7 @@ class DBHandler:
             entries_table: Literal[
                 'asset_movements',
                 'trades',
-                'ethereum_transactions',
+                'evm_transactions',
                 'ledger_actions',
                 'eth2_daily_staking_details',
                 'entries_notes',
@@ -2144,7 +2045,7 @@ class DBHandler:
         cursorstr = f'SELECT COUNT(*) from {entries_table}'
         if len(kwargs) != 0:
             cursorstr += ' WHERE'
-        op.join([f' {arg} = "{val}" ' for arg, val in kwargs.items()])
+            cursorstr += op.join([f' {arg} = "{val}" ' for arg, val in kwargs.items()])
         cursorstr += ';'
         cursor.execute(cursorstr)
         return cursor.fetchone()[0]
@@ -2158,10 +2059,6 @@ class DBHandler:
         write_cursor.execute('DELETE FROM used_query_ranges WHERE name = ?', (f'aave_events_{address}',))  # noqa: E501
         write_cursor.execute(
             'DELETE FROM used_query_ranges WHERE name = ?',
-            (f'{ADEX_EVENTS_PREFIX}_{address}',),
-        )
-        write_cursor.execute(
-            'DELETE FROM used_query_ranges WHERE name = ?',
             (f'{BALANCER_EVENTS_PREFIX}_{address}',),
         )
         write_cursor.execute(
@@ -2172,9 +2069,8 @@ class DBHandler:
             'DELETE FROM used_query_ranges WHERE name = ?',
             (f'{ETH2_DEPOSITS_PREFIX}_{address}',),
         )
-        write_cursor.execute('DELETE FROM accounts_details WHERE account = ?', (address,))
+        write_cursor.execute('DELETE FROM evm_accounts_details WHERE account = ?', (address,))
         write_cursor.execute('DELETE FROM aave_events WHERE address = ?', (address,))
-        write_cursor.execute('DELETE FROM adex_events WHERE address = ?', (address,))
         write_cursor.execute('DELETE FROM balancer_events WHERE address=?;', (address,))
         write_cursor.execute('DELETE FROM amm_events WHERE address=?;', (address,))
         write_cursor.execute(
@@ -2184,8 +2080,8 @@ class DBHandler:
         loopring = DBLoopring(self)
         loopring.remove_accountid_mapping(write_cursor, address)
 
-        dbtx = DBEthTx(self)
-        dbtx.delete_transactions(write_cursor, address)
+        dbtx = DBEvmTx(self)
+        dbtx.delete_transactions(write_cursor=write_cursor, address=address, chain=SupportedBlockchain.ETHEREUM)  # noqa: E501
         write_cursor.execute('DELETE FROM eth2_deposits WHERE from_address=?;', (address,))
 
     def add_trades(self, write_cursor: 'DBCursor', trades: List[Trade]) -> None:
@@ -3203,7 +3099,7 @@ class DBHandler:
         now = ts_now()
         return now - last_save > period
 
-    def get_web3_nodes(
+    def get_rpc_nodes(
             self,
             blockchain: SupportedBlockchain,
             only_active: bool = False,
@@ -3214,10 +3110,10 @@ class DBHandler:
         """
         with self.conn.read_ctx() as cursor:
             if only_active:
-                cursor.execute('SELECT identifier, name, endpoint, owned, weight, active, blockchain FROM web3_nodes WHERE blockchain=? AND active=1 AND (CAST(weight as decimal) != 0 OR owned == 1) ORDER BY name;', (blockchain.value,))  # noqa: E501
+                cursor.execute('SELECT identifier, name, endpoint, owned, weight, active, blockchain FROM rpc_nodes WHERE blockchain=? AND active=1 AND (CAST(weight as decimal) != 0 OR owned == 1) ORDER BY name;', (blockchain.value,))  # noqa: E501
             else:
                 cursor.execute(
-                    'SELECT identifier, name, endpoint, owned, weight, active, blockchain FROM web3_nodes WHERE blockchain=? ORDER BY name;', (blockchain.value,),  # noqa: E501
+                    'SELECT identifier, name, endpoint, owned, weight, active, blockchain FROM rpc_nodes WHERE blockchain=? ORDER BY name;', (blockchain.value,),  # noqa: E501
                 )
             return [
                 WeightedNode(
@@ -3234,7 +3130,7 @@ class DBHandler:
                 for entry in cursor
             ]
 
-    def _rebalance_web3_nodes_weights(
+    def _rebalance_rpc_nodes_weights(
             self,
             write_cursor: 'DBCursor',
             proportion_to_share: FVal,
@@ -3249,10 +3145,10 @@ class DBHandler:
         In case of deletion it's omitted and `None`is passed.
         """
         if exclude_identifier is None:
-            write_cursor.execute('SELECT identifier, weight FROM web3_nodes WHERE owned=0 AND blockchain=?', (blockchain.value,))  # noqa: E501
+            write_cursor.execute('SELECT identifier, weight FROM rpc_nodes WHERE owned=0 AND blockchain=?', (blockchain.value,))  # noqa: E501
         else:
             write_cursor.execute(
-                'SELECT identifier, weight FROM web3_nodes WHERE identifier !=? AND owned=0 AND blockchain=?',  # noqa: E501
+                'SELECT identifier, weight FROM rpc_nodes WHERE identifier !=? AND owned=0 AND blockchain=?',  # noqa: E501
                 (exclude_identifier, blockchain.value),
             )
         new_weights = []
@@ -3267,39 +3163,42 @@ class DBHandler:
             new_weights.append((str(new_weight), node_id))
 
         write_cursor.executemany(
-            'UPDATE web3_nodes SET weight=? WHERE identifier=?',
+            'UPDATE rpc_nodes SET weight=? WHERE identifier=?',
             new_weights,
         )
 
-    def add_web3_node(self, node: WeightedNode) -> None:
+    def add_rpc_node(self, node: WeightedNode) -> None:
         """
-        Adds a new web3 node.
+        Adds a new rpc node.
         """
         with self.user_write() as cursor:
             try:
                 cursor.execute(
-                    'INSERT INTO web3_nodes(name, endpoint, owned, active, weight, blockchain) VALUES (?, ?, ?, ?, ?, ?)',   # noqa: E501
+                    'INSERT INTO rpc_nodes(name, endpoint, owned, active, weight, blockchain) VALUES (?, ?, ?, ?, ?, ?)',   # noqa: E501
                     node.serialize_for_db(),
                 )
             except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
-                raise InputError(f'Node with name {node.node_info.name} already exists in db') from e  # noqa: E501
-            self._rebalance_web3_nodes_weights(
+                raise InputError(
+                    f'Node for {node.node_info.blockchain} with name {node.node_info.name} '
+                    f'already exists in db',
+                ) from e
+            self._rebalance_rpc_nodes_weights(
                 write_cursor=cursor,
                 proportion_to_share=ONE - node.weight,
                 exclude_identifier=cursor.lastrowid,
                 blockchain=node.node_info.blockchain,
             )
 
-    def update_web3_node(self, node: WeightedNode) -> None:
+    def update_rpc_node(self, node: WeightedNode) -> None:
         """
-        Edits an existing web3 node.
+        Edits an existing rpc node.
         Note: we don't allow editing the blockchain field.
         May raise:
         - InputError if no entry with such
         """
         with self.user_write() as cursor:
             cursor.execute(
-                'UPDATE web3_nodes SET name=?, endpoint=?, owned=?, active=?, weight=? WHERE identifier=? AND blockchain=?',  # noqa: E501
+                'UPDATE rpc_nodes SET name=?, endpoint=?, owned=?, active=?, weight=? WHERE identifier=? AND blockchain=?',  # noqa: E501
                 (
                     node.node_info.name,
                     node.node_info.endpoint,
@@ -3314,23 +3213,23 @@ class DBHandler:
             if cursor.rowcount == 0:
                 raise InputError(f'Node with identifier {node.identifier} doesn\'t exist')
 
-            self._rebalance_web3_nodes_weights(
+            self._rebalance_rpc_nodes_weights(
                 write_cursor=cursor,
                 proportion_to_share=ONE - node.weight,
                 exclude_identifier=node.identifier,
                 blockchain=node.node_info.blockchain,
             )
 
-    def delete_web3_node(self, identifier: int, blockchain: SupportedBlockchain) -> None:
-        """Delete a web3 node by identifier and blockchain.
+    def delete_rpc_node(self, identifier: int, blockchain: SupportedBlockchain) -> None:
+        """Delete a rpc node by identifier and blockchain.
         May raise:
         - InputError if no entry with such identifier is in the database.
         """
         with self.user_write() as cursor:
-            cursor.execute('DELETE FROM web3_nodes WHERE identifier=? AND blockchain=?', (identifier, blockchain.value))   # noqa: E501
+            cursor.execute('DELETE FROM rpc_nodes WHERE identifier=? AND blockchain=?', (identifier, blockchain.value))   # noqa: E501
             if cursor.rowcount == 0:
                 raise InputError(f'node with id {identifier} and blockchain {blockchain.value} was not found in the database')  # noqa: E501
-            self._rebalance_web3_nodes_weights(
+            self._rebalance_rpc_nodes_weights(
                 write_cursor=cursor,
                 proportion_to_share=ONE,
                 exclude_identifier=None,

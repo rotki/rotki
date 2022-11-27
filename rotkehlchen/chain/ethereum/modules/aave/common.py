@@ -17,7 +17,7 @@ from rotkehlchen.user_messages import MessagesAggregator
 from .structures import AaveEvent
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
 
 
@@ -85,7 +85,7 @@ def atoken_to_asset(atoken: EvmToken) -> Optional[CryptoAsset]:
         result = cursor.execute(
             'SELECT A.address from evm_tokens as A LEFT OUTER JOIN common_asset_details as B '
             'ON A.identifier=B.identifier WHERE A.chain=? AND B.symbol=? COLLATE NOCASE',
-            (atoken.chain.serialize_for_db(), asset_symbol),
+            (atoken.chain_id.serialize_for_db(), asset_symbol),
         ).fetchall()
     if len(result) != 1:
         log.error(f'Could not find asset from {atoken} since multiple or no results were returned')
@@ -143,12 +143,12 @@ class AaveInquirer():
 
     def __init__(
             self,
-            ethereum_manager: 'EthereumManager',
+            ethereum_inquirer: 'EthereumInquirer',
             database: 'DBHandler',
             premium: Optional[Premium],
             msg_aggregator: MessagesAggregator,
     ) -> None:
-        self.ethereum = ethereum_manager
+        self.ethereum = ethereum_inquirer
         self.database = database
         self.msg_aggregator = msg_aggregator
         self.premium = premium

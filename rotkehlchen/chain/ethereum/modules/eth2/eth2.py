@@ -37,7 +37,7 @@ from .structures import (
 from .utils import scrape_validator_daily_stats
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
     from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery
@@ -52,7 +52,7 @@ class Eth2(EthereumModule):
 
     def __init__(
             self,
-            ethereum_manager: 'EthereumManager',
+            ethereum_inquirer: 'EthereumInquirer',
             database: 'DBHandler',
             premium: Optional[Premium],
             msg_aggregator: MessagesAggregator,
@@ -60,7 +60,7 @@ class Eth2(EthereumModule):
     ) -> None:
         self.database = database
         self.premium = premium
-        self.ethereum = ethereum_manager
+        self.ethereum = ethereum_inquirer
         self.msg_aggregator = msg_aggregator
         self.beaconchain = beaconchain
         self.last_stats_query_ts = 0

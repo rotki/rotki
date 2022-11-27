@@ -88,7 +88,7 @@ def deserialize_bpt_event(
             userdb=userdb,
             symbol=token_symbol,
             evm_address=token_address,
-            chain=ChainID.ETHEREUM,
+            chain_id=ChainID.ETHEREUM,
             name=token_name,
             decimals=token_decimals,
         )
@@ -102,7 +102,7 @@ def deserialize_bpt_event(
     pool_address_token = get_or_create_evm_token(
         userdb=userdb,
         evm_address=pool_address,
-        chain=ChainID.ETHEREUM,
+        chain_id=ChainID.ETHEREUM,
         symbol='BPT',
         protocol='balancer',
         decimals=18,  # all BPT tokens have 18 decimals
@@ -209,7 +209,7 @@ def deserialize_pool_share(
             userdb=userdb,
             symbol=token_symbol,
             evm_address=token_address,
-            chain=ChainID.ETHEREUM,
+            chain_id=ChainID.ETHEREUM,
             name=token_name,
             decimals=token_decimals,
         )
@@ -238,7 +238,7 @@ def deserialize_pool_share(
         userdb=userdb,
         symbol='BPT',
         evm_address=pool_address,
-        chain=ChainID.ETHEREUM,
+        chain_id=ChainID.ETHEREUM,
         protocol='balancer',
         decimals=18,  # All BPT tokens have 18 decimals
         underlying_tokens=pool_tokens,

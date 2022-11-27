@@ -1,23 +1,22 @@
 import logging
+from abc import ABCMeta, abstractmethod
 from collections import defaultdict
 from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple
 
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.chain.ethereum.constants import ETHERSCAN_NODE
-from rotkehlchen.chain.ethereum.types import WeightedNode, string_to_evm_address
+from rotkehlchen.chain.ethereum.types import WeightedNode
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
-from rotkehlchen.chain.evm.manager import EvmManager
-from rotkehlchen.constants.ethereum import ETH_SCAN
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, Price, SupportedBlockchain, Timestamp
+from rotkehlchen.types import ChecksumEvmAddress, Price, SupportedBlockchain, Timestamp
 from rotkehlchen.utils.misc import combine_dicts, get_chunks
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.dbhandler import DBHandler
+
+    from .node_inquirer import EvmNodeInquirer
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -96,10 +95,10 @@ def generate_multicall_chunks(
     return multicall_chunks
 
 
-class EvmTokens():
-    def __init__(self, database: DBHandler, manager: EvmManager):
+class EvmTokens(metaclass=ABCMeta):
+    def __init__(self, database: 'DBHandler', evm_inquirer: 'EvmNodeInquirer'):
         self.db = database
-        self.manager = manager
+        self.evm_inquirer = evm_inquirer
 
     def _get_token_balances(
             self,
@@ -116,12 +115,12 @@ class EvmTokens():
           token has no code. That means the chain is not synced
         """
         log.debug(
-            'Querying evm chain for multi token address balances',
+            f'Querying {self.evm_inquirer.chain_name} for multi token address balances',
             address=address,
             tokens_num=len(tokens),
         )
-        result = ETH_SCAN[ChainID.ETHEREUM].call(
-            manager=self.manager,
+        result = self.evm_inquirer.contract_scan.call(
+            node_inquirer=self.evm_inquirer,
             method_name='tokensBalance',
             arguments=[address, [x.evm_address for x in tokens]],
             call_order=call_order,
@@ -133,8 +132,8 @@ class EvmTokens():
 
             normalized_balance = token_normalized_value(token_balance, token)
             log.debug(
-                f'Found {token.symbol}({token.evm_address}) token balance for '
-                f'{address} and balance {normalized_balance}',
+                f'Found {self.evm_inquirer.chain_name} {token.symbol}({token.evm_address}) '
+                f'token balance for {address} and balance {normalized_balance}',
             )
             balances[token] += normalized_balance
         return balances
@@ -150,25 +149,24 @@ class EvmTokens():
         - RemoteError if no result is queried in multicall
         """
         calls: List[Tuple[ChecksumEvmAddress, str]] = []
-        eth_scan = ETH_SCAN[ChainID.ETHEREUM]
         for address, tokens in chunk:
             tokens_addrs = [token.evm_address for token in tokens]
             calls.append(
                 (
-                    eth_scan.address,
-                    eth_scan.encode(
+                    self.evm_inquirer.contract_scan.address,
+                    self.evm_inquirer.contract_scan.encode(
                         method_name='tokensBalance',
                         arguments=[address, tokens_addrs],
                     ),
                 ),
             )
-        results = self.manager.multicall(
+        results = self.evm_inquirer.multicall(
             calls=calls,
             call_order=call_order,
         )
         balances: Dict[ChecksumEvmAddress, Dict[EvmToken, FVal]] = defaultdict(lambda: defaultdict(FVal))  # noqa: E501
         for (address, tokens), result in zip(chunk, results):
-            decoded_result = ETH_SCAN[ChainID.ETHEREUM].decode(  # pylint: disable=unsubscriptable-object  # noqa: E501
+            decoded_result = self.evm_inquirer.contract_scan.decode(  # pylint: disable=unsubscriptable-object  # noqa: E501
                 result=result,
                 method_name='tokensBalance',
                 arguments=[address, [token.evm_address for token in tokens]],
@@ -179,8 +177,8 @@ class EvmTokens():
 
                 normalized_balance = token_normalized_value(token_balance, token)
                 log.debug(
-                    f'Found {token.symbol}({token.evm_address}) token balance for '
-                    f'{address} and balance {normalized_balance}',
+                    f'Found {self.evm_inquirer.chain_name} {token.symbol}({token.evm_address}) '
+                    f'token balance for {address} and balance {normalized_balance}',
                 )
                 balances[address][token] += normalized_balance
         return balances
@@ -222,23 +220,19 @@ class EvmTokens():
         """
         with self.db.conn.read_ctx() as cursor:
             if only_cache is False:
-                self._detect_tokens(cursor, addresses=addresses)
+                self._detect_tokens(addresses=addresses)
 
             addresses_info: DetectedTokensType = {}
             for address in addresses:
                 addresses_info[address] = self.db.get_tokens_for_address(
                     cursor=cursor,
                     address=address,
-                    blockchain=SupportedBlockchain.ETHEREUM,
+                    blockchain=self.evm_inquirer.blockchain,
                 )
 
         return addresses_info
 
-    def _detect_tokens(
-            self,
-            cursor: 'DBCursor',
-            addresses: List[ChecksumEvmAddress],
-    ) -> None:
+    def _detect_tokens(self, addresses: List[ChecksumEvmAddress]) -> None:
         """
         Detect tokens for the given addresses.
 
@@ -248,42 +242,19 @@ class EvmTokens():
         - BadFunctionCallOutput if a local node is used and the contract for the
           token has no code. That means the chain is not synced
         """
-        exceptions = [
-            # Ignore the veCRV balance in token query. It's already detected by
-            # defi SDK as part of locked CRV in Vote Escrowed CRV. Which is the right way
-            # to approach it as there is no way to assign a price to 1 veCRV. It
-            # can be 1 CRV locked for 4 years or 4 CRV locked for 1 year etc.
-            string_to_evm_address('0x5f3b5DfEb7B28CDbD7FAba78963EE202a494e2A2'),
-            # Ignore for now xsushi since is queried by defi SDK. We'll do it for now
-            # since the SDK entry might return other tokens from sushi and we don't
-            # fully support sushi now.
-            string_to_evm_address('0x8798249c2E607446EfB7Ad49eC89dD1865Ff4272'),
-            # Ignore stkAave since it's queried by defi SDK.
-            string_to_evm_address('0x4da27a545c0c5B758a6BA100e3a049001de870f5'),
-            # Ignore the following tokens. They are old tokens of upgraded contracts which
-            # duplicated the balances at upgrade instead of doing a token swap.
-            # e.g.: https://github.com/rotki/rotki/issues/3548
-            # TODO: At some point we should actually remove them from the DB and
-            # upgrade possible occurences in the user DB
-            #
-            # Old contract of Fetch.ai
-            string_to_evm_address('0x1D287CC25dAD7cCaF76a26bc660c5F7C8E2a05BD'),
-        ]
-        ignored_assets = self.db.get_ignored_assets(cursor=cursor)
-        for asset in ignored_assets:  # don't query for the ignored tokens
-            if asset.is_evm_token():
-                exceptions.append(EvmToken(asset.identifier).evm_address)
-        all_tokens = GlobalDBHandler().get_ethereum_tokens(
-            exceptions=exceptions,
+        all_tokens = GlobalDBHandler().get_evm_tokens(
+            chain_id=self.evm_inquirer.chain_id,
+            exceptions=self._get_token_exceptions(),
             except_protocols=['balancer'],
         )
-        if self.manager.connected_to_any_web3():
+
+        if self.evm_inquirer.connected_to_any_web3():
             chunk_size = OTHER_MAX_TOKEN_CHUNK_LENGTH
             # skipping etherscan because chunk size is too big for etherscan
-            call_order = self.manager.default_call_order(skip_etherscan=True)
+            call_order = self.evm_inquirer.default_call_order(skip_etherscan=True)
         else:
             chunk_size = ETHERSCAN_MAX_ARGUMENTS_TO_CONTRACT
-            call_order = [ETHERSCAN_NODE]
+            call_order = [self.evm_inquirer.etherscan_node]
         for address in addresses:
             token_balances = self._query_chunks(
                 address=address,
@@ -296,7 +267,7 @@ class EvmTokens():
                 self.db.save_tokens_for_address(
                     write_cursor=write_cursor,
                     address=address,
-                    blockchain=SupportedBlockchain.ETHEREUM,
+                    blockchain=self.evm_inquirer.blockchain,
                     tokens=detected_tokens,
                 )
 
@@ -317,13 +288,13 @@ class EvmTokens():
         all_tokens = set()
         addresses_to_tokens: Dict[ChecksumEvmAddress, List[EvmToken]] = {}
 
-        if self.manager.connected_to_any_web3():
+        if self.evm_inquirer.connected_to_any_web3():
             chunk_size = OTHER_MAX_TOKEN_CHUNK_LENGTH
             # skipping etherscan because chunk size is too big for etherscan
-            call_order = self.manager.default_call_order(skip_etherscan=True)
+            call_order = self.evm_inquirer.default_call_order(skip_etherscan=True)
         else:
             chunk_size = ETHERSCAN_MAX_ARGUMENTS_TO_CONTRACT
-            call_order = [ETHERSCAN_NODE]
+            call_order = [self.evm_inquirer.etherscan_node]
 
         with self.db.conn.read_ctx() as cursor:
             for address in addresses:
@@ -348,3 +319,14 @@ class EvmTokens():
             token_usd_price[token] = Inquirer.find_usd_price(asset=token)
 
         return addresses_to_balances, token_usd_price
+
+    # -- methods to be implemented by child classes
+    @abstractmethod
+    def _get_token_exceptions(self) -> List[ChecksumEvmAddress]:
+        """
+        Returns a list of token addresses that will not be taken into account
+        when performing token detection.
+
+        Each chain needs to implement any chain-specific exceptions here.
+        """
+        ...

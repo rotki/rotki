@@ -5,14 +5,15 @@ import pytest
 from eth_utils import to_checksum_address
 
 from rotkehlchen.chain.ethereum.constants import ETHEREUM_BEGIN, GENESIS_HASH, ZERO_ADDRESS
+from rotkehlchen.chain.ethereum.etherscan import EthereumEtherscan
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.db.ethtx import DBEthTx
-from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
-from rotkehlchen.externalapis.etherscan import Etherscan
+from rotkehlchen.db.evmtx import DBEvmTx
+from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
 from rotkehlchen.serialization.deserialize import deserialize_evm_transaction
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (
     BlockchainAccountData,
+    ChainID,
     EvmInternalTransaction,
     EvmTransaction,
     ExternalService,
@@ -40,7 +41,7 @@ def fixture_temp_etherscan(function_scope_messages_aggregator, tmpdir_factory, s
         db.add_external_service_credentials(credentials=[  # pylint: disable=no-value-for-parameter
             ExternalServiceApiCredentials(service=ExternalService.ETHERSCAN, api_key=api_key),
         ])
-    etherscan = Etherscan(database=db, msg_aggregator=function_scope_messages_aggregator)
+    etherscan = EthereumEtherscan(database=db, msg_aggregator=function_scope_messages_aggregator)
     return etherscan
 
 
@@ -85,9 +86,16 @@ def test_maximum_rate_limit_reached(temp_etherscan, **kwargs):  # pylint: disabl
 def test_deserialize_transaction_from_etherscan():
     # Make sure that a missing to address due to contract creation is handled
     data = {'blockNumber': 54092, 'timeStamp': 1439048640, 'hash': '0x9c81f44c29ff0226f835cd0a8a2f2a7eca6db52a711f8211b566fd15d3e0e8d4', 'nonce': 0, 'blockHash': '0xd3cabad6adab0b52ea632c386ea19403680571e682c62cb589b5abcd76de2159', 'transactionIndex': 0, 'from': '0x5153493bB1E1642A63A098A65dD3913daBB6AE24', 'to': '', 'value': 11901464239480000000000000, 'gas': 2000000, 'gasPrice': 10000000000000, 'isError': 0, 'txreceipt_status': '', 'input': '0x313233', 'contractAddress': '0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae', 'cumulativeGasUsed': 1436963, 'gasUsed': 1436963, 'confirmations': 8569454}  # noqa: E501
-    transaction = deserialize_evm_transaction(data, internal=False, manager=None)
+    chain_id = ChainID.ETHEREUM
+    transaction = deserialize_evm_transaction(
+        data=data,
+        internal=False,
+        chain_id=chain_id,
+        evm_inquirer=None,
+    )
     assert transaction == EvmTransaction(
         tx_hash=deserialize_evm_tx_hash(data['hash']),
+        chain_id=chain_id,
         timestamp=1439048640,
         block_number=54092,
         from_address='0x5153493bB1E1642A63A098A65dD3913daBB6AE24',
@@ -118,18 +126,22 @@ def test_etherscan_get_transactions_genesis_block(eth_transactions):
         start_ts=ETHEREUM_BEGIN,
         end_ts=Timestamp(1451606400),
     )
-    dbtx = DBEthTx(database=db)
+    dbtx = DBEvmTx(database=db)
     with db.conn.read_ctx() as cursor:
-        regular_tx_in_db = dbtx.get_ethereum_transactions(
+        regular_tx_in_db = dbtx.get_evm_transactions(
             cursor=cursor,
-            filter_=ETHTransactionsFilterQuery.make(),
+            filter_=EvmTransactionsFilterQuery.make(),
             has_premium=True,
         )
-        internal_tx_in_db = dbtx.get_ethereum_internal_transactions(parent_tx_hash=GENESIS_HASH)
+        internal_tx_in_db = dbtx.get_evm_internal_transactions(
+            parent_tx_hash=GENESIS_HASH,
+            blockchain=SupportedBlockchain.ETHEREUM,
+        )
 
     assert regular_tx_in_db == [
         EvmTransaction(
             tx_hash=GENESIS_HASH,
+            chain_id=ChainID.ETHEREUM,
             timestamp=ETHEREUM_BEGIN,
             block_number=0,
             from_address=ZERO_ADDRESS,
@@ -142,6 +154,7 @@ def test_etherscan_get_transactions_genesis_block(eth_transactions):
             nonce=0,
         ), EvmTransaction(
             tx_hash=deserialize_evm_tx_hash('0x352b93ac19dfbfd65d4d8385cded959d7a156c3f352a71a5a49560b088e1c8df'),  # noqa: E501
+            chain_id=ChainID.ETHEREUM,
             timestamp=Timestamp(1443534531),
             block_number=307793,
             from_address='0xC951900c341aBbb3BAfbf7ee2029377071Dbc36A',
@@ -158,6 +171,7 @@ def test_etherscan_get_transactions_genesis_block(eth_transactions):
     assert internal_tx_in_db == [
         EvmInternalTransaction(
             parent_tx_hash=GENESIS_HASH,
+            chain_id=ChainID.ETHEREUM,
             trace_id=0,
             timestamp=ETHEREUM_BEGIN,
             block_number=0,

@@ -31,7 +31,7 @@ from .vaults import YearnVaultBalance, YearnVaultHistory, get_usd_price_zero_if_
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.defi.structures import GIVEN_ETH_BALANCES
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
 
@@ -44,22 +44,18 @@ class YearnVaultsV2(EthereumModule):
 
     def __init__(
             self,
-            ethereum_manager: 'EthereumManager',
+            ethereum_inquirer: 'EthereumInquirer',
             database: 'DBHandler',
-            premium: Optional[Premium],
+            premium: Optional['Premium'],  # pylint: disable=unused-argument
             msg_aggregator: MessagesAggregator,
     ) -> None:
-        self.ethereum = ethereum_manager
+        self.ethereum = ethereum_inquirer
         self.database = database
         self.msg_aggregator = msg_aggregator
-        self.premium = premium
         self.history_lock = Semaphore()
 
         try:
             self.graph_inquirer: YearnVaultsV2Graph = YearnVaultsV2Graph(
-                ethereum_manager=ethereum_manager,
-                database=database,
-                premium=premium,
                 msg_aggregator=msg_aggregator,
             )
         except RemoteError as e:

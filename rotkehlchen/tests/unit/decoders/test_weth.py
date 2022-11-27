@@ -4,29 +4,26 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.utils import get_or_create_evm_token
-from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.weth.constants import CPT_WETH
+from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.constants.assets import A_ETH, A_USDC, A_WETH
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import ChainID, EvmTokenKind, Location, deserialize_evm_tx_hash
-from rotkehlchen.user_messages import MessagesAggregator
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x4B078a6A7026C32D2D6Aff763E2F37336cf552Dd']])  # noqa: E501
-def test_weth_deposit(database, ethereum_manager):
+def test_weth_deposit(database, ethereum_inquirer):
     """
     Data for deposit is taken from
     https://etherscan.io/tx/0x5bb623b365def9650816dcbaf1babde8fd0ebed737db36d3a033d7cf63792daf
     """
-    msg_aggregator = MessagesAggregator()
     tx_hex = '0x5bb623b365def9650816dcbaf1babde8fd0ebed737db36d3a033d7cf63792daf'
     evmhash = deserialize_evm_tx_hash(tx_hex)
     events, _ = get_decoded_events_of_transaction(
-        ethereum_manager=ethereum_manager,
+        ethereum_inquirer=ethereum_inquirer,
         database=database,
-        msg_aggregator=msg_aggregator,
         tx_hash=evmhash,
     )
     assert len(events) == 3
@@ -88,18 +85,16 @@ def test_weth_deposit(database, ethereum_manager):
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x4b2975AfF4DeF34D3Cd4f4759b45faF738D790D3']])  # noqa: E501
-def test_weth_withdrawal(database, ethereum_manager):
+def test_weth_withdrawal(database, ethereum_inquirer):
     """
     Data for withdrawal is taken from
     https://etherscan.io/tx/0x1f3aa6f7d33bfaaaf9cdd92b16fecdf911341601c02ad89b4ec0b80c66c28a07
     """
-    msg_aggregator = MessagesAggregator()
     tx_hex = '0x1f3aa6f7d33bfaaaf9cdd92b16fecdf911341601c02ad89b4ec0b80c66c28a07'
     evmhash = deserialize_evm_tx_hash(tx_hex)
     events, _ = get_decoded_events_of_transaction(
-        ethereum_manager=ethereum_manager,
+        ethereum_inquirer=ethereum_inquirer,
         database=database,
-        msg_aggregator=msg_aggregator,
         tx_hash=evmhash,
     )
     assert len(events) == 3
@@ -155,18 +150,16 @@ def test_weth_withdrawal(database, ethereum_manager):
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0xC4DdFf531132d32b47eC938AcfA28E354769A806']])  # noqa: E501
-def test_weth_interaction_with_protocols_deposit(database, ethereum_manager):
+def test_weth_interaction_with_protocols_deposit(database, ethereum_inquirer):
     """
     Data for deposit is taken from
     https://etherscan.io/tx/0xab0dec3785632c567365c48ea1fd1178f0998773136a555912625d2668ef53e9
     """
-    msg_aggregator = MessagesAggregator()
     tx_hex = '0xab0dec3785632c567365c48ea1fd1178f0998773136a555912625d2668ef53e9'
     evmhash = deserialize_evm_tx_hash(tx_hex)
     events, _ = get_decoded_events_of_transaction(
-        ethereum_manager=ethereum_manager,
+        ethereum_inquirer=ethereum_inquirer,
         database=database,
-        msg_aggregator=msg_aggregator,
         tx_hash=evmhash,
     )
     assert len(events) == 4
@@ -218,9 +211,9 @@ def test_weth_interaction_with_protocols_deposit(database, ethereum_manager):
     expected_erc721 = get_or_create_evm_token(
         userdb=database,
         evm_address='0xC36442b4a4522E871399CD717aBDD847Ab11FE88',
-        chain=ChainID.ETHEREUM,
+        chain_id=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC721,
-        ethereum_manager=ethereum_manager,
+        evm_inquirer=ethereum_inquirer,
     )
     assert events[3] == HistoryBaseEntry(
         event_identifier=tx_hash,
@@ -239,18 +232,16 @@ def test_weth_interaction_with_protocols_deposit(database, ethereum_manager):
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0xDea6866A866C60d68fFDFc6178C12fCFdb9d0D47']])  # noqa: E501
-def test_weth_interaction_with_protocols_withdrawal(database, ethereum_manager):
+def test_weth_interaction_with_protocols_withdrawal(database, ethereum_inquirer):
     """
     Data for deposit is taken from
     https://etherscan.io/tx/0x4a811e8cfa58cb5bd57d92d62e1f01c8578859705243fe69c6bd9e59f3dcd167
     """
-    msg_aggregator = MessagesAggregator()
     tx_hex = '0x4a811e8cfa58cb5bd57d92d62e1f01c8578859705243fe69c6bd9e59f3dcd167'
     evmhash = deserialize_evm_tx_hash(tx_hex)
     events, _ = get_decoded_events_of_transaction(
-        ethereum_manager=ethereum_manager,
+        ethereum_inquirer=ethereum_inquirer,
         database=database,
-        msg_aggregator=msg_aggregator,
         tx_hash=evmhash,
     )
     assert len(events) == 3
@@ -303,16 +294,14 @@ def test_weth_interaction_with_protocols_withdrawal(database, ethereum_manager):
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0xF5f5C8924db9aa5E70Bdf7842473Ee8C7F1F4c9d']])  # noqa: E501
-def test_weth_interaction_errors(database, ethereum_manager):
+def test_weth_interaction_errors(database, ethereum_inquirer):
     # check that if no out event occurs, an in event should not be created for deposit event
     # https://etherscan.io/tx/0x4ca19c97b7533e74f36dff18acf0115055f63f9d8ae078dfc8ab15ceb14d2f2d
-    msg_aggregator = MessagesAggregator()
     tx_hex = '0x4ca19c97b7533e74f36dff18acf0115055f63f9d8ae078dfc8ab15ceb14d2f2d'
     evmhash = deserialize_evm_tx_hash(tx_hex)
     events, _ = get_decoded_events_of_transaction(
-        ethereum_manager=ethereum_manager,
+        ethereum_inquirer=ethereum_inquirer,
         database=database,
-        msg_aggregator=msg_aggregator,
         tx_hash=evmhash,
     )
     assert len(events) == 3

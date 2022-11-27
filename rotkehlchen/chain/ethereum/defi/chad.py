@@ -7,7 +7,7 @@ from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.user_messages import MessagesAggregator
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
 
 
@@ -16,13 +16,12 @@ class DefiChad():
 
     def __init__(
             self,
-            ethereum_manager: 'EthereumManager',
+            ethereum_inquirer: 'EthereumInquirer',
             msg_aggregator: MessagesAggregator,
             database: 'DBHandler',
     ) -> None:
-        self.ethereum = ethereum_manager
         self.zerion_sdk = ZerionSDK(
-            ethereum_manager=ethereum_manager,
+            ethereum_inquirer=ethereum_inquirer,
             msg_aggregator=msg_aggregator,
             database=database,
         )

@@ -1,11 +1,12 @@
 from typing import TYPE_CHECKING, Callable, List
+
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.utils import get_or_create_evm_token
-from rotkehlchen.chain.ethereum.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.modules.constants import AMM_ASSETS_SYMBOLS
-from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
+from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
+from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import ChainID
@@ -14,17 +15,17 @@ from rotkehlchen.types import EvmTokenKind, EvmTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
 
 
 def decode_uniswap_v2_like_swap(
-        tx_log: EthereumTxReceiptLog,
+        tx_log: EvmTxReceiptLog,
         decoded_events: List[HistoryBaseEntry],
         transaction: EvmTransaction,
         counterparty: str,
         database: 'DBHandler',
-        ethereum_manager: 'EthereumManager',
+        ethereum_inquirer: 'EthereumInquirer',
         notify_user: Callable[[HistoryBaseEntry, str], None],
 ) -> None:
     """Common logic for decoding uniswap v2 like protocols (uniswap and sushiswap atm)
@@ -45,9 +46,9 @@ def decode_uniswap_v2_like_swap(
     pool_token = get_or_create_evm_token(
         userdb=database,
         evm_address=tx_log.address,
-        chain=ChainID.ETHEREUM,
+        chain_id=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
-        ethereum_manager=ethereum_manager,
+        evm_inquirer=ethereum_inquirer,
     )
 
     if pool_token.symbol in exclude_amms.values():

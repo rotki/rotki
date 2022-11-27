@@ -11,12 +11,6 @@ from rotkehlchen.constants.resolver import (
     ChainID,
     evm_address_to_identifier,
 )
-from rotkehlchen.db.constants import (
-    ACCOUNTS_DETAILS_LAST_QUERIED_TS,
-    ACCOUNTS_DETAILS_TOKENS,
-    HISTORY_MAPPING_CUSTOMIZED,
-)
-from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.globaldb.upgrades.v2_v3 import OTHER_EVM_CHAINS_ASSETS
 from rotkehlchen.history.types import DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER, HistoricalPriceOracle
 from rotkehlchen.inquirer import DEFAULT_CURRENT_PRICE_ORACLES_ORDER, CurrentPriceOracle
@@ -114,7 +108,7 @@ def _rename_assets_identifiers(write_cursor: 'DBCursor') -> None:
         if identifier.startswith(ETHEREUM_DIRECTIVE):
             old_id_to_new[identifier] = evm_address_to_identifier(
                 address=identifier[ETHEREUM_DIRECTIVE_LENGTH:],
-                chain=ChainID.ETHEREUM,
+                chain_id=ChainID.ETHEREUM,
                 token_type=EvmTokenKind.ERC20,
             )
         elif identifier in OTHER_EVM_CHAINS_ASSETS:
@@ -200,7 +194,7 @@ def _update_ignored_assets_identifiers_to_caip_format(cursor: 'DBCursor') -> Non
                 (
                     evm_address_to_identifier(
                         address=old_identifier[ETHEREUM_DIRECTIVE_LENGTH:],
-                        chain=ChainID.ETHEREUM,
+                        chain_id=ChainID.ETHEREUM,
                         token_type=EvmTokenKind.ERC20,
                     ),
                     old_identifier,
@@ -224,7 +218,7 @@ def _update_history_event_assets_identifiers_to_caip_format(cursor: 'DBCursor') 
         if entry[6].startswith(ETHEREUM_DIRECTIVE):
             new_id = evm_address_to_identifier(
                 address=entry[6][ETHEREUM_DIRECTIVE_LENGTH:],
-                chain=ChainID.ETHEREUM,
+                chain_id=ChainID.ETHEREUM,
                 token_type=EvmTokenKind.ERC20,
             )
         new_entries.append((
@@ -311,14 +305,14 @@ def _update_assets_in_user_queried_tokens(cursor: 'DBCursor') -> None:
         for token in tokens.get('tokens', []):
             new_id = evm_address_to_identifier(
                 address=token[ETHEREUM_DIRECTIVE_LENGTH:],
-                chain=ChainID.ETHEREUM,
+                chain_id=ChainID.ETHEREUM,
                 token_type=EvmTokenKind.ERC20,
             )
             update_rows.append(
                 (
                     address,
                     SupportedBlockchain.ETHEREUM.serialize(),
-                    ACCOUNTS_DETAILS_TOKENS,
+                    'tokens',
                     new_id,
                 ),
             )
@@ -326,7 +320,7 @@ def _update_assets_in_user_queried_tokens(cursor: 'DBCursor') -> None:
             (
                 address,
                 SupportedBlockchain.ETHEREUM.serialize(),
-                ACCOUNTS_DETAILS_LAST_QUERIED_TS,
+                'last_queried_timestamp',
                 now,
             ),
         )
@@ -410,11 +404,24 @@ def _reset_decoded_events(db: 'DBHandler', write_cursor: 'DBCursor') -> None:
         cursor.execute('SELECT tx_hash from evm_tx_mappings')
         for entry in cursor:
             tx_hashes.append(entry[0])
-    db_events = DBHistoryEvents(db)
-    db_events.delete_events_by_tx_hash(write_cursor, tx_hashes)
+
+    #  delete_events_by_tx_hash -- took code out of method at v34 DB version
+    write_cursor.execute(
+        'SELECT parent_identifier FROM history_events_mappings WHERE value=?',
+        ('customized',),
+    )
+    customized_event_ids = [x[0] for x in write_cursor]
+    length = len(customized_event_ids)
+    querystr = 'DELETE FROM history_events WHERE event_identifier=?'
+    if length != 0:
+        querystr += f' AND identifier NOT IN ({", ".join(["?"] * length)})'
+        bindings = [(x, *customized_event_ids) for x in tx_hashes]
+    else:
+        bindings = [(x,) for x in tx_hashes]
+    write_cursor.executemany(querystr, bindings)
     write_cursor.execute(
         'DELETE from evm_tx_mappings WHERE value !=?',
-        (HISTORY_MAPPING_CUSTOMIZED,),
+        ('customized',),
     )
     log.debug('Exit _reset_decoded_events')
 

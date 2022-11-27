@@ -126,7 +126,7 @@ CREATE TABLE IF NOT EXISTS settings (
 # The evm_tokens table contains information to represent the tokens on every evm chain. It uses
 # the asset identifier to reference the asset table allowing for a delete on cascade. Token kind
 # and chain are two enum fields where token_kind represent the type of token e.g. ERC20 or ERC721.
-# chain is also an enum and it maps to the different chains e.g. ETHEREUM, BINANCE, AVALANCHE...
+# chain is an integer representing the chain id
 # Protocol is a text field that we fill with pre selected values in the code and allows to group
 # assets by their protocol. All the curve assets are identified by this field and the uniswap pool
 # tokens as well. The decimals field is allowed to be NULL since for some tokens is not possible to

@@ -686,7 +686,7 @@ def test_no_etherscan_is_detected(rotkehlchen_api_server):
 
     warnings = rotki.msg_aggregator.consume_warnings()
     assert len(warnings) == 1
-    assert 'You do not have an Etherscan API key configured' in warnings[0]
+    assert 'You do not have an eth Etherscan API key configured' in warnings[0]
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
@@ -708,7 +708,7 @@ def test_adding_non_checksummed_eth_account_works(rotkehlchen_api_server):
         setup.enter_ethereum_patches(stack)
         response = requests.put(api_url_for(
             rotkehlchen_api_server,
-            "blockchainsaccountsresource",
+            'blockchainsaccountsresource',
             blockchain='ETH',
         ), json=request_data)
     assert_proper_response(response)

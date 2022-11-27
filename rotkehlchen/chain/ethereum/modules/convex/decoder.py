@@ -8,8 +8,6 @@ from rotkehlchen.accounting.structures.base import (
 )
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.constants import ZERO_ADDRESS
-from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.modules.convex.constants import (
     BOOSTER,
     CONVEX_ABRAS_HEX,
@@ -24,16 +22,18 @@ from rotkehlchen.chain.ethereum.modules.convex.constants import (
     TRANSFER_TOPIC,
     WITHDRAWAL_TOPICS,
 )
-from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
+from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.structures import ActionItem
+from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.decoding.base import BaseDecoderTools
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -44,22 +44,22 @@ class ConvexDecoder(DecoderInterface):
 
     def __init__(
             self,
-            ethereum_manager: 'EthereumManager',
+            ethereum_inquirer: 'EthereumInquirer',
             base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',
     ) -> None:
         super().__init__(
-            ethereum_manager=ethereum_manager,
+            evm_inquirer=ethereum_inquirer,
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
         )
 
     def _decode_convex_events(
             self,
-            tx_log: EthereumTxReceiptLog,
+            tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
             decoded_events: List[HistoryBaseEntry],
-            all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
+            all_logs: List[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: List[ActionItem],  # pylint: disable=unused-argument
     ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
         amount_raw = hex_or_bytes_to_int(tx_log.data[0:32])
@@ -119,7 +119,7 @@ class ConvexDecoder(DecoderInterface):
     @staticmethod
     def _maybe_enrich_convex_transfers(
             token: EvmToken,  # pylint: disable=unused-argument
-            tx_log: EthereumTxReceiptLog,
+            tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
             event: HistoryBaseEntry,
             action_items: List[ActionItem],  # pylint: disable=unused-argument

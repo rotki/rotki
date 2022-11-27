@@ -11,11 +11,11 @@ from rotkehlchen.tests.utils.mock import MockResponse
 
 
 @pytest.fixture(scope='function', name='temp_loopring')
-def mock_loopring(function_scope_messages_aggregator, database, ethereum_manager):
+def mock_loopring(function_scope_messages_aggregator, database, ethereum_inquirer):
     return Loopring(
         database=database,
         msg_aggregator=function_scope_messages_aggregator,
-        ethereum_manager=ethereum_manager,
+        ethereum_inquirer=ethereum_inquirer,
         premium=None,
     )
 

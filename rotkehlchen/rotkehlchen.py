@@ -34,11 +34,11 @@ from rotkehlchen.balances.manual import (
 from rotkehlchen.chain.aggregator import ChainsAggregator
 from rotkehlchen.chain.avalanche.manager import AvalancheManager
 from rotkehlchen.chain.ethereum.accounting.aggregator import EVMAccountingAggregator
-from rotkehlchen.chain.ethereum.decoding import EVMTransactionDecoder
+from rotkehlchen.chain.ethereum.etherscan import EthereumEtherscan
 from rotkehlchen.chain.ethereum.manager import EthereumManager
+from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.ethereum.oracles.saddle import SaddleOracle
 from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
-from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.chain.substrate.manager import SubstrateManager
 from rotkehlchen.chain.substrate.types import SubstrateChain
 from rotkehlchen.chain.substrate.utils import (
@@ -61,7 +61,6 @@ from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.covalent import Covalent, chains_id
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.externalapis.defillama import Defillama
-from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb import GlobalDBHandler
 from rotkehlchen.globaldb.manual_price_oracles import ManualCurrentOracle
@@ -80,6 +79,7 @@ from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
     BlockchainAccountData,
+    ChainID,
     ChecksumEvmAddress,
     ListOfBlockchainAddresses,
     Location,
@@ -258,7 +258,7 @@ class Rotkehlchen():
                 data_dir=self.data_dir,
                 should_submit=settings.submit_usage_analytics,
             )
-            self.etherscan = Etherscan(database=self.data.db, msg_aggregator=self.msg_aggregator)  # noqa: E501
+            etherscan = EthereumEtherscan(database=self.data.db, msg_aggregator=self.msg_aggregator)  # noqa: E501
             self.beaconchain = BeaconChain(database=self.data.db, msg_aggregator=self.msg_aggregator)  # noqa: E501
             # Initialize the price historian singleton
             PriceHistorian(
@@ -276,15 +276,15 @@ class Rotkehlchen():
             )
             blockchain_accounts = self.data.db.get_blockchain_accounts(cursor)
 
-        ethereum_nodes = self.data.db.get_web3_nodes(blockchain=SupportedBlockchain.ETHEREUM, only_active=True)  # noqa: E501
+        ethereum_nodes = self.data.db.get_rpc_nodes(blockchain=SupportedBlockchain.ETHEREUM, only_active=True)  # noqa: E501
         # Initialize blockchain querying modules
-        ethereum_manager = EthereumManager(
-            etherscan=self.etherscan,
-            msg_aggregator=self.msg_aggregator,
+        ethereum_inquirer = EthereumInquirer(
             greenlet_manager=self.greenlet_manager,
             database=self.data.db,
+            etherscan=etherscan,
             connect_at_start=ethereum_nodes,
         )
+        ethereum_manager = EthereumManager(ethereum_inquirer)
         kusama_manager = SubstrateManager(
             chain=SubstrateChain.KUSAMA,
             msg_aggregator=self.msg_aggregator,
@@ -301,7 +301,6 @@ class Rotkehlchen():
             connect_on_startup=len(blockchain_accounts.dot) != 0,
             own_rpc_endpoint=settings.dot_rpc_endpoint,
         )
-        self.eth_transactions = EthTransactions(ethereum=ethereum_manager, database=self.data.db)
         self.covalent_avalanche = Covalent(
             database=self.data.db,
             msg_aggregator=self.msg_aggregator,
@@ -313,10 +312,10 @@ class Rotkehlchen():
             msg_aggregator=self.msg_aggregator,
         )
 
-        Inquirer().inject_ethereum(ethereum_manager)
-        uniswap_v2_oracle = UniswapV2Oracle(ethereum_manager)
-        uniswap_v3_oracle = UniswapV3Oracle(ethereum_manager)
-        saddle_oracle = SaddleOracle(ethereum_manager)
+        Inquirer().inject_evm_managers([(ChainID.ETHEREUM, ethereum_manager)])
+        uniswap_v2_oracle = UniswapV2Oracle(ethereum_inquirer)
+        uniswap_v3_oracle = UniswapV3Oracle(ethereum_inquirer)
+        saddle_oracle = SaddleOracle(ethereum_inquirer)
         Inquirer().add_defi_oracles(
             uniswap_v2=uniswap_v2_oracle,
             uniswap_v3=uniswap_v3_oracle,
@@ -339,12 +338,6 @@ class Rotkehlchen():
             beaconchain=self.beaconchain,
             btc_derivation_gap_limit=settings.btc_derivation_gap_limit,
         )
-        self.eth_tx_decoder = EVMTransactionDecoder(
-            database=self.data.db,
-            ethereum_manager=ethereum_manager,
-            transactions=self.eth_transactions,
-            msg_aggregator=self.msg_aggregator,
-        )
         self.evm_accounting_aggregator = EVMAccountingAggregator(
             ethereum_manager=ethereum_manager,
             msg_aggregator=self.msg_aggregator,
@@ -361,7 +354,6 @@ class Rotkehlchen():
             msg_aggregator=self.msg_aggregator,
             exchange_manager=self.exchange_manager,
             chains_aggregator=self.chains_aggregator,
-            eth_tx_decoder=self.eth_tx_decoder,
         )
         self.task_manager = TaskManager(
             max_tasks_num=DEFAULT_MAX_TASKS_NUM,
@@ -372,7 +364,6 @@ class Rotkehlchen():
             premium_sync_manager=self.premium_sync_manager,
             chains_aggregator=self.chains_aggregator,
             exchange_manager=self.exchange_manager,
-            eth_tx_decoder=self.eth_tx_decoder,
             deactivate_premium=self.deactivate_premium_status,
             activate_premium=self.activate_premium_status,
             query_balances=self.query_balances,
@@ -622,9 +613,10 @@ class Rotkehlchen():
         with contextlib.ExitStack() as stack:
             cursor = stack.enter_context(self.data.db.user_write())
             if blockchain == SupportedBlockchain.ETHEREUM:
-                stack.enter_context(self.eth_transactions.wait_until_no_query_for(eth_addresses))
-                stack.enter_context(self.eth_transactions.missing_receipts_lock)
-                stack.enter_context(self.eth_tx_decoder.undecoded_tx_query_lock)
+                ethereum = self.chains_aggregator.get_chain_manager(SupportedBlockchain.ETHEREUM)
+                stack.enter_context(ethereum.transactions.wait_until_no_query_for(eth_addresses))
+                stack.enter_context(ethereum.transactions.missing_receipts_lock)
+                stack.enter_context(ethereum.transactions_decoder.undecoded_tx_query_lock)
             self.data.db.remove_blockchain_accounts(cursor, blockchain, accounts)
 
     def get_history_query_status(self) -> Dict[str, str]:
@@ -941,7 +933,7 @@ class Rotkehlchen():
         if self.user_is_logged_in:
             with self.data.db.conn.read_ctx() as cursor:
                 result['last_balance_save'] = self.data.db.get_last_balance_save_time(cursor)
-                result['connected_eth_nodes'] = [node.name for node in self.chains_aggregator.ethereum.get_connected_nodes()]  # noqa: E501
+                result['connected_eth_nodes'] = [node.name for node in self.chains_aggregator.ethereum.node_inquirer.get_connected_nodes()]  # noqa: E501
                 result['last_data_upload_ts'] = Timestamp(self.premium_sync_manager.last_data_upload_ts)  # noqa : E501
         return result
 

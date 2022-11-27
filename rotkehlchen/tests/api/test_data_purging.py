@@ -2,8 +2,8 @@ import pytest
 import requests
 
 from rotkehlchen.constants import ONE
-from rotkehlchen.db.ethtx import DBEthTx
-from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
+from rotkehlchen.db.evmtx import DBEvmTx
+from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
 from rotkehlchen.tests.utils.api import api_url_for, assert_simple_ok_response
 from rotkehlchen.tests.utils.exchanges import (
     check_saved_events_for_exchange,
@@ -12,6 +12,7 @@ from rotkehlchen.tests.utils.exchanges import (
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.types import (
     BlockchainAccountData,
+    ChainID,
     EvmTransaction,
     Location,
     SupportedBlockchain,
@@ -56,7 +57,7 @@ def test_purge_single_exchange_data(rotkehlchen_api_server_with_exchanges, added
 def test_purge_ethereum_transaction_data(rotkehlchen_api_server):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     addr1 = make_ethereum_address()
-    db = DBEthTx(rotki.data.db)
+    db = DBEvmTx(rotki.data.db)
     with rotki.data.db.user_write() as cursor:
         rotki.data.db.add_blockchain_accounts(
             write_cursor=cursor,
@@ -65,10 +66,11 @@ def test_purge_ethereum_transaction_data(rotkehlchen_api_server):
                 BlockchainAccountData(address=addr1),
             ],
         )
-        db.add_ethereum_transactions(
+        db.add_evm_transactions(
             cursor,
             [EvmTransaction(
                 tx_hash=make_evm_tx_hash(bytes()),
+                chain_id=ChainID.ETHEREUM,
                 timestamp=1,
                 block_number=1,
                 from_address=addr1,
@@ -82,9 +84,9 @@ def test_purge_ethereum_transaction_data(rotkehlchen_api_server):
             )],
             relevant_address=addr1,
         )
-        filter_ = ETHTransactionsFilterQuery.make()
+        filter_ = EvmTransactionsFilterQuery.make(chain_id=ChainID.ETHEREUM)
 
-        result, filter_count = db.get_ethereum_transactions_and_limit_info(cursor, filter_, True)
+        result, filter_count = db.get_evm_transactions_and_limit_info(cursor, filter_, True)
         assert len(result) == 1
         assert filter_count == 1
         response = requests.delete(
@@ -94,6 +96,6 @@ def test_purge_ethereum_transaction_data(rotkehlchen_api_server):
             ),
         )
         assert_simple_ok_response(response)
-        result, filter_count = db.get_ethereum_transactions_and_limit_info(cursor, filter_, True)
+        result, filter_count = db.get_evm_transactions_and_limit_info(cursor, filter_, True)
     assert len(result) == 0
     assert filter_count == 0

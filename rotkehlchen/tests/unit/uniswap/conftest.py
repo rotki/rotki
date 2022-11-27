@@ -23,7 +23,7 @@ def fixture_graph_query_limit(graph_query_limit):
 
 @pytest.fixture
 def mock_uniswap(
-        ethereum_manager,
+        ethereum_inquirer,
         database,
         start_with_valid_premium,
         rotki_premium_credentials,
@@ -36,7 +36,7 @@ def mock_uniswap(
         premium = Premium(rotki_premium_credentials)
 
     uniswap = Uniswap(
-        ethereum_manager=ethereum_manager,
+        ethereum_inquirer=ethereum_inquirer,
         database=database,
         premium=premium,
         msg_aggregator=function_scope_messages_aggregator,

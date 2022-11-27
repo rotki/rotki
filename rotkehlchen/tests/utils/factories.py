@@ -74,6 +74,7 @@ def make_ethereum_transaction(tx_hash: Optional[bytes] = None) -> EvmTransaction
         tx_hash = make_random_bytes(42)
     return EvmTransaction(
         tx_hash=make_evm_tx_hash(tx_hash),
+        chain_id=ChainID.ETHEREUM,
         timestamp=Timestamp(0),
         block_number=0,
         from_address=make_ethereum_address(),
@@ -89,7 +90,7 @@ def make_ethereum_transaction(tx_hash: Optional[bytes] = None) -> EvmTransaction
 
 CUSTOM_USDT = EvmToken.initialize(
     address=string_to_evm_address('0xdAC17F958D2ee523a2206206994597C13D831ec7'),
-    chain=ChainID.ETHEREUM,
+    chain_id=ChainID.ETHEREUM,
     token_kind=EvmTokenKind.ERC20,
     name='Tether',
     symbol='USDT',

@@ -7,7 +7,7 @@ from rotkehlchen.accounting.mixins.event import AccountingEventMixin
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.api.v1.schemas import TradeSchema
-from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
+from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_ETH2, A_USDC, A_USDT
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
@@ -969,7 +969,7 @@ def mock_history_processing_and_exchanges(
         remote_errors,
     )
     etherscan_patch = mock_etherscan_transaction_response(
-        etherscan=rotki.etherscan,
+        etherscan=rotki.chains_aggregator.ethereum.node_inquirer.etherscan,
         remote_errors=remote_errors,
     )
     return TradesTestSetup(
@@ -1187,12 +1187,14 @@ def assert_pnl_debug_import(filepath: Path, database: DBHandler) -> None:
         pnl_debug_json = json.load(f)
 
     settings_from_file = pnl_debug_json['settings']
+    settings_from_file.pop('version')
     settings_from_file.pop('last_write_ts')
     ignored_actions_ids_from_file = pnl_debug_json['ignored_events_ids']
 
     with database.conn.read_ctx() as cursor:
         settings_from_db = database.get_settings(cursor=cursor).serialize()
         settings_from_db.pop('last_write_ts')
+        settings_from_db.pop('version')
         ignored_actions_ids_from_db = database.get_ignored_action_ids(
             cursor=cursor,
             action_type=None,

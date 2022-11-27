@@ -278,7 +278,7 @@ def test_stability_pool(rotkehlchen_api_server):
 
     async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    with mock_etherscan_transaction_response(rotki.etherscan):
+    with mock_etherscan_transaction_response(rotki.chains_aggregator.ethereum.node_inquirer.etherscan):  # noqa: E501
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
             'liquitystabilitypoolresource',
