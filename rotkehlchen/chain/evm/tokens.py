@@ -218,16 +218,17 @@ class EvmTokens(metaclass=ABCMeta):
         - BadFunctionCallOutput if a local node is used and the contract for the
           token has no code. That means the chain is not synced
         """
-        if only_cache is False:
-            self._detect_tokens(addresses=addresses)
+        with self.db.conn.read_ctx() as cursor:
+            if only_cache is False:
+                self._detect_tokens(addresses=addresses)
+
             addresses_info: DetectedTokensType = {}
-            with self.db.conn.read_ctx() as cursor:
-                for address in addresses:
-                    addresses_info[address] = self.db.get_tokens_for_address(
-                        cursor=cursor,
-                        address=address,
-                        blockchain=self.evm_inquirer.blockchain,
-                    )
+            for address in addresses:
+                addresses_info[address] = self.db.get_tokens_for_address(
+                    cursor=cursor,
+                    address=address,
+                    blockchain=self.evm_inquirer.blockchain,
+                )
 
         return addresses_info
 

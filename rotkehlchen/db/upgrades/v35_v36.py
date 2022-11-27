@@ -26,6 +26,11 @@ def _remove_adex(write_cursor: 'DBCursor') -> None:
     """
     write_cursor.execute('/*IMPLEMENT ME*/')
 
+def _upgrade_ignored_actionids(write_cursor: 'DBCursor') -> None:
+    """TODO: ignored_action_ids of ActionType.ETHEREUM_TRANSACTION need chainid prepended
+    """
+    write_cursor.execute('/*IMPLEMENT ME*/')
+
 
 def upgrade_v35_to_v36(db: 'DBHandler') -> None:
     """Upgrades the DB from v35 to v36

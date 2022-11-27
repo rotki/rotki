@@ -28,7 +28,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-HISTORY_INSERT = """INSERT INTO history_events(event_identifier, sequence_index,
+HISTORY_INSERT = """INSERT OR IGNORE INTO history_events(event_identifier, sequence_index,
 timestamp, location, location_label, asset, amount, usd_value, notes,
 type, subtype, counterparty, extra_data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"""
 
@@ -55,13 +55,15 @@ class DBHistoryEvents():
         the DB. Can only happen if an event with an unresolved asset is passed.
         """
         write_cursor.execute(HISTORY_INSERT, event.serialize_for_db())
-        identifier = write_cursor.lastrowid
+        if write_cursor.rowcount == 0:
+            return  # already exists
 
+        identifier = write_cursor.lastrowid
         if mapping_values is not None:
             write_cursor.executemany(
                 'INSERT OR IGNORE INTO history_events_mappings(parent_identifier, name, value) '
                 'VALUES(?, ?, ?)',
-                list(mapping_values.items()),
+                [(identifier, k, v) for k, v in mapping_values.items()]
             )
 
         return identifier
@@ -70,21 +72,27 @@ class DBHistoryEvents():
             self,
             write_cursor: 'DBCursor',
             history: Sequence[HistoryBaseEntry],
+            chain_id: Optional[ChainID] = None,
     ) -> None:
         """Insert a list of history events in the database.
+
+        Optionally provide a chain id to associate them with in the history
+        events mapping table
 
         May raise:
         - InputError if the events couldn't be stored in the database
         """
-        events = []
+        mapping_values = None
+        if chain_id is not None:
+            mapping_values = {HISTORY_MAPPING_KEY_CHAINID: chain_id.serialize_for_db()}
+        
         for event in history:
-            events.append(event.serialize_for_db())
-        self.db.write_tuples(
-            write_cursor=write_cursor,
-            tuple_type='history_event',
-            query=HISTORY_INSERT,
-            tuples=events,
-        )
+            self.add_history_event(
+                write_cursor=write_cursor,
+                event=event,
+                mapping_values=mapping_values,
+            )
+
 
     def edit_history_event(self, event: HistoryBaseEntry) -> Tuple[bool, str]:
         """Edit a history entry to the DB. Returns the edited entry"""
@@ -106,6 +114,8 @@ class DBHistoryEvents():
             if cursor.rowcount != 1:
                 msg = f'Tried to edit event with id {event.identifier} but could not find it in the DB'  # noqa: E501
                 return False, msg
+
+            # Also mark it as customized
             cursor.execute(
                 'INSERT OR IGNORE INTO history_events_mappings(parent_identifier, name, value) '
                 'VALUES(?, ?, ?)',
@@ -179,9 +189,18 @@ class DBHistoryEvents():
                 (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED),
             )
         else:
+            # cursor.execute(
+            #     'SELECT DISTINCT parent_identifier FROM history_events_mappings '
+            #     'WHERE name=? AND value=? AND name=? and value=?',
+            #     (
+            #         HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED,
+            #         HISTORY_MAPPING_KEY_CHAINID, chain_id.serialize_for_db(),
+            #     ),
+            # )
             cursor.execute(
-                'SELECT DISTINCT parent_identifier FROM history_events_mappings '
-                'WHERE name=? AND value=? AND name=? and value=?',
+                'SELECT A.parent_identifier FROM history_events_mappings A JOIN '
+                'history_events_mappings B ON A.parent_identifier=B.parent_identifier AND '
+                'A.name=? AND A.value=? AND B.name=? AND B.value=?',
                 (
                     HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED,
                     HISTORY_MAPPING_KEY_CHAINID, chain_id.serialize_for_db(),

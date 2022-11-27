@@ -612,7 +612,7 @@ class Rotkehlchen():
             if blockchain == SupportedBlockchain.ETHEREUM:
                 ethereum = self.chains_aggregator.get_chain_manager(SupportedBlockchain.ETHEREUM)
                 stack.enter_context(ethereum.transactions.wait_until_no_query_for(eth_addresses))
-                stack.enter_context(ethereum.transactions_decoder.missing_receipts_lock)
+                stack.enter_context(ethereum.transactions.missing_receipts_lock)
                 stack.enter_context(ethereum.transactions_decoder.undecoded_tx_query_lock)
             self.data.db.remove_blockchain_accounts(cursor, blockchain, accounts)
 

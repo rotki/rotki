@@ -257,7 +257,11 @@ class EVMTransactionDecoder():
             if event:
                 events.append(event)
 
-        self.dbevents.add_history_events(write_cursor=write_cursor, history=events)
+        self.dbevents.add_history_events(
+            write_cursor=write_cursor,
+            history=events,
+            chain_id=self.evm_inquirer.chain_id,
+        )
         write_cursor.execute(
             'INSERT OR IGNORE INTO evm_tx_mappings(tx_hash, chain_id, value) VALUES(?, ?, ?)',
             (transaction.tx_hash, self.evm_inquirer.chain_id.serialize_for_db(), HISTORY_MAPPING_STATE_DECODED),  # noqa: E501

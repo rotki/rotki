@@ -147,7 +147,6 @@ DBTupleType = Literal[
     'evm_transaction',
     'amm_swap',
     'accounting_event',
-    'history_event',
 ]
 
 # Tuples that contain first the name of a table and then the columns that
@@ -2045,7 +2044,7 @@ class DBHandler:
         cursorstr = f'SELECT COUNT(*) from {entries_table}'
         if len(kwargs) != 0:
             cursorstr += ' WHERE'
-        op.join([f' {arg} = "{val}" ' for arg, val in kwargs.items()])
+            cursorstr += op.join([f' {arg} = "{val}" ' for arg, val in kwargs.items()])
         cursorstr += ';'
         cursor.execute(cursorstr)
         return cursor.fetchone()[0]
