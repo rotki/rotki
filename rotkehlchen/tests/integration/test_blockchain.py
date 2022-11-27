@@ -10,8 +10,8 @@ from rotkehlchen.chain.ethereum.defi.structures import (
     DefiProtocol,
     DefiProtocolBalances,
 )
+from rotkehlchen.chain.ethereum.tokens import EthereumTokens
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
-from rotkehlchen.chain.evm.tokens import EvmTokens
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH
 from rotkehlchen.tests.utils.blockchain import mock_beaconchain, mock_etherscan_query
@@ -40,7 +40,7 @@ def test_multiple_concurrent_ethereum_blockchain_queries(blockchain):
     addr2 = string_to_evm_address('0x78a087fCf440315b843632cFd6FDE6E5adcCc2C2')
     etherscan_patch = mock_etherscan_query(
         eth_map={addr1: {A_ETH: 1, A_DAI: 1 * 10**18}, addr2: {A_ETH: 2}},
-        etherscan=blockchain.ethereum.etherscan,
+        etherscan=blockchain.ethereum.node_inquirer.etherscan,
         original_requests_get=requests.get,
         original_queries=None,
         extra_flags=None,
@@ -105,8 +105,8 @@ def test_multiple_concurrent_ethereum_blockchain_queries(blockchain):
             blockchain=SupportedBlockchain.ETHEREUM,
             accounts=[addr1, addr2],
         )
-        evmtokens = EvmTokens(database=blockchain.database, evm_inquirer=blockchain.ethereum.node_inquirer)  # noqa: E501
-        evmtokens.detect_tokens(
+        ethtokens = EthereumTokens(database=blockchain.database, ethereum_inquirer=blockchain.ethereum.node_inquirer)  # noqa: E501
+        ethtokens.detect_tokens(
             only_cache=False,
             addresses=[addr1, addr2],
         )
