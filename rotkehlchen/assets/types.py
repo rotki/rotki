@@ -70,9 +70,10 @@ class AssetData(NamedTuple):
     def serialize(self) -> Dict[str, Any]:
         result = self._asdict()  # pylint: disable=no-member
         result.pop('identifier')
+        result.pop('chain_id')
         result['asset_type'] = str(self.asset_type)
         if self.chain_id is not None:
-            result['chain_id'] = self.chain_id.serialize()
+            result['evm_chain'] = self.chain_id.to_name()
         if self.token_kind is not None:
             result['token_kind'] = self.token_kind.serialize()
         return result

@@ -871,7 +871,7 @@ def test_exporting_user_assets_list(rotkehlchen_api_server, globaldb, with_custo
             assert data['assets'][0] == {
                 'identifier': identifier,
                 'name': 'yabirtoken',
-                'chain_id': 1,  # ethereum
+                'evm_chain': 'ethereum',
                 'asset_type': 'evm token',
                 'decimals': 18,
                 'symbol': 'YAB',

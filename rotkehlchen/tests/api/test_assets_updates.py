@@ -301,7 +301,7 @@ INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0x1B175474E890
                 'forked': None,
                 'swapped_for': None,
                 'address': '0x6B175474E89094C44Da98b954EedeAC495271d0F',
-                'chain_id': 1,  # ethereum
+                'evm_chain': 'ethereum',
                 'token_kind': 'erc20',
                 'decimals': 18,
                 'cryptocompare': None,
@@ -316,7 +316,7 @@ INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0x1B175474E890
                 'forked': None,
                 'swapped_for': None,
                 'address': '0x6B175474E89094C44Da98b954EedeAC495271d0F',
-                'chain_id': 1,  # ethereum
+                'evm_chain': 'ethereum',
                 'token_kind': 'erc20',
                 'decimals': 8,
                 'cryptocompare': None,
@@ -333,7 +333,6 @@ INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0x1B175474E890
                 'forked': None,
                 'swapped_for': None,
                 'address': None,
-                'chain_id': None,
                 'token_kind': None,
                 'decimals': None,
                 'cryptocompare': None,
@@ -348,7 +347,6 @@ INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0x1B175474E890
                 'forked': 'BTC',
                 'swapped_for': None,
                 'address': None,
-                'chain_id': None,
                 'token_kind': None,
                 'decimals': None,
                 'cryptocompare': None,
@@ -363,7 +361,7 @@ INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0x1B175474E890
                 'cryptocompare': None,
                 'decimals': 12,
                 'address': '0x1B175474E89094C44Da98b954EedeAC495271d0F',
-                'chain_id': 1,  # ethereum
+                'evm_chain': 'ethereum',
                 'token_kind': 'erc20',
                 'forked': None,
                 'name': 'Conflicting token',
@@ -378,7 +376,7 @@ INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0x1B175474E890
                 'cryptocompare': None,
                 'decimals': 18,
                 'address': '0x1b175474E89094C44DA98B954EeDEAC495271d0f',
-                'chain_id': 1,  # ethereum
+                'evm_chain': 'ethereum',
                 'token_kind': 'erc20',
                 'forked': None,
                 'name': 'Conflicting token',
@@ -572,7 +570,7 @@ INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0xa74476443119
                 'forked': None,
                 'swapped_for': 'eip155:1/erc20:0x7DD9c5Cba05E151C895FDe1CF355C9A1D5DA6429',
                 'address': '0xa74476443119A942dE498590Fe1f2454d7D4aC0d',
-                'chain_id': 1,  # ethereum
+                'evm_chain': 'ethereum',
                 'token_kind': 'erc20',
                 'decimals': 18,
                 'cryptocompare': None,
@@ -587,7 +585,7 @@ INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0xa74476443119
                 'forked': None,
                 'swapped_for': 'eip155:1/erc20:0xA8d35739EE92E69241A2Afd9F513d41021A07972',
                 'address': '0xa74476443119A942dE498590Fe1f2454d7D4aC0d',
-                'chain_id': 1,  # ethereum
+                'evm_chain': 'ethereum',
                 'token_kind': 'erc20',
                 'decimals': 18,
                 'cryptocompare': None,
@@ -726,7 +724,7 @@ INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protoco
                 'forked': None,
                 'swapped_for': 'eip155:1/erc20:0x7DD9c5Cba05E151C895FDe1CF355C9A1D5DA6429',
                 'address': '0xa74476443119A942dE498590Fe1f2454d7D4aC0d',
-                'chain_id': 1,  # ethereum
+                'evm_chain': 'ethereum',
                 'token_kind': 'erc20',
                 'decimals': 18,
                 'cryptocompare': None,
@@ -741,7 +739,7 @@ INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protoco
                 'forked': None,
                 'swapped_for': 'eip155:1/erc20:0xA8d35739EE92E69241A2Afd9F513d41021A07972',
                 'address': '0xa74476443119A942dE498590Fe1f2454d7D4aC0d',
-                'chain_id': 1,  # ethereum
+                'evm_chain': 'ethereum',
                 'token_kind': 'erc20',
                 'decimals': 18,
                 'cryptocompare': None,

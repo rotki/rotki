@@ -192,12 +192,12 @@ T_TradeID = str
 TradeID = NewType('TradeID', T_TradeID)
 
 
-class ChainID(SerializableEnumMixin):
+class ChainID(Enum):
     """This class maps each EVM chain to their chain id. This is used to correctly idenity EVM
     assets and use it where these ids are needed.
 
-    This enum implements custom serialization/deserialization since it differs from
-    the rest being an int value enum. TODO: Fix types
+    This enum implements custom serialization/deserialization so it does not inherit from the
+    SerializableEnumMixin since it differs from the rest being an int value enum. TODO: Fix types.
     """
     ETHEREUM = 1
     OPTIMISM = 10
@@ -219,15 +219,32 @@ class ChainID(SerializableEnumMixin):
     def serialize_for_db(self) -> int:
         return self.value
 
-    def serialize(self) -> int:  # type: ignore  # supertype is str
+    def serialize(self) -> int:
         return self.value
 
     @classmethod
-    def deserialize(cls, value: int) -> 'ChainID':  # type: ignore  # supertype is str
+    def deserialize(cls, value: int) -> 'ChainID':
         return cls.deserialize_from_db(value)
 
     def to_name(self) -> str:
-        return str(self).lower()
+        return self.name.lower()
+
+    def __str__(self) -> str:
+        return self.to_name()
+
+    @classmethod
+    def deserialize_from_name(cls, value: str) -> 'ChainID':
+        """May raise DeserializationError if the given value can't be deserialized"""
+        if not isinstance(value, str):
+            raise DeserializationError(
+                f'Failed to deserialize evm chain value from non string value: {value}',
+            )
+
+        upper_value = value.replace(' ', '_').upper()
+        try:
+            return getattr(cls, upper_value)
+        except AttributeError as e:
+            raise DeserializationError(f'Failed to deserialize evm chain value {value}') from e  # noqa: E501
 
     def to_blockchain(self) -> 'SupportedBlockchain':
         return CHAINID_TO_SUPPORTED_BLOCKCHAIN[self]

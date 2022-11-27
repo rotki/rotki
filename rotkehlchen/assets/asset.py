@@ -554,7 +554,7 @@ class EvmToken(CryptoAsset):
         underlying_tokens = [x.serialize() for x in self.underlying_tokens] if self.underlying_tokens is not None else None  # noqa: E501
         return super().to_dict() | {
             'address': self.evm_address,
-            'chain_id': self.chain_id.serialize(),
+            'evm_chain': self.chain_id.to_name(),
             'token_kind': self.token_kind.serialize(),
             'decimals': self.decimals,
             'protocol': self.protocol,

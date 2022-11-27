@@ -348,7 +348,7 @@ class GlobalDBHandler():
                     'asset_type': AssetType.deserialize_from_db(entry[4]).serialize(),
                 }
                 if entry[3] is not None:
-                    result[entry[0]].update({'chain_id': ChainID.deserialize_from_db(entry[3]).serialize()})  # noqa: E501
+                    result[entry[0]].update({'evm_chain': ChainID.deserialize_from_db(entry[3]).to_name()})  # noqa: E501
                 if entry[5] is not None:
                     result[entry[0]].update({'custom_asset_type': entry[5]})
 
@@ -386,7 +386,7 @@ class GlobalDBHandler():
                     'is_custom_asset': AssetType.deserialize_from_db(entry[4]) == AssetType.CUSTOM_ASSET,  # noqa: E501
                 }
                 if entry[3] is not None:
-                    entry_info['chain_id'] = ChainID.deserialize_from_db(entry[3]).serialize()
+                    entry_info['evm_chain'] = ChainID.deserialize_from_db(entry[3]).to_name()
                 if entry[5] is not None:
                     entry_info['custom_asset_type'] = entry[5]
 

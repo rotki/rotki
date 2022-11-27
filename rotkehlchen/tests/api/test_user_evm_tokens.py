@@ -58,7 +58,7 @@ def test_query_user_tokens(rotkehlchen_api_server):
             rotkehlchen_api_server,
             'ethereumassetsresource',
         ),
-        json={'address': user_token_address1, 'chain_id': ChainID.ETHEREUM.value},
+        json={'address': user_token_address1, 'evm_chain': ChainID.ETHEREUM.to_name()},
     )
     result = assert_proper_response_with_result(response)
     expected_result = expected_tokens[0].to_dict()
@@ -85,7 +85,7 @@ def test_query_user_tokens(rotkehlchen_api_server):
             rotkehlchen_api_server,
             'ethereumassetsresource',
         ),
-        json={'address': unknown_address, 'chain_id': ChainID.ETHEREUM.value},
+        json={'address': unknown_address, 'evm_chain': ChainID.ETHEREUM.to_name()},
     )
     assert_error_response(
         response=response,
@@ -269,7 +269,7 @@ def test_adding_user_tokens(rotkehlchen_api_server):
     bad_identifier = 'INVALIDID'
     bad_token = {
         'address': make_ethereum_address(),
-        'chain_id': 1,
+        'evm_chain': 'ethereum',
         'token_kind': 'erc20',
         'decimals': 18,
         'name': 'Bad token',
@@ -436,7 +436,7 @@ def test_deleting_user_tokens(rotkehlchen_api_server):
             rotkehlchen_api_server,
             'ethereumassetsresource',
         ),
-        json={'address': initial_tokens[1].evm_address, 'chain_id': ChainID.ETHEREUM.value},
+        json={'address': initial_tokens[1].evm_address, 'evm_chain': ChainID.ETHEREUM.to_name()},
     )
     result = assert_proper_response_with_result(response)
     assert result == {'identifier': token1_id}
@@ -462,7 +462,7 @@ def test_deleting_user_tokens(rotkehlchen_api_server):
             rotkehlchen_api_server,
             'ethereumassetsresource',
         ),
-        json={'address': non_existing_address, 'chain_id': ChainID.ETHEREUM.value},
+        json={'address': non_existing_address, 'evm_chain': ChainID.ETHEREUM.to_name()},
     )
     expected_msg = (
         f'Tried to delete EVM token with address {non_existing_address} '
@@ -481,7 +481,7 @@ def test_deleting_user_tokens(rotkehlchen_api_server):
             rotkehlchen_api_server,
             'ethereumassetsresource',
         ),
-        json={'address': underlying_address1, 'chain_id': ChainID.ETHEREUM.value},
+        json={'address': underlying_address1, 'evm_chain': ChainID.ETHEREUM.to_name()},
     )
     assert_proper_response(response)
 
@@ -492,7 +492,7 @@ def test_deleting_user_tokens(rotkehlchen_api_server):
             rotkehlchen_api_server,
             'ethereumassetsresource',
         ),
-        json={'address': initial_tokens[0].evm_address, 'chain_id': ChainID.ETHEREUM.value},
+        json={'address': initial_tokens[0].evm_address, 'evm_chain': ChainID.ETHEREUM.to_name()},
     )
     result = assert_proper_response_with_result(response)
     assert result['swapped_for'] == A_MKR.identifier
@@ -506,7 +506,7 @@ def test_deleting_user_tokens(rotkehlchen_api_server):
         ),
         json={
             'address': A_MKR.resolve_to_evm_token().evm_address,
-            'chain_id': ChainID.ETHEREUM.value,
+            'evm_chain': ChainID.ETHEREUM.to_name(),
         },
     )
     assert_proper_response(response)
@@ -520,7 +520,7 @@ def test_deleting_user_tokens(rotkehlchen_api_server):
             rotkehlchen_api_server,
             'ethereumassetsresource',
         ),
-        json={'address': initial_tokens[0].evm_address, 'chain_id': ChainID.ETHEREUM.value},
+        json={'address': initial_tokens[0].evm_address, 'evm_chain': ChainID.ETHEREUM.to_name()},
     )
     result = assert_proper_response_with_result(response)
     assert result == {'identifier': token0_id}
@@ -572,7 +572,7 @@ def test_user_tokens_delete_guard(rotkehlchen_api_server):
             rotkehlchen_api_server,
             'ethereumassetsresource',
         ),
-        json={'address': expected_tokens[0].evm_address, 'chain_id': ChainID.ETHEREUM.value},
+        json={'address': expected_tokens[0].evm_address, 'evm_chain': ChainID.ETHEREUM.to_name()},
     )
     expected_msg = 'Failed to delete asset with id'
     assert_error_response(
@@ -597,7 +597,7 @@ def test_add_non_ethereum_token(rotkehlchen_api_server):
                 'started': 1599646888,
                 'swapped_for': None,
                 'address': '0xC88eA7a5df3A7BA59C72393C5b2dc2CE260ff04D',
-                'chain_id': 56,  # binance - important that is not `ethereum` here
+                'evm_chain': 'binance',  # important that is not `ethereum` here
                 'token_kind': 'erc20',
                 'decimals': 18,
                 'protocol': 'my-own-protocol',

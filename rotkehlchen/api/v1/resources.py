@@ -789,8 +789,8 @@ class EthereumAssetsResource(BaseMethodView):
         )
 
     @use_kwargs(get_schema, location='json_and_query')
-    def get(self, address: Optional[ChecksumEvmAddress], chain_id: ChainID) -> Response:
-        return self.rest_api.get_custom_evm_tokens(address=address, chain_id=chain_id)
+    def get(self, address: Optional[ChecksumEvmAddress], evm_chain: ChainID) -> Response:
+        return self.rest_api.get_custom_evm_tokens(address=address, chain_id=evm_chain)
 
     @require_loggedin_user()
     @resource_parser.use_kwargs(make_edit_schema, location='json')
@@ -803,8 +803,8 @@ class EthereumAssetsResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(delete_schema, location='json')
-    def delete(self, address: ChecksumEvmAddress, chain_id: ChainID) -> Response:
-        return self.rest_api.delete_custom_ethereum_token(address, chain_id)
+    def delete(self, address: ChecksumEvmAddress, evm_chain: ChainID) -> Response:
+        return self.rest_api.delete_custom_ethereum_token(address, evm_chain)
 
 
 class AssetUpdatesResource(BaseMethodView):

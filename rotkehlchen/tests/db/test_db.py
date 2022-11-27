@@ -1527,8 +1527,8 @@ def test_db_schema_sanity_check(database):
     connection.schema_sanity_check()
     with pytest.raises(DBSchemaError) as exception_info:
         with database.user_write() as cursor:
-            cursor.execute('DROP TABLE web3_nodes')
-            cursor.execute('CREATE TABLE web3_nodes(column1 INTEGER)')
+            cursor.execute('DROP TABLE rpc_nodes')
+            cursor.execute('CREATE TABLE rpc_nodes(column1 INTEGER)')
             cursor.execute('DROP TABLE ens_mappings')
             cursor.execute('CREATE TABLE ens_mappings(column2 TEXT)')
             connection.schema_sanity_check()
