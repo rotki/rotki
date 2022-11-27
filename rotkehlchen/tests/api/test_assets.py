@@ -552,14 +552,14 @@ def test_get_assets_mappings(rotkehlchen_api_server):
     for identifier, details in result.items():
         assert identifier in queried_assets
         if identifier == A_DAI.identifier:
-            assert details['evm_chain'] == 'ethereum'
+            assert details['chain_id'] == 1
             assert 'custom_asset_type' not in details.keys()
             assert details['asset_type'] != 'custom asset'
         elif identifier == custom_asset_id:
             assert details['custom_asset_type'] == 'random'
             assert details['asset_type'] == 'custom asset'
         else:
-            assert 'evm_chain' not in details.keys()
+            assert 'chain_id' not in details.keys()
             assert 'custom_asset_type' not in details.keys()
             assert details['asset_type'] != 'custom asset'
 
@@ -686,9 +686,9 @@ def test_search_assets(rotkehlchen_api_server):
         assert entry['symbol'] == 'ETH'
         assert entry['identifier'] != 'ETH2'
         if entry['name'] != 'Binance-Peg Ethereum Token':
-            assert 'evm_chain' not in entry
+            assert 'chain_id' not in entry
         else:
-            assert entry['evm_chain'] == 'binance'
+            assert entry['chain_id'] == 56  # binance
     assert_asset_result_order(data=result, is_ascending=True, order_field='name')
     assert all(['custom_asset_type' not in entry.keys() and not entry['is_custom_asset'] for entry in result])  # noqa: E501
 
@@ -708,7 +708,7 @@ def test_search_assets(rotkehlchen_api_server):
     )
     assert_error_response(response, contained_in_msg='Must be one of: name, symbol.')
 
-    # test that the evm_chain column is included
+    # test that the chain_id column is included
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
@@ -724,9 +724,15 @@ def test_search_assets(rotkehlchen_api_server):
         },
     )
     result = assert_proper_response_with_result(response)
-    assert {asset['evm_chain'] for asset in result} == {'matic', 'optimism', 'ethereum', 'arbitrum', 'binance'}  # noqa: E501
+    assert {asset['chain_id'] for asset in result} == {
+        137,  # matic
+        10,  # optimism
+        1,  # ethereum
+        42161,  # arbitrum
+        56,  # binance
+    }
 
-    # check that using evm_chain filter works.
+    # check that using chain_id filter works.
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
@@ -736,17 +742,17 @@ def test_search_assets(rotkehlchen_api_server):
             'value': 'DAI',
             'search_column': 'symbol',
             'limit': 50,
-            'evm_chain': 'ethereum',
+            'chain_id': 1,
             'order_by_attributes': ['name'],
             'ascending': [True],
         },
     )
     result = assert_proper_response_with_result(response)
     assert 50 >= len(result) > 10
-    assert all(['ethereum' == entry['evm_chain'] and 'DAI' in entry['symbol'] for entry in result])
+    assert all([1 == entry['chain_id'] and 'DAI' in entry['symbol'] for entry in result])
     assert_asset_result_order(data=result, is_ascending=True, order_field='name')
 
-    # check that using an unsupported evm_chain fails
+    # check that using an unsupported chain_id fails
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
@@ -756,12 +762,12 @@ def test_search_assets(rotkehlchen_api_server):
             'value': 'dai',
             'search_column': 'symbol',
             'limit': 50,
-            'evm_chain': 'near',
+            'chain_id': 42424,
             'order_by_attributes': ['name'],
             'ascending': [True],
         },
     )
-    assert_error_response(response, contained_in_msg='Failed to deserialize ChainID value near')
+    assert_error_response(response, contained_in_msg='Could not deserialize ChainID from value 42424')  # noqa: E501
 
 
 def test_search_assets_with_levenshtein(rotkehlchen_api_server):
@@ -867,12 +873,12 @@ def test_search_assets_with_levenshtein(rotkehlchen_api_server):
         json={
             'value': 'dai',
             'limit': 50,
-            'evm_chain': 'ethereum',
+            'chain_id': 1,
         },
     )
     result = assert_proper_response_with_result(response)
     assert 50 >= len(result) > 10
-    assert all(['ethereum' == entry['evm_chain'] and entry['asset_type'] != 'custom asset' and 'custom_asset_type' not in entry.keys() for entry in result])  # noqa: E501
+    assert all([1 == entry['chain_id'] and entry['asset_type'] != 'custom asset' and 'custom_asset_type' not in entry.keys() for entry in result])  # noqa: E501
 
     assert_substring_in_search_result(result, 'dai')
     # check that Dai(DAI) appears at the top of result.
@@ -906,7 +912,7 @@ def test_search_assets_with_levenshtein(rotkehlchen_api_server):
     assert_substring_in_search_result(result, 'my custom')
     assert all([custom_asset_id == entry['identifier'] and entry['asset_type'] == 'custom asset' and 'random' == entry['custom_asset_type'] for entry in result])  # noqa: E501
 
-    # check that using an unsupported evm_chain fails
+    # check that using an unsupported chain_id fails
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
@@ -915,10 +921,10 @@ def test_search_assets_with_levenshtein(rotkehlchen_api_server):
         json={
             'value': 'dai',
             'limit': 50,
-            'evm_chain': 'near',
+            'chain_id': 4242,
         },
     )
-    assert_error_response(response, contained_in_msg='Failed to deserialize ChainID value near')
+    assert_error_response(response, contained_in_msg='Could not deserialize ChainID from value 4242')  # noqa: E501
 
 
 def test_search_nfts_with_levenshtein(rotkehlchen_api_server):

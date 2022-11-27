@@ -3,20 +3,20 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
-from rotkehlchen.chain.ethereum.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.modules.weth.constants import CPT_WETH
-from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
+from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.structures import ActionItem
+from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
+from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.constants.assets import A_ETH, A_WETH
 from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction, Location
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int, ts_sec_to_ms
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.decoding.base import BaseDecoderTools
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
     from rotkehlchen.user_messages import MessagesAggregator
 
 WETH_CONTRACT = string_to_evm_address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2')
@@ -27,21 +27,25 @@ WETH_WITHDRAW_TOPIC = b'\x7f\xcfS,\x15\xf0\xa6\xdb\x0b\xd6\xd0\xe08\xbe\xa7\x1d0
 class WethDecoder(DecoderInterface):
     def __init__(
             self,
-            ethereum_manager: 'EthereumManager',
+            ethereum_inquirer: 'EthereumInquirer',
             base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',
     ) -> None:
-        super().__init__(ethereum_manager, base_tools, msg_aggregator)
+        super().__init__(
+            evm_inquirer=ethereum_inquirer,
+            base_tools=base_tools,
+            msg_aggregator=msg_aggregator,
+        )
         self.base_tools = base_tools
         self.weth = A_WETH.resolve_to_evm_token()
         self.eth = A_ETH.resolve_to_crypto_asset()
 
     def _decode_weth(
             self,
-            tx_log: EthereumTxReceiptLog,
+            tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
             decoded_events: List[HistoryBaseEntry],
-            all_logs: List[EthereumTxReceiptLog],
+            all_logs: List[EvmTxReceiptLog],
             action_items: Optional[List[ActionItem]],
     ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
         if tx_log.topics[0] == WETH_DEPOSIT_TOPIC:
@@ -66,10 +70,10 @@ class WethDecoder(DecoderInterface):
 
     def _decode_deposit_event(
             self,
-            tx_log: EthereumTxReceiptLog,
+            tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
             decoded_events: List[HistoryBaseEntry],
-            all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
+            all_logs: List[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[List[ActionItem]],  # pylint: disable=unused-argument
     ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
         depositor = hex_or_bytes_to_address(tx_log.topics[1])
@@ -113,10 +117,10 @@ class WethDecoder(DecoderInterface):
 
     def _decode_withdrawal_event(
             self,
-            tx_log: EthereumTxReceiptLog,
+            tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
             decoded_events: List[HistoryBaseEntry],
-            all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
+            all_logs: List[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[List[ActionItem]],  # pylint: disable=unused-argument
     ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
         withdrawer = hex_or_bytes_to_address(tx_log.topics[1])

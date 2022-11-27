@@ -3064,7 +3064,7 @@ Querying all supported assets
    :resjson string swapped_for: An optional attribute representing another asset for which this asset was swapped for. For example ``VEN`` tokens were at some point swapped for ``VET`` tokens.
    :resjson string symbol: The symbol used for this asset. This is not guaranteed to be unique.
    :resjson string evm_address: If the type is ``evm_token`` then this will be the hexadecimal address of the token's contract.
-   :resjson string chain: If the type is ``evm_token`` then this will be the chain in the form of string in which the token is.
+   :resjson int chain_id: If the type is ``evm_token`` then this will be an integer representing the chain id of the chain.
    :resjson string token_kind:  If the type is ``evm_token`` then this will be the token type, for example ``erc20``.
    :resjson integer decimals: If the type is ``evm_token`` then this will be the number of decimals the token has.
    :resjson string cryptocompare: The cryptocompare identifier for the asset. can be missing if not known. If missing a query by symbol is attempted.
@@ -3124,8 +3124,9 @@ Get asset identifiers mappings
               "eip155:1/erc20:0xcC4eF9EEAF656aC1a2Ab886743E98e97E090ed38": {
                   "name": "DigitalDevelopersFund",
                   "symbol": "DDF",
-                  "evm_chain": "ethereum",
-                  "asset_type": "evm token"
+                  "chain_id": 1,
+                  "is_custom_asset": false,
+		  "asset_type": "evm token"
               },
               "_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_26612040215479394739615825115912800930061094786769410446114278812336794170041": {
 	              "name": "Mooncat 151",
@@ -3140,7 +3141,7 @@ Get asset identifiers mappings
    :resjson object result: A mapping of identifiers to (1) their name, symbol & chain(if available) if they are assets. And to (2) their name, collection name and image url if they are nfts.
    :resjson string name: Name of the asset/nft.
    :resjson string symbol: Symbol of the asset. Will only exist for non-nft assets.
-   :resjson string evm_chain: This value might not be included in all the results. Full name of the EVM chain where the asset is located if the asset is an EVM token. This is not included for NFTs.
+   :resjson int chain_id: This value might not be included in all the results. Chain id of the chain where the asset is located if the asset is an EVM token.
    :resjson string custom_asset_type: This value might not be included in all the results. It represents the custom asset type for a custom asset.
    :resjson string collection_name: Only included for NFTs. May be null if nft has no collection. If it does then this is its name.
    :resjson string image_url: Only included for NFTs. May be null if nft has no image. If it does this is a url to the image.
@@ -3178,7 +3179,7 @@ Search for assets
    :reqjson string value: A string to be used search the assets. Required.
    :reqjson string search_column: A column on the assets table to perform the search on. One of ``"name"`` or ``"symbol"``. Required.
    :reqjson bool return_exact_matches: A flag that specifies whether the result returned should match the search keyword. Defaults to ``"false"``.
-   :reqjson string[optional] evm_chain: A string representing the name of a supported EVM chain used to filter the result. e.g "ethereum", "optimism", "binance", etc.
+   :reqjson int[optional] chain_id: Chain id of the chain where the asset is located if the asset is an EVM token.
 
 
    **Example Response**:
@@ -3194,7 +3195,7 @@ Search for assets
                   "identifier": "eip155:1/erc20:0xB6eD7644C69416d67B522e20bC294A9a9B405B31",
                   "name": "0xBitcoin",
                   "symbol": "0xBTC"
-                  "chain": "ethereum",
+                  "chain_id": 1,
                   "is_custom_asset": false
               },
               {
@@ -3211,7 +3212,7 @@ Search for assets
    :resjson string identifier: Identifier of the asset.
    :resjson string name: Name of the asset.
    :resjson string symbol: Symbol of the asset.
-   :resjson string evm_chain: This value might not be included in all the results. Full name of the EVM chain where the asset is located if the asset is an EVM token.
+   :resjson int chain_id: This value might not be included in all the results. Chain id of the chain where the asset is located if the asset is an EVM token.
    :resjson string custom_asset_type: This value might not be included in all the results. It represents the custom asset type for a custom asset.
    :resjson string asset_type: This value represents the asset type. Can be `custom asset`, `nft`, etc.
    :resjson string collection_name: This value might not be included in all the results. It represents the nft collection name.
@@ -3242,7 +3243,7 @@ Search for assets(Levenshtein)
 
    :reqjson int limit: This signifies the limit of records to return as per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
    :reqjson string value: A string to be used to search the assets. Required.
-   :reqjson string[optional] evm_chain: A string representing the name of a supported EVM chain used to filter the result. e.g "ethereum", "optimism", "binance", etc.
+   :reqjson int[optional] chain_id: Chain id of a supported EVM chain used to filter the result
    :reqjson list[string][optional] owner_addresses: A list of evm addresses. If provided, only nfts owned by these addresses will be returned.
    :reqjson string[optional] name: Optional nfts name to filter by.
    :reqjson string[optional] collection_name: Optional nfts collection_name to filter by.
@@ -3261,7 +3262,7 @@ Search for assets(Levenshtein)
                   "identifier": "eip155:1/erc20:0xB6eD7644C69416d67B522e20bC294A9a9B405B31",
                   "name": "0xBitcoin",
                   "symbol": "0xBTC"
-                  "evm_chain": "ethereum",
+                  "chain_id": 1,
                   "is_custom_asset": false
               }
           ],
@@ -3272,7 +3273,7 @@ Search for assets(Levenshtein)
    :resjson string identifier: Identifier of the asset.
    :resjson string name: Name of the asset.
    :resjson string symbol: Symbol of the asset.
-   :resjson string evm_chain: This value might not be included in all the results. Full name of the EVM chain where the asset is located if the asset is an EVM token.
+   :resjson int chain_id: This value might not be included in all the results. Chain id of the chain where the asset is located if the asset is an EVM token.
    :resjson string custom_asset_type: This value might not be included in all the results. It represents the custom asset type for a custom asset.
    :resjson string asset_type: This value represents the asset type. Can be `custom asset`, `nft`, etc.
    :statuscode 200: Assets successfully queried.
@@ -6702,251 +6703,6 @@ Getting Aave historical data
    :statuscode 500: Internal rotki error
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
-Getting AdEx balances
-==============================
-
-.. http:get:: /api/(version)/blockchains/ETH/modules/adex/balances
-
-   Doing a GET on the adex balances resource will return the ADX staked in the pools of the platform.
-
-   .. note::
-      This endpoint can also be queried asynchronously by using ``"async_query": true``
-
-   **Example Request**:
-
-   .. http:example:: curl wget httpie python-requests
-
-      GET /api/1/blockchains/ETH/modules/adex/balances HTTP/1.1
-      Host: localhost:5042
-
-   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
-
-   **Example Response**:
-
-   .. sourcecode:: http
-
-      HTTP/1.1 200 OK
-      Content-Type: application/json
-
-      {
-        "result": {
-            "0xE74ad5437C6CFB0cCD6bADda1F6b57b6E542E75e": [
-                {
-                    "adx_balance": {
-                        "amount": "1050",
-                        "usd_value": "950"
-                    },
-                    "contract_address": "0x4846C6837ec670Bbd1f5b485471c8f64ECB9c534",
-                    "dai_unclaimed_balance": {
-                        "amount": "0.221231768887185282",
-                        "usd_value": "0.221895464193846837846"
-                    },
-                    "pool_id": "0x1ce0c96393fa219d9776f33146e983a3e4a7d95821faca1b180ea0011d93a121",
-                    "pool_name": "Tom"
-                }
-            ]
-        },
-        "message": "",
-      }
-
-   :resjson object result: A mapping between accounts and their balances in the AdEx pools (represented by a list where each item is a pool).
-   :resjson string address: The staking contract address.
-   :resjson string pool_id: The identifier of the pool.
-   :resjson string pool_id: The name of the pool.
-   :resjson object adx_balance: The sum of the staked ADX plus the unclaimed ADX amount the user has in the pool, and its USD value.
-   :resjson object dai_unclaimed_balance: The unclaimed DAI amount the user has in the pool and its USD value.
-
-   :statuscode 200: AdEx balances successfully queried.
-   :statuscode 409: User is not logged in. Or AdEx module is not activated.
-   :statuscode 500: Internal rotki error.
-   :statuscode 502: An external service used in the query such as etherscan or the graph node could not be reached or returned unexpected response.
-
-Getting AdEx historical data
-==============================
-
-.. http:get:: /api/(version)/blockchains/ETH/modules/adex/history
-
-   Doing a GET on the adex events history resource will return the history of staking events (e.g. withdraw, deposit) and the staking details of the pools.
-
-   .. note::
-      This endpoint can also be queried asynchronously by using ``"async_query": true``
-
-   **Example Request**:
-
-   .. http:example:: curl wget httpie python-requests
-
-      GET /api/1/blockchains/ETH/modules/adex/history HTTP/1.1
-      Host: localhost:5042
-
-   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
-
-   **Example Response**:
-
-   .. sourcecode:: http
-
-      HTTP/1.1 200 OK
-      Content-Type: application/json
-
-      {
-        "result": {
-            "0xE74ad5437C6CFB0cCD6bADda1F6b57b6E542E75e": {
-                "events": [
-                    {
-                        "bond_id": "0x540cab9883923c01e657d5da4ca5674b6e4626b4a148224635495502d674c7c5",
-                        "event_type": "deposit",
-                        "identity_address": "0x2a6c38D16BFdc7b4a20f1F982c058F07BDCe9204",
-                        "pool_id": "0x1ce0c96393fa219d9776f33146e983a3e4a7d95821faca1b180ea0011d93a121",
-                        "pool_name": "Tom",
-                        "timestamp": 1604366004,
-                        "tx_hash": "0x9989f47c6c0a761f98f910ac24e2438d858be96c12124a13be4bb4b3150c55ea",
-                        "value": {
-                            "amount": "1000",
-                            "usd_value": "950"
-                        }
-                    },
-                    {
-                        "event_type": "claim",
-                        "identity_address": "0x2a6c38D16BFdc7b4a20f1F982c058F07BDCe9204",
-                        "pool_id": "0x1ce0c96393fa219d9776f33146e983a3e4a7d95821faca1b180ea0011d93a121",
-                        "pool_name": "Tom",
-                        "timestamp": 1607453764,
-                        "tx_hash": "0xa9ee91af823c0173fc5ada908ff9fe3f4d7c84a2c9da795f0889b3f4ace75b13",
-                        "value": {
-                            "amount": "50",
-                            "usd_value": "45.23"
-                        },
-                        "token": "eip155:1/erc20:0xADE00C28244d5CE17D72E40330B1c318cD12B7c3",
-                    },
-                    {
-                        "bond_id": "0x540cab9883923c01e657d5da4ca5674b6e4626b4a148224635495502d674c7c5",
-                        "event_type": "withdraw",
-                        "identity_address": "0x2a6c38D16BFdc7b4a20f1F982c058F07BDCe9204",
-                        "pool_id": "0x1ce0c96393fa219d9776f33146e983a3e4a7d95821faca1b180ea0011d93a121",
-                        "pool_name": "Tom",
-                        "timestamp": 1607453764,
-                        "tx_hash": "0xa9ee91af823c0173fc5ada908ff9fe3f4d7c84a2c9da795f0889b3f4ace75b13",
-                        "value": {
-                            "amount": "1000",
-                            "usd_value": "950"
-                        }
-                    },
-                    {
-                        "bond_id": "0x16bb43690fe3764b15a2eb8d5e94e1ac13d6ef38e6c6f9d9f9c745eaff92d427",
-                        "event_type": "deposit",
-                        "identity_address": "0x2a6c38D16BFdc7b4a20f1F982c058F07BDCe9204",
-                        "pool_id": "0x1ce0c96393fa219d9776f33146e983a3e4a7d95821faca1b180ea0011d93a121",
-                        "pool_name": "Tom",
-                        "timestamp": 1607453764,
-                        "tx_hash": "0xa9ee91af823c0173fc5ada908ff9fe3f4d7c84a2c9da795f0889b3f4ace75b13",
-                        "value": {
-                            "amount": "1050",
-                            "usd_value": "1015"
-                        }
-                    },
-                    {
-                        "event_type": "claim",
-                        "identity_address": "0x2a6c38D16BFdc7b4a20f1F982c058F07BDCe9204",
-                        "pool_id": "0x1ce0c96393fa219d9776f33146e983a3e4a7d95821faca1b180ea0011d93a121",
-                        "pool_name": "Tom",
-                        "timestamp": 1607915796,
-                        "tx_hash": "0x892e2dacbd0fcb787d7104b4f384e24fc4573294b75b9bfd91ca969119d8ed80",
-                        "value": {
-                            "amount": "43",
-                            "usd_value": "39.233"
-                        },
-                        "token": "eip155:1/erc20:0xADE00C28244d5CE17D72E40330B1c318cD12B7c3",
-                    },
-                    {
-                        "bond_id": "0x16bb43690fe3764b15a2eb8d5e94e1ac13d6ef38e6c6f9d9f9c745eaff92d427",
-                        "event_type": "withdraw",
-                        "identity_address": "0x2a6c38D16BFdc7b4a20f1F982c058F07BDCe9204",
-                        "pool_id": "0x1ce0c96393fa219d9776f33146e983a3e4a7d95821faca1b180ea0011d93a121",
-                        "pool_name": "Tom",
-                        "timestamp": 1607915796,
-                        "tx_hash": "0x892e2dacbd0fcb787d7104b4f384e24fc4573294b75b9bfd91ca969119d8ed80",
-                        "value": {
-                            "amount": "1050",
-                            "usd_value": "1015"
-                        }
-                    },
-                    {
-                        "bond_id": "0x30bd07a0cc0c9b94e2d10487c1053fc6a5043c41fb28dcfa3ff80a68013eb501",
-                        "event_type": "deposit",
-                        "identity_address": "0x2a6c38D16BFdc7b4a20f1F982c058F07BDCe9204",
-                        "pool_id": "0x1ce0c96393fa219d9776f33146e983a3e4a7d95821faca1b180ea0011d93a121",
-                        "pool_name": "Tom",
-                        "timestamp": 1607915796,
-                        "tx_hash": "0x892e2dacbd0fcb787d7104b4f384e24fc4573294b75b9bfd91ca969119d8ed80",
-                        "value": {
-                            "amount": "1093",
-                            "usd_value": "1075"
-                        }
-                    }
-                ],
-                "staking_details": [
-                    {
-                        "contract_address": "0x4846C6837ec670Bbd1f5b485471c8f64ECB9c534",
-                        "pool_id": "0x1ce0c96393fa219d9776f33146e983a3e4a7d95821faca1b180ea0011d93a121",
-                        "pool_name": "Tom",
-                        "apr": "52.43%",
-                        "adx_balance": {
-                            "amount": "1093",
-                            "usd_value": "1075"
-                        },
-                        "adx_unclaimed_balance": {
-                            "amount": "19.75",
-                            "usd_value": "5.24"
-                        },
-                        "dai_unclaimed_balance": {
-                            "amount": "0.221231768887185282",
-                            "usd_value": "0.221895464193846837846"
-                        },
-                        "adx_profit_loss": {
-                            "amount": "93",
-                            "usd_value": "81"
-                        },
-                        "dai_profit_loss": {
-                            "amount": "0.22",
-                            "usd_value": "0.21"
-                        },
-                        "total_staked_amount": "28809204.154057988204380985"
-                    }
-                ]
-            }
-        },
-        "message": "",
-      }
-
-   :resjson object result: A mapping between accounts and their events history on the AdEx pools and the staking details of the pools.
-   :resjson list[object] events: A list of all the staking events generated by the address interacting with the pools.
-
-       - tx_hash: The transaction hash of the event.
-       - timestamp: The Unix timestamp in UTC when the event happened (in seconds).
-       - identity_address: The contract address associated with the user address in the platform.
-       - event_type: The type of event. Can be: ``"deposit"`` (bond), ``"withdraw"`` (unbond), ``"withdraw request"`` (unbond request) and ``"claim"`` (channel withdraw).
-       - value: the deposited, withdrawn or claimed ADX amount and its USD value.
-       - bond_id (except claim events): The identifier of the bond, shared among deposit, withdraw and withdraw requested events that involve the same bond.
-       - pool_id: The identifier of the pool.
-       - pool_name: The name of the pool.
-       - token (only claim events): The identifier of the tokens claimed.
-
-   :resjson list[object] staking_details: A list of the staking details of the staking pools the address is currently staking in.
-
-       - contract_address: The ADX staking contract address.
-       - pool_id: The identifier of the pool.
-       - pool_name: The name of the pool.
-       - total_staked_amount: The total amount of ADX staked in the pool.
-       - adx_balance: The sum of the staked ADX plus the unclaimed ADX amount the user has in the pool, and its USD value.
-       - adx_unclaimed_balance: The unclaimed ADX amount the user has in the pool and its USD value.
-       - dai_unclaimed_balance: The unclaimed DAI amount the user has in the pool and its USD value.
-       - apr: The current staking APR in the pool.
-       - adx_profit_loss: The ADX profit/loss amount and its USD value (includes unclaimed ADX).
-       - dai_profit_loss: The DAI profit/loss amount and its USD value (includes unclaimed DAI).
-
-   :statuscode 200: AdEx events history successfully queried.
-   :statuscode 409: User is not logged in. Or AdEx module is not activated.
-   :statuscode 500: Internal rotki error.
-   :statuscode 502: An external service used in the query such as etherscan or the graph node could not be reached or returned unexpected response.
 
 Getting Balancer balances
 ==============================

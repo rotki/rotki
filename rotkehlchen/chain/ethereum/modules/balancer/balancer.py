@@ -84,7 +84,7 @@ from .utils import (
 )
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
 
@@ -96,12 +96,12 @@ class Balancer(EthereumModule):
     """Balancer integration module"""
     def __init__(
             self,
-            ethereum_manager: 'EthereumManager',
+            ethereum_inquirer: 'EthereumInquirer',
             database: 'DBHandler',
             premium: Optional[Premium],
             msg_aggregator: MessagesAggregator,
     ) -> None:
-        self.ethereum = ethereum_manager
+        self.ethereum = ethereum_inquirer
         self.database = database
         self.premium = premium
         self.msg_aggregator = msg_aggregator
@@ -559,7 +559,7 @@ class Balancer(EthereumModule):
         balancer_events: List[BalancerEvent] = []
         pool_addr_to_token_addr_to_index: PoolAddrToTokenAddrToIndex = {}
         # Create a map that allows getting the index of a token in the pool
-        db_pools = GlobalDBHandler().get_ethereum_tokens(protocol='balancer')
+        db_pools = GlobalDBHandler().get_evm_tokens(chain_id=ChainID.ETHEREUM, protocol='balancer')
         for db_pool in db_pools:
             token_addr_to_index = {
                 pool_token.address: idx
@@ -660,7 +660,7 @@ class Balancer(EthereumModule):
                     ]
                     token_data = EvmToken.initialize(
                         address=bpt_event.pool_address,
-                        chain=ChainID.ETHEREUM,
+                        chain_id=ChainID.ETHEREUM,
                         token_kind=EvmTokenKind.ERC20,
                         underlying_tokens=underlying_tokens,
                         protocol='balancer',

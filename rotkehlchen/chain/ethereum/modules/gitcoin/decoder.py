@@ -4,17 +4,17 @@ from typing import TYPE_CHECKING, Callable, List
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
-from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
+from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.structures import ActionItem
+from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import EvmTransaction
 
 from .constants import CPT_GITCOIN
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.decoding.base import BaseDecoderTools
     from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
     from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -34,7 +34,7 @@ class GitcoinDecoder(DecoderInterface):
     def _maybe_enrich_gitcoin_transfers(  # pylint: disable=no-self-use
             self,
             token: EvmToken,  # pylint: disable=unused-argument
-            tx_log: EthereumTxReceiptLog,  # pylint: disable=unused-argument
+            tx_log: EvmTxReceiptLog,  # pylint: disable=unused-argument
             transaction: EvmTransaction,
             event: HistoryBaseEntry,
             action_items: List[ActionItem],  # pylint: disable=unused-argument

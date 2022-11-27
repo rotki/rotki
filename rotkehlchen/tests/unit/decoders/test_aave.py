@@ -3,8 +3,8 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.aave.constants import CPT_AAVE_V1
+from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.constants.assets import A_DAI, A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.aave import A_ADAI_V1, A_AETH_V1
@@ -16,16 +16,15 @@ ADDY2 = '0x5727c0481b90a129554395937612d8b9301D6c7b'
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
-def test_aave_deposit_v1(database, ethereum_manager, function_scope_messages_aggregator):
+def test_aave_deposit_v1(database, ethereum_inquirer):
     """Data taken from
     https://etherscan.io/tx/0x930879d66d13c37edf25cdbb2d2e85b65c3b2a026529ff4085146bb7a5398410
     """
     # TODO: For faster tests hard-code the transaction and the logs here so no remote query needed
     tx_hash = deserialize_evm_tx_hash('0x930879d66d13c37edf25cdbb2d2e85b65c3b2a026529ff4085146bb7a5398410')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
-        ethereum_manager=ethereum_manager,
+        ethereum_inquirer=ethereum_inquirer,
         database=database,
-        msg_aggregator=function_scope_messages_aggregator,
         tx_hash=tx_hash,
     )
     amount = '2507.675873220870275072'
@@ -84,16 +83,15 @@ def test_aave_deposit_v1(database, ethereum_manager, function_scope_messages_agg
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
-def test_aave_withdraw_v1(database, ethereum_manager, function_scope_messages_aggregator):
+def test_aave_withdraw_v1(database, ethereum_inquirer):
     """Data taken from
     https://etherscan.io/tx/0x4fed67963375a3f90916f0cf7cb9e4d12644629e36233025b36060494ffba486
     """
     # TODO: For faster tests hard-code the transaction and the logs here so no remote query needed
     tx_hash = deserialize_evm_tx_hash('0x4fed67963375a3f90916f0cf7cb9e4d12644629e36233025b36060494ffba486')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
-        ethereum_manager=ethereum_manager,
+        ethereum_inquirer=ethereum_inquirer,
         database=database,
-        msg_aggregator=function_scope_messages_aggregator,
         tx_hash=tx_hash,
     )
     amount = '7968.408929477087756071'
@@ -153,16 +151,15 @@ def test_aave_withdraw_v1(database, ethereum_manager, function_scope_messages_ag
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY2]])
-def test_aave_eth_withdraw_v1(database, ethereum_manager, function_scope_messages_aggregator):
+def test_aave_eth_withdraw_v1(database, ethereum_inquirer):
     """Data taken from
     https://etherscan.io/tx/0xbd333bdd5784c10630aac5683e63f703e660a78d06f95b2ff2a8788a8dade787
     """
     # TODO: For faster tests hard-code the transaction and the logs here so no remote query needed
     tx_hash = deserialize_evm_tx_hash('0xbd333bdd5784c10630aac5683e63f703e660a78d06f95b2ff2a8788a8dade787')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
-        ethereum_manager=ethereum_manager,
+        ethereum_inquirer=ethereum_inquirer,
         database=database,
-        msg_aggregator=function_scope_messages_aggregator,
         tx_hash=tx_hash,
     )
     amount = '1.000240847792940067'

@@ -209,19 +209,19 @@ def test_migration_4(rotkehlchen_api_server):
 
     with open(dir_path / 'data' / 'nodes.json', 'r') as f:
         nodes = json.loads(f.read())
-        web3_nodes = database.get_web3_nodes(blockchain=SupportedBlockchain.ETHEREUM)
-        assert len(web3_nodes) == len(nodes) + 1
+        rpc_nodes = database.get_rpc_nodes(blockchain=SupportedBlockchain.ETHEREUM)
+        assert len(rpc_nodes) == len(nodes) + 1
         for node in nodes:
-            for web3_node in web3_nodes:
-                if web3_node.node_info.name == node['name']:
-                    assert web3_node.node_info.endpoint == node['endpoint']
-                    assert web3_node.active == node['active']
-                    assert web3_node.node_info.owned == node['owned']
-                    assert web3_node.weight == FVal(node['weight'])
+            for rpc_node in rpc_nodes:
+                if rpc_node.node_info.name == node['name']:
+                    assert rpc_node.node_info.endpoint == node['endpoint']
+                    assert rpc_node.active == node['active']
+                    assert rpc_node.node_info.owned == node['owned']
+                    assert rpc_node.weight == FVal(node['weight'])
                     continue
-        assert len(web3_nodes) >= 5
-        assert web3_nodes[5].node_info.owned is True
-        assert web3_nodes[5].node_info.endpoint == 'https://localhost:5222'
+        assert len(rpc_nodes) >= 5
+        assert rpc_nodes[5].node_info.owned is True
+        assert rpc_nodes[5].node_info.endpoint == 'https://localhost:5222'
 
 
 @pytest.mark.parametrize('data_migration_version', [None])
@@ -247,10 +247,10 @@ def test_migration_4_no_own_endpoint(rotkehlchen_api_server):
             'SELECT * from settings where name=?', ('eth_rpc_endpoint',),
         )
         assert cursor.fetchone() is None, 'Setting should have been deleted'
-    web3_nodes = database.get_web3_nodes(blockchain=SupportedBlockchain.ETHEREUM)
+    rpc_nodes = database.get_rpc_nodes(blockchain=SupportedBlockchain.ETHEREUM)
     with open(dir_path / 'data' / 'nodes.json', 'r') as f:
         nodes = json.loads(f.read())
-        assert len(nodes) == len(web3_nodes)
+        assert len(nodes) == len(rpc_nodes)
 
 
 @pytest.mark.parametrize('data_migration_version', [None])

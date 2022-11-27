@@ -68,7 +68,7 @@ def test_curve_pools_cache(rotkehlchen_instance):
             GlobalDBHandler().delete_evm_token(
                 write_cursor=write_cursor,
                 address='0xD71eCFF9342A5Ced620049e616c5035F1dB98620',
-                chain=ChainID.ETHEREUM,
+                chain_id=ChainID.ETHEREUM,
             )
         except InputError:
             # token might not exist but we don't care
@@ -77,14 +77,14 @@ def test_curve_pools_cache(rotkehlchen_instance):
     # check that it was deleted successfully
     token = GlobalDBHandler().get_evm_token(
         address='0xD71eCFF9342A5Ced620049e616c5035F1dB98620',
-        chain=ChainID.ETHEREUM,
+        chain_id=ChainID.ETHEREUM,
     )
     assert token is None
 
-    def mock_call_contract(contract, manager, method_name, **kwargs):
+    def mock_call_contract(contract, node_inquirer, method_name, **kwargs):
         if method_name == 'pool_count':
             return 2  # if we don't limit pools count, the test will run for too long
-        return manager.call_contract(
+        return node_inquirer.call_contract(
             contract_address=contract.address,
             abi=contract.abi,
             method_name=method_name,
@@ -123,7 +123,7 @@ def test_curve_pools_cache(rotkehlchen_instance):
     # Check that the token was created
     token = GlobalDBHandler().get_evm_token(
         address='0xD71eCFF9342A5Ced620049e616c5035F1dB98620',
-        chain=ChainID.ETHEREUM,
+        chain_id=ChainID.ETHEREUM,
     )
     assert token.name == 'Synth sEUR'
     assert token.symbol == 'sEUR'

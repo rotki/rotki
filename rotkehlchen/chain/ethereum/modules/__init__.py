@@ -1,6 +1,5 @@
 __all__ = [
     'Aave',
-    'Adex',
     'Balancer',
     'Compound',
     'Loopring',
@@ -17,7 +16,6 @@ __all__ = [
 ]
 
 from .aave.aave import Aave
-from .adex.adex import Adex
 from .balancer.balancer import Balancer
 from .compound import Compound
 from .eth2.eth2 import Eth2

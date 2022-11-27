@@ -97,7 +97,7 @@ class Defillama(HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):
         """
         if asset.is_evm_token() is True:
             asset = asset.resolve_to_evm_token()
-            return f'{str(asset.chain)}:{asset.evm_address}'
+            return f'{str(asset.chain_id)}:{asset.evm_address}'
 
         return f'coingecko:{asset.to_coingecko()}'
 

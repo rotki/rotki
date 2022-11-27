@@ -7,25 +7,25 @@ import gevent
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.chain.ethereum.constants import ETHERSCAN_NODE
-from rotkehlchen.chain.ethereum.decoding.decoder import EVMTransactionDecoder
-from rotkehlchen.chain.ethereum.manager import EthereumManager
-from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
-from rotkehlchen.chain.ethereum.transactions import EthTransactions
+from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
+from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
 from rotkehlchen.chain.ethereum.types import NodeName, WeightedNode, string_to_evm_address
+from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.constants import ONE
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.db.ethtx import DBEthTx
-from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
+from rotkehlchen.db.evmtx import DBEvmTx
+from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     BlockchainAccountData,
+    ChainID,
     EvmTransaction,
     EVMTxHash,
     SupportedBlockchain,
     Timestamp,
     deserialize_evm_tx_hash,
 )
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
 NODE_CONNECTION_TIMEOUT = 10
@@ -96,23 +96,23 @@ else:
 
 
 def wait_until_all_nodes_connected(
-        ethereum_manager_connect_at_start,
-        ethereum,
+        connect_at_start,
+        evm_inquirer,
         timeout: int = NODE_CONNECTION_TIMEOUT,
 ):
     """Wait until all ethereum nodes are connected or until a timeout is hit"""
-    connected = [False] * len(ethereum_manager_connect_at_start)
+    connected = [False] * len(connect_at_start)
     try:
         with gevent.Timeout(timeout):
             while not all(connected):
-                for idx, weighted_node in enumerate(ethereum_manager_connect_at_start):
-                    if weighted_node.node_info in ethereum.web3_mapping:
+                for idx, weighted_node in enumerate(connect_at_start):
+                    if weighted_node.node_info in evm_inquirer.web3_mapping:
                         connected[idx] = True
 
                 gevent.sleep(0.1)
     except gevent.Timeout:
         names = [
-            str(x) for idx, x in enumerate(ethereum_manager_connect_at_start) if not connected[idx]
+            str(x) for idx, x in enumerate(connect_at_start) if not connected[idx]
         ]
         log.warning(
             f'Did not connect to nodes: {",".join(names)} due to '
@@ -120,7 +120,7 @@ def wait_until_all_nodes_connected(
         )
 
 
-def txreceipt_to_data(receipt: EthereumTxReceipt) -> Dict[str, Any]:
+def txreceipt_to_data(receipt: EvmTxReceipt) -> Dict[str, Any]:
     """Turns it to receipt data as would be returned by web3
 
     Is here since this would only be done in test. In actual
@@ -154,8 +154,8 @@ def setup_ethereum_transactions_test(
         transaction_already_queried: bool,
         one_receipt_in_db: bool = False,
         second_receipt_in_db: bool = False,
-) -> Tuple[List[EvmTransaction], List[EthereumTxReceipt]]:
-    dbethtx = DBEthTx(database)
+) -> Tuple[List[EvmTransaction], List[EvmTxReceipt]]:
+    dbevmtx = DBEvmTx(database)
     tx_hash1 = deserialize_evm_tx_hash('0x692f9a6083e905bdeca4f0293f3473d7a287260547f8cbccc38c5cb01591fcda')  # noqa: E501
     addr1 = string_to_evm_address('0x443E1f9b1c866E54e914822B7d3d7165EdB6e9Ea')
     addr2 = string_to_evm_address('0x442068F934BE670aDAb81242C87144a851d56d16')
@@ -171,6 +171,7 @@ def setup_ethereum_transactions_test(
 
     transaction1 = EvmTransaction(
         tx_hash=tx_hash1,
+        chain_id=ChainID.ETHEREUM,
         timestamp=Timestamp(1630532276),
         block_number=13142218,
         from_address=addr1,
@@ -185,6 +186,7 @@ def setup_ethereum_transactions_test(
     tx_hash2 = deserialize_evm_tx_hash('0x6beab9409a8f3bd11f82081e99e856466a7daf5f04cca173192f79e78ed53a77')  # noqa: E501
     transaction2 = EvmTransaction(
         tx_hash=tx_hash2,
+        chain_id=ChainID.ETHEREUM,
         timestamp=Timestamp(1631013757),
         block_number=13178342,
         from_address=addr2,
@@ -199,18 +201,19 @@ def setup_ethereum_transactions_test(
     transactions = [transaction1, transaction2]
     if transaction_already_queried is True:
         with database.user_write() as cursor:
-            dbethtx.add_ethereum_transactions(cursor, ethereum_transactions=[transaction1], relevant_address=addr1)  # noqa: E501
-            dbethtx.add_ethereum_transactions(cursor, ethereum_transactions=[transaction2], relevant_address=addr2)  # noqa: E501
-            result = dbethtx.get_ethereum_transactions(cursor, ETHTransactionsFilterQuery.make(), True)  # noqa: E501
+            dbevmtx.add_evm_transactions(cursor, evm_transactions=[transaction1], relevant_address=addr1)  # noqa: E501
+            dbevmtx.add_evm_transactions(cursor, evm_transactions=[transaction2], relevant_address=addr2)  # noqa: E501
+            result = dbevmtx.get_evm_transactions(cursor, EvmTransactionsFilterQuery.make(chain_id=ChainID.ETHEREUM), True)  # noqa: E501
         assert result == transactions
 
-    expected_receipt1 = EthereumTxReceipt(
+    expected_receipt1 = EvmTxReceipt(
         tx_hash=tx_hash1,
+        chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
         type=0,
         logs=[
-            EthereumTxReceiptLog(
+            EvmTxReceiptLog(
                 log_index=295,
                 data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000008ac7230489e80000'),  # noqa: E501
                 address=string_to_evm_address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
@@ -219,7 +222,7 @@ def setup_ethereum_transactions_test(
                     hexstring_to_bytes('0xe1fffcc4923d04b559f4d29a8bfc6cda04eb5b0d3c460751c2402c5c5cc9109c'),  # noqa: E501
                     hexstring_to_bytes('0x0000000000000000000000007a250d5630b4cf539739df2c5dacb4c659f2488d'),  # noqa: E501
                 ],
-            ), EthereumTxReceiptLog(
+            ), EvmTxReceiptLog(
                 log_index=296,
                 data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000008ac7230489e80000'),  # noqa: E501
                 address=string_to_evm_address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
@@ -229,7 +232,7 @@ def setup_ethereum_transactions_test(
                     hexstring_to_bytes('0x0000000000000000000000007a250d5630b4cf539739df2c5dacb4c659f2488d'),  # noqa: E501
                     hexstring_to_bytes('0x000000000000000000000000caa004418eb42cdf00cb057b7c9e28f0ffd840a5'),  # noqa: E501
                 ],
-            ), EthereumTxReceiptLog(
+            ), EvmTxReceiptLog(
                 log_index=297,
                 data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000036ba1d53baeeda5ed20'),  # noqa: E501
                 address=string_to_evm_address('0x2a3bFF78B79A009976EeA096a51A948a3dC00e34'),
@@ -239,13 +242,13 @@ def setup_ethereum_transactions_test(
                     hexstring_to_bytes('0x000000000000000000000000caa004418eb42cdf00cb057b7c9e28f0ffd840a5'),  # noqa: E501
                     hexstring_to_bytes('0x000000000000000000000000443e1f9b1c866e54e914822b7d3d7165edb6e9ea'),  # noqa: E501
                 ],
-            ), EthereumTxReceiptLog(
+            ), EvmTxReceiptLog(
                 log_index=298,
                 data=hexstring_to_bytes('0x000000000000000000000000000000000000000000007b6ea033189ba7d047e30000000000000000000000000000000000000000000000140bc8194dd0f5e4be'),  # noqa: E501
                 address=string_to_evm_address('0xcaA004418eB42cdf00cB057b7C9E28f0FfD840a5'),
                 removed=False,
                 topics=[hexstring_to_bytes('0x1c411e9a96e071241c2f21f7726b17ae89e3cab4c78be50e062b03a9fffbbad1')],  # noqa: E501
-            ), EthereumTxReceiptLog(
+            ), EvmTxReceiptLog(
                 log_index=299,
                 data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000008ac7230489e8000000000000000000000000000000000000000000000000036ba1d53baeeda5ed200000000000000000000000000000000000000000000000000000000000000000'),  # noqa: E501
                 address=string_to_evm_address('0xcaA004418eB42cdf00cB057b7C9E28f0FfD840a5'),
@@ -258,13 +261,14 @@ def setup_ethereum_transactions_test(
             ),
         ],
     )
-    expected_receipt2 = EthereumTxReceipt(
+    expected_receipt2 = EvmTxReceipt(
         tx_hash=tx_hash2,
+        chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
         type=2,
         logs=[
-            EthereumTxReceiptLog(
+            EvmTxReceiptLog(
                 log_index=438,
                 data=hexstring_to_bytes('0x000000000000000000000000000000000000000000000000000000003b9deec6'),  # noqa: E501
                 address=string_to_evm_address('0xEaDD9B69F96140283F9fF75DA5FD33bcF54E6296'),
@@ -280,30 +284,28 @@ def setup_ethereum_transactions_test(
 
     if one_receipt_in_db is True:
         with database.user_write() as cursor:
-            dbethtx.add_receipt_data(cursor, txreceipt_to_data(expected_receipt1))
+            dbevmtx.add_receipt_data(cursor, ChainID.ETHEREUM, txreceipt_to_data(expected_receipt1))  # noqa: E501
             if second_receipt_in_db is True:
-                dbethtx.add_receipt_data(cursor, txreceipt_to_data(expected_receipt2))
+                dbevmtx.add_receipt_data(cursor, ChainID.ETHEREUM, txreceipt_to_data(expected_receipt2))  # noqa: E501
 
     return transactions, [expected_receipt1, expected_receipt2]
 
 
 def get_decoded_events_of_transaction(
-        ethereum_manager: EthereumManager,
+        ethereum_inquirer: EthereumInquirer,
         database: DBHandler,
-        msg_aggregator: MessagesAggregator,
         tx_hash: EVMTxHash,
-) -> Tuple[List[HistoryBaseEntry], EVMTransactionDecoder]:
+) -> Tuple[List[HistoryBaseEntry], EthereumTransactionDecoder]:
     """A convenience function to ask get transaction, receipt and decoded event for a tx_hash
 
     Returns the list of decoded events and the EVMTransactionDecoder
     """
-    transactions = EthTransactions(ethereum=ethereum_manager, database=database)
+    transactions = EthereumTransactions(ethereum_inquirer=ethereum_inquirer, database=database)
     with database.user_write() as cursor:
         transactions.get_or_query_transaction_receipt(cursor, tx_hash=tx_hash)
-    decoder = EVMTransactionDecoder(
+    decoder = EthereumTransactionDecoder(
         database=database,
-        ethereum_manager=ethereum_manager,
+        ethereum_inquirer=ethereum_inquirer,
         transactions=transactions,
-        msg_aggregator=msg_aggregator,
     )
     return decoder.decode_transaction_hashes(ignore_cache=True, tx_hashes=[tx_hash]), decoder

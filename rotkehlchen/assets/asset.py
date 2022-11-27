@@ -49,7 +49,7 @@ class UnderlyingToken(NamedTuple):
     def get_identifier(self, parent_chain: ChainID) -> str:
         return evm_address_to_identifier(
             address=str(self.address),
-            chain=parent_chain,
+            chain_id=parent_chain,
             token_type=self.token_kind,
         )
 
@@ -111,7 +111,7 @@ class Asset:
         if self.identifier.startswith(NFT_DIRECTIVE):
             return Nft.initialize(
                 identifier=self.identifier,
-                chain=ChainID.ETHEREUM,
+                chain_id=ChainID.ETHEREUM,
             )
 
         return AssetResolver().resolve_asset(
@@ -462,7 +462,7 @@ EthereumTokenDBTuple = Tuple[
 class EvmToken(CryptoAsset):
     form_with_incomplete_data: bool = field(default=False)
     evm_address: ChecksumEvmAddress = field(init=False)
-    chain: ChainID = field(init=False)
+    chain_id: ChainID = field(init=False)
     token_kind: EvmTokenKind = field(init=False)
     decimals: int = field(init=False)
     protocol: str = field(init=False)
@@ -480,7 +480,7 @@ class EvmToken(CryptoAsset):
         )
         object.__setattr__(self, 'asset_type', AssetType.EVM_TOKEN)
         object.__setattr__(self, 'evm_address', resolved.evm_address)
-        object.__setattr__(self, 'chain', resolved.chain)
+        object.__setattr__(self, 'chain_id', resolved.chain_id)
         object.__setattr__(self, 'token_kind', resolved.token_kind)
         object.__setattr__(self, 'decimals', resolved.decimals)
         object.__setattr__(self, 'protocol', resolved.protocol)
@@ -490,7 +490,7 @@ class EvmToken(CryptoAsset):
     def initialize(  # type: ignore  # signature is incompatible with super type
             cls: Type['EvmToken'],
             address: ChecksumEvmAddress,
-            chain: ChainID,
+            chain_id: ChainID,
             token_kind: EvmTokenKind,
             name: Optional[str] = None,
             symbol: Optional[str] = None,
@@ -505,7 +505,7 @@ class EvmToken(CryptoAsset):
     ) -> 'EvmToken':
         identifier = evm_address_to_identifier(
             address=address,
-            chain=chain,
+            chain_id=chain_id,
             token_type=token_kind,
         )
         asset = EvmToken(identifier=identifier, direct_field_initialization=True)
@@ -518,7 +518,7 @@ class EvmToken(CryptoAsset):
         object.__setattr__(asset, 'forked', forked)
         object.__setattr__(asset, 'swapped_for', swapped_for)
         object.__setattr__(asset, 'evm_address', address)
-        object.__setattr__(asset, 'chain', chain)
+        object.__setattr__(asset, 'chain_id', chain_id)
         object.__setattr__(asset, 'token_kind', token_kind)
         object.__setattr__(asset, 'decimals', decimals)
         object.__setattr__(asset, 'protocol', protocol)
@@ -537,7 +537,7 @@ class EvmToken(CryptoAsset):
         swapped_for = CryptoAsset(entry[8]) if entry[8] is not None else None
         return EvmToken.initialize(
             address=entry[1],  # type: ignore
-            chain=ChainID(entry[2]),
+            chain_id=ChainID(entry[2]),
             token_kind=EvmTokenKind.deserialize_from_db(entry[3]),
             decimals=entry[4],
             name=entry[5],
@@ -554,7 +554,7 @@ class EvmToken(CryptoAsset):
         underlying_tokens = [x.serialize() for x in self.underlying_tokens] if self.underlying_tokens is not None else None  # noqa: E501
         return super().to_dict() | {
             'address': self.evm_address,
-            'chain': self.chain.serialize(),
+            'chain_id': self.chain_id.serialize(),
             'token_kind': self.token_kind.serialize(),
             'decimals': self.decimals,
             'protocol': self.protocol,
@@ -581,7 +581,7 @@ class Nft(EvmToken):
         object.__setattr__(self, 'forked', None)
         object.__setattr__(self, 'swapped_for', None)
         object.__setattr__(self, 'evm_address', address)
-        object.__setattr__(self, 'chain', ChainID.ETHEREUM)
+        object.__setattr__(self, 'chain_id', ChainID.ETHEREUM)
         object.__setattr__(self, 'token_kind', EvmTokenKind.ERC721)
         object.__setattr__(self, 'decimals', 0)
         object.__setattr__(self, 'protocol', None)
@@ -591,7 +591,7 @@ class Nft(EvmToken):
     def initialize(  # type: ignore  # signature is incompatible with super type
             cls: Type['EvmToken'],
             identifier: str,
-            chain: ChainID,
+            chain_id: ChainID,
             name: Optional[str] = None,
             symbol: Optional[str] = None,
     ) -> 'Nft':
@@ -613,7 +613,7 @@ class Nft(EvmToken):
         object.__setattr__(asset, 'forked', None)
         object.__setattr__(asset, 'swapped_for', None)
         object.__setattr__(asset, 'evm_address', address)
-        object.__setattr__(asset, 'chain', chain)
+        object.__setattr__(asset, 'chain_id', chain_id)
         object.__setattr__(asset, 'token_kind', EvmTokenKind.ERC721)
         object.__setattr__(asset, 'decimals', 0)
         object.__setattr__(asset, 'protocol', None)

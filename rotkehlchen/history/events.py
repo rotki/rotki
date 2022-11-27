@@ -6,7 +6,7 @@ from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
-    ETHTransactionsFilterQuery,
+    EvmTransactionsFilterQuery,
     HistoryEventFilterQuery,
     LedgerActionsFilterQuery,
     TradesFilterQuery,
@@ -19,7 +19,7 @@ from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition,
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import EXTERNAL_LOCATION, Location, Timestamp
+from rotkehlchen.types import EXTERNAL_LOCATION, ChainID, Location, SupportedBlockchain, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import timestamp_to_date
 
@@ -27,7 +27,6 @@ if TYPE_CHECKING:
     from rotkehlchen.accounting.ledger_actions import LedgerAction
     from rotkehlchen.accounting.mixins.event import AccountingEventMixin
     from rotkehlchen.chain.aggregator import ChainsAggregator
-    from rotkehlchen.chain.ethereum.decoding.decoder import EVMTransactionDecoder
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
 
@@ -55,7 +54,6 @@ class EventsHistorian:
             msg_aggregator: MessagesAggregator,
             exchange_manager: ExchangeManager,
             chains_aggregator: 'ChainsAggregator',
-            eth_tx_decoder: 'EVMTransactionDecoder',
     ) -> None:
 
         self.msg_aggregator = msg_aggregator
@@ -63,7 +61,6 @@ class EventsHistorian:
         self.db = db
         self.exchange_manager = exchange_manager
         self.chains_aggregator = chains_aggregator
-        self.eth_tx_decoder = eth_tx_decoder
         self._reset_variables()
 
     def timestamp_to_date(self, timestamp: Timestamp) -> str:
@@ -335,16 +332,18 @@ class EventsHistorian:
             step = self._increase_progress(step, total_steps)
 
         self.processing_state_name = 'Querying ethereum transactions history'
-        tx_filter_query = ETHTransactionsFilterQuery.make(
+        ethereum = self.chains_aggregator.get_chain_manager(SupportedBlockchain.ETHEREUM)
+        tx_filter_query = EvmTransactionsFilterQuery.make(
             limit=None,
             offset=None,
             addresses=None,
             # We need to have history of transactions since before the range
             from_ts=Timestamp(0),
             to_ts=end_ts,
+            chain_id=ChainID.ETHEREUM,
         )
         try:
-            _, _ = self.eth_tx_decoder.transactions.query(
+            _, _ = ethereum.transactions.query(
                 filter_query=tx_filter_query,
                 has_premium=True,  # ignore limits here. Limit applied at processing
                 only_cache=False,
@@ -359,11 +358,11 @@ class EventsHistorian:
         step = self._increase_progress(step, total_steps)
 
         self.processing_state_name = 'Querying ethereum transaction receipts'
-        self.eth_tx_decoder.transactions.get_receipts_for_transactions_missing_them()
+        ethereum.transactions.get_receipts_for_transactions_missing_them()
         step = self._increase_progress(step, total_steps)
 
         self.processing_state_name = 'Decoding raw transactions'
-        self.eth_tx_decoder.get_and_decode_undecoded_transactions(limit=None)
+        ethereum.transactions_decoder.get_and_decode_undecoded_transactions(limit=None)
         step = self._increase_progress(step, total_steps)
 
         # Include all external trades and trades from external exchanges

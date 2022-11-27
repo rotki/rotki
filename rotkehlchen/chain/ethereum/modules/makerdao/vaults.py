@@ -85,7 +85,7 @@ from rotkehlchen.utils.misc import address_to_bytes32, hexstr_to_int, shift_num_
 from .constants import MAKERDAO_REQUERY_PERIOD, RAY, WAD
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
@@ -254,14 +254,14 @@ class MakerdaoVaults(HasDSProxy):
 
     def __init__(
             self,
-            ethereum_manager: 'EthereumManager',
+            ethereum_inquirer: 'EthereumInquirer',
             database: 'DBHandler',
             premium: Optional[Premium],
             msg_aggregator: MessagesAggregator,
     ) -> None:
 
         super().__init__(
-            ethereum_manager=ethereum_manager,
+            ethereum_inquirer=ethereum_inquirer,
             database=database,
             premium=premium,
             msg_aggregator=msg_aggregator,
@@ -649,7 +649,7 @@ class MakerdaoVaults(HasDSProxy):
         queries fail for some reason
         """
         result = MAKERDAO_GET_CDPS.call(
-            manager=self.ethereum,
+            node_inquirer=self.ethereum,
             method_name='getCdpsAsc',
             arguments=[MAKERDAO_CDP_MANAGER.address, proxy_address],
         )

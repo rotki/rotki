@@ -135,7 +135,7 @@ if TYPE_CHECKING:
         GIVEN_DEFI_BALANCES,
         DefiProtocolBalances,
     )
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
 
@@ -194,12 +194,12 @@ class YearnVaults(EthereumModule):
 
     def __init__(
             self,
-            ethereum_manager: 'EthereumManager',
+            ethereum_inquirer: 'EthereumInquirer',
             database: 'DBHandler',
             premium: Optional[Premium],
             msg_aggregator: MessagesAggregator,
     ) -> None:
-        self.ethereum = ethereum_manager
+        self.ethereum = ethereum_inquirer
         self.database = database
         self.msg_aggregator = msg_aggregator
         self.premium = premium

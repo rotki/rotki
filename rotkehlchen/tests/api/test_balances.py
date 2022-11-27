@@ -550,9 +550,9 @@ def test_multiple_balance_queries_not_concurrent(
     setup = setup_balances(rotki, ethereum_accounts, btc_accounts)
 
     multieth_balance_patch = patch.object(
-        rotki.chains_aggregator.ethereum,
+        rotki.chains_aggregator.ethereum.node_inquirer,
         'get_multi_balance',
-        wraps=rotki.chains_aggregator.ethereum.get_multi_balance,
+        wraps=rotki.chains_aggregator.ethereum.node_inquirer.get_multi_balance,
     )
     btc_balances_patch = patch(
         'rotkehlchen.chain.aggregator.get_bitcoin_addresses_balances',

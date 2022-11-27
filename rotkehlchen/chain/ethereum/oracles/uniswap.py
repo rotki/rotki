@@ -32,9 +32,9 @@ from rotkehlchen.types import ChecksumEvmAddress, Price
 from rotkehlchen.utils.mixins.cacheable import CacheableMixIn, cache_response_timewise
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
-UNISWAP_FACTORY_DEPLOYED_BLOCK = 12369621
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 
+UNISWAP_FACTORY_DEPLOYED_BLOCK = 12369621
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -57,10 +57,10 @@ class UniswapOracle(CurrentPriceOracleInterface, CacheableMixIn):
     """
     Provides shared logic between Uniswap V2 and Uniswap V3 to use them as price oracles.
     """
-    def __init__(self, eth_manager: 'EthereumManager', version: int):
+    def __init__(self, ethereum_inquirer: 'EthereumInquirer', version: int):
         CacheableMixIn.__init__(self)
         CurrentPriceOracleInterface.__init__(self, oracle_name=f'Uniswap V{version} oracle')
-        self.eth_manager = eth_manager
+        self.ethereum = ethereum_inquirer
         self.weth = A_WETH.resolve_to_evm_token()
         self.routing_assets = [
             self.weth,
@@ -281,8 +281,8 @@ class UniswapOracle(CurrentPriceOracleInterface, CacheableMixIn):
 
 class UniswapV3Oracle(UniswapOracle):
 
-    def __init__(self, eth_manager: 'EthereumManager'):
-        super().__init__(eth_manager=eth_manager, version=3)
+    def __init__(self, ethereum_inquirer: 'EthereumInquirer'):
+        super().__init__(ethereum_inquirer=ethereum_inquirer, version=3)
 
     @cache_response_timewise()
     def get_pool(
@@ -290,7 +290,7 @@ class UniswapV3Oracle(UniswapOracle):
             token_0: EvmToken,
             token_1: EvmToken,
     ) -> List[str]:
-        result = self.eth_manager.multicall_specific(
+        result = self.ethereum.multicall_specific(
             contract=UNISWAP_V3_FACTORY,
             method_name='getPool',
             arguments=[[
@@ -312,7 +312,7 @@ class UniswapV3Oracle(UniswapOracle):
                 deployed_block=UNISWAP_FACTORY_DEPLOYED_BLOCK,
             )
             pool_liquidity = pool_contract.call(
-                manager=self.eth_manager,
+                node_inquirer=self.ethereum,
                 method_name='liquidity',
                 arguments=[],
                 call_order=None,
@@ -354,7 +354,7 @@ class UniswapV3Oracle(UniswapOracle):
                 pool_contract.encode(method_name='token1'),
             ),
         ]
-        output = self.eth_manager.multicall(
+        output = self.ethereum.multicall(
             calls=calls,
             require_success=True,
             block_identifier=block_identifier,
@@ -383,8 +383,8 @@ class UniswapV3Oracle(UniswapOracle):
 
 class UniswapV2Oracle(UniswapOracle):
 
-    def __init__(self, eth_manager: 'EthereumManager'):
-        super().__init__(eth_manager=eth_manager, version=3)
+    def __init__(self, ethereum_inquirer: 'EthereumInquirer'):
+        super().__init__(ethereum_inquirer=ethereum_inquirer, version=3)
 
     @cache_response_timewise()
     def get_pool(
@@ -393,7 +393,7 @@ class UniswapV2Oracle(UniswapOracle):
         token_1: EvmToken,
     ) -> List[str]:
         result = UNISWAP_V2_FACTORY.call(
-            manager=self.eth_manager,
+            node_inquirer=self.ethereum,
             method_name='getPair',
             arguments=[
                 token_0.evm_address,
@@ -430,7 +430,7 @@ class UniswapV2Oracle(UniswapOracle):
                 pool_contract.encode(method_name='token1'),
             ),
         ]
-        output = self.eth_manager.multicall(
+        output = self.ethereum.multicall(
             calls=calls,
             require_success=True,
             block_identifier=block_identifier,

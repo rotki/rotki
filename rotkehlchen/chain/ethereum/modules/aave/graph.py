@@ -38,7 +38,7 @@ from .structures import (
 )
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
@@ -391,14 +391,14 @@ class AaveGraphInquirer(AaveInquirer):
 
     def __init__(
             self,
-            ethereum_manager: 'EthereumManager',
+            ethereum_inquirer: 'EthereumInquirer',
             database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
             premium: Optional[Premium],
     ) -> None:
         """May raise RemoteError if we can't connect to the subgraph"""
         super().__init__(
-            ethereum_manager=ethereum_manager,
+            ethereum_inquirer=ethereum_inquirer,
             database=database,
             premium=premium,
             msg_aggregator=msg_aggregator,

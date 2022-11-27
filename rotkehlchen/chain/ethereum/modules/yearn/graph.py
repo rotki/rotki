@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional
+from typing import Any, Dict, List, Literal
 
 from eth_utils import to_checksum_address
 
@@ -12,15 +12,10 @@ from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.premium.premium import Premium
 from rotkehlchen.types import ChecksumEvmAddress, EvmAddress, Timestamp, deserialize_evm_tx_hash
 from rotkehlchen.user_messages import MessagesAggregator
 
 from .structures import YearnVaultEvent
-
-if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
-    from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -84,15 +79,9 @@ class YearnVaultsV2Graph:
 
     def __init__(
             self,
-            ethereum_manager: 'EthereumManager',
-            database: 'DBHandler',
-            premium: Optional[Premium],
             msg_aggregator: MessagesAggregator,
     ) -> None:
-        self.ethereum = ethereum_manager
-        self.database = database
         self.msg_aggregator = msg_aggregator
-        self.premium = premium
         self.graph = Graph('https://api.thegraph.com/subgraphs/name/rareweasel/yearn-vaults-v2-subgraph-mainnet')  # noqa: E501
 
     def _process_event(

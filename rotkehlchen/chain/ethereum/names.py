@@ -1,7 +1,6 @@
-from typing import Callable, Dict, List, Optional
+from typing import TYPE_CHECKING, Callable, Dict, List, Optional
 
 from rotkehlchen.chain.ethereum.decoding.constants import ETHADDRESS_TO_KNOWN_NAME
-from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.constants import ENS_UPDATE_INTERVAL
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.dbhandler import DBHandler
@@ -18,9 +17,12 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.utils.misc import ts_now
 
+if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+
 
 def find_ens_mappings(
-        ethereum_manager: EthereumManager,
+        ethereum_inquirer: 'EthereumInquirer',
         addresses: List[ChecksumEvmAddress],
         ignore_cache: bool,
 ) -> Dict[ChecksumEvmAddress, str]:
@@ -30,7 +32,7 @@ def find_ens_mappings(
     May raise:
     - RemoteError if was not able to query blockchain
     """
-    dbens = DBEns(ethereum_manager.database)
+    dbens = DBEns(ethereum_inquirer.database)
     ens_mappings: Dict[ChecksumEvmAddress, str] = {}
     with dbens.db.user_write() as cursor:
         if ignore_cache:
@@ -49,7 +51,7 @@ def find_ens_mappings(
             addresses_to_query += list(set(addresses) - set(cached_data.keys()))
 
         try:
-            query_results = ethereum_manager.ens_reverse_lookup(addresses_to_query)
+            query_results = ethereum_inquirer.ens_reverse_lookup(addresses_to_query)
         except (RemoteError, BlockchainQueryError) as e:
             raise RemoteError(f'Error occurred while querying ens names: {str(e)}') from e
 

@@ -107,6 +107,10 @@ from rotkehlchen.api.v1.schemas import (
     QueriedAddressesSchema,
     RequiredEthereumAddressSchema,
     ReverseEnsSchema,
+    RpcAddNodeSchema,
+    RpcNodeEditSchema,
+    RpcNodeListDeleteSchema,
+    RpcNodeSchema,
     SingleAssetIdentifierSchema,
     SingleAssetWithOraclesIdentifierSchema,
     SingleFileSchema,
@@ -135,10 +139,6 @@ from rotkehlchen.api.v1.schemas import (
     WatchersAddSchema,
     WatchersDeleteSchema,
     WatchersEditSchema,
-    Web3AddNodeSchema,
-    Web3NodeEditSchema,
-    Web3NodeListDeleteSchema,
-    Web3NodeSchema,
     XpubAddSchema,
     XpubPatchSchema,
 )
@@ -160,7 +160,7 @@ from rotkehlchen.db.filtering import (
     AssetsFilterQuery,
     CustomAssetsFilterQuery,
     Eth2DailyStatsFilterQuery,
-    ETHTransactionsFilterQuery,
+    EvmTransactionsFilterQuery,
     LedgerActionsFilterQuery,
     LevenshteinFilterQuery,
     NFTFilterQuery,
@@ -474,7 +474,7 @@ class EthereumTransactionsResource(BaseMethodView):
             self,
             async_query: bool,
             only_cache: bool,
-            filter_query: ETHTransactionsFilterQuery,
+            filter_query: EvmTransactionsFilterQuery,
             event_params: Dict[str, Any],
     ) -> Response:
         return self.rest_api.get_ethereum_transactions(
@@ -522,17 +522,17 @@ class EthereumAirdropsResource(BaseMethodView):
         return self.rest_api.get_ethereum_airdrops(async_query)
 
 
-class Web3NodesResource(BaseMethodView):
+class RpcNodesResource(BaseMethodView):
 
-    get_schema = Web3NodeSchema()
-    put_schema = Web3AddNodeSchema()
-    patch_schema = Web3NodeEditSchema()
-    delete_schema = Web3NodeListDeleteSchema()
+    get_schema = RpcNodeSchema()
+    put_schema = RpcAddNodeSchema()
+    patch_schema = RpcNodeEditSchema()
+    delete_schema = RpcNodeListDeleteSchema()
 
     @require_loggedin_user()
     @use_kwargs(get_schema, location='view_args')
     def get(self, blockchain: SupportedBlockchain) -> Response:
-        return self.rest_api.get_web3_nodes(blockchain=blockchain)
+        return self.rest_api.get_rpc_nodes(blockchain=blockchain)
 
     @require_loggedin_user()
     @use_kwargs(put_schema, location='json_and_query_and_view_args')
@@ -555,7 +555,7 @@ class Web3NodesResource(BaseMethodView):
             weight=weight,
             active=active,
         )
-        return self.rest_api.add_web3_node(node)
+        return self.rest_api.add_rpc_node(node)
 
     @require_loggedin_user()
     @use_kwargs(patch_schema, location='json_and_query_and_view_args')
@@ -580,7 +580,7 @@ class Web3NodesResource(BaseMethodView):
             weight=weight,
             active=active,
         )
-        return self.rest_api.update_web3_node(node)
+        return self.rest_api.update_rpc_node(node)
 
     @require_loggedin_user()
     @use_kwargs(delete_schema, location='json_and_query_and_view_args')
@@ -589,7 +589,7 @@ class Web3NodesResource(BaseMethodView):
             blockchain: SupportedBlockchain,  # pylint: disable=unused-argument
             identifier: int,
     ) -> Response:
-        return self.rest_api.delete_web3_node(identifier=identifier, blockchain=blockchain)
+        return self.rest_api.delete_rpc_node(identifier=identifier, blockchain=blockchain)
 
 
 class ExternalServicesResource(BaseMethodView):
@@ -789,8 +789,8 @@ class EthereumAssetsResource(BaseMethodView):
         )
 
     @use_kwargs(get_schema, location='json_and_query')
-    def get(self, address: Optional[ChecksumEvmAddress], chain: Optional[ChainID]) -> Response:
-        return self.rest_api.get_custom_ethereum_tokens(address=address, chain=chain)
+    def get(self, address: Optional[ChecksumEvmAddress], chain_id: ChainID) -> Response:
+        return self.rest_api.get_custom_evm_tokens(address=address, chain_id=chain_id)
 
     @require_loggedin_user()
     @resource_parser.use_kwargs(make_edit_schema, location='json')
@@ -803,8 +803,8 @@ class EthereumAssetsResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(delete_schema, location='json')
-    def delete(self, address: ChecksumEvmAddress, chain: ChainID) -> Response:
-        return self.rest_api.delete_custom_ethereum_token(address, chain)
+    def delete(self, address: ChecksumEvmAddress, chain_id: ChainID) -> Response:
+        return self.rest_api.delete_custom_ethereum_token(address, chain_id)
 
 
 class AssetUpdatesResource(BaseMethodView):
@@ -1393,17 +1393,17 @@ class BlockchainsAccountsResource(BaseMethodView):
 
     def make_put_schema(self) -> BlockchainAccountsPutSchema:
         return BlockchainAccountsPutSchema(
-            self.rest_api.rotkehlchen.chains_aggregator.ethereum,
+            self.rest_api.rotkehlchen.chains_aggregator.ethereum.node_inquirer,
         )
 
     def make_patch_schema(self) -> BlockchainAccountsPatchSchema:
         return BlockchainAccountsPatchSchema(
-            self.rest_api.rotkehlchen.chains_aggregator.ethereum,
+            self.rest_api.rotkehlchen.chains_aggregator.ethereum.node_inquirer,
         )
 
     def make_delete_schema(self) -> BlockchainAccountsDeleteSchema:
         return BlockchainAccountsDeleteSchema(
-            self.rest_api.rotkehlchen.chains_aggregator.ethereum,
+            self.rest_api.rotkehlchen.chains_aggregator.ethereum.node_inquirer,
         )
 
     @require_loggedin_user()
@@ -1827,37 +1827,6 @@ class AaveHistoryResource(BaseMethodView):
             to_timestamp: Timestamp,
     ) -> Response:
         return self.rest_api.get_aave_history(
-            async_query=async_query,
-            reset_db_data=reset_db_data,
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp,
-        )
-
-
-class AdexBalancesResource(BaseMethodView):
-
-    get_schema = AsyncQueryArgumentSchema()
-
-    @require_loggedin_user()
-    @use_kwargs(get_schema, location='json_and_query')
-    def get(self, async_query: bool) -> Response:
-        return self.rest_api.get_adex_balances(async_query=async_query)
-
-
-class AdexHistoryResource(BaseMethodView):
-
-    get_schema = AsyncHistoricalQuerySchema()
-
-    @require_premium_user(active_check=False)
-    @use_kwargs(get_schema, location='json_and_query')
-    def get(
-            self,
-            async_query: bool,
-            reset_db_data: bool,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-    ) -> Response:
-        return self.rest_api.get_adex_history(
             async_query=async_query,
             reset_db_data=reset_db_data,
             from_timestamp=from_timestamp,

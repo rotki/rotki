@@ -575,14 +575,14 @@ def test_get_or_create_evm_token(globaldb, database):
         userdb=database,
         symbol='DAI',
         evm_address='0x6B175474E89094C44Da98b954EedeAC495271d0F',
-        chain=ChainID.ETHEREUM,
+        chain_id=ChainID.ETHEREUM,
     )
     # Try getting a DAI token of a different address. Shold add new token to DB
     new_token = get_or_create_evm_token(
         userdb=database,
         symbol='DAI',
         evm_address='0xA379B8204A49A72FF9703e18eE61402FAfCCdD60',
-        chain=ChainID.ETHEREUM,
+        chain_id=ChainID.ETHEREUM,
     )
     assert cursor.execute('SELECT COUNT(*) from assets;').fetchone()[0] == assets_num + 1
     assert new_token.symbol == 'DAI'
@@ -592,7 +592,7 @@ def test_get_or_create_evm_token(globaldb, database):
         userdb=database,
         symbol='DOT',
         evm_address='0xB179B8204A49672FF9703e18eE61402FAfCCdD60',
-        chain=ChainID.ETHEREUM,
+        chain_id=ChainID.ETHEREUM,
     )
     assert new_token.symbol == 'DOT'
     assert new_token.evm_address == '0xB179B8204A49672FF9703e18eE61402FAfCCdD60'
@@ -602,7 +602,7 @@ def test_get_or_create_evm_token(globaldb, database):
         userdb=database,
         symbol='ROFL',
         evm_address='0xdAC17F958D2ee523a2206206994597C13D831ec7',
-        chain=ChainID.ETHEREUM,
+        chain_id=ChainID.ETHEREUM,
     )
     assert cursor.execute('SELECT COUNT(*) from assets;').fetchone()[0] == assets_num + 2
 
@@ -623,7 +623,7 @@ def test_resolve_nft():
     assert nft_asset.is_fiat() is False
     assert nft_asset.resolve() == Nft.initialize(
         identifier='_nft_foo',
-        chain=ChainID.ETHEREUM,
+        chain_id=ChainID.ETHEREUM,
     )
 
 

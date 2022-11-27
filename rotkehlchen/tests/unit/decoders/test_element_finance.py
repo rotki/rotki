@@ -3,8 +3,8 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.airdrops.constants import CPT_ELEMENT_FINANCE
+from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.constants.assets import A_ELFI, A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
@@ -14,16 +14,15 @@ ADDY = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
-def test_claim_aidrop(database, ethereum_manager, function_scope_messages_aggregator):
+def test_claim_aidrop(database, ethereum_inquirer):
     """Data taken from
     https://etherscan.io/tx/0x1e58aed1baf70b57e6e3e880e1890e7fe607fddc94d62986c38fe70e483e594b
     """
     # TODO: For faster tests hard-code the transaction and the logs here so no remote query needed
     tx_hash = deserialize_evm_tx_hash('0x1e58aed1baf70b57e6e3e880e1890e7fe607fddc94d62986c38fe70e483e594b')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
-        ethereum_manager=ethereum_manager,
+        ethereum_inquirer=ethereum_inquirer,
         database=database,
-        msg_aggregator=function_scope_messages_aggregator,
         tx_hash=tx_hash,
     )
     expected_events = [

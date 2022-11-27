@@ -1,6 +1,8 @@
 import logging
+from abc import ABCMeta
 from json.decoder import JSONDecodeError
 from typing import (
+    TYPE_CHECKING,
     Any,
     Dict,
     Iterator,
@@ -23,8 +25,7 @@ from rotkehlchen.constants.timing import (
     DEFAULT_READ_TIMEOUT,
     DEFAULT_TIMEOUT_TUPLE,
 )
-from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.db.ethtx import DBEthTx
+from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
@@ -36,6 +37,7 @@ from rotkehlchen.serialization.deserialize import (
 )
 from rotkehlchen.types import (
     ChecksumEvmAddress,
+    EVMChain,
     EvmInternalTransaction,
     EvmTransaction,
     EVMTxHash,
@@ -45,6 +47,9 @@ from rotkehlchen.types import (
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import hex_or_bytes_to_int, set_user_agent
 from rotkehlchen.utils.serialization import jsonloads_dict
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
 
 ETHERSCAN_TX_QUERY_LIMIT = 10000
 TRANSACTIONS_BATCH_NUM = 10
@@ -61,10 +66,20 @@ def _hashes_tuple_to_list(hashes: Set[Tuple[str, Timestamp]]) -> List[str]:
     return [x[0] for x in sorted(hashes, key=lambda x: x[1])]
 
 
-class Etherscan(ExternalServiceWithApiKey):
-    def __init__(self, database: DBHandler, msg_aggregator: MessagesAggregator) -> None:
-        super().__init__(database=database, service_name=ExternalService.ETHERSCAN)
+class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
+    """Base class for all Etherscan implementations"""
+    def __init__(
+            self,
+            database: 'DBHandler',
+            msg_aggregator: 'MessagesAggregator',
+            chain: EVMChain,
+            base_url: str,
+            service: Literal[ExternalService.ETHERSCAN],
+    ) -> None:
+        super().__init__(database=database, service_name=service)
         self.msg_aggregator = msg_aggregator
+        self.chain = chain
+        self.base_url = base_url
         self.session = requests.session()
         self.warning_given = False
         set_user_agent(self.session)
@@ -129,7 +144,7 @@ class Etherscan(ExternalServiceWithApiKey):
         - RemoteError if there are any problems with reaching Etherscan or if
         an unexpected response is returned
         """
-        query_str = f'https://api.etherscan.io/api?module={module}&action={action}'
+        query_str = f'https://api.{self.base_url}/api?module={module}&action={action}'
         if options:
             for name, value in options.items():
                 query_str += f'&{name}={value}'
@@ -138,11 +153,11 @@ class Etherscan(ExternalServiceWithApiKey):
         if api_key is None:
             if not self.warning_given:
                 self.msg_aggregator.add_warning(
-                    'You do not have an Etherscan API key configured. rotki '
-                    'etherscan queries will still work but will be very slow. '
-                    'If you are not using your own ethereum node, it is recommended '
-                    'to go to https://etherscan.io/register, create an API '
-                    'key and then input it in the external service credentials setting of rotki',
+                    f'You do not have an {self.chain} Etherscan API key configured. rotki '
+                    f'etherscan queries will still work but will be very slow. '
+                    f'If you are not using your own ethereum node, it is recommended '
+                    f'to go to https://{self.base_url}/register, create an API '
+                    f'key and then input it in the external service credentials setting of rotki',
                 )
                 self.warning_given = True
         else:
@@ -151,29 +166,29 @@ class Etherscan(ExternalServiceWithApiKey):
         backoff = 1
         backoff_limit = 33
         while backoff < backoff_limit:
-            log.debug(f'Querying etherscan: {query_str}')
+            log.debug(f'Querying {self.chain} etherscan: {query_str}')
             try:
                 response = self.session.get(query_str, timeout=timeout if timeout else DEFAULT_TIMEOUT_TUPLE)  # noqa: E501
             except requests.exceptions.RequestException as e:
                 if 'Max retries exceeded with url' in str(e):
                     log.debug(
-                        f'Got max retries exceeded from etherscan. Will '
+                        f'Got max retries exceeded from {self.chain} etherscan. Will '
                         f'backoff for {backoff} seconds.',
                     )
                     gevent.sleep(backoff)
                     backoff = backoff * 2
                     if backoff >= backoff_limit:
                         raise RemoteError(
-                            'Getting Etherscan max connections error even '
-                            'after we incrementally backed off',
+                            f'Getting {self.chain} Etherscan max connections error even '
+                            f'after we incrementally backed off',
                         ) from e
                     continue
 
-                raise RemoteError(f'Etherscan API request failed due to {str(e)}') from e
+                raise RemoteError(f'{self.chain} Etherscan API request failed due to {str(e)}') from e  # noqa: E501
 
             if response.status_code != 200:
                 raise RemoteError(
-                    f'Etherscan API request {response.url} failed '
+                    f'{self.chain} Etherscan API request {response.url} failed '
                     f'with HTTP status code {response.status_code} and text '
                     f'{response.text}',
                 )
@@ -182,7 +197,7 @@ class Etherscan(ExternalServiceWithApiKey):
                 json_ret = jsonloads_dict(response.text)
             except JSONDecodeError as e:
                 raise RemoteError(
-                    f'Etherscan API request {response.url} returned invalid '
+                    f'{self.chain} Etherscan API request {response.url} returned invalid '
                     f'JSON response: {response.text}',
                 ) from e
 
@@ -190,7 +205,7 @@ class Etherscan(ExternalServiceWithApiKey):
                 result = json_ret.get('result', None)
                 if result is None:
                     raise RemoteError(
-                        f'Unexpected format of Etherscan response for request {response.url}. '
+                        f'Unexpected format of {self.chain} Etherscan response for request {response.url}. '  # noqa: E501
                         f'Missing a result in response. Response was: {response.text}',
                     )
 
@@ -200,8 +215,8 @@ class Etherscan(ExternalServiceWithApiKey):
                 if status != 1:
                     if status == 0 and 'rate limit reached' in result:
                         log.debug(
-                            f'Got response: {response.text} from etherscan. Will '
-                            f'backoff for {backoff} seconds.',
+                            f'Got response: {response.text} from {self.chain} etherscan.'
+                            f' Will backoff for {backoff} seconds.',
                         )
                         gevent.sleep(backoff)
                         # Continue increasing backoff until limit is reached.
@@ -226,10 +241,10 @@ class Etherscan(ExternalServiceWithApiKey):
                         return []  # type: ignore
 
                     # else
-                    raise RemoteError(f'Etherscan returned error response: {json_ret}')
+                    raise RemoteError(f'{self.chain} Etherscan returned error response: {json_ret}')  # noqa: E501
             except KeyError as e:
                 raise RemoteError(
-                    f'Unexpected format of Etherscan response for request {response.url}. '
+                    f'Unexpected format of {self.chain} Etherscan response for request {response.url}. '  # noqa: E501
                     f'Missing key entry for {str(e)}. Response was: {response.text}',
                 ) from e
 
@@ -281,6 +296,7 @@ class Etherscan(ExternalServiceWithApiKey):
 
         transactions: Union[Sequence[EvmTransaction], Sequence[EvmInternalTransaction]] = []  # noqa: E501
         is_internal = action == 'txlistinternal'
+        chain_id = self.chain.to_chain_id()
         while True:
             result = self._query(module='account', action=action, options=options)
             last_ts = deserialize_timestamp(result[0]['timeStamp']) if len(result) != 0 else None  # noqa: E501 pylint: disable=unsubscriptable-object
@@ -292,23 +308,28 @@ class Etherscan(ExternalServiceWithApiKey):
                         tx = deserialize_evm_transaction(  # type: ignore
                             data=entry,
                             internal=is_internal,
-                            manager=None,
+                            chain_id=chain_id,
+                            evm_inquirer=None,
                         )
                     else:
                         # Handling genesis transactions
-                        dbtx = DBEthTx(self.db)  # type: ignore
-                        tx = dbtx.get_or_create_genesis_transaction(account=account)
-                        trace_id = dbtx.get_max_genesis_trace_id()
+                        dbtx = DBEvmTx(self.db)  # type: ignore
+                        tx = dbtx.get_or_create_genesis_transaction(
+                            account=account,
+                            chain_id=chain_id,
+                        )
+                        trace_id = dbtx.get_max_genesis_trace_id(chain_id)
                         entry['from'] = ZERO_ADDRESS
                         entry['hash'] = GENESIS_HASH
                         entry['traceId'] = trace_id
                         internal_tx = deserialize_evm_transaction(
                             data=entry,
                             internal=True,
-                            manager=None,
+                            chain_id=chain_id,
+                            evm_inquirer=None,
                         )
                         with self.db.user_write() as cursor:  # type: ignore  # db always here
-                            dbtx.add_ethereum_internal_transactions(
+                            dbtx.add_evm_internal_transactions(
                                 write_cursor=cursor,
                                 transactions=[internal_tx],
                                 relevant_address=account,

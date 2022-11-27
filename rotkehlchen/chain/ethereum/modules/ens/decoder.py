@@ -8,11 +8,11 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
-from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.names import find_ens_mappings
-from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
+from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.structures import ActionItem
+from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.ethereum import ENS_PUBLIC_RESOLVER_2, ENS_REVERSE_RESOLVER
 from rotkehlchen.errors.serialization import DeserializationError
@@ -24,8 +24,8 @@ from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 from .constants import CPT_ENS
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.decoding.base import BaseDecoderTools
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
     from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -49,21 +49,21 @@ TEXT_CHANGED_ABI = '{"anonymous":false,"inputs":[{"indexed":true,"internalType":
 class EnsDecoder(DecoderInterface, CustomizableDateMixin):
     def __init__(  # pylint: disable=super-init-not-called
             self,
-            ethereum_manager: 'EthereumManager',
+            ethereum_inquirer: 'EthereumInquirer',
             base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',  # pylint: disable=unused-argument
     ) -> None:
         self.base = base_tools
-        self.ethereum_manager = ethereum_manager
+        self.ethereum_inquirer = ethereum_inquirer
         CustomizableDateMixin.__init__(self, base_tools.database)
         self.eth = A_ETH.resolve_to_crypto_asset()
 
     def _decode_ens_registrar_event(
             self,
-            tx_log: EthereumTxReceiptLog,
+            tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
             decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
-            all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
+            all_logs: List[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[List[ActionItem]],  # pylint: disable=unused-argument
     ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
         if tx_log.topics[0] == NAME_REGISTERED:
@@ -88,10 +88,10 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
 
     def _decode_name_registered(
             self,
-            tx_log: EthereumTxReceiptLog,
+            tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
             decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
-            all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
+            all_logs: List[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[List[ActionItem]],  # pylint: disable=unused-argument
     ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
         try:
@@ -140,10 +140,10 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
 
     def _decode_name_renewed(
             self,
-            tx_log: EthereumTxReceiptLog,
+            tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
             decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
-            all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
+            all_logs: List[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[List[ActionItem]],  # pylint: disable=unused-argument
     ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
         try:
@@ -168,10 +168,10 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
 
     def _decode_ens_registry_with_fallback_event(
             self,
-            tx_log: EthereumTxReceiptLog,
+            tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
             decoded_events: List[HistoryBaseEntry],
-            all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
+            all_logs: List[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[List[ActionItem]],  # pylint: disable=unused-argument
     ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
         """Decode event where address is set for an ENS name."""
@@ -179,7 +179,7 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
             node = tx_log.topics[1]
             try:
                 ens_name = ENS_REVERSE_RESOLVER.call(
-                    manager=self.ethereum_manager,
+                    node_inquirer=self.ethereum_inquirer,
                     method_name='name',
                     arguments=[node],
                 )
@@ -211,10 +211,10 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
 
     def _decode_ens_public_resolver_2_events(
             self,
-            tx_log: EthereumTxReceiptLog,
+            tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
             decoded_events: List[HistoryBaseEntry],
-            all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
+            all_logs: List[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[List[ActionItem]],  # pylint: disable=unused-argument
     ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
         """Decode event where a text property (discord, telegram, etc.) is set for an ENS name."""
@@ -233,13 +233,13 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
             node = tx_log.topics[1]
             try:
                 address = ENS_PUBLIC_RESOLVER_2.call(
-                    manager=self.ethereum_manager,
+                    node_inquirer=self.ethereum_inquirer,
                     method_name='addr',
                     arguments=[node],
                 )
                 address = to_checksum_address(address)
                 ens_mapping = find_ens_mappings(
-                    ethereum_manager=self.ethereum_manager,
+                    ethereum_inquirer=self.ethereum_inquirer,
                     addresses=[address],
                     ignore_cache=False,
                 )

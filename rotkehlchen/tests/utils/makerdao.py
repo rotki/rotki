@@ -16,6 +16,7 @@ from rotkehlchen.constants.ethereum import (
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.factories import ZERO_ETH_ADDRESS
 from rotkehlchen.types import ChecksumEvmAddress
+from rotkehlchen.utils.interfaces import EthereumModule
 
 
 class VaultTestData(NamedTuple):
@@ -135,6 +136,7 @@ def create_web3_mock(web3: Web3, test_data: VaultTestData):
             return MockContract(test_data, ilks=mock_spot_ilks)
         if address == MAKERDAO_JUG.address and 'JUG' in test_data.mock_contracts:
             return MockContract(test_data, ilks=mock_jug_ilks)
+        # if address == ETH_MULTICALL.address
         # else
         raise AssertionError('Got unexpected address for contract during tests')
 
@@ -146,13 +148,20 @@ def create_web3_mock(web3: Web3, test_data: VaultTestData):
 
 
 def mock_proxies(
-        rotki,
+        module: EthereumModule,
         mapping: Dict[ChecksumEvmAddress, ChecksumEvmAddress],
-        given_module: str,
 ) -> None:
     def mock_get_proxies() -> Dict[ChecksumEvmAddress, ChecksumEvmAddress]:
         return mapping
 
+    module._get_accounts_having_proxy = mock_get_proxies  # type: ignore
+
+
+def mock_proxies_for(
+        rotki,
+        mapping: Dict[ChecksumEvmAddress, ChecksumEvmAddress],
+        given_module: str,
+) -> None:
     module = rotki.chains_aggregator.get_module(given_module)
     assert module, f'module {module} not found in chain manager'
-    module._get_accounts_having_proxy = mock_get_proxies
+    mock_proxies(module, mapping)

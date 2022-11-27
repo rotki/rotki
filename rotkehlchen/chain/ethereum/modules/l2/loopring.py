@@ -132,7 +132,7 @@ from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.premium.premium import Premium
 
@@ -155,7 +155,7 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryMixIn):
             self,
             database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
-            ethereum_manager: 'EthereumManager',  # pylint: disable=unused-argument
+            ethereum_inquirer: 'EthereumInquirer',  # pylint: disable=unused-argument
             premium: Optional['Premium'],  # pylint: disable=unused-argument
     ) -> None:
         super().__init__(database=database, service_name=ExternalService.LOOPRING)

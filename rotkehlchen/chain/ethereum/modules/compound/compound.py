@@ -28,7 +28,7 @@ from rotkehlchen.utils.misc import hexstr_to_int, ts_now
 from .constants import COMP_DEPLOYED_BLOCK, COMPTROLLER_PROXY
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
 
 ADDRESS_TO_ASSETS = Dict[ChecksumEvmAddress, Dict[CryptoAsset, Balance]]
@@ -140,12 +140,12 @@ class Compound(EthereumModule):
 
     def __init__(
             self,
-            ethereum_manager: 'EthereumManager',
+            ethereum_inquirer: 'EthereumInquirer',
             database: 'DBHandler',
             premium: Optional[Premium],
             msg_aggregator: MessagesAggregator,
     ):
-        self.ethereum = ethereum_manager
+        self.ethereum = ethereum_inquirer
         self.database = database
         self.premium = premium
         self.msg_aggregator = msg_aggregator
@@ -307,7 +307,7 @@ class Compound(EthereumModule):
             try:
                 underlying_asset = symbol_to_asset_or_token(
                     symbol=underlying_symbol,
-                    evm_chain=ChainID.ETHEREUM,
+                    chain_id=ChainID.ETHEREUM,
                 )
             except UnknownAsset:
                 log.error(
@@ -379,7 +379,7 @@ class Compound(EthereumModule):
             try:
                 underlying_asset = symbol_to_asset_or_token(
                     symbol=underlying_symbol,
-                    evm_chain=ChainID.ETHEREUM,
+                    chain_id=ChainID.ETHEREUM,
                 )
             except UnknownAsset:
                 log.error(
@@ -473,7 +473,7 @@ class Compound(EthereumModule):
             try:
                 underlying_asset = symbol_to_asset_or_token(
                     symbol=underlying_symbol,
-                    evm_chain=ChainID.ETHEREUM,
+                    chain_id=ChainID.ETHEREUM,
                 )
             except (UnknownAsset, WrongAssetType):
                 log.error(

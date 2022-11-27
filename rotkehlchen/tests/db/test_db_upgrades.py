@@ -1000,6 +1000,7 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument
         assert cursor.execute('SELECT * from evm_tx_mappings').fetchall() == expected_evm_tx_mappings  # noqa: E501
 
 
+@pytest.mark.skip('Will unskip once the DB upgrade is done')
 def test_latest_upgrade_adds_remove_tables(user_data_dir):
     """
     This is a test that we can only do for the last upgrade.
@@ -1030,7 +1031,7 @@ def test_latest_upgrade_adds_remove_tables(user_data_dir):
 
     # Execute upgrade
     db = _init_db_with_target_version(
-        target_version=35,
+        target_version=36,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
     )

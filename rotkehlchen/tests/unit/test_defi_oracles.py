@@ -84,7 +84,7 @@ def test_uniswap_no_decimals(inquirer_defi):
             if identifier == resolved_weth.identifier:
                 fake_weth = EvmToken.initialize(
                     address=resolved_weth.evm_address,
-                    chain=resolved_weth.chain,
+                    chain_id=resolved_weth.chain_id,
                     token_kind=resolved_weth.token_kind,
                     decimals=None,
                     name=resolved_weth.name,
@@ -120,11 +120,12 @@ def test_pool_with_no_liquidity(inquirer_defi: 'Inquirer'):
         response = """{"jsonrpc":"2.0","id":1,"result":"0x0000000000000000000000000000000000000000000000000000000000f2aa4700000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000003000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000a000000000000000000000000000000000000000000000000000000000000000e0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000"}"""  # noqa: E501
         return MockResponse(200, response)
 
-    assert inquirer_defi._ethereum is not None
+    ethereum_inquirer = inquirer_defi.get_ethereum_manager().node_inquirer
+    assert ethereum_inquirer is not None
     assert inquirer_defi._uniswapv3 is not None
 
     etherscan_patch = patch.object(
-        target=inquirer_defi._ethereum.etherscan.session,
+        target=ethereum_inquirer.etherscan.session,
         attribute='get',
         wraps=mock_requests_get,
     )

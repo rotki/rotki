@@ -9,7 +9,7 @@ from rotkehlchen.accounting.structures.types import (
     HistoryEventSubType,
     HistoryEventType,
 )
-from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
+from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade

@@ -5,12 +5,12 @@ from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import CryptoAsset
 from rotkehlchen.chain.ethereum.decoding.constants import ERC20_OR_ERC721_TRANSFER
-from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.defi.defisaver_proxy import HasDSProxy
-from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_normalized_value
+from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.structures import ActionItem
+from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.constants.assets import (
     A_AAVE,
     A_BAL,
@@ -80,8 +80,8 @@ from rotkehlchen.utils.misc import (
 from .constants import CPT_DSR, CPT_MIGRATION, CPT_VAULT
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.decoding.base import BaseDecoderTools
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
     from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -99,20 +99,20 @@ CDPMANAGER_FROB = b'E\xe6\xbd\xcd\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x0
 class MakerdaoDecoder(DecoderInterface, HasDSProxy):
     def __init__(  # pylint: disable=super-init-not-called
             self,
-            ethereum_manager: 'EthereumManager',
+            ethereum_inquirer: 'EthereumInquirer',
             base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',
     ) -> None:
         DecoderInterface.__init__(
             self,
-            ethereum_manager=ethereum_manager,
+            evm_inquirer=ethereum_inquirer,
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
         )
         self.base = base_tools
         HasDSProxy.__init__(
             self,
-            ethereum_manager=ethereum_manager,
+            ethereum_inquirer=ethereum_inquirer,
             database=self.base.database,
             premium=None,  # not used here
             msg_aggregator=msg_aggregator,
@@ -171,10 +171,10 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
 
     def decode_makerdao_vault_action(  # pylint: disable=no-self-use
             self,
-            tx_log: EthereumTxReceiptLog,
+            tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
             decoded_events: List[HistoryBaseEntry],
-            all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
+            all_logs: List[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: List[ActionItem],  # pylint: disable=unused-argument
             vault_asset: CryptoAsset,
             vault_type: str,
@@ -217,10 +217,10 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
 
     def decode_makerdao_debt_payback(  # pylint: disable=no-self-use
             self,
-            tx_log: EthereumTxReceiptLog,
+            tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
             decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
-            all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
+            all_logs: List[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: List[ActionItem],  # pylint: disable=unused-argument
     ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
         if tx_log.topics[0] == GENERIC_JOIN:
@@ -250,10 +250,10 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
 
     def decode_pot_for_dsr(
             self,
-            tx_log: EthereumTxReceiptLog,
+            tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
             decoded_events: List[HistoryBaseEntry],
-            all_logs: List[EthereumTxReceiptLog],
+            all_logs: List[EvmTxReceiptLog],
             action_items: List[ActionItem],  # pylint: disable=unused-argument
     ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
         if tx_log.topics[0] == POT_JOIN:
@@ -337,10 +337,10 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
 
     def decode_proxy_creation(
             self,
-            tx_log: EthereumTxReceiptLog,
+            tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
             decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
-            all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
+            all_logs: List[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: List[ActionItem],  # pylint: disable=unused-argument
     ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
         if tx_log.topics[0] == b'%\x9b0\xca9\x88\\m\x80\x1a\x0b]\xbc\x98\x86@\xf3\xc2^/7S\x1f\xe18\xc5\xc5\xaf\x89U\xd4\x1b':  # noqa: E501
@@ -370,10 +370,10 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
 
     def _decode_vault_creation(
             self,
-            tx_log: EthereumTxReceiptLog,
+            tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
             decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
-            all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
+            all_logs: List[EvmTxReceiptLog],  # pylint: disable=unused-argument
     ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
         owner_address = self._get_address_or_proxy(hex_or_bytes_to_address(tx_log.topics[2]))
         if owner_address is None:
@@ -402,10 +402,10 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
 
     def _decode_vault_debt_generation(
             self,
-            tx_log: EthereumTxReceiptLog,
+            tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
             decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
-            all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
+            all_logs: List[EvmTxReceiptLog],  # pylint: disable=unused-argument
     ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
         """Decode vault debt generation by parsing a lognote for cdpmanager move"""
         cdp_id = hex_or_bytes_to_int(tx_log.topics[2])
@@ -442,10 +442,10 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
 
     def _decode_vault_change(
             self,
-            tx_log: EthereumTxReceiptLog,
+            tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
             decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
-            all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
+            all_logs: List[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: List[ActionItem],  # pylint: disable=unused-argument
     ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
         """Decode CDPManger Frob (vault change)
@@ -509,10 +509,10 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
 
     def decode_cdp_manager_events(
             self,
-            tx_log: EthereumTxReceiptLog,
+            tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
             decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
-            all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
+            all_logs: List[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: List[ActionItem],  # pylint: disable=unused-argument
     ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
         if tx_log.topics[0] == NEWCDP:
@@ -526,10 +526,10 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
 
     def decode_saidai_migration(
             self,
-            tx_log: EthereumTxReceiptLog,
+            tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
             decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
-            all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
+            all_logs: List[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: List[ActionItem],  # pylint: disable=unused-argument
     ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
         if tx_log.topics[0] == ERC20_OR_ERC721_TRANSFER:

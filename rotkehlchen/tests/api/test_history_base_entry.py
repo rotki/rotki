@@ -7,7 +7,7 @@ import requests
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
+from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_USDT
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
@@ -154,7 +154,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server):
     )
     assert_error_response(
         response=response,
-        contained_in_msg='Failed to add event to the DB due to a DB error: UNIQUE constraint failed: history_events.event_identifier, history_events.sequence_index',  # noqa: E501
+        contained_in_msg='Failed to add event to the DB. It already exists',
         status_code=HTTPStatus.CONFLICT,
     )
     # test editing works

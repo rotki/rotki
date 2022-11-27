@@ -19,7 +19,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.manual_price_oracles import ManualCurrentOracle
 from rotkehlchen.inquirer import DEFAULT_CURRENT_PRICE_ORACLES_ORDER, CurrentPriceOracle, Inquirer
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.types import Timestamp
+from rotkehlchen.types import ChainID, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -212,9 +212,9 @@ def _create_inquirer(
         msg_aggregator=MessagesAggregator(),
     )
     if ethereum_manager is not None:
-        inquirer.inject_ethereum(ethereum_manager)
-        uniswap_v2_oracle = UniswapV2Oracle(ethereum_manager)
-        uniswap_v3_oracle = UniswapV3Oracle(ethereum_manager)
+        inquirer.inject_evm_managers([(ChainID.ETHEREUM, ethereum_manager)])
+        uniswap_v2_oracle = UniswapV2Oracle(ethereum_manager.node_inquirer)
+        uniswap_v3_oracle = UniswapV3Oracle(ethereum_manager.node_inquirer)
         saddle_oracle = SaddleOracle(ethereum_manager)
         Inquirer().add_defi_oracles(
             uniswap_v2=uniswap_v2_oracle,

@@ -30,7 +30,7 @@ from rotkehlchen.utils.misc import hexstr_to_int, ts_now
 from .constants import MAKERDAO_REQUERY_PERIOD, RAD, RAY
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
@@ -105,14 +105,14 @@ class MakerdaoDsr(HasDSProxy):
 
     def __init__(
             self,
-            ethereum_manager: 'EthereumManager',
+            ethereum_inquirer: 'EthereumInquirer',
             database: 'DBHandler',
             premium: Optional[Premium],
             msg_aggregator: MessagesAggregator,
     ) -> None:
 
         super().__init__(
-            ethereum_manager=ethereum_manager,
+            ethereum_inquirer=ethereum_inquirer,
             database=database,
             premium=premium,
             msg_aggregator=msg_aggregator,
