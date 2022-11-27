@@ -3381,9 +3381,10 @@ Getting custom EVM tokens
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"address": "0x1169C72f36A843cD3a3713a76019FAB9503B2807", "chain": "ethereum"}
+      {"address": "0x1169C72f36A843cD3a3713a76019FAB9503B2807", "evm_chain": "ethereum"}
 
    :reqjson string address: An optional address to query for ethereum token info. If given only token info of this address are returned. As an object. **not a list**. If not given, a list of all known tokens is returned.
+   :reqjson string evm_chain: An optional name for the evm chain for which to filter the addresses for. Values like: "ethereum", "optimism" etc.
 
    **Example Response**:
 
@@ -3396,7 +3397,7 @@ Getting custom EVM tokens
           "result": {
               "identifier": "eip155:1/erc20:0x1169C72f36A843cD3a3713a76019FAB9503B2807",
               "address": "0x1169C72f36A843cD3a3713a76019FAB9503B2807",
-              "chain":"ethereum",
+              "evm_chain":"ethereum",
               "token_kind":"erc20",
               "decimals": 18,
               "name": "foo",
@@ -3407,9 +3408,9 @@ Getting custom EVM tokens
               "cryptocompare": "FOO",
               "protocol": "uniswap",
               "underlying_tokens": [
-                  {"address": "0x4a363BDcF9C139c0B77d929C8c8c5f971a38490c", "chain":"ethereum", "token_kind":"erc20", "weight": "15.45"},
-                  {"address": "0xf627B24754583896AbB6376b1e231A3B26d86c99", "chain":"ethereum", "token_kind":"erc20", "weight": "35.65"},
-                  {"address": "0x2B18982803EF09529406e738f344A0c1A54fA1EB", "chain":"ethereum", "token_kind":"erc20", "weight": "39"}
+                  {"address": "0x4a363BDcF9C139c0B77d929C8c8c5f971a38490c", "evm_chain":"ethereum", "token_kind":"erc20", "weight": "15.45"},
+                  {"address": "0xf627B24754583896AbB6376b1e231A3B26d86c99", "evm_chain":"ethereum", "token_kind":"erc20", "weight": "35.65"},
+                  {"address": "0x2B18982803EF09529406e738f344A0c1A54fA1EB", "evm_chain":"ethereum", "token_kind":"erc20", "weight": "39"}
               ]
           },
           "message": ""
@@ -3420,7 +3421,7 @@ Getting custom EVM tokens
    :resjson list result: A list of ethereum tokens
    :resjsonarr string identifier: The rotki identifier of the token. This is only returned from the GET endpoint and not input from the add/edit one.
    :resjsonarr string address: The address of the token. This is a required field.
-   :resjsonarr string chain: The chain where the token is deployed. This is a required field.
+   :resjsonarr string evm_chain: The chain where the token is deployed. This is a required field.
    :resjsonarr string token_kind: The kind of the token. This is a required field.
    :resjsonarr integer decimals: Ethereum token decimals. Can be missing if not known.
    :resjsonarr string name: Asset name. Can be missing if not known.
@@ -3509,6 +3510,7 @@ Editing custom ethereum tokens
       {
           "token": {
               "address": "0x1169C72f36A843cD3a3713a76019FAB9503B2807",
+	      "evm_chain": "ethereum",
               "decimals": 5,
               "name": "foo",
               "symbol": "FTK",
@@ -3556,9 +3558,10 @@ Deleting custom ethereum tokens
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"address": "0x1169C72f36A843cD3a3713a76019FAB9503B2807"}
+      {"address": "0x1169C72f36A843cD3a3713a76019FAB9503B2807", "evm_chain": "ethereum"}
 
    :reqjson string address: Address of the token to delete.
+   :reqjson string evm_chain: The name of the evm chain for which to delete the token. "ethereum", "optimism" etc.
 
    **Example Response**:
 
@@ -3568,7 +3571,7 @@ Deleting custom ethereum tokens
       Content-Type: application/json
 
       {
-          "result": {"identifier": "GNO"},
+          "result": {"identifier": "eip155:1/erc20:0x1169C72f36A843cD3a3713a76019FAB9503B2807"},
           "message": ""
       }
 

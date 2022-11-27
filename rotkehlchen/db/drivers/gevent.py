@@ -428,7 +428,13 @@ class DBConnection:
         return self._conn.total_changes
 
     def schema_sanity_check(self) -> None:
-        """Ensures that database schema is not broken. Raises DBSchemaError if anything is bad."""
+        """Ensures that database schema is not broken.
+
+        If you need to regenerate the schema that is being checked run:
+        tools/scripts/generate_minimized_db_schema.py
+
+        Raises DBSchemaError if anything is off.
+        """
         if self.minimized_schema is None:
             return  # Should happen only for transient db
         # Create same mapping for tables that are currently in the database

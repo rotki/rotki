@@ -124,6 +124,7 @@ from .fields import (
     DerivationPathField,
     DirectoryField,
     EthereumAddressField,
+    EvmChainNameField,
     EVMTransactionHashField,
     FeeField,
     FileField,
@@ -1694,21 +1695,17 @@ class IgnoredActionsModifySchema(Schema):
 
 class OptionalEthereumAddressSchema(Schema):
     address = EthereumAddressField(required=False, load_default=None)
-    chain_id = SerializableEnumField(
-        enum_class=ChainID,
-        required=False,
-        load_default=ChainID.ETHEREUM,
-    )
+    evm_chain = EvmChainNameField(required=False, load_default=ChainID.ETHEREUM)
 
 
 class RequiredEthereumAddressSchema(Schema):
     address = EthereumAddressField(required=True)
-    chain_id = SerializableEnumField(enum_class=ChainID, required=True)
+    evm_chain = EvmChainNameField(required=True)
 
 
 class OptionalEvmTokenInformationSchema(Schema):
     address = EthereumAddressField(required=False)
-    chain_id = SerializableEnumField(enum_class=ChainID, required=False)
+    evm_chain = EvmChainNameField(required=False)
     token_kind = SerializableEnumField(enum_class=EvmTokenKind, required=False)
 
 
@@ -1856,7 +1853,7 @@ class AssetsPostSchema(DBPaginationSchema, DBOrderBySchema):
 
 class AssetsSearchLevenshteinSchema(Schema):
     value = fields.String(required=True)
-    chain_id = SerializableEnumField(enum_class=ChainID, load_default=None)
+    evm_chain = EvmChainNameField(load_default=None)
     limit = fields.Integer(required=True)
     search_nfts = fields.Boolean(load_default=False)
 
@@ -1869,7 +1866,7 @@ class AssetsSearchLevenshteinSchema(Schema):
         filter_query = LevenshteinFilterQuery.make(
             and_op=True,
             substring_search=data['value'].strip().casefold(),
-            chain_id=data['chain_id'],
+            chain_id=data['evm_chain'],
         )
         return {
             'filter_query': filter_query,
@@ -1884,8 +1881,7 @@ class AssetsSearchByColumnSchema(DBOrderBySchema, DBPaginationSchema):
         validate=webargs.validate.OneOf(choices=('name', 'symbol')),
     )
     value = fields.String(required=True)
-    # Using name evm_chain and string repr as input to make it easy for the frontend
-    evm_chain = SerializableEnumField(enum_class=ChainID, load_default=None)
+    evm_chain = EvmChainNameField(load_default=None)
     return_exact_matches = fields.Boolean(load_default=False)
 
     @post_load
@@ -1902,7 +1898,7 @@ class AssetsSearchByColumnSchema(DBOrderBySchema, DBPaginationSchema):
             substring_search=data['value'].strip(),
             search_column=data['search_column'],
             return_exact_matches=data['return_exact_matches'],
-            chain_id=data['chain_id'],
+            chain_id=data['evm_chain'],
         )
         return {'filter_query': filter_query}
 
@@ -1974,6 +1970,8 @@ class EvmTokenSchema(BaseCryptoAssetSchema, RequiredEthereumAddressSchema):
             **_kwargs: Any,
     ) -> EvmToken:
         given_underlying_tokens = data.pop('underlying_tokens', None)
+        chain_id = data.pop('evm_chain')
+        data['chain_id'] = chain_id
         underlying_tokens = None
         if given_underlying_tokens is not None:
             underlying_tokens = []

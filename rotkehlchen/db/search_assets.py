@@ -85,7 +85,7 @@ def _search_only_assets_levenstein(
                 'asset_type': AssetType.deserialize_from_db(entry[4]).serialize(),
             }
             if entry[3] is not None:
-                entry_info['evm_chain'] = ChainID.deserialize_from_db(entry[3]).serialize()
+                entry_info['evm_chain'] = ChainID.deserialize_from_db(entry[3]).to_name()
             if entry[5] is not None:
                 entry_info['custom_asset_type'] = entry[5]
 

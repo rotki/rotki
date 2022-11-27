@@ -40,6 +40,7 @@ from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
     AssetAmount,
+    ChainID,
     ChecksumEvmAddress,
     EVMTxHash,
     Fee,
@@ -360,6 +361,35 @@ class SerializableEnumField(fields.Field):
             raise ValidationError(str(e)) from e
 
         return result
+
+
+class EvmChainNameField(fields.Field):
+    """A special case of serializing to an enum. Using the string name of an evm
+    chain to serialize to chain id, so the frontend does not have to remember a
+    mapping of chain id to evm chain name"""
+
+    @staticmethod
+    def _serialize(
+            value: ChainID,
+            attr: Optional[str],  # pylint: disable=unused-argument
+            obj: Any,  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> Optional[str]:
+        return value.to_name() if value else None
+
+    def _deserialize(
+            self,
+            value: str,
+            attr: Optional[str],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> ChainID:
+        try:
+            chain_id = ChainID.deserialize_from_name(value)
+        except DeserializationError as e:
+            raise ValidationError(str(e)) from e
+
+        return chain_id
 
 
 class AssetField(fields.Field):
