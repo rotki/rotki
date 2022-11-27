@@ -40,6 +40,35 @@ jobs:
           frontend_paths: |
             frontend/app
 
+  code-analyze-frontend:
+    name: 'Code analyze frontend'
+    needs: ['check-changes', 'load_env']
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    if: ${{ needs.check-changes.outputs.frontend_tasks }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup node  # not sure this step is needed
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ needs.load_env.outputs.node_version }}
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: 'javascript'
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v2
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+        with:
+          category: "/language:javascript"
+
   lint-frontend:
     name: 'Frontend lint'
     needs: ['check-changes', 'load_env']
@@ -135,6 +164,34 @@ jobs:
           git rev-parse HEAD
       - name: Build html docs
         run: cd docs && make html
+
+  code-analyze-backend:
+    name: 'Code analyze backend'
+    needs: ['check-changes', 'load_env']
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    if: ${{ needs.check-changes.outputs.backend_tasks }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup python  # not sure if this step is needed
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ needs.load_env.outputs.python_version }}
+          cache: 'pip'
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: 'python'
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v2
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+        with:
+          category: "/language:python"
 
   lint-backend:
     name: 'Backend lint'
