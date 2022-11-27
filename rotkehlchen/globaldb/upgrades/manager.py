@@ -63,7 +63,7 @@ def maybe_upgrade_globaldb(connection: 'DBConnection', dbpath: Path) -> bool:
         shutil.copyfile(dbpath, tmp_db_path)
         try:
             upgrade.function(connection)
-        except BaseException as e:  # lgtm[py/catch-base-exception]
+        except BaseException as e:
             # Problem .. restore DB backup and bail out
             error_message = (
                 f'Failed at global DB upgrade from version {upgrade.from_version} to '

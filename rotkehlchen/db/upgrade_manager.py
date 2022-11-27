@@ -146,7 +146,7 @@ class DBUpgradeManager():
             try:
                 kwargs = upgrade.kwargs if upgrade.kwargs is not None else {}
                 upgrade.function(db=self.db, **kwargs)
-            except BaseException as e:  # lgtm[py/catch-base-exception]
+            except BaseException as e:
                 # Problem .. restore DB backup and bail out
                 error_message = (
                     f'Failed at database upgrade from version {upgrade.from_version} to '

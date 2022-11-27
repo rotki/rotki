@@ -56,7 +56,7 @@ log = RotkehlchenLogsAdapter(logger)
 MAX_PAGE_SIZE = 100
 
 
-class Bitpanda(ExchangeInterface):  # lgtm[py/missing-call-to-init]
+class Bitpanda(ExchangeInterface):
 
     def __init__(
             self,

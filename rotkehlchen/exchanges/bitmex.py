@@ -90,7 +90,7 @@ def trade_from_bitmex(bitmex_trade: Dict) -> MarginPosition:
     )
 
 
-class Bitmex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
+class Bitmex(ExchangeInterface):
     def __init__(
             self,
             name: str,

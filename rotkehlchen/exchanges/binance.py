@@ -169,7 +169,7 @@ def trade_from_binance(
     )
 
 
-class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
+class Binance(ExchangeInterface):
     """This class supports:
       - Binance: when instantiated with default uri, equals BINANCE_BASE_URL.
       - Binance US: when instantiated with uri equals BINANCEUS_BASE_URL.

@@ -88,7 +88,7 @@ def trade_from_iconomi(raw_trade: Dict) -> Trade:
     )
 
 
-class Iconomi(ExchangeInterface):  # lgtm[py/missing-call-to-init]
+class Iconomi(ExchangeInterface):
     def __init__(
             self,
             name: str,

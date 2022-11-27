@@ -24,7 +24,7 @@ class ModuleAccountantInterface(metaclass=ABCMeta):
         decoder to choose what to keep"""
         # It's okay to call overriden reset here, since super class reset does not do anything.
         # If at any point it does we have to make sure all overriden reset() call parent
-        self.reset()  # lgtm[py/missing-call-to-init]
+        self.reset()
 
     @abstractmethod
     def event_settings(self, pot: 'AccountingPot') -> Dict[str, 'TxEventSettings']:  # pylint: disable=no-self-use  # noqa: E501

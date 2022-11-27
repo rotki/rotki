@@ -143,7 +143,7 @@ def deserialize_trade_pair(trade_pair_symbol: str) -> Tuple[AssetWithOracles, As
     return base_asset, quote_asset
 
 
-class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
+class Kucoin(ExchangeInterface):
     """Resources:
     https://docs.kucoin.com
     https://github.com/Kucoin/kucoin-python-sdk

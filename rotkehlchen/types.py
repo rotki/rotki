@@ -19,11 +19,11 @@ from hexbytes import HexBytes as Web3HexBytes
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.utils.hexbytes import HexBytes
-from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn  # lgtm[py/unsafe-cyclic-import]
+from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn
 from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 from rotkehlchen.utils.mixins.serializableenumvalue import SerializableEnumValueMixin
 
-from rotkehlchen.chain.substrate.types import KusamaAddress, PolkadotAddress  # isort:skip # lgtm [py/unsafe-cyclic-import]  # noqa: E501
+from rotkehlchen.chain.substrate.types import KusamaAddress, PolkadotAddress  # isort:skip # noqa: E501
 
 ModuleName = Literal[
     'makerdao_dsr',

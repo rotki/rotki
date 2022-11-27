@@ -106,7 +106,7 @@ def coinbasepro_deserialize_timestamp(entry: Dict[str, Any], key: str) -> Timest
     return timestamp
 
 
-class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
+class Coinbasepro(ExchangeInterface):
 
     def __init__(
             self,

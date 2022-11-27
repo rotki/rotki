@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Type, TypeVar
 
-from rotkehlchen.errors.serialization import DeserializationError  # lgtm[py/unsafe-cyclic-import]
+from rotkehlchen.errors.serialization import DeserializationError
 
 T = TypeVar('T', bound=Enum)
 

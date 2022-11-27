@@ -20,7 +20,7 @@ DEPOSIT = b'\xc1,W\xb1\xc7:,:.\xa4a>\x94v\xab\xb3\xd8\xd1F\x85z\xabs)\xe2BC\xfbY
 REDEEM_UNDERLYING = b'\x9cN\xd5\x99\xcd\x85U\xb9\xc1\xe8\xcdvC$\r}q\xebv\xb7\x92\x94\x8cI\xfc\xb4\xd4\x11\xf7\xb6\xb3\xc6'  # noqa: E501
 
 
-class Aavev1Decoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
+class Aavev1Decoder(DecoderInterface):
 
     def _decode_pool_event(  # pylint: disable=no-self-use
             self,

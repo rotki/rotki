@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class GitcoinDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
+class GitcoinDecoder(DecoderInterface):
     def __init__(  # pylint: disable=super-init-not-called
             self,
             ethereum_manager: 'EthereumManager',  # pylint: disable=unused-argument

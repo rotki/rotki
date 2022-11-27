@@ -6,7 +6,6 @@ from rotkehlchen.data_migrations.migrations.migration_2 import data_migration_2
 from rotkehlchen.data_migrations.migrations.migration_3 import data_migration_3
 from rotkehlchen.data_migrations.migrations.migration_4 import data_migration_4
 from rotkehlchen.data_migrations.migrations.migration_5 import data_migration_5
-
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:
@@ -60,7 +59,7 @@ class DataMigrationManager:
         try:
             kwargs = migration.kwargs if migration.kwargs is not None else {}
             migration.function(write_cursor, self.rotki, **kwargs)
-        except BaseException as e:  # lgtm[py/catch-base-exception]
+        except BaseException as e:
             error = f'Failed to run soft data migration to version {migration.version} due to {str(e)}'  # noqa: E501
             self.rotki.msg_aggregator.add_error(error)
             return False

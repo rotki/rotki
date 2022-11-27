@@ -113,10 +113,10 @@ class DBCursor:
         https://docs.python.org/3/library/sqlite3.html#sqlite3.Cursor.executescript
         """
         if __debug__:
-            logger.trace(f'EXECUTESCRIPT {script}')  # lgtm [py/clear-text-logging-sensitive-data]
+            logger.trace(f'EXECUTESCRIPT {script}')
         self._cursor.executescript(script)
         if __debug__:
-            logger.trace(f'FINISH EXECUTESCRIPT {script}')  # noqa: E501 lgtm [py/clear-text-logging-sensitive-data]
+            logger.trace(f'FINISH EXECUTESCRIPT {script}')
         return self
 
     def fetchone(self) -> Any:
@@ -313,7 +313,7 @@ class DBConnection:
         try:
             yield cursor
         finally:
-            cursor.close()  # lgtm [py/should-use-with]
+            cursor.close()
 
     @contextmanager
     def write_ctx(self) -> Generator['DBCursor', None, None]:
@@ -326,7 +326,7 @@ class DBConnection:
         else:
             self._conn.commit()
         finally:
-            cursor.close()  # lgtm [py/should-use-with]
+            cursor.close()
 
     @contextmanager
     def savepoint_ctx(
@@ -347,7 +347,7 @@ class DBConnection:
         else:
             self.release_savepoint(savepoint_name)
         finally:
-            cursor.close()  # lgtm [py/should-use-with]
+            cursor.close()
 
     def enter_savepoint(self, savepoint_name: Optional[str] = None) -> Tuple['DBCursor', str]:
         """

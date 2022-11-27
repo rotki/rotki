@@ -30,7 +30,7 @@ chainid_to_name = {
 }
 
 
-class HopDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
+class HopDecoder(DecoderInterface):
 
     def _decode_send_eth(  # pylint: disable=no-self-use
             self,

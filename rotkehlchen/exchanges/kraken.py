@@ -264,7 +264,7 @@ class KrakenAccountType(SerializableEnumMixin):
 DEFAULT_KRAKEN_ACCOUNT_TYPE = KrakenAccountType.STARTER
 
 
-class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
+class Kraken(ExchangeInterface):
     def __init__(
             self,
             name: str,
