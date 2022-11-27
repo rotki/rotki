@@ -43,8 +43,9 @@ class DBHistoryEvents():
             write_cursor: 'DBCursor',
             event: HistoryBaseEntry,
             mapping_values: Optional[Dict[str, int]] = None,
-    ) -> int:
-        """Insert a single history entry to the DB. Returns its identifier.
+    ) -> Optional[int]:
+        """Insert a single history entry to the DB. Returns its identifier or
+        None if it already exists.
 
         Optionally map it to a specific value used to map attributes
         to some events
@@ -56,14 +57,14 @@ class DBHistoryEvents():
         """
         write_cursor.execute(HISTORY_INSERT, event.serialize_for_db())
         if write_cursor.rowcount == 0:
-            return  # already exists
+            return None  # already exists
 
         identifier = write_cursor.lastrowid
         if mapping_values is not None:
             write_cursor.executemany(
                 'INSERT OR IGNORE INTO history_events_mappings(parent_identifier, name, value) '
                 'VALUES(?, ?, ?)',
-                [(identifier, k, v) for k, v in mapping_values.items()]
+                [(identifier, k, v) for k, v in mapping_values.items()],
             )
 
         return identifier
@@ -85,14 +86,13 @@ class DBHistoryEvents():
         mapping_values = None
         if chain_id is not None:
             mapping_values = {HISTORY_MAPPING_KEY_CHAINID: chain_id.serialize_for_db()}
-        
+
         for event in history:
             self.add_history_event(
                 write_cursor=write_cursor,
                 event=event,
                 mapping_values=mapping_values,
             )
-
 
     def edit_history_event(self, event: HistoryBaseEntry) -> Tuple[bool, str]:
         """Edit a history entry to the DB. Returns the edited entry"""

@@ -26,6 +26,7 @@ def _remove_adex(write_cursor: 'DBCursor') -> None:
     """
     write_cursor.execute('/*IMPLEMENT ME*/')
 
+
 def _upgrade_ignored_actionids(write_cursor: 'DBCursor') -> None:
     """TODO: ignored_action_ids of ActionType.ETHEREUM_TRANSACTION need chainid prepended
     """

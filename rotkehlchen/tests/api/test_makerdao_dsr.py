@@ -458,14 +458,14 @@ def test_query_current_dsr_balance(
     async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     setup = setup_tests_for_dsr(
-        etherscan=rotki.etherscan,
+        etherscan=rotki.chains_aggregator.ethereum.node_inquirer.etherscan,
         accounts=ethereum_accounts,
         original_requests_get=requests.get,
     )
     with setup.etherscan_patch:
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
-            "makerdaodsrbalanceresource",
+            'makerdaodsrbalanceresource',
         ), json={'async_query': async_query})
         if async_query:
             task_id = assert_ok_async_response(response)
@@ -484,14 +484,14 @@ def test_query_historical_dsr_non_premium(
 ):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     setup = setup_tests_for_dsr(
-        etherscan=rotki.etherscan,
+        etherscan=rotki.chains_aggregator.ethereum.node_inquirer.etherscan,
         accounts=ethereum_accounts,
         original_requests_get=requests.get,
     )
     with setup.etherscan_patch:
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
-            "makerdaodsrhistoryresource",
+            'makerdaodsrhistoryresource',
         ))
 
     assert_error_response(
@@ -551,14 +551,14 @@ def test_query_historical_dsr(
     async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     setup = setup_tests_for_dsr(
-        etherscan=rotki.etherscan,
+        etherscan=rotki.chains_aggregator.ethereum.node_inquirer.etherscan,
         accounts=ethereum_accounts,
         original_requests_get=requests.get,
     )
     with setup.etherscan_patch:
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
-            "makerdaodsrhistoryresource",
+            'makerdaodsrhistoryresource',
         ), json={'async_query': async_query})
         if async_query:
             task_id = assert_ok_async_response(response)
@@ -587,7 +587,7 @@ def test_query_historical_dsr_with_a_zero_withdrawal(
     problem seems to be just because he tried a zero DAI withdrawal
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    original_get_logs = rotki.chains_aggregator.ethereum.get_logs
+    original_get_logs = rotki.chains_aggregator.ethereum.node_inquirer.get_logs
     proxies_mapping = {
         # proxy for 0x714696C5a872611F76655Bc163D0131cBAc60a70
         ethereum_accounts[0]: '0xAe9996b76bdAa003ace6D66328A6942565f5768d',
@@ -622,7 +622,7 @@ def test_query_historical_dsr_with_a_zero_withdrawal(
     with patched_get_logs:
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
-            "makerdaodsrhistoryresource",
+            'makerdaodsrhistoryresource',
         ))
     assert_proper_response(response)
     json_data = response.json()
@@ -684,7 +684,7 @@ def test_dsr_for_account_with_proxy_but_no_dsr(
     """Assure that an account with a DSR proxy but no DSR balance isn't returned in the balances"""
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
-        "makerdaodsrbalanceresource",
+        'makerdaodsrbalanceresource',
     ))
     assert_proper_response(response)
     json_data = response.json()

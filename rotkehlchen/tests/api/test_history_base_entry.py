@@ -153,7 +153,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server):
     )
     assert_error_response(
         response=response,
-        contained_in_msg='Failed to add event to the DB due to a DB error: UNIQUE constraint failed: history_events.event_identifier, history_events.sequence_index',  # noqa: E501
+        contained_in_msg='Failed to add event to the DB. It already exists',
         status_code=HTTPStatus.CONFLICT,
     )
     # test editing works

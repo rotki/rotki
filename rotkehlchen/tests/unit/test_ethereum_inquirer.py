@@ -1,4 +1,3 @@
-
 import pytest
 
 from rotkehlchen.chain.ethereum.constants import ZERO_ADDRESS
@@ -137,6 +136,7 @@ def test_get_transaction_by_hash(ethereum_inquirer, call_order, ethereum_manager
     )
     expected_tx = EvmTransaction(
         tx_hash=make_evm_tx_hash(b'[\x18\x0e=\xcc\x19\xcd)\xc9\x18\xb9\x8c\x87o\x199>\x07\xb7L\x07\xfdr\x81\x02\xebbA\xdb<-\\'),  # noqa: E501
+        chain_id=ChainID.ETHEREUM,
         timestamp=1633128954,
         block_number=13336285,
         from_address='0x2F6789A208A05C762cA8d142A3df95d29C18b065',
@@ -293,16 +293,16 @@ def test_get_log_and_receipt_etherscan_bad_tx_index(
     assert all(x['transactionIndex'] == 0 for x in result['logs'])
 
 
-def _test_get_blocknumber_by_time(eth_manager, etherscan):
-    result = eth_manager.get_blocknumber_by_time(1577836800, etherscan=etherscan)
+def _test_get_blocknumber_by_time(ethereum_inquirer, etherscan):
+    result = ethereum_inquirer.get_blocknumber_by_time(1577836800, etherscan=etherscan)
     assert result == 9193265
 
 
-def test_get_blocknumber_by_time_subgraph(ethereum_manager):
+def test_get_blocknumber_by_time_subgraph(ethereum_inquirer):
     """Queries the blocks subgraph for known block times"""
-    _test_get_blocknumber_by_time(ethereum_manager, False)
+    _test_get_blocknumber_by_time(ethereum_inquirer, False)
 
 
-def test_get_blocknumber_by_time_etherscan(ethereum_manager):
+def test_get_blocknumber_by_time_etherscan(ethereum_inquirer):
     """Queries etherscan for known block times"""
-    _test_get_blocknumber_by_time(ethereum_manager, True)
+    _test_get_blocknumber_by_time(ethereum_inquirer, True)

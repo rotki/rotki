@@ -210,11 +210,6 @@ def db_tuple_to_str(
             f'AMM swap with id {data[0]}-{data[1]} '
             f'in {Location.deserialize_from_db(data[6])} '
         )
-    if tuple_type == 'history_event':
-        return (
-            f'History event with event identifier {data[0]} from '
-            f'{Location.deserialize_from_db(data[3])}.'
-        )
 
     raise AssertionError('db_tuple_to_str() called with invalid tuple_type {tuple_type}')
 

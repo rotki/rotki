@@ -1024,6 +1024,10 @@ class RestAPI():
                 error_msg = f'Failed to add event to the DB due to a DB error: {str(e)}'
                 return api_response(wrap_in_fail_result(error_msg), status_code=HTTPStatus.CONFLICT)  # noqa: E501
 
+        if identifier is None:
+            error_msg = 'Failed to add event to the DB. It already exists'
+            return api_response(wrap_in_fail_result(error_msg), status_code=HTTPStatus.CONFLICT)
+
         # success
         result_dict = _wrap_in_ok_result({'identifier': identifier})
         return api_response(result_dict, status_code=HTTPStatus.OK)

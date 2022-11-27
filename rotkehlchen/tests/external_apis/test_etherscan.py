@@ -91,7 +91,7 @@ def test_deserialize_transaction_from_etherscan():
         data=data,
         internal=False,
         chain_id=chain_id,
-        manager=None,
+        evm_inquirer=None,
     )
     assert transaction == EvmTransaction(
         tx_hash=deserialize_evm_tx_hash(data['hash']),
@@ -141,6 +141,7 @@ def test_etherscan_get_transactions_genesis_block(eth_transactions):
     assert regular_tx_in_db == [
         EvmTransaction(
             tx_hash=GENESIS_HASH,
+            chain_id=ChainID.ETHEREUM,
             timestamp=ETHEREUM_BEGIN,
             block_number=0,
             from_address=ZERO_ADDRESS,
@@ -153,6 +154,7 @@ def test_etherscan_get_transactions_genesis_block(eth_transactions):
             nonce=0,
         ), EvmTransaction(
             tx_hash=deserialize_evm_tx_hash('0x352b93ac19dfbfd65d4d8385cded959d7a156c3f352a71a5a49560b088e1c8df'),  # noqa: E501
+            chain_id=ChainID.ETHEREUM,
             timestamp=Timestamp(1443534531),
             block_number=307793,
             from_address='0xC951900c341aBbb3BAfbf7ee2029377071Dbc36A',
@@ -169,6 +171,7 @@ def test_etherscan_get_transactions_genesis_block(eth_transactions):
     assert internal_tx_in_db == [
         EvmInternalTransaction(
             parent_tx_hash=GENESIS_HASH,
+            chain_id=ChainID.ETHEREUM,
             trace_id=0,
             timestamp=ETHEREUM_BEGIN,
             block_number=0,

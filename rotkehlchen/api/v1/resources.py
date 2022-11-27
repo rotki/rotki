@@ -789,8 +789,8 @@ class EthereumAssetsResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(delete_schema, location='json')
-    def delete(self, address: ChecksumEvmAddress, chain: ChainID) -> Response:
-        return self.rest_api.delete_custom_ethereum_token(address, chain)
+    def delete(self, address: ChecksumEvmAddress, chain_id: ChainID) -> Response:
+        return self.rest_api.delete_custom_ethereum_token(address, chain_id)
 
 
 class AssetUpdatesResource(BaseMethodView):

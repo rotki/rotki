@@ -143,7 +143,7 @@ class DBEvmTx():
         for result in results:
             tx = EvmInternalTransaction(
                 parent_tx_hash=make_evm_tx_hash(result[0]),
-                chain_id=result[1],
+                chain_id=ChainID.deserialize_from_db(result[1]),
                 trace_id=result[2],
                 timestamp=result[3],
                 block_number=result[4],
