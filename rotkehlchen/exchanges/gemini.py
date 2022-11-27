@@ -97,7 +97,7 @@ def gemini_symbol_to_base_quote(symbol: str) -> Tuple[AssetWithOracles, AssetWit
     return base_asset, quote_asset
 
 
-class Gemini(ExchangeInterface):  # lgtm[py/missing-call-to-init]
+class Gemini(ExchangeInterface):
 
     def __init__(
             self,

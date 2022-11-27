@@ -86,7 +86,7 @@ def _deserialize_nft_from_db(entry: NFT_DB_TUPLE) -> Dict[str, Any]:
     }
 
 
-class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):  # lgtm [py/missing-call-to-init]
+class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):
 
     def __init__(
             self,

@@ -143,7 +143,7 @@ def trade_from_bittrex(bittrex_trade: Dict[str, Any]) -> Trade:
     )
 
 
-class Bittrex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
+class Bittrex(ExchangeInterface):
     def __init__(
             self,
             name: str,

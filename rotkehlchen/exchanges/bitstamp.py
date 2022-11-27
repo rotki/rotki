@@ -107,7 +107,7 @@ class TradePairData(NamedTuple):
     quote_asset: AssetWithOracles
 
 
-class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
+class Bitstamp(ExchangeInterface):
     """Bitstamp exchange api docs:
     https://www.bitstamp.net/api/
 

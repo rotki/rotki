@@ -3,8 +3,8 @@ from multiprocessing.managers import RemoteError
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from eth_utils import to_checksum_address
-from rotkehlchen.accounting.structures.balance import Balance
 
+from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
@@ -46,7 +46,7 @@ TEXT_CHANGED = b'\xd8\xc93K\x1a\x9c/\x9d\xa3B\xa0\xa2\xb3&)\xc1\xa2)\xb6D]\xadx\
 TEXT_CHANGED_ABI = '{"anonymous":false,"inputs":[{"indexed":true,"internalType":"bytes32","name":"node","type":"bytes32"},{"indexed":true,"internalType":"string","name":"indexedKey","type":"string"},{"indexed":false,"internalType":"string","name":"key","type":"string"}],"name":"TextChanged","type":"event"}'  # noqa: E501
 
 
-class EnsDecoder(DecoderInterface, CustomizableDateMixin):  # lgtm[py/missing-call-to-init]
+class EnsDecoder(DecoderInterface, CustomizableDateMixin):
     def __init__(  # pylint: disable=super-init-not-called
             self,
             ethereum_manager: 'EthereumManager',

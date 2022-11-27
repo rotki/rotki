@@ -107,7 +107,7 @@ def trade_from_ftx(raw_trade: Dict[str, Any]) -> Optional[Trade]:
     )
 
 
-class Ftx(ExchangeInterface):  # lgtm[py/missing-call-to-init]
+class Ftx(ExchangeInterface):
 
     def __init__(
             self,

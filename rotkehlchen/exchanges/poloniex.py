@@ -111,7 +111,7 @@ def trade_from_poloniex(poloniex_trade: Dict[str, Any]) -> Trade:
     )
 
 
-class Poloniex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
+class Poloniex(ExchangeInterface):
 
     def __init__(
             self,

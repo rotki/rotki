@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class CurveDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
+class CurveDecoder(DecoderInterface):
 
     def __init__(
             self,

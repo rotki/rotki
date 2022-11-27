@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class LiquityDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
+class LiquityDecoder(DecoderInterface):
 
     def __init__(
             self,

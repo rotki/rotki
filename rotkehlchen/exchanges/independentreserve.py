@@ -1,7 +1,7 @@
 import hashlib
 import hmac
 import json
-import logging  # lgtm [py/import-and-import-from]  # https://github.com/github/codeql/issues/6088
+import logging
 import time
 from collections import OrderedDict
 from json.decoder import JSONDecodeError
@@ -226,7 +226,7 @@ def _asset_movement_from_independentreserve(raw_tx: Dict) -> Optional[AssetMovem
     )
 
 
-class Independentreserve(ExchangeInterface):  # lgtm[py/missing-call-to-init]
+class Independentreserve(ExchangeInterface):
     def __init__(
             self,
             name: str,

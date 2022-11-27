@@ -356,9 +356,8 @@ class EthereumManager(EvmManager):
         """We know that in most of its early life the Eth2 contract address returns a
         a lot of results. So limit the query range to not hit the infura limits every time
         """
-        # supress https://lgtm.com/rules/1507386916281/ since it does not apply here
         infura_eth2_log_query = (
-            'infura.io' in web3.manager.provider.endpoint_uri and  # type: ignore # noqa: E501 lgtm [py/incomplete-url-substring-sanitization]
+            'infura.io' in web3.manager.provider.endpoint_uri and  # type: ignore
             contract_address == ETH2_DEPOSIT.address
         )
         return WEB3_LOGQUERY_BLOCK_RANGE if infura_eth2_log_query is False else 75000

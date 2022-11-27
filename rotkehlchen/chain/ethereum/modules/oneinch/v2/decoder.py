@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 SWAPPED = b'v\xaf"J\x148e\xa5\x0bAIn\x1asb&\x98i,V\\\x12\x14\xbc\x86/\x18\xe2-\x82\x9c^'
 
 
-class Oneinchv2Decoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
+class Oneinchv2Decoder(DecoderInterface):
     def __init__(  # pylint: disable=super-init-not-called
             self,
             ethereum_manager: 'EthereumManager',  # pylint: disable=unused-argument

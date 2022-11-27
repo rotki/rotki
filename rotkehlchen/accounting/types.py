@@ -7,7 +7,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import Timestamp
-from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn  # lgtm[py/unsafe-cyclic-import]
+from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn
 from rotkehlchen.utils.serialization import rlk_jsondumps
 
 
