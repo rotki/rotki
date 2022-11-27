@@ -4,8 +4,6 @@
 
 rotki is an open source portfolio tracking, analytics, accounting and tax reporting tool that protects your privacy.  The mission of rotki is to bring transparency into the crypto and financial sectors through the use of open source. Most importantly unlike virtually every other competing service which consists of closed source SaaS onto which you are forced to hand over all your financial data, with rotki your data is stored encrypted locally in your computer. It enables you to take ownership of your financial data!
 
-[![Language grade: JavaScript](https://img.shields.io/lgtm/grade/javascript/g/rotki/rotki.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/rotki/rotki/context:javascript)
-[![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/rotki/rotki.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/rotki/rotki/context:python)
 
 [![GitHub release](https://img.shields.io/github/release/rotki/rotki.svg)](https://GitHub.com/rotki/rotki/releases/)
 [![Docker Image Version (tag latest semver)](https://img.shields.io/docker/v/rotki/rotki/latest?label=Docker)](https://hub.docker.com/layers/rotki/rotki/dev/images/sha256-acbd52985ccea0fb42820a655d994312d322a0895ee5777733582b017a89f3b0?context=explore)
