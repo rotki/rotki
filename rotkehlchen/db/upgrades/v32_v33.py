@@ -7,6 +7,7 @@ from rotkehlchen.types import deserialize_evm_tx_hash
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 
 def _refactor_xpubs_and_xpub_mappings(cursor: 'DBCursor') -> None:
@@ -476,15 +477,21 @@ def _refactor_blockchain_account_labels(cursor: 'DBCursor') -> None:
     cursor.execute('UPDATE blockchain_accounts SET label = NULL WHERE label = ""')
 
 
-def upgrade_v32_to_v33(db: 'DBHandler') -> None:
+def upgrade_v32_to_v33(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v32 to v33
     - Change the schema of `blockchain` column in `xpub_mappings` table to be required.
     - Add blockchain column to `xpubs` table.
     - Change tx_hash for tables to BLOB type & history events event_identifier column to BLOB type.
     """
+    progress_handler.set_total_steps(5)
     with db.user_write() as cursor:
         _refactor_xpubs_and_xpub_mappings(cursor)
+        progress_handler.new_step()
         _create_new_tables(cursor)
+        progress_handler.new_step()
         _refactor_blockchain_account_labels(cursor)
+        progress_handler.new_step()
         _create_nodes(cursor)
+        progress_handler.new_step()
         _force_bytes_for_tx_hashes(cursor)
+        progress_handler.new_step()

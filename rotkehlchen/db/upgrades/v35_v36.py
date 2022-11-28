@@ -7,6 +7,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -416,7 +417,7 @@ def _upgrade_nfts_table(write_cursor: 'DBCursor') -> None:
     log.debug('Exit _upgrade_nfts_table')
 
 
-def upgrade_v35_to_v36(db: 'DBHandler') -> None:
+def upgrade_v35_to_v36(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v35 to v36
 
         - Remove adex data
@@ -429,14 +430,20 @@ def upgrade_v35_to_v36(db: 'DBHandler') -> None:
         - rename web3_nodes to rpc_nodes
     """
     log.debug('Entered userdb v35->v36 upgrade')
-
+    progress_handler.set_total_steps(6)
     with db.user_write() as write_cursor:
         _remove_adex(write_cursor)
+        progress_handler.new_step()
         _upgrade_ignored_actionids(write_cursor)
+        progress_handler.new_step()
         _upgrade_account_details(write_cursor)
+        progress_handler.new_step()
         _rename_eth_to_evm_add_chainid(write_cursor)
+        progress_handler.new_step()
         _upgrade_events_mappings(write_cursor)
+        progress_handler.new_step()
         _upgrade_nfts_table(write_cursor)
         write_cursor.execute('ALTER TABLE web3_nodes RENAME TO rpc_nodes;')
+        progress_handler.new_step()
 
     log.debug('Finished userdb v35->v36 upgrade')

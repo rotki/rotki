@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBConnection
+    from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 
 def _create_new_tables(conn: 'DBConnection') -> None:
@@ -52,13 +53,14 @@ def _create_new_tables(conn: 'DBConnection') -> None:
     );""")  # noqa: E501
 
 
-def upgrade_v28_to_v29(db: 'DBHandler') -> None:
+def upgrade_v28_to_v29(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v28 to v29
 
     - Alters the primary key of blockchain accounts to be blockchain type + account
     - Alters the xpub_mappings to reference the new blockchain accounts
     - Alters the ethereum transactions table to have tx_hash as primary key
     """
+    progress_handler.set_total_steps(6)
     cursor = db.conn.cursor()
     query = cursor.execute('SELECT blockchain, account, label FROM blockchain_accounts;')
     accounts_data = query.fetchall()
@@ -69,6 +71,7 @@ def upgrade_v28_to_v29(db: 'DBHandler') -> None:
     cursor.execute('DROP TABLE IF EXISTS blockchain_accounts;')
     cursor.execute('DROP TABLE IF EXISTS xpub_mappings;')
     cursor.execute('DROP TABLE IF EXISTS ethereum_transactions;')
+    progress_handler.new_step()
     # create the new tables and insert all values into it
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS blockchain_accounts (
@@ -82,6 +85,7 @@ def upgrade_v28_to_v29(db: 'DBHandler') -> None:
         'INSERT INTO blockchain_accounts(blockchain, account, label) VALUES(?, ?, ?);',
         accounts_data,
     )
+    progress_handler.new_step()
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS xpub_mappings (
     address TEXT NOT NULL,
@@ -100,6 +104,7 @@ def upgrade_v28_to_v29(db: 'DBHandler') -> None:
         'VALUES(?, ?, ?, ?, ?);',
         xpub_mappings_data,
     )
+    progress_handler.new_step()
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS ethereum_transactions (
     tx_hash BLOB NOT NULL PRIMARY KEY,
@@ -120,11 +125,13 @@ def upgrade_v28_to_v29(db: 'DBHandler') -> None:
         'VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);',
         transactions_data,
     )
-
+    progress_handler.new_step()
     _create_new_tables(db.conn)
+    progress_handler.new_step()
 
     # Rename uniswap_events table. Drop amm_events first if it was created at initialization
     # of the db handler
     cursor.execute('DROP TABLE IF EXISTS amm_events;')
     cursor.execute('ALTER TABLE uniswap_events RENAME TO amm_events;')
+    progress_handler.new_step()
     db.conn.commit()

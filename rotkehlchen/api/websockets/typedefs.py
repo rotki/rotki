@@ -13,6 +13,7 @@ class WSMessageType(Enum):
     BALANCE_SNAPSHOT_ERROR = auto()
     ETHEREUM_TRANSACTION_STATUS = auto()
     PREMIUM_STATUS_UPDATE = auto()
+    LOGIN_STATUS = auto()
 
     def __str__(self) -> str:
         return self.name.lower()  # pylint: disable=no-member

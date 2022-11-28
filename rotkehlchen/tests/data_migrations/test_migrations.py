@@ -138,6 +138,11 @@ def test_failed_migration(rotkehlchen_api_server):
         'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
         new=botched_list,
     )
+
+    # Ignore websocket messages with notifications about db upgrade version.
+    # By default they will be treated as errors since we have no websocket connection set up.
+    rotki.msg_aggregator.consume_errors()
+
     with migrate_mock:
         DataMigrationManager(rotki).maybe_migrate_data()
 

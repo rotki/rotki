@@ -1063,7 +1063,7 @@ class UserActionSchema(Schema):
             )
 
 
-class UserActionLoginSchema(Schema):
+class UserActionLoginSchema(AsyncQueryArgumentSchema):
     name = fields.String(required=True)
     password = fields.String(required=True)
     sync_approval = fields.String(

@@ -2,10 +2,11 @@ import logging
 import os
 import shutil
 from tempfile import TemporaryDirectory
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
+from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION
 from rotkehlchen.db.upgrades.v26_v27 import upgrade_v26_to_v27
 from rotkehlchen.db.upgrades.v27_v28 import upgrade_v27_to_v28
@@ -19,6 +20,7 @@ from rotkehlchen.db.upgrades.v34_v35 import upgrade_v34_to_v35
 from rotkehlchen.db.upgrades.v35_v36 import upgrade_v35_to_v36
 from rotkehlchen.errors.misc import DBUpgradeError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.upgrades import UpgradeRecord
 
@@ -75,6 +77,65 @@ UPGRADES_LIST = [
 ]
 
 
+class DBUpgradeProgressHandler():
+    """Class to notify users through websockets about progress of upgrading the database."""
+    def __init__(
+            self,
+            messages_aggregator: 'MessagesAggregator',
+            target_db_version: int,
+    ) -> None:
+        self._messages_aggregator = messages_aggregator
+        self._target_db_version = target_db_version
+        self._start_db_version: Optional[int] = None
+        self._current_db_version: Optional[int] = None
+        self._current_upgrade_total_steps = 0
+        self._current_upgrade_current_step = 0
+
+    def new_upgrade(self, upgrade_from_version: int) -> None:
+        """
+        Should be called when a new upgrade starts but before `set_total_steps`.
+        Notifies users about the new upgrade.
+        """
+        if self._start_db_version is None:
+            self._start_db_version = upgrade_from_version
+
+        self._current_db_version = upgrade_from_version
+        self._current_upgrade_total_steps = 0
+        self._current_upgrade_current_step = 0
+        self._notify_frontend()
+
+    def set_total_steps(self, steps: int) -> None:
+        """
+        Should be called when new upgrade starts but after `new_upgrade` method.
+        Sets total steps that the new upgrade consists of.
+        """
+        self._current_upgrade_total_steps = steps
+
+    def new_step(self) -> None:
+        """
+        Should be called when currently running upgrade reaches a new step.
+        Informs users about the new step. Total number of calls to this method must be equal to
+        the total number of steps set via `set_total_steps`.
+        """
+        self._current_upgrade_current_step += 1
+        self._notify_frontend()
+
+    def _notify_frontend(self) -> None:
+        """Sends to the user through websockets all information about db upgrading progress."""
+        self._messages_aggregator.add_message(
+            message_type=WSMessageType.LOGIN_STATUS,
+            data={
+                'start_db_version': self._start_db_version,
+                'target_db_version': self._target_db_version,
+                'current_upgrade': {
+                    'from_db_version': self._current_db_version,
+                    'total_steps': self._current_upgrade_total_steps,
+                    'current_step': self._current_upgrade_current_step,
+                },
+            },
+        )
+
+
 class DBUpgradeManager():
     """Separate class to manage DB upgrades/migrations"""
 
@@ -113,15 +174,23 @@ class DBUpgradeManager():
                     'Please only use the latest version of the software.',
                 )
 
+        progress_handler = DBUpgradeProgressHandler(
+            messages_aggregator=self.db.msg_aggregator,
+            target_db_version=ROTKEHLCHEN_DB_VERSION,
+        )
         for upgrade in UPGRADES_LIST:
-            self._perform_single_upgrade(upgrade)
+            self._perform_single_upgrade(upgrade, progress_handler)
 
         # Finally make sure to always have latest version in the DB
         with self.db.user_write() as cursor:
             self.db.set_setting(cursor, name='version', value=ROTKEHLCHEN_DB_VERSION)
         return False
 
-    def _perform_single_upgrade(self, upgrade: UpgradeRecord) -> None:
+    def _perform_single_upgrade(
+            self,
+            upgrade: UpgradeRecord,
+            progress_handler: DBUpgradeProgressHandler,
+    ) -> None:
         """
         This is the wrapper function that performs each DB upgrade
 
@@ -138,6 +207,7 @@ class DBUpgradeManager():
         if current_version != upgrade.from_version:
             return
         to_version = upgrade.from_version + 1
+        progress_handler.new_upgrade(upgrade_from_version=upgrade.from_version)
 
         # First make a backup of the DB
         with TemporaryDirectory() as tmpdirname:
@@ -150,7 +220,7 @@ class DBUpgradeManager():
 
             try:
                 kwargs = upgrade.kwargs if upgrade.kwargs is not None else {}
-                upgrade.function(db=self.db, **kwargs)
+                upgrade.function(db=self.db, progress_handler=progress_handler, **kwargs)
             except BaseException as e:
                 # Problem .. restore DB backup and bail out
                 error_message = (
@@ -164,12 +234,11 @@ class DBUpgradeManager():
                 )
                 raise DBUpgradeError(error_message) from e
 
-            # for some upgrades even for success keep the backup of the previous db
-            if upgrade.from_version >= 24:
-                shutil.copyfile(
-                    tmp_db_path,
-                    os.path.join(self.db.user_data_dir, tmp_db_filename),
-                )
+            # even for success keep the backup of the previous db
+            shutil.copyfile(
+                tmp_db_path,
+                os.path.join(self.db.user_data_dir, tmp_db_filename),
+            )
 
         # Upgrade success all is good
         with self.db.user_write() as cursor:

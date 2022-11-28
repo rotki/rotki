@@ -366,7 +366,6 @@ class AsyncTasksResource(BaseMethodView):
 
     get_schema = AsyncTasksQuerySchema()
 
-    @require_loggedin_user()
     @use_kwargs(get_schema, location='view_args')
     def get(self, task_id: Optional[int]) -> Response:
         return self.rest_api.query_tasks_outcome(task_id=task_id)
@@ -1170,11 +1169,13 @@ class UsersByNameResource(BaseMethodView):
     @use_kwargs(post_schema, location='json_and_view_args')
     def post(
             self,
+            async_query: bool,
             name: str,
             password: str,
             sync_approval: Literal['yes', 'no', 'unknown'],
     ) -> Response:
         return self.rest_api.user_login(
+            async_query=async_query,
             name=name,
             password=password,
             sync_approval=sync_approval,
