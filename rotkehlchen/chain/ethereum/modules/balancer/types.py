@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from enum import Enum, auto
 from typing import Any, DefaultDict, NamedTuple, Optional, Union, cast
 
 from eth_typing.evm import ChecksumAddress
@@ -26,6 +27,11 @@ from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 # TODO: improve the prefixes annotation and amend their usage in balancer.py
 BALANCER_EVENTS_PREFIX = 'balancer_events'
 POOL_MAX_NUMBER_TOKENS = 8
+
+
+class BalancerV1EventTypes(Enum):
+    JOIN = auto()
+    EXIT = auto()
 
 
 @dataclass(init=True, repr=True)

@@ -51,6 +51,7 @@ class EventDecoderFunction(Protocol):
             transaction: EvmTransaction,
             decoded_events: list[HistoryBaseEntry],
             action_items: list[ActionItem],
+            all_logs: list[EvmTxReceiptLog],
     ) -> Optional[HistoryBaseEntry]:
         ...
 
@@ -182,9 +183,10 @@ class EVMTransactionDecoder():
             transaction: EvmTransaction,
             decoded_events: list[HistoryBaseEntry],
             action_items: list[ActionItem],
+            all_logs: list[EvmTxReceiptLog],
     ) -> Optional[HistoryBaseEntry]:
         for rule in self.event_rules:
-            event = rule(token=token, tx_log=tx_log, transaction=transaction, decoded_events=decoded_events, action_items=action_items)  # noqa: E501
+            event = rule(token=token, tx_log=tx_log, transaction=transaction, decoded_events=decoded_events, action_items=action_items, all_logs=all_logs)  # noqa: E501
             if event:
                 return event
 
@@ -254,6 +256,7 @@ class EVMTransactionDecoder():
                 transaction=transaction,
                 decoded_events=events,
                 action_items=action_items,
+                all_logs=tx_receipt.logs,
             )
             if event:
                 events.append(event)

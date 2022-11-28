@@ -73,6 +73,7 @@ class EthereumTransactionDecoder(EVMTransactionDecoder):
             transaction: EvmTransaction,
             decoded_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
             action_items: list[ActionItem],  # pylint: disable=unused-argument
+            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
     ) -> Optional[HistoryBaseEntry]:
         if tx_log.topics[0] != ERC20_APPROVE or token is None:
             return None
@@ -119,6 +120,7 @@ class EthereumTransactionDecoder(EVMTransactionDecoder):
             transaction: EvmTransaction,
             decoded_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
             action_items: list[ActionItem],
+            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
     ) -> Optional[HistoryBaseEntry]:
         if tx_log.topics[0] != ERC20_OR_ERC721_TRANSFER:
             return None
@@ -194,6 +196,7 @@ class EthereumTransactionDecoder(EVMTransactionDecoder):
             transaction=transaction,
             event=transfer,
             action_items=action_items,
+            all_logs=all_logs,
         )
         return transfer
 
@@ -204,6 +207,7 @@ class EthereumTransactionDecoder(EVMTransactionDecoder):
             transaction: EvmTransaction,  # pylint: disable=unused-argument
             decoded_events: list[HistoryBaseEntry],
             action_items: list[ActionItem],  # pylint: disable=unused-argument
+            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
     ) -> Optional[HistoryBaseEntry]:
         if tx_log.topics[0] == GTC_CLAIM and tx_log.address == '0xDE3e5a990bCE7fC60a6f017e7c4a95fc4939299E':  # noqa: E501
             for event in decoded_events:
@@ -248,6 +252,7 @@ class EthereumTransactionDecoder(EVMTransactionDecoder):
             transaction: EvmTransaction,
             event: HistoryBaseEntry,
             action_items: list[ActionItem],
+            all_logs: list[EvmTxReceiptLog],
     ) -> None:
         """
         Decode special transfers made by contract execution for example at the moment
@@ -263,6 +268,7 @@ class EthereumTransactionDecoder(EVMTransactionDecoder):
                     transaction=transaction,
                     event=event,
                     action_items=action_items,
+                    all_logs=all_logs,
                 )
             except (UnknownAsset, WrongAssetType) as e:
                 log.error(
@@ -281,6 +287,7 @@ class EthereumTransactionDecoder(EVMTransactionDecoder):
             transaction: EvmTransaction,
             decoded_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
             action_items: list[ActionItem],  # pylint: disable=unused-argument
+            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
     ) -> Optional[HistoryBaseEntry]:
         if tx_log.topics[0] == GOVERNORALPHA_PROPOSE:
             if tx_log.address == '0xDbD27635A534A3d3169Ef0498beB56Fb9c937489':

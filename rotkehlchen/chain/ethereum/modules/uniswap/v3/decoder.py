@@ -55,6 +55,7 @@ class Uniswapv3Decoder(DecoderInterface):
             transaction: EvmTransaction,  # pylint: disable=unused-argument
             decoded_events: list[HistoryBaseEntry],
             action_items: list[ActionItem],  # pylint: disable=unused-argument
+            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
     ) -> None:
         """Decode trade for uniswap v3. The approach is to read the events and detect the ones
         where the user sends and receives any asset. The swap events need to be consecutive and

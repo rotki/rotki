@@ -40,6 +40,7 @@ class SushiswapDecoder(DecoderInterface):
             transaction: EvmTransaction,
             decoded_events: list[HistoryBaseEntry],
             action_items: list[ActionItem],  # pylint: disable=unused-argument
+            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
     ) -> None:
         if tx_log.topics[0] == SWAP_SIGNATURE:
             decode_uniswap_v2_like_swap(
