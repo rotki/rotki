@@ -51,6 +51,7 @@ class Uniswapv1Decoder(DecoderInterface):
             transaction: EvmTransaction,  # pylint: disable=unused-argument
             decoded_events: list[HistoryBaseEntry],
             action_items: list[ActionItem],  # pylint: disable=unused-argument
+            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
     ) -> None:
         """Search for both events. Since the order is not guaranteed try reshuffle in both cases"""
         out_event = in_event = None

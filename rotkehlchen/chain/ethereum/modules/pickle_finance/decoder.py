@@ -47,6 +47,7 @@ class PickleFinanceDecoder(DecoderInterface):
             transaction: EvmTransaction,
             event: HistoryBaseEntry,
             action_items: list[ActionItem],  # pylint: disable=unused-argument
+            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
     ) -> bool:
         """
         Enrich tranfer transactions to address for jar deposits and withdrawals

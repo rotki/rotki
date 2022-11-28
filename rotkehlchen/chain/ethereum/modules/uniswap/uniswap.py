@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Optional
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
@@ -111,7 +111,7 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
         )
         return protocol_balance
 
-    def get_v3_balances_chain(self, addresses: List[ChecksumEvmAddress]) -> UniswapV3ProtocolBalance:  # noqa: 501
+    def get_v3_balances_chain(self, addresses: list[ChecksumEvmAddress]) -> UniswapV3ProtocolBalance:  # noqa: 501
         """Get the addresses' Uniswap V3 pools data via chain queries."""
         price_known_tokens: set[EvmToken] = set()
         price_unknown_tokens: set[EvmToken] = set()

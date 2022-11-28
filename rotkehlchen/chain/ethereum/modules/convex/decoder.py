@@ -123,6 +123,7 @@ class ConvexDecoder(DecoderInterface):
             transaction: EvmTransaction,
             event: HistoryBaseEntry,
             action_items: list[ActionItem],  # pylint: disable=unused-argument
+            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
     ) -> bool:
         """
         Used for rewards paid with abracadabras. Problem is that the transfer event in this
