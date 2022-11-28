@@ -2,13 +2,15 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 
-def upgrade_v26_to_v27(db: 'DBHandler') -> None:
+def upgrade_v26_to_v27(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v26 to v27
 
     - Deletes and recreates the tables that were changed after removing UnknownEthereumToken
     """
+    progress_handler.set_total_steps(3)
     cursor = db.conn.cursor()
     cursor.execute('DROP TABLE IF EXISTS balancer_events;')
     cursor.execute("""
@@ -35,6 +37,7 @@ CREATE TABLE IF NOT EXISTS balancer_events (
 """)
     cursor.execute('DROP TABLE IF EXISTS balancer_pools;')
     cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "balancer_events%";')
+    progress_handler.new_step()
 
     cursor.execute('DROP TABLE IF EXISTS amm_swaps;')
     cursor.execute("""
@@ -58,6 +61,7 @@ CREATE TABLE IF NOT EXISTS amm_swaps (
 );""")
     cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "balancer_trades%";')
     cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "uniswap_trades%";')
+    progress_handler.new_step()
 
     cursor.execute('DROP TABLE IF EXISTS uniswap_events;')
     cursor.execute("""
@@ -79,5 +83,6 @@ CREATE TABLE IF NOT EXISTS uniswap_events (
     PRIMARY KEY (tx_hash, log_index)
 );""")
     cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "uniswap_events%";')
+    progress_handler.new_step()
 
     db.conn.commit()

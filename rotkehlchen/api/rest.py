@@ -1193,20 +1193,21 @@ class RestAPI():
             }
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
-    def user_login(
+    def _user_login(
             self,
             name: str,
             password: str,
             sync_approval: Literal['yes', 'no', 'unknown'],
-    ) -> Response:
-        result_dict: Dict[str, Any] = {'result': None, 'message': ''}
+    ) -> Dict[str, Any]:
         if self.rotkehlchen.user_is_logged_in:
-            result_dict['message'] = (
-                f'Can not login to user {name} because user '
-                f'{self.rotkehlchen.data.username} is already logged in. '
-                f'Log out of that user first',
+            return wrap_in_fail_result(
+                message=(
+                    f'Can not login to user {name} because user '
+                    f'{self.rotkehlchen.data.username} is already logged in. '
+                    f'Log out of that user first'
+                ),
+                status_code=HTTPStatus.CONFLICT,
             )
-            return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
 
         try:
             self.rotkehlchen.unlock_user(
@@ -1220,28 +1221,65 @@ class RestAPI():
         # up until here. Even with non valid keys in the DB login should work fine
         except AuthenticationError as e:
             self.rotkehlchen.reset_after_failed_account_creation_or_login()
-            result_dict['message'] = str(e)
-            return api_response(result_dict, status_code=HTTPStatus.UNAUTHORIZED)
+            return wrap_in_fail_result(
+                message=str(e),
+                status_code=HTTPStatus.UNAUTHORIZED,
+            )
         except RotkehlchenPermissionError as e:
             self.rotkehlchen.reset_after_failed_account_creation_or_login()
-            result_dict['result'] = e.message_payload
-            result_dict['message'] = e.error_message
-            return api_response(result_dict, status_code=HTTPStatus.MULTIPLE_CHOICES)
+            return {
+                'result': e.message_payload,
+                'message': e.error_message,
+                'status_code': HTTPStatus.MULTIPLE_CHOICES,
+            }
         except (DBUpgradeError, SystemPermissionError, DBSchemaError) as e:
             self.rotkehlchen.reset_after_failed_account_creation_or_login()
-            result_dict['message'] = str(e)
-            return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
+            return wrap_in_fail_result(
+                message=str(e),
+                status_code=HTTPStatus.CONFLICT,
+            )
         except sqlcipher.OperationalError as e:  # pylint: disable=no-member
             self.rotkehlchen.reset_after_failed_account_creation_or_login()
-            result_dict['message'] = f'Unexpected database error: {str(e)}'
-            return api_response(result_dict, status_code=HTTP_STATUS_INTERNAL_DB_ERROR)  # type: ignore  # noqa: E501
+            return wrap_in_fail_result(
+                message=f'Unexpected database error: {str(e)}',
+                status_code=HTTP_STATUS_INTERNAL_DB_ERROR,  # type: ignore  # Is a custom status code, not a member of HTTPStatus  # noqa: E501
+            )
+
         # Success!
+        exchanges = self.rotkehlchen.exchange_manager.get_connected_exchanges_info()
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            result_dict['result'] = {
-                'exchanges': self.rotkehlchen.exchange_manager.get_connected_exchanges_info(),
-                'settings': process_result(self.rotkehlchen.get_settings(cursor)),
-            }
-        return api_response(result_dict, status_code=HTTPStatus.OK)
+            settings = process_result(self.rotkehlchen.get_settings(cursor))
+
+        return _wrap_in_ok_result({
+            'exchanges': exchanges,
+            'settings': settings,
+        })
+
+    def user_login(
+            self,
+            async_query: bool,
+            name: str,
+            password: str,
+            sync_approval: Literal['yes', 'no', 'unknown'],
+    ) -> Response:
+        if async_query is True:
+            return self._query_async(
+                command=self._user_login,
+                name=name,
+                password=password,
+                sync_approval=sync_approval,
+            )
+
+        response = self._user_login(
+            name=name,
+            password=password,
+            sync_approval=sync_approval,
+        )
+        result = response['result']
+        msg = response['message']
+        status_code = _get_status_code_from_async_response(response)
+        result_dict = _wrap_in_result(result=result, message=msg)
+        return api_response(result_dict, status_code=status_code)
 
     def user_logout(self, name: str) -> Response:
         result_dict: Dict[str, Any] = {'result': None, 'message': ''}

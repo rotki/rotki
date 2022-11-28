@@ -170,6 +170,9 @@ Handling user creation, sign-in, log-out and querying
 
    By doing a ``POST`` at this endpoint, you can login to the user with ``username``.
 
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``.
+
    **Example Request**:
 
    .. http:example:: curl wget httpie python-requests

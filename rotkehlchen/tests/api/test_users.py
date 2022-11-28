@@ -10,9 +10,13 @@ from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION, DBSettings
 from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.tests.utils.api import (
     api_url_for,
+    assert_error_async_response,
     assert_error_response,
+    assert_ok_async_response,
     assert_proper_response_with_result,
     assert_simple_ok_response,
+    wait_for_async_task,
+    wait_for_async_task_with_result,
 )
 from rotkehlchen.tests.utils.premium import (
     VALID_PREMIUM_KEY,
@@ -444,12 +448,13 @@ def test_user_password_change(rotkehlchen_api_server, username, db_password):
     assert rotki.user_is_logged_in is False
 
     # And login with the new password to make sure it works
-    data = {'password': new_password, 'sync_approval': 'unknown'}
+    data = {'password': new_password, 'sync_approval': 'unknown', 'async_query': True}
     response = requests.post(
         api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
         json=data,
     )
-    result = assert_proper_response_with_result(response)
+    task_id = assert_ok_async_response(response)
+    result = wait_for_async_task_with_result(rotkehlchen_api_server, task_id)
     check_proper_unlock_result(result)
     assert rotki.user_is_logged_in is True
     users_data = check_user_status(rotkehlchen_api_server)
@@ -524,13 +529,14 @@ def test_user_login(rotkehlchen_api_server, username, db_password, data_dir):
     assert users_data['another_user'] == 'loggedout'
 
     # Now let's try to login
-    data = {'password': db_password, 'sync_approval': 'unknown'}
+    data = {'password': db_password, 'sync_approval': 'unknown', 'async_query': True}
     response = requests.post(
         api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
         json=data,
     )
     # And make sure it works
-    result = assert_proper_response_with_result(response)
+    task_id = assert_ok_async_response(response)
+    result = wait_for_async_task_with_result(rotkehlchen_api_server, task_id)
     check_proper_unlock_result(result)
     assert rotki.user_is_logged_in is True
     users_data = check_user_status(rotkehlchen_api_server)
@@ -552,14 +558,16 @@ def test_user_login(rotkehlchen_api_server, username, db_password, data_dir):
     assert users_data['another_user'] == 'loggedout'
 
     # Now try to login with a wrong password
-    data = {'password': 'wrong_password', 'sync_approval': 'unknown'}
+    data = {'password': 'wrong_password', 'sync_approval': 'unknown', 'async_query': True}
     response = requests.post(
         api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
         json=data,
     )
+    task_id = assert_ok_async_response(response)
+    response_data = wait_for_async_task(rotkehlchen_api_server, task_id)
     # And make sure it fails
-    assert_error_response(
-        response=response,
+    assert_error_async_response(
+        response_data=response_data,
         contained_in_msg='Wrong password or invalid/corrupt database for user',
         status_code=HTTPStatus.UNAUTHORIZED,
     )
@@ -569,11 +577,13 @@ def test_user_login(rotkehlchen_api_server, username, db_password, data_dir):
     assert users_data['another_user'] == 'loggedout'
 
     # Now let's manually add valid but not authenticable premium credentials in the DB
-    data = {'password': db_password, 'sync_approval': 'unknown'}
+    data = {'password': db_password, 'sync_approval': 'unknown', 'async_query': True}
     response = requests.post(
         api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
         json=data,
     )
+    task_id = assert_ok_async_response(response)
+    wait_for_async_task(rotkehlchen_api_server, task_id)
     credentials = PremiumCredentials(VALID_PREMIUM_KEY, VALID_PREMIUM_SECRET)
     rotki.data.db.set_rotkehlchen_premium(credentials)
     data = {'action': 'logout'}
@@ -584,13 +594,14 @@ def test_user_login(rotkehlchen_api_server, username, db_password, data_dir):
     assert_simple_ok_response(response)
     assert rotki.user_is_logged_in is False
     # And try to login while having these unauthenticable premium credentials in the DB
-    data = {'password': db_password, 'sync_approval': 'unknown'}
+    data = {'password': db_password, 'sync_approval': 'unknown', 'async_query': True}
     response = requests.post(
         api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
         json=data,
     )
     # And make sure it works despite having unauthenticable premium credentials in the DB
-    result = assert_proper_response_with_result(response)
+    task_id = assert_ok_async_response(response)
+    result = wait_for_async_task_with_result(rotkehlchen_api_server, task_id)
     check_proper_unlock_result(result)
     assert rotki.user_is_logged_in is True
     users_data = check_user_status(rotkehlchen_api_server)
@@ -671,13 +682,16 @@ def test_user_login_user_dir_permission_error(rotkehlchen_api_server, data_dir):
     db_path.touch()
     os.chmod(user_dir, 0o200)
 
-    data = {'password': '123', 'sync_approval': 'unknown'}
+    data = {'password': '123', 'sync_approval': 'unknown', 'async_query': True}
     response = requests.post(
         api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
         json=data,
     )
-    assert_error_response(
-        response=response,
+    task_id = assert_ok_async_response(response)
+    response_data = wait_for_async_task(rotkehlchen_api_server, task_id)
+
+    assert_error_async_response(
+        response_data=response_data,
         contained_in_msg=f'User {username} exists but DB is missing',
         status_code=HTTPStatus.CONFLICT,
     )
@@ -693,13 +707,15 @@ def test_user_login_db_permission_error(rotkehlchen_api_server, data_dir):
     db_path = Path(data_dir / username / 'rotkehlchen.db')
     db_path.touch()
     os.chmod(db_path, 0o200)
-    data = {'password': '123', 'sync_approval': 'unknown'}
+    data = {'password': '123', 'sync_approval': 'unknown', 'async_query': True}
     response = requests.post(
         api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
         json=data,
     )
-    assert_error_response(
-        response=response,
+    task_id = assert_ok_async_response(response)
+    response_data = wait_for_async_task(rotkehlchen_api_server, task_id)
+    assert_error_async_response(
+        response_data=response_data,
         contained_in_msg='Could not open database file',
         status_code=HTTPStatus.CONFLICT,
     )
@@ -737,17 +753,20 @@ def test_users_by_name_endpoint_errors(rotkehlchen_api_server, username, db_pass
     """Test that user by name endpoint errors are handled (for login/logout and edit)"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     # Now let's try to login while the user is already logged in
-    data = {'password': db_password, 'sync_approval': 'unknown'}
+    data = {'password': db_password, 'sync_approval': 'unknown', 'async_query': True}
     response = requests.post(
         api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
         json=data,
     )
+    task_id = assert_ok_async_response(response)
+    response_data = wait_for_async_task(rotkehlchen_api_server, task_id)
+
     expected_msg = (
         f'Can not login to user {username} because user {username} is '
         f'already logged in. Log out of that user first'
     )
-    assert_error_response(
-        response=response,
+    assert_error_async_response(
+        response_data=response_data,
         contained_in_msg=expected_msg,
         status_code=HTTPStatus.CONFLICT,
     )
@@ -763,13 +782,16 @@ def test_users_by_name_endpoint_errors(rotkehlchen_api_server, username, db_pass
     assert rotki.user_is_logged_in is False
 
     # Now let's try to login with an invalid password
-    data = {'password': 'wrong-password', 'sync_approval': 'unknown'}
+    data = {'password': 'wrong-password', 'sync_approval': 'unknown', 'async_query': True}
     response = requests.post(
         api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
         json=data,
     )
-    assert_error_response(
-        response=response,
+    task_id = assert_ok_async_response(response)
+    response_data = wait_for_async_task(rotkehlchen_api_server, task_id)
+
+    assert_error_async_response(
+        response_data=response_data,
         contained_in_msg='Wrong password or invalid/corrupt database for user',
         status_code=HTTPStatus.UNAUTHORIZED,
     )
@@ -789,11 +811,13 @@ def test_users_by_name_endpoint_errors(rotkehlchen_api_server, username, db_pass
     assert rotki.user_is_logged_in is False
 
     # Login first to test that schema validation works.
-    data = {'password': db_password, 'sync_approval': 'unknown'}
+    data = {'password': db_password, 'sync_approval': 'unknown', 'async_query': True}
     response = requests.post(
         api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
         json=data,
     )
+    task_id = assert_ok_async_response(response)
+    wait_for_async_task(rotkehlchen_api_server, task_id)
     assert rotki.user_is_logged_in is True
 
     # No action and no premium credentials

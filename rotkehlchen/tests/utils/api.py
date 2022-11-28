@@ -93,18 +93,12 @@ def assert_proper_response_with_result(
     return data['result']
 
 
-def assert_error_response(
-        response: Optional[requests.Response],
-        contained_in_msg: Optional[Union[str, List[str]]] = None,
-        status_code: HTTPStatus = HTTPStatus.BAD_REQUEST,
-        result_exists: bool = False,
+def _check_error_response_properties(
+        response_data: Dict[str, Any],
+        contained_in_msg: Optional[Union[str, List[str]]],
+        status_code: Optional[HTTPStatus],
+        result_exists: bool,
 ):
-    assert (
-        response is not None and
-        response.status_code == status_code and
-        response.headers["Content-Type"] == "application/json"
-    )
-    response_data = response.json()
     if status_code != HTTPStatus.INTERNAL_SERVER_ERROR:
         if result_exists:
             assert response_data['result'] is not None
@@ -116,6 +110,40 @@ def assert_error_response(
         elif isinstance(contained_in_msg, list):
             msg = f'Response: {response_data["message"]} does not match what we expected'
             assert any(x in response_data['message'] for x in contained_in_msg), msg
+
+
+def assert_error_response(
+        response: Optional[requests.Response],
+        contained_in_msg: Optional[Union[str, List[str]]] = None,
+        status_code: HTTPStatus = HTTPStatus.BAD_REQUEST,
+        result_exists: bool = False,
+):
+    assert (
+        response is not None and
+        response.status_code == status_code and
+        response.headers['Content-Type'] == 'application/json'
+    )
+    _check_error_response_properties(
+        response_data=response.json(),
+        contained_in_msg=contained_in_msg,
+        status_code=status_code,
+        result_exists=result_exists,
+    )
+
+
+def assert_error_async_response(
+        response_data: Optional[Dict[str, Any]],
+        contained_in_msg: Optional[Union[str, List[str]]] = None,
+        status_code: Optional[HTTPStatus] = HTTPStatus.BAD_REQUEST,
+        result_exists: bool = False,
+):
+    assert response_data is not None and response_data.get('status_code') == status_code
+    _check_error_response_properties(
+        response_data=response_data,
+        contained_in_msg=contained_in_msg,
+        status_code=status_code,
+        result_exists=result_exists,
+    )
 
 
 def assert_ok_async_response(response: requests.Response) -> int:
@@ -152,6 +180,9 @@ def wait_for_async_task(
                 )
             status = json_data['result']['status']
             if status == 'completed':
+                # Move status code to the outcome dict for easier checking
+                status_code = json_data['result'].get('status_code')
+                json_data['result']['outcome']['status_code'] = status_code
                 return json_data['result']['outcome']
             if status == 'not-found':
                 raise AssertionError(f'Tried to wait for task id {task_id} but it is not found')

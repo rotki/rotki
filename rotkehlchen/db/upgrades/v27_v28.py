@@ -2,15 +2,17 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 
-def upgrade_v27_to_v28(db: 'DBHandler') -> None:
+def upgrade_v27_to_v28(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v27 to v28
 
     - Adds new column to yearn vaults events representing the version of the protocol for the event
     - Deletes aave information due to the addition of aave 2
     - Adds the Gitcoin tables
     """
+    progress_handler.set_total_steps(1)
     cursor = db.conn.cursor()
     cursor.execute(
         'SELECT COUNT(*) FROM sqlite_master WHERE type="yearn_vaults_events" AND name="version"',
@@ -47,4 +49,5 @@ def upgrade_v27_to_v28(db: 'DBHandler') -> None:
     grant_name TEXT NOT NULL,
     created_on INTEGER NOT NULL
     );""")  # noqa: E501
+    progress_handler.new_step()
     db.conn.commit()

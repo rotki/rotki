@@ -21,6 +21,7 @@ from rotkehlchen.utils.misc import ts_now
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBConnection, DBCursor
+    from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -426,26 +427,41 @@ def _reset_decoded_events(db: 'DBHandler', write_cursor: 'DBCursor') -> None:
     log.debug('Exit _reset_decoded_events')
 
 
-def upgrade_v34_to_v35(db: 'DBHandler') -> None:
+def upgrade_v34_to_v35(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v34 to v35
     - Change tables where time is used as column name to timestamp
     - Add user_notes table
     - Renames the asset identifiers to use CAIPS
     """
     log.debug('Entered userdb v34->v35 upgrade')
+    progress_handler.set_total_steps(14)
     with db.user_write() as write_cursor:
         _clean_amm_swaps(write_cursor)
+        progress_handler.new_step()
         _remove_unused_assets(write_cursor)
+        progress_handler.new_step()
         _rename_assets_identifiers(write_cursor)
+        progress_handler.new_step()
         _update_ignored_assets_identifiers_to_caip_format(write_cursor)
+        progress_handler.new_step()
         _refactor_time_columns(write_cursor)
+        progress_handler.new_step()
         _create_new_tables(write_cursor)
+        progress_handler.new_step()
         _change_xpub_mappings_primary_key(write_cursor=write_cursor, conn=db.conn)
+        progress_handler.new_step()
         _add_blockchain_column_web3_nodes(write_cursor)
+        progress_handler.new_step()
         _update_assets_in_user_queried_tokens(write_cursor)
+        progress_handler.new_step()
         _update_history_event_assets_identifiers_to_caip_format(write_cursor)
+        progress_handler.new_step()
         _add_manual_current_price_oracle(write_cursor)
+        progress_handler.new_step()
         update_spam_assets(write_cursor=write_cursor, db=db, make_remote_query=False)
+        progress_handler.new_step()
         _add_defillama_to_all_oracles(write_cursor=write_cursor)
+        progress_handler.new_step()
         _reset_decoded_events(db=db, write_cursor=write_cursor)
+        progress_handler.new_step()
     log.debug('Finished userdb v34->v35 upgrade')

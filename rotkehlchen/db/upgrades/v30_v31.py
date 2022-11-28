@@ -2,9 +2,10 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 
-def upgrade_v30_to_v31(db: 'DBHandler') -> None:
+def upgrade_v30_to_v31(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v30 to v31
 
     - Add the new eth2 validator table and upgrade the old ones to have foreign key relationships.
@@ -13,6 +14,7 @@ def upgrade_v30_to_v31(db: 'DBHandler') -> None:
     - Delete all kraken trades and their used query ranges since we can now also fetch app trades
     and insta trades which are only visible through the kraken ledger query.
     """
+    progress_handler.set_total_steps(3)
     cursor = db.conn.cursor()
     # Should exist -- but we are being extremely pedantic here
     ignored_actions_exists = cursor.execute(  # always returns value
@@ -30,6 +32,7 @@ def upgrade_v30_to_v31(db: 'DBHandler') -> None:
         );
         """)
 
+    progress_handler.new_step()
     # Delete kraken trades so they can be requeried
     cursor.execute('DELETE FROM trades WHERE location="B";')
     cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "kraken_trades_%";')
@@ -76,6 +79,7 @@ def upgrade_v30_to_v31(db: 'DBHandler') -> None:
     amount_deposited TEXT,
     FOREIGN KEY(validator_index) REFERENCES eth2_validators(validator_index) ON UPDATE CASCADE ON DELETE CASCADE,
     PRIMARY KEY (validator_index, timestamp));""")  # noqa: E501
+    progress_handler.new_step()
     cursor.execute("""
 CREATE VIEW IF NOT EXISTS combined_trades_view AS
     WITH amounts_query AS (
@@ -188,4 +192,5 @@ CREATE VIEW IF NOT EXISTS combined_trades_view AS
     type TEXT NOT NULL,
     subtype TEXT
     );""")
+    progress_handler.new_step()
     db.conn.commit()

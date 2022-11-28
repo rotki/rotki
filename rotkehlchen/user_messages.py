@@ -15,6 +15,7 @@ log = RotkehlchenLogsAdapter(logger)
 INFORMATIONAL_MESSAGE_TYPES = {
     WSMessageType.ETHEREUM_TRANSACTION_STATUS,
     WSMessageType.PREMIUM_STATUS_UPDATE,
+    WSMessageType.LOGIN_STATUS,
 }
 
 

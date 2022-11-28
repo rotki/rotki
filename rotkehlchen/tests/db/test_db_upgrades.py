@@ -12,7 +12,11 @@ from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION
-from rotkehlchen.db.upgrade_manager import MIN_SUPPORTED_USER_DB_VERSION, UPGRADES_LIST
+from rotkehlchen.db.upgrade_manager import (
+    MIN_SUPPORTED_USER_DB_VERSION,
+    UPGRADES_LIST,
+    DBUpgradeProgressHandler,
+)
 from rotkehlchen.db.utils import table_exists
 from rotkehlchen.errors.misc import DBUpgradeError
 from rotkehlchen.tests.utils.database import (
@@ -88,10 +92,7 @@ def _init_db_with_target_version(
     with ExitStack() as stack:
         stack.enter_context(target_patch(target_version=target_version))
         stack.enter_context(mock_db_schema_sanity_check())
-        if target_version not in (2, 4):
-            # Some early upgrade tests rely on a mocked creation so we need to not touch it
-            # for others do not allow latest tables to be created after init
-            stack.enter_context(no_tables_created_after_init)
+        stack.enter_context(no_tables_created_after_init)
         if target_version <= 25:
             stack.enter_context(mock_dbhandler_update_owned_assets())
             stack.enter_context(mock_dbhandler_add_globaldb_assetids())
@@ -1257,6 +1258,36 @@ def test_latest_upgrade_adds_remove_tables(user_data_dir):
     }
     new_views = views_after_upgrade - views_before
     assert new_views == set()
+
+
+def test_steps_counted_properly_in_upgrades(user_data_dir):
+    """
+    Tests database upgrade progress counting behaviour. Makes sure that the number of times
+    `new_step()` function is called matches the expected number of total steps.
+    """
+    msessages_aggregator = MessagesAggregator()
+    base_database = f'v{MIN_SUPPORTED_USER_DB_VERSION}_rotkehlchen.db'
+    _use_prepared_db(user_data_dir, base_database)
+    last_db = _init_db_with_target_version(
+        target_version=MIN_SUPPORTED_USER_DB_VERSION,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msessages_aggregator,
+    )
+    progress_handler = DBUpgradeProgressHandler(
+        messages_aggregator=msessages_aggregator,
+        target_db_version=ROTKEHLCHEN_DB_VERSION,
+    )
+    for upgrade in UPGRADES_LIST:
+        progress_handler.new_upgrade(upgrade_from_version=upgrade.from_version)
+        kwargs = upgrade.kwargs if upgrade.kwargs is not None else {}
+        upgrade.function(db=last_db, progress_handler=progress_handler, **kwargs)
+        # Make sure that there were some steps taken
+        assert progress_handler._current_upgrade_total_steps > 0
+        # And that the number of total steps taken matches expected total steps
+        assert progress_handler._current_upgrade_current_step == progress_handler._current_upgrade_total_steps  # noqa: E501
+        # Check that the db version in progress handler is correct
+        assert progress_handler._current_db_version == upgrade.from_version
+        assert progress_handler._start_db_version == MIN_SUPPORTED_USER_DB_VERSION
 
 
 def test_db_newer_than_software_raises_error(data_dir, username, sql_vm_instructions_cb):

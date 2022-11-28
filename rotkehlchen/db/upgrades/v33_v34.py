@@ -2,14 +2,16 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 
-def upgrade_v33_to_v34(db: 'DBHandler') -> None:
+def upgrade_v33_to_v34(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v33 to v34
 
     - Recreates the combined_trades_view to fix a bug with the tx_hash after its
     transformation to bytes
     """
+    progress_handler.set_total_steps(1)
     with db.user_write() as write_cursor:
         write_cursor.execute('DROP VIEW combined_trades_view;')
         write_cursor.execute("""
@@ -111,3 +113,4 @@ def upgrade_v33_to_v34(db: 'DBHandler') -> None:
         SELECT * from trades
         ;
         """)  # noqa: E501
+        progress_handler.new_step()

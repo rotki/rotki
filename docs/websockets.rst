@@ -68,3 +68,27 @@ The messages sent by rotki when there is a snapshot balance error. There can be 
 
 - ``location``: An approximate location name for where in the balance snapshot the error happened.
 - ``error``: A string with details of the error
+
+
+Login status
+=========================
+
+The messages sent by rotki when a user is logging in and a db upgrade is happening. The format is the following.
+
+
+::
+
+    {
+        "start_db_version": 26,
+        "target_db_version": 35,
+        "current_upgrade": {
+            "from_db_version": 30,
+            "total_steps": 8,
+            "current_step": 5
+        }
+    }
+
+
+- ``start_db_version``: DB version that user's database had before any upgrades began. This is the version of the DB when rotki first starts.
+- ``current_upgrade``: Structure that holds information about currently running upgrade. Contains: `from_db_version` - version of the database that currently running upgrade is being applied to; `total_steps` - total number of steps that currently running upgrade consists of; `current_step` - step that the upgrade is at as of this websocket message. 
+- ``target_db_version``: The target version of the DB. When this is reached, the upgrade process will have finished.
