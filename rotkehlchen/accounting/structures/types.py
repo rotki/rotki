@@ -65,6 +65,7 @@ class HistoryEventSubType(SerializableEnumMixin):
     NFT = auto()
     # for DXDAO Mesa, Gnosis cowswap etc.
     PLACE_ORDER = auto()
+    LIQUIDATE = auto()
 
     def serialize_or_none(self) -> Optional[str]:
         """Serializes the subtype but for the subtype None it returns None"""
