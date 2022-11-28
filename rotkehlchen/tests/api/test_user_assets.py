@@ -866,24 +866,31 @@ def test_exporting_user_assets_list(rotkehlchen_api_server, globaldb, with_custo
             zip_file = ZipFile(result['file'])
             data = json.loads(zip_file.read('assets.json'))
             assert int(data['version']) == GLOBAL_DB_VERSION
-            assert len(data['assets']) == 1
-            assert data['assets'][0] == {
-                'identifier': identifier,
-                'name': 'yabirtoken',
-                'evm_chain': 'ethereum',
-                'asset_type': 'evm token',
-                'decimals': 18,
-                'symbol': 'YAB',
-                'started': None,
-                'forked': None,
-                'swapped_for': None,
-                'cryptocompare': 'YAB',
-                'coingecko': 'YAB',
-                'protocol': None,
-                'token_kind': 'erc20',
-                'underlying_tokens': None,
-                'address': eth_address,
-            }
+            # this should be 1 once PETH is added to the packaged GlobalDB.
+            # at that point the get_or_create_evm_token in the SAI Decoder
+            # should be replaced with a constant.Also undo the silly search logic below
+            assert len(data['assets']) == 2
+            for entry in data['assets']:
+                if entry == {
+                    'identifier': identifier,
+                    'name': 'yabirtoken',
+                    'evm_chain': 'ethereum',
+                    'asset_type': 'evm token',
+                    'decimals': 18,
+                    'symbol': 'YAB',
+                    'started': None,
+                    'forked': None,
+                    'swapped_for': None,
+                    'cryptocompare': 'YAB',
+                    'coingecko': 'YAB',
+                    'protocol': None,
+                    'token_kind': 'erc20',
+                    'underlying_tokens': None,
+                    'address': eth_address,
+                }:
+                    break
+            else:
+                raise AssertionError('Could not find the token')
         else:
             assert response.status_code == HTTPStatus.OK
             assert response.headers['Content-Type'] == 'application/zip'

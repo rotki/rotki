@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`4416` Transactions that have interacted with the single collateral DAI CDP contracts are now properly decoded.
 * :feature:`5150` Add option to abbreviate large number. For example to show 1.234.567 as 1.23 M.
 * :feature:`4940` Users will now be able to reset the assets database without losing any custom information they may have added.
 * :feature:`4487` Users can now customize the order of how addresses are resolved to human readable names.
@@ -64,7 +65,7 @@ Changelog
 * :feature:`-` Transactions involving uniswap v2 and uniswap v3 will now be properly decoded in the ethereum transactions view
 * :feature:`2701` Multi-evm assets are now supported. All EVM assets display the chain they correspond to in the UI.
 * :bug:`-` When force sync fails a proper error message is displayed
-* :bug:`-` If something is wrong with an asset update, it won't end up having partial information. 
+* :bug:`-` If something is wrong with an asset update, it won't end up having partial information.
 * :bug:`4930` Taxable ledger actions that spend fiat currencies should now be properly seen as taxable.
 * :bug:`4870` ETH2 staking view should no longer freeze for too many validators.
 * :bug:`-` Decimals now defaults to 18 when token contract info query fails.
