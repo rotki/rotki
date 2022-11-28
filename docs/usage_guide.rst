@@ -215,7 +215,7 @@ Decimal separator
 This is the symbol that will be separating the floating part of the number. For example in 5.42 the symbol is ``.``.
 
 Use abbreviations for large numbers.
-^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If this setting is enabled, it will abbreviates large numbers. For example, ``1.234.567`` will be displayed as ``1.23 M``.
 
@@ -1792,6 +1792,43 @@ ask for the password of the database. The password used for the database is the 
 
 Once the database is unlocked you can browse the information in the ``Browse Data`` tab or execute custom SQL commands. Please be aware that manually modifying the information of the database can lead to inconsistent state.
 So only run commands that you have double checked with our team there. Or use it without supervision only if you really know what you are doing. And always take backups of the database before you modify it.
+
+Using rotki from mobile
+***********************
+
+If you are using DAppNode or the docker image instead of the electron application it is possible to access rotki
+from a mobile device.
+
+DAppNode
+=========
+
+If you are running rotki on a DAppNode then in order to access rotki on mobile the only thing needed is to setup a
+`VPN connection <https://docs.dappnode.io/user-guide/ui/access/vpn/>`_ between DAppNode and your phone or tablet.
+
+You can use either Wireguard or OpenVPN by following the guide linked above. When you are done with the configuration
+you can activate the VPN connection on your device. With the VPN activated you will be able to access rotki
+on ``http://rotki.dappnode``.
+
+.. image:: images/rotki_dappnode_mobile.png
+   :alt: Rotki running on DAppNode accessed from a mobile device
+   :align: center
+
+This way you can get the full rotki functionality on mobile.
+
+Docker
+=======
+
+Accessing rotki on mobile when you run docker on your own can be a bit complicated and depends on the kind of setup
+you have. You have to make sure that :ref:`rotki is never directly accessible from a public network <docker warning>`.
+
+One way to have rotki accessible on mobile over a public network is by making sure that an :ref:`authenticated proxy <docker rotki public>`
+intercepts all traffic directed to rotki. This way you can ensure that no one else can access your rotki instance.
+
+If you followed the authenticated proxy example from above you should be able to access rotki's interface
+by going to ``https://rotki.example.com`` on your phone or tablet.
+
+Alternatively if you already have a VPN setup to your private network or on the machine you could use this VPN connection
+to securely connect to the rotki instance that runs in this network machine.
 
 Troubleshooting
 *****************
