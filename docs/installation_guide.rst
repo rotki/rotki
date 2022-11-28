@@ -271,6 +271,8 @@ Docker Compose
 
 If you prefer to use docker compose, a docker-compose.yml template is provided below for convenience.
 
+.. _docker rotki public:
+
 Using docker over a public network
 ----------------------------------
 
