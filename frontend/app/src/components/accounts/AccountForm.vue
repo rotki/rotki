@@ -285,7 +285,7 @@ watch(loading, loading => {
 });
 
 const { addEth2Validator, editEth2Validator } = useEthAccountsStore();
-const { addAccounts, refreshAccounts } = useBlockchainStore();
+const { addAccounts, refreshAccounts, fetchAccounts } = useBlockchainStore();
 const { editAccount } = useBlockchainAccountsStore();
 const { fetchEnsNames } = useEthNamesStore();
 
@@ -343,7 +343,7 @@ const manualAdd = async () => {
       if (get(blockchain) === Blockchain.ETH) {
         await fetchEnsNames([blockchainAccount.address], true);
       }
-      startPromise(refreshAccounts(blockchainAccount.blockchain));
+      startPromise(fetchAccounts(blockchainAccount.blockchain));
     } else {
       const entries = get(addresses);
       const payload = entries.map(address => ({
