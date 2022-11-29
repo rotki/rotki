@@ -53,19 +53,19 @@ const { assets, type } = toRefs(props);
 const data = [
   {
     identifier: LpType.UNISWAP_V2,
-    icon: '/assets/images/defi/uniswap.svg'
+    icon: './assets/images/defi/uniswap.svg'
   },
   {
     identifier: LpType.UNISWAP_V3,
-    icon: '/assets/images/defi/uniswap.svg'
+    icon: './assets/images/defi/uniswap.svg'
   },
   {
     identifier: LpType.SUSHISWAP,
-    icon: '/assets/images/modules/sushiswap.svg'
+    icon: './assets/images/modules/sushiswap.svg'
   },
   {
     identifier: LpType.BALANCER,
-    icon: '/assets/images/defi/balancer.svg'
+    icon: './assets/images/defi/balancer.svg'
   }
 ];
 

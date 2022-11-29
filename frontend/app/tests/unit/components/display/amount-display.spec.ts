@@ -57,7 +57,6 @@ describe('AmountDisplay.vue', () => {
     setActivePinia(pinia);
     document.body.setAttribute('data-app', 'true');
     const store = useGeneralSettingsStore();
-    const frontendStore = useFrontendSettingsStore();
     const { findCurrency } = useCurrencies();
     const mainCurrency = findCurrency('EUR');
     store.update({

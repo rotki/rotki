@@ -122,7 +122,7 @@ export default defineConfig({
         ]
       : []),
     VitePWA({
-      base: '',
+      base: publicPath,
       registerType: 'prompt',
       manifest: false
     })

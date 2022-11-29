@@ -7,7 +7,6 @@
             v-if="isVideo(imageUrl)"
             width="100%"
             height="100%"
-            aspect-ratio="1"
             :src="imageUrl"
           />
           <v-img
@@ -80,7 +79,7 @@ const { assetInfo } = useAssetInfoRetrieval();
 const balanceData = assetInfo(identifier);
 
 const imageUrl = computed<string | null>(() => {
-  return get(balanceData)?.imageUrl ?? '/assets/images/placeholder.svg';
+  return get(balanceData)?.imageUrl ?? './assets/images/placeholder.svg';
 });
 
 const collectionName: ComputedRef<string | null> = computed(() => {
