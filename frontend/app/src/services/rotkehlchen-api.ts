@@ -63,7 +63,7 @@ export class RotkehlchenApi {
     return this._serverUrl === this.defaultServerUrl;
   }
 
-  public cancel() {
+  public cancel(): void {
     this.signal.cancel('cancelling all pending requests');
     this.signal = axios.CancelToken.source();
   }

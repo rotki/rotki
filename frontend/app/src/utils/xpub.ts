@@ -58,9 +58,13 @@ export const keyType: XpubType[] = [
   }
 ];
 
-export const isPrefixed = (value: string) => value.match(/([xzy]pub)(.*)/);
+export const isPrefixed = (value: string): RegExpMatchArray | null =>
+  value.match(/([xzy]pub)(.*)/);
 
-export const xpubToPayload = (xpub: string, path: string | null) => {
+export const xpubToPayload = (
+  xpub: string,
+  path: string | null
+): XpubPayload => {
   const match = isPrefixed(xpub);
   let key = xpub;
   let prefix: XpubPrefix = XpubPrefix.XPUB;

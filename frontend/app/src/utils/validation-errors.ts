@@ -7,5 +7,5 @@ import { ErrorObject } from '@vuelidate/core';
  * @param errors ErrorObject
  * @return string[]
  */
-export const toMessages = (errors: ErrorObject[]) =>
+export const toMessages = (errors: ErrorObject[]): string[] =>
   errors.map(e => get(e.$message));

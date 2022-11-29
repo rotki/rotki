@@ -87,7 +87,7 @@ export function isValidDate(date: string, dateFormat: string): boolean {
   return dayjs(date, dateFormat, true).isValid();
 }
 
-export function setupDayjs() {
+export function setupDayjs(): void {
   dayjs.extend(customParseFormat);
   dayjs.extend(utc);
   dayjs.extend(timezone);

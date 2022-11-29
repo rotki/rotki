@@ -56,7 +56,7 @@ import { logger } from '@/utils/logging';
 /**
  * Vuetify components that are used in the premium components
  */
-const vuetifyRegister = () => {
+const vuetifyRegister = (): void => {
   // version 17 - 1.24
   Vue.component('VCol', VCol);
   Vue.component('VRow', VRow);
@@ -76,7 +76,7 @@ const vuetifyRegister = () => {
   Vue.component('VDataTableHeader', VDataTableHeader);
 };
 
-export function registerComponents() {
+export function registerComponents(): void {
   // Globally registered components are also provided to the premium components.
   Vue.component('AmountDisplay', AmountDisplay);
   // version: 1

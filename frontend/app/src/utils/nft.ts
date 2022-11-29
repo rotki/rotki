@@ -5,7 +5,7 @@ export const isVideo = (url: string | null): boolean => {
   );
 };
 
-export const isNft = (address?: string) => {
+export const isNft = (address?: string): boolean => {
   if (!address) return false;
   return address.startsWith('_nft_');
 };

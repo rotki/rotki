@@ -19,7 +19,7 @@ const streamToString = (
   const bufferChunks: Buffer[] = [];
   const stringChunks: string[] = [];
 
-  const onData = (chunk: any) => {
+  const onData = (chunk: any): void => {
     if (typeof chunk === 'string') {
       stringChunks.push(chunk);
     } else {
@@ -27,7 +27,7 @@ const streamToString = (
     }
   };
 
-  const onEnd = () => {
+  const onEnd = (): void => {
     if (bufferChunks.length > 0) {
       try {
         stringChunks.push(Buffer.concat(bufferChunks).toString('utf8'));
@@ -96,8 +96,8 @@ export default class PyHandler {
   private onChildExit?: (code: number, signal: any) => void;
   private logDirectory?: string;
   private stdioListeners = {
-    outOff: () => {},
-    errOff: () => {}
+    outOff: (): void => {},
+    errOff: (): void => {}
   };
 
   constructor(private app: App) {
@@ -531,7 +531,7 @@ export default class PyHandler {
   }
 
   private async waitForTermination(tasks: Task[], processes: number[]) {
-    function stillRunning() {
+    function stillRunning(): number {
       return tasks.filter(({ pid }) => processes.includes(pid)).length;
     }
 

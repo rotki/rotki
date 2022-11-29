@@ -29,7 +29,7 @@ export function nonNullProperties<T extends object>(object: T): Partial<T> {
   return partial;
 }
 
-export const size = (bytes: number) => {
+export const size = (bytes: number): string => {
   let i = 0;
 
   for (i; bytes > 1024; i++) {

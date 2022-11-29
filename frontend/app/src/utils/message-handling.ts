@@ -25,7 +25,7 @@ export const handleSnapshotError = (
 
 export const handleEthereumTransactionStatus = (
   message: WebsocketMessage<SocketMessageType>
-) => {
+): void => {
   const data = EthereumTransactionQueryData.parse(message.data);
   const { setQueryStatus } = useTxQueryStatus();
   setQueryStatus(data);

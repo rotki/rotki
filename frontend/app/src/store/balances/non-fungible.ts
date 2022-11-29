@@ -127,7 +127,7 @@ export const useNonFungibleBalancesStore = defineStore(
           return;
         }
 
-        const fetchOnlyCache = async () => {
+        const fetchOnlyCache = async (): Promise<void> => {
           set(balances, await fetchNfBalancesHandler(true));
         };
 

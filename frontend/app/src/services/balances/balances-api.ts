@@ -98,7 +98,7 @@ export class BalancesApi {
   async editEth2Validator({
     ownershipPercentage,
     validatorIndex
-  }: Eth2Validator) {
+  }: Eth2Validator): Promise<boolean> {
     const response = await this.axios.patch<ActionResult<boolean>>(
       '/blockchains/ETH2/validators',
       axiosSnakeCaseTransformer({ ownershipPercentage, validatorIndex }),

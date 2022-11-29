@@ -5,7 +5,7 @@ import ChartJsPluginZoom from 'chartjs-plugin-zoom';
 import * as Vue from 'vue';
 import * as zod from 'zod';
 
-export const setupPremium = async () => {
+export const setupPremium = async (): Promise<void> => {
   window.Vue = Vue;
   window.VueUse = VueUse;
   window.Chart = Chart;

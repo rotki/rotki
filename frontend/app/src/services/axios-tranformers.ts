@@ -36,7 +36,7 @@ const isObject = (data: any): boolean =>
   !(data instanceof Date) &&
   !(data instanceof BigNumber);
 
-export function getUpdatedKey(key: string, camelCase: boolean) {
+export function getUpdatedKey(key: string, camelCase: boolean): string {
   if (camelCase) {
     return key.includes('_')
       ? key.replace(/_(.)/gu, (_, p1) => p1.toUpperCase())
@@ -117,7 +117,7 @@ export const setupJsonTransformer: (
 export function setupTransformer(
   numericKeys: string[] | null = null,
   skipRoot = false
-) {
+): AxiosResponseTransformer[] {
   return [
     setupJsonTransformer(numericKeys),
     skipRoot ? axiosNoRootCamelCaseTransformer : axiosCamelCaseTransformer

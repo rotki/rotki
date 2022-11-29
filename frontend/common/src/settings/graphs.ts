@@ -83,7 +83,7 @@ function createTimeframe(
   let timestampRange = 0;
 
   if (frame === TimeFramePeriod.ALL) {
-    start = () => 0;
+    start = (): number => 0;
     timestampRange = Infinity;
   } else {
     let startUnit: TimeUnit;

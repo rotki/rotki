@@ -45,7 +45,7 @@ export const useCompoundStore = defineStore('defi/compound', () => {
     toProfitLossModel(get(history).liquidationProfit)
   );
 
-  const fetchBalances = async (refresh = false) => {
+  const fetchBalances = async (refresh = false): Promise<void> => {
     if (!get(activeModules).includes(Module.COMPOUND)) {
       return;
     }
@@ -87,7 +87,7 @@ export const useCompoundStore = defineStore('defi/compound', () => {
     setStatus(Status.LOADED, section);
   };
 
-  const fetchHistory = async (refresh = false) => {
+  const fetchHistory = async (refresh = false): Promise<void> => {
     if (!get(activeModules).includes(Module.COMPOUND) || !get(premium)) {
       return;
     }
@@ -134,7 +134,7 @@ export const useCompoundStore = defineStore('defi/compound', () => {
     setStatus(Status.LOADED, section);
   };
 
-  const reset = () => {
+  const reset = (): void => {
     set(balances, {});
     set(history, defaultCompoundHistory());
     resetStatus(Section.DEFI_COMPOUND_BALANCES);
