@@ -372,3 +372,9 @@ def combine_asset_balances(balances: List[SingleDBAssetBalance]) -> List[SingleD
             new_balances = _append_or_combine(new_balances, balance)
 
     return new_balances
+
+
+def table_exists(cursor: 'DBCursor', name: str) -> bool:
+    return cursor.execute(
+        f'SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name="{name}"',
+    ).fetchone()[0] == 1

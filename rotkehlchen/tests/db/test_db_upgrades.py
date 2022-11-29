@@ -13,6 +13,7 @@ from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION
 from rotkehlchen.db.upgrade_manager import MIN_SUPPORTED_USER_DB_VERSION, UPGRADES_LIST
+from rotkehlchen.db.utils import table_exists
 from rotkehlchen.errors.misc import DBUpgradeError
 from rotkehlchen.tests.utils.database import (
     _use_prepared_db,
@@ -306,12 +307,8 @@ def test_upgrade_db_28_to_29(user_data_dir):  # pylint: disable=unused-argument
     assert transactions_after == expected_transactions_after
 
     # check that uniswap_events table was renamed
-    cursor.execute(
-        'SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name="uniswap_events";',
-    )
-    assert cursor.fetchone()[0] == 0
-    cursor.execute('SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name="amm_events";')
-    assert cursor.fetchone()[0] == 1
+    assert table_exists(cursor, 'uniswap_events') is False
+    assert table_exists(cursor, 'amm_events') is True
 
     # Finally also make sure that we have updated to the target version
     with db.conn.read_ctx() as cursor:
@@ -393,8 +390,7 @@ def test_upgrade_db_30_to_31(user_data_dir):  # pylint: disable=unused-argument
     assert db.get_setting(cursor, 'version') == 31
     cursor = db.conn.cursor()
     # Check that the new table is created
-    result = cursor.execute('SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name="eth2_validators"')  # noqa: E501
-    assert result.fetchone()[0] == 1
+    assert table_exists(cursor, 'eth2_validators') is True
     result = cursor.execute('SELECT COUNT(*) FROM eth2_deposits;')
     assert result.fetchone()[0] == 0
     result = cursor.execute('SELECT COUNT(*) FROM eth2_daily_staking_details;')
@@ -462,9 +458,7 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument
     assert result == [(2, '0x1', 1, 1, 'A'), (3, '0x2', 1, 1, 'B')]
     # Check that the other gitcoin tables exist at this point
     for name in ('gitcoin_tx_type', 'ledger_actions_gitcoin_data', 'gitcoin_grant_metadata'):
-        assert cursor.execute(
-            'SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name=?', (name,),
-        ).fetchone()[0] == 1
+        assert table_exists(cursor, name)
 
     manual_balance_before = cursor.execute(
         'SELECT asset, label, amount, location, category FROM '
@@ -537,9 +531,7 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument
     assert result == [(1, 1, 'A', 'A', '1', 'ETH', None, None, None, None)]
     # Check that all gitcoin tables are deleted
     for name in ('gitcoin_tx_type', 'ledger_actions_gitcoin_data', 'gitcoin_grant_metadata'):
-        assert cursor.execute(
-            'SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name=?', (name,),
-        ).fetchone()[0] == 0
+        assert table_exists(cursor, name) is False
 
     manual_balance_after = cursor.execute(
         'SELECT asset, label, amount, location, category FROM '
@@ -800,9 +792,7 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument
             ('balancer_trades_0x45E6CA515E840A4e9E02A3062F99216951825eB2', 0, 1637575118)]
 
         # check that amm_swaps and combined trades view exist
-        assert cursor.execute(
-            'SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name=?', ('amm_swaps',),
-        ).fetchone()[0] == 1
+        assert table_exists(cursor, 'amm_swaps') is True
         assert cursor.execute(
             'SELECT COUNT(*) FROM sqlite_master WHERE type="view" AND name=?', ('combined_trades_view',),  # noqa: E501
         ).fetchone()[0] == 1
@@ -930,9 +920,7 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument
         ]
 
         # check that amm_swaps and combined trades view are deleted
-        assert cursor.execute(
-            'SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name=?', ('amm_swaps',),
-        ).fetchone()[0] == 0
+        assert table_exists(cursor, 'amm_swaps') is False
         assert cursor.execute(
             'SELECT COUNT(*) FROM sqlite_master WHERE type="view" AND name=?', ('combined_trades_view',),  # noqa: E501
         ).fetchone()[0] == 0
@@ -1018,8 +1006,7 @@ def test_upgrade_db_35_to_36(user_data_dir):  # pylint: disable=unused-argument
         ('C', '0x72b6e402ccf1adc977b4054905337ece6cf0e6f67c6a95b2965d4f845ac86971'),
         ('D', '1'),
     ]
-    result = cursor.execute('SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name="adex_events"')  # noqa: E501
-    assert result.fetchone()[0] == 1
+    assert table_exists(cursor, 'adex_events')
     result = cursor.execute('SELECT * FROM used_query_ranges')
     assert result.fetchall() == [
         ('ethtxs_0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', 0, 1669719423),
@@ -1051,10 +1038,8 @@ def test_upgrade_db_35_to_36(user_data_dir):  # pylint: disable=unused-argument
     tx_mappings_result = cursor.execute('SELECT * from evm_tx_mappings').fetchall()
     assert len(tx_mappings_result) == 305
     assert cursor.execute('SELECT COUNT(*) from history_events').fetchone()[0] == 558
-    result = cursor.execute('SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name="web3_nodes"')  # noqa: E501
-    assert result.fetchone()[0] == 1
-    result = cursor.execute('SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name="rpc_nodes"')  # noqa: E501
-    assert result.fetchone()[0] == 0
+    assert table_exists(cursor, 'web3_nodes')
+    assert table_exists(cursor, 'rpc_nodes') is False
     result = cursor.execute('SELECT sql from sqlite_master WHERE type="table" AND name="nfts"')
     assert result.fetchone()[0] == (
         'CREATE TABLE nfts (\n'
@@ -1086,8 +1071,7 @@ def test_upgrade_db_35_to_36(user_data_dir):  # pylint: disable=unused-argument
         ('C', '10x72b6e402ccf1adc977b4054905337ece6cf0e6f67c6a95b2965d4f845ac86971'),
         ('D', '1'),
     ]
-    result = cursor.execute('SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name="adex_events"')  # noqa: E501
-    assert result.fetchone()[0] == 0
+    assert table_exists(cursor, 'adex_events') is False
     result = cursor.execute('SELECT * FROM used_query_ranges')
     assert result.fetchall() == [
         ('ethtxs_0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', 0, 1669719423),
@@ -1177,10 +1161,8 @@ def test_upgrade_db_35_to_36(user_data_dir):  # pylint: disable=unused-argument
                 else:
                     raise AssertionError(f'Unexpected value {entry[i]} in evm_tx_mappings')
     assert cursor.execute('SELECT COUNT(*) from history_events').fetchone()[0] == 558
-    result = cursor.execute('SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name="web3_nodes"')  # noqa: E501
-    assert result.fetchone()[0] == 0
-    result = cursor.execute('SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name="rpc_nodes"')  # noqa: E501
-    assert result.fetchone()[0] == 1
+    assert table_exists(cursor, 'web3_nodes') is False
+    assert table_exists(cursor, 'rpc_nodes') is True
     result = cursor.execute('SELECT sql from sqlite_master WHERE type="table" AND name="nfts"')
     assert result.fetchone()[0] == (
         'CREATE TABLE nfts (\n'
