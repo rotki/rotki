@@ -9,10 +9,9 @@ import { checkIfDevelopment } from '@/utils/env-utils';
 Vue.use(Router);
 
 const base = import.meta.env.VITE_PUBLIC_PATH ? window.location.pathname : '/';
-const isDocker = import.meta.env.VITE_DOCKER;
 
 export default new Router({
-  mode: isDocker ? 'hash' : 'history',
+  mode: 'hash',
   base,
   scrollBehavior: (to, from, savedPosition) => {
     if (to.hash) {

@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`5187` Fix issue where the blockchain balances were refreshed, when only changing the label or the tags of an account.
 * :bug:`5170` Fix issue where loopring balances is not updated when blockchain balances are manually refreshed.
 * :bug:`5127` Uniswap V3 swap transactions are now decoded properly.
 * :bug:`5124` Users will now correctly see all the events related to lending in the defi view.
