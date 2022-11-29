@@ -24,7 +24,7 @@ def _remove_adex(write_cursor: 'DBCursor') -> None:
 def _upgrade_ignored_actionids(write_cursor: 'DBCursor') -> None:
     """ignored_action_ids of ActionType.ETHEREUM_TRANSACTION need chainid prepended"""
     log.debug('Enter _upgrade_ignored_actionids')
-    write_cursor.execute('UPDATE ignored_actions SET identifier = "1"+identifier WHERE type="C"')
+    write_cursor.execute('UPDATE ignored_actions SET identifier = "1" || identifier WHERE type="C"')  # noqa: E501
     log.debug('Exit _upgrade_ignored_actionids')
 
 
@@ -123,9 +123,9 @@ def _rename_eth_to_evm_add_chainid(write_cursor: 'DBCursor') -> None:
     tx_mappings = []
     write_cursor.execute('SELECT * from evm_tx_mappings')
     for entry in write_cursor:
-        if entry[1] == 'decoded':
+        if entry[2] == 'decoded':
             value = 0
-        elif entry[1] == 'customized':
+        elif entry[2] == 'customized':
             value = 1
         else:
             log.error(
@@ -133,10 +133,17 @@ def _rename_eth_to_evm_add_chainid(write_cursor: 'DBCursor') -> None:
                 f'value {entry[1]} was found. Skipping it.',
             )
             continue
-        tx_mappings.append((1, value))
 
-    # Kill tables: Figure out if foreign keys should go off during
-    # write_cursor.execute('PRAGMA foreign_keys = 0;')
+        if entry[1] != 'ETH':
+            log.error(
+                f'During v35->v36 DB upgrade unknown evm_tx_mappings '
+                f'blockchain entry "{entry[1]}" was found. Skipping it.',
+            )
+            continue
+
+        tx_mappings.append((entry[0], 1, value))
+
+    # Kill tables -- TODO: foreign keys off here or not?
     write_cursor.execute('DROP TABLE IF EXISTS ethereum_transactions')
     write_cursor.execute('DROP TABLE IF EXISTS ethereum_internal_transactions')
     write_cursor.execute('DROP TABLE IF EXISTS ethtx_receipts')
@@ -144,7 +151,6 @@ def _rename_eth_to_evm_add_chainid(write_cursor: 'DBCursor') -> None:
     write_cursor.execute('DROP TABLE IF EXISTS ethtx_receipt_log_topics')
     write_cursor.execute('DROP TABLE IF EXISTS ethtx_address_mappings')
     write_cursor.execute('DROP TABLE IF EXISTS evm_tx_mappings')
-    # write_cursor.execute('PRAGMA foreign_keys = 1;')
 
     # Create new tables and populate them
     write_cursor.execute(
@@ -231,7 +237,7 @@ def _rename_eth_to_evm_add_chainid(write_cursor: 'DBCursor') -> None:
             chain_id,
             contract_address,
             status,
-            type,
+            type
         ) VALUES (?, ?, ?, ?, ?)""",
         tx_receipts,
     )
@@ -256,7 +262,7 @@ def _rename_eth_to_evm_add_chainid(write_cursor: 'DBCursor') -> None:
             log_index,
             data,
             address,
-            removed,
+            removed
         ) VALUES (?, ?, ?, ?, ?, ?)""",
         tx_receipt_logs,
     )
@@ -279,7 +285,7 @@ def _rename_eth_to_evm_add_chainid(write_cursor: 'DBCursor') -> None:
             chain_id,
             log_index,
             topic,
-            topic_index,
+            topic_index
         ) VALUES (?, ?, ?, ?, ?)""",
         tx_receipt_log_topics,
     )
@@ -301,7 +307,7 @@ def _rename_eth_to_evm_add_chainid(write_cursor: 'DBCursor') -> None:
             address,
             tx_hash,
             chain_id,
-            blockchain,
+            blockchain
         ) VALUES (?, ?, ?, ?)""",
         tx_address_mappings,
     )
@@ -320,7 +326,7 @@ def _rename_eth_to_evm_add_chainid(write_cursor: 'DBCursor') -> None:
         INSERT OR IGNORE INTO evm_tx_mappings(
             tx_hash,
             chain_id,
-            value,
+            value
         ) VALUES (?, ?, ?)""",
         tx_mappings,
     )
@@ -347,7 +353,7 @@ def _upgrade_events_mappings(write_cursor: 'DBCursor') -> None:
             continue
         new_data.append((entry[0], 'state', value))
 
-    write_cursor.execute('DROP TABBLE IF EXISTS history_events_mappings')
+    write_cursor.execute('DROP TABLE IF EXISTS history_events_mappings')
     write_cursor.execute(
         """
         CREATE TABLE IF NOT EXISTS history_events_mappings (
@@ -363,7 +369,7 @@ def _upgrade_events_mappings(write_cursor: 'DBCursor') -> None:
         INSERT OR IGNORE INTO history_events_mappings(
             parent_identifier,
             name,
-            value,
+            value
         ) VALUES (?, ?, ?)""",
         new_data,
     )
@@ -400,8 +406,15 @@ def _upgrade_nfts_table(write_cursor: 'DBCursor') -> None:
 
 def upgrade_v35_to_v36(db: 'DBHandler') -> None:
     """Upgrades the DB from v35 to v36
-    - Rename all ethereum transaction tables and add chainid to them
-    - Upgrade history_events_mappings to the new format
+
+        - Remove adex data
+        - upgrade ignored actions ids for transactions
+        - upgrade accounts details table to add chain id
+        - rename all eth tables to evm and add chain id
+        - upgrade history_events_mappings to have key/value schema
+        - Upgrade nfts table to add image url, collection name and whether
+          it's a uniswap LP NFT
+        - rename web3_nodes to rpc_nodes
     """
     log.debug('Entered userdb v35->v36 upgrade')
 

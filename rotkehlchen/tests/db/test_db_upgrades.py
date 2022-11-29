@@ -1000,6 +1000,207 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument
         assert cursor.execute('SELECT * from evm_tx_mappings').fetchall() == expected_evm_tx_mappings  # noqa: E501
 
 
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_upgrade_db_35_to_36(user_data_dir):  # pylint: disable=unused-argument
+    """Test upgrading the DB from version 35 to version 36"""
+    msg_aggregator = MessagesAggregator()
+    _use_prepared_db(user_data_dir, 'v35_rotkehlchen.db')
+    db_v35 = _init_db_with_target_version(
+        target_version=35,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+    )
+    cursor = db_v35.conn.cursor()
+
+    # Test state of DB before upgrade is as expected
+    result = cursor.execute('SELECT * FROM ignored_actions;')
+    assert result.fetchall() == [
+        ('C', '0x72b6e402ccf1adc977b4054905337ece6cf0e6f67c6a95b2965d4f845ac86971'),
+        ('D', '1'),
+    ]
+    result = cursor.execute('SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name="adex_events"')  # noqa: E501
+    assert result.fetchone()[0] == 1
+    result = cursor.execute('SELECT * FROM used_query_ranges')
+    assert result.fetchall() == [
+        ('ethtxs_0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', 0, 1669719423),
+        ('ethinternaltxs_0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', 0, 1669719423),
+        ('ethtokentxs_0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', 0, 1669719423),
+        ('adex_events_0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', 0, 1669719423),
+    ]
+    accounts_details_result = cursor.execute('SELECT * from accounts_details').fetchall()
+    assert len(accounts_details_result) == 47
+    for entry in accounts_details_result:
+        if entry[2] == 'tokens':
+            assert entry[3].startswith('eip155:1/erc')
+        elif entry[2] == 'last_queried_timestamp':
+            assert entry[3] == '1669718731'
+        else:
+            raise AssertionError(f'Unexpected type {entry[2]} in accounts_details')
+    transactions_result = cursor.execute('SELECT * from ethereum_transactions').fetchall()
+    assert len(transactions_result) == 305
+    internal_transactions_result = cursor.execute('SELECT * from ethereum_internal_transactions').fetchall()  # noqa: E501
+    assert len(internal_transactions_result) == 8
+    tx_receipts_result = cursor.execute('SELECT * from ethtx_receipts').fetchall()
+    assert len(tx_receipts_result) == 305
+    tx_receipt_logs_result = cursor.execute('SELECT * from ethtx_receipt_logs').fetchall()
+    assert len(tx_receipt_logs_result) == 8291
+    tx_receipt_log_topics_result = cursor.execute('SELECT * from ethtx_receipt_log_topics').fetchall()  # noqa: E501
+    assert len(tx_receipt_log_topics_result) == 24124
+    tx_address_mappings_result = cursor.execute('SELECT * from ethtx_address_mappings').fetchall()  # noqa: E501
+    assert len(tx_address_mappings_result) == 305
+    tx_mappings_result = cursor.execute('SELECT * from evm_tx_mappings').fetchall()
+    assert len(tx_mappings_result) == 305
+    assert cursor.execute('SELECT COUNT(*) from history_events').fetchone()[0] == 558
+    result = cursor.execute('SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name="web3_nodes"')  # noqa: E501
+    assert result.fetchone()[0] == 1
+    result = cursor.execute('SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name="rpc_nodes"')  # noqa: E501
+    assert result.fetchone()[0] == 0
+    result = cursor.execute('SELECT sql from sqlite_master WHERE type="table" AND name="nfts"')
+    assert result.fetchone()[0] == (
+        'CREATE TABLE nfts (\n'
+        '    identifier TEXT NOT NULL PRIMARY KEY,\n'
+        '    name TEXT,\n'
+        '    last_price TEXT,\n'
+        '    last_price_asset TEXT,\n'
+        '    manual_price INTEGER NOT NULL CHECK (manual_price IN (0, 1)),\n'
+        '    owner_address TEXT,\n'
+        '    blockchain TEXT GENERATED ALWAYS AS ("ETH") VIRTUAL,\n'
+        '    FOREIGN KEY(blockchain, owner_address) REFERENCES blockchain_accounts(blockchain, account) ON DELETE CASCADE,\n'  # noqa: E501
+        '    FOREIGN KEY (identifier) REFERENCES assets(identifier) ON UPDATE CASCADE,\n'
+        '    FOREIGN KEY (last_price_asset) REFERENCES assets(identifier) ON UPDATE CASCADE\n'
+        ')'
+    )
+
+    db_v35.logout()
+    # Execute upgrade
+    db = _init_db_with_target_version(
+        target_version=36,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+    )
+    cursor = db.conn.cursor()
+
+    # Test all is properly upgraded
+    result = cursor.execute('SELECT * FROM ignored_actions;')
+    assert result.fetchall() == [
+        ('C', '10x72b6e402ccf1adc977b4054905337ece6cf0e6f67c6a95b2965d4f845ac86971'),
+        ('D', '1'),
+    ]
+    result = cursor.execute('SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name="adex_events"')  # noqa: E501
+    assert result.fetchone()[0] == 0
+    result = cursor.execute('SELECT * FROM used_query_ranges')
+    assert result.fetchall() == [
+        ('ethtxs_0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', 0, 1669719423),
+        ('ethinternaltxs_0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', 0, 1669719423),
+        ('ethtokentxs_0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', 0, 1669719423),
+    ]
+    new_accounts_details_result = cursor.execute('SELECT * from evm_accounts_details').fetchall()
+    assert len(new_accounts_details_result) == 47
+    for idx, entry in enumerate(new_accounts_details_result):
+        assert entry[0] == accounts_details_result[idx][0]
+        assert entry[1] == 1
+        assert entry[2] == accounts_details_result[idx][2]
+        assert entry[3] == accounts_details_result[idx][3]
+    new_transactions_result = cursor.execute('SELECT * from evm_transactions').fetchall()
+    assert len(new_transactions_result) == 305
+    for idx, entry in enumerate(new_transactions_result):
+        for i in range(12):
+            if i == 0:
+                assert entry[i] == transactions_result[idx][i]
+            elif i == 1:
+                assert entry[i] == 1
+            else:
+                assert entry[i] == transactions_result[idx][i - 1]
+    new_internal_transactions_result = cursor.execute('SELECT * from evm_internal_transactions').fetchall()  # noqa: E501
+    assert len(new_internal_transactions_result) == 8
+    for idx, entry in enumerate(new_internal_transactions_result):
+        for i in range(8):
+            if i == 0:
+                assert entry[i] == internal_transactions_result[idx][i]
+            elif i == 1:
+                assert entry[i] == 1
+            else:
+                assert entry[i] == internal_transactions_result[idx][i - 1]
+    new_tx_receipts_result = cursor.execute('SELECT * from evmtx_receipts').fetchall()
+    assert len(new_tx_receipts_result) == 305
+    for idx, entry in enumerate(new_tx_receipts_result):
+        for i in range(5):
+            if i == 0:
+                assert entry[i] == tx_receipts_result[idx][i]
+            elif i == 1:
+                assert entry[i] == 1
+            else:
+                assert entry[i] == tx_receipts_result[idx][i - 1]
+    new_tx_receipt_logs_result = cursor.execute('SELECT * from evmtx_receipt_logs').fetchall()
+    assert len(new_tx_receipt_logs_result) == 8291
+    for idx, entry in enumerate(new_tx_receipt_logs_result):
+        for i in range(6):
+            if i == 0:
+                assert entry[i] == tx_receipt_logs_result[idx][i]
+            elif i == 1:
+                assert entry[i] == 1
+            else:
+                assert entry[i] == tx_receipt_logs_result[idx][i - 1]
+    new_tx_receipt_log_topics_result = cursor.execute('SELECT * from evmtx_receipt_log_topics').fetchall()  # noqa: E501
+    assert len(new_tx_receipt_log_topics_result) == 24124
+    for idx, entry in enumerate(new_tx_receipt_log_topics_result):
+        for i in range(5):
+            if i == 0:
+                assert entry[i] == tx_receipt_log_topics_result[idx][i]
+            elif i == 1:
+                assert entry[i] == 1
+            else:
+                assert entry[i] == tx_receipt_log_topics_result[idx][i - 1]
+    new_tx_address_mappings_result = cursor.execute('SELECT * from evmtx_address_mappings').fetchall()  # noqa: E501
+    assert len(new_tx_address_mappings_result) == 305
+    for idx, entry in enumerate(new_tx_address_mappings_result):
+        for i in range(4):
+            if i in (0, 1):
+                assert entry[i] == tx_address_mappings_result[idx][i]
+            elif i == 2:
+                assert entry[i] == 1
+            else:
+                assert entry[i] == tx_address_mappings_result[idx][i - 1]
+    new_tx_mappings_result = cursor.execute('SELECT * from evm_tx_mappings').fetchall()  # noqa: E501
+    assert len(new_tx_mappings_result) == 305
+    for idx, entry in enumerate(new_tx_mappings_result):
+        for i in range(3):
+            if i == 0:
+                assert entry[i] == tx_mappings_result[idx][i]
+            elif i == 1:
+                assert entry[i] == 1
+            else:
+                if entry[i] == 0:
+                    assert tx_mappings_result[idx][i] == 'decoded'
+                elif entry[i] == 1:
+                    assert tx_mappings_result[idx][i] == 'customized'
+                else:
+                    raise AssertionError(f'Unexpected value {entry[i]} in evm_tx_mappings')
+    assert cursor.execute('SELECT COUNT(*) from history_events').fetchone()[0] == 558
+    result = cursor.execute('SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name="web3_nodes"')  # noqa: E501
+    assert result.fetchone()[0] == 0
+    result = cursor.execute('SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name="rpc_nodes"')  # noqa: E501
+    assert result.fetchone()[0] == 1
+    result = cursor.execute('SELECT sql from sqlite_master WHERE type="table" AND name="nfts"')
+    assert result.fetchone()[0] == (
+        'CREATE TABLE nfts (\n'
+        '            identifier TEXT NOT NULL PRIMARY KEY,\n'
+        '            name TEXT,\n'
+        '            last_price TEXT,\n'
+        '            last_price_asset TEXT,\n'
+        '            manual_price INTEGER NOT NULL CHECK (manual_price IN (0, 1)),\n'
+        '            owner_address TEXT,\n'
+        '            blockchain TEXT GENERATED ALWAYS AS ("ETH") VIRTUAL,\n'
+        '            is_lp INTEGER NOT NULL CHECK (is_lp IN (0, 1)),\n'
+        '            image_url TEXT,\n'
+        '            collection_name TEXT,\n'
+        '            FOREIGN KEY(blockchain, owner_address) REFERENCES blockchain_accounts(blockchain, account) ON DELETE CASCADE,\n'  # noqa: E501
+        '            FOREIGN KEY (identifier) REFERENCES assets(identifier) ON UPDATE CASCADE,\n'
+        '            FOREIGN KEY (last_price_asset) REFERENCES assets(identifier) ON UPDATE CASCADE\n'  # noqa: E501
+        '        )'
+    )
+
+
 @pytest.mark.skip('Will unskip once the DB upgrade is done')
 def test_latest_upgrade_adds_remove_tables(user_data_dir):
     """
