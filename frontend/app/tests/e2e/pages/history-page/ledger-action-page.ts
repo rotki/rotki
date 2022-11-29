@@ -9,7 +9,7 @@ export class LedgerActionPage {
       .click();
   }
 
-  fetchLedgerActions() {
+  createWaitForLedgerActions() {
     cy.intercept({
       method: 'GET',
       url: '/api/1/ledgeractions**'
@@ -20,7 +20,6 @@ export class LedgerActionPage {
       cy.wait('@apiCall', { timeout: 30000 })
         .its('response.statusCode')
         .should('equal', 200);
-      cy.wait(500);
     };
   }
 
@@ -47,9 +46,9 @@ export class LedgerActionPage {
     );
     cy.get('[data-cy=link]').type(ledgerAction.link);
     cy.get('[data-cy=notes]').type(ledgerAction.notes);
-    const fetchLedgerActionsAssertion = this.fetchLedgerActions();
+    const waitForLedgerActions = this.createWaitForLedgerActions();
     cy.get('.big-dialog__buttons__confirm').click();
-    fetchLedgerActionsAssertion();
+    waitForLedgerActions();
     cy.get('[data-cy=ledger-action-form]').should('not.exist');
   }
 
@@ -99,9 +98,9 @@ export class LedgerActionPage {
     cy.get('[data-cy=amount]').clear();
     cy.get('[data-cy=amount]').type(amount);
 
-    const fetchLedgerActionsAssertion = this.fetchLedgerActions();
+    const waitForLedgerActions = this.createWaitForLedgerActions();
     cy.get('.big-dialog__buttons__confirm').click();
-    fetchLedgerActionsAssertion();
+    waitForLedgerActions();
     cy.get('[data-cy=ledger-action-form]').should('not.exist');
   }
 
@@ -116,9 +115,9 @@ export class LedgerActionPage {
     cy.get('[data-cy=confirm-dialog]')
       .find('[data-cy=dialog-title]')
       .should('contain', 'Delete Ledger Action');
-    const fetchLedgerActionsAssertion = this.fetchLedgerActions();
+    const waitForLedgerActions = this.createWaitForLedgerActions();
     cy.get('[data-cy=confirm-dialog]').find('[data-cy=button-confirm]').click();
-    fetchLedgerActionsAssertion();
+    waitForLedgerActions();
     cy.get('[data-cy=confirm-dialog]').should('not.be.exist');
   }
 }

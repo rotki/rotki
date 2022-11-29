@@ -24,11 +24,14 @@ export class AssetsManagerPage {
     cy.get('[data-cy=asset_table_filter]').type(
       `{selectall}{backspace}symbol: ${asset}{enter}{esc}`
     );
+    cy.get('.v-data-table__empty-wrapper', {
+      timeout: 300000
+    }).should('not.exist');
+    cy.get('.v-data-table__progress', { timeout: 300000 }).should('not.exist');
   }
 
   addIgnoredAsset(asset: string) {
     this.searchAsset(asset);
-    cy.wait(1000);
     cy.get(
       '.v-data-table__wrapper tbody tr:first-child td:nth-child(6) input'
     ).then($switch => {
@@ -48,7 +51,6 @@ export class AssetsManagerPage {
       .scrollIntoView()
       .click();
     this.searchAsset(asset);
-    cy.wait(1000);
     cy.get(
       '.v-data-table__wrapper tbody tr:first-child td:nth-child(6) input'
     ).then($switch => {
