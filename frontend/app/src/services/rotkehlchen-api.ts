@@ -7,7 +7,6 @@ import {
 } from '@/services/axios-tranformers';
 import { BalancesApi } from '@/services/balances/balances-api';
 import { DefiApi } from '@/services/defi/defi-api';
-import { HistoryApi } from '@/services/history/history-api';
 import { ReportsApi } from '@/services/reports/reports-api';
 import {
   BackendInfo,
@@ -32,7 +31,6 @@ export class RotkehlchenApi {
   private axios: AxiosInstance;
   private _defi: DefiApi;
   private _balances: BalancesApi;
-  private _history: HistoryApi;
   private _reports: ReportsApi;
   private _assets: AssetApi;
   private _serverUrl: string;
@@ -72,7 +70,6 @@ export class RotkehlchenApi {
   private setupApis = (axios: AxiosInstance) => ({
     defi: new DefiApi(axios),
     balances: new BalancesApi(axios),
-    history: new HistoryApi(axios),
     reports: new ReportsApi(axios),
     assets: new AssetApi(axios)
   });
@@ -89,7 +86,6 @@ export class RotkehlchenApi {
     ({
       defi: this._defi,
       balances: this._balances,
-      history: this._history,
       reports: this._reports,
       assets: this._assets
     } = this.setupApis(this.axios));
@@ -101,10 +97,6 @@ export class RotkehlchenApi {
 
   get balances(): BalancesApi {
     return this._balances;
-  }
-
-  get history(): HistoryApi {
-    return this._history;
   }
 
   get reports(): ReportsApi {
@@ -126,7 +118,6 @@ export class RotkehlchenApi {
     ({
       defi: this._defi,
       balances: this._balances,
-      history: this._history,
       reports: this._reports,
       assets: this._assets
     } = this.setupApis(this.axios));

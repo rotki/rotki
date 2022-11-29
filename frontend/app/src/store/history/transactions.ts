@@ -1,8 +1,12 @@
 import isEqual from 'lodash/isEqual';
 import { type Ref } from 'vue';
-import { api } from '@/services/rotkehlchen-api';
+import { useStatusUpdater } from '@/composables/status';
+import { useHistoryApi } from '@/services/history';
+import { useTransactionsApi } from '@/services/history/transactions';
+import { type PendingTask } from '@/services/types-api';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
-import { useEthBalancesStore } from '@/store/blockchain/balances/eth';
+import { useEthAccountsStore } from '@/store/blockchain/accounts/eth';
+import { useTxQueryStatus } from '@/store/history/query-status';
 import { type EthTransactionEntry } from '@/store/history/types';
 import {
   defaultHistoricPayloadState,
@@ -39,14 +43,21 @@ export const useTransactions = defineStore('history/transactions', () => {
   const transactionsPayload: Ref<Partial<TransactionRequestPayload>> = ref(
     defaultHistoricPayloadState<EthTransaction>()
   );
+  const fetchedTxAddresses: Ref<string[]> = ref([]);
 
   const counterparties = ref<string[]>([]);
 
   const { t } = useI18n();
+  const { notify } = useNotificationsStore();
 
-  const { ethAddresses } = storeToRefs(useEthBalancesStore());
+  const { ethAddresses } = storeToRefs(useEthAccountsStore());
+  const api = useTransactionsApi();
+  const { awaitTask, isTaskRunning } = useTasks();
+
+  const { fetchAvailableCounterparties } = useHistoryApi();
+  const { resetQueryStatus } = useTxQueryStatus();
+
   const fetchTransactions = async (refresh = false): Promise<void> => {
-    const { awaitTask, isTaskRunning } = useTasks();
     const { setStatus, loading, isFirstLoad, resetStatus } = useStatusUpdater(
       Section.TX
     );
@@ -71,7 +82,7 @@ export const useTransactions = defineStore('history/transactions', () => {
 
       const { fetchEnsNames } = useEthNamesStore();
       if (onlyCache) {
-        const result = await api.history.ethTransactions(payload);
+        const result = await api.fetchEthTransactions(payload);
 
         const mapped = mapCollectionEntriesWithMeta<EthTransaction>(
           mapCollectionResponse(result)
@@ -83,7 +94,7 @@ export const useTransactions = defineStore('history/transactions', () => {
         return mapped;
       }
 
-      const { taskId } = await api.history.ethTransactionsTask(payload);
+      const { taskId } = await api.fetchEthTransactionsTask(payload);
       const address = parameters?.address ?? '';
       const taskMeta = {
         title: t('actions.transactions.task.title').toString(),
@@ -112,7 +123,9 @@ export const useTransactions = defineStore('history/transactions', () => {
 
     try {
       const firstLoad = isFirstLoad();
-      const onlyCache = firstLoad ? false : !refresh;
+      const ethAddressesVal = get(ethAddresses);
+      const addressesChanged = get(fetchedTxAddresses) !== ethAddressesVal;
+      const onlyCache = firstLoad || addressesChanged ? false : !refresh;
       if ((get(isTaskRunning(taskType)) || loading()) && !onlyCache) {
         return;
       }
@@ -127,8 +140,9 @@ export const useTransactions = defineStore('history/transactions', () => {
 
       if (!onlyCache) {
         setStatus(Status.REFRESHING);
-        const { notify } = useNotificationsStore();
-        const refreshAddressTxs = get(ethAddresses).map((address: string) =>
+        resetQueryStatus();
+        set(fetchedTxAddresses, ethAddressesVal);
+        const refreshAddressTxs = ethAddressesVal.map((address: string) =>
           fetchTransactionsHandler(false, {
             address
           }).catch(error => {
@@ -143,7 +157,7 @@ export const useTransactions = defineStore('history/transactions', () => {
           })
         );
         await Promise.all(refreshAddressTxs);
-
+        await checkTransactionsMissingEvents();
         await fetchOnlyCache();
       }
 
@@ -171,7 +185,7 @@ export const useTransactions = defineStore('history/transactions', () => {
     let success = false;
     let message = '';
     try {
-      await api.history.addTransactionEvent(event);
+      await api.addTransactionEvent(event);
       success = true;
     } catch (e: any) {
       message = e.message;
@@ -188,7 +202,7 @@ export const useTransactions = defineStore('history/transactions', () => {
     let success = false;
     let message = '';
     try {
-      await api.history.editTransactionEvent(event);
+      await api.editTransactionEvent(event);
       success = true;
     } catch (e: any) {
       message = e.message;
@@ -204,7 +218,7 @@ export const useTransactions = defineStore('history/transactions', () => {
     let success = false;
     let message = '';
     try {
-      success = await api.history.deleteTransactionEvent([eventId]);
+      success = await api.deleteTransactionEvent([eventId]);
     } catch (e: any) {
       message = e.message;
     }
@@ -240,6 +254,24 @@ export const useTransactions = defineStore('history/transactions', () => {
     return txHashesToFetch;
   };
 
+  const checkTransactionsMissingEvents = async () => {
+    const taskType = TaskType.TX_EVENTS;
+    const { taskId } =
+      await api.reDecodeMissingTransactionEvents<PendingTask>();
+
+    const taskMeta = {
+      title: t('actions.transactions_events.task.title').toString(),
+      description: t('actions.transactions_events.task.description').toString(),
+      numericKeys: []
+    };
+
+    const { result } = await awaitTask(taskId, taskType, taskMeta, true);
+
+    if (result) {
+      await fetchTransactions();
+    }
+  };
+
   const fetchTransactionEvents = async (
     txHashes: string[] | null,
     ignoreCache = false
@@ -251,10 +283,8 @@ export const useTransactions = defineStore('history/transactions', () => {
 
     if (!isFetchAll && txHashesToFetch && txHashesToFetch.length === 0) return;
 
-    const { awaitTask } = useTasks();
-
     const taskType = TaskType.TX_EVENTS;
-    const { taskId } = await api.history.fetchEthTransactionEvents({
+    const { taskId } = await api.fetchEthTransactionEvents({
       txHashes: txHashesToFetch,
       ignoreCache
     });
@@ -297,7 +327,7 @@ export const useTransactions = defineStore('history/transactions', () => {
     filterAddressesFromWords(getTransactionsNotesWords(transactions));
 
   const fetchCounterparties = async (): Promise<void> => {
-    const result = await api.history.fetchAvailableCounterparties();
+    const result = await fetchAvailableCounterparties();
 
     set(counterparties, result);
   };
@@ -312,7 +342,8 @@ export const useTransactions = defineStore('history/transactions', () => {
     addTransactionEvent,
     editTransactionEvent,
     deleteTransactionEvent,
-    fetchCounterparties
+    fetchCounterparties,
+    checkTransactionsMissingEvents
   };
 });
 

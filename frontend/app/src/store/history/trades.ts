@@ -1,6 +1,6 @@
 import isEqual from 'lodash/isEqual';
 import { type Ref } from 'vue';
-import { api } from '@/services/rotkehlchen-api';
+import { useTradesApi } from '@/services/history/trades';
 import { useAssociatedLocationsStore } from '@/store/history/associated-locations';
 import { type TradeEntry } from '@/store/history/types';
 import {
@@ -44,6 +44,9 @@ export const useTrades = defineStore('history/trades', () => {
   const { fetchAssociatedLocations } = locationsStore;
   const { exchangeName } = useTradeLocations();
   const { tc } = useI18n();
+  const { notify } = useNotificationsStore();
+
+  const api = useTradesApi();
 
   const fetchTrades = async (
     refresh = false,
@@ -74,13 +77,13 @@ export const useTrades = defineStore('history/trades', () => {
       );
 
       if (onlyCache) {
-        const result = await api.history.trades(payload);
+        const result = await api.getTrades(payload);
         return mapCollectionEntriesWithMeta<Trade>(
           mapCollectionResponse(result)
         ) as Collection<TradeEntry>;
       }
 
-      const { taskId } = await api.history.tradesTask(payload);
+      const { taskId } = await api.getTradesTask(payload);
       const location = parameters?.location ?? '';
       const exchange = location
         ? exchangeName(location as TradeLocation)
@@ -129,7 +132,6 @@ export const useTrades = defineStore('history/trades', () => {
 
       if (!onlyCache || onlyLocation) {
         setStatus(Status.REFRESHING);
-        const { notify } = useNotificationsStore();
 
         const locations = onlyLocation
           ? [onlyLocation]
@@ -178,7 +180,7 @@ export const useTrades = defineStore('history/trades', () => {
     let success = false;
     let message = '';
     try {
-      await api.history.addExternalTrade(trade);
+      await api.addExternalTrade(trade);
       success = true;
     } catch (e: any) {
       message = e.message;
@@ -195,7 +197,7 @@ export const useTrades = defineStore('history/trades', () => {
     let success = false;
     let message = '';
     try {
-      await api.history.editExternalTrade(trade);
+      await api.editExternalTrade(trade);
       success = true;
     } catch (e: any) {
       message = e.message;
@@ -211,7 +213,7 @@ export const useTrades = defineStore('history/trades', () => {
     let success = false;
     let message = '';
     try {
-      success = await api.history.deleteExternalTrade(tradesIds);
+      success = await api.deleteExternalTrade(tradesIds);
     } catch (e: any) {
       message = e.message;
     }

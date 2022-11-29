@@ -4,7 +4,7 @@ import {
   type Eth2ValidatorEntry,
   type Eth2Validators
 } from '@rotki/common/lib/staking/eth2';
-import { type Ref } from 'vue';
+import { type ComputedRef, type Ref } from 'vue';
 import { api } from '@/services/rotkehlchen-api';
 import { type GeneralAccountData } from '@/services/types-api';
 import { useMessageStore } from '@/store/message';
@@ -200,8 +200,13 @@ export const useEthAccountsStore = defineStore(
       set(eth, removeTags(get(eth), tag));
     };
 
+    const ethAddresses: ComputedRef<string[]> = computed(() => {
+      return get(eth).map(({ address }) => address);
+    });
+
     return {
       eth,
+      ethAddresses,
       eth2Validators,
       getEth2Account,
       addEth2Validator,

@@ -1,6 +1,6 @@
 import isEqual from 'lodash/isEqual';
 import { type Ref } from 'vue';
-import { api } from '@/services/rotkehlchen-api';
+import { useLedgerActionsApi } from '@/services/history/ledger-actions';
 import { useAssociatedLocationsStore } from '@/store/history/associated-locations';
 import { type LedgerActionEntry } from '@/store/history/types';
 import {
@@ -42,6 +42,9 @@ export const useLedgerActions = defineStore('history/ledgerActions', () => {
   const { fetchAssociatedLocations } = useAssociatedLocationsStore();
   const { exchangeName } = useTradeLocations();
   const { tc } = useI18n();
+  const { notify } = useNotificationsStore();
+
+  const api = useLedgerActionsApi();
 
   const fetchLedgerActions = async (
     refresh = false,
@@ -72,13 +75,13 @@ export const useLedgerActions = defineStore('history/ledgerActions', () => {
       );
 
       if (onlyCache) {
-        const result = await api.history.ledgerActions(payload);
+        const result = await api.getLedgerActions(payload);
         return mapCollectionEntriesWithMeta<LedgerAction>(
           mapCollectionResponse(result)
         ) as Collection<LedgerActionEntry>;
       }
 
-      const { taskId } = await api.history.ledgerActionsTask(payload);
+      const { taskId } = await api.getLedgerActionsTask(payload);
       const location = parameters?.location ?? '';
       const exchange = location
         ? exchangeName(location as TradeLocation)
@@ -127,7 +130,6 @@ export const useLedgerActions = defineStore('history/ledgerActions', () => {
 
       if (!onlyCache || onlyLocation) {
         setStatus(Status.REFRESHING);
-        const { notify } = useNotificationsStore();
 
         const exchange = onlyLocation
           ? exchangeName(onlyLocation as TradeLocation)
@@ -175,7 +177,7 @@ export const useLedgerActions = defineStore('history/ledgerActions', () => {
     let success = false;
     let message = '';
     try {
-      await api.history.addLedgerAction(ledgerAction);
+      await api.addLedgerAction(ledgerAction);
       success = true;
     } catch (e: any) {
       message = e.message;
@@ -191,7 +193,7 @@ export const useLedgerActions = defineStore('history/ledgerActions', () => {
     let success = false;
     let message = '';
     try {
-      await api.history.editLedgerAction(ledgerAction);
+      await api.editLedgerAction(ledgerAction);
       success = true;
     } catch (e: any) {
       message = e.message;
@@ -207,7 +209,7 @@ export const useLedgerActions = defineStore('history/ledgerActions', () => {
     let success = false;
     let message = '';
     try {
-      success = await api.history.deleteLedgerAction(identifiers);
+      success = await api.deleteLedgerAction(identifiers);
     } catch (e: any) {
       message = e.message;
     }

@@ -5,7 +5,7 @@
         <refresh-button
           :loading="loading"
           :tooltip="tc('transactions.refresh_tooltip')"
-          @refresh="fetch(true)"
+          @refresh="refresh"
         />
         {{ usedTitle }}
       </template>
@@ -240,7 +240,9 @@ import { type GeneralAccount } from '@rotki/common/lib/account';
 import { type ComputedRef, type PropType, type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
 import TransactionEventForm from '@/components/history/TransactionEventForm.vue';
-
+import { isSectionLoading } from '@/composables/common';
+import { useTransactionFilter } from '@/composables/filters/transactions';
+import { useTxQueryStatus } from '@/store/history/query-status';
 import { useTransactions } from '@/store/history/transactions';
 import {
   type EthTransactionEntry,
@@ -579,6 +581,7 @@ watch(filters, async (filter, oldValue) => {
 
   await updatePaginationHandler(newOptions);
 });
+
 watch(usedAccount, async () => {
   let newOptions = null;
   if (get(options)) {
@@ -593,16 +596,32 @@ watch(usedAccount, async () => {
 
 const loading = isSectionLoading(Section.TX);
 const eventTaskLoading = isTaskRunning(TaskType.TX_EVENTS);
+const { isAllFinished } = toRefs(useTxQueryStatus());
 
 const { pause, resume, isActive } = useIntervalFn(() => fetch(), 10000);
 
-watch([loading, eventTaskLoading], ([sectionLoading, eventTaskLoading]) => {
-  if ((sectionLoading || eventTaskLoading) && !get(isActive)) {
-    resume();
-  } else if (!sectionLoading && !eventTaskLoading && get(isActive)) {
-    pause();
+watch(
+  [loading, eventTaskLoading, isAllFinished],
+  ([sectionLoading, eventTaskLoading]) => {
+    if (
+      (sectionLoading || eventTaskLoading || !isAllFinished) &&
+      !get(isActive)
+    ) {
+      resume();
+    } else if (
+      !sectionLoading &&
+      !eventTaskLoading &&
+      isAllFinished &&
+      get(isActive)
+    ) {
+      pause();
+    }
   }
-});
+);
+
+const refresh = async () => {
+  await fetch(true);
+};
 
 onUnmounted(() => {
   pause();

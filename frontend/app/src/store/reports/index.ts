@@ -1,5 +1,6 @@
 import { type Message } from '@rotki/common/lib/messages';
 import { type ComputedRef, type Ref } from 'vue';
+import { useHistoryApi } from '@/services/history';
 import { api } from '@/services/rotkehlchen-api';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
 import { filterAddressesFromWords } from '@/store/history/utils';
@@ -209,6 +210,8 @@ export const useReports = defineStore('reports', () => {
     }
   };
 
+  const { getProgress } = useHistoryApi();
+
   const generateReport = async (
     period: ProfitLossReportPeriod
   ): Promise<number> => {
@@ -219,7 +222,7 @@ export const useReports = defineStore('reports', () => {
     set(reportError, emptyError());
 
     const interval = setInterval(async () => {
-      set(reportProgress, await api.history.getProgress());
+      set(reportProgress, await getProgress());
     }, 2000);
 
     const { awaitTask } = useTasks();
@@ -271,7 +274,7 @@ export const useReports = defineStore('reports', () => {
     set(reportError, emptyError());
 
     const interval = setInterval(async () => {
-      set(reportProgress, await api.history.getProgress());
+      set(reportProgress, await getProgress());
     }, 2000);
 
     const { awaitTask } = useTasks();

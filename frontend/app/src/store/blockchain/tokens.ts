@@ -7,7 +7,7 @@ import {
 } from '@/services/balances/types';
 import { api } from '@/services/rotkehlchen-api';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useEthBalancesStore } from '@/store/blockchain/balances/eth';
+import { useEthAccountsStore } from '@/store/blockchain/accounts/eth';
 import { useTasks } from '@/store/tasks';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
@@ -18,7 +18,7 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
 
   const { isAssetIgnored } = useIgnoredAssetsStore();
   const { tc } = useI18n();
-  const { ethAddresses } = storeToRefs(useEthBalancesStore());
+  const { ethAddresses } = storeToRefs(useEthAccountsStore());
 
   const fetchDetected = async (addresses: string[]): Promise<void> => {
     await Promise.allSettled(

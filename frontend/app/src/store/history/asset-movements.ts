@@ -1,6 +1,6 @@
 import isEqual from 'lodash/isEqual';
 import { type Ref } from 'vue';
-import { api } from '@/services/rotkehlchen-api';
+import { useAssetMovementsApi } from '@/services/history/asset-movements';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
 import { useAssociatedLocationsStore } from '@/store/history/associated-locations';
 import { type AssetMovementEntry } from '@/store/history/types';
@@ -43,6 +43,9 @@ export const useAssetMovements = defineStore('history/assetMovements', () => {
   const { fetchAssociatedLocations } = locationsStore;
   const { exchangeName } = useTradeLocations();
   const { tc } = useI18n();
+  const { notify } = useNotificationsStore();
+
+  const api = useAssetMovementsApi();
 
   const fetchAssetMovements = async (
     refresh = false,
@@ -74,7 +77,7 @@ export const useAssetMovements = defineStore('history/assetMovements', () => {
 
       const { fetchEnsNames } = useEthNamesStore();
       if (onlyCache) {
-        const result = await api.history.assetMovements(payload);
+        const result = await api.getAssetMovements(payload);
         const mapped = mapCollectionEntriesWithMeta<AssetMovement>(
           mapCollectionResponse(result)
         ) as Collection<AssetMovementEntry>;
@@ -91,7 +94,7 @@ export const useAssetMovements = defineStore('history/assetMovements', () => {
         return mapped;
       }
 
-      const { taskId } = await api.history.assetMovementsTask(payload);
+      const { taskId } = await api.getAssetMovementsTask(payload);
       const location = parameters?.location ?? '';
       const exchange = location
         ? exchangeName(location as TradeLocation)
@@ -151,7 +154,6 @@ export const useAssetMovements = defineStore('history/assetMovements', () => {
 
       if (!onlyCache || onlyLocation) {
         setStatus(Status.REFRESHING);
-        const { notify } = useNotificationsStore();
 
         const locations = onlyLocation
           ? [onlyLocation]

@@ -56,11 +56,6 @@ export const useEthBalancesStore = defineStore('balances/eth', () => {
   const { queryLoopringBalances } = useBlockchainBalanceApi();
   const { tc } = useI18n();
 
-  const ethAddresses: ComputedRef<string[]> = computed(() => {
-    const { ETH } = get(balances);
-    return ETH ? Object.keys(ETH) : [];
-  });
-
   const getLoopringAssetBalances = (
     address: MaybeRef<string> = ref('')
   ): ComputedRef<AssetBalances> =>
@@ -229,7 +224,6 @@ export const useEthBalancesStore = defineStore('balances/eth', () => {
     loopring,
     totals,
     liabilities,
-    ethAddresses,
     update,
     updatePrices,
     accountAssets,
