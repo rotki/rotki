@@ -3,7 +3,8 @@ import { type SupportedExternalExchanges } from '@/services/balances/types';
 import {
   ALL_CENTRALIZED_EXCHANGES,
   ALL_DECENTRALIZED_EXCHANGES,
-  ALL_MODULES
+  ALL_MODULES,
+  ALL_TRANSACTIONS
 } from '@/services/session/consts';
 import { type Purgeable } from '@/services/session/types';
 import { useDefiStore } from '@/store/defi';
@@ -13,7 +14,7 @@ import { SUPPORTED_EXCHANGES, type SupportedExchange } from '@/types/exchanges';
 import { Module } from '@/types/modules';
 
 export const useSessionPurgeStore = defineStore('session/purge', () => {
-  const { purgeExchange } = usePurgeStore();
+  const { purgeExchange, purgeTransactions } = usePurgeStore();
   const { resetState } = useDefiStore();
   const { reset } = useStakingStore();
 
@@ -30,6 +31,8 @@ export const useSessionPurgeStore = defineStore('session/purge', () => {
       EXTERNAL_EXCHANGES.includes(purgeable as SupportedExternalExchanges)
     ) {
       await purgeExchange(purgeable as SupportedExchange);
+    } else if (purgeable === ALL_TRANSACTIONS) {
+      await purgeTransactions();
     } else if (Object.values(Module).includes(purgeable as Module)) {
       if ([Module.ETH2].includes(purgeable as Module)) {
         reset(purgeable as Module);
@@ -38,6 +41,7 @@ export const useSessionPurgeStore = defineStore('session/purge', () => {
       }
     }
   };
+
   return {
     purgeCache
   };

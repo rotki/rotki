@@ -57,9 +57,9 @@ const steps = [
 const openStatusDropdown = ref<boolean>(false);
 
 const transactionsQueryStatusStore = useTxQueryStatus();
-const { queryStatus } = toRefs(transactionsQueryStatusStore);
+const { queryStatus, isAllFinished } = toRefs(transactionsQueryStatusStore);
 
-const { resetQueryStatus } = transactionsQueryStatusStore;
+const { isStatusFinished, resetQueryStatus } = transactionsQueryStatusStore;
 
 const isQueryStatusRange = (data: EthereumTransactionQueryData) => {
   return data.period?.[0] > 0;
@@ -77,22 +77,6 @@ const getLabel = (data: EthereumTransactionQueryData) => {
 
   return '';
 };
-
-const isStatusFinished = (item: EthereumTransactionQueryData) => {
-  return (
-    item.status ===
-    EthereumTransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED
-  );
-};
-
-const isAllFinished = computed<boolean>(() => {
-  const queryStatusVal = get(queryStatus);
-  const addresses = Object.keys(queryStatusVal);
-
-  return addresses.every((address: string) => {
-    return isStatusFinished(queryStatusVal[address]);
-  });
-});
 
 const getItemTranslationKey = (item: EthereumTransactionQueryData) => {
   const isRange = isQueryStatusRange(item);

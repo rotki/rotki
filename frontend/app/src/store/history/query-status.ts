@@ -1,3 +1,4 @@
+import { type ComputedRef } from 'vue';
 import {
   type EthereumTransactionQueryData,
   EthereumTransactionsQueryStatus
@@ -35,8 +36,26 @@ export const useTxQueryStatus = defineStore(
       set(queryStatus, {});
     };
 
+    const isStatusFinished = (item: EthereumTransactionQueryData) => {
+      return (
+        item.status ===
+        EthereumTransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED
+      );
+    };
+
+    const isAllFinished: ComputedRef<boolean> = computed(() => {
+      const queryStatusVal = get(queryStatus);
+      const addresses = Object.keys(queryStatusVal);
+
+      return addresses.every((address: string) => {
+        return isStatusFinished(queryStatusVal[address]);
+      });
+    });
+
     return {
       queryStatus,
+      isAllFinished,
+      isStatusFinished,
       setQueryStatus,
       resetQueryStatus
     };

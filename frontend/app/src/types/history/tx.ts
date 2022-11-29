@@ -87,3 +87,7 @@ export const EthTransactionCollectionResponse = z.object({
   entriesTotal: z.number(),
   totalUsdValue: NumericString.nullish()
 });
+
+export const EthRedecodeMissingEventsResponse = z.object({
+  decodedTxNumber: z.number()
+});
