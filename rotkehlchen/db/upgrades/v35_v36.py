@@ -1,6 +1,7 @@
 import logging
 from typing import TYPE_CHECKING
 
+from rotkehlchen.db.utils import table_exists
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:
@@ -15,16 +16,18 @@ def _remove_adex(write_cursor: 'DBCursor') -> None:
     """Remove all adex related tables, events, data in other tables"""
     log.debug('Enter _remove_adex')
     write_cursor.execute('DROP TABLE IF EXISTS adex_events')
-    write_cursor.execute(
-        'DELETE FROM used_query_ranges WHERE name LIKE ?', ('adex_events%',),
-    )
+    if table_exists(write_cursor, 'used_query_ranges'):
+        write_cursor.execute(
+            'DELETE FROM used_query_ranges WHERE name LIKE ?', ('adex_events%',),
+        )
     log.debug('Exit _remove_adex')
 
 
 def _upgrade_ignored_actionids(write_cursor: 'DBCursor') -> None:
     """ignored_action_ids of ActionType.ETHEREUM_TRANSACTION need chainid prepended"""
     log.debug('Enter _upgrade_ignored_actionids')
-    write_cursor.execute('UPDATE ignored_actions SET identifier = "1" || identifier WHERE type="C"')  # noqa: E501
+    if table_exists(write_cursor, 'used_query_ranges'):
+        write_cursor.execute('UPDATE ignored_actions SET identifier = "1" || identifier WHERE type="C"')  # noqa: E501
     log.debug('Exit _upgrade_ignored_actionids')
 
 
@@ -32,19 +35,20 @@ def _upgrade_account_details(write_cursor: 'DBCursor') -> None:
     """Upgrade to account_defails table to evm_accounts_details"""
     log.debug('Enter _upgrade_account_details')
 
-    write_cursor = write_cursor.execute('SELECT * FROM accounts_details')
     new_data = []
-    for entry in write_cursor:
-        if entry[1] != 'eth':
-            log.error(
-                f'During v35->v36 DB upgrade a non-eth accounts_details entry '
-                f'{entry[1]} was found. Skipping it.',
-            )
-            continue
+    if table_exists(write_cursor, 'accounts_details'):
+        write_cursor = write_cursor.execute('SELECT * FROM accounts_details')
+        for entry in write_cursor:
+            if entry[1] != 'eth':
+                log.error(
+                    f'During v35->v36 DB upgrade a non-eth accounts_details entry '
+                    f'{entry[1]} was found. Skipping it.',
+                )
+                continue
 
-        new_data.append((entry[0], 1, entry[2], entry[3]))
+            new_data.append((entry[0], 1, entry[2], entry[3]))
 
-    write_cursor.execute('DROP TABLE accounts_details;')
+    write_cursor.execute('DROP TABLE IF EXISTS accounts_details;')
     write_cursor.execute("""
     CREATE TABLE IF NOT EXISTS evm_accounts_details (
         account VARCHAR[42] NOT NULL,
@@ -70,78 +74,85 @@ def _rename_eth_to_evm_add_chainid(write_cursor: 'DBCursor') -> None:
 
     # Get all data in memory and upgrade it
     transactions = []
-    write_cursor.execute('SELECT * from ethereum_transactions')
-    for entry in write_cursor:
-        transactions.append((
-            entry[0],    # tx_hash
-            1,           # chain_id
-            *entry[1:],  # all the rest are the same
-        ))
+    if table_exists(write_cursor, 'ethereum_transactions'):
+        write_cursor.execute('SELECT * from ethereum_transactions')
+        for entry in write_cursor:
+            transactions.append((
+                entry[0],    # tx_hash
+                1,           # chain_id
+                *entry[1:],  # all the rest are the same
+            ))
     internal_transactions = []
-    write_cursor.execute('SELECT * from ethereum_internal_transactions')
-    for entry in write_cursor:
-        internal_transactions.append((
-            entry[0],    # parent_ tx_hash
-            1,           # chain_id
-            *entry[1:],  # all the rest are the same
-        ))
+    if table_exists(write_cursor, 'ethereum_internal_transactions'):
+        write_cursor.execute('SELECT * from ethereum_internal_transactions')
+        for entry in write_cursor:
+            internal_transactions.append((
+                entry[0],    # parent_ tx_hash
+                1,           # chain_id
+                *entry[1:],  # all the rest are the same
+            ))
 
     tx_receipts = []
-    write_cursor.execute('SELECT * from ethtx_receipts')
-    for entry in write_cursor:
-        tx_receipts.append((
-            entry[0],    # tx_hash
-            1,           # chain_id
-            *entry[1:],  # all the rest are the same
-        ))
+    if table_exists(write_cursor, 'ethtx_receipts'):
+        write_cursor.execute('SELECT * from ethtx_receipts')
+        for entry in write_cursor:
+            tx_receipts.append((
+                entry[0],    # tx_hash
+                1,           # chain_id
+                *entry[1:],  # all the rest are the same
+            ))
     tx_receipt_logs = []
-    write_cursor.execute('SELECT * from ethtx_receipt_logs')
-    for entry in write_cursor:
-        tx_receipt_logs.append((
-            entry[0],    # tx_hash
-            1,           # chain_id
-            *entry[1:],  # all the rest are the same
-        ))
+    if table_exists(write_cursor, 'ethtx_receipt_logs'):
+        write_cursor.execute('SELECT * from ethtx_receipt_logs')
+        for entry in write_cursor:
+            tx_receipt_logs.append((
+                entry[0],    # tx_hash
+                1,           # chain_id
+                *entry[1:],  # all the rest are the same
+            ))
     tx_receipt_log_topics = []
-    write_cursor.execute('SELECT * from ethtx_receipt_log_topics')
-    for entry in write_cursor:
-        tx_receipt_log_topics.append((
-            entry[0],    # tx_hash
-            1,           # chain_id
-            *entry[1:],  # all the rest are the same
-        ))
+    if table_exists(write_cursor, 'ethtx_receipt_log_topics'):
+        write_cursor.execute('SELECT * from ethtx_receipt_log_topics')
+        for entry in write_cursor:
+            tx_receipt_log_topics.append((
+                entry[0],    # tx_hash
+                1,           # chain_id
+                *entry[1:],  # all the rest are the same
+            ))
 
     tx_address_mappings = []
-    write_cursor.execute('SELECT * from ethtx_address_mappings')
-    for entry in write_cursor:
-        tx_address_mappings.append((
-            entry[0],    # address
-            entry[1],    # tx_hash
-            1,           # chain_id
-            *entry[2:],  # all the rest are the same
-        ))
+    if table_exists(write_cursor, 'ethtx_address_mappings'):
+        write_cursor.execute('SELECT * from ethtx_address_mappings')
+        for entry in write_cursor:
+            tx_address_mappings.append((
+                entry[0],    # address
+                entry[1],    # tx_hash
+                1,           # chain_id
+                *entry[2:],  # all the rest are the same
+            ))
     tx_mappings = []
-    write_cursor.execute('SELECT * from evm_tx_mappings')
-    for entry in write_cursor:
-        if entry[2] == 'decoded':
-            value = 0
-        elif entry[2] == 'customized':
-            value = 1
-        else:
-            log.error(
-                f'During v35->v36 DB upgrade unknown evm_tx_mappings '
-                f'value {entry[1]} was found. Skipping it.',
-            )
-            continue
+    if table_exists(write_cursor, 'evm_tx_mappings'):
+        write_cursor.execute('SELECT * from evm_tx_mappings')
+        for entry in write_cursor:
+            if entry[2] == 'decoded':
+                value = 0
+            elif entry[2] == 'customized':
+                value = 1
+            else:
+                log.error(
+                    f'During v35->v36 DB upgrade unknown evm_tx_mappings '
+                    f'value {entry[1]} was found. Skipping it.',
+                )
+                continue
 
-        if entry[1] != 'ETH':
-            log.error(
-                f'During v35->v36 DB upgrade unknown evm_tx_mappings '
-                f'blockchain entry "{entry[1]}" was found. Skipping it.',
-            )
-            continue
+            if entry[1] != 'ETH':
+                log.error(
+                    f'During v35->v36 DB upgrade unknown evm_tx_mappings '
+                    f'blockchain entry "{entry[1]}" was found. Skipping it.',
+                )
+                continue
 
-        tx_mappings.append((entry[0], 1, value))
+            tx_mappings.append((entry[0], 1, value))
 
     # Kill tables -- TODO: foreign keys off here or not?
     write_cursor.execute('DROP TABLE IF EXISTS ethereum_transactions')
@@ -339,19 +350,20 @@ def _upgrade_events_mappings(write_cursor: 'DBCursor') -> None:
     log.debug('Enter _upgrade_events_mappings')
 
     new_data = []
-    write_cursor = write_cursor.execute('SELECT * FROM history_events_mappings')
-    for entry in write_cursor:
-        if entry[1] == 'decoded':
-            value = 0
-        elif entry[1] == 'customized':
-            value = 1
-        else:
-            log.error(
-                f'During v35->v36 DB upgrade unknown history_events_mappings '
-                f'value {entry[1]} was found. Skipping it.',
-            )
-            continue
-        new_data.append((entry[0], 'state', value))
+    if table_exists(write_cursor, 'history_events_mappings'):
+        write_cursor = write_cursor.execute('SELECT * FROM history_events_mappings')
+        for entry in write_cursor:
+            if entry[1] == 'decoded':
+                value = 0
+            elif entry[1] == 'customized':
+                value = 1
+            else:
+                log.error(
+                    f'During v35->v36 DB upgrade unknown history_events_mappings '
+                    f'value {entry[1]} was found. Skipping it.',
+                )
+                continue
+            new_data.append((entry[0], 'state', value))
 
     write_cursor.execute('DROP TABLE IF EXISTS history_events_mappings')
     write_cursor.execute(
