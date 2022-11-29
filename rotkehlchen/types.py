@@ -289,7 +289,7 @@ class EvmTransaction(NamedTuple):
 
     @property
     def identifier(self) -> str:
-        return str(self.chain_id.serialize()) + self.tx_hash.hex()
+        return str(self.chain_id.value) + self.tx_hash.hex()
 
 
 class EvmInternalTransaction(NamedTuple):

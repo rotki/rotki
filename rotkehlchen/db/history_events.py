@@ -189,14 +189,6 @@ class DBHistoryEvents():
                 (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED),
             )
         else:
-            # cursor.execute(
-            #     'SELECT DISTINCT parent_identifier FROM history_events_mappings '
-            #     'WHERE name=? AND value=? AND name=? and value=?',
-            #     (
-            #         HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED,
-            #         HISTORY_MAPPING_KEY_CHAINID, chain_id.serialize_for_db(),
-            #     ),
-            # )
             cursor.execute(
                 'SELECT A.parent_identifier FROM history_events_mappings A JOIN '
                 'history_events_mappings B ON A.parent_identifier=B.parent_identifier AND '
