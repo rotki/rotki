@@ -266,11 +266,6 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
       return get(prices)[get(asset)]?.isCurrentCurrency || false;
     });
 
-  const reset = (): void => {
-    set(prices, {});
-    set(exchangeRates, {});
-  };
-
   watch([exchangeRates, currencySymbol], ([rates, symbol]) => {
     if (Object.keys(rates).length > 0) {
       const rate = get(exchangeRate(symbol));
@@ -298,8 +293,7 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
     deletePriceCache,
     toSelectedCurrency,
     isManualAssetPrice,
-    isAssetPriceInCurrentCurrency,
-    reset
+    isAssetPriceInCurrentCurrency
   };
 });
 

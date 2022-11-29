@@ -21,7 +21,7 @@ import { SupportedExchange } from '@/types/exchanges';
 import { bigNumberify, zeroBalance } from '@/utils/bignumbers';
 import '../../i18n';
 
-describe('balances:getters', () => {
+describe('store::balances/aggregated', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
   });
@@ -60,11 +60,31 @@ describe('balances:getters', () => {
 
     const { prices } = storeToRefs(useBalancePricesStore());
     set(prices, {
-      DAI: { value: bigNumberify(1), isManualPrice: false },
-      EUR: { value: bigNumberify(1), isManualPrice: false },
-      SAI: { value: bigNumberify(1), isManualPrice: false },
-      ETH: { value: bigNumberify(3000), isManualPrice: false },
-      BTC: { value: bigNumberify(40000), isManualPrice: false }
+      DAI: {
+        value: bigNumberify(1),
+        isManualPrice: false,
+        isCurrentCurrency: false
+      },
+      EUR: {
+        value: bigNumberify(1),
+        isManualPrice: false,
+        isCurrentCurrency: false
+      },
+      SAI: {
+        value: bigNumberify(1),
+        isManualPrice: false,
+        isCurrentCurrency: false
+      },
+      ETH: {
+        value: bigNumberify(3000),
+        isManualPrice: false,
+        isCurrentCurrency: false
+      },
+      BTC: {
+        value: bigNumberify(40000),
+        isManualPrice: false,
+        isCurrentCurrency: false
+      }
     });
 
     const { manualBalancesData } = storeToRefs(useManualBalancesStore());
@@ -149,38 +169,6 @@ describe('balances:getters', () => {
     );
 
     expect(actualResult).toMatchObject(expectedResult);
-  });
-
-  test('manualLabels', () => {
-    const { manualBalancesData, manualLabels } = storeToRefs(
-      useManualBalancesStore()
-    );
-    set(manualBalancesData, [
-      {
-        id: 1,
-        usdValue: bigNumberify(50),
-        amount: bigNumberify(50),
-        asset: 'DAI',
-        label: 'My monero wallet',
-        tags: [],
-        location: TRADE_LOCATION_BANKS,
-        balanceType: BalanceType.ASSET
-      },
-      {
-        id: 2,
-        usdValue: bigNumberify(50),
-        amount: bigNumberify(50),
-        asset: 'EUR',
-        label: 'My Bank Account',
-        tags: [],
-        location: TRADE_LOCATION_BANKS,
-        balanceType: BalanceType.ASSET
-      }
-    ]);
-    expect(
-      // @ts-ignore
-      get(manualLabels)
-    ).toMatchObject(['My monero wallet', 'My Bank Account']);
   });
 
   test('btcAccounts', () => {
