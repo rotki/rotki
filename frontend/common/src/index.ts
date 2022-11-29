@@ -41,4 +41,4 @@ export interface HasBalance {
 
 export { BigNumber as BigNumber }
 
-export const onlyIfTruthy = <T>(value: T) => value ? value : undefined
+export const onlyIfTruthy = <T>(value: T): T | undefined => value ? value : undefined

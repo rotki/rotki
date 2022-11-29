@@ -60,7 +60,10 @@ export const useEthNamesStore = defineStore('ethNames', () => {
     return changed;
   };
 
-  const fetchEnsNames = async (addresses: string[], forceUpdate = false) => {
+  const fetchEnsNames = async (
+    addresses: string[],
+    forceUpdate = false
+  ): Promise<void> => {
     if (addresses.length < 1) return;
 
     const changed = updateEnsAddresses(addresses);
@@ -84,7 +87,7 @@ export const useEthNamesStore = defineStore('ethNames', () => {
     }
   };
 
-  const fetchEthNames = async () => {
+  const fetchEthNames = async (): Promise<void> => {
     const addresses = [
       ...get(ethAddressBookGlobal).map(item => item.address),
       ...get(ethAddressBookPrivate).map(item => item.address),

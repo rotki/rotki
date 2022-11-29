@@ -38,7 +38,7 @@ if (import.meta.env.MODE === 'production' && import.meta.env.VITE_TEST) {
 
 Vue.directive('blur', {
   inserted: function (el) {
-    el.onfocus = ({ target }) => {
+    el.onfocus = ({ target }): void => {
       if (!target) {
         return;
       }
@@ -57,7 +57,7 @@ if (isDevelopment) {
 setActivePinia(pinia);
 
 new Vue({
-  setup() {
+  setup(): void {
     provide('premium', usePremiumApi());
   },
   vuetify,

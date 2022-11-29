@@ -46,7 +46,7 @@ const getState = (key: string) => {
   });
 };
 
-const setState = (key: string, state: any) => {
+const setState = (key: string, state: any): void => {
   storage.setItem(key, JSON.stringify(convert(state)));
 };
 

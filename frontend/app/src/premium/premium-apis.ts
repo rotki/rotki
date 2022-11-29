@@ -118,7 +118,7 @@ export const adexApi = (): AdexApi => {
   const { adexBalances, adexHistory } = storeToRefs(store);
   const { fetchAdex } = store;
   return {
-    async fetchAdex(refresh: boolean) {
+    async fetchAdex(refresh: boolean): Promise<void> {
       await fetchAdex(refresh);
     },
     adexHistory: adexHistory as Ref<AdexHistory>,

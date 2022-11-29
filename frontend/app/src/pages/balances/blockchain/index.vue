@@ -254,14 +254,14 @@ const loading: ComputedRef<boolean> = computed(
     get(isQueryingBlockchain)
 );
 
-const createAccount = () => {
+const createAccount = (): void => {
   set(accountToEdit, null);
   set(dialogTitle, t('blockchain_balances.form_dialog.add_title').toString());
   set(dialogSubtitle, '');
   set(openDialog, true);
 };
 
-const editAccount = (account: BlockchainAccountWithBalance) => {
+const editAccount = (account: BlockchainAccountWithBalance): void => {
   set(accountToEdit, account);
   set(dialogTitle, t('blockchain_balances.form_dialog.edit_title').toString());
   set(
@@ -271,7 +271,7 @@ const editAccount = (account: BlockchainAccountWithBalance) => {
   set(openDialog, true);
 };
 
-const clearDialog = async () => {
+const clearDialog = async (): Promise<void> => {
   set(openDialog, false);
   setTimeout(async () => {
     if (get(form)) {
@@ -281,7 +281,7 @@ const clearDialog = async () => {
   }, 300);
 };
 
-const saveAccount = async () => {
+const saveAccount = async (): Promise<void> => {
   if (!get(form)) {
     return;
   }

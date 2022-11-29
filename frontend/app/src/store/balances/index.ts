@@ -38,7 +38,7 @@ export const useBalancesStore = defineStore('balances', () => {
   const { tc } = useI18n();
   const { currencySymbol, currency } = storeToRefs(useGeneralSettingsStore());
 
-  const adjustPrices = (prices: MaybeRef<AssetPrices>) => {
+  const adjustPrices = (prices: MaybeRef<AssetPrices>): void => {
     const pricesConvertedToUsd = { ...get(prices) };
 
     const mainCurrency = get(currencySymbol);

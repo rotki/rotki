@@ -1,7 +1,7 @@
 import { Balance, BigNumber } from '@rotki/common';
 import { Ref } from 'vue';
 
-export function bigNumberify(value: string | number) {
+export function bigNumberify(value: string | number): BigNumber {
   return new BigNumber(value);
 }
 
@@ -26,4 +26,5 @@ export const zeroBalance = (): Balance => {
   };
 };
 
-export const sortDesc = (a: BigNumber, b: BigNumber) => b.minus(a).toNumber();
+export const sortDesc = (a: BigNumber, b: BigNumber): number =>
+  b.minus(a).toNumber();

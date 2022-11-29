@@ -1,7 +1,7 @@
 import { BigNumber } from '@rotki/common';
 import { checkIfDevelopment } from '@/utils/env-utils';
 
-export function setupFormatter() {
+export function setupFormatter(): void {
   if (!checkIfDevelopment()) {
     return;
   }
@@ -14,7 +14,7 @@ export function setupFormatter() {
         }
         return ['div', {}, obj.toString()];
       },
-      hasBody: function () {
+      hasBody: function (): boolean {
         return false;
       }
     }

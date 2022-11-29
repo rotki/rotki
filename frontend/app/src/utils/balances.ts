@@ -71,7 +71,7 @@ export const appendAssetBalance = (
   value: AssetBalance,
   assets: AssetBalances,
   getAssociatedAssetIdentifier: (identifier: string) => ComputedRef<string>
-) => {
+): void => {
   const identifier = getAssociatedAssetIdentifier(value.asset);
   const associatedAsset: string = get(identifier);
   const ownedAsset = assets[associatedAsset];
@@ -167,7 +167,7 @@ export const btcAccountsWithBalances = (
   accountsData: BtcAccountData,
   balances: BtcBalances,
   blockchain: Blockchain.BTC | Blockchain.BCH
-) => {
+): BlockchainAccountWithBalance[] => {
   const accounts: BlockchainAccountWithBalance[] = [];
 
   const { standalone, xpubs } = accountsData;

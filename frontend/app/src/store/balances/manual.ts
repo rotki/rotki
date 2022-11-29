@@ -156,7 +156,7 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
       return assets;
     });
 
-  const fetchManualBalances = async () => {
+  const fetchManualBalances = async (): Promise<void> => {
     const { getStatus, setStatus, resetStatus } = useStatusUpdater(
       Section.MANUAL_BALANCES
     );
@@ -250,7 +250,7 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
     }
   };
 
-  const deleteManualBalance = async (id: number) => {
+  const deleteManualBalance = async (id: number): Promise<void> => {
     try {
       const { balances } = await deleteManualBalances([id]);
       set(manualBalancesData, balances);
