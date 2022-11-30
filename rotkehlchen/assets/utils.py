@@ -47,7 +47,7 @@ def get_or_create_evm_token(
         protocol: Optional[str] = None,
         underlying_tokens: Optional[List[UnderlyingToken]] = None,
         form_with_incomplete_data: bool = False,
-        evm_inquirer: 'EvmNodeInquirer' = None,
+        evm_inquirer: Optional['EvmNodeInquirer'] = None,
 ) -> EvmToken:
     """Given a token address return the <EvmToken>
 

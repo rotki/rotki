@@ -250,7 +250,7 @@ def test_add_manually_tracked_balances_no_price(rotkehlchen_api_server):
     Regression test for https://github.com/rotki/rotki/issues/896"""
     async_query = random.choice([False, True])
     _populate_tags(rotkehlchen_api_server)
-    balances: List[Dict[str, Any]] = [{
+    balances = [{
         'asset': A_CYFM.identifier,
         'label': 'CYFM account',
         'amount': '50.315',

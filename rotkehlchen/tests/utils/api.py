@@ -18,7 +18,7 @@ else:
 
 
 def _wait_for_listening_port(
-        port_number: int, tries: int = 10, sleep: float = 0.1, pid: int = None,
+        port_number: int, tries: int = 10, sleep: float = 0.1, pid: Optional[int] = None,
 ) -> None:
     if pid is None:
         pid = os.getpid()

@@ -127,7 +127,7 @@ class DBCursor:
             logger.trace('FINISH CURSOR FETCHONE')
         return result
 
-    def fetchmany(self, size: int = None) -> List[Any]:
+    def fetchmany(self, size: Optional[int] = None) -> List[Any]:
         if __debug__:
             logger.trace(f'CURSOR FETCHMANY with {size=}')
         if size is None:

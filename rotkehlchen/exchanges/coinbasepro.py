@@ -393,7 +393,7 @@ class Coinbasepro(ExchangeInterface):
     def _paginated_query(
             self,
             endpoint: str,
-            query_options: Dict[str, Any] = None,
+            query_options: Optional[Dict[str, Any]] = None,
             limit: int = COINBASEPRO_PAGINATION_LIMIT,
     ) -> Iterator[List[Dict[str, Any]]]:
         if query_options is None:

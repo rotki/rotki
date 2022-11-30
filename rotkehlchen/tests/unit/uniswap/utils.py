@@ -1,4 +1,5 @@
 import functools
+from typing import List
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
@@ -181,7 +182,7 @@ USD_PRICE_CAR = Price(FVal('0.2635575008126147388714187358722384'))
 
 
 # Method: `_calculate_events_balances`
-def const_lp_1_events():
+def const_lp_1_events() -> List[LiquidityPoolEvent]:
     return [
         LiquidityPoolEvent(
             tx_hash=deserialize_evm_tx_hash(
@@ -192,8 +193,8 @@ def const_lp_1_events():
             timestamp=Timestamp(1604273256),
             event_type=EventType.MINT_UNISWAP,
             pool_address=string_to_evm_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),  # noqa: E501
-            token0=A_DOLLAR_BASED,
-            token1=A_WETH,
+            token0=A_DOLLAR_BASED.resolve_to_evm_token(),
+            token1=A_WETH.resolve_to_evm_token(),
             amount0=AssetAmount(FVal('605.773209925184996494')),
             amount1=AssetAmount(FVal('1.106631443395672732')),
             usd_price=Price(FVal('872.4689300619698095220125311431804')),
@@ -208,8 +209,8 @@ def const_lp_1_events():
             timestamp=Timestamp(1604283808),
             event_type=EventType.BURN_UNISWAP,
             pool_address=string_to_evm_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),  # noqa: E501
-            token0=A_DOLLAR_BASED,
-            token1=A_WETH,
+            token0=A_DOLLAR_BASED.resolve_to_evm_token(),
+            token1=A_WETH.resolve_to_evm_token(),
             amount0=AssetAmount(FVal('641.26289347330654345')),
             amount1=AssetAmount(FVal('1.046665027131675546')),
             usd_price=Price(FVal('837.2737746532695970921908229899852')),
@@ -218,7 +219,7 @@ def const_lp_1_events():
     ]
 
 
-def const_lp_2_events():
+def const_lp_2_events() -> List[LiquidityPoolEvent]:
     return [
         LiquidityPoolEvent(
             tx_hash=deserialize_evm_tx_hash(
@@ -229,7 +230,7 @@ def const_lp_2_events():
             timestamp=Timestamp(1598270334),
             event_type=EventType.MINT_UNISWAP,
             pool_address=string_to_evm_address("0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55"),  # noqa: E501
-            token0=A_WETH,
+            token0=A_WETH.resolve_to_evm_token(),
             token1=A_BTR.resolve_to_evm_token(),
             amount0=AssetAmount(FVal('1.580431277572006656')),
             amount1=AssetAmount(FVal('3')),
@@ -245,7 +246,7 @@ def const_lp_2_events():
             timestamp=Timestamp(1599000975),
             event_type=EventType.BURN_UNISWAP,
             pool_address=string_to_evm_address("0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55"),  # noqa: E501
-            token0=A_WETH,
+            token0=A_WETH.resolve_to_evm_token(),
             token1=A_BTR.resolve_to_evm_token(),
             amount0=AssetAmount(FVal('0.970300671842796406')),
             amount1=AssetAmount(FVal('4.971799615456732408')),
@@ -255,37 +256,33 @@ def const_lp_2_events():
     ]
 
 
-def const_lp_1_events_balance():
-    return (
-        LiquidityPoolEventsBalance(
-            address=TEST_ADDRESS_1,
-            pool_address=string_to_evm_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),
-            token0=A_DOLLAR_BASED,
-            token1=A_WETH,
-            events=const_lp_1_events(),
-            profit_loss0=AssetAmount(FVal('35.489683548121546956')),
-            profit_loss1=AssetAmount(FVal('-0.059966416263997186')),
-            usd_profit_loss=Price(FVal('-35.19515540870021242982170811')),
-        )
+def const_lp_1_events_balance() -> LiquidityPoolEventsBalance:
+    return LiquidityPoolEventsBalance(
+        address=TEST_ADDRESS_1,
+        pool_address=string_to_evm_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),
+        token0=A_DOLLAR_BASED.resolve_to_evm_token(),
+        token1=A_WETH.resolve_to_evm_token(),
+        events=const_lp_1_events(),
+        profit_loss0=AssetAmount(FVal('35.489683548121546956')),
+        profit_loss1=AssetAmount(FVal('-0.059966416263997186')),
+        usd_profit_loss=Price(FVal('-35.19515540870021242982170811')),
     )
 
 
-def const_lp_2_events_balance():
-    return (
-        LiquidityPoolEventsBalance(
-            address=TEST_ADDRESS_1,
-            pool_address=string_to_evm_address("0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55"),
-            token0=A_WETH,
-            token1=A_BTR.resolve_to_evm_token(),
-            events=const_lp_2_events(),
-            profit_loss0=AssetAmount(FVal('-0.610130605729210250')),
-            profit_loss1=AssetAmount(FVal('1.971799615456732408')),
-            usd_profit_loss=Price(FVal('-352.3903567533354058260380955')),
-        )
+def const_lp_2_events_balance() -> LiquidityPoolEventsBalance:
+    return LiquidityPoolEventsBalance(
+        address=TEST_ADDRESS_1,
+        pool_address=string_to_evm_address("0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55"),
+        token0=A_WETH.resolve_to_evm_token(),
+        token1=A_BTR.resolve_to_evm_token(),
+        events=const_lp_2_events(),
+        profit_loss0=AssetAmount(FVal('-0.610130605729210250')),
+        profit_loss1=AssetAmount(FVal('1.971799615456732408')),
+        usd_profit_loss=Price(FVal('-352.3903567533354058260380955')),
     )
 
 
-def const_lp_3_events():
+def const_lp_3_events() -> List[LiquidityPoolEvent]:
     return [
         LiquidityPoolEvent(
             tx_hash=deserialize_evm_tx_hash(
@@ -296,8 +293,8 @@ def const_lp_3_events():
             timestamp=Timestamp(1604273256),
             event_type=EventType.MINT_UNISWAP,
             pool_address=string_to_evm_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),  # noqa: E501
-            token0=A_DOLLAR_BASED,
-            token1=A_WETH,
+            token0=A_DOLLAR_BASED.resolve_to_evm_token(),
+            token1=A_WETH.resolve_to_evm_token(),
             amount0=AssetAmount(FVal('605.773209925184996494')),
             amount1=AssetAmount(FVal('1.106631443395672732')),
             usd_price=Price(FVal('872.4689300619698095220125311431804')),
@@ -312,8 +309,8 @@ def const_lp_3_events():
             timestamp=Timestamp(1604283808),
             event_type=EventType.BURN_UNISWAP,
             pool_address=string_to_evm_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),  # noqa: E501
-            token0=A_DOLLAR_BASED,
-            token1=A_WETH,
+            token0=A_DOLLAR_BASED.resolve_to_evm_token(),
+            token1=A_WETH.resolve_to_evm_token(),
             amount0=AssetAmount(FVal('600')),
             amount1=AssetAmount(FVal('1')),
             usd_price=Price(FVal('800')),
@@ -322,51 +319,47 @@ def const_lp_3_events():
     ]
 
 
-def const_lp_3_balance():
-    return (
-        LiquidityPool(
-            address=string_to_evm_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),
-            assets=[
-                LiquidityPoolAsset(
-                    token=A_DOLLAR_BASED.resolve_to_evm_token(),
-                    total_amount=FVal('13364.706850726724616147'),
-                    user_balance=Balance(
-                        amount=FVal('5'),
-                        usd_value=FVal('0.876854'),  # Updated
-                    ),
-                    usd_price=Price(FVal('4.38427')),  # Updated
+def const_lp_3_balance() -> LiquidityPool:
+    return LiquidityPool(
+        address=string_to_evm_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),
+        assets=[
+            LiquidityPoolAsset(
+                token=A_DOLLAR_BASED.resolve_to_evm_token(),
+                total_amount=FVal('13364.706850726724616147'),
+                user_balance=Balance(
+                    amount=FVal('5'),
+                    usd_value=FVal('0.876854'),  # Updated
                 ),
-                LiquidityPoolAsset(
-                    token=A_WETH,
-                    total_amount=FVal('24.831854200785672749'),
-                    user_balance=Balance(
-                        amount=FVal('0.05'),
-                        usd_value=FVal('23.573'),  # Updated
-                    ),
-                    usd_price=Price(FVal('471.46')),  # Updated
-                ),
-            ],
-            total_supply=FVal('27.12436225218922874'),
-            user_balance=Balance(
-                amount=FVal('0.11'),
-                usd_value=FVal('36.23'),  # Updated
+                usd_price=Price(FVal('4.38427')),  # Updated
             ),
-        )
+            LiquidityPoolAsset(
+                token=A_WETH.resolve_to_evm_token(),
+                total_amount=FVal('24.831854200785672749'),
+                user_balance=Balance(
+                    amount=FVal('0.05'),
+                    usd_value=FVal('23.573'),  # Updated
+                ),
+                usd_price=Price(FVal('471.46')),  # Updated
+            ),
+        ],
+        total_supply=FVal('27.12436225218922874'),
+        user_balance=Balance(
+            amount=FVal('0.11'),
+            usd_value=FVal('36.23'),  # Updated
+        ),
     )
 
 
-def const_lp_3_events_balance():
-    return (
-        LiquidityPoolEventsBalance(
-            address=TEST_ADDRESS_1,
-            pool_address=string_to_evm_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),
-            token0=A_DOLLAR_BASED.resolve_to_evm_token(),
-            token1=A_WETH.resolve_to_evm_token(),
-            events=const_lp_3_events(),
-            profit_loss0=AssetAmount(FVal('-0.773209925184996494')),
-            profit_loss1=AssetAmount(FVal('-0.056631443395672732')),
-            usd_profit_loss=Price(FVal('-36.2389300619698095220125311')),
-        )
+def const_lp_3_events_balance() -> LiquidityPoolEventsBalance:
+    return LiquidityPoolEventsBalance(
+        address=TEST_ADDRESS_1,
+        pool_address=string_to_evm_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),
+        token0=A_DOLLAR_BASED.resolve_to_evm_token(),
+        token1=A_WETH.resolve_to_evm_token(),
+        events=const_lp_3_events(),
+        profit_loss0=AssetAmount(FVal('-0.773209925184996494')),
+        profit_loss1=AssetAmount(FVal('-0.056631443395672732')),
+        usd_profit_loss=Price(FVal('-36.2389300619698095220125311')),
     )
 
 

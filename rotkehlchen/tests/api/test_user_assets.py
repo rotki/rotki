@@ -3,7 +3,6 @@ import tempfile
 from copy import deepcopy
 from http import HTTPStatus
 from pathlib import Path
-from typing import Any, Dict, List
 from zipfile import ZipFile
 
 import pytest
@@ -559,7 +558,7 @@ def test_replace_asset(rotkehlchen_api_server, globaldb, only_in_globaldb):
     if only_in_globaldb:
         cursor.execute('DELETE FROM assets where identifier=?', (user_asset1_id,))
 
-    balances: List[Dict[str, Any]] = [{
+    balances = [{
         'asset': user_asset1_id,
         'label': 'ICP account',
         'amount': '50.315',
@@ -743,7 +742,7 @@ def test_replace_asset_edge_cases(rotkehlchen_api_server, globaldb):
     # the global DB does not work, error is returned and no changes happen
     # in the global DB and in the user DB
     glm_id = strethaddress_to_identifier('0x7DD9c5Cba05E151C895FDe1CF355C9A1D5DA6429')
-    balances: List[Dict[str, Any]] = [{
+    balances = [{
         'asset': glm_id,
         'label': 'ICP account',
         'amount': '50.315',

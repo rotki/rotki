@@ -662,7 +662,7 @@ class Rotkehlchen():
             self,
             requested_save_data: bool = False,
             save_despite_errors: bool = False,
-            timestamp: Timestamp = None,
+            timestamp: Optional[Timestamp] = None,
             ignore_cache: bool = False,
     ) -> Dict[str, Any]:
         """Query all balances rotkehlchen can see.

@@ -374,7 +374,7 @@ class APIServer():
             self,
             rest_api: RestAPI,
             ws_notifier: RotkiNotifier,
-            cors_domain_list: List[str] = None,
+            cors_domain_list: Optional[List[str]] = None,
     ) -> None:
         flask_app = Flask(__name__)
         if cors_domain_list:

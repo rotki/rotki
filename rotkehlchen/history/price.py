@@ -82,10 +82,10 @@ class PriceHistorian():
 
     def __new__(
             cls,
-            data_directory: Path = None,
-            cryptocompare: 'Cryptocompare' = None,
-            coingecko: 'Coingecko' = None,
-            defillama: 'Defillama' = None,
+            data_directory: Optional[Path] = None,
+            cryptocompare: Optional['Cryptocompare'] = None,
+            coingecko: Optional['Coingecko'] = None,
+            defillama: Optional['Defillama'] = None,
     ) -> 'PriceHistorian':
         if PriceHistorian.__instance is not None:
             return PriceHistorian.__instance

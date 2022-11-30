@@ -296,12 +296,12 @@ class Inquirer():
 
     def __new__(
             cls,
-            data_dir: Path = None,
-            cryptocompare: 'Cryptocompare' = None,
-            coingecko: 'Coingecko' = None,
-            defillama: 'Defillama' = None,
-            manualcurrent: 'ManualCurrentOracle' = None,
-            msg_aggregator: 'MessagesAggregator' = None,
+            data_dir: Optional[Path] = None,
+            cryptocompare: Optional['Cryptocompare'] = None,
+            coingecko: Optional['Coingecko'] = None,
+            defillama: Optional['Defillama'] = None,
+            manualcurrent: Optional['ManualCurrentOracle'] = None,
+            msg_aggregator: Optional['MessagesAggregator'] = None,
     ) -> 'Inquirer':
         if Inquirer.__instance is not None:
             return Inquirer.__instance

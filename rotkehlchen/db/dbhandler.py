@@ -1668,8 +1668,8 @@ class DBHandler:
     def get_exchange_credentials(
             self,
             cursor: 'DBCursor',
-            location: Location = None,
-            name: str = None,
+            location: Optional[Location] = None,
+            name: Optional[str] = None,
     ) -> Dict[Location, List[ExchangeApiCredentials]]:
         """Gets all exchange credentials
 

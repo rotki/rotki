@@ -124,8 +124,8 @@ class GlobalDBHandler():
 
     def __new__(
             cls,
-            data_dir: Path = None,
-            sql_vm_instructions_cb: int = None,
+            data_dir: Optional[Path] = None,
+            sql_vm_instructions_cb: Optional[int] = None,
     ) -> 'GlobalDBHandler':
         """
         Initializes the GlobalDB.
