@@ -6,7 +6,7 @@ from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.ens import DBEns
 from rotkehlchen.errors.misc import BlockchainQueryError, RemoteError
-from rotkehlchen.globaldb import GlobalDBHandler
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.types import (
     AddressbookType,
     AddressNameSource,

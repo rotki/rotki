@@ -4,7 +4,7 @@ from rotkehlchen.assets.asset import CustomAsset
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.db.filtering import CustomAssetsFilterQuery
 from rotkehlchen.errors.misc import InputError
-from rotkehlchen.globaldb import GlobalDBHandler
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler

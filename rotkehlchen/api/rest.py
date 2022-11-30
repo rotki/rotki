@@ -145,8 +145,8 @@ from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.utils import query_binance_exchange_pairs
 from rotkehlchen.fval import FVal
-from rotkehlchen.globaldb import GlobalDBHandler
 from rotkehlchen.globaldb.assets_management import export_assets_from_file, import_assets_from_file
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.updates import ASSETS_VERSION_KEY
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.types import NOT_EXPOSED_SOURCES, HistoricalPrice, HistoricalPriceOracle

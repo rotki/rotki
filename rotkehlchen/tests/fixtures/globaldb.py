@@ -10,7 +10,7 @@ from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.fval import FVal
-from rotkehlchen.globaldb import GlobalDBHandler
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.upgrades.manager import UPGRADES_LIST
 from rotkehlchen.globaldb.utils import GLOBAL_DB_VERSION
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle

@@ -15,7 +15,7 @@ from rotkehlchen.constants.ethereum import (
     ETH_SPECIAL_ADDRESS,
 )
 from rotkehlchen.db.drivers.gevent import DBCursor
-from rotkehlchen.globaldb import GlobalDBHandler
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.types import (
     CURVE_POOL_PROTOCOL,
     ChainID,

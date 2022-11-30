@@ -5,7 +5,7 @@ from freezegun import freeze_time
 
 from rotkehlchen.constants.timing import WEEK_IN_SECONDS
 from rotkehlchen.errors.misc import InputError
-from rotkehlchen.globaldb import GlobalDBHandler
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.types import ChainID, GeneralCacheType
 
 CURVE_EXPECTED_LP_TOKENS_TO_POOLS = {

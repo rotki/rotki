@@ -16,7 +16,7 @@ from rotkehlchen.constants.assets import A_BTC, A_DAI, A_EUR, A_SAI, A_USD
 from rotkehlchen.db.custom_assets import DBCustomAssets
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.fval import FVal
-from rotkehlchen.globaldb import GlobalDBHandler
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,

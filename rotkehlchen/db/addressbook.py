@@ -7,7 +7,7 @@ from pysqlcipher3 import dbapi2
 
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors.misc import InputError
-from rotkehlchen.globaldb import GlobalDBHandler
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.types import AddressbookEntry, AddressbookType, ChecksumEvmAddress
 
 if TYPE_CHECKING:
