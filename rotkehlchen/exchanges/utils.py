@@ -55,6 +55,9 @@ def create_binance_symbols_to_pair(
         location: Location,
 ) -> Dict[str, BinancePair]:
     """Parses the result of 'exchangeInfo' endpoint and creates the symbols_to_pair mapping
+
+    May raise:
+    - KeyError if the given exchange data has unexpected format
     """
     result: Dict[str, BinancePair] = {}
     for symbol in exchange_data['symbols']:
@@ -96,13 +99,16 @@ def query_binance_exchange_pairs(location: Location) -> Dict[str, BinancePair]:
 
     if ts_now() - last_pair_check_ts > DAY_IN_SECONDS:
         try:
-            data = requests.get(url)
+            response = requests.get(url)
             pairs = create_binance_symbols_to_pair(
-                exchange_data=data.json(),
+                exchange_data=response.json(),
                 location=location,
             )
-        except (JSONDecodeError, requests.exceptions.RequestException) as e:
-            log.debug(f'Failed to obtain market pairs from binance. {str(e)}')
+        except (JSONDecodeError, requests.exceptions.RequestException, KeyError) as e:
+            msg = str(e)
+            if isinstance(e, KeyError):
+                msg = f'Missing key: {msg} in Binance response: {response.text}'
+            log.debug(f'Failed to obtain market pairs from binance. {msg}')
             # If request fails try to get them from the database
             database_pairs = gdb_binance.get_all_binance_pairs(location)
             return {pair.symbol: pair for pair in database_pairs}
