@@ -108,7 +108,7 @@ def query_binance_exchange_pairs(location: Location) -> Dict[str, BinancePair]:
             msg = str(e)
             if isinstance(e, KeyError):
                 msg = f'Missing key: {msg} in Binance response: {response.text}'
-            log.debug(f'Failed to obtain market pairs from binance. {msg}')
+            log.debug(f'Failed to obtain market pairs from {location}. {msg}')
             # If request fails try to get them from the database
             database_pairs = gdb_binance.get_all_binance_pairs(location)
             return {pair.symbol: pair for pair in database_pairs}
