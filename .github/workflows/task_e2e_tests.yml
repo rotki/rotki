@@ -64,8 +64,10 @@ jobs:
           command: npm run test:integration-ci
           working-directory: ./frontend/app
       - name: Upload coverage
-        working-directory: ./frontend/app
-        run: cd ../.. && ./.github/.codecov -F frontend_integration
+        uses: codecov/codecov-action@v3
+        with:
+          flags: frontend_integration
+          working-directory: ./frontend/app
       - name: Upload screenshots
         uses: actions/upload-artifact@v3
         if: failure()
