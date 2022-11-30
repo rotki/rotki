@@ -100,7 +100,7 @@ def get_or_create_evm_token(
                     symbol = info['symbol'] if symbol is None else symbol
                     name = info['name'] if name is None else name
                     if None in (decimals, symbol, name):
-                        raise NotERC20Conformant(f'Token {evm_address} is not ERC20 conformant')  # noqa: E501  # pylint: disable=raise-missing-from
+                        raise NotERC20Conformant(f'Token {evm_address} is not ERC20 conformant')  # noqa: E501 B904  # pylint: disable=raise-missing-from
 
                 elif token_kind == EvmTokenKind.ERC721:
                     info = evm_inquirer.get_erc721_contract_info(evm_address)

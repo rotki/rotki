@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class EvmTransactions(metaclass=ABCMeta):
+class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
 
     def __init__(
             self,
