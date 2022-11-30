@@ -1,6 +1,6 @@
 import json
 from collections import namedtuple
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from hexbytes import HexBytes
 
@@ -10,7 +10,7 @@ class MockResponse():
             self,
             status_code: int,
             text: str,
-            headers: Dict['str', Any] = None,
+            headers: Optional[Dict['str', Any]] = None,
     ) -> None:
         self.status_code = status_code
         self.text = text

@@ -79,7 +79,7 @@ def assert_eth_balances_result(
         eth_balances: List[str],
         token_balances: Dict[EvmToken, List[str]],
         also_btc: bool,
-        expected_liabilities: Dict[EvmToken, List[str]] = None,
+        expected_liabilities: Optional[Dict[EvmToken, List[str]]] = None,
         totals_only: bool = False,
 ) -> None:
     """Asserts for correct ETH blockchain balances when mocked in tests

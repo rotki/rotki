@@ -92,7 +92,7 @@ class Covalent(ExternalServiceWithApiKey):
             self,
             module: str,
             action: str,
-            address: str = None,
+            address: Optional[str] = None,
             options: Optional[Dict[str, Any]] = None,
             timeout: Optional[Tuple[int, int]] = None,
     ) -> Optional[Dict[str, Any]]:

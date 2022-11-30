@@ -1189,7 +1189,7 @@ class Binance(ExchangeInterface):
                 'fiat/orders',
                 'fiat/payments',
             ],
-            additional_options: Dict = None,
+            additional_options: Optional[Dict] = None,
     ) -> List[Dict[str, Any]]:
         """Request via `api_query_dict()` from `start_ts` `end_ts` using a time
         delta (offset) less than `time_delta`.

@@ -1923,8 +1923,8 @@ class EvmTokenSchema(BaseCryptoAssetSchema, RequiredEthereumAddressSchema):
 
     def __init__(
             self,
-            coingecko: 'Coingecko' = None,
-            cryptocompare: 'Cryptocompare' = None,
+            coingecko: Optional['Coingecko'] = None,
+            cryptocompare: Optional['Cryptocompare'] = None,
             **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)

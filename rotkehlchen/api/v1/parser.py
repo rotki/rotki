@@ -24,7 +24,7 @@ class ResourceReadingParser(FlaskParser):
             location: Optional[str] = None,
             unknown: Optional[str] = _UNKNOWN_DEFAULT_PARAM,  # pylint: disable=unused-argument
             as_kwargs: bool = False,
-            validate: ValidateArg = None,
+            validate: Optional[ValidateArg] = None,
             error_status_code: Optional[int] = None,
             error_headers: Optional[Mapping[str, str]] = None,
     ) -> Callable:
@@ -77,7 +77,7 @@ class ResourceReadingParser(FlaskParser):
             *,
             location: Optional[str] = None,
             unknown: Optional[str] = _UNKNOWN_DEFAULT_PARAM,  # pylint: disable=unused-argument
-            validate: ValidateArg = None,
+            validate: Optional[ValidateArg] = None,
             error_status_code: Optional[int] = None,
             error_headers: Optional[Mapping[str, str]] = None,
     ) -> Dict[str, Any]:

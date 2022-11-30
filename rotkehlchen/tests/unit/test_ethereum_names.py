@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Dict, Mapping, Optional
 from unittest.mock import Mock
 
 import pytest
@@ -13,12 +13,12 @@ def fixture_evm_address() -> ChecksumEvmAddress:
     return make_ethereum_address()
 
 
-def test_get_prioritized_name(evm_address):
+def test_get_prioritized_name(evm_address: ChecksumEvmAddress) -> None:
     """Given some name fetchers which return names, the NamePrioritizer must return
     the first found name, which has also the highest priority
     """
     prioritizer = NamePrioritizer(Mock())
-    fetchers: Dict[AddressNameSource, str] = {
+    fetchers: Mapping[AddressNameSource, str] = {
         'blockchain_account': 'blockchain account label',
         'ens_names': 'ens name',
         'global_addressbook': 'global addressbook label',
@@ -32,14 +32,14 @@ def test_get_prioritized_name(evm_address):
 
 
 def test_get_name_of_lowest_prio_name_source(
-        evm_address,
+        evm_address: ChecksumEvmAddress,
 ):
     """Given some name fetchers where only the one with the lowest priority
     (the last one) returns a name, the NamePrioritizer must return
     the name with the last priority
     """
     prioritizer = NamePrioritizer(Mock())
-    fetchers: Dict[AddressNameSource, str] = {
+    fetchers: Mapping[AddressNameSource, Optional[str]] = {
         'blockchain_account': None,
         'ens_names': None,
         'global_addressbook': 'global addressbook label',
@@ -54,7 +54,7 @@ def test_get_name_of_lowest_prio_name_source(
 
 
 def get_fetchers_with_names(
-        fetchers_to_name: Dict[AddressNameSource, Optional[str]],
+        fetchers_to_name: Mapping[AddressNameSource, Optional[str]],
 ) -> Dict[AddressNameSource, FetcherFunc]:
     fetchers: Dict[AddressNameSource, FetcherFunc] = {}
     for source_id, returned_name in fetchers_to_name.items():
