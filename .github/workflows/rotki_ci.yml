@@ -140,8 +140,10 @@ jobs:
         working-directory: ./frontend/app
         run: npm run test:unit
       - name: Upload coverage
-        working-directory: ./frontend/app
-        run: cd ../.. && ./.github/.codecov -F frontend_unit
+        uses: codecov/codecov-action@v3
+        with:
+          flags: frontend_unit
+          working-directory: ./frontend/app
 
   docs:
     name: 'Documentation build'
