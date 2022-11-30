@@ -46,3 +46,5 @@ User_ID,UTC_Time,Account,Operation,Coin,Change,Remark
 1,2020-12-01 15:51:47,Spot,Fee,BNB,-0.041427214681599996,""
 1,2020-12-01 15:51:47,Spot,Fee,BNB,-0.0462623227152,""
 1,2020-12-01 15:51:47,Spot,Buy,BTC,0.09564009919439999,""
+1,2020-12-02 22:30:01,Spot,Buy,IOTA,882,"Trade with no fee for test"
+1,2020-12-02 22:30:01,Spot,Buy,USDT,-1146.3354,

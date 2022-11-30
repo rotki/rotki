@@ -110,15 +110,12 @@ class BinanceTradeEntry(BinanceMultipleEntry):
             - (Buy + Transaction Related) * N
         """
         counted = Counter(requested_operations)
-        fee = counted.pop('Fee', None)
+        counted.pop('Fee', None)
         keys = set(counted.keys())
         return (
-            (
-                keys == {'Buy', 'Sell'} and counted['Buy'] % 2 == 0 and counted['Sell'] % 2 == 0 and  # noqa: E501
-                (not fee or counted['Sell'] + counted['Buy'] == fee * 2)
-            ) or
-            (keys == {'Buy'} and counted['Buy'] % 2 == 0 and (not fee or counted['Buy'] == fee * 2)) or  # noqa: E501
-            (keys == {'Sell'} and counted['Sell'] % 2 == 0 and (not fee or counted['Sell'] == fee * 2)) or  # noqa: E501
+            (keys == {'Buy', 'Sell'} and counted['Buy'] % 2 == 0 and counted['Sell'] % 2 == 0) or
+            (keys == {'Buy'} and counted['Buy'] % 2 == 0) or  # noqa: E501
+            (keys == {'Sell'} and counted['Sell'] % 2 == 0) or  # noqa: E501
             (keys == {'Transaction Related'} and counted['Transaction Related'] % 2 == 0) or
             (keys == {'Small assets exchange BNB'} and counted['Small assets exchange BNB'] % 2 == 0) or  # noqa: E501
             (keys == {'ETH 2.0 Staking'} and counted['ETH 2.0 Staking'] % 2 == 0) or
