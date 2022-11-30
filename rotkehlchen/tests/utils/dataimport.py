@@ -1369,6 +1369,19 @@ def assert_binance_import_results(rotki: Rotkehlchen):
             link='',
             notes='Imported from binance CSV file. Binance operation: Buy / Sell',
         ),
+        Trade(
+            timestamp=Timestamp(1606948201),
+            location=Location.BINANCE,
+            base_asset=CryptoAsset('IOTA'),
+            quote_asset=A_USDT,
+            trade_type=TradeType.BUY,
+            amount=AssetAmount(FVal('882')),
+            rate=Price(FVal('0.7694083249980764791875048088')),
+            fee=None,
+            fee_currency=None,
+            link='',
+            notes='Imported from binance CSV file. Binance operation: Buy / Sell',
+        ),
     ]
     expected_asset_movements = [
         AssetMovement(
