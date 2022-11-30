@@ -40,7 +40,7 @@ BinanceCsvRow = Dict[str, Any]
 BINANCE_TRADE_OPERATIONS = {'Buy', 'Sell', 'Fee'}
 
 
-class BinanceEntry(metaclass=abc.ABCMeta):
+class BinanceEntry(metaclass=abc.ABCMeta):  # noqa: B024
     """This is a base BinanceEntry class
     All row combinations in the Binance csv have to be inherited from this base class
     """
