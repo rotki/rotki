@@ -28,7 +28,7 @@ from rotkehlchen.tests.utils.constants import A_GNO, A_RDN
 from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
-from rotkehlchen.types import Location
+from rotkehlchen.types import ChainID, Location
 
 KICK_TOKEN = Asset('eip155:1/erc20:0x824a50dF33AC1B41Afc52f4194E2e8356C17C3aC')
 
@@ -343,6 +343,8 @@ def test_get_all_assets(rotkehlchen_api_server):
     assert 'entries_limit' in result
     for entry in result['entries']:
         assert 'Uniswap' in entry['name']
+        if entry['type'] == AssetType.EVM_TOKEN.serialize():
+            assert entry['evm_chain'] in [x.to_name() for x in ChainID]
     assert_asset_result_order(data=result['entries'], is_ascending=False, order_field='symbol')
 
     # test that ignored assets filter works
@@ -396,7 +398,9 @@ def test_get_all_assets(rotkehlchen_api_server):
     )
     result = assert_proper_response_with_result(response)
     assets_names = {r['name'] for r in result['entries']}
+    assets_chain = {r.get('evm_chain', None) for r in result['entries']}
     assert result['entries_found'] == 3
+    assert assets_chain.issubset({*[x.to_name() for x in ChainID], None})
     assert A_BTC.resolve_to_asset_with_name_and_type().name in assets_names
     assert A_DAI.resolve_to_asset_with_name_and_type().name in assets_names
     assert A_SAI.resolve_to_asset_with_name_and_type().name not in assets_names
@@ -450,6 +454,8 @@ def test_get_all_assets(rotkehlchen_api_server):
     for entry in result['entries']:
         assert 'Uniswap' in entry['name']
         assert 'UNI' in entry['symbol']
+        if entry['type'] == AssetType.EVM_TOKEN.serialize():
+            assert entry['evm_chain'] in [x.to_name() for x in ChainID]
 
     # check that providing multiple order_by_attributes fails
     response = requests.post(
@@ -481,6 +487,7 @@ def test_get_all_assets(rotkehlchen_api_server):
     assert result['entries'][0]['identifier'] == A_DAI
     assert 'address' in result['entries'][0]
     assert 'decimals' in result['entries'][0]
+    assert result['entries'][0]['evm_chain'] == 'ethereum'
     assert result['entries'][0]['type'] == AssetType.EVM_TOKEN.serialize()
 
     # ask for a crypto asset and a fiat asset (test multiple asset query)
@@ -525,6 +532,7 @@ def test_get_all_assets(rotkehlchen_api_server):
     result = assert_proper_response_with_result(response)
     for entry in result['entries']:
         assert 'underlying_tokens' in entry
+        assert entry['evm_chain'] in [x.to_name() for x in ChainID]
 
 
 def test_get_assets_mappings(rotkehlchen_api_server):

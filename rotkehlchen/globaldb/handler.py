@@ -303,7 +303,7 @@ class GlobalDBHandler():
                 elif asset_type == AssetType.EVM_TOKEN:
                     data.update({
                         'address': entry[2],
-                        'chain': ChainID.deserialize_from_db(entry[12]).serialize(),
+                        'evm_chain': ChainID.deserialize_from_db(entry[12]).to_name(),
                         'token_kind': EvmTokenKind.deserialize_from_db(entry[13]).serialize(),
                         'decimals': entry[3],
                         'underlying_tokens': underlying_tokens.get(entry[0], None),

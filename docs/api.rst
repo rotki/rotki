@@ -2990,7 +2990,7 @@ Querying all supported assets
               {
                   "identifier": "eip155:1/erc20:0xB6eD7644C69416d67B522e20bC294A9a9B405B31",
                   "evm_address": "0xB6eD7644C69416d67B522e20bC294A9a9B405B31",
-                  "chain":"ethereum",
+                  "evm_chain":"ethereum",
                   "token_kind":"erc20",
                   "decimals": 8,
                   "name": "0xBitcoin",
@@ -3011,7 +3011,7 @@ Querying all supported assets
               {
                   "identifier": "eip155:1/erc20:0xcC4eF9EEAF656aC1a2Ab886743E98e97E090ed38",
                   "evm_address": "0xcC4eF9EEAF656aC1a2Ab886743E98e97E090ed38",
-                  "chain":"ethereum",
+                  "evm_chain":"ethereum",
                   "token_kind":"erc20",
                   "decimals": 18,
                   "name": "DigitalDevelopersFund",
@@ -3039,7 +3039,7 @@ Querying all supported assets
               {
                   "identifier": "eip155:1/erc20:0xD850942eF8811f2A866692A623011bDE52a462C1",
                   "evm_address": "0xD850942eF8811f2A866692A623011bDE52a462C1",
-                  "chain":"ethereum",
+                  "evm_chain":"ethereum",
                   "token_kind":"erc20",
                   "decimals": 18,
                   "name": "Vechain Token",
@@ -3064,7 +3064,7 @@ Querying all supported assets
    :resjson string swapped_for: An optional attribute representing another asset for which this asset was swapped for. For example ``VEN`` tokens were at some point swapped for ``VET`` tokens.
    :resjson string symbol: The symbol used for this asset. This is not guaranteed to be unique.
    :resjson string evm_address: If the type is ``evm_token`` then this will be the hexadecimal address of the token's contract.
-   :resjson int chain_id: If the type is ``evm_token`` then this will be an integer representing the chain id of the chain.
+   :resjson string evm_chain: If the type is ``evm_token`` then this will be the name of the evm chain. "ethereum", "optimism" etc.
    :resjson string token_kind:  If the type is ``evm_token`` then this will be the token type, for example ``erc20``.
    :resjson integer decimals: If the type is ``evm_token`` then this will be the number of decimals the token has.
    :resjson string cryptocompare: The cryptocompare identifier for the asset. can be missing if not known. If missing a query by symbol is attempted.
