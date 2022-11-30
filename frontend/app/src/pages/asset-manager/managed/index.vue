@@ -202,7 +202,7 @@ const confirmDelete = async () => {
   } else {
     let address = asset.address;
     assert(address);
-    await deleteToken(address, asset.chain as string);
+    await deleteToken(address, asset.evmChain as string);
   }
 };
 

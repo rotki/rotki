@@ -420,7 +420,7 @@ onMounted(() => {
   set(decimals, token.decimals ? token.decimals.toString() : '');
   set(protocol, token.protocol ?? '');
   set(underlyingTokens, token.underlyingTokens ?? []);
-  set(chain, token.chain);
+  set(chain, token.evmChain);
   set(tokenKind, token.tokenKind);
 });
 

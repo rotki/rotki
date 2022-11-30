@@ -44,7 +44,7 @@ export const BaseAsset = z.object({
   name: z.string().nullish(),
   symbol: z.string().nullish(),
   swappedFor: z.string().nullish(),
-  chain: EvmChainEnum.nullish(),
+  evmChain: EvmChainEnum.nullish(),
   tokenKind: EvmTokenKindEnum.nullish()
 });
 
