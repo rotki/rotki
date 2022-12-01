@@ -1,12 +1,12 @@
 <template>
   <error-screen
-    class="start-error-screen"
+    :class="css.overlay"
     :header="tc('error_screen.start_failure')"
     :title="tc('error_screen.backend_error')"
     :subtitle="tc('error_screen.message')"
     :message="message"
   >
-    <v-btn depressed color="primary" @click="terminate()">
+    <v-btn depressed color="primary" @click="closeApp()">
       {{ tc('common.actions.terminate') }}
     </v-btn>
   </error-screen>
@@ -14,22 +14,24 @@
 
 <script setup lang="ts">
 import ErrorScreen from '@/components/error/ErrorScreen.vue';
-import { interop } from '@/electron-interop';
+import { useInterop } from '@/electron-interop';
 
-const props = defineProps({
+defineProps({
   message: { required: true, type: String }
 });
 
-const { message } = toRefs(props);
 const { tc } = useI18n();
-
-const terminate = () => {
-  interop.closeApp();
-};
+const css = useCssModule();
+const { closeApp } = useInterop();
 </script>
 
-<style scoped lang="scss">
-.startup-error-screen {
-  background-color: white;
+<style module lang="scss">
+.overlay {
+  background-color: #fafafa;
+  height: 100vh !important;
+  width: 100vw !important;
+  position: fixed;
+  top: 0;
+  left: 0;
 }
 </style>
