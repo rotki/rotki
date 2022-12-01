@@ -12,6 +12,7 @@ import { logger } from '@/utils/logging';
 import {
   handleEthereumTransactionStatus,
   handleLegacyMessage,
+  handleLoginStatus,
   handleSnapshotError
 } from '@/utils/message-handling';
 
@@ -125,6 +126,8 @@ export const useNotifications = defineStore('notifications', () => {
         object.type === SocketMessageType.ETHEREUM_TRANSACTION_STATUS
       ) {
         await handleEthereumTransactionStatus(object);
+      } else if (object.type === SocketMessageType.LOGIN_STATUS) {
+        await handleLoginStatus(object);
       } else {
         logger.error('unsupported message:', message);
       }

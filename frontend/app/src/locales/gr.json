@@ -2697,7 +2697,10 @@
       "title": "User action required for DB sync"
     },
     "title": "Sign In",
-    "upgrading_db_warning": "A database upgrade might be in progress. Please wait and don't close the app until it's finished.",
+    "upgrading_db": {
+      "current": "Βήμα {currentStep} από {totalSteps} της αναβάθμισής της βάσης δεδομένων v{currentVersion}.",
+      "warning": "Η βάση δεδομένων αναβαιμίζεται από την έκδοση {fromVersion} στην {toVersion}. Παρακαλώ μην κλείσετε την εφαρμογή μέχρι να ολοκληρωθεί."
+    },
     "validation": {
       "non_empty_password": "Please provide a password",
       "non_empty_username": "Please provide a user name",

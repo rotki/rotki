@@ -25,6 +25,8 @@ import {
   validWithoutSessionStatus,
   validWithParamsSessionAndExternalService
 } from '@/services/utils';
+import { SyncConflictPayload } from '@/store/session/types';
+import { SyncConflictError } from '@/types/login';
 import { TaskResultResponse } from '@/types/task';
 
 export class RotkehlchenApi {
@@ -208,7 +210,7 @@ export class RotkehlchenApi {
     return handleResponse(response);
   }
 
-  queryTaskResult<T>(
+  async queryTaskResult<T>(
     id: number,
     numericKeys?: string[] | null,
     transform = true
@@ -226,24 +228,25 @@ export class RotkehlchenApi {
       config.transformResponse = transformer;
     }
 
-    return this.axios
-      .get<ActionResult<TaskResultResponse<ActionResult<T>>>>(
-        `/tasks/${id}`,
-        config
-      )
-      .then(response => {
-        if (response.status === 404) {
-          throw new TaskNotFoundError(`Task with id ${id} not found`);
-        }
-        return response;
-      })
-      .then(handleResponse)
-      .then(value => {
-        if (value.outcome) {
-          return value.outcome;
-        }
-        throw new Error('No result');
-      });
+    const response = await this.axios.get<
+      ActionResult<TaskResultResponse<ActionResult<T>>>
+    >(`/tasks/${id}`, config);
+
+    if (response.status === 404) {
+      throw new TaskNotFoundError(`Task with id ${id} not found`);
+    }
+
+    const { outcome, statusCode } = handleResponse(response);
+
+    if (outcome) {
+      if (statusCode === 300) {
+        const { result, message } = outcome as ActionResult<T>;
+        throw new SyncConflictError(message, SyncConflictPayload.parse(result));
+      }
+      return outcome;
+    }
+
+    throw new Error('No result');
   }
 
   async importDataFrom(

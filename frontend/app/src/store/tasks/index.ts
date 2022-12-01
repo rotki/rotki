@@ -6,6 +6,7 @@ import { Ref } from 'vue';
 
 import { api } from '@/services/rotkehlchen-api';
 import { TaskNotFoundError } from '@/services/types-api';
+import { SyncConflictError } from '@/types/login';
 import { Task, TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { assert } from '@/utils/assertions';
@@ -221,6 +222,8 @@ export const useTasks = defineStore('tasks', () => {
       if (e instanceof TaskNotFoundError) {
         remove(task.id);
         handleResult(error(task, e.message), task);
+      } else if (e instanceof SyncConflictError) {
+        handleResult({ message: e.message, result: e.payload }, task);
       }
     }
     unlock(task.id);

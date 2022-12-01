@@ -31,4 +31,5 @@ export interface AddressMeta extends TaskMeta {
 export interface TaskResultResponse<T> {
   outcome: T | null;
   status: 'completed' | 'not-found' | 'pending';
+  statusCode?: number;
 }

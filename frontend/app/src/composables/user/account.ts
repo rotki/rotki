@@ -15,7 +15,9 @@ export const useAccountManagement = () => {
   const { showGetPremiumButton, showPremiumDialog } = usePremiumReminder();
   const { navigateToDashboard } = useAppNavigation();
   const { createAccount, login } = useSessionStore();
-  const { logged } = storeToRefs(useSessionAuthStore());
+  const authStore = useSessionAuthStore();
+  const { logged } = storeToRefs(authStore);
+  const { updateLoginStatus } = authStore;
 
   const createNewAccount = async (payload: CreateAccountPayload) => {
     set(loading, true);
@@ -49,6 +51,7 @@ export const useAccountManagement = () => {
       set(errors, [result.message]);
     }
     set(loading, false);
+    updateLoginStatus();
     if (get(logged)) {
       setLastLogin(username);
       showGetPremiumButton();
