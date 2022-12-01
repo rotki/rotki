@@ -114,23 +114,29 @@ class AssetSpendEvent:
         )
 
 
-class AssetAcquisitionHeap(NamedTuple):
+class AssetAcquisitionHeapElement(NamedTuple):
     """
-    A heap structure for an acquisition.
+    https://docs.python.org/3/library/heapq.html#basic-examples
+
+    This represents a heap element for the asset acquisition heap.
+    It is a tuple to also carry a priority which is used by the heap algorithm to
+    preserve the heap invariant.
+
     Note:`heapq` uses a min heap implementation i.e. the smallest item comes out first.
 
     For FIFO, a counter is used as the priority so the first acquisition comes out first.
     For LIFO, a counter is used but negated, so the acquisition added last comes first.
-    For HIFO, the amount of the acquisition is used although negated so the acquisition with the highest amount comes first.
-    """  # noqa: E501
-    priority: FVal
+    For HIFO, the amount of the acquisition is used although negated so the
+    acquisition with the highest amount comes first.
+    """
+    priority: FVal  # This is only used by heapq algorithm and not accessed from our code
     acquisition_event: AssetAcquisitionEvent
 
 
 class BaseCostBasisMethod(metaclass=ABCMeta):
     """The base class in which every other cost basis method inherits from."""
     def __init__(self) -> None:
-        self._acquisitions_heap: List[AssetAcquisitionHeap] = []
+        self._acquisitions_heap: List[AssetAcquisitionHeapElement] = []
 
     @abstractmethod
     def add_acquisition(self, acquisition: AssetAcquisitionEvent) -> None:
@@ -304,7 +310,7 @@ class FIFOCostBasisMethod(BaseCostBasisMethod):
 
     def add_acquisition(self, acquisition: AssetAcquisitionEvent) -> None:
         """Adds an acquisition to the `_acquisitions_heap` using a counter to achieve the FIFO order."""  # noqa: E501
-        heapq.heappush(self._acquisitions_heap, AssetAcquisitionHeap(self._count, acquisition))
+        heapq.heappush(self._acquisitions_heap, AssetAcquisitionHeapElement(self._count, acquisition))  # noqa: E501
         self._count += 1
 
 
@@ -319,7 +325,7 @@ class LIFOCostBasisMethod(BaseCostBasisMethod):
 
     def add_acquisition(self, acquisition: AssetAcquisitionEvent) -> None:
         """Adds an acquisition to the `_acquisitions_heap` using a negated counter to achieve the LIFO order."""  # noqa: E501
-        heapq.heappush(self._acquisitions_heap, AssetAcquisitionHeap(-self._count, acquisition))
+        heapq.heappush(self._acquisitions_heap, AssetAcquisitionHeapElement(-self._count, acquisition))  # noqa: E501
         self._count += 1
 
 
@@ -333,7 +339,7 @@ class HIFOCostBasisMethod(BaseCostBasisMethod):
         Adds an acquisition to the `_acquisitions_heap` using the negated amount
         of the acquisition to achieve the HIFO order.
         """
-        heapq.heappush(self._acquisitions_heap, AssetAcquisitionHeap(-acquisition.amount, acquisition))  # noqa: E501
+        heapq.heappush(self._acquisitions_heap, AssetAcquisitionHeapElement(-acquisition.amount, acquisition))  # noqa: E501
 
 
 class AverageCostBasisMethod(BaseCostBasisMethod):
@@ -359,7 +365,10 @@ class AverageCostBasisMethod(BaseCostBasisMethod):
         The formula used to calculate the average cost basis of an acquisition is:
         [Previous Total ACB] + [Cost of New Shares] + [Transaction Costs]
         """
-        heapq.heappush(self._acquisitions_heap, AssetAcquisitionHeap(self._count, acquisition))
+        heapq.heappush(
+            self._acquisitions_heap,
+            AssetAcquisitionHeapElement(self._count, acquisition),
+        )
         self.current_average_cost_basis += (acquisition.rate * acquisition.amount)
         self.remaining_amount += acquisition.amount
         self._count += 1
