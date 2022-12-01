@@ -1,6 +1,7 @@
 import { Ref } from 'vue';
 import { useBalancesStore } from '@/store/balances';
 import { useNotifications } from '@/store/notifications';
+import { useSessionAuthStore } from '@/store/session/auth';
 import { usePeriodicStore } from '@/store/session/periodic';
 import { useWatchersStore } from '@/store/session/watchers';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
@@ -17,6 +18,7 @@ const BALANCES = 'balances';
 export const useMonitorStore = defineStore('monitor', () => {
   const monitors: Ref<Record<string, any>> = ref({});
 
+  const { logged } = storeToRefs(useSessionAuthStore());
   const { check } = usePeriodicStore();
   const { consume } = useNotifications();
   const { fetchWatchers } = useWatchersStore();
@@ -27,10 +29,14 @@ export const useMonitorStore = defineStore('monitor', () => {
     useFrontendSettingsStore()
   );
 
-  const { connect, disconnect, connected } = useWebsocketStore();
+  const ws = useWebsocketStore();
+  const { connected } = storeToRefs(ws);
+  const { connect, disconnect } = ws;
 
   const fetch = () => {
-    startPromise(check());
+    if (get(logged)) {
+      startPromise(check());
+    }
 
     if (!get(connected)) {
       startPromise(consume());

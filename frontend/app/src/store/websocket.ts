@@ -67,6 +67,10 @@ export const useWebsocketStore = defineStore('websocket', () => {
 
   async function connect(): Promise<boolean> {
     return new Promise<boolean>(resolve => {
+      if (get(connected)) {
+        logger.debug('websocket already connected');
+        return true;
+      }
       const serverUrl = api.serverUrl;
       let protocol = 'ws';
       const location = window.location;

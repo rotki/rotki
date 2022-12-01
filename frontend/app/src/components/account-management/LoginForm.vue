@@ -44,7 +44,7 @@
             <v-col>
               <v-checkbox
                 v-model="rememberUsername"
-                :disabled="customBackendDisplay || rememberPassword"
+                :disabled="customBackendDisplay || rememberPassword || loading"
                 color="primary"
                 hide-details
                 class="mt-2 remember"
@@ -54,7 +54,7 @@
                 <v-col cols="auto">
                   <v-checkbox
                     v-model="rememberPassword"
-                    :disabled="customBackendDisplay"
+                    :disabled="customBackendDisplay || loading"
                     color="primary"
                     hide-details
                     class="mt-0 pt-0 remember"
@@ -80,6 +80,7 @@
                     icon
                     :color="serverColor"
                     v-bind="attrs"
+                    :disabled="loading"
                     v-on="on"
                     @click="customBackendDisplay = !customBackendDisplay"
                   >
@@ -215,19 +216,27 @@
         </v-form>
       </v-card-text>
       <v-card-actions class="login__actions d-block">
-        <v-alert v-if="loginStatus" type="warning" text>
+        <v-alert v-if="primaryProgress" type="warning" text>
           <template #prepend>
             <div class="mr-4">
               <v-progress-circular
                 rounded
-                indeterminate
+                :value="primaryProgress.percentage"
                 size="40"
                 width="3"
                 color="warning"
               />
             </div>
           </template>
-          {{ tc('login.upgrading_db_warning', 0, loginStatus) }}
+          <div>
+            <div>
+              {{ tc('login.upgrading_db.warning', 0, primaryProgress) }}
+            </div>
+            <v-divider class="my-2" />
+            <div>
+              {{ tc('login.upgrading_db.current', 0, primaryProgress) }}
+            </div>
+          </div>
         </v-alert>
         <span>
           <v-btn
@@ -248,20 +257,21 @@
         </span>
         <v-divider class="my-4" />
         <span class="login__actions__footer">
-          <a
+          <button
+            :disabled="loading"
             data-cy="new-account"
             class="login__button__new-account font-weight-bold secondary--text"
             @click="newAccount()"
           >
             {{ tc('login.button_new_account') }}
-          </a>
+          </button>
         </span>
       </v-card-actions>
     </div>
   </v-slide-y-transition>
 </template>
 <script setup lang="ts">
-import { PropType, Ref } from 'vue';
+import { ComputedRef, PropType, Ref } from 'vue';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import { useInterop } from '@/electron-interop';
 import { useSessionStore } from '@/store/session';
@@ -273,6 +283,15 @@ import {
   getBackendUrl,
   saveBackendUrl
 } from '@/utils/account-management';
+
+interface Progress {
+  percentage: number;
+  currentStep: number;
+  totalSteps: number;
+  currentVersion: number;
+  fromVersion: number;
+  toVersion: number;
+}
 
 const KEY_REMEMBER_USERNAME = 'rotki.remember_username';
 const KEY_REMEMBER_PASSWORD = 'rotki.remember_password';
@@ -296,7 +315,7 @@ const emit = defineEmits([
   'touched'
 ]);
 
-const { syncConflict, errors } = toRefs(props);
+const { syncConflict, errors, loginStatus } = toRefs(props);
 
 const touched = () => emit('touched');
 const newAccount = () => emit('new-account');
@@ -321,6 +340,24 @@ const passwordRef: Ref<any> = ref(null);
 const savedRememberUsername = useLocalStorage(KEY_REMEMBER_USERNAME, null);
 const savedRememberPassword = useLocalStorage(KEY_REMEMBER_PASSWORD, null);
 const savedUsername = useLocalStorage(KEY_USERNAME, '');
+
+const primaryProgress: ComputedRef<Progress | null> = computed(() => {
+  const status = get(loginStatus);
+  if (!status) {
+    return null;
+  }
+  const { currentStep, fromDbVersion, totalSteps } = status.currentUpgrade;
+  const current = fromDbVersion - status.startDbVersion;
+  const total = status.targetDbVersion - status.startDbVersion;
+  return {
+    percentage: (current / total) * 100,
+    currentVersion: fromDbVersion,
+    fromVersion: status.startDbVersion,
+    toVersion: status.targetDbVersion,
+    currentStep: totalSteps > 0 ? currentStep : 1,
+    totalSteps: totalSteps > 0 ? totalSteps : 1
+  };
+});
 
 const { tc } = useI18n();
 

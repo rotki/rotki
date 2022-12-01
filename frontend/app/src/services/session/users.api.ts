@@ -93,7 +93,8 @@ export const useUsersApi = () => {
       `/users/${username}`,
       axiosSnakeCaseTransformer({
         password,
-        syncApproval
+        syncApproval,
+        asyncQuery: true
       }),
       {
         validateStatus: validAccountOperationStatus,

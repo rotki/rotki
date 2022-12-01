@@ -44,8 +44,13 @@ export const PremiumStatusUpdateData = z.object({
 export type PremiumStatusUpdateData = z.infer<typeof PremiumStatusUpdateData>;
 
 export const LoginStatusData = z.object({
-  fromVersion: z.number(),
-  toVersion: z.number()
+  startDbVersion: z.number().nonnegative(),
+  targetDbVersion: z.number().nonnegative(),
+  currentUpgrade: z.object({
+    currentStep: z.number().nonnegative(),
+    fromDbVersion: z.number().nonnegative(),
+    totalSteps: z.number().nonnegative()
+  })
 });
 
 export type LoginStatusData = z.infer<typeof LoginStatusData>;
