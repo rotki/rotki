@@ -1,5 +1,6 @@
 import hashlib
 import hmac
+import os
 import re
 import warnings as test_warnings
 from contextlib import ExitStack
@@ -159,6 +160,10 @@ def test_trade_from_binance(function_scope_binance):
         assert isinstance(our_trade.fee_currency, Asset)
 
 
+@pytest.mark.skipif(
+    'CI' in os.environ,
+    reason='https://twitter.com/LefterisJP/status/1598107187184037888',
+)
 def test_binance_assets_are_known(inquirer):  # pylint: disable=unused-argument
     unsupported_assets = set(UNSUPPORTED_BINANCE_ASSETS)
     common_items = unsupported_assets.intersection(set(WORLD_TO_BINANCE.values()))
