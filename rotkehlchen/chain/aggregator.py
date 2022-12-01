@@ -22,7 +22,7 @@ from gevent.lock import Semaphore
 from web3.exceptions import BadFunctionCallOutput
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
-from rotkehlchen.assets.asset import Asset, CryptoAsset, EvmToken
+from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.chain.bitcoin import get_bitcoin_addresses_balances
 from rotkehlchen.chain.bitcoin.bch import get_bitcoin_cash_addresses_balances
 from rotkehlchen.chain.bitcoin.bch.utils import force_address_to_legacy_address
@@ -44,7 +44,6 @@ from rotkehlchen.chain.ethereum.modules import (
     YearnVaults,
     YearnVaultsV2,
 )
-from rotkehlchen.chain.ethereum.modules.balancer.types import BalancerPoolBalance
 from rotkehlchen.chain.ethereum.modules.eth2.structures import Eth2Validator
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.chain.substrate.manager import wait_until_a_node_is_available
@@ -84,7 +83,6 @@ from rotkehlchen.types import (
     ChecksumEvmAddress,
     Eth2PubKey,
     ListOfBlockchainAddresses,
-    Location,
     ModuleName,
     Price,
     SupportedBlockchain,
@@ -98,16 +96,13 @@ from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_l
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.avalanche.manager import AvalancheManager
-    from rotkehlchen.chain.ethereum.interfaces.ammswap.types import AddressToLPBalances
     from rotkehlchen.chain.ethereum.manager import EthereumManager
-    from rotkehlchen.chain.ethereum.modules.balancer.types import AddressToPoolBalances
     from rotkehlchen.chain.ethereum.modules.eth2.structures import (
         Eth2Deposit,
         ValidatorDailyStats,
         ValidatorDetails,
     )
     from rotkehlchen.chain.ethereum.modules.nft.nfts import Nfts
-    from rotkehlchen.chain.ethereum.modules.uniswap.v3.types import AddressToUniswapV3LPBalances
     from rotkehlchen.chain.evm.manager import EvmManager
     from rotkehlchen.chain.substrate.manager import SubstrateManager
     from rotkehlchen.db.dbhandler import DBHandler
@@ -1146,65 +1141,6 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.query_defi_balances()
         self.query_evm_tokens(manager=self.ethereum, balances=self.balances.eth)
         self._add_eth_protocol_balances(eth_balances=self.balances.eth)
-
-    def query_ethereum_lp_balances(
-            self,
-            balances: Dict[str, Dict[Asset, Balance]],
-    ) -> Optional['AddressToUniswapV3LPBalances']:
-        """Queries all ethereum liquidity pool balances and adds them to the balances.
-        Returns the Uniswap V3 LP balances as they're needed for the NFTs balances.
-        May raise:
-        - RemoteError if any of the calls fail.
-        """
-        module_names: List[Literal['sushiswap', 'balancer']] = ['sushiswap', 'balancer']
-        uniswap = self.get_module('uniswap')
-        uniswap_v3_balances = None
-        if uniswap is not None:
-            uniswap_v3_balances = uniswap.get_v3_balances(
-                addresses=self.queried_addresses_for_module('uniswap'),
-            )
-            uniswap_v2_balances = uniswap.get_balances(
-                addresses=self.queried_addresses_for_module('uniswap'),
-            )
-            self.add_ethereum_lp_to_balance(
-                lp_balance=uniswap_v2_balances,
-                balances=balances,
-            )
-
-        for module_name in module_names:
-            module = self.get_module(module_name)
-            if module is not None:
-                module_lp_balances = module.get_balances(
-                    addresses=self.queried_addresses_for_module(module_name),
-                )
-                self.add_ethereum_lp_to_balance(
-                    lp_balance=module_lp_balances,
-                    balances=balances,
-                )
-
-        return uniswap_v3_balances
-
-    def add_ethereum_lp_to_balance(
-            self,
-            lp_balance: Union['AddressToPoolBalances', 'AddressToLPBalances'],
-            balances: Dict[str, Dict[Asset, Balance]],
-    ) -> None:
-        """Adds the liquidity pool balance(one of Uniswap, Sushiswap or Balancer) to the
-        blockchain balances.
-        """
-        if len(lp_balance) == 0:
-            return
-
-        loc_key = str(Location.BLOCKCHAIN)
-        if loc_key not in balances:
-            balances[loc_key] = {}
-
-        for lps in lp_balance.values():
-            for lp in lps:
-                if isinstance(lp, BalancerPoolBalance):
-                    balances[loc_key][lp.pool_token] = lp.user_balance
-                else:
-                    balances[loc_key][EvmToken(ethaddress_to_identifier(lp.address))] = lp.user_balance  # noqa: E501
 
     def _add_eth_protocol_balances(self, eth_balances: DefaultDict[ChecksumEvmAddress, BalanceSheet]) -> None:  # noqa: E501
         """Also count token balances that may come from various eth protocols"""

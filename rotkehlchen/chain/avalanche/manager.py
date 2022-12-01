@@ -1,12 +1,12 @@
 import logging
 from typing import Any, Dict, List, Optional
+
 from eth_utils import to_checksum_address
 from web3 import HTTPProvider, Web3
 from web3.datastructures import MutableAttributeDict
 from web3.exceptions import BadFunctionCallOutput
 
 from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
-from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.misc import BlockchainQueryError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -175,39 +175,3 @@ class AvalancheManager():
                 f'Error doing call on contract {contract_address}: {str(e)}',
             ) from e
         return result
-
-    @staticmethod
-    def get_basic_contract_info(address: ChecksumEvmAddress) -> Dict[str, Any]:
-        """
-        Query a contract address in pangolin graph node and return basic information as:
-        - Decimals
-        - name
-        - symbol
-        if it is provided in the contract. This method may raise:
-        - BadFunctionCallOutput: If there is an error calling a bad address
-        """
-        properties = ('decimals', 'symbol', 'name')
-        info: Dict[str, Any] = {}
-        try:
-            # Output contains call status and result
-            graph = Graph('https://api.thegraph.com/subgraphs/name/dasconnor/pangolin-dex')
-            output = graph.query(
-                f'''{{token(id:"{address.lower()}"){{
-                    symbol
-                    name
-                    decimals
-                    }}
-                }}
-                ''',
-            )
-            token = output['token']
-            for prop in properties:
-                if prop == 'decimals':
-                    info[prop] = int(token[prop])
-                else:
-                    info[prop] = token[prop]
-        except (KeyError, ValueError, TypeError):
-            # If something happens in the connection the output should have
-            # the same length as the tuple of properties
-            return {'decimals': None, 'symbol': None, 'name': None}
-        return info
