@@ -1155,20 +1155,23 @@ def test_edit_exchange_credentials(rotkehlchen_api_server_with_exchanges):
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE,)])
 def test_binance_query_pairs(rotkehlchen_api_server_with_exchanges):
     """Test that the binance endpoint returns some market pairs"""
+    ci_run = 'CI' in os.environ
     server = rotkehlchen_api_server_with_exchanges
-    response = requests.get(
-        api_url_for(
-            server,
-            'binanceavailablemarkets',
-        ),
-        params={'location': Location.BINANCE},
-    )
     binance_globaldb = GlobalDBBinance(GlobalDBHandler())
-    result = assert_proper_response_with_result(response)
-    some_pairs = {'ETHUSDC', 'BTCUSDC', 'BNBBTC', 'FTTBNB'}
-    assert some_pairs.issubset(result)
-    binance_pairs_num = len(binance_globaldb.get_all_binance_pairs(Location.BINANCE))
-    assert binance_pairs_num != 0
+    if ci_run is False:
+        response = requests.get(
+            api_url_for(
+                server,
+                'binanceavailablemarkets',
+            ),
+            params={'location': Location.BINANCE},
+        )
+        result = assert_proper_response_with_result(response)
+        some_pairs = {'ETHUSDC', 'BTCUSDC', 'BNBBTC', 'FTTBNB'}
+        assert some_pairs.issubset(result)
+        binance_pairs_num = len(binance_globaldb.get_all_binance_pairs(Location.BINANCE))
+        assert binance_pairs_num != 0
+
     response = requests.get(
         api_url_for(
             server,
@@ -1182,4 +1185,5 @@ def test_binance_query_pairs(rotkehlchen_api_server_with_exchanges):
     some_pairs = {'ETHUSD', 'BTCUSDC', 'BNBUSDT'}
     assert some_pairs.issubset(result)
     assert 'FTTBNB' not in result
-    assert binance_pairs_num > binanceus_pairs_num
+    if ci_run is False:
+        assert binance_pairs_num > binanceus_pairs_num
