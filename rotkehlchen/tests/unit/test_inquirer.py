@@ -25,7 +25,6 @@ from rotkehlchen.constants.assets import (
 )
 from rotkehlchen.constants.resolver import ethaddress_to_identifier, evm_address_to_identifier
 from rotkehlchen.db.custom_assets import DBCustomAssets
-from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -452,10 +451,9 @@ def test_price_non_ethereum_evm_token(inquirer_defi, globaldb):
         asset_type=AssetType.EVM_TOKEN,
         data=token,
     )
-    with pytest.raises(UnknownAsset):
-        # error is expected as token only exists on ethereum chain and uniswap
-        # oracle only queries ethereum chain.
-        inquirer_defi.find_usd_price(EvmToken(token.identifier))
+
+    # Since the asset is not from a valid chain the query will fail and return zero
+    assert inquirer_defi.find_usd_price(EvmToken(token.identifier)) == ZERO
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])

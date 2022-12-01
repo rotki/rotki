@@ -5,6 +5,7 @@ from enum import Enum
 from typing import Any, Dict, Literal, NamedTuple, Optional, Tuple, Union
 
 from rotkehlchen.data_handler import DataHandler
+from rotkehlchen.data_migrations.manager import DataMigrationManager
 from rotkehlchen.errors.api import PremiumAuthenticationError, RotkehlchenPermissionError
 from rotkehlchen.errors.misc import RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -31,11 +32,17 @@ class SyncCheckResult(NamedTuple):
 
 class PremiumSyncManager():
 
-    def __init__(self, data: DataHandler, password: str) -> None:
+    def __init__(
+            self,
+            migration_manager: DataMigrationManager,
+            data: DataHandler,
+            password: str,
+    ) -> None:
         # Initialize this with the value saved in the DB
         with data.db.conn.read_ctx() as cursor:
             self.last_data_upload_ts = data.db.get_setting(cursor, name='last_data_upload_ts')
         self.data = data
+        self.migration_manager = migration_manager
         self.password = password
         self.premium: Optional[Premium] = None
 
@@ -112,6 +119,9 @@ class PremiumSyncManager():
                 'The given password can not unlock the database that was retrieved  from '
                 'the server. Make sure to use the same password as when the account was created.',
             ) from e
+
+        # Need to run migrations in case the app was updated
+        self.migration_manager.maybe_migrate_data()
 
         return True, ''
 

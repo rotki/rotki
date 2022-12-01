@@ -40,3 +40,11 @@ User_ID,UTC_Time,Account,Operation,Coin,Change,Remark
 1,2020-11-20 22:30:01,Spot,Buy,USDT,-1146.3354,
 1,2020-12-01 20:06:44,Spot,Withdraw,KNC,-0.16,Withdraw fee is included
 1,2020-12-01 20:06:45,Spot,ABC,ETH,-15,This is to test non-existent row type
+1,2020-12-01 15:51:47,Spot,Transaction Related,ETH,-1.01065076,""
+1,2020-12-01 15:51:47,Spot,Buy,BTC,0.10680859385,""
+1,2020-12-01 15:51:47,Spot,Transaction Related,ETH,-0.9049715199999999,""
+1,2020-12-01 15:51:47,Spot,Fee,BNB,-0.041427214681599996,""
+1,2020-12-01 15:51:47,Spot,Fee,BNB,-0.0462623227152,""
+1,2020-12-01 15:51:47,Spot,Buy,BTC,0.09564009919439999,""
+1,2020-12-02 22:30:01,Spot,Buy,IOTA,882,"Trade with no fee for test"
+1,2020-12-02 22:30:01,Spot,Buy,USDT,-1146.3354,

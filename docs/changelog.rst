@@ -5,10 +5,18 @@ Changelog
 * :feature:`5150` Add option to abbreviates large number. For example to show 1.234.567 as 1.23 M.
 * :feature:`4940` Users will now be able to reset the assets database without losing any custom information they may have added.
 * :feature:`4487` Users can now customize the order of how addresses are resolved to human readable names.
+* :bug:`5187` Fix issue where the blockchain balances were refreshed, when only changing the label or the tags of an account.
+* :bug:`5170` Fix issue where loopring balances is not updated when blockchain balances are manually refreshed.
+* :bug:`-` Users will now be able to import binance trades of type Buy + Transaction Related from CSV exports.
+* :bug:`5127` Uniswap V3 swap transactions are now decoded properly.
 * :bug:`5124` Users will now correctly see all the events related to lending in the defi view.
 * :bug:`5126` APR and APY for borrowing and lending in Aave should properly show again.
 * :bug:`5128` Ethereum transactions where no value was transferred will now be correctly decoded.
 * :bug:`-` Uniswap V3 oracle will now correctly skip assets with no liquidity when querying prices.
+* :bug:`2934` Users will now be able to deploy the docker image on a subpath instead of the root domain.
+* :bug:`-` Users won't get errors querying prices due the usage of defi oracles for querying prices of NFTs.
+* :bug:`-` Fix an edge-case problem with synchronizing database with the server.
+* :bug:`-` Fix an issue with nginx websocket proxying on docker.
 
 
 * :release:`1.26.1 <2022-11-04>`

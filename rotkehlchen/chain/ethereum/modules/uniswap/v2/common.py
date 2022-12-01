@@ -4,6 +4,7 @@ from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.modules.constants import AMM_ASSETS_SYMBOLS
+from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
@@ -17,6 +18,9 @@ from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
+
+UNISWAP_V2_ROUTER = string_to_evm_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D')
+SUSHISWAP_ROUTER = string_to_evm_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F')
 
 
 def decode_uniswap_v2_like_swap(
@@ -119,10 +123,14 @@ def decode_uniswap_v2_like_swap(
                 amount=amount_out,
                 asset=crypto_asset,
             ) and
-            event.asset == A_ETH and transaction.from_address == event.location_label
+            event.asset == A_ETH and
+            transaction.from_address == event.location_label and
+            event.counterparty in (SUSHISWAP_ROUTER, UNISWAP_V2_ROUTER)
         ):
+            # this is to make sure its the amm issuing the refund and not an agreggator making a swap  # noqa: E501
             # Those are assets returned due to a change in the swap price
             event.event_type = HistoryEventType.TRANSFER
+            event.event_subtype = HistoryEventSubType.NONE
             event.counterparty = counterparty
             event.notes = f'Refund of {event.balance.amount} {crypto_asset.symbol} in {counterparty} due to price change'  # noqa: E501
 

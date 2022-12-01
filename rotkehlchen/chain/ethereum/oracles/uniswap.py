@@ -21,14 +21,14 @@ from rotkehlchen.constants.ethereum import (
 )
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
-from rotkehlchen.errors.asset import WrongAssetType
+from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.defi import DefiPoolError
 from rotkehlchen.errors.price import PriceQueryUnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.interfaces import CurrentPriceOracleInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, Price
+from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind, Price
 from rotkehlchen.utils.mixins.cacheable import CacheableMixIn, cache_response_timewise
 
 if TYPE_CHECKING:
@@ -216,6 +216,9 @@ class UniswapOracle(CurrentPriceOracleInterface, CacheableMixIn):
 
         if from_token == to_token:
             return Price(ONE)
+
+        if from_token.token_kind != EvmTokenKind.ERC20 or to_token.token_kind != EvmTokenKind.ERC20:  # noqa: E501
+            raise PriceQueryUnsupportedAsset(f'Either {from_token} or {to_token} is not an ERC20 token')  # noqa: E501
 
         route = self.find_route(from_token, to_token)
 
@@ -435,12 +438,23 @@ class UniswapV2Oracle(UniswapOracle):
             require_success=True,
             block_identifier=block_identifier,
         )
-        token_0 = EvmToken(
-            ethaddress_to_identifier(to_checksum_address(pool_contract.decode(output[1], 'token0')[0])),  # noqa: E501 pylint:disable=unsubscriptable-object
-        )
-        token_1 = EvmToken(
-            ethaddress_to_identifier(to_checksum_address(pool_contract.decode(output[2], 'token1')[0])),  # noqa: E501 pylint:disable=unsubscriptable-object
-        )
+
+        token_0_address = pool_contract.decode(output[1], 'token0')[0]  # noqa: E501 pylint:disable=unsubscriptable-object
+        token_1_address = pool_contract.decode(output[2], 'token1')[0]  # noqa: E501 pylint:disable=unsubscriptable-object
+
+        try:
+            token_0 = EvmToken(
+                ethaddress_to_identifier(to_checksum_address(token_0_address)),
+            )
+        except (UnknownAsset, WrongAssetType) as e:
+            raise DefiPoolError(f'Failed to read token from address {token_0_address} as ERC-20 token') from e  # noqa: E501
+
+        try:
+            token_1 = EvmToken(
+                ethaddress_to_identifier(to_checksum_address(token_1_address)),
+            )
+        except (UnknownAsset, WrongAssetType) as e:
+            raise DefiPoolError(f'Failed to read token from address {token_1_address} as ERC-20 token') from e  # noqa: E501
 
         if token_0.decimals is None:
             raise DefiPoolError(f'Token {token_0} has None as decimals')

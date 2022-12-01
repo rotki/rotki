@@ -17,7 +17,7 @@ export const useRefresh = (blockchain?: MaybeRef<Blockchain>) => {
         blockchain: chain
       })
     ];
-    if (chain === Blockchain.ETH) {
+    if (!chain || chain === Blockchain.ETH) {
       pending.push(fetchLoopringBalances(true));
     }
 

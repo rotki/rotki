@@ -5,14 +5,17 @@ import pytest
 
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.resolver import AssetResolver
+from rotkehlchen.assets.types import AssetType
+from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_1INCH, A_BTC, A_DOGE, A_ETH, A_LINK, A_USDC, A_WETH
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.errors.defi import DefiPoolError
 from rotkehlchen.errors.price import PriceQueryUnsupportedAsset
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.inquirer import CurrentPriceOracle
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import Price
+from rotkehlchen.types import ChainID, EvmTokenKind, Price
 
 if TYPE_CHECKING:
     from rotkehlchen.inquirer import Inquirer
@@ -132,3 +135,33 @@ def test_pool_with_no_liquidity(inquirer_defi: 'Inquirer'):
     with etherscan_patch:
         path = inquirer_defi._uniswapv3.get_pool(old_stream, A_USDC.resolve_to_evm_token())
     assert path == []
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_invalid_token_kind_price_query(inquirer_defi: 'Inquirer'):
+    """
+    Test that if we pass something that is not an ERC20 the inquirer raises an error
+    """
+    nft_token = EvmToken.initialize(
+        address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
+        chain_id=ChainID.ETHEREUM,
+        name='Uniswap V3: Positions NFT',
+        symbol='UNI-V3-POS',
+        decimals=18,
+        token_kind=EvmTokenKind.ERC721,
+    )
+    GlobalDBHandler().add_asset(
+        asset_id=nft_token.identifier,
+        asset_type=AssetType.EVM_TOKEN,
+        data=nft_token,
+    )
+    ethereum_inquirer = inquirer_defi.get_ethereum_manager().node_inquirer
+    assert ethereum_inquirer is not None
+    assert inquirer_defi._uniswapv3 is not None
+
+    with pytest.raises(PriceQueryUnsupportedAsset):
+        inquirer_defi._uniswapv3.query_current_price(
+            from_asset=nft_token,
+            to_asset=A_USDC.resolve_to_evm_token(),
+            match_main_currency=False,
+        )

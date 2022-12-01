@@ -165,6 +165,7 @@ class Rotkehlchen():
         )
         self.task_manager: Optional[TaskManager] = None
         self.shutdown_event = gevent.event.Event()
+        self.migration_manager = DataMigrationManager(self)
 
     def reset_after_failed_account_creation_or_login(self) -> None:
         """If the account creation or login failed make sure that the rotki instance is clear
@@ -221,7 +222,11 @@ class Rotkehlchen():
             method=self.data.db.ensure_data_integrity,
         )
         self.data_importer = CSVDataImporter(db=self.data.db)
-        self.premium_sync_manager = PremiumSyncManager(data=self.data, password=password)
+        self.premium_sync_manager = PremiumSyncManager(
+            migration_manager=self.migration_manager,
+            data=self.data,
+            password=password,
+        )
         # set the DB in the external services instances that need it
         self.cryptocompare.set_database(self.data.db)
         Inquirer()._manualcurrent.set_database(database=self.data.db)
@@ -371,7 +376,7 @@ class Rotkehlchen():
             msg_aggregator=self.msg_aggregator,
         )
 
-        DataMigrationManager(self).maybe_migrate_data()
+        self.migration_manager.maybe_migrate_data()
         self.greenlet_manager.spawn_and_track(
             after_seconds=5,
             task_name='periodically_query_icons_until_all_cached',
