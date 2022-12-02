@@ -35,11 +35,10 @@ from web3.types import BlockIdentifier, FilterParams
 
 from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
 from rotkehlchen.chain.ethereum.constants import DEFAULT_TOKEN_DECIMALS
-from rotkehlchen.chain.ethereum.types import NodeName, WeightedNode
 from rotkehlchen.chain.ethereum.utils import MULTICALL_CHUNKS
-from rotkehlchen.chain.evm.contracts import EvmContract
+from rotkehlchen.chain.evm.contracts import EvmContract, EvmContracts
+from rotkehlchen.chain.evm.types import NodeName, WeightedNode
 from rotkehlchen.constants import ONE
-from rotkehlchen.constants.ethereum import ERC20TOKEN_ABI, ERC721TOKEN_ABI, UNIV1_LP_ABI
 from rotkehlchen.errors.misc import BlockchainQueryError, NotERC721Conformant, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.etherscan import Etherscan
@@ -182,9 +181,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             blockchain: EVMChain,
             etherscan_node: WeightedNode,
             etherscan_node_name: str,
-            contract_scan: EvmContract,
-            contract_multicall: EvmContract,
-            contract_multicall_2: EvmContract,
+            contracts: EvmContracts,
             connect_at_start: Sequence[WeightedNode],
             rpc_timeout: int = DEFAULT_EVM_RPC_TIMEOUT,
     ) -> None:
@@ -194,13 +191,16 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         self.etherscan = etherscan
         self.etherscan_node = etherscan_node
         self.etherscan_node_name = etherscan_node_name
+        self.contracts = contracts
         self.web3_mapping: Dict[NodeName, Web3] = {}
         self.rpc_timeout = rpc_timeout
         self.chain_id = blockchain.to_chain_id()
         self.chain_name = self.blockchain.name.lower()
-        self.contract_scan = contract_scan
-        self.contract_multicall = contract_multicall
-        self.contract_multicall_2 = contract_multicall_2
+        # BalanceScanner from mycrypto: https://github.com/MyCryptoHQ/eth-scan
+        self.contract_scan = self.contracts.contract('ETH_SCAN')
+        # Multicall from MakerDAO: https://github.com/makerdao/multicall/
+        self.contract_multicall = self.contracts.contract('ETH_MULTICALL')
+        self.contract_multicall_2 = self.contracts.contract('ETH_MULTICALL_2')
         self.queried_archive_connection = False
         self.archive_connection = False
 
@@ -339,8 +339,8 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         if node_connected:
             return True, f'Already connected to {node} {self.chain_name} node'
 
+        rpc_endpoint = node.endpoint
         try:
-            rpc_endpoint = node.endpoint
             parsed_rpc_endpoint = urlparse(node.endpoint)
             if not parsed_rpc_endpoint.scheme:
                 rpc_endpoint = f'http://{node.endpoint}'
@@ -974,7 +974,8 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         properties = ('decimals', 'symbol', 'name')
         info: Dict[str, Any] = {}
 
-        contract = EvmContract(address=address, abi=ERC20TOKEN_ABI, deployed_block=0)
+        abi = self.contracts.abi('ERC20TOKEN_ABI')
+        contract = EvmContract(address=address, abi=abi, deployed_block=0)
         try:
             # Output contains call status and result
             output = self.multicall_2(
@@ -1001,7 +1002,8 @@ class EvmNodeInquirer(metaclass=ABCMeta):
                 f'{address} failed to decode as ERC20 token. '
                 f'Trying with token ABI using bytes. {str(e)}',
             )
-            contract = EvmContract(address=address, abi=UNIV1_LP_ABI, deployed_block=0)
+            abi = self.contracts.abi('UNIV1_LP_ABI')
+            contract = EvmContract(address=address, abi=abi, deployed_block=0)
             decoded = self._process_contract_info(
                 output=output,
                 properties=properties,
@@ -1037,7 +1039,8 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         properties = ('symbol', 'name')
         info: Dict[str, Any] = {}
 
-        contract = EvmContract(address=address, abi=ERC721TOKEN_ABI, deployed_block=0)
+        abi = self.contracts.abi('ERC721TOKEN_ABI')
+        contract = EvmContract(address=address, abi=abi, deployed_block=0)
         try:
             # Output contains call status and result
             output = self.multicall_2(

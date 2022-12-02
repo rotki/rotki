@@ -7,7 +7,6 @@ from rotkehlchen.accounting.structures.base import (
     HistoryEventType,
 )
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.chain.ethereum.constants import ZERO_ADDRESS
 from rotkehlchen.chain.ethereum.modules.convex.constants import (
     BOOSTER,
     CONVEX_ABRAS_HEX,
@@ -23,6 +22,7 @@ from rotkehlchen.chain.ethereum.modules.convex.constants import (
     WITHDRAWAL_TOPICS,
 )
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
+from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import ActionItem
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog

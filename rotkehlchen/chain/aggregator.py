@@ -45,7 +45,7 @@ from rotkehlchen.chain.ethereum.modules import (
     YearnVaultsV2,
 )
 from rotkehlchen.chain.ethereum.modules.eth2.structures import Eth2Validator
-from rotkehlchen.chain.ethereum.types import string_to_evm_address
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.substrate.manager import wait_until_a_node_is_available
 from rotkehlchen.chain.substrate.types import KusamaAddress, PolkadotAddress
 from rotkehlchen.chain.substrate.utils import SUBSTRATE_NODE_CONNECTION_TIMEOUT
@@ -1494,7 +1494,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
     def get_chain_manager(
             self,
-            blockchain: Literal[SupportedBlockchain.ETHEREUM, SupportedBlockchain.KUSAMA, SupportedBlockchain.POLKADOT, SupportedBlockchain.AVALANCHE],  # noqa: E501
+            blockchain: Literal[SupportedBlockchain.ETHEREUM, SupportedBlockchain.KUSAMA, SupportedBlockchain.POLKADOT, SupportedBlockchain.AVALANCHE, SupportedBlockchain.OPTIMISM],  # noqa: E501
     ) -> Any:
         """Returns blockchain manager"""
         attr = blockchain.name.lower()

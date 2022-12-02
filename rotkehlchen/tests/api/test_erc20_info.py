@@ -4,7 +4,7 @@ from typing import Any
 import pytest
 import requests
 
-from rotkehlchen.chain.ethereum.types import string_to_evm_address
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,

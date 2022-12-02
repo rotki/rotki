@@ -7,9 +7,9 @@ from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.decoding.constants import CPT_GNOSIS_CHAIN
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
 from rotkehlchen.chain.ethereum.modules.airdrops.constants import CPT_ONEINCH
-from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.evmtx import DBEvmTx

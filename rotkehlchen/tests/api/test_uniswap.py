@@ -14,7 +14,7 @@ from rotkehlchen.chain.ethereum.modules.uniswap import (
     UniswapPoolEvent,
     UniswapPoolEventsBalance,
 )
-from rotkehlchen.chain.ethereum.types import NodeName, string_to_evm_address
+from rotkehlchen.chain.evm.types import NodeName, string_to_evm_address
 from rotkehlchen.constants.assets import A_WETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal

@@ -19,7 +19,8 @@ from typing import (
 import gevent
 import requests
 
-from rotkehlchen.chain.ethereum.constants import GENESIS_HASH, ZERO_ADDRESS
+from rotkehlchen.chain.ethereum.constants import GENESIS_HASH
+from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.constants.timing import (
     DEFAULT_CONNECT_TIMEOUT,
     DEFAULT_READ_TIMEOUT,
@@ -74,7 +75,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
             msg_aggregator: 'MessagesAggregator',
             chain: EVMChain,
             base_url: str,
-            service: Literal[ExternalService.ETHERSCAN],
+            service: Literal[ExternalService.ETHERSCAN, ExternalService.OPTIMISM_ETHERSCAN],
     ) -> None:
         super().__init__(database=database, service_name=service)
         self.msg_aggregator = msg_aggregator

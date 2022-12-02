@@ -5,9 +5,9 @@ from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.modules.curve.constants import CPT_CURVE
-from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_LINK, A_USDC, A_USDT
 from rotkehlchen.constants.misc import EXP18, ZERO
 from rotkehlchen.db.evmtx import DBEvmTx

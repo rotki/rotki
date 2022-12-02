@@ -4,8 +4,8 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple
 
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.chain.ethereum.types import WeightedNode
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
+from rotkehlchen.chain.evm.types import WeightedNode
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.inquirer import Inquirer

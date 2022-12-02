@@ -67,8 +67,8 @@ from rotkehlchen.chain.ethereum.airdrops import check_airdrops
 from rotkehlchen.chain.ethereum.modules.eth2.constants import FREE_VALIDATORS_LIMIT
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.ethereum.names import find_ens_mappings, search_for_addresses_names
-from rotkehlchen.chain.ethereum.types import WeightedNode
 from rotkehlchen.chain.evm.manager import EvmManager
+from rotkehlchen.chain.evm.types import WeightedNode
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.limits import (
     FREE_ASSET_MOVEMENTS_LIMIT,

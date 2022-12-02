@@ -12,7 +12,6 @@ from rotkehlchen.chain.ethereum.modules.yearn.db import (
 )
 from rotkehlchen.chain.ethereum.modules.yearn.structures import YearnVault, YearnVaultEvent
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_MANA, A_WBTC, A_YV1_DAI
-from rotkehlchen.constants.ethereum import YEARN_DAI_VAULT
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.fval import FVal
@@ -176,7 +175,12 @@ def test_add_and_get_aave_events(data_dir, username, sql_vm_instructions_cb):
     assert len(test_set) == len(addr3_events)
 
 
-def test_add_and_get_yearn_vault_events(data_dir, username, sql_vm_instructions_cb):
+def test_add_and_get_yearn_vault_events(
+        data_dir,
+        username,
+        sql_vm_instructions_cb,
+        ethereum_contracts,
+):
     """Test that get yearn vault events works fine and returns only events for what we need"""
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
@@ -248,7 +252,7 @@ def test_add_and_get_yearn_vault_events(data_dir, username, sql_vm_instructions_
 
         ydai_vault = YearnVault(
             name='YDAI Vault',
-            contract=YEARN_DAI_VAULT,
+            contract=ethereum_contracts.contract('YEARN_DAI_VAULT'),
             underlying_token=A_DAI,
             token=A_YV1_DAI,
         )

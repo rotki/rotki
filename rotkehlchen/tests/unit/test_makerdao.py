@@ -6,7 +6,6 @@ from web3 import Web3
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.chain.ethereum.modules.makerdao.vaults import (
-    GEMJOIN_MAPPING,
     MakerdaoVault,
     MakerdaoVaults,
     create_collateral_type_mapping,
@@ -95,7 +94,7 @@ def fixture_makerdao_vaults(
     if not use_etherscan:
         set_web3_in_inquirer(ethereum_inquirer, Web3())
         web3_instance = get_web3_from_inquirer(ethereum_inquirer)
-        web3_patch = create_web3_mock(web3=web3_instance, test_data=makerdao_test_data)
+        web3_patch = create_web3_mock(web3=web3_instance, ethereum=ethereum_inquirer, test_data=makerdao_test_data)  # noqa: E501
     else:
         web3_patch = nullcontext()
 
@@ -114,9 +113,9 @@ def fixture_makerdao_vaults(
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
-def test_get_vaults(makerdao_vaults, makerdao_test_data):
+def test_get_vaults(makerdao_vaults, makerdao_test_data, ethereum_inquirer):
     web3_instance = get_web3_from_inquirer(makerdao_vaults.ethereum)
-    web3_patch = create_web3_mock(web3=web3_instance, test_data=makerdao_test_data)
+    web3_patch = create_web3_mock(web3=web3_instance, ethereum=ethereum_inquirer, test_data=makerdao_test_data)  # noqa: E501
     mock_proxies(makerdao_vaults, {})
     with web3_patch:
         vaults = makerdao_vaults.get_vaults()
@@ -155,10 +154,10 @@ def test_get_vault_balance(
     assert vault.get_balance() == expected_result
 
 
-def test_vault_types():
+def test_vault_types(makerdao_vaults):
     collateral_type_mapping = create_collateral_type_mapping()
-    assert len(collateral_type_mapping) == len(GEMJOIN_MAPPING)
-    assert set(collateral_type_mapping.keys()) == set(GEMJOIN_MAPPING.keys())
+    assert len(collateral_type_mapping) == len(makerdao_vaults.gemjoin_mapping)
+    assert set(collateral_type_mapping.keys()) == set(makerdao_vaults.gemjoin_mapping.keys())
     for collateral_type, asset in collateral_type_mapping.items():
         if collateral_type == 'PAXUSD-A':
             assert asset.identifier == ethaddress_to_identifier('0x8E870D67F660D95d5be530380D0eC0bd388289E1')  # PAX # noqa: E501

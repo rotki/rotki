@@ -3,8 +3,8 @@ from typing import TYPE_CHECKING, Dict, List, NamedTuple, Optional, Tuple, Union
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
+from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS
 from rotkehlchen.constants.assets import A_AETH_V1, A_AREP_V1, A_ETH, A_REP
-from rotkehlchen.constants.ethereum import ETH_SPECIAL_ADDRESS
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.fval import FVal

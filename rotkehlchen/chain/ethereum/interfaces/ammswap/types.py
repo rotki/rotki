@@ -5,7 +5,7 @@ from typing import Any, DefaultDict, Dict, List, NamedTuple, Optional, Set, Tupl
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.chain.ethereum.types import string_to_evm_address
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal

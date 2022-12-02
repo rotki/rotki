@@ -6,12 +6,12 @@ from typing import Any, Dict, List, Tuple
 import gevent
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
-from rotkehlchen.chain.ethereum.constants import ETHERSCAN_NODE
+from rotkehlchen.chain.ethereum.constants import ETHEREUM_ETHERSCAN_NODE
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
-from rotkehlchen.chain.ethereum.types import NodeName, WeightedNode, string_to_evm_address
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
+from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
 from rotkehlchen.constants import ONE
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.evmtx import DBEvmTx
@@ -44,7 +44,7 @@ INFURA_TEST = random.choice([
 ALCHEMY_TEST = 'https://eth-mainnet.alchemyapi.io/v2/ga1GtB7R26UgzjextaVpbaWZ49nSi2zt'
 
 ETHERSCAN_AND_INFURA_PARAMS: Tuple[str, List[Tuple]] = ('ethereum_manager_connect_at_start, call_order', [  # noqa: E501
-    ((), (ETHERSCAN_NODE,)),
+    ((), (ETHEREUM_ETHERSCAN_NODE,)),
     (
         (WeightedNode(node_info=NodeName(name='own', endpoint=INFURA_TEST, owned=True, blockchain=SupportedBlockchain.ETHEREUM), weight=ONE, active=True),),  # noqa: E501
         (WeightedNode(node_info=NodeName(name='own', endpoint=INFURA_TEST, owned=True, blockchain=SupportedBlockchain.ETHEREUM), weight=ONE, active=True),),  # noqa: E501
@@ -54,7 +54,7 @@ ETHERSCAN_AND_INFURA_PARAMS: Tuple[str, List[Tuple]] = ('ethereum_manager_connec
 
 ETHERSCAN_AND_INFURA_AND_ALCHEMY: Tuple[str, List[Tuple]] = ('ethereum_manager_connect_at_start, call_order', [  # noqa: E501
     # Query etherscan only
-    ((), (ETHERSCAN_NODE,)),
+    ((), (ETHEREUM_ETHERSCAN_NODE,)),
     # For "our own" node querying use infura
     (
         (WeightedNode(node_info=NodeName(name='own', endpoint=INFURA_TEST, owned=True, blockchain=SupportedBlockchain.ETHEREUM), weight=ONE, active=True),),  # noqa: E501
@@ -74,7 +74,7 @@ if 'GITHUB_WORKFLOW' in os.environ:
     # from Github actions hangs and times out
     ETHEREUM_TEST_PARAMETERS = ('ethereum_manager_connect_at_start, call_order', [
         # Query etherscan only
-        ((), (ETHERSCAN_NODE,)),
+        ((), (ETHEREUM_ETHERSCAN_NODE,)),
     ])
 else:
     # For Travis and local tests also use Infura, works fine
@@ -88,7 +88,7 @@ if 'GITHUB_WORKFLOW' in os.environ:
     # from Github actions hangs and times out
     ETHEREUM_FULL_TEST_PARAMETERS = ('ethereum_manager_connect_at_start, call_order', [  # noqa: E501
         # Query etherscan only
-        ((), (ETHERSCAN_NODE,)),
+        ((), (ETHEREUM_ETHERSCAN_NODE,)),
     ])
 else:
     # For Travis and local tests also use Infura, works fine

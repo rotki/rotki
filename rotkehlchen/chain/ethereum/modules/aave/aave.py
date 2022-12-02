@@ -9,7 +9,6 @@ from rotkehlchen.accounting.structures.defi import DefiEvent, DefiEventType
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.chain.ethereum.defi.structures import GIVEN_DEFI_BALANCES
 from rotkehlchen.chain.ethereum.modules.makerdao.constants import RAY
-from rotkehlchen.constants.ethereum import AAVE_V1_LENDING_POOL, AAVE_V2_LENDING_POOL
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
@@ -144,7 +143,8 @@ class Aave(EthereumModule):
                 if reserve_data is None:
 
                     if balance_entry.protocol.name == 'Aave':
-                        reserve_result = AAVE_V1_LENDING_POOL.call(
+                        contract = self.ethereum.contracts.contract('AAVE_V1_LENDING_POOL')
+                        reserve_result = contract.call(
                             node_inquirer=self.ethereum,
                             method_name='getReserveData',
                             arguments=[reserve_address],
@@ -155,7 +155,8 @@ class Aave(EthereumModule):
                             stable_borrow_rate=FVal(reserve_result[6] / RAY),
                         )
                     else:  # Aave V2
-                        reserve_result = AAVE_V2_LENDING_POOL.call(
+                        contract = self.ethereum.contracts.contract('AAVE_V2_LENDING_POOL')
+                        reserve_result = contract.call(
                             node_inquirer=self.ethereum,
                             method_name='getReserveData',
                             arguments=[reserve_address],

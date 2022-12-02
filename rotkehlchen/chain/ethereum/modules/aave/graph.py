@@ -7,7 +7,6 @@ from rotkehlchen.assets.asset import CryptoAsset
 from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.ethereum.modules.makerdao.constants import RAY
 from rotkehlchen.chain.ethereum.utils import ethaddress_to_asset, token_normalized_value_decimals
-from rotkehlchen.constants.ethereum import ATOKEN_ABI, ATOKEN_V2_ABI
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
@@ -603,10 +602,10 @@ class AaveGraphInquirer(AaveInquirer):
 
             if lending_balance.version == 1:
                 method = 'principalBalanceOf'
-                abi = ATOKEN_ABI
+                abi = self.ethereum.contracts.abi('ATOKEN_ABI')
             else:
                 method = 'scaledBalanceOf'
-                abi = ATOKEN_V2_ABI
+                abi = self.ethereum.contracts.abi('ATOKEN_V2_ABI')
 
             principal_balance = self.ethereum.call_contract(
                 contract_address=atoken.evm_address,

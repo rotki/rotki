@@ -94,6 +94,7 @@ class EthereumManager(EvmManager, LockableQueryMixIn):
                 self._update_curve_decoder(tx_decoder)
             return False
 
+        curve_address_provider = self.node_inquirer.contracts.contract('CURVE_ADDRESS_PROVIDER')
         # Using shared cursor to not end up having partially populated cache
         with GlobalDBHandler().conn.write_ctx() as write_cursor:
             # Delete current cache. Need to do this in case curve removes some pools
@@ -101,11 +102,13 @@ class EthereumManager(EvmManager, LockableQueryMixIn):
             # write new values to the cache
             update_curve_registry_pools_cache(
                 write_cursor=write_cursor,
-                ethereum_inquirer=self.node_inquirer,
+                ethereum=self.node_inquirer,
+                curve_address_provider=curve_address_provider,
             )
             update_curve_metapools_cache(
                 write_cursor=write_cursor,
-                ethereum_inquirer=self.node_inquirer,
+                ethereum=self.node_inquirer,
+                curve_address_provider=curve_address_provider,
             )
 
         if tx_decoder is not None:

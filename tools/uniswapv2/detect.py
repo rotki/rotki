@@ -10,8 +10,8 @@ from rotkehlchen.chain.ethereum.etherscan import EthereumEtherscan
 from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.ethereum.modules.uniswap.utils import uniswap_lp_token_balances
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
-from rotkehlchen.chain.ethereum.types import NodeName, WeightedNode
 from rotkehlchen.chain.evm.contracts import EvmContract
+from rotkehlchen.chain.evm.types import NodeName, WeightedNode
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors.serialization import DeserializationError

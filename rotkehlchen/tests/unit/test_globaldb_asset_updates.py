@@ -1,7 +1,7 @@
 import pytest
 
 from rotkehlchen.assets.types import AssetData, AssetType
-from rotkehlchen.chain.ethereum.types import string_to_evm_address
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.updates import AssetsUpdater

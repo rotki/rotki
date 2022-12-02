@@ -6,8 +6,6 @@ from eth_typing import HexAddress, HexStr
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import ChecksumEvmAddress, SupportedBlockchain
 
-ETHERSCAN_NODE_NAME = 'etherscan'
-
 
 def string_to_evm_address(value: str) -> ChecksumEvmAddress:
     """This is a conversion without any checks of a string to ethereum address
@@ -26,7 +24,7 @@ class NodeName(NamedTuple):
     name: str
     endpoint: str
     owned: bool
-    blockchain: Literal[SupportedBlockchain.ETHEREUM, SupportedBlockchain.KUSAMA, SupportedBlockchain.POLKADOT, SupportedBlockchain.AVALANCHE]  # noqa: E501
+    blockchain: Literal[SupportedBlockchain.ETHEREUM, SupportedBlockchain.KUSAMA, SupportedBlockchain.POLKADOT, SupportedBlockchain.AVALANCHE, SupportedBlockchain.OPTIMISM]  # noqa: E501
 
     def serialize(self) -> Dict[str, Any]:
         return {

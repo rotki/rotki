@@ -8,6 +8,7 @@ from gevent.lock import Semaphore
 from rotkehlchen.accounting.structures.balance import AssetBalance, Balance, BalanceSheet
 from rotkehlchen.accounting.structures.defi import DefiEvent, DefiEventType
 from rotkehlchen.assets.asset import CryptoAsset
+from rotkehlchen.chain.ethereum.constants import RAY_DIGITS
 from rotkehlchen.chain.ethereum.defi.defisaver_proxy import HasDSProxy
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_normalized_value
 from rotkehlchen.constants import ONE, ZERO
@@ -34,41 +35,6 @@ from rotkehlchen.constants.assets import (
     A_YFI,
     A_ZRX,
 )
-from rotkehlchen.constants.ethereum import (
-    MAKERDAO_AAVE_A_JOIN,
-    MAKERDAO_BAL_A_JOIN,
-    MAKERDAO_BAT_A_JOIN,
-    MAKERDAO_CAT,
-    MAKERDAO_CDP_MANAGER,
-    MAKERDAO_COMP_A_JOIN,
-    MAKERDAO_DAI_JOIN,
-    MAKERDAO_ETH_A_JOIN,
-    MAKERDAO_ETH_B_JOIN,
-    MAKERDAO_ETH_C_JOIN,
-    MAKERDAO_GET_CDPS,
-    MAKERDAO_GUSD_A_JOIN,
-    MAKERDAO_JUG,
-    MAKERDAO_KNC_A_JOIN,
-    MAKERDAO_LINK_A_JOIN,
-    MAKERDAO_LRC_A_JOIN,
-    MAKERDAO_MANA_A_JOIN,
-    MAKERDAO_MATIC_A_JOIN,
-    MAKERDAO_PAXUSD_A_JOIN,
-    MAKERDAO_RENBTC_A_JOIN,
-    MAKERDAO_SPOT,
-    MAKERDAO_TUSD_A_JOIN,
-    MAKERDAO_UNI_A_JOIN,
-    MAKERDAO_USDC_A_JOIN,
-    MAKERDAO_USDC_B_JOIN,
-    MAKERDAO_USDT_A_JOIN,
-    MAKERDAO_VAT,
-    MAKERDAO_WBTC_A_JOIN,
-    MAKERDAO_WBTC_B_JOIN,
-    MAKERDAO_WBTC_C_JOIN,
-    MAKERDAO_YFI_A_JOIN,
-    MAKERDAO_ZRX_A_JOIN,
-    RAY_DIGITS,
-)
 from rotkehlchen.constants.timing import YEAR_IN_SECONDS
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -90,35 +56,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
-
-GEMJOIN_MAPPING = {
-    'BAT-A': MAKERDAO_BAT_A_JOIN,
-    'ETH-A': MAKERDAO_ETH_A_JOIN,
-    'ETH-B': MAKERDAO_ETH_B_JOIN,
-    'ETH-C': MAKERDAO_ETH_C_JOIN,
-    'KNC-A': MAKERDAO_KNC_A_JOIN,
-    'TUSD-A': MAKERDAO_TUSD_A_JOIN,
-    'USDC-A': MAKERDAO_USDC_A_JOIN,
-    'USDC-B': MAKERDAO_USDC_B_JOIN,
-    'USDT-A': MAKERDAO_USDT_A_JOIN,
-    'WBTC-A': MAKERDAO_WBTC_A_JOIN,
-    'WBTC-B': MAKERDAO_WBTC_B_JOIN,
-    'WBTC-C': MAKERDAO_WBTC_C_JOIN,
-    'ZRX-A': MAKERDAO_ZRX_A_JOIN,
-    'MANA-A': MAKERDAO_MANA_A_JOIN,
-    'PAXUSD-A': MAKERDAO_PAXUSD_A_JOIN,
-    'COMP-A': MAKERDAO_COMP_A_JOIN,
-    'LRC-A': MAKERDAO_LRC_A_JOIN,
-    'LINK-A': MAKERDAO_LINK_A_JOIN,
-    'BAL-A': MAKERDAO_BAL_A_JOIN,
-    'YFI-A': MAKERDAO_YFI_A_JOIN,
-    'GUSD-A': MAKERDAO_GUSD_A_JOIN,
-    'UNI-A': MAKERDAO_UNI_A_JOIN,
-    'RENBTC-A': MAKERDAO_RENBTC_A_JOIN,
-    'AAVE-A': MAKERDAO_AAVE_A_JOIN,
-    'MATIC-A': MAKERDAO_MATIC_A_JOIN,
-}
 
 
 def create_collateral_type_mapping() -> Dict[str, CryptoAsset]:
@@ -274,6 +211,40 @@ class MakerdaoVaults(HasDSProxy):
         self.vault_details: List[MakerdaoVaultDetails] = []
         self.collateral_type_mapping = create_collateral_type_mapping()
         self.dai = A_DAI.resolve_to_evm_token()
+        self.gemjoin_mapping = {
+            'BAT-A': self.ethereum.contracts.contract('MAKERDAO_BAT_A_JOIN'),
+            'ETH-A': self.ethereum.contracts.contract('MAKERDAO_ETH_A_JOIN'),
+            'ETH-B': self.ethereum.contracts.contract('MAKERDAO_ETH_B_JOIN'),
+            'ETH-C': self.ethereum.contracts.contract('MAKERDAO_ETH_C_JOIN'),
+            'KNC-A': self.ethereum.contracts.contract('MAKERDAO_KNC_A_JOIN'),
+            'TUSD-A': self.ethereum.contracts.contract('MAKERDAO_TUSD_A_JOIN'),
+            'USDC-A': self.ethereum.contracts.contract('MAKERDAO_USDC_A_JOIN'),
+            'USDC-B': self.ethereum.contracts.contract('MAKERDAO_USDC_B_JOIN'),
+            'USDT-A': self.ethereum.contracts.contract('MAKERDAO_USDT_A_JOIN'),
+            'WBTC-A': self.ethereum.contracts.contract('MAKERDAO_WBTC_A_JOIN'),
+            'WBTC-B': self.ethereum.contracts.contract('MAKERDAO_WBTC_B_JOIN'),
+            'WBTC-C': self.ethereum.contracts.contract('MAKERDAO_WBTC_C_JOIN'),
+            'ZRX-A': self.ethereum.contracts.contract('MAKERDAO_ZRX_A_JOIN'),
+            'MANA-A': self.ethereum.contracts.contract('MAKERDAO_MANA_A_JOIN'),
+            'PAXUSD-A': self.ethereum.contracts.contract('MAKERDAO_PAXUSD_A_JOIN'),
+            'COMP-A': self.ethereum.contracts.contract('MAKERDAO_COMP_A_JOIN'),
+            'LRC-A': self.ethereum.contracts.contract('MAKERDAO_LRC_A_JOIN'),
+            'LINK-A': self.ethereum.contracts.contract('MAKERDAO_LINK_A_JOIN'),
+            'BAL-A': self.ethereum.contracts.contract('MAKERDAO_BAL_A_JOIN'),
+            'YFI-A': self.ethereum.contracts.contract('MAKERDAO_YFI_A_JOIN'),
+            'GUSD-A': self.ethereum.contracts.contract('MAKERDAO_GUSD_A_JOIN'),
+            'UNI-A': self.ethereum.contracts.contract('MAKERDAO_UNI_A_JOIN'),
+            'RENBTC-A': self.ethereum.contracts.contract('MAKERDAO_RENBTC_A_JOIN'),
+            'AAVE-A': self.ethereum.contracts.contract('MAKERDAO_AAVE_A_JOIN'),
+            'MATIC-A': self.ethereum.contracts.contract('MAKERDAO_MATIC_A_JOIN'),
+        }
+        self.makerdao_jug = self.ethereum.contracts.contract('MAKERDAO_JUG')
+        self.makerdao_vat = self.ethereum.contracts.contract('MAKERDAO_VAT')
+        self.makerdao_cdp_manager = self.ethereum.contracts.contract('MAKERDAO_CDP_MANAGER')
+        self.makerdao_get_cdps = self.ethereum.contracts.contract('MAKERDAO_GET_CDPS')
+        self.makerdao_dai_join = self.ethereum.contracts.contract('MAKERDAO_DAI_JOIN')
+        self.makerdao_cat = self.ethereum.contracts.contract('MAKERDAO_CAT')
+        self.makerdao_spot = self.ethereum.contracts.contract('MAKERDAO_SPOT')
 
     def reset_last_query_ts(self) -> None:
         """Reset the last query timestamps, effectively cleaning the caches"""
@@ -286,7 +257,7 @@ class MakerdaoVaults(HasDSProxy):
         if ilk in self.ilk_to_stability_fee:
             return self.ilk_to_stability_fee[ilk]
 
-        result = MAKERDAO_JUG.call(self.ethereum, 'ilks', arguments=[ilk])
+        result = self.makerdao_jug.call(self.ethereum, 'ilks', arguments=[ilk])
         # result[0] is the duty variable of the ilks in the contract
         stability_fee = FVal(result[0] / RAY) ** (YEAR_IN_SECONDS) - 1
         return stability_fee
@@ -307,16 +278,16 @@ class MakerdaoVaults(HasDSProxy):
             )
             return None
 
-        result = MAKERDAO_VAT.call(self.ethereum, 'urns', arguments=[ilk, urn])
+        result = self.makerdao_vat.call(self.ethereum, 'urns', arguments=[ilk, urn])
         # also known as ink in their contract
         collateral_amount = FVal(result[0] / WAD)
         normalized_debt = result[1]  # known as art in their contract
-        result = MAKERDAO_VAT.call(self.ethereum, 'ilks', arguments=[ilk])
+        result = self.makerdao_vat.call(self.ethereum, 'ilks', arguments=[ilk])
         rate = result[1]  # Accumulated Rates
         spot = FVal(result[2])  # Price with Safety Margin
         # How many DAI owner needs to pay back to the vault
         debt_value = FVal(((normalized_debt / WAD) * rate) / RAY)
-        result = MAKERDAO_SPOT.call(self.ethereum, 'ilks', arguments=[ilk])
+        result = self.makerdao_spot.call(self.ethereum, 'ilks', arguments=[ilk])
         mat = result[1]
         liquidation_ratio = FVal(mat / RAY)
         price = FVal((spot / RAY) * liquidation_ratio)
@@ -357,12 +328,10 @@ class MakerdaoVaults(HasDSProxy):
         # They can raise:
         # DeserializationError due to hex_or_bytes_to_address, hexstr_to_int
         # RemoteError due to external query errors
-        events = self.ethereum.get_logs(
-            contract_address=MAKERDAO_CDP_MANAGER.address,
-            abi=MAKERDAO_CDP_MANAGER.abi,
+        events = self.makerdao_cdp_manager.get_logs_since_deployment(
+            node_inquirer=self.ethereum,
             event_name='NewCdp',
             argument_filters={'cdp': vault.identifier},
-            from_block=MAKERDAO_CDP_MANAGER.deployed_block,
         )
         if len(events) == 0:
             self.msg_aggregator.add_error(
@@ -390,16 +359,14 @@ class MakerdaoVaults(HasDSProxy):
             # so don't filter for it
             # 'arg3': address_to_bytes32(proxy),  # proxy - owner
         }
-        frob_events = self.ethereum.get_logs(
-            contract_address=MAKERDAO_VAT.address,
-            abi=MAKERDAO_VAT.abi,
+        frob_events = self.makerdao_vat.get_logs_since_deployment(
+            node_inquirer=self.ethereum,
             event_name='LogNote',
             argument_filters=argument_filters,
-            from_block=MAKERDAO_VAT.deployed_block,
         )
         frob_event_tx_hashes = [x['transactionHash'] for x in frob_events]
 
-        gemjoin = GEMJOIN_MAPPING.get(vault.collateral_type, None)
+        gemjoin = self.gemjoin_mapping.get(vault.collateral_type, None)
         if gemjoin is None:
             self.msg_aggregator.add_warning(
                 f'Unknown makerdao vault collateral type detected {vault.collateral_type}.'
@@ -514,12 +481,10 @@ class MakerdaoVaults(HasDSProxy):
             # filter for it here. Still seems like the urn as arg1 is sufficient
             # 'arg2': address_to_bytes32(proxy),
         }
-        events = self.ethereum.get_logs(
-            contract_address=MAKERDAO_VAT.address,
-            abi=MAKERDAO_VAT.abi,
+        events = self.makerdao_vat.get_logs_since_deployment(
+            node_inquirer=self.ethereum,
             event_name='LogNote',
             argument_filters=argument_filters,
-            from_block=MAKERDAO_VAT.deployed_block,
         )
         for event in events:
             given_amount = shift_num_right_by(hexstr_to_int(event['topics'][3]), RAY_DIGITS)
@@ -548,12 +513,10 @@ class MakerdaoVaults(HasDSProxy):
             'usr': proxy,
             'arg1': address_to_bytes32(urn),
         }
-        events = self.ethereum.get_logs(
-            contract_address=MAKERDAO_DAI_JOIN.address,
-            abi=MAKERDAO_DAI_JOIN.abi,
+        events = self.makerdao_dai_join.get_logs_since_deployment(
+            node_inquirer=self.ethereum,
             event_name='LogNote',
             argument_filters=argument_filters,
-            from_block=MAKERDAO_DAI_JOIN.deployed_block,
         )
         for event in events:
             given_amount = hexstr_to_int(event['topics'][3])
@@ -584,12 +547,10 @@ class MakerdaoVaults(HasDSProxy):
 
         # Get the liquidation events
         argument_filters = {'urn': urn}
-        events = self.ethereum.get_logs(
-            contract_address=MAKERDAO_CAT.address,
-            abi=MAKERDAO_CAT.abi,
+        events = self.makerdao_cat.get_logs_since_deployment(
+            node_inquirer=self.ethereum,
             event_name='Bite',
             argument_filters=argument_filters,
-            from_block=MAKERDAO_CAT.deployed_block,
         )
         sum_liquidation_amount = ZERO
         sum_liquidation_usd = ZERO
@@ -648,10 +609,10 @@ class MakerdaoVaults(HasDSProxy):
         - BlockchainQueryError if an ethereum node is used and the contract call
         queries fail for some reason
         """
-        result = MAKERDAO_GET_CDPS.call(
+        result = self.makerdao_get_cdps.call(
             node_inquirer=self.ethereum,
             method_name='getCdpsAsc',
-            arguments=[MAKERDAO_CDP_MANAGER.address, proxy_address],
+            arguments=[self.makerdao_cdp_manager.address, proxy_address],
         )
 
         vaults = []

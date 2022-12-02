@@ -1,8 +1,8 @@
 from typing import TYPE_CHECKING, List
 
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.chain.evm.tokens import EvmTokens
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.types import ChecksumEvmAddress
 
 if TYPE_CHECKING:

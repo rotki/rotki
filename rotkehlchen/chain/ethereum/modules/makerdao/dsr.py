@@ -9,7 +9,6 @@ from rotkehlchen.accounting.structures.defi import DefiEvent, DefiEventType
 from rotkehlchen.chain.ethereum.defi.defisaver_proxy import HasDSProxy
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_DAI
-from rotkehlchen.constants.ethereum import MAKERDAO_DAI_JOIN, MAKERDAO_POT
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
@@ -121,6 +120,8 @@ class MakerdaoDsr(HasDSProxy):
         self.historical_dsr_reports: Dict[ChecksumEvmAddress, DSRAccountReport] = {}
         self.lock = Semaphore()
         self.dai = A_DAI.resolve_to_evm_token()
+        self.makerdao_dai_join = self.ethereum.contracts.contract('MAKERDAO_DAI_JOIN')
+        self.makerdao_pot = self.ethereum.contracts.contract('MAKERDAO_POT')
 
     def reset_last_query_ts(self) -> None:
         """Reset the last query timestamps, effectively cleaning the caches"""
@@ -145,18 +146,18 @@ class MakerdaoDsr(HasDSProxy):
             except RemoteError:
                 current_dai_price = Price(ONE)
             for account, proxy in proxy_mappings.items():
-                guy_slice = MAKERDAO_POT.call(self.ethereum, 'pie', arguments=[proxy])
+                guy_slice = self.makerdao_pot.call(self.ethereum, 'pie', arguments=[proxy])
                 if guy_slice == 0:
                     # no current DSR balance for this proxy
                     continue
-                chi = MAKERDAO_POT.call(self.ethereum, 'chi')
+                chi = self.makerdao_pot.call(self.ethereum, 'chi')
                 dai_balance = _dsrdai_to_dai(guy_slice * chi)
                 balances[account] = Balance(
                     amount=dai_balance,
                     usd_value=current_dai_price * dai_balance,
                 )
 
-            current_dsr = MAKERDAO_POT.call(self.ethereum, 'dsr')
+            current_dsr = self.makerdao_pot.call(self.ethereum, 'dsr')
             # Calculation is from here:
             # https://docs.makerdao.com/smart-contract-modules/rates-module#a-note-on-setting-rates
             current_dsr_percentage = ((FVal(current_dsr / RAY) ** 31622400) % 1) * 100
@@ -189,9 +190,8 @@ class MakerdaoDsr(HasDSProxy):
             'sig': '0x3b4da69f' if movement_type == 'join' else '0xef693bed',
             'usr': proxy_address,
         }
-        events = self.ethereum.get_logs(
-            contract_address=MAKERDAO_DAI_JOIN.address,
-            abi=MAKERDAO_DAI_JOIN.abi,
+        events = self.makerdao_dai_join.get_logs(
+            node_inquirer=self.ethereum,
             event_name='LogNote',
             argument_filters=argument_filters,
             from_block=block_number,
@@ -232,12 +232,10 @@ class MakerdaoDsr(HasDSProxy):
             'sig': '0x049878f3',  # join
             'usr': proxy,
         }
-        join_events = self.ethereum.get_logs(
-            contract_address=MAKERDAO_POT.address,
-            abi=MAKERDAO_POT.abi,
+        join_events = self.makerdao_pot.get_logs_since_deployment(
+            node_inquirer=self.ethereum,
             event_name='LogNote',
             argument_filters=argument_filters,
-            from_block=MAKERDAO_POT.deployed_block,
         )
         for join_event in join_events:
             try:
@@ -287,12 +285,10 @@ class MakerdaoDsr(HasDSProxy):
             'sig': '0x7f8661a1',  # exit
             'usr': proxy,
         }
-        exit_events = self.ethereum.get_logs(
-            contract_address=MAKERDAO_POT.address,
-            abi=MAKERDAO_POT.abi,
+        exit_events = self.makerdao_pot.get_logs_since_deployment(
+            node_inquirer=self.ethereum,
             event_name='LogNote',
             argument_filters=argument_filters,
-            from_block=MAKERDAO_POT.deployed_block,
         )
         for exit_event in exit_events:
             try:
@@ -374,7 +370,7 @@ class MakerdaoDsr(HasDSProxy):
                 amount_in_dsr -= m.amount
                 normalized_balance -= m.normalized_balance
 
-        chi = MAKERDAO_POT.call(self.ethereum, 'chi')
+        chi = self.makerdao_pot.call(self.ethereum, 'chi')
         normalized_balance = normalized_balance * chi
         gain = normalized_balance - amount_in_dsr
         try:

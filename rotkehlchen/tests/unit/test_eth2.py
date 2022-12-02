@@ -13,7 +13,7 @@ from rotkehlchen.chain.ethereum.modules.eth2.structures import (
     ValidatorDailyStats,
 )
 from rotkehlchen.chain.ethereum.modules.eth2.utils import scrape_validator_daily_stats
-from rotkehlchen.chain.ethereum.types import string_to_evm_address
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.eth2 import DBEth2

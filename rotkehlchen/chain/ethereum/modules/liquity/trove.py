@@ -14,9 +14,7 @@ from rotkehlchen.chain.ethereum.graph import (
     format_query_indentation,
 )
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
-from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants.assets import A_ETH, A_LQTY, A_LUSD, A_USD
-from rotkehlchen.constants.ethereum import LIQUITY_STABILITY_POOL, LIQUITY_TROVE_MANAGER
 from rotkehlchen.errors.misc import BlockchainQueryError, ModuleInitializationFailure, RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.errors.serialization import DeserializationError
@@ -202,16 +200,8 @@ class Liquity(HasDSProxy):
             )
             raise ModuleInitializationFailure('Liquity Subgraph remote error') from e
 
-        self.trove_manager_contract = EvmContract(
-            address=LIQUITY_TROVE_MANAGER.address,
-            abi=LIQUITY_TROVE_MANAGER.abi,
-            deployed_block=LIQUITY_TROVE_MANAGER.deployed_block,
-        )
-        self.stability_pool_contract = EvmContract(
-            address=LIQUITY_STABILITY_POOL.address,
-            abi=LIQUITY_STABILITY_POOL.abi,
-            deployed_block=LIQUITY_STABILITY_POOL.deployed_block,
-        )
+        self.trove_manager_contract = self.ethereum.contracts.contract('LIQUITY_TROVE_MANAGER')
+        self.stability_pool_contract = self.ethereum.contracts.contract('LIQUITY_STABILITY_POOL')
 
     def get_positions(
             self,
@@ -225,7 +215,7 @@ class Liquity(HasDSProxy):
         addresses += proxied_addresses.values()
 
         calls = [
-            (LIQUITY_TROVE_MANAGER.address, self.trove_manager_contract.encode(method_name='Troves', arguments=[x]))  # noqa: E501
+            (self.trove_manager_contract.address, self.trove_manager_contract.encode(method_name='Troves', arguments=[x]))  # noqa: E501
             for x in addresses
         ]
         outputs = self.ethereum.multicall_2(
@@ -308,13 +298,13 @@ class Liquity(HasDSProxy):
         calls = []
         for address in addresses:
             calls.append(
-                (LIQUITY_STABILITY_POOL.address, self.stability_pool_contract.encode(method_name='getDepositorETHGain', arguments=[address])),  # noqa: E501
+                (self.stability_pool_contract.address, self.stability_pool_contract.encode(method_name='getDepositorETHGain', arguments=[address])),  # noqa: E501
             )
             calls.append(
-                (LIQUITY_STABILITY_POOL.address, self.stability_pool_contract.encode(method_name='getDepositorLQTYGain', arguments=[address])),  # noqa: E501
+                (self.stability_pool_contract.address, self.stability_pool_contract.encode(method_name='getDepositorLQTYGain', arguments=[address])),  # noqa: E501
             )
             calls.append(
-                (LIQUITY_STABILITY_POOL.address, self.stability_pool_contract.encode(method_name='getCompoundedLUSDDeposit', arguments=[address])),  # noqa: E501
+                (self.stability_pool_contract.address, self.stability_pool_contract.encode(method_name='getCompoundedLUSDDeposit', arguments=[address])),  # noqa: E501
             )
 
         try:

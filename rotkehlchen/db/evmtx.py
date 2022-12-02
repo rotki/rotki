@@ -1,7 +1,8 @@
 import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
-from rotkehlchen.chain.ethereum.constants import ETHEREUM_BEGIN, GENESIS_HASH, ZERO_ADDRESS
+from rotkehlchen.chain.ethereum.constants import ETHEREUM_BEGIN, GENESIS_HASH
+from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.db.constants import HISTORY_MAPPING_STATE_DECODED
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery

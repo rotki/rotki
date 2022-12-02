@@ -4,8 +4,8 @@ from rotkehlchen.chain.ethereum.modules.aave.common import (
     atoken_to_asset,
 )
 from rotkehlchen.chain.ethereum.utils import ethaddress_to_asset
+from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.constants.ethereum import ETH_SPECIAL_ADDRESS
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.tests.utils.aave import ATOKENV1_TO_ASSET, ATOKENV2_ADDRESS_TO_RESERVE_ASSET
 from rotkehlchen.types import ChainID

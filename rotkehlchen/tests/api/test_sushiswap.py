@@ -13,7 +13,7 @@ from rotkehlchen.chain.ethereum.modules.sushiswap import (
     SushiswapPoolEvent,
     SushiswapPoolEventsBalance,
 )
-from rotkehlchen.chain.ethereum.types import string_to_evm_address
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     ASYNC_TASK_WAIT_TIMEOUT,

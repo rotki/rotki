@@ -1,4 +1,4 @@
-from rotkehlchen.constants.ethereum import RAY_DIGITS
+from rotkehlchen.chain.ethereum.constants import RAY_DIGITS
 
 MAKERDAO_REQUERY_PERIOD = 7200  # Refresh queries every 2 hours
 

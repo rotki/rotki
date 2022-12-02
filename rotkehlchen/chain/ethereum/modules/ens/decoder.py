@@ -9,12 +9,11 @@ from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
 from rotkehlchen.chain.ethereum.names import find_ens_mappings
-from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import ActionItem
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.constants.ethereum import ENS_PUBLIC_RESOLVER_2, ENS_REVERSE_RESOLVER
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction, Location
@@ -54,7 +53,7 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
             msg_aggregator: 'MessagesAggregator',  # pylint: disable=unused-argument
     ) -> None:
         self.base = base_tools
-        self.ethereum_inquirer = ethereum_inquirer
+        self.ethereum = ethereum_inquirer
         CustomizableDateMixin.__init__(self, base_tools.database)
         self.eth = A_ETH.resolve_to_crypto_asset()
 
@@ -178,8 +177,8 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
         if tx_log.topics[0] == NEW_RESOLVER:
             node = tx_log.topics[1]
             try:
-                ens_name = ENS_REVERSE_RESOLVER.call(
-                    node_inquirer=self.ethereum_inquirer,
+                ens_name = self.ethereum.contracts.contract('ENS_REVERSE_RESOLVER').call(
+                    node_inquirer=self.ethereum,
                     method_name='name',
                     arguments=[node],
                 )
@@ -232,14 +231,14 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
 
             node = tx_log.topics[1]
             try:
-                address = ENS_PUBLIC_RESOLVER_2.call(
-                    node_inquirer=self.ethereum_inquirer,
+                address = self.ethereum.contracts.contract('ENS_PUBLIC_RESOLVER_2').call(
+                    node_inquirer=self.ethereum,
                     method_name='addr',
                     arguments=[node],
                 )
                 address = to_checksum_address(address)
                 ens_mapping = find_ens_mappings(
-                    ethereum_inquirer=self.ethereum_inquirer,
+                    ethereum_inquirer=self.ethereum,
                     addresses=[address],
                     ignore_cache=False,
                 )

@@ -43,9 +43,12 @@ from rotkehlchen.chain.ethereum.modules.aave.structures import AaveEvent, aave_e
 from rotkehlchen.chain.ethereum.modules.balancer import BALANCER_EVENTS_PREFIX
 from rotkehlchen.chain.ethereum.modules.sushiswap import SUSHISWAP_EVENTS_PREFIX
 from rotkehlchen.chain.ethereum.modules.uniswap import UNISWAP_EVENTS_PREFIX
-from rotkehlchen.chain.ethereum.types import NodeName, WeightedNode
+from rotkehlchen.chain.ethereum.modules.yearn.constants import (
+    YEARN_VAULTS_PREFIX,
+    YEARN_VAULTS_V2_PREFIX,
+)
+from rotkehlchen.chain.evm.types import NodeName, WeightedNode
 from rotkehlchen.constants.assets import A_ETH, A_ETH2, A_USD
-from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX, YEARN_VAULTS_V2_PREFIX
 from rotkehlchen.constants.limits import (
     FREE_ASSET_MOVEMENTS_LIMIT,
     FREE_TRADES_LIMIT,
