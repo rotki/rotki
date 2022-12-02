@@ -51,7 +51,7 @@ def uniswap_lp_token_balances(
     """
     zerion_contract = EvmContract(
         address=ZERION_ADAPTER_ADDRESS,
-        abi=ethereum.contracts.abi('ZERION_ABI'),
+        abi=ethereum.contracts.abi('ZERION_ADAPTER'),
         deployed_block=1586199170,
     )
     if (own_node_info := ethereum.get_own_node_info()) is not None:
@@ -158,7 +158,7 @@ def find_uniswap_v2_lp_price(
     - Total supply of of pool token
     """
     address = token.evm_address
-    abi = ethereum.contracts.abi('UNISWAP_V2_LP_ABI')
+    abi = ethereum.contracts.abi('UNISWAP_V2_LP')
     contract = EvmContract(address=address, abi=abi, deployed_block=0)
     methods = ['token0', 'token1', 'totalSupply', 'getReserves', 'decimals']
     multicall_method = ethereum.multicall_2  # choose which multicall to use

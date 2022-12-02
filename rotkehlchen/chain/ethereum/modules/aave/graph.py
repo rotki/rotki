@@ -602,10 +602,10 @@ class AaveGraphInquirer(AaveInquirer):
 
             if lending_balance.version == 1:
                 method = 'principalBalanceOf'
-                abi = self.ethereum.contracts.abi('ATOKEN_ABI')
+                abi = self.ethereum.contracts.abi('ATOKEN')
             else:
                 method = 'scaledBalanceOf'
-                abi = self.ethereum.contracts.abi('ATOKEN_V2_ABI')
+                abi = self.ethereum.contracts.abi('ATOKEN_V2')
 
             principal_balance = self.ethereum.call_contract(
                 contract_address=atoken.evm_address,

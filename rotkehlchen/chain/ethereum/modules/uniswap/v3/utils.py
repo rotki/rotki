@@ -96,7 +96,7 @@ def uniswap_v3_lp_token_balances(
     """
     uniswap_v3_nft_manager = ethereum.contracts.contract('UNISWAP_V3_NFT_MANAGER')
     uniswap_v3_factory = ethereum.contracts.contract('UNISWAP_V3_FACTORY')
-    uniswap_v3_pool_abi = ethereum.contracts.abi('UNISWAP_V3_POOL_ABI')
+    uniswap_v3_pool_abi = ethereum.contracts.abi('UNISWAP_V3_POOL')
     balances: List[NFTLiquidityPool] = []
     try:
         amount_of_positions = uniswap_v3_nft_manager.call(

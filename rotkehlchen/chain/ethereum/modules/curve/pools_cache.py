@@ -174,7 +174,7 @@ def update_curve_registry_pools_cache(
     registry_address = to_checksum_address(get_registry_result)
     registry_contract = EvmContract(
         address=registry_address,
-        abi=ethereum.contracts.abi('CURVE_REGISTRY_ABI'),
+        abi=ethereum.contracts.abi('CURVE_REGISTRY'),
         deployed_block=0,  # deployment_block is not used and the contract is dynamic
     )
     registry_pool_count = registry_contract.call(
@@ -253,7 +253,7 @@ def update_curve_metapools_cache(
     factory_address = to_checksum_address(factory_address_result)
     factory_contract = EvmContract(
         address=factory_address,
-        abi=ethereum.contracts.abi('CURVE_METAPOOL_FACTORY_ABI'),
+        abi=ethereum.contracts.abi('CURVE_METAPOOL_FACTORY'),
         deployed_block=0,  # deployment_block is not used and the contract is dynamic
     )
     pool_count = factory_contract.call(

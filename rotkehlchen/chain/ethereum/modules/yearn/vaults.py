@@ -374,7 +374,7 @@ class YearnVaults(EthereumModule):
         now_block_number = self.ethereum.get_latest_block_number()
         price_per_full_share = self.ethereum.call_contract(
             contract_address=vault.contract.address,
-            abi=self.ethereum.contracts.abi('YEARN_DAI_VAULT'),  # Any vault ABI will do
+            abi=self.ethereum.contracts.contract('YEARN_DAI_VAULT').abi,  # Any vault ABI will do
             method_name='getPricePerFullShare',
         )
         nominator = price_per_full_share - EXP18
@@ -457,7 +457,7 @@ class YearnVaults(EthereumModule):
         argument_filters = {'from': address, 'to': vault.contract.address}
         deposit_events = self.ethereum.get_logs(
             contract_address=vault.underlying_token.evm_address,
-            abi=self.ethereum.contracts.abi('ERC20TOKEN_ABI'),
+            abi=self.ethereum.contracts.abi('ERC20_TOKEN'),
             event_name='Transfer',
             argument_filters=argument_filters,
             from_block=from_block,
@@ -543,7 +543,7 @@ class YearnVaults(EthereumModule):
         argument_filters = {'from': vault.contract.address, 'to': address}
         withdraw_events = self.ethereum.get_logs(
             contract_address=vault.underlying_token.evm_address,
-            abi=self.ethereum.contracts.abi('ERC20TOKEN_ABI'),
+            abi=self.ethereum.contracts.abi('ERC20_TOKEN'),
             event_name='Transfer',
             argument_filters=argument_filters,
             from_block=from_block,

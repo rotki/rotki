@@ -212,7 +212,7 @@ def test_get_logs(ethereum_inquirer, call_order, ethereum_manager_connect_at_sta
     }
     events = ethereum_inquirer.get_logs(
         contract_address='0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8',
-        abi=ethereum_inquirer.contracts.abi('ERC20TOKEN_ABI'),
+        abi=ethereum_inquirer.contracts.abi('ERC20_TOKEN'),
         event_name='Transfer',
         argument_filters=argument_filters,
         from_block=10712531,
@@ -272,7 +272,7 @@ def test_get_log_and_receipt_etherscan_bad_tx_index(
     }
     events = ethereum_inquirer.get_logs(
         contract_address='0xFC4B8ED459e00e5400be803A9BB3954234FD50e3',
-        abi=ethereum_inquirer.contracts.abi('ATOKEN_ABI'),
+        abi=ethereum_inquirer.contracts.abi('ATOKEN'),
         event_name='Transfer',
         argument_filters=argument_filters,
         from_block=10773651,

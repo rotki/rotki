@@ -168,7 +168,7 @@ class Compound(EthereumModule):
         try:
             rate = self.ethereum.call_contract(
                 contract_address=address,
-                abi=self.ethereum.contracts.abi('CTOKEN_ABI'),
+                abi=self.ethereum.contracts.abi('CTOKEN'),
                 method_name=method_name,
             )
         except (RemoteError, BlockchainQueryError) as e:
@@ -541,7 +541,7 @@ class Compound(EthereumModule):
         }
         comp_events = self.ethereum.get_logs(
             contract_address=self.comp.evm_address,
-            abi=self.ethereum.contracts.abi('ERC20TOKEN_ABI'),
+            abi=self.ethereum.contracts.abi('ERC20_TOKEN'),
             event_name='Transfer',
             argument_filters=argument_filters,
             from_block=from_block,

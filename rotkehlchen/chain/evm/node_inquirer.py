@@ -974,7 +974,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         properties = ('decimals', 'symbol', 'name')
         info: Dict[str, Any] = {}
 
-        abi = self.contracts.abi('ERC20TOKEN_ABI')
+        abi = self.contracts.abi('ERC20_TOKEN')
         contract = EvmContract(address=address, abi=abi, deployed_block=0)
         try:
             # Output contains call status and result
@@ -1002,7 +1002,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
                 f'{address} failed to decode as ERC20 token. '
                 f'Trying with token ABI using bytes. {str(e)}',
             )
-            abi = self.contracts.abi('UNIV1_LP_ABI')
+            abi = self.contracts.abi('UNIV1_LP')
             contract = EvmContract(address=address, abi=abi, deployed_block=0)
             decoded = self._process_contract_info(
                 output=output,
@@ -1039,7 +1039,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         properties = ('symbol', 'name')
         info: Dict[str, Any] = {}
 
-        abi = self.contracts.abi('ERC721TOKEN_ABI')
+        abi = self.contracts.abi('ERC721_TOKEN')
         contract = EvmContract(address=address, abi=abi, deployed_block=0)
         try:
             # Output contains call status and result

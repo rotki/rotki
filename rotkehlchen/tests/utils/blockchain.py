@@ -277,7 +277,7 @@ def mock_etherscan_query(
                 return original_requests_get(url, *args, **kwargs)
 
             web3 = Web3()
-            contract = web3.eth.contract(address=ZERION_ADAPTER_ADDRESS, abi=ethereum.contracts.abi('ZERION_ABI'))  # noqa: E501
+            contract = web3.eth.contract(address=ZERION_ADAPTER_ADDRESS, abi=ethereum.contracts.abi('ZERION_ADAPTER'))  # noqa: E501
             if 'data=0xc84aae17' in url:  # getBalances
                 data = url.split('data=')[1]
                 if '&apikey' in data:
