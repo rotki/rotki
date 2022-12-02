@@ -608,6 +608,7 @@ def test_query_historical_dsr_with_a_zero_withdrawal(
             argument_filters,
             from_block,
             to_block='latest',  # pylint: disable=unused-argument
+            call_order=None,
     ):
         return original_get_logs(
             contract_address,
@@ -616,6 +617,7 @@ def test_query_historical_dsr_with_a_zero_withdrawal(
             argument_filters,
             from_block,
             to_block=10149816,  # A block at which DSR is still zero
+            call_order=call_order,
         )
 
     patched_get_logs = patch.object(

@@ -129,16 +129,16 @@ class EvmContracts():
     """A class allowing to query contract data for an Evm Chain. addresses and ABIs.
 
     Atm all evm chains need to have (may need to change this):
-    - ERC20TOKEN_ABI
-    - UNIV1_LP_ABI
-    - ERC721TOKEN_ABI
+    - ERC20TOKEN
+    - UNIV1_LP
+    - ERC721TOKEN
     """
 
     def __init__(self, chain_id: ChainID, contracts_filename: str, abi_filename: str) -> None:
         self.chain_id = chain_id
         self.contracts: Dict[str, Dict[str, Any]] = {}
         self.abi_entries: Dict[str, List[Dict[str, Any]]] = {}
-        dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+        dir_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
         with open(os.path.join(dir_path, 'data', contracts_filename), 'r') as f:
             self.contracts = json.loads(f.read())
 

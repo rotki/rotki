@@ -81,7 +81,7 @@ class YearnVaultsV2(EthereumModule):
         now_block_number = self.ethereum.get_latest_block_number()
         price_per_full_share = self.ethereum.call_contract(
             contract_address=vault.evm_address,
-            abi=self.ethereum.contracts.abi('YEARN_VAULT_V2_ABI'),  # Any vault ABI will do
+            abi=self.ethereum.contracts.abi('YEARN_VAULT_V2'),  # Any vault ABI will do
             method_name='pricePerShare',
         )
         nominator = price_per_full_share - EXP18

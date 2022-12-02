@@ -127,7 +127,7 @@ def handle_underlying_price_harvest_vault(
 ) -> FVal:
     price_per_full_share = ethereum.call_contract(
         contract_address=token.evm_address,
-        abi=ethereum.contracts.abi('FARM_ASSET_ABI'),
+        abi=ethereum.contracts.abi('FARM_ASSET'),
         method_name='getPricePerFullShare',
         arguments=[],
     )

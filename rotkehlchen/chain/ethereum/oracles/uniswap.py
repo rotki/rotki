@@ -280,7 +280,7 @@ class UniswapV3Oracle(UniswapOracle):
 
     def __init__(self, ethereum_inquirer: 'EthereumInquirer'):
         super().__init__(ethereum_inquirer=ethereum_inquirer, version=3)
-        self.uniswap_v3_pool_abi = self.ethereum.contracts.abi('UNISWAP_V3_POOL_ABI')
+        self.uniswap_v3_pool_abi = self.ethereum.contracts.abi('UNISWAP_V3_POOL')
         self.uniswap_v3_factory = self.ethereum.contracts.contract('UNISWAP_V3_FACTORY')
 
     @cache_response_timewise()
@@ -384,7 +384,7 @@ class UniswapV2Oracle(UniswapOracle):
 
     def __init__(self, ethereum_inquirer: 'EthereumInquirer'):
         super().__init__(ethereum_inquirer=ethereum_inquirer, version=3)
-        self.uniswap_v2_lp_abi = self.ethereum.contracts.abi('UNISWAP_V2_LP_ABI')
+        self.uniswap_v2_lp_abi = self.ethereum.contracts.abi('UNISWAP_V2_LP')
         self.uniswap_v2_factory = self.ethereum.contracts.contract('UNISWAP_V2_FACTORY')
 
     @cache_response_timewise()

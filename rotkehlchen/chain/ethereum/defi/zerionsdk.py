@@ -219,7 +219,7 @@ class ZerionSDK():
         self.msg_aggregator = msg_aggregator
         self.contract = EvmContract(
             address=ZERION_ADAPTER_ADDRESS,
-            abi=self.ethereum.contracts.abi('ZERION_ABI'),
+            abi=self.ethereum.contracts.abi('ZERION_ADAPTER'),
             deployed_block=1586199170,
         )
         self.database = database

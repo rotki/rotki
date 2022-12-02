@@ -827,7 +827,7 @@ class Inquirer():
         # Query virtual price of LP share and balances in the pool for each token
         contract = EvmContract(
             address=pool_address,
-            abi=ethereum.node_inquirer.contracts.abi('CURVE_POOL_ABI'),
+            abi=ethereum.node_inquirer.contracts.abi('CURVE_POOL'),
             deployed_block=0,
         )
         calls = [(pool_address, contract.encode(method_name='get_virtual_price'))]
@@ -910,7 +910,7 @@ class Inquirer():
         # Get the price per share from the yearn contract
         contract = EvmContract(
             address=token.evm_address,
-            abi=ethereum.node_inquirer.contracts.abi('YEARN_VAULT_V2_ABI'),
+            abi=ethereum.node_inquirer.contracts.abi('YEARN_VAULT_V2'),
             deployed_block=0,
         )
         try:
