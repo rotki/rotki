@@ -13,6 +13,7 @@ Changelog
 * :bug:`2934` Users will now be able to deploy the docker image on a subpath instead of the root domain.
 * :bug:`-` Users won't get errors querying prices due the usage of defi oracles for querying prices of NFTs.
 * :bug:`-` Fix an edge-case problem with synchronizing database with the server.
+* :bug:`-` Users will be able to edit EVM tokens again and the information about underlying tokens will be correctly displayed.
 * :bug:`-` Fix an issue with nginx websocket proxying on docker.
 
 * :release:`1.26.1 <2022-11-04>`
