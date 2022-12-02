@@ -1002,6 +1002,8 @@ def test_upgrade_db_35_to_36(user_data_dir):  # pylint: disable=unused-argument
     cursor = db_v35.conn.cursor()
 
     # Test state of DB before upgrade is as expected
+    result = cursor.execute('SELECT value FROM settings WHERE name="active_modules" ;')
+    assert result.fetchone()[0] == '["liquity","adex","balancer"]'
     result = cursor.execute('SELECT * FROM ignored_actions;')
     assert result.fetchall() == [
         ('C', '0x72b6e402ccf1adc977b4054905337ece6cf0e6f67c6a95b2965d4f845ac86971'),
@@ -1067,6 +1069,8 @@ def test_upgrade_db_35_to_36(user_data_dir):  # pylint: disable=unused-argument
     cursor = db.conn.cursor()
 
     # Test all is properly upgraded
+    result = cursor.execute('SELECT value FROM settings WHERE name="active_modules" ;')
+    assert result.fetchone()[0] == '["liquity", "balancer"]'
     result = cursor.execute('SELECT * FROM ignored_actions;')
     assert result.fetchall() == [
         ('C', '10x72b6e402ccf1adc977b4054905337ece6cf0e6f67c6a95b2965d4f845ac86971'),

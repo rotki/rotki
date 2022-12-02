@@ -1,6 +1,8 @@
+import json
 import logging
 from typing import TYPE_CHECKING
 
+from rotkehlchen.db.settings import DEFAULT_ACTIVE_MODULES
 from rotkehlchen.db.utils import table_exists
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
@@ -16,10 +18,32 @@ log = RotkehlchenLogsAdapter(logger)
 def _remove_adex(write_cursor: 'DBCursor') -> None:
     """Remove all adex related tables, events, data in other tables"""
     log.debug('Enter _remove_adex')
+
     write_cursor.execute('DROP TABLE IF EXISTS adex_events')
     if table_exists(write_cursor, 'used_query_ranges'):
         write_cursor.execute(
             'DELETE FROM used_query_ranges WHERE name LIKE ?', ('adex_events%',),
+        )
+
+    write_cursor.execute('SELECT value FROM settings where name="active_modules"')
+    active_modules_result = write_cursor.fetchone()
+    if active_modules_result is not None:
+        active_modules_str = active_modules_result[0]
+        try:
+            new_value = json.loads(active_modules_str)
+            if 'adex' in new_value:
+                new_value.remove('adex')
+
+        except json.decoder.JSONDecodeError:
+            log.error(
+                f'During v35->v36 DB upgrade a non-json active_modules entry was found: '
+                f'{active_modules_str}. Reverting to default.',
+            )
+            new_value = DEFAULT_ACTIVE_MODULES
+
+        write_cursor.execute(
+            'UPDATE OR IGNORE settings SET value=? WHERE name="active_modules"',
+            (json.dumps(new_value),),
         )
     log.debug('Exit _remove_adex')
 
