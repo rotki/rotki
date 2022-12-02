@@ -8,15 +8,13 @@ export function setupFormatter(): void {
   // @ts-ignore
   window.devtoolsFormatters = [
     {
-      header: function (obj: any) {
+      header: (obj: any): {}[] | null => {
         if (!(obj instanceof BigNumber)) {
           return null;
         }
         return ['div', {}, obj.toString()];
       },
-      hasBody: function (): boolean {
-        return false;
-      }
+      hasBody: (): boolean => false
     }
   ];
 }

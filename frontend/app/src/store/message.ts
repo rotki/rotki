@@ -15,7 +15,7 @@ export const useMessageStore = defineStore('message', () => {
 
   const setMessage = (
     msg: SemiPartial<Message, 'description'> = emptyMessage()
-  ) => {
+  ): void => {
     set(message, {
       ...{
         title: msg.success

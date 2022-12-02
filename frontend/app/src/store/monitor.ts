@@ -33,7 +33,7 @@ export const useMonitorStore = defineStore('monitor', () => {
   const { connected } = storeToRefs(ws);
   const { connect, disconnect } = ws;
 
-  const fetch = () => {
+  const fetch = (): void => {
     if (get(logged)) {
       startPromise(check());
     }
@@ -88,7 +88,7 @@ export const useMonitorStore = defineStore('monitor', () => {
     }
   };
 
-  const startBalanceRefresh = () => {
+  const startBalanceRefresh = (): void => {
     const period = get(refreshPeriod) * 60 * 1000;
     const activeMonitors = get(monitors);
     if (!activeMonitors[BALANCES] && period > 0) {

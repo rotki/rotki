@@ -12,7 +12,7 @@ export const usePeriodicStore = defineStore('session/periodic', () => {
   const { t } = useI18n();
   const { fetchPeriodicData } = useSessionApi();
 
-  const check = async () => {
+  const check = async (): Promise<void> => {
     if (get(periodicRunning)) {
       return;
     }

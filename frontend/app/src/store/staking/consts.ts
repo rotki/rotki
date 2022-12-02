@@ -2,7 +2,9 @@ import { ComputedRef } from 'vue';
 import { ActionDataEntry } from '@/store/types';
 import { KrakenStakingEventType } from '@/types/staking';
 
-export const useKrakenStakingEventTypes = () => {
+export const useKrakenStakingEventTypes = (): {
+  krakenStakingEventTypeData: ComputedRef<ActionDataEntry[]>;
+} => {
   const { tc } = useI18n();
   const krakenStakingEventTypeData: ComputedRef<ActionDataEntry[]> = computed(
     () => [

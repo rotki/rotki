@@ -20,7 +20,7 @@ export const useWatchersStore = defineStore('session/watchers', () => {
   const { notify } = useNotifications();
   const api = useWatchersApi();
 
-  const fetchWatchers = async () => {
+  const fetchWatchers = async (): Promise<void> => {
     if (!get(premium)) {
       return;
     }
@@ -40,15 +40,17 @@ export const useWatchersStore = defineStore('session/watchers', () => {
 
   const addWatchers = async (
     newWatchers: Omit<Watcher<WatcherTypes>, 'identifier'>[]
-  ) => {
+  ): Promise<void> => {
     set(watchers, await api.addWatcher(newWatchers));
   };
 
-  const deleteWatchers = async (identifiers: string[]) => {
+  const deleteWatchers = async (identifiers: string[]): Promise<void> => {
     set(watchers, await api.deleteWatcher(identifiers));
   };
 
-  const editWatchers = async (editedWatchers: Watcher<WatcherTypes>[]) => {
+  const editWatchers = async (
+    editedWatchers: Watcher<WatcherTypes>[]
+  ): Promise<void> => {
     set(watchers, await api.editWatcher(editedWatchers));
   };
 

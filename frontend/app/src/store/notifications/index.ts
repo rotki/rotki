@@ -40,7 +40,7 @@ const createNotification = (
   date: new Date()
 });
 
-export const emptyNotification = () => createNotification();
+export const emptyNotification = (): NotificationData => createNotification();
 
 export const useNotifications = defineStore('notifications', () => {
   const data = ref<NotificationData[]>([]);
@@ -66,11 +66,11 @@ export const useNotifications = defineStore('notifications', () => {
     get(data).filter(notification => notification.display)
   );
 
-  function update(payload: NotificationData[]) {
+  function update(payload: NotificationData[]): void {
     set(data, [...get(data), ...payload]);
   }
 
-  function remove(id: number) {
+  function remove(id: number): void {
     const notifications = [...get(data)];
 
     const index = notifications.findIndex(v => v.id === id);
@@ -81,13 +81,13 @@ export const useNotifications = defineStore('notifications', () => {
     set(data, notifications);
   }
 
-  function setNotifications(notifications: NotificationData[]) {
+  function setNotifications(notifications: NotificationData[]): void {
     set(data, notifications);
   }
 
   const notify = (
     data: SemiPartial<NotificationPayload, 'title' | 'message'>
-  ) => {
+  ): void => {
     update([
       createNotification(
         get(nextId),
@@ -96,7 +96,7 @@ export const useNotifications = defineStore('notifications', () => {
     ]);
   };
 
-  const displayed = (ids: number[]) => {
+  const displayed = (ids: number[]): void => {
     if (ids.length <= 0) {
       return;
     }
@@ -113,7 +113,10 @@ export const useNotifications = defineStore('notifications', () => {
     setNotifications(notifications);
   };
 
-  const handleNotification = async (message: string, isWarning: boolean) => {
+  const handleNotification = async (
+    message: string,
+    isWarning: boolean
+  ): Promise<void> => {
     try {
       const object = JSON.parse(message);
       if (!object.type) {

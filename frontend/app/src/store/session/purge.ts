@@ -17,7 +17,7 @@ export const useSessionPurgeStore = defineStore('session/purge', () => {
   const { resetState } = useDefiStore();
   const { reset } = useStakingStore();
 
-  const purgeCache = async (purgeable: Purgeable) => {
+  const purgeCache = async (purgeable: Purgeable): Promise<void> => {
     if (purgeable === ALL_CENTRALIZED_EXCHANGES) {
       await purgeExchange(ALL_CENTRALIZED_EXCHANGES);
     } else if (purgeable === ALL_DECENTRALIZED_EXCHANGES) {
@@ -31,7 +31,7 @@ export const useSessionPurgeStore = defineStore('session/purge', () => {
     ) {
       await purgeExchange(purgeable as SupportedExchange);
     } else if (Object.values(Module).includes(purgeable as Module)) {
-      if ([Module.ETH2, Module.ADEX].includes(purgeable as Module)) {
+      if ([Module.ETH2].includes(purgeable as Module)) {
         reset(purgeable as Module);
       } else {
         resetState(purgeable as Module);

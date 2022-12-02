@@ -79,7 +79,7 @@ export const handlePremiumStatusUpdate = (
 
 export const handleLoginStatus = (
   message: WebsocketMessage<SocketMessageType>
-) => {
+): void => {
   const { handleLoginStatus } = useSessionAuthStore();
   const data = LoginStatusData.parse(convertKeys(message.data, true, false));
   handleLoginStatus(data);

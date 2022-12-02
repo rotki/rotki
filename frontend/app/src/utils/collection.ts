@@ -1,5 +1,5 @@
 import { BigNumber } from '@rotki/common';
-import { Ref } from 'vue';
+import { ComputedRef, Ref } from 'vue';
 import { usePremium } from '@/composables/premium';
 import { Collection, CollectionResponse } from '@/types/collection';
 import { Zero } from '@/utils/bignumbers';
@@ -24,14 +24,22 @@ export const defaultCollectionState = <T>(): Collection<T> => ({
   totalUsdValue: Zero
 });
 
-export const getCollectionData = <T>(collection: Ref<Collection<T>>) => {
-  const data = computed<T[]>(() => {
-    return get(collection).data as T[];
-  });
-  const limit = computed<number>(() => get(collection).limit);
-  const found = computed<number>(() => get(collection).found);
-  const total = computed<number>(() => get(collection).total);
-  const totalUsdValue = computed<BigNumber | undefined | null>(
+type TotalValue = BigNumber | undefined | null;
+
+export const getCollectionData = <T>(
+  collection: Ref<Collection<T>>
+): {
+  data: ComputedRef<T[]>;
+  limit: ComputedRef<number>;
+  found: ComputedRef<number>;
+  total: ComputedRef<number>;
+  totalUsdValue: ComputedRef<TotalValue>;
+} => {
+  const data: ComputedRef<T[]> = computed(() => get(collection).data);
+  const limit: ComputedRef<number> = computed(() => get(collection).limit);
+  const found: ComputedRef<number> = computed(() => get(collection).found);
+  const total: ComputedRef<number> = computed(() => get(collection).total);
+  const totalUsdValue: ComputedRef<TotalValue> = computed(
     () => get(collection).totalUsdValue
   );
 
@@ -48,10 +56,13 @@ export const setupEntryLimit = (
   limit: Ref<number>,
   found: Ref<number>,
   total: Ref<number>
-) => {
+): {
+  itemLength: ComputedRef<number>;
+  showUpgradeRow: ComputedRef<boolean>;
+} => {
   const premium = usePremium();
 
-  const itemLength = computed(() => {
+  const itemLength: ComputedRef<number> = computed(() => {
     const isPremium = get(premium);
     const totalFound = get(found);
     if (isPremium) {
@@ -62,7 +73,7 @@ export const setupEntryLimit = (
     return Math.min(totalFound, entryLimit);
   });
 
-  const showUpgradeRow = computed(() => {
+  const showUpgradeRow: ComputedRef<boolean> = computed(() => {
     return get(limit) <= get(total) && get(limit) > 0;
   });
 

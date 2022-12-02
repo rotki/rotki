@@ -3,6 +3,7 @@ import { TimeUnit } from '@rotki/common/lib/settings';
 import { timeframes } from '@rotki/common/lib/settings/graphs';
 import { NetValue } from '@rotki/common/lib/statistics';
 import dayjs from 'dayjs';
+import { ComputedRef } from 'vue';
 import { setupLiquidityPosition } from '@/composables/defi';
 import { useStatisticsApi } from '@/services/statistics/statistics-api';
 import { useAggregatedBalancesStore } from '@/store/balances/aggregated';
@@ -15,7 +16,7 @@ import { useSessionSettingsStore } from '@/store/settings/session';
 import { CURRENCY_USD } from '@/types/currencies';
 import { bigNumberify, One, Zero } from '@/utils/bignumbers';
 
-const defaultNetValue = () => ({
+const defaultNetValue = (): NetValue => ({
   times: [],
   data: []
 });
@@ -38,7 +39,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
 
   const { t } = useI18n();
 
-  const calculateTotalValue = (includeNft = false) =>
+  const calculateTotalValue = (includeNft = false): ComputedRef<BigNumber> =>
     computed(() => {
       const aggregatedBalances = get(balances());
       const totalLiabilities = get(liabilities());
@@ -120,7 +121,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
   });
 
   const api = useStatisticsApi();
-  const fetchNetValue = async () => {
+  const fetchNetValue = async (): Promise<void> => {
     try {
       set(netValue, await api.queryNetValueData(get(nftsInNetValue)));
     } catch (e: any) {
@@ -134,7 +135,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
     }
   };
 
-  const getNetValue = (startingDate: number) =>
+  const getNetValue = (startingDate: number): ComputedRef<NetValue> =>
     computed(() => {
       const currency = get(currencySymbol);
       const rate = get(exchangeRate(currency)) ?? One;

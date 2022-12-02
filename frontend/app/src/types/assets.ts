@@ -1,10 +1,10 @@
+import { NumericString } from '@rotki/common';
 import {
-  SupportedAsset,
   AssetInfo,
-  AssetInfoWithTransformer
+  AssetInfoWithTransformer,
+  SupportedAsset
 } from '@rotki/common/lib/data';
 import { z } from 'zod';
-import { getCollectionResponseType } from '@/types/collection';
 import { ApiPagination, TablePagination } from '@/types/pagination';
 
 export interface AssetDBVersion {
@@ -92,7 +92,13 @@ export const CustomAsset = z.object({
 
 export type CustomAsset = z.infer<typeof CustomAsset>;
 
-export const CustomAssets = getCollectionResponseType(CustomAsset);
+export const CustomAssets = z.object({
+  entries: z.array(CustomAsset),
+  entriesFound: z.number(),
+  entriesLimit: z.number().default(-1),
+  entriesTotal: z.number(),
+  totalUsdValue: NumericString.nullish()
+});
 export type CustomAssets = z.infer<typeof CustomAssets>;
 
 export interface CustomAssetPagination extends ApiPagination<CustomAsset> {

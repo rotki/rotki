@@ -69,7 +69,7 @@ import { usePremium } from '@/composables/premium';
 import { useModules } from '@/composables/session/modules';
 import { Eth2Staking } from '@/premium/premium';
 import { useEthAccountsStore } from '@/store/blockchain/accounts/eth';
-import { useEth2StakingStore } from '@/store/staking';
+import { useEth2StakingStore } from '@/store/staking/eth2';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 

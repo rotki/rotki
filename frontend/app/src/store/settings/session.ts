@@ -38,7 +38,7 @@ export const useSessionSettingsStore = defineStore('settings/session', () => {
     return settings.privacyMode < PrivacyMode.PRIVATE;
   });
 
-  const setAnimationsEnabled = (enabled: boolean) => {
+  const setAnimationsEnabled = (enabled: boolean): void => {
     set(isAnimationEnabledSetting, enabled);
     settings.animationsEnabled = enabled;
   };

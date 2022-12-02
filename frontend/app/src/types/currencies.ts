@@ -92,7 +92,7 @@ export const useCurrencies = createSharedComposable(() => {
     return get(currencies)[0];
   });
 
-  const findCurrency = (currencySymbol: string) => {
+  const findCurrency = (currencySymbol: string): Currency => {
     const currency: Currency | undefined = get(currencies).find(
       currency => currency.tickerSymbol === currencySymbol
     );

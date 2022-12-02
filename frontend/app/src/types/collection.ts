@@ -1,5 +1,4 @@
-import { BigNumber, NumericString } from '@rotki/common';
-import { z, ZodTypeAny } from 'zod';
+import { BigNumber } from '@rotki/common';
 
 export interface Collection<T> {
   data: T[];
@@ -16,13 +15,3 @@ export interface CollectionResponse<T> {
   entriesTotal: number;
   totalUsdValue?: BigNumber | null;
 }
-
-export const getCollectionResponseType = (obj: ZodTypeAny) => {
-  return z.object({
-    entries: z.array(obj),
-    entriesFound: z.number(),
-    entriesLimit: z.number().default(-1),
-    entriesTotal: z.number(),
-    totalUsdValue: NumericString.nullish()
-  });
-};

@@ -23,7 +23,7 @@ export const useAccountingSettingsStore = defineStore(
     );
     const costBasisMethod = computed(() => settings.costBasisMethod);
 
-    const update = (accountingSettings: AccountingSettings) => {
+    const update = (accountingSettings: AccountingSettings): void => {
       Object.assign(settings, accountingSettings);
     };
 

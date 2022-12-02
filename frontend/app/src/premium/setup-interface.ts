@@ -9,7 +9,6 @@ import dayjs from 'dayjs';
 import { displayDateFormatter } from '@/data/date_formatter';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 import {
-  adexApi,
   assetsApi,
   balancerApi,
   balancesApi,
@@ -61,7 +60,6 @@ const date: DateUtilities = {
 const data = (): DataUtilities => ({
   assets: assetsApi(),
   statistics: statisticsApi(),
-  adex: adexApi(),
   balances: balancesApi(),
   balancer: balancerApi(),
   compound: compoundApi(),

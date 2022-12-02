@@ -7,12 +7,12 @@ export interface BackendSettings {
   readonly sessionOnly: boolean;
 }
 
-export function deleteBackendUrl() {
+export function deleteBackendUrl(): void {
   localStorage.removeItem(KEY_BACKEND_URL);
   localStorage.removeItem(KEY_BACKEND_URL_SESSION_ONLY);
 }
 
-export function saveBackendUrl({ sessionOnly, url }: BackendSettings) {
+export function saveBackendUrl({ sessionOnly, url }: BackendSettings): void {
   localStorage.setItem(KEY_BACKEND_URL, url);
   if (sessionOnly) {
     localStorage.setItem(KEY_BACKEND_URL_SESSION_ONLY, `${true}`);
@@ -35,7 +35,7 @@ export function lastLogin(): string {
   return localStorage.getItem(KEY_LAST_LOGIN) ?? '';
 }
 
-export function setLastLogin(username: string) {
+export function setLastLogin(username: string): void {
   if (!username) {
     localStorage.removeItem(KEY_LAST_LOGIN);
   } else {

@@ -1,16 +1,20 @@
-import logger, { LogLevelNames, LogLevelNumbers } from 'loglevel';
-import { interop } from '@/electron-interop';
+import logger, {
+  LoggingMethod,
+  LogLevelNames,
+  LogLevelNumbers
+} from 'loglevel';
+import { useInterop } from '@/electron-interop';
 import { checkIfDevelopment } from '@/utils/env-utils';
 import IndexedDb from '@/utils/indexed-db';
 import { LogLevel } from '@/utils/log-level';
 
 const isDevelopment = checkIfDevelopment();
 
-export const getDefaultLogLevel = () => {
+export const getDefaultLogLevel = (): LogLevel => {
   return isDevelopment ? LogLevel.DEBUG : LogLevel.CRITICAL;
 };
 
-export const getDefaultFrontendLogLevel = () => {
+export const getDefaultFrontendLogLevel = (): LogLevelNumbers => {
   return isDevelopment ? logger.levels.DEBUG : logger.levels.SILENT;
 };
 
@@ -23,7 +27,7 @@ const mapping = {
   [LogLevel.TRACE]: logger.levels.TRACE
 };
 
-export const mapToFrontendLogLevel = (logLevel?: LogLevel) => {
+export const mapToFrontendLogLevel = (logLevel?: LogLevel): LogLevelNumbers => {
   if (!logLevel) {
     return getDefaultFrontendLogLevel();
   }
@@ -42,18 +46,20 @@ if (!isDevelopment) {
     methodName: LogLevelNames,
     logLevel: LogLevelNumbers,
     loggerName: string | symbol
-  ) {
+  ): LoggingMethod {
     const rawMethod = originalFactory(methodName, logLevel, loggerName);
 
-    return (...message: any[]) => {
+    const { isPackaged, logToFile } = useInterop();
+
+    return (...message: any[]): void => {
       rawMethod(...message);
 
       if (
         loggerName !== 'console-only' &&
         Object.values(LogLevel).indexOf(methodName as LogLevel) >= logLevel
       ) {
-        if (interop.isPackaged) {
-          interop.logToFile(`(${methodName}): ${message.join('')}`);
+        if (isPackaged) {
+          logToFile(`(${methodName}): ${message.join('')}`);
         } else {
           void loggerDb.add({
             message: `${new Date(Date.now()).toISOString()}: ${message.join(
@@ -68,7 +74,7 @@ if (!isDevelopment) {
 
 logger.setLevel(logger.getLevel());
 
-const setLevel = (loglevel?: LogLevel, persist = true) => {
+const setLevel = (loglevel?: LogLevel, persist = true): void => {
   logger.setLevel(mapToFrontendLogLevel(loglevel), persist);
 };
 

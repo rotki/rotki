@@ -1,5 +1,5 @@
 import { Message } from '@rotki/common/lib/messages';
-import { Ref } from 'vue';
+import { ComputedRef, Ref } from 'vue';
 import { api } from '@/services/rotkehlchen-api';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
 import { filterAddressesFromWords } from '@/store/history/utils';
@@ -27,7 +27,7 @@ const notify = (info: {
   title: string;
   message: (value: { message: string }) => string;
   error?: any;
-}) => {
+}): void => {
   logger.error(info.error);
   const message = info.error?.message ?? info.error ?? '';
   const { notify } = useNotifications();
@@ -38,7 +38,7 @@ const notify = (info: {
   });
 };
 
-const emptyError: () => ReportError = () => ({
+const emptyError = (): ReportError => ({
   error: '',
   message: ''
 });
@@ -64,20 +64,30 @@ const defaultReport = (): SelectedReport => ({
   }
 });
 
-const defaultReports = () => ({
+const defaultReports = (): Reports => ({
   entries: [],
   entriesLimit: 0,
   entriesFound: 0
 });
 
-const defaultProgress = () => ({ processingState: '', totalProgress: '' });
+interface Progress {
+  processingState: string;
+  totalProgress: string;
+}
+
+const defaultProgress = (): Progress => ({
+  processingState: '',
+  totalProgress: ''
+});
 
 export const useReports = defineStore('reports', () => {
-  const report = ref(defaultReport()) as Ref<SelectedReport>;
-  const reports = ref<Reports>(defaultReports()) as Ref<Reports>;
-  const accountingSettings = ref<AccountingSettings | null>(null);
+  const report: Ref<SelectedReport> = ref(
+    defaultReport()
+  ) as Ref<SelectedReport>;
+  const reports: Ref<Reports> = ref(defaultReports());
+  const accountingSettings: Ref<AccountingSettings | null> = ref(null);
   const loaded = ref(false);
-  const reportProgress = ref(defaultProgress());
+  const reportProgress: Ref<Progress> = ref(defaultProgress());
   const reportError = ref(emptyError());
   const lastGeneratedReport = ref<number | null>(null);
   const actionableItems = ref<ReportActionableItem>({
@@ -89,7 +99,7 @@ export const useReports = defineStore('reports', () => {
   const { itemsPerPage } = storeToRefs(useFrontendSettingsStore());
   const { t } = useI18n();
 
-  const createCsv = async (path: string) => {
+  const createCsv = async (path: string): Promise<void> => {
     let message: Message;
     try {
       const success = await api.reports.exportReportCSV(path);
@@ -110,7 +120,7 @@ export const useReports = defineStore('reports', () => {
     setMessage(message);
   };
 
-  const deleteReport = async (reportId: number) => {
+  const deleteReport = async (reportId: number): Promise<void> => {
     try {
       await api.reports.deleteReport(reportId);
       await fetchReports();
@@ -186,7 +196,7 @@ export const useReports = defineStore('reports', () => {
     return true;
   };
 
-  const fetchReports = async () => {
+  const fetchReports = async (): Promise<void> => {
     try {
       set(reports, await api.reports.fetchReports());
     } catch (e: any) {
@@ -299,16 +309,16 @@ export const useReports = defineStore('reports', () => {
   const progress = computed(() => get(reportProgress).totalProgress);
   const processingState = computed(() => get(reportProgress).processingState);
 
-  const isLatestReport = (reportId: number) =>
+  const isLatestReport = (reportId: number): ComputedRef<boolean> =>
     computed(() => {
       return get(lastGeneratedReport) === reportId;
     });
 
-  const clearError = () => {
+  const clearError = (): void => {
     set(reportError, emptyError());
   };
 
-  const clearReport = () => {
+  const clearReport = (): void => {
     set(report, defaultReport());
   };
 

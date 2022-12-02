@@ -2,7 +2,7 @@ import { AssetBalance } from '@rotki/common';
 import { AssetInfo } from '@rotki/common/lib/data';
 import { assert } from '@/utils/assertions';
 
-const levenshtein = (a: string, b: string) => {
+const levenshtein = (a: string, b: string): number => {
   let tmp;
   if (a.length === 0) {
     return b.length;
@@ -54,7 +54,11 @@ const levenshtein = (a: string, b: string) => {
  * 1. It will prioritize string that match from beginning (i.e. for keyword `hop`, it prioritizes string `hop-protocol` higher than string `hoo`)
  * 2. It will prioritize string that contain the keyword (i.e. for keyword `urv`, it prioritizes string `curvy`, higher than string `urw`)
  */
-export const compareSymbols = (a: string, b: string, keyword: string) => {
+export const compareSymbols = (
+  a: string,
+  b: string,
+  keyword: string
+): number => {
   const search = keyword.toLocaleLowerCase().trim();
   const keywordA = a.toLocaleLowerCase().trim();
   const keywordB = b.toLocaleLowerCase().trim();
@@ -118,12 +122,12 @@ export const getSortItems = (
   };
 };
 
-export const isEvmIdentifier = (identifier?: string) => {
+export const isEvmIdentifier = (identifier?: string): boolean => {
   if (!identifier) return false;
   return identifier.startsWith('eip155');
 };
 
-export const getAddressFromEvmIdentifier = (identifier?: string) => {
+export const getAddressFromEvmIdentifier = (identifier?: string): string => {
   if (!identifier) return '';
   return identifier.split(':')[2] ?? '';
 };
@@ -131,10 +135,10 @@ export const getAddressFromEvmIdentifier = (identifier?: string) => {
 export const createEvmIdentifierFromAddress = (
   address: string,
   chain = '1'
-) => {
+): string => {
   return `eip155:${chain}/erc20:${address}`;
 };
 
-export const getValidSelectorFromEvmAddress = (address: string) => {
+export const getValidSelectorFromEvmAddress = (address: string): string => {
   return address.replace(/[^a-z0-9]/gi, '');
 };

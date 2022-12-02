@@ -99,7 +99,7 @@ function createTimeframe(
     } else {
       throw new Error(`unsupported timeframe: ${frame}`);
     }
-    start = () => startingDate(startUnit, amount);
+    start = ():number => startingDate(startUnit, amount);
   }
   return {
     text: frame,

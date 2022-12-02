@@ -125,10 +125,6 @@ export const UniswapDetails = () => {
   return createFactory(load('UniswapDetails'));
 };
 
-export const AdexStaking = () => {
-  return createFactory(load('AdexStaking'));
-};
-
 export const AssetAmountAndValueOverTime = () => {
   return createFactory(load('AssetAmountAndValueOverTime'));
 };

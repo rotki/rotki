@@ -104,7 +104,7 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
 
   const api = useSettingsApi();
 
-  const update = (update: FrontendSettings) => {
+  const update = (update: FrontendSettings): void => {
     Object.assign(settings, update);
     checkMachineLanguage();
   };
@@ -146,7 +146,7 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
 
   const { lastLanguage, forceUpdateMachineLanguage } = useLastLanguage();
 
-  const checkMachineLanguage = () => {
+  const checkMachineLanguage = (): void => {
     if (get(forceUpdateMachineLanguage) === 'true') {
       set(lastLanguage, get(language));
     } else {
