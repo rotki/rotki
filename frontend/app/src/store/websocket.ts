@@ -92,18 +92,18 @@ export const useWebsocketStore = defineStore('websocket', () => {
       logger.debug(`preparing to connect to ${url}`);
       const ws = new WebSocket(url);
       set(connection, ws);
-      ws.onmessage = async event => await handleMessage(event);
-      ws.onopen = () => {
+      ws.onmessage = async (event): Promise<void> => await handleMessage(event);
+      ws.onopen = (): void => {
         logger.debug('websocket connected');
         set(connected, true);
         resolve(true);
       };
-      ws.onerror = () => {
+      ws.onerror = (): void => {
         logger.error('websocket connection failed');
         set(connected, false);
         resolve(false);
       };
-      ws.onclose = event => {
+      ws.onclose = (event): void => {
         logger.debug('websocket connection closed');
         set(connected, false);
         if (!event.wasClean) {

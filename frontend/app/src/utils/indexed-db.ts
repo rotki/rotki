@@ -21,13 +21,13 @@ export default class IndexedDb {
         (window as any).webkitIndexedDB
       ).open(this.dbName, this.dbVersion);
 
-      request.onsuccess = e => {
+      request.onsuccess = (e): void => {
         resolve((e.target as any).result);
       };
-      request.onerror = e => {
+      request.onerror = (e): void => {
         reject(e);
       };
-      request.onupgradeneeded = e => {
+      request.onupgradeneeded = (e): void => {
         const db = (e.target as any).result;
         if (!db.objectStoreNames.contains(this.store)) {
           db.createObjectStore(this.store, {
@@ -37,13 +37,13 @@ export default class IndexedDb {
         }
       };
 
-      request.onblocked = e => {
+      request.onblocked = (e): void => {
         reject(e);
       };
     });
   }
 
-  async add(data: any, callback: Function = () => {}) {
+  async add(data: any, callback: Function = (): void => {}): Promise<void> {
     try {
       const db = await this.db;
       const objectStore = db
@@ -52,12 +52,12 @@ export default class IndexedDb {
 
       const request = objectStore.put(data);
 
-      request.onsuccess = (e: any) => {
+      request.onsuccess = (e: any): void => {
         const currentId = e.target.result;
 
         const cursorRequest = objectStore.openCursor();
 
-        cursorRequest.onsuccess = (e: any) => {
+        cursorRequest.onsuccess = (e: any): void => {
           const cursor = e.target.result;
           if (cursor) {
             const firstId = cursor.value.id;
@@ -72,13 +72,13 @@ export default class IndexedDb {
         };
       };
 
-      request.onerror = (e: any) => callback(e.target.error);
+      request.onerror = (e: any): void => callback(e.target.error);
     } catch (e: any) {
       logger.getLogger('console-only').log(e);
     }
   }
 
-  async getAll(callback: Function) {
+  async getAll(callback: Function): Promise<void> {
     try {
       const db = await this.db;
       const request = db
@@ -86,7 +86,7 @@ export default class IndexedDb {
         .objectStore(this.store)
         .openCursor();
       const results: any[] = [];
-      request.onsuccess = (e: any) => {
+      request.onsuccess = (e: any): void => {
         const cursor = e.target.result;
         if (cursor) {
           cursor.continue();
@@ -95,7 +95,7 @@ export default class IndexedDb {
           callback(results);
         }
       };
-      request.onerror = (e: any) => callback(e.target.error);
+      request.onerror = (e: any): void => callback(e.target.error);
     } catch (e: any) {
       logger.getLogger('console-only').log(e);
     }

@@ -5,6 +5,6 @@ export interface TabContent {
   readonly hideHeader?: boolean;
 }
 
-export const getClass = (route: string) => {
+export const getClass = (route: string): string => {
   return route.toLowerCase().replace('/', '').replace(/\//g, '__');
 };

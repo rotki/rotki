@@ -1,4 +1,5 @@
 import { MaybeRef } from '@vueuse/core';
+import { ComputedRef } from 'vue';
 import { StatusPayload } from '@/store/types';
 import { defiSections, Section, Status } from '@/types/status';
 
@@ -21,14 +22,14 @@ export const useStatusStore = defineStore('status', () => {
     );
   });
 
-  const resetDefiStatus = () => {
+  const resetDefiStatus = (): void => {
     const newStatus = Status.NONE;
     defiSections.forEach(section => {
       status.value[section] = newStatus;
     });
   };
 
-  const setStatus = ({ section, status: newStatus }: StatusPayload) => {
+  const setStatus = ({ section, status: newStatus }: StatusPayload): void => {
     const statuses = get(status);
     if (statuses[section] === newStatus) {
       return;
@@ -36,7 +37,7 @@ export const useStatusStore = defineStore('status', () => {
     set(status, { ...statuses, [section]: newStatus });
   };
 
-  const getStatus = (section: Section) =>
+  const getStatus = (section: Section): ComputedRef<Status> =>
     computed<Status>(() => {
       return get(status)[section] ?? Status.NONE;
     });
@@ -61,7 +62,7 @@ if (import.meta.hot) {
  * @deprecated use useStatusUpdater instead
  * @param section
  */
-export const getStatus = (section: Section) => {
+export const getStatus = (section: Section): Status => {
   const { getStatus } = useStatusStore();
   return get(getStatus(section));
 };

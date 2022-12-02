@@ -10,6 +10,7 @@
   "types": "lib/index.d.ts",
   "scripts": {
     "preinstall": "node ../check-versions.js",
+    "postinstall": "npm run build",
     "build": "rimraf lib && tsc -m es6",
     "watch": "tsc -w -m es6",
     "test": "echo \"Error: no test specified\" && exit 1",

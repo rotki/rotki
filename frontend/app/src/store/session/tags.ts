@@ -38,7 +38,7 @@ export const useTagStore = defineStore('session/tags', () => {
     }
   };
 
-  const editTag = async (tag: Tag) => {
+  const editTag = async (tag: Tag): Promise<void> => {
     try {
       set(allTags, await queryEditTag(tag));
     } catch (e: any) {
@@ -49,7 +49,7 @@ export const useTagStore = defineStore('session/tags', () => {
     }
   };
 
-  const deleteTag = async (name: string) => {
+  const deleteTag = async (name: string): Promise<void> => {
     try {
       set(allTags, await queryDeleteTag(name));
       removeTag(name);
@@ -61,7 +61,7 @@ export const useTagStore = defineStore('session/tags', () => {
     }
   };
 
-  const fetchTags = async () => {
+  const fetchTags = async (): Promise<void> => {
     try {
       set(allTags, await queryTags());
     } catch (e: any) {

@@ -67,15 +67,6 @@
                 </router-link>
               </v-col>
               <v-col cols="auto" class="mx-4">
-                <router-link to="/staking/adex">
-                  <v-img
-                    :width="iconSize"
-                    contain
-                    src="/assets/images/adex.svg"
-                  />
-                </router-link>
-              </v-col>
-              <v-col cols="auto" class="mx-4">
                 <router-link to="/staking/liquity">
                   <v-img
                     :width="iconSize"
@@ -116,7 +107,6 @@
 import { PropType } from 'vue';
 import FullSizeContent from '@/components/common/FullSizeContent.vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
-import AdexPage from '@/components/staking/AdexPage.vue';
 import Eth2Page from '@/components/staking/Eth2Page.vue';
 import KrakenPage from '@/components/staking/KrakenPage.vue';
 import LiquityPage from '@/components/staking/LiquityPage.vue';
@@ -133,7 +123,6 @@ const iconSize = '64px';
 
 const pages = {
   eth2: Eth2Page,
-  adex: AdexPage,
   liquity: LiquityPage,
   kraken: KrakenPage
 };
@@ -141,7 +130,7 @@ const pages = {
 const props = defineProps({
   location: {
     required: false,
-    type: String as PropType<'eth2' | 'adex' | 'liquity' | 'kraken' | null>,
+    type: String as PropType<'eth2' | 'liquity' | 'kraken' | null>,
     default: null
   }
 });
@@ -155,11 +144,6 @@ const staking = computed<StakingInfo[]>(() => [
     id: 'eth2',
     icon: './assets/images/modules/eth.svg',
     name: tc('staking.eth2')
-  },
-  {
-    id: 'adex',
-    icon: './assets/images/adex.svg',
-    name: tc('staking.adex')
   },
   {
     id: 'liquity',

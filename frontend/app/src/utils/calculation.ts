@@ -2,7 +2,7 @@ import { Balance, BigNumber } from '@rotki/common';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { Zero } from '@/utils/bignumbers';
 
-export const assetSum = (balances: Record<string, Balance>) => {
+export const assetSum = (balances: Record<string, Balance>): BigNumber => {
   const { isAssetIgnored } = useIgnoredAssetsStore();
 
   return Object.entries(balances).reduce((sum, [asset, balance]) => {
@@ -35,7 +35,10 @@ export const balanceSum = (
   usdValue: sum.usdValue.plus(usdValue)
 });
 
-export const calculatePercentage = (value: BigNumber, divider: BigNumber) => {
+export const calculatePercentage = (
+  value: BigNumber,
+  divider: BigNumber
+): string => {
   const percentage = divider.isZero()
     ? 0
     : value.div(divider).multipliedBy(100);

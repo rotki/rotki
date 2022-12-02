@@ -14,17 +14,17 @@ export const useSessionAuthStore = defineStore('session/auth', () => {
   const syncConflict = ref<SyncConflict>(defaultSyncConflict());
   const loginStatus = ref<LoginStatusData | null>(null);
 
-  const resetSyncConflict = () => {
+  const resetSyncConflict = (): void => {
     set(syncConflict, defaultSyncConflict());
   };
 
-  const handleLoginStatus = (data: LoginStatusData) => {
+  const handleLoginStatus = (data: LoginStatusData): void => {
     if (!get(logged)) {
       updateLoginStatus(data);
     }
   };
 
-  const updateLoginStatus = (status: LoginStatusData | null = null) => {
+  const updateLoginStatus = (status: LoginStatusData | null = null): void => {
     set(loginStatus, status);
   };
 

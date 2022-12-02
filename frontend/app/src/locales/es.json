@@ -765,24 +765,6 @@
       }
     },
     "staking": {
-      "adex_balances": {
-        "error": {
-          "description": "Failed to query the AdEx staking balances: {error}",
-          "title": "Querying AdEx staking balances failed"
-        },
-        "task": {
-          "title": "Querying AdEx staking balances"
-        }
-      },
-      "adex_history": {
-        "error": {
-          "description": "Failed to query the AdEx staking history: {error}",
-          "title": "Querying AdEx staking history"
-        },
-        "task": {
-          "title": "Querying AdEx staking history"
-        }
-      },
       "eth2": {
         "error": {
           "description": "Failed to query the Eth2 staking details: {error}",
@@ -851,9 +833,6 @@
       "title": "Enabled module"
     },
     "view_addresses": "View the queried addresses for {name}"
-  },
-  "adex_page": {
-    "loading": "Please wait while your AdEx staking details are getting loaded..."
   },
   "airdrops": {
     "description": "* These are the airdrops rotki detected your tracked accounts are eligible for. You may have already claimed them. If not then visit the link for each protocol and claim your share.",
@@ -3517,7 +3496,6 @@
     }
   },
   "staking": {
-    "adex": "AdEx",
     "eth2": "ETH2",
     "kraken": "Kraken",
     "liquity": "Liquity"

@@ -1,9 +1,8 @@
 // Trades
 import { NumericString } from '@rotki/common';
 import { z } from 'zod';
-import { getCollectionResponseType } from '@/types/collection';
 import { PaginationRequestPayload } from '@/types/common';
-import { getEntryWithMeta } from '@/types/history/meta';
+import { EntryMeta } from '@/types/history/meta';
 import { TradeLocation } from '@/types/history/trade-location';
 
 export const TradeType = z.enum([
@@ -28,9 +27,19 @@ export const Trade = z.object({
   notes: z.string().nullish()
 });
 export type Trade = z.infer<typeof Trade>;
-export const TradeCollectionResponse = getCollectionResponseType(
-  getEntryWithMeta(Trade)
-);
+export const TradeCollectionResponse = z.object({
+  entries: z.array(
+    z
+      .object({
+        entry: Trade
+      })
+      .merge(EntryMeta)
+  ),
+  entriesFound: z.number(),
+  entriesLimit: z.number().default(-1),
+  entriesTotal: z.number(),
+  totalUsdValue: NumericString.nullish()
+});
 export type NewTrade = Omit<Trade, 'tradeId' | 'ignoredInAccounting'>;
 export interface TradeRequestPayload extends PaginationRequestPayload<Trade> {
   readonly fromTimestamp?: string | number;

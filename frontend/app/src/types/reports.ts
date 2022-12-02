@@ -1,6 +1,5 @@
 import { NumericString } from '@rotki/common';
 import { z } from 'zod';
-import { Entries } from '@/types/common';
 import { Quarter } from '@/types/frontend-settings';
 import { BaseAccountingSettings } from '@/types/user';
 
@@ -97,15 +96,27 @@ export interface ReportError {
   message: string;
 }
 
-export const Reports = Entries(z.array(Report));
+export const Reports = z.object({
+  entries: z.array(Report),
+  entriesFound: z.number(),
+  entriesLimit: z.number()
+});
 
 export type Reports = z.infer<typeof Reports>;
 
-export const ProfitLossReportOverview = Entries(z.array(ProfitLossOverview));
+export const ProfitLossReportOverview = z.object({
+  entries: z.array(ProfitLossOverview),
+  entriesFound: z.number(),
+  entriesLimit: z.number()
+});
 
 export type ProfitLossReportOverview = z.infer<typeof ProfitLossReportOverview>;
 
-export const ProfitLossReportEvents = Entries(ProfitLossEvents);
+export const ProfitLossReportEvents = z.object({
+  entries: ProfitLossEvents,
+  entriesFound: z.number(),
+  entriesLimit: z.number()
+});
 
 export type ProfitLossReportEvents = z.infer<typeof ProfitLossReportEvents>;
 

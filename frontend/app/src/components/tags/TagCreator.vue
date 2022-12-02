@@ -118,7 +118,7 @@ import { PropType, Ref } from 'vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
 import { TagEvent } from '@/types/tags';
 import { Tag } from '@/types/user';
-import { invertColor, randomColor } from '@/utils/Color';
+import { invertColor, randomColor } from '@/utils/color';
 
 const props = defineProps({
   tag: { required: true, type: Object as PropType<Tag> },

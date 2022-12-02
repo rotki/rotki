@@ -8,7 +8,6 @@ import { BalancerBalance, BalancerEvent, BalancerProfitLoss } from "../defi/bala
 import { XswapBalance, XswapEventDetails, XswapPool, XswapPoolProfit } from "../defi/xswap";
 import { AssetBalanceWithPrice, BigNumber } from "../index";
 import { Theme , DebugSettings, FrontendSettingsPayload, Themes, TimeUnit } from '../settings';
-import { AdexBalances, AdexHistory } from "../staking/adex";
 import { LocationData, NetValue, OwnedAssets, TimedAssetBalances, TimedBalances } from "../statistics";
 
 export interface PremiumInterface {
@@ -30,13 +29,6 @@ export interface StatisticsApi {
   fetchNetValue(): Promise<void>
   netValue: (startingData: number) => Ref<NetValue>
 }
-
-export interface AdexApi {
-  fetchAdex(refresh: boolean): Promise<void>
-  adexHistory: Ref<AdexHistory>
-  adexBalances: Ref<AdexBalances>
-}
-
 export interface DateUtilities {
   epoch(): number;
   format(date: string, oldFormat: string, newFormat: string): string;
@@ -97,7 +89,6 @@ export interface DataUtilities {
   readonly assets: AssetsApi
   readonly utils: UtilsApi
   readonly statistics: StatisticsApi;
-  readonly adex: AdexApi;
   readonly compound: CompoundApi,
   readonly balancer: BalancerApi,
   readonly balances: BalancesApi

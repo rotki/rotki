@@ -1,7 +1,6 @@
 import { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 import { ProfitLossModel } from '@rotki/common/lib/defi';
 import {
-  AdexApi,
   AssetsApi,
   BalancerApi,
   BalancesApi,
@@ -11,7 +10,6 @@ import {
   UserSettingsApi,
   UtilsApi
 } from '@rotki/common/lib/premium';
-import { AdexBalances, AdexHistory } from '@rotki/common/lib/staking/adex';
 import {
   LocationData,
   OwnedAssets,
@@ -19,7 +17,7 @@ import {
   TimedBalances
 } from '@rotki/common/lib/statistics';
 import { MaybeRef } from '@vueuse/core';
-import { ComputedRef, Ref } from 'vue';
+import { ComputedRef } from 'vue';
 import { setupLiquidityPosition } from '@/composables/defi';
 import { truncateAddress } from '@/filters';
 import { api } from '@/services/rotkehlchen-api';
@@ -35,7 +33,6 @@ import { useSushiswapStore } from '@/store/defi/sushiswap';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';
-import { useAdexStakingStore } from '@/store/staking';
 import { useStatisticsStore } from '@/store/statistics';
 import { One } from '@/utils/bignumbers';
 import { isNft } from '@/utils/nft';
@@ -110,19 +107,6 @@ export const userSettings = (): UserSettingsApi => {
     scrambleData,
     shouldShowAmount,
     shouldShowPercentage
-  };
-};
-
-export const adexApi = (): AdexApi => {
-  const store = useAdexStakingStore();
-  const { adexBalances, adexHistory } = storeToRefs(store);
-  const { fetchAdex } = store;
-  return {
-    async fetchAdex(refresh: boolean): Promise<void> {
-      await fetchAdex(refresh);
-    },
-    adexHistory: adexHistory as Ref<AdexHistory>,
-    adexBalances: adexBalances as Ref<AdexBalances>
   };
 };
 

@@ -14,7 +14,9 @@ export const useQueriedAddressesStore = defineStore(
     const api = useQueriedAddressApi();
     const { t } = useI18n();
 
-    async function addQueriedAddress(payload: QueriedAddressPayload) {
+    async function addQueriedAddress(
+      payload: QueriedAddressPayload
+    ): Promise<void> {
       try {
         set(queriedAddresses, await api.addQueriedAddress(payload));
       } catch (e: any) {
@@ -29,7 +31,9 @@ export const useQueriedAddressesStore = defineStore(
       }
     }
 
-    async function deleteQueriedAddress(payload: QueriedAddressPayload) {
+    async function deleteQueriedAddress(
+      payload: QueriedAddressPayload
+    ): Promise<void> {
       try {
         set(queriedAddresses, await api.deleteQueriedAddress(payload));
       } catch (e: any) {
@@ -44,7 +48,7 @@ export const useQueriedAddressesStore = defineStore(
       }
     }
 
-    async function fetchQueriedAddresses() {
+    async function fetchQueriedAddresses(): Promise<void> {
       try {
         set(queriedAddresses, await api.queriedAddresses());
       } catch (e: any) {

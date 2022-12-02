@@ -90,7 +90,7 @@ import TagIcon from '@/components/tags/TagIcon.vue';
 import TagManager from '@/components/tags/TagManager.vue';
 import { useTagStore } from '@/store/session/tags';
 import { Tag } from '@/types/user';
-import { invertColor, randomColor } from '@/utils/Color';
+import { invertColor, randomColor } from '@/utils/color';
 import { checkIfDevelopment } from '@/utils/env-utils';
 import { logger } from '@/utils/logging';
 

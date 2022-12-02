@@ -78,7 +78,7 @@ export const useKrakenStakingStore = defineStore('staking/kraken', () => {
     Section.STAKING_KRAKEN
   );
 
-  const refreshEvents = async () => {
+  const refreshEvents = async (): Promise<void> => {
     const { taskId } = await api.refreshKrakenStaking();
 
     const taskMeta: TaskMeta = {
@@ -94,7 +94,7 @@ export const useKrakenStakingStore = defineStore('staking/kraken', () => {
     );
   };
 
-  const fetchEvents = async (refresh = false) => {
+  const fetchEvents = async (refresh = false): Promise<void> => {
     const taskType = TaskType.STAKING_KRAKEN;
     try {
       const firstLoad = isFirstLoad();
@@ -129,7 +129,9 @@ export const useKrakenStakingStore = defineStore('staking/kraken', () => {
     }
   };
 
-  const updatePagination = async (data: KrakenStakingPagination) => {
+  const updatePagination = async (
+    data: KrakenStakingPagination
+  ): Promise<void> => {
     set(pagination, data);
     await fetchEvents();
   };

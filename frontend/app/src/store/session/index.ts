@@ -156,7 +156,7 @@ export const useSessionStore = defineStore('session', () => {
     }
   };
 
-  const logout = async () => {
+  const logout = async (): Promise<void> => {
     resetTray();
     try {
       await usersApi.logout(get(username));

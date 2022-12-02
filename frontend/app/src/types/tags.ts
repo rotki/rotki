@@ -1,3 +1,5 @@
+import { Tag } from '@/types/user';
+
 export interface TagEvent {
   readonly name?: string;
   readonly description?: string;
@@ -5,7 +7,7 @@ export interface TagEvent {
   readonly backgroundColor?: string;
 }
 
-export const defaultTag = () => ({
+export const defaultTag = (): Tag => ({
   name: '',
   description: '',
   foregroundColor: '000000',

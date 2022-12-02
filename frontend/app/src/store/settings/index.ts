@@ -20,7 +20,9 @@ export const useSettingsStore = defineStore('settings', () => {
 
   const api = useSettingsApi();
 
-  const setKrakenAccountType = async (krakenAccountType: KrakenAccountType) => {
+  const setKrakenAccountType = async (
+    krakenAccountType: KrakenAccountType
+  ): Promise<void> => {
     try {
       const { general } = await api.setSettings({
         krakenAccountType
@@ -67,7 +69,7 @@ export const useSettingsStore = defineStore('settings', () => {
   const enableModule = async (payload: {
     readonly enable: Module[];
     readonly addresses: string[];
-  }) => {
+  }): Promise<void> => {
     const activeModules = generalStore.activeModules;
     const modules: Module[] = [...activeModules, ...payload.enable].filter(
       uniqueStrings

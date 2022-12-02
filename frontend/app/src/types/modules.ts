@@ -9,7 +9,6 @@ export enum Module {
   AAVE = 'aave',
   UNISWAP = 'uniswap',
   BALANCER = 'balancer',
-  ADEX = 'adex',
   LOOPRING = 'loopring',
   ETH2 = 'eth2',
   SUSHISWAP = 'sushiswap',
@@ -62,11 +61,6 @@ export const SUPPORTED_MODULES: SupportedModule[] = [
     identifier: Module.UNISWAP,
     name: 'Uniswap',
     icon: './assets/images/defi/uniswap.svg'
-  },
-  {
-    identifier: Module.ADEX,
-    name: 'AdEx',
-    icon: './assets/images/adex.svg'
   },
   {
     identifier: Module.LOOPRING,
