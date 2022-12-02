@@ -22,7 +22,7 @@ from rotkehlchen.chain.ethereum.modules.aave.structures import (
     AaveLiquidationEvent,
     AaveRepayEvent,
 )
-from rotkehlchen.chain.ethereum.types import string_to_evm_address
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_BUSD, A_DAI, A_ETH, A_LINK, A_USDT, A_WBTC
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.fval import FVal

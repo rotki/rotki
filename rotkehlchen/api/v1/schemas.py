@@ -43,9 +43,9 @@ from rotkehlchen.chain.bitcoin.bch.utils import validate_bch_address_input
 from rotkehlchen.chain.bitcoin.hdkey import HDKey, XpubType
 from rotkehlchen.chain.bitcoin.utils import is_valid_btc_address, scriptpubkey_to_btc_address
 from rotkehlchen.chain.constants import NON_BITCOIN_CHAINS
+from rotkehlchen.chain.ethereum.constants import ETHEREUM_ETHERSCAN_NODE_NAME
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
-from rotkehlchen.chain.ethereum.types import ETHERSCAN_NODE_NAME
 from rotkehlchen.chain.substrate.types import (
     KusamaAddress,
     PolkadotAddress,
@@ -2547,8 +2547,8 @@ class RpcAddNodeSchema(Schema):
     name = fields.String(
         required=True,
         validate=webargs.validate.NoneOf(
-            iterable=['', ETHERSCAN_NODE_NAME],
-            error=f'Name can\'t be empty or {ETHERSCAN_NODE_NAME}',
+            iterable=['', ETHEREUM_ETHERSCAN_NODE_NAME],
+            error=f'Name can\'t be empty or {ETHEREUM_ETHERSCAN_NODE_NAME}',
         ),
     )
     endpoint = fields.String(required=True)
@@ -2573,7 +2573,7 @@ class RpcNodeEditSchema(RpcAddNodeSchema):
             data: Dict[str, Any],
             **_kwargs: Any,
     ) -> None:
-        if data['identifier'] == 1 and data['name'] != ETHERSCAN_NODE_NAME:
+        if data['identifier'] == 1 and data['name'] != ETHEREUM_ETHERSCAN_NODE_NAME:
             raise ValidationError(
                 message='Can\'t change the etherscan node name',
                 field_name='name',

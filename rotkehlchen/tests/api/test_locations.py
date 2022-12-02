@@ -1,7 +1,7 @@
 import pytest
 import requests
 
-from rotkehlchen.chain.ethereum.types import string_to_evm_address
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_EUR
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.exchanges.data_structures import Trade

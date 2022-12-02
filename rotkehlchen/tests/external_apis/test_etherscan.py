@@ -4,8 +4,9 @@ from unittest.mock import patch
 import pytest
 from eth_utils import to_checksum_address
 
-from rotkehlchen.chain.ethereum.constants import ETHEREUM_BEGIN, GENESIS_HASH, ZERO_ADDRESS
+from rotkehlchen.chain.ethereum.constants import ETHEREUM_BEGIN, GENESIS_HASH
 from rotkehlchen.chain.ethereum.etherscan import EthereumEtherscan
+from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery

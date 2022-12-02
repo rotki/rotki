@@ -10,11 +10,11 @@ from rotkehlchen.chain.ethereum.defi.structures import (
     DefiProtocol,
     DefiProtocolBalances,
 )
-from rotkehlchen.chain.ethereum.types import NodeName, WeightedNode, string_to_evm_address
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
+from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS
 from rotkehlchen.chain.evm.contracts import EvmContract
+from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
 from rotkehlchen.constants.assets import A_DAI, A_USDC
-from rotkehlchen.constants.ethereum import ETH_SPECIAL_ADDRESS, ZERION_ABI
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset, WrongAssetType
@@ -219,7 +219,7 @@ class ZerionSDK():
         self.msg_aggregator = msg_aggregator
         self.contract = EvmContract(
             address=ZERION_ADAPTER_ADDRESS,
-            abi=ZERION_ABI,
+            abi=self.ethereum.contracts.abi('ZERION_ABI'),
             deployed_block=1586199170,
         )
         self.database = database

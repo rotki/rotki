@@ -14,7 +14,7 @@ from rotkehlchen.chain.ethereum.modules.yearn.db import (
 )
 from rotkehlchen.chain.ethereum.modules.yearn.structures import YearnVault
 from rotkehlchen.chain.ethereum.modules.yearn.vaults import YearnVaultEvent, YearnVaultHistory
-from rotkehlchen.chain.ethereum.types import NodeName, WeightedNode
+from rotkehlchen.chain.evm.types import NodeName, WeightedNode
 from rotkehlchen.constants.assets import (
     A_ALINK_V1,
     A_CRVP_DAIUSDCTTUSD,
@@ -29,7 +29,6 @@ from rotkehlchen.constants.assets import (
     A_YV1_USDT,
     A_YV1_YFI,
 )
-from rotkehlchen.constants.ethereum import YEARN_YCRV_VAULT
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
@@ -520,6 +519,7 @@ def test_query_yearn_vault_history(rotkehlchen_api_server, ethereum_accounts):
 
     async_query = random.choice([True, False])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    yearn_ycrv_vault = rotki.chain.ethereum.contracts.contract('YEARN_YCRV_VAULT')
     setup = setup_balances(
         rotki,
         ethereum_accounts=ethereum_accounts,
@@ -528,7 +528,7 @@ def test_query_yearn_vault_history(rotkehlchen_api_server, ethereum_accounts):
     )
     test_vault = YearnVault(
         name='YCRV Vault',
-        contract=YEARN_YCRV_VAULT,
+        contract=yearn_ycrv_vault,
         underlying_token=A_CRVP_DAIUSDCTTUSD,
         token=A_YV1_DAIUSDCTTUSD,
     )

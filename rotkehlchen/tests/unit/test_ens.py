@@ -5,7 +5,7 @@ import pytest
 from eth_utils import to_checksum_address
 
 from rotkehlchen.chain.ethereum.defi.zerionsdk import ZERION_ADAPTER_ADDRESS
-from rotkehlchen.chain.ethereum.types import string_to_evm_address
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.tests.utils.ens import (
     ENS_BRUNO,

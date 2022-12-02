@@ -7,11 +7,7 @@ from gevent.lock import Semaphore
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.graph import SUBGRAPH_REMOTE_ERROR_MSG
-from rotkehlchen.constants.ethereum import (
-    MAX_BLOCKTIME_CACHE,
-    YEARN_VAULT_V2_ABI,
-    YEARN_VAULTS_V2_PREFIX,
-)
+from rotkehlchen.chain.evm.constants import MAX_BLOCKTIME_CACHE
 from rotkehlchen.constants.misc import EXP18, ZERO
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.misc import ModuleInitializationFailure, RemoteError
@@ -24,6 +20,7 @@ from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import ts_now
 
+from .constants import BLOCKS_PER_YEAR, YEARN_VAULTS_V2_PREFIX
 from .db import add_yearn_vaults_events, get_yearn_vaults_v2_events
 from .graph import YearnVaultsV2Graph
 from .structures import YearnVaultEvent
@@ -35,7 +32,6 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
 
-BLOCKS_PER_YEAR = 2425846
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
@@ -85,7 +81,7 @@ class YearnVaultsV2(EthereumModule):
         now_block_number = self.ethereum.get_latest_block_number()
         price_per_full_share = self.ethereum.call_contract(
             contract_address=vault.evm_address,
-            abi=YEARN_VAULT_V2_ABI,  # Any vault ABI will do
+            abi=self.ethereum.contracts.abi('YEARN_VAULT_V2_ABI'),  # Any vault ABI will do
             method_name='pricePerShare',
         )
         nominator = price_per_full_share - EXP18

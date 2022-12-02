@@ -20,9 +20,9 @@ from typing import (
 
 from rotkehlchen.assets.asset import Asset, EvmToken, FiatAsset
 from rotkehlchen.chain.ethereum.defi.price import handle_defi_price_query
-from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.contracts import EvmContract
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import CURRENCYCONVERTER_API_KEY, ONE, ZERO
 from rotkehlchen.constants.assets import (
     A_3CRV,
@@ -68,7 +68,6 @@ from rotkehlchen.constants.assets import (
     A_YV1_WETH,
     A_YV1_YFI,
 )
-from rotkehlchen.constants.ethereum import CURVE_POOL_ABI, YEARN_VAULT_V2_ABI
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, MONTH_IN_SECONDS
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
@@ -828,7 +827,7 @@ class Inquirer():
         # Query virtual price of LP share and balances in the pool for each token
         contract = EvmContract(
             address=pool_address,
-            abi=CURVE_POOL_ABI,
+            abi=ethereum.node_inquirer.contracts.abi('CURVE_POOL_ABI'),
             deployed_block=0,
         )
         calls = [(pool_address, contract.encode(method_name='get_virtual_price'))]
@@ -911,7 +910,7 @@ class Inquirer():
         # Get the price per share from the yearn contract
         contract = EvmContract(
             address=token.evm_address,
-            abi=YEARN_VAULT_V2_ABI,
+            abi=ethereum.node_inquirer.contracts.abi('YEARN_VAULT_V2_ABI'),
             deployed_block=0,
         )
         try:

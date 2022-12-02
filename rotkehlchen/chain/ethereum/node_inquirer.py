@@ -10,16 +10,11 @@ from eth_typing import BlockNumber, HexStr
 from web3 import Web3
 
 from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
-from rotkehlchen.chain.ethereum.constants import ETHERSCAN_NODE
+from rotkehlchen.chain.ethereum.constants import ETHEREUM_ETHERSCAN_NODE
 from rotkehlchen.chain.ethereum.graph import Graph
-from rotkehlchen.chain.ethereum.modules.eth2.constants import ETH2_DEPOSIT
+from rotkehlchen.chain.evm.contracts import EvmContracts
 from rotkehlchen.chain.evm.node_inquirer import WEB3_LOGQUERY_BLOCK_RANGE, EvmNodeInquirer
-from rotkehlchen.constants.ethereum import (
-    ENS_REVERSE_RECORDS,
-    ETH_MULTICALL,
-    ETH_MULTICALL_2,
-    ETH_SCAN,
-)
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.errors.misc import InputError, RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
@@ -30,7 +25,7 @@ from rotkehlchen.types import ChainID, ChecksumEvmAddress, SupportedBlockchain, 
 from rotkehlchen.utils.misc import get_chunks
 from rotkehlchen.utils.network import request_get_dict
 
-from .types import ETHERSCAN_NODE_NAME, WeightedNode, string_to_evm_address
+from .constants import ETH2_DEPOSIT_ADDRESS, ETHEREUM_ETHERSCAN_NODE_NAME, WeightedNode
 from .utils import ENS_RESOLVER_ABI_MULTICHAIN_ADDRESS
 
 if TYPE_CHECKING:
@@ -59,16 +54,19 @@ class EthereumInquirer(EvmNodeInquirer):
             database=database,
             etherscan=etherscan,
             blockchain=SupportedBlockchain.ETHEREUM,
-            etherscan_node=ETHERSCAN_NODE,
-            etherscan_node_name=ETHERSCAN_NODE_NAME,
-            contract_scan=ETH_SCAN[ChainID.ETHEREUM],
-            contract_multicall=ETH_MULTICALL,
-            contract_multicall_2=ETH_MULTICALL_2,
+            etherscan_node=ETHEREUM_ETHERSCAN_NODE,
+            etherscan_node_name=ETHEREUM_ETHERSCAN_NODE_NAME,
+            contracts=EvmContracts(
+                chain_id=ChainID.ETHEREUM,
+                contracts_filename='eth_contracts.json',
+                abi_filename='eth_abi.json',
+            ),
             connect_at_start=connect_at_start,
             rpc_timeout=rpc_timeout,
         )
         self.blocks_subgraph = Graph('https://api.thegraph.com/subgraphs/name/blocklytics/ethereum-blocks')  # noqa: E501
         self.etherscan = cast('EthereumEtherscan', self.etherscan)
+        self.ens_reverse_records = self.contracts.contract('ENS_REVERSE_RECORDS')
 
     def ens_reverse_lookup(self, addresses: List[ChecksumEvmAddress]) -> Dict[ChecksumEvmAddress, Optional[str]]:  # noqa: E501
         """Performs a reverse ENS lookup on a list of addresses
@@ -83,7 +81,7 @@ class EthereumInquirer(EvmNodeInquirer):
         human_names: Dict[ChecksumEvmAddress, Optional[str]] = {}
         chunks = get_chunks(lst=addresses, n=MAX_ADDRESSES_IN_REVERSE_ENS_QUERY)
         for chunk in chunks:
-            result = ENS_REVERSE_RECORDS.call(
+            result = self.ens_reverse_records.call(
                 node_inquirer=self,
                 method_name='getNames',
                 arguments=[chunk],
@@ -302,11 +300,10 @@ class EthereumInquirer(EvmNodeInquirer):
             contract_address: ChecksumEvmAddress,
     ) -> int:
         """We know that in most of its early life the Eth2 contract address returns a
-        a lot of results. So limit the query range to not hit the infura limits every time
+        a lot of results. So limit the query range to not hit the infura limits every tiem
         """
-        # supress https://lgtm.com/rules/1507386916281/ since it does not apply here
         infura_eth2_log_query = (
             'infura.io' in web3.manager.provider.endpoint_uri and  # type: ignore # noqa: E501 lgtm [py/incomplete-url-substring-sanitization]
-            contract_address == ETH2_DEPOSIT.address
+            contract_address == ETH2_DEPOSIT_ADDRESS
         )
         return WEB3_LOGQUERY_BLOCK_RANGE if infura_eth2_log_query is False else 75000

@@ -5,8 +5,8 @@ from eth_utils import to_checksum_address
 from web3 import Web3
 
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
+from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.constants.ethereum import ETH_SPECIAL_ADDRESS
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.constants.timing import ETH_PROTOCOLS_CACHE_REFRESH
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset, WrongAssetType

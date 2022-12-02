@@ -32,39 +32,12 @@ from rotkehlchen.constants.assets import (
     A_YV1_WETH,
     A_YV1_YFI,
 )
-from rotkehlchen.constants.ethereum import (
-    FARM_ASSET_ABI,
-    YEARN_3CRV_VAULT,
-    YEARN_ALINK_VAULT,
-    YEARN_BCURVE_VAULT,
-    YEARN_DAI_VAULT,
-    YEARN_GUSD_VAULT,
-    YEARN_SRENCURVE_VAULT,
-    YEARN_TUSD_VAULT,
-    YEARN_USDC_VAULT,
-    YEARN_USDT_VAULT,
-    YEARN_WETH_VAULT,
-    YEARN_YCRV_VAULT,
-    YEARN_YFI_VAULT,
-    EthereumConstants,
-)
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import Price
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
-
-
-CURVEFI_YSWAP = EthereumConstants().contract('CURVEFI_YSWAP')
-CURVEFI_PAXSWAP = EthereumConstants().contract('CURVEFI_PAXSWAP')
-CURVEFI_BUSDSWAP = EthereumConstants().contract('CURVEFI_BUSDSWAP')
-CURVEFI_RENSWAP = EthereumConstants().contract('CURVEFI_RENSWAP')
-CURVEFI_SRENSWAP = EthereumConstants().contract('CURVEFI_SRENSWAP')
-CURVEFI_SUSDV2SWAP = EthereumConstants().contract('CURVEFI_SUSDV2SWAP')
-CURVEFI_3POOLSWAP = EthereumConstants().contract('CURVEFI_3POOLSWAP')
-CURVEFI_A3CRVSWAP = EthereumConstants().contract('CURVEFI_A3CRVSWAP')
-CURVEFI_GUSDC3CRVSWAP = EthereumConstants().contract('CURVEFI_GUSDC3CRVSWAP')
 
 HARVEST_VAULTS = (
     A_FARM_USDC,
@@ -154,7 +127,7 @@ def handle_underlying_price_harvest_vault(
 ) -> FVal:
     price_per_full_share = ethereum.call_contract(
         contract_address=token.evm_address,
-        abi=FARM_ASSET_ABI,
+        abi=ethereum.contracts.abi('FARM_ASSET_ABI'),
         method_name='getPricePerFullShare',
         arguments=[],
     )
@@ -177,16 +150,16 @@ def handle_defi_price_query(
     if token == A_YV1_DAIUSDCTTUSD:
         usd_value = _handle_yearn_curve_vault(
             ethereum=ethereum,
-            curve_contract=CURVEFI_YSWAP,
-            yearn_contract=YEARN_YCRV_VAULT,
+            curve_contract=ethereum.contracts.contract('CURVEFI_YSWAP'),
+            yearn_contract=ethereum.contracts.contract('YEARN_YCRV_VAULT'),
             div_decimals=36,
             asset_price=ONE,  # assuming price of $1 for all stablecoins in pool
         )
     elif token == A_YV1_DAIUSDCTBUSD:
         usd_value = _handle_yearn_curve_vault(
             ethereum=ethereum,
-            curve_contract=CURVEFI_BUSDSWAP,
-            yearn_contract=YEARN_BCURVE_VAULT,
+            curve_contract=ethereum.contracts.contract('CURVEFI_BUSDSWAP'),
+            yearn_contract=ethereum.contracts.contract('YEARN_BCURVE_VAULT'),
             div_decimals=36,
             asset_price=ONE,  # assuming price of $1 for all stablecoins in pool
         )
@@ -194,28 +167,28 @@ def handle_defi_price_query(
         assert underlying_asset_price
         usd_value = _handle_yearn_curve_vault(
             ethereum=ethereum,
-            curve_contract=CURVEFI_SRENSWAP,
-            yearn_contract=YEARN_SRENCURVE_VAULT,
+            curve_contract=ethereum.contracts.contract('CURVEFI_SRENSWAP'),
+            yearn_contract=ethereum.contracts.contract('YEARN_SRENCURVE_VAULT'),
             div_decimals=36,
             asset_price=underlying_asset_price,
         )
     elif token == A_YV1_3CRV:
         usd_value = _handle_yearn_curve_vault(
             ethereum=ethereum,
-            curve_contract=CURVEFI_3POOLSWAP,
-            yearn_contract=YEARN_3CRV_VAULT,
+            curve_contract=ethereum.contracts.contract('CURVEFI_3POOLSWAP'),
+            yearn_contract=ethereum.contracts.contract('YEARN_3CRV_VAULT'),
             div_decimals=36,
             asset_price=ONE,  # assuming price of $1 for all stablecoins in pool
         )
     elif token == A_CRVP_DAIUSDCTTUSD:
-        usd_value = _handle_curvepool_price(ethereum, CURVEFI_YSWAP, token.decimals, ONE)
+        usd_value = _handle_curvepool_price(ethereum, ethereum.contracts.contract('CURVEFI_YSWAP'), token.decimals, ONE)  # noqa: E501
     elif token == A_CRV_YPAX:
-        usd_value = _handle_curvepool_price(ethereum, CURVEFI_PAXSWAP, token.decimals, ONE)
+        usd_value = _handle_curvepool_price(ethereum, ethereum.contracts.contract('CURVEFI_PAXSWAP'), token.decimals, ONE)  # noqa: E501
     elif token == A_CRV_RENWBTC:
         assert underlying_asset_price
         usd_value = _handle_curvepool_price(
             ethereum=ethereum,
-            contract=CURVEFI_RENSWAP,
+            contract=ethereum.contracts.contract('CURVEFI_RENSWAP'),
             div_decimals=token.decimals,
             asset_price=underlying_asset_price,
         )
@@ -223,26 +196,26 @@ def handle_defi_price_query(
         assert underlying_asset_price
         usd_value = _handle_curvepool_price(
             ethereum=ethereum,
-            contract=CURVEFI_SRENSWAP,
+            contract=ethereum.contracts.contract('CURVEFI_SRENSWAP'),
             div_decimals=token.decimals,
             asset_price=underlying_asset_price,
         )
     elif token == A_CRV_3CRVSUSD:
-        usd_value = _handle_curvepool_price(ethereum, CURVEFI_SUSDV2SWAP, token.decimals, ONE)
+        usd_value = _handle_curvepool_price(ethereum, ethereum.contracts.contract('CURVEFI_SUSDV2SWAP'), token.decimals, ONE)  # noqa: E501
     elif token == A_CRV_3CRV:
-        usd_value = _handle_curvepool_price(ethereum, CURVEFI_3POOLSWAP, token.decimals, ONE)
+        usd_value = _handle_curvepool_price(ethereum, ethereum.contracts.contract('CURVEFI_3POOLSWAP'), token.decimals, ONE)  # noqa: E501
     # a3CRV: Comparing address since constant won't be found if user has not updated their DB
     elif token.evm_address == '0xFd2a8fA60Abd58Efe3EeE34dd494cD491dC14900':
-        usd_value = _handle_curvepool_price(ethereum, CURVEFI_A3CRVSWAP, token.decimals, ONE)
+        usd_value = _handle_curvepool_price(ethereum, ethereum.contracts.contract('CURVEFI_A3CRVSWAP'), token.decimals, ONE)  # noqa: E501
     elif token == A_CRV_GUSD:
-        usd_value = _handle_curvepool_price(ethereum, CURVEFI_GUSDC3CRVSWAP, token.decimals, ONE)
+        usd_value = _handle_curvepool_price(ethereum, ethereum.contracts.contract('CURVEFI_GUSDC3CRVSWAP'), token.decimals, ONE)  # noqa: E501
     elif token == A_CRVP_DAIUSDCTBUSD:
-        usd_value = _handle_curvepool_price(ethereum, CURVEFI_BUSDSWAP, token.decimals, ONE)
+        usd_value = _handle_curvepool_price(ethereum, ethereum.contracts.contract('CURVEFI_BUSDSWAP'), token.decimals, ONE)  # noqa: E501
     elif token == A_YV1_ALINK:
         assert underlying_asset_price
         usd_value = handle_underlying_price_yearn_vault(
             ethereum=ethereum,
-            contract=YEARN_ALINK_VAULT,
+            contract=ethereum.contracts.contract('YEARN_ALINK_VAULT'),
             div_decimals=token.decimals,
             asset_price=underlying_asset_price,
         )
@@ -250,7 +223,7 @@ def handle_defi_price_query(
         assert underlying_asset_price
         usd_value = handle_underlying_price_yearn_vault(
             ethereum=ethereum,
-            contract=YEARN_DAI_VAULT,
+            contract=ethereum.contracts.contract('YEARN_DAI_VAULT'),
             div_decimals=token.decimals,
             asset_price=underlying_asset_price,
         )
@@ -258,7 +231,7 @@ def handle_defi_price_query(
         assert underlying_asset_price
         usd_value = handle_underlying_price_yearn_vault(
             ethereum=ethereum,
-            contract=YEARN_WETH_VAULT,
+            contract=ethereum.contracts.contract('YEARN_WETH_VAULT'),
             div_decimals=token.decimals,
             asset_price=underlying_asset_price,
         )
@@ -266,7 +239,7 @@ def handle_defi_price_query(
         assert underlying_asset_price
         usd_value = handle_underlying_price_yearn_vault(
             ethereum=ethereum,
-            contract=YEARN_YFI_VAULT,
+            contract=ethereum.contracts.contract('YEARN_YFI_VAULT'),
             div_decimals=token.decimals,
             asset_price=underlying_asset_price,
         )
@@ -274,7 +247,7 @@ def handle_defi_price_query(
         assert underlying_asset_price
         usd_value = handle_underlying_price_yearn_vault(
             ethereum=ethereum,
-            contract=YEARN_USDT_VAULT,
+            contract=ethereum.contracts.contract('YEARN_USDT_VAULT'),
             div_decimals=token.decimals,
             asset_price=underlying_asset_price,
         )
@@ -282,7 +255,7 @@ def handle_defi_price_query(
         assert underlying_asset_price
         usd_value = handle_underlying_price_yearn_vault(
             ethereum=ethereum,
-            contract=YEARN_USDC_VAULT,
+            contract=ethereum.contracts.contract('YEARN_USDC_VAULT'),
             div_decimals=token.decimals,
             asset_price=underlying_asset_price,
         )
@@ -290,7 +263,7 @@ def handle_defi_price_query(
         assert underlying_asset_price
         usd_value = handle_underlying_price_yearn_vault(
             ethereum=ethereum,
-            contract=YEARN_TUSD_VAULT,
+            contract=ethereum.contracts.contract('YEARN_TUSD_VAULT'),
             div_decimals=token.decimals,
             asset_price=underlying_asset_price,
         )
@@ -298,7 +271,7 @@ def handle_defi_price_query(
         assert underlying_asset_price
         usd_value = handle_underlying_price_yearn_vault(
             ethereum=ethereum,
-            contract=YEARN_GUSD_VAULT,
+            contract=ethereum.contracts.contract('YEARN_GUSD_VAULT'),
             div_decimals=token.decimals,
             asset_price=underlying_asset_price,
         )

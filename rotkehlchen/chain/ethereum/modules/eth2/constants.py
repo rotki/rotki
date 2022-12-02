@@ -1,7 +1,3 @@
-from rotkehlchen.constants.ethereum import EthereumConstants
-
-ETH2_DEPOSIT = EthereumConstants().contract('ETH2_DEPOSIT')
-
 REQUEST_DELTA_TS = 60 * 60  # 1
 
 VALIDATOR_STATS_QUERY_BACKOFF_EVERY_N_VALIDATORS = 30

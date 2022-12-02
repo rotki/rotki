@@ -213,6 +213,7 @@ def setup_balances(
     etherscan_patch = mock_etherscan_query(
         eth_map=eth_map,
         etherscan=rotki.chains_aggregator.ethereum.node_inquirer.etherscan,
+        ethereum=rotki.chains_aggregator.ethereum.node_inquirer,
         original_queries=original_queries,
         original_requests_get=requests.get,
         extra_flags=extra_flags,

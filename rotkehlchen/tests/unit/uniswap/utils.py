@@ -10,7 +10,7 @@ from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (
     LiquidityPoolEvent,
     LiquidityPoolEventsBalance,
 )
-from rotkehlchen.chain.ethereum.types import string_to_evm_address
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_USDT, A_WETH
 from rotkehlchen.fval import FVal

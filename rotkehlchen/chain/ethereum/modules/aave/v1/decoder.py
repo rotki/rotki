@@ -1,17 +1,21 @@
-from typing import Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.chain.ethereum.constants import ZERO_ADDRESS
 from rotkehlchen.chain.ethereum.modules.aave.common import asset_to_atoken
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, ethaddress_to_asset
+from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import ActionItem
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
-from rotkehlchen.constants.ethereum import AAVE_V1_LENDING_POOL
 from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
+    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.user_messages import MessagesAggregator
 
 # from rotkehlchen.chain.ethereum.modules.aave.constants import CPT_AAVE_V1
 from ..constants import CPT_AAVE_V1
@@ -21,6 +25,15 @@ REDEEM_UNDERLYING = b'\x9cN\xd5\x99\xcd\x85U\xb9\xc1\xe8\xcdvC$\r}q\xebv\xb7\x92
 
 
 class Aavev1Decoder(DecoderInterface):
+
+    def __init__(
+            self,
+            evm_inquirer: 'EvmNodeInquirer',
+            base_tools: 'BaseDecoderTools',  # pylint: disable=unused-argument
+            msg_aggregator: 'MessagesAggregator',
+    ) -> None:
+        super().__init__(evm_inquirer, base_tools, msg_aggregator)
+        self.ethereum = evm_inquirer
 
     def _decode_pool_event(  # pylint: disable=no-self-use
             self,
@@ -125,7 +138,7 @@ class Aavev1Decoder(DecoderInterface):
 
     def addresses_to_decoders(self) -> Dict[ChecksumEvmAddress, Tuple[Any, ...]]:
         return {
-            AAVE_V1_LENDING_POOL.address: (self._decode_pool_event,),
+            self.ethereum.contracts.contract('AAVE_V1_LENDING_POOL').address: (self._decode_pool_event,),  # noqa: E501
         }
 
     def counterparties(self) -> List[str]:

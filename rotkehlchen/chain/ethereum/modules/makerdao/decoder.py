@@ -4,13 +4,14 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import CryptoAsset
+from rotkehlchen.chain.ethereum.constants import RAY_DIGITS
 from rotkehlchen.chain.ethereum.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.ethereum.defi.defisaver_proxy import HasDSProxy
-from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import ActionItem
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import (
     A_AAVE,
     A_BAL,
@@ -34,37 +35,6 @@ from rotkehlchen.constants.assets import (
     A_WBTC,
     A_YFI,
     A_ZRX,
-)
-from rotkehlchen.constants.ethereum import (
-    MAKERDAO_AAVE_A_JOIN,
-    MAKERDAO_BAL_A_JOIN,
-    MAKERDAO_BAT_A_JOIN,
-    MAKERDAO_CDP_MANAGER,
-    MAKERDAO_COMP_A_JOIN,
-    MAKERDAO_DAI_JOIN,
-    MAKERDAO_ETH_A_JOIN,
-    MAKERDAO_ETH_B_JOIN,
-    MAKERDAO_ETH_C_JOIN,
-    MAKERDAO_GUSD_A_JOIN,
-    MAKERDAO_KNC_A_JOIN,
-    MAKERDAO_LINK_A_JOIN,
-    MAKERDAO_LRC_A_JOIN,
-    MAKERDAO_MANA_A_JOIN,
-    MAKERDAO_MATIC_A_JOIN,
-    MAKERDAO_PAXUSD_A_JOIN,
-    MAKERDAO_POT,
-    MAKERDAO_RENBTC_A_JOIN,
-    MAKERDAO_TUSD_A_JOIN,
-    MAKERDAO_UNI_A_JOIN,
-    MAKERDAO_USDC_A_JOIN,
-    MAKERDAO_USDC_B_JOIN,
-    MAKERDAO_USDT_A_JOIN,
-    MAKERDAO_WBTC_A_JOIN,
-    MAKERDAO_WBTC_B_JOIN,
-    MAKERDAO_WBTC_C_JOIN,
-    MAKERDAO_YFI_A_JOIN,
-    MAKERDAO_ZRX_A_JOIN,
-    RAY_DIGITS,
 )
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.serialization import DeserializationError
@@ -119,6 +89,8 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
         )
         self.dai = A_DAI.resolve_to_evm_token()
         self.sai = A_SAI.resolve_to_evm_token()
+        self.makerdao_cdp_manager = self.ethereum.contracts.contract('MAKERDAO_CDP_MANAGER')
+        self.makerdao_dai_join = self.ethereum.contracts.contract('MAKERDAO_DAI_JOIN')
 
     def _get_address_or_proxy(self, address: ChecksumEvmAddress) -> Optional[ChecksumEvmAddress]:
         if self.base.is_tracked(address):
@@ -147,16 +119,16 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
         """
         output = self.ethereum.multicall(
             calls=[(
-                MAKERDAO_CDP_MANAGER.address,
-                MAKERDAO_CDP_MANAGER.encode(method_name='urns', arguments=[cdp_id]),
+                self.makerdao_cdp_manager.address,
+                self.makerdao_cdp_manager.encode(method_name='urns', arguments=[cdp_id]),
             ), (
-                MAKERDAO_CDP_MANAGER.address,
-                MAKERDAO_CDP_MANAGER.encode(method_name='owns', arguments=[cdp_id]),
+                self.makerdao_cdp_manager.address,
+                self.makerdao_cdp_manager.encode(method_name='owns', arguments=[cdp_id]),
             )],
         )
         mapping = {}
         for result_encoded, method_name in zip(output, ('urns', 'owns')):
-            result = MAKERDAO_CDP_MANAGER.decode(    # pylint: disable=unsubscriptable-object
+            result = self.makerdao_cdp_manager.decode(    # pylint: disable=unsubscriptable-object
                 result_encoded,
                 method_name,
                 arguments=[cdp_id],
@@ -265,7 +237,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
             # Now gotta find the DAI join event to get actual DAI value
             daijoin_log = None
             for event_log in all_logs:
-                if event_log.address == MAKERDAO_DAI_JOIN.address and event_log.topics[0] == GENERIC_JOIN:  # noqa: E501
+                if event_log.address == self.makerdao_dai_join.address and event_log.topics[0] == GENERIC_JOIN:  # noqa: E501
                     daijoin_user_address = hex_or_bytes_to_address(event_log.topics[1])
                     if daijoin_user_address != potjoin_user_address:
                         continue  # not a match
@@ -302,7 +274,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
             # Now gotta find the DAI exit event to get actual DAI value
             daiexit_log = None
             for event_log in all_logs:
-                if event_log.address == MAKERDAO_DAI_JOIN.address and event_log.topics[0] == GENERIC_EXIT:  # noqa: E501
+                if event_log.address == self.makerdao_dai_join.address and event_log.topics[0] == GENERIC_EXIT:  # noqa: E501
                     daiexit_user_address = hex_or_bytes_to_address(event_log.topics[2])
                     if daiexit_user_address != user:
                         continue  # not a match
@@ -572,36 +544,36 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
 
     def addresses_to_decoders(self) -> Dict[ChecksumEvmAddress, Tuple[Any, ...]]:
         return {
-            MAKERDAO_BAT_A_JOIN.address: (self.decode_makerdao_vault_action, A_BAT.resolve_to_crypto_asset(), 'BAT-A'),  # noqa: E501
-            MAKERDAO_ETH_A_JOIN.address: (self.decode_makerdao_vault_action, A_ETH.resolve_to_crypto_asset(), 'ETH-A'),  # noqa: E501
-            MAKERDAO_ETH_B_JOIN.address: (self.decode_makerdao_vault_action, A_ETH.resolve_to_crypto_asset(), 'ETH-B'),  # noqa: E501
-            MAKERDAO_ETH_C_JOIN.address: (self.decode_makerdao_vault_action, A_ETH.resolve_to_crypto_asset(), 'ETH-C'),  # noqa: E501
-            MAKERDAO_KNC_A_JOIN.address: (self.decode_makerdao_vault_action, A_KNC.resolve_to_crypto_asset(), 'KNC-A'),  # noqa: E501
-            MAKERDAO_TUSD_A_JOIN.address: (self.decode_makerdao_vault_action, A_TUSD.resolve_to_crypto_asset(), 'TUSD-A'),  # noqa: E501
-            MAKERDAO_USDC_A_JOIN.address: (self.decode_makerdao_vault_action, A_USDC.resolve_to_crypto_asset(), 'USDC-A'),  # noqa: E501
-            MAKERDAO_USDC_B_JOIN.address: (self.decode_makerdao_vault_action, A_USDC.resolve_to_crypto_asset(), 'USDC-B'),  # noqa: E501
-            MAKERDAO_USDT_A_JOIN.address: (self.decode_makerdao_vault_action, A_USDT.resolve_to_crypto_asset(), 'USDT-A'),  # noqa: E501
-            MAKERDAO_WBTC_A_JOIN.address: (self.decode_makerdao_vault_action, A_WBTC.resolve_to_crypto_asset(), 'WBTC-A'),  # noqa: E501
-            MAKERDAO_WBTC_B_JOIN.address: (self.decode_makerdao_vault_action, A_WBTC.resolve_to_crypto_asset(), 'WBTC-B'),  # noqa: E501
-            MAKERDAO_WBTC_C_JOIN.address: (self.decode_makerdao_vault_action, A_WBTC.resolve_to_crypto_asset(), 'WBTC-C'),  # noqa: E501
-            MAKERDAO_ZRX_A_JOIN.address: (self.decode_makerdao_vault_action, A_ZRX.resolve_to_crypto_asset(), 'ZRX-A'),  # noqa: E501
-            MAKERDAO_MANA_A_JOIN.address: (self.decode_makerdao_vault_action, A_MANA.resolve_to_crypto_asset(), 'MANA-A'),  # noqa: E501
-            MAKERDAO_PAXUSD_A_JOIN.address: (self.decode_makerdao_vault_action, A_PAX.resolve_to_crypto_asset(), 'PAXUSD-A'),  # noqa: E501
-            MAKERDAO_COMP_A_JOIN.address: (self.decode_makerdao_vault_action, A_COMP.resolve_to_crypto_asset(), 'COMP-A'),  # noqa: E501
-            MAKERDAO_LRC_A_JOIN.address: (self.decode_makerdao_vault_action, A_LRC.resolve_to_crypto_asset(), 'LRC-A'),  # noqa: E501
-            MAKERDAO_LINK_A_JOIN.address: (self.decode_makerdao_vault_action, A_LINK.resolve_to_crypto_asset(), 'LINK-A'),  # noqa: E501
-            MAKERDAO_BAL_A_JOIN.address: (self.decode_makerdao_vault_action, A_BAL.resolve_to_crypto_asset(), 'BAL-A'),  # noqa: E501
-            MAKERDAO_YFI_A_JOIN.address: (self.decode_makerdao_vault_action, A_YFI.resolve_to_crypto_asset(), 'YFI-A'),  # noqa: E501
-            MAKERDAO_GUSD_A_JOIN.address: (self.decode_makerdao_vault_action, A_GUSD.resolve_to_crypto_asset(), 'GUSD-A'),  # noqa: E501
-            MAKERDAO_UNI_A_JOIN.address: (self.decode_makerdao_vault_action, A_UNI.resolve_to_crypto_asset(), 'UNI-A'),  # noqa: E501
-            MAKERDAO_RENBTC_A_JOIN.address: (self.decode_makerdao_vault_action, A_RENBTC.resolve_to_crypto_asset(), 'RENBTC-A'),  # noqa: E501
-            MAKERDAO_AAVE_A_JOIN.address: (self.decode_makerdao_vault_action, A_AAVE.resolve_to_crypto_asset(), 'AAVE-A'),  # noqa: E501
-            MAKERDAO_MATIC_A_JOIN.address: (self.decode_makerdao_vault_action, A_MATIC.resolve_to_crypto_asset(), 'MATIC-A'),  # noqa: E501
-            MAKERDAO_POT.address: (self.decode_pot_for_dsr,),
-            MAKERDAO_DAI_JOIN.address: (self.decode_makerdao_debt_payback,),
+            self.ethereum.contracts.contract('MAKERDAO_BAT_A_JOIN').address: (self.decode_makerdao_vault_action, A_BAT.resolve_to_crypto_asset(), 'BAT-A'),  # noqa: E501
+            self.ethereum.contracts.contract('MAKERDAO_ETH_A_JOIN').address: (self.decode_makerdao_vault_action, A_ETH.resolve_to_crypto_asset(), 'ETH-A'),  # noqa: E501
+            self.ethereum.contracts.contract('MAKERDAO_ETH_B_JOIN').address: (self.decode_makerdao_vault_action, A_ETH.resolve_to_crypto_asset(), 'ETH-B'),  # noqa: E501
+            self.ethereum.contracts.contract('MAKERDAO_ETH_C_JOIN').address: (self.decode_makerdao_vault_action, A_ETH.resolve_to_crypto_asset(), 'ETH-C'),  # noqa: E501
+            self.ethereum.contracts.contract('MAKERDAO_KNC_A_JOIN').address: (self.decode_makerdao_vault_action, A_KNC.resolve_to_crypto_asset(), 'KNC-A'),  # noqa: E501
+            self.ethereum.contracts.contract('MAKERDAO_TUSD_A_JOIN').address: (self.decode_makerdao_vault_action, A_TUSD.resolve_to_crypto_asset(), 'TUSD-A'),  # noqa: E501
+            self.ethereum.contracts.contract('MAKERDAO_USDC_A_JOIN').address: (self.decode_makerdao_vault_action, A_USDC.resolve_to_crypto_asset(), 'USDC-A'),  # noqa: E501
+            self.ethereum.contracts.contract('MAKERDAO_USDC_B_JOIN').address: (self.decode_makerdao_vault_action, A_USDC.resolve_to_crypto_asset(), 'USDC-B'),  # noqa: E501
+            self.ethereum.contracts.contract('MAKERDAO_USDT_A_JOIN').address: (self.decode_makerdao_vault_action, A_USDT.resolve_to_crypto_asset(), 'USDT-A'),  # noqa: E501
+            self.ethereum.contracts.contract('MAKERDAO_WBTC_A_JOIN').address: (self.decode_makerdao_vault_action, A_WBTC.resolve_to_crypto_asset(), 'WBTC-A'),  # noqa: E501
+            self.ethereum.contracts.contract('MAKERDAO_WBTC_B_JOIN').address: (self.decode_makerdao_vault_action, A_WBTC.resolve_to_crypto_asset(), 'WBTC-B'),  # noqa: E501
+            self.ethereum.contracts.contract('MAKERDAO_WBTC_C_JOIN').address: (self.decode_makerdao_vault_action, A_WBTC.resolve_to_crypto_asset(), 'WBTC-C'),  # noqa: E501
+            self.ethereum.contracts.contract('MAKERDAO_ZRX_A_JOIN').address: (self.decode_makerdao_vault_action, A_ZRX.resolve_to_crypto_asset(), 'ZRX-A'),  # noqa: E501
+            self.ethereum.contracts.contract('MAKERDAO_MANA_A_JOIN').address: (self.decode_makerdao_vault_action, A_MANA.resolve_to_crypto_asset(), 'MANA-A'),  # noqa: E501
+            self.ethereum.contracts.contract('MAKERDAO_PAXUSD_A_JOIN').address: (self.decode_makerdao_vault_action, A_PAX.resolve_to_crypto_asset(), 'PAXUSD-A'),  # noqa: E501
+            self.ethereum.contracts.contract('MAKERDAO_COMP_A_JOIN').address: (self.decode_makerdao_vault_action, A_COMP.resolve_to_crypto_asset(), 'COMP-A'),  # noqa: E501
+            self.ethereum.contracts.contract('MAKERDAO_LRC_A_JOIN').address: (self.decode_makerdao_vault_action, A_LRC.resolve_to_crypto_asset(), 'LRC-A'),  # noqa: E501
+            self.ethereum.contracts.contract('MAKERDAO_LINK_A_JOIN').address: (self.decode_makerdao_vault_action, A_LINK.resolve_to_crypto_asset(), 'LINK-A'),  # noqa: E501
+            self.ethereum.contracts.contract('MAKERDAO_BAL_A_JOIN').address: (self.decode_makerdao_vault_action, A_BAL.resolve_to_crypto_asset(), 'BAL-A'),  # noqa: E501
+            self.ethereum.contracts.contract('MAKERDAO_YFI_A_JOIN').address: (self.decode_makerdao_vault_action, A_YFI.resolve_to_crypto_asset(), 'YFI-A'),  # noqa: E501
+            self.ethereum.contracts.contract('MAKERDAO_GUSD_A_JOIN').address: (self.decode_makerdao_vault_action, A_GUSD.resolve_to_crypto_asset(), 'GUSD-A'),  # noqa: E501
+            self.ethereum.contracts.contract('MAKERDAO_UNI_A_JOIN').address: (self.decode_makerdao_vault_action, A_UNI.resolve_to_crypto_asset(), 'UNI-A'),  # noqa: E501
+            self.ethereum.contracts.contract('MAKERDAO_RENBTC_A_JOIN').address: (self.decode_makerdao_vault_action, A_RENBTC.resolve_to_crypto_asset(), 'RENBTC-A'),  # noqa: E501
+            self.ethereum.contracts.contract('MAKERDAO_AAVE_A_JOIN').address: (self.decode_makerdao_vault_action, A_AAVE.resolve_to_crypto_asset(), 'AAVE-A'),  # noqa: E501
+            self.ethereum.contracts.contract('MAKERDAO_MATIC_A_JOIN').address: (self.decode_makerdao_vault_action, A_MATIC.resolve_to_crypto_asset(), 'MATIC-A'),  # noqa: E501
+            self.ethereum.contracts.contract('MAKERDAO_POT').address: (self.decode_pot_for_dsr,),
+            self.makerdao_dai_join.address: (self.decode_makerdao_debt_payback,),
             string_to_evm_address('0xA26e15C895EFc0616177B7c1e7270A4C7D51C997'): (self.decode_proxy_creation,),  # noqa: E501
             string_to_evm_address('0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359'): (self.decode_saidai_migration,),  # noqa: E501
-            MAKERDAO_CDP_MANAGER.address: (self.decode_cdp_manager_events,),
+            self.makerdao_cdp_manager.address: (self.decode_cdp_manager_events,),
         }
 
     def counterparties(self) -> List[str]:

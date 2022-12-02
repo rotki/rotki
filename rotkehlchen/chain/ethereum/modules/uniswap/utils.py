@@ -10,10 +10,9 @@ from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.defi.zerionsdk import ZERION_ADAPTER_ADDRESS
 from rotkehlchen.chain.ethereum.interfaces.ammswap.types import LiquidityPool
 from rotkehlchen.chain.ethereum.interfaces.ammswap.utils import _decode_result
-from rotkehlchen.chain.ethereum.types import WeightedNode
 from rotkehlchen.chain.evm.contracts import EvmContract
+from rotkehlchen.chain.evm.types import WeightedNode
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.ethereum import UNISWAP_V2_LP_ABI, ZERION_ABI
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
@@ -52,7 +51,7 @@ def uniswap_lp_token_balances(
     """
     zerion_contract = EvmContract(
         address=ZERION_ADAPTER_ADDRESS,
-        abi=ZERION_ABI,
+        abi=ethereum.contracts.abi('ZERION_ABI'),
         deployed_block=1586199170,
     )
     if (own_node_info := ethereum.get_own_node_info()) is not None:
@@ -159,7 +158,8 @@ def find_uniswap_v2_lp_price(
     - Total supply of of pool token
     """
     address = token.evm_address
-    contract = EvmContract(address=address, abi=UNISWAP_V2_LP_ABI, deployed_block=0)
+    abi = ethereum.contracts.abi('UNISWAP_V2_LP_ABI')
+    contract = EvmContract(address=address, abi=abi, deployed_block=0)
     methods = ['token0', 'token1', 'totalSupply', 'getReserves', 'decimals']
     multicall_method = ethereum.multicall_2  # choose which multicall to use
     if isinstance(block_identifier, int):

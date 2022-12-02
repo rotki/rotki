@@ -10,14 +10,8 @@ from web3 import Web3
 from web3._utils.abi import get_abi_output_types
 
 from rotkehlchen.chain.ethereum.modules.makerdao.dsr import _dsrdai_to_dai
+from rotkehlchen.chain.evm.contracts import EvmContracts
 from rotkehlchen.constants.assets import A_DAI
-from rotkehlchen.constants.ethereum import (
-    DS_PROXY_REGISTRY,
-    ETH_MULTICALL,
-    MAKERDAO_DAI_JOIN,
-    MAKERDAO_POT,
-    MAKERDAO_VAT,
-)
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
@@ -106,12 +100,18 @@ def blocknumber_to_timestamp(num: int) -> int:
 
 def mock_etherscan_for_dsr(
         etherscan: Etherscan,
+        contracts: EvmContracts,
         account1: ChecksumEvmAddress,
         account2: ChecksumEvmAddress,
         account3: ChecksumEvmAddress,
         original_requests_get,
         params: DSRMockParameters,
 ) -> _patch:
+    ds_proxy_registry = contracts.contract('DS_PROXY_REGISTRY')
+    makerdao_dai_join = contracts.contract('MAKERDAO_DAI_JOIN')
+    makerdao_pot = contracts.contract('MAKERDAO_POT')
+    makerdao_vat = contracts.contract('MAKERDAO_VAT')
+    eth_multicall = contracts.contract('ETH_MULTICALL')
 
     proxy1 = make_ethereum_address()
     proxy2 = make_ethereum_address()
@@ -120,23 +120,23 @@ def mock_etherscan_for_dsr(
     sorted_accounts = sorted(zip([account1, account2, account3], targets), key=lambda x: x[0])
     proxies = [y[1] for y in sorted_accounts]
 
-    account1_join1_event = f"""{{"address": "{MAKERDAO_POT.address}", "topics": ["0x049878f300000000000000000000000000000000000000000000000000000000", "{address_to_32byteshexstr(proxy1)}", "{int_to_32byteshexstr(params.account1_join1_normalized_balance)}", "0x0000000000000000000000000000000000000000000000000000000000000000"], "data": "0x1", "blockNumber": "{hex(params.account1_join1_blocknumber)}", "timeStamp": "{hex(blocknumber_to_timestamp(params.account1_join1_blocknumber))}", "gasPrice": "0x1", "gasUsed": "0x1", "logIndex": "0x6c", "transactionHash": "0xd81bddb97599cfab91b9ee52b5c505ffa730b71f1e484dc46d0f4ecb57893d2f", "transactionIndex": "0x79"}}"""  # noqa: E501
+    account1_join1_event = f"""{{"address": "{makerdao_pot.address}", "topics": ["0x049878f300000000000000000000000000000000000000000000000000000000", "{address_to_32byteshexstr(proxy1)}", "{int_to_32byteshexstr(params.account1_join1_normalized_balance)}", "0x0000000000000000000000000000000000000000000000000000000000000000"], "data": "0x1", "blockNumber": "{hex(params.account1_join1_blocknumber)}", "timeStamp": "{hex(blocknumber_to_timestamp(params.account1_join1_blocknumber))}", "gasPrice": "0x1", "gasUsed": "0x1", "logIndex": "0x6c", "transactionHash": "0xd81bddb97599cfab91b9ee52b5c505ffa730b71f1e484dc46d0f4ecb57893d2f", "transactionIndex": "0x79"}}"""  # noqa: E501
 
     account1_join1_deposit = params.account1_join1_normalized_balance * params.account1_join1_chi
-    account1_join1_move_event = f"""{{"address": "{MAKERDAO_VAT.address}", "topics": ["0xbb35783b00000000000000000000000000000000000000000000000000000000", "{address_to_32byteshexstr(proxy1)}", "{MAKERDAO_POT.address}", "{int_to_32byteshexstr(account1_join1_deposit // 10 ** 27)}"], "data": "0x1", "blockNumber": "{hex(params.account1_join1_blocknumber)}", "timeStamp": "{hex(blocknumber_to_timestamp(params.account1_join1_blocknumber))}", "gasPrice": "0x1", "gasUsed": "0x1", "logIndex": "0x6c", "transactionHash": "0xd81bddb97599cfab91b9ee52b5c505ffa730b71f1e484dc46d0f4ecb57893d2f", "transactionIndex": "0x79"}}"""  # noqa: E501
-    account1_join2_event = f"""{{"address": "{MAKERDAO_POT.address}", "topics": ["0x049878f300000000000000000000000000000000000000000000000000000000", "{address_to_32byteshexstr(proxy1)}", "{int_to_32byteshexstr(params.account1_join2_normalized_balance)}", "0x0000000000000000000000000000000000000000000000000000000000000000"], "data": "0x1", "blockNumber": "{hex(params.account1_join2_blocknumber)}", "timeStamp": "{hex(blocknumber_to_timestamp(params.account1_join2_blocknumber))}", "gasPrice": "0x1", "gasUsed": "0x1", "logIndex": "0x6c", "transactionHash": "0xd81bddb97599cfab91b9ee52b5c505ffa730b71f1e484dc46d0f4ecb57893d2f", "transactionIndex": "0x79"}}"""  # noqa: E501
+    account1_join1_move_event = f"""{{"address": "{makerdao_vat.address}", "topics": ["0xbb35783b00000000000000000000000000000000000000000000000000000000", "{address_to_32byteshexstr(proxy1)}", "{makerdao_pot.address}", "{int_to_32byteshexstr(account1_join1_deposit // 10 ** 27)}"], "data": "0x1", "blockNumber": "{hex(params.account1_join1_blocknumber)}", "timeStamp": "{hex(blocknumber_to_timestamp(params.account1_join1_blocknumber))}", "gasPrice": "0x1", "gasUsed": "0x1", "logIndex": "0x6c", "transactionHash": "0xd81bddb97599cfab91b9ee52b5c505ffa730b71f1e484dc46d0f4ecb57893d2f", "transactionIndex": "0x79"}}"""  # noqa: E501
+    account1_join2_event = f"""{{"address": "{makerdao_pot.address}", "topics": ["0x049878f300000000000000000000000000000000000000000000000000000000", "{address_to_32byteshexstr(proxy1)}", "{int_to_32byteshexstr(params.account1_join2_normalized_balance)}", "0x0000000000000000000000000000000000000000000000000000000000000000"], "data": "0x1", "blockNumber": "{hex(params.account1_join2_blocknumber)}", "timeStamp": "{hex(blocknumber_to_timestamp(params.account1_join2_blocknumber))}", "gasPrice": "0x1", "gasUsed": "0x1", "logIndex": "0x6c", "transactionHash": "0xd81bddb97599cfab91b9ee52b5c505ffa730b71f1e484dc46d0f4ecb57893d2f", "transactionIndex": "0x79"}}"""  # noqa: E501
     account1_join2_deposit = params.account1_join2_normalized_balance * params.account1_join2_chi
-    account1_join2_move_event = f"""{{"address": "{MAKERDAO_VAT.address}", "topics": ["0xbb35783b00000000000000000000000000000000000000000000000000000000", "{address_to_32byteshexstr(proxy1)}", "{MAKERDAO_POT.address}", "{int_to_32byteshexstr(account1_join2_deposit // 10 ** 27)}"], "data": "0x1", "blockNumber": "{hex(params.account1_join1_blocknumber)}", "timeStamp": "{hex(blocknumber_to_timestamp(params.account1_join2_blocknumber))}", "gasPrice": "0x1", "gasUsed": "0x1", "logIndex": "0x6c", "transactionHash": "0xd81bddb97599cfab91b9ee52b5c505ffa730b71f1e484dc46d0f4ecb57893d2f", "transactionIndex": "0x79"}}"""  # noqa: E501
+    account1_join2_move_event = f"""{{"address": "{makerdao_vat.address}", "topics": ["0xbb35783b00000000000000000000000000000000000000000000000000000000", "{address_to_32byteshexstr(proxy1)}", "{makerdao_pot.address}", "{int_to_32byteshexstr(account1_join2_deposit // 10 ** 27)}"], "data": "0x1", "blockNumber": "{hex(params.account1_join1_blocknumber)}", "timeStamp": "{hex(blocknumber_to_timestamp(params.account1_join2_blocknumber))}", "gasPrice": "0x1", "gasUsed": "0x1", "logIndex": "0x6c", "transactionHash": "0xd81bddb97599cfab91b9ee52b5c505ffa730b71f1e484dc46d0f4ecb57893d2f", "transactionIndex": "0x79"}}"""  # noqa: E501
 
-    account1_exit1_event = f"""{{"address": "{MAKERDAO_POT.address}", "topics": ["0x7f8661a100000000000000000000000000000000000000000000000000000000", "{address_to_32byteshexstr(proxy1)}", "{int_to_32byteshexstr(params.account1_exit1_normalized_balance)}", "0x0000000000000000000000000000000000000000000000000000000000000000"], "data": "0x1", "blockNumber": "{hex(params.account1_exit1_blocknumber)}", "timeStamp": "{hex(blocknumber_to_timestamp(params.account1_exit1_blocknumber))}", "gasPrice": "0x1", "gasUsed": "0x1", "logIndex": "0x6c", "transactionHash": "0xd81bddb97599cfab91b9ee52b5c505ffa730b71f1e484dc46d0f4ecb57893d2f", "transactionIndex": "0x79"}}"""  # noqa: E501
+    account1_exit1_event = f"""{{"address": "{makerdao_pot.address}", "topics": ["0x7f8661a100000000000000000000000000000000000000000000000000000000", "{address_to_32byteshexstr(proxy1)}", "{int_to_32byteshexstr(params.account1_exit1_normalized_balance)}", "0x0000000000000000000000000000000000000000000000000000000000000000"], "data": "0x1", "blockNumber": "{hex(params.account1_exit1_blocknumber)}", "timeStamp": "{hex(blocknumber_to_timestamp(params.account1_exit1_blocknumber))}", "gasPrice": "0x1", "gasUsed": "0x1", "logIndex": "0x6c", "transactionHash": "0xd81bddb97599cfab91b9ee52b5c505ffa730b71f1e484dc46d0f4ecb57893d2f", "transactionIndex": "0x79"}}"""  # noqa: E501
     account1_exit1_withdrawal = (
         params.account1_exit1_normalized_balance * params.account1_exit1_chi
     )
-    account1_exit1_move_event = f"""{{"address": "{MAKERDAO_VAT.address}", "topics": ["0xbb35783b00000000000000000000000000000000000000000000000000000000", "{MAKERDAO_POT.address}", "{address_to_32byteshexstr(proxy1)}", "{int_to_32byteshexstr(account1_exit1_withdrawal // 10 ** 27)}"], "data": "0x1", "blockNumber": "{hex(params.account1_exit1_blocknumber)}", "timeStamp": "{hex(blocknumber_to_timestamp(params.account1_exit1_blocknumber))}", "gasPrice": "0x1", "gasUsed": "0x1", "logIndex": "0x6c", "transactionHash": "0xd81bddb97599cfab91b9ee52b5c505ffa730b71f1e484dc46d0f4ecb57893d2f", "transactionIndex": "0x79"}}"""  # noqa: E501
-    account2_join1_event = f"""{{"address": "{MAKERDAO_POT.address}", "topics": ["0x049878f300000000000000000000000000000000000000000000000000000000", "{address_to_32byteshexstr(proxy2)}", "{int_to_32byteshexstr(params.account2_join1_normalized_balance)}", "0x0000000000000000000000000000000000000000000000000000000000000000"], "data": "0x1", "blockNumber": "{hex(params.account2_join1_blocknumber)}", "timeStamp": "{hex(blocknumber_to_timestamp(params.account2_join1_blocknumber))}", "gasPrice": "0x1", "gasUsed": "0x1", "logIndex": "0x6c", "transactionHash": "0xd81bddb97599cfab91b9ee52b5c505ffa730b71f1e484dc46d0f4ecb57893d2f", "transactionIndex": "0x79"}}"""  # noqa: E501
+    account1_exit1_move_event = f"""{{"address": "{makerdao_vat.address}", "topics": ["0xbb35783b00000000000000000000000000000000000000000000000000000000", "{makerdao_pot.address}", "{address_to_32byteshexstr(proxy1)}", "{int_to_32byteshexstr(account1_exit1_withdrawal // 10 ** 27)}"], "data": "0x1", "blockNumber": "{hex(params.account1_exit1_blocknumber)}", "timeStamp": "{hex(blocknumber_to_timestamp(params.account1_exit1_blocknumber))}", "gasPrice": "0x1", "gasUsed": "0x1", "logIndex": "0x6c", "transactionHash": "0xd81bddb97599cfab91b9ee52b5c505ffa730b71f1e484dc46d0f4ecb57893d2f", "transactionIndex": "0x79"}}"""  # noqa: E501
+    account2_join1_event = f"""{{"address": "{makerdao_pot.address}", "topics": ["0x049878f300000000000000000000000000000000000000000000000000000000", "{address_to_32byteshexstr(proxy2)}", "{int_to_32byteshexstr(params.account2_join1_normalized_balance)}", "0x0000000000000000000000000000000000000000000000000000000000000000"], "data": "0x1", "blockNumber": "{hex(params.account2_join1_blocknumber)}", "timeStamp": "{hex(blocknumber_to_timestamp(params.account2_join1_blocknumber))}", "gasPrice": "0x1", "gasUsed": "0x1", "logIndex": "0x6c", "transactionHash": "0xd81bddb97599cfab91b9ee52b5c505ffa730b71f1e484dc46d0f4ecb57893d2f", "transactionIndex": "0x79"}}"""  # noqa: E501
 
     account2_join1_deposit = params.account2_join1_normalized_balance * params.account2_join1_chi
-    account2_join1_move_event = f"""{{"address": "{MAKERDAO_VAT.address}", "topics": ["0xbb35783b00000000000000000000000000000000000000000000000000000000", "{address_to_32byteshexstr(proxy2)}", "{MAKERDAO_POT.address}", "{int_to_32byteshexstr(account2_join1_deposit // 10 ** 27)}"], "data": "0x1", "blockNumber": "{hex(params.account2_join1_blocknumber)}", "timeStamp": "{hex(blocknumber_to_timestamp(params.account2_join1_blocknumber))}", "gasPrice": "0x1", "gasUsed": "0x1", "logIndex": "0x6c", "transactionHash": "0xd81bddb97599cfab91b9ee52b5c505ffa730b71f1e484dc46d0f4ecb57893d2f", "transactionIndex": "0x79"}}"""  # noqa: E501
+    account2_join1_move_event = f"""{{"address": "{makerdao_vat.address}", "topics": ["0xbb35783b00000000000000000000000000000000000000000000000000000000", "{address_to_32byteshexstr(proxy2)}", "{makerdao_pot.address}", "{int_to_32byteshexstr(account2_join1_deposit // 10 ** 27)}"], "data": "0x1", "blockNumber": "{hex(params.account2_join1_blocknumber)}", "timeStamp": "{hex(blocknumber_to_timestamp(params.account2_join1_blocknumber))}", "gasPrice": "0x1", "gasUsed": "0x1", "logIndex": "0x6c", "transactionHash": "0xd81bddb97599cfab91b9ee52b5c505ffa730b71f1e484dc46d0f4ecb57893d2f", "transactionIndex": "0x79"}}"""  # noqa: E501
 
     # Not sure how to convince pylint that this ChecksumEvmAddress IS a subscriptable object
     proxy1_contents = proxy1[2:].lower()  # pylint: disable=unsubscriptable-object
@@ -150,7 +150,7 @@ def mock_etherscan_for_dsr(
                 'https://api.etherscan.io/api?module=proxy&action=eth_call&to=',
             )[1][:42]
             input_data = url.split('data=')[1].split('&apikey')[0]
-            if to_address == DS_PROXY_REGISTRY.address:
+            if to_address == ds_proxy_registry.address:
                 if not input_data.startswith('0xc4552791'):
                     raise AssertionError(
                         'Call to unexpected method of DSR ProxyRegistry during tests',
@@ -164,9 +164,9 @@ def mock_etherscan_for_dsr(
                 else:
                     proxy_account = '0x' + '0' * 64
                 response = f'{{"status":"1","message":"OK","result":"{proxy_account}"}}'
-            elif to_address == ETH_MULTICALL.address:
+            elif to_address == eth_multicall.address:
                 web3 = Web3()
-                contract = web3.eth.contract(address=ETH_MULTICALL.address, abi=ETH_MULTICALL.abi)
+                contract = web3.eth.contract(address=eth_multicall.address, abi=eth_multicall.abi)
                 data = url.split('data=')[1]
                 if '&apikey' in data:
                     data = data.split('&apikey')[0]
@@ -176,7 +176,7 @@ def mock_etherscan_for_dsr(
                 args = [1, proxies]
                 result = '0x' + web3.codec.encode_abi(output_types, args).hex()
                 response = f'{{"status":"1","message":"OK","result":"{result}"}}'
-            elif to_address == MAKERDAO_POT.address:
+            elif to_address == makerdao_pot.address:
                 if input_data.startswith('0x0bebac86'):  # pie
                     if proxy1_contents in input_data:
                         result = int_to_32byteshexstr(params.account1_current_normalized_balance)
@@ -210,7 +210,7 @@ def mock_etherscan_for_dsr(
             from_block = int(url.split('&fromBlock=')[1].split('&')[0])
             to_block = int(url.split('&toBlock=')[1].split('&')[0])
 
-            if contract_address == MAKERDAO_POT.address:
+            if contract_address == makerdao_pot.address:
                 if topic0.startswith('0x049878f3'):  # join
 
                     events = []
@@ -239,7 +239,7 @@ def mock_etherscan_for_dsr(
                 else:
                     raise AssertionError('Etherscan unknown log query to makerdao POT contract')
 
-            elif contract_address == MAKERDAO_VAT.address:
+            elif contract_address == makerdao_vat.address:
                 if topic0.startswith('0xbb35783b'):  # move
                     events = []
                     if proxy1_contents in topic1:  # deposit from acc1
@@ -258,7 +258,7 @@ def mock_etherscan_for_dsr(
                     response = f'{{"status":"1","message":"OK","result":[{",".join(events)}]}}'
                 else:
                     raise AssertionError('Etherscan unknown log query to makerdao VAT contract')
-            elif contract_address == MAKERDAO_DAI_JOIN.address:
+            elif contract_address == makerdao_dai_join.address:
                 events = []
                 if topic0.startswith('0x3b4da69f'):  # join
                     if proxy1_contents in topic1:  # deposit from acc1
@@ -290,6 +290,7 @@ def mock_etherscan_for_dsr(
 
 def setup_tests_for_dsr(
         etherscan: Etherscan,
+        contracts: EvmContracts,
         accounts: List[ChecksumEvmAddress],
         original_requests_get,
 ) -> DSRTestSetup:
@@ -320,6 +321,7 @@ def setup_tests_for_dsr(
     )
     etherscan_patch = mock_etherscan_for_dsr(
         etherscan=etherscan,
+        contracts=contracts,
         account1=account1,
         account2=account2,
         account3=account3,
@@ -459,6 +461,7 @@ def test_query_current_dsr_balance(
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     setup = setup_tests_for_dsr(
         etherscan=rotki.chains_aggregator.ethereum.node_inquirer.etherscan,
+        contracts=rotki.chains_aggregator.ethereum.node_inquirer.contracts,
         accounts=ethereum_accounts,
         original_requests_get=requests.get,
     )
@@ -485,6 +488,7 @@ def test_query_historical_dsr_non_premium(
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     setup = setup_tests_for_dsr(
         etherscan=rotki.chains_aggregator.ethereum.node_inquirer.etherscan,
+        contracts=rotki.chains_aggregator.ethereum.node_inquirer.contracts,
         accounts=ethereum_accounts,
         original_requests_get=requests.get,
     )
@@ -552,6 +556,7 @@ def test_query_historical_dsr(
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     setup = setup_tests_for_dsr(
         etherscan=rotki.chains_aggregator.ethereum.node_inquirer.etherscan,
+        contracts=rotki.chains_aggregator.ethereum.node_inquirer.contracts,
         accounts=ethereum_accounts,
         original_requests_get=requests.get,
     )

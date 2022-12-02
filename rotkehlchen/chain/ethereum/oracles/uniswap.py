@@ -8,17 +8,10 @@ from eth_utils import to_checksum_address
 from web3.types import BlockIdentifier
 
 from rotkehlchen.assets.asset import AssetWithOracles, EvmToken
-from rotkehlchen.chain.ethereum.constants import ZERO_ADDRESS
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
+from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_USD, A_USDC, A_USDT, A_WETH
-from rotkehlchen.constants.ethereum import (
-    SINGLE_SIDE_USD_POOL_LIMIT,
-    UNISWAP_V2_FACTORY,
-    UNISWAP_V2_LP_ABI,
-    UNISWAP_V3_FACTORY,
-    UNISWAP_V3_POOL_ABI,
-)
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
@@ -35,6 +28,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 
 UNISWAP_FACTORY_DEPLOYED_BLOCK = 12369621
+SINGLE_SIDE_USD_POOL_LIMIT = 5000
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -286,6 +280,8 @@ class UniswapV3Oracle(UniswapOracle):
 
     def __init__(self, ethereum_inquirer: 'EthereumInquirer'):
         super().__init__(ethereum_inquirer=ethereum_inquirer, version=3)
+        self.uniswap_v3_pool_abi = self.ethereum.contracts.abi('UNISWAP_V3_POOL_ABI')
+        self.uniswap_v3_factory = self.ethereum.contracts.contract('UNISWAP_V3_FACTORY')
 
     @cache_response_timewise()
     def get_pool(
@@ -294,7 +290,7 @@ class UniswapV3Oracle(UniswapOracle):
             token_1: EvmToken,
     ) -> List[str]:
         result = self.ethereum.multicall_specific(
-            contract=UNISWAP_V3_FACTORY,
+            contract=self.uniswap_v3_factory,
             method_name='getPool',
             arguments=[[
                 token_0.evm_address,
@@ -311,7 +307,7 @@ class UniswapV3Oracle(UniswapOracle):
             pool_address = to_checksum_address(query[0])
             pool_contract = EvmContract(
                 address=pool_address,
-                abi=UNISWAP_V3_POOL_ABI,
+                abi=self.uniswap_v3_pool_abi,
                 deployed_block=UNISWAP_FACTORY_DEPLOYED_BLOCK,
             )
             pool_liquidity = pool_contract.call(
@@ -342,7 +338,7 @@ class UniswapV3Oracle(UniswapOracle):
         """
         pool_contract = EvmContract(
             address=pool_addr,
-            abi=UNISWAP_V3_POOL_ABI,
+            abi=self.uniswap_v3_pool_abi,
             deployed_block=UNISWAP_FACTORY_DEPLOYED_BLOCK,
         )
         calls = [
@@ -388,6 +384,8 @@ class UniswapV2Oracle(UniswapOracle):
 
     def __init__(self, ethereum_inquirer: 'EthereumInquirer'):
         super().__init__(ethereum_inquirer=ethereum_inquirer, version=3)
+        self.uniswap_v2_lp_abi = self.ethereum.contracts.abi('UNISWAP_V2_LP_ABI')
+        self.uniswap_v2_factory = self.ethereum.contracts.contract('UNISWAP_V2_FACTORY')
 
     @cache_response_timewise()
     def get_pool(
@@ -395,7 +393,7 @@ class UniswapV2Oracle(UniswapOracle):
         token_0: EvmToken,
         token_1: EvmToken,
     ) -> List[str]:
-        result = UNISWAP_V2_FACTORY.call(
+        result = self.uniswap_v2_factory.call(
             node_inquirer=self.ethereum,
             method_name='getPair',
             arguments=[
@@ -418,7 +416,7 @@ class UniswapV2Oracle(UniswapOracle):
         """
         pool_contract = EvmContract(
             address=pool_addr,
-            abi=UNISWAP_V2_LP_ABI,
+            abi=self.uniswap_v2_lp_abi,
             deployed_block=10000835,  # Factory deployment block
         )
         calls = [

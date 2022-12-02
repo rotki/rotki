@@ -1,5 +1,5 @@
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.chain.ethereum.types import NodeName, string_to_evm_address
+from rotkehlchen.chain.evm.types import NodeName, string_to_evm_address
 from rotkehlchen.constants.assets import A_EUR
 from rotkehlchen.types import SupportedBlockchain, deserialize_evm_tx_hash
 

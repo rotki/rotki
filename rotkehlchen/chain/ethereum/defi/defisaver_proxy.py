@@ -1,7 +1,6 @@
 import logging
 from typing import TYPE_CHECKING, Dict, List, Optional
 
-from rotkehlchen.constants.ethereum import DS_PROXY_REGISTRY
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -42,6 +41,7 @@ class HasDSProxy(EthereumModule):
         self.address_to_proxy: Dict[ChecksumEvmAddress, ChecksumEvmAddress] = {}
         self.proxy_to_address: Dict[ChecksumEvmAddress, ChecksumEvmAddress] = {}
         self.reset_last_query_ts()
+        self.dsproxy_registry = self.ethereum.contracts.contract('DS_PROXY_REGISTRY')
 
     def reset_last_query_ts(self) -> None:
         """Reset the last query timestamps, effectively cleaning the caches"""
@@ -57,7 +57,7 @@ class HasDSProxy(EthereumModule):
         - BlockchainQueryError if an evm node is used and the contract call
         queries fail for some reason
         """
-        result = DS_PROXY_REGISTRY.call(self.ethereum, 'proxies', arguments=[address])
+        result = self.dsproxy_registry.call(self.ethereum, 'proxies', arguments=[address])
         if int(result, 16) != 0:
             try:
                 return deserialize_evm_address(result)
@@ -80,14 +80,14 @@ class HasDSProxy(EthereumModule):
         """
         output = self.ethereum.multicall(
             calls=[(
-                DS_PROXY_REGISTRY.address,
-                DS_PROXY_REGISTRY.encode(method_name='proxies', arguments=[address]),
+                self.dsproxy_registry.address,
+                self.dsproxy_registry.encode(method_name='proxies', arguments=[address]),
             ) for address in addresses],
         )
         mapping = {}
         for idx, result_encoded in enumerate(output):
             address = addresses[idx]
-            result = DS_PROXY_REGISTRY.decode(    # pylint: disable=unsubscriptable-object
+            result = self.dsproxy_registry.decode(    # pylint: disable=unsubscriptable-object
                 result_encoded,
                 'proxies',
                 arguments=[address],

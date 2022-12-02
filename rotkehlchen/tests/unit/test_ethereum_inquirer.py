@@ -1,9 +1,8 @@
 import pytest
 
-from rotkehlchen.chain.ethereum.constants import ZERO_ADDRESS
-from rotkehlchen.chain.ethereum.types import ETHERSCAN_NODE_NAME
+from rotkehlchen.chain.ethereum.constants import ETHEREUM_ETHERSCAN_NODE_NAME
+from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
-from rotkehlchen.constants.ethereum import ATOKEN_ABI, ERC20TOKEN_ABI, YEARN_YCRV_VAULT
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.tests.utils.checks import assert_serialized_dicts_equal
 from rotkehlchen.tests.utils.ethereum import (
@@ -159,7 +158,7 @@ def test_use_open_nodes(ethereum_inquirer, database):
     """
     # Wait until all nodes are connected
     rpc_nodes_all = database.get_rpc_nodes(blockchain=SupportedBlockchain.ETHEREUM, only_active=True)  # noqa: E501
-    rpc_nodes = [node for node in rpc_nodes_all if node.node_info.name != ETHERSCAN_NODE_NAME]
+    rpc_nodes = [node for node in rpc_nodes_all if node.node_info.name != ETHEREUM_ETHERSCAN_NODE_NAME]  # noqa: E501
     ethereum_inquirer.connect_to_multiple_nodes(rpc_nodes)
     wait_until_all_nodes_connected(
         connect_at_start=rpc_nodes,
@@ -179,20 +178,20 @@ def test_call_contract(ethereum_inquirer, call_order, ethereum_manager_connect_a
         connect_at_start=ethereum_manager_connect_at_start,
         evm_inquirer=ethereum_inquirer,
     )
-
+    yearn_ycrv_vault = ethereum_inquirer.contracts.contract('YEARN_YCRV_VAULT')
     result = ethereum_inquirer.call_contract(
-        contract_address=YEARN_YCRV_VAULT.address,
-        abi=YEARN_YCRV_VAULT.abi,
+        contract_address=yearn_ycrv_vault.address,
+        abi=yearn_ycrv_vault.abi,
         method_name='symbol',
         call_order=call_order,
     )
     assert result == 'yyDAI+yUSDC+yUSDT+yTUSD'
     # also test that doing contract.call() has the same result
-    result2 = YEARN_YCRV_VAULT.call(ethereum_inquirer, 'symbol', call_order=call_order)
+    result2 = yearn_ycrv_vault.call(ethereum_inquirer, 'symbol', call_order=call_order)
     assert result == result2
     result = ethereum_inquirer.call_contract(
-        contract_address=YEARN_YCRV_VAULT.address,
-        abi=YEARN_YCRV_VAULT.abi,
+        contract_address=yearn_ycrv_vault.address,
+        abi=yearn_ycrv_vault.abi,
         method_name='balanceOf',
         arguments=['0x5dbcF33D8c2E976c6b560249878e6F1491Bca25c'],
         call_order=call_order,
@@ -206,14 +205,14 @@ def test_get_logs(ethereum_inquirer, call_order, ethereum_manager_connect_at_sta
         connect_at_start=ethereum_manager_connect_at_start,
         evm_inquirer=ethereum_inquirer,
     )
-
+    yearn_ycrv_vault = ethereum_inquirer.contracts.contract('YEARN_YCRV_VAULT')
     argument_filters = {
         'from': '0x7780E86699e941254c8f4D9b7eB08FF7e96BBE10',
-        'to': YEARN_YCRV_VAULT.address,
+        'to': yearn_ycrv_vault.address,
     }
     events = ethereum_inquirer.get_logs(
         contract_address='0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8',
-        abi=ERC20TOKEN_ABI,
+        abi=ethereum_inquirer.contracts.abi('ERC20TOKEN_ABI'),
         event_name='Transfer',
         argument_filters=argument_filters,
         from_block=10712531,
@@ -273,7 +272,7 @@ def test_get_log_and_receipt_etherscan_bad_tx_index(
     }
     events = ethereum_inquirer.get_logs(
         contract_address='0xFC4B8ED459e00e5400be803A9BB3954234FD50e3',
-        abi=ATOKEN_ABI,
+        abi=ethereum_inquirer.contracts.abi('ATOKEN_ABI'),
         event_name='Transfer',
         argument_filters=argument_filters,
         from_block=10773651,

@@ -22,11 +22,6 @@ from rotkehlchen.chain.ethereum.modules.uniswap.v3.types import (
 from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV3Oracle
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants.assets import A_USDC
-from rotkehlchen.constants.ethereum import (
-    UNISWAP_V3_FACTORY,
-    UNISWAP_V3_NFT_MANAGER,
-    UNISWAP_V3_POOL_ABI,
-)
 from rotkehlchen.constants.misc import NFT_DIRECTIVE, ZERO
 from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError
 from rotkehlchen.errors.price import PriceQueryUnsupportedAsset
@@ -70,7 +65,8 @@ def uniswap_v3_lp_token_balances(
     `tokenOfOwnerByIndex` method which gives the NFT ID that represents a LP position.
     3. Use the token ID gotten above to call the `positions` method to get the current state of the
     liquidity position.
-    4. Use the `positions` data to generate the LP address using the `compute_pool_address` method.
+    4. Use the `positions` data to generate the LP address using the
+    `_compute_pool_address` method.
     5. Use the pool contract of the addresses generate and call the `slot0` method to get the
     LP state.
     6. Get basic information of the tokens in the LP pairs.
@@ -98,14 +94,12 @@ def uniswap_v3_lp_token_balances(
 
     May raise RemoteError if querying NFT manager contract fails.
     """
-    nft_manager_contract = EvmContract(
-        address=UNISWAP_V3_NFT_MANAGER.address,
-        abi=UNISWAP_V3_NFT_MANAGER.abi,
-        deployed_block=UNISWAP_V3_NFT_MANAGER.deployed_block,
-    )
+    uniswap_v3_nft_manager = ethereum.contracts.contract('UNISWAP_V3_NFT_MANAGER')
+    uniswap_v3_factory = ethereum.contracts.contract('UNISWAP_V3_FACTORY')
+    uniswap_v3_pool_abi = ethereum.contracts.abi('UNISWAP_V3_POOL_ABI')
     balances: List[NFTLiquidityPool] = []
     try:
-        amount_of_positions = nft_manager_contract.call(
+        amount_of_positions = uniswap_v3_nft_manager.call(
             node_inquirer=ethereum,
             method_name='balanceOf',
             arguments=[address],
@@ -128,8 +122,8 @@ def uniswap_v3_lp_token_balances(
                 require_success=False,
                 calls=[
                     (
-                        UNISWAP_V3_NFT_MANAGER.address,
-                        nft_manager_contract.encode('tokenOfOwnerByIndex', [address, index]),
+                        uniswap_v3_nft_manager.address,
+                        uniswap_v3_nft_manager.encode('tokenOfOwnerByIndex', [address, index]),
                     )
                     for index in chunk
                 ],
@@ -139,7 +133,7 @@ def uniswap_v3_lp_token_balances(
             continue
 
         tokens_ids = [
-            nft_manager_contract.decode(   # pylint: disable=unsubscriptable-object
+            uniswap_v3_nft_manager.decode(   # pylint: disable=unsubscriptable-object
                 result=data[1],
                 method_name='tokenOfOwnerByIndex',
                 arguments=[address, index],
@@ -152,8 +146,8 @@ def uniswap_v3_lp_token_balances(
                 require_success=False,
                 calls=[
                     (
-                        UNISWAP_V3_NFT_MANAGER.address,
-                        nft_manager_contract.encode('positions', [token_id]),
+                        uniswap_v3_nft_manager.address,
+                        uniswap_v3_nft_manager.encode('positions', [token_id]),
                     )
                     for token_id in tokens_ids
                 ],
@@ -162,7 +156,7 @@ def uniswap_v3_lp_token_balances(
             log.error(UNISWAP_V3_ERROR_MSG.format('nft contract positions', str(e)))
             continue
         positions = [
-            nft_manager_contract.decode(
+            uniswap_v3_nft_manager.decode(
                 result=data[1],
                 method_name='positions',
                 arguments=[tokens_ids[index]],
@@ -172,7 +166,8 @@ def uniswap_v3_lp_token_balances(
         # Generate the LP contract address with CREATE2 opcode replicated in Python using
         # factory_address, token_0, token1 and the fee of the LP all gotten from the position.
         pool_addresses = [
-            compute_pool_address(
+            _compute_pool_address(
+                uniswap_v3_factory_address=uniswap_v3_factory.address,
                 token0_address_raw=position[2],
                 token1_address_raw=position[3],
                 fee=position[4],
@@ -182,8 +177,8 @@ def uniswap_v3_lp_token_balances(
         pool_contracts = [
             EvmContract(
                 address=pool_address,
-                abi=UNISWAP_V3_POOL_ABI,
-                deployed_block=UNISWAP_V3_FACTORY.deployed_block,
+                abi=uniswap_v3_pool_abi,
+                deployed_block=uniswap_v3_factory.deployed_block,
             )
             for pool_address in pool_addresses
         ]
@@ -316,13 +311,15 @@ def uniswap_v3_lp_token_balances(
                 balances.append(_decode_uniswap_v3_result(
                     userdb=userdb,
                     data=item,
+                    uniswap_v3_nft_manager_address=uniswap_v3_nft_manager.address,
                     price_known_tokens=price_known_tokens,
                     price_unknown_tokens=price_unknown_tokens,
                 ))
     return balances
 
 
-def compute_pool_address(
+def _compute_pool_address(
+        uniswap_v3_factory_address: ChecksumEvmAddress,
         token0_address_raw: str,
         token1_address_raw: str,
         fee: int,
@@ -345,7 +342,7 @@ def compute_pool_address(
     )
     # pylint: disable=no-value-for-parameter
     salt = Web3.solidityKeccak(abi_types=['bytes'], values=['0x' + abi_encoded_1.hex()])
-    abi_encoded_2 = encode_abi_packed(['address', 'bytes32'], (UNISWAP_V3_FACTORY.address, salt))
+    abi_encoded_2 = encode_abi_packed(['address', 'bytes32'], (uniswap_v3_factory_address, salt))
     # pylint: disable=no-value-for-parameter
     raw_address_bytes = Web3.solidityKeccak(
         abi_types=['bytes', 'bytes'],
@@ -462,6 +459,7 @@ def _decode_uniswap_v3_token(entry: Dict[str, Any]) -> TokenDetails:
 def _decode_uniswap_v3_result(
         userdb: 'DBHandler',
         data: Tuple,
+        uniswap_v3_nft_manager_address: ChecksumEvmAddress,
         price_known_tokens: Set[EvmToken],
         price_unknown_tokens: Set[EvmToken],
 ) -> NFTLiquidityPool:
@@ -475,7 +473,7 @@ def _decode_uniswap_v3_result(
 
     Edge cases whereby a token does not conform to ERC20 standard,the user balance is set to ZERO.
     """
-    nft_id = NFT_DIRECTIVE + to_normalized_address(UNISWAP_V3_NFT_MANAGER.address) + '_' + str(data[0])  # noqa: E501
+    nft_id = NFT_DIRECTIVE + to_normalized_address(uniswap_v3_nft_manager_address) + '_' + str(data[0])  # noqa: E501
     pool_token = data[1]
     token0 = _decode_uniswap_v3_token(data[4])
     token1 = _decode_uniswap_v3_token(data[5])

@@ -11,7 +11,7 @@ from rotkehlchen.chain.ethereum.defi.structures import (
     DefiProtocolBalances,
 )
 from rotkehlchen.chain.ethereum.tokens import EthereumTokens
-from rotkehlchen.chain.ethereum.types import string_to_evm_address
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH
 from rotkehlchen.tests.utils.blockchain import mock_beaconchain, mock_etherscan_query
@@ -41,6 +41,7 @@ def test_multiple_concurrent_ethereum_blockchain_queries(blockchain):
     etherscan_patch = mock_etherscan_query(
         eth_map={addr1: {A_ETH: 1, A_DAI: 1 * 10**18}, addr2: {A_ETH: 2}},
         etherscan=blockchain.ethereum.node_inquirer.etherscan,
+        ethereum=blockchain.ethereum.node_inquirer,
         original_requests_get=requests.get,
         original_queries=None,
         extra_flags=None,

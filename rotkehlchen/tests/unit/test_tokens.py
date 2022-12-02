@@ -4,8 +4,8 @@ import pytest
 from flaky import flaky
 
 from rotkehlchen.chain.ethereum.tokens import EthereumTokens
-from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.chain.evm.tokens import generate_multicall_chunks
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_OMG
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_LPT

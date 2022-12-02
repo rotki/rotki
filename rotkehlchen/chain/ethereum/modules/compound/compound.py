@@ -9,8 +9,8 @@ from rotkehlchen.assets.utils import symbol_to_asset_or_token, symbol_to_ethereu
 from rotkehlchen.chain.ethereum.defi.structures import GIVEN_DEFI_BALANCES
 from rotkehlchen.chain.ethereum.graph import Graph, get_common_params
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
+from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS
 from rotkehlchen.constants.assets import A_COMP, A_ETH
-from rotkehlchen.constants.ethereum import CTOKEN_ABI, ERC20TOKEN_ABI, ETH_SPECIAL_ADDRESS
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
@@ -25,7 +25,7 @@ from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import hexstr_to_int, ts_now
 
-from .constants import COMP_DEPLOYED_BLOCK, COMPTROLLER_PROXY
+from .constants import COMP_DEPLOYED_BLOCK, COMPTROLLER_PROXY_ADDRESS
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -168,7 +168,7 @@ class Compound(EthereumModule):
         try:
             rate = self.ethereum.call_contract(
                 contract_address=address,
-                abi=CTOKEN_ABI,
+                abi=self.ethereum.contracts.abi('CTOKEN_ABI'),
                 method_name=method_name,
             )
         except (RemoteError, BlockchainQueryError) as e:
@@ -536,12 +536,12 @@ class Compound(EthereumModule):
             self.ethereum.get_blocknumber_by_time(from_ts),
         )
         argument_filters = {
-            'from': COMPTROLLER_PROXY.address,
+            'from': COMPTROLLER_PROXY_ADDRESS,
             'to': address,
         }
         comp_events = self.ethereum.get_logs(
             contract_address=self.comp.evm_address,
-            abi=ERC20TOKEN_ABI,
+            abi=self.ethereum.contracts.abi('ERC20TOKEN_ABI'),
             event_name='Transfer',
             argument_filters=argument_filters,
             from_block=from_block,

@@ -1,3 +1,5 @@
+import json
+import os
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -17,12 +19,12 @@ from web3._utils.abi import get_abi_output_types
 from web3.types import BlockIdentifier
 
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi
-from rotkehlchen.types import ChecksumEvmAddress
+from rotkehlchen.types import ChainID, ChecksumEvmAddress
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.types import WeightedNode
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
+    from rotkehlchen.chain.evm.types import WeightedNode
 
 WEB3 = Web3()
 
@@ -47,6 +49,24 @@ class EvmContract(NamedTuple):
             arguments=arguments,
             call_order=call_order,
             block_identifier=block_identifier,
+        )
+
+    def get_logs_since_deployment(
+            self,
+            node_inquirer: 'EvmNodeInquirer',
+            event_name: str,
+            argument_filters: Dict[str, Any],
+            to_block: Union[int, Literal['latest']] = 'latest',
+            call_order: Optional[Sequence['WeightedNode']] = None,
+    ) -> Any:
+        return node_inquirer.get_logs(
+            contract_address=self.address,
+            abi=self.abi,
+            event_name=event_name,
+            argument_filters=argument_filters,
+            from_block=self.deployed_block,
+            to_block=to_block,
+            call_order=call_order,
         )
 
     def get_logs(
@@ -103,3 +123,64 @@ class EvmContract(NamedTuple):
             argument_names=argument_names,
         )
         return decode_event_data_abi(tx_log=tx_log, event_abi=event_abi)  # type: ignore
+
+
+class EvmContracts():
+    """A class allowing to query contract data for an Evm Chain. addresses and ABIs.
+
+    Atm all evm chains need to have (may need to change this):
+    - ERC20TOKEN_ABI
+    - UNIV1_LP_ABI
+    - ERC721TOKEN_ABI
+    """
+
+    def __init__(self, chain_id: ChainID, contracts_filename: str, abi_filename: str) -> None:
+        self.chain_id = chain_id
+        self.contracts: Dict[str, Dict[str, Any]] = {}
+        self.abi_entries: Dict[str, List[Dict[str, Any]]] = {}
+        dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+        with open(os.path.join(dir_path, 'data', contracts_filename), 'r') as f:
+            self.contracts = json.loads(f.read())
+
+        with open(os.path.join(dir_path, 'data', abi_filename), 'r') as f:
+            self.abi_entries = json.loads(f.read())
+
+    def contract_or_none(self, name: str) -> Optional[EvmContract]:
+        """Gets details of an evm contract from the contracts json file
+
+        Returns None if missing
+        """
+        contract = self.contracts.get(name, None)
+        if contract is None:
+            return None
+
+        return EvmContract(
+            address=contract['address'],
+            abi=contract['abi'],
+            deployed_block=contract['deployed_block'],
+        )
+
+    def contract(self, name: str) -> EvmContract:
+        """Gets details of an evm contract from the contracts json file
+
+        Missing contract is a programming error and should never happen.
+        """
+        contract = self.contract_or_none(name)
+        assert contract, f'No contract data for {name} found'
+        return contract
+
+    def abi_or_none(self, name: str) -> Optional[List[Dict[str, Any]]]:
+        """Gets abi of an evm contract from the abi json file
+
+        Returns None if missing
+        """
+        return self.abi_entries.get(name, None)
+
+    def abi(self, name: str) -> List[Dict[str, Any]]:
+        """Gets abi of an evm contract from the abi json file
+
+        Missing abi is a programming error and should never happen
+        """
+        abi = self.abi_or_none(name)
+        assert abi, f'No abi for {name} found'
+        return abi

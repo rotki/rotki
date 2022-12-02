@@ -9,7 +9,8 @@ from rotkehlchen.chain.ethereum.etherscan import EthereumEtherscan
 from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
-from rotkehlchen.chain.ethereum.types import NodeName
+from rotkehlchen.chain.evm.contracts import EvmContracts
+from rotkehlchen.chain.evm.types import NodeName
 from rotkehlchen.chain.substrate.manager import SubstrateChainProperties, SubstrateManager
 from rotkehlchen.chain.substrate.types import KusamaAddress, PolkadotAddress, SubstrateChain
 from rotkehlchen.constants.assets import A_DOT, A_KSM
@@ -27,7 +28,7 @@ from rotkehlchen.tests.utils.substrate import (
     POLKADOT_SS58_FORMAT,
     wait_until_all_substrate_nodes_connected,
 )
-from rotkehlchen.types import BTCAddress, ChecksumEvmAddress
+from rotkehlchen.types import BTCAddress, ChainID, ChecksumEvmAddress
 
 
 @pytest.fixture(name='number_of_eth_accounts')
@@ -350,3 +351,12 @@ def blockchain(
     )
 
     return chains_aggregator
+
+
+@pytest.fixture(name='ethereum_contracts')
+def fixture_ethereum_contracts():
+    return EvmContracts(
+        chain_id=ChainID.ETHEREUM,
+        contracts_filename='eth_contracts.json',
+        abi_filename='eth_abi.json',
+    )

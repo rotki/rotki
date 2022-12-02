@@ -7,9 +7,8 @@ from web3._utils.abi import get_abi_input_types, get_abi_output_types
 
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.defi.zerionsdk import ZERION_ADAPTER_ADDRESS
-from rotkehlchen.chain.ethereum.types import NodeName
+from rotkehlchen.chain.evm.types import NodeName
 from rotkehlchen.constants.assets import A_BTC
-from rotkehlchen.constants.ethereum import ETH_MULTICALL, ETH_SCAN, ZERION_ABI
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
@@ -21,7 +20,7 @@ from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.tests.utils.eth_tokens import CONTRACT_ADDRESS_TO_TOKEN
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import BTCAddress, ChainID, ChecksumEvmAddress, SupportedBlockchain
+from rotkehlchen.types import BTCAddress, ChecksumEvmAddress, SupportedBlockchain
 from rotkehlchen.utils.misc import from_wei, satoshis_to_btc
 
 if TYPE_CHECKING:
@@ -201,10 +200,13 @@ def mock_beaconchain(
 def mock_etherscan_query(
         eth_map: Dict[ChecksumEvmAddress, Dict[Union[str, EvmToken], Any]],
         etherscan: Etherscan,
+        ethereum: 'EthereumInquirer',
         original_queries: Optional[List[str]],
         extra_flags: Optional[List[str]],
         original_requests_get,
 ):
+    eth_scan = ethereum.contracts.contract('ETH_SCAN')
+    eth_multicall = ethereum.contracts.contract('ETH_MULTICALL')
     original_queries = [] if original_queries is None else original_queries
     extra_flags = [] if extra_flags is None else extra_flags
 
@@ -275,7 +277,7 @@ def mock_etherscan_query(
                 return original_requests_get(url, *args, **kwargs)
 
             web3 = Web3()
-            contract = web3.eth.contract(address=ZERION_ADAPTER_ADDRESS, abi=ZERION_ABI)
+            contract = web3.eth.contract(address=ZERION_ADAPTER_ADDRESS, abi=ethereum.contracts.abi('ZERION_ABI'))  # noqa: E501
             if 'data=0xc84aae17' in url:  # getBalances
                 data = url.split('data=')[1]
                 if '&apikey' in data:
@@ -329,9 +331,9 @@ def mock_etherscan_query(
             else:
                 raise AssertionError(f'Unexpected etherscan call during tests: {url}')
 
-        elif f'api.etherscan.io/api?module=proxy&action=eth_call&to={ETH_MULTICALL.address}' in url:  # noqa: E501
+        elif f'api.etherscan.io/api?module=proxy&action=eth_call&to={eth_multicall.address}' in url:  # noqa: E501
             web3 = Web3()
-            contract = web3.eth.contract(address=ETH_MULTICALL.address, abi=ETH_MULTICALL.abi)
+            contract = web3.eth.contract(address=eth_multicall.address, abi=eth_multicall.abi)
             if 'c2cb1040220768554cf699b0d863a3cd4324ce3' in url:
                 multicall_purpose = 'ds_proxy'
             elif '2bdded18e2ca464355091266b7616956944ee7e' in url:
@@ -356,7 +358,7 @@ def mock_etherscan_query(
                 decoded_input = web3.codec.decode_abi(input_types, bytes.fromhex(data[10:]))
 
                 if multicall_purpose == 'multibalance_query':
-                    contract = ETH_SCAN[ChainID.ETHEREUM]
+                    contract = eth_scan
                     # Get the ethscan multibalance subcalls
                     ethscan_contract = web3.eth.contract(address=contract.address, abi=contract.abi)  # noqa: E501
                     # not really the given args, but we just want the fn abi
@@ -401,12 +403,12 @@ def mock_etherscan_query(
             else:
                 raise AssertionError('Unexpected etherscan multicall during tests: {url}')
 
-        elif f'api.etherscan.io/api?module=proxy&action=eth_call&to={ETH_SCAN[ChainID.ETHEREUM].address}' in url:  # noqa: E501
+        elif f'api.etherscan.io/api?module=proxy&action=eth_call&to={eth_scan.address}' in url:  # noqa: E501
             if 'ethscan' in original_queries:
                 return original_requests_get(url, *args, **kwargs)
 
             web3 = Web3()
-            contract = ETH_SCAN[ChainID.ETHEREUM]
+            contract = eth_scan
             ethscan_contract = web3.eth.contract(address=contract.address, abi=contract.abi)
             if 'data=0xdbdbb51b' in url:  # Eth balance query
                 data = url.split('data=')[1]

@@ -5,7 +5,7 @@ from unittest.mock import patch
 import pytest
 import requests
 
-from rotkehlchen.chain.ethereum.types import ETHERSCAN_NODE_NAME
+from rotkehlchen.chain.ethereum.constants import ETHEREUM_ETHERSCAN_NODE_NAME
 from rotkehlchen.constants.misc import DEFAULT_MAX_LOG_BACKUP_FILES, DEFAULT_SQL_VM_INSTRUCTIONS_CB
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
@@ -142,7 +142,7 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
     result = assert_proper_response_with_result(response)
     assert len(result) == 7
     for node in result:
-        if node['name'] != ETHERSCAN_NODE_NAME:
+        if node['name'] != ETHEREUM_ETHERSCAN_NODE_NAME:
             assert node['endpoint'] != ''
         else:
             assert node['identifier'] == 1

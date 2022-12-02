@@ -16,7 +16,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
-from .constants import COMPTROLLER_PROXY, CPT_COMPOUND
+from .constants import COMPTROLLER_PROXY_ADDRESS, CPT_COMPOUND
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
@@ -178,7 +178,7 @@ class CompoundDecoder(DecoderInterface):
         # comp in the Comptroller until enough for a transfer is there. We should only
         # count a payout if the transfer occurs
         for event in decoded_events:
-            if event.event_type == HistoryEventType.RECEIVE and event.location_label == supplier_address and event.asset == A_COMP and event.counterparty == COMPTROLLER_PROXY.address:  # noqa: E501
+            if event.event_type == HistoryEventType.RECEIVE and event.location_label == supplier_address and event.asset == A_COMP and event.counterparty == COMPTROLLER_PROXY_ADDRESS:  # noqa: E501
                 event.event_subtype = HistoryEventSubType.REWARD
                 event.counterparty = CPT_COMPOUND
                 event.notes = f'Collect {event.balance.amount} COMP from compound'
@@ -199,7 +199,7 @@ class CompoundDecoder(DecoderInterface):
                 continue
 
             mapping[token.evm_address] = (self.decode_compound_token_movement, token)
-        mapping[COMPTROLLER_PROXY.address] = (self.decode_comp_claim,)
+        mapping[COMPTROLLER_PROXY_ADDRESS] = (self.decode_comp_claim,)
         return mapping
 
     def counterparties(self) -> List[str]:

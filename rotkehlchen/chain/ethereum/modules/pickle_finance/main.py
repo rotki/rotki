@@ -3,9 +3,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional
 
 from rotkehlchen.accounting.structures.balance import AssetBalance, Balance
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
-from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants.assets import A_PICKLE
-from rotkehlchen.constants.ethereum import PICKLE_DILL, PICKLE_DILL_REWARDS
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.premium.premium import Premium
@@ -45,16 +43,8 @@ class PickleFinance(EthereumModule):
         self.database = database
         self.premium = premium
         self.msg_aggregator = msg_aggregator
-        self.rewards_contract = EvmContract(
-            address=PICKLE_DILL_REWARDS.address,
-            abi=PICKLE_DILL_REWARDS.abi,
-            deployed_block=PICKLE_DILL_REWARDS.deployed_block,
-        )
-        self.dill_contract = EvmContract(
-            address=PICKLE_DILL.address,
-            abi=PICKLE_DILL.abi,
-            deployed_block=PICKLE_DILL.deployed_block,
-        )
+        self.rewards_contract = self.ethereum.contracts.contract('PICKLE_DILL_REWARDS')
+        self.dill_contract = self.ethereum.contracts.contract('PICKLE_DILL')
         self.pickle = A_PICKLE.resolve_to_evm_token()
 
     def get_dill_balances(
@@ -68,13 +58,13 @@ class PickleFinance(EthereumModule):
         api_output = {}
         rewards_calls = [
             (
-                PICKLE_DILL_REWARDS.address,
+                self.rewards_contract.address,
                 self.rewards_contract.encode(method_name='claim', arguments=[x]),
             )
             for x in addresses
         ]
         balance_calls = [
-            (PICKLE_DILL.address, self.dill_contract.encode(method_name='locked', arguments=[x]))
+            (self.dill_contract.address, self.dill_contract.encode(method_name='locked', arguments=[x]))  # noqa: E501
             for x in addresses
         ]
         outputs = self.ethereum.multicall_2(

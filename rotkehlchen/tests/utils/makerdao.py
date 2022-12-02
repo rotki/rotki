@@ -1,22 +1,18 @@
 import types
-from typing import Dict, List, NamedTuple, Tuple
+from typing import TYPE_CHECKING, Dict, List, NamedTuple, Tuple
 from unittest.mock import patch
 
 from web3 import Web3
 
 from rotkehlchen.chain.ethereum.modules.makerdao.constants import RAY, WAD
 from rotkehlchen.chain.ethereum.modules.makerdao.vaults import MakerdaoVault
-from rotkehlchen.constants.ethereum import (
-    DS_PROXY_REGISTRY,
-    MAKERDAO_GET_CDPS,
-    MAKERDAO_JUG,
-    MAKERDAO_SPOT,
-    MAKERDAO_VAT,
-)
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.factories import ZERO_ETH_ADDRESS
 from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.interfaces import EthereumModule
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 
 
 class VaultTestData(NamedTuple):
@@ -120,24 +116,23 @@ def mock_jug_ilks(_, ilk) -> Tuple[int, int]:
     return duty, whatever
 
 
-def create_web3_mock(web3: Web3, test_data: VaultTestData):
+def create_web3_mock(web3: Web3, ethereum: 'EthereumInquirer', test_data: VaultTestData):
     def mock_contract(address, abi):  # pylint: disable=unused-argument
         mock_proxy_registry = (
-            address == DS_PROXY_REGISTRY.address and
+            address == ethereum.contracts.contract('DS_PROXY_REGISTRY').address and
             'ProxyRegistry' in test_data.mock_contracts
         )
-        if address == MAKERDAO_GET_CDPS.address and 'GetCDPS' in test_data.mock_contracts:
+        if address == ethereum.contracts.contract('MAKERDAO_GET_CDPS').address and 'GetCDPS' in test_data.mock_contracts:  # noqa: E501
             return MockContract(test_data, getCdpsAsc=mock_get_cdps_asc)
         if mock_proxy_registry:
             return MockContract(test_data, proxies=mock_registry_proxies)
-        if address == MAKERDAO_VAT.address and 'VAT' in test_data.mock_contracts:
+        if address == ethereum.contracts.contract('MAKERDAO_VAT').address and 'VAT' in test_data.mock_contracts:  # noqa: E501
             return MockContract(test_data, urns=mock_vat_urns, ilks=mock_vat_ilks)
-        if address == MAKERDAO_SPOT.address and 'SPOT' in test_data.mock_contracts:
+        if address == ethereum.contracts.contract('MAKERDAO_SPOT').address and 'SPOT' in test_data.mock_contracts:  # noqa: E501
             return MockContract(test_data, ilks=mock_spot_ilks)
-        if address == MAKERDAO_JUG.address and 'JUG' in test_data.mock_contracts:
+        if address == ethereum.contracts.contract('MAKERDAO_JUG').address and 'JUG' in test_data.mock_contracts:  # noqa: E501
             return MockContract(test_data, ilks=mock_jug_ilks)
-        # if address == ETH_MULTICALL.address
-        # else
+
         raise AssertionError('Got unexpected address for contract during tests')
 
     return patch.object(
