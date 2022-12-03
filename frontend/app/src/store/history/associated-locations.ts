@@ -10,7 +10,7 @@ export const useAssociatedLocationsStore = defineStore(
     const { notify } = useNotifications();
     const { t } = useI18n();
     const associatedLocations: Ref<TradeLocation[]> = ref([]);
-    const fetchAssociatedLocations = async () => {
+    const fetchAssociatedLocations = async (): Promise<void> => {
       try {
         set(associatedLocations, await api.history.associatedLocations());
       } catch (e: any) {

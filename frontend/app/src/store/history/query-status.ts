@@ -8,7 +8,7 @@ export const useTxQueryStatus = defineStore(
   () => {
     const queryStatus = ref<Record<string, EthereumTransactionQueryData>>({});
 
-    const setQueryStatus = (data: EthereumTransactionQueryData) => {
+    const setQueryStatus = (data: EthereumTransactionQueryData): void => {
       const status = { ...get(queryStatus) };
       const address = data.address;
 
@@ -31,7 +31,7 @@ export const useTxQueryStatus = defineStore(
       set(queryStatus, status);
     };
 
-    const resetQueryStatus = () => {
+    const resetQueryStatus = (): void => {
       set(queryStatus, {});
     };
 

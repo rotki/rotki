@@ -55,7 +55,7 @@ export const useMainStore = defineStore('main', () => {
       clearInterval(intervalId);
     }
 
-    function updateApi(payload?: Nullable<string>) {
+    const updateApi = (payload?: Nullable<string>): void => {
       const interopBackendUrl = window.interop?.serverUrl();
       let backendUrl = api.defaultServerUrl;
       if (payload) {
@@ -64,9 +64,9 @@ export const useMainStore = defineStore('main', () => {
         backendUrl = interopBackendUrl;
       }
       api.setup(backendUrl);
-    }
+    };
 
-    const attemptConnect = async function () {
+    const attemptConnect = async (): Promise<void> => {
       try {
         updateApi(payload);
 
@@ -96,15 +96,15 @@ export const useMainStore = defineStore('main', () => {
     set(connectionFailure, false);
   };
 
-  const setConnected = (isConnected: boolean) => {
+  const setConnected = (isConnected: boolean): void => {
     set(connected, isConnected);
   };
 
-  const setNewUser = (isNew: boolean) => {
+  const setNewUser = (isNew: boolean): void => {
     set(newUser, isNew);
   };
 
-  const setConnectionFailure = (failed: boolean) => {
+  const setConnectionFailure = (failed: boolean): void => {
     set(connectionFailure, failed);
   };
 
@@ -125,12 +125,11 @@ export const useMainStore = defineStore('main', () => {
   };
 });
 
-const defaultVersion = () =>
-  ({
-    version: '',
-    latestVersion: '',
-    downloadUrl: ''
-  } as Version);
+const defaultVersion = (): Version => ({
+  version: '',
+  latestVersion: '',
+  downloadUrl: ''
+});
 
 if (import.meta.hot) {
   import.meta.hot.accept(acceptHMRUpdate(useMainStore, import.meta.hot));

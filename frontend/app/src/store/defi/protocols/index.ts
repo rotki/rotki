@@ -177,7 +177,9 @@ export const useDefiSupportedProtocolsStore = defineStore(
           }
         }
 
-        function yearnHistory(version: ProtocolVersion = ProtocolVersion.V1) {
+        const yearnHistory = (
+          version: ProtocolVersion = ProtocolVersion.V1
+        ): void => {
           const isV1 = version === ProtocolVersion.V1;
           const vaultsHistory = get(isV1 ? yearnV1History : yearnV2History);
           for (const address in vaultsHistory) {
@@ -217,7 +219,7 @@ export const useDefiSupportedProtocolsStore = defineStore(
               }
             }
           }
-        }
+        };
 
         if (showAll || protocols.includes(DefiProtocol.YEARN_VAULTS)) {
           yearnHistory();
@@ -702,7 +704,7 @@ export const useDefiSupportedProtocolsStore = defineStore(
         return sortBy(balances, 'asset');
       });
 
-    async function fetchLending(refresh = false) {
+    const fetchLending = async (refresh = false): Promise<void> => {
       const isPremium = get(premium);
       const section = Section.DEFI_LENDING;
       const premiumSection = Section.DEFI_LENDING_HISTORY;
@@ -774,9 +776,9 @@ export const useDefiSupportedProtocolsStore = defineStore(
       ]);
 
       setStatus(Status.LOADED, premiumSection);
-    }
+    };
 
-    async function fetchBorrowing(refresh = false) {
+    const fetchBorrowing = async (refresh = false): Promise<void> => {
       const section = Section.DEFI_BORROWING;
       const premiumSection = Section.DEFI_BORROWING_HISTORY;
       const currentStatus = getStatus(section);
@@ -825,7 +827,7 @@ export const useDefiSupportedProtocolsStore = defineStore(
       ]);
 
       setStatus(Status.LOADED, premiumSection);
-    }
+    };
 
     const effectiveInterestRate = (
       protocols: DefiProtocol[],
@@ -987,13 +989,12 @@ export const useDefiSupportedProtocolsStore = defineStore(
           .map(value => value.balance.usdValue)
           .reduce((sum, usdValue) => sum.plus(usdValue), Zero);
 
-        function getYearnDeposit(
+        const getYearnDeposit = (
           version: ProtocolVersion = ProtocolVersion.V1
-        ) {
-          return get(yearnStore.yearnVaultsAssets(addresses, version))
+        ): BigNumber =>
+          get(yearnStore.yearnVaultsAssets(addresses, version))
             .map(value => value.underlyingValue.usdValue)
             .reduce((sum, usdValue) => sum.plus(usdValue), Zero);
-        }
 
         if (
           protocols.length === 0 ||

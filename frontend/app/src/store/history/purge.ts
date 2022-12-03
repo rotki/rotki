@@ -10,7 +10,9 @@ export const usePurgeStore = defineStore('history/purge', () => {
   const { fetchTrades } = useTrades();
   const { fetchAssetMovements } = useAssetMovements();
   const { fetchLedgerActions } = useLedgerActions();
-  const purgeHistoryLocation = async (exchange: SupportedExchange) => {
+  const purgeHistoryLocation = async (
+    exchange: SupportedExchange
+  ): Promise<void> => {
     await Promise.allSettled([
       fetchTrades(true, exchange),
       fetchAssetMovements(true, exchange),
@@ -20,7 +22,7 @@ export const usePurgeStore = defineStore('history/purge', () => {
 
   const purgeExchange = async (
     exchange: SupportedExchange | typeof ALL_CENTRALIZED_EXCHANGES
-  ) => {
+  ): Promise<void> => {
     const { resetStatus } = useStatusUpdater(Section.TRADES);
 
     if (exchange === ALL_CENTRALIZED_EXCHANGES) {

@@ -378,28 +378,29 @@ export const transactionEventProtocolData = computed<ActionDataEntry[]>(() => [
     identifier: TransactionEventProtocol.MAKERDAO,
     label: 'Makerdao',
     image: './assets/images/defi/makerdao.svg',
-    matcher: (identifier: string) =>
+    matcher: (identifier: string): boolean =>
       identifier.toLowerCase().startsWith('makerdao')
   },
   {
     identifier: TransactionEventProtocol.UNISWAP,
     label: 'Uniswap',
     image: './assets/images/defi/uniswap.svg',
-    matcher: (identifier: string) =>
+    matcher: (identifier: string): boolean =>
       identifier.toLowerCase().startsWith('uniswap')
   },
   {
     identifier: TransactionEventProtocol.SUSHISWAP,
     label: 'Sushiswap',
     image: './assets/images/defi/sushi.png',
-    matcher: (identifier: string) =>
+    matcher: (identifier: string): boolean =>
       identifier.toLowerCase().startsWith('sushiswap')
   },
   {
     identifier: TransactionEventProtocol.AAVE,
     label: 'Aave',
     image: './assets/images/defi/aave.svg',
-    matcher: (identifier: string) => identifier.toLowerCase().startsWith('aave')
+    matcher: (identifier: string): boolean =>
+      identifier.toLowerCase().startsWith('aave')
   },
   {
     identifier: TransactionEventProtocol.FRAX,
@@ -415,7 +416,7 @@ export const transactionEventProtocolData = computed<ActionDataEntry[]>(() => [
     identifier: TransactionEventProtocol['1INCH'],
     label: '1inch',
     image: './assets/images/defi/1inch.svg',
-    matcher: (identifier: string) =>
+    matcher: (identifier: string): boolean =>
       identifier.toLowerCase().startsWith('1inch')
   },
   {
@@ -452,7 +453,7 @@ export const transactionEventProtocolData = computed<ActionDataEntry[]>(() => [
     identifier: TransactionEventProtocol.DXDAO,
     label: 'dxdao',
     image: './assets/images/defi/dxdao.svg',
-    matcher: (identifier: string) =>
+    matcher: (identifier: string): boolean =>
       identifier.toLowerCase().startsWith('dxdao')
   },
   {

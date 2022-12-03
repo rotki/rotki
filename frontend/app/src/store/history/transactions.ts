@@ -46,7 +46,7 @@ export const useTransactions = defineStore('history/transactions', () => {
   const { t } = useI18n();
 
   const { ethAddresses } = storeToRefs(useEthBalancesStore());
-  const fetchTransactions = async (refresh = false) => {
+  const fetchTransactions = async (refresh = false): Promise<void> => {
     const { awaitTask, isTaskRunning } = useTasks();
     const { setStatus, loading, isFirstLoad, resetStatus } = useStatusUpdater(
       Section.TX
@@ -56,7 +56,7 @@ export const useTransactions = defineStore('history/transactions', () => {
     const fetchTransactionsHandler = async (
       onlyCache: boolean,
       parameters?: Partial<TransactionRequestPayload>
-    ) => {
+    ): Promise<Collection<EthTransactionEntry>> => {
       const defaults: TradeRequestPayload = {
         limit: 0,
         offset: 0,
@@ -119,7 +119,7 @@ export const useTransactions = defineStore('history/transactions', () => {
         return;
       }
 
-      const fetchOnlyCache = async () => {
+      const fetchOnlyCache = async (): Promise<void> => {
         set(transactions, await fetchTransactionsHandler(true));
       };
 
@@ -160,7 +160,7 @@ export const useTransactions = defineStore('history/transactions', () => {
 
   const updateTransactionsPayload = async (
     newPayload: Partial<TransactionRequestPayload>
-  ) => {
+  ): Promise<void> => {
     if (!isEqual(get(transactionsPayload), newPayload)) {
       set(transactionsPayload, newPayload);
       await fetchTransactions();
@@ -245,7 +245,7 @@ export const useTransactions = defineStore('history/transactions', () => {
   const fetchTransactionEvents = async (
     txHashes: string[] | null,
     ignoreCache = false
-  ) => {
+  ): Promise<void> => {
     const isFetchAll = txHashes === null;
 
     const checked = checkFetchedTxHashesEvents(txHashes);
@@ -300,7 +300,7 @@ export const useTransactions = defineStore('history/transactions', () => {
   const getNotesAddresses = (transactions: EthTransactionEntry[]): string[] =>
     filterAddressesFromWords(getTransactionsNotesWords(transactions));
 
-  const fetchCounterparties = async () => {
+  const fetchCounterparties = async (): Promise<void> => {
     const result = await api.history.fetchAvailableCounterparties();
 
     set(counterparties, result);

@@ -15,7 +15,7 @@ export const useHistory = defineStore('history', () => {
 
   const api = useHistoryIgnoringApi();
 
-  const fetchIgnored = async () => {
+  const fetchIgnored = async (): Promise<void> => {
     try {
       set(ignored, await api.fetchIgnored());
     } catch (e: any) {
