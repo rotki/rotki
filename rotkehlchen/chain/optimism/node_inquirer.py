@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Sequence, cast
+from typing import TYPE_CHECKING, Literal, Sequence, cast
 
 from eth_typing import BlockNumber
 
@@ -39,9 +39,8 @@ class OptimismInquirer(EvmNodeInquirer):
             blockchain=SupportedBlockchain.OPTIMISM,
             etherscan_node=OPTIMISM_ETHERSCAN_NODE,
             etherscan_node_name=OPTIMISM_ETHERSCAN_NODE_NAME,
-            contracts=EvmContracts(  # TODO: Change
-                chain_id=ChainID.OPTIMISM,
-                contracts_filename='eth_contracts.json',
+            contracts=EvmContracts[Literal[ChainID.OPTIMISM]](
+                contracts_filename='eth_contracts.json',  # TODO: Change
                 abi_filename='eth_abi.json',
             ),
             connect_at_start=connect_at_start,

@@ -4,13 +4,16 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Dict,
+    Generic,
     List,
     Literal,
     NamedTuple,
     Optional,
     Sequence,
     Tuple,
+    TypeVar,
     Union,
+    overload,
 )
 
 from eth_typing.abi import Decodable
@@ -22,9 +25,11 @@ from rotkehlchen.chain.ethereum.abi import decode_event_data_abi
 from rotkehlchen.types import ChainID, ChecksumEvmAddress
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.types import ETHEREUM_KNOWN_ABI, ETHEREUM_KNOWN_CONTRACTS
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.chain.evm.types import WeightedNode
+
 
 WEB3 = Web3()
 
@@ -125,7 +130,10 @@ class EvmContract(NamedTuple):
         return decode_event_data_abi(tx_log=tx_log, event_abi=event_abi)  # type: ignore
 
 
-class EvmContracts():
+T = TypeVar('T', bound='ChainID')
+
+
+class EvmContracts(Generic[T]):
     """A class allowing to query contract data for an Evm Chain. addresses and ABIs.
 
     Atm all evm chains need to have (may need to change this):
@@ -134,8 +142,7 @@ class EvmContracts():
     - ERC721TOKEN
     """
 
-    def __init__(self, chain_id: ChainID, contracts_filename: str, abi_filename: str) -> None:
-        self.chain_id = chain_id
+    def __init__(self, contracts_filename: str, abi_filename: str) -> None:
         self.contracts: Dict[str, Dict[str, Any]] = {}
         self.abi_entries: Dict[str, List[Dict[str, Any]]] = {}
         dir_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
@@ -160,6 +167,14 @@ class EvmContracts():
             deployed_block=contract['deployed_block'],
         )
 
+    @overload
+    def contract(self: 'EvmContracts[Literal[ChainID.ETHEREUM]]', name: 'ETHEREUM_KNOWN_CONTRACTS') -> EvmContract:  # noqa: E501
+        ...
+
+    @overload
+    def contract(self: 'EvmContracts[Literal[ChainID.OPTIMISM]]', name: Literal['to', 'do', 'PICKLE_DILL']) -> EvmContract:  # noqa: E501
+        ...
+
     def contract(self, name: str) -> EvmContract:
         """Gets details of an evm contract from the contracts json file
 
@@ -175,6 +190,14 @@ class EvmContracts():
         Returns None if missing
         """
         return self.abi_entries.get(name, None)
+
+    @overload
+    def abi(self: 'EvmContracts[Literal[ChainID.ETHEREUM]]', name: 'ETHEREUM_KNOWN_ABI') -> List[Dict[str, Any]]:  # noqa: E501
+        ...
+
+    @overload
+    def abi(self: 'EvmContracts[Literal[ChainID.OPTIMISM]]', name: Literal['to', 'do', 'CTOKEN']) -> List[Dict[str, Any]]:  # noqa: E501
+        ...
 
     def abi(self, name: str) -> List[Dict[str, Any]]:
         """Gets abi of an evm contract from the abi json file

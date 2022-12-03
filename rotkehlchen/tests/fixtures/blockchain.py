@@ -1,4 +1,4 @@
-from typing import List, Optional, Sequence
+from typing import List, Literal, Optional, Sequence
 
 import pytest
 
@@ -355,8 +355,7 @@ def blockchain(
 
 @pytest.fixture(name='ethereum_contracts')
 def fixture_ethereum_contracts():
-    return EvmContracts(
-        chain_id=ChainID.ETHEREUM,
+    return EvmContracts[Literal[ChainID.ETHEREUM]](
         contracts_filename='eth_contracts.json',
         abi_filename='eth_abi.json',
     )
