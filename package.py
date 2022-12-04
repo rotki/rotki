@@ -7,6 +7,7 @@ import platform
 import shutil
 import stat
 import subprocess
+import sys
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Any, Callable, Literal, Optional
@@ -157,7 +158,7 @@ class Environment:
 
         if any(sign_vars):
             logger.error('at least one of the secrets was set in the environment')
-            exit(1)
+            sys.exit(1)
 
     @staticmethod
     def check_repo() -> None:
@@ -181,7 +182,7 @@ class Environment:
             logger.error(
                 f"Found {unmerged_commits} in bugfixes that have not been merged for release",
             )
-            exit(1)
+            sys.exit(1)
         logger.info("branch is up to date with bugfixes")
 
     def check_environment(self) -> None:
@@ -189,17 +190,17 @@ class Environment:
             logger.error(
                 f'{self.arch} is not supported, packaging only supports {SUPPORTED_ARCHS}',
             )
-            exit(1)
+            sys.exit(1)
 
         if self.os not in SUPPORTED_OSES:
             logger.error(
                 f'{platform.system()} is not supported, packaging only supports {SUPPORTED_OSES}',
             )
-            exit(1)
+            sys.exit(1)
 
         if not self.is_ci() and not os.environ.get('VIRTUAL_ENV'):
             logger.error('The script should not run outside a virtual environment if not on CI')
-            exit(1)
+            sys.exit(1)
 
         self.check_repo()
 
@@ -277,12 +278,12 @@ class Checksum:
             cmd = f'powershell.exe -command "Get-FileHash {path.name} -Algorithm SHA512 | Select-Object Hash | foreach {{$_.Hash}} | Out-File -FilePath {checksum_filename}"'  # noqa E501
         else:
             logger.error('unsupported system')
-            exit(1)
+            sys.exit(1)
 
         ret_code = subprocess.call(cmd, cwd=path.parent, shell=True)
         if ret_code != 0:
             logger.error(f'could not generate sha512 sum for {path}')
-            exit(1)
+            sys.exit(1)
         return path.parent / checksum_filename
 
 
@@ -313,7 +314,7 @@ class Storage:
         backend = self.backend_directory
         if not backend.exists() or not any(backend.iterdir()):
             logger.error(f'{backend} was missing or empty')
-            exit(1)
+            sys.exit(1)
 
     def copy_to_dist(self, file: Path) -> None:
         self.dist_directory.mkdir(exist_ok=True)
@@ -399,7 +400,7 @@ class WindowsPackaging:
 
         if csc_password is None:
             logger.error(f'Missing {CERTIFICATE_KEY}')
-            exit(1)
+            sys.exit(1)
 
         logger.info('preparing to sign windows installer')
         with NamedTemporaryFile(delete=False, suffix='.p12') as p12:
@@ -463,13 +464,13 @@ class MacPackaging:
 
         if ret_code != 0:
             logger.error(f'failed to create a fat binary {source} {destination}')
-            exit(1)
+            sys.exit(1)
 
         archs = subprocess.check_output(f'lipo -archs {destination}', encoding="utf-8", shell=True)
 
         if archs.strip() != 'x86_64 arm64':
             logger.error(f'{destination} was not a fat binary, only has {archs}')
-            exit(1)
+            sys.exit(1)
 
     @staticmethod
     def modify_wheel_metadata(wheel_metadata: Path) -> None:
@@ -583,7 +584,7 @@ class MacPackaging:
             )
             if ret_code != 0:
                 logger.error(f'repack of {unpacked_wheel} failed')
-                exit(1)
+                sys.exit(1)
 
         shutil.rmtree(x86_64)
         shutil.rmtree(arm64)
@@ -626,13 +627,13 @@ class MacPackaging:
 
         if download_result != 0:
             logger.error(f'failed to download {package_name}')
-            exit(1)
+            sys.exit(1)
 
         extract_result = subprocess.call(f'tar -xvf {miniupnpc_archive}', shell=True)
 
         if extract_result != 0:
             logger.error(f'failed to extract {package_name}')
-            exit(1)
+            sys.exit(1)
 
         os.chdir(miniupnpc_directory)
 
@@ -643,7 +644,7 @@ class MacPackaging:
 
         if make_x86_result != 0:
             logger.error('make failed for x86_64')
-            exit(1)
+            sys.exit(1)
 
         shutil.move(Path(libminiupnpc_dylib), temp)
         shutil.move(Path(libminiupnpc_a), temp)
@@ -652,7 +653,7 @@ class MacPackaging:
 
         if make_clean_result != 0:
             logger.error(f'failed to clean {package_name}')
-            exit(1)
+            sys.exit(1)
 
         env = os.environ.copy()
         env.setdefault('CC', 'gcc -arch arm64')
@@ -661,7 +662,7 @@ class MacPackaging:
 
         if make_arm64_result != 0:
             logger.error('make failed for arm64')
-            exit(1)
+            sys.exit(1)
 
         self.macos_link_archs(
             destination=Path(libminiupnpc_a),
@@ -675,7 +676,7 @@ class MacPackaging:
         wheel_build_result = subprocess.call('python setup.py bdist_wheel', shell=True)
         if wheel_build_result != 0:
             logger.error(f'failed to build {package_name} wheel')
-            exit(1)
+            sys.exit(1)
 
         miniupnpc_dist = miniupnpc_directory / 'dist'
         wheel_file = miniupnpc_dist / f'{miniupnpc}-cp39-cp39-macosx_10_9_universal2.whl'
@@ -739,7 +740,7 @@ class MacPackaging:
 
         if csc_password is None:
             logger.error(f'Missing {CERTIFICATE_KEY}')
-            exit(1)
+            sys.exit(1)
 
         logger.info('preparing to sign macOS binary')
         p12 = self.__p12
@@ -807,13 +808,13 @@ class MacPackaging:
 
             if sign_ret_code != 0:
                 logger.error(f'could not sign file {path}')
-                exit(1)
+                sys.exit(1)
 
             verify_ret_code = subprocess.call(f'codesign --verify {path}', shell=True)
 
             if verify_ret_code != 0:
                 logger.error(f'signature verification failed at {path}')
-                exit(1)
+                sys.exit(1)
         self.cleanup_keychain()
 
     @log_group('zip')
@@ -831,7 +832,7 @@ class MacPackaging:
         )
         if ret_code != 0:
             logger.error('zip failed')
-            exit(1)
+            sys.exit(1)
         zip_file = backend_directory / zip_filename
         checksum_file = Checksum.generate(self.__environment, zip_file)
         self.__storage.move_to_dist(zip_file)
@@ -859,7 +860,7 @@ class BackendBuilder:
 
             if clean_result != 0:
                 logger.error('failed to make clean')
-                exit(1)
+                sys.exit(1)
         else:
             if storage.temporary_directory.exists():
                 shutil.rmtree(storage.temporary_directory)
@@ -887,7 +888,7 @@ class BackendBuilder:
         )
         if ret_code != 0:
             logger.error(f'could not run "pip install {what}"')
-            exit(1)
+            sys.exit(1)
 
     def __build_pyinstaller_bootloader(self, tag_version: str) -> None:
         """
@@ -908,7 +909,7 @@ class BackendBuilder:
         )
         if git_clone_ret_code != 0:
             logger.error('could not clone pyinstaller')
-            exit(1)
+            sys.exit(1)
 
         pyinstaller_directory = build_directory / 'pyinstaller'
         os.chdir(pyinstaller_directory)
@@ -916,7 +917,7 @@ class BackendBuilder:
         checkout_ret_code = subprocess.call(f'git checkout v{tag_version}', shell=True)
         if checkout_ret_code != 0:
             logger.error(f'failed to checkout pyinstaller v{tag_version} tag')
-            exit(1)
+            sys.exit(1)
 
         bootloader_directory = pyinstaller_directory / 'bootloader'
         os.chdir(bootloader_directory)
@@ -928,13 +929,13 @@ class BackendBuilder:
         build_ret_code = subprocess.call(f'./waf all {flag}', shell=True)
         if build_ret_code != 0:
             logger.error(f'failed to build pyinstaller bootloader for {flag}')
-            exit(1)
+            sys.exit(1)
 
         os.chdir(pyinstaller_directory)
         install_ret_code = subprocess.call('python setup.py install', shell=True)
         if install_ret_code != 0:
             logger.error('failed to install pyinstaller')
-            exit(1)
+            sys.exit(1)
 
     def __sanity_check(self) -> None:
         os.chdir(self.__storage.working_directory)
@@ -949,7 +950,7 @@ class BackendBuilder:
         # since the error does not affect runtime.
         if ret_code != 0 and os.environ.get('SKIP_SQLCIPHER_VERIFICATION') is None:
             logger.error('could not verify sqlcipher v4')
-            exit(1)
+            sys.exit(1)
 
     def __move_to_dist(self) -> None:
         """
@@ -1032,14 +1033,14 @@ class BackendBuilder:
         )
         if package_ret_code != 0:
             logger.error('packaging failed')
-            exit(1)
+            sys.exit(1)
         logger.info('Check binary')
         suffix = self.__env.backend_suffix()
         backend_binary = next(backend_directory.glob(f'**/{BACKEND_PREFIX}-*-{suffix}'))
         ret_code = subprocess.call(f'{backend_binary} version', shell=True)
         if ret_code != 0:
             logger.error('backend binary check failed')
-            exit(1)
+            sys.exit(1)
 
     @log_group('Pyinstaller')
     def __install_pyinstaller(self) -> None:
@@ -1089,7 +1090,7 @@ class FrontendBuilder:
         required_version = version.parse('8.0.0')
         if npm_version < required_version:
             logger.error(f'The system npm version is < 8.0.0 ({npm_version})')
-            exit(1)
+            sys.exit(1)
 
     @log_group('electron app build')
     def build(self) -> None:
@@ -1115,7 +1116,7 @@ class FrontendBuilder:
         ret_code = subprocess.call('npm run build', shell=True, env=frontend_env)
         if ret_code != 0:
             logger.error('build failed')
-            exit(1)
+            sys.exit(1)
 
         package_ret_code = subprocess.call(
             'npm run electron:package',
@@ -1124,7 +1125,7 @@ class FrontendBuilder:
         )
         if package_ret_code != 0:
             logger.error('package failed')
-            exit(1)
+            sys.exit(1)
 
         app_path = self.__frontend_directory / 'app'
         frontend_build_dir = app_path / 'build'

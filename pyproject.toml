@@ -42,15 +42,16 @@ disallow_untyped_defs = false
 [tool.ruff]
 line-length = 99
 
-select = ["E", "F", "W", "C", "N", "B", "T", "UP", "YTT", "ERA", "PGH", "PLC"]
+select = ["E", "F", "W", "C", "N", "B", "T", "UP", "YTT", "ERA", "PGH", "PLC", "RUF"]
 extend-select = [
-    "RUF100",  # detect unused noqa
-    "Q003",
+    "Q003",  # Change outer quotes to avoid escaping inner quotes
 ]
 ignore = [
     "E402",  # module level import at file top. https://www.flake8rules.com/rules/E402.html
     "N818",  # error suffix in exception names
     "C901",  # function too complex
+    "RUF001",  # AmbiguousUnicodeCharacterString
+    "RUF002",  # AmbiguousUnicodeCharacterDocstring
 ]
 # Exclude a variety of commonly ignored directories.
 exclude = [
