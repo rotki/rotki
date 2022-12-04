@@ -51,7 +51,6 @@ def test_query_async_tasks(rotkehlchen_api_server_with_exchanges):
         response = requests.get(api_url_for(server, 'asynctasksresource'))
         result = assert_proper_response_with_result(response)
         assert result == {'completed': [], 'pending': [task_id]}
-        # assert json_data['result'] == {'completed': [], 'pending': []}
 
         # now query for the task result and see it's still pending (test for task lists)
         response = requests.get(

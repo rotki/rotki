@@ -583,8 +583,6 @@ class Kucoin(ExchangeInterface):
         try:
             timestamp = deserialize_timestamp(raw_result['createdAt'])
             trade_type = TradeType.BUY if raw_result['side'] == 'buy' else TradeType.SELL
-            # amount_key = 'size' if case == KucoinCase.TRADES else 'amount'
-            # amount = deserialize_asset_amount(raw_result['size'])
             fee = deserialize_fee(raw_result['fee'])
             trade_pair_symbol = raw_result['symbol']
             base_asset, quote_asset = deserialize_trade_pair(trade_pair_symbol)

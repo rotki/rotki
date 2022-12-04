@@ -399,7 +399,6 @@ def test_binance_query_deposits_withdrawals(function_scope_binance):
     prevent requesting with a time delta.
     """
     start_ts = 1508022000  # 2017-10-15
-    # end_ts = 1508540400  # 2017-10-21 (less than 90 days since `start_ts`)
     end_ts = 1636400907
     binance = function_scope_binance
 

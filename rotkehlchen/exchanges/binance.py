@@ -452,7 +452,7 @@ class Binance(ExchangeInterface):
                 # At least one endpoint (/sapi/v1/fiat/payments) can omit the data
                 # key in the response object instead of returning an empty list like
                 # other endpoints.
-                # {'code': '000000', 'message': 'success', 'success': True, 'total': 0}
+                # returns: {'code': '000000', 'message': 'success', 'success': True, 'total': 0}  # noqa: E501
                 return []
 
         if not isinstance(result, list):
@@ -873,8 +873,6 @@ class Binance(ExchangeInterface):
                         'limit': limit,
                         # Not specifying them since binance does not seem to
                         # respect them and always return all trades
-                        # 'startTime': start_ts * 1000,
-                        # 'endTime': end_ts * 1000,
                     })
                 if result:
                     try:

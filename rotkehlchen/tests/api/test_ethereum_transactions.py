@@ -503,7 +503,6 @@ def test_query_over_10k_transactions(rotkehlchen_api_server):
                 payload = '{"status":"1","message":"OK","result":[]}'
             elif '=getblocknobytime&' in url:
                 # we don't really care about this in this test so return whatever
-                # payload = '{"status":"1","message":"OK","result": "1"}'
                 return original_get(url)
             elif '=txlist&' in url:
                 return original_get(url)

@@ -149,9 +149,9 @@ class TraceSampler:
         # Save the old frame to have proper stack reporting. If the following
         # code is executed:
         #
-        #   slow() # At this point a new sample is *not* needed
-        #   f2()   # When this calls happens a new sample is needed, *because
-        #          # of the previous function*
+        #   function slow() # At this point a new sample is *not* needed
+        #   function f2()   # When this calls happens a new sample is needed, *because
+        #                   # of the previous function*
         #
         # The above gets worse because a context switch can happen after the
         # call to slow, if this is not taken into account a completely wrong
@@ -161,7 +161,6 @@ class TraceSampler:
         self.previous_callback = greenlet.gettrace()
         greenlet.settrace(self._greenlet_profiler)  # pylint: disable=c-extension-no-member
         sys.setprofile(self._thread_profiler)
-        # threading.setprofile(self._thread_profiler)
 
     def _should_sample(self, timestamp: float) -> bool:
         if timestamp - self.last_timestamp >= self.sample_interval:

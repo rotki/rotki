@@ -20,13 +20,11 @@ class CpuProfiler:
 
         GreenletProfiler.set_clock_type("cpu")
         GreenletProfiler.start()
-        # gevent_profiler.attach()
 
         self.datadir = datadir
 
     def stop(self) -> None:
         GreenletProfiler.stop()
-        # gevent_profiler.detach()
 
         greenlet_file = "{:%Y%m%d_%H%M}_profile_greenlet.callgrind".format(datetime.now())
         greenlet_path = os.path.join(self.datadir, greenlet_file)

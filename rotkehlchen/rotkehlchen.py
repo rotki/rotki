@@ -694,7 +694,7 @@ class Rotkehlchen():
                 location_str = str(exchange.location)
                 # TODO: Don't know why the type is not properly detected here. The expected one
                 # is Dict[Asset, Balance] and the one received
-                # Dict[AssetWithOracles, Balance]
+                # is Dict[AssetWithOracles, Balance]
                 if location_str not in balances:
                     balances[location_str] = exchange_balances  # type: ignore
                 else:  # multiple exchange of same type. Combine balances

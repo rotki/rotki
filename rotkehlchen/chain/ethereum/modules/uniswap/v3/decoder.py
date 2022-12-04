@@ -88,7 +88,6 @@ class Uniswapv3Decoder(DecoderInterface):
             for event in decoded_events:
                 # When swapping token for ETH the WETH contract is called by the router and the
                 # swap is not executed with the user in the topic but the router. This is when
-                # tx_log.topics[1] == tx_log.topics[2]
                 try:
                     crypto_asset = event.asset.resolve_to_crypto_asset()
                 except (UnknownAsset, WrongAssetType):

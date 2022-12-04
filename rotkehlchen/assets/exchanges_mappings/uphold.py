@@ -42,7 +42,6 @@ WORLD_TO_UPHOLD = COMMON_ASSETS_MAPPINGS | {
     strethaddress_to_identifier('0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599'): 'WBTC',
     strethaddress_to_identifier('0x04Fa0d235C4abf4BcF4787aF4CF447DE572eF828'): 'UMA',
     strethaddress_to_identifier('0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984'): 'UNI',
-    # 'UPT': 'UPT',
     'XCH': 'XCH',
     'XEM': 'NEM',
     'XLM': 'XLM',

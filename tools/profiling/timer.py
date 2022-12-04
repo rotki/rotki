@@ -4,10 +4,6 @@ from typing import Callable
 
 from .constants import INTERVAL_SECONDS
 
-# TIMER_SIGNAL = signal.SIGALRM
-# TIMER =  signal.ITIMER_REAL
-# TIMER_SIGNAL = signal.SIGVTALRM
-# TIMER =  signal.ITIMER_VIRTUAL
 TIMER = signal.ITIMER_PROF
 TIMER_SIGNAL = signal.SIGPROF
 

@@ -220,7 +220,6 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryMixIn):
             46: A_ENJ.resolve_to_crypto_asset(),
             47: A_NMR.resolve_to_crypto_asset(),
             48: A_SNT.resolve_to_crypto_asset(),
-            # 49: tBTC
             # 50: ANT old
             51: A_BAL.resolve_to_crypto_asset(),
             52: A_MTA.resolve_to_crypto_asset(),
@@ -245,7 +244,6 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryMixIn):
             71: A_HBTC.resolve_to_crypto_asset(),
             72: A_UNI.resolve_to_crypto_asset(),
             73: A_PLTC.resolve_to_crypto_asset(),
-            # 74: KAI
             75: A_FIN.resolve_to_crypto_asset(),
             76: A_DOUGH.resolve_to_crypto_asset(),
             77: A_DEFI_L.resolve_to_crypto_asset(),
@@ -295,7 +293,6 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryMixIn):
             197: A_FUSE.resolve_to_crypto_asset(),
             # 198 -> 200 LP (uniswap?) tokens - need to fill in when we support them
             201: A_SX.resolve_to_crypto_asset(),
-            # 202: REPT
             203: A_RSPT.resolve_to_crypto_asset(),
             # 204 -> 206 LP (uniswap?) tokens - need to fill in when we support them
         }
