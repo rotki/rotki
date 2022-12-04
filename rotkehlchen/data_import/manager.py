@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Tuple, Type
+from typing import Any
 
 from rotkehlchen.data_import.importers.binance import BinanceImporter
 from rotkehlchen.data_import.importers.bisq_trades import BisqTradesImporter
@@ -30,7 +30,7 @@ class DataImportSource(SerializableEnumMixin):
     ROTKI_TRADES = 10
     ROTKI_EVENTS = 11
 
-    def get_importer_type(self) -> Type[BaseExchangeImporter]:
+    def get_importer_type(self) -> type[BaseExchangeImporter]:
         if self == DataImportSource.COINTRACKING:
             return CointrackingImporter
         if self == DataImportSource.CRYPTOCOM:
@@ -66,7 +66,7 @@ class CSVDataImporter:
             source: DataImportSource,
             filepath: Path,
             **kwargs: Any,
-    ) -> Tuple[bool, str]:
+    ) -> tuple[bool, str]:
         """Imports csv data from `filepath`.`source` determines the format of the file.
         Returns (True, '') if imported successfully and (False, message) otherwise."""
         importer_type = source.get_importer_type()

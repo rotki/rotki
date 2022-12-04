@@ -3,7 +3,7 @@ import os
 from collections import deque
 from json.decoder import JSONDecodeError
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Deque, Dict, List, Literal, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Deque, Literal, Optional
 
 import gevent
 import requests
@@ -167,7 +167,7 @@ def _multiply_str_nums(a: str, b: str) -> str:
 
 
 def _check_hourly_data_sanity(
-        data: List[Dict[str, Any]],
+        data: list[dict[str, Any]],
         from_asset: AssetWithOracles,
         to_asset: AssetWithOracles,
 ) -> None:
@@ -259,7 +259,7 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleInterface, P
         assert self.db is not None, msg
         self.db = None
 
-    def _api_query(self, path: str) -> Dict[str, Any]:
+    def _api_query(self, path: str) -> dict[str, Any]:
         """Queries cryptocompare
 
         - May raise RemoteError if there is a problem reaching the cryptocompare server
@@ -408,7 +408,7 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleInterface, P
             limit: int,
             to_timestamp: Timestamp,
             handling_special_case: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Returns the full histohour response including TimeFrom and TimeTo
 
         - May raise RemoteError if there is a problem reaching the cryptocompare server
@@ -447,7 +447,7 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleInterface, P
             to_asset: AssetWithOracles,
             match_main_currency: bool,
             handling_special_case: bool = False,
-    ) -> Tuple[Price, bool]:
+    ) -> tuple[Price, bool]:
         """Returns the current price of an asset compared to another asset and `False` value
         since it never tries to match main currency.
 
@@ -543,7 +543,7 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleInterface, P
             to_asset: AssetWithOracles,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
-    ) -> Deque[Dict[str, Any]]:
+    ) -> Deque[dict[str, Any]]:
         """Query histohour data from cryptocompare for a time range going backwards in time
 
         Will stop when to_timestamp is reached OR when no more prices are returned
@@ -557,7 +557,7 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleInterface, P
         msg = '_get_histohour_data_for_range from_timestamp should be bigger than to_timestamp'
         assert from_timestamp >= to_timestamp, msg
 
-        calculated_history: Deque[Dict[str, Any]] = deque()
+        calculated_history: Deque[dict[str, Any]] = deque()
         end_date = from_timestamp
         while True:
             log.debug(
@@ -813,7 +813,7 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleInterface, P
         )])
         return price
 
-    def all_coins(self) -> Dict[str, Dict[str, Any]]:
+    def all_coins(self) -> dict[str, dict[str, Any]]:
         """
         Gets the mapping of all the cryptocompare coins
 

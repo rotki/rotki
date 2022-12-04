@@ -1,7 +1,7 @@
 import logging
 from abc import ABCMeta, abstractmethod
 from collections import defaultdict
-from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Optional, Sequence
 
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
@@ -21,14 +21,14 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-TokenBalancesType = Tuple[
-    Dict[ChecksumEvmAddress, Dict[EvmToken, FVal]],
-    Dict[EvmToken, Price],
+TokenBalancesType = tuple[
+    dict[ChecksumEvmAddress, dict[EvmToken, FVal]],
+    dict[EvmToken, Price],
 ]
 
-DetectedTokensType = Dict[
+DetectedTokensType = dict[
     ChecksumEvmAddress,
-    Tuple[Optional[List[EvmToken]], Optional[Timestamp]],
+    tuple[Optional[list[EvmToken]], Optional[Timestamp]],
 ]
 
 # 08/08/2020
@@ -70,8 +70,8 @@ PURE_TOKENS_BALANCE_ARGUMENTS = 7
 
 def generate_multicall_chunks(
         chunk_length: int,
-        addresses_to_tokens: Dict[ChecksumEvmAddress, List[EvmToken]],
-) -> List[List[Tuple[ChecksumEvmAddress, List[EvmToken]]]]:
+        addresses_to_tokens: dict[ChecksumEvmAddress, list[EvmToken]],
+) -> list[list[tuple[ChecksumEvmAddress, list[EvmToken]]]]:
     """Generate appropriate num of chunks for multicall address->tokens, address->tokens query"""
     multicall_chunks = []
     free_space = chunk_length
@@ -103,9 +103,9 @@ class EvmTokens(metaclass=ABCMeta):
     def _get_token_balances(
             self,
             address: ChecksumEvmAddress,
-            tokens: List[EvmToken],
+            tokens: list[EvmToken],
             call_order: Optional[Sequence[WeightedNode]],
-    ) -> Dict[EvmToken, FVal]:
+    ) -> dict[EvmToken, FVal]:
         """Queries the balances of multiple tokens for an address
 
         May raise:
@@ -125,7 +125,7 @@ class EvmTokens(metaclass=ABCMeta):
             arguments=[address, [x.evm_address for x in tokens]],
             call_order=call_order,
         )
-        balances: Dict[EvmToken, FVal] = defaultdict(FVal)
+        balances: dict[EvmToken, FVal] = defaultdict(FVal)
         for token_balance, token in zip(result, tokens):
             if token_balance == 0:
                 continue
@@ -140,15 +140,15 @@ class EvmTokens(metaclass=ABCMeta):
 
     def _get_multicall_token_balances(
             self,
-            chunk: List[Tuple[ChecksumEvmAddress, List[EvmToken]]],
+            chunk: list[tuple[ChecksumEvmAddress, list[EvmToken]]],
             call_order: Optional[Sequence['WeightedNode']] = None,
-    ) -> Dict[ChecksumEvmAddress, Dict[EvmToken, FVal]]:
+    ) -> dict[ChecksumEvmAddress, dict[EvmToken, FVal]]:
         """Gets token balances from a chunk of address -> token address
 
         May raise:
         - RemoteError if no result is queried in multicall
         """
-        calls: List[Tuple[ChecksumEvmAddress, str]] = []
+        calls: list[tuple[ChecksumEvmAddress, str]] = []
         for address, tokens in chunk:
             tokens_addrs = [token.evm_address for token in tokens]
             calls.append(
@@ -164,7 +164,7 @@ class EvmTokens(metaclass=ABCMeta):
             calls=calls,
             call_order=call_order,
         )
-        balances: Dict[ChecksumEvmAddress, Dict[EvmToken, FVal]] = defaultdict(lambda: defaultdict(FVal))  # noqa: E501
+        balances: dict[ChecksumEvmAddress, dict[EvmToken, FVal]] = defaultdict(lambda: defaultdict(FVal))  # noqa: E501
         for (address, tokens), result in zip(chunk, results):
             decoded_result = self.evm_inquirer.contract_scan.decode(  # pylint: disable=unsubscriptable-object  # noqa: E501
                 result=result,
@@ -186,11 +186,11 @@ class EvmTokens(metaclass=ABCMeta):
     def _query_chunks(
             self,
             address: ChecksumEvmAddress,
-            tokens: List[EvmToken],
+            tokens: list[EvmToken],
             chunk_size: int,
-            call_order: List[WeightedNode],
-    ) -> Dict[EvmToken, FVal]:
-        total_token_balances: Dict[EvmToken, FVal] = defaultdict(FVal)
+            call_order: list[WeightedNode],
+    ) -> dict[EvmToken, FVal]:
+        total_token_balances: dict[EvmToken, FVal] = defaultdict(FVal)
         chunks = get_chunks(tokens, n=chunk_size)
         for chunk in chunks:
             new_token_balances = self._get_token_balances(
@@ -204,7 +204,7 @@ class EvmTokens(metaclass=ABCMeta):
     def detect_tokens(
             self,
             only_cache: bool,
-            addresses: List[ChecksumEvmAddress],
+            addresses: list[ChecksumEvmAddress],
     ) -> DetectedTokensType:
         """
         Detect tokens for the given addresses.
@@ -232,7 +232,7 @@ class EvmTokens(metaclass=ABCMeta):
 
         return addresses_info
 
-    def _detect_tokens(self, addresses: List[ChecksumEvmAddress]) -> None:
+    def _detect_tokens(self, addresses: list[ChecksumEvmAddress]) -> None:
         """
         Detect tokens for the given addresses.
 
@@ -273,7 +273,7 @@ class EvmTokens(metaclass=ABCMeta):
 
     def query_tokens_for_addresses(
             self,
-            addresses: List[ChecksumEvmAddress],
+            addresses: list[ChecksumEvmAddress],
     ) -> TokenBalancesType:
         """Queries token balances for a list of addresses
         Returns the token balances of each address and the usd prices of the tokens.
@@ -284,9 +284,9 @@ class EvmTokens(metaclass=ABCMeta):
         - BadFunctionCallOutput if a local node is used and the contract for the
           token has no code. That means the chain is not synced
         """
-        addresses_to_balances: Dict[ChecksumEvmAddress, Dict[EvmToken, FVal]] = {}
+        addresses_to_balances: dict[ChecksumEvmAddress, dict[EvmToken, FVal]] = {}
         all_tokens = set()
-        addresses_to_tokens: Dict[ChecksumEvmAddress, List[EvmToken]] = {}
+        addresses_to_tokens: dict[ChecksumEvmAddress, list[EvmToken]] = {}
 
         if self.evm_inquirer.connected_to_any_web3():
             chunk_size = OTHER_MAX_TOKEN_CHUNK_LENGTH
@@ -314,7 +314,7 @@ class EvmTokens(metaclass=ABCMeta):
                 call_order=call_order,
             ))
 
-        token_usd_price: Dict[EvmToken, Price] = {}
+        token_usd_price: dict[EvmToken, Price] = {}
         for token in all_tokens:
             token_usd_price[token] = Inquirer.find_usd_price(asset=token)
 
@@ -322,7 +322,7 @@ class EvmTokens(metaclass=ABCMeta):
 
     # -- methods to be implemented by child classes
     @abstractmethod
-    def _get_token_exceptions(self) -> List[ChecksumEvmAddress]:
+    def _get_token_exceptions(self) -> list[ChecksumEvmAddress]:
         """
         Returns a list of token addresses that will not be taken into account
         when performing token detection.

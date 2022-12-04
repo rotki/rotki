@@ -1,6 +1,6 @@
 from copy import deepcopy
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Callable, Dict, NamedTuple, Tuple
+from typing import TYPE_CHECKING, Any, Callable, NamedTuple
 
 from rotkehlchen.utils.misc import ts_now
 
@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 class ResultCache(NamedTuple):
     """Represents a time-cached result of some API query"""
-    result: Dict
+    result: dict
     timestamp: 'Timestamp'
 
 
@@ -31,7 +31,7 @@ class CacheableMixIn:
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.results_cache: Dict[int, ResultCache] = {}
+        self.results_cache: dict[int, ResultCache] = {}
         # Can also be 0 which means cache is disabled.
         self.cache_ttl_secs = CACHE_RESPONSE_FOR_SECS
 
@@ -53,7 +53,7 @@ def _cache_response_timewise_base(
         forward_ignore_cache: bool,
         *args: Any,
         **kwargs: Any,
-) -> Tuple[bool, int, 'Timestamp', Dict]:
+) -> tuple[bool, int, 'Timestamp', dict]:
     """Base code used in the 2 cache_response_timewise decorators"""
     if forward_ignore_cache:
         ignore_cache = kwargs.get('ignore_cache', False)

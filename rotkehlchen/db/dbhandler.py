@@ -7,21 +7,7 @@ import tempfile
 from collections import defaultdict
 from contextlib import contextmanager
 from pathlib import Path
-from typing import (
-    Any,
-    Dict,
-    Iterator,
-    List,
-    Literal,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Type,
-    Union,
-    cast,
-    overload,
-)
+from typing import Any, Iterator, Literal, Optional, Sequence, Union, cast, overload
 
 from gevent.lock import Semaphore
 from pysqlcipher3 import dbapi2 as sqlcipher
@@ -182,7 +168,7 @@ def _protect_password_sqlcipher(password: str) -> str:
 
 
 def db_tuple_to_str(
-        data: Tuple[Any, ...],
+        data: tuple[Any, ...],
         tuple_type: DBTupleType,
 ) -> str:
     """Turns a tuple DB entry for trade, or asset_movement into a user readable string
@@ -590,21 +576,21 @@ class DBHandler:
     def add_external_service_credentials(
             self,
             write_cursor: 'DBCursor',
-            credentials: List[ExternalServiceApiCredentials],
+            credentials: list[ExternalServiceApiCredentials],
     ) -> None:
         write_cursor.executemany(
             'INSERT OR REPLACE INTO external_service_credentials(name, api_key) VALUES(?, ?)',
             [c.serialize_for_db() for c in credentials],
         )
 
-    def delete_external_service_credentials(self, services: List[ExternalService]) -> None:
+    def delete_external_service_credentials(self, services: list[ExternalService]) -> None:
         with self.user_write() as cursor:
             cursor.executemany(
                 'DELETE FROM external_service_credentials WHERE name=?;',
                 [(service.name.lower(),) for service in services],
             )
 
-    def get_all_external_service_credentials(self) -> List[ExternalServiceApiCredentials]:
+    def get_all_external_service_credentials(self) -> list[ExternalServiceApiCredentials]:
         """Returns a list with all the external service credentials saved in the DB"""
         with self.conn.read_ctx() as cursor:
             cursor.execute('SELECT name, api_key from external_service_credentials;')
@@ -655,7 +641,7 @@ class DBHandler:
             (asset.identifier,),
         )
 
-    def get_ignored_assets(self, cursor: 'DBCursor', only_nfts: bool = False) -> List[Asset]:
+    def get_ignored_assets(self, cursor: 'DBCursor', only_nfts: bool = False) -> list[Asset]:
         """
         Retrieve all ignored assets.
         If `only_nfts` is True, only ignored nfts are returned.
@@ -692,7 +678,7 @@ class DBHandler:
             self,
             write_cursor: 'DBCursor',
             action_type: ActionType,
-            identifiers: List[str],
+            identifiers: list[str],
     ) -> None:
         """Adds a list of identifiers to be ignored for a given action type
 
@@ -711,7 +697,7 @@ class DBHandler:
             self,
             write_cursor: 'DBCursor',
             action_type: ActionType,
-            identifiers: List[str],
+            identifiers: list[str],
     ) -> None:
         """Removes a list of identifiers to be ignored for a given action type
 
@@ -734,9 +720,9 @@ class DBHandler:
             self,
             cursor: 'DBCursor',
             action_type: Optional[ActionType],
-    ) -> Dict[ActionType, List[str]]:
+    ) -> dict[ActionType, list[str]]:
         query = 'SELECT type, identifier from ignored_actions'
-        tuples: Tuple
+        tuples: tuple
         if action_type is None:
             query += ';'
             tuples = ()
@@ -752,7 +738,7 @@ class DBHandler:
         return mapping
 
     # pylint: disable=no-self-use
-    def add_multiple_balances(self, write_cursor: 'DBCursor', balances: List[DBAssetBalance]) -> None:  # noqa: E501
+    def add_multiple_balances(self, write_cursor: 'DBCursor', balances: list[DBAssetBalance]) -> None:  # noqa: E501
         """Execute addition of multiple balances in the DB"""
         serialized_balances = [balance.serialize_for_db() for balance in balances]
         try:
@@ -803,10 +789,10 @@ class DBHandler:
             cursor: 'DBCursor',
             address: ChecksumEvmAddress,
             atoken: Optional[EvmToken] = None,
-    ) -> List[AaveEvent]:
+    ) -> list[AaveEvent]:
         """Get aave for a single address and a single aToken """
         querystr = 'SELECT * FROM aave_events '
-        values: Tuple
+        values: tuple
         if atoken is not None:  # when called by blockchain
             underlying_token = atoken_to_asset(atoken)
             if underlying_token is None:  # should never happen
@@ -892,11 +878,11 @@ class DBHandler:
     def get_amm_events(
             self,
             cursor: 'DBCursor',
-            events: List[EventType],
+            events: list[EventType],
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
             address: Optional[ChecksumEvmAddress] = None,
-    ) -> List[LiquidityPoolEvent]:
+    ) -> list[LiquidityPoolEvent]:
         """Returns a list of amm events optionally filtered by time, location
         and address
         """
@@ -1007,7 +993,7 @@ class DBHandler:
         write_cursor.execute('DELETE FROM multisettings WHERE name LIKE "loopring_%";')
 
     # pylint: disable=no-self-use
-    def get_used_query_range(self, cursor: 'DBCursor', name: str) -> Optional[Tuple[Timestamp, Timestamp]]:  # noqa: E501
+    def get_used_query_range(self, cursor: 'DBCursor', name: str) -> Optional[tuple[Timestamp, Timestamp]]:  # noqa: E501
         """Get the last start/end timestamp range that has been queried for name
 
         Currently possible names are:
@@ -1076,7 +1062,7 @@ class DBHandler:
 
         return Timestamp(int(result[0]))
 
-    def add_multiple_location_data(self, write_cursor: 'DBCursor', location_data: List[LocationData]) -> None:  # noqa: E501
+    def add_multiple_location_data(self, write_cursor: 'DBCursor', location_data: list[LocationData]) -> None:  # noqa: E501
         """Execute addition of multiple location data in the DB"""
         for entry in location_data:
             try:
@@ -1098,7 +1084,7 @@ class DBHandler:
             self,
             write_cursor: 'DBCursor',
             blockchain: SupportedBlockchain,
-            account_data: List[BlockchainAccountData],
+            account_data: list[BlockchainAccountData],
     ) -> None:
         # Insert the blockchain account addresses and labels to the DB
         tuples = [(
@@ -1122,7 +1108,7 @@ class DBHandler:
             self,
             write_cursor: 'DBCursor',
             blockchain: SupportedBlockchain,
-            account_data: List[BlockchainAccountData],
+            account_data: list[BlockchainAccountData],
     ) -> None:
         """Edit the given blockchain accounts
 
@@ -1203,7 +1189,7 @@ class DBHandler:
             cursor: 'DBCursor',
             address: ChecksumEvmAddress,
             blockchain: SupportedBlockchain,
-    ) -> Tuple[Optional[List[EvmToken]], Optional[Timestamp]]:
+    ) -> tuple[Optional[list[EvmToken]], Optional[Timestamp]]:
         """Gets the detected tokens for the given address if the given current time
         is recent enough.
 
@@ -1248,12 +1234,12 @@ class DBHandler:
             write_cursor: 'DBCursor',
             address: ChecksumEvmAddress,
             blockchain: SupportedBlockchain,
-            tokens: List[EvmToken],
+            tokens: list[EvmToken],
     ) -> None:
         """Saves detected tokens for an address"""
         now = ts_now()
         chain_id = blockchain.to_chain_id().serialize_for_db()
-        insert_rows: List[Tuple[ChecksumEvmAddress, int, str, Union[str, Timestamp]]] = [
+        insert_rows: list[tuple[ChecksumEvmAddress, int, str, Union[str, Timestamp]]] = [
             (
                 address,
                 chain_id,
@@ -1329,7 +1315,7 @@ class DBHandler:
             self,
             cursor: 'DBCursor',
             blockchain: SupportedBlockchain,
-    ) -> List[BlockchainAccountData]:
+    ) -> list[BlockchainAccountData]:
         """Returns account data for a particular blockchain.
 
         Each account entry contains address and potentially label and tags
@@ -1357,7 +1343,7 @@ class DBHandler:
             self,
             cursor: 'DBCursor',
             balance_type: Optional[BalanceType] = BalanceType.ASSET,
-    ) -> List[ManuallyTrackedBalance]:
+    ) -> list[ManuallyTrackedBalance]:
         """Returns the manually tracked balances from the DB"""
         query_balance_type = ''
         if balance_type is not None:
@@ -1392,7 +1378,7 @@ class DBHandler:
         return data
 
     # pylint: disable=no-self-use
-    def add_manually_tracked_balances(self, write_cursor: 'DBCursor', data: List[ManuallyTrackedBalance]) -> None:  # noqa: E501
+    def add_manually_tracked_balances(self, write_cursor: 'DBCursor', data: list[ManuallyTrackedBalance]) -> None:  # noqa: E501
         """Adds manually tracked balances in the DB
 
         May raise:
@@ -1416,7 +1402,7 @@ class DBHandler:
         # make sure assets are included in the global db user owned assets
         GlobalDBHandler().add_user_owned_assets([x.asset for x in data])
 
-    def edit_manually_tracked_balances(self, write_cursor: 'DBCursor', data: List[ManuallyTrackedBalance]) -> None:  # noqa: E501
+    def edit_manually_tracked_balances(self, write_cursor: 'DBCursor', data: list[ManuallyTrackedBalance]) -> None:  # noqa: E501
         """Edits manually tracked balances
 
         Edits the manually tracked balances for each of the given balance labels.
@@ -1453,7 +1439,7 @@ class DBHandler:
             raise InputError(msg)
         insert_tag_mappings(write_cursor=write_cursor, data=data, object_reference_keys=['id'])
 
-    def remove_manually_tracked_balances(self, write_cursor: 'DBCursor', ids: List[int]) -> None:
+    def remove_manually_tracked_balances(self, write_cursor: 'DBCursor', ids: list[int]) -> None:
         """
         Removes manually tracked balances for the given ids
 
@@ -1476,7 +1462,7 @@ class DBHandler:
                 f'manually tracked balance ids that do not exist',
             )
 
-    def save_balances_data(self, write_cursor: 'DBCursor', data: Dict[str, Any], timestamp: Timestamp) -> None:  # noqa: E501
+    def save_balances_data(self, write_cursor: 'DBCursor', data: dict[str, Any], timestamp: Timestamp) -> None:  # noqa: E501
         """The keys of the data dictionary can be any kind of asset plus 'location'
         and 'net_usd'. This gives us the balance data per assets, the balance data
         per location and finally the total balance
@@ -1510,7 +1496,7 @@ class DBHandler:
 
         for key2, val2 in data['location'].items():
             # Here we know val2 is just a Dict since the key to data is 'location'
-            val2 = cast(Dict, val2)
+            val2 = cast(dict, val2)
             location = Location.deserialize(key2).serialize_for_db()
             locations.append(LocationData(
                 time=timestamp, location=location, usd_value=str(val2['usd_value']),
@@ -1534,7 +1520,7 @@ class DBHandler:
             api_secret: ApiSecret,
             passphrase: Optional[str] = None,
             kraken_account_type: Optional[KrakenAccountType] = None,
-            binance_selected_trade_pairs: Optional[List[str]] = None,
+            binance_selected_trade_pairs: Optional[list[str]] = None,
             ftx_subaccount: Optional[str] = None,
     ) -> None:
         if location not in SUPPORTED_EXCHANGES:
@@ -1571,7 +1557,7 @@ class DBHandler:
             api_secret: Optional[ApiSecret],
             passphrase: Optional[str],
             kraken_account_type: Optional['KrakenAccountType'],
-            binance_selected_trade_pairs: Optional[List[str]],
+            binance_selected_trade_pairs: Optional[list[str]],
             ftx_subaccount: Optional[str],
     ) -> None:
         """May raise InputError if something is wrong with editing the DB"""
@@ -1673,7 +1659,7 @@ class DBHandler:
             cursor: 'DBCursor',
             location: Optional[Location] = None,
             name: Optional[str] = None,
-    ) -> Dict[Location, List[ExchangeApiCredentials]]:
+    ) -> dict[Location, list[ExchangeApiCredentials]]:
         """Gets all exchange credentials
 
         If an exchange name and location are passed the credentials are filtered further
@@ -1710,7 +1696,7 @@ class DBHandler:
 
         return credentials
 
-    def get_exchange_credentials_extras(self, name: str, location: Location) -> Dict[str, Any]:
+    def get_exchange_credentials_extras(self, name: str, location: Location) -> dict[str, Any]:
         """Returns any extra settings for a particular exchange key credentials"""
         with self.conn.read_ctx() as cursor:
             cursor.execute(
@@ -1738,7 +1724,7 @@ class DBHandler:
 
         return extras
 
-    def set_binance_pairs(self, write_cursor: 'DBCursor', name: str, pairs: List[str], location: Location) -> None:  # noqa: E501
+    def set_binance_pairs(self, write_cursor: 'DBCursor', name: str, pairs: list[str], location: Location) -> None:  # noqa: E501
         """Sets the market pairs used by the user on a specific binance exchange"""
         data = json.dumps(pairs)
         write_cursor.execute(
@@ -1753,7 +1739,7 @@ class DBHandler:
             ),
         )
 
-    def get_binance_pairs(self, name: str, location: Location) -> List[str]:
+    def get_binance_pairs(self, name: str, location: Location) -> list[str]:
         """Gets the market pairs used by the user on a specific binance exchange"""
         with self.conn.read_ctx() as cursor:
             cursor.execute(
@@ -1797,7 +1783,7 @@ class DBHandler:
             write_cursor: 'DBCursor',
             tuple_type: DBTupleType,
             query: str,
-            tuples: Sequence[Tuple[Any, ...]],
+            tuples: Sequence[tuple[Any, ...]],
             **kwargs: Optional[ChecksumEvmAddress],
     ) -> None:
         """When used for inputting transactions make sure that for one write it's
@@ -1868,8 +1854,8 @@ class DBHandler:
                 f' DB. Tuples: {tuples} with query: {query}',
             )
 
-    def add_margin_positions(self, write_cursor: 'DBCursor', margin_positions: List[MarginPosition]) -> None:  # noqa: E501
-        margin_tuples: List[Tuple[Any, ...]] = []
+    def add_margin_positions(self, write_cursor: 'DBCursor', margin_positions: list[MarginPosition]) -> None:  # noqa: E501
+        margin_tuples: list[tuple[Any, ...]] = []
         for margin in margin_positions:
             open_time = 0 if margin.open_time is None else margin.open_time
             margin_tuples.append((
@@ -1907,7 +1893,7 @@ class DBHandler:
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
             location: Optional[Location] = None,
-    ) -> List[MarginPosition]:
+    ) -> list[MarginPosition]:
         """Returns a list of margin positions optionally filtered by time and location
 
         The returned list is ordered from oldest to newest
@@ -1938,8 +1924,8 @@ class DBHandler:
 
         return margin_positions
 
-    def add_asset_movements(self, write_cursor: 'DBCursor', asset_movements: List[AssetMovement]) -> None:  # noqa: E501
-        movement_tuples: List[Tuple[Any, ...]] = []
+    def add_asset_movements(self, write_cursor: 'DBCursor', asset_movements: list[AssetMovement]) -> None:  # noqa: E501
+        movement_tuples: list[tuple[Any, ...]] = []
         for movement in asset_movements:
             movement_tuples.append((
                 movement.identifier,
@@ -1977,7 +1963,7 @@ class DBHandler:
             self,
             filter_query: AssetMovementsFilterQuery,
             has_premium: bool,
-    ) -> Tuple[List[AssetMovement], int]:
+    ) -> tuple[list[AssetMovement], int]:
         """Gets all asset movements for the query from the DB
 
         Also returns how many are the total found for the filter
@@ -1994,7 +1980,7 @@ class DBHandler:
             cursor: 'DBCursor',
             filter_query: AssetMovementsFilterQuery,
             has_premium: bool,
-    ) -> List[AssetMovement]:
+    ) -> list[AssetMovement]:
         """Returns a list of asset movements optionally filtered by the given filter.
 
         Returned list is ordered according to the passed filter query
@@ -2087,8 +2073,8 @@ class DBHandler:
         dbtx.delete_transactions(write_cursor=write_cursor, address=address, chain=SupportedBlockchain.ETHEREUM)  # noqa: E501
         write_cursor.execute('DELETE FROM eth2_deposits WHERE from_address=?;', (address,))
 
-    def add_trades(self, write_cursor: 'DBCursor', trades: List[Trade]) -> None:
-        trade_tuples: List[Tuple[Any, ...]] = []
+    def add_trades(self, write_cursor: 'DBCursor', trades: list[Trade]) -> None:
+        trade_tuples: list[tuple[Any, ...]] = []
         for trade in trades:
             trade_tuples.append((
                 trade.identifier,
@@ -2128,7 +2114,7 @@ class DBHandler:
             write_cursor: 'DBCursor',
             old_trade_id: str,
             trade: Trade,
-    ) -> Tuple[bool, str]:
+    ) -> tuple[bool, str]:
         write_cursor.execute(
             'UPDATE trades SET '
             '  id=?, '
@@ -2170,7 +2156,7 @@ class DBHandler:
             cursor: 'DBCursor',
             filter_query: TradesFilterQuery,
             has_premium: bool,
-    ) -> Tuple[List[Trade], int]:
+    ) -> tuple[list[Trade], int]:
         """Gets all trades for the query from the DB
 
         Also returns how many are the total found for the filter
@@ -2181,7 +2167,7 @@ class DBHandler:
         total_found_result = cursor.execute(query, bindings)
         return trades, total_found_result.fetchone()[0]
 
-    def get_trades(self, cursor: 'DBCursor', filter_query: TradesFilterQuery, has_premium: bool) -> List[Trade]:  # noqa: E501
+    def get_trades(self, cursor: 'DBCursor', filter_query: TradesFilterQuery, has_premium: bool) -> list[Trade]:  # noqa: E501
         """Returns a list of trades optionally filtered by various filters.
 
         The returned list is ordered according to the passed filter query"""
@@ -2212,7 +2198,7 @@ class DBHandler:
 
         return trades
 
-    def delete_trades(self, write_cursor: 'DBCursor', trades_ids: List[str]) -> None:
+    def delete_trades(self, write_cursor: 'DBCursor', trades_ids: list[str]) -> None:
         """Removes trades from the database using their `trade_id`.
         May raise:
         - InputError if any of the `trade_id` are non-existent.
@@ -2276,7 +2262,7 @@ class DBHandler:
             self,
             from_ts: Timestamp,
             include_nfts: bool = True,
-    ) -> Tuple[List[str], List[str]]:
+    ) -> tuple[list[str], list[str]]:
         """Get all entries of net value data from the DB"""
         with self.conn.read_ctx() as cursor:
             # Get the total location ("H") entries in ascending time
@@ -2312,7 +2298,7 @@ class DBHandler:
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
             balance_type: Optional[BalanceType] = None,
-    ) -> List[SingleDBAssetBalance]:
+    ) -> list[SingleDBAssetBalance]:
         """Query all balance entries for an asset within a range of timestamps
 
         Can optionally filter by balance type
@@ -2378,7 +2364,7 @@ class DBHandler:
 
         return balances
 
-    def query_owned_assets(self, cursor: 'DBCursor') -> List[Asset]:
+    def query_owned_assets(self, cursor: 'DBCursor') -> list[Asset]:
         """Query the DB for a list of all assets ever owned
 
         The assets are taken from:
@@ -2394,7 +2380,7 @@ class DBHandler:
             table_name = table_entry[0]
             columns = table_entry[1:]
             columns_str = ", ".join(columns)
-            bindings: Union[Tuple, Tuple[str]] = ()
+            bindings: Union[tuple, tuple[str]] = ()
             condition = ''
             if table_name in ('manually_tracked_balances', 'timed_balances'):
                 bindings = (BalanceType.LIABILITY.serialize_for_db(),)
@@ -2443,7 +2429,7 @@ class DBHandler:
         GlobalDBHandler().add_user_owned_assets(assets)
 
     # pylint: disable=no-self-use
-    def add_asset_identifiers(self, write_cursor: 'DBCursor', asset_identifiers: List[str]) -> None:  # noqa: E501
+    def add_asset_identifiers(self, write_cursor: 'DBCursor', asset_identifiers: list[str]) -> None:  # noqa: E501
         """Adds an asset to the user db asset identifier table"""
         write_cursor.executemany(
             'INSERT OR IGNORE INTO assets(identifier) VALUES(?);',
@@ -2511,7 +2497,7 @@ class DBHandler:
                     (target_asset.identifier, source_identifier),
                 )
 
-    def get_latest_location_value_distribution(self) -> List[LocationData]:
+    def get_latest_location_value_distribution(self) -> list[LocationData]:
         """Gets the latest location data
 
         Returns a list of `LocationData` all at the latest timestamp.
@@ -2534,7 +2520,7 @@ class DBHandler:
 
         return locations
 
-    def get_latest_asset_value_distribution(self) -> List[DBAssetBalance]:
+    def get_latest_asset_value_distribution(self) -> list[DBAssetBalance]:
         """Gets the latest asset distribution data
 
         Returns a list of `DBAssetBalance` all at the latest timestamp.
@@ -2594,8 +2580,8 @@ class DBHandler:
                     asset_balances.append(eth_balance)
         return asset_balances
 
-    def get_tags(self, cursor: 'DBCursor') -> Dict[str, Tag]:
-        tags_mapping: Dict[str, Tag] = {}
+    def get_tags(self, cursor: 'DBCursor') -> dict[str, Tag]:
+        tags_mapping: dict[str, Tag] = {}
         cursor.execute(
             'SELECT name, description, background_color, foreground_color FROM tags;',
         )
@@ -2715,9 +2701,9 @@ class DBHandler:
             self,
             cursor: 'DBCursor',
             given_data: Union[
-                List[BlockchainAccountData],
-                List[ManuallyTrackedBalance],
-                List[XpubData],
+                list[BlockchainAccountData],
+                list[ManuallyTrackedBalance],
+                list[XpubData],
             ],
             action: Literal['adding', 'editing'],
             data_type: Literal['blockchain accounts', 'manually tracked balances', 'bitcoin xpub', 'bitcoin cash xpub'],  # noqa: 501
@@ -2731,7 +2717,7 @@ class DBHandler:
         # tag comparison is case-insensitive
         existing_tag_keys = [key.lower() for key in existing_tags]
 
-        unknown_tags: Set[str] = set()
+        unknown_tags: set[str] = set()
         for entry in given_data:
             if entry.tags is not None:
                 unknown_tags.update(
@@ -2870,7 +2856,7 @@ class DBHandler:
             self,
             cursor: 'DBCursor',
             blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
-    ) -> List[XpubData]:
+    ) -> list[XpubData]:
         query = cursor.execute(
             'SELECT A.xpub, A.blockchain, A.derivation_path, A.label, '
             'group_concat(B.tag_name,",") FROM xpubs as A LEFT OUTER JOIN tag_mappings AS B ON '
@@ -2890,7 +2876,7 @@ class DBHandler:
 
         return result
 
-    def get_last_consecutive_xpub_derived_indices(self, cursor: 'DBCursor', xpub_data: XpubData) -> Tuple[int, int]:  # noqa: E501
+    def get_last_consecutive_xpub_derived_indices(self, cursor: 'DBCursor', xpub_data: XpubData) -> tuple[int, int]:  # noqa: E501
         """
         Get the last known receiving and change derived indices from the given
         xpub that are consecutive since the beginning.
@@ -2927,8 +2913,8 @@ class DBHandler:
             self,
             cursor: 'DBCursor',
             blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
-            addresses: List[BTCAddress],
-    ) -> Dict[BTCAddress, XpubData]:
+            addresses: list[BTCAddress],
+    ) -> dict[BTCAddress, XpubData]:
         data = {}
         for address in addresses:
             cursor.execute(
@@ -2953,7 +2939,7 @@ class DBHandler:
             self,
             write_cursor: 'DBCursor',
             xpub_data: XpubData,
-            derived_addresses_data: List[XpubDerivedAddressData],
+            derived_addresses_data: list[XpubDerivedAddressData],
     ) -> None:
         """Create if not existing the mappings between the addresses and the xpub"""
         tuples = [
@@ -2982,9 +2968,9 @@ class DBHandler:
             self,
             cursor: 'DBCursor',
             table_name: str,
-            klass: Union[Type[Trade], Type[AssetMovement], Type[MarginPosition]],
+            klass: Union[type[Trade], type[AssetMovement], type[MarginPosition]],
     ) -> None:
-        updates: List[Tuple[str, str]] = []
+        updates: list[tuple[str, str]] = []
         log.debug(f'db integrity: start {table_name}')
         cursor.execute(f'SELECT * from {table_name};')
         for result in cursor:
@@ -3023,7 +3009,7 @@ class DBHandler:
             self._ensure_data_integrity(cursor, 'margin_positions', MarginPosition)
         log.debug(f'DB data integrity check finished after {ts_now() - start_time} seconds')
 
-    def get_db_info(self, cursor: 'DBCursor') -> Dict[str, Any]:
+    def get_db_info(self, cursor: 'DBCursor') -> dict[str, Any]:
         filepath = self.user_data_dir / 'rotkehlchen.db'
         size = Path(self.user_data_dir / 'rotkehlchen.db').stat().st_size
         version = self.get_setting(cursor, 'version')
@@ -3033,7 +3019,7 @@ class DBHandler:
             'version': int(version),
         }
 
-    def get_backups(self) -> List[Dict[str, Any]]:
+    def get_backups(self) -> list[dict[str, Any]]:
         """Returns a list of tuples with possible backups of the user DB"""
         backups = []
         for root, _, files in os.walk(self.user_data_dir):
@@ -3068,7 +3054,7 @@ class DBHandler:
         )
         return new_db_path
 
-    def get_associated_locations(self) -> Set[Location]:
+    def get_associated_locations(self) -> set[Location]:
         with self.conn.read_ctx() as cursor:
             cursor.execute(
                 'SELECT location FROM trades UNION '
@@ -3106,7 +3092,7 @@ class DBHandler:
             self,
             blockchain: SupportedBlockchain,
             only_active: bool = False,
-    ) -> List[WeightedNode]:
+    ) -> list[WeightedNode]:
         """
         Get all the nodes in the database. If only_active is set to true only the nodes that
         have the column active set to True will be returned.
@@ -3244,7 +3230,7 @@ class DBHandler:
             filter_query: UserNotesFilterQuery,
             cursor: 'DBCursor',
             has_premium: bool,
-    ) -> List[UserNote]:
+    ) -> list[UserNote]:
         """Returns all the notes created by a user filtered by the given filter"""
         query, bindings = filter_query.prepare()
         if has_premium:
@@ -3261,7 +3247,7 @@ class DBHandler:
             filter_query: UserNotesFilterQuery,
             cursor: 'DBCursor',
             has_premium: bool,
-    ) -> Tuple[List[UserNote], int]:
+    ) -> tuple[list[UserNote], int]:
         """Gets all user_notes for the query from the DB
 
         Also returns how many are the total found for the filter
@@ -3330,7 +3316,7 @@ class DBHandler:
             if write_cursor.rowcount == 0:
                 raise InputError(f'User note with identifier {identifier} not found in database')
 
-    def get_nft_mappings(self, identifiers: List[str]) -> Dict[str, dict]:
+    def get_nft_mappings(self, identifiers: list[str]) -> dict[str, dict]:
         """
         Given a list of nft identifiers, return a list of nft info (id, name, collection_name)
         for those identifiers.

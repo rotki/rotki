@@ -1,7 +1,7 @@
 import json
 import logging
 from http import HTTPStatus
-from typing import Any, Callable, Dict, List, Union
+from typing import Any, Callable, Union
 
 import gevent
 import requests
@@ -20,7 +20,7 @@ def request_get(
         timeout: int = GLOBAL_REQUESTS_TIMEOUT,
         handle_429: bool = False,
         backoff_in_seconds: Union[int, float] = 0,
-) -> Union[Dict, List]:
+) -> Union[dict, list]:
     """
     May raise:
     - UnableToDecryptRemoteData from request_get
@@ -57,7 +57,7 @@ def request_get_dict(
         timeout: int = GLOBAL_REQUESTS_TIMEOUT,
         handle_429: bool = False,
         backoff_in_seconds: Union[int, float] = 0,
-) -> Dict:
+) -> dict:
     """Like request_get, but the endpoint only returns a dict
 
     May raise:
@@ -65,7 +65,7 @@ def request_get_dict(
     - Remote error if the get request fails
     """
     response = request_get(url, timeout, handle_429, backoff_in_seconds)
-    assert isinstance(response, Dict)  # pylint: disable=isinstance-second-argument-not-valid-type  # noqa: E501
+    assert isinstance(response, dict)  # pylint: disable=isinstance-second-argument-not-valid-type  # noqa: E501
     return response
 
 

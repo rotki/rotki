@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Literal, Optional
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
@@ -82,10 +82,10 @@ class AirdropsDecoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
-            all_logs: List[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: List[ActionItem],  # pylint: disable=unused-argument
-    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
+            decoded_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
+            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+            action_items: list[ActionItem],  # pylint: disable=unused-argument
+    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         if tx_log.topics[0] != UNISWAP_TOKEN_CLAIMED:
             return None, []
 
@@ -107,10 +107,10 @@ class AirdropsDecoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
-            all_logs: List[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: List[ActionItem],  # pylint: disable=unused-argument
-    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
+            decoded_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
+            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+            action_items: list[ActionItem],  # pylint: disable=unused-argument
+    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         if tx_log.topics[0] != FOX_CLAIMED:
             return None, []
 
@@ -132,10 +132,10 @@ class AirdropsDecoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
-            all_logs: List[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: List[ActionItem],  # pylint: disable=unused-argument
-    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
+            decoded_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
+            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+            action_items: list[ActionItem],  # pylint: disable=unused-argument
+    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         if tx_log.topics[0] != BADGER_HUNT_EVENT:
             return None, []
 
@@ -160,10 +160,10 @@ class AirdropsDecoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
-            all_logs: List[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: List[ActionItem],  # pylint: disable=unused-argument
-    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
+            decoded_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
+            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+            action_items: list[ActionItem],  # pylint: disable=unused-argument
+    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         if tx_log.topics[0] != ONEINCH_CLAIMED:
             return None, []
 
@@ -185,11 +185,11 @@ class AirdropsDecoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
-            all_logs: List[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: List[ActionItem],  # pylint: disable=unused-argument
+            decoded_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
+            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+            action_items: list[ActionItem],  # pylint: disable=unused-argument
             airdrop: Literal['convex', 'fpis'],
-    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
+    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         if tx_log.topics[0] != FPIS_CONVEX_CLAIM:
             return None, []
 
@@ -229,10 +229,10 @@ class AirdropsDecoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
-            all_logs: List[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: List[ActionItem],  # pylint: disable=unused-argument
-    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
+            decoded_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
+            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+            action_items: list[ActionItem],  # pylint: disable=unused-argument
+    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         """Example:
         https://etherscan.io/tx/0x1e58aed1baf70b57e6e3e880e1890e7fe607fddc94d62986c38fe70e483e594b
         """
@@ -278,7 +278,7 @@ class AirdropsDecoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
-    def addresses_to_decoders(self) -> Dict[ChecksumEvmAddress, Tuple[Any, ...]]:
+    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
             UNISWAP_DISTRIBUTOR: (self._decode_uniswap_claim,),
             BADGERHUNT: (self._decode_badger_claim,),
@@ -289,5 +289,5 @@ class AirdropsDecoder(DecoderInterface):
             ELFI_LOCKING: (self._decode_elfi_claim,),
         }
 
-    def counterparties(self) -> List[str]:
+    def counterparties(self) -> list[str]:
         return AIRDROPS_LIST

@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, NamedTuple, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Optional, Union
 
 from rotkehlchen.accounting.structures.balance import AssetBalance, Balance, BalanceType
 from rotkehlchen.accounting.structures.defi import DefiEvent, DefiEventType
@@ -31,7 +31,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
 
-ADDRESS_TO_ASSETS = Dict[ChecksumEvmAddress, Dict[CryptoAsset, Balance]]
+ADDRESS_TO_ASSETS = dict[ChecksumEvmAddress, dict[CryptoAsset, Balance]]
 BLOCKS_PER_DAY = 4 * 60 * 24
 DAYS_PER_YEAR = 365
 ETH_MANTISSA = 10**18
@@ -71,7 +71,7 @@ class CompoundBalance(NamedTuple):
     balance: Balance
     apy: Optional[FVal]
 
-    def serialize(self) -> Dict[str, Union[Optional[str], Dict[str, str]]]:
+    def serialize(self) -> dict[str, Union[Optional[str], dict[str, str]]]:
         return {
             'balance': self.balance.serialize(),
             'apy': self.apy.to_percentage(precision=2) if self.apy else None,
@@ -91,7 +91,7 @@ class CompoundEvent(NamedTuple):
     tx_hash: str
     log_index: int  # only used to identify uniqueness
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self) -> dict[str, Any]:
         serialized = self._asdict()  # pylint: disable=no-member
         del serialized['log_index']
         return serialized
@@ -101,7 +101,7 @@ class CompoundEvent(NamedTuple):
         return f'Compound {self.event_type} event'
 
 
-def _get_txhash_and_logidx(identifier: str) -> Optional[Tuple[str, int]]:
+def _get_txhash_and_logidx(identifier: str) -> Optional[tuple[str, int]]:
     result = identifier.split('-')
     if len(result) != 2:
         return None
@@ -181,7 +181,7 @@ class Compound(EthereumModule):
     def get_balances(
             self,
             given_defi_balances: GIVEN_DEFI_BALANCES,
-    ) -> Dict[ChecksumEvmAddress, Dict[str, Dict[CryptoAsset, CompoundBalance]]]:
+    ) -> dict[ChecksumEvmAddress, dict[str, dict[CryptoAsset, CompoundBalance]]]:
         compound_balances = {}
         now = ts_now()
         if isinstance(given_defi_balances, dict):
@@ -276,7 +276,7 @@ class Compound(EthereumModule):
             address: ChecksumEvmAddress,
             from_ts: Timestamp,
             to_ts: Timestamp,
-    ) -> List[CompoundEvent]:
+    ) -> list[CompoundEvent]:
         param_types, param_values = get_common_params(from_ts, to_ts, address)
         if event_type == 'borrow':
             graph_event_name = 'borrowEvents'
@@ -346,7 +346,7 @@ class Compound(EthereumModule):
             address: ChecksumEvmAddress,
             from_ts: Timestamp,
             to_ts: Timestamp,
-    ) -> List[CompoundEvent]:
+    ) -> list[CompoundEvent]:
         """https://compound.finance/docs/ctokens#liquidate-borrow"""
         param_types, param_values = get_common_params(from_ts, to_ts, address)
         result = self.graph.query(  # type: ignore
@@ -440,7 +440,7 @@ class Compound(EthereumModule):
             address: ChecksumEvmAddress,
             from_ts: Timestamp,
             to_ts: Timestamp,
-    ) -> List[CompoundEvent]:
+    ) -> list[CompoundEvent]:
         param_types, param_values = get_common_params(from_ts, to_ts, address)
         if event_type == 'mint':
             graph_event_name = 'mintEvents'
@@ -529,7 +529,7 @@ class Compound(EthereumModule):
             address: ChecksumEvmAddress,
             from_ts: Timestamp,
             to_ts: Timestamp,
-    ) -> List[CompoundEvent]:
+    ) -> list[CompoundEvent]:
         self.ethereum.get_blocknumber_by_time(from_ts)
         from_block = max(
             COMP_DEPLOYED_BLOCK,
@@ -581,9 +581,9 @@ class Compound(EthereumModule):
 
     def _process_events(
             self,
-            events: List[CompoundEvent],
+            events: list[CompoundEvent],
             given_defi_balances: GIVEN_DEFI_BALANCES,
-    ) -> Tuple[ADDRESS_TO_ASSETS, ADDRESS_TO_ASSETS, ADDRESS_TO_ASSETS, ADDRESS_TO_ASSETS]:
+    ) -> tuple[ADDRESS_TO_ASSETS, ADDRESS_TO_ASSETS, ADDRESS_TO_ASSETS, ADDRESS_TO_ASSETS]:
         """Processes all events and returns a dictionary of earned balances totals"""
         assets: ADDRESS_TO_ASSETS = defaultdict(lambda: defaultdict(Balance))
         loss_assets: ADDRESS_TO_ASSETS = defaultdict(lambda: defaultdict(Balance))
@@ -694,16 +694,16 @@ class Compound(EthereumModule):
     def get_history(
             self,
             given_defi_balances: GIVEN_DEFI_BALANCES,
-            addresses: List[ChecksumEvmAddress],
+            addresses: list[ChecksumEvmAddress],
             reset_db_data: bool,  # pylint: disable=unused-argument
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """May raise:
         - RemoteError due to the graph query failure or etherscan
         """
-        history: Dict[str, Any] = {}
-        events: List[CompoundEvent] = []
+        history: dict[str, Any] = {}
+        events: list[CompoundEvent] = []
 
         if self.graph is None:  # could not initialize graph
             return {}
@@ -744,8 +744,8 @@ class Compound(EthereumModule):
             self,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
-            addresses: List[ChecksumEvmAddress],
-    ) -> List[DefiEvent]:
+            addresses: list[ChecksumEvmAddress],
+    ) -> list[DefiEvent]:
         history = self.get_history(
             given_defi_balances={},
             addresses=addresses,

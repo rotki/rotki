@@ -1,16 +1,5 @@
 import logging
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    Literal,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Callable, Literal, TypeVar, Union, overload
 
 from eth_utils import to_checksum_address
 
@@ -292,7 +281,7 @@ def deserialize_asset_amount_force_positive(amount: AcceptableFValInitInput) -> 
     return result
 
 
-def _split_pair(pair: TradePair) -> Tuple[str, str]:
+def _split_pair(pair: TradePair) -> tuple[str, str]:
     assets = pair.split('_')
     if len(assets) != 2:
         # Could not split the pair
@@ -305,7 +294,7 @@ def _split_pair(pair: TradePair) -> Tuple[str, str]:
     return assets[0], assets[1]
 
 
-def pair_get_assets(pair: TradePair) -> Tuple[AssetWithOracles, AssetWithOracles]:
+def pair_get_assets(pair: TradePair) -> tuple[AssetWithOracles, AssetWithOracles]:
     """Returns a tuple with the (base, quote) assets
 
     May raise:
@@ -511,7 +500,7 @@ def deserialize_optional(input_val: Optional[X], fn: Callable[[X], Y]) -> Option
 
 @overload
 def deserialize_evm_transaction(
-        data: Dict[str, Any],
+        data: dict[str, Any],
         internal: Literal[True],
         chain_id: ChainID,
         evm_inquirer: Optional['EvmNodeInquirer'] = None,
@@ -521,7 +510,7 @@ def deserialize_evm_transaction(
 
 @overload
 def deserialize_evm_transaction(
-        data: Dict[str, Any],
+        data: dict[str, Any],
         internal: Literal[False],
         chain_id: ChainID,
         evm_inquirer: Optional['EvmNodeInquirer'] = None,
@@ -530,7 +519,7 @@ def deserialize_evm_transaction(
 
 
 def deserialize_evm_transaction(
-        data: Dict[str, Any],
+        data: dict[str, Any],
         internal: bool,
         chain_id: ChainID,
         evm_inquirer: Optional['EvmNodeInquirer'] = None,
@@ -606,7 +595,7 @@ def deserialize_evm_transaction(
 R = TypeVar('R')
 
 
-def ensure_type(symbol: Any, expected_type: Type[R], location: str) -> R:
+def ensure_type(symbol: Any, expected_type: type[R], location: str) -> R:
     if isinstance(symbol, expected_type) is True:
         return symbol
     raise DeserializationError(

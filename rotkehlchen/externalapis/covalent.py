@@ -1,6 +1,6 @@
 import logging
 from json.decoder import JSONDecodeError
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Optional
 
 import requests
 
@@ -44,7 +44,7 @@ chains_id = {
 
 
 def convert_transaction_from_covalent(
-        data: Dict[str, Any],
+        data: dict[str, Any],
 ) -> CovalentTransaction:
     """Reads dict data of a transaction from Covalent and deserializes it
 
@@ -93,9 +93,9 @@ class Covalent(ExternalServiceWithApiKey):
             module: str,
             action: str,
             address: Optional[str] = None,
-            options: Optional[Dict[str, Any]] = None,
-            timeout: Optional[Tuple[int, int]] = None,
-    ) -> Optional[Dict[str, Any]]:
+            options: Optional[dict[str, Any]] = None,
+            timeout: Optional[tuple[int, int]] = None,
+    ) -> Optional[dict[str, Any]]:
         """Queries Covalent
 
         May raise:
@@ -156,7 +156,7 @@ class Covalent(ExternalServiceWithApiKey):
             account: ChecksumEvmAddress,
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
-    ) -> Optional[List[CovalentTransaction]]:
+    ) -> Optional[list[CovalentTransaction]]:
         """Gets a list of transactions for account.
         - account is address for wallet.
         - to_ts is latest date.
@@ -203,7 +203,7 @@ class Covalent(ExternalServiceWithApiKey):
             i += 1
             options = {'page-number': i, 'page-size': PAGESIZE}
 
-        def between_date(value: Dict) -> bool:
+        def between_date(value: dict) -> bool:
             try:
                 v_timestamp = create_timestamp(
                     datestr=value['block_signed_at'],
@@ -225,7 +225,7 @@ class Covalent(ExternalServiceWithApiKey):
 
         return transactions
 
-    def get_transaction_receipt(self, tx_hash: EVMTxHash) -> Optional[Dict[str, Any]]:
+    def get_transaction_receipt(self, tx_hash: EVMTxHash) -> Optional[dict[str, Any]]:
         """Gets the receipt for the given transaction hash
 
         May raise:
@@ -251,7 +251,7 @@ class Covalent(ExternalServiceWithApiKey):
     def get_token_balances_address(
             self,
             address: ChecksumEvmAddress,
-    ) -> Optional[List[Dict[str, Any]]]:
+    ) -> Optional[list[dict[str, Any]]]:
         options = {'limit': COVALENT_QUERY_LIMIT, 'page-size': PAGESIZE}
         result = self._query(
             module='balances_v2',

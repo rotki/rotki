@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Optional
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
@@ -107,7 +107,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
     def _get_vault_details(
             self,
             cdp_id: int,
-    ) -> Tuple[ChecksumEvmAddress, ChecksumEvmAddress]:
+    ) -> tuple[ChecksumEvmAddress, ChecksumEvmAddress]:
         """
         Queries the CDPManager to get the CDP details.
         Returns a tuple with the CDP address and the CDP owner as of the
@@ -145,12 +145,12 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: List[HistoryBaseEntry],
-            all_logs: List[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: List[ActionItem],  # pylint: disable=unused-argument
+            decoded_events: list[HistoryBaseEntry],
+            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+            action_items: list[ActionItem],  # pylint: disable=unused-argument
             vault_asset: CryptoAsset,
             vault_type: str,
-    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
+    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         if tx_log.topics[0] == GENERIC_JOIN:
             raw_amount = hex_or_bytes_to_int(tx_log.topics[3])
             amount = asset_normalized_value(
@@ -191,10 +191,10 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
-            all_logs: List[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: List[ActionItem],  # pylint: disable=unused-argument
-    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
+            decoded_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
+            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+            action_items: list[ActionItem],  # pylint: disable=unused-argument
+    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         if tx_log.topics[0] == GENERIC_JOIN:
             join_user_address = hex_or_bytes_to_address(tx_log.topics[2])
             raw_amount = hex_or_bytes_to_int(tx_log.topics[3])
@@ -224,10 +224,10 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: List[HistoryBaseEntry],
-            all_logs: List[EvmTxReceiptLog],
-            action_items: List[ActionItem],  # pylint: disable=unused-argument
-    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
+            decoded_events: list[HistoryBaseEntry],
+            all_logs: list[EvmTxReceiptLog],
+            action_items: list[ActionItem],  # pylint: disable=unused-argument
+    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         if tx_log.topics[0] == POT_JOIN:
             potjoin_user_address = hex_or_bytes_to_address(tx_log.topics[1])
             user = self._get_address_or_proxy(potjoin_user_address)
@@ -311,10 +311,10 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
-            all_logs: List[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: List[ActionItem],  # pylint: disable=unused-argument
-    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
+            decoded_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
+            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+            action_items: list[ActionItem],  # pylint: disable=unused-argument
+    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         if tx_log.topics[0] == b'%\x9b0\xca9\x88\\m\x80\x1a\x0b]\xbc\x98\x86@\xf3\xc2^/7S\x1f\xe18\xc5\xc5\xaf\x89U\xd4\x1b':  # noqa: E501
             owner_address = hex_or_bytes_to_address(tx_log.topics[2])
             if not self.base.is_tracked(owner_address):
@@ -344,9 +344,9 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
-            all_logs: List[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
+            decoded_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
+            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         owner_address = self._get_address_or_proxy(hex_or_bytes_to_address(tx_log.topics[2]))
         if owner_address is None:
             return None, []
@@ -376,9 +376,9 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
-            all_logs: List[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
+            decoded_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
+            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         """Decode vault debt generation by parsing a lognote for cdpmanager move"""
         cdp_id = hex_or_bytes_to_int(tx_log.topics[2])
         destination = hex_or_bytes_to_address(tx_log.topics[3])
@@ -416,10 +416,10 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
-            all_logs: List[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: List[ActionItem],  # pylint: disable=unused-argument
-    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
+            decoded_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
+            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+            action_items: list[ActionItem],  # pylint: disable=unused-argument
+    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         """Decode CDPManger Frob (vault change)
 
         Used to find the vault id of a collateral deposit
@@ -483,10 +483,10 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
-            all_logs: List[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: List[ActionItem],  # pylint: disable=unused-argument
-    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
+            decoded_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
+            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+            action_items: list[ActionItem],  # pylint: disable=unused-argument
+    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         if tx_log.topics[0] == NEWCDP:
             return self._decode_vault_creation(tx_log=tx_log, transaction=transaction, decoded_events=decoded_events, all_logs=all_logs)  # noqa: E501
         if tx_log.topics[0] == CDPMANAGER_MOVE:
@@ -500,10 +500,10 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
-            all_logs: List[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: List[ActionItem],  # pylint: disable=unused-argument
-    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
+            decoded_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
+            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+            action_items: list[ActionItem],  # pylint: disable=unused-argument
+    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         if tx_log.topics[0] == ERC20_OR_ERC721_TRANSFER:
             to_address = hex_or_bytes_to_address(tx_log.topics[2])
             if to_address != '0xc73e0383F3Aff3215E6f04B0331D58CeCf0Ab849':
@@ -542,7 +542,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
 
     # -- DecoderInterface methods
 
-    def addresses_to_decoders(self) -> Dict[ChecksumEvmAddress, Tuple[Any, ...]]:
+    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
             self.ethereum.contracts.contract('MAKERDAO_BAT_A_JOIN').address: (self.decode_makerdao_vault_action, A_BAT.resolve_to_crypto_asset(), 'BAT-A'),  # noqa: E501
             self.ethereum.contracts.contract('MAKERDAO_ETH_A_JOIN').address: (self.decode_makerdao_vault_action, A_ETH.resolve_to_crypto_asset(), 'ETH-A'),  # noqa: E501
@@ -576,5 +576,5 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
             self.makerdao_cdp_manager.address: (self.decode_cdp_manager_events,),
         }
 
-    def counterparties(self) -> List[str]:
+    def counterparties(self) -> list[str]:
         return [CPT_VAULT, CPT_DSR, CPT_MIGRATION]

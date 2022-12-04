@@ -4,19 +4,7 @@ import logging
 import uuid
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    List,
-    Literal,
-    NamedTuple,
-    Optional,
-    Tuple,
-    Union,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Callable, Literal, NamedTuple, Optional, Union, overload
 from urllib.parse import urlencode
 
 import requests
@@ -177,7 +165,7 @@ class Bitstamp(ExchangeInterface):
             log.error(msg)
             raise RemoteError(msg) from e
 
-        assets_balance: Dict[AssetWithOracles, Balance] = {}
+        assets_balance: dict[AssetWithOracles, Balance] = {}
         for entry, amount in response_dict.items():
             if not entry.endswith('_balance'):
                 continue
@@ -227,7 +215,7 @@ class Bitstamp(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> List[AssetMovement]:
+    ) -> list[AssetMovement]:
         """Return the account asset movements on Bitstamp.
 
         NB: when `since_id` is used, the Bitstamp API v2 will return by default
@@ -252,7 +240,7 @@ class Bitstamp(ExchangeInterface):
                 since_id = int(query_result[0]) + 1
                 options.update({'since_id': since_id})
 
-        asset_movements: List[AssetMovement] = self._api_query_paginated(
+        asset_movements: list[AssetMovement] = self._api_query_paginated(
             start_ts=start_ts,
             end_ts=end_ts,
             options=options,
@@ -264,7 +252,7 @@ class Bitstamp(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> Tuple[List[Trade], Tuple[Timestamp, Timestamp]]:
+    ) -> tuple[list[Trade], tuple[Timestamp, Timestamp]]:
         """Return the account trades on Bitstamp.
 
         NB: when `since_id` is used, the Bitstamp API v2 will return by default
@@ -289,7 +277,7 @@ class Bitstamp(ExchangeInterface):
                 since_id = int(query_result[0]) + 1
                 options.update({'since_id': since_id})
 
-        trades: List[Trade] = self._api_query_paginated(
+        trades: list[Trade] = self._api_query_paginated(
             start_ts=start_ts,
             end_ts=end_ts,
             options=options,
@@ -297,7 +285,7 @@ class Bitstamp(ExchangeInterface):
         )
         return trades, (start_ts, end_ts)
 
-    def validate_api_key(self) -> Tuple[bool, str]:
+    def validate_api_key(self) -> tuple[bool, str]:
         """Validates that the Bitstamp API key is good for usage in rotki
 
         Makes sure that the following permissions are given to the key:
@@ -319,7 +307,7 @@ class Bitstamp(ExchangeInterface):
             self,
             endpoint: Literal['balance', 'user_transactions'],
             method: Literal['post'] = 'post',
-            options: Optional[Dict[str, Any]] = None,
+            options: Optional[dict[str, Any]] = None,
     ) -> Response:
         """Request a Bistamp API v2 endpoint (from `endpoint`).
         """
@@ -378,9 +366,9 @@ class Bitstamp(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-            options: Dict[str, Any],
+            options: dict[str, Any],
             case: Literal['trades'],
-    ) -> List[Trade]:
+    ) -> list[Trade]:
         ...
 
     @overload
@@ -388,18 +376,18 @@ class Bitstamp(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-            options: Dict[str, Any],
+            options: dict[str, Any],
             case: Literal['asset_movements'],
-    ) -> List[AssetMovement]:
+    ) -> list[AssetMovement]:
         ...
 
     def _api_query_paginated(
             self,
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,
-            options: Dict[str, Any],
+            options: dict[str, Any],
             case: Literal['trades', 'asset_movements'],
-    ) -> Union[List[Trade], List[AssetMovement], List]:
+    ) -> Union[list[Trade], list[AssetMovement], list]:
         """Request a Bitstamp API v2 endpoint paginating via an options
         attribute.
 
@@ -413,7 +401,7 @@ class Bitstamp(ExchangeInterface):
             * limit: 1000 (API v2 default using `since_id`).
             * sort: 'asc'
         """
-        deserialization_method: Callable[[Dict[str, Any]], Union[Trade, AssetMovement]]
+        deserialization_method: Callable[[dict[str, Any]], Union[Trade, AssetMovement]]
         endpoint: Literal['user_transactions']
         response_case: Literal['trades', 'asset_movements']
         if case == 'trades':
@@ -516,7 +504,7 @@ class Bitstamp(ExchangeInterface):
 
     @staticmethod
     def _deserialize_asset_movement(
-            raw_movement: Dict[str, Any],
+            raw_movement: dict[str, Any],
     ) -> AssetMovement:
         """Process a deposit/withdrawal user transaction from Bitstamp and
         deserialize it.
@@ -579,7 +567,7 @@ class Bitstamp(ExchangeInterface):
 
     def _deserialize_trade(
             self,
-            raw_trade: Dict[str, Any],
+            raw_trade: dict[str, Any],
     ) -> Trade:
         """Process a trade user transaction from Bitstamp and deserialize it.
 
@@ -621,7 +609,7 @@ class Bitstamp(ExchangeInterface):
         return trade
 
     @staticmethod
-    def _get_trade_pair_data_from_transaction(raw_result: Dict[str, Any]) -> TradePairData:
+    def _get_trade_pair_data_from_transaction(raw_result: dict[str, Any]) -> TradePairData:
         """Given a user transaction that contains the base and quote assets'
         symbol as keys, return the Bitstamp trade pair data (raw pair str,
         base/quote assets raw symbols, and TradePair).
@@ -665,7 +653,7 @@ class Bitstamp(ExchangeInterface):
             self,
             response: Response,
             case: Literal['validate_api_key'],
-    ) -> Tuple[bool, str]:
+    ) -> tuple[bool, str]:
         ...
 
     @overload
@@ -681,7 +669,7 @@ class Bitstamp(ExchangeInterface):
             self,
             response: Response,
             case: Literal['trades'],
-    ) -> List[Trade]:
+    ) -> list[Trade]:
         ...
 
     @overload
@@ -689,7 +677,7 @@ class Bitstamp(ExchangeInterface):
             self,
             response: Response,
             case: Literal['asset_movements'],
-    ) -> List[AssetMovement]:
+    ) -> list[AssetMovement]:
         ...
 
     def _process_unsuccessful_response(
@@ -697,8 +685,8 @@ class Bitstamp(ExchangeInterface):
             response: Response,
             case: Literal['validate_api_key', 'balances', 'trades', 'asset_movements'],
     ) -> Union[
-        List,
-        Tuple[bool, str],
+        list,
+        tuple[bool, str],
         ExchangeQueryBalances,
     ]:
         """This function processes not successful responses for the following
@@ -746,12 +734,12 @@ class Bitstamp(ExchangeInterface):
             self,  # pylint: disable=no-self-use
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,  # pylint: disable=unused-argument
-    ) -> List[MarginPosition]:
+    ) -> list[MarginPosition]:
         return []  # noop for bitstamp
 
     def query_online_income_loss_expense(
             self,  # pylint: disable=no-self-use
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,  # pylint: disable=unused-argument
-    ) -> List[LedgerAction]:
+    ) -> list[LedgerAction]:
         return []  # noop for bitstamp

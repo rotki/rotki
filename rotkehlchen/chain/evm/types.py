@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Dict, Literal, NamedTuple, Tuple, Type
+from typing import Any, Literal, NamedTuple
 
 from eth_typing import HexAddress, HexStr
 
@@ -26,7 +26,7 @@ class NodeName(NamedTuple):
     owned: bool
     blockchain: Literal[SupportedBlockchain.ETHEREUM, SupportedBlockchain.KUSAMA, SupportedBlockchain.POLKADOT, SupportedBlockchain.AVALANCHE, SupportedBlockchain.OPTIMISM]  # noqa: E501
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self) -> dict[str, Any]:
         return {
             'name': self.name,
             'endpoint': self.endpoint,
@@ -42,7 +42,7 @@ class WeightedNode:
     weight: FVal
     identifier: int = 0
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self) -> dict[str, Any]:
         return {
             'identifier': self.identifier,
             'name': self.node_info.name,
@@ -53,7 +53,7 @@ class WeightedNode:
             'blockchain': self.node_info.blockchain.value,
         }
 
-    def serialize_for_db(self) -> Tuple[str, str, bool, bool, str, str]:
+    def serialize_for_db(self) -> tuple[str, str, bool, bool, str, str]:
         return (
             self.node_info.name,
             self.node_info.endpoint,
@@ -65,8 +65,8 @@ class WeightedNode:
 
     @classmethod
     def deserialize(
-        cls: Type['WeightedNode'],
-        data: Dict[str, str],
+        cls: type['WeightedNode'],
+        data: dict[str, str],
     ) -> 'WeightedNode':
         return WeightedNode(
             identifier=int(data['identifier']),

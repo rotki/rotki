@@ -2,7 +2,7 @@ import random
 import warnings as test_warnings
 from contextlib import ExitStack
 from http import HTTPStatus
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 import requests
@@ -90,7 +90,7 @@ def test_query_aave_balances(rotkehlchen_api_server, ethereum_accounts):
         test_warnings.warn(UserWarning(f'Test account {AAVE_BALANCESV1_TEST_ACC} and {AAVE_BALANCESV2_TEST_ACC} have no aave balances'))  # noqa: E501
         return
 
-    def _assert_valid_entries(balances: Dict[str, Any]) -> None:
+    def _assert_valid_entries(balances: dict[str, Any]) -> None:
         lending = v1_balances['lending']
         for _, entry in lending.items():
             assert len(entry) == 2

@@ -1,7 +1,7 @@
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Optional
 from unittest.mock import patch
 
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
@@ -438,7 +438,7 @@ BINANCE_FIATWITHDRAWS_RESPONSE = """{
 }"""
 
 
-def assert_binance_balances_result(balances: Dict[str, Any]) -> None:
+def assert_binance_balances_result(balances: dict[str, Any]) -> None:
     assert balances['BTC']['amount'] == '4723846.89208129'
     assert balances['BTC']['usd_value'] is not None
     assert balances['ETH']['amount'] == '4763368.68006011'
@@ -446,7 +446,7 @@ def assert_binance_balances_result(balances: Dict[str, Any]) -> None:
 
 
 def assert_binance_asset_movements_result(
-        movements: List[AssetMovement],
+        movements: list[AssetMovement],
         location: Location,
         got_fiat: bool,
 ) -> None:
@@ -501,7 +501,7 @@ def assert_binance_asset_movements_result(
         assert movements[5].fee == FVal('0.02')
 
 
-def assert_poloniex_balances_result(balances: Dict[str, Any]) -> None:
+def assert_poloniex_balances_result(balances: dict[str, Any]) -> None:
     assert balances['BTC']['amount'] == '5.5'
     assert balances['BTC']['usd_value'] is not None
     assert balances['ETH']['amount'] == '11.0'
@@ -1262,7 +1262,7 @@ def mock_normal_coinbase_query(url, **kwargs):  # pylint: disable=unused-argumen
     raise AssertionError(f'Unexpected url {url} for test')
 
 
-def kraken_to_world_pair(pair: str) -> Tuple[AssetWithOracles, AssetWithOracles]:
+def kraken_to_world_pair(pair: str) -> tuple[AssetWithOracles, AssetWithOracles]:
     """Turns a pair from kraken to our base/quote asset tuple
 
     Can throw:

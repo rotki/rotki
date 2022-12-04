@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Callable, Optional
 
 from geventwebsocket import WebSocketApplication
 from geventwebsocket.exceptions import WebSocketError
@@ -20,9 +20,9 @@ def _ws_send_impl(
         websocket: WebSocket,
         to_send_msg: str,
         success_callback: Optional[Callable] = None,
-        success_callback_args: Optional[Dict[str, Any]] = None,
+        success_callback_args: Optional[dict[str, Any]] = None,
         failure_callback: Optional[Callable] = None,
-        failure_callback_args: Optional[Dict[str, Any]] = None,
+        failure_callback_args: Optional[dict[str, Any]] = None,
 ) -> None:
     try:
         websocket.send(to_send_msg)
@@ -46,7 +46,7 @@ class RotkiNotifier():
             greenlet_manager: GreenletManager,
     ) -> None:
         self.greenlet_manager = greenlet_manager
-        self.subscribers: List[WebSocket] = []
+        self.subscribers: list[WebSocket] = []
 
     def subscribe(self, websocket: WebSocket) -> None:
         log.info(f'Websocket with hash id {hash(websocket)} subscribed to rotki notifier')
@@ -62,11 +62,11 @@ class RotkiNotifier():
     def broadcast(
             self,
             message_type: 'WSMessageType',
-            to_send_data: Dict[str, Any],
+            to_send_data: dict[str, Any],
             success_callback: Optional[Callable] = None,
-            success_callback_args: Optional[Dict[str, Any]] = None,
+            success_callback_args: Optional[dict[str, Any]] = None,
             failure_callback: Optional[Callable] = None,
-            failure_callback_args: Optional[Dict[str, Any]] = None,
+            failure_callback_args: Optional[dict[str, Any]] = None,
     ) -> None:
         message_data = {'type': str(message_type), 'data': to_send_data}
         message = json.dumps(message_data)  # TODO: Check for dumps error

@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Optional
 
 from gevent.lock import Semaphore
 
@@ -60,7 +60,7 @@ class YearnVaultsV2(EthereumModule):
             )
             raise ModuleInitializationFailure('Yearn Vaults v2 Subgraph remote error') from e
 
-    def _calculate_vault_roi(self, vault: EvmToken) -> Tuple[FVal, int]:
+    def _calculate_vault_roi(self, vault: EvmToken) -> tuple[FVal, int]:
         """
         getPricePerFullShare A @ block X
         getPricePerFullShare B @ block Y
@@ -97,10 +97,10 @@ class YearnVaultsV2(EthereumModule):
 
     def _get_single_addr_balance(
             self,
-            defi_balances: Dict[Asset, Balance],
-            roi_cache: Dict[str, FVal],
-            pps_cache: Dict[str, int],  # price per share
-    ) -> Dict[ChecksumEvmAddress, YearnVaultBalance]:
+            defi_balances: dict[Asset, Balance],
+            roi_cache: dict[str, FVal],
+            pps_cache: dict[str, int],  # price per share
+    ) -> dict[ChecksumEvmAddress, YearnVaultBalance]:
         result = {}
         globaldb = GlobalDBHandler()
         with globaldb.conn.read_ctx() as cursor:
@@ -147,15 +147,15 @@ class YearnVaultsV2(EthereumModule):
     def get_balances(
         self,
         given_eth_balances: 'GIVEN_ETH_BALANCES',
-    ) -> Dict[ChecksumEvmAddress, Dict[ChecksumEvmAddress, YearnVaultBalance]]:
+    ) -> dict[ChecksumEvmAddress, dict[ChecksumEvmAddress, YearnVaultBalance]]:
 
         if isinstance(given_eth_balances, dict):
             defi_balances = given_eth_balances
         else:
             defi_balances = given_eth_balances()
 
-        roi_cache: Dict[str, FVal] = {}
-        pps_cache: Dict[str, int] = {}  # price per share cache
+        roi_cache: dict[str, FVal] = {}
+        pps_cache: dict[str, int] = {}  # price per share cache
         result = {}
 
         for address, balances in defi_balances.items():
@@ -164,7 +164,7 @@ class YearnVaultsV2(EthereumModule):
                 result[address] = vault_balances
         return result
 
-    def _process_vault_events(self, events: List[YearnVaultEvent]) -> Balance:
+    def _process_vault_events(self, events: list[YearnVaultEvent]) -> Balance:
         """Process the events for a single vault and returns total profit/loss after all events"""
         total = Balance()
         profit_so_far = Balance()
@@ -198,13 +198,13 @@ class YearnVaultsV2(EthereumModule):
     def get_vaults_history(
             self,
             write_cursor: 'DBCursor',
-            eth_balances: Dict[ChecksumEvmAddress, BalanceSheet],
-            addresses: List[ChecksumEvmAddress],
+            eth_balances: dict[ChecksumEvmAddress, BalanceSheet],
+            addresses: list[ChecksumEvmAddress],
             from_block: int,
             to_block: int,
-    ) -> Dict[ChecksumEvmAddress, Dict[str, YearnVaultHistory]]:
-        query_addresses: List[EvmAddress] = []
-        query_checksumed_addresses: List[ChecksumEvmAddress] = []
+    ) -> dict[ChecksumEvmAddress, dict[str, YearnVaultHistory]]:
+        query_addresses: list[EvmAddress] = []
+        query_checksumed_addresses: list[ChecksumEvmAddress] = []
 
         # Skip addresses recently fetched
         for address in addresses:
@@ -225,7 +225,7 @@ class YearnVaultsV2(EthereumModule):
             to_block=to_block,
         )
         current_time = ts_now()
-        vaults_histories_per_address: Dict[ChecksumEvmAddress, Dict[str, YearnVaultHistory]] = {}
+        vaults_histories_per_address: dict[ChecksumEvmAddress, dict[str, YearnVaultHistory]] = {}
 
         for address, new_events in new_events_addresses.items():
             # Query events from db for address
@@ -260,9 +260,9 @@ class YearnVaultsV2(EthereumModule):
                 to_block=to_block,
                 msg_aggregator=self.msg_aggregator,
             )
-            vaults_histories: Dict[str, YearnVaultHistory] = {}
+            vaults_histories: dict[str, YearnVaultHistory] = {}
             # Dict that stores vault token symbol and their events + total pnl
-            vaults: Dict[str, Dict[str, List[YearnVaultEvent]]] = defaultdict(
+            vaults: dict[str, dict[str, list[YearnVaultEvent]]] = defaultdict(
                 lambda: defaultdict(list),
             )
             for event in all_events:
@@ -328,11 +328,11 @@ class YearnVaultsV2(EthereumModule):
     def get_history(
             self,
             given_eth_balances: 'GIVEN_ETH_BALANCES',
-            addresses: List[ChecksumEvmAddress],
+            addresses: list[ChecksumEvmAddress],
             reset_db_data: bool,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
-    ) -> Dict[ChecksumEvmAddress, Dict[str, YearnVaultHistory]]:
+    ) -> dict[ChecksumEvmAddress, dict[str, YearnVaultHistory]]:
         with self.history_lock:
 
             if isinstance(given_eth_balances, dict):

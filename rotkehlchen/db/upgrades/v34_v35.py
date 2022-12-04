@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import TYPE_CHECKING, List, Literal, Sequence, Tuple, Type
+from typing import TYPE_CHECKING, Literal, Sequence
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
@@ -188,7 +188,7 @@ def _add_blockchain_column_web3_nodes(cursor: 'DBCursor') -> None:
 def _update_ignored_assets_identifiers_to_caip_format(cursor: 'DBCursor') -> None:
     log.debug('Enter _update_ignored_assets_identifiers_to_caip_format')
     cursor.execute('SELECT value FROM multisettings WHERE name="ignored_asset";')
-    old_ids_to_caip_ids_mappings: List[Tuple[str, str]] = []
+    old_ids_to_caip_ids_mappings: list[tuple[str, str]] = []
     for (old_identifier,) in cursor:
         if old_identifier is not None and old_identifier.startswith(ETHEREUM_DIRECTIVE):
             old_ids_to_caip_ids_mappings.append(
@@ -345,7 +345,7 @@ def _add_manual_current_price_oracle(cursor: 'DBCursor') -> None:
     if current_oracles_order is None:
         return
 
-    list_oracles_order: List = json.loads(current_oracles_order[0])
+    list_oracles_order: list = json.loads(current_oracles_order[0])
     list_oracles_order.insert(0, 'manualcurrent')
     cursor.execute(
         'UPDATE settings SET value=? WHERE name="current_price_oracles"',
@@ -363,7 +363,7 @@ def _add_defillama_to_oracles(cursor: 'DBCursor', setting_name: Literal['current
     price_oracles = cursor.fetchone()
 
     if setting_name == 'current_price_oracles':
-        oracle_cls: Type[OracleSource] = CurrentPriceOracle
+        oracle_cls: type[OracleSource] = CurrentPriceOracle
         default_oracles: Sequence[OracleSource] = DEFAULT_CURRENT_PRICE_ORACLES_ORDER
     else:
         oracle_cls = HistoricalPriceOracle

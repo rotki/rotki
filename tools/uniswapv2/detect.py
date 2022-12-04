@@ -3,7 +3,7 @@ import json
 import os
 import sys
 from pathlib import Path
-from typing import Any, Dict, Optional, Set
+from typing import Any, Optional
 
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.etherscan import EthereumEtherscan
@@ -51,7 +51,7 @@ def init_ethereum(
     return eth_inquirer
 
 
-def pairs_from_ethereum(ethereum_inquirer: EthereumInquirer) -> Dict[str, Any]:
+def pairs_from_ethereum(ethereum_inquirer: EthereumInquirer) -> dict[str, Any]:
     """Detect the uniswap v2 pool tokens by using an ethereum node"""
     contracts_file = Path(__file__).resolve().parent / 'contracts.json'
     with contracts_file.open('r') as f:
@@ -77,7 +77,7 @@ def pairs_from_ethereum(ethereum_inquirer: EthereumInquirer) -> Dict[str, Any]:
     return pairs
 
 
-def pairs_and_token_details_from_graph() -> Dict[str, Any]:
+def pairs_and_token_details_from_graph() -> dict[str, Any]:
     """Detect the uniswap v2 pool tokens by using the subgraph"""
     step = 1000
     querystr = """
@@ -149,7 +149,7 @@ def write_result_to_file(result: Any, name: str) -> None:
         f.write(json.dumps(result))
 
 
-def read_file_if_exists(name: str) -> Optional[Dict[str, Any]]:
+def read_file_if_exists(name: str) -> Optional[dict[str, Any]]:
     filepath = root_path / 'rotkehlchen' / 'data' / name
     data = None
     if filepath.exists():
@@ -230,8 +230,8 @@ if __name__ == "__main__":
 
         if args.no_query_balances is False:
             start = ts_now()
-            known_tokens: Set[EvmToken] = set()
-            unknown_tokens: Set[EvmToken] = set()
+            known_tokens: set[EvmToken] = set()
+            unknown_tokens: set[EvmToken] = set()
             balances = uniswap_lp_token_balances(
                 userdb=database,
                 address='0x1554d34D46842778999cB4eb1381b19f651e4a9d',  # test address

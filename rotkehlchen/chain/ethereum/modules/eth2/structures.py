@@ -1,6 +1,6 @@
 import decimal
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Literal, NamedTuple, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Iterator, Literal, NamedTuple, Optional
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.accounting.structures.balance import Balance
@@ -38,7 +38,7 @@ class ValidatorID(NamedTuple):
         return hash(self.public_key)
 
 
-Eth2ValidatorDBTuple = Tuple[int, str, str]
+Eth2ValidatorDBTuple = tuple[int, str, str]
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -58,7 +58,7 @@ class Eth2Validator:
             ownership_proportion=FVal(result[2]),
         )
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self) -> dict[str, Any]:
         percentage_value = self.ownership_proportion.to_percentage(precision=2, with_perc_sign=False)  # noqa: E501
         return {
             'validator_index': self.index,
@@ -67,7 +67,7 @@ class Eth2Validator:
         }
 
 
-ValidatorDailyStatsDBTuple = Tuple[
+ValidatorDailyStatsDBTuple = tuple[
     int,  # validator index
     int,  # timestamp
     str,  # usd_price_start
@@ -180,7 +180,7 @@ class ValidatorDailyStats(AccountingEventMixin):
             amount_deposited=FVal(entry[15]),
         )
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self) -> dict[str, Any]:
         return {
             'validator_index': self.validator_index,
             'timestamp': self.timestamp,
@@ -199,7 +199,7 @@ class ValidatorDailyStats(AccountingEventMixin):
         }
 
     @classmethod
-    def deserialize(cls, data: Dict[str, Any]) -> 'ValidatorDailyStats':
+    def deserialize(cls, data: dict[str, Any]) -> 'ValidatorDailyStats':
         """Deserializes a validator daily stats dict to ValidatorDailyStats object.
         May raise:
             - DeserializationError
@@ -261,10 +261,10 @@ class ValidatorDailyStats(AccountingEventMixin):
     def get_identifier(self) -> str:
         return str(self.validator_index) + str(self.timestamp)
 
-    def get_assets(self) -> List['Asset']:
+    def get_assets(self) -> list['Asset']:
         return [A_ETH, A_ETH2]
 
-    def should_ignore(self, ignored_ids_mapping: Dict[ActionType, List[str]]) -> bool:
+    def should_ignore(self, ignored_ids_mapping: dict[ActionType, list[str]]) -> bool:
         return False
 
     def process(
@@ -307,7 +307,7 @@ class ValidatorPerformance(NamedTuple):
     performance_1m: int  # in gwei
     performance_1y: int  # in gwei
 
-    def serialize(self, eth_usd_price: FVal) -> Dict[str, Dict[str, str]]:
+    def serialize(self, eth_usd_price: FVal) -> dict[str, dict[str, str]]:
         return {
             'balance': _serialize_gwei_with_price(self.balance, eth_usd_price),
             'performance_1d': _serialize_gwei_with_price(self.performance_1d, eth_usd_price),
@@ -327,7 +327,7 @@ DEPOSITING_VALIDATOR_PERFORMANCE = ValidatorPerformance(
 
 
 Eth2DepositDBTuple = (
-    Tuple[
+    tuple[
         bytes,  # tx_hash
         int,    # tx_index
         str,    # from_address
@@ -346,7 +346,7 @@ class ValidatorDetails(NamedTuple):
     eth1_depositor: ChecksumEvmAddress
     performance: ValidatorPerformance
 
-    def serialize(self, eth_usd_price: FVal) -> Dict[str, Any]:
+    def serialize(self, eth_usd_price: FVal) -> dict[str, Any]:
         return {
             'index': self.validator_index,
             'public_key': self.public_key,
@@ -364,7 +364,7 @@ class Eth2Deposit(NamedTuple):
     tx_index: int
     timestamp: Timestamp
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self) -> dict[str, Any]:
         result = self._asdict()  # pylint: disable=no-member
         result['tx_hash'] = self.tx_hash.hex()
         result['value'] = self.value.serialize()
@@ -412,7 +412,7 @@ class Eth2Deposit(NamedTuple):
         )
 
 
-def _serialize_gwei_with_price(value: int, eth_usd_price: FVal) -> Dict[str, str]:
+def _serialize_gwei_with_price(value: int, eth_usd_price: FVal) -> dict[str, str]:
     normalized_value = from_gwei(value)
     return {
         'amount': str(normalized_value),

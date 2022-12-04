@@ -2,7 +2,7 @@ import logging
 from abc import ABCMeta
 from collections import defaultdict
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Dict, Iterator, List, Optional, Tuple
+from typing import TYPE_CHECKING, Iterator, Optional
 
 import gevent
 from gevent.lock import Semaphore
@@ -45,12 +45,12 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
         super().__init__()
         self.evm_inquirer = evm_inquirer
         self.database = database
-        self.address_tx_locks: Dict[ChecksumEvmAddress, Semaphore] = defaultdict(Semaphore)
+        self.address_tx_locks: dict[ChecksumEvmAddress, Semaphore] = defaultdict(Semaphore)
         self.missing_receipts_lock = Semaphore()
         self.msg_aggregator = database.msg_aggregator
 
     @contextmanager
-    def wait_until_no_query_for(self, addresses: List[ChecksumEvmAddress]) -> Iterator[None]:
+    def wait_until_no_query_for(self, addresses: list[ChecksumEvmAddress]) -> Iterator[None]:
         """Will acquire all locks relevant to an address and yield to the caller"""
         locks = []
         for address in addresses:
@@ -115,7 +115,7 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
             filter_query: EvmTransactionsFilterQuery,
             has_premium: bool = False,
             only_cache: bool = False,
-    ) -> Tuple[List[EvmTransaction], int]:
+    ) -> tuple[list[EvmTransaction], int]:
         """Queries for all transactions of an evm address or of all addresses.
 
         Returns a list of all transactions filtered and sorted according to the parameters.

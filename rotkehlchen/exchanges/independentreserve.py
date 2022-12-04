@@ -5,7 +5,7 @@ import logging
 import time
 from collections import OrderedDict
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Literal, Optional
 
 import gevent
 import requests
@@ -138,7 +138,7 @@ def independentreserve_asset(symbol: str) -> AssetWithOracles:
     return asset.resolve_to_asset_with_oracles()
 
 
-def _trade_from_independentreserve(raw_trade: Dict) -> Trade:
+def _trade_from_independentreserve(raw_trade: dict) -> Trade:
     """Convert IndependentReserve raw data to a trade
 
     https://www.independentreserve.com/products/api#GetClosedFilledOrders
@@ -174,7 +174,7 @@ def _trade_from_independentreserve(raw_trade: Dict) -> Trade:
     )
 
 
-def _asset_movement_from_independentreserve(raw_tx: Dict) -> Optional[AssetMovement]:
+def _asset_movement_from_independentreserve(raw_tx: dict) -> Optional[AssetMovement]:
     """Convert IndependentReserve raw data to an AssetMovement
 
     https://www.independentreserve.com/products/api#GetTransactions
@@ -245,7 +245,7 @@ class Independentreserve(ExchangeInterface):
         self.uri = 'https://api.independentreserve.com'
         self.msg_aggregator = msg_aggregator
         self.session.headers.update({'Content-Type': 'application/json'})
-        self.account_guids: Optional[List] = None
+        self.account_guids: Optional[list] = None
 
     def edit_exchange_credentials(
             self,
@@ -263,8 +263,8 @@ class Independentreserve(ExchangeInterface):
             verb: Literal['get', 'post'],
             method_type: Literal['Public', 'Private'],
             path: str,
-            options: Optional[Dict] = None,
-    ) -> Dict:
+            options: Optional[dict] = None,
+    ) -> dict:
         """An IndependentrReserve query
 
         May raise RemoteError
@@ -343,7 +343,7 @@ class Independentreserve(ExchangeInterface):
 
         return json_ret
 
-    def validate_api_key(self) -> Tuple[bool, str]:
+    def validate_api_key(self) -> tuple[bool, str]:
         """Validates that the IndependentReserve API key is good for usage in rotki"""
         try:
             self._api_query(verb='post', method_type='Private', path='GetAccounts')
@@ -353,7 +353,7 @@ class Independentreserve(ExchangeInterface):
             return False, str(e)
 
     def query_balances(self, **kwargs: Any) -> ExchangeQueryBalances:
-        assets_balance: Dict[AssetWithOracles, Balance] = {}
+        assets_balance: dict[AssetWithOracles, Balance] = {}
         try:
             response = self._api_query(verb='post', method_type='Private', path='GetAccounts')
         except RemoteError as e:
@@ -398,7 +398,7 @@ class Independentreserve(ExchangeInterface):
         self.account_guids = account_guids
         return assets_balance, ''
 
-    def _gather_paginated_data(self, path: str, extra_options: Optional[Dict] = None) -> List[Dict[str, Any]]:  # noqa: E501
+    def _gather_paginated_data(self, path: str, extra_options: Optional[dict] = None) -> list[dict[str, Any]]:  # noqa: E501
         """May raise KeyError"""
         page = 1
         page_size = 50
@@ -424,7 +424,7 @@ class Independentreserve(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> Tuple[List[Trade], Tuple[Timestamp, Timestamp]]:
+    ) -> tuple[list[Trade], tuple[Timestamp, Timestamp]]:
         """May raise RemoteError"""
         try:
             resp_trades = self._gather_paginated_data(path='GetClosedFilledOrders')
@@ -469,7 +469,7 @@ class Independentreserve(ExchangeInterface):
             self,  # pylint: disable=no-self-use
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,  # pylint: disable=unused-argument
-    ) -> List[AssetMovement]:
+    ) -> list[AssetMovement]:
         if self.account_guids is None:
             self.query_balances()  # do a balance query to populate the account guids
         movements = []
@@ -529,12 +529,12 @@ class Independentreserve(ExchangeInterface):
             self,  # pylint: disable=no-self-use
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,  # pylint: disable=unused-argument
-    ) -> List[MarginPosition]:
+    ) -> list[MarginPosition]:
         return []  # noop for independentreserve
 
     def query_online_income_loss_expense(
             self,  # pylint: disable=no-self-use
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,  # pylint: disable=unused-argument
-    ) -> List[LedgerAction]:
+    ) -> list[LedgerAction]:
         return []  # noop for independentreserve

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Any, Callable, Dict, Iterator, List, Optional, Set
+from typing import TYPE_CHECKING, Any, Callable, Iterator, Optional
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.assets.asset import Asset, CryptoAsset
@@ -50,7 +50,7 @@ class DefiEvent(AccountingEventMixin):
     got_balance: Optional['Balance']
     spent_asset: Optional[CryptoAsset]
     spent_balance: Optional['Balance']
-    pnl: Optional[List['AssetBalance']]
+    pnl: Optional[list['AssetBalance']]
     # If this is true then both got and spent asset count in cost basis
     # So it will count as if you got asset at given amount and price of timestamp
     # and spent asset at given amount and price of timestamp
@@ -83,8 +83,8 @@ class DefiEvent(AccountingEventMixin):
     def get_identifier(self) -> str:
         return self.__str__()
 
-    def get_assets(self) -> List[Asset]:
-        assets: Set[Asset] = set()
+    def get_assets(self) -> list[Asset]:
+        assets: set[Asset] = set()
         if self.got_asset is not None:
             assets.add(self.got_asset)
         if self.spent_asset is not None:
@@ -103,15 +103,15 @@ class DefiEvent(AccountingEventMixin):
         """DefiEvent should be eventually deleted. Will not be called from accounting"""
         raise AssertionError('Should never be called')
 
-    def should_ignore(self, ignored_ids_mapping: Dict['ActionType', List[str]]) -> bool:
+    def should_ignore(self, ignored_ids_mapping: dict['ActionType', list[str]]) -> bool:
         """DefiEvent should be eventually deleted. Will not be called from accounting"""
         raise AssertionError('Should never be called')
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self) -> dict[str, Any]:
         """DefiEvent should be eventually deleted. Will not be called from accounting"""
         raise AssertionError('Should never be called')
 
     @classmethod
-    def deserialize(cls, data: Dict[str, Any]) -> 'DefiEvent':
+    def deserialize(cls, data: dict[str, Any]) -> 'DefiEvent':
         """DefiEvent should be eventually deleted. Will not be called from accounting"""
         raise AssertionError('Should never be called')

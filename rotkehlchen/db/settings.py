@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, List, NamedTuple, Optional, Union
+from typing import Any, NamedTuple, Optional, Union
 
 from rotkehlchen.accounting.ledger_actions import LedgerActionType
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
@@ -110,26 +110,26 @@ class DBSettings(NamedTuple):
     date_display_format: str = DEFAULT_DATE_DISPLAY_FORMAT
     last_balance_save: Timestamp = Timestamp(0)
     submit_usage_analytics: bool = DEFAULT_SUBMIT_USAGE_ANALYTICS
-    active_modules: List[ModuleName] = DEFAULT_ACTIVE_MODULES  # type: ignore
+    active_modules: list[ModuleName] = DEFAULT_ACTIVE_MODULES  # type: ignore
     frontend_settings: str = ''
     account_for_assets_movements: bool = DEFAULT_ACCOUNT_FOR_ASSETS_MOVEMENTS
     btc_derivation_gap_limit: int = DEFAULT_BTC_DERIVATION_GAP_LIMIT
     calculate_past_cost_basis: bool = DEFAULT_CALCULATE_PAST_COST_BASIS
     display_date_in_localtime: bool = DEFAULT_DISPLAY_DATE_IN_LOCALTIME
-    current_price_oracles: List[CurrentPriceOracle] = DEFAULT_CURRENT_PRICE_ORACLES
-    historical_price_oracles: List[HistoricalPriceOracle] = DEFAULT_HISTORICAL_PRICE_ORACLES
-    taxable_ledger_actions: List[LedgerActionType] = DEFAULT_TAXABLE_LEDGER_ACTIONS
+    current_price_oracles: list[CurrentPriceOracle] = DEFAULT_CURRENT_PRICE_ORACLES
+    historical_price_oracles: list[HistoricalPriceOracle] = DEFAULT_HISTORICAL_PRICE_ORACLES
+    taxable_ledger_actions: list[LedgerActionType] = DEFAULT_TAXABLE_LEDGER_ACTIONS
     pnl_csv_with_formulas: bool = DEFAULT_PNL_CSV_WITH_FORMULAS
     pnl_csv_have_summary: bool = DEFAULT_PNL_CSV_HAVE_SUMMARY
     ssf_0graph_multiplier: int = DEFAULT_SSF_0GRAPH_MULTIPLIER
     last_data_migration: int = DEFAULT_LAST_DATA_MIGRATION
-    non_syncing_exchanges: List[ExchangeLocationID] = []
+    non_syncing_exchanges: list[ExchangeLocationID] = []
     cost_basis_method: CostBasisMethod = DEFAULT_COST_BASIS_METHOD
     treat_eth2_as_eth: bool = DEFAULT_TREAT_ETH2_AS_ETH
     eth_staking_taxable_after_withdrawal_enabled: bool = DEFAULT_ETH_STAKING_TAXABLE_AFTER_WITHDRAWAL_ENABLED  # noqa: 501
-    address_name_priority: List[AddressNameSource] = DEFAULT_ADDRESS_NAME_PRIORITY
+    address_name_priority: list[AddressNameSource] = DEFAULT_ADDRESS_NAME_PRIORITY
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self) -> dict[str, Any]:
         settings_dict = self._asdict()   # pylint: disable=no-member
         for key in settings_dict:
             value = settings_dict.get(key)
@@ -155,25 +155,25 @@ class ModifiableDBSettings(NamedTuple):
     main_currency: Optional[AssetWithOracles] = None
     date_display_format: Optional[str] = None
     submit_usage_analytics: Optional[bool] = None
-    active_modules: Optional[List[ModuleName]] = None
+    active_modules: Optional[list[ModuleName]] = None
     frontend_settings: Optional[str] = None
     account_for_assets_movements: Optional[bool] = None
     btc_derivation_gap_limit: Optional[int] = None
     calculate_past_cost_basis: Optional[bool] = None
     display_date_in_localtime: Optional[bool] = None
-    current_price_oracles: Optional[List[CurrentPriceOracle]] = None
-    historical_price_oracles: Optional[List[HistoricalPriceOracle]] = None
-    taxable_ledger_actions: Optional[List[LedgerActionType]] = None
+    current_price_oracles: Optional[list[CurrentPriceOracle]] = None
+    historical_price_oracles: Optional[list[HistoricalPriceOracle]] = None
+    taxable_ledger_actions: Optional[list[LedgerActionType]] = None
     pnl_csv_with_formulas: Optional[bool] = None
     pnl_csv_have_summary: Optional[bool] = None
     ssf_0graph_multiplier: Optional[int] = None
-    non_syncing_exchanges: Optional[List[ExchangeLocationID]] = None
+    non_syncing_exchanges: Optional[list[ExchangeLocationID]] = None
     cost_basis_method: Optional[CostBasisMethod] = None
     treat_eth2_as_eth: Optional[bool] = None
     eth_staking_taxable_after_withdrawal_enabled: Optional[bool] = None
-    address_name_priority: Optional[List[AddressNameSource]] = None
+    address_name_priority: Optional[list[AddressNameSource]] = None
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self) -> dict[str, Any]:
         settings_dict = {}
         for setting in ModifiableDBSettings._fields:
             value = getattr(self, setting)
@@ -199,10 +199,10 @@ def read_boolean(value: Union[str, bool]) -> bool:
 
 
 def db_settings_from_dict(
-        settings_dict: Dict[str, Any],
+        settings_dict: dict[str, Any],
         msg_aggregator: MessagesAggregator,
 ) -> DBSettings:
-    specified_args: Dict[str, Any] = {}
+    specified_args: dict[str, Any] = {}
     for key, value in settings_dict.items():
         if key in BOOLEAN_KEYS:
             specified_args[key] = read_boolean(value)

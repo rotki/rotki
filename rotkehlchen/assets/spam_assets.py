@@ -1,6 +1,6 @@
 import logging
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Dict, Set
+from typing import TYPE_CHECKING, Any
 
 import requests
 from eth_utils import to_checksum_address
@@ -27,7 +27,7 @@ log = RotkehlchenLogsAdapter(logger)
 MISSING_NAME_SPAM_TOKEN = 'Autodetected spam token'
 MISSING_SYMBOL_SPAM_TOKEN = 'SPAM-TOKEN'
 
-KNOWN_ETH_SPAM_TOKENS: Dict[ChecksumEvmAddress, Dict[str, Any]] = {
+KNOWN_ETH_SPAM_TOKENS: dict[ChecksumEvmAddress, dict[str, Any]] = {
     # khex.net and said to be spam by etherscan
     string_to_evm_address('0x4AF9ab04615cB91e2EE8cbEDb43fb52eD205041B'): {
         'name': MISSING_NAME_SPAM_TOKEN,
@@ -761,7 +761,7 @@ KNOWN_ETH_SPAM_TOKENS: Dict[ChecksumEvmAddress, Dict[str, Any]] = {
 }
 
 
-def query_token_spam_list(db: 'DBHandler', make_remote_query: bool) -> Set[EvmToken]:
+def query_token_spam_list(db: 'DBHandler', make_remote_query: bool) -> set[EvmToken]:
     """Generate a set of assets that can be ignored combining information of cryptoscamdb
     and the list of spam assets KNOWN_ETH_SPAM_TOKENS. This function also makes sure to get the
     bad assets in the list of cryptoscamdb and ensures that they exists in the globaldb before

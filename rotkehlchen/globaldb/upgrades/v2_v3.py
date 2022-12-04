@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, List, Tuple
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants.resolver import (
@@ -147,17 +147,17 @@ BINANCE_INSERT = 'INSERT INTO binance_pairs(pair, base_asset, quote_asset, locat
 
 
 EVM_TUPLES_CREATION_TYPE = (
-    Tuple[
-        List[Tuple[str, str, int, str, Any, Any]],
-        List[Tuple[Any, Any, str]],
-        List[Tuple[Any, Any, Any, Any, None, Any, Any]],
+    tuple[
+        list[tuple[str, str, int, str, Any, Any]],
+        list[tuple[Any, Any, str]],
+        list[tuple[Any, Any, Any, Any, None, Any, Any]],
     ]
 )
 
 ASSET_CREATION_TYPE = (
-    Tuple[
-        List[Tuple[Any, Any, Any]],
-        List[Tuple[Any, Any, Any, Any, Any, Any, Any]],
+    tuple[
+        list[tuple[Any, Any, Any]],
+        list[tuple[Any, Any, Any, Any, Any, Any, Any]],
     ]
 )
 
@@ -278,7 +278,7 @@ def upgrade_other_assets(cursor: 'DBCursor') -> ASSET_CREATION_TYPE:
     )
 
 
-def translate_underlying_table(cursor: 'DBCursor') -> List[Tuple[str, str, str]]:
+def translate_underlying_table(cursor: 'DBCursor') -> list[tuple[str, str, str]]:
     """Get information about the underlying tokens and upgrade it to the V3 schema from the
     information in the v2 schema"""
     query = cursor.execute(
@@ -302,7 +302,7 @@ def translate_underlying_table(cursor: 'DBCursor') -> List[Tuple[str, str, str]]
     return mappings
 
 
-def translate_owned_assets(cursor: 'DBCursor') -> List[Tuple[str]]:
+def translate_owned_assets(cursor: 'DBCursor') -> list[tuple[str]]:
     """Collect and update assets in the user_owned_assets tables to use the new id format"""
     cursor.execute('SELECT asset_id from user_owned_assets;')
     owned_assets = []
@@ -311,7 +311,7 @@ def translate_owned_assets(cursor: 'DBCursor') -> List[Tuple[str]]:
     return owned_assets
 
 
-def translate_binance_pairs(cursor: 'DBCursor') -> List[Tuple[str, str, str, str]]:
+def translate_binance_pairs(cursor: 'DBCursor') -> list[tuple[str, str, str, str]]:
     """Collect and update assets in the binance_pairs tables to use the new id format"""
     table_exists = cursor.execute(
         'SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name="binance_pairs"',
@@ -340,7 +340,7 @@ def translate_binance_pairs(cursor: 'DBCursor') -> List[Tuple[str, str, str, str
     return binance_pairs
 
 
-def translate_assets_in_price_table(cursor: 'DBCursor') -> List[Tuple[str, str, str, int, str]]:
+def translate_assets_in_price_table(cursor: 'DBCursor') -> list[tuple[str, str, str, int, str]]:
     """
     Translate the asset ids in the price table.
 

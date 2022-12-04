@@ -3,7 +3,7 @@ import csv
 import logging
 from collections import Counter, defaultdict
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Optional
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.assets.asset import AssetWithOracles
@@ -36,7 +36,7 @@ from rotkehlchen.types import (
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-BinanceCsvRow = Dict[str, Any]
+BinanceCsvRow = dict[str, Any]
 BINANCE_TRADE_OPERATIONS = {'Buy', 'Sell', 'Fee'}
 
 
@@ -54,7 +54,7 @@ class BinanceSingleEntry(BinanceEntry, metaclass=abc.ABCMeta):
     Children should have a class-variable "available_operations" which describes
     which "Operation" types can be processed by a class
     """
-    available_operations: List[str]
+    available_operations: list[str]
 
     def is_entry(self, requested_operation: str) -> bool:
         """This method checks whether row with "requested_operation" could be processed
@@ -77,7 +77,7 @@ class BinanceSingleEntry(BinanceEntry, metaclass=abc.ABCMeta):
 
 class BinanceMultipleEntry(BinanceEntry, metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def are_entries(self, requested_operations: List) -> bool:
+    def are_entries(self, requested_operations: list) -> bool:
         """The subclass's method checks whether requested operations can be processed
         Not implemented here because the logic can differ for each subclass"""
         ...
@@ -88,14 +88,14 @@ class BinanceMultipleEntry(BinanceEntry, metaclass=abc.ABCMeta):
             cursor: DBCursor,
             importer: BaseExchangeImporter,
             timestamp: Timestamp,
-            data: List[BinanceCsvRow],
+            data: list[BinanceCsvRow],
     ) -> int:
         """Turns given csv rows into internal Rotki's representation"""
         ...
 
 
 class BinanceTradeEntry(BinanceMultipleEntry):
-    def are_entries(self, requested_operations: List) -> bool:
+    def are_entries(self, requested_operations: list) -> bool:
         """This class supports several formats of Trade entries from the csv.
         Supports the following combinations of "Operation" column's values:
             - Buy + Buy
@@ -126,8 +126,8 @@ class BinanceTradeEntry(BinanceMultipleEntry):
     def process_trades(
             importer: BaseExchangeImporter,
             timestamp: Timestamp,
-            data: List[BinanceCsvRow],
-    ) -> List[Trade]:
+            data: list[BinanceCsvRow],
+    ) -> list[Trade]:
         """Processes multiple rows data and stores it into rotki's trades
         Each row has format: {'Operation': ..., 'Change': ..., 'Coin': ...}
         Change is amount, Coin is asset
@@ -144,7 +144,7 @@ class BinanceTradeEntry(BinanceMultipleEntry):
 
         # Checking assets
         same_assets = True
-        assets: Dict[str, Optional[AssetWithOracles]] = defaultdict(lambda: None)
+        assets: dict[str, Optional[AssetWithOracles]] = defaultdict(lambda: None)
         for row in data:
             if row['Operation'] == 'Fee':
                 cur_operation = 'Fee'
@@ -173,7 +173,7 @@ class BinanceTradeEntry(BinanceMultipleEntry):
                 row['usd_value'] = row['Change'] * price
 
         # Group rows depending on whether they are fee or not and then sort them by amount
-        rows_grouped_by_fee: Dict[bool, List[BinanceCsvRow]] = defaultdict(list)
+        rows_grouped_by_fee: dict[bool, list[BinanceCsvRow]] = defaultdict(list)
         for row in data:
             is_fee = row['Operation'] == 'Fee'
             rows_grouped_by_fee[is_fee].append(row)
@@ -191,7 +191,7 @@ class BinanceTradeEntry(BinanceMultipleEntry):
             grouped_trade_rows.append(cur_batch)
 
         # Creating trades structures based on grouped rows data
-        raw_trades: List[Trade] = []
+        raw_trades: list[Trade] = []
         for trade_rows in grouped_trade_rows:
             to_asset: Optional[AssetWithOracles] = None
             to_amount: Optional[AssetAmount] = None
@@ -249,7 +249,7 @@ class BinanceTradeEntry(BinanceMultipleEntry):
         # Sometimes we can get absolutely identical trades (including timestamp) but the database
         # allows us to add only one of them. So we combine these trades into a huge single trade
         # First step: group trades
-        grouped_trades: Dict[TradeID, List[Trade]] = defaultdict(list)
+        grouped_trades: dict[TradeID, list[Trade]] = defaultdict(list)
         for trade in raw_trades:
             grouped_trades[trade.identifier].append(trade)
 
@@ -270,7 +270,7 @@ class BinanceTradeEntry(BinanceMultipleEntry):
             cursor: DBCursor,
             importer: BaseExchangeImporter,
             timestamp: Timestamp,
-            data: List[BinanceCsvRow],
+            data: list[BinanceCsvRow],
     ) -> int:
         trades = self.process_trades(importer=importer, timestamp=timestamp, data=data)
         for trade in trades:
@@ -390,11 +390,11 @@ MULTIPLE_BINANCE_ENTRIES = [
 
 
 def _group_binance_rows(
-        rows: List[BinanceCsvRow],
+        rows: list[BinanceCsvRow],
         timestamp_format: str = '%Y-%m-%d %H:%M:%S',
-) -> Tuple[int, Dict[Timestamp, List[BinanceCsvRow]]]:
+) -> tuple[int, dict[Timestamp, list[BinanceCsvRow]]]:
     """Groups Binance rows by timestamp and deletes unused columns"""
-    multirows: Dict[Timestamp, List[BinanceCsvRow]] = defaultdict(list)
+    multirows: dict[Timestamp, list[BinanceCsvRow]] = defaultdict(list)
     skipped_count = 0
     for csv_row in rows:
         try:
@@ -422,11 +422,11 @@ class BinanceImporter(BaseExchangeImporter):
             self,
             cursor: DBCursor,
             timestamp: Timestamp,
-            rows: List[BinanceCsvRow],
-    ) -> Tuple[Dict[BinanceSingleEntry, int], List[BinanceCsvRow]]:
+            rows: list[BinanceCsvRow],
+    ) -> tuple[dict[BinanceSingleEntry, int], list[BinanceCsvRow]]:
         """Processes binance entries that are represented with a single row in a csv file"""
-        processed: Dict[BinanceSingleEntry, int] = defaultdict(int)
-        ignored: List[BinanceCsvRow] = []
+        processed: dict[BinanceSingleEntry, int] = defaultdict(int)
+        ignored: list[BinanceCsvRow] = []
         for row in rows:
             for single_entry_class in SINGLE_BINANCE_ENTRIES:
                 if single_entry_class.is_entry(row['Operation']):
@@ -446,8 +446,8 @@ class BinanceImporter(BaseExchangeImporter):
             self,
             cursor: DBCursor,
             timestamp: Timestamp,
-            rows: List[BinanceCsvRow],
-    ) -> Tuple[Optional[BinanceEntry], int]:
+            rows: list[BinanceCsvRow],
+    ) -> tuple[Optional[BinanceEntry], int]:
         """Processes binance entries that are represented with 2+ rows in a csv file.
         Returns Entry type and entries count if any entries were processed. Otherwise, None and 0.
         """
@@ -465,10 +465,10 @@ class BinanceImporter(BaseExchangeImporter):
     def _process_binance_rows(
             self,
             cursor: DBCursor,
-            multi: Dict[Timestamp, List[BinanceCsvRow]],
+            multi: dict[Timestamp, list[BinanceCsvRow]],
     ) -> None:
-        stats: Dict[BinanceEntry, int] = defaultdict(int)
-        skipped_rows: List[Any] = []
+        stats: dict[BinanceEntry, int] = defaultdict(int)
+        skipped_rows: list[Any] = []
         for timestamp, rows in multi.items():
             single_processed, rows_without_single = self._process_single_binance_entries(
                 cursor=cursor,

@@ -2,7 +2,7 @@ import importlib
 import logging
 import pkgutil
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Protocol, Set, Tuple, Union
+from typing import TYPE_CHECKING, Any, Callable, Optional, Protocol, Union
 
 from gevent.lock import Semaphore
 
@@ -49,8 +49,8 @@ class EventDecoderFunction(Protocol):
             token: Optional[EvmToken],
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: List[HistoryBaseEntry],
-            action_items: List[ActionItem],
+            decoded_events: list[HistoryBaseEntry],
+            action_items: list[ActionItem],
     ) -> Optional[HistoryBaseEntry]:
         ...
 
@@ -63,8 +63,8 @@ class EVMTransactionDecoder():
             evm_inquirer: 'EvmNodeInquirer',
             transactions: 'EvmTransactions',
             value_asset: AssetWithOracles,
-            event_rules: List[EventDecoderFunction],
-            misc_counterparties: List[str],
+            event_rules: list[EventDecoderFunction],
+            misc_counterparties: list[str],
             address_is_exchange_fn: Callable[[ChecksumEvmAddress], Optional[str]],
     ):
         """
@@ -84,7 +84,7 @@ class EVMTransactionDecoder():
         """
         self.database = database
         self.misc_counterparties = [CPT_GAS] + misc_counterparties
-        self.all_counterparties: Set[str] = set()
+        self.all_counterparties: set[str] = set()
         self.evm_inquirer = evm_inquirer
         self.transactions = transactions
         self.msg_aggregator = database.msg_aggregator
@@ -97,17 +97,17 @@ class EVMTransactionDecoder():
             address_is_exchange_fn=address_is_exchange_fn,
         )
         self.event_rules = event_rules
-        self.token_enricher_rules: List[Callable] = []  # enrichers to run for token transfers
+        self.token_enricher_rules: list[Callable] = []  # enrichers to run for token transfers
         self.value_asset = value_asset
         self.initialize_all_decoders()
         self.undecoded_tx_query_lock = Semaphore()
 
     def _recursively_initialize_decoders(
             self, package: Union[str, ModuleType],
-    ) -> Tuple[
-            Dict[ChecksumEvmAddress, Tuple[Any, ...]],
-            List[Callable],
-            List[Callable],
+    ) -> tuple[
+            dict[ChecksumEvmAddress, tuple[Any, ...]],
+            list[Callable],
+            list[Callable],
     ]:
         if isinstance(package, str):
             package = importlib.import_module(package)
@@ -159,7 +159,7 @@ class EVMTransactionDecoder():
     def initialize_all_decoders(self) -> None:
         """Recursively check all submodules to get all decoder address mappings and rules
         """
-        self.decoders: Dict[str, 'DecoderInterface'] = {}
+        self.decoders: dict[str, 'DecoderInterface'] = {}
         address_result, rules_result, enrichers_result = self._recursively_initialize_decoders(self.chain_modules_root)  # noqa: E501
         self.address_mappings = address_result
         self.event_rules.extend(rules_result)
@@ -179,8 +179,8 @@ class EVMTransactionDecoder():
             token: Optional[EvmToken],
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: List[HistoryBaseEntry],
-            action_items: List[ActionItem],
+            decoded_events: list[HistoryBaseEntry],
+            action_items: list[ActionItem],
     ) -> Optional[HistoryBaseEntry]:
         for rule in self.event_rules:
             event = rule(token=token, tx_log=tx_log, transaction=transaction, decoded_events=decoded_events, action_items=action_items)  # noqa: E501
@@ -193,10 +193,10 @@ class EVMTransactionDecoder():
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: List[HistoryBaseEntry],
-            all_logs: List[EvmTxReceiptLog],
-            action_items: List[ActionItem],
-    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
+            decoded_events: list[HistoryBaseEntry],
+            all_logs: list[EvmTxReceiptLog],
+            action_items: list[ActionItem],
+    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         """
         Sees if the log is on an address for which we have specific decoders and calls it
 
@@ -228,12 +228,12 @@ class EVMTransactionDecoder():
             write_cursor: 'DBCursor',
             transaction: EvmTransaction,
             tx_receipt: EvmTxReceipt,
-    ) -> List[HistoryBaseEntry]:
+    ) -> list[HistoryBaseEntry]:
         """Decodes an evm transaction and its receipt and saves result in the DB"""
         self.base.reset_sequence_counter()
         # check if any eth transfer happened in the transaction, including in internal transactions
         events = self._maybe_decode_simple_transactions(transaction, tx_receipt)
-        action_items: List[ActionItem] = []
+        action_items: list[ActionItem] = []
 
         # decode transaction logs from the receipt
         for tx_log in tx_receipt.logs:
@@ -286,8 +286,8 @@ class EVMTransactionDecoder():
     def decode_transaction_hashes(
             self,
             ignore_cache: bool,
-            tx_hashes: Optional[List[EVMTxHash]],
-    ) -> List[HistoryBaseEntry]:
+            tx_hashes: Optional[list[EVMTxHash]],
+    ) -> list[HistoryBaseEntry]:
         """Make sure that receipts are pulled + events decoded for the given transaction hashes.
 
         The transaction hashes must exist in the DB at the time of the call
@@ -334,7 +334,7 @@ class EVMTransactionDecoder():
             transaction: EvmTransaction,
             tx_receipt: EvmTxReceipt,
             ignore_cache: bool,
-    ) -> List[HistoryBaseEntry]:
+    ) -> list[HistoryBaseEntry]:
         """Get a transaction's events if existing in the DB or decode them"""
         serialized_chain_id = self.evm_inquirer.chain_id.serialize_for_db()
         if ignore_cache is True:  # delete all decoded events
@@ -370,7 +370,7 @@ class EVMTransactionDecoder():
             self,
             tx: EvmTransaction,
             tx_receipt: EvmTxReceipt,
-            events: List[HistoryBaseEntry],
+            events: list[HistoryBaseEntry],
             ts_ms: TimestampMS,
     ) -> None:
         """
@@ -442,9 +442,9 @@ class EVMTransactionDecoder():
             self,
             tx: EvmTransaction,
             tx_receipt: EvmTxReceipt,
-    ) -> List[HistoryBaseEntry]:
+    ) -> list[HistoryBaseEntry]:
         """Decodes normal ETH transfers, internal transactions and gas cost payments"""
-        events: List[HistoryBaseEntry] = []
+        events: list[HistoryBaseEntry] = []
         ts_ms = ts_sec_to_ms(tx.timestamp)
 
         # check for gas spent

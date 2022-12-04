@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple
+from typing import TYPE_CHECKING, Optional
 
 from eth_utils import to_checksum_address
 
@@ -23,12 +23,12 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 
 
-CURVE_POOLS_MAPPING_TYPE = Dict[
+CURVE_POOLS_MAPPING_TYPE = dict[
     ChecksumEvmAddress,  # lp token address
-    Tuple[
+    tuple[
         ChecksumEvmAddress,  # pool address
-        List[ChecksumEvmAddress],  # list of coins addresses
-        Optional[List[ChecksumEvmAddress]],  # optional list of underlying coins addresses
+        list[ChecksumEvmAddress],  # list of coins addresses
+        Optional[list[ChecksumEvmAddress]],  # optional list of underlying coins addresses
     ],
 ]
 
@@ -57,7 +57,7 @@ def clear_curve_pools_cache(write_cursor: DBCursor) -> None:
     )
 
 
-def read_curve_pools() -> Set[ChecksumEvmAddress]:
+def read_curve_pools() -> set[ChecksumEvmAddress]:
     """Reads globaldb cache and returns a set of all known curve pools' addresses.
     Doesn't raise anything unless cache entries were inserted incorrectly."""
     curve_pools_lp_tokens = GlobalDBHandler().get_general_cache_values(

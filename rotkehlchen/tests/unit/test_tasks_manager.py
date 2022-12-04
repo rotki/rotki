@@ -1,4 +1,3 @@
-from typing import List
 from unittest.mock import MagicMock, patch
 
 import gevent
@@ -32,7 +31,7 @@ def fixture_max_tasks_num() -> int:
 
 
 @pytest.fixture(name='api_task_greenlets')
-def fixture_api_task_greenlets() -> List:
+def fixture_api_task_greenlets() -> list:
     return []
 
 

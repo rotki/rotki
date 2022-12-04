@@ -1,5 +1,5 @@
 import dataclasses
-from typing import Any, Dict, Literal, Optional, Tuple
+from typing import Any, Literal, Optional
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
@@ -10,7 +10,7 @@ from rotkehlchen.serialization.deserialize import deserialize_optional_to_fval
 from rotkehlchen.types import ChecksumEvmAddress, EVMTxHash, Timestamp, make_evm_tx_hash
 
 AAVE_EVENT_TYPE = Literal['deposit', 'withdrawal', 'interest', 'borrow', 'repay', 'liquidation']
-AAVE_EVENT_DB_TUPLE = Tuple[
+AAVE_EVENT_DB_TUPLE = tuple[
     ChecksumEvmAddress,
     AAVE_EVENT_TYPE,
     int,  # block_number
@@ -42,12 +42,12 @@ class AaveEvent:
     # https://github.com/aave/aave-protocol/blob/f7ef52000af2964046857da7e5fe01894a51f2ab/thegraph/raw/schema.graphql#L144
     log_index: int
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self) -> dict[str, Any]:
         data = dataclasses.asdict(self)
         data['tx_hash'] = self.tx_hash.hex()
         return data
 
-    def to_db_tuple(self, address: ChecksumEvmAddress) -> Tuple[
+    def to_db_tuple(self, address: ChecksumEvmAddress) -> tuple[
         ChecksumEvmAddress,
         AAVE_EVENT_TYPE,
         int,
@@ -81,7 +81,7 @@ class AaveInterestEvent(AaveEvent):
     asset: CryptoAsset
     value: Balance
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self) -> dict[str, Any]:
         result = super().serialize()
         result['asset'] = self.asset.identifier
         return result
@@ -106,7 +106,7 @@ class AaveDepositWithdrawalEvent(AaveEvent):
     value: Balance
     atoken: EvmToken
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self) -> dict[str, Any]:
         result = super().serialize()
         result['asset'] = self.asset.identifier
         result['atoken'] = self.atoken.identifier
@@ -171,7 +171,7 @@ class AaveLiquidationEvent(AaveEvent):
     principal_asset: CryptoAsset
     principal_balance: Balance
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self) -> dict[str, Any]:
         result = super().serialize()
         result['collateral_asset'] = self.collateral_asset.identifier
         result['principal_asset'] = self.principal_asset.identifier

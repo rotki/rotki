@@ -1,7 +1,7 @@
 import json
 import logging
 from http import HTTPStatus
-from typing import Any, Dict, List, Literal, NamedTuple, Optional, Tuple, Union, overload
+from typing import Any, Literal, NamedTuple, Optional, Union, overload
 from urllib.parse import urlencode
 
 import requests
@@ -367,7 +367,7 @@ class Coingecko(HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):
         PenalizablePriceOracleMixin.__init__(self)
         self.session = requests.session()
         set_user_agent(self.session)
-        self.all_coins_cache: Optional[Dict[str, Dict[str, Any]]] = None
+        self.all_coins_cache: Optional[dict[str, dict[str, Any]]] = None
         self.last_rate_limit = 0
 
     @overload
@@ -375,8 +375,8 @@ class Coingecko(HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):
             self,
             module: Literal['coins/list'],
             subpath: Optional[str] = None,
-            options: Optional[Dict[str, str]] = None,
-    ) -> List[Dict[str, Any]]:
+            options: Optional[dict[str, str]] = None,
+    ) -> list[dict[str, Any]]:
         ...
 
     @overload
@@ -384,16 +384,16 @@ class Coingecko(HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):
             self,
             module: Literal['coins', 'simple/price'],
             subpath: Optional[str] = None,
-            options: Optional[Dict[str, str]] = None,
-    ) -> Dict[str, Any]:
+            options: Optional[dict[str, str]] = None,
+    ) -> dict[str, Any]:
         ...
 
     def _query(
             self,
             module: str,
             subpath: Optional[str] = None,
-            options: Optional[Dict[str, str]] = None,
-    ) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
+            options: Optional[dict[str, str]] = None,
+    ) -> Union[dict[str, Any], list[dict[str, Any]]]:
         """Performs a coingecko query
 
         May raise:
@@ -479,7 +479,7 @@ class Coingecko(HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):
 
         return parsed_data
 
-    def all_coins(self) -> Dict[str, Dict[str, Any]]:
+    def all_coins(self) -> dict[str, dict[str, Any]]:
         """Returns all coingecko assets
 
         May raise:
@@ -522,7 +522,7 @@ class Coingecko(HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):
             from_asset: AssetWithOracles,
             to_asset: AssetWithOracles,
             match_main_currency: bool,
-    ) -> Tuple[Price, bool]:
+    ) -> tuple[Price, bool]:
         """Returns a simple price for from_asset to to_asset in coingecko and `False` value
         since it never tries to match main currency.
 

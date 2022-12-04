@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Type, TypeVar
+from typing import TypeVar
 
 from rotkehlchen.errors.serialization import DeserializationError
 
@@ -14,7 +14,7 @@ class DBEnumMixIn(SerializableEnumMixin):
         return chr(self.value + 64)
 
     @classmethod
-    def deserialize_from_db(cls: Type[T], value: str) -> T:
+    def deserialize_from_db(cls: type[T], value: str) -> T:
         """May raise a DeserializationError if something is wrong with the DB data"""
         if not isinstance(value, str):
             raise DeserializationError(

@@ -3,7 +3,7 @@ import logging
 from collections import defaultdict
 from json.decoder import JSONDecodeError
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, TextIO, Tuple
+from typing import Any, Iterator, TextIO
 
 import requests
 
@@ -220,7 +220,7 @@ POAP_AIRDROPS = {
 }
 
 
-def get_airdrop_data(name: str, data_dir: Path) -> Tuple[Iterator, TextIO]:
+def get_airdrop_data(name: str, data_dir: Path) -> tuple[Iterator, TextIO]:
     airdrops_dir = data_dir / 'airdrops'
     airdrops_dir.mkdir(parents=True, exist_ok=True)
     filename = airdrops_dir / f'{name}.csv'
@@ -251,7 +251,7 @@ def get_airdrop_data(name: str, data_dir: Path) -> Tuple[Iterator, TextIO]:
     return iterator, csvfile
 
 
-def get_poap_airdrop_data(name: str, data_dir: Path) -> Dict[str, Any]:
+def get_poap_airdrop_data(name: str, data_dir: Path) -> dict[str, Any]:
     airdrops_dir = data_dir / 'airdrops_poap'
     airdrops_dir.mkdir(parents=True, exist_ok=True)
     filename = airdrops_dir / f'{name}.json'
@@ -276,15 +276,15 @@ def get_poap_airdrop_data(name: str, data_dir: Path) -> Dict[str, Any]:
 
 
 def check_airdrops(
-        addresses: List[ChecksumEvmAddress],
+        addresses: list[ChecksumEvmAddress],
         data_dir: Path,
-) -> Dict[ChecksumEvmAddress, Dict]:
+) -> dict[ChecksumEvmAddress, dict]:
     """Checks airdrop data for the given list of ethereum addresses
 
     May raise:
         - RemoteError if the remote request fails
     """
-    found_data: Dict[ChecksumEvmAddress, Dict] = defaultdict(lambda: defaultdict(dict))
+    found_data: dict[ChecksumEvmAddress, dict] = defaultdict(lambda: defaultdict(dict))
     for protocol_name, airdrop_data in AIRDROPS.items():
         data, csvfile = get_airdrop_data(protocol_name, data_dir)
         for row in data:

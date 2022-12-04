@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 
@@ -12,7 +12,7 @@ def _swap_event_indices(event1: HistoryBaseEntry, event2: HistoryBaseEntry) -> N
 def maybe_reshuffle_events(
         out_event: Optional[HistoryBaseEntry],
         in_event: Optional[HistoryBaseEntry],
-        events_list: Optional[List[HistoryBaseEntry]] = None,
+        events_list: Optional[list[HistoryBaseEntry]] = None,
 ) -> None:
     """Takes 2 events and makes sure that the sequence index of out_event comes first.
     Also make sure that the events are consecutive.

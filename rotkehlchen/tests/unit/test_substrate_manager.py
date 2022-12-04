@@ -1,4 +1,4 @@
-from typing import Any, Dict, NamedTuple
+from typing import Any, NamedTuple
 from unittest.mock import MagicMock
 
 import pytest
@@ -22,7 +22,7 @@ from rotkehlchen.tests.utils.substrate import (
 
 
 class AccountInfo(NamedTuple):
-    value: Dict[str, Any]
+    value: dict[str, Any]
 
 
 @pytest.fixture(scope='module', name='kusama_available_node_attributes_map')

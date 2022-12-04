@@ -4,7 +4,7 @@ import hmac
 import json
 import logging
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union
 from urllib.parse import urlencode
 
 import gevent
@@ -58,7 +58,7 @@ log = RotkehlchenLogsAdapter(logger)
 PUBLIC_API_ENDPOINTS = ('/currencies',)
 
 
-def trade_from_poloniex(poloniex_trade: Dict[str, Any]) -> Trade:
+def trade_from_poloniex(poloniex_trade: dict[str, Any]) -> Trade:
     """Turn a poloniex trade returned from poloniex trade history to our common trade
     history format
 
@@ -151,7 +151,7 @@ class Poloniex(ExchangeInterface):
 
         return changed
 
-    def validate_api_key(self) -> Tuple[bool, str]:
+    def validate_api_key(self) -> tuple[bool, str]:
         try:
             self.return_fee_info()
         except RemoteError as e:
@@ -162,17 +162,17 @@ class Poloniex(ExchangeInterface):
             raise
         return True, ''
 
-    def api_query_dict(self, command: str, req: Optional[Dict] = None) -> Dict:
+    def api_query_dict(self, command: str, req: Optional[dict] = None) -> dict:
         result = self._api_query(command, req)
-        if not isinstance(result, Dict):
+        if not isinstance(result, dict):
             raise RemoteError(
                 f'Poloniex query for {command} did not return a dict result. Result: {result}',
             )
         return result
 
-    def api_query_list(self, command: str, req: Optional[Dict] = None) -> List:
+    def api_query_list(self, command: str, req: Optional[dict] = None) -> list:
         result = self._api_query(command, req)
-        if not isinstance(result, List):
+        if not isinstance(result, list):
             raise RemoteError(
                 f'Poloniex query for {command} did not return a list result. Result: {result}',
             )
@@ -181,7 +181,7 @@ class Poloniex(ExchangeInterface):
     def _create_sign(
             self,
             timestamp: TimestampMS,
-            params: Dict[str, Any],
+            params: dict[str, Any],
             method: Literal['GET'],
             path: str,
     ) -> str:
@@ -205,7 +205,7 @@ class Poloniex(ExchangeInterface):
         signature = base64.b64encode(digest)
         return signature.decode()
 
-    def _single_query(self, path: str, req: Dict[str, Any]) -> Optional[requests.Response]:
+    def _single_query(self, path: str, req: dict[str, Any]) -> Optional[requests.Response]:
         """A single api query for poloniex
 
         Returns the response if all went well or None if a recoverable poloniex
@@ -244,7 +244,7 @@ class Poloniex(ExchangeInterface):
         # else all is good
         return response
 
-    def _api_query(self, command: str, req: Optional[Dict] = None) -> Union[Dict, List]:
+    def _api_query(self, command: str, req: Optional[dict] = None) -> Union[dict, list]:
         """An api query to poloniex. May make multiple requests
 
         Can raise:
@@ -285,7 +285,7 @@ class Poloniex(ExchangeInterface):
                 f'incremental backoff retries',
             )
 
-        result: Union[Dict, List]
+        result: Union[dict, list]
         try:
             result = response.json()
         except JSONDecodeError as e:
@@ -300,7 +300,7 @@ class Poloniex(ExchangeInterface):
 
         return result
 
-    def return_fee_info(self) -> Dict:
+    def return_fee_info(self) -> dict:
         response = self.api_query_dict('/feeinfo')
         return response
 
@@ -308,10 +308,10 @@ class Poloniex(ExchangeInterface):
             self,
             start: Timestamp,
             end: Timestamp,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Returns poloniex trade history"""
         limit = 100
-        data: List[Dict[str, Any]] = []
+        data: list[dict[str, Any]] = []
         start_ms = start * 1000
         end_ms = end * 1000
         while True:
@@ -371,7 +371,7 @@ class Poloniex(ExchangeInterface):
             log.error(msg)
             return None, msg
 
-        assets_balance: Dict[AssetWithOracles, Balance] = {}
+        assets_balance: dict[AssetWithOracles, Balance] = {}
         for account_info in resp:
             try:
                 balances = account_info['balances']
@@ -451,7 +451,7 @@ class Poloniex(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> Tuple[List[Trade], Tuple[Timestamp, Timestamp]]:
+    ) -> tuple[list[Trade], tuple[Timestamp, Timestamp]]:
         raw_data = self.return_trade_history(
             start=start_ts,
             end=end_ts,
@@ -501,7 +501,7 @@ class Poloniex(ExchangeInterface):
     def _deserialize_asset_movement(
             self,
             movement_type: AssetMovementCategory,
-            movement_data: Dict[str, Any],
+            movement_data: dict[str, Any],
     ) -> Optional[AssetMovement]:
         """Processes a single deposit/withdrawal from polo and deserializes it
 
@@ -565,7 +565,7 @@ class Poloniex(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> List[AssetMovement]:
+    ) -> list[AssetMovement]:
         result = self.api_query_dict(
             '/wallets/activity',
             {'start': start_ts, 'end': end_ts},
@@ -598,12 +598,12 @@ class Poloniex(ExchangeInterface):
             self,  # pylint: disable=no-self-use
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,  # pylint: disable=unused-argument
-    ) -> List[MarginPosition]:
+    ) -> list[MarginPosition]:
         return []  # noop for poloniex
 
     def query_online_income_loss_expense(
             self,  # pylint: disable=no-self-use
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,  # pylint: disable=unused-argument
-    ) -> List[LedgerAction]:
+    ) -> list[LedgerAction]:
         return []  # noop for poloniex

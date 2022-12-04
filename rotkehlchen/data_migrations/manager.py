@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Dict, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional
 
 from rotkehlchen.data_migrations.migrations.migration_1 import data_migration_1
 from rotkehlchen.data_migrations.migrations.migration_2 import data_migration_2
@@ -19,7 +19,7 @@ log = RotkehlchenLogsAdapter(logger)
 class MigrationRecord(NamedTuple):
     version: int
     function: Callable[['DBCursor', 'Rotkehlchen'], None]
-    kwargs: Optional[Dict[str, Any]] = None
+    kwargs: Optional[dict[str, Any]] = None
 
 
 MIGRATION_LIST = [

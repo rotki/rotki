@@ -1,5 +1,5 @@
 import logging
-from typing import Optional, Sequence, Set, Tuple
+from typing import Optional, Sequence
 
 import gevent
 import requests
@@ -55,7 +55,7 @@ def attempt_connect_test_nodes(
 
     NB: prioritising nodes by block_number is disabled.
     """
-    def attempt_connect_node(node: NodeName) -> Tuple[NodeName, Optional[NodeNameAttributes]]:
+    def attempt_connect_node(node: NodeName) -> tuple[NodeName, Optional[NodeNameAttributes]]:
         try:
             node_interface = SubstrateInterface(
                 url=node.endpoint(),
@@ -111,8 +111,8 @@ def wait_until_all_substrate_nodes_connected(
 ) -> None:
     """Wait until all substrate nodes are connected or until a timeout is hit.
     """
-    all_nodes: Set[NodeName] = set(substrate_manager_connect_at_start)
-    connected: Set[NodeName] = set()
+    all_nodes: set[NodeName] = set(substrate_manager_connect_at_start)
+    connected: set[NodeName] = set()
     try:
         with gevent.Timeout(timeout):
             while connected != all_nodes:

@@ -9,19 +9,7 @@ from contextlib import contextmanager
 from enum import Enum, auto
 from pathlib import Path
 from types import TracebackType
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    Generator,
-    List,
-    Literal,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Generator, Literal, Optional, Sequence, Union
 from uuid import uuid4
 
 import gevent
@@ -85,8 +73,8 @@ class DBCursor:
 
     def __exit__(
             self,
-            exctype: Optional[Type[BaseException]],
-            value: Optional[Type[BaseException]],
+            exctype: Optional[type[BaseException]],
+            value: Optional[type[BaseException]],
             traceback: Optional[TracebackType],
     ) -> bool:
         self.close()
@@ -127,7 +115,7 @@ class DBCursor:
             logger.trace('FINISH CURSOR FETCHONE')
         return result
 
-    def fetchmany(self, size: Optional[int] = None) -> List[Any]:
+    def fetchmany(self, size: Optional[int] = None) -> list[Any]:
         if __debug__:
             logger.trace(f'CURSOR FETCHMANY with {size=}')
         if size is None:
@@ -137,7 +125,7 @@ class DBCursor:
             logger.trace('FINISH CURSOR FETCHMANY')
         return result
 
-    def fetchall(self) -> List[Any]:
+    def fetchall(self) -> list[Any]:
         if __debug__:
             logger.trace('CURSOR FETCHALL')
         result = self._cursor.fetchall()
@@ -167,7 +155,7 @@ class DBConnectionType(Enum):
 # progress handler. Having a global mapping and 3 different progress callbacks is
 # a sort of ugly hack. If anybody knows of a better way to make it work let's improve it.
 # With this approach we have named connections and a different progress callback per connection.
-CONNECTION_MAP: Dict[DBConnectionType, 'DBConnection'] = {}
+CONNECTION_MAP: dict[DBConnectionType, 'DBConnection'] = {}
 
 
 def _progress_callback(connection: Optional['DBConnection']) -> int:
@@ -241,7 +229,7 @@ class DBConnection:
         self.sql_vm_instructions_cb = sql_vm_instructions_cb
         # We need an ordered set. Python doesn't have such thing as a standalone object, but has
         # `dict` which preserves the order of its keys. So we use dict with None values.
-        self.savepoints: Dict[str, None] = {}
+        self.savepoints: dict[str, None] = {}
         if connection_type == DBConnectionType.GLOBAL:
             self._conn = sqlite3.connect(path, check_same_thread=False)
         else:
@@ -349,7 +337,7 @@ class DBConnection:
         finally:
             cursor.close()
 
-    def enter_savepoint(self, savepoint_name: Optional[str] = None) -> Tuple['DBCursor', str]:
+    def enter_savepoint(self, savepoint_name: Optional[str] = None) -> tuple['DBCursor', str]:
         """
         Creates an sqlite savepoint with the given name. If None is given, a uuid is created.
         Returns cursor and savepoint's name.
@@ -482,7 +470,7 @@ class DBConnection:
                 )
 
             # Check structure of which tables in the database differ from the expected.
-            differing_tables_properties: Dict[str, Tuple[Tuple[str, str], str]] = {}
+            differing_tables_properties: dict[str, tuple[tuple[str, str], str]] = {}
             # At this point keys of two dictionaries match
             for table_name in tables_data_from_db:
                 if tables_data_from_db[table_name][0] != self.minimized_schema[table_name]:

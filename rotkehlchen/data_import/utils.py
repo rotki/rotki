@@ -1,6 +1,6 @@
 from abc import ABCMeta, abstractmethod
 from pathlib import Path
-from typing import Any, List, Tuple
+from typing import Any
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
@@ -20,12 +20,12 @@ class BaseExchangeImporter(metaclass=ABCMeta):
         self.db = db
         self.db_ledger = DBLedgerActions(self.db, self.db.msg_aggregator)
         self.history_db = DBHistoryEvents(self.db)
-        self._trades: List[Trade] = []
-        self._asset_movements: List[AssetMovement] = []
-        self._ledger_actions: List[LedgerAction] = []
-        self._history_events: List[HistoryBaseEntry] = []
+        self._trades: list[Trade] = []
+        self._asset_movements: list[AssetMovement] = []
+        self._ledger_actions: list[LedgerAction] = []
+        self._history_events: list[HistoryBaseEntry] = []
 
-    def import_csv(self, filepath: Path, **kwargs: Any) -> Tuple[bool, str]:
+    def import_csv(self, filepath: Path, **kwargs: Any) -> tuple[bool, str]:
         try:
             with self.db.user_write() as cursor:
                 self._import_csv(cursor, filepath=filepath, **kwargs)
@@ -54,7 +54,7 @@ class BaseExchangeImporter(metaclass=ABCMeta):
         self._ledger_actions.append(ledger_action)
         self.maybe_flush_all(cursor)
 
-    def add_history_events(self, cursor: DBCursor, history_events: List[HistoryBaseEntry]) -> None:
+    def add_history_events(self, cursor: DBCursor, history_events: list[HistoryBaseEntry]) -> None:
         self._history_events.extend(history_events)
         self.maybe_flush_all(cursor)
 

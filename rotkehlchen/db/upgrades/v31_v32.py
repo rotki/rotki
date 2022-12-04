@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import TYPE_CHECKING, Dict, Set
+from typing import TYPE_CHECKING
 
 from rotkehlchen.db.constants import BINANCE_MARKETS_KEY
 
@@ -144,7 +144,7 @@ def _update_history_entries_from_kraken(cursor: 'DBCursor') -> None:
     """)
 
     cursor.execute('SELECT event_identifier, sequence_index from history_events')
-    eventid_to_indices: Dict[str, Set[int]] = defaultdict(set)
+    eventid_to_indices: dict[str, set[int]] = defaultdict(set)
     for event_identifier, sequence_index in cursor:
         eventid_to_indices[event_identifier].add(sequence_index)
 

@@ -1,7 +1,7 @@
 import csv
 from itertools import count
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List
+from typing import TYPE_CHECKING, Any
 from rotkehlchen.assets.asset import AssetWithOracles
 
 from rotkehlchen.assets.converters import LOCATION_TO_ASSET_MAPPING
@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
 
-def remap_header(fieldnames: List[str]) -> List[str]:
+def remap_header(fieldnames: list[str]) -> list[str]:
     cur_count = count(1)
     mapping = {1: 'Buy', 2: 'Sell', 3: 'Fee'}
     return [f'Cur.{mapping[next(cur_count)]}' if f.startswith('Cur.') else f for f in fieldnames]
@@ -84,7 +84,7 @@ class CointrackingImporter(BaseExchangeImporter):
     def _consume_cointracking_entry(
             self,
             cursor: DBCursor,
-            csv_row: Dict[str, Any],
+            csv_row: dict[str, Any],
             timestamp_format: str = '%d.%m.%Y %H:%M:%S',
     ) -> None:
         """Consumes a cointracking entry row from the CSV and adds it into the database

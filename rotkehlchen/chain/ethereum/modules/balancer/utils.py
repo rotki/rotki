@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any, Dict, Literal, Tuple
+from typing import TYPE_CHECKING, Any, Literal
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken, UnderlyingToken
@@ -50,7 +50,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 def deserialize_bpt_event(
         userdb: 'DBHandler',
-        raw_event: Dict[str, Any],
+        raw_event: dict[str, Any],
         event_type: Literal[BalancerBPTEventType.MINT, BalancerBPTEventType.BURN],
 ) -> BalancerBPTEvent:
     """May raise DeserializationError"""
@@ -121,7 +121,7 @@ def deserialize_bpt_event(
 
 
 def deserialize_invest_event(
-        raw_event: Dict[str, Any],
+        raw_event: dict[str, Any],
         event_type: Literal[
             BalancerInvestEventType.ADD_LIQUIDITY,
             BalancerInvestEventType.REMOVE_LIQUIDITY,
@@ -170,8 +170,8 @@ def deserialize_invest_event(
 
 def deserialize_pool_share(
         userdb: 'DBHandler',
-        raw_pool_share: Dict[str, Any],
-) -> Tuple[ChecksumEvmAddress, BalancerPoolBalance]:
+        raw_pool_share: dict[str, Any],
+) -> tuple[ChecksumEvmAddress, BalancerPoolBalance]:
     """May raise DeserializationError"""
     try:
         raw_user_address = raw_pool_share['userAddress']['id']
@@ -253,7 +253,7 @@ def deserialize_pool_share(
     return user_address, pool
 
 
-def deserialize_transaction_id(raw_tx_id: str) -> Tuple[EVMTxHash, int]:
+def deserialize_transaction_id(raw_tx_id: str) -> tuple[EVMTxHash, int]:
     """This function deserializes a Balancer's transaction id from the Graph API to
     get the transaction hash & log index.
     May raise:
@@ -270,8 +270,8 @@ def deserialize_transaction_id(raw_tx_id: str) -> Tuple[EVMTxHash, int]:
 
 
 def deserialize_token_price(
-        raw_token_price: Dict[str, Any],
-) -> Tuple[ChecksumEvmAddress, Price]:
+        raw_token_price: dict[str, Any],
+) -> tuple[ChecksumEvmAddress, Price]:
     """May raise DeserializationError"""
     try:
         token_address = raw_token_price['id']
@@ -285,8 +285,8 @@ def deserialize_token_price(
 
 
 def deserialize_token_day_data(
-        raw_token_day_data: Dict[str, Any],
-) -> Tuple[ChecksumEvmAddress, Price]:
+        raw_token_day_data: dict[str, Any],
+) -> tuple[ChecksumEvmAddress, Price]:
     """May raise DeserializationError"""
     try:
         token_address = raw_token_day_data['token']['id']

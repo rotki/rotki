@@ -1,7 +1,7 @@
 import logging
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, DefaultDict, Dict, List, Literal, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, DefaultDict, Literal, NamedTuple, Optional
 
 from eth_utils import to_checksum_address
 from gevent.lock import Semaphore
@@ -102,7 +102,7 @@ class LiquityEvent:
     timestamp: Timestamp
     sequence_number: str
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self) -> dict[str, Any]:
         return {
             'kind': self.kind,
             'tx': self.tx,
@@ -120,7 +120,7 @@ class LiquityTroveEvent(LiquityEvent):
     collateral_delta: AssetBalance
     trove_operation: TroveOperation
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self) -> dict[str, Any]:
         result = super().serialize()
         result['debt_after'] = self.debt_after.serialize()
         result['debt_delta'] = self.debt_delta.serialize()
@@ -138,7 +138,7 @@ class LiquityStakeEvent(LiquityEvent):
     redemption_gain: AssetBalance
     stake_operation: LiquityStakeEventType
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self) -> dict[str, Any]:
         result = super().serialize()
         result['stake_after'] = self.stake_after.serialize()
         result['stake_change'] = self.stake_change.serialize()
@@ -156,8 +156,8 @@ class Trove(NamedTuple):
     active: bool
     trove_id: int
 
-    def serialize(self) -> Dict[str, Any]:
-        result: Dict[str, Any] = {}
+    def serialize(self) -> dict[str, Any]:
+        result: dict[str, Any] = {}
         result['collateral'] = self.collateral.serialize()
         result['debt'] = self.debt.serialize()
         result['collateralization_ratio'] = self.collateralization_ratio
@@ -170,7 +170,7 @@ class Trove(NamedTuple):
 class StakePosition(NamedTuple):
     staked: AssetBalance
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self) -> dict[str, Any]:
         return self.staked.serialize()
 
 
@@ -205,8 +205,8 @@ class Liquity(HasDSProxy):
 
     def get_positions(
             self,
-            addresses_list: List[ChecksumEvmAddress],
-    ) -> Dict[ChecksumEvmAddress, Trove]:
+            addresses_list: list[ChecksumEvmAddress],
+    ) -> dict[ChecksumEvmAddress, Trove]:
         """Query liquity contract to detect open troves"""
         # make a copy of the list to avoid modifications in the list that is passed as argument
         addresses = addresses_list.copy()
@@ -223,7 +223,7 @@ class Liquity(HasDSProxy):
             calls=calls,
         )
 
-        data: Dict[ChecksumEvmAddress, Trove] = {}
+        data: dict[ChecksumEvmAddress, Trove] = {}
         eth_price = Inquirer().find_usd_price(A_ETH)
         lusd_price = Inquirer().find_usd_price(A_LUSD)
         for idx, output in enumerate(outputs):
@@ -286,8 +286,8 @@ class Liquity(HasDSProxy):
 
     def get_stability_pool_positions(
             self,
-            addresses: List[ChecksumEvmAddress],
-    ) -> Dict[ChecksumEvmAddress, Dict[str, FVal]]:
+            addresses: list[ChecksumEvmAddress],
+    ) -> dict[ChecksumEvmAddress, dict[str, FVal]]:
         """Get current deposit in the stability pool and current ETH/LQTY gains"""
         # make a copy of the list to avoid modifications in the list that is passed as argument
         addresses = addresses.copy()
@@ -318,7 +318,7 @@ class Liquity(HasDSProxy):
             )
             return {}
 
-        data: DefaultDict[ChecksumEvmAddress, Dict[str, Any]] = defaultdict(dict)
+        data: DefaultDict[ChecksumEvmAddress, dict[str, Any]] = defaultdict(dict)
         for idx, output in enumerate(outputs):
             current_address = addresses[idx // 3]
             status, result = output
@@ -351,8 +351,8 @@ class Liquity(HasDSProxy):
 
     def liquity_staking_balances(
             self,
-            addresses: List[ChecksumEvmAddress],
-    ) -> Dict[ChecksumEvmAddress, StakePosition]:
+            addresses: list[ChecksumEvmAddress],
+    ) -> dict[ChecksumEvmAddress, StakePosition]:
         staked = self._get_raw_history(addresses, 'stake')
         lqty_price = Inquirer().find_usd_price(A_LQTY)
         data = {}
@@ -385,9 +385,9 @@ class Liquity(HasDSProxy):
 
     def _get_raw_history(
         self,
-        addresses: List[ChecksumEvmAddress],
+        addresses: list[ChecksumEvmAddress],
         query_for: Literal['stake', 'trove'],
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         param_types = {
             '$addresses': '[Bytes!]',
         }
@@ -406,10 +406,10 @@ class Liquity(HasDSProxy):
 
     def get_trove_history(
             self,
-            addresses: List[ChecksumEvmAddress],
+            addresses: list[ChecksumEvmAddress],
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
-    ) -> Dict[ChecksumEvmAddress, List[LiquityEvent]]:
+    ) -> dict[ChecksumEvmAddress, list[LiquityEvent]]:
         addresses_to_query = addresses.copy()
         proxied_addresses = self._get_accounts_having_proxy()
         proxies_to_address = {v: k for k, v in proxied_addresses.items()}
@@ -421,7 +421,7 @@ class Liquity(HasDSProxy):
             log.error(f'Failed to query trove graph events for liquity. {str(e)}')
             query = {}
 
-        result: Dict[ChecksumEvmAddress, List[LiquityEvent]] = defaultdict(list)
+        result: dict[ChecksumEvmAddress, list[LiquityEvent]] = defaultdict(list)
         for trove in query.get('troves', []):
             owner = to_checksum_address(trove['owner']['id'])
             if owner in proxies_to_address:
@@ -516,17 +516,17 @@ class Liquity(HasDSProxy):
 
     def get_staking_history(
             self,
-            addresses: List[ChecksumEvmAddress],
+            addresses: list[ChecksumEvmAddress],
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
-    ) -> Dict[ChecksumEvmAddress, List[LiquityEvent]]:
+    ) -> dict[ChecksumEvmAddress, list[LiquityEvent]]:
         try:
             staked = self._get_raw_history(addresses, 'stake')
         except RemoteError as e:
             log.error(f'Failed to query stake graph events for liquity. {str(e)}')
             staked = {}
 
-        result: Dict[ChecksumEvmAddress, List[LiquityEvent]] = defaultdict(list)
+        result: dict[ChecksumEvmAddress, list[LiquityEvent]] = defaultdict(list)
         for stake in staked.get('lqtyStakes', []):
             owner = to_checksum_address(stake['id'])
             for change in stake['changes']:

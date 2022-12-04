@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import TYPE_CHECKING, Dict, List, cast
+from typing import TYPE_CHECKING, cast
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry, get_tx_event_type_identifier
@@ -20,14 +20,14 @@ if TYPE_CHECKING:
 class MakerdaoAccountant(ModuleAccountantInterface):
 
     def reset(self) -> None:
-        self.vault_balances: Dict[str, FVal] = defaultdict(FVal)
-        self.dsr_balances: Dict[ChecksumEvmAddress, FVal] = defaultdict(FVal)
+        self.vault_balances: dict[str, FVal] = defaultdict(FVal)
+        self.dsr_balances: dict[ChecksumEvmAddress, FVal] = defaultdict(FVal)
 
     def _process_vault_dai_generation(
             self,
             pot: 'AccountingPot',  # pylint: disable=unused-argument
             event: HistoryBaseEntry,
-            other_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
+            other_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
     ) -> None:
         cdp_id = event.extra_data['cdp_id']  # type: ignore  # this event should have extra data
         self.vault_balances[cdp_id] += event.balance.amount
@@ -36,7 +36,7 @@ class MakerdaoAccountant(ModuleAccountantInterface):
             self,
             pot: 'AccountingPot',  # pylint: disable=unused-argument
             event: HistoryBaseEntry,
-            other_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
+            other_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
     ) -> None:
         cdp_id = event.extra_data['cdp_id']  # type: ignore  # this event should have extra_data
         self.vault_balances[cdp_id] -= event.balance.amount
@@ -58,7 +58,7 @@ class MakerdaoAccountant(ModuleAccountantInterface):
             self,
             pot: 'AccountingPot',  # pylint: disable=unused-argument
             event: HistoryBaseEntry,
-            other_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
+            other_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
     ) -> None:
         address = cast(ChecksumEvmAddress, event.location_label)  # should always exist
         self.dsr_balances[address] += event.balance.amount
@@ -67,7 +67,7 @@ class MakerdaoAccountant(ModuleAccountantInterface):
             self,
             pot: 'AccountingPot',  # pylint: disable=unused-argument
             event: HistoryBaseEntry,
-            other_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
+            other_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
     ) -> None:
         address = cast(ChecksumEvmAddress, event.location_label)  # should always exist
         self.dsr_balances[address] -= event.balance.amount
@@ -85,7 +85,7 @@ class MakerdaoAccountant(ModuleAccountantInterface):
             )
             self.dsr_balances[address] = ZERO
 
-    def event_settings(self, pot: 'AccountingPot') -> Dict[str, TxEventSettings]:  # pylint: disable=unused-argument  # noqa: E501
+    def event_settings(self, pot: 'AccountingPot') -> dict[str, TxEventSettings]:  # pylint: disable=unused-argument  # noqa: E501
         """Being defined at function call time is fine since this function is called only once"""
         # TODO: How can we count here loss from debt and gain from DSR? We need to keep state
         return {  # vault collateral deposit

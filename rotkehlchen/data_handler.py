@@ -5,7 +5,7 @@ import shutil
 import tempfile
 import zlib
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Optional
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.crypto import decrypt, encrypt
@@ -132,7 +132,7 @@ class DataHandler():
         self.password = password
         return user_data_dir
 
-    def add_ignored_assets(self, assets: List[Asset]) -> Tuple[Optional[List[Asset]], str]:
+    def add_ignored_assets(self, assets: list[Asset]) -> tuple[Optional[list[Asset]], str]:
         """Adds ignored assets to the DB.
 
         If any of the given assets is already in the DB the function does nothing
@@ -151,7 +151,7 @@ class DataHandler():
 
             return self.db.get_ignored_assets(cursor), ''
 
-    def remove_ignored_assets(self, assets: List[Asset]) -> Tuple[Optional[List[Asset]], str]:
+    def remove_ignored_assets(self, assets: list[Asset]) -> tuple[Optional[list[Asset]], str]:
         """Removes ignored assets from the DB.
 
         If any of the given assets is not in the DB the call function does nothing
@@ -170,7 +170,7 @@ class DataHandler():
 
             return self.db.get_ignored_assets(cursor), ''
 
-    def get_users(self) -> Dict[str, str]:
+    def get_users(self) -> dict[str, str]:
         """Returns a dict with all users in the system.
 
         Each key is a user's name and the value is denoting whether that
@@ -187,7 +187,7 @@ class DataHandler():
 
         return users
 
-    def compress_and_encrypt_db(self, password: str) -> Tuple[B64EncodedBytes, str]:
+    def compress_and_encrypt_db(self, password: str) -> tuple[B64EncodedBytes, str]:
         """Decrypt the DB, dump in temporary plaintextdb, compress it,
         and then re-encrypt it
 

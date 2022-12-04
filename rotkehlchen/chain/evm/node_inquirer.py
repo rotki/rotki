@@ -2,18 +2,7 @@ import json
 import logging
 import random
 from abc import ABCMeta, abstractmethod
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    List,
-    Literal,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Sequence, Union
 from urllib.parse import urlparse
 
 import requests
@@ -68,7 +57,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def _is_synchronized(current_block: int, latest_block: int) -> Tuple[bool, str]:
+def _is_synchronized(current_block: int, latest_block: int) -> tuple[bool, str]:
     """ Validate that the evm node is synchronized
             within 20 blocks of latest block
 
@@ -98,11 +87,11 @@ def _query_web3_get_logs(
         to_block: Union[int, Literal['latest']],
         contract_address: ChecksumEvmAddress,
         event_name: str,
-        argument_filters: Dict[str, Any],
+        argument_filters: dict[str, Any],
         initial_block_range: int,
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     until_block = web3.eth.block_number if to_block == 'latest' else to_block
-    events: List[Dict[str, Any]] = []
+    events: list[dict[str, Any]] = []
     start_block = from_block
     block_range = initial_block_range
 
@@ -121,7 +110,7 @@ def _query_web3_get_logs(
         # As seen in https://github.com/rotki/rotki/issues/1787, the json RPC, if it
         # is infura can throw an error here which we can only parse by catching the  exception
         try:
-            new_events_web3: List[Dict[str, Any]] = [dict(x) for x in web3.eth.get_logs(filter_args)]  # noqa: E501
+            new_events_web3: list[dict[str, Any]] = [dict(x) for x in web3.eth.get_logs(filter_args)]  # noqa: E501
         except (ValueError, KeyError) as e:
             if isinstance(e, ValueError):
                 try:
@@ -192,7 +181,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         self.etherscan_node = etherscan_node
         self.etherscan_node_name = etherscan_node_name
         self.contracts = contracts
-        self.web3_mapping: Dict[NodeName, Web3] = {}
+        self.web3_mapping: dict[NodeName, Web3] = {}
         self.rpc_timeout = rpc_timeout
         self.chain_id = blockchain.to_chain_id()
         self.chain_name = self.blockchain.name.lower()
@@ -207,7 +196,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         log.debug(f'Initializing {self.chain_name} inquirer. Nodes to connect {connect_at_start}')
 
         # A cache for the erc20 contract info to not requery same one
-        self.contract_info_cache: Dict[ChecksumEvmAddress, Dict[str, Any]] = {}
+        self.contract_info_cache: dict[ChecksumEvmAddress, dict[str, Any]] = {}
         self.connect_to_multiple_nodes(connect_at_start)
 
     def connected_to_any_web3(self) -> bool:
@@ -225,10 +214,10 @@ class EvmNodeInquirer(metaclass=ABCMeta):
                 return node
         return None
 
-    def get_connected_nodes(self) -> List[NodeName]:
+    def get_connected_nodes(self) -> list[NodeName]:
         return list(self.web3_mapping.keys())
 
-    def default_call_order(self, skip_etherscan: bool = False) -> List[WeightedNode]:
+    def default_call_order(self, skip_etherscan: bool = False) -> list[WeightedNode]:
         """Default call order for evm nodes
 
         Own node always has preference. Then all other node types are randomly queried
@@ -271,16 +260,16 @@ class EvmNodeInquirer(metaclass=ABCMeta):
 
     def get_multi_balance(
             self,
-            accounts: List[ChecksumEvmAddress],
+            accounts: list[ChecksumEvmAddress],
             call_order: Optional[Sequence[WeightedNode]] = None,
-    ) -> Dict[ChecksumEvmAddress, FVal]:
+    ) -> dict[ChecksumEvmAddress, FVal]:
         """Returns a dict with keys being accounts and balances in ETH
 
         May raise:
         - RemoteError if an external service such as Etherscan is queried and
           there is a problem with its query.
         """
-        balances: Dict[ChecksumEvmAddress, FVal] = {}
+        balances: dict[ChecksumEvmAddress, FVal] = {}
         log.debug(
             f'Querying {self.chain_name} chain for {self.blockchain.value} balance',
             eth_addresses=accounts,
@@ -328,7 +317,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             self,
             node: NodeName,
             connectivity_check: bool = True,
-    ) -> Tuple[bool, str]:
+    ) -> tuple[bool, str]:
         """Attempt to connect to a particular node type
 
         For our own node if the given rpc endpoint is not the same as the saved one
@@ -486,14 +475,14 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             self,
             num: int,
             call_order: Optional[Sequence[WeightedNode]] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         return self._query(
             method=self._get_block_by_number,
             call_order=call_order if call_order is not None else self.default_call_order(),
             num=num,
         )
 
-    def _get_block_by_number(self, web3: Optional[Web3], num: int) -> Dict[str, Any]:
+    def _get_block_by_number(self, web3: Optional[Web3], num: int) -> dict[str, Any]:
         """Returns the block object corresponding to the given block number
 
         May raise:
@@ -535,9 +524,9 @@ class EvmNodeInquirer(metaclass=ABCMeta):
     def _call_contract_etherscan(
             self,
             contract_address: ChecksumEvmAddress,
-            abi: List,
+            abi: list,
             method_name: str,
-            arguments: Optional[List[Any]] = None,
+            arguments: Optional[list[Any]] = None,
     ) -> Any:
         """Performs an eth_call to an evm contract via etherscan
 
@@ -574,9 +563,9 @@ class EvmNodeInquirer(metaclass=ABCMeta):
     def call_contract(
             self,
             contract_address: ChecksumEvmAddress,
-            abi: List,
+            abi: list,
             method_name: str,
-            arguments: Optional[List[Any]] = None,
+            arguments: Optional[list[Any]] = None,
             call_order: Optional[Sequence[WeightedNode]] = None,
             block_identifier: BlockIdentifier = 'latest',
     ) -> Any:
@@ -594,9 +583,9 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             self,
             web3: Optional[Web3],
             contract_address: ChecksumEvmAddress,
-            abi: List,
+            abi: list,
             method_name: str,
-            arguments: Optional[List[Any]] = None,
+            arguments: Optional[list[Any]] = None,
             block_identifier: BlockIdentifier = 'latest',
     ) -> Any:
         """Performs an eth_call to an evm contract
@@ -628,7 +617,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             self,
             web3: Optional[Web3],
             tx_hash: EVMTxHash,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         if web3 is None:
             tx_receipt = self.etherscan.get_transaction_receipt(tx_hash)
             try:
@@ -669,7 +658,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             self,
             tx_hash: EVMTxHash,
             call_order: Optional[Sequence[WeightedNode]] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         return self._query(
             method=self._get_transaction_receipt,
             call_order=call_order if call_order is not None else self.default_call_order(),
@@ -714,13 +703,13 @@ class EvmNodeInquirer(metaclass=ABCMeta):
     def get_logs(
             self,
             contract_address: ChecksumEvmAddress,
-            abi: List,
+            abi: list,
             event_name: str,
-            argument_filters: Dict[str, Any],
+            argument_filters: dict[str, Any],
             from_block: int,
             to_block: Union[int, Literal['latest']] = 'latest',
             call_order: Optional[Sequence[WeightedNode]] = None,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         if call_order is None:  # Default call order for logs
             call_order = [self.etherscan_node]
             if (node_info := self.get_own_node_info()) is not None:
@@ -746,12 +735,12 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             self,
             web3: Optional[Web3],
             contract_address: ChecksumEvmAddress,
-            abi: List,
+            abi: list,
             event_name: str,
-            argument_filters: Dict[str, Any],
+            argument_filters: dict[str, Any],
             from_block: int,
             to_block: Union[int, Literal['latest']] = 'latest',
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Queries logs of an evm contract
         May raise:
         - RemoteError if etherscan is used and there is a problem with
@@ -769,7 +758,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         if event_abi['anonymous']:
             # web3.py does not handle the anonymous events correctly and adds the first topic
             filter_args['topics'] = filter_args['topics'][1:]
-        events: List[Dict[str, Any]] = []
+        events: list[dict[str, Any]] = []
         start_block = from_block
         if web3 is not None:
             events = _query_web3_get_logs(
@@ -872,7 +861,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
 
         return events
 
-    def get_event_timestamp(self, event: Dict[str, Any]) -> Timestamp:
+    def get_event_timestamp(self, event: dict[str, Any]) -> Timestamp:
         """Reads an event returned either by etherscan or web3 and gets its timestamp
 
         Etherscan events contain a timestamp. Normal web3 events don't so it needs to
@@ -895,7 +884,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
 
     def multicall(
             self,
-            calls: List[Tuple[ChecksumEvmAddress, str]],
+            calls: list[tuple[ChecksumEvmAddress, str]],
             # only here to comply with multicall_2
             require_success: bool = True,  # pylint: disable=unused-argument
             call_order: Optional[Sequence['WeightedNode']] = None,
@@ -920,13 +909,13 @@ class EvmNodeInquirer(metaclass=ABCMeta):
 
     def multicall_2(
             self,
-            calls: List[Tuple[ChecksumEvmAddress, str]],
+            calls: list[tuple[ChecksumEvmAddress, str]],
             require_success: bool,
             call_order: Optional[Sequence['WeightedNode']] = None,
             block_identifier: BlockIdentifier = 'latest',
             # only here to comply with multicall
             calls_chunk_size: int = MULTICALL_CHUNKS,  # pylint: disable=unused-argument
-    ) -> List[Tuple[bool, bytes]]:
+    ) -> list[tuple[bool, bytes]]:
         """
         Uses MULTICALL_2 contract. If require success is set to False any call in the list
         of calls is allowed to fail.
@@ -943,7 +932,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             self,
             contract: 'EvmContract',
             method_name: str,
-            arguments: List[Any],
+            arguments: list[Any],
             call_order: Optional[Sequence['WeightedNode']] = None,
             decode_result: bool = True,
     ) -> Any:
@@ -956,7 +945,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             return output
         return [contract.decode(x, method_name, arguments[0]) for x in output]
 
-    def get_erc20_contract_info(self, address: ChecksumEvmAddress) -> Dict[str, Any]:
+    def get_erc20_contract_info(self, address: ChecksumEvmAddress) -> dict[str, Any]:
         """
         Query an erc20 contract address and return basic information as:
         - Decimals
@@ -972,7 +961,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             return cache
 
         properties = ('decimals', 'symbol', 'name')
-        info: Dict[str, Any] = {}
+        info: dict[str, Any] = {}
 
         abi = self.contracts.abi('ERC20_TOKEN')
         contract = EvmContract(address=address, abi=abi, deployed_block=0)
@@ -1020,7 +1009,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         self.contract_info_cache[address] = info
         return info
 
-    def get_erc721_contract_info(self, address: ChecksumEvmAddress) -> Dict[str, Any]:
+    def get_erc721_contract_info(self, address: ChecksumEvmAddress) -> dict[str, Any]:
         """
         Query an erc721 contract address and return basic information.
         - name
@@ -1037,7 +1026,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             return cache
 
         properties = ('symbol', 'name')
-        info: Dict[str, Any] = {}
+        info: dict[str, Any] = {}
 
         abi = self.contracts.abi('ERC721_TOKEN')
         contract = EvmContract(address=address, abi=abi, deployed_block=0)
@@ -1071,11 +1060,11 @@ class EvmNodeInquirer(metaclass=ABCMeta):
 
     def _process_contract_info(
             self,
-            output: List[Tuple[bool, bytes]],
-            properties: Tuple[str, ...],
+            output: list[tuple[bool, bytes]],
+            properties: tuple[str, ...],
             contract: EvmContract,
             token_kind: EvmTokenKind,
-    ) -> List[Optional[Union[int, str, bytes]]]:
+    ) -> list[Optional[Union[int, str, bytes]]]:
         """Decodes information i.e. (decimals, symbol, name) about the token contract.
         - `decimals` property defaults to 18.
         - `name` and `symbol` default to None.

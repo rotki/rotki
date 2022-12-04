@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Dict, Iterator, List
+from typing import TYPE_CHECKING, Iterator
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
@@ -24,7 +24,7 @@ class TransactionsAccountant():
     ) -> None:
         self.evm_accounting_aggregator = evm_accounting_aggregator
         self.pot = pot
-        self.tx_event_settings: Dict[str, TxEventSettings] = {}
+        self.tx_event_settings: dict[str, TxEventSettings] = {}
 
     def reset(self) -> None:
         self.evm_accounting_aggregator.reset()
@@ -48,7 +48,7 @@ class TransactionsAccountant():
 
         notes = event.notes if event.notes else ''
         counter = 1
-        other_events: List[HistoryBaseEntry] = []
+        other_events: list[HistoryBaseEntry] = []
         while counter < event_settings.take:
             next_event = next(events_iterator, None)
             if next_event is None:

@@ -4,7 +4,7 @@ import logging
 import time
 from collections import defaultdict
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, DefaultDict, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, DefaultDict, Optional
 from urllib.parse import urlencode
 
 import requests
@@ -53,7 +53,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def trade_from_coinbase(raw_trade: Dict[str, Any]) -> Optional[Trade]:
+def trade_from_coinbase(raw_trade: dict[str, Any]) -> Optional[Trade]:
     """Turns a coinbase transaction into a rotkehlchen Trade.
 
     https://developers.coinbase.com/api/v2?python#buys
@@ -104,7 +104,7 @@ def trade_from_coinbase(raw_trade: Dict[str, Any]) -> Optional[Trade]:
     )
 
 
-def trade_from_conversion(trade_a: Dict[str, Any], trade_b: Dict[str, Any]) -> Optional[Trade]:
+def trade_from_conversion(trade_a: dict[str, Any], trade_b: dict[str, Any]) -> Optional[Trade]:
     """Turn information from a conversion into a trade
 
     Mary raise:
@@ -222,7 +222,7 @@ class Coinbase(ExchangeInterface):
             self,
             method_str: str,
             ignore_pagination: bool = False,
-    ) -> Tuple[Optional[List[Any]], str]:
+    ) -> tuple[Optional[list[Any]], str]:
         try:
             result = self._api_query(method_str, ignore_pagination=ignore_pagination)
 
@@ -268,7 +268,7 @@ class Coinbase(ExchangeInterface):
 
         return result, ''
 
-    def validate_api_key(self) -> Tuple[bool, str]:
+    def validate_api_key(self) -> tuple[bool, str]:
         """Validates that the Coinbase API key is good for usage in rotki
 
         Makes sure that the following permissions are given to the key:
@@ -315,7 +315,7 @@ class Coinbase(ExchangeInterface):
 
         return True, ''
 
-    def _get_account_ids(self, accounts: List[Dict[str, Any]]) -> List[str]:
+    def _get_account_ids(self, accounts: list[dict[str, Any]]) -> list[str]:
         """Gets the account ids out of the accounts response"""
         account_ids = []
         for account_data in accounts:
@@ -339,15 +339,15 @@ class Coinbase(ExchangeInterface):
     def _api_query(
             self,
             endpoint: str,
-            options: Optional[Dict[str, Any]] = None,
+            options: Optional[dict[str, Any]] = None,
             ignore_pagination: bool = False,
-    ) -> List[Any]:
+    ) -> list[Any]:
         """Performs a coinbase API Query for endpoint
 
         You can optionally provide extra arguments to the endpoint via the options argument.
         If you want just the first results then set ignore_pagination to True.
         """
-        all_items: List[Any] = []
+        all_items: list[Any] = []
         request_verb = "GET"
         # initialize next_uri before loop
         next_uri = f'/{self.apiversion}/{endpoint}'
@@ -490,7 +490,7 @@ class Coinbase(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> Tuple[List[Trade], Tuple[Timestamp, Timestamp]]:
+    ) -> tuple[list[Trade], tuple[Timestamp, Timestamp]]:
         account_data = self._api_query('accounts')
         # now get the account ids and for each one query buys/sells
         # Looking at coinbase's API no other type of transaction
@@ -600,7 +600,7 @@ class Coinbase(ExchangeInterface):
 
         return trades, (start_ts, end_ts)
 
-    def _deserialize_asset_movement(self, raw_data: Dict[str, Any]) -> Optional[AssetMovement]:
+    def _deserialize_asset_movement(self, raw_data: dict[str, Any]) -> Optional[AssetMovement]:
         """Processes a single deposit/withdrawal from coinbase and deserializes it
 
         Can log error/warning and return None if something went wrong at deserialization
@@ -721,7 +721,7 @@ class Coinbase(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> List[AssetMovement]:
+    ) -> list[AssetMovement]:
         account_data = self._api_query('accounts')
         account_ids = self._get_account_ids(account_data)
         raw_data = []
@@ -749,7 +749,7 @@ class Coinbase(ExchangeInterface):
 
         return movements
 
-    def _deserialize_ledger_action(self, raw_data: Dict[str, Any]) -> Optional[LedgerAction]:
+    def _deserialize_ledger_action(self, raw_data: dict[str, Any]) -> Optional[LedgerAction]:
         """Processes a single transaction from coinbase and deserializes it
 
         Can log error/warning and return None if something went wrong at deserialization
@@ -832,7 +832,7 @@ class Coinbase(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> List[LedgerAction]:
+    ) -> list[LedgerAction]:
         account_data = self._api_query('accounts')
         account_ids = self._get_account_ids(account_data)
         raw_data = []
@@ -861,5 +861,5 @@ class Coinbase(ExchangeInterface):
             self,  # pylint: disable=no-self-use
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,  # pylint: disable=unused-argument
-    ) -> List[MarginPosition]:
+    ) -> list[MarginPosition]:
         return []  # noop for coinbase

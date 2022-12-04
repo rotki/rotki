@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, DefaultDict, Dict, List, NamedTuple, Optional, Set, Tuple, Union, cast
+from typing import Any, DefaultDict, NamedTuple, Optional, Union, cast
 
 from eth_typing.evm import ChecksumAddress
 
@@ -36,7 +36,7 @@ class BalancerPoolTokenBalance:
     weight: FVal
     usd_price: Price = Price(ZERO)
 
-    def serialize(self) -> Dict:
+    def serialize(self) -> dict:
         return {
             'token': self.token.serialize(),
             'total_amount': self.total_amount,
@@ -49,11 +49,11 @@ class BalancerPoolTokenBalance:
 @dataclass(init=True, repr=True)
 class BalancerPoolBalance:
     pool_token: EvmToken
-    underlying_tokens_balance: List[BalancerPoolTokenBalance]
+    underlying_tokens_balance: list[BalancerPoolTokenBalance]
     total_amount: FVal  # LP token amount
     user_balance: Balance  # user LP token balance
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self) -> dict[str, Any]:
 
         return {
             'address': self.pool_token.evm_address,
@@ -63,15 +63,15 @@ class BalancerPoolBalance:
         }
 
 
-AddressToPoolBalances = Dict[ChecksumEvmAddress, List[BalancerPoolBalance]]
-DDAddressToPoolBalances = DefaultDict[ChecksumEvmAddress, List[BalancerPoolBalance]]
-TokenToPrices = Dict[ChecksumEvmAddress, Price]
+AddressToPoolBalances = dict[ChecksumEvmAddress, list[BalancerPoolBalance]]
+DDAddressToPoolBalances = DefaultDict[ChecksumEvmAddress, list[BalancerPoolBalance]]
+TokenToPrices = dict[ChecksumEvmAddress, Price]
 
 
 class ProtocolBalance(NamedTuple):
     address_to_pool_balances: AddressToPoolBalances
-    known_tokens: Set[EvmToken]
-    unknown_tokens: Set[EvmToken]
+    known_tokens: set[EvmToken]
+    unknown_tokens: set[EvmToken]
 
 
 class BalancerInvestEventType(SerializableEnumMixin):
@@ -108,7 +108,7 @@ class BalancerBPTEventPoolToken(NamedTuple):
     token: EvmToken
     weight: FVal
 
-    def serialize(self) -> Dict:
+    def serialize(self) -> dict:
         return {
             'token': self.token.serialize(),
             'weight': str(self.weight),
@@ -134,21 +134,21 @@ class BalancerBPTEvent(NamedTuple):
 
 
 class BalancerEventsData(NamedTuple):
-    add_liquidities: List[BalancerInvestEvent]
-    remove_liquidities: List[BalancerInvestEvent]
-    mints: List[BalancerBPTEvent]
-    burns: List[BalancerBPTEvent]
+    add_liquidities: list[BalancerInvestEvent]
+    remove_liquidities: list[BalancerInvestEvent]
+    mints: list[BalancerBPTEvent]
+    burns: list[BalancerBPTEvent]
 
 
-AddressToInvestEvents = Dict[ChecksumEvmAddress, List[BalancerInvestEvent]]
-DDAddressToUniqueInvestEvents = DefaultDict[ChecksumEvmAddress, Set[BalancerInvestEvent]]
-AddressToBPTEvents = Dict[ChecksumEvmAddress, List[BalancerBPTEvent]]
-DDAddressToUniqueBPTEvents = DefaultDict[ChecksumEvmAddress, Set[BalancerBPTEvent]]
-AddressToEventsData = Dict[ChecksumAddress, BalancerEventsData]
-PoolAddrToTokenAddrToIndex = Dict[EvmToken, Dict[ChecksumAddress, int]]
+AddressToInvestEvents = dict[ChecksumEvmAddress, list[BalancerInvestEvent]]
+DDAddressToUniqueInvestEvents = DefaultDict[ChecksumEvmAddress, set[BalancerInvestEvent]]
+AddressToBPTEvents = dict[ChecksumEvmAddress, list[BalancerBPTEvent]]
+DDAddressToUniqueBPTEvents = DefaultDict[ChecksumEvmAddress, set[BalancerBPTEvent]]
+AddressToEventsData = dict[ChecksumAddress, BalancerEventsData]
+PoolAddrToTokenAddrToIndex = dict[EvmToken, dict[ChecksumAddress, int]]
 
 BalancerEventDBTuple = (
-    Tuple[
+    tuple[
         bytes,  # tx_hash
         int,  # log_index
         str,  # address
@@ -177,7 +177,7 @@ class BalancerEvent(NamedTuple):
     event_type: BalancerBPTEventType
     pool_address_token: EvmToken
     lp_balance: Balance
-    amounts: List[AssetAmount]
+    amounts: list[AssetAmount]
 
     @classmethod
     def deserialize_from_db(
@@ -221,7 +221,7 @@ class BalancerEvent(NamedTuple):
                 f'Balancer event pool token: {event_tuple[5]} not found in the DB.',
             ) from e
 
-        amounts: List[AssetAmount] = [
+        amounts: list[AssetAmount] = [
             deserialize_asset_amount(item)
             for item in event_tuple[8:16]
             if item is not None
@@ -242,9 +242,9 @@ class BalancerEvent(NamedTuple):
 
     def serialize(
             self,
-            pool_tokens: Optional[List[UnderlyingToken]] = None,
-    ) -> Dict[str, Any]:
-        amounts: Union[List[str], Dict[str, Any]]
+            pool_tokens: Optional[list[UnderlyingToken]] = None,
+    ) -> dict[str, Any]:
+        amounts: Union[list[str], dict[str, Any]]
         if isinstance(pool_tokens, list) and len(pool_tokens) > 0:
             amounts = {}
             for pool_token, amount in zip(pool_tokens, self.amounts):
@@ -277,19 +277,19 @@ class BalancerEvent(NamedTuple):
         return cast(BalancerEventDBTuple, tuple(serialized_for_db_attributes))
 
 
-AddressToEvents = Dict[ChecksumAddress, List[BalancerEvent]]
-DDAddressToEvents = DefaultDict[EvmToken, List[BalancerEvent]]
+AddressToEvents = dict[ChecksumAddress, list[BalancerEvent]]
+DDAddressToEvents = DefaultDict[EvmToken, list[BalancerEvent]]
 
 
 class BalancerPoolEventsBalance(NamedTuple):
     address: ChecksumAddress
     pool_address_token: EvmToken
-    events: List[BalancerEvent]
-    profit_loss_amounts: List[AssetAmount]
+    events: list[BalancerEvent]
+    profit_loss_amounts: list[AssetAmount]
     usd_profit_loss: FVal
 
-    def serialize(self) -> Dict[str, Any]:
-        profit_loss_amounts: Dict[str, Any] = {}  # Includes all assets, even with zero amount
+    def serialize(self) -> dict[str, Any]:
+        profit_loss_amounts: dict[str, Any] = {}  # Includes all assets, even with zero amount
         tokens_and_weights = []
         for pool_token, profit_loss_amount in zip(self.pool_address_token.underlying_tokens, self.profit_loss_amounts):  # noqa: E501
             token_identifier = ethaddress_to_identifier(pool_token.address)
@@ -308,5 +308,5 @@ class BalancerPoolEventsBalance(NamedTuple):
         }
 
 
-AddressToPoolEventsBalances = Dict[ChecksumEvmAddress, List[BalancerPoolEventsBalance]]
-DDAddressToProfitLossAmounts = DefaultDict[EvmToken, List[AssetAmount]]
+AddressToPoolEventsBalances = dict[ChecksumEvmAddress, list[BalancerPoolEventsBalance]]
+DDAddressToProfitLossAmounts = DefaultDict[EvmToken, list[AssetAmount]]

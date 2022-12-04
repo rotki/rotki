@@ -4,7 +4,7 @@ import json
 import logging
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union
 from urllib.parse import urlencode
 
 import gevent
@@ -59,7 +59,7 @@ log = RotkehlchenLogsAdapter(logger)
 BITTREX_V3_PUBLIC_ENDPOINTS = ('currencies',)
 
 
-def bittrex_pair_to_world(given_pair: str) -> Tuple[AssetWithOracles, AssetWithOracles]:
+def bittrex_pair_to_world(given_pair: str) -> tuple[AssetWithOracles, AssetWithOracles]:
     """
     Turns a pair written in bittrex to way to rotki base/quote asset
 
@@ -89,7 +89,7 @@ def world_pair_to_bittrex(pair: TradePair) -> str:
     return f'{quote_asset_str}-{base_asset_str}'
 
 
-def trade_from_bittrex(bittrex_trade: Dict[str, Any]) -> Trade:
+def trade_from_bittrex(bittrex_trade: dict[str, Any]) -> Trade:
     """Turn a bittrex trade returned from bittrex trade history to our common trade
     history format
 
@@ -184,7 +184,7 @@ class Bittrex(ExchangeInterface):
             self.session.headers.update({'Api-Key': self.api_key})
         return changed
 
-    def validate_api_key(self) -> Tuple[bool, str]:
+    def validate_api_key(self) -> tuple[bool, str]:
         try:
             self.api_query('balances')
         except RemoteError as e:
@@ -201,8 +201,8 @@ class Bittrex(ExchangeInterface):
             self,
             endpoint: str,
             method: Literal['get', 'put', 'delete'] = 'get',
-            options: Optional[Dict[str, Any]] = None,
-    ) -> List[Dict[str, Any]]:
+            options: Optional[dict[str, Any]] = None,
+    ) -> list[dict[str, Any]]:
         """
         Queries Bittrex api v3 for given endpoint, method and options
         """
@@ -257,7 +257,7 @@ class Bittrex(ExchangeInterface):
     def _single_api_query(
             self,
             request_url: str,
-            options: Dict[str, Any],
+            options: dict[str, Any],
             method: Literal['get', 'put', 'delete'],
             public_endpoint: bool = False,
     ) -> requests.Response:
@@ -291,7 +291,7 @@ class Bittrex(ExchangeInterface):
 
         return response
 
-    def get_currencies(self) -> List[Dict[str, Any]]:
+    def get_currencies(self) -> list[dict[str, Any]]:
         """Gets a list of all currencies supported by Bittrex"""
         result = self.api_query('currencies')
         return result
@@ -309,7 +309,7 @@ class Bittrex(ExchangeInterface):
             log.error(msg)
             return None, msg
 
-        returned_balances: Dict[AssetWithOracles, Balance] = {}
+        returned_balances: dict[AssetWithOracles, Balance] = {}
         for entry in resp:
             try:
                 asset = asset_from_bittrex(entry['currencySymbol'])
@@ -370,8 +370,8 @@ class Bittrex(ExchangeInterface):
             self,
             endpoint: str,
             method: Literal['get', 'put', 'delete'] = 'get',
-            options: Optional[Dict[str, Any]] = None,
-    ) -> List[Dict[str, Any]]:
+            options: Optional[dict[str, Any]] = None,
+    ) -> list[dict[str, Any]]:
         """Handle pagination for bittrex v3 api queries
 
         Docs: https://bittrex.github.io/api/v3#topic-REST-API-Overview
@@ -398,8 +398,8 @@ class Bittrex(ExchangeInterface):
             start_ts: Timestamp,
             end_ts: Timestamp,
             market: Optional[TradePair] = None,
-    ) -> Tuple[List[Trade], Tuple[Timestamp, Timestamp]]:
-        options: Dict[str, Union[str, int]] = {
+    ) -> tuple[list[Trade], tuple[Timestamp, Timestamp]]:
+        options: dict[str, Union[str, int]] = {
             'pageSize': 200,  # max page size according to their docs
             'startDate': timestamp_to_iso8601(start_ts, utc_as_z=True),
             'endDate': timestamp_to_iso8601(end_ts, utc_as_z=True),
@@ -451,7 +451,7 @@ class Bittrex(ExchangeInterface):
 
         return trades, (start_ts, end_ts)
 
-    def _deserialize_asset_movement(self, raw_data: Dict[str, Any]) -> Optional[AssetMovement]:
+    def _deserialize_asset_movement(self, raw_data: dict[str, Any]) -> Optional[AssetMovement]:
         """Processes a single deposit/withdrawal from bittrex and deserializes it
 
         Can log error/warning and return None if something went wrong at deserialization
@@ -515,8 +515,8 @@ class Bittrex(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> List[AssetMovement]:
-        options: Dict[str, Union[str, int]] = {
+    ) -> list[AssetMovement]:
+        options: dict[str, Union[str, int]] = {
             'pageSize': 200,  # max page size according to their docs
             'startDate': timestamp_to_iso8601(start_ts, utc_as_z=True),
             'endDate': timestamp_to_iso8601(end_ts, utc_as_z=True),
@@ -540,12 +540,12 @@ class Bittrex(ExchangeInterface):
             self,  # pylint: disable=no-self-use
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,  # pylint: disable=unused-argument
-    ) -> List[MarginPosition]:
+    ) -> list[MarginPosition]:
         return []  # noop for bittrex
 
     def query_online_income_loss_expense(
             self,  # pylint: disable=no-self-use
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,  # pylint: disable=unused-argument
-    ) -> List[LedgerAction]:
+    ) -> list[LedgerAction]:
         return []  # noop for bittrex

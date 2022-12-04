@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Dict
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -23,7 +23,7 @@ def test_query_info_version_when_up_to_date(rotkehlchen_api_server):
     expected_version = 'v1.1.0'
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
-    def patched_get_system_spec() -> Dict[str, Any]:
+    def patched_get_system_spec() -> dict[str, Any]:
         return {'rotkehlchen': expected_version}
 
     def patched_get_latest_release(_klass):

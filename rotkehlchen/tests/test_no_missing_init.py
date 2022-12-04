@@ -1,11 +1,10 @@
 import os
 import warnings as test_warnings
-from typing import Set
 
 
-def find_directories_with_missing_init(path: str) -> Set[str]:
-    package_dirs: Set[str] = set()
-    py_directories: Set[str] = set()
+def find_directories_with_missing_init(path: str) -> set[str]:
+    package_dirs: set[str] = set()
+    py_directories: set[str] = set()
     for root, dirs, files in os.walk(path):
         try:
             dirs.remove("__pycache__")

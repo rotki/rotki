@@ -1,6 +1,5 @@
 import os
 from datetime import datetime
-from typing import List
 from unittest.mock import patch
 
 import pytest
@@ -42,7 +41,7 @@ def test_cryptocompare_query_pricehistorical(cryptocompare):
     assert price
 
 
-def get_globaldb_cache_entries(from_asset: Asset, to_asset: Asset) -> List[HistoricalPrice]:
+def get_globaldb_cache_entries(from_asset: Asset, to_asset: Asset) -> list[HistoricalPrice]:
     """TODO: This should probaly be moved in the globaldb/handler.py if we use it elsewhere
     and made more generic (accept different sources)"""
     connection = GlobalDBHandler().conn
@@ -75,7 +74,7 @@ def test_cryptocompare_historical_data_use_cached_price(data_dir, database, hist
     assert result == FVal(396.56)
 
 
-def check_cc_result(result: List, forward: bool):
+def check_cc_result(result: list, forward: bool):
     for idx, entry in enumerate(result):
         if idx != 0:
             assert entry.timestamp == result[idx - 1].timestamp + 3600

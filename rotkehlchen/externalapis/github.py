@@ -1,5 +1,4 @@
 from json.decoder import JSONDecodeError
-from typing import Dict, Tuple
 
 import requests
 
@@ -13,7 +12,7 @@ class Github():
     def __init__(self) -> None:
         self.prefix = 'https://api.github.com/'
 
-    def _query(self, path: str) -> Dict:
+    def _query(self, path: str) -> dict:
         """
         May raise:
         - RemoteError if there is a problem querying Github
@@ -36,7 +35,7 @@ class Github():
             raise RemoteError(f'Github returned invalid JSON response: {response.text}') from e
         return json_ret
 
-    def get_latest_release(self) -> Tuple[str, str]:
+    def get_latest_release(self) -> tuple[str, str]:
         """Returns the latest rotkehlchen release version
 
         In success returns a tuple (version_tag, version_download_url)

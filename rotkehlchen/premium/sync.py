@@ -2,7 +2,7 @@ import base64
 import logging
 import shutil
 from enum import Enum
-from typing import Any, Dict, Literal, NamedTuple, Optional, Tuple, Union
+from typing import Any, Literal, NamedTuple, Optional, Union
 
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.data_migrations.manager import DataMigrationManager
@@ -27,7 +27,7 @@ class SyncCheckResult(NamedTuple):
     can_sync: CanSync
     # If result is ASK_USER, what should the message be?
     message: str
-    payload: Optional[Dict[str, Any]]
+    payload: Optional[dict[str, Any]]
 
 
 class PremiumSyncManager():
@@ -88,7 +88,7 @@ class PremiumSyncManager():
             },
         )
 
-    def _sync_data_from_server_and_replace_local(self) -> Tuple[bool, str]:
+    def _sync_data_from_server_and_replace_local(self) -> tuple[bool, str]:
         """
         Performs syncing of data from server and replaces local db
 
@@ -199,7 +199,7 @@ class PremiumSyncManager():
         log.debug('upload to server -- success')
         return True
 
-    def sync_data(self, action: Literal['upload', 'download']) -> Tuple[bool, str]:
+    def sync_data(self, action: Literal['upload', 'download']) -> tuple[bool, str]:
         msg = ''
         if action == 'upload':
             if self.check_if_should_sync(force_upload=True) is False:

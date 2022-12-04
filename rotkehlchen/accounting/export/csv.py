@@ -3,7 +3,7 @@ import logging
 from csv import DictWriter
 from pathlib import Path
 from tempfile import mkdtemp
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Tuple
+from typing import TYPE_CHECKING, Any, Literal
 from zipfile import ZIP_DEFLATED, ZipFile
 
 from rotkehlchen.accounting.pnl import PnlTotals
@@ -40,7 +40,7 @@ class CSVWriteError(Exception):
     pass
 
 
-def _dict_to_csv_file(path: Path, dictionary_list: List) -> None:
+def _dict_to_csv_file(path: Path, dictionary_list: list) -> None:
     """Takes a filepath and a list of dictionaries representing the rows and writes them
     into the file as a CSV
 
@@ -104,7 +104,7 @@ class CSVExporter(CustomizableDateMixin):
     def _add_pnl_type(
             self,
             event: 'ProcessedAccountingEvent',
-            dict_event: Dict[str, Any],
+            dict_event: dict[str, Any],
             amount_column: str,
             name: Literal['free', 'taxable'],
     ) -> None:
@@ -154,14 +154,14 @@ class CSVExporter(CustomizableDateMixin):
 
         dict_event[f'cost_basis_{name}'] = cost_basis
 
-    def _maybe_add_summary(self, events: List[Dict[str, Any]], pnls: PnlTotals) -> None:
+    def _maybe_add_summary(self, events: list[dict[str, Any]], pnls: PnlTotals) -> None:
         """Depending on given settings, adds a few summary lines at the end of
         the all events PnL report"""
         if self.settings.pnl_csv_have_summary is False:
             return
 
         length = len(events) + 1
-        template: Dict[str, Any] = {
+        template: dict[str, Any] = {
             'type': '',
             'notes': '',
             'location': '',
@@ -231,16 +231,16 @@ class CSVExporter(CustomizableDateMixin):
 
     def create_zip(
             self,
-            events: List['ProcessedAccountingEvent'],
+            events: list['ProcessedAccountingEvent'],
             pnls: PnlTotals,
-    ) -> Tuple[bool, str]:
+    ) -> tuple[bool, str]:
         # TODO: Find a way to properly delete the directory after send is complete
         dirpath = Path(mkdtemp())
         success, msg = self.export(events=events, pnls=pnls, directory=dirpath)
         if not success:
             return False, msg
 
-        files: List[Tuple[Path, str]] = [
+        files: list[tuple[Path, str]] = [
             (dirpath / FILENAME_ALL_CSV, FILENAME_ALL_CSV),
         ]
         with ZipFile(file=dirpath / 'csv.zip', mode='w', compression=ZIP_DEFLATED) as csv_zip:
@@ -259,7 +259,7 @@ class CSVExporter(CustomizableDateMixin):
 
         return success, filename
 
-    def to_csv_entry(self, event: 'ProcessedAccountingEvent') -> Dict[str, Any]:
+    def to_csv_entry(self, event: 'ProcessedAccountingEvent') -> dict[str, Any]:
         dict_event = event.to_exported_dict(
             ts_converter=self.timestamp_to_date,
             eth_explorer=self.eth_explorer,
@@ -277,10 +277,10 @@ class CSVExporter(CustomizableDateMixin):
 
     def export(
             self,
-            events: List['ProcessedAccountingEvent'],
+            events: list['ProcessedAccountingEvent'],
             pnls: PnlTotals,
             directory: Path,
-    ) -> Tuple[bool, str]:
+    ) -> tuple[bool, str]:
         serialized_events = [self.to_csv_entry(x) for idx, x in enumerate(events)]
         self._maybe_add_summary(events=serialized_events, pnls=pnls)
         try:

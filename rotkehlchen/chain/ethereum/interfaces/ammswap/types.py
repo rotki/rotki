@@ -1,7 +1,7 @@
 import logging
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, DefaultDict, Dict, List, NamedTuple, Optional, Set, Tuple
+from typing import Any, DefaultDict, NamedTuple, Optional
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
@@ -37,7 +37,7 @@ class LiquidityPoolAsset:
     user_balance: Balance
     usd_price: Price = Price(ZERO)
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self) -> dict[str, Any]:
         return {
             'asset': self.token.serialize(),
             'total_amount': self.total_amount,
@@ -49,11 +49,11 @@ class LiquidityPoolAsset:
 @dataclass(init=True, repr=True)
 class LiquidityPool:
     address: ChecksumEvmAddress
-    assets: List[LiquidityPoolAsset]
+    assets: list[LiquidityPoolAsset]
     total_supply: Optional[FVal]
     user_balance: Balance
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self) -> dict[str, Any]:
         return {
             'address': self.address,
             'assets': [asset.serialize() for asset in self.assets],
@@ -62,9 +62,9 @@ class LiquidityPool:
         }
 
 
-AddressToLPBalances = Dict[ChecksumEvmAddress, List[LiquidityPool]]
-DDAddressToLPBalances = DefaultDict[ChecksumEvmAddress, List[LiquidityPool]]
-AssetToPrice = Dict[ChecksumEvmAddress, Price]
+AddressToLPBalances = dict[ChecksumEvmAddress, list[LiquidityPool]]
+DDAddressToLPBalances = DefaultDict[ChecksumEvmAddress, list[LiquidityPool]]
+AssetToPrice = dict[ChecksumEvmAddress, Price]
 
 
 class ProtocolBalance(NamedTuple):
@@ -74,8 +74,8 @@ class ProtocolBalance(NamedTuple):
     Unknown assets are those we would have to try to query through uniswap directly
     """
     address_balances: AddressToLPBalances
-    known_tokens: Set[EvmToken]
-    unknown_tokens: Set[EvmToken]
+    known_tokens: set[EvmToken]
+    unknown_tokens: set[EvmToken]
 
 
 class EventType(Enum):
@@ -125,7 +125,7 @@ class EventType(Enum):
 
 
 LiquidityPoolEventDBTuple = (
-    Tuple[
+    tuple[
         bytes,  # tx_hash
         int,  # log_index
         str,  # address
@@ -215,7 +215,7 @@ class LiquidityPoolEvent(NamedTuple):
         )
         return db_tuple
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self) -> dict[str, Any]:
         return {
             'tx_hash': self.tx_hash.hex(),
             'log_index': self.log_index,
@@ -233,12 +233,12 @@ class LiquidityPoolEventsBalance(NamedTuple):
     pool_address: ChecksumEvmAddress
     token0: EvmToken
     token1: EvmToken
-    events: List[LiquidityPoolEvent]
+    events: list[LiquidityPoolEvent]
     profit_loss0: FVal
     profit_loss1: FVal
     usd_profit_loss: FVal
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self) -> dict[str, Any]:
         return {
             'address': self.address,
             'pool_address': self.pool_address,
@@ -253,12 +253,12 @@ class LiquidityPoolEventsBalance(NamedTuple):
 
 @dataclass(init=True, repr=True)
 class AggregatedAmount:
-    events: List[LiquidityPoolEvent] = field(default_factory=list)
+    events: list[LiquidityPoolEvent] = field(default_factory=list)
     profit_loss0: FVal = ZERO
     profit_loss1: FVal = ZERO
     usd_profit_loss: FVal = ZERO
 
 
-AddressEvents = Dict[ChecksumEvmAddress, List[LiquidityPoolEvent]]
-DDAddressEvents = DefaultDict[ChecksumEvmAddress, List[LiquidityPoolEvent]]
-AddressEventsBalances = Dict[ChecksumEvmAddress, List[LiquidityPoolEventsBalance]]
+AddressEvents = dict[ChecksumEvmAddress, list[LiquidityPoolEvent]]
+DDAddressEvents = DefaultDict[ChecksumEvmAddress, list[LiquidityPoolEvent]]
+AddressEventsBalances = dict[ChecksumEvmAddress, list[LiquidityPoolEventsBalance]]

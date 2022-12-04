@@ -9,7 +9,7 @@ import logging
 import operator
 import time
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, DefaultDict, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, DefaultDict, Optional, Union
 from urllib.parse import urlencode
 
 import gevent
@@ -108,10 +108,10 @@ def kraken_ledger_entry_type_to_ours(value: str) -> HistoryEventType:
 
 
 def history_event_from_kraken(
-    events: List[Dict[str, Any]],
+    events: list[dict[str, Any]],
     name: str,
     msg_aggregator: MessagesAggregator,
-) -> Tuple[List[HistoryBaseEntry], bool]:
+) -> tuple[list[HistoryBaseEntry], bool]:
     """
     This function gets raw data from kraken and creates a list of related history events
     to be used in the app. It returns a list of events and a boolean in the case that an unknown
@@ -209,7 +209,7 @@ def history_event_from_kraken(
     return group_events, found_unknown_event
 
 
-def _check_and_get_response(response: Response, method: str) -> Union[str, Dict]:
+def _check_and_get_response(response: Response, method: str) -> Union[str, dict]:
     """Checks the kraken response and if it's succesfull returns the result.
 
     If there is recoverable error a string is returned explaining the error
@@ -321,7 +321,7 @@ class Kraken(ExchangeInterface):
             api_key: Optional[ApiKey],
             api_secret: Optional[ApiSecret],
             **kwargs: Any,
-    ) -> Tuple[bool, str]:
+    ) -> tuple[bool, str]:
         success, msg = super().edit_exchange(
             name=name,
             api_key=api_key,
@@ -339,7 +339,7 @@ class Kraken(ExchangeInterface):
         self.set_account_type(account_type)
         return True, ''
 
-    def validate_api_key(self) -> Tuple[bool, str]:
+    def validate_api_key(self) -> tuple[bool, str]:
         """Validates that the Kraken API Key is good for usage in Rotkehlchen
 
         Makes sure that the following permission are given to the key:
@@ -367,8 +367,8 @@ class Kraken(ExchangeInterface):
     def _validate_single_api_key_action(
             self,
             method_str: str,
-            req: Optional[Dict[str, Any]] = None,
-    ) -> Tuple[bool, str]:
+            req: Optional[dict[str, Any]] = None,
+    ) -> tuple[bool, str]:
         try:
             self.api_query(method_str, req)
         except (RemoteError, ValueError) as e:
@@ -404,7 +404,7 @@ class Kraken(ExchangeInterface):
         else:
             self.call_counter += 1
 
-    def _query_public(self, method: str, req: Optional[dict] = None) -> Union[Dict, str]:
+    def _query_public(self, method: str, req: Optional[dict] = None) -> Union[dict, str]:
         """API queries that do not require a valid key/secret pair.
 
         Arguments:
@@ -473,7 +473,7 @@ class Kraken(ExchangeInterface):
             f'After {KRAKEN_QUERY_TRIES} kraken queries for {method} could still not be completed',
         )
 
-    def _query_private(self, method: str, req: Optional[dict] = None) -> Union[Dict, str]:
+    def _query_private(self, method: str, req: Optional[dict] = None) -> Union[dict, str]:
         """API queries that require a valid key/secret pair.
 
         Arguments:
@@ -587,12 +587,12 @@ class Kraken(ExchangeInterface):
             start_ts: Timestamp,
             end_ts: Timestamp,
             extra_dict: Optional[dict] = None,
-    ) -> Tuple[List, bool]:
+    ) -> tuple[list, bool]:
         """ Abstracting away the functionality of querying a kraken endpoint where
         you need to check the 'count' of the returned results and provide sufficient
         calls with enough offset to gather all the data of your query.
         """
-        result: List = []
+        result: list = []
 
         with_errors = False
         log.debug(
@@ -665,7 +665,7 @@ class Kraken(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> Tuple[List[Trade], Tuple[Timestamp, Timestamp]]:
+    ) -> tuple[list[Trade], tuple[Timestamp, Timestamp]]:
         """
         Query kraken events from database and create trades from them. May raise:
         - RemoteError if the kraken pairs couldn't be queried
@@ -702,7 +702,7 @@ class Kraken(ExchangeInterface):
             offset: Optional[int] = None,
             extra_dict: Optional[dict] = None,
     ) -> dict:
-        request: Dict[str, Union[Timestamp, int]] = {}
+        request: dict[str, Union[Timestamp, int]] = {}
         request['start'] = start_ts
         request['end'] = end_ts
         if offset is not None:
@@ -716,7 +716,7 @@ class Kraken(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> List[AssetMovement]:
+    ) -> list[AssetMovement]:
         with self.db.conn.read_ctx() as cursor:
             self.query_kraken_ledgers(cursor, start_ts=start_ts, end_ts=end_ts)
             filter_query = HistoryEventFilterQuery.make(
@@ -802,20 +802,20 @@ class Kraken(ExchangeInterface):
             self,  # pylint: disable=no-self-use
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,  # pylint: disable=unused-argument
-    ) -> List[MarginPosition]:
+    ) -> list[MarginPosition]:
         return []  # noop for kraken
 
     def query_online_income_loss_expense(
             self,  # pylint: disable=no-self-use
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,  # pylint: disable=unused-argument
-    ) -> List[LedgerAction]:
+    ) -> list[LedgerAction]:
         return []  # noop for kraken
 
     def process_kraken_events_for_trade(
             self,
-            trade_parts: List[HistoryBaseEntry],
-            adjustments: List[HistoryBaseEntry],
+            trade_parts: list[HistoryBaseEntry],
+            adjustments: list[HistoryBaseEntry],
     ) -> Optional[Trade]:
         """Processes events from trade parts to a trade. If it's an adjustment
         adds it to a separate list"""
@@ -967,8 +967,8 @@ class Kraken(ExchangeInterface):
 
     def process_kraken_trades(
         self,
-        raw_data: List[HistoryBaseEntry],
-    ) -> Tuple[List[Trade], Timestamp]:
+        raw_data: list[HistoryBaseEntry],
+    ) -> tuple[list[Trade], Timestamp]:
         """
         Given a list of history events we process them to create Trade objects. The valid
         History events type are
@@ -994,7 +994,7 @@ class Kraken(ExchangeInterface):
         trades = []
         max_ts = 0
         get_attr = operator.attrgetter('event_identifier')
-        adjustments: List[HistoryBaseEntry] = []
+        adjustments: list[HistoryBaseEntry] = []
         # Create a list of lists where each sublist has the events for the same event identifier
         grouped_events = [list(g) for k, g in itertools.groupby(sorted(raw_data, key=get_attr), get_attr)]  # noqa: E501
         for trade_parts in grouped_events:

@@ -1,5 +1,4 @@
 import logging
-from typing import Dict
 
 import requests
 from bs4 import BeautifulSoup, SoupStrainer
@@ -18,7 +17,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def _scrape_xratescom_exchange_rates(url: str) -> Dict[FiatAsset, Price]:
+def _scrape_xratescom_exchange_rates(url: str) -> dict[FiatAsset, Price]:
     """
     Scrapes x-rates.com website for the exchange rates tables
 
@@ -81,7 +80,7 @@ def _scrape_xratescom_exchange_rates(url: str) -> Dict[FiatAsset, Price]:
     return prices
 
 
-def get_current_xratescom_exchange_rates(from_currency: FiatAsset) -> Dict[FiatAsset, Price]:  # noqa: E501
+def get_current_xratescom_exchange_rates(from_currency: FiatAsset) -> dict[FiatAsset, Price]:  # noqa: E501
     """
     Get the current exchanges rates of currency from x-rates.com
 
@@ -92,7 +91,7 @@ def get_current_xratescom_exchange_rates(from_currency: FiatAsset) -> Dict[FiatA
     return _scrape_xratescom_exchange_rates(url)
 
 
-def get_historical_xratescom_exchange_rates(from_asset: FiatAsset, time: Timestamp) -> Dict[FiatAsset, Price]:  # noqa: E501
+def get_historical_xratescom_exchange_rates(from_asset: FiatAsset, time: Timestamp) -> dict[FiatAsset, Price]:  # noqa: E501
     """
     Get the historical exchanges rates of a currency from x-rates.com
 

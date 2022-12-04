@@ -4,18 +4,7 @@ import time
 from collections import defaultdict
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    DefaultDict,
-    Dict,
-    List,
-    Literal,
-    Optional,
-    Tuple,
-    Union,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, DefaultDict, Literal, Optional, Union, overload
 from urllib.parse import quote, urlencode
 
 import gevent
@@ -70,7 +59,7 @@ FTXUS_BASE_URL = 'https://ftx.us'
 FTX_QUERY_ORDER = 'asc'
 
 
-def trade_from_ftx(raw_trade: Dict[str, Any]) -> Optional[Trade]:
+def trade_from_ftx(raw_trade: dict[str, Any]) -> Optional[Trade]:
     """Turns an FTX transaction into a rotki Trade.
 
     May raise:
@@ -162,7 +151,7 @@ class Ftx(ExchangeInterface):
 
         return changed
 
-    def validate_api_key(self) -> Tuple[bool, str]:
+    def validate_api_key(self) -> tuple[bool, str]:
         """Validates that the FTX API key is good for usage in rotki"""
         endpoint: Literal['account', 'wallet/all_balances']
 
@@ -188,7 +177,7 @@ class Ftx(ExchangeInterface):
         min_id: Optional[int] = None,
         limit: int = PAGINATION_LIMIT,
         order: Optional[str] = FTX_QUERY_ORDER,
-    ) -> Union[List[Dict[str, Any]], Dict[str, List[Any]]]:
+    ) -> Union[list[dict[str, Any]], dict[str, list[Any]]]:
         """Performs an FTX API Query for endpoint adding the needed information to
         authenticate user and handling errors.
         This function can raise:
@@ -200,7 +189,7 @@ class Ftx(ExchangeInterface):
         # Use a while loop to retry request if rate limit is reached
         while True:
             request_url = '/api/' + endpoint
-            options: Dict[str, Union[str, int]] = {'limit': limit}
+            options: dict[str, Union[str, int]] = {'limit': limit}
             if start_time is not None:
                 options['start_time'] = start_time
             if end_time is not None:
@@ -265,7 +254,7 @@ class Ftx(ExchangeInterface):
             end_time: Optional[Timestamp] = None,
             limit: int = PAGINATION_LIMIT,
             paginate: bool = True,
-    ) -> Dict[str, List[Any]]:
+    ) -> dict[str, list[Any]]:
         ...
 
     @overload
@@ -276,7 +265,7 @@ class Ftx(ExchangeInterface):
             end_time: Optional[Timestamp] = None,
             limit: int = PAGINATION_LIMIT,
             paginate: bool = True,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         ...
 
     @overload
@@ -287,7 +276,7 @@ class Ftx(ExchangeInterface):
             end_time: Optional[Timestamp] = None,
             limit: int = PAGINATION_LIMIT,
             paginate: bool = True,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         ...
 
     @overload
@@ -304,7 +293,7 @@ class Ftx(ExchangeInterface):
             end_time: Optional[Timestamp] = None,
             limit: int = PAGINATION_LIMIT,
             paginate: bool = True,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         ...
 
     def _api_query(
@@ -315,7 +304,7 @@ class Ftx(ExchangeInterface):
             limit: int = PAGINATION_LIMIT,
             paginate: bool = True,
             min_id: Optional[int] = None,
-    ) -> Union[List[Dict[str, Any]], Dict[str, List[Any]], Dict[str, Any]]:
+    ) -> Union[list[dict[str, Any]], dict[str, list[Any]], dict[str, Any]]:
         """
         Query FTX endpoint and retrieve all available information if pagination
         is requested. In case of paginate being set to False only one request is made.
@@ -341,7 +330,7 @@ class Ftx(ExchangeInterface):
         new_start_time = start_time
         new_min_id = min_id
         ids = set()
-        final_data: List[Dict[str, Any]] = []
+        final_data: list[dict[str, Any]] = []
         while True:
             step = self._make_request(
                 endpoint=endpoint,
@@ -415,7 +404,7 @@ class Ftx(ExchangeInterface):
 
         if resp_dict is not None:
             # flatten the list that maps accounts to balances
-            balances: List[Dict[str, Any]] = [x for _, bal in resp_dict.items() for x in bal]
+            balances: list[dict[str, Any]] = [x for _, bal in resp_dict.items() for x in bal]
         elif resp_lst is not None:
             # When querying for a subaccount we get a list instead of a dict
             balances = resp_lst
@@ -474,7 +463,7 @@ class Ftx(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> Tuple[List[Trade], Tuple[Timestamp, Timestamp]]:
+    ) -> tuple[list[Trade], tuple[Timestamp, Timestamp]]:
 
         raw_data = self._api_query('fills', start_time=start_ts, end_time=end_ts)
         log.debug('FTX trades history result', results_num=len(raw_data))
@@ -515,7 +504,7 @@ class Ftx(ExchangeInterface):
 
     def _deserialize_asset_movement(
         self,
-        raw_data: Dict[str, Any],
+        raw_data: dict[str, Any],
         movement_type: AssetMovementCategory,
     ) -> Optional[AssetMovement]:
         """Processes a single deposit/withdrawal from FTX and deserializes it
@@ -580,7 +569,7 @@ class Ftx(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> List[AssetMovement]:
+    ) -> list[AssetMovement]:
         raw_data_deposits = self._api_query(
             'wallet/deposits',
             start_time=start_ts,
@@ -618,12 +607,12 @@ class Ftx(ExchangeInterface):
             self,  # pylint: disable=no-self-use
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,  # pylint: disable=unused-argument
-    ) -> List[MarginPosition]:
+    ) -> list[MarginPosition]:
         return []  # noop for FTX
 
     def query_online_income_loss_expense(
             self,  # pylint: disable=no-self-use
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,  # pylint: disable=unused-argument
-    ) -> List[LedgerAction]:
+    ) -> list[LedgerAction]:
         return []  # noop for FTX

@@ -1,5 +1,4 @@
 from http import HTTPStatus
-from typing import Dict, List
 from unittest.mock import patch
 
 import pytest
@@ -423,8 +422,8 @@ def test_set_settings_errors(rotkehlchen_api_server):
 
 
 def assert_queried_addresses_match(
-        result: Dict[ModuleName, List[ChecksumEvmAddress]],
-        expected: Dict[ModuleName, List[ChecksumEvmAddress]],
+        result: dict[ModuleName, list[ChecksumEvmAddress]],
+        expected: dict[ModuleName, list[ChecksumEvmAddress]],
 ) -> None:
     assert len(result) == len(expected)
     for key, value in expected.items():

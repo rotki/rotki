@@ -1,5 +1,5 @@
 import json
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 from unittest.mock import patch
 
 from web3 import Web3
@@ -28,9 +28,9 @@ if TYPE_CHECKING:
 
 
 def assert_btc_balances_result(
-        result: Dict[str, Any],
-        btc_accounts: List[str],
-        btc_balances: List[str],
+        result: dict[str, Any],
+        btc_accounts: list[str],
+        btc_balances: list[str],
         also_eth: bool,
 ) -> None:
     """Asserts for correct BTC blockchain balances when mocked in tests"""
@@ -73,12 +73,12 @@ def assert_btc_balances_result(
 
 def assert_eth_balances_result(
         rotki: Rotkehlchen,
-        result: Dict[str, Any],
-        eth_accounts: List[str],
-        eth_balances: List[str],
-        token_balances: Dict[EvmToken, List[str]],
+        result: dict[str, Any],
+        eth_accounts: list[str],
+        eth_balances: list[str],
+        token_balances: dict[EvmToken, list[str]],
         also_btc: bool,
-        expected_liabilities: Optional[Dict[EvmToken, List[str]]] = None,
+        expected_liabilities: Optional[dict[EvmToken, list[str]]] = None,
         totals_only: bool = False,
 ) -> None:
     """Asserts for correct ETH blockchain balances when mocked in tests
@@ -179,7 +179,7 @@ def _get_token(value: Any) -> Optional[EvmToken]:
 
 def mock_beaconchain(
         beaconchain: BeaconChain,
-        original_queries: Optional[List[str]],
+        original_queries: Optional[list[str]],
         original_requests_get,
 ):
 
@@ -198,11 +198,11 @@ def mock_beaconchain(
 
 
 def mock_etherscan_query(
-        eth_map: Dict[ChecksumEvmAddress, Dict[Union[str, EvmToken], Any]],
+        eth_map: dict[ChecksumEvmAddress, dict[Union[str, EvmToken], Any]],
         etherscan: Etherscan,
         ethereum: 'EthereumInquirer',
-        original_queries: Optional[List[str]],
-        extra_flags: Optional[List[str]],
+        original_queries: Optional[list[str]],
+        extra_flags: Optional[list[str]],
         original_requests_get,
 ):
     eth_scan = ethereum.contracts.contract('ETH_SCAN')
@@ -517,7 +517,7 @@ def mock_etherscan_query(
 
 
 def mock_bitcoin_balances_query(
-        btc_map: Dict[BTCAddress, str],
+        btc_map: dict[BTCAddress, str],
         original_requests_get,
 ):
 
@@ -546,7 +546,7 @@ def mock_bitcoin_balances_query(
     return patch('rotkehlchen.utils.network.requests.get', wraps=mock_requests_get)
 
 
-def compare_account_data(expected: List[Dict], got: List[Dict]) -> None:
+def compare_account_data(expected: list[dict], got: list[dict]) -> None:
     """Compare two lists of account data dictionaries for equality"""
 
     for got_entry in got:

@@ -13,11 +13,8 @@ from typing import (
     Any,
     Callable,
     DefaultDict,
-    Dict,
     Iterable,
     Iterator,
-    List,
-    Tuple,
     TypeVar,
     Union,
     overload,
@@ -140,7 +137,7 @@ V = TypeVar('V')
 
 
 @overload
-def combine_dicts(a: Dict[K, V], b: Dict[K, V], op: Callable = operator.add) -> Dict[K, V]:  # type: ignore[misc] # noqa: E501
+def combine_dicts(a: dict[K, V], b: dict[K, V], op: Callable = operator.add) -> dict[K, V]:  # type: ignore[misc] # noqa: E501
     ...
 
 
@@ -154,10 +151,10 @@ def combine_dicts(
 
 
 def combine_dicts(
-        a: Union[Dict[K, V], DefaultDict[K, V]],
-        b: Union[Dict[K, V], DefaultDict[K, V]],
+        a: Union[dict[K, V], DefaultDict[K, V]],
+        b: Union[dict[K, V], DefaultDict[K, V]],
         op: Callable = operator.add,
-) -> Union[Dict[K, V], DefaultDict[K, V]]:
+) -> Union[dict[K, V], DefaultDict[K, V]]:
     new_dict = a.copy()
     # issue for pylint's false positive here: https://github.com/PyCQA/pylint/issues/3987
     if op == operator.sub:  # pylint: disable=comparison-with-callable
@@ -168,14 +165,14 @@ def combine_dicts(
     return new_dict
 
 
-def _add_entries(a: Dict[str, FVal], b: Dict[str, FVal]) -> Dict[str, FVal]:
+def _add_entries(a: dict[str, FVal], b: dict[str, FVal]) -> dict[str, FVal]:
     return {
         'amount': a['amount'] + b['amount'],
         'usd_value': a['usd_value'] + b['usd_value'],
     }
 
 
-def combine_stat_dicts(list_of_dicts: List[Dict]) -> Dict:
+def combine_stat_dicts(list_of_dicts: list[dict]) -> dict:
     if len(list_of_dicts) == 0:
         return {}
 
@@ -221,7 +218,7 @@ def convert_to_int(
     raise ConversionError(f'Can not convert {val} which is of type {type(val)} to int.')
 
 
-def get_system_spec() -> Dict[str, str]:
+def get_system_spec() -> dict[str, str]:
     """Collect information about the system and installation."""
     if sys.platform == 'darwin':
         system_info = 'macOS {} {}'.format(
@@ -320,7 +317,7 @@ def address_to_bytes32(address: ChecksumEvmAddress) -> str:
 T = TypeVar('T')
 
 
-def get_chunks(lst: List[T], n: int) -> Iterator[List[T]]:
+def get_chunks(lst: list[T], n: int) -> Iterator[list[T]]:
     """Yield successive n-sized chunks from lst."""
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
@@ -383,10 +380,10 @@ def is_valid_ethereum_tx_hash(val: str) -> bool:
 
 
 def create_order_by_rules_list(
-        data: Dict[str, Any],
+        data: dict[str, Any],
         default_order_by_field: str = 'timestamp',
         is_ascending_by_default: bool = False,
-) -> List[Tuple[str, bool]]:
+) -> list[tuple[str, bool]]:
     """Create a list of attributes and sorting order taking values from DBOrderBySchema
     to be used by the filters that allow sorting. By default, the attribute used for sorting is
     timestamp and the ascending value for this field is False.

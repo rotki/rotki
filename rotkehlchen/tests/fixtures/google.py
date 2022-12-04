@@ -2,7 +2,7 @@ import logging
 import os
 import warnings as test_warnings
 from pathlib import Path
-from typing import Any, Dict, Generator, List, Optional
+from typing import Any, Generator, Optional
 
 import pytest
 from google.oauth2.service_account import Credentials
@@ -23,7 +23,7 @@ SHEETS_SCOPES = [
 ]
 
 
-def _login(service_name: str, version: str, scopes: List[str], credentials_path: Path):
+def _login(service_name: str, version: str, scopes: list[str], credentials_path: Path):
     """Create a specific google service driver and loginto it with credentials
     """
     credentials = (
@@ -111,7 +111,7 @@ class GoogleService:
 
         return sheet_id
 
-    def add_rows(self, sheet_id: str, csv_data: List[Dict[str, Any]]) -> None:
+    def add_rows(self, sheet_id: str, csv_data: list[dict[str, Any]]) -> None:
         requests = []
         data_length = len(csv_data)
         # Add the csv values (not using values.batchUpdate() to combine formatting and inserting into one call  # noqa: E501
@@ -164,14 +164,14 @@ class GoogleService:
             body={'requests': requests},
         ).execute()
 
-    def get_cell_range(self, sheet_id: str, range_name: str) -> List[List[str]]:
+    def get_cell_range(self, sheet_id: str, range_name: str) -> list[list[str]]:
         result = self.sheets_service.spreadsheets().values().get(  # pylint: disable=no-member
             spreadsheetId=sheet_id,
             range=range_name,
         ).execute()
         return result.get('values', [])
 
-    def get_cell_ranges(self, sheet_id: str, range_names: List[str]) -> List[Dict[str, Any]]:
+    def get_cell_ranges(self, sheet_id: str, range_names: list[str]) -> list[dict[str, Any]]:
         result = self.sheets_service.spreadsheets().values().batchGet(  # pylint: disable=no-member
             spreadsheetId=sheet_id,
             ranges=range_names,

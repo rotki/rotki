@@ -1,7 +1,7 @@
 import csv
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.converters import asset_from_kraken
 from rotkehlchen.constants import ZERO
@@ -38,7 +38,7 @@ class ShapeshiftTradesImporter(BaseExchangeImporter):
     def _consume_shapeshift_trade(
             self,
             cursor: DBCursor,
-            csv_row: Dict[str, Any],
+            csv_row: dict[str, Any],
             timestamp_format: str = 'iso8601',
     ) -> None:
         """

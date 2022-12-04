@@ -1,7 +1,7 @@
 import base64
 import random
 import string
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Optional
 
 from eth_utils.address import to_checksum_address
 
@@ -129,8 +129,8 @@ def make_ethereum_event(
 
 
 def generate_tx_entries_response(
-    data: List[Tuple[EvmTransaction, List[HistoryBaseEntry]]],
-) -> List:
+    data: list[tuple[EvmTransaction, list[HistoryBaseEntry]]],
+) -> list:
     result = []
     for tx, events in data:
         decoded_events = []
@@ -147,7 +147,7 @@ def generate_tx_entries_response(
     return result
 
 
-def make_addressbook_entries() -> List[AddressbookEntry]:
+def make_addressbook_entries() -> list[AddressbookEntry]:
     return [
         AddressbookEntry(
             address=to_checksum_address('0x9d904063e7e120302a13c6820561940538a2ad57'),
@@ -164,7 +164,7 @@ def make_addressbook_entries() -> List[AddressbookEntry]:
     ]
 
 
-def make_user_notes_entries() -> List[Dict[str, Any]]:
+def make_user_notes_entries() -> list[dict[str, Any]]:
     return [
         {
             'title': 'TODO List',
@@ -187,7 +187,7 @@ def make_user_notes_entries() -> List[Dict[str, Any]]:
     ]
 
 
-def make_random_user_notes(num_notes: int) -> List[Dict[str, Any]]:
+def make_random_user_notes(num_notes: int) -> list[dict[str, Any]]:
     """Make random user notes to be used in tests"""
     notes = []
     for note_number in range(num_notes):

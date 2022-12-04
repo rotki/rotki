@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING
 
 from rotkehlchen.accounting.structures.base import get_tx_event_type_identifier
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 class SushiswapAccountant(ModuleAccountantInterface):
 
-    def event_settings(self, pot: 'AccountingPot') -> Dict[str, 'TxEventSettings']:
+    def event_settings(self, pot: 'AccountingPot') -> dict[str, 'TxEventSettings']:
         """Being defined at function call time is fine since this function is called only once"""
         return {
             get_tx_event_type_identifier(HistoryEventType.TRADE, HistoryEventSubType.SPEND, CPT_SUSHISWAP_V2): TxEventSettings(  # noqa: E501

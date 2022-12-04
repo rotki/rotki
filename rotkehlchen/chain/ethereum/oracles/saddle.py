@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Optional, Tuple
+from typing import TYPE_CHECKING, Optional
 
 from web3.types import BlockIdentifier
 
@@ -73,7 +73,7 @@ class SaddleOracle(CurrentPriceOracleInterface):
             from_asset: AssetWithOracles,
             to_asset: AssetWithOracles,
             match_main_currency: bool,
-    ) -> Tuple[Price, bool]:
+    ) -> tuple[Price, bool]:
         """At the moment until more pools get implemented this function is limited to ALETH
         Refer to the docstring of `get_price`.
         May raise:

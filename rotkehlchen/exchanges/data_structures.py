@@ -1,7 +1,7 @@
 import logging
 from dataclasses import dataclass
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, NamedTuple, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Iterator, NamedTuple, Optional
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.accounting.structures.types import ActionType
@@ -46,7 +46,7 @@ def hash_id(hashable: str) -> TradeID:
     return TradeID(id_bytes.hex())
 
 
-AssetMovementDBTuple = Tuple[
+AssetMovementDBTuple = tuple[
     str,  # id
     str,  # location
     str,  # category
@@ -102,7 +102,7 @@ class AssetMovement(AccountingEventMixin):
         )
         return hash_id(string)
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self) -> dict[str, Any]:
         return {
             'identifier': self.identifier,
             'timestamp': self.timestamp,
@@ -118,7 +118,7 @@ class AssetMovement(AccountingEventMixin):
         }
 
     @classmethod
-    def deserialize(cls, data: Dict[str, Any]) -> 'AssetMovement':
+    def deserialize(cls, data: dict[str, Any]) -> 'AssetMovement':
         """Deserializes an asset movement dict to an AssetMovement object.
         May raise:
             - DeserializationError
@@ -169,10 +169,10 @@ class AssetMovement(AccountingEventMixin):
     def get_identifier(self) -> str:
         return self.identifier
 
-    def get_assets(self) -> List[Asset]:
+    def get_assets(self) -> list[Asset]:
         return [self.asset, self.fee_asset]
 
-    def should_ignore(self, ignored_ids_mapping: Dict[ActionType, List[str]]) -> bool:
+    def should_ignore(self, ignored_ids_mapping: dict[ActionType, list[str]]) -> bool:
         return self.identifier in ignored_ids_mapping.get(ActionType.ASSET_MOVEMENT, [])
 
     def process(
@@ -202,7 +202,7 @@ class AssetMovement(AccountingEventMixin):
         return 1
 
 
-TradeDBTuple = Tuple[
+TradeDBTuple = tuple[
     str,  # id
     int,  # time
     str,  # location
@@ -272,7 +272,7 @@ class Trade(AccountingEventMixin):
         )
         return TradeID(hash_id(string))
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self) -> dict[str, Any]:
         """Serialize the trade into a dict"""
         return {
             'timestamp': self.timestamp,
@@ -289,7 +289,7 @@ class Trade(AccountingEventMixin):
         }
 
     @classmethod
-    def deserialize(cls, data: Dict[str, Any]) -> 'Trade':
+    def deserialize(cls, data: dict[str, Any]) -> 'Trade':
         """
         Deserializes a trade dict to a Trade object.
         May raise:
@@ -339,10 +339,10 @@ class Trade(AccountingEventMixin):
     def get_identifier(self) -> str:
         return self.identifier
 
-    def get_assets(self) -> List[Asset]:
+    def get_assets(self) -> list[Asset]:
         return [self.base_asset, self.quote_asset]
 
-    def should_ignore(self, ignored_ids_mapping: Dict[ActionType, List[str]]) -> bool:
+    def should_ignore(self, ignored_ids_mapping: dict[ActionType, list[str]]) -> bool:
         return self.identifier in ignored_ids_mapping.get(ActionType.TRADE, [])
 
     def process(
@@ -438,7 +438,7 @@ class Trade(AccountingEventMixin):
         return 1
 
 
-MarginPositionDBTuple = Tuple[
+MarginPositionDBTuple = tuple[
     str,  # id
     str,  # location
     int,  # open_time
@@ -495,7 +495,7 @@ class MarginPosition(AccountingEventMixin):
         )
         return hash_id(string)
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self) -> dict[str, Any]:
         """Serialize the margin position into a dict."""
         return {
             'location': self.location.serialize(),
@@ -509,7 +509,7 @@ class MarginPosition(AccountingEventMixin):
         }
 
     @classmethod
-    def deserialize(cls, data: Dict[str, Any]) -> 'MarginPosition':
+    def deserialize(cls, data: dict[str, Any]) -> 'MarginPosition':
         """Deserialize a dict margin position to a MarginPosition object.
         May raise:
             - DeserializationError
@@ -562,10 +562,10 @@ class MarginPosition(AccountingEventMixin):
     def get_identifier(self) -> str:
         return self.identifier
 
-    def get_assets(self) -> List[Asset]:
+    def get_assets(self) -> list[Asset]:
         return [self.pl_currency]
 
-    def should_ignore(self, ignored_ids_mapping: Dict[ActionType, List[str]]) -> bool:
+    def should_ignore(self, ignored_ids_mapping: dict[ActionType, list[str]]) -> bool:
         return False
 
     def process(
@@ -620,7 +620,7 @@ class Loan(AccountingEventMixin):
     def get_timestamp(self) -> Timestamp:
         return self.close_time
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self) -> dict[str, Any]:
         """Serialize the loan into a dict."""
         return {
             'location': self.location.serialize(),
@@ -633,7 +633,7 @@ class Loan(AccountingEventMixin):
         }
 
     @classmethod
-    def deserialize(cls, data: Dict[str, Any]) -> 'Loan':
+    def deserialize(cls, data: dict[str, Any]) -> 'Loan':
         """Deserialize a dict loan to a Loan object.
         May raise:
             - DeserializationError
@@ -657,10 +657,10 @@ class Loan(AccountingEventMixin):
     def get_identifier(self) -> str:
         return 'loan_' + str(self.close_time)
 
-    def should_ignore(self, ignored_ids_mapping: Dict[ActionType, List[str]]) -> bool:
+    def should_ignore(self, ignored_ids_mapping: dict[ActionType, list[str]]) -> bool:
         return False
 
-    def get_assets(self) -> List[Asset]:
+    def get_assets(self) -> list[Asset]:
         return [self.currency]
 
     def process(
@@ -684,7 +684,7 @@ def trade_pair_from_assets(base: AssetWithOracles, quote: AssetWithOracles) -> T
     return TradePair(f'{base.identifier}_{quote.identifier}')
 
 
-def deserialize_trade(data: Dict[str, Any]) -> Trade:
+def deserialize_trade(data: dict[str, Any]) -> Trade:
     """
     Takes a dict trade representation of our common trade format and serializes
     it into the Trade object
@@ -721,12 +721,12 @@ def deserialize_trade(data: Dict[str, Any]) -> Trade:
 
 
 def trades_from_dictlist(
-        given_trades: List[Dict[str, Any]],
+        given_trades: list[dict[str, Any]],
         start_ts: Timestamp,
         end_ts: Timestamp,
         location: str,
         msg_aggregator: MessagesAggregator,
-) -> List[Trade]:
+) -> list[Trade]:
     """ Gets a list of dict trades, most probably read from the json files and
     a time period. Returns it as a list of the Trade tuples that are inside the time period
 
@@ -753,7 +753,7 @@ def trades_from_dictlist(
     return returned_trades
 
 
-BINANCE_PAIR_DB_TUPLE = Tuple[str, str, str, str]
+BINANCE_PAIR_DB_TUPLE = tuple[str, str, str, str]
 
 
 class BinancePair(NamedTuple):

@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, NamedTuple, Tuple, Union
+from typing import Any, NamedTuple, Union
 
 import jsonschema
 
@@ -19,9 +19,9 @@ class SchemaEventType(DBEnumMixIn):
     """
     ACCOUNTING_EVENT = 1
 
-    def get_schema(self) -> Dict[str, Any]:
+    def get_schema(self) -> dict[str, Any]:
         """May raise EncodingError if schema is invalid"""
-        schema: Dict[str, Any] = {}
+        schema: dict[str, Any] = {}
         if self == SchemaEventType.ACCOUNTING_EVENT:
             return schema
 
@@ -29,7 +29,7 @@ class SchemaEventType(DBEnumMixIn):
 
 
 NamedJsonDBTuple = (
-    Tuple[
+    tuple[
         str,  # type,
         str,  # data
     ]
@@ -38,13 +38,13 @@ NamedJsonDBTuple = (
 
 class NamedJson(NamedTuple):
     event_type: SchemaEventType
-    data: Dict[str, Any]
+    data: dict[str, Any]
 
     @classmethod
     def deserialize(
             cls,
             event_type: SchemaEventType,
-            data: Dict[str, Any],
+            data: dict[str, Any],
     ) -> 'NamedJson':
         """Turns an event type and a data dict to a NamedJson object
 
@@ -112,7 +112,7 @@ class MissingAcquisition(NamedTuple):
     found_amount: FVal
     missing_amount: FVal
 
-    def serialize(self) -> Dict[str, Union[str, int]]:
+    def serialize(self) -> dict[str, Union[str, int]]:
         return {
             'asset': self.asset.identifier,
             'time': self.time,
@@ -127,7 +127,7 @@ class MissingPrice(NamedTuple):
     time: Timestamp
     rate_limited: bool
 
-    def serialize(self) -> Dict[str, Union[str, int, bool]]:
+    def serialize(self) -> dict[str, Union[str, int, bool]]:
         return {
             'from_asset': self.from_asset.identifier,
             'to_asset': self.to_asset.identifier,

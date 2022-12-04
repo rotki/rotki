@@ -1,14 +1,14 @@
-from typing import Dict, List, Optional
+from typing import Optional
 
 from rotkehlchen.fval import FVal
 
 
 def assert_serialized_lists_equal(
-        a: List,
-        b: List,
+        a: list,
+        b: list,
         max_length_to_check: Optional[int] = None,
-        ignore_keys: Optional[List] = None,
-        length_list_keymap: Optional[Dict] = None,
+        ignore_keys: Optional[list] = None,
+        length_list_keymap: Optional[dict] = None,
         max_diff: str = "1e-6",
 ) -> None:
     """Compares lists of serialized dicts"""
@@ -36,10 +36,10 @@ def assert_serialized_lists_equal(
 
 
 def assert_serialized_dicts_equal(
-        a: Dict,
-        b: Dict,
-        ignore_keys: Optional[List] = None,
-        length_list_keymap: Optional[Dict] = None,
+        a: dict,
+        b: dict,
+        ignore_keys: Optional[list] = None,
+        length_list_keymap: Optional[dict] = None,
         max_diff: str = "1e-6",
         same_key_length=True,
 ) -> None:
@@ -120,7 +120,7 @@ def assert_serialized_dicts_equal(
 
 
 def assert_asset_result_order(
-        data: List,
+        data: list,
         is_ascending: bool,
         order_field: str,
 ) -> None:

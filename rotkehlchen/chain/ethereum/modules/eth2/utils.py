@@ -1,6 +1,6 @@
 import logging
 from http import HTTPStatus
-from typing import List, NamedTuple
+from typing import NamedTuple
 
 import gevent
 import requests
@@ -54,7 +54,7 @@ def scrape_validator_daily_stats(
         validator_index: int,
         last_known_timestamp: Timestamp,
         msg_aggregator: MessagesAggregator,
-) -> List[ValidatorDailyStats]:
+) -> list[ValidatorDailyStats]:
     """Scrapes the website of beaconcha.in and parses the data directly out of the data table.
 
     The parser is very simple. And can break if they change stuff in the way
@@ -117,7 +117,7 @@ def scrape_validator_daily_stats(
     deposits_number = 0
     amount_deposited = ZERO
     column_pos = 1
-    stats: List[ValidatorDailyStats] = []
+    stats: list[ValidatorDailyStats] = []
     while tr is not None:
 
         for column in tr.children:

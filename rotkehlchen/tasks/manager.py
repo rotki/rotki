@@ -2,7 +2,7 @@ import copy
 import logging
 import random
 from collections import defaultdict
-from typing import Callable, DefaultDict, Dict, List, NamedTuple, Set, Tuple
+from typing import Callable, DefaultDict, NamedTuple
 
 import gevent
 
@@ -75,7 +75,7 @@ class TaskManager():
             self,
             max_tasks_num: int,
             greenlet_manager: GreenletManager,
-            api_task_greenlets: List[gevent.Greenlet],
+            api_task_greenlets: list[gevent.Greenlet],
             database: DBHandler,
             cryptocompare: Cryptocompare,
             premium_sync_manager: Optional[PremiumSyncManager],
@@ -93,14 +93,14 @@ class TaskManager():
         self.database = database
         self.cryptocompare = cryptocompare
         self.exchange_manager = exchange_manager
-        self.cryptocompare_queries: Set[CCHistoQuery] = set()
+        self.cryptocompare_queries: set[CCHistoQuery] = set()
         self.chains_aggregator = chains_aggregator
         self.last_xpub_derivation_ts = 0
         self.last_eth_tx_query_ts: DefaultDict[ChecksumEvmAddress, int] = defaultdict(int)
         self.last_exchange_query_ts: DefaultDict[ExchangeLocationID, int] = defaultdict(int)
-        self.base_entries_ignore_set: Set[str] = set()
+        self.base_entries_ignore_set: set[str] = set()
         self.prepared_cryptocompare_query = False
-        self.running_greenlets: Dict[Callable, gevent.Greenlet] = {}
+        self.running_greenlets: dict[Callable, gevent.Greenlet] = {}
         self.greenlet_manager.spawn_and_track(  # Needs to run in greenlet, is slow
             after_seconds=None,
             task_name='Prepare cryptocompare queries',
@@ -116,7 +116,7 @@ class TaskManager():
         self.premium_check_retries = 0
         self.premium_sync_manager: Optional[PremiumSyncManager] = premium_sync_manager
 
-        self.potential_tasks: List[Callable[[], Optional[gevent.Greenlet]]] = [
+        self.potential_tasks: list[Callable[[], Optional[gevent.Greenlet]]] = [
             self._maybe_schedule_cryptocompare_query,
             self._maybe_schedule_xpub_derivation,
             self._maybe_query_ethereum_transactions,
@@ -365,7 +365,7 @@ class TaskManager():
     def get_base_entries_missing_prices(
         self,
         query_filter: HistoryEventFilterQuery,
-    ) -> List[Tuple[str, FVal, Asset, Timestamp]]:
+    ) -> list[tuple[str, FVal, Asset, Timestamp]]:
         """
         Searches base entries missing usd prices that have not previously been checked in
         this session.
@@ -387,7 +387,7 @@ class TaskManager():
 
     def query_missing_prices_of_base_entries(
         self,
-        entries_missing_prices: List[Tuple[str, FVal, Asset, Timestamp]],
+        entries_missing_prices: list[tuple[str, FVal, Asset, Timestamp]],
     ) -> None:
         """Queries missing prices for HistoryBaseEntry in database updating
         the price if it is found. Otherwise we add the id to the ignore list

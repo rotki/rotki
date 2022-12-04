@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Optional, Tuple
+from typing import TYPE_CHECKING, Optional
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
@@ -72,7 +72,7 @@ class ManualCurrentOracle(CurrentPriceOracleInterface):
             from_asset: Asset,
             to_asset: Asset,
             match_main_currency: bool,
-    ) -> Tuple[Price, bool]:
+    ) -> tuple[Price, bool]:
         """
         Searches for a manually specified current price for the `from_asset`.
         If it finds the price and it is the main currency, returns as is and along with a True

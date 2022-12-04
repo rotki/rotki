@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Optional
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
@@ -44,9 +44,9 @@ class CompoundDecoder(DecoderInterface):
             self,
             transaction: EvmTransaction,
             tx_log: EvmTxReceiptLog,
-            decoded_events: List[HistoryBaseEntry],
+            decoded_events: list[HistoryBaseEntry],
             compound_token: EvmToken,
-    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
+    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         minter = hex_or_bytes_to_address(tx_log.data[0:32])
         if not self.base.is_tracked(minter):
             return None, []
@@ -96,9 +96,9 @@ class CompoundDecoder(DecoderInterface):
     def _decode_redeem(
             self,
             tx_log: EvmTxReceiptLog,
-            decoded_events: List[HistoryBaseEntry],
+            decoded_events: list[HistoryBaseEntry],
             compound_token: EvmToken,
-    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
+    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         redeemer = hex_or_bytes_to_address(tx_log.data[0:32])
         if not self.base.is_tracked(redeemer):
             return None, []
@@ -138,11 +138,11 @@ class CompoundDecoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: List[HistoryBaseEntry],
-            all_logs: List[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: Optional[List[ActionItem]],  # pylint: disable=unused-argument
+            decoded_events: list[HistoryBaseEntry],
+            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+            action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
             compound_token: EvmToken,
-    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
+    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         if tx_log.topics[0] == MINT_COMPOUND_TOKEN:
             log.debug(f'Hash: {transaction.tx_hash.hex()}')
             return self._decode_mint(transaction=transaction, tx_log=tx_log, decoded_events=decoded_events, compound_token=compound_token)  # noqa: E501
@@ -156,10 +156,10 @@ class CompoundDecoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
-            all_logs: List[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: Optional[List[ActionItem]],  # pylint: disable=unused-argument
-    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
+            decoded_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
+            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+            action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
+    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         """Example tx:
         https://etherscan.io/tx/0x024bd402420c3ba2f95b875f55ce2a762338d2a14dac4887b78174254c9ab807
         """
@@ -188,12 +188,12 @@ class CompoundDecoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
-    def addresses_to_decoders(self) -> Dict[ChecksumEvmAddress, Tuple[Any, ...]]:
+    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         compound_tokens = GlobalDBHandler().get_evm_tokens(
             chain_id=ChainID.ETHEREUM,
             protocol='compound',
         )
-        mapping: Dict[ChecksumEvmAddress, Tuple[Any, ...]] = {}
+        mapping: dict[ChecksumEvmAddress, tuple[Any, ...]] = {}
         for token in compound_tokens:
             if token == A_COMP:
                 continue
@@ -202,5 +202,5 @@ class CompoundDecoder(DecoderInterface):
         mapping[COMPTROLLER_PROXY_ADDRESS] = (self.decode_comp_claim,)
         return mapping
 
-    def counterparties(self) -> List[str]:
+    def counterparties(self) -> list[str]:
         return [CPT_COMPOUND]

@@ -1,17 +1,5 @@
 from enum import Enum, auto
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Literal,
-    NamedTuple,
-    NewType,
-    Optional,
-    Tuple,
-    Type,
-    Union,
-)
+from typing import Any, Callable, Literal, NamedTuple, NewType, Optional, Union
 
 from eth_typing import ChecksumAddress
 from hexbytes import HexBytes as Web3HexBytes
@@ -118,7 +106,7 @@ class ExternalServiceApiCredentials(NamedTuple):
     service: ExternalService
     api_key: ApiKey
 
-    def serialize_for_db(self) -> Tuple[str, str]:
+    def serialize_for_db(self) -> tuple[str, str]:
         return (self.service.name.lower(), self.api_key)
 
 
@@ -173,10 +161,10 @@ BlockchainAddress = Union[
     str,
 ]
 ListOfBlockchainAddresses = Union[
-    List[BTCAddress],
-    List[ChecksumEvmAddress],
-    List[KusamaAddress],
-    List[PolkadotAddress],
+    list[BTCAddress],
+    list[ChecksumEvmAddress],
+    list[KusamaAddress],
+    list[PolkadotAddress],
 ]
 
 
@@ -266,7 +254,7 @@ class EvmTransaction(NamedTuple):
     input_data: bytes
     nonce: int
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self) -> dict[str, Any]:
         result = self._asdict()  # pylint: disable=no-member
         result['tx_hash'] = result['tx_hash'].hex()
         result['chain_id'] = result['chain_id'].serialize()
@@ -304,7 +292,7 @@ class EvmInternalTransaction(NamedTuple):
     to_address: Optional[ChecksumEvmAddress]
     value: int
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self) -> dict[str, Any]:
         result = self._asdict()  # pylint: disable=no-member
         result['tx_hash'] = result['tx_hash'].hex()
         result['chain_id'] = result['chain_id'].serialize()
@@ -340,7 +328,7 @@ class CovalentTransaction(NamedTuple):
     input_data: str
     nonce: int
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self) -> dict[str, Any]:
         result = {
             'tx_hash': self.tx_hash,
             'timestamp': self.timestamp,
@@ -466,7 +454,7 @@ class TradeType(DBEnumMixIn):
     SETTLEMENT_SELL = 4
 
     @classmethod
-    def deserialize(cls: Type['TradeType'], symbol: str) -> 'TradeType':
+    def deserialize(cls: type['TradeType'], symbol: str) -> 'TradeType':
         """Overriding deserialize here since it can have different wordings for the same type
         so the automatic deserialization does not work
         """
@@ -539,7 +527,7 @@ class AssetMovementCategory(DBEnumMixIn):
 class BlockchainAccountData(NamedTuple):
     address: BlockchainAddress
     label: Optional[str] = None
-    tags: Optional[List[str]] = None
+    tags: Optional[list[str]] = None
 
 
 class ExchangeApiCredentials(NamedTuple):
@@ -554,7 +542,7 @@ class ExchangeApiCredentials(NamedTuple):
     passphrase: Optional[str] = None
 
 
-EXTERNAL_EXCHANGES: List = [
+EXTERNAL_EXCHANGES: list = [
     Location.CRYPTOCOM,
     Location.BLOCKFI,
     Location.NEXO,
@@ -569,13 +557,13 @@ class ExchangeLocationID(NamedTuple):
     name: str
     location: Location
 
-    def serialize(self) -> Dict:
+    def serialize(self) -> dict:
         return {'name': self.name, 'location': self.location.serialize()}
 
     @classmethod
     def deserialize(
-            cls: Type['ExchangeLocationID'],
-            data: Dict['str', Any],
+            cls: type['ExchangeLocationID'],
+            data: dict['str', Any],
     ) -> 'ExchangeLocationID':
         """May raise DeserializationError"""
         try:
@@ -604,11 +592,11 @@ class AddressbookEntry(NamedTuple):
     address: ChecksumEvmAddress
     name: str
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self) -> dict[str, Any]:
         return {'address': self.address, 'name': self.name}
 
     @classmethod
-    def deserialize(cls: Type['AddressbookEntry'], data: Dict[str, Any]) -> 'AddressbookEntry':
+    def deserialize(cls: type['AddressbookEntry'], data: dict[str, Any]) -> 'AddressbookEntry':
         """May raise:
         -KeyError if required keys are missing
         """
@@ -628,7 +616,7 @@ class UserNote(NamedTuple):
     last_update_timestamp: Timestamp
     is_pinned: bool
 
-    def serialize(self) -> Dict[str, Union[str, int]]:
+    def serialize(self) -> dict[str, Union[str, int]]:
         """Serialize a `UserNote` object into a dict."""
         return {
             'identifier': self.identifier,
@@ -640,7 +628,7 @@ class UserNote(NamedTuple):
         }
 
     @classmethod
-    def deserialize(cls, entry: Dict[str, Any]) -> 'UserNote':
+    def deserialize(cls, entry: dict[str, Any]) -> 'UserNote':
         """Turns a dict into a `UserNote` object.
         May raise:
         - DeserializationError if required keys are missing.
@@ -658,7 +646,7 @@ class UserNote(NamedTuple):
             raise DeserializationError(f'Failed to deserialize dict due to missing key: {str(e)}') from e  # noqa: E501
 
     @classmethod
-    def deserialize_from_db(cls, entry: Tuple[int, str, str, str, int, int]) -> 'UserNote':
+    def deserialize_from_db(cls, entry: tuple[int, str, str, str, int, int]) -> 'UserNote':
         """Turns a `user_note` db entry into a `UserNote` object."""
         return cls(
             identifier=entry[0],
@@ -704,7 +692,7 @@ AddressNameSource = Literal[
     'private_addressbook',
 ]
 
-DEFAULT_ADDRESS_NAME_PRIORITY: List[AddressNameSource] = [
+DEFAULT_ADDRESS_NAME_PRIORITY: list[AddressNameSource] = [
     'private_addressbook',
     'blockchain_account',
     'global_addressbook',

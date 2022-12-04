@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Optional
 
 import requests
 
@@ -36,9 +36,9 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-ExchangeQueryBalances = Tuple[Optional[Dict[AssetWithOracles, Balance]], str]
+ExchangeQueryBalances = tuple[Optional[dict[AssetWithOracles, Balance]], str]
 ExchangeHistorySuccessCallback = Callable[
-    [List[Trade], List[MarginPosition], List[AssetMovement], Any],
+    [list[Trade], list[MarginPosition], list[AssetMovement], Any],
     None,
 ]
 
@@ -100,7 +100,7 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             api_key: Optional[ApiKey],
             api_secret: Optional[ApiSecret],
             **kwargs: Any,
-    ) -> Tuple[bool, str]:
+    ) -> tuple[bool, str]:
         """Edits the exchange object with new info given from the API
 
         Returns False and error message in case of problems
@@ -181,7 +181,7 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
         """
         raise NotImplementedError('first_connection() should only be implemented by subclasses')
 
-    def validate_api_key(self) -> Tuple[bool, str]:
+    def validate_api_key(self) -> tuple[bool, str]:
         """Tries to make the simplest private api query to the exchange in order to
         verify the api key's validity"""
         raise NotImplementedError('validate_api_key() should only be implemented by subclasses')
@@ -190,7 +190,7 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> Tuple[List[Trade], Tuple[Timestamp, Timestamp]]:
+    ) -> tuple[list[Trade], tuple[Timestamp, Timestamp]]:
         """Queries the exchange's API for the trade history of the user
 
         Should be implemented by subclasses if the exchange can return trade history in any form.
@@ -208,7 +208,7 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> List[MarginPosition]:
+    ) -> list[MarginPosition]:
         """Queries the exchange's API for the margin positions history of the user
 
         Should be implemented by subclasses if the exchange can return margin position history in
@@ -222,7 +222,7 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> List[AssetMovement]:
+    ) -> list[AssetMovement]:
         """Queries the exchange's API for the asset movements of the user
 
         Should be implemented in subclasses.
@@ -235,7 +235,7 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> List[LedgerAction]:
+    ) -> list[LedgerAction]:
         """Queries the exchange's API for the ledger actions of the user
 
         Should be implemented in subclasses.
@@ -253,7 +253,7 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             start_ts: Timestamp,
             end_ts: Timestamp,
             only_cache: bool,
-    ) -> List[Trade]:
+    ) -> list[Trade]:
         """Queries the local DB and the remote exchange for the trade history of the user
 
         Limits the query to the given time range and also if only_cache is True returns
@@ -316,7 +316,7 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> List[MarginPosition]:
+    ) -> list[MarginPosition]:
         """
         Queries the local DB and the remote exchange for the margin positions history of the user
         """
@@ -369,7 +369,7 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             start_ts: Timestamp,
             end_ts: Timestamp,
             only_cache: bool,
-    ) -> List[AssetMovement]:
+    ) -> list[AssetMovement]:
         """Queries the local DB and the exchange for the deposits/withdrawal history of the user
 
         If only_cache is true only what is already cached in the DB is returned without
@@ -428,7 +428,7 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             start_ts: Timestamp,
             end_ts: Timestamp,
             only_cache: bool,
-    ) -> List[LedgerAction]:
+    ) -> list[LedgerAction]:
         """Queries the local DB and the exchange for the income/loss/expense history of the user
 
         If only_cache is true only what is already cached in the DB is returned without

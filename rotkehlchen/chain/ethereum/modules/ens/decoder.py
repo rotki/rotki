@@ -1,6 +1,6 @@
 import logging
 from multiprocessing.managers import RemoteError
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Optional
 
 from eth_utils import to_checksum_address
 
@@ -61,10 +61,10 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
-            all_logs: List[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: Optional[List[ActionItem]],  # pylint: disable=unused-argument
-    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
+            decoded_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
+            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+            action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
+    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         if tx_log.topics[0] == NAME_REGISTERED:
             return self._decode_name_registered(
                 tx_log=tx_log,
@@ -89,10 +89,10 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
-            all_logs: List[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: Optional[List[ActionItem]],  # pylint: disable=unused-argument
-    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
+            decoded_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
+            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+            action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
+    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         try:
             _, decoded_data = decode_event_data_abi_str(tx_log, NAME_REGISTERED_ABI)
         except DeserializationError as e:
@@ -141,10 +141,10 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
-            all_logs: List[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: Optional[List[ActionItem]],  # pylint: disable=unused-argument
-    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
+            decoded_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
+            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+            action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
+    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         try:
             _, decoded_data = decode_event_data_abi_str(tx_log, NAME_RENEWED_ABI)
         except DeserializationError as e:
@@ -169,10 +169,10 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: List[HistoryBaseEntry],
-            all_logs: List[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: Optional[List[ActionItem]],  # pylint: disable=unused-argument
-    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
+            decoded_events: list[HistoryBaseEntry],
+            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+            action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
+    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         """Decode event where address is set for an ENS name."""
         if tx_log.topics[0] == NEW_RESOLVER:
             node = tx_log.topics[1]
@@ -212,10 +212,10 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: List[HistoryBaseEntry],
-            all_logs: List[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: Optional[List[ActionItem]],  # pylint: disable=unused-argument
-    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
+            decoded_events: list[HistoryBaseEntry],
+            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+            action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
+    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         """Decode event where a text property (discord, telegram, etc.) is set for an ENS name."""
         if tx_log.topics[0] == TEXT_CHANGED:
             try:
@@ -269,12 +269,12 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
 
     # -- DecoderInterface methods
 
-    def addresses_to_decoders(self) -> Dict[ChecksumEvmAddress, Tuple[Any, ...]]:
+    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
             ENS_REGISTRAR_CONTROLLER: (self._decode_ens_registrar_event,),
             ENS_REGISTRY_WITH_FALLBACK: (self._decode_ens_registry_with_fallback_event,),
             ENS_PUBLIC_RESOLVER_2_ADDRESS: (self._decode_ens_public_resolver_2_events,),
         }
 
-    def counterparties(self) -> List[str]:
+    def counterparties(self) -> list[str]:
         return [CPT_ENS]

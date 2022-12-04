@@ -1,5 +1,4 @@
 from http import HTTPStatus
-from typing import Dict, List
 
 import pytest
 import requests
@@ -18,7 +17,7 @@ from rotkehlchen.types import Timestamp
 from rotkehlchen.utils.misc import ts_now
 
 
-def _add_ledger_actions(server) -> List[Dict]:
+def _add_ledger_actions(server) -> list[dict]:
     actions = [{
         'timestamp': 1,
         'action_type': 'income',

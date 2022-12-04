@@ -2,7 +2,7 @@ import csv
 import logging
 from decimal import DivisionByZero
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.data_import.utils import BaseExchangeImporter
@@ -24,7 +24,7 @@ class RotkiGenericTradesImporter(BaseExchangeImporter):
     def _consume_rotki_trades(
             self,
             cursor: DBCursor,
-            csv_row: Dict[str, Any],
+            csv_row: dict[str, Any],
     ) -> None:
         """Consume rotki generic trades import CSV file.
         May raise:

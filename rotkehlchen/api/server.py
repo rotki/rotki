@@ -2,7 +2,7 @@ import json
 import logging
 import sys
 from http import HTTPStatus
-from typing import Any, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Optional, Union
 
 import werkzeug
 from flask import Blueprint, Flask, Response, abort, jsonify, request
@@ -143,10 +143,10 @@ from rotkehlchen.api.v1.resources import (
 from rotkehlchen.api.websockets.notifier import RotkiNotifier, RotkiWSApp
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
-URLS = List[
+URLS = list[
     Union[
-        Tuple[str, Type[MethodView]],
-        Tuple[str, Type[MethodView], str],
+        tuple[str, type[MethodView]],
+        tuple[str, type[MethodView], str],
     ]
 ]
 
@@ -349,7 +349,7 @@ def handle_request_parsing_error(
         _request: werkzeug.local.LocalProxy,
         _schema: Schema,
         error_status_code: Optional[int],  # pylint: disable=unused-argument
-        error_headers: Optional[Dict],  # pylint: disable=unused-argument
+        error_headers: Optional[dict],  # pylint: disable=unused-argument
 ) -> None:
     """ This handles request parsing errors generated for example by schema
     field validation failing."""
@@ -374,7 +374,7 @@ class APIServer():
             self,
             rest_api: RestAPI,
             ws_notifier: RotkiNotifier,
-            cors_domain_list: Optional[List[str]] = None,
+            cors_domain_list: Optional[list[str]] = None,
     ) -> None:
         flask_app = Flask(__name__)
         if cors_domain_list:

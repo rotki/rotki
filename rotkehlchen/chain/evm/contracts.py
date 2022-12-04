@@ -3,14 +3,11 @@ import os
 from typing import (
     TYPE_CHECKING,
     Any,
-    Dict,
     Generic,
-    List,
     Literal,
     NamedTuple,
     Optional,
     Sequence,
-    Tuple,
     TypeVar,
     Union,
     overload,
@@ -36,14 +33,14 @@ WEB3 = Web3()
 
 class EvmContract(NamedTuple):
     address: ChecksumEvmAddress
-    abi: List[Dict[str, Any]]
+    abi: list[dict[str, Any]]
     deployed_block: int
 
     def call(
             self,
             node_inquirer: 'EvmNodeInquirer',
             method_name: str,
-            arguments: Optional[List[Any]] = None,
+            arguments: Optional[list[Any]] = None,
             call_order: Optional[Sequence['WeightedNode']] = None,
             block_identifier: BlockIdentifier = 'latest',
     ) -> Any:
@@ -60,7 +57,7 @@ class EvmContract(NamedTuple):
             self,
             node_inquirer: 'EvmNodeInquirer',
             event_name: str,
-            argument_filters: Dict[str, Any],
+            argument_filters: dict[str, Any],
             to_block: Union[int, Literal['latest']] = 'latest',
             call_order: Optional[Sequence['WeightedNode']] = None,
     ) -> Any:
@@ -78,7 +75,7 @@ class EvmContract(NamedTuple):
             self,
             node_inquirer: 'EvmNodeInquirer',
             event_name: str,
-            argument_filters: Dict[str, Any],
+            argument_filters: dict[str, Any],
             from_block: int,
             to_block: Union[int, Literal['latest']] = 'latest',
             call_order: Optional[Sequence['WeightedNode']] = None,
@@ -93,7 +90,7 @@ class EvmContract(NamedTuple):
             call_order=call_order,
         )
 
-    def encode(self, method_name: str, arguments: Optional[List[Any]] = None) -> str:
+    def encode(self, method_name: str, arguments: Optional[list[Any]] = None) -> str:
         contract = WEB3.eth.contract(address=self.address, abi=self.abi)
         return contract.encodeABI(method_name, args=arguments if arguments else [])
 
@@ -101,8 +98,8 @@ class EvmContract(NamedTuple):
             self,
             result: Decodable,
             method_name: str,
-            arguments: Optional[List[Any]] = None,
-    ) -> Tuple[Any, ...]:
+            arguments: Optional[list[Any]] = None,
+    ) -> tuple[Any, ...]:
         contract = WEB3.eth.contract(address=self.address, abi=self.abi)
         fn_abi = contract._find_matching_fn_abi(
             fn_identifier=method_name,
@@ -116,7 +113,7 @@ class EvmContract(NamedTuple):
             tx_log: 'EvmTxReceiptLog',
             event_name: str,
             argument_names: Sequence[str],
-    ) -> Tuple[List, List]:
+    ) -> tuple[list, list]:
         """Decodes an event by finding the event ABI in the given contract's abi
 
         Perhaps we can have a faster version of this method where instead of name
@@ -143,8 +140,8 @@ class EvmContracts(Generic[T]):
     """
 
     def __init__(self, contracts_filename: str, abi_filename: str) -> None:
-        self.contracts: Dict[str, Dict[str, Any]] = {}
-        self.abi_entries: Dict[str, List[Dict[str, Any]]] = {}
+        self.contracts: dict[str, dict[str, Any]] = {}
+        self.abi_entries: dict[str, list[dict[str, Any]]] = {}
         dir_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
         with open(os.path.join(dir_path, 'data', contracts_filename)) as f:
             self.contracts = json.loads(f.read())
@@ -184,7 +181,7 @@ class EvmContracts(Generic[T]):
         assert contract, f'No contract data for {name} found'
         return contract
 
-    def abi_or_none(self, name: str) -> Optional[List[Dict[str, Any]]]:
+    def abi_or_none(self, name: str) -> Optional[list[dict[str, Any]]]:
         """Gets abi of an evm contract from the abi json file
 
         Returns None if missing
@@ -192,14 +189,14 @@ class EvmContracts(Generic[T]):
         return self.abi_entries.get(name, None)
 
     @overload
-    def abi(self: 'EvmContracts[Literal[ChainID.ETHEREUM]]', name: 'ETHEREUM_KNOWN_ABI') -> List[Dict[str, Any]]:  # noqa: E501
+    def abi(self: 'EvmContracts[Literal[ChainID.ETHEREUM]]', name: 'ETHEREUM_KNOWN_ABI') -> list[dict[str, Any]]:  # noqa: E501
         ...
 
     @overload
-    def abi(self: 'EvmContracts[Literal[ChainID.OPTIMISM]]', name: Literal['to', 'do', 'CTOKEN']) -> List[Dict[str, Any]]:  # noqa: E501
+    def abi(self: 'EvmContracts[Literal[ChainID.OPTIMISM]]', name: Literal['to', 'do', 'CTOKEN']) -> list[dict[str, Any]]:  # noqa: E501
         ...
 
-    def abi(self, name: str) -> List[Dict[str, Any]]:
+    def abi(self, name: str) -> list[dict[str, Any]]:
         """Gets abi of an evm contract from the abi json file
 
         Missing abi is a programming error and should never happen

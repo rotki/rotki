@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from eth_utils import to_checksum_address
 from web3 import HTTPProvider, Web3
@@ -70,8 +70,8 @@ class AvalancheManager():
 
     def get_multiavax_balance(
             self,
-            accounts: List[ChecksumEvmAddress],
-    ) -> Dict[ChecksumEvmAddress, FVal]:
+            accounts: list[ChecksumEvmAddress],
+    ) -> dict[ChecksumEvmAddress, FVal]:
         """Returns a dict with keys being accounts and balances in AVAX
 
         May raise:
@@ -83,7 +83,7 @@ class AvalancheManager():
             balances[account] = self.get_avax_balance(account)
         return balances
 
-    def get_block_by_number(self, num: int) -> Dict[str, Any]:
+    def get_block_by_number(self, num: int) -> dict[str, Any]:
         """Returns the block object corresponding to the given block number
 
         May raise:
@@ -108,7 +108,7 @@ class AvalancheManager():
     def get_transaction_receipt(
             self,
             tx_hash: EVMTxHash,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         tx_receipt = self.covalent.get_transaction_receipt(tx_hash)
         if tx_receipt is None:
             tx_receipt = self.w3.eth.get_transaction(tx_hash).__dict__  # type: ignore
@@ -154,9 +154,9 @@ class AvalancheManager():
     def call_contract(
             self,
             contract_address: ChecksumEvmAddress,
-            abi: List,
+            abi: list,
             method_name: str,
-            arguments: Optional[List[Any]] = None,
+            arguments: Optional[list[Any]] = None,
     ) -> Any:
         """Performs an eth_call to an ethereum contract
 

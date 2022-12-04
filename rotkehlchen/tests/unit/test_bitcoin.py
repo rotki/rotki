@@ -1,4 +1,3 @@
-from typing import Dict
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -427,7 +426,7 @@ def test_bitcoin_balance_api_resolver():
         BTCAddress('33k4CdyQJFwXQD9giSKyo36mTvE9Y6C9cP'),
     ]
 
-    def check_balances(balances_to_check: Dict[BTCAddress, FVal]) -> None:
+    def check_balances(balances_to_check: dict[BTCAddress, FVal]) -> None:
         for addr in addresses:
             assert addr in balances_to_check
 

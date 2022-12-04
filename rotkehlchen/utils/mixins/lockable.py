@@ -1,6 +1,6 @@
 from collections import defaultdict
 from functools import wraps
-from typing import Any, Callable, Dict
+from typing import Any, Callable
 
 from gevent.lock import Semaphore
 
@@ -16,7 +16,7 @@ class LockableQueryMixIn():
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.query_locks_map: Dict[int, Semaphore] = defaultdict(Semaphore)
+        self.query_locks_map: dict[int, Semaphore] = defaultdict(Semaphore)
         # Accessing and writing to the query_locks map also needs to be protected
         self.query_locks_map_lock = Semaphore()
 

@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Optional
 
 from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.ethereum.interfaces.ammswap.ammswap import AMMSwapPlatform
@@ -70,7 +70,7 @@ class Sushiswap(AMMSwapPlatform, EthereumModule):
     def _get_events_balances(
             self,
             write_cursor: 'DBCursor',
-            addresses: List[ChecksumEvmAddress],
+            addresses: list[ChecksumEvmAddress],
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
     ) -> AddressEventsBalances:
@@ -82,8 +82,8 @@ class Sushiswap(AMMSwapPlatform, EthereumModule):
         address_events_balances: AddressEventsBalances = {}
         address_events: DDAddressEvents = defaultdict(list)
         db_address_events: AddressEvents = {}
-        new_addresses: List[ChecksumEvmAddress] = []
-        existing_addresses: List[ChecksumEvmAddress] = []
+        new_addresses: list[ChecksumEvmAddress] = []
+        existing_addresses: list[ChecksumEvmAddress] = []
         min_end_ts: Timestamp = to_timestamp
 
         # Get addresses' last used query range for Sushiswap events
@@ -185,7 +185,7 @@ class Sushiswap(AMMSwapPlatform, EthereumModule):
 
     def get_balances(
         self,
-        addresses: List[ChecksumEvmAddress],
+        addresses: list[ChecksumEvmAddress],
     ) -> AddressToLPBalances:
         """Get the addresses' balances in the Sushiswap protocol
 

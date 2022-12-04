@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Optional, Tuple
+from typing import TYPE_CHECKING, Optional
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
@@ -64,7 +64,7 @@ class BaseDecoderTools():
             self,
             from_address: ChecksumEvmAddress,
             to_address: Optional[ChecksumEvmAddress],
-    ) -> Optional[Tuple[HistoryEventType, Optional[str], str, str]]:
+    ) -> Optional[tuple[HistoryEventType, Optional[str], str, str]]:
         """Depending on addresses, if they are tracked by the user or not, if they
         are an exchange address etc. determine the type of event to classify the transfer as"""
         tracked_from = from_address in self.tracked_accounts.eth

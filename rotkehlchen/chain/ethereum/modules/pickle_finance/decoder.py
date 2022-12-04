@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Callable, List
+from typing import TYPE_CHECKING, Callable
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
@@ -46,7 +46,7 @@ class PickleFinanceDecoder(DecoderInterface):
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
             event: HistoryBaseEntry,
-            action_items: List[ActionItem],  # pylint: disable=unused-argument
+            action_items: list[ActionItem],  # pylint: disable=unused-argument
     ) -> bool:
         """
         Enrich tranfer transactions to address for jar deposits and withdrawals
@@ -138,10 +138,10 @@ class PickleFinanceDecoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
-    def enricher_rules(self) -> List[Callable]:
+    def enricher_rules(self) -> list[Callable]:
         return [
             self._maybe_enrich_pickle_transfers,
         ]
 
-    def counterparties(self) -> List[str]:
+    def counterparties(self) -> list[str]:
         return [CPT_PICKLE]

@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Optional
 
 from rotkehlchen.chain.ethereum.modules.curve.pools_cache import (
     clear_curve_pools_cache,
@@ -28,12 +28,12 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-CURVE_POOLS_MAPPING_TYPE = Dict[
+CURVE_POOLS_MAPPING_TYPE = dict[
     ChecksumEvmAddress,  # lp token address
-    Tuple[
+    tuple[
         ChecksumEvmAddress,  # pool address
-        List[ChecksumEvmAddress],  # list of coins addresses
-        Optional[List[ChecksumEvmAddress]],  # optional list of underlying coins addresses
+        list[ChecksumEvmAddress],  # list of coins addresses
+        Optional[list[ChecksumEvmAddress]],  # optional list of underlying coins addresses
     ],
 ]
 

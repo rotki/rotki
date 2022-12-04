@@ -4,7 +4,7 @@ import json
 import logging
 import time
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Optional, Union
 from urllib.parse import urlencode
 
 import requests
@@ -53,7 +53,7 @@ def bitmex_to_world(symbol: str) -> AssetWithOracles:
     return Asset(symbol).resolve_to_asset_with_oracles()
 
 
-def trade_from_bitmex(bitmex_trade: Dict) -> MarginPosition:
+def trade_from_bitmex(bitmex_trade: dict) -> MarginPosition:
     """Turn a bitmex trade returned from bitmex trade history to our common trade
     history format. This only returns margin positions as bitmex only deals in
     margin trading. May raise:
@@ -125,7 +125,7 @@ class Bitmex(ExchangeInterface):
     def first_connection(self) -> None:
         self.first_connection_made = True
 
-    def validate_api_key(self) -> Tuple[bool, str]:
+    def validate_api_key(self) -> tuple[bool, str]:
         try:
             self._api_query('get', 'user')
         except RemoteError as e:
@@ -153,8 +153,8 @@ class Bitmex(ExchangeInterface):
             self,
             verb: str,
             path: str,
-            options: Optional[Dict] = None,
-    ) -> Union[List, Dict]:
+            options: Optional[dict] = None,
+    ) -> Union[list, dict]:
         """
         Queries Bitmex with the given verb for the given path and options
         """
@@ -221,26 +221,26 @@ class Bitmex(ExchangeInterface):
             self,
             verb: str,
             path: str,
-            options: Optional[Dict] = None,
-    ) -> Dict:
+            options: Optional[dict] = None,
+    ) -> dict:
         result = self._api_query(verb, path, options)
-        assert isinstance(result, Dict)  # pylint: disable=isinstance-second-argument-not-valid-type  # noqa: E501
+        assert isinstance(result, dict)  # pylint: disable=isinstance-second-argument-not-valid-type  # noqa: E501
         return result
 
     def _api_query_list(
             self,
             verb: str,
             path: str,
-            options: Optional[Dict] = None,
-    ) -> List:
+            options: Optional[dict] = None,
+    ) -> list:
         result = self._api_query(verb, path, options)
-        assert isinstance(result, List)  # pylint: disable=isinstance-second-argument-not-valid-type  # noqa: E501
+        assert isinstance(result, list)  # pylint: disable=isinstance-second-argument-not-valid-type  # noqa: E501
         return result
 
     @protect_with_lock()
     @cache_response_timewise()
     def query_balances(self) -> ExchangeQueryBalances:
-        returned_balances: Dict[AssetWithOracles, Balance] = {}
+        returned_balances: dict[AssetWithOracles, Balance] = {}
         try:
             resp = self._api_query_dict('get', 'user/wallet', {'currency': 'XBt'})
             # Bitmex shows only BTC balance
@@ -276,7 +276,7 @@ class Bitmex(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> List[MarginPosition]:
+    ) -> list[MarginPosition]:
 
         # We know user/walletHistory returns a list
         resp = self._api_query_list('get', 'user/walletHistory')
@@ -302,7 +302,7 @@ class Bitmex(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> List:
+    ) -> list:
         resp = self._api_query_list('get', 'user/walletHistory')
 
         log.debug('Bitmex deposit/withdrawals query', results_num=len(resp))
@@ -370,12 +370,12 @@ class Bitmex(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> Tuple[List[Trade], Tuple[Timestamp, Timestamp]]:
+    ) -> tuple[list[Trade], tuple[Timestamp, Timestamp]]:
         return [], (start_ts, end_ts)  # noop for bitmex
 
     def query_online_income_loss_expense(
             self,  # pylint: disable=no-self-use
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,  # pylint: disable=unused-argument
-    ) -> List[LedgerAction]:
+    ) -> list[LedgerAction]:
         return []  # noop for bitmex

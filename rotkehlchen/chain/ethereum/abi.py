@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import TYPE_CHECKING, Any, Dict, List, Tuple
+from typing import TYPE_CHECKING, Any
 
 from eth_utils import event_abi_to_log_topic
 from web3 import Web3
@@ -30,7 +30,7 @@ WEB3 = Web3()
 def decode_event_data_abi_str(
         tx_log: 'EvmTxReceiptLog',
         abi_json: str,
-) -> Tuple[List, List]:
+) -> tuple[list, list]:
     """This is an adjustment of web3's event data decoding to work with our code
     source: https://github.com/ethereum/web3.py/blob/ffe59daf10edc19ee5f05227b25bac8d090e8aa4/web3/_utils/events.py#L201
 
@@ -48,8 +48,8 @@ def decode_event_data_abi_str(
 
 def decode_event_data_abi(
         tx_log: 'EvmTxReceiptLog',
-        event_abi: Dict[str, Any],
-) -> Tuple[List, List]:
+        event_abi: dict[str, Any],
+) -> tuple[list, list]:
     """This is an adjustment of web3's event data decoding to work with our code
     source: https://github.com/ethereum/web3.py/blob/ffe59daf10edc19ee5f05227b25bac8d090e8aa4/web3/_utils/events.py#L201
 

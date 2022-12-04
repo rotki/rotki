@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Dict, List, NamedTuple, NewType, Tuple, Type, TypeVar, Union
+from typing import NamedTuple, NewType, TypeVar, Union
 
 from substrateinterface import SubstrateInterface
 
@@ -140,7 +140,7 @@ class SubstrateChain(Enum):
 
         raise AssertionError(f'Unexpected Chain: {self}')
 
-    def node_name_type(self) -> Union[Type[KusamaNodeName], Type[PolkadotNodeName]]:
+    def node_name_type(self) -> Union[type[KusamaNodeName], type[PolkadotNodeName]]:
         """Return the NodeName enum.
         """
         if self == SubstrateChain.KUSAMA:
@@ -155,5 +155,5 @@ class NodeNameAttributes(NamedTuple):
     weight_block: BlockNumber
 
 
-DictNodeNameNodeAttributes = Dict[NodeName, NodeNameAttributes]
-NodesCallOrder = List[Tuple[NodeName, NodeNameAttributes]]
+DictNodeNameNodeAttributes = dict[NodeName, NodeNameAttributes]
+NodesCallOrder = list[tuple[NodeName, NodeNameAttributes]]

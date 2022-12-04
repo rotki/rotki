@@ -1,5 +1,4 @@
 from http import HTTPStatus
-from typing import List
 
 import pytest
 import requests
@@ -210,7 +209,7 @@ def test_delete_addressbook(rotkehlchen_api_server, book_type: AddressbookType):
 
 
 def test_names_compilation(rotkehlchen_api_server):
-    def names_request(addresses: List[str]):
+    def names_request(addresses: list[str]):
         return requests.post(
             api_url_for(
                 rotkehlchen_api_server,

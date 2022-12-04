@@ -10,14 +10,10 @@ from typing import (
     Any,
     Callable,
     DefaultDict,
-    Dict,
     Iterable,
-    List,
     Literal,
     NamedTuple,
     Optional,
-    Set,
-    Tuple,
     Union,
     cast,
     overload,
@@ -100,19 +96,19 @@ DeserializationMethod = Callable[..., Union[Trade, AssetMovement]]  # ... due to
 class CurrenciesResponse(NamedTuple):
     success: bool
     response: Response
-    currencies: List[str]
+    currencies: list[str]
 
 
 class CurrencyMapResponse(NamedTuple):
     success: bool
     response: Response
-    currency_map: Dict[str, str]
+    currency_map: dict[str, str]
 
 
 class ExchangePairsResponse(NamedTuple):
     success: bool
     response: Response
-    pairs: List[str]
+    pairs: list[str]
 
 
 class ErrorResponseData(NamedTuple):
@@ -165,7 +161,7 @@ class Bitfinex(ExchangeInterface):
                 'trades',
                 'wallets',
             ],
-            options: Optional[Dict[str, Any]] = None,
+            options: Optional[dict[str, Any]] = None,
     ) -> Response:
         """Request a Bitfinex API v2 endpoint (from `endpoint`).
         """
@@ -233,24 +229,24 @@ class Bitfinex(ExchangeInterface):
     @overload
     def _api_query_paginated(  # pylint: disable=no-self-use
             self,
-            options: Dict[str, Any],
+            options: dict[str, Any],
             case: Literal['trades'],
-    ) -> List[Trade]:
+    ) -> list[Trade]:
         ...
 
     @overload
     def _api_query_paginated(  # pylint: disable=no-self-use
             self,
-            options: Dict[str, Any],
+            options: dict[str, Any],
             case: Literal['asset_movements'],
-    ) -> List[AssetMovement]:
+    ) -> list[AssetMovement]:
         ...
 
     def _api_query_paginated(
             self,
-            options: Dict[str, Any],
+            options: dict[str, Any],
             case: Literal['trades', 'asset_movements'],
-    ) -> Union[List[Trade], List[AssetMovement], List]:
+    ) -> Union[list[Trade], list[AssetMovement], list]:
         """Request a Bitfinex API v2 endpoint paginating via an options
         attribute.
 
@@ -277,8 +273,8 @@ class Bitfinex(ExchangeInterface):
 
         call_options = options.copy()
         limit = options['limit']
-        results: Union[List[Trade], List[AssetMovement], List] = []
-        processed_result_ids: Set[int] = set()
+        results: Union[list[Trade], list[AssetMovement], list] = []
+        processed_result_ids: set[int] = set()
         retries_left = API_REQUEST_RETRY_TIMES
         while retries_left >= 0:
             response = self._api_query(
@@ -369,29 +365,29 @@ class Bitfinex(ExchangeInterface):
     def _deserialize_api_query_paginated_results(  # pylint: disable=no-self-use
             self,
             case: Literal['trades'],
-            options: Dict[str, Any],
-            raw_results: List[List[Any]],
-            processed_result_ids: Set[int],
-    ) -> List[Trade]:
+            options: dict[str, Any],
+            raw_results: list[list[Any]],
+            processed_result_ids: set[int],
+    ) -> list[Trade]:
         ...
 
     @overload
     def _deserialize_api_query_paginated_results(  # pylint: disable=no-self-use
             self,
             case: Literal['asset_movements'],
-            options: Dict[str, Any],
-            raw_results: List[List[Any]],
-            processed_result_ids: Set[int],
-    ) -> List[AssetMovement]:
+            options: dict[str, Any],
+            raw_results: list[list[Any]],
+            processed_result_ids: set[int],
+    ) -> list[AssetMovement]:
         ...
 
     def _deserialize_api_query_paginated_results(
             self,
             case: Literal['trades', 'asset_movements'],
-            options: Dict[str, Any],
-            raw_results: List[List[Any]],
-            processed_result_ids: Set[int],
-    ) -> Union[List[Trade], List[AssetMovement], List]:
+            options: dict[str, Any],
+            raw_results: list[list[Any]],
+            processed_result_ids: set[int],
+    ) -> Union[list[Trade], list[AssetMovement], list]:
         deserialization_method: DeserializationMethod
         if case == 'trades':
             deserialization_method = self._deserialize_trade
@@ -411,7 +407,7 @@ class Bitfinex(ExchangeInterface):
         if case == 'asset_movements':
             raw_results.sort(key=lambda raw_result: raw_result[id_index])
 
-        results: Union[List[Trade], List[AssetMovement], List] = []
+        results: Union[list[Trade], list[AssetMovement], list] = []
         for raw_result in raw_results:
             if len(raw_result) < expected_raw_result_length:
                 log.error(
@@ -475,7 +471,7 @@ class Bitfinex(ExchangeInterface):
 
         return results
 
-    def _deserialize_asset_movement(self, raw_result: List[Any]) -> AssetMovement:
+    def _deserialize_asset_movement(self, raw_result: list[Any]) -> AssetMovement:
         """Process an asset movement (i.e. deposit or withdrawal) from Bitfinex
         and deserialize it.
 
@@ -531,7 +527,7 @@ class Bitfinex(ExchangeInterface):
         )
         return asset_movement
 
-    def _deserialize_trade(self, raw_result: List[Any]) -> Trade:
+    def _deserialize_trade(self, raw_result: list[Any]) -> Trade:
         """Process a trade result from Bitfinex and deserialize it.
 
         The base and quote assets are instantiated using the `fee_currency_symbol`
@@ -586,7 +582,7 @@ class Bitfinex(ExchangeInterface):
         return trade
 
     @staticmethod
-    def _get_error_response_data(response_list: List[Any]) -> ErrorResponseData:
+    def _get_error_response_data(response_list: list[Any]) -> ErrorResponseData:
         """Given an error response, return the error code and the reason.
         """
         error_code = None
@@ -722,7 +718,7 @@ class Bitfinex(ExchangeInterface):
             self,
             response: Response,
             case: Literal['validate_api_key'],
-    ) -> Tuple[bool, str]:
+    ) -> tuple[bool, str]:
         ...
 
     @overload
@@ -738,7 +734,7 @@ class Bitfinex(ExchangeInterface):
             self,
             response: Response,
             case: Literal['trades'],
-    ) -> List[Trade]:
+    ) -> list[Trade]:
         ...
 
     @overload
@@ -746,7 +742,7 @@ class Bitfinex(ExchangeInterface):
             self,
             response: Response,
             case: Literal['asset_movements'],
-    ) -> List[AssetMovement]:
+    ) -> list[AssetMovement]:
         ...
 
     def _process_unsuccessful_response(
@@ -754,8 +750,8 @@ class Bitfinex(ExchangeInterface):
             response: Response,
             case: Literal['validate_api_key', 'balances', 'trades', 'asset_movements'],
     ) -> Union[
-        List,
-        Tuple[bool, str],
+        list,
+        tuple[bool, str],
         ExchangeQueryBalances,
     ]:
         """This function processes not successful responses for the cases listed
@@ -840,7 +836,7 @@ class Bitfinex(ExchangeInterface):
             )
         # Generate a pair - tickers map. Bitfinex test assets have already been
         # removed from both 'pairs' and 'currencies' lists.
-        pair_bfx_symbols_map: Dict[str, Tuple[str, str]] = {}
+        pair_bfx_symbols_map: dict[str, tuple[str, str]] = {}
         for pair in exchange_pairs_response.pairs:
             bfx_pair = self._process_bfx_pair(pair)
             for bfx_symbol in currencies_response.currencies:
@@ -950,7 +946,7 @@ class Bitfinex(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> List[AssetMovement]:
+    ) -> list[AssetMovement]:
         """Return the account deposits and withdrawals on Bitfinex.
 
         Endpoint documentation:
@@ -963,7 +959,7 @@ class Bitfinex(ExchangeInterface):
             'end': end_ts * 1000,
             'limit': API_MOVEMENTS_MAX_LIMIT,
         }
-        asset_movements: List[AssetMovement] = self._api_query_paginated(
+        asset_movements: list[AssetMovement] = self._api_query_paginated(
             options=options,
             case='asset_movements',
         )
@@ -973,7 +969,7 @@ class Bitfinex(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> Tuple[List[Trade], Tuple[Timestamp, Timestamp]]:
+    ) -> tuple[list[Trade], tuple[Timestamp, Timestamp]]:
         """Return the account trades on Bitfinex.
 
         Endpoint documentation:
@@ -987,13 +983,13 @@ class Bitfinex(ExchangeInterface):
             'limit': API_TRADES_MAX_LIMIT,
             'sort': API_TRADES_SORTING_MODE,
         }
-        trades: List[Trade] = self._api_query_paginated(
+        trades: list[Trade] = self._api_query_paginated(
             options=options,
             case='trades',
         )
         return trades, (start_ts, end_ts)
 
-    def validate_api_key(self) -> Tuple[bool, str]:
+    def validate_api_key(self) -> tuple[bool, str]:
         """Validates that the Bitfinex API key is good for usage in rotki.
 
         Makes sure that the following permissions are given to the key:
@@ -1015,12 +1011,12 @@ class Bitfinex(ExchangeInterface):
             self,  # pylint: disable=no-self-use
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,  # pylint: disable=unused-argument
-    ) -> List[MarginPosition]:
+    ) -> list[MarginPosition]:
         return []  # noop for bitfinex
 
     def query_online_income_loss_expense(
             self,  # pylint: disable=no-self-use
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,  # pylint: disable=unused-argument
-    ) -> List[LedgerAction]:
+    ) -> list[LedgerAction]:
         return []  # noop for bitfinex

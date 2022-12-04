@@ -1,7 +1,7 @@
 import json
 import logging
 from http import HTTPStatus
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Optional
 from urllib.parse import urlencode
 
 import requests
@@ -38,15 +38,15 @@ class Defillama(HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):
         PenalizablePriceOracleMixin.__init__(self)
         self.session = requests.session()
         self.session.headers.update({'User-Agent': 'rotkehlchen'})
-        self.all_coins_cache: Optional[Dict[str, Dict[str, Any]]] = None
+        self.all_coins_cache: Optional[dict[str, dict[str, Any]]] = None
         self.last_rate_limit = 0
 
     def _query(
             self,
             module: str,
             subpath: Optional[str] = None,
-            options: Optional[Dict[str, str]] = None,
-    ) -> Dict[str, Any]:
+            options: Optional[dict[str, str]] = None,
+    ) -> dict[str, Any]:
         """Performs a defillama query
 
         May raise:
@@ -103,7 +103,7 @@ class Defillama(HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):
 
     def _deserialize_price(
             self,
-            result: Dict[str, Any],
+            result: dict[str, Any],
             coin_id: str,
             from_asset: Asset,
             to_asset: Asset,
@@ -149,7 +149,7 @@ class Defillama(HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):
             from_asset: AssetWithOracles,
             to_asset: AssetWithOracles,
             match_main_currency: bool,
-    ) -> Tuple[Price, bool]:
+    ) -> tuple[Price, bool]:
         """
         Returns a simple price for from_asset to to_asset in Defillama and `False` value
         since it never tries to match main currency.
@@ -281,6 +281,6 @@ class Defillama(HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):
         )])
         return price
 
-    def all_coins(self) -> Dict[str, Dict[str, Any]]:
+    def all_coins(self) -> dict[str, dict[str, Any]]:
         """no op for defillama. Required for the interface"""
         return {}

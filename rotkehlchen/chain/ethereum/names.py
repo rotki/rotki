@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Callable, Dict, List, Optional
+from typing import TYPE_CHECKING, Callable, Optional
 
 from rotkehlchen.chain.ethereum.decoding.constants import ETHADDRESS_TO_KNOWN_NAME
 from rotkehlchen.constants import ENS_UPDATE_INTERVAL
@@ -23,9 +23,9 @@ if TYPE_CHECKING:
 
 def find_ens_mappings(
         ethereum_inquirer: 'EthereumInquirer',
-        addresses: List[ChecksumEvmAddress],
+        addresses: list[ChecksumEvmAddress],
         ignore_cache: bool,
-) -> Dict[ChecksumEvmAddress, str]:
+) -> dict[ChecksumEvmAddress, str]:
     """
     Find and return ens names for the given addresses.
     First check the db, and if can't find, call the blockchain.
@@ -33,7 +33,7 @@ def find_ens_mappings(
     - RemoteError if was not able to query blockchain
     """
     dbens = DBEns(ethereum_inquirer.database)
-    ens_mappings: Dict[ChecksumEvmAddress, str] = {}
+    ens_mappings: dict[ChecksumEvmAddress, str] = {}
     with dbens.db.user_write() as cursor:
         if ignore_cache:
             addresses_to_query = addresses
@@ -65,8 +65,8 @@ def find_ens_mappings(
 
 def search_for_addresses_names(
         database: DBHandler,
-        addresses: List[ChecksumEvmAddress],
-) -> Dict[ChecksumEvmAddress, Optional[str]]:
+        addresses: list[ChecksumEvmAddress],
+) -> dict[ChecksumEvmAddress, Optional[str]]:
     """This method searches for all names of provided addresses known to rotki. We can show
     only one name per address, and thus we prioritize known names. Priority is read from settings.
     """
@@ -97,22 +97,22 @@ FetcherFunc = Callable[[DBHandler, ChecksumEvmAddress], Optional[str]]
 
 class NamePrioritizer:
     def __init__(self, database: DBHandler):
-        self._fetchers: Dict[AddressNameSource, FetcherFunc] = {}
+        self._fetchers: dict[AddressNameSource, FetcherFunc] = {}
         self._db = database
 
-    def add_fetchers(self, fetchers: Dict[AddressNameSource, FetcherFunc]) -> None:
+    def add_fetchers(self, fetchers: dict[AddressNameSource, FetcherFunc]) -> None:
         self._fetchers.update(fetchers)
 
     def get_prioritized_names(
             self,
-            prioritized_name_source: List[AddressNameSource],
-            addresses: List[ChecksumEvmAddress],
-    ) -> Dict[ChecksumEvmAddress, Optional[str]]:
+            prioritized_name_source: list[AddressNameSource],
+            addresses: list[ChecksumEvmAddress],
+    ) -> dict[ChecksumEvmAddress, Optional[str]]:
         """
         Gets the name from the name source with the highest priority.
         Name source ids with lower index have a higher priority.
         """
-        top_prio_names: Dict[ChecksumEvmAddress, Optional[str]] = {}
+        top_prio_names: dict[ChecksumEvmAddress, Optional[str]] = {}
 
         for address in addresses:
             for name_source in prioritized_name_source:

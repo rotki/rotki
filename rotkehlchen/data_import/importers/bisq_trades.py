@@ -1,6 +1,6 @@
 import csv
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.constants.assets import A_BSQ, A_BTC
@@ -22,7 +22,7 @@ class BisqTradesImporter(BaseExchangeImporter):
     def _consume_bisq_trade(
             self,
             cursor: DBCursor,
-            csv_row: Dict[str, Any],
+            csv_row: dict[str, Any],
             timestamp_format: str = '%d %b %Y %H:%M:%S',
     ) -> None:
         """

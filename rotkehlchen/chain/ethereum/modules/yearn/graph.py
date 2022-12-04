@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List, Literal
+from typing import Any, Literal
 
 from eth_utils import to_checksum_address
 
@@ -86,9 +86,9 @@ class YearnVaultsV2Graph:
 
     def _process_event(
         self,
-        events: List[Dict[str, Any]],
+        events: list[dict[str, Any]],
         event_type: Literal['deposit', 'withdraw'],
-    ) -> List[YearnVaultEvent]:
+    ) -> list[YearnVaultEvent]:
         result = []
 
         for entry in events:
@@ -204,10 +204,10 @@ class YearnVaultsV2Graph:
 
     def get_all_events(
         self,
-        addresses: List[EvmAddress],
+        addresses: list[EvmAddress],
         from_block: int,
         to_block: int,
-    ) -> Dict[ChecksumEvmAddress, Dict[str, List[YearnVaultEvent]]]:
+    ) -> dict[ChecksumEvmAddress, dict[str, list[YearnVaultEvent]]]:
 
         param_types = {
             '$from_block': 'BigInt!',
@@ -227,7 +227,7 @@ class YearnVaultsV2Graph:
             param_values=param_values,
         )
 
-        result: Dict[ChecksumEvmAddress, Dict[str, List[YearnVaultEvent]]] = {}
+        result: dict[ChecksumEvmAddress, dict[str, list[YearnVaultEvent]]] = {}
 
         for account in query['accounts']:
             account_id = to_checksum_address(account['id'])

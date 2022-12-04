@@ -1,4 +1,3 @@
-from typing import List
 
 from rotkehlchen.assets.asset import EvmToken, UnderlyingToken
 from rotkehlchen.constants.assets import A_MKR
@@ -14,7 +13,7 @@ user_token_address1 = make_ethereum_address()
 user_token_address2 = make_ethereum_address()
 
 
-def create_initial_globaldb_test_tokens() -> List[EvmToken]:
+def create_initial_globaldb_test_tokens() -> list[EvmToken]:
     return [
         EvmToken.initialize(
             address=user_token_address1,

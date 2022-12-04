@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Optional
 
 from polyleven import levenshtein
 
@@ -16,10 +16,10 @@ if TYPE_CHECKING:
 def _search_only_nfts_levenstein(
         cursor: 'DBCursor',
         filter_query: 'LevenshteinFilterQuery',
-) -> List[Tuple[int, Dict[str, Any]]]:
+) -> list[tuple[int, dict[str, Any]]]:
     query, bindings = filter_query.prepare('nfts')
     cursor.execute('SELECT identifier, name, collection_name FROM nfts ' + query, bindings)
-    search_result: List[Tuple[int, Dict[str, Any]]] = []
+    search_result: list[tuple[int, dict[str, Any]]] = []
     for entry in cursor:
         lev_dist_min = 100
         if entry[1] is not None:
@@ -47,8 +47,8 @@ def _search_only_assets_levenstein(
         cursor: 'DBCursor',
         db: 'DBHandler',
         filter_query: 'LevenshteinFilterQuery',
-) -> List[Tuple[int, Dict[str, Any]]]:
-    search_result: List[Tuple[int, Dict[str, Any]]] = []
+) -> list[tuple[int, dict[str, Any]]]:
+    search_result: list[tuple[int, dict[str, Any]]] = []
     resolved_eth = A_ETH.resolve_to_crypto_asset()
     with GlobalDBHandler().conn.read_ctx() as globaldb_cursor:
         query, bindings = filter_query.prepare('assets')
@@ -99,7 +99,7 @@ def search_assets_levenshtein(
         filter_query: 'LevenshteinFilterQuery',
         limit: Optional[int],
         search_nfts: bool,
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """Returns a list of asset details that match the search keyword using the Levenshtein distance approach."""  # noqa: E501
     search_result = []
     with db.conn.read_ctx() as cursor:

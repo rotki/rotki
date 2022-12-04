@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Tuple, cast
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, cast
 from unittest.mock import _patch, patch
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin
@@ -251,7 +251,7 @@ prices = {
 def check_result_of_history_creation_for_remote_errors(  # pylint: disable=useless-return
         start_ts: Timestamp,  # pylint: disable=unused-argument
         end_ts: Timestamp,  # pylint: disable=unused-argument
-        events: List[AccountingEventMixin],
+        events: list[AccountingEventMixin],
 ) -> Optional[int]:
     assert len(events) == 0
     return None  # fake report id
@@ -569,10 +569,10 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
 
 
 def assert_asset_movements(
-        expected: List[AssetMovement],
-        to_check_list: List[Any],
+        expected: list[AssetMovement],
+        to_check_list: list[Any],
         deserialized: bool,
-        movements_to_check: Optional[Tuple[int, ...]] = None,
+        movements_to_check: Optional[tuple[int, ...]] = None,
 ) -> None:
     if deserialized:
         expected = process_result_list([x.serialize() for x in expected])
@@ -586,9 +586,9 @@ def assert_asset_movements(
 
 
 def assert_poloniex_asset_movements(
-        to_check_list: List[Any],
+        to_check_list: list[Any],
         deserialized: bool,
-        movements_to_check: Optional[Tuple[int, ...]] = None,
+        movements_to_check: Optional[tuple[int, ...]] = None,
 ) -> None:
     expected = [AssetMovement(
         location=Location.POLONIEX,
@@ -639,9 +639,9 @@ def assert_poloniex_asset_movements(
 
 
 def assert_kraken_asset_movements(
-        to_check_list: List[Any],
+        to_check_list: list[Any],
         deserialized: bool,
-        movements_to_check: Optional[Tuple[int, ...]] = None,
+        movements_to_check: Optional[tuple[int, ...]] = None,
 ):
     expected = [
         AssetMovement(
@@ -733,7 +733,7 @@ def mock_history_processing(
     def check_result_of_history_creation(
             start_ts: Timestamp,
             end_ts: Timestamp,
-            events: List[AccountingEventMixin],
+            events: list[AccountingEventMixin],
     ) -> Optional[int]:
         """This function offers some simple assertions on the result of the
         created history. The entire processing part of the history is mocked
@@ -849,7 +849,7 @@ def mock_history_processing(
     def check_result_of_history_creation_and_process_it(
             start_ts: Timestamp,
             end_ts: Timestamp,
-            events: List[AccountingEventMixin],
+            events: list[AccountingEventMixin],
     ) -> Optional[int]:
         """Checks results of history creation but also proceeds to normal history processing"""
         check_result_of_history_creation(
@@ -1009,8 +1009,8 @@ def prepare_rotki_for_history_processing_test(
 
 
 def assert_binance_trades_result(
-        trades: List[Dict[str, Any]],
-        trades_to_check: Optional[Tuple[int, ...]] = None,
+        trades: list[dict[str, Any]],
+        trades_to_check: Optional[tuple[int, ...]] = None,
 ) -> None:
     """Convenience function to assert on the trades returned by binance's mock
 
@@ -1060,8 +1060,8 @@ def assert_binance_trades_result(
 
 
 def assert_poloniex_trades_result(
-        trades: List[Dict[str, Any]],
-        trades_to_check: Optional[Tuple[int, ...]] = None,
+        trades: list[dict[str, Any]],
+        trades_to_check: Optional[tuple[int, ...]] = None,
 ) -> None:
     """Convenience function to assert on the trades returned by poloniex's mock
 
@@ -1128,8 +1128,8 @@ def maybe_mock_historical_price_queries(
         should_mock_price_queries: bool,
         mocked_price_queries,
         default_mock_value: Optional[FVal] = None,
-        dont_mock_price_for: Optional[List['Asset']] = None,
-        force_no_price_found_for: Optional[List[Tuple['Asset', Timestamp]]] = None,
+        dont_mock_price_for: Optional[list['Asset']] = None,
+        force_no_price_found_for: Optional[list[tuple['Asset', Timestamp]]] = None,
 ) -> None:
     """If needed will make sure the historian's price queries are mocked"""
     if not should_mock_price_queries:

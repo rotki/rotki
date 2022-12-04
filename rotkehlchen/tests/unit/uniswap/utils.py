@@ -1,5 +1,4 @@
 import functools
-from typing import List
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
@@ -182,7 +181,7 @@ USD_PRICE_CAR = Price(FVal('0.2635575008126147388714187358722384'))
 
 
 # Method: `_calculate_events_balances`
-def const_lp_1_events() -> List[LiquidityPoolEvent]:
+def const_lp_1_events() -> list[LiquidityPoolEvent]:
     return [
         LiquidityPoolEvent(
             tx_hash=deserialize_evm_tx_hash(
@@ -219,7 +218,7 @@ def const_lp_1_events() -> List[LiquidityPoolEvent]:
     ]
 
 
-def const_lp_2_events() -> List[LiquidityPoolEvent]:
+def const_lp_2_events() -> list[LiquidityPoolEvent]:
     return [
         LiquidityPoolEvent(
             tx_hash=deserialize_evm_tx_hash(
@@ -282,7 +281,7 @@ def const_lp_2_events_balance() -> LiquidityPoolEventsBalance:
     )
 
 
-def const_lp_3_events() -> List[LiquidityPoolEvent]:
+def const_lp_3_events() -> list[LiquidityPoolEvent]:
     return [
         LiquidityPoolEvent(
             tx_hash=deserialize_evm_tx_hash(

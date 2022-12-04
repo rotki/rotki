@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.evm.tokens import EvmTokens
@@ -39,7 +39,7 @@ class EthereumTokens(EvmTokens):
         super().__init__(database=database, evm_inquirer=ethereum_inquirer)
 
     # -- methods that need to be implemented per chain
-    def _get_token_exceptions(self) -> List[ChecksumEvmAddress]:
+    def _get_token_exceptions(self) -> list[ChecksumEvmAddress]:
         exceptions = ETH_TOKEN_EXCEPTIONS.copy()
         with self.db.conn.read_ctx() as cursor:
             ignored_assets = self.db.get_ignored_assets(cursor=cursor)

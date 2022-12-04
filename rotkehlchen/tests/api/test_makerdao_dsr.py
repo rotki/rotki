@@ -1,7 +1,7 @@
 import random
 from dataclasses import dataclass
 from http import HTTPStatus
-from typing import Any, Dict, List, NamedTuple
+from typing import Any, NamedTuple
 from unittest.mock import _patch, patch
 
 import pytest
@@ -69,8 +69,8 @@ def address_to_32byteshexstr(address: ChecksumEvmAddress) -> str:
 
 class DSRTestSetup(NamedTuple):
     etherscan_patch: _patch
-    dsr_balance_response: Dict[str, Any]
-    dsr_history_response: Dict[ChecksumEvmAddress, Dict[str, Any]]
+    dsr_balance_response: dict[str, Any]
+    dsr_history_response: dict[ChecksumEvmAddress, dict[str, Any]]
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -291,7 +291,7 @@ def mock_etherscan_for_dsr(
 def setup_tests_for_dsr(
         etherscan: Etherscan,
         contracts: EvmContracts,
-        accounts: List[ChecksumEvmAddress],
+        accounts: list[ChecksumEvmAddress],
         original_requests_get,
 ) -> DSRTestSetup:
     account1 = accounts[0]
@@ -437,7 +437,7 @@ def setup_tests_for_dsr(
     )
 
 
-def assert_dsr_current_result_is_correct(result: Dict[str, Any], setup: DSRTestSetup) -> None:
+def assert_dsr_current_result_is_correct(result: dict[str, Any], setup: DSRTestSetup) -> None:
     assert len(result) == len(setup.dsr_balance_response)
     for key, val in setup.dsr_balance_response.items():
         if key == 'balances':
@@ -505,7 +505,7 @@ def test_query_historical_dsr_non_premium(
     )
 
 
-def assert_dsr_history_result_is_correct(result: Dict[str, Any], setup: DSRTestSetup) -> None:
+def assert_dsr_history_result_is_correct(result: dict[str, Any], setup: DSRTestSetup) -> None:
     assert len(result) == 2
     for account, entry in setup.dsr_history_response.items():
         assert len(entry) == len(result[account])

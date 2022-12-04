@@ -1,7 +1,7 @@
 import random
 from contextlib import ExitStack
 from http import HTTPStatus
-from typing import Any, Dict
+from typing import Any
 from unittest.mock import patch
 
 import gevent
@@ -821,7 +821,7 @@ def test_ethereum_tokens_detection(
 ):
     account = ethereum_accounts[0]
 
-    def query_detect_eth_tokens() -> Dict[str, Any]:
+    def query_detect_eth_tokens() -> dict[str, Any]:
         response = requests.post(
             api_url_for(
                 rotkehlchen_api_server,

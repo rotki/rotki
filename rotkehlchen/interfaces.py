@@ -1,5 +1,5 @@
 import abc
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Optional
 
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.types import Price, Timestamp
@@ -26,7 +26,7 @@ class CurrentPriceOracleInterface(metaclass=abc.ABCMeta):
             from_asset: AssetWithOracles,
             to_asset: AssetWithOracles,
             match_main_currency: bool,
-    ) -> Tuple[Price, bool]:
+    ) -> tuple[Price, bool]:
         """
         Accepts a pair of assets to find price for and a flag. If `match_main_currency` is True
         and there is a manual latest price that has value in `main_currency`, then it will be
@@ -70,7 +70,7 @@ class HistoricalPriceOracleInterface(CurrentPriceOracleInterface):
         ...
 
     @abc.abstractmethod
-    def all_coins(self) -> Dict[str, Dict[str, Any]]:
+    def all_coins(self) -> dict[str, dict[str, Any]]:
         """Historical price oracles (coingecko, cryptocompare) implement this
         to return all of their supported assets.
 

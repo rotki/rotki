@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 
 from hexbytes import HexBytes as Web3HexBytes
 
@@ -9,7 +9,7 @@ from rotkehlchen.utils.misc import convert_to_int
 DEFAULT_API = 'etherscan'
 
 
-def read_hash(data: Dict[str, Any], key: str, api: str = DEFAULT_API) -> bytes:
+def read_hash(data: dict[str, Any], key: str, api: str = DEFAULT_API) -> bytes:
     if isinstance(data[key], Web3HexBytes):
         return bytes(data[key])
 
@@ -23,7 +23,7 @@ def read_hash(data: Dict[str, Any], key: str, api: str = DEFAULT_API) -> bytes:
     return result
 
 
-def read_integer(data: Dict[str, Any], key: str, api: str = DEFAULT_API) -> int:
+def read_integer(data: dict[str, Any], key: str, api: str = DEFAULT_API) -> int:
     try:
         result = convert_to_int(data[key])
     except ConversionError as e:

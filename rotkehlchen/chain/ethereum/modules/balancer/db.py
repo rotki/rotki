@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, List, Optional, Sequence
+from typing import TYPE_CHECKING, Optional, Sequence
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
@@ -59,7 +59,7 @@ def get_balancer_events(
         from_timestamp: Optional[Timestamp] = None,
         to_timestamp: Optional[Timestamp] = None,
         address: Optional[ChecksumEvmAddress] = None,
-) -> List[BalancerEvent]:
+) -> list[BalancerEvent]:
     """Returns a list of Balancer events optionally filtered by time and address"""
     query = 'SELECT * FROM balancer_events '
     # Timestamp filters are omitted, done via `form_query_to_filter_timestamps`

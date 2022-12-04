@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, List, Optional, Set
+from typing import TYPE_CHECKING, List, Optional
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
@@ -85,10 +85,10 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
             graph=self.graph,
         )
 
-    def get_balances_chain(self, addresses: List[ChecksumEvmAddress]) -> ProtocolBalance:
+    def get_balances_chain(self, addresses: list[ChecksumEvmAddress]) -> ProtocolBalance:
         """Get the addresses' pools data via chain queries."""
-        known_tokens: Set[EvmToken] = set()
-        unknown_tokens: Set[EvmToken] = set()
+        known_tokens: set[EvmToken] = set()
+        unknown_tokens: set[EvmToken] = set()
         lp_addresses = get_latest_lp_addresses(self.data_directory)
 
         address_mapping = {}
@@ -113,8 +113,8 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
 
     def get_v3_balances_chain(self, addresses: List[ChecksumEvmAddress]) -> UniswapV3ProtocolBalance:  # noqa: 501
         """Get the addresses' Uniswap V3 pools data via chain queries."""
-        price_known_tokens: Set[EvmToken] = set()
-        price_unknown_tokens: Set[EvmToken] = set()
+        price_known_tokens: set[EvmToken] = set()
+        price_unknown_tokens: set[EvmToken] = set()
 
         address_mapping = {}
         for address in addresses:
@@ -139,7 +139,7 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
     def _get_events_balances(
             self,
             write_cursor: 'DBCursor',
-            addresses: List[ChecksumEvmAddress],
+            addresses: list[ChecksumEvmAddress],
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
     ) -> AddressEventsBalances:
@@ -151,8 +151,8 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
         address_events_balances: AddressEventsBalances = {}
         address_events: DDAddressEvents = defaultdict(list)
         db_address_events: AddressEvents = {}
-        new_addresses: List[ChecksumEvmAddress] = []
-        existing_addresses: List[ChecksumEvmAddress] = []
+        new_addresses: list[ChecksumEvmAddress] = []
+        existing_addresses: list[ChecksumEvmAddress] = []
         min_end_ts: Timestamp = to_timestamp
 
         # Get addresses' last used query range for Uniswap events
@@ -255,7 +255,7 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
 
     def get_balances(
         self,
-        addresses: List[ChecksumEvmAddress],
+        addresses: list[ChecksumEvmAddress],
     ) -> AddressToLPBalances:
         """Get the addresses' balances in the Uniswap protocol
 
@@ -293,7 +293,7 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
 
     def get_v3_balances(
             self,
-            addresses: List[ChecksumEvmAddress],
+            addresses: list[ChecksumEvmAddress],
     ) -> AddressToUniswapV3LPBalances:
         """Get the addresses' balances in the Uniswap V3 protocol."""
         protocol_balance = self.get_v3_balances_chain(addresses)

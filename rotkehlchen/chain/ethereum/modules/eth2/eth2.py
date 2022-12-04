@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 import gevent
 
@@ -70,16 +70,16 @@ class Eth2(EthereumModule):
             self,
             write_cursor: 'DBCursor',
             dbeth2: DBEth2,
-            indices_or_pubkeys: Union[List[int], List[Eth2PubKey]],
-    ) -> List[Eth2Deposit]:
+            indices_or_pubkeys: Union[list[int], list[Eth2PubKey]],
+    ) -> list[Eth2Deposit]:
         new_deposits = self.beaconchain.get_validator_deposits(indices_or_pubkeys)
         dbeth2.add_eth2_deposits(write_cursor, new_deposits)
         return new_deposits
 
     def get_staking_deposits(
             self,
-            addresses: List[ChecksumEvmAddress],
-    ) -> List[Eth2Deposit]:
+            addresses: list[ChecksumEvmAddress],
+    ) -> list[Eth2Deposit]:
         """Get the eth2 deposits for all tracked validators and all validators associated
         with any given eth1 address.
 
@@ -129,8 +129,8 @@ class Eth2(EthereumModule):
 
     def fetch_eth1_validator_data(
             self,
-            addresses: List[ChecksumEvmAddress],
-    ) -> List[ValidatorID]:
+            addresses: list[ChecksumEvmAddress],
+    ) -> list[ValidatorID]:
         """Query all eth1 addresses for their validators and get all corresponding deposits.
 
         Returns the list of all tracked validators. It's ValidatorID  since
@@ -177,9 +177,9 @@ class Eth2(EthereumModule):
 
     def get_balances(
             self,
-            addresses: List[ChecksumEvmAddress],
+            addresses: list[ChecksumEvmAddress],
             fetch_validators_for_eth1: bool,
-    ) -> Dict[Eth2PubKey, Balance]:
+    ) -> dict[Eth2PubKey, Balance]:
         """
         Returns a mapping of validator public key to eth balance.
         If fetch_validators_for_eth1 is true then each eth1 address is also checked
@@ -190,8 +190,8 @@ class Eth2(EthereumModule):
         """
         usd_price = Inquirer().find_usd_price(A_ETH)
         dbeth2 = DBEth2(self.database)
-        balance_mapping: Dict[Eth2PubKey, Balance] = defaultdict(Balance)
-        validators: Union[List[ValidatorID], List[Eth2Validator]]
+        balance_mapping: dict[Eth2PubKey, Balance] = defaultdict(Balance)
+        validators: Union[list[ValidatorID], list[Eth2Validator]]
         if fetch_validators_for_eth1:
             validators = self.fetch_eth1_validator_data(addresses)
         else:
@@ -228,8 +228,8 @@ class Eth2(EthereumModule):
 
     def get_details(
             self,
-            addresses: List[ChecksumEvmAddress],
-    ) -> List[ValidatorDetails]:
+            addresses: list[ChecksumEvmAddress],
+    ) -> list[ValidatorDetails]:
         """Go through the list of eth1 addresses and find all eth2 validators associated
         with them along with their details.
 
@@ -371,7 +371,7 @@ class Eth2(EthereumModule):
             filter_query: 'Eth2DailyStatsFilterQuery',
             only_cache: bool,
             msg_aggregator: MessagesAggregator,
-    ) -> Tuple[List[ValidatorDailyStats], int, FVal, FVal]:
+    ) -> tuple[list[ValidatorDailyStats], int, FVal, FVal]:
         """Gets the daily stats eth2 validators depending on the given filter.
 
         This won't detect new validators

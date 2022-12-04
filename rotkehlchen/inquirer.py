@@ -3,19 +3,7 @@ import logging
 import operator
 from enum import auto
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    Iterable,
-    List,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Iterable, NamedTuple, Optional, Sequence, Union
 
 from rotkehlchen.assets.asset import Asset, EvmToken, FiatAsset
 from rotkehlchen.chain.ethereum.defi.price import handle_defi_price_query
@@ -138,7 +126,7 @@ CurrentPriceOracleInstance = Union[
 ]
 
 
-def _check_curve_contract_call(decoded: Tuple[Any, ...]) -> bool:
+def _check_curve_contract_call(decoded: tuple[Any, ...]) -> bool:
     """
     Checks the result of decoding curve contract methods to verify:
     - The result is a tuple
@@ -177,7 +165,7 @@ DEFAULT_CURRENT_PRICE_ORACLES_ORDER = [
 ]
 
 
-def get_underlying_asset_price(token: EvmToken) -> Tuple[Optional[Price], CurrentPriceOracle]:  # noqa: E501
+def get_underlying_asset_price(token: EvmToken) -> tuple[Optional[Price], CurrentPriceOracle]:  # noqa: E501
     """Gets the underlying asset price for the given ethereum token
 
     TODO: This should be eventually pulled from the assets DB. All of these
@@ -271,8 +259,8 @@ class CachedPriceEntry(NamedTuple):
 
 class Inquirer():
     __instance: Optional['Inquirer'] = None
-    _cached_forex_data: Dict
-    _cached_current_price: Dict[Tuple[Asset, Asset], CachedPriceEntry]
+    _cached_forex_data: dict
+    _cached_current_price: dict[tuple[Asset, Asset], CachedPriceEntry]
     _data_directory: Path
     _cryptocompare: 'Cryptocompare'
     _coingecko: 'Coingecko'
@@ -281,14 +269,14 @@ class Inquirer():
     _uniswapv2: Optional['UniswapV2Oracle'] = None
     _uniswapv3: Optional['UniswapV3Oracle'] = None
     _saddle: Optional['SaddleOracle'] = None
-    _evm_managers: Dict[ChainID, 'EvmManager']
-    _oracles: Optional[List[CurrentPriceOracle]] = None
-    _oracle_instances: Optional[List[CurrentPriceOracleInstance]] = None
-    _oracles_not_onchain: Optional[List[CurrentPriceOracle]] = None
-    _oracle_instances_not_onchain: Optional[List[CurrentPriceOracleInstance]] = None
+    _evm_managers: dict[ChainID, 'EvmManager']
+    _oracles: Optional[list[CurrentPriceOracle]] = None
+    _oracle_instances: Optional[list[CurrentPriceOracleInstance]] = None
+    _oracles_not_onchain: Optional[list[CurrentPriceOracle]] = None
+    _oracle_instances_not_onchain: Optional[list[CurrentPriceOracleInstance]] = None
     _msg_aggregator: 'MessagesAggregator'
     # save only the identifier of the special tokens since we only check if assets are in this set
-    special_tokens: Set[str]
+    special_tokens: set[str]
     weth: EvmToken
     usd: FiatAsset
 
@@ -365,7 +353,7 @@ class Inquirer():
         return Inquirer.__instance
 
     @staticmethod
-    def inject_evm_managers(evm_managers: Sequence[Tuple[ChainID, 'EvmManager']]) -> None:
+    def inject_evm_managers(evm_managers: Sequence[tuple[ChainID, 'EvmManager']]) -> None:
         instance = Inquirer()
         for chain_id, evm_manager in evm_managers:
             instance._evm_managers[chain_id] = evm_manager
@@ -388,7 +376,7 @@ class Inquirer():
 
     @staticmethod
     def get_cached_current_price_entry(
-            cache_key: Tuple[Asset, Asset],
+            cache_key: tuple[Asset, Asset],
             match_main_currency: bool,
     ) -> Optional[CachedPriceEntry]:
         cache = Inquirer()._cached_current_price.get(cache_key, None)
@@ -398,7 +386,7 @@ class Inquirer():
         return cache
 
     @staticmethod
-    def remove_cache_prices_for_asset(pairs_to_invalidate: List[Tuple[Asset, Asset]]) -> None:
+    def remove_cache_prices_for_asset(pairs_to_invalidate: list[tuple[Asset, Asset]]) -> None:
         """Deletes all prices cache that contains any asset in the possible pairs."""
         assets_to_invalidate = set()
         for asset_a, asset_b in pairs_to_invalidate:
@@ -410,11 +398,11 @@ class Inquirer():
                 Inquirer()._cached_current_price.pop(asset_pair, None)
 
     @staticmethod
-    def remove_cached_current_price_entry(cache_key: Tuple[Asset, Asset]) -> None:
+    def remove_cached_current_price_entry(cache_key: tuple[Asset, Asset]) -> None:
         Inquirer()._cached_current_price.pop(cache_key, None)
 
     @staticmethod
-    def set_oracles_order(oracles: List[CurrentPriceOracle]) -> None:
+    def set_oracles_order(oracles: list[CurrentPriceOracle]) -> None:
         assert len(oracles) != 0 and len(oracles) == len(set(oracles)), (
             'Oracles can\'t be empty or have repeated items'
         )
@@ -435,7 +423,7 @@ class Inquirer():
             coming_from_latest_price: bool,
             skip_onchain: bool = False,
             match_main_currency: bool = False,
-    ) -> Tuple[Price, CurrentPriceOracle, bool]:
+    ) -> tuple[Price, CurrentPriceOracle, bool]:
         """
         Query oracle instances.
         `coming_from_latest_price` is used by manual latest price oracle to handle price loops.
@@ -529,7 +517,7 @@ class Inquirer():
             skip_onchain: bool = False,
             coming_from_latest_price: bool = False,
             match_main_currency: bool = False,
-    ) -> Tuple[Price, CurrentPriceOracle, bool]:
+    ) -> tuple[Price, CurrentPriceOracle, bool]:
         """Returns:
         1. The current price of 'from_asset' in 'to_asset' valuation.
         2. Oracle that was used to get the price.
@@ -592,7 +580,7 @@ class Inquirer():
             skip_onchain: bool = False,
             coming_from_latest_price: bool = False,
             match_main_currency: bool = False,
-    ) -> Tuple[Price, CurrentPriceOracle, bool]:
+    ) -> tuple[Price, CurrentPriceOracle, bool]:
         """
         Wrapper around _find_price to include oracle queried when getting price and
         flag that shows whether returned price is in main currency.
@@ -629,7 +617,7 @@ class Inquirer():
             skip_onchain: bool = False,
             coming_from_latest_price: bool = False,
             match_main_currency: bool = False,
-    ) -> Tuple[Price, CurrentPriceOracle, bool]:
+    ) -> tuple[Price, CurrentPriceOracle, bool]:
         """
         Wrapper around _find_usd_price to include oracle queried when getting usd price and
         flag that shows whether returned price is in main currency
@@ -649,7 +637,7 @@ class Inquirer():
             skip_onchain: bool = False,
             coming_from_latest_price: bool = False,
             match_main_currency: bool = False,
-    ) -> Tuple[Price, CurrentPriceOracle, bool]:
+    ) -> tuple[Price, CurrentPriceOracle, bool]:
         """Returns the current price of the asset, oracle that was used and hether returned price
         is in main currency.
 
@@ -798,7 +786,7 @@ class Inquirer():
         pool_tokens_addresses = GlobalDBHandler().get_general_cache_values(
             key_parts=[GeneralCacheType.CURVE_POOL_TOKENS, pool_address],
         )
-        tokens: List[EvmToken] = []
+        tokens: list[EvmToken] = []
         # Translate addresses to tokens
         try:
             for token_address_str in pool_tokens_addresses:
@@ -921,7 +909,7 @@ class Inquirer():
         return None
 
     @staticmethod
-    def get_fiat_usd_exchange_rates(currencies: Iterable[FiatAsset]) -> Dict[FiatAsset, Price]:  # noqa: E501
+    def get_fiat_usd_exchange_rates(currencies: Iterable[FiatAsset]) -> dict[FiatAsset, Price]:  # noqa: E501
         """Gets the USD exchange rate of any of the given assets
 
         In case of failure to query a rate it's returned as zero"""
@@ -988,7 +976,7 @@ class Inquirer():
     def _query_fiat_pair(
             base: FiatAsset,
             quote: FiatAsset,
-    ) -> Tuple[Price, CurrentPriceOracle]:
+    ) -> tuple[Price, CurrentPriceOracle]:
         """Queries the current price between two fiat assets
 
         If a current price is not found but a cached price within 30 days is found

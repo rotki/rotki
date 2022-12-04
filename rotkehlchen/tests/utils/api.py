@@ -1,7 +1,7 @@
 import os
 import platform
 from http import HTTPStatus
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 
 import gevent
 import psutil
@@ -94,8 +94,8 @@ def assert_proper_response_with_result(
 
 
 def _check_error_response_properties(
-        response_data: Dict[str, Any],
-        contained_in_msg: Optional[Union[str, List[str]]],
+        response_data: dict[str, Any],
+        contained_in_msg: Optional[Union[str, list[str]]],
         status_code: Optional[HTTPStatus],
         result_exists: bool,
 ):
@@ -114,7 +114,7 @@ def _check_error_response_properties(
 
 def assert_error_response(
         response: Optional[requests.Response],
-        contained_in_msg: Optional[Union[str, List[str]]] = None,
+        contained_in_msg: Optional[Union[str, list[str]]] = None,
         status_code: HTTPStatus = HTTPStatus.BAD_REQUEST,
         result_exists: bool = False,
 ):
@@ -132,8 +132,8 @@ def assert_error_response(
 
 
 def assert_error_async_response(
-        response_data: Optional[Dict[str, Any]],
-        contained_in_msg: Optional[Union[str, List[str]]] = None,
+        response_data: Optional[dict[str, Any]],
+        contained_in_msg: Optional[Union[str, list[str]]] = None,
         status_code: Optional[HTTPStatus] = HTTPStatus.BAD_REQUEST,
         result_exists: bool = False,
 ):
@@ -159,7 +159,7 @@ def wait_for_async_task(
         server: APIServer,
         task_id: int,
         timeout=ASYNC_TASK_WAIT_TIMEOUT,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Waits until an async task is ready and when it is returns the response's outcome
 
     If the task's outcome is not ready within timeout seconds then the test fails"""
@@ -198,7 +198,7 @@ def wait_for_async_task_with_result(
         server: APIServer,
         task_id: int,
         timeout=ASYNC_TASK_WAIT_TIMEOUT,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Same as wait_for_async_task but returns the result part of the dict"""
     result = wait_for_async_task(server=server, task_id=task_id, timeout=timeout)
     assert result['message'] == ''

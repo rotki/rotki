@@ -1,6 +1,6 @@
 import json
 from collections import namedtuple
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from hexbytes import HexBytes
 
@@ -10,7 +10,7 @@ class MockResponse():
             self,
             status_code: int,
             text: str,
-            headers: Optional[Dict['str', Any]] = None,
+            headers: Optional[dict['str', Any]] = None,
     ) -> None:
         self.status_code = status_code
         self.text = text
@@ -18,7 +18,7 @@ class MockResponse():
         self.url = 'http://someurl.com'
         self.headers = headers or {}
 
-    def json(self) -> Dict[str, Any]:
+    def json(self) -> dict[str, Any]:
         return json.loads(self.text)
 
 
@@ -33,7 +33,7 @@ class MockEth():
     def get_block(
             self,
             _number: int,
-    ) -> Dict[str, HexBytes]:
+    ) -> dict[str, HexBytes]:
         """Always return genesis block since this is what we care about in the tests"""
         genesis = (
             b'\xd4\xe5g@\xf8v\xae\xf8\xc0\x10\xb8j@\xd5\xf5gE\xa1\x18\xd0\x90j4'

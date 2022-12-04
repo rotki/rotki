@@ -5,7 +5,7 @@ import sys
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
 from pathlib import Path
-from typing import Any, Dict, NamedTuple, Optional
+from typing import Any, NamedTuple, Optional
 
 import maxminddb
 import miniupnpc
@@ -113,7 +113,7 @@ def retrieve_location_data(data_dir: Path) -> Optional[GeolocationData]:
     return None
 
 
-def create_usage_analytics(data_dir: Path) -> Dict[str, Any]:
+def create_usage_analytics(data_dir: Path) -> dict[str, Any]:
     analytics = {}
 
     analytics['system_os'] = platform.system()

@@ -1,6 +1,6 @@
 import logging
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union
 
 import gevent
 import requests
@@ -45,8 +45,8 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 def _calculate_query_chunks(
-        indices_or_pubkeys: Union[List[int], List[Eth2PubKey]],
-) -> Union[List[List[int]], List[List[Eth2PubKey]]]:
+        indices_or_pubkeys: Union[list[int], list[Eth2PubKey]],
+) -> Union[list[list[int]], list[list[Eth2PubKey]]]:
     """Create chunks of queries.
 
     Beaconcha.in allows up to 100 validator or public keys in one query for most calls.
@@ -82,7 +82,7 @@ class BeaconChain(ExternalServiceWithApiKey):
             module: Literal['validator'],
             endpoint: Optional[Literal['balancehistory', 'performance', 'eth1', 'deposits']],
             encoded_args: str,
-    ) -> Union[List[Dict[str, Any]], Dict[str, Any]]:
+    ) -> Union[list[dict[str, Any]], dict[str, Any]]:
         """
         May raise:
         - RemoteError due to problems querying beaconcha.in API
@@ -182,7 +182,7 @@ class BeaconChain(ExternalServiceWithApiKey):
 
         return json_ret['data']
 
-    def get_balance_history(self, validator_indices: List[int]) -> Dict[int, ValidatorBalance]:
+    def get_balance_history(self, validator_indices: list[int]) -> dict[int, ValidatorBalance]:
         """Get the balance history of all the validators given from the indices list
 
         https://beaconcha.in/api/v1/docs/index.html#/Validator/get_api_v1_validator__indexOrPubkey__balancehistory
@@ -212,7 +212,7 @@ class BeaconChain(ExternalServiceWithApiKey):
                 data.append(result)
 
         # We are only interested in last epoch, so get its value
-        balances: Dict[int, ValidatorBalance] = {}
+        balances: dict[int, ValidatorBalance] = {}
         try:
             for entry in data:
                 index = entry['validatorindex']
@@ -234,8 +234,8 @@ class BeaconChain(ExternalServiceWithApiKey):
 
     def get_performance(
             self,
-            indices_or_pubkeys: Union[List[int], List[Eth2PubKey]],
-    ) -> Dict[int, ValidatorPerformance]:
+            indices_or_pubkeys: Union[list[int], list[Eth2PubKey]],
+    ) -> dict[int, ValidatorPerformance]:
         """Get the performance of all the validators given from the list of indices or pubkeys
 
         Queries in chunks of 100 due to api limitations
@@ -274,7 +274,7 @@ class BeaconChain(ExternalServiceWithApiKey):
 
         return performance
 
-    def get_eth1_address_validators(self, address: ChecksumEvmAddress) -> List[ValidatorID]:
+    def get_eth1_address_validators(self, address: ChecksumEvmAddress) -> list[ValidatorID]:
         """Get a list of Validators that are associated with the given eth1 address.
 
         Each entry is a tuple of (optional) validator index and pubkey
@@ -308,8 +308,8 @@ class BeaconChain(ExternalServiceWithApiKey):
 
     def get_validator_deposits(
             self,
-            indices_or_pubkeys: Union[List[int], List[Eth2PubKey]],
-    ) -> List[Eth2Deposit]:
+            indices_or_pubkeys: Union[list[int], list[Eth2PubKey]],
+    ) -> list[Eth2Deposit]:
         """Get the deposits of all the validators given from the list of indices or pubkeys
 
         Queries in chunks of 100 due to api limitations

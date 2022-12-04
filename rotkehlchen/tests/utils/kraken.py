@@ -1,7 +1,7 @@
 import json
 import random
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from rotkehlchen.assets.converters import KRAKEN_TO_WORLD
 from rotkehlchen.assets.exchanges_mappings.kraken import WORLD_TO_KRAKEN
@@ -324,7 +324,7 @@ def get_random_kraken_asset() -> str:
     return random.choice(list(kraken_assets))
 
 
-def generate_random_kraken_balance_response() -> Dict[str, FVal]:
+def generate_random_kraken_balance_response() -> dict[str, FVal]:
     kraken_assets = set(KRAKEN_TO_WORLD.keys()) - set(KRAKEN_DELISTED)
     number_of_assets = random.randrange(0, len(kraken_assets))
     chosen_assets = random.sample(kraken_assets, number_of_assets)
@@ -345,7 +345,7 @@ def generate_random_kraken_id() -> str:
 
 
 def create_kraken_trade(
-        tradeable_pairs: List[str],
+        tradeable_pairs: list[str],
         base_asset: Optional[str] = None,
         quote_asset: Optional[str] = None,
         time: Optional[Timestamp] = None,
@@ -355,7 +355,7 @@ def create_kraken_trade(
         rate: Optional[FVal] = None,
         amount: Optional[FVal] = None,
         fee: Optional[FVal] = None,
-) -> Dict[str, str]:
+) -> dict[str, str]:
     trade = {}
     trade['ordertxid'] = str(generate_random_kraken_id())
     trade['postxid'] = str(generate_random_kraken_id())
@@ -399,10 +399,10 @@ def create_kraken_trade(
 
 
 def generate_random_kraken_trade_data(
-        tradeable_pairs: List[str],
+        tradeable_pairs: list[str],
         start_ts: Timestamp,
         end_ts: Timestamp,
-) -> Dict[str, str]:
+) -> dict[str, str]:
     return create_kraken_trade(
         tradeable_pairs=tradeable_pairs,
         start_ts=start_ts,
@@ -414,7 +414,7 @@ def generate_random_single_kraken_ledger_data(
         start_ts: Timestamp,
         end_ts: Timestamp,
         ledger_type: str,
-) -> Dict[str, str]:
+) -> dict[str, str]:
     ledger = {}
     ledger['refid'] = str(generate_random_kraken_id())
     ledger['time'] = str(make_random_timestamp(start=start_ts, end=end_ts)) + '.0000'
@@ -446,7 +446,7 @@ def generate_random_kraken_ledger_data(start: Timestamp, end: Timestamp, ledger_
 def generate_random_kraken_trades_data(
         start: Timestamp,
         end: Timestamp,
-        tradeable_pairs: List[str],
+        tradeable_pairs: list[str],
 ):
     trades_num = random.randint(1, 49)
 
@@ -493,7 +493,7 @@ class MockKraken(Kraken):
         self.tradeable_pairs = self.api_query('AssetPairs')
 
     @staticmethod
-    def _load_results_from_file(filename: str) -> Dict[str, Any]:
+    def _load_results_from_file(filename: str) -> dict[str, Any]:
         dir_path = Path(__file__).resolve().parent.parent
         filepath = dir_path / 'data' / filename
         with open(filepath) as f:
@@ -551,7 +551,7 @@ class MockKraken(Kraken):
                 )
             else:
                 data = json.loads(KRAKEN_GENERAL_LEDGER_RESPONSE)
-            new_data: Dict[str, Any] = {'ledger': {}}
+            new_data: dict[str, Any] = {'ledger': {}}
             for key, val in data['ledger'].items():
                 try:
                     ts = int(val['time'])

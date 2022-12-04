@@ -1,4 +1,4 @@
-from typing import Callable, Dict, Optional
+from typing import Callable, Optional
 
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.assets.exchanges_mappings.binance import WORLD_TO_BINANCE
@@ -857,7 +857,7 @@ def asset_from_poloniex(poloniex_name: str) -> AssetWithOracles:
 
 def asset_from_bitfinex(
         bitfinex_name: str,
-        currency_map: Dict[str, str],
+        currency_map: dict[str, str],
         is_currency_map_updated: bool = True,
 ) -> AssetWithOracles:
     """May raise:
@@ -1103,7 +1103,7 @@ def asset_from_cryptocom(cryptocom_name: str) -> AssetWithOracles:
     return symbol_to_asset_or_token(symbol)
 
 
-LOCATION_TO_ASSET_MAPPING: Dict[Location, Callable[[str], AssetWithOracles]] = {
+LOCATION_TO_ASSET_MAPPING: dict[Location, Callable[[str], AssetWithOracles]] = {
     Location.BINANCE: asset_from_binance,
     Location.CRYPTOCOM: asset_from_cryptocom,
     Location.BITPANDA: asset_from_bitpanda,

@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, Dict, List, NamedTuple, Optional, cast
+from typing import TYPE_CHECKING, NamedTuple, Optional, cast
 
 from gevent.lock import Semaphore
 
@@ -93,14 +93,14 @@ class Aave(EthereumModule):
     def get_balances(
             self,
             given_defi_balances: GIVEN_DEFI_BALANCES,
-    ) -> Dict[ChecksumEvmAddress, AaveBalances]:
+    ) -> dict[ChecksumEvmAddress, AaveBalances]:
         with self.balances_lock:
             return self._get_balances(given_defi_balances)
 
     def _get_balances(
             self,
             given_defi_balances: GIVEN_DEFI_BALANCES,
-    ) -> Dict[ChecksumEvmAddress, AaveBalances]:
+    ) -> dict[ChecksumEvmAddress, AaveBalances]:
         """Retrieves the aave balances
 
         Receives the defi balances from zerion as an argument. They can either be directly given
@@ -108,7 +108,7 @@ class Aave(EthereumModule):
         balances mapping when executed.
         """
         aave_balances = {}
-        reserve_cache: Dict[str, ReserveData] = {}
+        reserve_cache: dict[str, ReserveData] = {}
 
         if isinstance(given_defi_balances, dict):
             defi_balances = given_defi_balances
@@ -193,12 +193,12 @@ class Aave(EthereumModule):
 
     def get_history(
             self,
-            addresses: List[ChecksumEvmAddress],
+            addresses: list[ChecksumEvmAddress],
             reset_db_data: bool,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
             given_defi_balances: GIVEN_DEFI_BALANCES,
-    ) -> Dict[ChecksumEvmAddress, AaveHistory]:
+    ) -> dict[ChecksumEvmAddress, AaveHistory]:
         """Detects aave historical data for the given addresses"""
         latest_block = self.ethereum.get_latest_block_number()
         with self.history_lock:
@@ -219,8 +219,8 @@ class Aave(EthereumModule):
             self,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
-            addresses: List[ChecksumEvmAddress],
-    ) -> List[DefiEvent]:
+            addresses: list[ChecksumEvmAddress],
+    ) -> list[DefiEvent]:
         if len(addresses) == 0:
             return []
 
@@ -233,8 +233,8 @@ class Aave(EthereumModule):
         )
         events = []
         for _, history in mapping.items():
-            total_borrow: Dict[CryptoAsset, Balance] = defaultdict(Balance)
-            realized_borrow_loss: Dict[CryptoAsset, Balance] = defaultdict(Balance)
+            total_borrow: dict[CryptoAsset, Balance] = defaultdict(Balance)
+            realized_borrow_loss: dict[CryptoAsset, Balance] = defaultdict(Balance)
             for event in history.events:
                 got_asset: Optional[CryptoAsset]
                 spent_asset: Optional[CryptoAsset]

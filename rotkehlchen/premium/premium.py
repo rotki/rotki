@@ -7,7 +7,7 @@ from base64 import b64decode, b64encode
 from binascii import Error as BinasciiError
 from enum import Enum
 from http import HTTPStatus
-from typing import Any, Dict, Literal, NamedTuple, Optional, Tuple
+from typing import Any, Literal, NamedTuple, Optional
 from urllib.parse import urlencode
 
 import requests
@@ -46,7 +46,7 @@ class RemoteMetadata(NamedTuple):
     data_size: int
 
 
-def _process_dict_response(response: requests.Response) -> Dict:
+def _process_dict_response(response: requests.Response) -> dict:
     """Processess a dict response returned from the Rotkehlchen server and returns
     the result for success or raises RemoteError if an error happened"""
     if response.status_code not in HANDLABLE_STATUS_CODES:
@@ -183,7 +183,7 @@ class Premium():
             self.status = SubscriptionStatus.INACTIVE
             return False
 
-    def sign(self, method: str, **kwargs: Any) -> Tuple[hmac.HMAC, Dict]:
+    def sign(self, method: str, **kwargs: Any) -> tuple[hmac.HMAC, dict]:
         urlpath = '/api/' + self.apiversion + '/' + method
 
         req = kwargs
@@ -207,7 +207,7 @@ class Premium():
             our_hash: str,
             last_modify_ts: Timestamp,
             compression_type: Literal['zlib'],
-    ) -> Dict:
+    ) -> dict:
         """Uploads data to the server and returns the response dict
 
         May raise:
@@ -241,7 +241,7 @@ class Premium():
 
         return _process_dict_response(response)
 
-    def pull_data(self) -> Dict:
+    def pull_data(self) -> dict:
         """Pulls data from the server and returns the response dict
 
         Returns None if there is no DB saved in the server.
@@ -333,7 +333,7 @@ class Premium():
     def watcher_query(
             self,
             method: Literal['GET', 'PUT', 'PATCH', 'DELETE'],
-            data: Optional[Dict[str, Any]],
+            data: Optional[dict[str, Any]],
     ) -> Any:
         if data is None:
             data = {}

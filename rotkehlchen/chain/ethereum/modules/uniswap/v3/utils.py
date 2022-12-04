@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Set, Tuple
+from typing import TYPE_CHECKING, Any, Literal
 
 from eth_abi import encode_abi
 from eth_abi.packed import encode_abi_packed
@@ -55,9 +55,9 @@ def uniswap_v3_lp_token_balances(
         address: ChecksumEvmAddress,
         ethereum: 'EthereumInquirer',
         msg_aggregator: MessagesAggregator,
-        price_known_tokens: Set[EvmToken],
-        price_unknown_tokens: Set[EvmToken],
-) -> List[NFTLiquidityPool]:
+        price_known_tokens: set[EvmToken],
+        price_unknown_tokens: set[EvmToken],
+) -> list[NFTLiquidityPool]:
     """
     Fetches all the Uniswap V3 LP positions for the specified address.
     1. Use the NFT Positions contract to call the `balanceOf` method to get number of positions.
@@ -97,7 +97,7 @@ def uniswap_v3_lp_token_balances(
     uniswap_v3_nft_manager = ethereum.contracts.contract('UNISWAP_V3_NFT_MANAGER')
     uniswap_v3_factory = ethereum.contracts.contract('UNISWAP_V3_FACTORY')
     uniswap_v3_pool_abi = ethereum.contracts.abi('UNISWAP_V3_POOL')
-    balances: List[NFTLiquidityPool] = []
+    balances: list[NFTLiquidityPool] = []
     try:
         amount_of_positions = uniswap_v3_nft_manager.call(
             node_inquirer=ethereum,
@@ -357,7 +357,7 @@ def calculate_price_range(
         tick_upper: int,
         decimal_0: int,
         decimal_1: int,
-) -> Tuple[FVal, FVal]:
+) -> tuple[FVal, FVal]:
     """Calculates the price range for a Uniswap V3 LP position."""
     sqrt_a = LOG_PRICE**tick_lower
     sqrt_b = LOG_PRICE**tick_upper
@@ -372,7 +372,7 @@ def compute_sqrt_values_for_amounts(
         tick_lower: int,
         tick_upper: int,
         tick: int,
-) -> Tuple[FVal, FVal, FVal]:
+) -> tuple[FVal, FVal, FVal]:
     """Computes the values for `sqrt`, `sqrt_a`, sqrt_b`"""
     sqrt_a = LOG_PRICE**FVal(tick_lower / 2) * POW_96
     sqrt_b = LOG_PRICE**FVal(tick_upper / 2) * POW_96
@@ -413,7 +413,7 @@ def calculate_total_amounts_of_tokens(
         fee: Literal[100, 500, 3000, 10000],
         decimal_0: int,
         decimal_1: int,
-) -> Tuple[FVal, FVal]:
+) -> tuple[FVal, FVal]:
     """
     Calculates the total amount of tokens present in a liquidity pool.
     A fee of 10000 represents 200 ticks spacing, 3000 represents 60 ticks spacing and
@@ -446,7 +446,7 @@ def calculate_total_amounts_of_tokens(
     return FVal(total_amount_0), FVal(total_amount_1)
 
 
-def _decode_uniswap_v3_token(entry: Dict[str, Any]) -> TokenDetails:
+def _decode_uniswap_v3_token(entry: dict[str, Any]) -> TokenDetails:
     return TokenDetails(
         address=to_checksum_address(entry['address']),
         name=entry['name'],
@@ -458,10 +458,10 @@ def _decode_uniswap_v3_token(entry: Dict[str, Any]) -> TokenDetails:
 
 def _decode_uniswap_v3_result(
         userdb: 'DBHandler',
-        data: Tuple,
+        data: tuple,
         uniswap_v3_nft_manager_address: ChecksumEvmAddress,
-        price_known_tokens: Set[EvmToken],
-        price_unknown_tokens: Set[EvmToken],
+        price_known_tokens: set[EvmToken],
+        price_unknown_tokens: set[EvmToken],
 ) -> NFTLiquidityPool:
     """
     Takes the data aggregated from the Positions NFT contract & LP contract and converts it
@@ -525,7 +525,7 @@ def _decode_uniswap_v3_result(
 
 def get_unknown_asset_price_chain(
         ethereum: 'EthereumInquirer',
-        unknown_tokens: Set[EvmToken],
+        unknown_tokens: set[EvmToken],
 ) -> AssetToPrice:
     """Get token price using Uniswap V3 Oracle."""
     oracle = UniswapV3Oracle(ethereum_inquirer=ethereum)

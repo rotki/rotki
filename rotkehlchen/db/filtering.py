@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from typing import Any, Generic, List, Literal, NamedTuple, Optional, Tuple, TypeVar, Union, cast
+from typing import Any, Generic, Literal, NamedTuple, Optional, TypeVar, Union, cast
 
 from rotkehlchen.accounting.ledger_actions import LedgerActionType
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
@@ -29,7 +29,7 @@ T = TypeVar('T')
 
 
 class DBFilterOrder(NamedTuple):
-    rules: List[Tuple[str, bool]]
+    rules: list[tuple[str, bool]]
     case_sensitive: bool
 
     def prepare(self) -> str:
@@ -62,7 +62,7 @@ class DBFilterPagination(NamedTuple):
 class DBFilter():
     and_op: bool
 
-    def prepare(self) -> Tuple[List[str], List[Any]]:
+    def prepare(self) -> tuple[list[str], list[Any]]:
         raise NotImplementedError('prepare should be implemented by subclasses')
 
 
@@ -70,9 +70,9 @@ class DBFilter():
 class DBNestedFilter(DBFilter):
     """Filter that allows combination of multiple subfilters with different operands."""
     and_op: bool
-    filters: List[DBFilter]
+    filters: list[DBFilter]
 
-    def prepare(self) -> Tuple[List[str], List[Any]]:
+    def prepare(self) -> tuple[list[str], list[Any]]:
         filterstrings = []
         bindings = []
         for single_filter in self.filters:
@@ -94,7 +94,7 @@ class DBTimestampFilter(DBFilter):
     scaling_factor: Optional[FVal] = None
     timestamp_field: Optional[str] = None
 
-    def prepare(self) -> Tuple[List[str], List[Any]]:
+    def prepare(self) -> tuple[list[str], list[Any]]:
         filters = []
         bindings = []
         timestamp_field = 'timestamp'
@@ -127,13 +127,13 @@ class DBETHTransactionJoinsFilter(DBFilter):
     2. If join_events is True, join history_events which makes it possible to apply
     filters by history_events' properties
     """
-    addresses: Optional[List[ChecksumEvmAddress]]
+    addresses: Optional[list[ChecksumEvmAddress]]
     should_join_events: bool = False
     chain_id: Optional[ChainID] = None
 
-    def prepare(self) -> Tuple[List[str], List[Any]]:
-        query_filters: List[str] = []
-        bindings: List[Union[ChecksumEvmAddress, int]] = []
+    def prepare(self) -> tuple[list[str], list[Any]]:
+        query_filters: list[str] = []
+        bindings: list[Union[ChecksumEvmAddress, int]] = []
         if self.should_join_events is True:
             query_filters.append(
                 'LEFT JOIN (SELECT event_identifier, counterparty, asset, type, subtype FROM history_events) '  # noqa: E501
@@ -173,7 +173,7 @@ class DBETHTransactionJoinsFilter(DBFilter):
 class DBEvmTransactionHashFilter(DBFilter):
     tx_hash: Optional[EVMTxHash] = None
 
-    def prepare(self) -> Tuple[List[str], List[Any]]:
+    def prepare(self) -> tuple[list[str], list[Any]]:
         if self.tx_hash is None:
             return [], []
 
@@ -184,7 +184,7 @@ class DBEvmTransactionHashFilter(DBFilter):
 class DBEvmChainIDFilter(DBFilter):
     chain_id: Optional[ChainID] = None
 
-    def prepare(self) -> Tuple[List[str], List[Any]]:
+    def prepare(self) -> tuple[list[str], list[Any]]:
         if self.chain_id is None:
             return [], []
 
@@ -195,7 +195,7 @@ class DBEvmChainIDFilter(DBFilter):
 class DBReportDataReportIDFilter(DBFilter):
     report_id: Optional[Union[str, int]] = None
 
-    def prepare(self) -> Tuple[List[str], List[Any]]:
+    def prepare(self) -> tuple[list[str], list[Any]]:
         if self.report_id is None:
             return [], []
 
@@ -215,7 +215,7 @@ class DBReportDataReportIDFilter(DBFilter):
 class DBReportDataEventTypeFilter(DBFilter):
     event_type: Optional[Union[str, SchemaEventType]] = None
 
-    def prepare(self) -> Tuple[List[str], List[Any]]:
+    def prepare(self) -> tuple[list[str], list[Any]]:
         if self.event_type is None:
             return [], []
 
@@ -235,7 +235,7 @@ class DBReportDataEventTypeFilter(DBFilter):
 class DBLocationFilter(DBFilter):
     location: Location
 
-    def prepare(self) -> Tuple[List[str], List[Any]]:
+    def prepare(self) -> tuple[list[str], list[Any]]:
         return ['location=?'], [self.location.serialize_for_db()]
 
 
@@ -244,14 +244,14 @@ class DBSubStringFilter(DBFilter):
     field: str
     search_string: str
 
-    def prepare(self) -> Tuple[List[str], List[Any]]:
+    def prepare(self) -> tuple[list[str], list[Any]]:
         return [f'{self.field} LIKE ?'], [f'%{self.search_string}%']
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBFilterQuery():
     and_op: bool
-    filters: List[DBFilter]
+    filters: list[DBFilter]
     join_clause: Optional[DBFilter] = None
     order_by: Optional[DBFilterOrder] = None
     pagination: Optional[DBFilterPagination] = None
@@ -260,7 +260,7 @@ class DBFilterQuery():
             self,
             with_pagination: bool = True,
             with_order: bool = True,
-    ) -> Tuple[str, List[Any]]:
+    ) -> tuple[str, list[Any]]:
         query_parts = []
         bindings = []
         filterstrings = []
@@ -301,7 +301,7 @@ class DBFilterQuery():
             limit: Optional[int],
             offset: Optional[int],
             order_by_case_sensitive: bool = True,
-            order_by_rules: Optional[List[Tuple[str, bool]]] = None,
+            order_by_rules: Optional[list[tuple[str, bool]]] = None,
     ) -> 'DBFilterQuery':
         if limit is None or offset is None:
             pagination = None
@@ -364,7 +364,7 @@ class FilterWithLocation():
 class EvmTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
 
     @property
-    def addresses(self) -> Optional[List[ChecksumEvmAddress]]:
+    def addresses(self) -> Optional[list[ChecksumEvmAddress]]:
         if self.join_clause is None:
             return None
 
@@ -381,19 +381,19 @@ class EvmTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
     def make(
             cls,
             and_op: bool = True,
-            order_by_rules: Optional[List[Tuple[str, bool]]] = None,
+            order_by_rules: Optional[list[tuple[str, bool]]] = None,
             limit: Optional[int] = None,
             offset: Optional[int] = None,
-            addresses: Optional[List[ChecksumEvmAddress]] = None,
+            addresses: Optional[list[ChecksumEvmAddress]] = None,
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
             tx_hash: Optional[EVMTxHash] = None,
             chain_id: Optional[ChainID] = None,
-            protocols: Optional[List[str]] = None,
+            protocols: Optional[list[str]] = None,
             asset: Optional[EvmToken] = None,
             exclude_ignored_assets: bool = False,
-            event_types: Optional[List[HistoryEventType]] = None,
-            event_subtypes: Optional[List[HistoryEventSubType]] = None,
+            event_types: Optional[list[HistoryEventType]] = None,
+            event_subtypes: Optional[list[HistoryEventSubType]] = None,
     ) -> 'EvmTransactionsFilterQuery':
         if order_by_rules is None:
             order_by_rules = [('timestamp', True)]
@@ -405,7 +405,7 @@ class EvmTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
             order_by_rules=order_by_rules,
         )
         filter_query = cast('EvmTransactionsFilterQuery', filter_query)
-        filters: List[DBFilter] = []
+        filters: list[DBFilter] = []
         if tx_hash is not None:  # tx_hash means single result so make it as single filter
             filters.append(DBEvmTransactionHashFilter(and_op=True, tx_hash=tx_hash))
             if chain_id is not None:  # keep it as last (see chain_id property of this filter)
@@ -464,16 +464,16 @@ class DBAssetFilter(DBFilter):
     asset: Asset
     asset_key: str
 
-    def prepare(self) -> Tuple[List[str], List[Any]]:
+    def prepare(self) -> tuple[list[str], list[Any]]:
         return [f'{self.asset_key}=?'], [self.asset.identifier]
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBIgnoreValuesFilter(DBFilter):
     column: str
-    values: List[Any]
+    values: list[Any]
 
-    def prepare(self) -> Tuple[List[str], List[Any]]:
+    def prepare(self) -> tuple[list[str], list[Any]]:
         if len(self.values) == 0:
             return [], []
         return [f'{self.column} NOT IN ({", ".join(["?"] * len(self.values))})'], self.values
@@ -482,9 +482,9 @@ class DBIgnoreValuesFilter(DBFilter):
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBEth2ValidatorIndicesFilter(DBFilter):
     """A filter for Eth2 validator indices"""
-    validators: Optional[List[int]]
+    validators: Optional[list[int]]
 
-    def prepare(self) -> Tuple[List[str], List[Any]]:
+    def prepare(self) -> tuple[list[str], list[Any]]:
         if self.validators is None:
             return [], []
         questionmarks = '?' * len(self.validators)
@@ -495,13 +495,13 @@ class DBEth2ValidatorIndicesFilter(DBFilter):
 class DBTypeFilter(DBFilter):
     """A filter for type/category/HistoryBaseEntry enums"""
     filter_types: Union[
-        List[TradeType],
-        List[AssetMovementCategory],
-        List[LedgerActionType],
+        list[TradeType],
+        list[AssetMovementCategory],
+        list[LedgerActionType],
     ]
     type_key: Literal['type', 'subtype', 'category']
 
-    def prepare(self) -> Tuple[List[str], List[Any]]:
+    def prepare(self) -> tuple[list[str], list[Any]]:
         if len(self.filter_types) == 1:
             return [f'{self.type_key}=?'], [self.filter_types[0].serialize_for_db()]
         return (
@@ -517,7 +517,7 @@ class DBEqualsFilter(DBFilter):
     value: Union[str, bytes, int, bool]
     alias: Optional[str] = None
 
-    def prepare(self) -> Tuple[List[str], List[Any]]:
+    def prepare(self) -> tuple[list[str], list[Any]]:
         key_name = self.column
         if self.alias is not None:
             key_name = f'{self.alias}.{key_name}'
@@ -528,10 +528,10 @@ class DBEqualsFilter(DBFilter):
 class DBMultiValueFilter(Generic[T], DBFilter):
     """Filter a column having a string value out of a selection of values"""
     column: str
-    values: List[T]
+    values: list[T]
     operator: Literal['IN', 'NOT IN'] = 'IN'
 
-    def prepare(self) -> Tuple[List[str], List[T]]:
+    def prepare(self) -> tuple[list[str], list[T]]:
         return (
             [f'{self.column} {self.operator} ({", ".join(["?"] * len(self.values))}) OR {self.column} IS NULL'],  # noqa: E501
             self.values,
@@ -554,14 +554,14 @@ class TradesFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLocation):
     def make(
             cls,
             and_op: bool = True,
-            order_by_rules: Optional[List[Tuple[str, bool]]] = None,
+            order_by_rules: Optional[list[tuple[str, bool]]] = None,
             limit: Optional[int] = None,
             offset: Optional[int] = None,
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
-            base_assets: Optional[Tuple[Asset, ...]] = None,
-            quote_assets: Optional[Tuple[Asset, ...]] = None,
-            trade_type: Optional[List[TradeType]] = None,
+            base_assets: Optional[tuple[Asset, ...]] = None,
+            quote_assets: Optional[tuple[Asset, ...]] = None,
+            trade_type: Optional[list[TradeType]] = None,
             location: Optional[Location] = None,
     ) -> 'TradesFilterQuery':
         if order_by_rules is None:
@@ -574,7 +574,7 @@ class TradesFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLocation):
             order_by_rules=order_by_rules,
         )
         filter_query = cast('TradesFilterQuery', filter_query)
-        filters: List[DBFilter] = []
+        filters: list[DBFilter] = []
         if base_assets is not None:
             if len(base_assets) == 1:
                 filters.append(
@@ -623,13 +623,13 @@ class AssetMovementsFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLo
     def make(
             cls,
             and_op: bool = True,
-            order_by_rules: Optional[List[Tuple[str, bool]]] = None,
+            order_by_rules: Optional[list[tuple[str, bool]]] = None,
             limit: Optional[int] = None,
             offset: Optional[int] = None,
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
-            assets: Optional[Tuple[Asset, ...]] = None,
-            action: Optional[List[AssetMovementCategory]] = None,
+            assets: Optional[tuple[Asset, ...]] = None,
+            action: Optional[list[AssetMovementCategory]] = None,
             location: Optional[Location] = None,
     ) -> 'AssetMovementsFilterQuery':
         if order_by_rules is None:
@@ -642,7 +642,7 @@ class AssetMovementsFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLo
             order_by_rules=order_by_rules,
         )
         filter_query = cast('AssetMovementsFilterQuery', filter_query)
-        filters: List[DBFilter] = []
+        filters: list[DBFilter] = []
         if assets is not None:
             if len(assets) == 1:
                 filters.append(DBAssetFilter(and_op=True, asset=assets[0], asset_key='asset'))
@@ -676,13 +676,13 @@ class LedgerActionsFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoc
     def make(
             cls,
             and_op: bool = True,
-            order_by_rules: Optional[List[Tuple[str, bool]]] = None,
+            order_by_rules: Optional[list[tuple[str, bool]]] = None,
             limit: Optional[int] = None,
             offset: Optional[int] = None,
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
-            assets: Optional[Tuple[Asset, ...]] = None,
-            action_type: Optional[List[LedgerActionType]] = None,
+            assets: Optional[tuple[Asset, ...]] = None,
+            action_type: Optional[list[LedgerActionType]] = None,
             location: Optional[Location] = None,
     ) -> 'LedgerActionsFilterQuery':
         if order_by_rules is None:
@@ -694,7 +694,7 @@ class LedgerActionsFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoc
             order_by_rules=order_by_rules,
         )
         filter_query = cast('LedgerActionsFilterQuery', filter_query)
-        filters: List[DBFilter] = []
+        filters: list[DBFilter] = []
         if assets is not None:
             if len(assets) == 1:
                 filters.append(DBAssetFilter(and_op=True, asset=assets[0], asset_key='asset'))
@@ -728,12 +728,12 @@ class Eth2DailyStatsFilterQuery(DBFilterQuery, FilterWithTimestamp):
     def make(
             cls,
             and_op: bool = True,
-            order_by_rules: Optional[List[Tuple[str, bool]]] = None,
+            order_by_rules: Optional[list[tuple[str, bool]]] = None,
             limit: Optional[int] = None,
             offset: Optional[int] = None,
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
-            validators: Optional[List[int]] = None,
+            validators: Optional[list[int]] = None,
     ) -> 'Eth2DailyStatsFilterQuery':
         if order_by_rules is None:
             order_by_rules = [('timestamp', True)]
@@ -745,7 +745,7 @@ class Eth2DailyStatsFilterQuery(DBFilterQuery, FilterWithTimestamp):
             order_by_rules=order_by_rules,
         )
         filter_query = cast('Eth2DailyStatsFilterQuery', filter_query)
-        filters: List[DBFilter] = []
+        filters: list[DBFilter] = []
 
         filter_query.timestamp_filter = DBTimestampFilter(
             and_op=True,
@@ -791,7 +791,7 @@ class ReportDataFilterQuery(DBFilterQuery, FilterWithTimestamp):
     def make(
             cls,
             and_op: bool = True,
-            order_by_rules: Optional[List[Tuple[str, bool]]] = None,
+            order_by_rules: Optional[list[tuple[str, bool]]] = None,
             limit: Optional[int] = None,
             offset: Optional[int] = None,
             report_id: Optional[int] = None,
@@ -809,7 +809,7 @@ class ReportDataFilterQuery(DBFilterQuery, FilterWithTimestamp):
             order_by_rules=order_by_rules,
         )
         filter_query = cast('ReportDataFilterQuery', filter_query)
-        filters: List[DBFilter] = []
+        filters: list[DBFilter] = []
         if report_id is not None:
             filters.append(DBReportDataReportIDFilter(and_op=True, report_id=report_id))
         if event_type is not None:
@@ -827,9 +827,9 @@ class ReportDataFilterQuery(DBFilterQuery, FilterWithTimestamp):
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBNullFilter(DBFilter):
-    columns: List[str]
+    columns: list[str]
 
-    def prepare(self) -> Tuple[List[str], List[Any]]:
+    def prepare(self) -> tuple[list[str], list[Any]]:
         null_columns = []
         for column in self.columns:
             null_columns.append(f'{column} IS NULL')
@@ -842,21 +842,21 @@ class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoca
     def make(
             cls,
             and_op: bool = True,
-            order_by_rules: Optional[List[Tuple[str, bool]]] = None,
+            order_by_rules: Optional[list[tuple[str, bool]]] = None,
             limit: Optional[int] = None,
             offset: Optional[int] = None,
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
-            assets: Optional[Tuple[Asset, ...]] = None,
-            event_types: Optional[List[HistoryEventType]] = None,
-            event_subtypes: Optional[List[HistoryEventSubType]] = None,
-            exclude_subtypes: Optional[List[HistoryEventSubType]] = None,
+            assets: Optional[tuple[Asset, ...]] = None,
+            event_types: Optional[list[HistoryEventType]] = None,
+            event_subtypes: Optional[list[HistoryEventSubType]] = None,
+            exclude_subtypes: Optional[list[HistoryEventSubType]] = None,
             location: Optional[Location] = None,
             location_label: Optional[str] = None,
-            ignored_ids: Optional[List[str]] = None,
-            null_columns: Optional[List[str]] = None,
-            event_identifiers: Optional[List[bytes]] = None,
-            protocols: Optional[List[str]] = None,
+            ignored_ids: Optional[list[str]] = None,
+            null_columns: Optional[list[str]] = None,
+            event_identifiers: Optional[list[bytes]] = None,
+            protocols: Optional[list[str]] = None,
             exclude_ignored_assets: bool = False,
     ) -> 'HistoryEventFilterQuery':
         if order_by_rules is None:
@@ -869,7 +869,7 @@ class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoca
             order_by_rules=order_by_rules,
         )
         filter_query = cast('HistoryEventFilterQuery', filter_query)
-        filters: List[DBFilter] = []
+        filters: list[DBFilter] = []
         if assets is not None:
             if len(assets) == 1:
                 filters.append(DBAssetFilter(and_op=True, asset=assets[0], asset_key='asset'))
@@ -953,9 +953,9 @@ class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoca
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBProtocolsFilter(DBFilter):
     """Protocols should be not empty. Otherwise, it can break the query's logic"""
-    protocols: List[str]
+    protocols: list[str]
 
-    def prepare(self) -> Tuple[List[str], List[Any]]:
+    def prepare(self) -> tuple[list[str], list[Any]]:
         questionmarks = ','.join('?' * len(self.protocols))
         filters = [f'counterparty IN ({questionmarks})']
         bindings = self.protocols
@@ -967,7 +967,7 @@ class DBIgnoredAssetsFilter(DBFilter):
     """Filter that removes rows with ignored assets"""
     asset_key: str
 
-    def prepare(self) -> Tuple[List[str], List[Any]]:
+    def prepare(self) -> tuple[list[str], list[Any]]:
         filters = [f'{self.asset_key} IS NULL OR {self.asset_key} NOT IN (SELECT value FROM multisettings WHERE name="ignored_asset")']  # noqa: E501
         return filters, []
 
@@ -978,7 +978,7 @@ class UserNotesFilterQuery(DBFilterQuery, FilterWithTimestamp):
     def make(
             cls,
             and_op: bool = True,
-            order_by_rules: Optional[List[Tuple[str, bool]]] = None,
+            order_by_rules: Optional[list[tuple[str, bool]]] = None,
             limit: Optional[int] = None,
             offset: Optional[int] = None,
             from_ts: Optional[Timestamp] = None,
@@ -995,7 +995,7 @@ class UserNotesFilterQuery(DBFilterQuery, FilterWithTimestamp):
             order_by_rules=order_by_rules,
         )
         filter_query = cast('UserNotesFilterQuery', filter_query)
-        filters: List[DBFilter] = []
+        filters: list[DBFilter] = []
         filter_query.timestamp_filter = DBTimestampFilter(
             and_op=True,
             from_ts=from_ts,
@@ -1020,7 +1020,7 @@ class AssetsFilterQuery(DBFilterQuery):
     def make(
             cls,
             and_op: bool = True,
-            order_by_rules: Optional[List[Tuple[str, bool]]] = None,
+            order_by_rules: Optional[list[tuple[str, bool]]] = None,
             limit: Optional[int] = None,
             offset: Optional[int] = None,
             name: Optional[str] = None,
@@ -1028,10 +1028,10 @@ class AssetsFilterQuery(DBFilterQuery):
             substring_search: Optional[str] = None,
             search_column: Optional[str] = None,
             asset_type: Optional[AssetType] = None,
-            identifiers: Optional[List[str]] = None,
+            identifiers: Optional[list[str]] = None,
             return_exact_matches: bool = False,
             chain_id: Optional[ChainID] = None,
-            ignored_assets_filter_params: Optional[Tuple[Literal['IN', 'NOT IN'], List[str]]] = None,  # noqa: E501
+            ignored_assets_filter_params: Optional[tuple[Literal['IN', 'NOT IN'], list[str]]] = None,  # noqa: E501
     ) -> 'AssetsFilterQuery':
         if order_by_rules is None:
             order_by_rules = [('name', True)]
@@ -1045,7 +1045,7 @@ class AssetsFilterQuery(DBFilterQuery):
         )
         filter_query = cast('AssetsFilterQuery', filter_query)
 
-        filters: List[DBFilter] = []
+        filters: list[DBFilter] = []
         if name is not None:
             filters.append(DBSubStringFilter(
                 and_op=True,
@@ -1104,7 +1104,7 @@ class CustomAssetsFilterQuery(DBFilterQuery):
     @classmethod
     def make(
             cls,
-            order_by_rules: Optional[List[Tuple[str, bool]]] = None,
+            order_by_rules: Optional[list[tuple[str, bool]]] = None,
             limit: Optional[int] = None,
             offset: Optional[int] = None,
             identifier: Optional[str] = None,
@@ -1122,7 +1122,7 @@ class CustomAssetsFilterQuery(DBFilterQuery):
         )
         filter_query = cast('CustomAssetsFilterQuery', filter_query)
 
-        filters: List[DBFilter] = []
+        filters: list[DBFilter] = []
         if identifier is not None:
             filters.append(DBEqualsFilter(
                 and_op=True,
@@ -1151,13 +1151,13 @@ class NFTFilterQuery(DBFilterQuery):
     @classmethod
     def make(
             cls,
-            order_by_rules: Optional[List[Tuple[str, bool]]] = None,
+            order_by_rules: Optional[list[tuple[str, bool]]] = None,
             limit: Optional[int] = None,
             offset: Optional[int] = None,
-            owner_addresses: Optional[List[str]] = None,
+            owner_addresses: Optional[list[str]] = None,
             name: Optional[str] = None,
             collection_name: Optional[str] = None,
-            ignored_assets_filter_params: Optional[Tuple[Literal['IN', 'NOT IN'], List[str]]] = None,  # noqa: E501
+            ignored_assets_filter_params: Optional[tuple[Literal['IN', 'NOT IN'], list[str]]] = None,  # noqa: E501
             lps_handling: NftLpHandling = NftLpHandling.ALL_NFTS,
             nft_id: Optional[str] = None,
     ) -> 'NFTFilterQuery':
@@ -1168,7 +1168,7 @@ class NFTFilterQuery(DBFilterQuery):
             order_by_rules=order_by_rules,
         )
         filter_query = cast('NFTFilterQuery', filter_query)
-        filters: List[DBFilter] = []
+        filters: list[DBFilter] = []
         if owner_addresses is not None:
             filters.append(DBMultiStringFilter(
                 and_op=True,
@@ -1217,9 +1217,9 @@ class MultiTableFilterQuery():
     (e.g. different column names).
     """
     and_op: bool
-    filters: List[Tuple[DBFilter, str]]  # filter + table name for which to use it.
+    filters: list[tuple[DBFilter, str]]  # filter + table name for which to use it.
 
-    def prepare(self, target_table_name: str) -> Tuple[str, List[Any]]:
+    def prepare(self, target_table_name: str) -> tuple[str, list[Any]]:
         """Generates query and bindings for table `target_table_name`."""
         query_parts = []
         bindings = []
@@ -1265,7 +1265,7 @@ class LevenshteinFilterQuery(MultiTableFilterQuery):
             filters=[],
             substring_search=substring_search,
         )
-        filters: List[Tuple[DBFilter, str]] = []  # filter + table name for which to use it.
+        filters: list[tuple[DBFilter, str]] = []  # filter + table name for which to use it.
 
         name_filter = DBSubStringFilter(
             and_op=True,

@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 import pytest
 
@@ -22,8 +22,8 @@ if TYPE_CHECKING:
 @pytest.mark.parametrize('ethereum_modules', [['uniswap']])
 def test_no_events_no_balances(rotkehlchen_api_server: 'APIServer') -> None:
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    events: List[LiquidityPoolEvent] = []
-    balances: List[LiquidityPool] = []
+    events: list[LiquidityPoolEvent] = []
+    balances: list[LiquidityPool] = []
     uniswap = rotki.chains_aggregator.get_module('uniswap')
     assert uniswap is not None
     events_balances = uniswap._calculate_events_balances(
@@ -37,7 +37,7 @@ def test_no_events_no_balances(rotkehlchen_api_server: 'APIServer') -> None:
 @pytest.mark.parametrize('ethereum_modules', [['uniswap']])
 def test_single_pool_without_balances(rotkehlchen_api_server: 'APIServer'):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    balances: List[LiquidityPool] = []
+    balances: list[LiquidityPool] = []
     uniswap = rotki.chains_aggregator.get_module('uniswap')
     assert uniswap is not None
     events_balances = uniswap._calculate_events_balances(
@@ -53,7 +53,7 @@ def test_multiple_pools_without_balances(rotkehlchen_api_server: 'APIServer'):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     events = list(const_lp_1_events())
     events.extend(const_lp_2_events())
-    balances: List[LiquidityPool] = []
+    balances: list[LiquidityPool] = []
     uniswap = rotki.chains_aggregator.get_module('uniswap')
     assert uniswap is not None
     events_balances = uniswap._calculate_events_balances(

@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Dict, List, NamedTuple, Optional, Tuple, Union
+from typing import TYPE_CHECKING, NamedTuple, Optional, Union
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
@@ -34,7 +34,7 @@ class AaveLendingBalance(NamedTuple):
     apy: FVal
     version: int
 
-    def serialize(self) -> Dict[str, Union[str, Dict[str, str]]]:
+    def serialize(self) -> dict[str, Union[str, dict[str, str]]]:
         return {
             'balance': self.balance.serialize(),
             'apy': self.apy.to_percentage(precision=2),
@@ -51,7 +51,7 @@ class AaveBorrowingBalance(NamedTuple):
     stable_apr: FVal
     version: int
 
-    def serialize(self) -> Dict[str, Union[str, Dict[str, str]]]:
+    def serialize(self) -> dict[str, Union[str, dict[str, str]]]:
         return {
             'balance': self.balance.serialize(),
             'variable_apr': self.variable_apr.to_percentage(precision=2),
@@ -61,8 +61,8 @@ class AaveBorrowingBalance(NamedTuple):
 
 class AaveBalances(NamedTuple):
     """The Aave balances per account"""
-    lending: Dict[CryptoAsset, AaveLendingBalance]
-    borrowing: Dict[CryptoAsset, AaveBorrowingBalance]
+    lending: dict[CryptoAsset, AaveLendingBalance]
+    borrowing: dict[CryptoAsset, AaveBorrowingBalance]
 
 
 def asset_to_aave_reserve_address(asset: CryptoAsset) -> Optional[ChecksumEvmAddress]:
@@ -116,7 +116,7 @@ def asset_to_atoken(asset: CryptoAsset, version: int) -> Optional[EvmToken]:
         return None
 
 
-def _get_reserve_address_decimals(asset: CryptoAsset) -> Tuple[ChecksumEvmAddress, int]:
+def _get_reserve_address_decimals(asset: CryptoAsset) -> tuple[ChecksumEvmAddress, int]:
     """Get the reserve address and the number of decimals for symbol"""
     if asset == A_ETH:
         reserve_address = ETH_SPECIAL_ADDRESS
@@ -133,10 +133,10 @@ def _get_reserve_address_decimals(asset: CryptoAsset) -> Tuple[ChecksumEvmAddres
 class AaveHistory(NamedTuple):
     """All events and total interest accrued for all Atoken of an address
     """
-    events: List[AaveEvent]
-    total_earned_interest: Dict[CryptoAsset, Balance]
-    total_lost: Dict[CryptoAsset, Balance]
-    total_earned_liquidations: Dict[CryptoAsset, Balance]
+    events: list[AaveEvent]
+    total_earned_interest: dict[CryptoAsset, Balance]
+    total_lost: dict[CryptoAsset, Balance]
+    total_earned_liquidations: dict[CryptoAsset, Balance]
 
 
 class AaveInquirer():
@@ -155,12 +155,12 @@ class AaveInquirer():
 
     def get_history_for_addresses(
             self,
-            addresses: List[ChecksumEvmAddress],
+            addresses: list[ChecksumEvmAddress],
             to_block: int,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
-            aave_balances: Dict[ChecksumEvmAddress, AaveBalances],
-    ) -> Dict[ChecksumEvmAddress, AaveHistory]:
+            aave_balances: dict[ChecksumEvmAddress, AaveBalances],
+    ) -> dict[ChecksumEvmAddress, AaveHistory]:
         """
         Queries aave history for a list of addresses.
 

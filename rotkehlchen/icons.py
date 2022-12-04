@@ -4,7 +4,7 @@ import shutil
 import urllib.parse
 from http import HTTPStatus
 from pathlib import Path
-from typing import Dict, Optional, Set
+from typing import Optional
 
 import gevent
 import requests
@@ -42,7 +42,7 @@ class IconManager():
         self.coingecko = coingecko
         self.icons_dir.mkdir(parents=True, exist_ok=True)
         self.custom_icons_dir.mkdir(parents=True, exist_ok=True)
-        self.failed_asset_ids: Set[str] = set()
+        self.failed_asset_ids: set[str] = set()
 
     def iconfile_path(self, asset: Asset) -> Path:
         return self.icons_dir / f'{urllib.parse.quote_plus(asset.identifier)}_small.png'
@@ -156,13 +156,13 @@ class IconManager():
             image_data = f.read()
         return image_data
 
-    def _assets_with_coingecko_id(self) -> Dict[str, str]:
+    def _assets_with_coingecko_id(self) -> dict[str, str]:
         """Create a mapping of all the assets identifiers to their coingecko id if it is set"""
         querystr = """
         SELECT A.identifier, B.coingecko from assets as A JOIN common_asset_details as B
         ON B.identifier = A.identifier WHERE A.type != ? AND B.coingecko IS NOT NULL AND B.coingecko != ""
         """  # noqa: E501
-        assets_mappings: Dict[str, str] = {}
+        assets_mappings: dict[str, str] = {}
         with GlobalDBHandler().conn.read_ctx() as cursor:
             fiat_type = AssetType.FIAT.serialize_for_db()
             cursor.execute(querystr, [fiat_type])

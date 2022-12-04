@@ -7,12 +7,9 @@ from typing import (
     TYPE_CHECKING,
     Any,
     DefaultDict,
-    Dict,
     Iterator,
-    List,
     Literal,
     Optional,
-    Tuple,
     TypeVar,
     Union,
     overload,
@@ -167,10 +164,10 @@ class BlockchainBalances:
     db: 'DBHandler'  # Need this to serialize BTC accounts with xpub mappings
     eth: DefaultDict[ChecksumEvmAddress, BalanceSheet] = field(init=False)
     eth2: DefaultDict[Eth2PubKey, BalanceSheet] = field(init=False)
-    btc: Dict[BTCAddress, Balance] = field(init=False)
-    bch: Dict[BTCAddress, Balance] = field(init=False)
-    ksm: Dict[KusamaAddress, BalanceSheet] = field(init=False)
-    dot: Dict[PolkadotAddress, BalanceSheet] = field(init=False)
+    btc: dict[BTCAddress, Balance] = field(init=False)
+    bch: dict[BTCAddress, Balance] = field(init=False)
+    ksm: dict[KusamaAddress, BalanceSheet] = field(init=False)
+    dot: dict[PolkadotAddress, BalanceSheet] = field(init=False)
     avax: DefaultDict[ChecksumEvmAddress, BalanceSheet] = field(init=False)
 
     def copy(self) -> 'BlockchainBalances':
@@ -212,11 +209,11 @@ class BlockchainBalances:
             new_totals += avax_balances
         return new_totals
 
-    def serialize(self) -> Dict[str, Dict]:
+    def serialize(self) -> dict[str, dict]:
         eth_balances = {k: v.serialize() for k, v in self.eth.items()}
         eth2_balances = {k: v.serialize() for k, v in self.eth2.items()}
-        btc_balances: Dict[str, Any] = {}
-        bch_balances: Dict[str, Any] = {}
+        btc_balances: dict[str, Any] = {}
+        bch_balances: dict[str, Any] = {}
         ksm_balances = {k: v.serialize() for k, v in self.ksm.items()}
         dot_balances = {k: v.serialize() for k, v in self.dot.items()}
         avax_balances = {k: v.serialize() for k, v in self.avax.items()}
@@ -244,7 +241,7 @@ class BlockchainBalances:
             blockchain=SupportedBlockchain.BITCOIN_CASH,
         )
 
-        blockchain_balances: Dict[str, Dict] = {}
+        blockchain_balances: dict[str, dict] = {}
         if eth_balances != {}:
             blockchain_balances['ETH'] = eth_balances
         if eth2_balances != {}:
@@ -264,12 +261,12 @@ class BlockchainBalances:
 
     def _serialize_bitcoin_balances(
         self,
-        bitcoin_balances: Dict[str, Any],
-        xpub_mappings: Dict[BTCAddress, XpubData],
+        bitcoin_balances: dict[str, Any],
+        xpub_mappings: dict[BTCAddress, XpubData],
         blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
     ) -> None:
         """This is a helper function to serialize the balances for BTC & BCH accounts."""
-        accounts_balances: Dict[BTCAddress, Balance] = getattr(self, blockchain.value.lower())
+        accounts_balances: dict[BTCAddress, Balance] = getattr(self, blockchain.value.lower())
         for account, balances in accounts_balances.items():
             xpub_result = xpub_mappings.get(account, None)
             if xpub_result is None:
@@ -292,7 +289,7 @@ class BlockchainBalances:
                         break
 
                 if addresses_dict is None:  # new xpub, create the mapping
-                    btc_new_entry: Dict[str, Any] = {
+                    btc_new_entry: dict[str, Any] = {
                         'xpub': xpub_result.xpub.xpub,
                         'derivation_path': xpub_result.derivation_path,
                         'addresses': {},
@@ -308,7 +305,7 @@ class BlockchainBalancesUpdate:
     per_account: BlockchainBalances
     totals: BalanceSheet
 
-    def serialize(self) -> Dict[str, Dict]:
+    def serialize(self) -> dict[str, dict]:
         return {
             'per_account': self.per_account.serialize(),
             'totals': self.totals.serialize(),
@@ -331,7 +328,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             data_directory: Path,
             beaconchain: 'BeaconChain',
             btc_derivation_gap_limit: int,
-            eth_modules: List[ModuleName],
+            eth_modules: list[ModuleName],
     ):
         log.debug('Initializing ChainsAggregator')
         super().__init__()
@@ -346,7 +343,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.beaconchain = beaconchain
         self.btc_derivation_gap_limit = btc_derivation_gap_limit
         self.defi_balances_last_query_ts = Timestamp(0)
-        self.defi_balances: Dict[ChecksumEvmAddress, List[DefiProtocolBalances]] = {}
+        self.defi_balances: dict[ChecksumEvmAddress, list[DefiProtocolBalances]] = {}
 
         # All of these locks are used, but the chain ones with dynamic getattr below
         self.defi_lock = Semaphore()
@@ -363,7 +360,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.totals: BalanceSheet = BalanceSheet()
         self.premium = premium
         self.greenlet_manager = greenlet_manager
-        self.eth_modules: Dict[ModuleName, EthereumModule] = {}
+        self.eth_modules: dict[ModuleName, EthereumModule] = {}
         for given_module in eth_modules:
             self.activate_module(given_module)
 
@@ -377,10 +374,10 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
     def __del__(self) -> None:
         del self.ethereum
 
-    def set_ksm_rpc_endpoint(self, endpoint: str) -> Tuple[bool, str]:
+    def set_ksm_rpc_endpoint(self, endpoint: str) -> tuple[bool, str]:
         return self.kusama.set_rpc_endpoint(endpoint)
 
-    def set_dot_rpc_endpoint(self, endpoint: str) -> Tuple[bool, str]:
+    def set_dot_rpc_endpoint(self, endpoint: str) -> tuple[bool, str]:
         return self.polkadot.set_rpc_endpoint(endpoint)
 
     def activate_premium_status(self, premium: Premium) -> None:
@@ -395,7 +392,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             if hasattr(module, 'premium') is True and module.premium is not None:  # type: ignore  # noqa: E501
                 module.premium = None  # type: ignore
 
-    def process_new_modules_list(self, module_names: List[ModuleName]) -> None:
+    def process_new_modules_list(self, module_names: list[ModuleName]) -> None:
         """Processes a new list of active modules
 
         Adds those missing, and removes those not present
@@ -411,11 +408,11 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             for name in modules_to_add:
                 self.activate_module(name)
 
-    def iterate_modules(self) -> Iterator[Tuple[str, EthereumModule]]:
+    def iterate_modules(self) -> Iterator[tuple[str, EthereumModule]]:
         for name, module in self.eth_modules.items():
             yield name, module
 
-    def queried_addresses_for_module(self, module: ModuleName) -> List[ChecksumEvmAddress]:
+    def queried_addresses_for_module(self, module: ModuleName) -> list[ChecksumEvmAddress]:
         """Returns the addresses to query for the given module/protocol"""
         with self.database.conn.read_ctx() as cursor:
             result = QueriedAddresses(self.database).get_queried_addresses_for_module(cursor, module)  # noqa: E501
@@ -860,7 +857,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
     def modify_dot_ksm_accounts(
             self,
-            accounts: Union[List[PolkadotAddress], List[KusamaAddress]],
+            accounts: Union[list[PolkadotAddress], list[KusamaAddress]],
             blockchain: Literal[SupportedBlockchain.POLKADOT, SupportedBlockchain.KUSAMA],
             append_or_remove: Literal['append', 'remove'],
     ) -> None:
@@ -870,7 +867,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         address_type = blockchain.get_address_type()
         substrate_manager: 'SubstrateManager' = getattr(self, blockchain.name.lower())
         saved_accounts = self.accounts.get(blockchain=blockchain)
-        balances: Union[Dict[PolkadotAddress, BalanceSheet], Dict[KusamaAddress, BalanceSheet]]
+        balances: Union[dict[PolkadotAddress, BalanceSheet], dict[KusamaAddress, BalanceSheet]]
         balances = getattr(self.balances, blockchain.value.lower())
 
         with lock:
@@ -896,7 +893,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
     def modify_btc_bch_avax_accounts(
             self,
-            accounts: Union[List[BTCAddress], List[ChecksumEvmAddress]],
+            accounts: Union[list[BTCAddress], list[ChecksumEvmAddress]],
             blockchain: Literal[
                 SupportedBlockchain.BITCOIN,
                 SupportedBlockchain.BITCOIN_CASH,
@@ -921,7 +918,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
     def modify_eth_accounts(
             self,
-            accounts: List[ChecksumEvmAddress],
+            accounts: list[ChecksumEvmAddress],
             append_or_remove: Literal['append', 'remove'],
     ) -> None:
         """May raise:
@@ -1039,8 +1036,8 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
     def _update_balances_after_token_query(
             self,
             dsr_proxy_append: bool,
-            balance_result: Dict[ChecksumEvmAddress, Dict[EvmToken, FVal]],
-            token_usd_price: Dict[EvmToken, Price],
+            balance_result: dict[ChecksumEvmAddress, dict[EvmToken, FVal]],
+            token_usd_price: dict[EvmToken, Price],
             balances: DefaultDict[ChecksumEvmAddress, BalanceSheet],
     ) -> None:
         # Update the per account token balance and usd value
@@ -1092,7 +1089,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             balances=balances,
         )
 
-    def query_defi_balances(self) -> Dict[ChecksumEvmAddress, List[DefiProtocolBalances]]:
+    def query_defi_balances(self) -> dict[ChecksumEvmAddress, list[DefiProtocolBalances]]:
         """Queries DeFi balances from Zerion contract and updates the state
 
         - RemoteError if an external service such as Etherscan or cryptocompare
@@ -1238,7 +1235,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
     def _add_account_defi_balances_to_token(
             self,
             account: ChecksumEvmAddress,
-            balances: List[DefiProtocolBalances],
+            balances: list[DefiProtocolBalances],
     ) -> None:
         """Add a single account's defi balances to per account"""
         for entry in balances:
@@ -1303,7 +1300,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
     @protect_with_lock()
     @cache_response_timewise()
-    def get_eth2_staking_deposits(self) -> List['Eth2Deposit']:
+    def get_eth2_staking_deposits(self) -> list['Eth2Deposit']:
         eth2 = self.get_module('eth2')
         if eth2 is None:
             raise ModuleInactive(
@@ -1316,7 +1313,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
     @protect_with_lock()
     @cache_response_timewise()
-    def get_eth2_staking_details(self) -> List['ValidatorDetails']:
+    def get_eth2_staking_details(self) -> list['ValidatorDetails']:
         """May raise:
         - ModuleInactive if eth2 module is not activated
         """
@@ -1329,7 +1326,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             self,
             filter_query: Eth2DailyStatsFilterQuery,
             only_cache: bool,
-    ) -> Tuple[List['ValidatorDailyStats'], int, FVal, FVal]:
+    ) -> tuple[list['ValidatorDailyStats'], int, FVal, FVal]:
         """May raise:
         - ModuleInactive if eth2 module is not activated
         """
@@ -1350,7 +1347,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             self,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
-    ) -> List['ValidatorDailyStats']:
+    ) -> list['ValidatorDailyStats']:
         """May raise:
         - ModuleInactive if eth2 module is not activated
         - RemoteError if a remote query to beacon chain fails and is not caught in the method
@@ -1389,7 +1386,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
         return stats
 
-    def get_eth2_validators(self) -> List[Eth2Validator]:
+    def get_eth2_validators(self) -> list[Eth2Validator]:
         """May raise:
         - ModuleInactive if eth2 module is not activated
         """
@@ -1469,7 +1466,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         )
 
     @cache_response_timewise()
-    def get_loopring_balances(self) -> Dict[CryptoAsset, Balance]:
+    def get_loopring_balances(self) -> dict[CryptoAsset, Balance]:
         """Query loopring balances if the module is activated
 
         May raise:
@@ -1485,7 +1482,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
         # Now that we have balances for the addresses we need to aggregate the
         # assets in the different addresses
-        aggregated_balances: Dict[CryptoAsset, Balance] = defaultdict(Balance)
+        aggregated_balances: dict[CryptoAsset, Balance] = defaultdict(Balance)
         for _, assets in balances.items():
             for asset, balance in assets.items():
                 aggregated_balances[asset] += balance
