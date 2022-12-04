@@ -1,6 +1,7 @@
+import builtins  # noqa: T100
 import json
 from dataclasses import dataclass, field
-from typing import Any, Callable, Optional, Type, TypeVar
+from typing import Any, Callable, Optional, TypeVar
 
 from rotkehlchen.accounting.cost_basis import CostBasisInfo
 from rotkehlchen.accounting.mixins.event import AccountingEventType
@@ -169,7 +170,7 @@ class ProcessedAccountingEvent:
         return string_data
 
     @classmethod
-    def deserialize_from_db(cls: Type[T], timestamp: Timestamp, stringified_json: str) -> T:  # noqa: E501, UP006  # Ignoring UP006 until https://github.com/python/mypy/issues/14245 is figured out
+    def deserialize_from_db(cls: builtins.type[T], timestamp: Timestamp, stringified_json: str) -> T:  # noqa: E501  # pylint: disable=unsubscriptable-object
         """May raise:
         - DeserializationError if something is wrong with reading this from the DB
         """
