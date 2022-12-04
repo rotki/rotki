@@ -14,7 +14,7 @@ scalecodec==1.1.1
 py-sr25519-bindings==0.2.0
 py-ed25519-zebra-bindings==1.0.1
 py-bip39-bindings==0.1.10
-substrate-interface==1.4.0
+substrate-interface==1.4.1
 beautifulsoup4==4.11.1
 maxminddb==2.2.0
 miniupnpc==2.0.2; sys_platform != 'win32'
