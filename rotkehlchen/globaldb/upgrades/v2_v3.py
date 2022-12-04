@@ -545,7 +545,7 @@ def migrate_to_v3(connection: 'DBConnection') -> None:
         # This file contains the EVM version of the assets that are currently in the
         # database and are not EVM (matic tokens, Otimism tokens, etc) + their variants in
         # other chains. And populates them properly via sql statements
-        with open(dir_path / 'data' / 'globaldb_v2_v3_assets.sql', 'r') as f:
+        with open(dir_path / 'data' / 'globaldb_v2_v3_assets.sql') as f:
             sql_sentences = f.read()
             cursor.executescript(sql_sentences)
         connection.commit()

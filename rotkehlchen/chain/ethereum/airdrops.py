@@ -245,7 +245,7 @@ def get_airdrop_data(name: str, data_dir: Path) -> Tuple[Iterator, TextIO]:
                 f'File {filename} contains invalid data. Check logs.',
             ) from e
     # Verify the CSV file
-    csvfile = open(filename, 'r')
+    csvfile = open(filename)
     iterator = csv.reader(csvfile)
     next(iterator)  # skip header
     return iterator, csvfile
@@ -270,7 +270,7 @@ def get_poap_airdrop_data(name: str, data_dir: Path) -> Dict[str, Any]:
         with open(filename, 'w') as outfile:
             outfile.write(rlk_jsondumps(json_data))
 
-    infile = open(filename, 'r')
+    infile = open(filename)
     data_dict = jsonloads_dict(infile.read())
     return data_dict
 

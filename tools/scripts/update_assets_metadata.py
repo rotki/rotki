@@ -10,7 +10,7 @@ ASSETS_JSON = src_dir / 'data/all_assets.json'
 ASSETS_META = src_dir / 'data/all_assets.meta'
 ASSETS_TEST = src_dir / 'tests/unit/test_assets.py'
 
-with open(ASSETS_META, 'r') as assets_meta:
+with open(ASSETS_META) as assets_meta:
     old_meta = json.load(assets_meta)
 
 with open(ASSETS_JSON, 'rb') as assets_json:

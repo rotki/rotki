@@ -212,7 +212,7 @@ def test_migration_4(rotkehlchen_api_server):
         )
         assert cursor.fetchone() is None, 'Setting should have been deleted'
 
-    with open(dir_path / 'data' / 'nodes.json', 'r') as f:
+    with open(dir_path / 'data' / 'nodes.json') as f:
         nodes = json.loads(f.read())
         rpc_nodes = database.get_rpc_nodes(blockchain=SupportedBlockchain.ETHEREUM)
         assert len(rpc_nodes) == len(nodes) + 1
@@ -253,7 +253,7 @@ def test_migration_4_no_own_endpoint(rotkehlchen_api_server):
         )
         assert cursor.fetchone() is None, 'Setting should have been deleted'
     rpc_nodes = database.get_rpc_nodes(blockchain=SupportedBlockchain.ETHEREUM)
-    with open(dir_path / 'data' / 'nodes.json', 'r') as f:
+    with open(dir_path / 'data' / 'nodes.json') as f:
         nodes = json.loads(f.read())
         assert len(nodes) == len(rpc_nodes)
 

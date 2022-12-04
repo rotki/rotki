@@ -38,7 +38,7 @@ class DxdaomesaDecoder(DecoderInterface):
         self.ethereum = ethereum_inquirer
 
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        with open(os.path.join(dir_path, 'data', 'contracts.json'), 'r') as f:
+        with open(os.path.join(dir_path, 'data', 'contracts.json')) as f:
             contracts = json.loads(f.read())
 
         self.contract = EvmContract(

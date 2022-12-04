@@ -518,7 +518,7 @@ class BinanceImporter(BaseExchangeImporter):
             )
 
     def _import_csv(self, cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
-        with open(filepath, 'r', encoding='utf-8-sig') as csvfile:
+        with open(filepath, encoding='utf-8-sig') as csvfile:
             input_rows = list(csv.DictReader(csvfile))
             skipped_count, multirows = _group_binance_rows(rows=input_rows, **kwargs)
             if skipped_count > 0:

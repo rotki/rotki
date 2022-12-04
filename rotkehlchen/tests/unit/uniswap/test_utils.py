@@ -11,7 +11,7 @@ def test_uniswapv2_lp_tokens_json_meta():
     data_dir = Path(__file__).resolve().parent.parent.parent.parent / 'data'
     data_md5 = file_md5(data_dir / 'uniswapv2_lp_tokens.json')
 
-    with open(data_dir / 'uniswapv2_lp_tokens.meta', 'r') as f:
+    with open(data_dir / 'uniswapv2_lp_tokens.meta') as f:
         saved_meta = json.loads(f.read())
 
     assert data_md5 == saved_meta['md5']

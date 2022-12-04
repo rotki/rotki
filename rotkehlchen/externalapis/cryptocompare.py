@@ -826,7 +826,7 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleInterface, P
         coinlist_cache_path = os.path.join(self.data_directory, 'cryptocompare_coinlist.json')
         if os.path.isfile(coinlist_cache_path):
             log.info('Found cryptocompare coinlist cache', path=coinlist_cache_path)
-            with open(coinlist_cache_path, 'r') as f:
+            with open(coinlist_cache_path) as f:
                 try:
                     data = jsonloads_dict(f.read())
                     now = ts_now()
