@@ -385,7 +385,7 @@ class Kucoin(ExchangeInterface):
             except KeyError as e:
                 msg = f'Kucoin {case} JSON response is missing key: {str(e)}'
                 log.error(msg, response_dict)
-                if case == KucoinCase.OLD_TRADES and '400100' == response_dict.get('code', ''):
+                if case == KucoinCase.OLD_TRADES and response_dict.get('code', '') == '400100':
                     if current_query_ts + time_step >= end_ts:
                         break  # end of time range query and last page. We are done.
                     # else update query ts
