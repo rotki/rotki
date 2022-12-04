@@ -42,9 +42,10 @@ disallow_untyped_defs = false
 [tool.ruff]
 line-length = 99
 
-select = ["E", "F", "W", "C", "N", "B", "T", "UP"]
+select = ["E", "F", "W", "C", "N", "B", "T", "UP", "YTT"]
 extend-select = [
     "RUF100",  # detect unused noqa
+    "Q003",
 ]
 ignore = [
     "E402",  # module level import at file top. https://www.flake8rules.com/rules/E402.html
