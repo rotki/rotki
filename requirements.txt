@@ -36,7 +36,7 @@ polyleven==0.8
 
 bip-utils==2.7.0
 
-typing-extensions==4.3.0 # used for typing.ParamSpec and typing.Concatenate (in stdlib since python 3.10)
+typing-extensions==4.4.0 # used for typing.ParamSpec and typing.Concatenate (in stdlib since python 3.10)
 
 #constraints
 setuptools==60.7.1  # constraint required by pyinstaller==5.1
