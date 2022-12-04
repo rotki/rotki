@@ -2,7 +2,7 @@ mypy==0.991
 mypy-extensions==0.4.3
 pylint==2.15.7
 astroid==2.12.13  # engine of pylint, upgrade them together
-ruff==0.0.152
+ruff==0.0.155
 flake8==6.0.0
 flake8-commas==2.1.0
 flake8-bugbear==22.10.27
@@ -16,7 +16,7 @@ isort==5.10.1
 
 # type packages used by mypy
 # pinned here so that we can have reproducible mypy runs
-types-chardet==5.0.4
+types-chardet==5.0.4.1
 types-cryptography==3.3.23.2
 types-enum34==1.1.8
 types-ipaddress==1.0.8
