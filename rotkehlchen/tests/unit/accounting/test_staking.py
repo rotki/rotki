@@ -22,7 +22,7 @@ def test_kraken_staking_events(accountant, google_service):
     """
     history = [
         HistoryBaseEntry(
-            event_identifier='XXX'.encode(),
+            event_identifier=b'XXX',
             sequence_index=0,
             timestamp=1640493374000,
             location=Location.KRAKEN,
@@ -36,7 +36,7 @@ def test_kraken_staking_events(accountant, google_service):
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.REWARD,
         ), HistoryBaseEntry(
-            event_identifier='YYY'.encode(),
+            event_identifier=b'YYY',
             sequence_index=0,
             timestamp=1636638550000,
             location=Location.KRAKEN,

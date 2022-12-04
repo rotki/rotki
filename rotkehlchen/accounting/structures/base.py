@@ -167,7 +167,7 @@ class HistoryBaseEntry(AccountingEventMixin):
     @property
     def serialized_event_identifier(self) -> str:
         """Take a HistoryBaseEntry's event_identifier and returns a string representation."""
-        if self.location == Location.KRAKEN or self.event_identifier.startswith('rotki_events'.encode()):  # noqa: E501
+        if self.location == Location.KRAKEN or self.event_identifier.startswith(b'rotki_events'):  # noqa: E501
             return self.event_identifier.decode()
 
         hex_representation = self.event_identifier.hex()
