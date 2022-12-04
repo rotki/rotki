@@ -102,7 +102,7 @@ def get_latest_lp_addresses(data_directory: Path) -> List[ChecksumEvmAddress]:
         else:
             local_meta_file = our_builtin_meta
 
-        with open(local_meta_file, 'r') as f:
+        with open(local_meta_file) as f:
             local_meta = json.loads(f.read())
 
         if local_meta['version'] < remote_meta['version']:
@@ -136,7 +136,7 @@ def get_latest_lp_addresses(data_directory: Path) -> List[ChecksumEvmAddress]:
     else:
         assets_file = root_dir / 'data' / 'uniswapv2_lp_tokens.json'
 
-    with open(assets_file, 'r') as f:
+    with open(assets_file) as f:
         return json.loads(f.read())
 
 

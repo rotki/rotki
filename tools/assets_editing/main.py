@@ -18,7 +18,7 @@ def find_coingecko_by_id(identifier: str, coins):
 
 root_dir = Path(__file__).resolve().parent.parent.parent
 ASSETS_FILE = Path(f'{root_dir}/rotkehlchen/data/all_assets.json')
-with open(ASSETS_FILE, 'r') as f:
+with open(ASSETS_FILE) as f:
     assets = json.loads(f.read())
 
 data_dir = default_data_directory()
@@ -26,7 +26,7 @@ coingecko = Coingecko()
 COINGECKO_COINS_FILE = data_dir / 'coingecko.json'
 
 if COINGECKO_COINS_FILE.exists():
-    with open(COINGECKO_COINS_FILE, 'r') as f:
+    with open(COINGECKO_COINS_FILE) as f:
         coingecko_coins = json.loads(f.read())
 else:
     coingecko_coins = coingecko.all_coins()

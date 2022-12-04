@@ -16,7 +16,7 @@ def _count_v2_v3_assets_inserted() -> int:
     """Counts and returns how many assets are to be inserted by globaldb_v2_v3_assets.sql"""
     assets_inserted_by_update = 0
     dir_path = Path(__file__).resolve().parent.parent.parent
-    with open(dir_path / 'data' / 'globaldb_v2_v3_assets.sql', 'r') as f:
+    with open(dir_path / 'data' / 'globaldb_v2_v3_assets.sql') as f:
         line = ' '
         while line:
             line = f.readline()

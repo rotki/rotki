@@ -179,7 +179,7 @@ Activity from uphold with uphold transaction id:
         """
         Information for the values that the columns can have has been obtained from sample CSVs
         """
-        with open(filepath, 'r', encoding='utf-8-sig') as csvfile:
+        with open(filepath, encoding='utf-8-sig') as csvfile:
             data = csv.DictReader(csvfile)
             for row in data:
                 try:

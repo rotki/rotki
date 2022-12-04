@@ -479,7 +479,7 @@ class MacPackaging:
 
         :param wheel_metadata: Path to the wheel metadata file
         """
-        with open(wheel_metadata, 'r') as file:
+        with open(wheel_metadata) as file:
             data = file.readlines()
             for (index, line) in enumerate(data):
                 if not line.startswith('Tag'):

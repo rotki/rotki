@@ -184,7 +184,7 @@ class CointrackingImporter(BaseExchangeImporter):
         """May raise:
         - InputError if one of the rows is malformed
         """
-        with open(filepath, 'r', encoding='utf-8-sig') as csvfile:
+        with open(filepath, encoding='utf-8-sig') as csvfile:
             data = csv.reader(csvfile, delimiter=',', quotechar='"')
             header = remap_header(next(data))
             for row in data:

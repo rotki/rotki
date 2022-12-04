@@ -153,7 +153,7 @@ def read_file_if_exists(name: str) -> Optional[Dict[str, Any]]:
     filepath = root_path / 'rotkehlchen' / 'data' / name
     data = None
     if filepath.exists():
-        with filepath.open(mode='r') as f:
+        with filepath.open() as f:
             data = json.loads(f.read())
 
     return data

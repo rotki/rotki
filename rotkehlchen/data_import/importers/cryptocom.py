@@ -505,7 +505,7 @@ class CryptocomImporter(BaseExchangeImporter):
         """May raise:
         - InputError if one of the rows is malformed
         """
-        with open(filepath, 'r', encoding='utf-8-sig') as csvfile:
+        with open(filepath, encoding='utf-8-sig') as csvfile:
             data = csv.DictReader(csvfile)
             try:
                 #  Notice: Crypto.com csv export gathers all swapping entries (`lockup_swap_*`,

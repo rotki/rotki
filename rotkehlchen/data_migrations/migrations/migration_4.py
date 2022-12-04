@@ -20,7 +20,7 @@ DEFAULT_ETH_RPC = 'http://localhost:8545'
 
 def read_and_write_nodes_in_database(write_cursor: 'DBCursor') -> None:
     dir_path = Path(__file__).resolve().parent.parent.parent
-    with open(dir_path / 'data' / 'nodes.json', 'r') as f:
+    with open(dir_path / 'data' / 'nodes.json') as f:
         nodes_info = json.loads(f.read())
         for node in nodes_info:
             write_cursor.execute(

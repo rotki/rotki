@@ -146,10 +146,10 @@ class EvmContracts(Generic[T]):
         self.contracts: Dict[str, Dict[str, Any]] = {}
         self.abi_entries: Dict[str, List[Dict[str, Any]]] = {}
         dir_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-        with open(os.path.join(dir_path, 'data', contracts_filename), 'r') as f:
+        with open(os.path.join(dir_path, 'data', contracts_filename)) as f:
             self.contracts = json.loads(f.read())
 
-        with open(os.path.join(dir_path, 'data', abi_filename), 'r') as f:
+        with open(os.path.join(dir_path, 'data', abi_filename)) as f:
             self.abi_entries = json.loads(f.read())
 
     def contract_or_none(self, name: str) -> Optional[EvmContract]:
