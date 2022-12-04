@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, NamedTuple, Tuple, Union
+from typing import TYPE_CHECKING, NamedTuple, Union
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.types import OracleSource, Price, Timestamp
@@ -51,7 +51,7 @@ class HistoricalPrice(NamedTuple):
             f'at {self.timestamp} from {str(self.source)}'
         )
 
-    def serialize_for_db(self) -> Tuple[str, str, str, int, str]:
+    def serialize_for_db(self) -> tuple[str, str, str, int, str]:
         return (
             self.from_asset.identifier,
             self.to_asset.identifier,
@@ -61,7 +61,7 @@ class HistoricalPrice(NamedTuple):
         )
 
     @classmethod
-    def deserialize_from_db(cls, value: Tuple[str, str, str, int, str]) -> 'HistoricalPrice':
+    def deserialize_from_db(cls, value: tuple[str, str, str, int, str]) -> 'HistoricalPrice':
         """Deserialize a HistoricalPrice entry from the DB.
 
         May raise:

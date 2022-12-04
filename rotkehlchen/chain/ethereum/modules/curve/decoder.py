@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Mapping, Optional
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
@@ -56,9 +56,9 @@ class CurveDecoder(DecoderInterface):
         self,
         tx_log: EvmTxReceiptLog,
         transaction: EvmTransaction,
-        decoded_events: List[HistoryBaseEntry],
+        decoded_events: list[HistoryBaseEntry],
         user_address: ChecksumEvmAddress,
-    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
+    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         """Decode information related to withdrawing assets from curve pools"""
         for event in decoded_events:
             try:
@@ -106,9 +106,9 @@ class CurveDecoder(DecoderInterface):
     def _decode_curve_deposit_events(
         self,
         tx_log: EvmTxReceiptLog,
-        decoded_events: List[HistoryBaseEntry],
+        decoded_events: list[HistoryBaseEntry],
         user_address: ChecksumEvmAddress,
-    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
+    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         """Decode information related to depositing assets in curve pools"""
         for event in decoded_events:
             try:
@@ -173,10 +173,10 @@ class CurveDecoder(DecoderInterface):
         self,
         tx_log: EvmTxReceiptLog,
         transaction: EvmTransaction,
-        decoded_events: List[HistoryBaseEntry],
-        all_logs: List[EvmTxReceiptLog],  # pylint: disable=unused-argument
-        action_items: Optional[List[ActionItem]],  # pylint: disable=unused-argument
-    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
+        decoded_events: list[HistoryBaseEntry],
+        all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+        action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
+    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         if tx_log.topics[0] in (
             REMOVE_LIQUIDITY,
             REMOVE_ONE,
@@ -211,7 +211,7 @@ class CurveDecoder(DecoderInterface):
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
             event: HistoryBaseEntry,
-            action_items: List[ActionItem],  # pylint: disable=unused-argument
+            action_items: list[ActionItem],  # pylint: disable=unused-argument
     ) -> bool:
         """
         May raise:
@@ -236,24 +236,24 @@ class CurveDecoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
-    def addresses_to_decoders(self) -> Dict[ChecksumEvmAddress, Tuple[Any, ...]]:
+    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
             address: (self._decode_curve_events,)
             for address in self.curve_pools
         }
 
-    def enricher_rules(self) -> List[Callable]:
+    def enricher_rules(self) -> list[Callable]:
         return [
             self._maybe_enrich_curve_transfers,
         ]
 
-    def counterparties(self) -> List[str]:
+    def counterparties(self) -> list[str]:
         return [CPT_CURVE]
 
-    def reload(self) -> Mapping[ChecksumEvmAddress, Tuple[Any, ...]]:
+    def reload(self) -> Mapping[ChecksumEvmAddress, tuple[Any, ...]]:
         new_curve_pools = read_curve_pools()
         curve_pools_diff = new_curve_pools - self.curve_pools
-        new_mapping: Mapping[ChecksumEvmAddress, Tuple[Callable]] = {
+        new_mapping: Mapping[ChecksumEvmAddress, tuple[Callable]] = {
             pool_addr: (self._decode_curve_events,)
             for pool_addr in curve_pools_diff
         }

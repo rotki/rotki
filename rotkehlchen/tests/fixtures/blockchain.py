@@ -1,4 +1,4 @@
-from typing import List, Literal, Optional, Sequence
+from typing import Literal, Optional, Sequence
 
 import pytest
 
@@ -37,22 +37,22 @@ def fixture_number_of_eth_accounts():
 
 
 @pytest.fixture(name='ethereum_accounts')
-def fixture_ethereum_accounts(number_of_eth_accounts) -> List[ChecksumEvmAddress]:
+def fixture_ethereum_accounts(number_of_eth_accounts) -> list[ChecksumEvmAddress]:
     return [make_ethereum_address() for x in range(number_of_eth_accounts)]
 
 
 @pytest.fixture(name='btc_accounts')
-def fixture_btc_accounts() -> List[BTCAddress]:
+def fixture_btc_accounts() -> list[BTCAddress]:
     return []
 
 
 @pytest.fixture(name='bch_accounts')
-def fixture_bch_accounts() -> List[BTCAddress]:
+def fixture_bch_accounts() -> list[BTCAddress]:
     return []
 
 
 @pytest.fixture(name='ksm_accounts')
-def fixture_ksm_accounts() -> List[KusamaAddress]:
+def fixture_ksm_accounts() -> list[KusamaAddress]:
     """As per feature requirements, instantiating SubstrateManager won't trigger
     the logic that attempts to connect to the nodes. Use this fixture with KSM
     addresses on tests (e.g. integration/API tests) that require connection
@@ -62,7 +62,7 @@ def fixture_ksm_accounts() -> List[KusamaAddress]:
 
 
 @pytest.fixture(name='dot_accounts')
-def fixture_dot_accounts() -> List[PolkadotAddress]:
+def fixture_dot_accounts() -> list[PolkadotAddress]:
     """As per feature requirements, instantiating SubstrateManager won't trigger
     the logic that attempts to connect to the nodes. Use this fixture with KSM
     addresses on tests (e.g. integration/API tests) that require connection
@@ -72,18 +72,18 @@ def fixture_dot_accounts() -> List[PolkadotAddress]:
 
 
 @pytest.fixture(name='avax_accounts')
-def fixture_avax_accounts() -> List[ChecksumEvmAddress]:
+def fixture_avax_accounts() -> list[ChecksumEvmAddress]:
     return []
 
 
 @pytest.fixture(name='blockchain_accounts')
 def fixture_blockchain_accounts(
-        ethereum_accounts: List[ChecksumEvmAddress],
-        btc_accounts: List[BTCAddress],
-        bch_accounts: List[BTCAddress],
-        ksm_accounts: List[KusamaAddress],
-        dot_accounts: List[PolkadotAddress],
-        avax_accounts: List[ChecksumEvmAddress],
+        ethereum_accounts: list[ChecksumEvmAddress],
+        btc_accounts: list[BTCAddress],
+        bch_accounts: list[BTCAddress],
+        ksm_accounts: list[KusamaAddress],
+        dot_accounts: list[PolkadotAddress],
+        avax_accounts: list[ChecksumEvmAddress],
 ) -> BlockchainAccounts:
     return BlockchainAccounts(
         eth=ethereum_accounts,
@@ -298,7 +298,7 @@ def fixture_avalanche_manager(
 
 
 @pytest.fixture(name='ethereum_modules')
-def fixture_ethereum_modules() -> List[str]:
+def fixture_ethereum_modules() -> list[str]:
     return []
 
 

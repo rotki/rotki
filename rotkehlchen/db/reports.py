@@ -1,17 +1,6 @@
 import logging
 from copy import deepcopy
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    List,
-    Literal,
-    Optional,
-    Tuple,
-    Union,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Union, overload
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
@@ -38,9 +27,9 @@ if TYPE_CHECKING:
 def _get_reports_or_events_maybe_limit(
         entry_type: Literal['events'],
         entries_found: int,
-        entries: List[ProcessedAccountingEvent],
+        entries: list[ProcessedAccountingEvent],
         with_limit: bool,
-) -> Tuple[List[ProcessedAccountingEvent], int]:
+) -> tuple[list[ProcessedAccountingEvent], int]:
     ...
 
 
@@ -48,18 +37,18 @@ def _get_reports_or_events_maybe_limit(
 def _get_reports_or_events_maybe_limit(
         entry_type: Literal['reports'],
         entries_found: int,
-        entries: List[Dict[str, Any]],
+        entries: list[dict[str, Any]],
         with_limit: bool,
-) -> Tuple[List[Dict[str, Any]], int]:
+) -> tuple[list[dict[str, Any]], int]:
     ...
 
 
 def _get_reports_or_events_maybe_limit(
         entry_type: Literal['events', 'reports'],
         entries_found: int,
-        entries: Union[List[Dict[str, Any]], List[ProcessedAccountingEvent]],
+        entries: Union[list[dict[str, Any]], list[ProcessedAccountingEvent]],
         with_limit: bool,
-) -> Tuple[Union[List[Dict[str, Any]], List[ProcessedAccountingEvent]], int]:
+) -> tuple[Union[list[dict[str, Any]], list[ProcessedAccountingEvent]], int]:
     if with_limit is False:
         return entries, entries_found
 
@@ -172,14 +161,14 @@ class DBAccountingReports():
             self,
             report_id: Optional[int],
             with_limit: bool,
-    ) -> Tuple[List[Dict[str, Any]], int]:
+    ) -> tuple[list[dict[str, Any]], int]:
         """Queries all historical saved PnL reports.
 
         If `with_limit` is true then the api limit is applied
         """
-        bindings: Union[Tuple, Tuple[int]] = ()
+        bindings: Union[tuple, tuple[int]] = ()
         query = 'SELECT * from pnl_reports'
-        reports: List[Dict[str, Any]] = []
+        reports: list[dict[str, Any]] = []
         if report_id is not None:
             bindings = (report_id,)
             query += ' WHERE identifier=?'
@@ -277,7 +266,7 @@ class DBAccountingReports():
             self,
             filter_: 'ReportDataFilterQuery',
             with_limit: bool,
-    ) -> Tuple[List[ProcessedAccountingEvent], int]:
+    ) -> tuple[list[ProcessedAccountingEvent], int]:
         """Retrieve the event data of a PnL report depending on the given filter
 
         May raise:

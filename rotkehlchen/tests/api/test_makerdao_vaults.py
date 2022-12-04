@@ -2,7 +2,7 @@
 
 import random
 from http import HTTPStatus
-from typing import List, Optional
+from typing import Optional
 
 import pytest
 import requests
@@ -184,7 +184,7 @@ def _check_vaults_values(vaults, owner):
     assert_serialized_lists_equal(expected_vaults, vaults, ignore_keys=VAULT_IGNORE_KEYS)
 
 
-def _check_vault_details_values(details, total_interest_owed_list: List[Optional[FVal]]):
+def _check_vault_details_values(details, total_interest_owed_list: list[Optional[FVal]]):
     expected_details = [VAULT_8015_DETAILS]
     assert_serialized_lists_equal(
         expected_details,

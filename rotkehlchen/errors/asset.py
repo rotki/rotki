@@ -1,16 +1,16 @@
-from typing import TYPE_CHECKING, Type, Union
+from typing import TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset, CryptoAsset, CustomAsset, EvmToken, FiatAsset, Nft
 
 
 POSSIBLE_ASSET = Union[
-    Type['Asset'],
-    Type['FiatAsset'],
-    Type['CryptoAsset'],
-    Type['CustomAsset'],
-    Type['EvmToken'],
-    Type['Nft'],
+    type['Asset'],
+    type['FiatAsset'],
+    type['CryptoAsset'],
+    type['CustomAsset'],
+    type['EvmToken'],
+    type['Nft'],
 ]
 
 

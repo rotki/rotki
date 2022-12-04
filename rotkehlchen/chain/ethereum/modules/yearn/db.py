@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.serialization import DeserializationError
@@ -14,7 +14,7 @@ from .structures import YearnVault, YearnVaultEvent
 def add_yearn_vaults_events(
         write_cursor: 'DBCursor',
         address: ChecksumEvmAddress,
-        events: List[YearnVaultEvent],
+        events: list[YearnVaultEvent],
 ) -> None:
     serialized_events = [e.serialize_for_db(address) for e in events]
     write_cursor.executemany(
@@ -44,7 +44,7 @@ def get_yearn_vaults_events(
         address: ChecksumEvmAddress,
         vault: YearnVault,
         msg_aggregator: MessagesAggregator,
-) -> List[YearnVaultEvent]:
+) -> list[YearnVaultEvent]:
     events = []
     cursor.execute(
         'SELECT * from yearn_vaults_events WHERE address=? '
@@ -67,7 +67,7 @@ def get_yearn_vaults_v2_events(
         from_block: int,
         to_block: int,
         msg_aggregator: MessagesAggregator,
-) -> List[YearnVaultEvent]:
+) -> list[YearnVaultEvent]:
     events = []
     cursor.execute(
         'SELECT * from yearn_vaults_events WHERE address=? AND version=2 '

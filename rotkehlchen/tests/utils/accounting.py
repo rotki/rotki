@@ -1,7 +1,7 @@
 import csv
 import tempfile
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Optional
 
 from rotkehlchen.accounting.export.csv import CSV_INDEX_OFFSET, FILENAME_ALL_CSV
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
@@ -75,7 +75,7 @@ history1 = [
 def _get_pnl_report_after_processing(
         report_id: int,
         database: 'DBHandler',
-) -> Tuple[Dict[str, Any], List[ProcessedAccountingEvent]]:
+) -> tuple[dict[str, Any], list[ProcessedAccountingEvent]]:
     dbpnl = DBAccountingReports(database)
     report = dbpnl.get_reports(report_id=report_id, with_limit=False)[0][0]
     events = dbpnl.get_report_data(
@@ -89,7 +89,7 @@ def accounting_create_and_process_history(
         rotki: 'Rotkehlchen',
         start_ts: Timestamp,
         end_ts: Timestamp,
-) -> Tuple[Dict[str, Any], List[ProcessedAccountingEvent]]:
+) -> tuple[dict[str, Any], list[ProcessedAccountingEvent]]:
     report_id, error_or_empty = rotki.process_history(start_ts=start_ts, end_ts=end_ts)
     assert error_or_empty == ''
     return _get_pnl_report_after_processing(report_id=report_id, database=rotki.data.db)
@@ -99,8 +99,8 @@ def accounting_history_process(
         accountant: 'Accountant',
         start_ts: Timestamp,
         end_ts: Timestamp,
-        history_list: List[AccountingEventMixin],
-) -> Tuple[Dict[str, Any], List[ProcessedAccountingEvent]]:
+        history_list: list[AccountingEventMixin],
+) -> tuple[dict[str, Any], list[ProcessedAccountingEvent]]:
     report_id = accountant.process_history(
         start_ts=start_ts,
         end_ts=end_ts,
@@ -148,7 +148,7 @@ def assert_pnl_totals_close(expected: PnlTotals, got: PnlTotals) -> None:
     assert len(iterate_pnl) == len(check_pnl) + reduced_length
 
 
-def _check_boolean_settings(row: Dict[str, Any], accountant: 'Accountant'):
+def _check_boolean_settings(row: dict[str, Any], accountant: 'Accountant'):
     """Check boolean settings are exported correctly to the spreadsheet CSV"""
     booleans = ('include_crypto2crypto', 'include_gas_costs', 'account_for_assets_movements', 'calculate_past_cost_basis')  # noqa: E501
 
@@ -158,7 +158,7 @@ def _check_boolean_settings(row: Dict[str, Any], accountant: 'Accountant'):
             break
 
 
-def _check_summaries_row(row: Dict[str, Any], accountant: 'Accountant'):
+def _check_summaries_row(row: dict[str, Any], accountant: 'Accountant'):
     if row['free_amount'] == 'rotki version':
         assert row['taxable_amount'] == get_current_version(check_for_updates=False).our_version
     elif row['free_amount'] == 'taxfree_after_period':
@@ -167,14 +167,14 @@ def _check_summaries_row(row: Dict[str, Any], accountant: 'Accountant'):
         _check_boolean_settings(row, accountant)
 
 
-def _check_column(attribute: str, index: int, sheet_id: str, expected: Dict[str, Any], got_columns: List[List[str]]):  # noqa: E501
+def _check_column(attribute: str, index: int, sheet_id: str, expected: dict[str, Any], got_columns: list[list[str]]):  # noqa: E501
     expected_value = FVal(expected[attribute])
     got_value = FVal(got_columns[index][0])
     msg = f'Sheet: {sheet_id}, row: {index + CSV_INDEX_OFFSET} {attribute} mismatch. {got_value} != {expected_value}'  # noqa: E501
     assert expected_value.is_close(got_value), msg
 
 
-def _check_total(sheet_id: str, offset: int, total_type: str, expected_pnls: PnlTotals, result: List[Dict[str, Any]]) -> bool:  # noqa: E501
+def _check_total(sheet_id: str, offset: int, total_type: str, expected_pnls: PnlTotals, result: list[dict[str, Any]]) -> bool:  # noqa: E501
     """Check each total line and return true if all lines are checked"""
     if total_type != 'TOTAL':  # must be a pnl total
         accounting_type = AccountingEventType.deserialize(total_type.removesuffix(' total'))
@@ -194,8 +194,8 @@ def _check_total(sheet_id: str, offset: int, total_type: str, expected_pnls: Pnl
 
 def upload_csv_and_check(
         service: 'GoogleService',
-        csv_data: List[Dict[str, Any]],
-        expected_csv_data: List[Dict[str, Any]],
+        csv_data: list[dict[str, Any]],
+        expected_csv_data: list[dict[str, Any]],
         expected_pnls: PnlTotals,
 ) -> None:
     """Creates a new google sheet, uploads the CSV and then checks it renders properly"""

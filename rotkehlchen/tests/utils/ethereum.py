@@ -1,7 +1,7 @@
 import logging
 import os
 import random
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 import gevent
 
@@ -43,7 +43,7 @@ INFURA_TEST = random.choice([
 ])
 ALCHEMY_TEST = 'https://eth-mainnet.alchemyapi.io/v2/ga1GtB7R26UgzjextaVpbaWZ49nSi2zt'
 
-ETHERSCAN_AND_INFURA_PARAMS: Tuple[str, List[Tuple]] = ('ethereum_manager_connect_at_start, call_order', [  # noqa: E501
+ETHERSCAN_AND_INFURA_PARAMS: tuple[str, list[tuple]] = ('ethereum_manager_connect_at_start, call_order', [  # noqa: E501
     ((), (ETHEREUM_ETHERSCAN_NODE,)),
     (
         (WeightedNode(node_info=NodeName(name='own', endpoint=INFURA_TEST, owned=True, blockchain=SupportedBlockchain.ETHEREUM), weight=ONE, active=True),),  # noqa: E501
@@ -52,7 +52,7 @@ ETHERSCAN_AND_INFURA_PARAMS: Tuple[str, List[Tuple]] = ('ethereum_manager_connec
 ])
 
 
-ETHERSCAN_AND_INFURA_AND_ALCHEMY: Tuple[str, List[Tuple]] = ('ethereum_manager_connect_at_start, call_order', [  # noqa: E501
+ETHERSCAN_AND_INFURA_AND_ALCHEMY: tuple[str, list[tuple]] = ('ethereum_manager_connect_at_start, call_order', [  # noqa: E501
     # Query etherscan only
     ((), (ETHEREUM_ETHERSCAN_NODE,)),
     # For "our own" node querying use infura
@@ -68,7 +68,7 @@ ETHERSCAN_AND_INFURA_AND_ALCHEMY: Tuple[str, List[Tuple]] = ('ethereum_manager_c
 
 
 # Test with etherscan and infura
-ETHEREUM_TEST_PARAMETERS: Tuple[str, List[Tuple]]
+ETHEREUM_TEST_PARAMETERS: tuple[str, list[tuple]]
 if 'GITHUB_WORKFLOW' in os.environ:
     # For Github actions don't use infura. It seems that connecting to it
     # from Github actions hangs and times out
@@ -82,7 +82,7 @@ else:
 
 
 # Test with multipe node types and etherscan
-ETHEREUM_FULL_TEST_PARAMETERS: Tuple[str, List[Tuple]]
+ETHEREUM_FULL_TEST_PARAMETERS: tuple[str, list[tuple]]
 if 'GITHUB_WORKFLOW' in os.environ:
     # For Github actions don't use infura. It seems that connecting to it
     # from Github actions hangs and times out
@@ -120,13 +120,13 @@ def wait_until_all_nodes_connected(
         )
 
 
-def txreceipt_to_data(receipt: EvmTxReceipt) -> Dict[str, Any]:
+def txreceipt_to_data(receipt: EvmTxReceipt) -> dict[str, Any]:
     """Turns it to receipt data as would be returned by web3
 
     Is here since this would only be done in test. In actual
     serialization snake case would be used.
     """
-    data: Dict[str, Any] = {
+    data: dict[str, Any] = {
         'transactionHash': receipt.tx_hash.hex(),
         'type': hex(receipt.type),
         'contractAddress': receipt.contract_address,
@@ -154,7 +154,7 @@ def setup_ethereum_transactions_test(
         transaction_already_queried: bool,
         one_receipt_in_db: bool = False,
         second_receipt_in_db: bool = False,
-) -> Tuple[List[EvmTransaction], List[EvmTxReceipt]]:
+) -> tuple[list[EvmTransaction], list[EvmTxReceipt]]:
     dbevmtx = DBEvmTx(database)
     tx_hash1 = deserialize_evm_tx_hash('0x692f9a6083e905bdeca4f0293f3473d7a287260547f8cbccc38c5cb01591fcda')  # noqa: E501
     addr1 = string_to_evm_address('0x443E1f9b1c866E54e914822B7d3d7165EdB6e9Ea')
@@ -295,7 +295,7 @@ def get_decoded_events_of_transaction(
         ethereum_inquirer: EthereumInquirer,
         database: DBHandler,
         tx_hash: EVMTxHash,
-) -> Tuple[List[HistoryBaseEntry], EthereumTransactionDecoder]:
+) -> tuple[list[HistoryBaseEntry], EthereumTransactionDecoder]:
     """A convenience function to ask get transaction, receipt and decoded event for a tx_hash
 
     Returns the list of decoded events and the EVMTransactionDecoder

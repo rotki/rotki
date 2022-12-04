@@ -8,18 +8,7 @@ from base64 import b64decode, b64encode
 from collections import defaultdict
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    DefaultDict,
-    Dict,
-    Iterator,
-    List,
-    Literal,
-    Optional,
-    Tuple,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, DefaultDict, Iterator, Literal, Optional, Union
 from urllib.parse import urlencode
 
 import gevent
@@ -72,7 +61,7 @@ log = RotkehlchenLogsAdapter(logger)
 COINBASEPRO_PAGINATION_LIMIT = 100  # default + max limit
 
 
-def coinbasepro_to_worldpair(product: str) -> Tuple[AssetWithOracles, AssetWithOracles]:
+def coinbasepro_to_worldpair(product: str) -> tuple[AssetWithOracles, AssetWithOracles]:
     """Turns a coinbasepro product into our base/quote assets
 
     - Can raise UnprocessableTradePair if product is in unexpected format
@@ -92,7 +81,7 @@ class CoinbaseProPermissionError(Exception):
     pass
 
 
-def coinbasepro_deserialize_timestamp(entry: Dict[str, Any], key: str) -> Timestamp:
+def coinbasepro_deserialize_timestamp(entry: dict[str, Any], key: str) -> Timestamp:
     """Deserialize a timestamp from coinbasepro
 
     In case of an error raises:
@@ -126,7 +115,7 @@ class Coinbasepro(ExchangeInterface):
         )
         self.base_uri = 'https://api.pro.coinbase.com'
         self.msg_aggregator = msg_aggregator
-        self.account_to_currency: Optional[Dict[str, AssetWithOracles]] = None
+        self.account_to_currency: Optional[dict[str, AssetWithOracles]] = None
         self.available_products = {0}
 
         self.session.headers.update({
@@ -152,7 +141,7 @@ class Coinbasepro(ExchangeInterface):
 
         return changed
 
-    def validate_api_key(self) -> Tuple[bool, str]:
+    def validate_api_key(self) -> tuple[bool, str]:
         """Validates that the Coinbase Pro API key is good for usage in rotki
 
         Makes sure that the following permissions are given to the key:
@@ -192,9 +181,9 @@ class Coinbasepro(ExchangeInterface):
             self,
             endpoint: str,
             request_method: Literal['GET', 'POST'] = 'GET',
-            options: Optional[Dict[str, Any]] = None,
-            query_options: Optional[Dict[str, Any]] = None,
-    ) -> Tuple[List[Any], Optional[str]]:
+            options: Optional[dict[str, Any]] = None,
+            query_options: Optional[dict[str, Any]] = None,
+    ) -> tuple[list[Any], Optional[str]]:
         """Performs a coinbase PRO API Query for endpoint
 
         You can optionally provide extra arguments to the endpoint via the options argument.
@@ -266,7 +255,7 @@ class Coinbasepro(ExchangeInterface):
                 # get out of the retry loop, we did not get 429 complaint
                 break
 
-        json_ret: Union[List[Any], Dict[str, Any]]
+        json_ret: Union[list[Any], dict[str, Any]]
         if response.status_code == HTTPStatus.BAD_REQUEST:
             json_ret = jsonloads_dict(response.text)
             if json_ret['message'] == 'invalid signature':
@@ -297,7 +286,7 @@ class Coinbasepro(ExchangeInterface):
 
         return json_ret, response.headers.get('cb-after', None)
 
-    def create_or_return_account_to_currency_map(self) -> Dict[str, AssetWithOracles]:
+    def create_or_return_account_to_currency_map(self) -> dict[str, AssetWithOracles]:
         if self.account_to_currency is not None:
             return self.account_to_currency
 
@@ -393,9 +382,9 @@ class Coinbasepro(ExchangeInterface):
     def _paginated_query(
             self,
             endpoint: str,
-            query_options: Optional[Dict[str, Any]] = None,
+            query_options: Optional[dict[str, Any]] = None,
             limit: int = COINBASEPRO_PAGINATION_LIMIT,
-    ) -> Iterator[List[Dict[str, Any]]]:
+    ) -> Iterator[list[dict[str, Any]]]:
         if query_options is None:
             query_options = {}
         query_options['limit'] = limit
@@ -411,7 +400,7 @@ class Coinbasepro(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> List[AssetMovement]:
+    ) -> list[AssetMovement]:
         """Queries coinbase pro for asset movements"""
         log.debug('Query coinbasepro asset movements', start_ts=start_ts, end_ts=end_ts)
         movements = []
@@ -510,7 +499,7 @@ class Coinbasepro(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> Tuple[List[Trade], Tuple[Timestamp, Timestamp]]:
+    ) -> tuple[list[Trade], tuple[Timestamp, Timestamp]]:
         """Queries coinbase pro for trades"""
         log.debug('Query coinbasepro trade history', start_ts=start_ts, end_ts=end_ts)
         self.first_connection()
@@ -620,12 +609,12 @@ class Coinbasepro(ExchangeInterface):
             self,  # pylint: disable=no-self-use
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,  # pylint: disable=unused-argument
-    ) -> List[MarginPosition]:
+    ) -> list[MarginPosition]:
         return []  # noop for coinbasepro
 
     def query_online_income_loss_expense(
             self,  # pylint: disable=no-self-use
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,  # pylint: disable=unused-argument
-    ) -> List[LedgerAction]:
+    ) -> list[LedgerAction]:
         return []  # noop for coinbasepro

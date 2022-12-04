@@ -1,4 +1,4 @@
-from typing import Dict, Mapping, Optional
+from typing import Mapping, Optional
 from unittest.mock import Mock
 
 import pytest
@@ -55,8 +55,8 @@ def test_get_name_of_lowest_prio_name_source(
 
 def get_fetchers_with_names(
         fetchers_to_name: Mapping[AddressNameSource, Optional[str]],
-) -> Dict[AddressNameSource, FetcherFunc]:
-    fetchers: Dict[AddressNameSource, FetcherFunc] = {}
+) -> dict[AddressNameSource, FetcherFunc]:
+    fetchers: dict[AddressNameSource, FetcherFunc] = {}
     for source_id, returned_name in fetchers_to_name.items():
         def make_fetcher(label: Optional[str]) -> FetcherFunc:
             return lambda db, addr: label

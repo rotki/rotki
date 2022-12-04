@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Tuple
 
 import pytest
 from pysqlcipher3 import dbapi2 as sqlcipher
@@ -12,7 +11,7 @@ from rotkehlchen.utils.misc import ts_now
 START_TS = Timestamp(1279940400)
 
 
-def _simple_ens_setup(database, freezer) -> Tuple[DBEns, ChecksumEvmAddress, ChecksumEvmAddress]:
+def _simple_ens_setup(database, freezer) -> tuple[DBEns, ChecksumEvmAddress, ChecksumEvmAddress]:
     dbens = DBEns(database)
     freezer.move_to(datetime.fromtimestamp(START_TS))
     addy1 = make_ethereum_address()

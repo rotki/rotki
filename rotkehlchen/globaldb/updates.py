@@ -5,7 +5,7 @@ import sqlite3
 import sys
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any, Dict, List, Literal, NamedTuple, Optional, Tuple, Union
+from typing import Any, Literal, NamedTuple, Optional, Union
 
 import requests
 
@@ -98,7 +98,7 @@ class AssetsUpdater():
         self.msg_aggregator = msg_aggregator
         self.local_assets_version = GlobalDBHandler().get_setting_value(ASSETS_VERSION_KEY, 0)
         self.last_remote_checked_version = None
-        self.conflicts: List[Tuple[AssetData, AssetData]] = []
+        self.conflicts: list[tuple[AssetData, AssetData]] = []
         self.assets_re = re.compile(r'.*INSERT +INTO +assets\( *identifier *, *name *, *type *\) +VALUES\(([^\)]*?),([^\)]*?),([^\)]*?)\).*?')  # noqa: E501
         self.ethereum_tokens_re = re.compile(r'.*INSERT +INTO +evm_tokens\( *identifier *, *token_kind *, *chain *, *address *, *decimals *, *protocol *\) +VALUES\(([^\)]*?),([^\)]*?),([^\)]*?),([^\)]*?),([^\)]*?),([^\)]*?)\).*')  # noqa: E501
         self.common_asset_details_re = re.compile(r'.*INSERT +INTO +common_asset_details\( *identifier *, *symbol *, *coingecko *, *cryptocompare *, *forked *, *started *, *swapped_for *\) +VALUES\((.*?),(.*?),(.*?),(.*?),(.*?),([^\)]*?),([^\)]*?)\).*')  # noqa: E501
@@ -108,7 +108,7 @@ class AssetsUpdater():
             # not packaged -- must be in develop mode
             self.branch = 'develop'
 
-    def _get_remote_info_json(self) -> Dict[str, Any]:
+    def _get_remote_info_json(self) -> dict[str, Any]:
         url = f'https://raw.githubusercontent.com/rotki/assets/{self.branch}/updates/info.json'
         try:
             response = requests.get(url=url, timeout=DEFAULT_TIMEOUT_TUPLE)
@@ -124,7 +124,7 @@ class AssetsUpdater():
 
         return json_data
 
-    def check_for_updates(self) -> Tuple[int, int, int]:
+    def check_for_updates(self) -> tuple[int, int, int]:
         """
         Checks the remote to see if there is new assets to get
         May raise:
@@ -227,7 +227,7 @@ class AssetsUpdater():
     def _parse_ethereum_token_data(
             self,
             insert_text: str,
-    ) -> Tuple[ChecksumEvmAddress, Optional[int], Optional[str], Optional[ChainID], Optional[EvmTokenKind]]:  # noqa: E501
+    ) -> tuple[ChecksumEvmAddress, Optional[int], Optional[str], Optional[ChainID], Optional[EvmTokenKind]]:  # noqa: E501
         match = self.ethereum_tokens_re.match(insert_text)
         if match is None:
             raise DeserializationError(
@@ -304,7 +304,7 @@ class AssetsUpdater():
             connection: DBConnection,
             version: int,
             text: str,
-            conflicts: Optional[Dict[Asset, Literal['remote', 'local']]],
+            conflicts: Optional[dict[Asset, Literal['remote', 'local']]],
     ) -> None:
         lines = text.splitlines()
         for action, full_insert in zip(*[iter(lines)] * 2):
@@ -379,8 +379,8 @@ class AssetsUpdater():
     def perform_update(
             self,
             up_to_version: Optional[int],
-            conflicts: Optional[Dict[Asset, Literal['remote', 'local']]],
-    ) -> Optional[List[Dict[str, Any]]]:
+            conflicts: Optional[dict[Asset, Literal['remote', 'local']]],
+    ) -> Optional[list[dict[str, Any]]]:
         """Performs an asset update by downloading new changes from the remote
 
         If `up_to_version` is given then changes up to and including that version are made.
@@ -433,9 +433,9 @@ class AssetsUpdater():
     def _perform_update(
             self,
             connection: DBConnection,
-            conflicts: Optional[Dict[Asset, Literal['remote', 'local']]],
+            conflicts: Optional[dict[Asset, Literal['remote', 'local']]],
             local_schema_version: int,
-            infojson: Dict[str, Any],
+            infojson: dict[str, Any],
             up_to_version: Optional[int],
     ) -> None:
         version = self.local_assets_version + 1

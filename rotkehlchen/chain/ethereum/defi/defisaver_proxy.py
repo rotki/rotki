@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING, Optional
 
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -38,8 +38,8 @@ class HasDSProxy(EthereumModule):
         self.ethereum = ethereum_inquirer
         self.database = database
         self.msg_aggregator = msg_aggregator
-        self.address_to_proxy: Dict[ChecksumEvmAddress, ChecksumEvmAddress] = {}
-        self.proxy_to_address: Dict[ChecksumEvmAddress, ChecksumEvmAddress] = {}
+        self.address_to_proxy: dict[ChecksumEvmAddress, ChecksumEvmAddress] = {}
+        self.proxy_to_address: dict[ChecksumEvmAddress, ChecksumEvmAddress] = {}
         self.reset_last_query_ts()
         self.dsproxy_registry = self.ethereum.contracts.contract('DS_PROXY_REGISTRY')
 
@@ -69,8 +69,8 @@ class HasDSProxy(EthereumModule):
 
     def _get_accounts_proxy(
         self,
-        addresses: List[ChecksumEvmAddress],
-    ) -> Dict[ChecksumEvmAddress, ChecksumEvmAddress]:
+        addresses: list[ChecksumEvmAddress],
+    ) -> dict[ChecksumEvmAddress, ChecksumEvmAddress]:
         """
         Returns DSProxy if it exists for a list of addresses using only one call
         to the chain.
@@ -101,7 +101,7 @@ class HasDSProxy(EthereumModule):
                     log.error(msg)
         return mapping
 
-    def _get_accounts_having_proxy(self) -> Dict[ChecksumEvmAddress, ChecksumEvmAddress]:
+    def _get_accounts_having_proxy(self) -> dict[ChecksumEvmAddress, ChecksumEvmAddress]:
         """Returns a mapping of accounts that have DS proxies to their proxies
 
         If the proxy mappings have been queried in the past REQUERY_PERIOD

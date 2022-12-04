@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Dict, List, Optional, Sequence
+from typing import TYPE_CHECKING, Optional, Sequence
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
@@ -18,7 +18,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval
-from rotkehlchen.types import ChainID, EVMTxHash, Timestamp, TimestampMS, Tuple
+from rotkehlchen.types import ChainID, EVMTxHash, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_ms_to_sec
 
 if TYPE_CHECKING:
@@ -42,7 +42,7 @@ class DBHistoryEvents():
             self,
             write_cursor: 'DBCursor',
             event: HistoryBaseEntry,
-            mapping_values: Optional[Dict[str, int]] = None,
+            mapping_values: Optional[dict[str, int]] = None,
     ) -> Optional[int]:
         """Insert a single history entry to the DB. Returns its identifier or
         None if it already exists.
@@ -94,7 +94,7 @@ class DBHistoryEvents():
                 mapping_values=mapping_values,
             )
 
-    def edit_history_event(self, event: HistoryBaseEntry) -> Tuple[bool, str]:
+    def edit_history_event(self, event: HistoryBaseEntry) -> tuple[bool, str]:
         """Edit a history entry to the DB. Returns the edited entry"""
         with self.db.user_write() as cursor:
             try:
@@ -124,7 +124,7 @@ class DBHistoryEvents():
 
         return True, ''
 
-    def delete_history_events_by_identifier(self, identifiers: List[int]) -> Optional[str]:  # noqa: E501
+    def delete_history_events_by_identifier(self, identifiers: list[int]) -> Optional[str]:  # noqa: E501
         """
         Delete the history events with the given identifiers. If deleting an event
         makes it the last event of a transaction hash then do not allow deletion.
@@ -159,7 +159,7 @@ class DBHistoryEvents():
     def delete_events_by_tx_hash(
             self,
             write_cursor: 'DBCursor',
-            tx_hashes: List[EVMTxHash],
+            tx_hashes: list[EVMTxHash],
             chain_id: ChainID,
     ) -> None:
         """Delete all relevant (by event_identifier) history events except those that
@@ -178,7 +178,7 @@ class DBHistoryEvents():
             self,
             cursor: 'DBCursor',
             chain_id: Optional[ChainID],
-    ) -> List[int]:      # pylint: disable=no-self-use
+    ) -> list[int]:      # pylint: disable=no-self-use
         """Returns the identifiers of all the events in the database that have been customized
 
         Optionally filter by chain_id
@@ -206,7 +206,7 @@ class DBHistoryEvents():
             cursor: 'DBCursor',
             filter_query: HistoryEventFilterQuery,
             has_premium: bool,
-    ) -> List[HistoryBaseEntry]:
+    ) -> list[HistoryBaseEntry]:
         """
         Get history events using the provided query filter
         """
@@ -236,7 +236,7 @@ class DBHistoryEvents():
             cursor: 'DBCursor',
             filter_query: HistoryEventFilterQuery,
             has_premium: bool,
-    ) -> Tuple[List[HistoryBaseEntry], int]:
+    ) -> tuple[list[HistoryBaseEntry], int]:
         """Gets all history events for the query from the DB
 
         Also returns how many are the total found for the filter
@@ -254,7 +254,7 @@ class DBHistoryEvents():
     def rows_missing_prices_in_base_entries(
         self,
         filter_query: HistoryEventFilterQuery,
-    ) -> List[Tuple[str, FVal, Asset, Timestamp]]:
+    ) -> list[tuple[str, FVal, Asset, Timestamp]]:
         """
         Get missing prices for history base entries based on filter query
         """
@@ -294,7 +294,7 @@ class DBHistoryEvents():
             self,
             cursor: 'DBCursor',
             query_filter: HistoryEventFilterQuery,
-    ) -> List[Asset]:
+    ) -> list[Asset]:
         """Returns asset from base entry events using the desired filter"""
         query, bindings = query_filter.prepare(with_pagination=False)
         query = 'SELECT DISTINCT asset from history_events ' + query
@@ -321,7 +321,7 @@ class DBHistoryEvents():
             self,
             cursor: 'DBCursor',
             query_filter: HistoryEventFilterQuery,
-    ) -> Tuple[FVal, List[Tuple[Asset, FVal, FVal]]]:
+    ) -> tuple[FVal, list[tuple[Asset, FVal, FVal]]]:
         """Returns the sum of the USD value at the time of acquisition and the amount received
         by asset"""
         usd_value = ZERO

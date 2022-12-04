@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Mapping
 
 from rotkehlchen.types import ChecksumEvmAddress
 
@@ -28,32 +28,32 @@ class DecoderInterface(metaclass=ABCMeta):
         """
         self.msg_aggregator = msg_aggregator
 
-    def addresses_to_decoders(self) -> Dict[ChecksumEvmAddress, Tuple[Any, ...]]:  # pylint: disable=no-self-use  # noqa: E501
+    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:  # pylint: disable=no-self-use  # noqa: E501
         """Subclasses may implement this to return the mappings of addresses to decode functions"""
         return {}
 
     @abstractmethod
-    def counterparties(self) -> List[str]:  # pylint: disable=no-self-use
+    def counterparties(self) -> list[str]:  # pylint: disable=no-self-use
         """
         Subclasses implement this to specify which counterparty values are introduced by the module
         """
         ...
 
-    def decoding_rules(self) -> List[Callable]:  # pylint: disable=no-self-use
+    def decoding_rules(self) -> list[Callable]:  # pylint: disable=no-self-use
         """
         Subclasses may implement this to add new generic decoding rules to be attempted
         by the decoding process
         """
         return []
 
-    def enricher_rules(self) -> List[Callable]:  # pylint: disable=no-self-use
+    def enricher_rules(self) -> list[Callable]:  # pylint: disable=no-self-use
         """
         Subclasses may implement this to add new generic decoding rules to be attempted
         by the decoding process
         """
         return []
 
-    def reload(self) -> Mapping[ChecksumEvmAddress, Tuple[Any, ...]]:  # pylint: disable=no-self-use  # noqa: E501
+    def reload(self) -> Mapping[ChecksumEvmAddress, tuple[Any, ...]]:  # pylint: disable=no-self-use  # noqa: E501
         """Subclasses may implement this to be able to reload some of the decoder's properties
         Returns only new mappings of addresses to decode functions
         """

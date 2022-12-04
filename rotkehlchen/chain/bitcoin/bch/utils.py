@@ -1,4 +1,4 @@
-from typing import List, Optional, Set, Tuple, Union
+from typing import Optional, Union
 
 import bech32
 from base58 import b58decode_check, b58encode_check
@@ -80,14 +80,14 @@ def _b32encode(inputs: list) -> str:
     return out
 
 
-def _address_type(address_type: str, version: Union[str, int]) -> Tuple[str, int, bool]:
+def _address_type(address_type: str, version: Union[str, int]) -> tuple[str, int, bool]:
     for mapping in _VERSION_MAP[address_type]:
         if version in (mapping[0], mapping[1]):
             return mapping
     raise ValueError('Invalid Address')
 
 
-def _calculate_checksum(prefix: str, payload: List[int]) -> list:
+def _calculate_checksum(prefix: str, payload: list[int]) -> list:
     poly = _polymod(_prefix_expand(prefix) + payload + [0, 0, 0, 0, 0, 0, 0, 0])
     out = []
     for i in range(8):
@@ -95,7 +95,7 @@ def _calculate_checksum(prefix: str, payload: List[int]) -> list:
     return out
 
 
-def _code_list_to_string(code_list: List[int]) -> bytes:
+def _code_list_to_string(code_list: list[int]) -> bytes:
     output = b''
     for code in code_list:
         output += bytes([code])
@@ -169,7 +169,7 @@ def force_address_to_legacy_address(address: str) -> BTCAddress:
     return BTCAddress(address)
 
 
-def force_addresses_to_legacy_addresses(data: Set[ChecksumAddress]) -> Set[BTCAddress]:
+def force_addresses_to_legacy_addresses(data: set[ChecksumAddress]) -> set[BTCAddress]:
     """Changes the format of a list of addresses to Legacy."""
     return_data = set()
     for entry in data:
@@ -178,7 +178,7 @@ def force_addresses_to_legacy_addresses(data: Set[ChecksumAddress]) -> Set[BTCAd
     return return_data
 
 
-def validate_bch_address_input(address: str, given_addresses: Set[ChecksumAddress]) -> None:
+def validate_bch_address_input(address: str, given_addresses: set[ChecksumAddress]) -> None:
     """Validates the address provided is valid for Bitcoin Cash.
     May raise ValidationError if all checks are not passed.
     """

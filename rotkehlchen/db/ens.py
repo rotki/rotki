@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
@@ -39,8 +39,8 @@ class DBEns:
     def get_reverse_ens(    # pylint: disable=no-self-use
             self,
             cursor: 'DBCursor',
-            addresses: List[ChecksumEvmAddress],
-    ) -> Dict[ChecksumEvmAddress, Union[EnsMapping, Timestamp]]:
+            addresses: list[ChecksumEvmAddress],
+    ) -> dict[ChecksumEvmAddress, Union[EnsMapping, Timestamp]]:
         """Returns a mapping of addresses to ens mappings if found in the DB
 
         - If the address has a name mapping in the DB it is returned as part of the dict
@@ -68,9 +68,9 @@ class DBEns:
     def update_values(
             self,
             write_cursor: 'DBCursor',
-            ens_lookup_results: Dict[ChecksumEvmAddress, Optional[str]],
-            mappings_to_send: Dict[ChecksumEvmAddress, str],
-    ) -> Dict[ChecksumEvmAddress, str]:
+            ens_lookup_results: dict[ChecksumEvmAddress, Optional[str]],
+            mappings_to_send: dict[ChecksumEvmAddress, str],
+    ) -> dict[ChecksumEvmAddress, str]:
         """Update the ENS mapping values in the DB and return updates mappings to return via api"""
         now = ts_now()
         for address, name in ens_lookup_results.items():

@@ -7,18 +7,7 @@ import os
 import time
 from collections import defaultdict
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    DefaultDict,
-    Dict,
-    List,
-    Literal,
-    Optional,
-    Tuple,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, DefaultDict, Literal, Optional, Union, cast
 
 import gevent
 
@@ -133,7 +122,7 @@ class Rotkehlchen():
                 f'The given data directory {self.data_dir} is not readable or writable',
             )
         self.main_loop_spawned = False
-        self.api_task_greenlets: List[gevent.Greenlet] = []
+        self.api_task_greenlets: list[gevent.Greenlet] = []
         self.msg_aggregator = MessagesAggregator()
         self.greenlet_manager = GreenletManager(msg_aggregator=self.msg_aggregator)
         self.rotki_notifier = RotkiNotifier(greenlet_manager=self.greenlet_manager)
@@ -463,7 +452,7 @@ class Rotkehlchen():
         self.accountant.activate_premium_status(self.premium)
         self.chains_aggregator.activate_premium_status(self.premium)
 
-    def delete_premium_credentials(self) -> Tuple[bool, str]:
+    def delete_premium_credentials(self) -> tuple[bool, str]:
         """Deletes the premium credentials for rotki"""
         msg = ''
 
@@ -489,7 +478,7 @@ class Rotkehlchen():
             self,
             cursor: 'DBCursor',
             blockchain: SupportedBlockchain,
-    ) -> Union[List[BlockchainAccountData], Dict[str, Any]]:
+    ) -> Union[list[BlockchainAccountData], dict[str, Any]]:
         account_data = self.data.db.get_blockchain_account_data(cursor, blockchain)
         if blockchain not in (SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH):
             return account_data
@@ -505,13 +494,13 @@ class Rotkehlchen():
             addresses=list(addresses_to_account_data.keys()),  # type: ignore
         )
 
-        xpub_mappings: Dict['XpubData', List[BlockchainAccountData]] = {}
+        xpub_mappings: dict['XpubData', list[BlockchainAccountData]] = {}
         for address, xpub_entry in address_to_xpub_mappings.items():
             if xpub_entry not in xpub_mappings:
                 xpub_mappings[xpub_entry] = []
             xpub_mappings[xpub_entry].append(addresses_to_account_data[address])
 
-        data: Dict[str, Any] = {'standalone': [], 'xpubs': []}
+        data: dict[str, Any] = {'standalone': [], 'xpubs': []}
         # Add xpub data
         for xpub_entry in xpub_data:
             data_entry = xpub_entry.serialize()
@@ -528,7 +517,7 @@ class Rotkehlchen():
     def add_blockchain_accounts(
             self,
             blockchain: SupportedBlockchain,
-            account_data: List[BlockchainAccountData],
+            account_data: list[BlockchainAccountData],
     ) -> None:
         """Adds new blockchain accounts
 
@@ -563,7 +552,7 @@ class Rotkehlchen():
             self,
             write_cursor: 'DBCursor',
             blockchain: SupportedBlockchain,
-            account_data: List[BlockchainAccountData],
+            account_data: list[BlockchainAccountData],
     ) -> None:
         """Edits blockchain accounts
 
@@ -614,7 +603,7 @@ class Rotkehlchen():
             blockchain=blockchain,
             accounts=accounts,
         )
-        eth_addresses: List[ChecksumEvmAddress] = cast(List[ChecksumEvmAddress], accounts) if blockchain == SupportedBlockchain.ETHEREUM else []  # noqa: E501
+        eth_addresses: list[ChecksumEvmAddress] = cast(list[ChecksumEvmAddress], accounts) if blockchain == SupportedBlockchain.ETHEREUM else []  # noqa: E501
         with contextlib.ExitStack() as stack:
             cursor = stack.enter_context(self.data.db.user_write())
             if blockchain == SupportedBlockchain.ETHEREUM:
@@ -624,7 +613,7 @@ class Rotkehlchen():
                 stack.enter_context(ethereum.transactions_decoder.undecoded_tx_query_lock)
             self.data.db.remove_blockchain_accounts(cursor, blockchain, accounts)
 
-    def get_history_query_status(self) -> Dict[str, str]:
+    def get_history_query_status(self) -> dict[str, str]:
         if self.events_historian.progress < FVal('100'):
             processing_state = self.events_historian.processing_state_name
             progress = self.events_historian.progress / 2
@@ -650,7 +639,7 @@ class Rotkehlchen():
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> Tuple[int, str]:
+    ) -> tuple[int, str]:
         error_or_empty, events = self.events_historian.get_history(
             start_ts=start_ts,
             end_ts=end_ts,
@@ -669,7 +658,7 @@ class Rotkehlchen():
             save_despite_errors: bool = False,
             timestamp: Optional[Timestamp] = None,
             ignore_cache: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Query all balances rotkehlchen can see.
 
         If requested_save_data is True then the data are always saved in the DB,
@@ -690,7 +679,7 @@ class Rotkehlchen():
             save_despite_errors=save_despite_errors,
         )
 
-        balances: Dict[str, Dict[Asset, Balance]] = {}
+        balances: dict[str, dict[Asset, Balance]] = {}
         problem_free = True
         for exchange in self.exchange_manager.iterate_exchanges():
             exchange_balances, error_msg = exchange.query_balances(ignore_cache=ignore_cache)
@@ -714,7 +703,7 @@ class Rotkehlchen():
                         exchange_balances,  # type: ignore
                     )
 
-        liabilities: Dict[Asset, Balance]
+        liabilities: dict[Asset, Balance]
         try:
             blockchain_result = self.chains_aggregator.query_balances(
                 blockchain=None,
@@ -785,7 +774,7 @@ class Rotkehlchen():
 
         # Calculate usd totals
         assets_total_balance: DefaultDict[Asset, Balance] = defaultdict(Balance)
-        total_usd_per_location: Dict[str, FVal] = {}
+        total_usd_per_location: dict[str, FVal] = {}
         for location, asset_balance in balances.items():
             total_usd_per_location[location] = ZERO
             for asset, balance in asset_balance.items():
@@ -797,7 +786,7 @@ class Rotkehlchen():
         net_usd -= liabilities_total_usd
 
         # Calculate location stats
-        location_stats: Dict[str, Any] = {}
+        location_stats: dict[str, Any] = {}
         for location, total_usd in total_usd_per_location.items():
             if location == str(Location.BLOCKCHAIN):
                 total_usd -= liabilities_total_usd
@@ -809,10 +798,10 @@ class Rotkehlchen():
             }
 
         # Calculate 'percentage_of_net_value' per asset
-        assets_total_balance_as_dict: Dict[Asset, Dict[str, Any]] = {
+        assets_total_balance_as_dict: dict[Asset, dict[str, Any]] = {
             asset: balance.to_dict() for asset, balance in assets_total_balance.items()
         }
-        liabilities_as_dict: Dict[Asset, Dict[str, Any]] = {
+        liabilities_as_dict: dict[Asset, dict[str, Any]] = {
             asset: balance.to_dict() for asset, balance in liabilities.items()
         }
         for asset, balance_dict in assets_total_balance_as_dict.items():
@@ -847,7 +836,7 @@ class Rotkehlchen():
 
         return result_dict
 
-    def set_settings(self, settings: ModifiableDBSettings) -> Tuple[bool, str]:
+    def set_settings(self, settings: ModifiableDBSettings) -> tuple[bool, str]:
         """Tries to set new settings. Returns True in success or False with message if error"""
         if settings.ksm_rpc_endpoint is not None:
             result, msg = self.chains_aggregator.set_ksm_rpc_endpoint(settings.ksm_rpc_endpoint)
@@ -887,9 +876,9 @@ class Rotkehlchen():
             api_secret: ApiSecret,
             passphrase: Optional[str] = None,
             kraken_account_type: Optional['KrakenAccountType'] = None,
-            binance_selected_trade_pairs: Optional[List[str]] = None,
+            binance_selected_trade_pairs: Optional[list[str]] = None,
             ftx_subaccount: Optional[str] = None,
-    ) -> Tuple[bool, str]:
+    ) -> tuple[bool, str]:
         """
         Setup a new exchange with an api key and an api secret and optionally a passphrase
         """
@@ -918,7 +907,7 @@ class Rotkehlchen():
             )
         return is_success, msg
 
-    def remove_exchange(self, name: str, location: Location) -> Tuple[bool, str]:
+    def remove_exchange(self, name: str, location: Location) -> tuple[bool, str]:
         if self.exchange_manager.get_exchange(name=name, location=location) is None:
             return False, f'{str(location)} exchange {name} is not registered'
 
@@ -931,9 +920,9 @@ class Rotkehlchen():
                 self.data.db.delete_used_query_range_for_exchange(write_cursor=cursor, location=location)  # noqa: E501
         return True, ''
 
-    def query_periodic_data(self) -> Dict[str, Union[bool, List[str], Timestamp]]:
+    def query_periodic_data(self) -> dict[str, Union[bool, list[str], Timestamp]]:
         """Query for frequently changing data"""
-        result: Dict[str, Union[bool, List[str], Timestamp]] = {}
+        result: dict[str, Union[bool, list[str], Timestamp]] = {}
 
         if self.user_is_logged_in:
             with self.data.db.conn.read_ctx() as cursor:

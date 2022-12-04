@@ -1,7 +1,7 @@
 import sqlite3
 from collections.abc import Generator
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Optional
 
 from pysqlcipher3 import dbapi2
 
@@ -42,8 +42,8 @@ class DBAddressbook:
     def get_addressbook_entries(  # pylint: disable=no-self-use
             self,
             cursor: 'DBCursor',
-            addresses: Optional[List[ChecksumEvmAddress]] = None,
-    ) -> List[AddressbookEntry]:
+            addresses: Optional[list[ChecksumEvmAddress]] = None,
+    ) -> list[AddressbookEntry]:
         if addresses is None:
             cursor.execute('SELECT address, name FROM address_book')
         else:
@@ -62,7 +62,7 @@ class DBAddressbook:
     def add_addressbook_entries(
             self,
             book_type: AddressbookType,
-            entries: List[AddressbookEntry],
+            entries: list[AddressbookEntry],
     ) -> None:
         with self.write_ctx(book_type) as write_cursor:
             # We iterate here with for loop instead of executemany in order to catch
@@ -83,7 +83,7 @@ class DBAddressbook:
     def update_addressbook_entries(
             self,
             book_type: AddressbookType,
-            entries: List[AddressbookEntry],
+            entries: list[AddressbookEntry],
     ) -> None:
         with self.write_ctx(book_type) as write_cursor:
             for entry in entries:
@@ -100,7 +100,7 @@ class DBAddressbook:
     def delete_addressbook_entries(
             self,
             book_type: AddressbookType,
-            addresses: List[ChecksumEvmAddress],
+            addresses: list[ChecksumEvmAddress],
     ) -> None:
         with self.write_ctx(book_type) as write_cursor:
             for address in addresses:

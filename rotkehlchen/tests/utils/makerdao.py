@@ -1,5 +1,5 @@
 import types
-from typing import TYPE_CHECKING, Dict, List, NamedTuple, Tuple
+from typing import TYPE_CHECKING, NamedTuple
 from unittest.mock import patch
 
 from web3 import Web3
@@ -16,9 +16,9 @@ if TYPE_CHECKING:
 
 
 class VaultTestData(NamedTuple):
-    vaults: List[MakerdaoVault]
-    proxy_mappings: Dict[ChecksumEvmAddress, ChecksumEvmAddress]
-    mock_contracts: List[str]
+    vaults: list[MakerdaoVault]
+    proxy_mappings: dict[ChecksumEvmAddress, ChecksumEvmAddress]
+    mock_contracts: list[str]
 
 
 class MockCaller:
@@ -38,8 +38,8 @@ def mock_get_cdps_asc(
         self,
         cdp_manager_address,  # pylint: disable=unused-argument
         proxy,  # pylint: disable=unused-argument
-) -> List[List]:
-    result: List[List] = [[], [], []]
+) -> list[list]:
+    result: list[list] = [[], [], []]
     for entry in self.test_data.vaults:
         result[0].append(entry.identifier)
         result[1].append(entry.urn)
@@ -61,7 +61,7 @@ def mock_vat_urns(
         self,
         ilk,  # pylint: disable=unused-argument
         urn,
-) -> Tuple[FVal, FVal]:
+) -> tuple[FVal, FVal]:
     for vault in self.test_data.vaults:
         if vault.urn == urn:
             result_a = vault.collateral.amount * WAD
@@ -72,7 +72,7 @@ def mock_vat_urns(
     raise AssertionError(f'Could not find a mock for vat urns for urn {urn}')
 
 
-def mock_vat_ilks(self, ilk) -> Tuple[int, int, FVal]:
+def mock_vat_ilks(self, ilk) -> tuple[int, int, FVal]:
     for vault in self.test_data.vaults:
         vault_ilk = bytearray(vault.collateral_type.encode())
         vault_ilk.extend(
@@ -89,7 +89,7 @@ def mock_vat_ilks(self, ilk) -> Tuple[int, int, FVal]:
     raise AssertionError(f'Could not find a mock for vat ilks for ilk {ilk}')
 
 
-def mock_spot_ilks(self, ilk) -> Tuple[int, FVal]:
+def mock_spot_ilks(self, ilk) -> tuple[int, FVal]:
     for vault in self.test_data.vaults:
         vault_ilk = bytearray(vault.collateral_type.encode())
         vault_ilk.extend(
@@ -104,7 +104,7 @@ def mock_spot_ilks(self, ilk) -> Tuple[int, FVal]:
     raise AssertionError(f'Could not find a mock for spot ilks for ilk {ilk}')
 
 
-def mock_jug_ilks(_, ilk) -> Tuple[int, int]:
+def mock_jug_ilks(_, ilk) -> tuple[int, int]:
     if 'ETH-A' in str(ilk):
         duty = 1000000000000000000000000000  # 0%
     elif 'BAT-A' in str(ilk):
@@ -144,9 +144,9 @@ def create_web3_mock(web3: Web3, ethereum: 'EthereumInquirer', test_data: VaultT
 
 def mock_proxies(
         module: EthereumModule,
-        mapping: Dict[ChecksumEvmAddress, ChecksumEvmAddress],
+        mapping: dict[ChecksumEvmAddress, ChecksumEvmAddress],
 ) -> None:
-    def mock_get_proxies() -> Dict[ChecksumEvmAddress, ChecksumEvmAddress]:
+    def mock_get_proxies() -> dict[ChecksumEvmAddress, ChecksumEvmAddress]:
         return mapping
 
     module._get_accounts_having_proxy = mock_get_proxies  # type: ignore
@@ -154,7 +154,7 @@ def mock_proxies(
 
 def mock_proxies_for(
         rotki,
-        mapping: Dict[ChecksumEvmAddress, ChecksumEvmAddress],
+        mapping: dict[ChecksumEvmAddress, ChecksumEvmAddress],
         given_module: str,
 ) -> None:
     module = rotki.chains_aggregator.get_module(given_module)

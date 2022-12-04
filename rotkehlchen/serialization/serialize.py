@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Union
+from typing import Any, Union
 
 from hexbytes import HexBytes
 from web3.datastructures import AttributeDict
@@ -79,7 +79,7 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.version_check import VersionCheckResult
 
 
-def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
+def _process_entry(entry: Any) -> Union[str, list[Any], dict[str, Any], Any]:
     if isinstance(entry, FVal):
         return str(entry)
     if isinstance(entry, list):
@@ -203,7 +203,7 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
     return entry
 
 
-def process_result(result: Any) -> Dict[Any, Any]:
+def process_result(result: Any) -> dict[Any, Any]:
     """Before sending out a result dictionary via the server we are serializing it.
     Turning:
 
@@ -215,12 +215,12 @@ def process_result(result: Any) -> Dict[Any, Any]:
         - all enums and more
     """
     processed_result = _process_entry(result)
-    assert isinstance(processed_result, (Dict, AttributeDict))  # pylint: disable=isinstance-second-argument-not-valid-type  # noqa: E501
+    assert isinstance(processed_result, (dict, AttributeDict))  # pylint: disable=isinstance-second-argument-not-valid-type  # noqa: E501
     return processed_result  # type: ignore
 
 
-def process_result_list(result: List[Any]) -> List[Any]:
+def process_result_list(result: list[Any]) -> list[Any]:
     """Just like process_result but for lists"""
     processed_result = _process_entry(result)
-    assert isinstance(processed_result, List)  # pylint: disable=isinstance-second-argument-not-valid-type  # noqa: E501
+    assert isinstance(processed_result, list)  # pylint: disable=isinstance-second-argument-not-valid-type  # noqa: E501
     return processed_result

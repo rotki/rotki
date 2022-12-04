@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Set, Tuple
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import CryptoAsset
@@ -202,13 +202,13 @@ class AaveUserReserve(NamedTuple):
 
 
 class AaveEventProcessingResult(NamedTuple):
-    interest_events: List[AaveInterestEvent]
-    total_earned_interest: Dict[CryptoAsset, Balance]
-    total_lost: Dict[CryptoAsset, Balance]
-    total_earned_liquidations: Dict[CryptoAsset, Balance]
+    interest_events: list[AaveInterestEvent]
+    total_earned_interest: dict[CryptoAsset, Balance]
+    total_lost: dict[CryptoAsset, Balance]
+    total_earned_liquidations: dict[CryptoAsset, Balance]
 
 
-def _get_version_from_reserveid(pairs: List[str], index: int) -> int:
+def _get_version_from_reserveid(pairs: list[str], index: int) -> int:
     """Gets the aave version from the reserve address id"""
     if pairs[index] == '24a42fd28c976a61df5d00d0599c34c4f90748c8':
         return 1  # lending pool provider v1
@@ -216,15 +216,15 @@ def _get_version_from_reserveid(pairs: List[str], index: int) -> int:
 
 
 def _calculate_loss(
-        borrow_actions: List[AaveEvent],
+        borrow_actions: list[AaveEvent],
         balances: AaveBalances,
-) -> Tuple[Dict[CryptoAsset, Balance], Dict[CryptoAsset, Balance]]:
+) -> tuple[dict[CryptoAsset, Balance], dict[CryptoAsset, Balance]]:
     """Returns a tuple of mapping of losses due to liquidation/borrowing and
     earnings due to keeping the principal repaid by the liquidation"""
     borrow_actions.sort(key=lambda event: event.timestamp)
-    historical_borrow_balances: Dict[CryptoAsset, FVal] = defaultdict(FVal)
-    total_lost: Dict[CryptoAsset, Balance] = defaultdict(Balance)
-    total_earned: Dict[CryptoAsset, Balance] = defaultdict(Balance)
+    historical_borrow_balances: dict[CryptoAsset, FVal] = defaultdict(FVal)
+    total_lost: dict[CryptoAsset, Balance] = defaultdict(Balance)
+    total_earned: dict[CryptoAsset, Balance] = defaultdict(Balance)
 
     for b_action in borrow_actions:
         if b_action.event_type == 'borrow':
@@ -254,10 +254,10 @@ def _calculate_loss(
 
 
 def _parse_common_event_data(
-        entry: Dict[str, Any],
+        entry: dict[str, Any],
         from_ts: Timestamp,
         to_ts: Timestamp,
-) -> Optional[Tuple[Timestamp, EVMTxHash, int]]:
+) -> Optional[tuple[Timestamp, EVMTxHash, int]]:
     """Parses and returns the common data of each event.
 
     Returns a tuple of timestamp, tx_hash and log index for success.
@@ -295,10 +295,10 @@ def _parse_common_event_data(
 
 
 def _parse_atoken_balance_history(
-        history: List[Dict[str, Any]],
+        history: list[dict[str, Any]],
         from_ts: Timestamp,
         to_ts: Timestamp,
-) -> List[ATokenBalanceHistory]:
+) -> list[ATokenBalanceHistory]:
     result = []
     for entry in history:
         timestamp = entry['timestamp']
@@ -363,9 +363,9 @@ def _parse_atoken_balance_history(
 
 
 def _get_reserve_asset_and_decimals(
-        entry: Dict[str, Any],
+        entry: dict[str, Any],
         reserve_key: str,
-) -> Optional[Tuple[CryptoAsset, int]]:
+) -> Optional[tuple[CryptoAsset, int]]:
     try:
         # The ID of reserve is the address of the asset and the address of the market's LendingPoolAddressProvider, in lower case  # noqa: E501
         reserve_address = deserialize_evm_address(entry[reserve_key]['id'][:42])
@@ -407,12 +407,12 @@ class AaveGraphInquirer(AaveInquirer):
 
     def get_history_for_addresses(
             self,
-            addresses: List[ChecksumEvmAddress],
+            addresses: list[ChecksumEvmAddress],
             to_block: int,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
-            aave_balances: Dict[ChecksumEvmAddress, AaveBalances],
-    ) -> Dict[ChecksumEvmAddress, AaveHistory]:
+            aave_balances: dict[ChecksumEvmAddress, AaveBalances],
+    ) -> dict[ChecksumEvmAddress, AaveHistory]:
         """
         Queries aave history for a list of addresses.
 
@@ -433,7 +433,7 @@ class AaveGraphInquirer(AaveInquirer):
 
         return result
 
-    def _get_user_reserves(self, address: ChecksumEvmAddress) -> List[AaveUserReserve]:
+    def _get_user_reserves(self, address: ChecksumEvmAddress) -> list[AaveUserReserve]:
         query = self.graph.query(
             querystr=USER_RESERVES_QUERY.format(address=address.lower()),
         )
@@ -461,13 +461,13 @@ class AaveGraphInquirer(AaveInquirer):
     def _calculate_interest_and_profit(
             self,
             user_address: ChecksumEvmAddress,
-            user_result: Dict[str, Any],
-            actions: List[AaveDepositWithdrawalEvent],
+            user_result: dict[str, Any],
+            actions: list[AaveDepositWithdrawalEvent],
             balances: AaveBalances,
-            db_interest_events: Set[AaveInterestEvent],
+            db_interest_events: set[AaveInterestEvent],
             from_ts: Timestamp,
             to_ts: Timestamp,
-    ) -> Tuple[List[AaveInterestEvent], Dict[CryptoAsset, Balance]]:
+    ) -> tuple[list[AaveInterestEvent], dict[CryptoAsset, Balance]]:
         reserve_history = {}
         for reserve in user_result['reserves']:
             pairs = reserve['id'].split('0x')
@@ -495,10 +495,10 @@ class AaveGraphInquirer(AaveInquirer):
             )
             reserve_history[reserve_address] = atoken_history
 
-        interest_events: List[AaveInterestEvent] = []
-        atoken_balances: Dict[CryptoAsset, FVal] = defaultdict(FVal)
+        interest_events: list[AaveInterestEvent] = []
+        atoken_balances: dict[CryptoAsset, FVal] = defaultdict(FVal)
         used_history_indices = set()
-        total_earned: Dict[CryptoAsset, Balance] = defaultdict(Balance)
+        total_earned: dict[CryptoAsset, Balance] = defaultdict(Balance)
 
         # Go through the existing db interest events and add total earned
         for interest_event in db_interest_events:
@@ -625,15 +625,15 @@ class AaveGraphInquirer(AaveInquirer):
     def _process_events(
             self,
             user_address: ChecksumEvmAddress,
-            user_result: Dict[str, Any],
+            user_result: dict[str, Any],
             from_ts: Timestamp,
             to_ts: Timestamp,
-            deposits: List[AaveDepositWithdrawalEvent],
-            withdrawals: List[AaveDepositWithdrawalEvent],
-            borrows: List[AaveBorrowEvent],
-            repays: List[AaveRepayEvent],
-            liquidations: List[AaveLiquidationEvent],
-            db_events: List[AaveEvent],
+            deposits: list[AaveDepositWithdrawalEvent],
+            withdrawals: list[AaveDepositWithdrawalEvent],
+            borrows: list[AaveBorrowEvent],
+            repays: list[AaveRepayEvent],
+            liquidations: list[AaveLiquidationEvent],
+            db_events: list[AaveEvent],
             balances: AaveBalances,
     ) -> AaveEventProcessingResult:
         """Calculates the interest events and the total earned from all the given events.
@@ -641,9 +641,9 @@ class AaveGraphInquirer(AaveInquirer):
 
         Also returns the edited DB events
         """
-        actions: List[AaveDepositWithdrawalEvent] = []
-        borrow_actions: List[AaveEvent] = []
-        db_interest_events: Set[AaveInterestEvent] = set()
+        actions: list[AaveDepositWithdrawalEvent] = []
+        borrow_actions: list[AaveEvent] = []
+        db_interest_events: set[AaveInterestEvent] = set()
         for db_event in db_events:
             if db_event.event_type == 'deposit':
                 actions.append(db_event)  # type: ignore
@@ -680,13 +680,13 @@ class AaveGraphInquirer(AaveInquirer):
 
     def _process_graph_query_result(
         self,
-        query: Dict[str, Any],
-        deposits: List[AaveDepositWithdrawalEvent],
-        withdrawals: List[AaveDepositWithdrawalEvent],
-        borrows: List[AaveBorrowEvent],
-        repays: List[AaveRepayEvent],
-        liquidation_calls: List[AaveLiquidationEvent],
-        user_merged_data: Dict[str, Any],
+        query: dict[str, Any],
+        deposits: list[AaveDepositWithdrawalEvent],
+        withdrawals: list[AaveDepositWithdrawalEvent],
+        borrows: list[AaveBorrowEvent],
+        repays: list[AaveRepayEvent],
+        liquidation_calls: list[AaveLiquidationEvent],
+        user_merged_data: dict[str, Any],
         from_ts: Timestamp,
         to_ts: Timestamp,
     ) -> None:
@@ -743,11 +743,11 @@ class AaveGraphInquirer(AaveInquirer):
             last_query_ts = last_query[1]
             from_ts = Timestamp(last_query_ts + 1)
 
-        deposits: List[AaveDepositWithdrawalEvent] = []
-        withdrawals: List[AaveDepositWithdrawalEvent] = []
-        borrows: List[AaveBorrowEvent] = []
-        repays: List[AaveRepayEvent] = []
-        liquidation_calls: List[AaveLiquidationEvent] = []
+        deposits: list[AaveDepositWithdrawalEvent] = []
+        withdrawals: list[AaveDepositWithdrawalEvent] = []
+        borrows: list[AaveBorrowEvent] = []
+        repays: list[AaveRepayEvent] = []
+        liquidation_calls: list[AaveLiquidationEvent] = []
         query = self.graph.query(
             querystr=USER_EVENTS_QUERY,
             param_types={'$address': 'ID!'},
@@ -759,7 +759,7 @@ class AaveGraphInquirer(AaveInquirer):
             param_values={'address': address.lower()},
         )
 
-        user_merged_data: Dict[str, Any] = defaultdict(list)
+        user_merged_data: dict[str, Any] = defaultdict(list)
         if now - last_query_ts > AAVE_GRAPH_RECENT_SECS:
             # In theory if these were individual queries we should do them only if
             # we have not queried recently. In practise since we only do 1 query above
@@ -803,7 +803,7 @@ class AaveGraphInquirer(AaveInquirer):
         )
 
         # Add all new events to the DB
-        new_events: List[AaveEvent] = deposits + withdrawals + result.interest_events + borrows + repays + liquidation_calls  # type: ignore  # noqa: E501
+        new_events: list[AaveEvent] = deposits + withdrawals + result.interest_events + borrows + repays + liquidation_calls  # type: ignore  # noqa: E501
         with self.database.user_write() as cursor:
             self.database.add_aave_events(cursor, address, new_events)
             # After all events have been queried then also update the query range.
@@ -816,7 +816,7 @@ class AaveGraphInquirer(AaveInquirer):
             )
 
         # Sort actions so that actions with same time are sorted deposit -> interest -> withdrawal
-        all_events: List[AaveEvent] = new_events + db_events
+        all_events: list[AaveEvent] = new_events + db_events
         sort_map = {'deposit': 0, 'interest': 0.1, 'withdrawal': 0.2, 'borrow': 0.3, 'repay': 0.4, 'liquidation': 0.5}  # noqa: E501
         all_events.sort(key=lambda event: sort_map[event.event_type] + event.timestamp)
         return AaveHistory(
@@ -828,11 +828,11 @@ class AaveGraphInquirer(AaveInquirer):
 
     def _parse_deposits(
             self,
-            deposits: List[Dict[str, Any]],
+            deposits: list[dict[str, Any]],
             from_ts: Timestamp,
             to_ts: Timestamp,
-    ) -> List[AaveDepositWithdrawalEvent]:
-        events: List[AaveDepositWithdrawalEvent] = []
+    ) -> list[AaveDepositWithdrawalEvent]:
+        events: list[AaveDepositWithdrawalEvent] = []
         for entry in deposits:
             common = _parse_common_event_data(entry, from_ts, to_ts)
             if common is None:
@@ -880,10 +880,10 @@ class AaveGraphInquirer(AaveInquirer):
 
     def _parse_withdrawals(
             self,
-            withdrawals: List[Dict[str, Any]],
+            withdrawals: list[dict[str, Any]],
             from_ts: Timestamp,
             to_ts: Timestamp,
-    ) -> List[AaveDepositWithdrawalEvent]:
+    ) -> list[AaveDepositWithdrawalEvent]:
         events = []
         for entry in withdrawals:
             common = _parse_common_event_data(entry, from_ts, to_ts)
@@ -932,10 +932,10 @@ class AaveGraphInquirer(AaveInquirer):
 
     def _parse_borrows(
             self,
-            borrows: List[Dict[str, Any]],
+            borrows: list[dict[str, Any]],
             from_ts: Timestamp,
             to_ts: Timestamp,
-    ) -> List[AaveBorrowEvent]:
+    ) -> list[AaveBorrowEvent]:
         events = []
         for entry in borrows:
             common = _parse_common_event_data(entry, from_ts, to_ts)
@@ -973,10 +973,10 @@ class AaveGraphInquirer(AaveInquirer):
 
     def _parse_repays(
             self,
-            repays: List[Dict[str, Any]],
+            repays: list[dict[str, Any]],
             from_ts: Timestamp,
             to_ts: Timestamp,
-    ) -> List[AaveRepayEvent]:
+    ) -> list[AaveRepayEvent]:
         events = []
         for entry in repays:
             common = _parse_common_event_data(entry, from_ts, to_ts)
@@ -1021,10 +1021,10 @@ class AaveGraphInquirer(AaveInquirer):
 
     def _parse_liquidations(
             self,
-            liquidations: List[Dict[str, Any]],
+            liquidations: list[dict[str, Any]],
             from_ts: Timestamp,
             to_ts: Timestamp,
-    ) -> List[AaveLiquidationEvent]:
+    ) -> list[AaveLiquidationEvent]:
         events = []
         for entry in liquidations:
             common = _parse_common_event_data(entry, from_ts, to_ts)
@@ -1092,12 +1092,12 @@ class AaveGraphInquirer(AaveInquirer):
 
     def _get_asset_and_balance(
             self,
-            entry: Dict[str, Any],
+            entry: dict[str, Any],
             timestamp: Timestamp,
             reserve_key: str,
             amount_key: str,
             location: str,
-    ) -> Optional[Tuple[CryptoAsset, Balance]]:
+    ) -> Optional[tuple[CryptoAsset, Balance]]:
         """Utility function to parse asset from graph query amount and price and return balance"""
         result = _get_reserve_asset_and_decimals(entry, reserve_key)
         if result is None:

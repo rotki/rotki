@@ -1,6 +1,6 @@
 import random
 import warnings as test_warnings
-from typing import Any, Dict, Tuple
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -729,7 +729,7 @@ def test_lp_nfts_filtering(rotkehlchen_api_server):
     """Assert that filtering by the lp property for NFTs works properly on all the endpoints that
     allow it
     """
-    def mock_get_all_nft_data(_addresses, **_kwargs) -> Tuple[Dict[str, Any], int]:
+    def mock_get_all_nft_data(_addresses, **_kwargs) -> tuple[dict[str, Any], int]:
         data = {
             '0x4bBa290826C253BD854121346c370a9886d1bC26': [
                 NFT(
@@ -808,7 +808,7 @@ def test_lp_nfts_filtering(rotkehlchen_api_server):
         }
         return data, 4
 
-    def mock_uniswap_v3_balances(*_args, **_kwargs) -> Dict[str, Any]:
+    def mock_uniswap_v3_balances(*_args, **_kwargs) -> dict[str, Any]:
         return {
             '0x3e649c5Eac6BBEE8a4F2A2945b50d8e582faB3bf': [
                 NFTLiquidityPool(

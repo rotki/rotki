@@ -2,7 +2,7 @@ import logging
 from collections import defaultdict
 from importlib import import_module
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Iterator, Optional
 
 from rotkehlchen.db.constants import KRAKEN_ACCOUNT_TYPE_KEY
 from rotkehlchen.errors.misc import InputError
@@ -26,7 +26,7 @@ log = RotkehlchenLogsAdapter(logger)
 class ExchangeManager():
 
     def __init__(self, msg_aggregator: MessagesAggregator) -> None:
-        self.connected_exchanges: Dict[Location, List[ExchangeInterface]] = defaultdict(list)
+        self.connected_exchanges: dict[Location, list[ExchangeInterface]] = defaultdict(list)
         self.msg_aggregator = msg_aggregator
 
     @staticmethod
@@ -72,9 +72,9 @@ class ExchangeManager():
             api_secret: Optional[ApiSecret],
             passphrase: Optional[str],
             kraken_account_type: Optional['KrakenAccountType'],
-            binance_selected_trade_pairs: Optional[List[str]],
+            binance_selected_trade_pairs: Optional[list[str]],
             ftx_subaccount: Optional[str],
-    ) -> Tuple[bool, str]:
+    ) -> tuple[bool, str]:
         """Edits both the exchange object and the database entry
 
         Returns True if an entry was found and edited and false otherwise
@@ -132,7 +132,7 @@ class ExchangeManager():
     def delete_all_exchanges(self) -> None:
         self.connected_exchanges.clear()
 
-    def get_connected_exchanges_info(self) -> List[Dict[str, Any]]:
+    def get_connected_exchanges_info(self) -> list[dict[str, Any]]:
         exchange_info = []
         for location, exchanges in self.connected_exchanges.items():
             for exchangeobj in exchanges:
@@ -168,7 +168,7 @@ class ExchangeManager():
             database: 'DBHandler',
             passphrase: Optional[str] = None,
             **kwargs: Any,
-    ) -> Tuple[bool, str]:
+    ) -> tuple[bool, str]:
         """
         Setup a new exchange with an api key, an api secret.
 
@@ -246,7 +246,7 @@ class ExchangeManager():
 
     def initialize_exchanges(
             self,
-            exchange_credentials: Dict[Location, List[ExchangeApiCredentials]],
+            exchange_credentials: dict[Location, list[ExchangeApiCredentials]],
             database: 'DBHandler',
     ) -> None:
         log.debug('Initializing exchanges')
@@ -267,7 +267,7 @@ class ExchangeManager():
                 )
                 self.connected_exchanges[location].append(exchange_obj)
 
-    def get_user_binance_pairs(self, name: str, location: Location) -> List[str]:
+    def get_user_binance_pairs(self, name: str, location: Location) -> list[str]:
         is_connected = location in self.connected_exchanges
         if is_connected:
             return self.database.get_binance_pairs(name, location)

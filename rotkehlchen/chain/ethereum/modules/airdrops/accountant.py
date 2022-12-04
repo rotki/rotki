@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING
 
 from rotkehlchen.accounting.ledger_actions import LedgerActionType
 from rotkehlchen.accounting.structures.base import get_tx_event_type_identifier
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 class AirdropsAccountant(ModuleAccountantInterface):
 
-    def event_settings(self, pot: 'AccountingPot') -> Dict[str, 'TxEventSettings']:
+    def event_settings(self, pot: 'AccountingPot') -> dict[str, 'TxEventSettings']:
         """Being defined at function call time is fine since this function is called only once"""
         airdrops_taxable = LedgerActionType.AIRDROP in pot.settings.taxable_ledger_actions
         return {

@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 import requests
@@ -796,7 +796,7 @@ def test_add_trades_errors(rotkehlchen_api_server):
     )
 
 
-def _check_trade_is_edited(original_trade: Dict[str, Any], result_trade: Dict[str, Any]) -> None:
+def _check_trade_is_edited(original_trade: dict[str, Any], result_trade: dict[str, Any]) -> None:
     for key, value in result_trade.items():
         if key == 'trade_id':
             assert value != original_trade[key]

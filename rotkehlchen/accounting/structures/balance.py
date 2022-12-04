@@ -1,7 +1,7 @@
 import operator
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, DefaultDict, Dict, Tuple
+from typing import TYPE_CHECKING, Any, DefaultDict
 
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.misc import InputError
@@ -23,10 +23,10 @@ class Balance:
     amount: FVal = ZERO
     usd_value: FVal = ZERO
 
-    def serialize(self) -> Dict[str, str]:
+    def serialize(self) -> dict[str, str]:
         return {'amount': str(self.amount), 'usd_value': str(self.usd_value)}
 
-    def to_dict(self) -> Dict[str, FVal]:
+    def to_dict(self) -> dict[str, FVal]:
         return {'amount': self.amount, 'usd_value': self.usd_value}
 
     def __add__(self, other: Any) -> 'Balance':
@@ -93,12 +93,12 @@ class AssetBalance:
     def usd_value(self) -> FVal:
         return self.balance.usd_value
 
-    def serialize(self) -> Dict[str, str]:
+    def serialize(self) -> dict[str, str]:
         result = self.balance.serialize()
         result['asset'] = self.asset.identifier
         return result
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         result = self.balance.to_dict()
         result['asset'] = self.asset  # type: ignore
         return result
@@ -126,7 +126,7 @@ class AssetBalance:
     def __neg__(self) -> 'AssetBalance':
         return AssetBalance(asset=self.asset, balance=-self.balance)
 
-    def serialize_for_db(self) -> Tuple[str, str, str]:
+    def serialize_for_db(self) -> tuple[str, str, str]:
         return (self.asset.identifier, str(self.amount), str(self.usd_value))
 
 
@@ -138,13 +138,13 @@ class BalanceSheet:
     def copy(self) -> 'BalanceSheet':
         return BalanceSheet(assets=self.assets.copy(), liabilities=self.liabilities.copy())
 
-    def serialize(self) -> Dict[str, Dict]:
+    def serialize(self) -> dict[str, dict]:
         return {
             'assets': {k.serialize(): v.serialize() for k, v in self.assets.items()},
             'liabilities': {k: v.serialize() for k, v in self.liabilities.items()},
         }
 
-    def to_dict(self) -> Dict[str, Dict]:
+    def to_dict(self) -> dict[str, dict]:
         return {
             'assets': {k: v.to_dict() for k, v in self.assets.items()},
             'liabilities': {k: v.to_dict() for k, v in self.liabilities.items()},

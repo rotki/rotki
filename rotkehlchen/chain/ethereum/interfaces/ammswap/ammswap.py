@@ -11,7 +11,7 @@ import abc
 import logging
 from collections import defaultdict
 from datetime import datetime, time
-from typing import TYPE_CHECKING, Dict, List, Literal, Optional, Set
+from typing import TYPE_CHECKING, Literal, Optional
 
 from gevent.lock import Semaphore
 
@@ -108,9 +108,9 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
     def _calculate_events_balances(
         self,
         address: ChecksumEvmAddress,
-        events: List[LiquidityPoolEvent],
-        balances: List[LiquidityPool],
-    ) -> List[LiquidityPoolEventsBalance]:
+        events: list[LiquidityPoolEvent],
+        balances: list[LiquidityPool],
+    ) -> list[LiquidityPoolEventsBalance]:
         """Given an address, its LP events and the current LPs participating in
         (`balances`), process each event (grouped by pool) aggregating the
         token0, token1 and USD amounts for calculating the profit/loss in the
@@ -121,11 +121,11 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
         balances in the protocol or the endpoint has been called with a
         specific time range.
         """
-        events_balances: List[LiquidityPoolEventsBalance] = []
-        pool_balance: Dict[ChecksumEvmAddress, LiquidityPool] = (
+        events_balances: list[LiquidityPoolEventsBalance] = []
+        pool_balance: dict[ChecksumEvmAddress, LiquidityPool] = (
             {pool.address: pool for pool in balances}
         )
-        pool_aggregated_amount: Dict[ChecksumEvmAddress, AggregatedAmount] = {}
+        pool_aggregated_amount: dict[ChecksumEvmAddress, AggregatedAmount] = {}
         # Populate `pool_aggregated_amount` dict, being the keys the pools'
         # addresses and the values the aggregated amounts from their events
         for event in events:
@@ -181,8 +181,8 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
 
     @staticmethod
     def _get_known_asset_price(
-            known_assets: Set[EvmToken],
-            unknown_assets: Set[EvmToken],
+            known_assets: set[EvmToken],
+            unknown_assets: set[EvmToken],
     ) -> AssetToPrice:
         """Get the tokens prices via Inquirer
 
@@ -220,11 +220,11 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
             start_ts: Timestamp,
             end_ts: Timestamp,
             event_type: EventType,
-    ) -> List[LiquidityPoolEvent]:
+    ) -> list[LiquidityPoolEvent]:
         """Get the address' events (mints & burns) querying the AMM's subgraph
         Each event data is stored in a <LiquidityPoolEvent>.
         """
-        address_events: List[LiquidityPoolEvent] = []
+        address_events: list[LiquidityPoolEvent] = []
         if event_type == self.mint_event:
             query = MINTS_QUERY
             query_schema = 'mints'
@@ -346,7 +346,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
 
     def _get_unknown_asset_price_graph(
             self,
-            unknown_assets: Set[EvmToken],
+            unknown_assets: set[EvmToken],
     ) -> AssetToPrice:
         """Get today's tokens prices via the AMM subgraph
 
@@ -415,7 +415,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
 
     def get_events_history(
             self,
-            addresses: List[ChecksumEvmAddress],
+            addresses: list[ChecksumEvmAddress],
             reset_db_data: bool,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
@@ -437,15 +437,15 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
 
     def _get_balances_graph(
             self,
-            addresses: List[ChecksumEvmAddress],
+            addresses: list[ChecksumEvmAddress],
     ) -> ProtocolBalance:
         """Get the addresses' pools data querying this AMM's subgraph
 
         Each liquidity position is converted into a <LiquidityPool>.
         """
         address_balances: DDAddressToLPBalances = defaultdict(list)
-        known_tokens: Set[EvmToken] = set()
-        unknown_tokens: Set[EvmToken] = set()
+        known_tokens: set[EvmToken] = set()
+        unknown_tokens: set[EvmToken] = set()
 
         addresses_lower = [address.lower() for address in addresses]
         querystr = format_query_indentation(LIQUIDITY_POSITIONS_QUERY.format())
@@ -598,7 +598,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
     def _get_events_balances(
             self,
             write_cursor: 'DBCursor',
-            addresses: List[ChecksumEvmAddress],
+            addresses: list[ChecksumEvmAddress],
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
     ) -> AddressEventsBalances:

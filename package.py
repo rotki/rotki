@@ -9,7 +9,7 @@ import stat
 import subprocess
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Any, Callable, Dict, Literal, Optional
+from typing import Any, Callable, Literal, Optional
 from zipfile import ZipFile
 
 import requests
@@ -112,7 +112,7 @@ class Environment:
         os.environ.pop(APPLE_ID, None)
         os.environ.pop(APPLE_ID_PASS, None)
 
-    def macos_sign_env(self) -> Dict[str, str]:
+    def macos_sign_env(self) -> dict[str, str]:
         env = os.environ.copy()
         if self.__csc_password is not None:
             env.setdefault(CERTIFICATE_KEY, self.__csc_password)
@@ -122,7 +122,7 @@ class Environment:
             env.setdefault(APPLE_ID_PASS, self.__appleidpass)
         return env
 
-    def macos_sign_vars(self) -> Dict[str, Optional[str]]:
+    def macos_sign_vars(self) -> dict[str, Optional[str]]:
         return {
             'certificate': self.__certificate_mac,
             'key': self.__csc_password,
@@ -130,13 +130,13 @@ class Environment:
             'appleidpass': self.__appleidpass,
         }
 
-    def win_sign_env(self) -> Dict[str, str]:
+    def win_sign_env(self) -> dict[str, str]:
         env = os.environ.copy()
         if self.__csc_password is not None:
             env.setdefault(CERTIFICATE_KEY, self.__csc_password)
         return env
 
-    def win_sign_vars(self) -> Dict[str, Optional[str]]:
+    def win_sign_vars(self) -> dict[str, Optional[str]]:
         return {
             'certificate': self.__certificate_win,
             'key': self.__csc_password,
@@ -244,7 +244,7 @@ class Environment:
     def mac_electron_env_set() -> bool:
         return os.environ.get('MACOS_ELECTRON_ARCH') is not None
 
-    def get_frontend_env(self) -> Dict[str, str]:
+    def get_frontend_env(self) -> dict[str, str]:
         if os.environ.get('GH_TOKEN'):
             logger.info('GH_TOKEN WAS SET')
         else:

@@ -3,7 +3,7 @@ import logging.config
 import re
 import sys
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, MutableMapping, Optional, Tuple
+from typing import TYPE_CHECKING, Any, MutableMapping, Optional
 
 import gevent
 
@@ -84,7 +84,7 @@ class RotkehlchenLogsAdapter(logging.LoggerAdapter):
     def __init__(self, logger: logging.Logger):
         super().__init__(logger, extra={})
 
-    def process(self, given_msg: Any, kwargs: MutableMapping[str, Any]) -> Tuple[str, Dict]:
+    def process(self, given_msg: Any, kwargs: MutableMapping[str, Any]) -> tuple[str, dict]:
         """
         This is the main post-processing function for rotki logs
 
@@ -186,7 +186,7 @@ def configure_logging(args: argparse.Namespace) -> None:
             '()': PywsgiFilter,
         },
     }
-    loggers: Dict[str, Any] = {
+    loggers: dict[str, Any] = {
         '': {  # root logger
             'level': loglevel,
             'handlers': selected_handlers,

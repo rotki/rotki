@@ -1,6 +1,6 @@
 import random
 from http import HTTPStatus
-from typing import Any, Dict, List
+from typing import Any
 
 import pytest
 import requests
@@ -77,7 +77,7 @@ def test_get_historical_assets_price(rotkehlchen_api_server):
     assert result['target_asset'] == 'USD'
 
 
-def _assert_expected_prices(data: List[Dict[str, Any]], after_deletion: bool) -> None:
+def _assert_expected_prices(data: list[dict[str, Any]], after_deletion: bool) -> None:
     assert len(data) == 2 if after_deletion else 3
 
     expected_data = []

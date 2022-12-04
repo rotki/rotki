@@ -1,5 +1,5 @@
 import functools
-from typing import Any, Callable, Dict, Mapping, Optional, Tuple
+from typing import Any, Callable, Mapping, Optional
 
 from flask.views import MethodView
 from marshmallow import Schema, exceptions as ma_exceptions
@@ -80,7 +80,7 @@ class ResourceReadingParser(FlaskParser):
             validate: Optional[ValidateArg] = None,
             error_status_code: Optional[int] = None,
             error_headers: Optional[Mapping[str, str]] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Main request parsing method.
 
         Different from core parser is that we also get the resource object and
@@ -129,11 +129,11 @@ class IgnoreKwargAfterPostLoadParser(FlaskParser):
 
     @staticmethod
     def _update_args_kwargs(  # type: ignore
-        args: Tuple,
-        kwargs: Dict[str, Any],
+        args: tuple,
+        kwargs: dict[str, Any],
         parsed_args: Mapping,
         as_kwargs: bool,
-    ) -> Tuple[Tuple, Mapping]:
+    ) -> tuple[tuple, Mapping]:
         return args, parsed_args
 
 

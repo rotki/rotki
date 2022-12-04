@@ -2,7 +2,7 @@ import json
 import logging
 import tempfile
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
 from zipfile import ZIP_DEFLATED, ZipFile
 
 from rotkehlchen.assets.asset import Asset
@@ -52,7 +52,7 @@ def import_assets_from_file(
         # for ethereum tokens comparing by identifier. The edge case of a non-ethereum token
         # with same name and symbol will make this fail.
         asset_type = asset_data['asset_type']
-        asset_ref: Union[Optional[List[str]], Optional[AssetData]]
+        asset_ref: Union[Optional[list[str]], Optional[AssetData]]
         if asset_type == AssetType.EVM_TOKEN:
             asset_ref = globaldb.get_asset_data(
                 identifier=asset_data['identifier'],

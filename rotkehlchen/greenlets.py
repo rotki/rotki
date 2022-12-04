@@ -1,6 +1,6 @@
 import logging
 import traceback
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, Optional
 
 import gevent
 
@@ -16,7 +16,7 @@ class GreenletManager():
 
     def __init__(self, msg_aggregator: MessagesAggregator) -> None:
         self.msg_aggregator = msg_aggregator
-        self.greenlets: List[gevent.Greenlet] = []
+        self.greenlets: list[gevent.Greenlet] = []
 
     def add(self, task_name: str, greenlet: gevent.Greenlet, exception_is_error: bool) -> None:
         greenlet.link_exception(self._handle_killed_greenlets)

@@ -2,7 +2,7 @@ import random
 import warnings as test_warnings
 from contextlib import ExitStack
 from http import HTTPStatus
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 import requests
@@ -107,7 +107,7 @@ def test_query_compound_balances_module_not_activated(
     )
 
 
-mocked_historical_prices: Dict[str, Any] = {
+mocked_historical_prices: dict[str, Any] = {
     A_DAI.identifier: {
         'USD': {
             1581184577: FVal('1.008'),
@@ -156,7 +156,7 @@ mocked_historical_prices: Dict[str, Any] = {
         },
     },
 }
-mocked_current_prices: Dict[str, Any] = {}
+mocked_current_prices: dict[str, Any] = {}
 
 
 TEST_ACCOUNTS = [

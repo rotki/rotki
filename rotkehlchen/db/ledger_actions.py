@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, List, Optional, Tuple
+from typing import TYPE_CHECKING, Optional
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
@@ -30,7 +30,7 @@ class DBLedgerActions():
             self,
             filter_query: LedgerActionsFilterQuery,
             has_premium: bool,
-    ) -> Tuple[List[LedgerAction], int]:
+    ) -> tuple[list[LedgerAction], int]:
         """Gets all ledger actions for the query from the DB
 
         Also returns how many are the total found for the filter
@@ -47,7 +47,7 @@ class DBLedgerActions():
             cursor: 'DBCursor',
             filter_query: LedgerActionsFilterQuery,
             has_premium: bool,
-    ) -> List[LedgerAction]:
+    ) -> list[LedgerAction]:
         """Returns a list of ledger actions optionally filtered by the given filter.
 
         Returned list is ordered according to the passed filter query
@@ -98,7 +98,7 @@ class DBLedgerActions():
         action.identifier = identifier
         return identifier
 
-    def add_ledger_actions(self, write_cursor: 'DBCursor', actions: List[LedgerAction]) -> None:
+    def add_ledger_actions(self, write_cursor: 'DBCursor', actions: list[LedgerAction]) -> None:
         """Adds multiple ledger action to the DB
 
         Is slow due to not using executemany since the ledger actions table
@@ -111,7 +111,7 @@ class DBLedgerActions():
                 self.db.msg_aggregator.add_warning('Did not add ledger action to DB due to it already existing')  # noqa: E501
                 log.warning(f'Did not add ledger action {action} to the DB due to it already existing')  # noqa: E501
 
-    def remove_ledger_actions(self, write_cursor: 'DBCursor', identifiers: List[int]) -> None:  # pylint: disable=no-self-use  # noqa: E501
+    def remove_ledger_actions(self, write_cursor: 'DBCursor', identifiers: list[int]) -> None:  # pylint: disable=no-self-use  # noqa: E501
         """Remove multiple ledger actions from the DB using their identifier.
         May raise:
         - InputError if any of the identifiers are non-existent

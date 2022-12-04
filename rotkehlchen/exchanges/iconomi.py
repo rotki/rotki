@@ -5,7 +5,7 @@ import json
 import logging
 import time
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Literal, Optional
 from urllib.parse import urlencode
 
 import requests
@@ -46,7 +46,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def trade_from_iconomi(raw_trade: Dict) -> Trade:
+def trade_from_iconomi(raw_trade: dict) -> Trade:
     """Turn an iconomi trade entry to our own trade format
 
     May raise:
@@ -130,7 +130,7 @@ class Iconomi(ExchangeInterface):
             self,
             verb: Literal['get', 'post'],
             path: str,
-            options: Optional[Dict] = None,
+            options: Optional[dict] = None,
             authenticated: bool = True,
     ) -> Any:
         """
@@ -201,7 +201,7 @@ class Iconomi(ExchangeInterface):
 
         return json_ret
 
-    def validate_api_key(self) -> Tuple[bool, str]:
+    def validate_api_key(self) -> tuple[bool, str]:
         """
         Validates that the ICONOMI API key is good for usage in rotki
         """
@@ -214,7 +214,7 @@ class Iconomi(ExchangeInterface):
             return False, 'Provided API Key is invalid'
 
     def query_balances(self, **kwargs: Any) -> ExchangeQueryBalances:
-        assets_balance: Dict[AssetWithOracles, Balance] = {}
+        assets_balance: dict[AssetWithOracles, Balance] = {}
         try:
             resp_info = self._api_query('get', 'user/balance')
         except RemoteError as e:
@@ -317,7 +317,7 @@ class Iconomi(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> Tuple[List[Trade], Tuple[Timestamp, Timestamp]]:
+    ) -> tuple[list[Trade], tuple[Timestamp, Timestamp]]:
 
         page = 0
         all_transactions = []
@@ -366,7 +366,7 @@ class Iconomi(ExchangeInterface):
 
     def query_supported_tickers(
             self,
-    ) -> List[str]:
+    ) -> list[str]:
 
         tickers = []
         resp = self._api_query('get', 'assets', authenticated=False)
@@ -384,19 +384,19 @@ class Iconomi(ExchangeInterface):
             self,  # pylint: disable=no-self-use
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,  # pylint: disable=unused-argument
-    ) -> List[AssetMovement]:
+    ) -> list[AssetMovement]:
         return []  # noop for iconomi
 
     def query_online_margin_history(
             self,  # pylint: disable=no-self-use
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,  # pylint: disable=unused-argument
-    ) -> List[MarginPosition]:
+    ) -> list[MarginPosition]:
         return []  # noop for iconomi
 
     def query_online_income_loss_expense(
             self,  # pylint: disable=no-self-use
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,  # pylint: disable=unused-argument
-    ) -> List[LedgerAction]:
+    ) -> list[LedgerAction]:
         return []  # noop for iconomi

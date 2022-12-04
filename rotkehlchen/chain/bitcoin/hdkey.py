@@ -5,7 +5,7 @@ import hashlib
 import hmac
 from dataclasses import dataclass
 from enum import auto
-from typing import List, NamedTuple, Optional, Union, cast
+from typing import NamedTuple, Optional, Union, cast
 
 from base58check import b58decode, b58encode
 from coincurve import PrivateKey, PublicKey
@@ -289,7 +289,7 @@ class HDKey():
         return b58encode(bytes(xpub)).decode('ascii')
 
     @staticmethod
-    def _parse_derivation(derivation_path: str) -> List[int]:
+    def _parse_derivation(derivation_path: str) -> list[int]:
         """
         turns a derivation path (e.g. m/44h/0) into a list of integer indexes
             e.g. [2147483692, 0]
@@ -298,10 +298,10 @@ class HDKey():
         Returns:
             (list(int)): the derivaion path as a list of indexes
         """
-        int_nodes: List[int] = []
+        int_nodes: list[int] = []
 
         # Must be / separated
-        nodes: List[str] = derivation_path.split('/')
+        nodes: list[str] = derivation_path.split('/')
         # If the first node is not m, error.
         # TODO: allow partial path knowledge
         if nodes[0] != 'm':

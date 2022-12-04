@@ -1,7 +1,7 @@
 import json
 import logging
 import re
-from typing import Any, Dict, Literal, Optional, Tuple
+from typing import Any, Literal, Optional
 
 import gevent
 import requests
@@ -42,7 +42,7 @@ def get_common_params(
         to_ts: Timestamp,
         address: ChecksumEvmAddress,
         address_type: Literal['Bytes!', 'String!'] = 'Bytes!',
-) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+) -> tuple[dict[str, Any], dict[str, Any]]:
     param_types = {
         '$start_ts': 'Int!',
         '$end_ts': 'Int!',
@@ -70,9 +70,9 @@ class Graph():
     def query(
             self,
             querystr: str,
-            param_types: Optional[Dict[str, Any]] = None,
-            param_values: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+            param_types: Optional[dict[str, Any]] = None,
+            param_values: Optional[dict[str, Any]] = None,
+    ) -> dict[str, Any]:
         """Queries The Graph for a particular query
 
         May raise:

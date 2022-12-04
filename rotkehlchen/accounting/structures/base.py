@@ -1,7 +1,7 @@
 import json
 import logging
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Iterator, Optional
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.accounting.structures.types import (
@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-HISTORY_EVENT_DB_TUPLE_READ = Tuple[
+HISTORY_EVENT_DB_TUPLE_READ = tuple[
     int,            # identifier
     bytes,          # event_identifier
     int,            # sequence_index
@@ -55,7 +55,7 @@ HISTORY_EVENT_DB_TUPLE_READ = Tuple[
     Optional[str],  # extra_data
 ]
 
-HISTORY_EVENT_DB_TUPLE_WRITE = Tuple[
+HISTORY_EVENT_DB_TUPLE_WRITE = tuple[
     bytes,          # event_identifier
     int,            # sequence_index
     int,            # timestamp
@@ -104,7 +104,7 @@ class HistoryBaseEntry(AccountingEventMixin):
     identifier: Optional[int] = None
     # contains event specific extra data. Optional, only for events that need to keep
     # extra information such as the CDP ID of a makerdao vault etc.
-    extra_data: Optional[Dict[str, Any]] = None
+    extra_data: Optional[dict[str, Any]] = None
 
     def serialize_for_db(self) -> HISTORY_EVENT_DB_TUPLE_WRITE:
         return (
@@ -186,7 +186,7 @@ class HistoryBaseEntry(AccountingEventMixin):
             return hexstring_to_bytes(val)
         return val.encode()
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self) -> dict[str, Any]:
         return {
             'identifier': self.identifier,
             'event_identifier': self.serialized_event_identifier,
@@ -204,7 +204,7 @@ class HistoryBaseEntry(AccountingEventMixin):
         }
 
     @classmethod
-    def deserialize(cls, data: Dict[str, Any]) -> 'HistoryBaseEntry':
+    def deserialize(cls, data: dict[str, Any]) -> 'HistoryBaseEntry':
         """Deserializes a dict history base entry to HistoryBaseEntry object.
         May raise:
             - DeserializationError
@@ -263,7 +263,7 @@ class HistoryBaseEntry(AccountingEventMixin):
     def get_accounting_event_type() -> AccountingEventType:
         return AccountingEventType.HISTORY_BASE_ENTRY
 
-    def should_ignore(self, ignored_ids_mapping: Dict[ActionType, List[str]]) -> bool:
+    def should_ignore(self, ignored_ids_mapping: dict[ActionType, list[str]]) -> bool:
         if not self.serialized_event_identifier.startswith('0x'):
             return False
 
@@ -274,7 +274,7 @@ class HistoryBaseEntry(AccountingEventMixin):
         assert self.identifier is not None, 'Should never be called without identifier'
         return str(self.identifier)
 
-    def get_assets(self) -> List[Asset]:
+    def get_assets(self) -> list[Asset]:
         return [self.asset]
 
     def process(
@@ -332,7 +332,7 @@ class StakingEvent:
             location=event.location,
         )
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self) -> dict[str, Any]:
         data = {
             'event_type': self.event_type.serialize(),
             'asset': self.asset.identifier,

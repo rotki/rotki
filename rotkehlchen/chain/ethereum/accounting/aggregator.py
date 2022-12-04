@@ -2,7 +2,7 @@ import importlib
 import logging
 import pkgutil
 from types import ModuleType
-from typing import TYPE_CHECKING, Dict, Union
+from typing import TYPE_CHECKING, Union
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.constants import MODULES_PACKAGE, MODULES_PREFIX_LENGTH
@@ -33,7 +33,7 @@ class EVMAccountingAggregator():
     ) -> None:
         self.ethereum_manager = ethereum_manager
         self.msg_aggregator = msg_aggregator
-        self.accountants: Dict[str, 'ModuleAccountantInterface'] = {}
+        self.accountants: dict[str, 'ModuleAccountantInterface'] = {}
         self.initialize_all_accountants()
 
     def _recursively_initialize_accountants(
@@ -65,7 +65,7 @@ class EVMAccountingAggregator():
         """Recursively check all submodules to get all accountants and initialize them"""
         self._recursively_initialize_accountants(MODULES_PACKAGE)
 
-    def get_accounting_settings(self, pot: 'AccountingPot') -> Dict[str, TxEventSettings]:
+    def get_accounting_settings(self, pot: 'AccountingPot') -> dict[str, TxEventSettings]:
         """Iterate through loaded accountants and get accounting settings for each event type"""
         result = {}
         for accountant in self.accountants.values():

@@ -1,6 +1,6 @@
 from abc import ABCMeta, abstractmethod
 from enum import auto
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List
+from typing import TYPE_CHECKING, Any, Iterator
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.types import Timestamp
@@ -46,12 +46,12 @@ class AccountingEventMixin(metaclass=ABCMeta):
         ...
 
     @abstractmethod
-    def should_ignore(self, ignored_ids_mapping: Dict['ActionType', List[str]]) -> bool:
+    def should_ignore(self, ignored_ids_mapping: dict['ActionType', list[str]]) -> bool:
         """Returns whether this event should be ignored due to user settings"""
         ...
 
     @abstractmethod
-    def get_assets(self) -> List[Asset]:
+    def get_assets(self) -> list[Asset]:
         """Gets the assets involved in the event.
 
         May raise:
@@ -76,15 +76,15 @@ class AccountingEventMixin(metaclass=ABCMeta):
         ...
 
     @abstractmethod
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self) -> dict[str, Any]:
         ...
 
-    def serialize_for_debug_import(self) -> Dict[str, Any]:
+    def serialize_for_debug_import(self) -> dict[str, Any]:
         data = self.serialize()
         data['accounting_event_type'] = self.get_accounting_event_type().serialize()
         return data
 
     @classmethod
     @abstractmethod
-    def deserialize(cls, data: Dict[str, Any]) -> 'AccountingEventMixin':
+    def deserialize(cls, data: dict[str, Any]) -> 'AccountingEventMixin':
         ...

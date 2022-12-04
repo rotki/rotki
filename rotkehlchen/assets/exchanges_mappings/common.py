@@ -1,10 +1,10 @@
-from typing import Dict, Final
+from typing import Final
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.types import ChainID, EvmTokenKind
 
 
 # Assets that need mapping in almost all the exchanges
-COMMON_ASSETS_MAPPINGS: Final[Dict[str, str]] = {
+COMMON_ASSETS_MAPPINGS: Final[dict[str, str]] = {
     evm_address_to_identifier('0xBB0E17EF65F82Ab018d8EDd776e8DD940327B28b', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'AXS',  # noqa: E501
     evm_address_to_identifier('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'USDC',  # noqa: E501
     evm_address_to_identifier('0x6B175474E89094C44Da98b954EedeAC495271d0F', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'DAI',  # noqa: E501

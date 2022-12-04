@@ -1,7 +1,7 @@
 import json
 import logging
 from collections import deque
-from typing import TYPE_CHECKING, Any, Deque, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Deque, Optional
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -46,7 +46,7 @@ class MessagesAggregator():
         # else
         self.warnings.appendleft(msg)
 
-    def consume_warnings(self) -> List[str]:
+    def consume_warnings(self) -> list[str]:
         result = []
         while len(self.warnings) != 0:
             result.append(self.warnings.pop())
@@ -71,7 +71,7 @@ class MessagesAggregator():
     def add_message(
             self,
             message_type: WSMessageType,
-            data: Dict[str, Any],
+            data: dict[str, Any],
     ) -> None:
         fallback_msg = json.dumps({'type': str(message_type), 'data': data})  # noqa: E501  # kind of silly to repeat it here. Same code in broadcast
 
@@ -87,7 +87,7 @@ class MessagesAggregator():
             if message_type not in INFORMATIONAL_MESSAGE_TYPES:
                 self.errors.appendleft(fallback_msg)
 
-    def consume_errors(self) -> List[str]:
+    def consume_errors(self) -> list[str]:
         result = []
         while len(self.errors) != 0:
             result.append(self.errors.pop())

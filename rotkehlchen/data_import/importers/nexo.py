@@ -1,7 +1,7 @@
 import csv
 import logging
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.assets.converters import asset_from_nexo
@@ -29,7 +29,7 @@ class NexoImporter(BaseExchangeImporter):
     def _consume_nexo(
             self,
             cursor: DBCursor,
-            csv_row: Dict[str, Any],
+            csv_row: dict[str, Any],
             timestamp_format: str = '%Y-%m-%d %H:%M:%S',
     ) -> None:
         """

@@ -1,5 +1,5 @@
 from contextlib import ExitStack
-from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Union
+from typing import Any, NamedTuple, Optional, Union
 from unittest.mock import _patch, patch
 
 import requests
@@ -35,12 +35,12 @@ from rotkehlchen.types import (
 
 
 class BalancesTestSetup(NamedTuple):
-    eth_balances: List[str]
-    btc_balances: List[str]
-    token_balances: Dict[EvmToken, List[str]]
-    binance_balances: Dict[AssetWithOracles, FVal]
-    poloniex_balances: Dict[AssetWithOracles, FVal]
-    manually_tracked_balances: List[ManuallyTrackedBalance]
+    eth_balances: list[str]
+    btc_balances: list[str]
+    token_balances: dict[EvmToken, list[str]]
+    binance_balances: dict[AssetWithOracles, FVal]
+    poloniex_balances: dict[AssetWithOracles, FVal]
+    manually_tracked_balances: list[ManuallyTrackedBalance]
     poloniex_patch: _patch
     binance_patch: _patch
     etherscan_patch: _patch
@@ -74,18 +74,18 @@ class BalancesTestSetup(NamedTuple):
 
 def setup_balances(
         rotki,
-        ethereum_accounts: Optional[List[ChecksumEvmAddress]],
-        btc_accounts: Optional[List[BTCAddress]],
-        eth_balances: Optional[List[str]] = None,
-        token_balances: Optional[Dict[EvmToken, List[str]]] = None,
+        ethereum_accounts: Optional[list[ChecksumEvmAddress]],
+        btc_accounts: Optional[list[BTCAddress]],
+        eth_balances: Optional[list[str]] = None,
+        token_balances: Optional[dict[EvmToken, list[str]]] = None,
         populate_detected_tokens: bool = True,
-        liabilities: Optional[Dict[EvmToken, List[str]]] = None,
-        btc_balances: Optional[List[str]] = None,
-        manually_tracked_balances: Optional[List[ManuallyTrackedBalance]] = None,
-        manual_current_prices: Optional[List[Tuple[Asset, Asset, Price]]] = None,
-        original_queries: Optional[List[str]] = None,
-        extra_flags: Optional[List[str]] = None,
-        defi_balances: Optional[Dict[ChecksumEvmAddress, List[DefiProtocolBalances]]] = None,
+        liabilities: Optional[dict[EvmToken, list[str]]] = None,
+        btc_balances: Optional[list[str]] = None,
+        manually_tracked_balances: Optional[list[ManuallyTrackedBalance]] = None,
+        manual_current_prices: Optional[list[tuple[Asset, Asset, Price]]] = None,
+        original_queries: Optional[list[str]] = None,
+        extra_flags: Optional[list[str]] = None,
+        defi_balances: Optional[dict[ChecksumEvmAddress, list[DefiProtocolBalances]]] = None,
 ) -> BalancesTestSetup:
     """Setup the blockchain, exchange and fiat balances for some tests
 
@@ -137,7 +137,7 @@ def setup_balances(
         else:
             btc_balances = []
 
-    eth_map: Dict[ChecksumEvmAddress, Dict[Union[str, EvmToken], Any]] = {}
+    eth_map: dict[ChecksumEvmAddress, dict[Union[str, EvmToken], Any]] = {}
     with rotki.data.db.user_write() as write_cursor:
         for idx, acc in enumerate(ethereum_accounts):
             eth_map[acc] = {}
@@ -187,8 +187,8 @@ def setup_balances(
         )
 
     if defi_balances is not None:
-        def mock_defichad_query_balances(addresses: List[ChecksumEvmAddress]):
-            result: Dict[ChecksumEvmAddress, List[DefiProtocolBalances]] = {}
+        def mock_defichad_query_balances(addresses: list[ChecksumEvmAddress]):
+            result: dict[ChecksumEvmAddress, list[DefiProtocolBalances]] = {}
             for addr in addresses:
                 if addr in defi_balances:  # type: ignore
                     result[addr] = defi_balances[addr]  # type: ignore
@@ -202,7 +202,7 @@ def setup_balances(
     else:
         defichad_query_balances_patch = None
 
-    btc_map: Dict[BTCAddress, str] = {}
+    btc_map: dict[BTCAddress, str] = {}
     for idx, btc_acc in enumerate(btc_accounts):
         btc_map[btc_acc] = btc_balances[idx]
 
@@ -234,12 +234,12 @@ def setup_balances(
         original_requests_get=requests.get,
     )
     # Taken from BINANCE_BALANCES_RESPONSE from tests.utils.exchanges
-    binance_balances: Dict[AssetWithOracles, FVal] = {
+    binance_balances: dict[AssetWithOracles, FVal] = {
         A_ETH.resolve_to_asset_with_oracles(): FVal('4763368.68006011'),
         A_BTC.resolve_to_asset_with_oracles(): FVal('4723846.89208129'),
     }
     # Taken from POLONIEX_BALANCES_RESPONSE from tests.utils.exchanges
-    poloniex_balances: Dict[AssetWithOracles, FVal] = {
+    poloniex_balances: dict[AssetWithOracles, FVal] = {
         A_ETH.resolve_to_asset_with_oracles(): FVal('11.0'),
         A_BTC.resolve_to_asset_with_oracles(): FVal('5.5'),
     }
@@ -275,7 +275,7 @@ def setup_balances(
     )
 
 
-def add_starting_balances(datahandler) -> List[DBAssetBalance]:
+def add_starting_balances(datahandler) -> list[DBAssetBalance]:
     """Adds some starting balances and other data to a testing instance"""
     balances = [
         DBAssetBalance(

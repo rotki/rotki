@@ -2,7 +2,7 @@ import abc
 import logging
 from functools import reduce
 from operator import mul
-from typing import TYPE_CHECKING, List, NamedTuple, Optional, Tuple
+from typing import TYPE_CHECKING, NamedTuple, Optional
 
 from eth_utils import to_checksum_address
 from web3.types import BlockIdentifier
@@ -73,7 +73,7 @@ class UniswapOracle(CurrentPriceOracleInterface, CacheableMixIn):
         self,
         token_0: EvmToken,
         token_1: EvmToken,
-    ) -> List[str]:
+    ) -> list[str]:
         """Given two tokens returns a list of pools where they can be swapped"""
         ...
 
@@ -94,7 +94,7 @@ class UniswapOracle(CurrentPriceOracleInterface, CacheableMixIn):
         self,
         asset: EvmToken,
         link_asset: EvmToken,
-        path: List[str],
+        path: list[str],
     ) -> bool:
         pools = self.get_pool(asset, link_asset)
         for pool in pools:
@@ -104,12 +104,12 @@ class UniswapOracle(CurrentPriceOracleInterface, CacheableMixIn):
 
         return False
 
-    def find_route(self, from_asset: EvmToken, to_asset: EvmToken) -> List[str]:
+    def find_route(self, from_asset: EvmToken, to_asset: EvmToken) -> list[str]:
         """
         Calculate the path needed to go from from_asset to to_asset and return a
         list of the pools needed to jump through to do that.
         """
-        output: List[str] = []
+        output: list[str] = []
         # If any of the assets is in the glue assets let's see if we find any path
         # (avoids iterating the list of glue assets)
         if any(x in self.routing_assets for x in (to_asset, from_asset)):
@@ -252,7 +252,7 @@ class UniswapOracle(CurrentPriceOracleInterface, CacheableMixIn):
             from_asset: AssetWithOracles,
             to_asset: AssetWithOracles,
             match_main_currency: bool,
-    ) -> Tuple[Price, bool]:
+    ) -> tuple[Price, bool]:
         """
         This method gets the current price for two ethereum tokens finding a pool
         or a path of pools in the uniswap protocol. The special case of USD as asset
@@ -288,7 +288,7 @@ class UniswapV3Oracle(UniswapOracle):
             self,
             token_0: EvmToken,
             token_1: EvmToken,
-    ) -> List[str]:
+    ) -> list[str]:
         result = self.ethereum.multicall_specific(
             contract=self.uniswap_v3_factory,
             method_name='getPool',
@@ -392,7 +392,7 @@ class UniswapV2Oracle(UniswapOracle):
         self,
         token_0: EvmToken,
         token_1: EvmToken,
-    ) -> List[str]:
+    ) -> list[str]:
         result = self.uniswap_v2_factory.call(
             node_inquirer=self.ethereum,
             method_name='getPair',

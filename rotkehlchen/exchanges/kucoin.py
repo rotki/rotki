@@ -7,19 +7,7 @@ from enum import Enum, auto
 from functools import partial
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    DefaultDict,
-    Dict,
-    List,
-    Literal,
-    Optional,
-    Tuple,
-    Union,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Callable, DefaultDict, Literal, Optional, Union, overload
 from urllib.parse import urlencode
 
 import gevent
@@ -126,7 +114,7 @@ def _deserialize_ts(case: KucoinCase, time: int) -> Timestamp:
 DeserializationMethod = Callable[..., Union[Trade, AssetMovement]]
 
 
-def deserialize_trade_pair(trade_pair_symbol: str) -> Tuple[AssetWithOracles, AssetWithOracles]:
+def deserialize_trade_pair(trade_pair_symbol: str) -> tuple[AssetWithOracles, AssetWithOracles]:
     """May raise:
     - UnprocessableTradePair
     - UnknownAsset
@@ -194,7 +182,7 @@ class Kucoin(ExchangeInterface):
     def _api_query(
             self,
             case: KucoinCase,
-            options: Optional[Dict[str, Any]] = None,
+            options: Optional[dict[str, Any]] = None,
     ) -> Response:
         """Request a KuCoin API v1 endpoint
 
@@ -296,26 +284,26 @@ class Kucoin(ExchangeInterface):
     @overload
     def _api_query_paginated(  # pylint: disable=no-self-use
             self,
-            options: Dict[str, Any],
+            options: dict[str, Any],
             case: Literal[KucoinCase.OLD_TRADES, KucoinCase.TRADES],
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> List[Trade]:
+    ) -> list[Trade]:
         ...
 
     @overload
     def _api_query_paginated(  # pylint: disable=no-self-use
             self,
-            options: Dict[str, Any],
+            options: dict[str, Any],
             case: Literal[KucoinCase.DEPOSITS, KucoinCase.WITHDRAWALS],
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> List[AssetMovement]:
+    ) -> list[AssetMovement]:
         ...
 
     def _api_query_paginated(
             self,
-            options: Dict[str, Any],
+            options: dict[str, Any],
             case: Literal[
                 KucoinCase.TRADES,
                 KucoinCase.OLD_TRADES,
@@ -324,7 +312,7 @@ class Kucoin(ExchangeInterface):
             ],
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> Union[List[Trade], List[AssetMovement]]:
+    ) -> Union[list[Trade], list[AssetMovement]]:
         """Request endpoints paginating via an options attribute
 
         May raise RemoteError
@@ -459,8 +447,8 @@ class Kucoin(ExchangeInterface):
 
     def _deserialize_accounts_balances(
             self,
-            response_dict: Dict[str, List[Dict[str, Any]]],
-    ) -> Dict[AssetWithOracles, Balance]:
+            response_dict: dict[str, list[dict[str, Any]]],
+    ) -> dict[AssetWithOracles, Balance]:
         """May raise RemoteError
         """
         try:
@@ -530,7 +518,7 @@ class Kucoin(ExchangeInterface):
 
     @staticmethod
     def _deserialize_asset_movement(
-            raw_result: Dict[str, Any],
+            raw_result: dict[str, Any],
             case: Literal[KucoinCase.DEPOSITS, KucoinCase.WITHDRAWALS],
     ) -> AssetMovement:
         """Process an asset movement result and deserialize it
@@ -578,7 +566,7 @@ class Kucoin(ExchangeInterface):
 
     @staticmethod
     def _deserialize_trade(
-            raw_result: Dict[str, Any],
+            raw_result: dict[str, Any],
             case: Literal[KucoinCase.TRADES, KucoinCase.OLD_TRADES],
     ) -> Trade:
         """Process a trade result and deserialize it
@@ -637,7 +625,7 @@ class Kucoin(ExchangeInterface):
             self,
             response: Response,
             case: Literal[KucoinCase.API_KEY],
-    ) -> Tuple[bool, str]:
+    ) -> tuple[bool, str]:
         ...
 
     @overload
@@ -653,7 +641,7 @@ class Kucoin(ExchangeInterface):
             self,
             response: Response,
             case: Literal[KucoinCase.TRADES, KucoinCase.OLD_TRADES],
-    ) -> List[Trade]:
+    ) -> list[Trade]:
         ...
 
     @overload
@@ -661,7 +649,7 @@ class Kucoin(ExchangeInterface):
             self,
             response: Response,
             case: Literal[KucoinCase.DEPOSITS, KucoinCase.WITHDRAWALS],
-    ) -> List[AssetMovement]:
+    ) -> list[AssetMovement]:
         ...
 
     def _process_unsuccessful_response(
@@ -676,8 +664,8 @@ class Kucoin(ExchangeInterface):
                 KucoinCase.WITHDRAWALS,
             ],
     ) -> Union[
-        List,
-        Tuple[bool, str],
+        list,
+        tuple[bool, str],
         ExchangeQueryBalances,
     ]:
         """Process unsuccessful responses
@@ -759,7 +747,7 @@ class Kucoin(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> List[AssetMovement]:
+    ) -> list[AssetMovement]:
         """Return the account deposits and withdrawals
 
         May raise RemoteError
@@ -769,7 +757,7 @@ class Kucoin(ExchangeInterface):
             'pageSize': API_PAGE_SIZE_LIMIT,
             'status': 'SUCCESS',
         }
-        asset_movements: List[AssetMovement] = []
+        asset_movements: list[AssetMovement] = []
         deposits = self._api_query_paginated(
             options=options.copy(),
             case=KucoinCase.DEPOSITS,
@@ -791,7 +779,7 @@ class Kucoin(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> Tuple[List[Trade], Tuple[Timestamp, Timestamp]]:
+    ) -> tuple[list[Trade], tuple[Timestamp, Timestamp]]:
         """Return the account trades
 
         May raise RemoteError
@@ -802,7 +790,7 @@ class Kucoin(ExchangeInterface):
             'tradeType': 'TRADE',  # discarded MARGIN_TRADE
             'status': 'done',
         }
-        trades: List[Trade] = self._api_query_paginated(
+        trades: list[Trade] = self._api_query_paginated(
             options=options,
             case=KucoinCase.TRADES,
             start_ts=start_ts,
@@ -810,7 +798,7 @@ class Kucoin(ExchangeInterface):
         )
         return trades, (start_ts, end_ts)
 
-    def validate_api_key(self) -> Tuple[bool, str]:
+    def validate_api_key(self) -> tuple[bool, str]:
         """Validates that the KuCoin API key is good for usage in rotki
 
         May raise RemoteError
@@ -830,12 +818,12 @@ class Kucoin(ExchangeInterface):
             self,  # pylint: disable=no-self-use
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,  # pylint: disable=unused-argument
-    ) -> List[MarginPosition]:
+    ) -> list[MarginPosition]:
         return []  # noop for kucoin
 
     def query_online_income_loss_expense(
             self,  # pylint: disable=no-self-use
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,  # pylint: disable=unused-argument
-    ) -> List[LedgerAction]:
+    ) -> list[LedgerAction]:
         return []  # noop for kucoin

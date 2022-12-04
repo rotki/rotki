@@ -1,5 +1,5 @@
 import dataclasses
-from typing import Any, Dict, Literal, NamedTuple, Optional, Tuple
+from typing import Any, Literal, NamedTuple, Optional
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
@@ -11,7 +11,7 @@ from rotkehlchen.serialization.deserialize import (
 )
 from rotkehlchen.types import ChecksumEvmAddress, EVMTxHash, Timestamp, make_evm_tx_hash
 
-YEARN_EVENT_DB_TUPLE = Tuple[
+YEARN_EVENT_DB_TUPLE = tuple[
     ChecksumEvmAddress,
     Literal['deposit', 'withdraw'],  # event_type
     str,  # from_asset identifier
@@ -44,7 +44,7 @@ class YearnVaultEvent:
     log_index: int
     version: int
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self) -> dict[str, Any]:
         # Would have been nice to have a customizable asdict() for dataclasses
         # This way we could have avoided manual work with the Asset object serialization
         return {

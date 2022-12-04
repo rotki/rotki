@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.pot import AccountingPot
@@ -27,7 +27,7 @@ class ModuleAccountantInterface(metaclass=ABCMeta):
         self.reset()
 
     @abstractmethod
-    def event_settings(self, pot: 'AccountingPot') -> Dict[str, 'TxEventSettings']:  # pylint: disable=no-self-use  # noqa: E501
+    def event_settings(self, pot: 'AccountingPot') -> dict[str, 'TxEventSettings']:  # pylint: disable=no-self-use  # noqa: E501
         """
         Subclasses implement this to specify rules/settings for their created events
         """

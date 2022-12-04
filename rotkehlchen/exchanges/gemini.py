@@ -6,19 +6,7 @@ from base64 import b64encode
 from collections import defaultdict
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    DefaultDict,
-    Dict,
-    List,
-    Literal,
-    Optional,
-    Tuple,
-    Union,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Callable, DefaultDict, Literal, Optional, Union, overload
 
 import gevent
 import requests
@@ -64,7 +52,7 @@ class GeminiPermissionError(Exception):
     pass
 
 
-def gemini_symbol_to_base_quote(symbol: str) -> Tuple[AssetWithOracles, AssetWithOracles]:
+def gemini_symbol_to_base_quote(symbol: str) -> tuple[AssetWithOracles, AssetWithOracles]:
     """Turns a gemini symbol product into a base/quote asset tuple
 
     - Can raise UnprocessableTradePair if symbol is in unexpected format
@@ -145,7 +133,7 @@ class Gemini(ExchangeInterface):
 
         return changed
 
-    def validate_api_key(self) -> Tuple[bool, str]:
+    def validate_api_key(self) -> tuple[bool, str]:
         """Validates that the Gemini API key is good for usage in rotki
 
         Makes sure that the following permissions are given to the key:
@@ -170,7 +158,7 @@ class Gemini(ExchangeInterface):
         return True, ''
 
     @property
-    def symbols(self) -> List[str]:
+    def symbols(self) -> list[str]:
         self.first_connection()
         return self._symbols
 
@@ -178,7 +166,7 @@ class Gemini(ExchangeInterface):
             self,
             method: Literal['get', 'post'],
             endpoint: str,
-            options: Optional[Dict[str, Any]] = None,
+            options: Optional[dict[str, Any]] = None,
     ) -> requests.Response:
         """Queries endpoint until anything but 429 is returned
 
@@ -228,7 +216,7 @@ class Gemini(ExchangeInterface):
     def _public_api_query(
             self,
             endpoint: str,
-    ) -> List[Any]:
+    ) -> list[Any]:
         """Performs a Gemini API Query for a public endpoint
 
         You can optionally provide extra arguments to the endpoint via the options argument.
@@ -256,23 +244,23 @@ class Gemini(ExchangeInterface):
     def _private_api_query(  # pylint: disable=no-self-use
             self,
             endpoint: Literal['roles'],
-            options: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+            options: Optional[dict[str, Any]] = None,
+    ) -> dict[str, Any]:
         ...
 
     @overload
     def _private_api_query(  # pylint: disable=no-self-use
             self,
             endpoint: Literal['balances', 'mytrades', 'transfers', 'balances/earn'],
-            options: Optional[Dict[str, Any]] = None,
-    ) -> List[Any]:
+            options: Optional[dict[str, Any]] = None,
+    ) -> list[Any]:
         ...
 
     def _private_api_query(
             self,
             endpoint: str,
-            options: Optional[Dict[str, Any]] = None,
-    ) -> Union[Dict[str, Any], List[Any]]:
+            options: Optional[dict[str, Any]] = None,
+    ) -> Union[dict[str, Any], list[Any]]:
         """Performs a Gemini API Query for a private endpoint
 
         You can optionally provide extra arguments to the endpoint via the options argument.
@@ -282,7 +270,7 @@ class Gemini(ExchangeInterface):
         permissions for the endpoint
         """
         response = self._query_continuously(method='post', endpoint=endpoint, options=options)
-        json_ret: Union[List[Any], Dict[str, Any]]
+        json_ret: Union[list[Any], dict[str, Any]]
         if response.status_code == HTTPStatus.FORBIDDEN:
             raise GeminiPermissionError(
                 f'API key does not have permission for {endpoint}',
@@ -298,7 +286,7 @@ class Gemini(ExchangeInterface):
                 f'status code: {response.status_code} and text: {response.text}',
             )
 
-        deserialization_fn: Union[Callable[[str], Dict[str, Any]], Callable[[str], List[Any]]]
+        deserialization_fn: Union[Callable[[str], dict[str, Any]], Callable[[str], list[Any]]]
         deserialization_fn = jsonloads_dict if endpoint == 'roles' else jsonloads_list
 
         try:
@@ -382,9 +370,9 @@ class Gemini(ExchangeInterface):
             start_ts: Timestamp,
             end_ts: Timestamp,
             **kwargs: Any,
-    ) -> List[Dict]:
+    ) -> list[dict]:
         """Gets all possible results of a paginated gemini query"""
-        options: Dict[str, Any] = {'timestamp': start_ts, **kwargs}
+        options: dict[str, Any] = {'timestamp': start_ts, **kwargs}
         # set maximum limits per endpoint as per API docs
         if endpoint == 'mytrades':
             # https://docs.gemini.com/rest-api/?python#get-past-trades
@@ -431,7 +419,7 @@ class Gemini(ExchangeInterface):
             symbol: str,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> List[Dict]:
+    ) -> list[dict]:
         try:
             trades = self._get_paginated_query(
                 endpoint='mytrades',
@@ -455,7 +443,7 @@ class Gemini(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> Tuple[List[Trade], Tuple[Timestamp, Timestamp]]:
+    ) -> tuple[list[Trade], tuple[Timestamp, Timestamp]]:
         """Queries gemini for trades
         """
         log.debug('Query gemini trade history', start_ts=start_ts, end_ts=end_ts)
@@ -519,7 +507,7 @@ class Gemini(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> List[AssetMovement]:
+    ) -> list[AssetMovement]:
         result = self._get_paginated_query(
             endpoint='transfers',
             start_ts=start_ts,
@@ -580,12 +568,12 @@ class Gemini(ExchangeInterface):
             self,  # pylint: disable=no-self-use
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,  # pylint: disable=unused-argument
-    ) -> List[MarginPosition]:
+    ) -> list[MarginPosition]:
         return []  # noop for gemini
 
     def query_online_income_loss_expense(
             self,  # pylint: disable=no-self-use
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,  # pylint: disable=unused-argument
-    ) -> List[LedgerAction]:
+    ) -> list[LedgerAction]:
         return []  # noop for gemini

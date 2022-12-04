@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, List, Tuple
+from typing import TYPE_CHECKING
 
 from rotkehlchen.assets.asset import CustomAsset
 from rotkehlchen.assets.types import AssetType
@@ -15,7 +15,7 @@ class DBCustomAssets:
         self.db = db_handler
 
     @staticmethod
-    def _get_custom_assets(filter_query: CustomAssetsFilterQuery) -> List[CustomAsset]:
+    def _get_custom_assets(filter_query: CustomAssetsFilterQuery) -> list[CustomAsset]:
         """
         Queries the custom_assets table using the filter query and returns a list of `CustomAsset`.
         May raise:
@@ -31,7 +31,7 @@ class DBCustomAssets:
     def get_custom_assets_and_limit_info(
             self,
             filter_query: CustomAssetsFilterQuery,
-    ) -> Tuple[List[CustomAsset], int, int]:
+    ) -> tuple[list[CustomAsset], int, int]:
         """
         Returns a list of `CustomAsset`, a count of the assets that match
         the query and the count of custom assets in the DB.
@@ -111,7 +111,7 @@ class DBCustomAssets:
                 )
 
     @staticmethod
-    def get_custom_asset_types() -> List[str]:
+    def get_custom_asset_types() -> list[str]:
         """Returns a list custom asset types used in the DB."""
         with GlobalDBHandler().conn.read_ctx() as cursor:
             cursor.execute('SELECT DISTINCT type FROM custom_assets ORDER BY type;')

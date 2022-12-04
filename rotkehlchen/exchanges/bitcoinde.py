@@ -4,7 +4,7 @@ import json
 import logging
 import time
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Literal, Optional
 from urllib.parse import urlencode
 
 import requests
@@ -74,7 +74,7 @@ def bitcoinde_asset(symbol: str) -> AssetWithOracles:
     return symbol_to_asset_or_token(rotki_id)
 
 
-def bitcoinde_pair_to_world(pair: str) -> Tuple[AssetWithOracles, AssetWithOracles]:
+def bitcoinde_pair_to_world(pair: str) -> tuple[AssetWithOracles, AssetWithOracles]:
     if len(pair) == 6:
         tx_asset = bitcoinde_asset(pair[:3])
         native_asset = bitcoinde_asset(pair[3:])
@@ -86,7 +86,7 @@ def bitcoinde_pair_to_world(pair: str) -> Tuple[AssetWithOracles, AssetWithOracl
     return tx_asset, native_asset
 
 
-def trade_from_bitcoinde(raw_trade: Dict) -> Trade:
+def trade_from_bitcoinde(raw_trade: dict) -> Trade:
     """Convert bitcoin.de raw data to a trade
 
     May raise:
@@ -179,8 +179,8 @@ class Bitcoinde(ExchangeInterface):
             self,
             verb: Literal['get', 'post'],
             path: str,
-            options: Optional[Dict] = None,
-    ) -> Dict:
+            options: Optional[dict] = None,
+    ) -> dict:
         """
         Queries Bitcoin.de with the given verb for the given path and options
         """
@@ -249,7 +249,7 @@ class Bitcoinde(ExchangeInterface):
 
         return json_ret
 
-    def validate_api_key(self) -> Tuple[bool, str]:
+    def validate_api_key(self) -> tuple[bool, str]:
         """
         Validates that the Bitcoin.de API key is good for usage in rotki
         """
@@ -262,7 +262,7 @@ class Bitcoinde(ExchangeInterface):
             return False, str(e)
 
     def query_balances(self, **kwargs: Any) -> ExchangeQueryBalances:
-        assets_balance: Dict[AssetWithOracles, Balance] = {}
+        assets_balance: dict[AssetWithOracles, Balance] = {}
         try:
             resp_info = self._api_query('get', 'account')
         except RemoteError as e:
@@ -311,7 +311,7 @@ class Bitcoinde(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> Tuple[List[Trade], Tuple[Timestamp, Timestamp]]:
+    ) -> tuple[list[Trade], tuple[Timestamp, Timestamp]]:
 
         page = 1
         resp_trades = []
@@ -373,19 +373,19 @@ class Bitcoinde(ExchangeInterface):
             self,  # pylint: disable=no-self-use
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,  # pylint: disable=unused-argument
-    ) -> List[AssetMovement]:
+    ) -> list[AssetMovement]:
         return []  # noop for bitcoinde
 
     def query_online_income_loss_expense(
             self,  # pylint: disable=no-self-use
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,  # pylint: disable=unused-argument
-    ) -> List[LedgerAction]:
+    ) -> list[LedgerAction]:
         return []  # noop for bitcoinde
 
     def query_online_margin_history(
             self,  # pylint: disable=no-self-use
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,  # pylint: disable=unused-argument
-    ) -> List[MarginPosition]:
+    ) -> list[MarginPosition]:
         return []  # noop for bitcoinde

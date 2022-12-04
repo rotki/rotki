@@ -1,6 +1,6 @@
 import hashlib
 from enum import Enum, auto
-from typing import Any, List, Tuple
+from typing import Any
 
 import base58check
 import bech32
@@ -96,7 +96,7 @@ def hash160(msg: bytes) -> bytes:
     return h.digest()
 
 
-def _calculate_hash160_and_checksum(prefix: bytes, data: bytes) -> Tuple[bytes, bytes]:
+def _calculate_hash160_and_checksum(prefix: bytes, data: bytes) -> tuple[bytes, bytes]:
     """Calculates the prefixed hash160 and checksum"""
     s1 = prefix + hash160(data)
     s2 = hashlib.sha256(s1).digest()
@@ -161,7 +161,7 @@ def pubkey_to_bech32_address(data: bytes, witver: WitnessVersion) -> BTCAddress:
     return BTCAddress(result)
 
 
-def is_valid_derivation_path(path: Any) -> Tuple[bool, str]:
+def is_valid_derivation_path(path: Any) -> tuple[bool, str]:
     """Check if a derivation path can be understood by rotki
 
     Returns False, "error message" if not and True, "" if yes
@@ -172,7 +172,7 @@ def is_valid_derivation_path(path: Any) -> Tuple[bool, str]:
     if not path.startswith('m'):
         return False, 'Derivation paths accepted by rotki should start with m'
 
-    nodes: List[str] = path.split('/')
+    nodes: list[str] = path.split('/')
     if nodes[0] != 'm':
         return False, 'Derivation paths accepted by rotki should start with m'
     nodes = nodes[1:]

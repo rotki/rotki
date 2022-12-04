@@ -3,20 +3,7 @@ import shutil
 import sqlite3
 from collections import defaultdict
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    Iterable,
-    List,
-    Literal,
-    Optional,
-    Set,
-    Tuple,
-    Union,
-    cast,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Iterable, Literal, Optional, Union, cast, overload
 
 from rotkehlchen.assets.asset import (
     Asset,
@@ -185,7 +172,7 @@ class GlobalDBHandler():
     def add_asset(
             asset_id: str,
             asset_type: AssetType,
-            data: Union[EvmToken, Dict[str, Any]],
+            data: Union[EvmToken, dict[str, Any]],
     ) -> None:
         """
         Add an asset in the DB. Either an ethereum token or a user asset.
@@ -204,7 +191,7 @@ class GlobalDBHandler():
             cryptocompare = token.cryptocompare
         else:
             token = None
-            data = cast(Dict[str, Any], data)
+            data = cast(dict[str, Any], data)
             forked_asset = data.get('forked', None)
             # The data should already be typed (as given in by marshmallow)
             name = data.get('name', None)
@@ -248,7 +235,7 @@ class GlobalDBHandler():
             ) from e
 
     @staticmethod
-    def retrieve_assets(filter_query: 'AssetsFilterQuery') -> Tuple[List[Dict[str, Any]], int]:
+    def retrieve_assets(filter_query: 'AssetsFilterQuery') -> tuple[list[dict[str, Any]], int]:
         """
         Returns a tuple that contains a list of assets details and a
         count of those assets that match the filter query.
@@ -256,7 +243,7 @@ class GlobalDBHandler():
         - DeserializationError
         """
         assets_info = []
-        underlying_tokens: Dict[str, List[Dict[str, str]]] = defaultdict(list)
+        underlying_tokens: dict[str, list[dict[str, str]]] = defaultdict(list)
         prepared_filter_query, bindings = filter_query.prepare()
         parent_query = """
         SELECT A.identifier AS identifier, A.type, B.address, B.decimals, A.name, C.symbol, C.started, C.forked, C.swapped_for, C.coingecko, C.cryptocompare, B.protocol, B.chain, B.token_kind, D.notes, D.type AS custom_asset_type
@@ -329,7 +316,7 @@ class GlobalDBHandler():
         return assets_info, entries_found
 
     @staticmethod
-    def get_assets_mappings(identifiers: List[str]) -> Dict[str, dict]:
+    def get_assets_mappings(identifiers: list[str]) -> dict[str, dict]:
         """
         Given a list of asset identifiers, return a list of asset information(id, name, symbol)
         for those identifiers.
@@ -358,7 +345,7 @@ class GlobalDBHandler():
     def search_assets(
             filter_query: 'AssetsFilterQuery',
             db: 'DBHandler',
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Returns a list of asset details that match the search query provided."""
         search_result = []
         query, bindings = GlobalDBHandler()._prepare_search_assets_query(filter_query)
@@ -394,7 +381,7 @@ class GlobalDBHandler():
         return search_result
 
     @staticmethod
-    def _prepare_search_assets_query(filter_query: 'AssetsFilterQuery') -> Tuple[str, list]:
+    def _prepare_search_assets_query(filter_query: 'AssetsFilterQuery') -> tuple[str, list]:
         query, bindings = filter_query.prepare()
         query = ALL_ASSETS_TABLES_QUERY + query
         return query, bindings
@@ -404,8 +391,8 @@ class GlobalDBHandler():
     def get_all_asset_data(
             mapping: Literal[True],
             serialized: bool = False,
-            specific_ids: Optional[List[str]] = None,
-    ) -> Dict[str, Dict[str, Any]]:
+            specific_ids: Optional[list[str]] = None,
+    ) -> dict[str, dict[str, Any]]:
         ...
 
     @overload
@@ -413,22 +400,22 @@ class GlobalDBHandler():
     def get_all_asset_data(
             mapping: Literal[False],
             serialized: bool = False,
-            specific_ids: Optional[List[str]] = None,
-    ) -> List[AssetData]:
+            specific_ids: Optional[list[str]] = None,
+    ) -> list[AssetData]:
         ...
 
     @staticmethod
     def get_all_asset_data(
             mapping: bool,
             serialized: bool = False,
-            specific_ids: Optional[List[str]] = None,
-    ) -> Union[List[AssetData], Dict[str, Dict[str, Any]]]:
+            specific_ids: Optional[list[str]] = None,
+    ) -> Union[list[AssetData], dict[str, dict[str, Any]]]:
         """Return all asset data from the DB or all data matching the given ids
 
         If mapping is True, return them as a Dict of identifier to data
         If mapping is False, return them as a List of AssetData
         """
-        result: Union[List[AssetData], Dict[str, Dict[str, Any]]]
+        result: Union[list[AssetData], dict[str, dict[str, Any]]]
         if mapping:
             result = {}
         else:
@@ -574,7 +561,7 @@ class GlobalDBHandler():
     def fetch_underlying_tokens(
             cursor: DBCursor,
             parent_token_identifier: str,
-    ) -> Optional[List[UnderlyingToken]]:
+    ) -> Optional[list[UnderlyingToken]]:
         """Fetch underlying tokens for a token address if they exist"""
         cursor.execute(
             'SELECT B.address, B.token_kind, A.weight FROM underlying_tokens_list AS A JOIN evm_tokens as B WHERE A.identifier=B.identifier AND parent_token_entry=?;',  # noqa: E501
@@ -591,7 +578,7 @@ class GlobalDBHandler():
     def _add_underlying_tokens(
             write_cursor: DBCursor,
             parent_token_identifier: str,
-            underlying_tokens: List[UnderlyingToken],
+            underlying_tokens: list[UnderlyingToken],
             chain_id: ChainID,
     ) -> None:
         """Add the underlying tokens for the parent token
@@ -671,7 +658,7 @@ class GlobalDBHandler():
             asset_type: AssetType,
             name: str,
             symbol: str,
-    ) -> Optional[List[str]]:
+    ) -> Optional[list[str]]:
         """Checks if an asset of a given type, symbol and name exists in the DB already
 
         For non ethereum tokens with no unique identifier like an address this is the
@@ -728,10 +715,10 @@ class GlobalDBHandler():
     @staticmethod
     def get_evm_tokens(
             chain_id: ChainID,
-            exceptions: Optional[List[ChecksumEvmAddress]] = None,
-            except_protocols: Optional[List[str]] = None,
+            exceptions: Optional[list[ChecksumEvmAddress]] = None,
+            except_protocols: Optional[list[str]] = None,
             protocol: Optional[str] = None,
-    ) -> List[EvmToken]:
+    ) -> list[EvmToken]:
         """Gets all ethereum tokens from the DB
 
         Can also accept filtering parameters.
@@ -745,7 +732,7 @@ class GlobalDBHandler():
             'assets AS A on B.identifier = A.identifier JOIN common_asset_details AS C ON '
             'C.identifier = B.identifier WHERE B.chain = ? '
         )
-        bindings_list: List[Union[str, int, ChecksumEvmAddress]] = [chain_id.serialize_for_db()]  # noqa: E501
+        bindings_list: list[Union[str, int, ChecksumEvmAddress]] = [chain_id.serialize_for_db()]  # noqa: E501
         if exceptions is not None or protocol is not None or except_protocols is not None:
             querystr_additions = []
             if exceptions is not None:
@@ -785,7 +772,7 @@ class GlobalDBHandler():
         return tokens
 
     @staticmethod
-    def get_tokens_mappings(addresses: List[ChecksumEvmAddress]) -> Dict[ChecksumEvmAddress, str]:  # noqa: E501
+    def get_tokens_mappings(addresses: list[ChecksumEvmAddress]) -> dict[ChecksumEvmAddress, str]:  # noqa: E501
         """Gets mappings: address -> name for tokens whose address is in the provided list"""
         questionmarks = ','.join('?' * len(addresses))
         mappings = {}
@@ -943,7 +930,7 @@ class GlobalDBHandler():
         return asset_identifier
 
     @staticmethod
-    def edit_user_asset(data: Dict[str, Any]) -> None:
+    def edit_user_asset(data: dict[str, Any]) -> None:
         """Edits an already existing user asset in the DB
 
         The data should already be typed (as given in by marshmallow).
@@ -1001,7 +988,7 @@ class GlobalDBHandler():
                 ) from e
 
     @staticmethod
-    def add_user_owned_assets(assets: List['Asset']) -> None:
+    def add_user_owned_assets(assets: list['Asset']) -> None:
         """Make sure all assets in the list are included in the user owned assets
 
         These assets are there so that when someone tries to delete assets from the global DB
@@ -1037,17 +1024,17 @@ class GlobalDBHandler():
             symbol: str,
             asset_type: Optional[AssetType] = None,
             chain_id: Optional[ChainID] = None,
-    ) -> List[AssetWithOracles]:
+    ) -> list[AssetWithOracles]:
         """Find all asset entries that have the given symbol"""
         eth_token_type = AssetType.EVM_TOKEN.serialize_for_db()    # pylint: disable=no-member
         extra_check_evm = ''
-        evm_query_list: List[Union[int, str]] = [eth_token_type, symbol]
+        evm_query_list: list[Union[int, str]] = [eth_token_type, symbol]
         if chain_id is not None:
             extra_check_evm += ' AND B.chain=? '
             evm_query_list.append(chain_id.serialize_for_db())
 
         extra_check_common = ''
-        common_query_list: List[Union[int, str]] = [
+        common_query_list: list[Union[int, str]] = [
             eth_token_type,
             AssetType.CUSTOM_ASSET.serialize_for_db(),
             symbol,
@@ -1068,7 +1055,7 @@ class GlobalDBHandler():
             cursor.execute(querystr, evm_query_list + common_query_list)
             for entry in cursor.fetchall():
                 asset_type = AssetType.deserialize_from_db(entry[1])
-                underlying_tokens: Optional[List[UnderlyingToken]] = None
+                underlying_tokens: Optional[list[UnderlyingToken]] = None
                 if asset_type == AssetType.EVM_TOKEN:
                     underlying_tokens = GlobalDBHandler().fetch_underlying_tokens(
                         cursor=cursor,
@@ -1117,7 +1104,7 @@ class GlobalDBHandler():
         return HistoricalPrice.deserialize_from_db(result)
 
     @staticmethod
-    def add_historical_prices(entries: List['HistoricalPrice']) -> None:
+    def add_historical_prices(entries: list['HistoricalPrice']) -> None:
         """Adds the given historical price entries in the DB
 
         If any addition causes a DB error it's skipped and an error is logged
@@ -1180,7 +1167,7 @@ class GlobalDBHandler():
             from_asset: Asset,
             to_asset: Asset,
             price: Price,
-    ) -> List[Tuple[Asset, Asset]]:
+    ) -> list[tuple[Asset, Asset]]:
         """
         Adds manual current price and turns previously known manual current price into a
         historical manual price.
@@ -1242,7 +1229,7 @@ class GlobalDBHandler():
         return pairs_to_invalidate
 
     @staticmethod
-    def get_manual_current_price(asset: Asset) -> Optional[Tuple[Asset, Price]]:
+    def get_manual_current_price(asset: Asset) -> Optional[tuple[Asset, Price]]:
         """Reads manual current price of an asset. If no price is found returns None."""
         with GlobalDBHandler().conn.read_ctx() as read_cursor:
             result = read_cursor.execute(
@@ -1259,7 +1246,7 @@ class GlobalDBHandler():
     def get_all_manual_latest_prices(
             from_asset: Optional[Asset] = None,
             to_asset: Optional[Asset] = None,
-    ) -> List[Tuple[str, str, str]]:
+    ) -> list[tuple[str, str, str]]:
         """Returns all the manual current prices in the price_history table"""
         query = 'SELECT from_asset, to_asset, price FROM price_history WHERE source_type=?'
         bindings = [HistoricalPriceOracle.MANUAL_CURRENT.serialize_for_db()]
@@ -1275,7 +1262,7 @@ class GlobalDBHandler():
             return read_cursor.fetchall()
 
     @staticmethod
-    def delete_manual_latest_price(asset: Asset) -> List[Tuple[Asset, Asset]]:
+    def delete_manual_latest_price(asset: Asset) -> list[tuple[Asset, Asset]]:
         """
         Deletes manual current price from globaldb and returns the list of asset
         price pairs to be invalidated.
@@ -1306,7 +1293,7 @@ class GlobalDBHandler():
     def get_manual_prices(
         from_asset: Optional[Asset],
         to_asset: Optional[Asset],
-    ) -> List[Dict[str, Union[int, str]]]:
+    ) -> list[dict[str, Union[int, str]]]:
         """Returns prices added to the database by the user for an asset"""
         querystr = (
             'SELECT from_asset, to_asset, source_type, timestamp, price FROM price_history '
@@ -1419,7 +1406,7 @@ class GlobalDBHandler():
             from_asset: 'Asset',
             to_asset: 'Asset',
             source: Optional[HistoricalPriceOracle] = None,
-    ) -> Optional[Tuple[Timestamp, Timestamp]]:
+    ) -> Optional[tuple[Timestamp, Timestamp]]:
         querystr = 'SELECT MIN(timestamp), MAX(timestamp) FROM price_history WHERE from_asset=? AND to_asset=?'  # noqa: E501
         query_list = [from_asset.identifier, to_asset.identifier]
         if source is not None:
@@ -1434,7 +1421,7 @@ class GlobalDBHandler():
             return result[0], result[1]
 
     @staticmethod
-    def get_historical_price_data(source: HistoricalPriceOracle) -> List[Dict[str, Any]]:
+    def get_historical_price_data(source: HistoricalPriceOracle) -> list[dict[str, Any]]:
         """Return a list of assets and first/last ts
 
         Only used by the API so just returning it as List of dicts from here"""
@@ -1470,7 +1457,7 @@ class GlobalDBHandler():
     @staticmethod
     def get_general_cache_values(
             key_parts: Iterable[Union[str, GeneralCacheType]],
-    ) -> List[str]:
+    ) -> list[str]:
         """Function to read globaldb cache. Returns all the values that are paired with the key."""
         cache_key = _compute_cache_key(key_parts)
         with GlobalDBHandler().conn.read_ctx() as cursor:
@@ -1532,7 +1519,7 @@ class GlobalDBHandler():
     def hard_reset_assets_list(
         user_db: 'DBHandler',
         force: bool = False,
-    ) -> Tuple[bool, str]:
+    ) -> tuple[bool, str]:
         """
         Delete all custom asset entries and repopulate from the last
         builtin version
@@ -1602,7 +1589,7 @@ class GlobalDBHandler():
         return True, ''
 
     @staticmethod
-    def soft_reset_assets_list() -> Tuple[bool, str]:
+    def soft_reset_assets_list() -> tuple[bool, str]:
         """
         Resets assets to the state in the packaged global db. Custom assets added by the user
         won't be affected by this reset.
@@ -1664,7 +1651,7 @@ class GlobalDBHandler():
             user_db_write_cursor: DBCursor,
             user_db: 'DBHandler',
             only_owned: bool = False,
-    ) -> Set[str]:
+    ) -> set[str]:
         """
         Create a list of the asset identifiers added by the user. If only_owned
         the assets added by the user and at some point he had are returned.
@@ -1769,7 +1756,7 @@ class GlobalDBHandler():
                 (identifier,),
             ).fetchone()[0]
 
-        asset_data: Union[EvmToken, Dict[str, Any]]
+        asset_data: Union[EvmToken, dict[str, Any]]
         if asset.asset_type == AssetType.EVM_TOKEN:
             asset_data = cast(EvmToken, asset)
         else:
@@ -1790,7 +1777,7 @@ class GlobalDBHandler():
             if asset.asset_type == AssetType.EVM_TOKEN:
                 GlobalDBHandler().edit_evm_token(cast(EvmToken, asset_data))
             else:
-                GlobalDBHandler().edit_user_asset(cast(Dict[str, Any], asset_data))
+                GlobalDBHandler().edit_user_asset(cast(dict[str, Any], asset_data))
 
         return asset
 

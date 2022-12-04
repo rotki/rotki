@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL
@@ -22,7 +22,7 @@ def handle_prefork_asset_acquisitions(
         amount: FVal,
         price: Price,
         starting_index: int,
-) -> List['ProcessedAccountingEvent']:
+) -> list['ProcessedAccountingEvent']:
     """
         Calculate the prefork asset acquisitions, meaning how is the acquisition
         of ETC pre ETH fork handled etc.

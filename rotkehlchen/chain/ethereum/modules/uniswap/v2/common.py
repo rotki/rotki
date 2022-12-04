@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Callable, List
+from typing import TYPE_CHECKING, Callable
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
@@ -25,7 +25,7 @@ SUSHISWAP_ROUTER = string_to_evm_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C37
 
 def decode_uniswap_v2_like_swap(
         tx_log: EvmTxReceiptLog,
-        decoded_events: List[HistoryBaseEntry],
+        decoded_events: list[HistoryBaseEntry],
         transaction: EvmTransaction,
         counterparty: str,
         database: 'DBHandler',

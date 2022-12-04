@@ -2,7 +2,7 @@
 way rotki works instead of subclassing it to handle errors our way in order to keep
 it as lightweight as possible"""
 
-from typing import Type, Union, cast, overload
+from typing import Union, cast, overload
 
 from hexbytes import HexBytes as Web3HexBytes
 
@@ -44,7 +44,7 @@ class HexBytes(bytes):
         3. The representation at console is in hex
     """
     def __new__(
-            cls: Type[bytes],
+            cls: type[bytes],
             val: Union[Web3HexBytes, bytearray, bytes, str],
     ) -> 'HexBytes':
         bytesval = to_bytes(val)
@@ -80,6 +80,6 @@ class HexBytes(bytes):
         return f'HexBytes({self.hex()!r})'
 
     @classmethod
-    def from_bytes(cls: Type['HexBytes'], value: bytes) -> 'HexBytes':
+    def from_bytes(cls: type['HexBytes'], value: bytes) -> 'HexBytes':
         """Creates a new HexBytes instance directly from bytes, skipping deserialization"""
         return super().__new__(cls, value)

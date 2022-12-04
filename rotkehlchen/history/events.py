@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, List, Tuple
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.constants.misc import ZERO
@@ -88,7 +88,7 @@ class EventsHistorian:
             self,
             filter_query: LedgerActionsFilterQuery,
             only_cache: bool,
-    ) -> Tuple[List['LedgerAction'], int]:
+    ) -> tuple[list['LedgerAction'], int]:
         """Queries the ledger actions with the given filter query
 
         :param only_cache: Optional. If this is true then the equivalent exchange/location
@@ -136,7 +136,7 @@ class EventsHistorian:
             self,
             filter_query: TradesFilterQuery,
             only_cache: bool,
-    ) -> Tuple[List[Trade], int]:
+    ) -> tuple[list[Trade], int]:
         """Queries trades for the given location and time range.
         If no location is given then all external, all exchange and DEX trades are queried.
 
@@ -224,7 +224,7 @@ class EventsHistorian:
             self,
             filter_query: AssetMovementsFilterQuery,
             only_cache: bool,
-    ) -> Tuple[List[AssetMovement], int]:
+    ) -> tuple[list[AssetMovement], int]:
         """Queries AssetMovements for the given filter
 
         If only_cache is True then only what is already in the DB is returned.
@@ -249,7 +249,7 @@ class EventsHistorian:
             cursor: 'DBCursor',
             filter_query: HistoryEventFilterQuery,
             only_cache: bool,
-    ) -> Tuple[List[HistoryBaseEntry], int]:
+    ) -> tuple[list[HistoryBaseEntry], int]:
         if only_cache is False:
             exchanges_list = self.exchange_manager.connected_exchanges.get(Location.KRAKEN, [])
             kraken_names = []
@@ -281,7 +281,7 @@ class EventsHistorian:
             start_ts: Timestamp,
             end_ts: Timestamp,
             has_premium: bool,
-    ) -> Tuple[str, List['AccountingEventMixin']]:
+    ) -> tuple[str, list['AccountingEventMixin']]:
         """
         Creates all events history from start_ts to end_ts. Returns it
         sorted by ascending timestamp.
@@ -295,13 +295,13 @@ class EventsHistorian:
             end_ts=end_ts,
         )
         # start creating the all trades history list
-        history: List['AccountingEventMixin'] = []
+        history: list['AccountingEventMixin'] = []
         empty_or_error = ''
 
         def populate_history_cb(
-                trades_history: List[Trade],
-                margin_history: List[MarginPosition],
-                result_asset_movements: List[AssetMovement],
+                trades_history: list[Trade],
+                margin_history: list[MarginPosition],
+                result_asset_movements: list[AssetMovement],
                 exchange_specific_data: Any,
         ) -> None:
             """This callback will run for succesfull exchange history query

@@ -1,6 +1,6 @@
 import logging
 import sqlite3
-from typing import TYPE_CHECKING, Iterable, List
+from typing import TYPE_CHECKING, Iterable
 
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import InputError
@@ -43,7 +43,7 @@ class GlobalDBBinance:
                 f'Tried to add a binance pair to the database but failed due to {str(e)}',
             ) from e
 
-    def get_all_binance_pairs(self, location: Location) -> List[BinancePair]:
+    def get_all_binance_pairs(self, location: Location) -> list[BinancePair]:
         """Gets all possible binance pairs from the GlobalDB.
         NB: This is not the user-selected binance pairs. This is just a cache.
         """

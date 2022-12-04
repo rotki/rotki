@@ -1,4 +1,4 @@
-from typing import Dict, NamedTuple, Optional, Tuple
+from typing import NamedTuple, Optional
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
@@ -18,7 +18,7 @@ class ActionItem(NamedTuple):
     to_event_subtype: Optional[HistoryEventSubType] = None
     to_notes: Optional[str] = None
     to_counterparty: Optional[str] = None
-    extra_data: Optional[Dict] = None
+    extra_data: Optional[dict] = None
     # Optional event data that pairs it with the event of the action item
     # Contains a tuple with the paired event and whether it's an out event (True) or in event
-    paired_event_data: Optional[Tuple[HistoryBaseEntry, bool]] = None
+    paired_event_data: Optional[tuple[HistoryBaseEntry, bool]] = None

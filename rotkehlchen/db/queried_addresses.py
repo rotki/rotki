@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING, Optional
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
@@ -52,7 +52,7 @@ class QueriedAddresses():
             self,
             cursor: 'DBCursor',
             module: ModuleName,
-    ) -> Optional[List[ChecksumAddress]]:
+    ) -> Optional[list[ChecksumAddress]]:
         """Get a List of addresses to query for module or None if none is set"""
         cursor = self.db.conn.cursor()
         query = cursor.execute(
@@ -62,9 +62,9 @@ class QueriedAddresses():
         result = [entry[0] for entry in query]
         return None if len(result) == 0 else result
 
-    def get_queried_addresses_per_module(self) -> Dict[ModuleName, List[ChecksumAddress]]:
+    def get_queried_addresses_per_module(self) -> dict[ModuleName, list[ChecksumAddress]]:
         """Get a mapping of modules to addresses to query for that module"""
-        mapping: Dict[ModuleName, List[ChecksumAddress]] = {}
+        mapping: dict[ModuleName, list[ChecksumAddress]] = {}
         with self.db.conn.read_ctx() as cursor:
             for module in AVAILABLE_MODULES_MAP:
                 result = self.get_queried_addresses_for_module(cursor, module)  # type: ignore

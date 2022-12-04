@@ -35,7 +35,7 @@ import collections
 import pickle
 from datetime import datetime
 from itertools import chain
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 import matplotlib.pyplot as plt
 from matplotlib import dates
@@ -87,10 +87,10 @@ def memory_objcount(output, data_list, topn=10):
         return [0.0 for __ in range(alltime_count)]
 
     position = 0
-    alltime_data: Dict = {}
+    alltime_data: dict = {}
     alltime_timestamps = []
     for data in data_list:
-        sample_highcount: Dict = {}
+        sample_highcount: dict = {}
 
         # some classes might not appear on all samples, nevertheless the list
         # must have the same length
@@ -99,7 +99,7 @@ def memory_objcount(output, data_list, topn=10):
         def sample_factory(count_arg=sample_count):
             return [0.0 for __ in range(count_arg)]
 
-        objcount: Dict = collections.defaultdict(sample_factory)
+        objcount: dict = collections.defaultdict(sample_factory)
 
         # group the samples by class
         for index, (__, count_per_type) in enumerate(data):

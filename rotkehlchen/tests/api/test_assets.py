@@ -1,6 +1,6 @@
 from contextlib import ExitStack
 from http import HTTPStatus
-from typing import Any, Dict, List
+from typing import Any
 from unittest.mock import patch
 from uuid import uuid4
 
@@ -42,7 +42,7 @@ def mock_cryptoscamdb_request():
 
 
 def assert_substring_in_search_result(
-        data: List[Dict[str, Any]],
+        data: list[dict[str, Any]],
         substring: str,
 ) -> None:
     """Asserts that a given substring is present in the search result."""
@@ -58,7 +58,7 @@ def assert_substring_in_search_result(
 def assert_asset_at_top_position(
         asset_id: str,
         max_position_index: int,
-        result: List[Dict[str, Any]],
+        result: list[dict[str, Any]],
 ) -> None:
     """Aserts that an asset appears at the top of the search results."""
     assert any([asset_id == entry['identifier'] for entry in result])

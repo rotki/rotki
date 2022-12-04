@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Dict, List, Literal, Optional, Sequence, Union, cast, overload
+from typing import TYPE_CHECKING, Literal, Optional, Sequence, Union, cast, overload
 
 import requests
 from ens.abis import ENS as ENS_ABI, RESOLVER as ENS_RESOLVER_ABI
@@ -67,7 +67,7 @@ class EthereumInquirer(EvmNodeInquirer):
         self.etherscan = cast('EthereumEtherscan', self.etherscan)
         self.ens_reverse_records = self.contracts.contract('ENS_REVERSE_RECORDS')
 
-    def ens_reverse_lookup(self, addresses: List[ChecksumEvmAddress]) -> Dict[ChecksumEvmAddress, Optional[str]]:  # noqa: E501
+    def ens_reverse_lookup(self, addresses: list[ChecksumEvmAddress]) -> dict[ChecksumEvmAddress, Optional[str]]:  # noqa: E501
         """Performs a reverse ENS lookup on a list of addresses
 
         Returns a mapping of addresses to either a string name or `None`
@@ -77,7 +77,7 @@ class EthereumInquirer(EvmNodeInquirer):
         - RemoteError if etherscan is used and there is a problem with
         reaching it or with the returned result
         - BlockchainQueryError if web3 is used and there is a VM execution error"""
-        human_names: Dict[ChecksumEvmAddress, Optional[str]] = {}
+        human_names: dict[ChecksumEvmAddress, Optional[str]] = {}
         chunks = get_chunks(lst=addresses, n=MAX_ADDRESSES_IN_REVERSE_ENS_QUERY)
         for chunk in chunks:
             result = self.ens_reverse_records.call(
@@ -224,7 +224,7 @@ class EthereumInquirer(EvmNodeInquirer):
 
     def query_highest_block(self) -> BlockNumber:
         log.debug('Querying blockcypher for ETH highest block', url=BLOCKCYPHER_URL)
-        eth_resp: Optional[Dict[str, str]]
+        eth_resp: Optional[dict[str, str]]
         try:
             eth_resp = request_get_dict(BLOCKCYPHER_URL)
         except (RemoteError, UnableToDecryptRemoteData, requests.exceptions.RequestException):

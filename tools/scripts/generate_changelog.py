@@ -9,7 +9,6 @@ It outputs the result to the stdout
 
 import argparse
 import re
-from typing import Dict, List
 
 NEW_ASSETS_MSG = 'Added support for the following tokens'
 NEW_VERSION_FORMAT = '* :release:`{}'
@@ -18,7 +17,7 @@ NEW_VERSION_FORMAT = '* :release:`{}'
 def generate_changelog(version: str, path: str) -> str:
     change_regex = r'\*\ :(feature|bug):`(\d*|-)`\ (.+)'
 
-    changes: Dict[str, List[str]] = {'features': [], 'bugs': []}
+    changes: dict[str, list[str]] = {'features': [], 'bugs': []}
     github_link = '- #{number} {text}'
     not_listed_change = '- {text}'
 

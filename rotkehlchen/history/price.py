@@ -1,7 +1,7 @@
 import logging
 from http import HTTPStatus
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Optional
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_KFEE, A_USD
@@ -77,8 +77,8 @@ class PriceHistorian():
     _coingecko: 'Coingecko'
     _defillama: 'Defillama'
     _manual: ManualPriceOracle  # This is used when iterating through all oracles
-    _oracles: Optional[List[HistoricalPriceOracle]] = None
-    _oracle_instances: Optional[List[HistoricalPriceOracleInstance]] = None
+    _oracles: Optional[list[HistoricalPriceOracle]] = None
+    _oracle_instances: Optional[list[HistoricalPriceOracleInstance]] = None
 
     def __new__(
             cls,
@@ -105,7 +105,7 @@ class PriceHistorian():
         return PriceHistorian.__instance
 
     @staticmethod
-    def set_oracles_order(oracles: List[HistoricalPriceOracle]) -> None:
+    def set_oracles_order(oracles: list[HistoricalPriceOracle]) -> None:
         assert len(oracles) != 0 and len(oracles) == len(set(oracles)), (
             'Oracles can\'t be empty or have repeated items'
         )

@@ -2,18 +2,7 @@ import json
 import logging
 from collections import defaultdict
 from http import HTTPStatus
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    DefaultDict,
-    Dict,
-    List,
-    Literal,
-    Optional,
-    Tuple,
-    Union,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, DefaultDict, Literal, Optional, Union, overload
 from urllib.parse import urlencode
 
 import gevent
@@ -76,9 +65,9 @@ class Bitpanda(ExchangeInterface):
         self.uri = 'https://api.bitpanda.com/v1'
         self.session.headers.update({'X-API-KEY': self.api_key})
         self.msg_aggregator = msg_aggregator
-        self.cryptocoin_map: Dict[str, AssetWithOracles] = {}
+        self.cryptocoin_map: dict[str, AssetWithOracles] = {}
         # AssetWithOracles instead of FiatAsset to comply with cryptocoin_map
-        self.fiat_map: Dict[str, AssetWithOracles] = {}
+        self.fiat_map: dict[str, AssetWithOracles] = {}
 
     def first_connection(self) -> None:
         if self.first_connection_made:
@@ -144,7 +133,7 @@ class Bitpanda(ExchangeInterface):
 
         return changed
 
-    def validate_api_key(self) -> Tuple[bool, str]:
+    def validate_api_key(self) -> tuple[bool, str]:
         """Validates that the Bitpanda API key is good for usage in rotki"""
         try:
             self._api_query('wallets')
@@ -154,7 +143,7 @@ class Bitpanda(ExchangeInterface):
 
     def _deserialize_wallettx(
             self,
-            entry: Dict[str, Any],
+            entry: dict[str, Any],
             from_ts: Timestamp,
             to_ts: Timestamp,
     ) -> Optional[AssetMovement]:
@@ -232,7 +221,7 @@ class Bitpanda(ExchangeInterface):
 
     def _deserialize_trade(
             self,
-            entry: Dict[str, Any],
+            entry: dict[str, Any],
             from_ts: Timestamp,
             to_ts: Timestamp,
     ) -> Optional[Trade]:
@@ -327,23 +316,23 @@ class Bitpanda(ExchangeInterface):
                 'fiatwallets/transactions',
                 'wallets/transactions',
             ],
-            options: Optional[Dict[str, Any]] = None,
-    ) -> Tuple[List[Any], Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
+            options: Optional[dict[str, Any]] = None,
+    ) -> tuple[list[Any], Optional[dict[str, Any]], Optional[dict[str, Any]]]:
         ...
 
     @overload
     def _api_query(  # pylint: disable=no-self-use
             self,
             endpoint: Literal['asset-wallets'],
-            options: Optional[Dict[str, Any]] = None,
-    ) -> Tuple[Dict[str, Any], Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
+            options: Optional[dict[str, Any]] = None,
+    ) -> tuple[dict[str, Any], Optional[dict[str, Any]], Optional[dict[str, Any]]]:
         ...
 
     def _api_query(
             self,
             endpoint: str,
-            options: Optional[Dict[str, Any]] = None,
-    ) -> Tuple[Union[List[Any], Dict[str, Any]], Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:  # noqa: E501
+            options: Optional[dict[str, Any]] = None,
+    ) -> tuple[Union[list[Any], dict[str, Any]], Optional[dict[str, Any]], Optional[dict[str, Any]]]:  # noqa: E501
         """Performs a bitpanda API Query for endpoint
 
         You can optionally provide extra arguments to the endpoint via the options argument.
@@ -411,8 +400,8 @@ class Bitpanda(ExchangeInterface):
             endpoint: Literal['trades'],
             from_ts: Optional[Timestamp],
             to_ts: Optional[Timestamp],
-            options: Optional[Dict[str, Any]] = None,
-    ) -> List[Trade]:
+            options: Optional[dict[str, Any]] = None,
+    ) -> list[Trade]:
         ...
 
     @overload
@@ -421,8 +410,8 @@ class Bitpanda(ExchangeInterface):
             endpoint: Literal['fiatwallets/transactions', 'wallets/transactions'],
             from_ts: Optional[Timestamp],
             to_ts: Optional[Timestamp],
-            options: Optional[Dict[str, Any]] = None,
-    ) -> List[AssetMovement]:
+            options: Optional[dict[str, Any]] = None,
+    ) -> list[AssetMovement]:
         ...
 
     def _query_endpoint_until_end(
@@ -430,8 +419,8 @@ class Bitpanda(ExchangeInterface):
             endpoint: Literal['trades', 'fiatwallets/transactions', 'wallets/transactions'],
             from_ts: Optional[Timestamp],
             to_ts: Optional[Timestamp],
-            options: Optional[Dict[str, Any]] = None,
-    ) -> Union[List[Trade], List[AssetMovement]]:
+            options: Optional[dict[str, Any]] = None,
+    ) -> Union[list[Trade], list[AssetMovement]]:
         """Query a paginated endpoint until all pages are read
 
         May raise RemoteError
@@ -537,7 +526,7 @@ class Bitpanda(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> Tuple[List[Trade], Tuple[Timestamp, Timestamp]]:
+    ) -> tuple[list[Trade], tuple[Timestamp, Timestamp]]:
         self.first_connection()
         trades = self._query_endpoint_until_end(
             endpoint='trades',
@@ -550,7 +539,7 @@ class Bitpanda(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> List[AssetMovement]:
+    ) -> list[AssetMovement]:
         self.first_connection()
         # Should probably also query wallets/transactions for crypto deposits/withdrawals
         # but it does not seem as if they contain them
@@ -571,12 +560,12 @@ class Bitpanda(ExchangeInterface):
             self,  # pylint: disable=no-self-use
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,  # pylint: disable=unused-argument
-    ) -> List[MarginPosition]:
+    ) -> list[MarginPosition]:
         return []  # noop for Bitpanda
 
     def query_online_income_loss_expense(
             self,  # pylint: disable=no-self-use
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,  # pylint: disable=unused-argument
-    ) -> List[LedgerAction]:
+    ) -> list[LedgerAction]:
         return []  # noop for Bitpanda

@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Optional, Union
 
 from gevent.lock import Semaphore
 
@@ -58,17 +58,17 @@ class DSRMovement:
 
 
 class DSRCurrentBalances(NamedTuple):
-    balances: Dict[ChecksumEvmAddress, Balance]
+    balances: dict[ChecksumEvmAddress, Balance]
     # The percentage of the current DSR. e.g. 8% would be 8.00
     current_dsr: FVal
 
 
 class DSRAccountReport(NamedTuple):
-    movements: List[DSRMovement]
+    movements: list[DSRMovement]
     gain_so_far: int
     gain_so_far_usd_value: FVal
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self) -> dict[str, Any]:
         serialized_report = {
             'gain_so_far': {
                 'amount': str(_dsrdai_to_dai(self.gain_so_far)),
@@ -117,7 +117,7 @@ class MakerdaoDsr(HasDSProxy):
             msg_aggregator=msg_aggregator,
         )
         self.reset_last_query_ts()
-        self.historical_dsr_reports: Dict[ChecksumEvmAddress, DSRAccountReport] = {}
+        self.historical_dsr_reports: dict[ChecksumEvmAddress, DSRAccountReport] = {}
         self.lock = Semaphore()
         self.dai = A_DAI.resolve_to_evm_token()
         self.makerdao_dai_join = self.ethereum.contracts.contract('MAKERDAO_DAI_JOIN')
@@ -394,7 +394,7 @@ class MakerdaoDsr(HasDSProxy):
             gain_so_far_usd_value=gain_so_far_usd_value,
         )
 
-    def get_historical_dsr(self) -> Dict[ChecksumEvmAddress, DSRAccountReport]:
+    def get_historical_dsr(self) -> dict[ChecksumEvmAddress, DSRAccountReport]:
         """Gets the historical DSR report per account
 
             This is a premium only call. Check happens only in the API level.
@@ -422,7 +422,7 @@ class MakerdaoDsr(HasDSProxy):
             self,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
-    ) -> List[DefiEvent]:
+    ) -> list[DefiEvent]:
         """Gets the history events from DSR for accounting
 
             This is a premium only call. Check happens only in the API level.

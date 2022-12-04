@@ -1,6 +1,6 @@
 import json
 from collections import deque
-from typing import Any, Deque, Dict, Generator
+from typing import Any, Deque, Generator
 
 import gevent
 import pytest
@@ -25,7 +25,7 @@ class WebsocketReader():
         # cleanup
         self.ws.close()
 
-    def pop_message(self) -> Dict[str, Any]:
+    def pop_message(self) -> dict[str, Any]:
         return self.messages.pop()
 
     def close(self) -> None:

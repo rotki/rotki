@@ -1,6 +1,6 @@
 import argparse
 import sys
-from typing import Any, List, Optional, Sequence, Union
+from typing import Any, Optional, Sequence, Union
 
 from rotkehlchen.constants.misc import (
     DEFAULT_MAX_LOG_BACKUP_FILES,
@@ -14,7 +14,7 @@ class CommandAction(argparse.Action):
     """Interprets the positional argument as a command if that command exists"""
     def __init__(  # pylint: disable=unused-argument
             self,
-            option_strings: List[str],
+            option_strings: list[str],
             dest: str,
             **kwargs: Any,
     ) -> None:

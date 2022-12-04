@@ -2,7 +2,7 @@ import os
 import random
 from pathlib import Path
 from shutil import copyfile
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 from unittest.mock import _patch, patch
 
 from rotkehlchen.assets.asset import Asset
@@ -66,8 +66,8 @@ def add_blockchain_accounts_to_db(db: DBHandler, blockchain_accounts: Blockchain
 
 def add_settings_to_test_db(
         db: DBHandler,
-        db_settings: Optional[Dict[str, Any]],
-        ignored_assets: Optional[List[Asset]],
+        db_settings: Optional[dict[str, Any]],
+        ignored_assets: Optional[list[Asset]],
         data_migration_version: Optional[int],
 ) -> None:
     settings = {
@@ -94,7 +94,7 @@ def add_settings_to_test_db(
         db.conn.commit()
 
 
-def add_tags_to_test_db(db: DBHandler, tags: List[Dict[str, Any]]) -> None:
+def add_tags_to_test_db(db: DBHandler, tags: list[dict[str, Any]]) -> None:
     with db.user_write() as cursor:
         for tag in tags:
             db.add_tag(
@@ -108,7 +108,7 @@ def add_tags_to_test_db(db: DBHandler, tags: List[Dict[str, Any]]) -> None:
 
 def add_manually_tracked_balances_to_test_db(
         db: DBHandler,
-        balances: List[ManuallyTrackedBalance],
+        balances: list[ManuallyTrackedBalance],
 ) -> None:
     with db.user_write() as cursor:
         db.add_manually_tracked_balances(cursor, balances)

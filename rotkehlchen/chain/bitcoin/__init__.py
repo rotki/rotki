@@ -1,5 +1,3 @@
-from typing import Dict, List, Tuple
-
 import requests
 
 from rotkehlchen.errors.misc import RemoteError, UnableToDecryptRemoteData
@@ -11,14 +9,14 @@ from rotkehlchen.utils.misc import satoshis_to_btc
 from rotkehlchen.utils.network import request_get_dict
 
 
-def _have_bc1_accounts(accounts: List[BTCAddress]) -> bool:
+def _have_bc1_accounts(accounts: list[BTCAddress]) -> bool:
     return any(account.lower()[0:3] == 'bc1' for account in accounts)
 
 
 def _query_blockstream_or_mempool(
-        accounts: List[BTCAddress],
+        accounts: list[BTCAddress],
         base_url: str,
-) -> Dict[BTCAddress, FVal]:
+) -> dict[BTCAddress, FVal]:
     """Queries balances from blockstream.info
     May raise:
     - RemoteError if got problems with querying the API
@@ -49,28 +47,28 @@ def _query_blockstream_or_mempool(
     return balances
 
 
-def _query_blockstream_info(accounts: List[BTCAddress]) -> Dict[BTCAddress, FVal]:
+def _query_blockstream_info(accounts: list[BTCAddress]) -> dict[BTCAddress, FVal]:
     return _query_blockstream_or_mempool(
         accounts=accounts,
         base_url='https://blockstream.info/api/address/',
     )
 
 
-def _query_mempool_space(accounts: List[BTCAddress]) -> Dict[BTCAddress, FVal]:
+def _query_mempool_space(accounts: list[BTCAddress]) -> dict[BTCAddress, FVal]:
     return _query_blockstream_or_mempool(
         accounts=accounts,
         base_url='https://mempool.space/api/address/',
     )
 
 
-def _query_blockchain_info(accounts: List[BTCAddress]) -> Dict[BTCAddress, FVal]:
+def _query_blockchain_info(accounts: list[BTCAddress]) -> dict[BTCAddress, FVal]:
     """Queries balances from blockchain.info
     May raise:
     - RemoteError if got problems with querying the API
     - KeyError if got unexpected json structure
     - DeserializationError if got unexpected json values
     """
-    balances: Dict[BTCAddress, FVal] = {}
+    balances: dict[BTCAddress, FVal] = {}
     accounts_chunks = [accounts[x:x + 80] for x in range(0, len(accounts), 80)]
     for accounts_chunk in accounts_chunks:
         params = '|'.join(accounts_chunk)
@@ -93,8 +91,8 @@ def _query_blockchain_info(accounts: List[BTCAddress]) -> Dict[BTCAddress, FVal]
 
 
 def get_bitcoin_addresses_balances(
-        accounts: List[BTCAddress],
-) -> Dict[BTCAddress, FVal]:
+        accounts: list[BTCAddress],
+) -> dict[BTCAddress, FVal]:
     """Queries bitcoin balance APIs for the balances of accounts
 
     May raise:
@@ -111,7 +109,7 @@ def get_bitcoin_addresses_balances(
             'blockstream.info': _query_blockstream_info,
             'mempool.space': _query_mempool_space,
         }
-    errors: Dict[str, str] = {}
+    errors: dict[str, str] = {}
     for api_name, callback in api_callbacks.items():
         try:
             balances = callback(accounts)
@@ -134,8 +132,8 @@ def get_bitcoin_addresses_balances(
 
 
 def _check_blockstream_for_transactions(
-        accounts: List[BTCAddress],
-) -> Dict[BTCAddress, Tuple[bool, FVal]]:
+        accounts: list[BTCAddress],
+) -> dict[BTCAddress, tuple[bool, FVal]]:
     """May raise:
     - RemoteError if couldn't query
     - KeyError if response structure differs from the expected one
@@ -168,8 +166,8 @@ def _check_blockstream_for_transactions(
 
 
 def _check_blockchaininfo_for_transactions(
-        accounts: List[BTCAddress],
-) -> Dict[BTCAddress, Tuple[bool, FVal]]:
+        accounts: list[BTCAddress],
+) -> dict[BTCAddress, tuple[bool, FVal]]:
     """May raise RemoteError or KeyError"""
     have_transactions = {}
     params = '|'.join(accounts)
@@ -187,7 +185,7 @@ def _check_blockchaininfo_for_transactions(
     return have_transactions
 
 
-def have_bitcoin_transactions(accounts: List[BTCAddress]) -> Dict[BTCAddress, Tuple[bool, FVal]]:
+def have_bitcoin_transactions(accounts: list[BTCAddress]) -> dict[BTCAddress, tuple[bool, FVal]]:
     """
     Takes a list of addresses and returns a mapping of which addresses have had transactions
     and also their current balance

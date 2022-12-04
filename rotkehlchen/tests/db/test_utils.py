@@ -1,4 +1,4 @@
-from typing import Any, Tuple
+from typing import Any
 
 import pytest
 
@@ -68,7 +68,7 @@ def test_form_query_to_filter_timestamps(
     assert bindings == expected_bindings
 
 
-def _tuple_to_balance(data: Tuple) -> SingleDBAssetBalance:
+def _tuple_to_balance(data: tuple) -> SingleDBAssetBalance:
     """Just a convenience function to not write too much"""
     return SingleDBAssetBalance(
         time=data[0],

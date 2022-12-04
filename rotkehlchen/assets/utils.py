@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Optional
 
 from rotkehlchen.assets.asset import Asset, AssetWithOracles, EvmToken, UnderlyingToken
 from rotkehlchen.assets.types import AssetType
@@ -45,7 +45,7 @@ def get_or_create_evm_token(
         name: Optional[str] = None,
         decimals: Optional[int] = None,
         protocol: Optional[str] = None,
-        underlying_tokens: Optional[List[UnderlyingToken]] = None,
+        underlying_tokens: Optional[list[UnderlyingToken]] = None,
         form_with_incomplete_data: bool = False,
         evm_inquirer: Optional['EvmNodeInquirer'] = None,
 ) -> EvmToken:

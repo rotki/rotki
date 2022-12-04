@@ -8,15 +8,10 @@ from typing import (
     Any,
     Callable,
     DefaultDict,
-    Dict,
     Iterator,
-    List,
     Literal,
     NamedTuple,
     Optional,
-    Set,
-    Tuple,
-    Type,
     overload,
 )
 
@@ -58,7 +53,7 @@ class AssetAcquisitionEvent:
         )
 
     @classmethod
-    def from_processed_event(cls: Type['AssetAcquisitionEvent'], event: 'ProcessedAccountingEvent') -> 'AssetAcquisitionEvent':  # noqa: E501
+    def from_processed_event(cls: type['AssetAcquisitionEvent'], event: 'ProcessedAccountingEvent') -> 'AssetAcquisitionEvent':  # noqa: E501
         return cls(
             amount=event.taxable_amount + event.free_amount,
             timestamp=event.timestamp,
@@ -67,7 +62,7 @@ class AssetAcquisitionEvent:
         )
 
     @classmethod
-    def deserialize(cls: Type['AssetAcquisitionEvent'], data: Dict[str, Any]) -> 'AssetAcquisitionEvent':  # noqa: E501
+    def deserialize(cls: type['AssetAcquisitionEvent'], data: dict[str, Any]) -> 'AssetAcquisitionEvent':  # noqa: E501
         """May raise DeserializationError"""
         try:
             return cls(
@@ -79,7 +74,7 @@ class AssetAcquisitionEvent:
         except KeyError as e:
             raise DeserializationError(f'Missing key {str(e)}') from e
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self) -> dict[str, Any]:
         return {
             'timestamp': self.timestamp,
             'full_amount': str(self.amount),
@@ -136,7 +131,7 @@ class AssetAcquisitionHeapElement(NamedTuple):
 class BaseCostBasisMethod(metaclass=ABCMeta):
     """The base class in which every other cost basis method inherits from."""
     def __init__(self) -> None:
-        self._acquisitions_heap: List[AssetAcquisitionHeapElement] = []
+        self._acquisitions_heap: list[AssetAcquisitionHeapElement] = []
 
     @abstractmethod
     def add_acquisition(self, acquisition: AssetAcquisitionEvent) -> None:
@@ -156,7 +151,7 @@ class BaseCostBasisMethod(metaclass=ABCMeta):
         while len(self._acquisitions_heap) > 0:
             yield self._acquisitions_heap[0].acquisition_event
 
-    def get_acquisitions(self) -> Tuple[AssetAcquisitionEvent, ...]:
+    def get_acquisitions(self) -> tuple[AssetAcquisitionEvent, ...]:
         """Returns read-only _acquisitions"""
         return tuple(entry.acquisition_event for entry in self._acquisitions_heap)
 
@@ -182,8 +177,8 @@ class BaseCostBasisMethod(metaclass=ABCMeta):
             spending_amount: FVal,
             spending_asset: Asset,
             timestamp: Timestamp,
-            missing_acquisitions: List[MissingAcquisition],
-            used_acquisitions: List[AssetAcquisitionEvent],
+            missing_acquisitions: list[MissingAcquisition],
+            used_acquisitions: list[AssetAcquisitionEvent],
             settings: DBSettings,
             timestamp_to_date: Callable[[Timestamp], str],
             average_cost_basis: Optional[FVal] = None,
@@ -383,8 +378,8 @@ class AverageCostBasisMethod(BaseCostBasisMethod):
             spending_amount: FVal,
             spending_asset: Asset,
             timestamp: Timestamp,
-            missing_acquisitions: List[MissingAcquisition],
-            used_acquisitions: List[AssetAcquisitionEvent],
+            missing_acquisitions: list[MissingAcquisition],
+            used_acquisitions: list[AssetAcquisitionEvent],
             settings: DBSettings,
             timestamp_to_date: Callable[[Timestamp], str],
             average_cost_basis: Optional[FVal] = None,  # pylint: disable=unused-argument
@@ -437,8 +432,8 @@ class CostBasisEvents:
             self.acquisitions_manager = HIFOCostBasisMethod()
         elif cost_basis_method == CostBasisMethod.ACB:
             self.acquisitions_manager = AverageCostBasisMethod()
-        self.spends: List[AssetSpendEvent] = []
-        self.used_acquisitions: List[AssetAcquisitionEvent] = []
+        self.spends: list[AssetSpendEvent] = []
+        self.used_acquisitions: list[AssetAcquisitionEvent] = []
 
 
 class MatchedAcquisition(NamedTuple):
@@ -446,7 +441,7 @@ class MatchedAcquisition(NamedTuple):
     event: AssetAcquisitionEvent  # the acquisition event
     taxable: bool  # whether it counts for taxable or non-taxable cost basis
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self) -> dict[str, Any]:
         """Turn to a dict to be serialized into the DB"""
         return {
             'amount': str(self.amount),
@@ -455,7 +450,7 @@ class MatchedAcquisition(NamedTuple):
         }
 
     @classmethod
-    def deserialize(cls: Type['MatchedAcquisition'], data: Dict[str, Any]) -> 'MatchedAcquisition':
+    def deserialize(cls: type['MatchedAcquisition'], data: dict[str, Any]) -> 'MatchedAcquisition':
         """May raise DeserializationError"""
         try:
             event = AssetAcquisitionEvent.deserialize(data['event'])
@@ -494,10 +489,10 @@ class CostBasisInfo(NamedTuple):
     taxable_amount: FVal
     taxable_bought_cost: FVal
     taxfree_bought_cost: FVal
-    matched_acquisitions: List[MatchedAcquisition]
+    matched_acquisitions: list[MatchedAcquisition]
     is_complete: bool
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self) -> dict[str, Any]:
         """Turn to a dict to be exported into the DB"""
         return {
             'is_complete': self.is_complete,
@@ -505,7 +500,7 @@ class CostBasisInfo(NamedTuple):
         }
 
     @classmethod
-    def deserialize(cls: Type['CostBasisInfo'], data: Dict[str, Any]) -> Optional['CostBasisInfo']:
+    def deserialize(cls: type['CostBasisInfo'], data: dict[str, Any]) -> Optional['CostBasisInfo']:
         """Creates a CostBasisInfo object from a json dict made from serialize()
 
         May raise:
@@ -527,7 +522,7 @@ class CostBasisInfo(NamedTuple):
             matched_acquisitions=matched_acquisitions,
         )
 
-    def to_string(self, converter: Callable[[Timestamp], str]) -> Tuple[str, str]:
+    def to_string(self, converter: Callable[[Timestamp], str]) -> tuple[str, str]:
         """
         Turn to 2 strings to be shown in exported files such as CSV for taxable and free cost basis
         """
@@ -569,8 +564,8 @@ class CostBasisCalculator(CustomizableDateMixin):
         self.settings = settings
         self.profit_currency = settings.main_currency
         self._events: DefaultDict[Asset, CostBasisEvents] = defaultdict(lambda: CostBasisEvents(settings.cost_basis_method))  # noqa: E501
-        self.missing_acquisitions: List[MissingAcquisition] = []
-        self.missing_prices: Set[MissingPrice] = set()
+        self.missing_acquisitions: list[MissingAcquisition] = []
+        self.missing_prices: set[MissingPrice] = set()
 
     def get_events(self, asset: Asset) -> CostBasisEvents:
         """Custom getter for events so that we have common cost basis for some assets"""

@@ -1,6 +1,6 @@
 import json
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, Optional, Type, TypeVar
+from typing import Any, Callable, Optional, Type, TypeVar
 
 from rotkehlchen.accounting.cost_basis import CostBasisInfo
 from rotkehlchen.accounting.mixins.event import AccountingEventType
@@ -38,7 +38,7 @@ class ProcessedAccountingEvent:
     index: int
     # This is set only for some events to remember extra data that can be used later
     # such as the transaction hash of an event
-    extra_data: Dict[str, Any] = field(default_factory=dict)
+    extra_data: dict[str, Any] = field(default_factory=dict)
     # These are set by calculate pnl and are only here to be remembered by the
     # processed accounting event so that the CSV export formulas can be correctly made
     count_entire_amount_spend: bool = field(init=False, default=False)
@@ -57,7 +57,7 @@ class ProcessedAccountingEvent:
             ts_converter: Callable[[Timestamp], str],
             eth_explorer: Optional[str],
             for_api: bool,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """These are the fields that will appear in CSV and report API
 
         If `eth_explorer` is given then this is for exporting to CSV
@@ -101,7 +101,7 @@ class ProcessedAccountingEvent:
 
         return exported_dict
 
-    def serialize_to_dict(self, ts_converter: Callable[[Timestamp], str]) -> Dict[str, Any]:
+    def serialize_to_dict(self, ts_converter: Callable[[Timestamp], str]) -> dict[str, Any]:
         """This is used to serialize to dict for saving to the DB"""
         data = self.to_exported_dict(
             ts_converter=ts_converter,
@@ -169,7 +169,7 @@ class ProcessedAccountingEvent:
         return string_data
 
     @classmethod
-    def deserialize_from_db(cls: Type[T], timestamp: Timestamp, stringified_json: str) -> T:
+    def deserialize_from_db(cls: Type[T], timestamp: Timestamp, stringified_json: str) -> T:  # noqa: E501, UP006  # Ignoring UP006 until https://github.com/python/mypy/issues/14245 is figured out
         """May raise:
         - DeserializationError if something is wrong with reading this from the DB
         """

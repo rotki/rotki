@@ -1,7 +1,7 @@
 from contextlib import ExitStack
 from pathlib import Path
 from shutil import copyfile
-from typing import TYPE_CHECKING, Callable, List, Optional, Union
+from typing import TYPE_CHECKING, Callable, Optional, Union
 from unittest.mock import patch
 
 import pytest
@@ -27,7 +27,7 @@ def fixture_generatable_user_ethereum_tokens() -> bool:
 
 
 @pytest.fixture(name='user_ethereum_tokens')
-def fixture_user_ethereum_tokens() -> Optional[Union[List[EvmToken], Callable]]:
+def fixture_user_ethereum_tokens() -> Optional[Union[list[EvmToken], Callable]]:
     return None
 
 
@@ -42,7 +42,7 @@ def fixture_target_globaldb_version() -> int:
 
 
 @pytest.fixture(name='globaldb_upgrades')
-def fixture_globaldb_upgrades() -> List['UpgradeRecord']:
+def fixture_globaldb_upgrades() -> list['UpgradeRecord']:
     return UPGRADES_LIST
 
 

@@ -5,13 +5,10 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Dict,
-    List,
     Literal,
     NamedTuple,
     Optional,
     Protocol,
-    Tuple,
     TypeVar,
     Union,
     overload,
@@ -124,15 +121,15 @@ def need_cursor(path_to_context_manager: str) -> Callable[[Callable[Concatenate[
 
 
 class BlockchainAccounts(NamedTuple):
-    eth: List[ChecksumEvmAddress]
-    btc: List[BTCAddress]
-    bch: List[BTCAddress]
-    ksm: List[KusamaAddress]
-    dot: List[PolkadotAddress]
-    avax: List[ChecksumEvmAddress]
+    eth: list[ChecksumEvmAddress]
+    btc: list[BTCAddress]
+    bch: list[BTCAddress]
+    ksm: list[KusamaAddress]
+    dot: list[PolkadotAddress]
+    avax: list[ChecksumEvmAddress]
 
     @overload
-    def get(self, blockchain: EVMChain) -> List[ChecksumEvmAddress]:
+    def get(self, blockchain: EVMChain) -> list[ChecksumEvmAddress]:
         ...
 
     @overload
@@ -166,8 +163,8 @@ class DBAssetBalance:
 
     def serialize(
             self,
-            currency_and_price: Optional[Tuple[AssetWithOracles, Price]] = None,
-    ) -> Dict[str, Union[str, int]]:
+            currency_and_price: Optional[tuple[AssetWithOracles, Price]] = None,
+    ) -> dict[str, Union[str, int]]:
         """Serializes a `DBAssetBalance` to dict.
         It accepts an `export_data` tuple of the user's local currency and the value of the
         currency in USD e.g (EUR, 1.01). If provided, the data is serialized for human consumption.
@@ -188,7 +185,7 @@ class DBAssetBalance:
             'usd_value': str(self.usd_value),
         }
 
-    def serialize_for_db(self) -> Tuple[str, int, str, str, str]:
+    def serialize_for_db(self) -> tuple[str, int, str, str, str]:
         """Serializes a `DBAssetBalance` to be written into the DB.
         (category, time, currency, amount, usd_value)
         """
@@ -201,7 +198,7 @@ class DBAssetBalance:
         )
 
     @classmethod
-    def deserialize_from_db(cls, entry: Tuple[str, int, str, str, str]) -> 'DBAssetBalance':
+    def deserialize_from_db(cls, entry: tuple[str, int, str, str, str]) -> 'DBAssetBalance':
         """Takes a timed balance from the DB and turns it into a `DBAssetBalance` object.
         May raise:
         - DeserializationError if the category from the db is invalid.
@@ -231,8 +228,8 @@ class LocationData(NamedTuple):
 
     def serialize(
             self,
-            currency_and_price: Optional[Tuple[AssetWithOracles, Price]] = None,
-    ) -> Dict[str, Union[str, int]]:
+            currency_and_price: Optional[tuple[AssetWithOracles, Price]] = None,
+    ) -> dict[str, Union[str, int]]:
         if currency_and_price:
             return {
                 'timestamp': timestamp_to_date(self.time, '%Y-%m-%d %H:%M:%S'),
@@ -252,7 +249,7 @@ class Tag(NamedTuple):
     background_color: HexColorCode
     foreground_color: HexColorCode
 
-    def serialize(self) -> Dict[str, str]:
+    def serialize(self) -> dict[str, str]:
         return self._asdict()  # pylint: disable=no-member
 
 
@@ -265,7 +262,7 @@ def form_query_to_filter_timestamps(
         timestamp_attribute: str,
         from_ts: Optional[Timestamp],
         to_ts: Optional[Timestamp],
-) -> Tuple[str, Union[Tuple, Tuple[Timestamp], Tuple[Timestamp, Timestamp]]]:
+) -> tuple[str, Union[tuple, tuple[Timestamp], tuple[Timestamp, Timestamp]]]:
     """Formulates the query string and its bindings to filter for timestamps"""
     got_from_ts = from_ts is not None
     got_to_ts = to_ts is not None
@@ -287,7 +284,7 @@ def form_query_to_filter_timestamps(
     return query, tuple(bindings)
 
 
-def deserialize_tags_from_db(val: Optional[str]) -> Optional[List[str]]:
+def deserialize_tags_from_db(val: Optional[str]) -> Optional[list[str]]:
     """Read tags from the DB and turn it into a List of tags"""
     if val is None:
         tags = None
@@ -301,8 +298,8 @@ def deserialize_tags_from_db(val: Optional[str]) -> Optional[List[str]]:
 
 def insert_tag_mappings(
         write_cursor: 'DBCursor',
-        data: Union[List['ManuallyTrackedBalance'], List[BlockchainAccountData], List['XpubData']],
-        object_reference_keys: List[
+        data: Union[list['ManuallyTrackedBalance'], list[BlockchainAccountData], list['XpubData']],
+        object_reference_keys: list[
             Literal['id', 'address', 'xpub.xpub', 'derivation_path'],
         ],
 ) -> None:
@@ -344,7 +341,7 @@ def is_valid_db_blockchain_account(
     raise AssertionError(f'Unknown blockchain: {blockchain}')
 
 
-def _append_or_combine(balances: List[SingleDBAssetBalance], entry: SingleDBAssetBalance) -> List[SingleDBAssetBalance]:  # noqa: E501
+def _append_or_combine(balances: list[SingleDBAssetBalance], entry: SingleDBAssetBalance) -> list[SingleDBAssetBalance]:  # noqa: E501
     """Append entry to balances or combine with last if timestamp is the same"""
     if len(balances) == 0 or balances[-1].time != entry.time:
         balances.append(entry)
@@ -355,9 +352,9 @@ def _append_or_combine(balances: List[SingleDBAssetBalance], entry: SingleDBAsse
     return balances
 
 
-def combine_asset_balances(balances: List[SingleDBAssetBalance]) -> List[SingleDBAssetBalance]:
+def combine_asset_balances(balances: list[SingleDBAssetBalance]) -> list[SingleDBAssetBalance]:
     """Returns a list with all balances of the same timestamp combined"""
-    new_balances: List[SingleDBAssetBalance] = []
+    new_balances: list[SingleDBAssetBalance] = []
     for balance, next_balance in pairwise_longest(balances):
         if next_balance is None:
             new_balances = _append_or_combine(new_balances, balance)

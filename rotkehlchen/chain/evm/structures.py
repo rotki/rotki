@@ -1,5 +1,5 @@
 import dataclasses
-from typing import List, Optional
+from typing import Optional
 
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, EVMTxHash
 
@@ -10,7 +10,7 @@ class EvmTxReceiptLog:
     data: bytes
     address: ChecksumEvmAddress
     removed: bool
-    topics: List[bytes] = dataclasses.field(default_factory=list)
+    topics: list[bytes] = dataclasses.field(default_factory=list)
 
 
 @dataclasses.dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -20,4 +20,4 @@ class EvmTxReceipt:
     contract_address: Optional[ChecksumEvmAddress]
     status: bool
     type: int
-    logs: List[EvmTxReceiptLog] = dataclasses.field(default_factory=list)
+    logs: list[EvmTxReceiptLog] = dataclasses.field(default_factory=list)

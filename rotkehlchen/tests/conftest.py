@@ -6,7 +6,6 @@ import tempfile
 import warnings as test_warnings
 from enum import auto
 from pathlib import Path
-from typing import List
 
 import py
 import pytest
@@ -124,7 +123,7 @@ def profiler(request):
         profiler_instance.stop()
 
 
-def requires_env(allowed_envs: List[TestEnvironment]):
+def requires_env(allowed_envs: list[TestEnvironment]):
     """Conditionally run tests if the environment is in the list of allowed environments"""
     try:
         env = TestEnvironment.deserialize(os.environ.get('TEST_ENVIRONMENT', 'standard'))

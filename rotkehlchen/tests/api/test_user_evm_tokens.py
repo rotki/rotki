@@ -1,6 +1,6 @@
 from copy import deepcopy
 from http import HTTPStatus
-from typing import Any, Dict, List
+from typing import Any
 
 import pytest
 import requests
@@ -35,8 +35,8 @@ from rotkehlchen.types import ChainID, EvmTokenKind, Location
 
 
 def assert_token_entry_exists_in_result(
-        result: List[Dict[str, Any]],
-        expected_result: List[Dict[str, Any]]):
+        result: list[dict[str, Any]],
+        expected_result: list[dict[str, Any]]):
     """Make sure token entry exists in result.
 
     We append the identifier to each entry since it's returned

@@ -1,4 +1,4 @@
-from typing import Any, Dict, Union
+from typing import Any, Union
 
 from marshmallow import Schema, fields, post_load
 
@@ -25,9 +25,9 @@ class AssetDataSchema(OptionalEvmTokenInformationSchema):
     @post_load
     def transform_data(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Returns the a dictionary with:
         - The identifier
         - extra_information used by the globaldb handler
@@ -47,7 +47,7 @@ class AssetDataSchema(OptionalEvmTokenInformationSchema):
                 ))
 
         asset_type = data['asset_type']
-        extra_information: Union[Dict[str, Any], EvmToken]
+        extra_information: Union[dict[str, Any], EvmToken]
         swapped_for, swapped_for_ident = data.pop('swapped_for'), None
         if swapped_for is not None:
             swapped_for_ident = swapped_for.identifier

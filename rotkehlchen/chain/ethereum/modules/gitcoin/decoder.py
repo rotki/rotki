@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Callable, List
+from typing import TYPE_CHECKING, Callable
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
@@ -37,7 +37,7 @@ class GitcoinDecoder(DecoderInterface):
             tx_log: EvmTxReceiptLog,  # pylint: disable=unused-argument
             transaction: EvmTransaction,
             event: HistoryBaseEntry,
-            action_items: List[ActionItem],  # pylint: disable=unused-argument
+            action_items: list[ActionItem],  # pylint: disable=unused-argument
     ) -> bool:
         """
         May raise:
@@ -63,10 +63,10 @@ class GitcoinDecoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
-    def enricher_rules(self) -> List[Callable]:
+    def enricher_rules(self) -> list[Callable]:
         return [
             self._maybe_enrich_gitcoin_transfers,
         ]
 
-    def counterparties(self) -> List[str]:
+    def counterparties(self) -> list[str]:
         return [CPT_GITCOIN]

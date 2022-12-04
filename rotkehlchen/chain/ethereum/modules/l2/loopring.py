@@ -2,7 +2,7 @@ import json
 import logging
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Union, overload
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union, overload
 from urllib.parse import urlencode
 
 import requests
@@ -316,23 +316,23 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryMixIn):
     def _api_query(  # pylint: disable=no-self-use
             self,
             endpoint: Literal['user/balances'],
-            options: Optional[Dict[str, Any]],
-    ) -> List[Dict[str, Any]]:
+            options: Optional[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
         ...
 
     @overload
     def _api_query(  # pylint: disable=no-self-use
             self,
             endpoint: Literal['account'],
-            options: Optional[Dict[str, Any]],
-    ) -> Dict[str, Any]:
+            options: Optional[dict[str, Any]],
+    ) -> dict[str, Any]:
         ...
 
     def _api_query(
             self,
             endpoint: str,
-            options: Optional[Dict[str, Any]],
-    ) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
+            options: Optional[dict[str, Any]],
+    ) -> Union[dict[str, Any], list[dict[str, Any]]]:
         querystr = self.base_url + endpoint
         if options is not None:
             querystr += '?' + urlencode(options)
@@ -422,7 +422,7 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryMixIn):
 
         return account_id
 
-    def get_account_balances(self, account_id: int) -> Dict[CryptoAsset, Balance]:
+    def get_account_balances(self, account_id: int) -> dict[CryptoAsset, Balance]:
         """Get the loopring balances of a given account id
 
         May Raise:
@@ -475,8 +475,8 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryMixIn):
     @protect_with_lock()
     def get_balances(
             self,
-            addresses: List[ChecksumEvmAddress],
-    ) -> Dict[ChecksumEvmAddress, Dict[CryptoAsset, Balance]]:
+            addresses: list[ChecksumEvmAddress],
+    ) -> dict[ChecksumEvmAddress, dict[CryptoAsset, Balance]]:
         """Gets all loopring balances of the given addresses
 
         Since this is the only point of entry to loopring here we check for api key.

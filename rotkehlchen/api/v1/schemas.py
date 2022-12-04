@@ -1,17 +1,6 @@
 import logging
 from enum import auto
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    List,
-    Literal,
-    Optional,
-    Tuple,
-    Union,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Union, overload
 from uuid import uuid4
 
 import webargs
@@ -175,7 +164,7 @@ class BalanceSchema(Schema):
     @post_load
     def make_balance_entry(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
     ) -> Balance:
         """Create a Balance struct. This should not raise since it's checked by Marshmallow"""
@@ -202,7 +191,7 @@ class DBOrderBySchema(Schema):
     @validates_schema
     def validate_order_by_schema(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
     ) -> None:
         if (data['order_by_attributes'] is None) ^ (data['ascending'] is None):
@@ -244,7 +233,7 @@ class EthereumTransactionQuerySchema(
     @validates_schema
     def validate_ethtx_query_schema(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
     ) -> None:
         valid_ordering_attr = {None, 'timestamp'}
@@ -270,9 +259,9 @@ class EthereumTransactionQuerySchema(
     @post_load
     def make_ethereum_transaction_query(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         address = data.get('address')
         protocols, asset = data['protocols'], data['asset']
         exclude_ignored_assets = data['exclude_ignored_assets']
@@ -313,7 +302,7 @@ class EthereumTransactionDecodingSchema(AsyncIgnoreCacheQueryArgumentSchema):
     @validates_schema
     def validate_schema(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
     ) -> None:
         tx_hashes = data.get('tx_hashes')
@@ -344,7 +333,7 @@ class TradesQuerySchema(
     @validates_schema
     def validate_trades_query_schema(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
     ) -> None:
         valid_ordering_attr = {
@@ -372,11 +361,11 @@ class TradesQuerySchema(
     @post_load
     def make_trades_query(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
-    ) -> Dict[str, Any]:
-        base_assets: Optional[Tuple['Asset', ...]] = None
-        quote_assets: Optional[Tuple['Asset', ...]] = None
+    ) -> dict[str, Any]:
+        base_assets: Optional[tuple['Asset', ...]] = None
+        quote_assets: Optional[tuple['Asset', ...]] = None
         if data['base_asset'] is not None:
             base_assets = (data['base_asset'],)
         if data['quote_asset'] is not None:
@@ -430,9 +419,9 @@ class StakingQuerySchema(
     @post_load
     def make_staking_query(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         if data['order_by_attributes'] is not None:
             attributes = []
             for order_by_attribute in data['order_by_attributes']:
@@ -441,7 +430,7 @@ class StakingQuerySchema(
                 else:
                     attributes.append(order_by_attribute)
             data['order_by_attributes'] = attributes
-        asset_list: Optional[Tuple['AssetWithOracles', ...]] = None
+        asset_list: Optional[tuple['AssetWithOracles', ...]] = None
         if data['asset'] is not None:
             asset_list = (data['asset'],)
         if self.treat_eth2_as_eth is True and data['asset'] == A_ETH:
@@ -519,7 +508,7 @@ class HistoryBaseEntrySchema(Schema):
     @validates_schema
     def validate_history_entry_schema(
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
     ) -> None:
         if self.identifier_required is True and data['identifier'] is None:
@@ -532,9 +521,9 @@ class HistoryBaseEntrySchema(Schema):
     @post_load
     def make_history_base_entry(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         if data['event_subtype'] is None:
             data['event_subtype'] = HistoryEventSubType.NONE
         return {'event': HistoryBaseEntry(**data)}
@@ -562,7 +551,7 @@ class AssetMovementsQuerySchema(
     @validates_schema
     def validate_asset_movements_query_schema(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
     ) -> None:
         valid_ordering_attr = {
@@ -589,10 +578,10 @@ class AssetMovementsQuerySchema(
     @post_load
     def make_asset_movements_query(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
-    ) -> Dict[str, Any]:
-        asset_list: Optional[Tuple['Asset', ...]] = None
+    ) -> dict[str, Any]:
+        asset_list: Optional[tuple['Asset', ...]] = None
         if data['asset'] is not None:
             asset_list = (data['asset'],)
         if self.treat_eth2_as_eth is True and data['asset'] == A_ETH:
@@ -637,7 +626,7 @@ class LedgerActionsQuerySchema(
     @validates_schema
     def validate_asset_movements_query_schema(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
     ) -> None:
         valid_ordering_attr = {
@@ -664,10 +653,10 @@ class LedgerActionsQuerySchema(
     @post_load
     def make_asset_movements_query(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
-    ) -> Dict[str, Any]:
-        asset_list: Optional[Tuple['Asset', ...]] = None
+    ) -> dict[str, Any]:
+        asset_list: Optional[tuple['Asset', ...]] = None
         if data['asset'] is not None:
             asset_list = (data['asset'],)
         if self.treat_eth2_as_eth is True and data['asset'] == A_ETH:
@@ -706,7 +695,7 @@ class TradeSchema(Schema):
     @validates_schema
     def validate_trade(  # pylint: disable=no-self-use
         self,
-        data: Dict[str, Any],
+        data: dict[str, Any],
         **_kwargs: Any,
     ) -> None:
         """This validation checks that fee_currency is provided whenever fee is given and
@@ -746,7 +735,7 @@ class LedgerActionSchema(Schema):
     @validates_schema
     def validate_ledger_action_schema(
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
     ) -> None:
         if self.identifier_required is True and data['identifier'] is None:
@@ -758,9 +747,9 @@ class LedgerActionSchema(Schema):
     @post_load(pass_many=True)
     def make_ledger_action(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
-    ) -> Dict[str, LedgerAction]:
+    ) -> dict[str, LedgerAction]:
         return {'action': LedgerAction(**data)}
 
 
@@ -787,7 +776,7 @@ class ManuallyTrackedBalanceAddSchema(Schema):
     @post_load
     def make_manually_tracked_balances(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
     ) -> ManuallyTrackedBalance:
         data['id'] = -1  # can be any value because id will be set automatically
@@ -800,7 +789,7 @@ class ManuallyTrackedBalanceEditSchema(ManuallyTrackedBalanceAddSchema):
     @post_load
     def make_manually_tracked_balances(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
     ) -> ManuallyTrackedBalance:
         return ManuallyTrackedBalance(**data)
@@ -839,7 +828,7 @@ class TagSchema(Schema):
     @validates_schema
     def validate_tag_schema(
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
     ) -> None:
         if self.color_required is True and None in (data['background_color'], data['foreground_color']):  # noqa: E501
@@ -854,7 +843,7 @@ class NameDeleteSchema(Schema):
 
 
 def _validate_current_price_oracles(
-        current_price_oracles: List[CurrentPriceOracle],
+        current_price_oracles: list[CurrentPriceOracle],
 ) -> None:
     """Prevents repeated oracle names and empty list"""
     if (
@@ -871,7 +860,7 @@ def _validate_current_price_oracles(
 
 
 def _validate_historical_price_oracles(
-        historical_price_oracles: List[HistoricalPriceOracle],
+        historical_price_oracles: list[HistoricalPriceOracle],
 ) -> None:
     """Prevents repeated oracle names and empty list"""
     if (
@@ -894,7 +883,7 @@ class ExchangeLocationIDSchema(Schema):
     @post_load()
     def make_exchange_location_id(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
     ) -> ExchangeLocationID:
         return ExchangeLocationID(name=data['name'], location=data['location'])
@@ -984,7 +973,7 @@ class ModifiableSettingsSchema(Schema):
     @validates_schema
     def validate_settings_schema(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
     ) -> None:
         if data['active_modules'] is not None:
@@ -998,7 +987,7 @@ class ModifiableSettingsSchema(Schema):
     @post_load
     def transform_data(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
     ) -> Any:
         return ModifiableDBSettings(
@@ -1054,7 +1043,7 @@ class UserActionSchema(Schema):
     @validates_schema
     def validate_user_action_schema(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
     ) -> None:
         if data['action'] is None and (data['premium_api_key'] == '' or data['premium_api_secret'] == ''):  # noqa: 501
@@ -1105,7 +1094,7 @@ class ExternalServiceSchema(Schema):
     @post_load
     def make_external_service(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
     ) -> ExternalServiceApiCredentials:
         """Used when encoding an external resource given in via the API"""
@@ -1198,7 +1187,7 @@ class AccountingReportsSchema(Schema):
     @validates_schema
     def validate_accounting_reports_schema(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
     ) -> None:
         if self.required_report_id and data['report_id'] is None:
@@ -1214,7 +1203,7 @@ class AccountingReportDataSchema(DBPaginationSchema, DBOrderBySchema):
     @validates_schema
     def validate_report_schema(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
     ) -> None:
         valid_ordering_attr = {None, 'timestamp'}
@@ -1234,9 +1223,9 @@ class AccountingReportDataSchema(DBPaginationSchema, DBOrderBySchema):
     @post_load
     def make_report_data_query(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         report_id = data.get('report_id')
         event_type = data.get('event_type')
         filter_query = ReportDataFilterQuery.make(
@@ -1265,7 +1254,7 @@ class BlockchainAccountDataSchema(Schema):
     @validates_schema
     def validate_blockchain_account_schema(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
     ) -> None:
         label = data.get('label', None)
@@ -1296,7 +1285,7 @@ class XpubAddSchema(AsyncQueryArgumentSchema):
     @post_load
     def transform_data(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
     ) -> Any:
         xpub_type = data.pop('xpub_type', None)
@@ -1329,7 +1318,7 @@ class BlockchainAccountsGetSchema(Schema):
 
 
 def _validate_blockchain_account_schemas(
-        data: Dict[str, Any],
+        data: dict[str, Any],
         address_getter: Callable,
 ) -> None:
     """Validates schema input for the PUT/PATCH/DELETE on blockchain account data"""
@@ -1590,7 +1579,7 @@ class BlockchainAccountsPatchSchema(Schema):
     @validates_schema
     def validate_schema(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
     ) -> None:
         _validate_blockchain_account_schemas(data, lambda x: x['address'])
@@ -1598,7 +1587,7 @@ class BlockchainAccountsPatchSchema(Schema):
     @post_load
     def transform_data(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
     ) -> Any:
         if data['blockchain'] in (SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH):
@@ -1647,7 +1636,7 @@ class BlockchainAccountsDeleteSchema(AsyncQueryArgumentSchema):
     @validates_schema
     def validate_blockchain_accounts_delete_schema(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
     ) -> None:
         _validate_blockchain_account_schemas(data, lambda x: x)
@@ -1655,7 +1644,7 @@ class BlockchainAccountsDeleteSchema(AsyncQueryArgumentSchema):
     @post_load
     def transform_data(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
     ) -> Any:
         if data['blockchain'] in (SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH):
@@ -1716,7 +1705,7 @@ class UnderlyingTokenInfoSchema(Schema):
 
 
 def _validate_single_oracle_id(
-        data: Dict[str, Any],
+        data: dict[str, Any],
         oracle_name: Literal['coingecko', 'cryptocompare'],
         oracle_obj: 'HistoricalPriceOracleInterface',
 ) -> None:
@@ -1769,7 +1758,7 @@ class CryptoAssetSchema(BaseCryptoAssetSchema):
     @validates_schema
     def validate_schema(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
     ) -> None:
         if self.identifier_required is True and data['identifier'] is None:
@@ -1799,7 +1788,7 @@ class AssetsPostSchema(DBPaginationSchema, DBOrderBySchema):
     @validates_schema
     def validate_schema(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
     ) -> None:
         # the length of `order_by_attributes` and `ascending` are the same. So check only one.
@@ -1812,11 +1801,11 @@ class AssetsPostSchema(DBPaginationSchema, DBOrderBySchema):
     @post_load
     def make_assets_post_query(
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         with self.db.user_write() as write_cursor, GlobalDBHandler().conn.read_ctx() as globaldb_read_cursor:  # noqa: E501
-            ignored_assets_filter_params: Optional[Tuple[Literal['IN', 'NOT IN'], List[str]]] = None  # noqa: E501
+            ignored_assets_filter_params: Optional[tuple[Literal['IN', 'NOT IN'], list[str]]] = None  # noqa: E501
             if data['ignored_assets_handling'] == IgnoredAssetsHandling.EXCLUDE:
                 ignored_assets_filter_params = (
                     'NOT IN',
@@ -1860,9 +1849,9 @@ class AssetsSearchLevenshteinSchema(Schema):
     @post_load
     def make_levenshtein_search_query(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         filter_query = LevenshteinFilterQuery.make(
             and_op=True,
             substring_search=data['value'].strip().casefold(),
@@ -1887,9 +1876,9 @@ class AssetsSearchByColumnSchema(DBOrderBySchema, DBPaginationSchema):
     @post_load
     def make_assets_search_query(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         filter_query = AssetsFilterQuery.make(
             and_op=True,
             order_by_rules=create_order_by_rules_list(data=data, default_order_by_field='name'),
@@ -1934,7 +1923,7 @@ class EvmTokenSchema(BaseCryptoAssetSchema, RequiredEthereumAddressSchema):
     @validates_schema
     def validate_ethereum_token_schema(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
     ) -> None:
         given_underlying_tokens = data.get('underlying_tokens', None)
@@ -1966,7 +1955,7 @@ class EvmTokenSchema(BaseCryptoAssetSchema, RequiredEthereumAddressSchema):
     @post_load
     def transform_data(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
     ) -> EvmToken:
         given_underlying_tokens = data.pop('underlying_tokens', None)
@@ -2001,7 +1990,7 @@ class ModifyEvmTokenSchema(Schema):
     @validates_schema
     def validate_modify_ethereum_token_schema(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
     ) -> None:
         # Not the best way to do it. Need to manually validate, coingecko/cryptocompare id here
@@ -2041,7 +2030,7 @@ class DataImportSchema(AsyncQueryArgumentSchema):
     @post_load
     def transform_data(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
     ) -> Any:
         if data['timestamp_format'] is None:
@@ -2234,7 +2223,7 @@ class Eth2ValidatorSchema(Schema):
     @validates_schema
     def validate_eth2_validator_schema(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
     ) -> None:
         validator_index = data.get('validator_index')
@@ -2260,7 +2249,7 @@ class Eth2ValidatorSchema(Schema):
     @post_load
     def transform_data(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
     ) -> Any:
         public_key = data.get('public_key')
@@ -2303,7 +2292,7 @@ class Eth2DailyStatsSchema(
     @validates_schema
     def validate_eth2_daily_stats_schema(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
     ) -> None:
         valid_ordering_attr = {
@@ -2341,9 +2330,9 @@ class Eth2DailyStatsSchema(
     @post_load
     def make_eth2_daily_stats_query(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         filter_query = Eth2DailyStatsFilterQuery.make(
             order_by_rules=create_order_by_rules_list(data),
             limit=data['limit'],
@@ -2389,7 +2378,7 @@ class AssetsImportingSchema(Schema):
     @validates_schema
     def validate_schema(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
     ) -> None:
         file = data.get('file')
@@ -2429,7 +2418,7 @@ class AddressbookEntrySchema(Schema):
     name = fields.String(required=True)
 
     @post_load()
-    def make_addressbook_entry(self, data: Dict[str, Any], **_kwargs: Any) -> AddressbookEntry:  # pylint: disable=no-self-use  # noqa: E501
+    def make_addressbook_entry(self, data: dict[str, Any], **_kwargs: Any) -> AddressbookEntry:  # pylint: disable=no-self-use  # noqa: E501
         return AddressbookEntry(address=data['address'], name=data['name'])
 
 
@@ -2456,7 +2445,7 @@ class SnapshotQuerySchema(SnapshotTimestampQuerySchema):
     @validates_schema
     def validate_schema(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
     ) -> None:
         path = data.get('path')
@@ -2482,7 +2471,7 @@ class BalanceSnapshotSchema(Schema):
     @post_load
     def make_balance(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
     ) -> DBAssetBalance:
         return DBAssetBalance(
@@ -2502,7 +2491,7 @@ class LocationDataSnapshotSchema(Schema):
     @post_load
     def make_location_data(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
     ) -> LocationData:
         return LocationData(
@@ -2528,7 +2517,7 @@ class SnapshotEditingSchema(Schema):
     @validates_schema
     def validate_schema(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
     ) -> None:
         if not data['timestamp'] == data['balances_snapshot'][0].time == data['location_data_snapshot'][0].time:  # noqa: 501
@@ -2570,7 +2559,7 @@ class RpcNodeEditSchema(RpcAddNodeSchema):
     @validates_schema
     def validate_schema(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
     ) -> None:
         if data['identifier'] == 1 and data['name'] != ETHEREUM_ETHERSCAN_NODE_NAME:
@@ -2593,7 +2582,7 @@ class RpcNodeListDeleteSchema(Schema):
     @validates_schema
     def validate_schema(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
     ) -> None:
         if data['identifier'] == 1:
@@ -2622,7 +2611,7 @@ class UserNotesPatchSchema(UserNotesPutSchema, IntegerIdentifierSchema):
     last_update_timestamp = TimestampField(required=True)
 
     @post_load
-    def make_user_note(self, data: Dict[str, Any], **_kwargs: Any) -> Dict[str, UserNote]:
+    def make_user_note(self, data: dict[str, Any], **_kwargs: Any) -> dict[str, UserNote]:
         return {'user_note': UserNote.deserialize(data)}
 
 
@@ -2635,9 +2624,9 @@ class UserNotesGetSchema(DBPaginationSchema, DBOrderBySchema):
     @post_load
     def make_user_notes_query(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         filter_query = UserNotesFilterQuery.make(
             order_by_rules=create_order_by_rules_list(data, 'last_update_timestamp'),
             limit=data['limit'],
@@ -2660,9 +2649,9 @@ class CustomAssetsQuerySchema(DBPaginationSchema, DBOrderBySchema):
     @post_load
     def make_custom_assets_query(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         filter_query = CustomAssetsFilterQuery.make(
             limit=data['limit'],
             offset=data['offset'],
@@ -2686,9 +2675,9 @@ class BaseCustomAssetSchema(Schema):
     @post_load
     def make_custom_asset(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
-    ) -> Dict[str, CustomAsset]:
+    ) -> dict[str, CustomAsset]:
         custom_asset = CustomAsset.initialize(
             identifier=str(uuid4()),
             name=data['name'],
@@ -2704,9 +2693,9 @@ class EditCustomAssetSchema(BaseCustomAssetSchema):
     @post_load
     def make_custom_asset(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
-    ) -> Dict[str, CustomAsset]:
+    ) -> dict[str, CustomAsset]:
         custom_asset = CustomAsset.initialize(
             identifier=str(data['identifier']),
             name=data['name'],
@@ -2741,10 +2730,10 @@ class NFTFilterQuerySchema(
     @post_load
     def make_nft_filter_query(  # pylint: disable=no-self-use
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **_kwargs: Any,
-    ) -> Dict[str, Any]:
-        ignored_assets_filter_params: Optional[Tuple[Literal['IN', 'NOT IN'], List[str]]] = None  # noqa: E501
+    ) -> dict[str, Any]:
+        ignored_assets_filter_params: Optional[tuple[Literal['IN', 'NOT IN'], list[str]]] = None  # noqa: E501
         with self.db.conn.read_ctx() as cursor:
             if data['ignored_assets_handling'] == IgnoredAssetsHandling.EXCLUDE:
                 ignored_assets_filter_params = (

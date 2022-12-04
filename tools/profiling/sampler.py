@@ -5,7 +5,7 @@ import sys
 import threading
 import time
 from types import FrameType
-from typing import IO, Any, Dict, List, NewType, Optional
+from typing import IO, Any, NewType, Optional
 
 import greenlet
 import objgraph
@@ -20,7 +20,7 @@ from .timer import TIMER, TIMER_SIGNAL, Timer
 # - Experiment with heapy or PySizer for memory profiling / leak hunting
 
 FlameStack = NewType("FlameStack", str)
-FlameGraph = Dict[FlameStack, float]
+FlameGraph = dict[FlameStack, float]
 
 
 def frame_format(frame: FrameType) -> str:
@@ -29,7 +29,7 @@ def frame_format(frame: FrameType) -> str:
     return "{}({})".format(block_name, module_name)
 
 
-def collect_frames(frame: FrameType) -> List[str]:
+def collect_frames(frame: FrameType) -> list[str]:
     callstack = []
     optional_frame: Optional[FrameType] = frame
     while optional_frame is not None:
@@ -67,7 +67,7 @@ def sample_memory(timestamp: float, pid: int, stream: IO) -> None:
 def sample_objects(timestamp: float, stream: IO) -> None:
     # instead of keeping the count_per_type in memory, stream the data to a file
     # to save memory
-    count_per_type: Dict[str, int] = objgraph.typestats()
+    count_per_type: dict[str, int] = objgraph.typestats()
 
     # add the timestamp for plotting
     data = [timestamp, count_per_type]

@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Optional
 
 from rotkehlchen.chain.ethereum.constants import ETHEREUM_BEGIN, GENESIS_HASH
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
@@ -48,11 +48,11 @@ class DBEvmTx():
     def add_evm_transactions(
             self,
             write_cursor: 'DBCursor',
-            evm_transactions: List[EvmTransaction],
+            evm_transactions: list[EvmTransaction],
             relevant_address: Optional[ChecksumEvmAddress],
     ) -> None:
         """Adds evm transactions to the database"""
-        tx_tuples: List[Tuple[Any, ...]] = []
+        tx_tuples: list[tuple[Any, ...]] = []
         for tx in evm_transactions:
             tx_tuples.append((
                 tx.tx_hash,
@@ -96,11 +96,11 @@ class DBEvmTx():
     def add_evm_internal_transactions(
             self,
             write_cursor: 'DBCursor',
-            transactions: List[EvmInternalTransaction],
+            transactions: list[EvmInternalTransaction],
             relevant_address: ChecksumEvmAddress,
     ) -> None:
         """Adds evm internal transactions to the database"""
-        tx_tuples: List[Tuple[Any, ...]] = []
+        tx_tuples: list[tuple[Any, ...]] = []
         for tx in transactions:
             tx_tuples.append((
                 tx.parent_tx_hash,
@@ -137,7 +137,7 @@ class DBEvmTx():
             self,
             parent_tx_hash: EVMTxHash,
             blockchain: SupportedBlockchain,
-    ) -> List[EvmInternalTransaction]:
+    ) -> list[EvmInternalTransaction]:
         """Get all internal transactions under a parent tx_hash for a given chain"""
         chain_id = blockchain.to_chain_id().serialize_for_db()
         cursor = self.db.conn.cursor()
@@ -166,7 +166,7 @@ class DBEvmTx():
             cursor: 'DBCursor',
             filter_: EvmTransactionsFilterQuery,
             has_premium: bool,
-    ) -> List[EvmTransaction]:
+    ) -> list[EvmTransaction]:
         """Returns a list of evm transactions optionally filtered by
         the given filter query
 
@@ -215,7 +215,7 @@ class DBEvmTx():
             cursor: 'DBCursor',
             filter_: EvmTransactionsFilterQuery,
             has_premium: bool,
-    ) -> Tuple[List[EvmTransaction], int]:
+    ) -> tuple[list[EvmTransaction], int]:
         """Gets all evm transactions for the query from the DB.
 
         Also returns how many are the total found for the filter.
@@ -243,7 +243,7 @@ class DBEvmTx():
             self,
             tx_filter_query: Optional[EvmTransactionsFilterQuery],
             limit: Optional[int],
-    ) -> List[EVMTxHash]:
+    ) -> list[EVMTxHash]:
         cursor = self.db.conn.cursor()
         querystr = 'SELECT DISTINCT tx_hash FROM evm_transactions '
         bindings = ()
@@ -272,7 +272,7 @@ class DBEvmTx():
             self,
             chain_id: Optional[ChainID],
             limit: Optional[int],
-    ) -> List[EVMTxHash]:
+    ) -> list[EVMTxHash]:
         """Get transaction hashes for the transactions that have not been decoded.
         Optionally by chain id.
         If the limit argument is provided then it is used in the SQL query with
@@ -301,7 +301,7 @@ class DBEvmTx():
             self,
             write_cursor: 'DBCursor',
             chain_id: ChainID,
-            data: Dict[str, Any],
+            data: dict[str, Any],
     ) -> None:
         """Add tx receipt data as they are returned by the chain to the DB
 
@@ -466,7 +466,7 @@ class DBEvmTx():
             cursor: 'DBCursor',
             address: ChecksumEvmAddress,
             chain: EVMChain,
-    ) -> Tuple[Timestamp, Timestamp]:
+    ) -> tuple[Timestamp, Timestamp]:
         """Gets the most conservative range that was queried for the
         transactions of an address for a specific evm chain
 

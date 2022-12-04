@@ -1,6 +1,6 @@
 import csv
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 from uuid import uuid4
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -29,7 +29,7 @@ class RotkiGenericEventsImporter(BaseExchangeImporter):
     def _consume_rotki_event(
             self,
             cursor: DBCursor,
-            csv_row: Dict[str, Any],
+            csv_row: dict[str, Any],
             sequence_index: int,
     ) -> None:
         """Consume rotki generic events import CSV file.
@@ -44,7 +44,7 @@ class RotkiGenericEventsImporter(BaseExchangeImporter):
             event_type, event_subtype = GENERIC_TYPE_TO_HISTORY_EVENT_TYPE_MAPPINGS[csv_row['Type']]  # noqa: E501
         except KeyError as e:
             raise UnsupportedCSVEntry(f'Unsupported entry {csv_row["Type"]}. Data: {csv_row}') from e  # noqa: E501
-        events: List[HistoryBaseEntry] = []
+        events: list[HistoryBaseEntry] = []
         location = Location.deserialize(csv_row['Location'])
         timestamp = TimestampMS(deserialize_timestamp(csv_row['Timestamp']))
         fee = Fee(deserialize_asset_amount(csv_row['Fee'])) if csv_row['Fee'] else Fee(ZERO)  # noqa: E501

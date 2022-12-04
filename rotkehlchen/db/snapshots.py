@@ -1,7 +1,7 @@
 import logging
 from pathlib import Path
 from tempfile import mkdtemp
-from typing import TYPE_CHECKING, List, Optional, Tuple
+from typing import TYPE_CHECKING, Optional
 from zipfile import ZIP_DEFLATED, ZipFile
 
 from rotkehlchen.accounting.export.csv import CSVWriteError, _dict_to_csv_file
@@ -39,7 +39,7 @@ class DBSnapshot:
             self,
             cursor: 'DBCursor',
             timestamp: Timestamp,
-    ) -> List[DBAssetBalance]:
+    ) -> list[DBAssetBalance]:
         """Retrieves the timed_balances from the db for a given timestamp."""
         balances_data = []
         cursor.execute(
@@ -66,7 +66,7 @@ class DBSnapshot:
     def get_timed_location_data(
             cursor: 'DBCursor',
             timestamp: Timestamp,
-    ) -> List[LocationData]:
+    ) -> list[LocationData]:
         """Retrieves the timed_location_data from the db for a given timestamp."""
         location_data = []
         cursor.execute(
@@ -86,11 +86,11 @@ class DBSnapshot:
 
     def create_zip(
             self,
-            timed_balances: List[DBAssetBalance],
-            timed_location_data: List[LocationData],
+            timed_balances: list[DBAssetBalance],
+            timed_location_data: list[LocationData],
             main_currency: AssetWithOracles,
             main_currency_price: Price,
-    ) -> Tuple[bool, str]:
+    ) -> tuple[bool, str]:
         """Creates a zip file of csv files containing timed_balances and timed_location_data."""
         dirpath = Path(mkdtemp())
         success, msg = self._export(
@@ -103,7 +103,7 @@ class DBSnapshot:
         if not success:
             return False, msg
 
-        files: List[Tuple[Path, str]] = [
+        files: list[tuple[Path, str]] = [
             (dirpath / BALANCES_FILENAME, BALANCES_FILENAME),
             (dirpath / BALANCES_FOR_IMPORT_FILENAME, BALANCES_FOR_IMPORT_FILENAME),
             (dirpath / LOCATION_DATA_FILENAME, LOCATION_DATA_FILENAME),
@@ -129,7 +129,7 @@ class DBSnapshot:
             self,
             timestamp: Timestamp,
             directory_path: Optional[Path],
-    ) -> Tuple[bool, str]:
+    ) -> tuple[bool, str]:
         """Export the database's snapshot for specified timestamp.
 
         If `directory_path` is provided, the snapshot generated is written to directory.
@@ -167,12 +167,12 @@ class DBSnapshot:
 
     @staticmethod
     def _export(
-            timed_balances: List[DBAssetBalance],
-            timed_location_data: List[LocationData],
+            timed_balances: list[DBAssetBalance],
+            timed_location_data: list[LocationData],
             directory: Path,
             main_currency: AssetWithOracles,
             main_currency_price: Price,
-    ) -> Tuple[bool, str]:
+    ) -> tuple[bool, str]:
         """Serializes the balances and location_data snapshots into a dictionary.
         It then writes the serialized data to a csv file.
         """
@@ -207,8 +207,8 @@ class DBSnapshot:
     def import_snapshot(
             self,
             write_cursor: 'DBCursor',
-            processed_balances_list: List[DBAssetBalance],
-            processed_location_data_list: List[LocationData],
+            processed_balances_list: list[DBAssetBalance],
+            processed_location_data_list: list[LocationData],
     ) -> None:
         """Import the validated snapshot data to the database.
         May raise:
@@ -226,8 +226,8 @@ class DBSnapshot:
             self,
             write_cursor: 'DBCursor',
             timestamp: Timestamp,
-            balances_snapshot: List[DBAssetBalance],
-            location_data_snapshot: List[LocationData],
+            balances_snapshot: list[DBAssetBalance],
+            location_data_snapshot: list[LocationData],
     ) -> None:
         """Updates a DB Balance snapshot at a given timestamp.
         May raise:
@@ -258,7 +258,7 @@ class DBSnapshot:
         if write_cursor.rowcount == 0:
             raise InputError('No snapshot found for the specified timestamp')
 
-    def add_nft_asset_ids(self, write_cursor: 'DBCursor', entries: List[str]) -> None:
+    def add_nft_asset_ids(self, write_cursor: 'DBCursor', entries: list[str]) -> None:
         """Add NFT identifiers to the DB to prevent unknown asset error."""
         nft_ids = []
         for entry in entries:

@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Optional
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
@@ -44,10 +44,10 @@ class WethDecoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: List[HistoryBaseEntry],
-            all_logs: List[EvmTxReceiptLog],
-            action_items: Optional[List[ActionItem]],
-    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
+            decoded_events: list[HistoryBaseEntry],
+            all_logs: list[EvmTxReceiptLog],
+            action_items: Optional[list[ActionItem]],
+    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         if tx_log.topics[0] == WETH_DEPOSIT_TOPIC:
             return self._decode_deposit_event(
                 tx_log=tx_log,
@@ -72,10 +72,10 @@ class WethDecoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: List[HistoryBaseEntry],
-            all_logs: List[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: Optional[List[ActionItem]],  # pylint: disable=unused-argument
-    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
+            decoded_events: list[HistoryBaseEntry],
+            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+            action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
+    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         depositor = hex_or_bytes_to_address(tx_log.topics[1])
         deposited_amount_raw = hex_or_bytes_to_int(tx_log.data[:32])
         deposited_amount = asset_normalized_value(amount=deposited_amount_raw, asset=self.eth)
@@ -119,10 +119,10 @@ class WethDecoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: List[HistoryBaseEntry],
-            all_logs: List[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: Optional[List[ActionItem]],  # pylint: disable=unused-argument
-    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
+            decoded_events: list[HistoryBaseEntry],
+            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+            action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
+    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         withdrawer = hex_or_bytes_to_address(tx_log.topics[1])
         withdrawn_amount_raw = hex_or_bytes_to_int(tx_log.data[:32])
         withdrawn_amount = asset_normalized_value(amount=withdrawn_amount_raw, asset=self.eth)
@@ -167,10 +167,10 @@ class WethDecoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
-    def addresses_to_decoders(self) -> Dict[ChecksumEvmAddress, Tuple[Any, ...]]:
+    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
             WETH_CONTRACT: (self._decode_weth,),
         }
 
-    def counterparties(self) -> List[str]:
+    def counterparties(self) -> list[str]:
         return [CPT_WETH]

@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Optional, Type, TypeVar
+from typing import TYPE_CHECKING, Optional, TypeVar
 
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
@@ -126,7 +126,7 @@ class AssetResolver():
     @staticmethod
     def resolve_asset_to_class(
             identifier: str,
-            expected_type: Type[T],
+            expected_type: type[T],
             form_with_incomplete_data: bool = False,
     ) -> T:
         """

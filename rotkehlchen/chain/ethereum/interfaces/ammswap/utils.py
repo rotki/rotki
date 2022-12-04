@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, NamedTuple, Set, Tuple, Union
+from typing import TYPE_CHECKING, NamedTuple, Union
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
@@ -40,7 +40,7 @@ class TokenDetails(NamedTuple):
     amount: FVal
 
 
-def _decode_token(entry: Tuple) -> TokenDetails:
+def _decode_token(entry: tuple) -> TokenDetails:
     decimals = entry[0][3]
     return TokenDetails(
         address=entry[0][0],
@@ -53,9 +53,9 @@ def _decode_token(entry: Tuple) -> TokenDetails:
 
 def _decode_result(
         userdb: 'DBHandler',
-        data: Tuple,
-        known_assets: Set[EvmToken],
-        unknown_assets: Set[EvmToken],
+        data: tuple,
+        known_assets: set[EvmToken],
+        unknown_assets: set[EvmToken],
 ) -> LiquidityPool:
     pool_token = _decode_token(data[0])
     token0 = _decode_token(data[1][0])

@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional
+from typing import TYPE_CHECKING, Any, Iterator, Optional
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.accounting.structures.base import ActionType
@@ -12,7 +12,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_optional,
     deserialize_timestamp,
 )
-from rotkehlchen.types import AssetAmount, Location, Price, Timestamp, Tuple
+from rotkehlchen.types import AssetAmount, Location, Price, Timestamp
 from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn
 
 if TYPE_CHECKING:
@@ -43,7 +43,7 @@ class LedgerActionType(DBEnumMixIn):
         )
 
 
-LedgerActionDBTuple = Tuple[
+LedgerActionDBTuple = tuple[
     int,  # timestamp
     str,  # action_type
     str,  # location
@@ -56,7 +56,7 @@ LedgerActionDBTuple = Tuple[
 ]
 
 
-LedgerActionDBTupleWithIdentifier = Tuple[
+LedgerActionDBTupleWithIdentifier = tuple[
     int,  # identifier
     int,  # timestamp
     str,  # action_type
@@ -97,7 +97,7 @@ class LedgerAction(AccountingEventMixin):
             f'link={self.link} notes={self.notes}>'
         )
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self) -> dict[str, Any]:
         return {
             'identifier': self.identifier,
             'timestamp': self.timestamp,
@@ -112,7 +112,7 @@ class LedgerAction(AccountingEventMixin):
         }
 
     @classmethod
-    def deserialize(cls, data: Dict[str, Any]) -> 'LedgerAction':
+    def deserialize(cls, data: dict[str, Any]) -> 'LedgerAction':
         """Deserializes a ledger action dict to a LedgerAction object.
         May raise:
             - DeserializationError
@@ -186,10 +186,10 @@ class LedgerAction(AccountingEventMixin):
     def get_identifier(self) -> str:
         return str(self.identifier)
 
-    def should_ignore(self, ignored_ids_mapping: Dict[ActionType, List[str]]) -> bool:
+    def should_ignore(self, ignored_ids_mapping: dict[ActionType, list[str]]) -> bool:
         return self.get_identifier() in ignored_ids_mapping.get(ActionType.LEDGER_ACTION, [])
 
-    def get_assets(self) -> List[Asset]:
+    def get_assets(self) -> list[Asset]:
         return [self.asset]
 
     def process(

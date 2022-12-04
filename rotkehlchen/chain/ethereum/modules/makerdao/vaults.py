@@ -1,7 +1,7 @@
 import logging
 from collections import defaultdict
 from enum import Enum
-from typing import TYPE_CHECKING, Any, DefaultDict, Dict, List, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, DefaultDict, NamedTuple, Optional
 
 from gevent.lock import Semaphore
 
@@ -58,7 +58,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def create_collateral_type_mapping() -> Dict[str, CryptoAsset]:
+def create_collateral_type_mapping() -> dict[str, CryptoAsset]:
     """Create a mapping with resolved assets for those used as collateral in maker"""
     return {
         'BAT-A': A_BAT.resolve_to_crypto_asset(),
@@ -145,7 +145,7 @@ class MakerdaoVault(NamedTuple):
     urn: ChecksumEvmAddress
     stability_fee: FVal
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self) -> dict[str, Any]:
         result = self._asdict()  # pylint: disable=no-member
         # But make sure to turn liquidation ratio and stability fee to a percentage
         result['collateral_asset'] = self.collateral_asset.identifier
@@ -184,7 +184,7 @@ class MakerdaoVaultDetails(NamedTuple):
     total_interest_owed: FVal
     # The total amount/usd_value of collateral that got liquidated
     total_liquidated: Balance
-    events: List[VaultEvent]
+    events: list[VaultEvent]
 
 
 class MakerdaoVaults(HasDSProxy):
@@ -205,10 +205,10 @@ class MakerdaoVaults(HasDSProxy):
         )
         self.reset_last_query_ts()
         self.lock = Semaphore()
-        self.usd_price: Dict[str, FVal] = defaultdict(FVal)
-        self.vault_mappings: Dict[ChecksumEvmAddress, List[MakerdaoVault]] = defaultdict(list)
-        self.ilk_to_stability_fee: Dict[bytes, FVal] = {}
-        self.vault_details: List[MakerdaoVaultDetails] = []
+        self.usd_price: dict[str, FVal] = defaultdict(FVal)
+        self.vault_mappings: dict[ChecksumEvmAddress, list[MakerdaoVault]] = defaultdict(list)
+        self.ilk_to_stability_fee: dict[bytes, FVal] = {}
+        self.vault_details: list[MakerdaoVaultDetails] = []
         self.collateral_type_mapping = create_collateral_type_mapping()
         self.dai = A_DAI.resolve_to_evm_token()
         self.gemjoin_mapping = {
@@ -600,7 +600,7 @@ class MakerdaoVaults(HasDSProxy):
             self,
             user_address: ChecksumEvmAddress,
             proxy_address: ChecksumEvmAddress,
-    ) -> List[MakerdaoVault]:
+    ) -> list[MakerdaoVault]:
         """Gets the vaults of a single address
 
         May raise:
@@ -636,7 +636,7 @@ class MakerdaoVaults(HasDSProxy):
 
         return vaults
 
-    def get_vaults(self) -> List[MakerdaoVault]:
+    def get_vaults(self) -> list[MakerdaoVault]:
         """Detects vaults the user has and returns basic info about each one
 
         If the vaults have been queried in the past REQUERY_PERIOD
@@ -671,7 +671,7 @@ class MakerdaoVaults(HasDSProxy):
             vaults.sort(key=lambda vault: vault.identifier)
         return vaults
 
-    def get_vault_details(self) -> List[MakerdaoVaultDetails]:
+    def get_vault_details(self) -> list[MakerdaoVaultDetails]:
         """Queries vault details for the auto detected vaults of the user
 
         This is a premium only call. Check happens only at the API level.
@@ -708,7 +708,7 @@ class MakerdaoVaults(HasDSProxy):
             self,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
-    ) -> List[DefiEvent]:
+    ) -> list[DefiEvent]:
         """Gets the history events from maker vaults for accounting
 
             This is a premium only call. Check happens only in the API level.
@@ -777,7 +777,7 @@ class MakerdaoVaults(HasDSProxy):
 
         return events
 
-    def get_balances(self) -> Dict[ChecksumEvmAddress, BalanceSheet]:
+    def get_balances(self) -> dict[ChecksumEvmAddress, BalanceSheet]:
         """Return a mapping of all assets locked as collateral in the vaults and
         all DAI owed as debt
         """

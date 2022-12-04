@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, NamedTuple, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Optional
 
 from gevent.lock import Semaphore
 
@@ -29,7 +29,7 @@ class XpubData(NamedTuple):
     blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH]
     derivation_path: Optional[str] = None
     label: Optional[str] = None
-    tags: Optional[List[str]] = None
+    tags: Optional[list[str]] = None
 
     def serialize_derivation_path_for_db(self) -> str:
         """
@@ -38,7 +38,7 @@ class XpubData(NamedTuple):
         """
         return '' if self.derivation_path is None else self.derivation_path
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self) -> dict[str, Any]:
         return {
             'xpub': self.xpub.xpub,
             'blockchain': self.blockchain.value,
@@ -77,15 +77,15 @@ def _derive_addresses_loop(
         root: HDKey,
         gap_limit: int,
         blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
-) -> List[XpubDerivedAddressData]:
+) -> list[XpubDerivedAddressData]:
     """May raise:
     - RemoteError: if blockstream/blockchain.info can't be reached
     """
     step_index = start_index
-    addresses: List[XpubDerivedAddressData] = []
+    addresses: list[XpubDerivedAddressData] = []
     should_continue = True
     while should_continue:
-        batch_addresses: List[Tuple[int, BTCAddress]] = []
+        batch_addresses: list[tuple[int, BTCAddress]] = []
         for idx in range(step_index, step_index + gap_limit):
             child = root.derive_child(idx)
             batch_addresses.append((idx, child.address()))
@@ -130,7 +130,7 @@ def _derive_addresses_from_xpub_data(
         start_receiving_index: int,
         start_change_index: int,
         gap_limit: int,
-) -> List[XpubDerivedAddressData]:
+) -> list[XpubDerivedAddressData]:
     """Derive all addresses from the xpub that have had transactions. Also includes
     any addresses until the biggest index derived addresses that have had no transactions.
     This is to make it easier to later derive and check more addresses

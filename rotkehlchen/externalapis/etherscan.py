@@ -1,20 +1,7 @@
 import logging
 from abc import ABCMeta
 from json.decoder import JSONDecodeError
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    Iterator,
-    List,
-    Literal,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Union,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Iterator, Literal, Optional, Sequence, Union, overload
 
 import gevent
 import requests
@@ -59,7 +46,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def _hashes_tuple_to_list(hashes: Set[Tuple[str, Timestamp]]) -> List[str]:
+def _hashes_tuple_to_list(hashes: set[tuple[str, Timestamp]]) -> list[str]:
     """Turns the set of hashes/timestamp to a timestamp ascending ordered list
 
     This function needs to exist since Set has no guranteed order of iteration.
@@ -96,9 +83,9 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                 'tokentx',
                 'getLogs',
             ],
-            options: Optional[Dict[str, Any]] = None,
-            timeout: Optional[Tuple[int, int]] = None,
-    ) -> List[Dict[str, Any]]:
+            options: Optional[dict[str, Any]] = None,
+            timeout: Optional[tuple[int, int]] = None,
+    ) -> list[dict[str, Any]]:
         ...
 
     @overload
@@ -110,9 +97,9 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                 'eth_getTransactionReceipt',
                 'eth_getTransactionByHash',
             ],
-            options: Optional[Dict[str, Any]] = None,
-            timeout: Optional[Tuple[int, int]] = None,
-    ) -> Dict[str, Any]:
+            options: Optional[dict[str, Any]] = None,
+            timeout: Optional[tuple[int, int]] = None,
+    ) -> dict[str, Any]:
         ...
 
     @overload
@@ -127,8 +114,8 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                 'eth_call',
                 'getblocknobytime',
             ],
-            options: Optional[Dict[str, Any]] = None,
-            timeout: Optional[Tuple[int, int]] = None,
+            options: Optional[dict[str, Any]] = None,
+            timeout: Optional[tuple[int, int]] = None,
     ) -> str:
         ...
 
@@ -136,9 +123,9 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
             self,
             module: str,
             action: str,
-            options: Optional[Dict[str, Any]] = None,
-            timeout: Optional[Tuple[int, int]] = None,
-    ) -> Union[List[Dict[str, Any]], str, List[EvmTransaction], Dict[str, Any]]:
+            options: Optional[dict[str, Any]] = None,
+            timeout: Optional[tuple[int, int]] = None,
+    ) -> Union[list[dict[str, Any]], str, list[EvmTransaction], dict[str, Any]]:
         """Queries etherscan
 
         May raise:
@@ -261,7 +248,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
             action: Literal['txlistinternal'],
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
-    ) -> Iterator[List[EvmInternalTransaction]]:
+    ) -> Iterator[list[EvmInternalTransaction]]:
         ...
 
     @overload
@@ -271,7 +258,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
             action: Literal['txlist'],
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
-    ) -> Iterator[List[EvmTransaction]]:
+    ) -> Iterator[list[EvmTransaction]]:
         ...
 
     def get_transactions(
@@ -280,7 +267,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
             action: Literal['txlist', 'txlistinternal'],
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
-    ) -> Union[Iterator[List[EvmTransaction]], Iterator[List[EvmInternalTransaction]]]:
+    ) -> Union[Iterator[list[EvmTransaction]], Iterator[list[EvmInternalTransaction]]]:
         """Gets a list of transactions (either normal or internal) for account.
 
         May raise:
@@ -361,7 +348,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
             account: ChecksumEvmAddress,
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
-    ) -> Iterator[List[str]]:
+    ) -> Iterator[list[str]]:
         options = {'address': str(account), 'sort': 'asc'}
         if from_ts is not None:
             from_block = self.get_blocknumber_by_time(from_ts)
@@ -370,7 +357,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
             to_block = self.get_blocknumber_by_time(to_ts)
             options['endBlock'] = str(to_block)
 
-        hashes: Set[Tuple[str, Timestamp]] = set()
+        hashes: set[tuple[str, Timestamp]] = set()
         while True:
             result = self._query(module='account', action='tokentx', options=options)
             last_ts = deserialize_timestamp(result[0]['timeStamp']) if len(result) != 0 else None  # noqa: E501 pylint: disable=unsubscriptable-object
@@ -406,7 +393,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
         )
         return int(result, 16)
 
-    def get_block_by_number(self, block_number: int) -> Dict[str, Any]:
+    def get_block_by_number(self, block_number: int) -> dict[str, Any]:
         """
         Gets a block object by block number
 
@@ -422,7 +409,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
 
         return block_data
 
-    def get_transaction_by_hash(self, tx_hash: EVMTxHash) -> Dict[str, Any]:
+    def get_transaction_by_hash(self, tx_hash: EVMTxHash) -> dict[str, Any]:
         """
         Gets a transaction object by hash
 
@@ -443,7 +430,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
         result = self._query(module='proxy', action='eth_getCode', options={'address': account})
         return result
 
-    def get_transaction_receipt(self, tx_hash: EVMTxHash) -> Dict[str, Any]:
+    def get_transaction_receipt(self, tx_hash: EVMTxHash) -> dict[str, Any]:
         """Gets the receipt for the given transaction hash
 
         May raise:
@@ -478,10 +465,10 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
     def get_logs(
             self,
             contract_address: ChecksumEvmAddress,
-            topics: List[str],
+            topics: list[str],
             from_block: int,
             to_block: Union[int, str] = 'latest',
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Performs the etherscan style of eth_getLogs as explained here:
         https://etherscan.io/apis#logs
 

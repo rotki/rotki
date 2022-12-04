@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, Iterator, List, Optional, Tuple
+from typing import TYPE_CHECKING, Iterator, Optional
 
 import gevent
 
@@ -71,7 +71,7 @@ class Accountant():
     def _process_skipping_exception(
             self,
             exception: Exception,
-            events: List[AccountingEventMixin],
+            events: list[AccountingEventMixin],
             count: int,
             reason: str,
     ) -> int:
@@ -94,7 +94,7 @@ class Accountant():
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-            events: List[AccountingEventMixin],
+            events: list[AccountingEventMixin],
     ) -> int:
         """Processes the entire history of cryptoworld actions in order to determine
         the price and time at which every asset was obtained and also
@@ -217,8 +217,8 @@ class Accountant():
             end_ts: Timestamp,
             prev_time: Timestamp,
             db_settings: DBSettings,
-            ignored_ids_mapping: Dict[ActionType, List[str]],
-    ) -> Tuple[int, Timestamp]:
+            ignored_ids_mapping: dict[ActionType, list[str]],
+    ) -> tuple[int, Timestamp]:
         """Processes each individual event and returns a tuple with processing information:
         - How many events were consumed (0 to indicate we finished processing)
         - last event timestamp
@@ -287,7 +287,7 @@ class Accountant():
         consumed_events = event.process(self.pots[0], events_iterator)
         return consumed_events, prev_time
 
-    def export(self, directory_path: Optional[Path]) -> Tuple[bool, str]:
+    def export(self, directory_path: Optional[Path]) -> tuple[bool, str]:
         """Export the PnL report. Only CSV for now
 
         If a directory is given, it simply exports all event.csv in the given directory.

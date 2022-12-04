@@ -1,6 +1,5 @@
-
 import logging
-from typing import TYPE_CHECKING, List, Literal, Optional, Sequence
+from typing import TYPE_CHECKING, Literal, Optional, Sequence, Union
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
@@ -15,7 +14,7 @@ from rotkehlchen.db.utils import form_query_to_filter_timestamps
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, Timestamp, Tuple, Union
+from rotkehlchen.types import ChecksumEvmAddress, Timestamp
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -33,7 +32,7 @@ class DBEth2():
     def __init__(self, database: 'DBHandler') -> None:
         self.db = database
 
-    def get_validators_to_query_for_stats(self, up_to_ts: Timestamp) -> List[Tuple[int, Timestamp]]:  # noqa: E501
+    def get_validators_to_query_for_stats(self, up_to_ts: Timestamp) -> list[tuple[int, Timestamp]]:  # noqa: E501
         """Gets a list of validators that need to be queried for new daily stats
 
         Validators need to be queried if last time they are queried was more than 2 days.
@@ -93,7 +92,7 @@ class DBEth2():
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
             address: Optional[ChecksumEvmAddress] = None,
-    ) -> List[Eth2Deposit]:
+    ) -> list[Eth2Deposit]:
         """Returns a list of Eth2Deposit filtered by time and address"""
         query = (
             'SELECT '
@@ -120,7 +119,7 @@ class DBEth2():
         cursor.execute(query, bindings)
         return [Eth2Deposit.deserialize_from_db(deposit_tuple) for deposit_tuple in cursor]
 
-    def add_validator_daily_stats(self, stats: List[ValidatorDailyStats]) -> None:
+    def add_validator_daily_stats(self, stats: list[ValidatorDailyStats]) -> None:
         """Adds given daily stats for validator in the DB. If an entry exists it's skipped"""
         with self.db.user_write() as cursor:
             for entry in stats:  # not doing executemany to just ignore existing entry
@@ -155,7 +154,7 @@ class DBEth2():
             self,
             cursor: 'DBCursor',
             filter_query: 'Eth2DailyStatsFilterQuery',
-    ) -> Tuple[List[ValidatorDailyStats], int, FVal, FVal]:
+    ) -> tuple[list[ValidatorDailyStats], int, FVal, FVal]:
         """Gets all eth2 daily stats for the query from the DB
 
         Returns a tuple with the following in order:
@@ -187,7 +186,7 @@ class DBEth2():
             self,
             cursor: 'DBCursor',
             filter_query: 'Eth2DailyStatsFilterQuery',
-    ) -> List[ValidatorDailyStats]:
+    ) -> list[ValidatorDailyStats]:
         """Gets all DB entries for validator daily stats according to the given filter"""
         query, bindings = filter_query.prepare()
         query = 'SELECT * from eth2_daily_staking_details ' + query
@@ -213,11 +212,11 @@ class DBEth2():
         cursor.execute(f'SELECT COUNT(*) from eth2_validators WHERE {field}=?', (arg,))
         return cursor.fetchone()[0] == 1  # count always returns
 
-    def get_validators(self, cursor: 'DBCursor') -> List[Eth2Validator]:  # pylint: disable=no-self-use  # noqa: E501
+    def get_validators(self, cursor: 'DBCursor') -> list[Eth2Validator]:  # pylint: disable=no-self-use  # noqa: E501
         cursor.execute('SELECT * from eth2_validators;')
         return [Eth2Validator.deserialize_from_db(x) for x in cursor]
 
-    def add_validators(self, write_cursor: 'DBCursor', validators: List[Eth2Validator]) -> None:  # pylint: disable=no-self-use  # noqa: E501
+    def add_validators(self, write_cursor: 'DBCursor', validators: list[Eth2Validator]) -> None:  # pylint: disable=no-self-use  # noqa: E501
         write_cursor.executemany(
             'INSERT OR IGNORE INTO '
             'eth2_validators(validator_index, public_key, ownership_proportion) VALUES(?, ?, ?)',

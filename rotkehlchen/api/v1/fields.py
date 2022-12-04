@@ -1,7 +1,7 @@
 import logging
 import urllib
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Mapping, Optional, Sequence, Type, Union
+from typing import Any, Literal, Mapping, Optional, Sequence, Union
 
 import webargs
 from eth_utils import to_checksum_address
@@ -77,11 +77,11 @@ class DelimitedOrNormalList(webargs.fields.DelimitedList):
 
     def _deserialize(  # type: ignore  # we may get a list in value
             self,
-            value: Union[List[str], str],
+            value: Union[list[str], str],
             attr: Optional[str],
-            data: Dict[str, Any],
+            data: dict[str, Any],
             **kwargs: Any,
-    ) -> List[Any]:
+    ) -> list[Any]:
         """Adjusting code for _deserialize so that it also works for list-like objects
 
         Adjusting code from
@@ -335,7 +335,7 @@ class BlockchainField(fields.Field):
 
 class SerializableEnumField(fields.Field):
 
-    def __init__(self, enum_class: Type[SerializableEnumMixin], **kwargs: Any) -> None:
+    def __init__(self, enum_class: type[SerializableEnumMixin], **kwargs: Any) -> None:
         self.enum_class = enum_class
         super().__init__(**kwargs)
 
@@ -398,11 +398,11 @@ class AssetField(fields.Field):
             self,
             *,
             expected_type: Union[
-                Type[Asset],
-                Type[AssetWithNameAndType],
-                Type[AssetWithOracles],
-                Type[CryptoAsset],
-                Type[EvmToken],
+                type[Asset],
+                type[AssetWithNameAndType],
+                type[AssetWithOracles],
+                type[CryptoAsset],
+                type[EvmToken],
             ],
             form_with_incomplete_data: bool = False,
             **kwargs: Any,
@@ -458,7 +458,7 @@ class MaybeAssetField(fields.Field):
     def __init__(
             self,
             *,
-            expected_type: Type[AssetWithOracles],  # the only possible type now
+            expected_type: type[AssetWithOracles],  # the only possible type now
             form_with_incomplete_data: bool = False,
             **kwargs: Any,
     ) -> None:
@@ -593,7 +593,7 @@ class AssetTypeField(fields.Field):
 
 class LocationField(fields.Field):
 
-    def __init__(self, *, limit_to: Optional[List[Location]] = None, **kwargs: Any) -> None:  # noqa: E501
+    def __init__(self, *, limit_to: Optional[list[Location]] = None, **kwargs: Any) -> None:  # noqa: E501
         self.limit_to = limit_to
         super().__init__(**kwargs)
 
@@ -687,22 +687,22 @@ class AssetConflictsField(fields.Field):
 
     @staticmethod
     def _serialize(
-            value: Dict[str, Any],
+            value: dict[str, Any],
             attr: Optional[str],  # pylint: disable=unused-argument
             obj: Any,  # pylint: disable=unused-argument
             **_kwargs: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         # TODO: If this ever gets used we probably need to change
         # the dict keys to identifiers from assets
         return value
 
     def _deserialize(
             self,
-            value: Dict[str, str],
+            value: dict[str, str],
             attr: Optional[str],  # pylint: disable=unused-argument
             data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
             **_kwargs: Any,
-    ) -> Dict[Asset, Literal['remote', 'local']]:
+    ) -> dict[Asset, Literal['remote', 'local']]:
         if not isinstance(value, dict):
             raise ValidationError('A dict object should be given for the conflictss')
 

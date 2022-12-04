@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Dict, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional
 
 from rotkehlchen.types import ChainID, EvmTokenKind
 from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn
@@ -67,7 +67,7 @@ class AssetData(NamedTuple):
     coingecko: Optional[str]
     protocol: Optional[str]
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self) -> dict[str, Any]:
         result = self._asdict()  # pylint: disable=no-member
         result.pop('identifier')
         result.pop('chain_id')

@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Literal, Optional
 
 from rotkehlchen.accounting.cost_basis import CostBasisCalculator
 from rotkehlchen.accounting.cost_basis.prefork import (
@@ -52,7 +52,7 @@ class AccountingPot(CustomizableDateMixin):
             msg_aggregator=msg_aggregator,
         )
         self.pnls = PnlTotals()
-        self.processed_events: List[ProcessedAccountingEvent] = []
+        self.processed_events: list[ProcessedAccountingEvent] = []
         self.transactions = TransactionsAccountant(
             evm_accounting_aggregator=evm_accounting_aggregator,
             pot=self,
@@ -123,7 +123,7 @@ class AccountingPot(CustomizableDateMixin):
             amount: FVal,
             taxable: bool,
             given_price: Optional[Price] = None,
-            extra_data: Optional[Dict] = None,
+            extra_data: Optional[dict] = None,
             **kwargs: Any,  # to be able to consume args given by add_asset_change_event
     ) -> None:
         """Add an asset acquisition event for the pot and count it in PnL if needed.
@@ -203,8 +203,8 @@ class AccountingPot(CustomizableDateMixin):
             taxable_amount_ratio: FVal = ONE,
             count_entire_amount_spend: bool = True,
             count_cost_basis_pnl: bool = True,
-            extra_data: Optional[Dict[str, Any]] = None,
-    ) -> Tuple[FVal, FVal]:
+            extra_data: Optional[dict[str, Any]] = None,
+    ) -> tuple[FVal, FVal]:
         """Add an asset spend event for the pot and count it in PnL if needed
 
         If a custom price for the asset should be used it can be passed here via
@@ -321,7 +321,7 @@ class AccountingPot(CustomizableDateMixin):
             asset_out: Asset,
             fee: Optional[FVal],
             fee_asset: Optional[Asset],
-    ) -> Optional[Tuple[Price, Price]]:
+    ) -> Optional[tuple[Price, Price]]:
         """
         Calculates the prices for assets going in and out of a swap/trade.
 

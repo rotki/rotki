@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Dict, List
+from typing import Any
 
 import pytest
 import requests
@@ -22,7 +22,7 @@ from rotkehlchen.tests.utils.api import (
 from rotkehlchen.types import Location, TimestampMS
 
 
-def entry_to_input_dict(entry: HistoryBaseEntry, include_identifier: bool) -> Dict[str, Any]:
+def entry_to_input_dict(entry: HistoryBaseEntry, include_identifier: bool) -> dict[str, Any]:
     serialized = entry.serialize()
     if include_identifier:
         assert entry.identifier is not None
@@ -31,7 +31,7 @@ def entry_to_input_dict(entry: HistoryBaseEntry, include_identifier: bool) -> Di
     return serialized
 
 
-def _add_entries(server) -> List[HistoryBaseEntry]:
+def _add_entries(server) -> list[HistoryBaseEntry]:
     entries = [HistoryBaseEntry(
         event_identifier=HistoryBaseEntry.deserialize_event_identifier('0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e'),  # noqa: E501
         sequence_index=162,

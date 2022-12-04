@@ -1,5 +1,4 @@
 from http import HTTPStatus
-from typing import List
 
 import requests
 from eth_utils import to_checksum_address
@@ -13,7 +12,7 @@ from rotkehlchen.tests.utils.api import (
 from rotkehlchen.types import ChecksumEvmAddress
 
 
-def _get_timestamps(db: DBEns, addresses: List[ChecksumEvmAddress]):
+def _get_timestamps(db: DBEns, addresses: list[ChecksumEvmAddress]):
     timestamps = []
     with db.db.conn.read_ctx() as cursor:
         for value in db.get_reverse_ens(cursor, addresses).values():

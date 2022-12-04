@@ -2,7 +2,7 @@ import abc
 import logging
 from dataclasses import InitVar, dataclass, field
 from functools import total_ordering
-from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Type, Union
+from typing import Any, NamedTuple, Optional, Union
 
 from rotkehlchen.assets.exchanges_mappings.bittrex import WORLD_TO_BITTREX
 from rotkehlchen.assets.resolver import AssetResolver
@@ -19,7 +19,7 @@ from .types import ASSETS_WITH_NO_CRYPTO_ORACLES, AssetType
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-UnderlyingTokenDBTuple = Tuple[str, str, str]
+UnderlyingTokenDBTuple = tuple[str, str, str]
 
 
 class UnderlyingToken(NamedTuple):
@@ -31,7 +31,7 @@ class UnderlyingToken(NamedTuple):
     token_kind: EvmTokenKind
     weight: FVal  # Floating percentage from 0 to 1
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self) -> dict[str, Any]:
         return {
             'address': self.address,
             'token_kind': self.token_kind.serialize(),
@@ -67,7 +67,7 @@ class Asset:
                 'Tried to initialize an asset out of a non-string identifier',
             )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             'identifier': self.identifier,
         }
@@ -217,7 +217,7 @@ class AssetWithNameAndType(Asset, metaclass=abc.ABCMeta):
     asset_type: AssetType = field(init=False)
     name: str = field(init=False)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return super().to_dict() | {
             'name': self.name,
             'asset_type': str(self.asset_type),
@@ -233,7 +233,7 @@ class AssetWithNameAndType(Asset, metaclass=abc.ABCMeta):
 class AssetWithSymbol(AssetWithNameAndType, metaclass=abc.ABCMeta):
     symbol: str = field(init=False)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return super().to_dict() | {'symbol': self.symbol}
 
     def __repr__(self) -> str:
@@ -280,7 +280,7 @@ class AssetWithOracles(AssetWithSymbol, metaclass=abc.ABCMeta):
     def to_bittrex(self) -> str:
         return WORLD_TO_BITTREX.get(self.identifier, self.identifier)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return super().to_dict() | {
             'cryptocompare': self.cryptocompare,
             'coingecko': self.coingecko,
@@ -305,7 +305,7 @@ class FiatAsset(AssetWithOracles):
 
     @classmethod
     def initialize(
-            cls: Type['FiatAsset'],
+            cls: type['FiatAsset'],
             identifier: str,
             name: Optional[str] = None,
             symbol: Optional[str] = None,
@@ -349,7 +349,7 @@ class CryptoAsset(AssetWithOracles):
 
     @classmethod
     def initialize(
-            cls: Type['CryptoAsset'],
+            cls: type['CryptoAsset'],
             identifier: str,
             asset_type: AssetType,
             name: Optional[str] = None,
@@ -371,7 +371,7 @@ class CryptoAsset(AssetWithOracles):
         object.__setattr__(asset, 'swapped_for', swapped_for)
         return asset
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         forked, swapped_for = None, None
         if self.forked is not None:
             forked = self.forked.identifier
@@ -396,7 +396,7 @@ class CustomAsset(AssetWithNameAndType):
 
     @classmethod
     def initialize(
-        cls: Type['CustomAsset'],
+        cls: type['CustomAsset'],
         identifier: str,
         name: str,
         custom_asset_type: str,
@@ -411,8 +411,8 @@ class CustomAsset(AssetWithNameAndType):
 
     @classmethod
     def deserialize_from_db(
-            cls: Type['CustomAsset'],
-            entry: Tuple[str, str, str, Optional[str]],
+            cls: type['CustomAsset'],
+            entry: tuple[str, str, str, Optional[str]],
     ) -> 'CustomAsset':
         """
         Takes a `custom_asset` entry from DB and turns it into a `CustomAsset` instance.
@@ -426,14 +426,14 @@ class CustomAsset(AssetWithNameAndType):
             notes=entry[3],
         )
 
-    def serialize_for_db(self) -> Tuple[str, str, Optional[str]]:
+    def serialize_for_db(self) -> tuple[str, str, Optional[str]]:
         return (
             self.identifier,
             self.custom_asset_type,
             self.notes,
         )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             'identifier': self.identifier,
             'name': self.name,
@@ -442,7 +442,7 @@ class CustomAsset(AssetWithNameAndType):
         }
 
 
-EthereumTokenDBTuple = Tuple[
+EthereumTokenDBTuple = tuple[
     str,                  # identifier
     str,                  # address
     str,                  # chain id
@@ -466,7 +466,7 @@ class EvmToken(CryptoAsset):
     token_kind: EvmTokenKind = field(init=False)
     decimals: int = field(init=False)
     protocol: str = field(init=False)
-    underlying_tokens: List[UnderlyingToken] = field(init=False)
+    underlying_tokens: list[UnderlyingToken] = field(init=False)
 
     def __post_init__(self, direct_field_initialization: bool) -> None:
         super().__post_init__(direct_field_initialization)
@@ -488,7 +488,7 @@ class EvmToken(CryptoAsset):
 
     @classmethod
     def initialize(  # type: ignore  # signature is incompatible with super type
-            cls: Type['EvmToken'],
+            cls: type['EvmToken'],
             address: ChecksumEvmAddress,
             chain_id: ChainID,
             token_kind: EvmTokenKind,
@@ -501,7 +501,7 @@ class EvmToken(CryptoAsset):
             cryptocompare: Optional[str] = '',
             decimals: Optional[int] = None,
             protocol: Optional[str] = None,
-            underlying_tokens: Optional[List[UnderlyingToken]] = None,
+            underlying_tokens: Optional[list[UnderlyingToken]] = None,
     ) -> 'EvmToken':
         identifier = evm_address_to_identifier(
             address=address,
@@ -527,9 +527,9 @@ class EvmToken(CryptoAsset):
 
     @classmethod
     def deserialize_from_db(
-            cls: Type['EvmToken'],
+            cls: type['EvmToken'],
             entry: EthereumTokenDBTuple,
-            underlying_tokens: Optional[List[UnderlyingToken]] = None,
+            underlying_tokens: Optional[list[UnderlyingToken]] = None,
     ) -> 'EvmToken':
         """May raise UnknownAsset if the swapped for asset can't be recognized
         That error would be bad because it would mean somehow an unknown id made it into the DB
@@ -550,7 +550,7 @@ class EvmToken(CryptoAsset):
             underlying_tokens=underlying_tokens,
         )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         underlying_tokens = [x.serialize() for x in self.underlying_tokens] if self.underlying_tokens is not None else None  # noqa: E501
         return super().to_dict() | {
             'address': self.evm_address,
@@ -589,7 +589,7 @@ class Nft(EvmToken):
 
     @classmethod
     def initialize(  # type: ignore  # signature is incompatible with super type
-            cls: Type['EvmToken'],
+            cls: type['EvmToken'],
             identifier: str,
             chain_id: ChainID,
             name: Optional[str] = None,

@@ -1,7 +1,7 @@
 import os
 from http import HTTPStatus
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 import pytest
 import requests
@@ -26,8 +26,8 @@ from rotkehlchen.tests.utils.premium import (
 
 
 def check_proper_unlock_result(
-        response_data: Dict[str, Any],
-        settings_to_check: Optional[Dict[str, Any]] = None,
+        response_data: dict[str, Any],
+        settings_to_check: Optional[dict[str, Any]] = None,
 ) -> None:
 
     assert isinstance(response_data['exchanges'], list)
@@ -40,7 +40,7 @@ def check_proper_unlock_result(
             assert response_data['settings'][setting] == value
 
 
-def check_user_status(api_server) -> Dict[str, str]:
+def check_user_status(api_server) -> dict[str, str]:
     # Check users status
     response = requests.get(
         api_url_for(api_server, "usersresource"),

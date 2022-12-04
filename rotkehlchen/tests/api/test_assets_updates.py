@@ -2,7 +2,7 @@ import json
 import random
 import re
 from http import HTTPStatus
-from typing import Any, Dict
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -32,7 +32,7 @@ def count_total_assets() -> int:
         return cursor.fetchone()[0]
 
 
-def mock_asset_updates(original_requests_get, latest: int, updates: Dict[str, Any], sql_actions: Dict[str, str]):  # noqa: E501
+def mock_asset_updates(original_requests_get, latest: int, updates: dict[str, Any], sql_actions: dict[str, str]):  # noqa: E501
 
     def mock_requests_get(url, *args, **kwargs):  # pylint: disable=unused-argument
         if 'github' not in url:

@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, List, Tuple
+from typing import TYPE_CHECKING
 
 from rotkehlchen.types import Timestamp
 
@@ -18,7 +18,7 @@ class DBQueryRanges():
             location_string: str,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> List[Tuple[Timestamp, Timestamp]]:
+    ) -> list[tuple[Timestamp, Timestamp]]:
         """Takes in the start/end ts for a location query and after checking the
         last query ranges of the DB provides a list of timestamp ranges that still
         need to be queried.
@@ -43,7 +43,7 @@ class DBQueryRanges():
             self,
             write_cursor: 'DBCursor',
             location_string: str,
-            queried_ranges: List[Tuple[Timestamp, Timestamp]],
+            queried_ranges: list[tuple[Timestamp, Timestamp]],
     ) -> None:
         """Depending on the queried ranges update the DB"""
         if len(queried_ranges) == 0:

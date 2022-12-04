@@ -1,5 +1,4 @@
 from http import HTTPStatus
-from typing import List, Tuple
 
 import pytest
 import requests
@@ -15,7 +14,7 @@ from rotkehlchen.tests.utils.api import (
 from rotkehlchen.types import Location
 
 
-def _populate_ignored_actions(rotkehlchen_api_server) -> List[Tuple[str, List[str]]]:
+def _populate_ignored_actions(rotkehlchen_api_server) -> list[tuple[str, list[str]]]:
     data = [
         ('trade', ['1', '2', '3']),
         ('asset_movement', ['1', '4', '5', '7']),

@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Callable, List, Optional
+from typing import TYPE_CHECKING, Callable, Optional
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.assets.asset import EvmToken
@@ -38,8 +38,8 @@ class SushiswapDecoder(DecoderInterface):
             token: Optional[EvmToken],  # pylint: disable=unused-argument
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: List[HistoryBaseEntry],
-            action_items: List[ActionItem],  # pylint: disable=unused-argument
+            decoded_events: list[HistoryBaseEntry],
+            action_items: list[ActionItem],  # pylint: disable=unused-argument
     ) -> None:
         if tx_log.topics[0] == SWAP_SIGNATURE:
             decode_uniswap_v2_like_swap(
@@ -54,10 +54,10 @@ class SushiswapDecoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
-    def decoding_rules(self) -> List[Callable]:
+    def decoding_rules(self) -> list[Callable]:
         return [
             self._maybe_decode_v2_swap,
         ]
 
-    def counterparties(self) -> List[str]:
+    def counterparties(self) -> list[str]:
         return [CPT_SUSHISWAP_V2]

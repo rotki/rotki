@@ -3,7 +3,7 @@ import functools
 import logging
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.assets.converters import asset_from_cryptocom
@@ -39,7 +39,7 @@ class CryptocomImporter(BaseExchangeImporter):
     def _consume_cryptocom_entry(
             self,
             cursor: DBCursor,
-            csv_row: Dict[str, Any],
+            csv_row: dict[str, Any],
             timestamp_format: str = '%Y-%m-%d %H:%M:%S',
     ) -> None:
         """Consumes a cryptocom entry row from the CSV and adds it into the database
@@ -304,9 +304,9 @@ class CryptocomImporter(BaseExchangeImporter):
         - UnknownAsset if an unknown asset is encountered in the imported files
         - KeyError if a row contains unexpected data entries
         """
-        multiple_rows: Dict[Any, Dict[str, Any]] = {}
-        investments_deposits: Dict[str, List[Any]] = defaultdict(list)
-        investments_withdrawals: Dict[str, List[Any]] = defaultdict(list)
+        multiple_rows: dict[Any, dict[str, Any]] = {}
+        investments_deposits: dict[str, list[Any]] = defaultdict(list)
+        investments_withdrawals: dict[str, list[Any]] = defaultdict(list)
         debited_row = None
         credited_row = None
         expects_debited = False

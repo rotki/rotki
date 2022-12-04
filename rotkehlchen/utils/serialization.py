@@ -1,6 +1,6 @@
 import json
 from json.decoder import JSONDecodeError
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 
 from rotkehlchen.assets.asset import (
     Asset,
@@ -43,7 +43,7 @@ class RKLEncoder(json.JSONEncoder):
         return super().encode(self._encode(obj))
 
 
-def jsonloads_dict(data: str) -> Dict[str, Any]:
+def jsonloads_dict(data: str) -> dict[str, Any]:
     """Just like jsonloads but forces the result to be a Dict"""
     value = json.loads(data)
     if not isinstance(value, dict):
@@ -51,7 +51,7 @@ def jsonloads_dict(data: str) -> Dict[str, Any]:
     return value
 
 
-def jsonloads_list(data: str) -> List:
+def jsonloads_list(data: str) -> list:
     """Just like jsonloads but forces the result to be a List"""
     value = json.loads(data)
     if not isinstance(value, list):
@@ -59,11 +59,11 @@ def jsonloads_list(data: str) -> List:
     return value
 
 
-def rlk_jsondumps(data: Union[Dict, List]) -> str:
+def rlk_jsondumps(data: Union[dict, list]) -> str:
     return json.dumps(data, cls=RKLEncoder)
 
 
-def pretty_json_dumps(data: Dict) -> str:
+def pretty_json_dumps(data: dict) -> str:
     return json.dumps(
         data,
         sort_keys=True,
@@ -75,8 +75,8 @@ def pretty_json_dumps(data: Dict) -> str:
 
 def deserialize_asset_with_oracles_from_db(
         asset_type: AssetType,
-        asset_data: List[Any],
-        underlying_tokens: Optional[List[UnderlyingToken]],
+        asset_data: list[Any],
+        underlying_tokens: Optional[list[UnderlyingToken]],
         form_with_incomplete_data: bool,
 ) -> AssetWithOracles:
     """
@@ -136,8 +136,8 @@ def deserialize_asset_with_oracles_from_db(
 
 def deserialize_generic_asset_from_db(
         asset_type: AssetType,
-        asset_data: List[Any],
-        underlying_tokens: Optional[List[UnderlyingToken]],
+        asset_data: list[Any],
+        underlying_tokens: Optional[list[UnderlyingToken]],
         form_with_incomplete_data: bool,
 ) -> AssetWithNameAndType:
     """

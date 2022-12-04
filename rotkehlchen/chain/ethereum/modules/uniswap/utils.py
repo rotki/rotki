@@ -1,7 +1,7 @@
 import json
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, List, Optional, Set
+from typing import TYPE_CHECKING, Any, Callable, Optional
 
 import requests
 from web3.types import BlockIdentifier
@@ -36,10 +36,10 @@ def uniswap_lp_token_balances(
         userdb: 'DBHandler',
         address: ChecksumEvmAddress,
         ethereum: 'EthereumInquirer',
-        lp_addresses: List[ChecksumEvmAddress],
-        known_tokens: Set[EvmToken],
-        unknown_tokens: Set[EvmToken],
-) -> List[LiquidityPool]:
+        lp_addresses: list[ChecksumEvmAddress],
+        known_tokens: set[EvmToken],
+        unknown_tokens: set[EvmToken],
+) -> list[LiquidityPool]:
     """Query uniswap token balances from ethereum chain
 
     The number of addresses to query in one call depends a lot on the node used.
@@ -76,7 +76,7 @@ def uniswap_lp_token_balances(
     return balances
 
 
-def get_latest_lp_addresses(data_directory: Path) -> List[ChecksumEvmAddress]:
+def get_latest_lp_addresses(data_directory: Path) -> list[ChecksumEvmAddress]:
     """Gets the latest lp addresses either locally or from the remote
 
     Checks the remote (github) and if there is a newer file there it pulls it,
@@ -144,7 +144,7 @@ def find_uniswap_v2_lp_price(
         ethereum: 'EthereumInquirer',
         token: EvmToken,
         token_price_func: Callable,
-        token_price_func_args: List[Any],
+        token_price_func_args: list[Any],
         block_identifier: BlockIdentifier,
 ) -> Optional[Price]:
     """

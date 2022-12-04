@@ -2,19 +2,7 @@ import logging
 from functools import wraps
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Iterable,
-    List,
-    Literal,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Tuple,
-    cast,
-)
+from typing import Any, Callable, Iterable, Literal, NamedTuple, Optional, Sequence, cast
 from urllib.parse import urlparse
 
 import gevent
@@ -247,7 +235,7 @@ class SubstrateManager():
             self,
             node: NodeName,
             endpoint: str,
-    ) -> Tuple[bool, str]:
+    ) -> tuple[bool, str]:
         """Attempt to connect to a node, check its status and store its
         attributes (e.g. interface, weight) in the available nodes map.
 
@@ -485,7 +473,7 @@ class SubstrateManager():
 
         return response
 
-    def _request_chain_metadata(self) -> Dict[str, Any]:
+    def _request_chain_metadata(self) -> dict[str, Any]:
         """Subscan API metadata documentation:
         https://docs.api.subscan.io/#metadata
         """
@@ -577,8 +565,8 @@ class SubstrateManager():
     def get_accounts_balance(
             self,
             # accounts: Union[List[KusamaAddress, PolkadotAddress]],
-            accounts: List[SubstrateAddress],
-    ) -> Dict[SubstrateAddress, FVal]:
+            accounts: list[SubstrateAddress],
+    ) -> dict[SubstrateAddress, FVal]:
         """Given a list of accounts get their amount of chain native token.
 
         This method is not decorated with `request_available_nodes` on purpose,
@@ -588,7 +576,7 @@ class SubstrateManager():
         - RemoteError: `request_available_nodes()` fails to request after
         trying with all the available nodes.
         """
-        balances: Dict[SubstrateAddress, FVal] = {}
+        balances: dict[SubstrateAddress, FVal] = {}
         for account in accounts:
             balances[account] = self.get_account_balance(account)
 
@@ -630,7 +618,7 @@ class SubstrateManager():
         """
         return self._get_last_block(node_interface)
 
-    def set_rpc_endpoint(self, endpoint: str) -> Tuple[bool, str]:
+    def set_rpc_endpoint(self, endpoint: str) -> tuple[bool, str]:
         """Attempt to set the RPC endpoint for the user's own node.
         If connection at endpoint is successful it will set `own_rpc_endpoint`.
         """

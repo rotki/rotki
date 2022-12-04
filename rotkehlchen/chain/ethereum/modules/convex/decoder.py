@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Optional
 
 from rotkehlchen.accounting.structures.base import (
     HistoryBaseEntry,
@@ -58,10 +58,10 @@ class ConvexDecoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: List[HistoryBaseEntry],
-            all_logs: List[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: List[ActionItem],  # pylint: disable=unused-argument
-    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
+            decoded_events: list[HistoryBaseEntry],
+            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+            action_items: list[ActionItem],  # pylint: disable=unused-argument
+    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         amount_raw = hex_or_bytes_to_int(tx_log.data[0:32])
         interacted_address = hex_or_bytes_to_address(tx_log.topics[1])
 
@@ -122,7 +122,7 @@ class ConvexDecoder(DecoderInterface):
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
             event: HistoryBaseEntry,
-            action_items: List[ActionItem],  # pylint: disable=unused-argument
+            action_items: list[ActionItem],  # pylint: disable=unused-argument
     ) -> bool:
         """
         Used for rewards paid with abracadabras. Problem is that the transfer event in this
@@ -150,8 +150,8 @@ class ConvexDecoder(DecoderInterface):
             return True
         return False
 
-    def addresses_to_decoders(self) -> Dict[ChecksumEvmAddress, Tuple[Any, ...]]:
-        decoder_mappings: Dict[ChecksumEvmAddress, Tuple[Callable, ...]] = {
+    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
+        decoder_mappings: dict[ChecksumEvmAddress, tuple[Callable, ...]] = {
             BOOSTER: (self._decode_convex_events,),
             CVX_LOCKER: (self._decode_convex_events,),
             CVX_LOCKER_V2: (self._decode_convex_events,),
@@ -164,8 +164,8 @@ class ConvexDecoder(DecoderInterface):
         decoder_mappings.update(virtual_rewards)
         return decoder_mappings
 
-    def counterparties(self) -> List[str]:
+    def counterparties(self) -> list[str]:
         return [CPT_CONVEX]
 
-    def enricher_rules(self) -> List[Callable]:
+    def enricher_rules(self) -> list[Callable]:
         return [self._maybe_enrich_convex_transfers]

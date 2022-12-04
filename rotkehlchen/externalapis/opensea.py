@@ -1,18 +1,7 @@
 import dataclasses
 import logging
 from json.decoder import JSONDecodeError
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    List,
-    Literal,
-    NamedTuple,
-    Optional,
-    Tuple,
-    Union,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Optional, Union, overload
 
 import gevent
 import requests
@@ -54,7 +43,7 @@ class Collection:
     large_image: str
     floor_price: Optional[FVal] = None
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self) -> dict[str, Any]:
         return {
             'name': self.name,
             'banner_image': self.banner_image,
@@ -75,7 +64,7 @@ class NFT(NamedTuple):
     price_usd: FVal
     collection: Optional[Collection]
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self) -> dict[str, Any]:
         return {
             'token_identifier': self.token_identifier,
             'background_color': self.background_color,
@@ -99,7 +88,7 @@ class Opensea(ExternalServiceWithApiKey):
         # the user agent is a browser. We lose nothing by doing this and may revert if they fix
         # https://twitter.com/LefterisJP/status/1483017589869711364
         self.session.headers.update({'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0'})  # noqa: E501
-        self.collections: Dict[str, Collection] = {}
+        self.collections: dict[str, Collection] = {}
         self.backup_key: Optional[str] = None
         self.eth_asset = A_ETH.resolve_to_crypto_asset()
 
@@ -144,26 +133,26 @@ class Opensea(ExternalServiceWithApiKey):
     def _query(  # pylint: disable=no-self-use
             self,
             endpoint: Literal['assets', 'collectionstats'],
-            options: Optional[Dict[str, Any]] = None,
-            timeout: Optional[Tuple[int, int]] = None,
-    ) -> Dict[str, Any]:
+            options: Optional[dict[str, Any]] = None,
+            timeout: Optional[tuple[int, int]] = None,
+    ) -> dict[str, Any]:
         ...
 
     @overload
     def _query(  # pylint: disable=no-self-use
             self,
             endpoint: Literal['collections'],
-            options: Optional[Dict[str, Any]] = None,
-            timeout: Optional[Tuple[int, int]] = None,
-    ) -> List[Dict[str, Any]]:
+            options: Optional[dict[str, Any]] = None,
+            timeout: Optional[tuple[int, int]] = None,
+    ) -> list[dict[str, Any]]:
         ...
 
     def _query(
             self,
             endpoint: Literal['assets', 'collections', 'collectionstats'],
-            options: Optional[Dict[str, Any]] = None,
-            timeout: Optional[Tuple[int, int]] = None,
-    ) -> Union[List[Dict[str, Any]], Dict[str, Any]]:
+            options: Optional[dict[str, Any]] = None,
+            timeout: Optional[tuple[int, int]] = None,
+    ) -> Union[list[dict[str, Any]], dict[str, Any]]:
         """May raise RemoteError"""
         api_key = self._get_api_key()
         if api_key is not None:
@@ -228,7 +217,7 @@ class Opensea(ExternalServiceWithApiKey):
 
     def _deserialize_nft(
             self,
-            entry: Dict[str, Any],
+            entry: dict[str, Any],
             owner_address: ChecksumEvmAddress,
             eth_usd_price: FVal,
     ) -> 'NFT':
@@ -243,7 +232,7 @@ class Opensea(ExternalServiceWithApiKey):
             )
 
         try:
-            last_sale: Optional[Dict[str, Any]] = entry.get('last_sale')
+            last_sale: Optional[dict[str, Any]] = entry.get('last_sale')
             if last_sale is not None and last_sale.get('payment_token') is not None:
                 if last_sale['payment_token']['symbol'] in ('ETH', 'WETH'):
                     payment_asset = self.eth_asset
@@ -308,7 +297,7 @@ class Opensea(ExternalServiceWithApiKey):
         offset = 0
         options = {'offset': offset, 'limit': CONTRACTS_MAX_LIMIT, 'asset_owner': account}  # noqa: E501
 
-        raw_result: List[Dict[str, Any]] = []
+        raw_result: list[dict[str, Any]] = []
         while True:
             result = self._query(endpoint='collections', options=options)
             raw_result.extend(result)
@@ -342,7 +331,7 @@ class Opensea(ExternalServiceWithApiKey):
                 floor_price=floor_price,
             )
 
-    def get_account_nfts(self, account: ChecksumEvmAddress) -> List[NFT]:
+    def get_account_nfts(self, account: ChecksumEvmAddress) -> list[NFT]:
         """May raise RemoteError"""
         offset = 0
         options = {'order_direction': 'desc', 'offset': offset, 'limit': ASSETS_MAX_LIMIT, 'owner': account}  # noqa: E501

@@ -2,7 +2,7 @@ import os
 import sys
 from contextlib import ExitStack
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import pytest
 
@@ -31,12 +31,12 @@ def fixture_username():
 
 
 @pytest.fixture(scope='session', name='session_ignored_assets')
-def fixture_session_ignored_assets() -> Optional[List[Asset]]:
+def fixture_session_ignored_assets() -> Optional[list[Asset]]:
     return None
 
 
 @pytest.fixture(name='ignored_assets')
-def fixture_ignored_assets() -> Optional[List[Asset]]:
+def fixture_ignored_assets() -> Optional[list[Asset]]:
     return None
 
 
@@ -89,22 +89,22 @@ def fixture_session_include_etherscan_key() -> bool:
 
 
 @pytest.fixture(name='tags')
-def fixture_tags() -> List[Dict[str, Any]]:
+def fixture_tags() -> list[dict[str, Any]]:
     return []
 
 
 @pytest.fixture(scope='session', name='session_tags')
-def fixture_session_tags() -> List[Dict[str, Any]]:
+def fixture_session_tags() -> list[dict[str, Any]]:
     return []
 
 
 @pytest.fixture(name='manually_tracked_balances')
-def fixture_manually_tracked_balances() -> List[ManuallyTrackedBalance]:
+def fixture_manually_tracked_balances() -> list[ManuallyTrackedBalance]:
     return []
 
 
 @pytest.fixture(scope='session', name='session_manually_tracked_balances')
-def fixture_session_manually_tracked_balances() -> List[ManuallyTrackedBalance]:
+def fixture_session_manually_tracked_balances() -> list[ManuallyTrackedBalance]:
     return []
 
 
@@ -122,13 +122,13 @@ def _init_database(
         data_dir: Path,
         password: str,
         msg_aggregator: MessagesAggregator,
-        db_settings: Optional[Dict[str, Any]],
-        ignored_assets: Optional[List[Asset]],
+        db_settings: Optional[dict[str, Any]],
+        ignored_assets: Optional[list[Asset]],
         blockchain_accounts: BlockchainAccounts,
         include_etherscan_key: bool,
         include_cryptocompare_key: bool,
-        tags: List[Dict[str, Any]],
-        manually_tracked_balances: List[ManuallyTrackedBalance],
+        tags: list[dict[str, Any]],
+        manually_tracked_balances: list[ManuallyTrackedBalance],
         data_migration_version: int,
         use_custom_database: Optional[str],
         sql_vm_instructions_cb: int,
@@ -240,12 +240,12 @@ def session_database(
 
 
 @pytest.fixture(name='db_settings')
-def fixture_db_settings() -> Optional[Dict[str, Any]]:
+def fixture_db_settings() -> Optional[dict[str, Any]]:
     return None
 
 
 @pytest.fixture(scope='session', name='session_db_settings')
-def fixture_session_db_settings() -> Optional[Dict[str, Any]]:
+def fixture_session_db_settings() -> Optional[dict[str, Any]]:
     return None
 
 

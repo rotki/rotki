@@ -1,7 +1,7 @@
 import json
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 from marshmallow import EXCLUDE, ValidationError
 
@@ -28,7 +28,7 @@ class DebugHistoryImporter:
     def import_history_debug(
             self,
             filepath: Path,
-    ) -> Tuple[bool, str, Dict[str, Any]]:
+    ) -> tuple[bool, str, dict[str, Any]]:
         """Imports the user events, settings & ignored actions identifiers for debugging."""
         try:
             with open(filepath) as f:
@@ -47,7 +47,7 @@ class DebugHistoryImporter:
             return False, error_msg, {}
 
         log.debug('Trying to add history events')
-        events: List[AccountingEventMixin] = []
+        events: list[AccountingEventMixin] = []
         try:
             for event in debug_data['events']:
                 event_type = AccountingEventType.deserialize(event['accounting_event_type'])

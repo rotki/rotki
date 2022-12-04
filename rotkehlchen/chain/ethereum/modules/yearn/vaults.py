@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional
 
 from gevent.lock import Semaphore
 
@@ -105,7 +105,7 @@ if TYPE_CHECKING:
 
 
 class YearnVaultHistory(NamedTuple):
-    events: List[YearnVaultEvent]
+    events: list[YearnVaultEvent]
     profit_loss: Balance
 
 
@@ -116,7 +116,7 @@ class YearnVaultBalance(NamedTuple):
     vault_value: Balance
     roi: FVal
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self) -> dict[str, Any]:
         result = self._asdict()  # pylint: disable=no-member
         result['roi'] = self.roi.to_percentage(precision=2)
         return result
@@ -383,9 +383,9 @@ class YearnVaults(EthereumModule):
 
     def _get_single_addr_balance(
             self,
-            defi_balances: List['DefiProtocolBalances'],
-            roi_cache: Dict[str, FVal],
-    ) -> Dict[str, YearnVaultBalance]:
+            defi_balances: list['DefiProtocolBalances'],
+            roi_cache: dict[str, FVal],
+    ) -> dict[str, YearnVaultBalance]:
         result = {}
         for balance in defi_balances:
             if balance.protocol.name == 'yearn.finance • Vaults':
@@ -426,13 +426,13 @@ class YearnVaults(EthereumModule):
     def get_balances(
             self,
             given_defi_balances: 'GIVEN_DEFI_BALANCES',
-    ) -> Dict[ChecksumEvmAddress, Dict[str, YearnVaultBalance]]:
+    ) -> dict[ChecksumEvmAddress, dict[str, YearnVaultBalance]]:
         if isinstance(given_defi_balances, dict):
             defi_balances = given_defi_balances
         else:
             defi_balances = given_defi_balances()
 
-        roi_cache: Dict[str, FVal] = {}
+        roi_cache: dict[str, FVal] = {}
         result = {}
         for address, balances in defi_balances.items():
             vault_balances = self._get_single_addr_balance(balances, roi_cache)
@@ -447,13 +447,13 @@ class YearnVaults(EthereumModule):
             address: ChecksumEvmAddress,
             from_block: int,
             to_block: int,
-    ) -> List[YearnVaultEvent]:
+    ) -> list[YearnVaultEvent]:
         """Get all deposit events of the underlying token to the vault
         May raise:
         - DeserializationError if tx_hash cannot be converted to bytes or mint_amount cannot be
           converted from hex string to int.
         """
-        events: List[YearnVaultEvent] = []
+        events: list[YearnVaultEvent] = []
         argument_filters = {'from': address, 'to': vault.contract.address}
         deposit_events = self.ethereum.get_logs(
             contract_address=vault.underlying_token.evm_address,
@@ -533,13 +533,13 @@ class YearnVaults(EthereumModule):
             address: ChecksumEvmAddress,
             from_block: int,
             to_block: int,
-    ) -> List[YearnVaultEvent]:
+    ) -> list[YearnVaultEvent]:
         """Get all withdraw events of the underlying token to the vault
         May raise:
         - DeserializationError if tx_hash cannot be converted to bytes or burn_amount cannot be
           converted from hex string to int.
         """
-        events: List[YearnVaultEvent] = []
+        events: list[YearnVaultEvent] = []
         argument_filters = {'from': vault.contract.address, 'to': address}
         withdraw_events = self.ethereum.get_logs(
             contract_address=vault.underlying_token.evm_address,
@@ -613,7 +613,7 @@ class YearnVaults(EthereumModule):
 
         return events
 
-    def _process_vault_events(self, events: List[YearnVaultEvent]) -> Balance:
+    def _process_vault_events(self, events: list[YearnVaultEvent]) -> Balance:
         """Process the events for a single vault and returns total profit/loss after all events"""
         total = Balance()
         profit_so_far = Balance()
@@ -647,7 +647,7 @@ class YearnVaults(EthereumModule):
     def get_vault_history(
             self,
             write_cursor: 'DBCursor',
-            defi_balances: List['DefiProtocolBalances'],
+            defi_balances: list['DefiProtocolBalances'],
             vault: YearnVault,
             address: ChecksumEvmAddress,
             from_block: int,
@@ -723,11 +723,11 @@ class YearnVaults(EthereumModule):
     def get_history(
             self,
             given_defi_balances: 'GIVEN_DEFI_BALANCES',
-            addresses: List[ChecksumEvmAddress],
+            addresses: list[ChecksumEvmAddress],
             reset_db_data: bool,
             from_timestamp: Timestamp,  # pylint: disable=unused-argument
             to_timestamp: Timestamp,  # pylint: disable=unused-argument
-    ) -> Dict[ChecksumEvmAddress, Dict[str, YearnVaultHistory]]:
+    ) -> dict[ChecksumEvmAddress, dict[str, YearnVaultHistory]]:
         with self.history_lock:
             with self.database.user_write() as cursor:
                 if reset_db_data is True:
@@ -740,7 +740,7 @@ class YearnVaults(EthereumModule):
 
                 from_block = self.ethereum.get_blocknumber_by_time(from_timestamp)
                 to_block = self.ethereum.get_blocknumber_by_time(to_timestamp)
-                history: Dict[ChecksumEvmAddress, Dict[str, YearnVaultHistory]] = {}
+                history: dict[ChecksumEvmAddress, dict[str, YearnVaultHistory]] = {}
 
                 for address in addresses:
                     history[address] = {}
@@ -765,8 +765,8 @@ class YearnVaults(EthereumModule):
             self,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
-            addresses: List[ChecksumEvmAddress],
-    ) -> List[DefiEvent]:
+            addresses: list[ChecksumEvmAddress],
+    ) -> list[DefiEvent]:
         """Gets the history events from maker vaults for accounting
 
             This is a premium only call. Check happens only in the API level.

@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, List, Optional, Tuple
+from typing import TYPE_CHECKING, Optional
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
@@ -223,9 +223,9 @@ class ZerionSDK():
             deployed_block=1586199170,
         )
         self.database = database
-        self.protocol_names: Optional[List[str]] = None
+        self.protocol_names: Optional[list[str]] = None
 
-    def _get_protocol_names(self) -> List[str]:
+    def _get_protocol_names(self) -> list[str]:
         if self.protocol_names is not None:
             return self.protocol_names
 
@@ -245,7 +245,7 @@ class ZerionSDK():
         self.protocol_names = protocol_names
         return protocol_names
 
-    def _query_chain_for_all_balances(self, account: ChecksumEvmAddress) -> List:
+    def _query_chain_for_all_balances(self, account: ChecksumEvmAddress) -> list:
         if (own_node_info := self.ethereum.get_own_node_info()) is not None:
             try:
                 # In this case we don't care about the gas limit
@@ -272,7 +272,7 @@ class ZerionSDK():
         # So now we get all supported protocols and query in batches
         protocol_names = self._get_protocol_names()
         result = []
-        protocol_chunks: List[List[str]] = list(get_chunks(
+        protocol_chunks: list[list[str]] = list(get_chunks(
             list(protocol_names),
             n=PROTOCOLS_QUERY_NUM,
         ))
@@ -288,7 +288,7 @@ class ZerionSDK():
 
         return result
 
-    def all_balances_for_account(self, account: ChecksumEvmAddress) -> List[DefiProtocolBalances]:
+    def all_balances_for_account(self, account: ChecksumEvmAddress) -> list[DefiProtocolBalances]:
         """Calls the contract's getBalances() to get all protocol balances for account
 
         https://docs.zerion.io/smart-contracts/adapterregistry-v3#getbalances
@@ -347,7 +347,7 @@ class ZerionSDK():
     def _get_single_balance(
             self,
             protocol_name: str,
-            entry: Tuple[Tuple[str, str, str, int], int],
+            entry: tuple[tuple[str, str, str, int], int],
     ) -> DefiBalance:
         """
         This method can raise DeserializationError while deserializing the token address

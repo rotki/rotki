@@ -2,7 +2,7 @@ import os
 import random
 from contextlib import ExitStack
 from http import HTTPStatus
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Optional
 from unittest.mock import patch
 
 import gevent
@@ -166,7 +166,7 @@ EXPECTED_4193_TXS = [{
 }]
 
 
-def assert_force_redecode_txns_works(api_server: 'APIServer', hashes: Optional[List[EVMTxHash]]):
+def assert_force_redecode_txns_works(api_server: 'APIServer', hashes: Optional[list[EVMTxHash]]):
     rotki = api_server.rest_api.rotkehlchen
     get_eth_txns_patch = patch.object(
         rotki.chains_aggregator.ethereum.transactions_decoder.dbevmtx,
@@ -207,9 +207,9 @@ def assert_force_redecode_txns_works(api_server: 'APIServer', hashes: Optional[L
 
 def _write_transactions_to_db(
         db: 'DBHandler',
-        transactions: List[EvmTransaction],
-        extra_transactions: List[EvmTransaction],
-        ethereum_accounts: List[ChecksumEvmAddress],
+        transactions: list[EvmTransaction],
+        extra_transactions: list[EvmTransaction],
+        ethereum_accounts: list[ChecksumEvmAddress],
         start_ts: Timestamp,
         end_ts: Timestamp,
 ) -> None:

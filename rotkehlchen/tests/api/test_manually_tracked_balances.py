@@ -3,7 +3,7 @@ from contextlib import ExitStack
 from copy import deepcopy
 from http import HTTPStatus
 from operator import itemgetter
-from typing import Any, Dict, List
+from typing import Any
 
 import pytest
 import requests
@@ -68,8 +68,8 @@ def _populate_tags(api_server):
 
 
 def assert_balances_match(
-        expected_balances: List[Dict[str, Any]],
-        returned_balances: List[Dict[str, Any]],
+        expected_balances: list[dict[str, Any]],
+        returned_balances: list[dict[str, Any]],
         expect_found_price: bool = True,
 ) -> None:
     assert len(returned_balances) == len(expected_balances)
@@ -94,9 +94,9 @@ def assert_balances_match(
             assert expected_balances[idx][key] == val, msg
 
 
-def _populate_initial_balances(api_server) -> List[Dict[str, Any]]:
+def _populate_initial_balances(api_server) -> list[dict[str, Any]]:
     # Now add some balances
-    balances: List[Dict[str, Any]] = [{
+    balances: list[dict[str, Any]] = [{
         'asset': 'XMR',
         'label': 'My monero wallet',
         'amount': '50.315',

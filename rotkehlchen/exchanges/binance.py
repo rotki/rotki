@@ -4,18 +4,7 @@ import json
 import logging
 from collections import defaultdict
 from json.decoder import JSONDecodeError
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    DefaultDict,
-    Dict,
-    List,
-    Literal,
-    Optional,
-    Tuple,
-    Type,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, DefaultDict, Literal, Optional, Union
 from urllib.parse import urlencode
 
 import gevent
@@ -102,8 +91,8 @@ class BinancePermissionError(RemoteError):
 
 
 def trade_from_binance(
-        binance_trade: Dict,
-        binance_symbols_to_pair: Dict[str, BinancePair],
+        binance_trade: dict,
+        binance_symbols_to_pair: dict[str, BinancePair],
         location: Location,
 ) -> Trade:
     """Turn a binance trade returned from trade history to our common trade
@@ -191,7 +180,7 @@ class Binance(ExchangeInterface):
             database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
             uri: str = BINANCE_BASE_URL,
-            binance_selected_trade_pairs: Optional[List[str]] = None,
+            binance_selected_trade_pairs: Optional[list[str]] = None,
     ):
         exchange_location = Location.BINANCE
         if uri == BINANCEUS_BASE_URL:
@@ -250,7 +239,7 @@ class Binance(ExchangeInterface):
             api_key: Optional[ApiKey],
             api_secret: Optional[ApiSecret],
             **kwargs: Any,
-    ) -> Tuple[bool, str]:
+    ) -> tuple[bool, str]:
         success, msg = super().edit_exchange(
             name=name,
             api_key=api_key,
@@ -269,12 +258,12 @@ class Binance(ExchangeInterface):
         return True, ''
 
     @property
-    def symbols_to_pair(self) -> Dict[str, BinancePair]:
+    def symbols_to_pair(self) -> dict[str, BinancePair]:
         """Returns binance symbols to pair if in memory otherwise queries binance"""
         self.first_connection()
         return self._symbols_to_pair
 
-    def validate_api_key(self) -> Tuple[bool, str]:
+    def validate_api_key(self) -> tuple[bool, str]:
         try:
             # We know account endpoint returns a dict
             self.api_query_dict('api', 'account')
@@ -300,8 +289,8 @@ class Binance(ExchangeInterface):
             self,
             api_type: BINANCE_API_TYPE,
             method: str,
-            options: Optional[Dict] = None,
-    ) -> Union[List, Dict]:
+            options: Optional[dict] = None,
+    ) -> Union[list, dict]:
         """Performs a binance api query
 
         May raise:
@@ -373,7 +362,7 @@ class Binance(ExchangeInterface):
                     log.debug(f'Couldnt query {self.name} trades for {symbol} since its delisted')
                     return []
 
-                exception_class: Union[Type[RemoteError], Type[BinancePermissionError]]
+                exception_class: Union[type[RemoteError], type[BinancePermissionError]]
                 if response.status_code == 401 and code == REJECTED_MBX_KEY:
                     # Either API key permission error or if futures/dapi then not enabled yet
                     exception_class = BinancePermissionError
@@ -436,8 +425,8 @@ class Binance(ExchangeInterface):
             self,
             api_type: BINANCE_API_TYPE,
             method: str,
-            options: Optional[Dict] = None,
-    ) -> Dict:
+            options: Optional[dict] = None,
+    ) -> dict:
         """May raise RemoteError and BinancePermissionError due to api_query"""
         result = self.api_query(api_type, method, options)
         if not isinstance(result, dict):
@@ -451,11 +440,11 @@ class Binance(ExchangeInterface):
             self,
             api_type: BINANCE_API_TYPE,
             method: str,
-            options: Optional[Dict] = None,
-    ) -> List:
+            options: Optional[dict] = None,
+    ) -> list:
         """May raise RemoteError and BinancePermissionError due to api_query"""
         result = self.api_query(api_type, method, options)
-        if isinstance(result, Dict):
+        if isinstance(result, dict):
             if 'data' in result:
                 result = result['data']
             elif 'total' in result and result['total'] == 0:
@@ -854,7 +843,7 @@ class Binance(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> Tuple[List[Trade], Tuple[Timestamp, Timestamp]]:
+    ) -> tuple[list[Trade], tuple[Timestamp, Timestamp]]:
         """
 
         May raise due to api query and unexpected id:
@@ -954,7 +943,7 @@ class Binance(ExchangeInterface):
 
         return trades, (start_ts, end_ts)
 
-    def _query_online_fiat_payments(self, start_ts: Timestamp, end_ts: Timestamp) -> List[Trade]:
+    def _query_online_fiat_payments(self, start_ts: Timestamp, end_ts: Timestamp) -> list[Trade]:
         if self.location == Location.BINANCEUS:
             return []  # dont exist for Binance US: https://github.com/rotki/rotki/issues/3664
 
@@ -988,7 +977,7 @@ class Binance(ExchangeInterface):
 
     def _deserialize_fiat_payment(
             self,
-            raw_data: Dict[str, Any],
+            raw_data: dict[str, Any],
             trade_type: TradeType,
     ) -> Optional[Trade]:
         """Processes a single deposit/withdrawal from binance and deserializes it
@@ -1055,7 +1044,7 @@ class Binance(ExchangeInterface):
 
     def _deserialize_fiat_movement(
             self,
-            raw_data: Dict[str, Any],
+            raw_data: dict[str, Any],
             category: AssetMovementCategory,
     ) -> Optional[AssetMovement]:
         """Processes a single deposit/withdrawal from binance and deserializes it
@@ -1114,7 +1103,7 @@ class Binance(ExchangeInterface):
 
         return None
 
-    def _deserialize_asset_movement(self, raw_data: Dict[str, Any]) -> Optional[AssetMovement]:
+    def _deserialize_asset_movement(self, raw_data: dict[str, Any]) -> Optional[AssetMovement]:
         """Processes a single deposit/withdrawal from binance and deserializes it
 
         Can log error/warning and return None if something went wrong at deserialization
@@ -1189,8 +1178,8 @@ class Binance(ExchangeInterface):
                 'fiat/orders',
                 'fiat/payments',
             ],
-            additional_options: Optional[Dict] = None,
-    ) -> List[Dict[str, Any]]:
+            additional_options: Optional[dict] = None,
+    ) -> list[dict[str, Any]]:
         """Request via `api_query_dict()` from `start_ts` `end_ts` using a time
         delta (offset) less than `time_delta`.
 
@@ -1200,7 +1189,7 @@ class Binance(ExchangeInterface):
           `used_query_ranges` table, but 0.
           - Timestamps are converted to milliseconds.
         """
-        results: List[Dict[str, Any]] = []
+        results: list[dict[str, Any]] = []
         # Create required time references in milliseconds
         start_ts = Timestamp(start_ts * 1000)
         end_ts = Timestamp(end_ts * 1000)
@@ -1238,7 +1227,7 @@ class Binance(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> List[AssetMovement]:
+    ) -> list[AssetMovement]:
         """
         Be aware of:
           - Timestamps must be in milliseconds.
@@ -1307,12 +1296,12 @@ class Binance(ExchangeInterface):
             self,  # pylint: disable=no-self-use
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,  # pylint: disable=unused-argument
-    ) -> List[MarginPosition]:
+    ) -> list[MarginPosition]:
         return []  # noop for binance
 
     def query_online_income_loss_expense(
             self,  # pylint: disable=no-self-use
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,  # pylint: disable=unused-argument
-    ) -> List[LedgerAction]:
+    ) -> list[LedgerAction]:
         return []  # noop for binance

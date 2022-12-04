@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Optional
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def _legacy_contracts_basic_info(tx_log: EvmTxReceiptLog) -> Tuple[ChecksumEvmAddress, Optional[CryptoAsset], Optional[CryptoAsset]]:  # noqa: E501
+def _legacy_contracts_basic_info(tx_log: EvmTxReceiptLog) -> tuple[ChecksumEvmAddress, Optional[CryptoAsset], Optional[CryptoAsset]]:  # noqa: E501
     """
     Returns:
     - address of the sender
@@ -51,7 +51,7 @@ def _legacy_contracts_basic_info(tx_log: EvmTxReceiptLog) -> Tuple[ChecksumEvmAd
 
 
 def _maybe_update_events_legacy_contrats(
-    decoded_events: List[HistoryBaseEntry],
+    decoded_events: list[HistoryBaseEntry],
     sender: ChecksumEvmAddress,
     source_asset: CryptoAsset,
     destination_asset: CryptoAsset,
@@ -103,10 +103,10 @@ class KyberDecoder(DecoderInterface):
         self,
         tx_log: EvmTxReceiptLog,
         transaction: EvmTransaction,  # pylint: disable=unused-argument
-        decoded_events: List[HistoryBaseEntry],
-        all_logs: List[EvmTxReceiptLog],  # pylint: disable=unused-argument
-        action_items: Optional[List[ActionItem]],  # pylint: disable=unused-argument
-    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
+        decoded_events: list[HistoryBaseEntry],
+        all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+        action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
+    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         if tx_log.topics[0] == KYBER_TRADE_LEGACY:
             return None, []
 
@@ -134,10 +134,10 @@ class KyberDecoder(DecoderInterface):
         self,
         tx_log: EvmTxReceiptLog,
         transaction: EvmTransaction,  # pylint: disable=unused-argument
-        decoded_events: List[HistoryBaseEntry],
-        all_logs: List[EvmTxReceiptLog],  # pylint: disable=unused-argument
-        action_items: Optional[List[ActionItem]],  # pylint: disable=unused-argument
-    ) -> Tuple[Optional[HistoryBaseEntry], List[ActionItem]]:
+        decoded_events: list[HistoryBaseEntry],
+        all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+        action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
+    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         if tx_log.topics[0] != KYBER_TRADE_LEGACY:
             return None, []
 
@@ -163,12 +163,12 @@ class KyberDecoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
-    def addresses_to_decoders(self) -> Dict[ChecksumEvmAddress, Tuple[Any, ...]]:
+    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
             KYBER_LEGACY_CONTRACT: (self._decode_legacy_trade,),
             KYBER_LEGACY_CONTRACT_MIGRATED: (self._decode_legacy_trade,),
             KYBER_LEGACY_CONTRACT_UPGRADED: (self._decode_legacy_upgraded_trade,),
         }
 
-    def counterparties(self) -> List[str]:
+    def counterparties(self) -> list[str]:
         return [CPT_KYBER]

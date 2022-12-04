@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
@@ -39,7 +39,7 @@ NFT_INFO_SQL_QUERY = (
 )
 
 
-NFT_DB_TUPLE = Tuple[
+NFT_DB_TUPLE = tuple[
     str,  # identifier
     Optional[str],  # name
     Optional[str],  # price_in_asset
@@ -55,7 +55,7 @@ NFT_DB_TUPLE = Tuple[
 def _deserialize_nft_price(
         last_price: Optional[str],
         last_price_asset: Optional[str],
-) -> Tuple[FVal, Asset, FVal]:
+) -> tuple[FVal, Asset, FVal]:
     """Deserialize last price and last price asset from a DB entry
     TODO: Both last_price and last_price_asset are optional in the current DB schema
     but they are not used as such and should not be. We need to change the schema.
@@ -67,7 +67,7 @@ def _deserialize_nft_price(
     return price_in_asset, price_asset, usd_price
 
 
-def _deserialize_nft_from_db(entry: NFT_DB_TUPLE) -> Dict[str, Any]:
+def _deserialize_nft_from_db(entry: NFT_DB_TUPLE) -> dict[str, Any]:
     """From a db tuple extract the information required by the API for a NFT"""
     price_in_asset, price_asset, usd_price = _deserialize_nft_price(
         last_price=entry[2],
@@ -106,10 +106,10 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):
     @cache_response_timewise_immutable()
     def _get_all_nft_data(
             self,  # pylint: disable=unused-argument
-            addresses: List[ChecksumEvmAddress],
+            addresses: list[ChecksumEvmAddress],
             # Kwargs here is so linters don't complain when the "magic" ignore_cache kwarg is given
             **kwargs: Any,
-    ) -> Tuple[Dict[ChecksumEvmAddress, List[NFT]], int]:
+    ) -> tuple[dict[ChecksumEvmAddress, list[NFT]], int]:
         """May raise RemoteError"""
         result = {}
         total_nfts_num = 0
@@ -136,7 +136,7 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):
 
     def get_all_info(
             self,
-            addresses: List[ChecksumEvmAddress],
+            addresses: list[ChecksumEvmAddress],
             ignore_cache: bool,
     ) -> NFTResult:
         """Gets info for all NFTs of the given addresses
@@ -160,7 +160,7 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):
             entries_limit=FREE_NFT_LIMIT,
         )
 
-    def get_db_nft_balances(self, filter_query: 'NFTFilterQuery') -> Dict[str, Any]:
+    def get_db_nft_balances(self, filter_query: 'NFTFilterQuery') -> dict[str, Any]:
         """Filters (with `filter_query`) and returns cached nft balances in the nfts table"""
         entries = defaultdict(list)
         query, bindings = filter_query.prepare()
@@ -195,7 +195,7 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):
 
     def query_balances(
             self,
-            addresses: List[ChecksumEvmAddress],
+            addresses: list[ChecksumEvmAddress],
             uniswap_nfts: Optional[AddressToUniswapV3LPBalances],
     ) -> None:
         """Queries NFT balances for the specified addresses and saves them to the db.
@@ -210,7 +210,7 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):
         # Be sure that the only addresses queried already exist in the database. Fix for #4456
         queried_addresses = list(set(accounts.eth) & set(addresses))
         nft_results, _ = self._get_all_nft_data(queried_addresses, ignore_cache=True)
-        db_data: List[NFT_DB_TUPLE] = []
+        db_data: list[NFT_DB_TUPLE] = []
         # get uniswap v3 lp balances and update nfts that are LPs with their worth.
         for address, nfts in nft_results.items():
             for nft in nfts:
@@ -265,13 +265,13 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):
             self,
             identifier: Optional[str] = None,
             lps_handling: NftLpHandling = NftLpHandling.ALL_NFTS,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Given an identifier for an nft asset return information about its manual price and
         price queried.
         """
         query_str = 'SELECT identifier, last_price, last_price_asset, manual_price from nfts WHERE last_price IS NOT NULL'  # noqa: E501
-        bindings: List[Union[str, bool]] = []
+        bindings: list[Union[str, bool]] = []
         if identifier is not None:
             query_str += ' AND identifier=?'
             bindings.append(identifier)
@@ -360,7 +360,7 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):
 
         return True
 
-    def _filter_ignored_nfts(self, nfts_data: Dict[ChecksumEvmAddress, List[NFT]]) -> Dict[ChecksumEvmAddress, List[NFT]]:  # noqa: E501
+    def _filter_ignored_nfts(self, nfts_data: dict[ChecksumEvmAddress, list[NFT]]) -> dict[ChecksumEvmAddress, list[NFT]]:  # noqa: E501
         """Remove ignored NFTs from NFTs data."""
         with self.db.conn.read_ctx() as cursor:
             # convert to set to allow O(1) during `in` conditional below.

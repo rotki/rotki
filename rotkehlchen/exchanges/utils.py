@@ -1,6 +1,6 @@
 import logging
 from json.decoder import JSONDecodeError
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 import requests
 from eth_utils.address import to_checksum_address
@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def get_key_if_has_val(mapping: Dict[str, Any], key: str) -> Optional[str]:
+def get_key_if_has_val(mapping: dict[str, Any], key: str) -> Optional[str]:
     """Gets the key from mapping if it exists and has a value (non empty string)
 
     The assumption here is that the value of the key is str. If it's not str
@@ -34,7 +34,7 @@ def get_key_if_has_val(mapping: Dict[str, Any], key: str) -> Optional[str]:
 
 
 def deserialize_asset_movement_address(
-        mapping: Dict[str, Any],
+        mapping: dict[str, Any],
         key: str,
         asset: Asset,
 ) -> Optional[str]:
@@ -51,15 +51,15 @@ def deserialize_asset_movement_address(
 
 
 def create_binance_symbols_to_pair(
-        exchange_data: Dict[str, Any],
+        exchange_data: dict[str, Any],
         location: Location,
-) -> Dict[str, BinancePair]:
+) -> dict[str, BinancePair]:
     """Parses the result of 'exchangeInfo' endpoint and creates the symbols_to_pair mapping
 
     May raise:
     - KeyError if the given exchange data has unexpected format
     """
-    result: Dict[str, BinancePair] = {}
+    result: dict[str, BinancePair] = {}
     for symbol in exchange_data['symbols']:
         symbol_str = symbol['symbol']
         if isinstance(symbol_str, FVal):
@@ -77,7 +77,7 @@ def create_binance_symbols_to_pair(
     return result
 
 
-def query_binance_exchange_pairs(location: Location) -> Dict[str, BinancePair]:
+def query_binance_exchange_pairs(location: Location) -> dict[str, BinancePair]:
     """Query all the binance pairs for a valid binance location (binance or binanceus).
     This function first tries to update the list of known pairs and store them in the database.
     If it fails tries to return available information in the database.

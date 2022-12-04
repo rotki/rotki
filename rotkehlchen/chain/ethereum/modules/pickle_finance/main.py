@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional
 
 from rotkehlchen.accounting.structures.balance import AssetBalance, Balance
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
@@ -22,7 +22,7 @@ class DillBalance(NamedTuple):
     pending_rewards: AssetBalance
     lock_time: Timestamp
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self) -> dict[str, Any]:
         return {
             "locked_amount": self.dill_amount.serialize(),
             "pending_rewards": self.pending_rewards.serialize(),
@@ -49,8 +49,8 @@ class PickleFinance(EthereumModule):
 
     def get_dill_balances(
         self,
-        addresses: List[ChecksumEvmAddress],
-    ) -> Dict[ChecksumEvmAddress, DillBalance]:
+        addresses: list[ChecksumEvmAddress],
+    ) -> dict[ChecksumEvmAddress, DillBalance]:
         """
         Query information for amount locked, pending rewards and time until unlock
         for Pickle's dill.
@@ -121,11 +121,11 @@ class PickleFinance(EthereumModule):
 
     def balances_in_protocol(
         self,
-        addresses: List[ChecksumEvmAddress],
-    ) -> Dict[ChecksumEvmAddress, List['AssetBalance']]:
+        addresses: list[ChecksumEvmAddress],
+    ) -> dict[ChecksumEvmAddress, list['AssetBalance']]:
         """Queries all the pickles deposited and available to claim in the protocol"""
         dill_balances = self.get_dill_balances(addresses)
-        balances_per_address: Dict[ChecksumEvmAddress, List['AssetBalance']] = defaultdict(list)
+        balances_per_address: dict[ChecksumEvmAddress, list['AssetBalance']] = defaultdict(list)
         for address, dill_balance in dill_balances.items():
             pickles = dill_balance.dill_amount + dill_balance.pending_rewards
             if pickles.balance.amount != 0:

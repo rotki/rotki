@@ -1,6 +1,6 @@
 from csv import DictReader
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, List, Tuple
+from typing import TYPE_CHECKING
 
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
@@ -21,9 +21,9 @@ if TYPE_CHECKING:
 
 
 def validate_import_data(
-        balances_data: List[Dict[str, str]],
-        location_data: List[Dict[str, str]],
-) -> Tuple[bool, str]:
+        balances_data: list[dict[str, str]],
+        location_data: list[dict[str, str]],
+) -> tuple[bool, str]:
     """Validates the snapshot data about to be imported.
     It returns the status of the validation and an error message if any.
     """
@@ -56,7 +56,7 @@ def validate_import_data(
 def parse_import_snapshot_data(
         balances_snapshot_file: Path,
         location_data_snapshot_file: Path,
-) -> Tuple[str, List[DBAssetBalance], List[LocationData]]:
+) -> tuple[str, list[DBAssetBalance], list[LocationData]]:
     """This function does the following:
     - Takes the path to the snapshot and converts it to a list of dictionaries.
     - The list of dictionaries is then passed through a series of validation checks.
@@ -75,8 +75,8 @@ def parse_import_snapshot_data(
     if is_valid is False:
         return message, [], []
 
-    processed_balances_list: List[DBAssetBalance] = []
-    processed_location_data_list: List[LocationData] = []
+    processed_balances_list: list[DBAssetBalance] = []
+    processed_location_data_list: list[LocationData] = []
     try:
         for entry in balances_list:
             processed_balances_list.append(
@@ -123,7 +123,7 @@ def parse_import_snapshot_data(
     return '', processed_balances_list, processed_location_data_list
 
 
-def _csv_to_dict(file: Path) -> List[Dict[str, str]]:
+def _csv_to_dict(file: Path) -> list[dict[str, str]]:
     """Converts a csv file to a list of dictionary."""
     with open(file) as csv_file:
         csv_reader = DictReader(csv_file)
@@ -135,7 +135,7 @@ def get_main_currency_price(
         db: DBHandler,
         timestamp: Timestamp,
         msg_aggregator: MessagesAggregator,
-) -> Tuple[AssetWithOracles, Price]:
+) -> tuple[AssetWithOracles, Price]:
     """Gets the main currency and its equivalent price at a particular timestamp."""
     main_currency = db.get_setting(cursor, name='main_currency')
     main_currency_price = None
