@@ -135,7 +135,7 @@ class Opensea(ExternalServiceWithApiKey):
             )
             return None
 
-        f = Fernet('draq3jF_MZR2MAV4tYTtGNjZQGAyEQkE-hr1cYF8kIc='.encode())
+        f = Fernet(b'draq3jF_MZR2MAV4tYTtGNjZQGAyEQkE-hr1cYF8kIc=')
         computed_key = f.decrypt(encrypted_key.encode()).decode()
         self.backup_key = computed_key
         return self.backup_key
