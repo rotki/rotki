@@ -195,8 +195,8 @@ class Covalent(ExternalServiceWithApiKey):
                     datestr=date_str,
                     formatstr=DATE_FORMAT_COVALENT,
                 )
-            except KeyError:
-                return None
+            except KeyError as e:
+                raise RemoteError(f'Missing key {str(e)} from Covalent response: {result}') from e
 
             if last_timestamp <= from_ts:
                 break

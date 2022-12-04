@@ -3851,11 +3851,18 @@ class RestAPI():
         to_timestamp: Timestamp,
     ) -> dict[str, Any]:
         avalanche = self.rotkehlchen.chains_aggregator.avalanche
-        response = avalanche.covalent.get_transactions(
-            account=address,
-            from_ts=from_timestamp,
-            to_ts=to_timestamp,
-        )
+        try:
+            response = avalanche.covalent.get_transactions(
+                account=address,
+                from_ts=from_timestamp,
+                to_ts=to_timestamp,
+            )
+        except RemoteError as e:
+            return {
+                'result': [],
+                'message': f'{str(e)}',
+                'status_code': HTTPStatus.BAD_GATEWAY,
+            }
         if response is None:
             return {
                 'result': [],
