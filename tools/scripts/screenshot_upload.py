@@ -2,6 +2,7 @@
 
 import argparse
 import os
+import sys
 from base64 import b64encode
 
 import requests
@@ -51,13 +52,13 @@ def main(directory: str):
 
     if not files:
         print('No screenshots to upload')
-        exit(0)
+        sys.exit(0)
 
     headers = {'Authorization': f'Client-ID {ANON_UPLOAD_ID}'}
 
     for path in files:
         upload(path, headers)
-    exit(0)
+    sys.exit(0)
 
 
 if __name__ == "__main__":
