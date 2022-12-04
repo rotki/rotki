@@ -13,6 +13,7 @@ lint:
 
 
 format:
+	ruff $(ALL_LINT_PATHS) --fix
 	isort $(ISORT_PARAMS)
 
 

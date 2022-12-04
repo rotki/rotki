@@ -42,7 +42,7 @@ disallow_untyped_defs = false
 [tool.ruff]
 line-length = 99
 
-select = ["E", "F", "W", "C", "N", "B", "T"]
+select = ["E", "F", "W", "C", "N", "B", "T", "UP"]
 extend-select = [
     "RUF100",  # detect unused noqa
 ]
