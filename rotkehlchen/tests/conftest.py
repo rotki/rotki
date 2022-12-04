@@ -30,9 +30,6 @@ configure_logging(default_args())
 
 from rotkehlchen.tests.fixtures import *  # noqa: F403
 
-# monkey patch web3's non-thread safe lru cache with our own version
-from rotkehlchen.chain.ethereum import patch_web3  # isort:skip # pylint: disable=unused-import # noqa
-
 assert sys.version_info.major == 3, 'Need to use python 3 for rotki'
 assert 9 == sys.version_info.minor, 'Need to use python 3.9 for rotki'
 
