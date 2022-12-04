@@ -465,7 +465,6 @@ class Bitpanda(ExchangeInterface):
     def query_balances(self) -> ExchangeQueryBalances:
         try:
             wallets, _, _ = self._api_query('wallets')
-            # asset_wallets = self._api_query('asset-wallets')
             fiat_wallets, _, _ = self._api_query('fiatwallets')
         except RemoteError as e:
             msg = f'Failed to query Bitpanda balances. {str(e)}'

@@ -17,7 +17,6 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.user_messages import MessagesAggregator
 
-# from rotkehlchen.chain.ethereum.modules.aave.constants import CPT_AAVE_V1
 from ..constants import CPT_AAVE_V1
 
 DEPOSIT = b'\xc1,W\xb1\xc7:,:.\xa4a>\x94v\xab\xb3\xd8\xd1F\x85z\xabs)\xe2BC\xfbYq\x0c\x82'

@@ -130,9 +130,7 @@ def pubkey_to_p2sh_p2wpkh_address(data: bytes) -> BTCAddress:
     script = bytes.fromhex('0014') + witprog
 
     prefix = b'\x05'  # this is mainnet prefix -- we don't care about testnet
-    # prefixed_hash, checksum = _calculate_hash160_and_checksum(prefix, prefix + script)
     prefixed_hash, checksum = _calculate_hash160_and_checksum(prefix, script)
-    # address = base58check.b58encode(prefix + prefixed_hash + checksum[:4])
     address = base58check.b58encode(prefixed_hash + checksum[:4])
     return BTCAddress(address.decode('ascii'))
 

@@ -389,9 +389,6 @@ class HDKey():
         try:
             if self.privkey:
                 raise NotImplementedError('Privkeys xpub derivation not implemented in rotki')
-                # if we have a private key, give the child a private key
-                # child_privkey = self.privkey.add(tweak)
-                # child_pubkey = PublicKey.from_secret(child_privkey.secret)
 
             # otherwise, just derive a pubkey
             child_pubkey = self.pubkey.add(tweak)

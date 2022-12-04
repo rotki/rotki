@@ -381,8 +381,7 @@ class MakerdaoVaults(HasDSProxy):
             # In cases where a CDP has been migrated from a SAI CDP to a DAI
             # Vault the usr in the first deposit will be the old address. To
             # detect the first deposit in these cases we need to check for
-            # arg1 being the urn
-            # 'usr': proxy,
+            # arg1 being the urn so we skip: 'usr': proxy,
             'arg1': address_to_bytes32(urn),
         }
         events = self.ethereum.get_logs(
@@ -479,7 +478,7 @@ class MakerdaoVaults(HasDSProxy):
             # For CDPs that were created by migrating from SAI the first DAI generation
             # during vault creation will have the old owner as arg2. So we can't
             # filter for it here. Still seems like the urn as arg1 is sufficient
-            # 'arg2': address_to_bytes32(proxy),
+            # so we skip: 'arg2': address_to_bytes32(proxy),
         }
         events = self.makerdao_vat.get_logs_since_deployment(
             node_inquirer=self.ethereum,

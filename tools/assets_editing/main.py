@@ -236,10 +236,6 @@ for key, entry in assets.items():
                     f' Our-name: {entry["name"]}. Coingecko-name: {coingecko_entry["name"]}',
                 )
 
-    # if 'coingecko' not in new_assets[key]:
-    #     __import__("pdb").set_trace()
-    #     a = 1
-
 
 print(f'Managed to automatically map {changed}/{len(assets)} assets for coingecko')
 print(f'Same name assets: {same_name_count}/{len(assets)}')

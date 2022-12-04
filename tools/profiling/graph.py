@@ -244,7 +244,6 @@ def latency_scatter(output, data_list):
         last = timestamps.pop(0)
         for current in timestamps:
             timedelta = current - last
-            # seconds = timedelta.total_seconds() - interval
             seconds = timedelta.total_seconds()
             timestamp.append(current)
             latency.append(seconds)

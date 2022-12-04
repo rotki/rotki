@@ -141,7 +141,6 @@ def cache_response_timewise_immutable(
     def _cache_response_timewise_immutable(f: Callable) -> Callable:
         @wraps(f)
         def wrapper(wrappingobj: CacheableMixIn, *args: Any, **kwargs: Any) -> Any:
-            # return f(wrappingobj, *args, **kwargs)
             cache_miss, cache_key, now, kwargs = _cache_response_timewise_base(
                 wrappingobj,
                 f,

@@ -5,7 +5,6 @@ from substrateinterface import SubstrateInterface
 
 KusamaAddress = NewType('KusamaAddress', str)
 PolkadotAddress = NewType('PolkadotAddress', str)
-# SubstrateAddress = Union[KusamaAddress, PolkadotAddress]
 SubstrateAddress = TypeVar('SubstrateAddress', KusamaAddress, PolkadotAddress)
 SubstratePublicKey = NewType('SubstratePublicKey', str)
 

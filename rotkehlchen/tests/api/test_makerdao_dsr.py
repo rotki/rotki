@@ -183,7 +183,6 @@ def mock_etherscan_for_dsr(
                     elif proxy2_contents in input_data:
                         result = int_to_32byteshexstr(params.account2_current_normalized_balance)
                     else:
-                        # result = int_to_32byteshexstr(0)
                         raise AssertionError('Pie call for unexpected account during tests')
                 elif input_data.startswith('0xc92aecc4'):  # chi
                     result = int_to_32byteshexstr(params.current_chi)
