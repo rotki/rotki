@@ -8,7 +8,9 @@ on:
       - bugfixes
   push:
     branches:
+      - master
       - develop
+      - bugfixes
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
@@ -107,7 +109,7 @@ jobs:
             frontend/common/.eslintcache
           key: ${{ runner.os }}-eslint-${{ github.ref_name }}
           restore-keys: |
-            ${{ runner.os }}-eslint-develop
+            ${{ runner.os }}-eslint-${{ github.base_ref || github.ref_name }}
       - name: Install dependencies
         working-directory: ./frontend
         run: |
@@ -117,11 +119,17 @@ jobs:
           fi
       - name: Build
         working-directory: ./frontend
-        run: npm run build
+        run: |
+          if [ ${{ github.event_name }} == 'push' ]; then          
+            npm run build -w @rotki/common
+          else
+            npm run build
+          fi
       - name: Lint code
         working-directory: ./frontend
         run: npm run lint
       - name: Lint style
+        if: ${{ github.event_name != 'push' }}
         working-directory: ./frontend/app
         run: npm run lint:style
 
