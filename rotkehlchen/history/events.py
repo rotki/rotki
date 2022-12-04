@@ -175,19 +175,19 @@ class EventsHistorian:
 
         - RemoteError if there is a problem with reaching the service
         """
-        if location in SUPPORTED_EXCHANGES:
-            exchanges_list = self.exchange_manager.connected_exchanges.get(location)
-            if exchanges_list is None:
-                return
+        if location not in SUPPORTED_EXCHANGES:
+            return  # nothing to do
 
-            for exchange in exchanges_list:
-                exchange.query_trade_history(
-                    start_ts=from_ts,
-                    end_ts=to_ts,
-                    only_cache=False,
-                )
-        else:
-            log.error(f'Requested latest trades for unsupported location {location}')
+        exchanges_list = self.exchange_manager.connected_exchanges.get(location)
+        if exchanges_list is None:
+            return
+
+        for exchange in exchanges_list:
+            exchange.query_trade_history(
+                start_ts=from_ts,
+                end_ts=to_ts,
+                only_cache=False,
+            )
 
     def _query_services_for_asset_movements(self, filter_query: AssetMovementsFilterQuery) -> None:
         """Queries all services requested for asset movements and writes them to the DB"""
