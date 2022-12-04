@@ -661,7 +661,7 @@ def test_search_assets(rotkehlchen_api_server):
     )
     result = assert_proper_response_with_result(response)
     assert len(result) == 3
-    assert any(['Ethereum' == entry['name'] for entry in result])
+    assert any([entry['name'] == 'Ethereum' for entry in result])
     for entry in result:
         assert entry['symbol'] == 'ETH'
     assert_asset_result_order(data=result, is_ascending=False, order_field='name')
@@ -689,7 +689,7 @@ def test_search_assets(rotkehlchen_api_server):
     )
     result = assert_proper_response_with_result(response)
     assert len(result) == 2
-    assert any(['Ethereum' == entry['name'] for entry in result])
+    assert any([entry['name'] == 'Ethereum' for entry in result])
     for entry in result:
         assert entry['symbol'] == 'ETH'
         assert entry['identifier'] != 'ETH2'
@@ -757,7 +757,7 @@ def test_search_assets(rotkehlchen_api_server):
     )
     result = assert_proper_response_with_result(response)
     assert 50 >= len(result) > 10
-    assert all(['ethereum' == entry['evm_chain'] and 'DAI' in entry['symbol'] for entry in result])
+    assert all([entry['evm_chain'] == 'ethereum' and 'DAI' in entry['symbol'] for entry in result])
     assert_asset_result_order(data=result, is_ascending=True, order_field='name')
 
     # check that using an unsupported evm_chain fails
@@ -856,7 +856,7 @@ def test_search_assets_with_levenshtein(rotkehlchen_api_server):
     assert_substring_in_search_result(result, 'ETH')
     # check that Ethereum(ETH) appears at the top of result.
     assert_asset_at_top_position('ETH', max_position_index=1, result=result)
-    assert all(['ETH2' != entry['identifier'] and entry['asset_type'] != 'custom asset' and 'custom_asset_type' not in entry.keys() for entry in result])  # noqa: E501
+    assert all([entry['identifier'] != 'ETH2' and entry['asset_type'] != 'custom asset' and 'custom_asset_type' not in entry.keys() for entry in result])  # noqa: E501
 
     # check that searching for a non-existent asset returns nothing
     response = requests.post(
@@ -886,7 +886,7 @@ def test_search_assets_with_levenshtein(rotkehlchen_api_server):
     )
     result = assert_proper_response_with_result(response)
     assert 50 >= len(result) > 10
-    assert all(['ethereum' == entry['evm_chain'] and entry['asset_type'] != 'custom asset' and 'custom_asset_type' not in entry.keys() for entry in result])  # noqa: E501
+    assert all([entry['evm_chain'] == 'ethereum' and entry['asset_type'] != 'custom asset' and 'custom_asset_type' not in entry.keys() for entry in result])  # noqa: E501
 
     assert_substring_in_search_result(result, 'dai')
     # check that Dai(DAI) appears at the top of result.
@@ -918,7 +918,7 @@ def test_search_assets_with_levenshtein(rotkehlchen_api_server):
     )
     result = assert_proper_response_with_result(response)
     assert_substring_in_search_result(result, 'my custom')
-    assert all([custom_asset_id == entry['identifier'] and entry['asset_type'] == 'custom asset' and 'random' == entry['custom_asset_type'] for entry in result])  # noqa: E501
+    assert all([custom_asset_id == entry['identifier'] and entry['asset_type'] == 'custom asset' and entry['custom_asset_type'] == 'random' for entry in result])  # noqa: E501
 
     # check that using an unsupported evm_chain fails
     response = requests.post(

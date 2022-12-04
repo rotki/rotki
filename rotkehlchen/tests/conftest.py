@@ -30,7 +30,7 @@ configure_logging(default_args())
 from rotkehlchen.tests.fixtures import *  # noqa: F403
 
 assert sys.version_info.major == 3, 'Need to use python 3 for rotki'
-assert 9 == sys.version_info.minor, 'Need to use python 3.9 for rotki'
+assert sys.version_info.minor == 9, 'Need to use python 3.9 for rotki'
 
 
 def pytest_addoption(parser):
