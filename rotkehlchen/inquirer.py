@@ -1,4 +1,3 @@
-from __future__ import unicode_literals  # isort:skip
 
 import logging
 import operator
