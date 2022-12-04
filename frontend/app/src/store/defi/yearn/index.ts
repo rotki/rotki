@@ -90,7 +90,7 @@ export const useYearnStore = defineStore('defi/yearn', () => {
   const yearnVaultsAssets = (
     addresses: string[],
     version: ProtocolVersion = ProtocolVersion.V1
-  ) =>
+  ): ComputedRef<YearnVaultAsset[]> =>
     computed(() => {
       const vaultBalances = get(
         version === ProtocolVersion.V1 ? vaultsBalances : vaultsV2Balances
@@ -160,7 +160,7 @@ export const useYearnStore = defineStore('defi/yearn', () => {
       refresh: false,
       version: ProtocolVersion.V1
     }
-  ) {
+  ): Promise<void> {
     const isV1 = version === ProtocolVersion.V1;
     const isV2 = version === ProtocolVersion.V2;
     const modules = get(activeModules);
@@ -226,7 +226,7 @@ export const useYearnStore = defineStore('defi/yearn', () => {
     refresh?: boolean;
     reset?: boolean;
     version: ProtocolVersion;
-  }) {
+  }): Promise<void> {
     const refresh = payload?.refresh;
     const reset = payload?.reset;
 
@@ -295,7 +295,7 @@ export const useYearnStore = defineStore('defi/yearn', () => {
     setStatus(Status.LOADED, section);
   }
 
-  const reset = (version?: ProtocolVersion) => {
+  const reset = (version?: ProtocolVersion): void => {
     const { resetStatus } = useStatusUpdater(
       Section.DEFI_YEARN_VAULTS_BALANCES
     );

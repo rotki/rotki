@@ -32,6 +32,7 @@ tests/e2e/videos
 tests/e2e/screenshots
 tests/**/coverage
 .nyc_output
+.eslintcache
 
 rotki_config.json
 package-lock.json

@@ -14,8 +14,8 @@
     "build": "rimraf lib && tsc -m es6",
     "watch": "tsc -w -m es6",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "lint:fix": "eslint --fix . --ext .js,.jsx,.ts,.tsx",
-    "lint": "eslint . --ext .js,.jsx,.ts,.tsx"
+    "lint:fix": "eslint --cache --fix . --ext .js,.jsx,.ts,.tsx",
+    "lint": "eslint --cache . --ext .js,.jsx,.ts,.tsx"
   },
   "author": "Rotki Solutions GmbH <info@rotki.com>",
   "homepage": "https://rotki.com",

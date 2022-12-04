@@ -48,7 +48,7 @@ export const useLedgerActions = defineStore('history/ledgerActions', () => {
   const fetchLedgerActions = async (
     refresh = false,
     onlyLocation?: SupportedExchange
-  ) => {
+  ): Promise<void> => {
     const { awaitTask, isTaskRunning } = useTasks();
     const { setStatus, loading, isFirstLoad, resetStatus } = useStatusUpdater(
       Section.LEDGER_ACTIONS,
@@ -59,7 +59,7 @@ export const useLedgerActions = defineStore('history/ledgerActions', () => {
     const fetchLedgerActionsHandler = async (
       onlyCache: boolean,
       parameters?: Partial<LedgerActionRequestPayload>
-    ) => {
+    ): Promise<Collection<LedgerActionEntry>> => {
       const defaults: LedgerActionRequestPayload = {
         limit: 1,
         offset: 0,
@@ -120,7 +120,7 @@ export const useLedgerActions = defineStore('history/ledgerActions', () => {
         await fetchAssociatedLocations();
       }
 
-      const fetchOnlyCache = async () => {
+      const fetchOnlyCache = async (): Promise<void> => {
         set(ledgerActions, await fetchLedgerActionsHandler(true));
       };
 
@@ -165,7 +165,7 @@ export const useLedgerActions = defineStore('history/ledgerActions', () => {
 
   const updateLedgerActionsPayload = async (
     newPayload: Partial<LedgerActionRequestPayload>
-  ) => {
+  ): Promise<void> => {
     if (!isEqual(get(ledgerActionsPayload), newPayload)) {
       set(ledgerActionsPayload, newPayload);
       await fetchLedgerActions();

@@ -26,7 +26,7 @@ export const useLiquityStore = defineStore('defi/liquity', () => {
   const { activeModules } = useModules();
   const { t, tc } = useI18n();
 
-  async function fetchPools(refresh = false) {
+  const fetchPools = async (refresh = false): Promise<void> => {
     const meta: TaskMeta = {
       title: tc('actions.defi.liquity_pools.task.title'),
       numericKeys: []
@@ -62,9 +62,9 @@ export const useLiquityStore = defineStore('defi/liquity', () => {
       },
       stakingPools
     );
-  }
+  };
 
-  async function fetchBalances(refresh = false) {
+  const fetchBalances = async (refresh = false): Promise<void> => {
     const meta: TaskMeta = {
       title: t('actions.defi.liquity.task.title').toString(),
       numericKeys: []
@@ -100,9 +100,9 @@ export const useLiquityStore = defineStore('defi/liquity', () => {
       },
       balances
     );
-  }
+  };
 
-  async function fetchEvents(refresh = false) {
+  const fetchEvents = async (refresh = false): Promise<void> => {
     const meta: TaskMeta = {
       title: t('actions.defi.liquity_events.task.title').toString(),
       numericKeys: []
@@ -139,9 +139,9 @@ export const useLiquityStore = defineStore('defi/liquity', () => {
       },
       events
     );
-  }
+  };
 
-  async function fetchStaking(refresh = false) {
+  const fetchStaking = async (refresh = false): Promise<void> => {
     const meta: TaskMeta = {
       title: t('actions.defi.liquity_staking.task.title').toString(),
       numericKeys: []
@@ -177,9 +177,9 @@ export const useLiquityStore = defineStore('defi/liquity', () => {
       },
       staking
     );
-  }
+  };
 
-  const reset = () => {
+  const reset = (): void => {
     const { resetStatus } = useStatusUpdater(Section.DEFI_LIQUITY_BALANCES);
 
     set(balances, {});

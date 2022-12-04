@@ -60,7 +60,7 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
   const premium = usePremium();
   const { tc } = useI18n();
 
-  async function fetchDSRBalances(refresh = false) {
+  const fetchDSRBalances = async (refresh = false): Promise<void> => {
     if (!get(activeModules).includes(Module.MAKERDAO_DSR)) {
       return;
     }
@@ -106,9 +106,9 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
     }
 
     setStatus(Status.LOADED, section);
-  }
+  };
 
-  async function fetchDSRHistory(refresh = false) {
+  const fetchDSRHistory = async (refresh = false): Promise<void> => {
     if (!get(activeModules).includes(Module.MAKERDAO_DSR) || !get(premium)) {
       return;
     }
@@ -154,9 +154,9 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
       });
     }
     setStatus(Status.LOADED, section);
-  }
+  };
 
-  async function fetchMakerDAOVaults(refresh = false) {
+  const fetchMakerDAOVaults = async (refresh = false): Promise<void> => {
     if (!get(activeModules).includes(Module.MAKERDAO_VAULTS)) {
       return;
     }
@@ -203,9 +203,9 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
       });
     }
     setStatus(Status.LOADED, section);
-  }
+  };
 
-  async function fetchMakerDAOVaultDetails(refresh = false) {
+  const fetchMakerDAOVaultDetails = async (refresh = false): Promise<void> => {
     if (!get(activeModules).includes(Module.MAKERDAO_VAULTS) || !get(premium)) {
       return;
     }
@@ -249,9 +249,9 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
     }
 
     setStatus(Status.LOADED, section);
-  }
+  };
 
-  const reset = (protocol?: MakerDAOProtocol) => {
+  const reset = (protocol?: MakerDAOProtocol): void => {
     const { resetStatus } = useStatusUpdater(Section.DEFI_DSR_BALANCES);
     if (!protocol || protocol === Module.MAKERDAO_DSR) {
       set(dsrHistory, {});

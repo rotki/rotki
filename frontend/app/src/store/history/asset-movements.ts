@@ -48,7 +48,7 @@ export const useAssetMovements = defineStore('history/assetMovements', () => {
   const fetchAssetMovements = async (
     refresh = false,
     onlyLocation?: SupportedExchange
-  ) => {
+  ): Promise<void> => {
     const { awaitTask, isTaskRunning } = useTasks();
     const { setStatus, loading, isFirstLoad, resetStatus } = useStatusUpdater(
       Section.ASSET_MOVEMENT,
@@ -59,7 +59,7 @@ export const useAssetMovements = defineStore('history/assetMovements', () => {
     const fetchAssetMovementsHandler = async (
       onlyCache: boolean,
       parameters?: Partial<AssetMovementRequestPayload>
-    ) => {
+    ): Promise<Collection<AssetMovementEntry>> => {
       const defaults: AssetMovementRequestPayload = {
         limit: 0,
         offset: 0,
@@ -143,7 +143,7 @@ export const useAssetMovements = defineStore('history/assetMovements', () => {
         await fetchAssociatedLocations();
       }
 
-      const fetchOnlyCache = async () => {
+      const fetchOnlyCache = async (): Promise<void> => {
         set(assetMovements, await fetchAssetMovementsHandler(true));
       };
 
@@ -197,7 +197,7 @@ export const useAssetMovements = defineStore('history/assetMovements', () => {
 
   const updateAssetMovementsPayload = async (
     newPayload: Partial<AssetMovementRequestPayload>
-  ) => {
+  ): Promise<void> => {
     if (!isEqual(get(assetMovementsPayload), newPayload)) {
       set(assetMovementsPayload, newPayload);
       await fetchAssetMovements();

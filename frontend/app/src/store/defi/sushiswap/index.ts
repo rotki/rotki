@@ -1,5 +1,11 @@
-import { XswapBalances, XswapEvents } from '@rotki/common/lib/defi/xswap';
-import { Ref } from 'vue';
+import {
+  XswapBalance,
+  XswapBalances,
+  XswapEventDetails,
+  XswapEvents,
+  XswapPoolProfit
+} from '@rotki/common/lib/defi/xswap';
+import { ComputedRef, Ref } from 'vue';
 import { usePremium } from '@/composables/premium';
 import { useModules } from '@/composables/session/modules';
 import { useStatusUpdater } from '@/composables/status';
@@ -30,11 +36,11 @@ export const useSushiswapStore = defineStore('defi/sushiswap', () => {
   const { activeModules } = useModules();
   const { t } = useI18n();
 
-  const balanceList = (addresses: string[]) =>
+  const balanceList = (addresses: string[]): ComputedRef<XswapBalance[]> =>
     computed(() => getBalances(get(balances), addresses));
-  const poolProfit = (addresses: string[]) =>
+  const poolProfit = (addresses: string[]): ComputedRef<XswapPoolProfit[]> =>
     computed(() => getPoolProfit(get(events) as XswapEvents, addresses));
-  const eventList = (addresses: string[]) =>
+  const eventList = (addresses: string[]): ComputedRef<XswapEventDetails[]> =>
     computed(() => getEventDetails(get(events) as XswapEvents, addresses));
   const addresses = computed(() =>
     Object.keys(get(balances)).concat(
@@ -45,7 +51,7 @@ export const useSushiswapStore = defineStore('defi/sushiswap', () => {
     getPools(get(balances), get(events) as XswapEvents)
   );
 
-  async function fetchBalances(refresh = false) {
+  const fetchBalances = async (refresh = false): Promise<void> => {
     const meta: TaskMeta = {
       title: t('actions.defi.sushiswap_balances.task.title').toString(),
       numericKeys: uniswapNumericKeys
@@ -80,9 +86,9 @@ export const useSushiswapStore = defineStore('defi/sushiswap', () => {
       },
       balances
     );
-  }
+  };
 
-  async function fetchEvents(refresh = false) {
+  const fetchEvents = async (refresh = false): Promise<void> => {
     const meta: TaskMeta = {
       title: t('actions.defi.sushiswap_events.task.title').toString(),
       numericKeys: uniswapEventsNumericKeys
@@ -117,15 +123,15 @@ export const useSushiswapStore = defineStore('defi/sushiswap', () => {
       },
       events
     );
-  }
+  };
 
-  async function reset() {
+  const reset = (): void => {
     const { resetStatus } = useStatusUpdater(Section.DEFI_SUSHISWAP_BALANCES);
     set(balances, {});
     set(events, {});
     resetStatus();
     resetStatus(Section.DEFI_SUSHISWAP_EVENTS);
-  }
+  };
 
   return {
     balances,

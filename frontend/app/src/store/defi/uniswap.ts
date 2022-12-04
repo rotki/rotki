@@ -1,7 +1,9 @@
 import {
   XswapBalance,
   XswapBalances,
-  XswapEvents
+  XswapEventDetails,
+  XswapEvents,
+  XswapPoolProfit
 } from '@rotki/common/lib/defi/xswap';
 import { ComputedRef, Ref } from 'vue';
 import { usePremium } from '@/composables/premium';
@@ -46,12 +48,16 @@ export const useUniswapStore = defineStore('defi/uniswap', () => {
       return getBalances(get(v3Balances), addresses, false);
     });
 
-  const uniswapPoolProfit = (addresses: string[]) =>
+  const uniswapPoolProfit = (
+    addresses: string[]
+  ): ComputedRef<XswapPoolProfit[]> =>
     computed(() => {
       return getPoolProfit(get(events), addresses);
     });
 
-  const uniswapEvents = (addresses: string[]) =>
+  const uniswapEvents = (
+    addresses: string[]
+  ): ComputedRef<XswapEventDetails[]> =>
     computed(() => {
       return getEventDetails(get(events), addresses);
     });
@@ -83,7 +89,7 @@ export const useUniswapStore = defineStore('defi/uniswap', () => {
     return getPools(uniswapBalances, {});
   });
 
-  const fetchV2Balances = async (refresh = false) => {
+  const fetchV2Balances = async (refresh = false): Promise<void> => {
     const meta: TaskMeta = {
       title: t('actions.defi.uniswap.task.title', { v: 2 }).toString(),
       numericKeys: []
@@ -122,7 +128,7 @@ export const useUniswapStore = defineStore('defi/uniswap', () => {
     );
   };
 
-  const fetchV3Balances = async (refresh = false) => {
+  const fetchV3Balances = async (refresh = false): Promise<void> => {
     const meta = {
       title: t('actions.defi.uniswap.task.title', { v: 3 }).toString(),
       numericKeys: [],
@@ -163,7 +169,7 @@ export const useUniswapStore = defineStore('defi/uniswap', () => {
     );
   };
 
-  const fetchEvents = async (refresh = false) => {
+  const fetchEvents = async (refresh = false): Promise<void> => {
     const meta: TaskMeta = {
       title: tc('actions.defi.uniswap_events.task.title'),
       numericKeys: uniswapEventsNumericKeys
@@ -200,7 +206,7 @@ export const useUniswapStore = defineStore('defi/uniswap', () => {
     );
   };
 
-  const reset = () => {
+  const reset = (): void => {
     const { resetStatus } = useStatusUpdater(Section.DEFI_UNISWAP_V3_BALANCES);
     set(v2Balances, {});
     set(v3Balances, {});

@@ -49,7 +49,7 @@ export const useTrades = defineStore('history/trades', () => {
   const fetchTrades = async (
     refresh = false,
     onlyLocation?: SupportedExchange
-  ) => {
+  ): Promise<void> => {
     const { awaitTask, isTaskRunning } = useTasks();
     const { setStatus, loading, isFirstLoad, resetStatus } = useStatusUpdater(
       Section.TRADES,
@@ -60,7 +60,7 @@ export const useTrades = defineStore('history/trades', () => {
     const fetchTradesHandler = async (
       onlyCache: boolean,
       parameters?: Partial<TradeRequestPayload>
-    ) => {
+    ): Promise<Collection<TradeEntry>> => {
       const defaults: TradeRequestPayload = {
         limit: 0,
         offset: 0,
@@ -121,7 +121,7 @@ export const useTrades = defineStore('history/trades', () => {
         await fetchAssociatedLocations();
       }
 
-      const fetchOnlyCache = async () => {
+      const fetchOnlyCache = async (): Promise<void> => {
         set(trades, await fetchTradesHandler(true));
       };
 
@@ -169,7 +169,7 @@ export const useTrades = defineStore('history/trades', () => {
 
   const updateTradesPayload = async (
     newPayload: Partial<TradeRequestPayload>
-  ) => {
+  ): Promise<void> => {
     if (!isEqual(get(tradesPayload), newPayload)) {
       set(tradesPayload, newPayload);
       await fetchTrades();

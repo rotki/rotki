@@ -1,6 +1,6 @@
 import { assert } from '@/utils/assertions';
 
-export function invertColor(color: string, bw = true): string {
+export const invertColor = (color: string, bw = true): string => {
   if (color.indexOf('#') === 0) {
     color = color.slice(1);
   }
@@ -24,7 +24,7 @@ export function invertColor(color: string, bw = true): string {
   const bInv = (255 - b).toString(16).padStart(2, '0');
 
   return `${rInv}${gInv}${bInv}`;
-}
+};
 
 const randomInt = (min: number, max: number): number => {
   return Math.floor(Math.random() * (max - min + 1)) + min;
