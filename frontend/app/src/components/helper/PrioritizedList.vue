@@ -1,12 +1,12 @@
 <template>
   <div>
-    <v-sheet outlined rounded class="mt-4">
+    <v-sheet outlined rounded>
       <div class="pb-0" :class="slots.title ? 'pa-4' : 'pa-0'">
-        <div v-if="slots.title" class="text-h5 pt-2 pb-4">
+        <div v-if="slots.title" class="text-h6 pb-4">
           <slot name="title" />
         </div>
 
-        <v-row v-if="!disableAdd" class="mb-4" no-gutters align="center">
+        <v-row v-if="!disableAdd" no-gutters>
           <v-col class="pr-4">
             <v-autocomplete
               v-model="selection"
@@ -14,7 +14,8 @@
               outlined
               :no-data-text="tc('prioritized_list.all_added', 0, itemNameTr)"
               :items="missing"
-              hide-details
+              :hint="autoCompleteHint"
+              persistent-hint
             >
               <template #selection="{ item }">
                 <prioritized-list-entry :data="itemData(item)" />
@@ -32,6 +33,7 @@
                   color="primary"
                   v-bind="attrs"
                   icon
+                  class="mt-3"
                   :disabled="!selection"
                   v-on="on"
                   @click="addItem"
@@ -69,11 +71,12 @@
           </tr>
           <tr v-for="(identifier, index) in value" :key="identifier">
             <td>
-              <div class="flex flex-column pt-3 pb-3">
+              <div class="flex flex-column py-2">
                 <div>
                   <v-btn
                     :id="'move-up-' + identifier"
                     icon
+                    small
                     :disabled="isFirst(identifier)"
                     @click="move(identifier, false)"
                   >
@@ -84,6 +87,7 @@
                   <v-btn
                     :id="'move-down-' + identifier"
                     icon
+                    small
                     :disabled="isLast(identifier)"
                     @click="move(identifier, true)"
                   >
@@ -106,7 +110,7 @@
                     v-on="on"
                     @click="remove(identifier)"
                   >
-                    <v-icon>mdi-delete-outline</v-icon>
+                    <v-icon>mdi-close</v-icon>
                   </v-btn>
                 </template>
                 <span>
@@ -123,7 +127,7 @@
 </template>
 
 <script setup lang="ts">
-import { PropType } from 'vue';
+import { ComputedRef, PropType } from 'vue';
 import ActionStatusIndicator from '@/components/error/ActionStatusIndicator.vue';
 import PrioritizedListEntry from '@/components/helper/PrioritizedListEntry.vue';
 import { Nullable } from '@/types';
@@ -218,6 +222,17 @@ const remove = (item: PrioritizedListId) => {
 
 const { t } = useI18n();
 const { tc } = useI18n();
+
+const autoCompleteHint: ComputedRef<string> = computed(() => {
+  const num = get(missing).length;
+  if (num) {
+    return tc('prioritized_list.disabled_items', 0, {
+      num,
+      namePluralized: get(itemNameTr).namePluralized
+    });
+  }
+  return tc('prioritized_list.all_added');
+});
 </script>
 
 <style scoped lang="scss">
