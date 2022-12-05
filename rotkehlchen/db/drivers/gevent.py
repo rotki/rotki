@@ -18,6 +18,7 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 from rotkehlchen.db.minimized_schema import MINIMIZED_USER_DB_SCHEMA
 from rotkehlchen.errors.misc import DBSchemaError
 from rotkehlchen.globaldb.minimized_schema import MINIMIZED_GLOBAL_DB_SCHEMA
+from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.logging import RotkehlchenLogger
@@ -326,17 +327,32 @@ class DBConnection:
             cursor.close()
 
     @contextmanager
-    def write_ctx(self) -> Generator['DBCursor', None, None]:
+    def write_ctx(self, commit_ts: bool = False) -> Generator['DBCursor', None, None]:
         cursor = self.cursor()
-        try:
-            yield cursor
-        except Exception:
-            self._conn.rollback()
-            raise
+        if self._conn.in_transaction is True:
+            with self.savepoint_ctx() as cursor:
+                yield cursor
+                return
         else:
-            self._conn.commit()
-        finally:
-            cursor.close()
+            cursor.execute('BEGIN TRANSACTION')
+            try:
+                yield cursor
+            except Exception:
+                while len(self.savepoints) != 0:
+                    gevent.sleep(1)
+                self._conn.rollback()
+                raise
+            else:
+                while len(self.savepoints) != 0:
+                    gevent.sleep(1)
+                if commit_ts is True:
+                    cursor.execute(
+                        'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+                        ('last_write_ts', str(ts_now())),
+                    )
+                self._conn.commit()
+            finally:
+                cursor.close()
 
     @contextmanager
     def savepoint_ctx(
@@ -348,13 +364,18 @@ class DBConnection:
         rolls back this savepoint, otherwise releases it (aka forgets it -- this is not commited to the DB).
         Savepoints work like nested transactions, more information here: https://www.sqlite.org/lang_savepoint.html
         """    # noqa: E501
+        savepoints_length_before = len(self.savepoints)
         cursor, savepoint_name = self.enter_savepoint(savepoint_name)
         try:
             yield cursor
         except Exception:
+            while len(self.savepoints) > savepoints_length_before + 1:
+                gevent.sleep(1)
             self.rollback_savepoint(savepoint_name)
             raise
         else:
+            while len(self.savepoints) > savepoints_length_before + 1:
+                gevent.sleep(1)
             self.release_savepoint(savepoint_name)
         finally:
             cursor.close()

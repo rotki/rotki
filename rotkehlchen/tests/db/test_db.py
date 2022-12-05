@@ -331,21 +331,21 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
         result, _ = data.add_ignored_assets([A_DOGE])
         assert result is None
 
-        with data.db.conn.read_ctx() as cursor:
-            ignored_assets = data.db.get_ignored_assets(cursor)
-            assert all(isinstance(asset, Asset) for asset in ignored_assets)
-            assert set(ignored_assets) == {A_DAO, A_DOGE}
-            # Test removing asset that is not in the list
-            result, msg = data.remove_ignored_assets([A_RDN])
-            assert 'not in ignored assets' in msg
-            assert result is None
-            result, _ = data.remove_ignored_assets([A_DOGE])
-            assert result
-            assert data.db.get_ignored_assets(cursor) == [A_DAO]
+    with data.db.conn.read_ctx() as cursor:
+        ignored_assets = data.db.get_ignored_assets(cursor)
+        assert all(isinstance(asset, Asset) for asset in ignored_assets)
+        assert set(ignored_assets) == {A_DAO, A_DOGE}
+        # Test removing asset that is not in the list
+        result, msg = data.remove_ignored_assets([A_RDN])
+        assert 'not in ignored assets' in msg
+        assert result is None
+        result, _ = data.remove_ignored_assets([A_DOGE])
+        assert result
+        assert data.db.get_ignored_assets(cursor) == [A_DAO]
 
-            # With nothing inserted in settings make sure default values are returned
-            result = data.db.get_settings(cursor)
-            last_write_diff = ts_now() - result.last_write_ts
+        # With nothing inserted in settings make sure default values are returned
+        result = data.db.get_settings(cursor)
+        last_write_diff = ts_now() - result.last_write_ts
 
     # make sure last_write was within 3 secs
     assert 0 <= last_write_diff < 3
