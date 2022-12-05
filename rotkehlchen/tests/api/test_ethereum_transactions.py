@@ -33,7 +33,12 @@ from rotkehlchen.tests.utils.api import (
 )
 from rotkehlchen.tests.utils.checks import assert_serialized_lists_equal
 from rotkehlchen.tests.utils.constants import TXHASH_HEX_TO_BYTES
-from rotkehlchen.tests.utils.ethereum import setup_ethereum_transactions_test
+from rotkehlchen.tests.utils.ethereum import (
+    TEST_ADDR1,
+    TEST_ADDR3,
+    extended_transactions_setup_test,
+    setup_ethereum_transactions_test,
+)
 from rotkehlchen.tests.utils.factories import (
     generate_tx_entries_response,
     make_ethereum_address,
@@ -1446,7 +1451,7 @@ def test_decoding_missing_transactions(rotkehlchen_api_server: 'APIServer') -> N
         one_receipt_in_db=True,
         second_receipt_in_db=True,
     )
-    response = requests.put(
+    response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
             'ethereumtransactionsdecodingresource',
@@ -1475,7 +1480,7 @@ def test_decoding_missing_transactions(rotkehlchen_api_server: 'APIServer') -> N
         assert len(events) == 2
 
     # call again and no new transaction should be decoded
-    response = requests.put(
+    response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
             'ethereumtransactionsdecodingresource',
@@ -1484,3 +1489,57 @@ def test_decoding_missing_transactions(rotkehlchen_api_server: 'APIServer') -> N
     result = assert_proper_response_with_result(response)
     outcome = wait_for_async_task(rotkehlchen_api_server, result['task_id'])
     assert outcome['result']['decoded_tx_number'] == 0
+
+
+def test_decoding_missing_transactions_by_address(rotkehlchen_api_server: 'APIServer') -> None:
+    """Test that decoding all pending transactions works fine when a filter by address is set"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+
+    transactions, _ = extended_transactions_setup_test(
+        database=rotki.data.db,
+        transaction_already_queried=True,
+        one_receipt_in_db=True,
+        second_receipt_in_db=True,
+    )
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ethereumtransactionsdecodingresource',
+        ), json={'async_query': False, 'evm_addresses': [TEST_ADDR1, TEST_ADDR3]},
+    )
+    result = assert_proper_response_with_result(response)
+
+    transactions_filtered = []
+    for transaction in transactions:
+        tx_addreses = (transaction.from_address, transaction.to_address)
+        if TEST_ADDR1 in tx_addreses or TEST_ADDR3 in tx_addreses:
+            transactions_filtered.append(transaction)
+
+    assert result['decoded_tx_number'] == len(transactions_filtered)
+
+    dbevents = DBHistoryEvents(rotki.data.db)
+    with rotki.data.db.conn.read_ctx() as cursor:
+        events = dbevents.get_history_events(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(
+                event_identifiers=[transactions[0].tx_hash],
+            ),
+            has_premium=True,
+        )
+        assert len(events) == 3
+        events = dbevents.get_history_events(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(
+                event_identifiers=[transactions[1].tx_hash],
+            ),
+            has_premium=True,
+        )
+        assert len(events) == 0
+        events = dbevents.get_history_events(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(
+                event_identifiers=[transactions[2].tx_hash],
+            ),
+            has_premium=True,
+        )
+        assert len(events) == 2

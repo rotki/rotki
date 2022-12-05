@@ -65,6 +65,8 @@ ETHERSCAN_AND_INFURA_AND_ALCHEMY: tuple[str, list[tuple]] = ('ethereum_manager_c
         (WeightedNode(node_info=NodeName(name='own', endpoint=ALCHEMY_TEST, owned=True, blockchain=SupportedBlockchain.ETHEREUM), weight=ONE, active=True),),  # noqa: E501
     ),
 ])
+TEST_ADDR1 = string_to_evm_address('0x443E1f9b1c866E54e914822B7d3d7165EdB6e9Ea')
+TEST_ADDR3 = string_to_evm_address('0xc37b40ABdB939635068d3c5f13E7faF686F03B65')
 
 
 # Test with etherscan and infura
@@ -157,14 +159,13 @@ def setup_ethereum_transactions_test(
 ) -> tuple[list[EvmTransaction], list[EvmTxReceipt]]:
     dbevmtx = DBEvmTx(database)
     tx_hash1 = deserialize_evm_tx_hash('0x692f9a6083e905bdeca4f0293f3473d7a287260547f8cbccc38c5cb01591fcda')  # noqa: E501
-    addr1 = string_to_evm_address('0x443E1f9b1c866E54e914822B7d3d7165EdB6e9Ea')
     addr2 = string_to_evm_address('0x442068F934BE670aDAb81242C87144a851d56d16')
     with database.user_write() as cursor:
         database.add_blockchain_accounts(
             cursor,
             blockchain=SupportedBlockchain.ETHEREUM,
             account_data=[
-                BlockchainAccountData(address=addr1),
+                BlockchainAccountData(address=TEST_ADDR1),
                 BlockchainAccountData(address=addr2),
             ],
         )
@@ -174,7 +175,7 @@ def setup_ethereum_transactions_test(
         chain_id=ChainID.ETHEREUM,
         timestamp=Timestamp(1630532276),
         block_number=13142218,
-        from_address=addr1,
+        from_address=TEST_ADDR1,
         to_address=string_to_evm_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
         value=int(10 * 10**18),
         gas=194928,
@@ -201,7 +202,7 @@ def setup_ethereum_transactions_test(
     transactions = [transaction1, transaction2]
     if transaction_already_queried is True:
         with database.user_write() as cursor:
-            dbevmtx.add_evm_transactions(cursor, evm_transactions=[transaction1], relevant_address=addr1)  # noqa: E501
+            dbevmtx.add_evm_transactions(cursor, evm_transactions=[transaction1], relevant_address=TEST_ADDR1)  # noqa: E501
             dbevmtx.add_evm_transactions(cursor, evm_transactions=[transaction2], relevant_address=addr2)  # noqa: E501
             result = dbevmtx.get_evm_transactions(cursor, EvmTransactionsFilterQuery.make(chain_id=ChainID.ETHEREUM), True)  # noqa: E501
         assert result == transactions
@@ -289,6 +290,80 @@ def setup_ethereum_transactions_test(
                 dbevmtx.add_receipt_data(cursor, ChainID.ETHEREUM, txreceipt_to_data(expected_receipt2))  # noqa: E501
 
     return transactions, [expected_receipt1, expected_receipt2]
+
+
+def extended_transactions_setup_test(
+        database: DBHandler,
+        transaction_already_queried: bool,
+        one_receipt_in_db: bool = False,
+        second_receipt_in_db: bool = False,
+) -> tuple[list[EvmTransaction], list[EvmTxReceipt]]:
+    """
+    This setup util extends setup_ethereum_transactions_test adding one third additional
+    transaction to test a setup with three addresses and three transactions.
+    """
+    dbevmtx = DBEvmTx(database)
+    transactions, receipts = setup_ethereum_transactions_test(
+        database=database,
+        transaction_already_queried=transaction_already_queried,
+        one_receipt_in_db=one_receipt_in_db,
+        second_receipt_in_db=second_receipt_in_db,
+    )
+    with database.user_write() as cursor:
+        database.add_blockchain_accounts(
+            cursor,
+            blockchain=SupportedBlockchain.ETHEREUM,
+            account_data=[
+                BlockchainAccountData(address=TEST_ADDR3),
+            ],
+        )
+
+    tx_hash3 = deserialize_evm_tx_hash('0x9dd81512d4cca937b30724cc601256614ba5133d5e99ba08206fd6ceb9aa9744')  # noqa: E501
+    transaction3 = EvmTransaction(
+        tx_hash=tx_hash3,
+        chain_id=ChainID.ETHEREUM,
+        timestamp=Timestamp(1631013757),
+        block_number=15546236,
+        from_address=TEST_ADDR3,
+        to_address=string_to_evm_address('0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0'),
+        value=0,
+        gas=77373,
+        gas_price=int(0.000000008455074395 * 10**18),
+        gas_used=46782,
+        input_data=hexstring_to_bytes('0x095ea7b30000000000000000000000009ee91f9f426fa633d227f7a9b000e28b9dfd85990000000000000000000000000000000000000000000000034e8397cc32d006ba'),  # noqa: E501
+        nonce=3,
+    )
+    transactions.append(transaction3)
+    if transaction_already_queried is True:
+        with database.user_write() as cursor:
+            dbevmtx.add_evm_transactions(cursor, evm_transactions=[transaction3], relevant_address=TEST_ADDR3)  # noqa: E501
+
+    expected_receipt3 = EvmTxReceipt(
+        tx_hash=tx_hash3,
+        chain_id=ChainID.ETHEREUM,
+        contract_address=None,
+        status=True,
+        type=2,
+        logs=[
+            EvmTxReceiptLog(
+                log_index=438,
+                data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000034e8397cc32d006ba'),  # noqa: E501
+                address=string_to_evm_address('0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0'),
+                removed=False,
+                topics=[
+                    hexstring_to_bytes('0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925'),  # noqa: E501
+                    hexstring_to_bytes('0x000000000000000000000000c37b40abdb939635068d3c5f13e7faf686f03b65'),  # noqa: E501
+                    hexstring_to_bytes('0x0000000000000000000000009ee91f9f426fa633d227f7a9b000e28b9dfd8599'),  # noqa: E501
+                ],
+            ),
+        ],
+    )
+
+    with database.user_write() as cursor:
+        dbevmtx.add_receipt_data(cursor, ChainID.ETHEREUM, txreceipt_to_data(expected_receipt3))  # noqa: E501
+    receipts.append(expected_receipt3)
+
+    return transactions, receipts
 
 
 def get_decoded_events_of_transaction(

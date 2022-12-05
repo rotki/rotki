@@ -30,6 +30,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium, premium_create_and_verify
 from rotkehlchen.premium.sync import PremiumSyncManager
 from rotkehlchen.types import (
+    ChainID,
     ChecksumEvmAddress,
     ExchangeLocationID,
     Location,
@@ -425,10 +426,13 @@ class TaskManager():
         lock acquired.
         """
         dbevmtx = DBEvmTx(self.database)
-        amount_of_tx_to_decode = dbevmtx.count_hashes_not_decoded()
-        if amount_of_tx_to_decode > 0:
+        number_of_tx_to_decode = dbevmtx.count_hashes_not_decoded(
+            addresses=None,
+            chain_id=ChainID.ETHEREUM,
+        )
+        if number_of_tx_to_decode > 0:
             ethereum = self.chains_aggregator.get_chain_manager(SupportedBlockchain.ETHEREUM)
-            task_name = f'decode {amount_of_tx_to_decode} evm trasactions'
+            task_name = f'decode {number_of_tx_to_decode} evm trasactions'
             log.debug(f'Scheduling periodic task to {task_name}')
             return self.greenlet_manager.spawn_and_track(
                 after_seconds=None,
