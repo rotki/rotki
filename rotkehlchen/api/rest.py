@@ -3335,11 +3335,17 @@ class RestAPI():
         result_dict = _wrap_in_result(result, msg)
         return api_response(process_result(result_dict), status_code=status_code)
 
-    def _decode_pending_ethereum_transactions(self) -> dict[str, Any]:
+    def _decode_pending_ethereum_transactions(
+            self,
+            evm_addresses: Optional[list[ChecksumEvmAddress]],
+    ) -> dict[str, Any]:
         dbevmtx = DBEvmTx(self.rotkehlchen.data.db)
-        amount_of_tx_to_decode = dbevmtx.count_hashes_not_decoded()
+        amount_of_tx_to_decode = dbevmtx.count_hashes_not_decoded(
+            addresses=evm_addresses,
+            chain_id=ChainID.ETHEREUM,
+        )
         if amount_of_tx_to_decode > 0:
-            self.rotkehlchen.chains_aggregator.ethereum.transactions_decoder.get_and_decode_undecoded_transactions()  # noqa: E501
+            self.rotkehlchen.chains_aggregator.ethereum.transactions_decoder.get_and_decode_undecoded_transactions(addresses=evm_addresses)  # noqa: E501
 
         return {
             'result': {'decoded_tx_number': amount_of_tx_to_decode},
@@ -3347,13 +3353,18 @@ class RestAPI():
             'status_code': HTTPStatus.OK,
         }
 
-    def decode_pending_ethereum_transactions(self, async_query: bool) -> Response:
+    def decode_pending_ethereum_transactions(
+            self,
+            async_query: bool,
+            evm_addresses: Optional[list[ChecksumEvmAddress]],
+    ) -> Response:
         if async_query is True:
             return self._query_async(
                 command=self._decode_pending_ethereum_transactions,
+                evm_addresses=evm_addresses,
             )
 
-        response = self._decode_pending_ethereum_transactions()
+        response = self._decode_pending_ethereum_transactions(evm_addresses=evm_addresses)
         status_code = _get_status_code_from_async_response(response)
         result_dict = _wrap_in_result(result=response['result'], message=response['message'])
 

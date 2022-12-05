@@ -1917,8 +1917,9 @@ Decode transactions that haven't been decoded yet
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"async_query": false}
+      {"async_query": false, "addresses": ["0xc37b40ABdB939635068d3c5f13E7faF686F03B65"]}
 
+   :reqjson list addresses: List of ethereum addresses used to filter when decoding pending transactions.
 
    **Example Response**:
 

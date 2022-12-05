@@ -2394,6 +2394,10 @@ class AssetsImportingFromFormSchema(Schema):
     file = FileField(allowed_extensions=['.zip', '.json'], required=True)
 
 
+class MultipleAddressAsyncSchema(AsyncQueryArgumentSchema):
+    evm_addresses = fields.List(EthereumAddressField(), load_default=None)
+
+
 class ReverseEnsSchema(AsyncIgnoreCacheQueryArgumentSchema):
     ethereum_addresses = fields.List(EthereumAddressField(), required=True)
 

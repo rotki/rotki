@@ -5,7 +5,7 @@ from rotkehlchen.chain.ethereum.constants import ETHEREUM_BEGIN, GENESIS_HASH
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.db.constants import HISTORY_MAPPING_STATE_DECODED
-from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
+from rotkehlchen.db.filtering import EvmTransactionsFilterQuery, TransactionsNotDecodedFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -36,7 +36,8 @@ from rotkehlchen.constants.limits import FREE_ETH_TX_LIMIT
 
 TRANSACTIONS_MISSING_DECODING_QUERY = (
     'evmtx_receipts AS A LEFT OUTER JOIN evm_tx_mappings AS B ON A.tx_hash=B.tx_hash '
-    'AND A.chain_id=B.chain_ID WHERE B.tx_hash is NULL'
+    'AND A.chain_id=B.chain_ID LEFT JOIN evm_transactions AS C on '
+    'A.tx_hash=C.tx_hash '
 )
 
 
@@ -272,29 +273,44 @@ class DBEvmTx():
             self,
             chain_id: Optional[ChainID],
             limit: Optional[int],
+            addresses: Optional[list[ChecksumEvmAddress]],
     ) -> list[EVMTxHash]:
         """Get transaction hashes for the transactions that have not been decoded.
         Optionally by chain id.
         If the limit argument is provided then it is used in the SQL query with
         the default order.
+        When the addresses argument is provided only the transactions involving those
+        addresses are decoded.
         """
-        querystr = 'SELECT A.tx_hash from ' + TRANSACTIONS_MISSING_DECODING_QUERY
-        bindings = []
-        if chain_id is not None:
-            bindings.append(chain_id.serialize_for_db())
-            querystr += ' AND A.chain_id=?'
-        if limit is not None:
-            bindings.append(limit)
-            querystr += ' LIMIT ?'
+        query, bindings = TransactionsNotDecodedFilterQuery.make(
+            limit=limit,
+            addresses=addresses,
+            chain_id=chain_id,
+        ).prepare()
+        querystr = 'SELECT A.tx_hash from ' + TRANSACTIONS_MISSING_DECODING_QUERY + query
 
         with self.db.conn.read_ctx() as cursor:
             cursor.execute(querystr, bindings)
             return [make_evm_tx_hash(x[0]) for x in cursor]
 
-    def count_hashes_not_decoded(self) -> int:
-        """Count the number of transactions queried that have not been decoded"""
+    def count_hashes_not_decoded(
+            self,
+            chain_id: Optional[ChainID],
+            addresses: Optional[list[ChecksumEvmAddress]],
+    ) -> int:
+        """
+        Count the number of transactions queried that have not been decoded. When the addresses
+        argument is provided only the transactions involving those addresses are decoded.
+        """
+        query, bindings = TransactionsNotDecodedFilterQuery.make(
+            limit=None,
+            addresses=addresses,
+            chain_id=chain_id,
+        ).prepare()
+
+        querystr = 'SELECT COUNT(*) FROM ' + TRANSACTIONS_MISSING_DECODING_QUERY + query
         with self.db.conn.read_ctx() as cursor:
-            cursor.execute('SELECT COUNT(*) from ' + TRANSACTIONS_MISSING_DECODING_QUERY)
+            cursor.execute(querystr, bindings)
             return cursor.fetchone()[0]
 
     def add_receipt_data(  # pylint: disable=no-self-use

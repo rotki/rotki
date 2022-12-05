@@ -170,6 +170,31 @@ class DBETHTransactionJoinsFilter(DBFilter):
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class DBTransactionsPendingDecodingFilter(DBFilter):
+    """
+    This filter is used to find the ethereum transactions that have not been decoded yet
+    using the query in `TRANSACTIONS_MISSING_DECODING_QUERY`. It allows filtering by addresses
+    and chain.
+    """
+    addresses: Optional[list[ChecksumEvmAddress]]
+    chain_id: Optional[ChainID]
+
+    def prepare(self) -> tuple[list[str], list[Any]]:
+        query_filters = ['B.tx_hash is NULL']
+        bindings: list[Union[int, ChecksumEvmAddress]] = []
+        if self.addresses is not None:
+            bindings = [*self.addresses, *self.addresses]
+            questionmarks = ','.join('?' * len(self.addresses))
+            query_filters.append(f'(C.from_address IN ({questionmarks}) OR C.to_address IN ({questionmarks}))')  # noqa: E501
+        if self.chain_id is not None:
+            bindings.append(self.chain_id.serialize_for_db())
+            query_filters.append('A.chain_id=?')
+
+        query = ' AND '.join(query_filters)
+        return [query], bindings
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBEvmTransactionHashFilter(DBFilter):
     tx_hash: Optional[EVMTxHash] = None
 
@@ -1304,6 +1329,38 @@ class LevenshteinFilterQuery(MultiTableFilterQuery):
                 value=chain_id.serialize_for_db(),
             )
             filters.append((new_filter, 'assets'))
+
+        filter_query.filters = filters
+        return filter_query
+
+
+class TransactionsNotDecodedFilterQuery(DBFilterQuery):
+    """
+    Filter used to find the transactions that have not been decoded yet using chain and
+    addresses as filter.
+    """
+    @classmethod
+    def make(
+            cls,
+            limit: Optional[int] = None,
+            addresses: Optional[list[ChecksumEvmAddress]] = None,
+            chain_id: Optional[ChainID] = None,
+    ) -> 'TransactionsNotDecodedFilterQuery':
+        filter_query = cls.create(
+            and_op=True,
+            limit=limit,
+            offset=None,
+            order_by_rules=None,
+        )
+        filter_query = cast('TransactionsNotDecodedFilterQuery', filter_query)
+
+        filters: list[DBFilter] = []
+        if addresses is not None or chain_id is not None:
+            filters.append(DBTransactionsPendingDecodingFilter(
+                and_op=True,
+                addresses=addresses,
+                chain_id=chain_id,
+            ))
 
         filter_query.filters = filters
         return filter_query

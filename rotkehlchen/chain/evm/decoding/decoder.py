@@ -272,14 +272,21 @@ class EVMTransactionDecoder():
 
         return sorted(events, key=lambda x: x.sequence_index, reverse=False)
 
-    def get_and_decode_undecoded_transactions(self, limit: Optional[int] = None) -> None:
+    def get_and_decode_undecoded_transactions(
+            self,
+            limit: Optional[int] = None,
+            addresses: Optional[list[ChecksumEvmAddress]] = None,
+    ) -> None:
         """Checks the DB for up to `limit` undecoded transactions and decodes them.
+        If a list of addresses is provided then only the transactions involving those
+        addresses are decoded.
 
         This is protected by concurrent access from a lock"""
         with self.undecoded_tx_query_lock:
             hashes = self.dbevmtx.get_transaction_hashes_not_decoded(
                 chain_id=self.evm_inquirer.chain_id,
                 limit=limit,
+                addresses=addresses,
             )
             self.decode_transaction_hashes(ignore_cache=False, tx_hashes=hashes)
 

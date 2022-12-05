@@ -95,6 +95,7 @@ from rotkehlchen.api.v1.schemas import (
     ManualPriceRegisteredSchema,
     ManualPriceSchema,
     ModifyEvmTokenSchema,
+    MultipleAddressAsyncSchema,
     NameDeleteSchema,
     NamedEthereumModuleDataSchema,
     NamedOracleCacheCreateSchema,
@@ -503,12 +504,19 @@ class EthereumTransactionsResource(BaseMethodView):
 
 
 class EthereumTransactionsDecodingResource(BaseMethodView):
-    post_schema = AsyncQueryArgumentSchema()
+    post_schema = MultipleAddressAsyncSchema()
 
     @require_loggedin_user()
     @use_kwargs(post_schema, location='json_and_query')
-    def put(self, async_query: bool) -> Response:
-        return self.rest_api.decode_pending_ethereum_transactions(async_query=async_query)
+    def post(
+            self,
+            async_query: bool,
+            evm_addresses: Optional[list[ChecksumEvmAddress]],
+    ) -> Response:
+        return self.rest_api.decode_pending_ethereum_transactions(
+            async_query=async_query,
+            evm_addresses=evm_addresses,
+        )
 
 
 class EthereumAirdropsResource(BaseMethodView):
