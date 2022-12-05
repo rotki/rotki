@@ -6,13 +6,13 @@ if TYPE_CHECKING:
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 
-def _create_new_tables(write_cursor: 'DBCursor') -> None:
+def _create_new_tables(cursor: 'DBCursor') -> None:
     """Create new tables added at this upgrade
 
     Should be called at the end of the upgrade as it depends on the changes
     done to the transactions table
     """
-    write_cursor.execute("""
+    cursor.execute("""
     CREATE TABLE IF NOT EXISTS ethtx_receipts (
     tx_hash BLOB NOT NULL PRIMARY KEY,
     contract_address TEXT, /* can be null */
@@ -20,7 +20,7 @@ def _create_new_tables(write_cursor: 'DBCursor') -> None:
     type INTEGER NOT NULL,
     FOREIGN KEY(tx_hash) REFERENCES ethereum_transactions(tx_hash) ON DELETE CASCADE ON UPDATE CASCADE
     );""")  # noqa: E501
-    write_cursor.execute("""
+    cursor.execute("""
     CREATE TABLE IF NOT EXISTS ethtx_receipt_logs (
     tx_hash BLOB NOT NULL,
     log_index INTEGER NOT NULL,
@@ -30,7 +30,7 @@ def _create_new_tables(write_cursor: 'DBCursor') -> None:
     FOREIGN KEY(tx_hash) REFERENCES ethtx_receipts(tx_hash) ON DELETE CASCADE ON UPDATE CASCADE,
     PRIMARY KEY(tx_hash, log_index)
     );""")
-    write_cursor.execute("""
+    cursor.execute("""
     CREATE TABLE IF NOT EXISTS ethtx_receipt_log_topics (
     tx_hash BLOB NOT NULL,
     log_index INTEGER NOT NULL,
@@ -39,7 +39,7 @@ def _create_new_tables(write_cursor: 'DBCursor') -> None:
     FOREIGN KEY(tx_hash, log_index) REFERENCES ethtx_receipt_logs(tx_hash, log_index) ON DELETE CASCADE ON UPDATE CASCADE,
     PRIMARY KEY(tx_hash, log_index, topic_index)
     );""")  # noqa: E501
-    write_cursor.execute("""CREATE TABLE IF NOT EXISTS nfts (
+    cursor.execute("""CREATE TABLE IF NOT EXISTS nfts (
     identifier TEXT NOT NULL PRIMARY KEY,
     name TEXT,
     last_price TEXT,
@@ -54,21 +54,21 @@ def _create_new_tables(write_cursor: 'DBCursor') -> None:
 
 
 def _upgrade_existing_tables(
-        write_cursor: 'DBCursor',
+        cursor: 'DBCursor',
         progress_handler: 'DBUpgradeProgressHandler',
 ) -> None:
-    query = write_cursor.execute('SELECT blockchain, account, label FROM blockchain_accounts;')
+    query = cursor.execute('SELECT blockchain, account, label FROM blockchain_accounts;')
     accounts_data = query.fetchall()
-    query = write_cursor.execute('SELECT address, xpub, derivation_path, account_index, derived_index FROM xpub_mappings;')  # noqa: E501
+    query = cursor.execute('SELECT address, xpub, derivation_path, account_index, derived_index FROM xpub_mappings;')  # noqa: E501
     xpub_mappings_data = query.fetchall()
-    query = write_cursor.execute('SELECT tx_hash, timestamp, block_number, from_address, to_address, value, gas, gas_price, gas_used, input_data, nonce FROM ethereum_transactions;')  # noqa: E501
+    query = cursor.execute('SELECT tx_hash, timestamp, block_number, from_address, to_address, value, gas, gas_price, gas_used, input_data, nonce FROM ethereum_transactions;')  # noqa: E501
     transactions_data = [entry for entry in query if entry[10] >= 0]  # non-internal
-    write_cursor.execute('DROP TABLE IF EXISTS blockchain_accounts;')
-    write_cursor.execute('DROP TABLE IF EXISTS xpub_mappings;')
-    write_cursor.execute('DROP TABLE IF EXISTS ethereum_transactions;')
+    cursor.execute('DROP TABLE IF EXISTS blockchain_accounts;')
+    cursor.execute('DROP TABLE IF EXISTS xpub_mappings;')
+    cursor.execute('DROP TABLE IF EXISTS ethereum_transactions;')
     progress_handler.new_step()
     # create the new tables and insert all values into it
-    write_cursor.execute("""
+    cursor.execute("""
     CREATE TABLE IF NOT EXISTS blockchain_accounts (
     blockchain VARCHAR[24] NOT NULL,
     account TEXT NOT NULL,
@@ -76,12 +76,12 @@ def _upgrade_existing_tables(
     PRIMARY KEY (blockchain, account)
     );
     """)
-    write_cursor.executemany(
+    cursor.executemany(
         'INSERT INTO blockchain_accounts(blockchain, account, label) VALUES(?, ?, ?);',
         accounts_data,
     )
     progress_handler.new_step()
-    write_cursor.execute("""
+    cursor.execute("""
     CREATE TABLE IF NOT EXISTS xpub_mappings (
     address TEXT NOT NULL,
     xpub TEXT NOT NULL,
@@ -94,13 +94,13 @@ def _upgrade_existing_tables(
     PRIMARY KEY (address, xpub, derivation_path)
     );
     """)  # noqa: E501
-    write_cursor.executemany(
+    cursor.executemany(
         'INSERT INTO xpub_mappings(address, xpub, derivation_path, account_index, derived_index) '  # noqa: E501
         'VALUES(?, ?, ?, ?, ?);',
         xpub_mappings_data,
     )
     progress_handler.new_step()
-    write_cursor.execute("""
+    cursor.execute("""
     CREATE TABLE IF NOT EXISTS ethereum_transactions (
     tx_hash BLOB NOT NULL PRIMARY KEY,
     timestamp INTEGER NOT NULL,
@@ -115,7 +115,7 @@ def _upgrade_existing_tables(
     nonce INTEGER NOT NULL
     );
     """)
-    write_cursor.executemany(
+    cursor.executemany(
         'INSERT INTO ethereum_transactions(tx_hash, timestamp, block_number, from_address, to_address, value, gas, gas_price, gas_used, input_data, nonce) '  # noqa: E501
         'VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);',
         transactions_data,
@@ -130,14 +130,14 @@ def upgrade_v28_to_v29(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
     - Alters the ethereum transactions table to have tx_hash as primary key
     """
     progress_handler.set_total_steps(6)
-    with db.user_write() as write_cursor:
-        _upgrade_existing_tables(write_cursor=write_cursor, progress_handler=progress_handler)
+    with db.user_write() as cursor:
+        _upgrade_existing_tables(cursor=cursor, progress_handler=progress_handler)
         progress_handler.new_step()
-        _create_new_tables(write_cursor)
+        _create_new_tables(cursor)
         progress_handler.new_step()
 
         # Rename uniswap_events table. Drop amm_events first if it was created at initialization
         # of the db handler
-        write_cursor.execute('DROP TABLE IF EXISTS amm_events;')
-        write_cursor.execute('ALTER TABLE uniswap_events RENAME TO amm_events;')
+        cursor.execute('DROP TABLE IF EXISTS amm_events;')
+        cursor.execute('ALTER TABLE uniswap_events RENAME TO amm_events;')
         progress_handler.new_step()

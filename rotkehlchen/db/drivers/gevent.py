@@ -119,7 +119,7 @@ class DBCursor:
         foreign keys a commit always happens which means that if you had a transaction, it might
         need to be restarted which this function does if `restart_transaction` is True.
         """
-        self.executescript(f'PRAGMA foreign_keys={on_or_off}')
+        self.executescript(f'PRAGMA foreign_keys={on_or_off};')
         if restart_transaction is True:
             self.execute('BEGIN TRANSACTION')
 
@@ -367,7 +367,7 @@ class DBConnection:
         Savepoints work like nested transactions, more information here: https://www.sqlite.org/lang_savepoint.html
         """    # noqa: E501
         savepoints_length_before = len(self.savepoints)
-        cursor, savepoint_name = self.enter_savepoint(savepoint_name)
+        cursor, savepoint_name = self._enter_savepoint(savepoint_name)
         try:
             yield cursor
         except Exception:
@@ -382,10 +382,13 @@ class DBConnection:
         finally:
             cursor.close()
 
-    def enter_savepoint(self, savepoint_name: Optional[str] = None) -> tuple['DBCursor', str]:
+    def _enter_savepoint(self, savepoint_name: Optional[str] = None) -> tuple['DBCursor', str]:
         """
         Creates an sqlite savepoint with the given name. If None is given, a uuid is created.
         Returns cursor and savepoint's name.
+
+        Should only be used inside a savepoint_ctx
+
         May raise:
         - ContextError if a savepoint with the same name already exists. Can only happen in case of
         manually specified name.

@@ -6,16 +6,16 @@ if TYPE_CHECKING:
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 
-def _do_upgrade(write_cursor: 'DBCursor', progress_handler: 'DBUpgradeProgressHandler') -> None:
+def _do_upgrade(cursor: 'DBCursor', progress_handler: 'DBUpgradeProgressHandler') -> None:
     # Should exist -- but we are being extremely pedantic here
-    ignored_actions_exists = write_cursor.execute(  # always returns value
+    ignored_actions_exists = cursor.execute(  # always returns value
         'SELECT count(*) FROM sqlite_master WHERE type="table" AND name="ignored_actions";',
     ).fetchone()[0]
     # Delete all ignored ethereum transaction ids
     if ignored_actions_exists == 1:
-        write_cursor.execute('DELETE FROM ignored_actions WHERE type="C";')
+        cursor.execute('DELETE FROM ignored_actions WHERE type="C";')
     else:
-        write_cursor.execute("""
+        cursor.execute("""
         CREATE TABLE IF NOT EXISTS ignored_actions (
         type CHAR(1) NOT NULL DEFAULT('A') REFERENCES action_type(type),
         identifier TEXT,
@@ -25,19 +25,19 @@ def _do_upgrade(write_cursor: 'DBCursor', progress_handler: 'DBUpgradeProgressHa
 
     progress_handler.new_step()
     # Delete kraken trades so they can be requeried
-    write_cursor.execute('DELETE FROM trades WHERE location="B";')
-    write_cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "kraken_trades_%";')
+    cursor.execute('DELETE FROM trades WHERE location="B";')
+    cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "kraken_trades_%";')
 
     # Add all new tables
-    write_cursor.execute('DROP TABLE IF EXISTS eth2_deposits;')
-    write_cursor.execute('DROP TABLE IF EXISTS eth2_daily_staking_details;')
-    write_cursor.execute("""
+    cursor.execute('DROP TABLE IF EXISTS eth2_deposits;')
+    cursor.execute('DROP TABLE IF EXISTS eth2_daily_staking_details;')
+    cursor.execute("""
     CREATE TABLE IF NOT EXISTS eth2_validators (
     validator_index INTEGER NOT NULL PRIMARY KEY,
     public_key TEXT NOT NULL UNIQUE,
     ownership_proportion TEXT NOT NULL
     );""")
-    write_cursor.execute("""
+    cursor.execute("""
     CREATE TABLE IF NOT EXISTS eth2_deposits (
     tx_hash BLOB NOT NULL,
     tx_index INTEGER NOT NULL,
@@ -50,7 +50,7 @@ def _do_upgrade(write_cursor: 'DBCursor', progress_handler: 'DBUpgradeProgressHa
     FOREIGN KEY(pubkey) REFERENCES eth2_validators(public_key) ON UPDATE CASCADE ON DELETE CASCADE,
     PRIMARY KEY(tx_hash, pubkey, amount) /* multiple deposits can exist for same pubkey */
     );""")
-    write_cursor.execute("""
+    cursor.execute("""
     CREATE TABLE IF NOT EXISTS eth2_daily_staking_details (
     validator_index INTEGER NOT NULL,
     timestamp integer NOT NULL,
@@ -71,7 +71,7 @@ def _do_upgrade(write_cursor: 'DBCursor', progress_handler: 'DBUpgradeProgressHa
     FOREIGN KEY(validator_index) REFERENCES eth2_validators(validator_index) ON UPDATE CASCADE ON DELETE CASCADE,
     PRIMARY KEY (validator_index, timestamp));""")  # noqa: E501
     progress_handler.new_step()
-    write_cursor.execute("""
+    cursor.execute("""
 CREATE VIEW IF NOT EXISTS combined_trades_view AS
     WITH amounts_query AS (
         SELECT
@@ -169,7 +169,7 @@ FROM SWAPS
 UNION ALL /* using union all as there can be no duplicates so no need to handle them */
 SELECT * from trades
 ;""")  # noqa: E501
-    write_cursor.execute("""CREATE TABLE IF NOT EXISTS history_events (
+    cursor.execute("""CREATE TABLE IF NOT EXISTS history_events (
     identifier TEXT NOT NULL PRIMARY KEY,
     event_identifier TEXT NOT NULL,
     sequence_index INTEGER NOT NULL,
@@ -196,5 +196,5 @@ def upgrade_v30_to_v31(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
     and insta trades which are only visible through the kraken ledger query.
     """
     progress_handler.set_total_steps(3)
-    with db.user_write() as write_cursor:
-        _do_upgrade(write_cursor=write_cursor, progress_handler=progress_handler)
+    with db.user_write() as cursor:
+        _do_upgrade(cursor=cursor, progress_handler=progress_handler)

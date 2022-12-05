@@ -249,7 +249,7 @@ class DBHandler:
         # Lock to make sure that 2 callers of get_or_create_evm_token do not go in at the same time
         self.get_or_create_evm_token_lock = Semaphore()
         self._connect(password)
-        self._check_abandoned_upgrades(password)
+        self._check_unfinished_upgrades(password)
         self._run_actions_after_first_connection(password)
         with self.user_write() as cursor:
             if initial_settings is not None:
@@ -257,7 +257,7 @@ class DBHandler:
             self.update_owned_assets_in_globaldb(cursor)
             self.add_globaldb_assetids(cursor)
 
-    def _check_abandoned_upgrades(self, password: str) -> None:
+    def _check_unfinished_upgrades(self, password: str) -> None:
         """
         Checks the database whether there are any not finished upgrades and automatically uses a
         backup if there are any. If no backup found, throws an error to the user
@@ -288,8 +288,8 @@ class DBHandler:
 
         backup_to_use = sorted(found_backups)[-1]  # Use latest backup
         shutil.copyfile(
-            os.path.join(self.user_data_dir, backup_to_use),
-            os.path.join(self.user_data_dir, 'rotkehlchen.db'),
+            self.user_data_dir / backup_to_use,
+            self.user_data_dir / 'rotkehlchen.db',
         )
         self.msg_aggregator.add_warning(
             f'Your encrypted database was in a half-upgraded state. '
@@ -432,13 +432,6 @@ class DBHandler:
             'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
             (name, str(value)),
         )
-
-    def delete_setting(  # pylint: disable=no-self-use
-            self,
-            write_cursor: 'DBCursor',
-            name: Literal['ongoing_upgrade_from_version'],
-    ) -> None:
-        write_cursor.execute('DELETE FROM settings WHERE name=?', (name,))
 
     def _connect(
             self,
