@@ -60,7 +60,7 @@ def test_upgrade_v2_v3(globaldb):
     with patch('rotkehlchen.globaldb.utils.GLOBAL_DB_VERSION', 2):
         maybe_upgrade_globaldb(
             connection=globaldb.conn,
-            dbpath=globaldb._data_directory / 'global_data' / 'global.db',
+            global_dir=globaldb._data_directory / 'global_data',
         )
 
     assert globaldb.get_setting_value('version', None) == 3

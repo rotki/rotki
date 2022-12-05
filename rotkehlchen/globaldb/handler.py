@@ -1,4 +1,5 @@
 import logging
+import os
 import shutil
 import sqlite3
 from collections import defaultdict
@@ -19,7 +20,7 @@ from rotkehlchen.constants.assets import A_ETH, A_ETH2
 from rotkehlchen.constants.misc import DEFAULT_SQL_VM_INSTRUCTIONS_CB, NFT_DIRECTIVE
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType, DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
-from rotkehlchen.errors.misc import InputError
+from rotkehlchen.errors.misc import DBUpgradeError, InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
@@ -32,6 +33,7 @@ from rotkehlchen.types import (
     Price,
     Timestamp,
 )
+from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import timestamp_to_date, ts_now
 from rotkehlchen.utils.serialization import (
     deserialize_asset_with_oracles_from_db,
@@ -40,7 +42,7 @@ from rotkehlchen.utils.serialization import (
 
 from .schema import DB_SCRIPT_CREATE_TABLES
 from .upgrades.manager import maybe_upgrade_globaldb
-from .utils import GLOBAL_DB_VERSION, _get_setting_value
+from .utils import GLOBAL_DB_VERSION, _add_setting_value, _delete_setting_value, _get_setting_value
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -57,14 +59,72 @@ LEFT JOIN custom_assets ON custom_assets.identifier= assets.identifier
 """
 
 
-def initialize_globaldb(dbpath: Path, sql_vm_instructions_cb: int) -> DBConnection:
-    """Initialie globaldb. May raise DBSchemaError if GlobalDB's schema is malformed."""
+def _initialize_and_check_abandoned_upgrades(
+        global_dir: Path,
+        sql_vm_instructions_cb: int,
+        msg_aggregator: 'MessagesAggregator',
+) -> DBConnection:
+    """
+    Checks the database whether there are any not finished upgrades and automatically uses a
+    backup if there are any. If no backup found, throws an error.
+    """
     connection = DBConnection(
-        path=dbpath,
+        path=global_dir / 'global.db',
         connection_type=DBConnectionType.GLOBAL,
         sql_vm_instructions_cb=sql_vm_instructions_cb,
     )
-    is_fresh_db = maybe_upgrade_globaldb(connection=connection, dbpath=dbpath)
+
+    with connection.read_ctx() as cursor:
+        ongoing_upgrade_from_version = _get_setting_value(
+            cursor=cursor,
+            name='ongoing_upgrade_from_version',
+            default_value=-1,
+        )
+    if ongoing_upgrade_from_version == -1:
+        return connection  # We are all good
+
+    # Otherwise replace the db with a backup and relogin
+    connection.close()
+    backup_postfix = f'global_db_v{ongoing_upgrade_from_version}.backup'
+    found_backups = list(filter(
+        lambda x: x[-len(backup_postfix):] == backup_postfix,
+        os.listdir(global_dir),
+    ))
+    if len(found_backups) == 0:
+        raise DBUpgradeError(
+            'Your global database is in a half-upgraded state and there was no backup '
+            'found. Please open an issue on our github or contact us in our discord server.',
+        )
+
+    backup_to_use = sorted(found_backups)[-1]  # Use latest backup
+    shutil.copyfile(
+        os.path.join(global_dir, backup_to_use),
+        os.path.join(global_dir, 'global.db'),
+    )
+    msg_aggregator.add_warning(
+        f'Your global database was in a half-upgraded state. '
+        f'Trying to login with a backup {backup_to_use}',
+    )
+    connection = DBConnection(
+        path=global_dir / 'global.db',
+        connection_type=DBConnectionType.GLOBAL,
+        sql_vm_instructions_cb=sql_vm_instructions_cb,
+    )
+    return connection
+
+
+def initialize_globaldb(
+        global_dir: Path,
+        sql_vm_instructions_cb: int,
+        msg_aggregator: 'MessagesAggregator',
+) -> DBConnection:
+    """Initialie globaldb. May raise DBSchemaError if GlobalDB's schema is malformed."""
+    connection = _initialize_and_check_abandoned_upgrades(
+        global_dir=global_dir,
+        sql_vm_instructions_cb=sql_vm_instructions_cb,
+        msg_aggregator=msg_aggregator,
+    )
+    is_fresh_db = maybe_upgrade_globaldb(connection=connection, global_dir=global_dir)
     connection.executescript(DB_SCRIPT_CREATE_TABLES)
     if is_fresh_db is True:
         with connection.write_ctx() as cursor:
@@ -76,7 +136,11 @@ def initialize_globaldb(dbpath: Path, sql_vm_instructions_cb: int) -> DBConnecti
     return connection
 
 
-def _initialize_global_db_directory(data_dir: Path, sql_vm_instructions_cb: int) -> DBConnection:
+def _initialize_global_db_directory(
+        data_dir: Path,
+        sql_vm_instructions_cb: int,
+        msg_aggregator: 'MessagesAggregator',
+) -> DBConnection:
     """Initialize globaldb directory. May raise DBSchemaError if GlobalDB's schema is malformed."""
     global_dir = data_dir / 'global_data'
     global_dir.mkdir(parents=True, exist_ok=True)
@@ -86,7 +150,11 @@ def _initialize_global_db_directory(data_dir: Path, sql_vm_instructions_cb: int)
         root_dir = Path(__file__).resolve().parent.parent
         builtin_data_dir = root_dir / 'data'
         shutil.copyfile(builtin_data_dir / 'global.db', global_dir / 'global.db')
-    return initialize_globaldb(dbname, sql_vm_instructions_cb)
+    return initialize_globaldb(
+        global_dir=global_dir,
+        sql_vm_instructions_cb=sql_vm_instructions_cb,
+        msg_aggregator=msg_aggregator,
+    )
 
 
 def _compute_cache_key(key_parts: Iterable[Union[str, GeneralCacheType]]) -> str:
@@ -106,6 +174,7 @@ class GlobalDBHandler():
     """A singleton class controlling the global DB"""
     __instance: Optional['GlobalDBHandler'] = None
     _data_directory: Optional[Path] = None
+    _msg_aggregator: Optional['MessagesAggregator'] = None
     _packaged_db_conn: Optional[DBConnection] = None
     conn: DBConnection
 
@@ -113,6 +182,7 @@ class GlobalDBHandler():
             cls,
             data_dir: Optional[Path] = None,
             sql_vm_instructions_cb: Optional[int] = None,
+            msg_aggregator: Optional[MessagesAggregator] = None,
     ) -> 'GlobalDBHandler':
         """
         Initializes the GlobalDB.
@@ -124,12 +194,13 @@ class GlobalDBHandler():
         """
         if GlobalDBHandler.__instance is not None:
             return GlobalDBHandler.__instance
-
         assert data_dir is not None, 'First instantiation of GlobalDBHandler should have a data_dir'  # noqa: E501
         assert sql_vm_instructions_cb is not None, 'First instantiation of GlobalDBHandler should have a sql_vm_instructions_cb'  # noqa: E501
+        assert msg_aggregator is not None, 'First instantiation of GlobalDBHandler should have a msg_aggregator'  # noqa: E501
         GlobalDBHandler.__instance = object.__new__(cls)
         GlobalDBHandler.__instance._data_directory = data_dir
-        GlobalDBHandler.__instance.conn = _initialize_global_db_directory(data_dir, sql_vm_instructions_cb)  # noqa: E501
+        GlobalDBHandler.__instance._msg_aggregator = msg_aggregator
+        GlobalDBHandler.__instance.conn = _initialize_global_db_directory(data_dir, sql_vm_instructions_cb, msg_aggregator)  # noqa: E501
         return GlobalDBHandler.__instance
 
     @staticmethod
@@ -139,10 +210,11 @@ class GlobalDBHandler():
             # mypy does not recognize the initialization as that of a singleton
             return GlobalDBHandler()._packaged_db_conn  # type: ignore
 
-        packaged_db_path = Path(__file__).resolve().parent.parent / 'data' / 'global.db'
+        global_dir = Path(__file__).resolve().parent.parent / 'data'
         packaged_db_conn = initialize_globaldb(
-            dbpath=packaged_db_path,
+            global_dir=global_dir,
             sql_vm_instructions_cb=DEFAULT_SQL_VM_INSTRUCTIONS_CB,
+            msg_aggregator=GlobalDBHandler()._msg_aggregator,  # type: ignore  # Definitely is not None here  # noqa: E501
         )
         GlobalDBHandler()._packaged_db_conn = packaged_db_conn
         return packaged_db_conn
@@ -160,13 +232,14 @@ class GlobalDBHandler():
             return _get_setting_value(cursor, name, default_value)
 
     @staticmethod
-    def add_setting_value(name: str, value: Any) -> None:
+    def add_setting_value(write_cursor: 'DBCursor', name: str, value: Any) -> None:
         """Add the value of a setting"""
-        with GlobalDBHandler().conn.write_ctx() as write_cursor:
-            write_cursor.execute(
-                'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
-                (name, str(value)),
-            )
+        _add_setting_value(write_cursor, name, value)
+
+    @staticmethod
+    def delete_setting_value(write_cursor: 'DBCursor', name: str) -> None:
+        """Delete a setting"""
+        _delete_setting_value(write_cursor, name)
 
     @staticmethod
     def add_asset(

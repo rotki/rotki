@@ -86,7 +86,12 @@ from rotkehlchen.db.utils import (
 )
 from rotkehlchen.errors.api import AuthenticationError, IncorrectApiKeyFormat
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
-from rotkehlchen.errors.misc import InputError, SystemPermissionError, TagConstraintError
+from rotkehlchen.errors.misc import (
+    DBUpgradeError,
+    InputError,
+    SystemPermissionError,
+    TagConstraintError,
+)
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.constants import SUPPORTED_EXCHANGES
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
@@ -222,7 +227,7 @@ class DBHandler:
         May raise:
         - DBUpgradeError if the rotki DB version is newer than the software or
         there is a DB upgrade and there is an error or if the version is older
-        than the one supported.
+        than the one supported or if db is in a half-upgraded state and there is no backup.
         - AuthenticationError if SQLCipher version problems are detected
         - SystemPermissionError if the DB file's permissions are not correct
         - DBSchemaError if database schema is malformed
@@ -238,18 +243,60 @@ class DBHandler:
             'last_data_upload_ts': (int, Timestamp(0)),
             'premium_should_sync': (str_to_bool, DEFAULT_PREMIUM_SHOULD_SYNC),
             'main_currency': (lambda x: Asset(x).resolve(), A_USD.resolve_to_fiat_asset()),
+            'ongoing_upgrade_from_version': (int, None),
         }
         self.conn: DBConnection = None  # type: ignore
         self.conn_transient: DBConnection = None  # type: ignore
         # Lock to make sure that 2 callers of get_or_create_evm_token do not go in at the same time
         self.get_or_create_evm_token_lock = Semaphore()
         self._connect(password)
+        self._check_abandoned_upgrades(password)
         self._run_actions_after_first_connection(password)
         with self.user_write() as cursor:
             if initial_settings is not None:
                 self.set_settings(cursor, initial_settings)
             self.update_owned_assets_in_globaldb(cursor)
             self.add_globaldb_assetids(cursor)
+
+    def _check_abandoned_upgrades(self, password: str) -> None:
+        """
+        Checks the database whether there are any not finished upgrades and automatically uses a
+        backup if there are any. If no backup found, throws an error to the user
+        """
+        with self.conn.read_ctx() as cursor:
+            try:
+                ongoing_upgrade_from_version = self.get_setting(
+                    cursor=cursor,
+                    name='ongoing_upgrade_from_version',
+                )
+            except sqlcipher.OperationalError:  # pylint: disable=no-member
+                return  # fresh database. Nothing to upgrade.
+        if ongoing_upgrade_from_version is None:
+            return  # We are all good
+
+        # Otherwise replace the db with a backup and relogin
+        self.logout()
+        backup_postfix = f'rotkehlchen_db_v{ongoing_upgrade_from_version}.backup'
+        found_backups = list(filter(
+            lambda x: x[-len(backup_postfix):] == backup_postfix,
+            os.listdir(self.user_data_dir),
+        ))
+        if len(found_backups) == 0:
+            raise DBUpgradeError(
+                'Your encrypted database is in a half-upgraded state and there was no backup '
+                'found. Please open an issue on our github or contact us in our discord server.',
+            )
+
+        backup_to_use = sorted(found_backups)[-1]  # Use latest backup
+        shutil.copyfile(
+            os.path.join(self.user_data_dir, backup_to_use),
+            os.path.join(self.user_data_dir, 'rotkehlchen.db'),
+        )
+        self.msg_aggregator.add_warning(
+            f'Your encrypted database was in a half-upgraded state. '
+            f'Trying to login with a backup {backup_to_use}',
+        )
+        self._connect(password)
 
     def logout(self) -> None:
         if self.conn is not None:
@@ -344,11 +391,22 @@ class DBHandler:
     def get_setting(self, cursor: 'DBCursor', name: Literal['main_currency']) -> AssetWithOracles:
         ...
 
+    @overload
+    def get_setting(self, cursor: 'DBCursor', name: Literal['ongoing_upgrade_from_version']) -> Optional[int]:  # noqa: E501
+        ...
+
     def get_setting(
             self,
             cursor: 'DBCursor',
-            name: Literal['version', 'last_write_ts', 'last_data_upload_ts', 'premium_should_sync', 'main_currency'],  # noqa: E501
-    ) -> Union[int, Timestamp, bool, AssetWithOracles]:
+            name: Literal[
+                'version',
+                'last_write_ts',
+                'last_data_upload_ts',
+                'premium_should_sync',
+                'main_currency',
+                'ongoing_upgrade_from_version',
+            ],
+    ) -> Union[Optional[int], Timestamp, bool, AssetWithOracles]:
         deserializer, default_value = self.setting_to_default_type[name]
         cursor.execute(
             'SELECT value FROM settings WHERE name=?;', (name,),
@@ -362,13 +420,26 @@ class DBHandler:
     def set_setting(  # pylint: disable=no-self-use
             self,
             write_cursor: 'DBCursor',
-            name: Literal['version', 'last_write_ts', 'last_data_upload_ts', 'premium_should_sync'],  # noqa: E501
+            name: Literal[
+                'version',
+                'last_write_ts',
+                'last_data_upload_ts',
+                'premium_should_sync',
+                'ongoing_upgrade_from_version',
+            ],
             value: Union[int, Timestamp],
     ) -> None:
         write_cursor.execute(
             'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
             (name, str(value)),
         )
+
+    def delete_setting(  # pylint: disable=no-self-use
+            self,
+            write_cursor: 'DBCursor',
+            name: Literal['ongoing_upgrade_from_version'],
+    ) -> None:
+        write_cursor.execute('DELETE FROM settings WHERE name=?', (name,))
 
     def _connect(
             self,
@@ -519,6 +590,7 @@ class DBHandler:
         also update the last write timestamp
         """
         cursor = self.conn.cursor()
+        cursor.execute('BEGIN TRANSACTION')
         try:
             yield cursor
         except Exception:

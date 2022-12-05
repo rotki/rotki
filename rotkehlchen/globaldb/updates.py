@@ -402,8 +402,12 @@ class AssetsUpdater():
         assert data_directory is not None, 'data directory should be initialized at this point'
         global_db_path = data_directory / 'global_data' / 'global.db'
         with TemporaryDirectory() as tmpdirname:
-            tempdbpath = Path(tmpdirname) / 'temp.db'
-            connection = initialize_globaldb(tempdbpath, GlobalDBHandler().conn.sql_vm_instructions_cb)  # noqa: E501
+            tmpdir = Path(tmpdirname)
+            connection = initialize_globaldb(
+                global_dir=tmpdir,
+                sql_vm_instructions_cb=GlobalDBHandler().conn.sql_vm_instructions_cb,
+                msg_aggregator=GlobalDBHandler()._msg_aggregator,  # type: ignore  # msg_aggregator is definitely not None here  # noqa: E501
+            )
             with GlobalDBHandler().conn.critical_section():
                 # make sure global DB is not accessed anywhere else
                 _replace_assets_from_db(connection, global_db_path)
@@ -427,7 +431,7 @@ class AssetsUpdater():
             connection.close()
             connection = GlobalDBHandler().conn
             with connection.critical_section():  # assure global DB is not accessed anywhere else
-                _replace_assets_from_db(connection, tempdbpath)
+                _replace_assets_from_db(connection, tmpdir / 'temp.db')
             return None
 
     def _perform_update(

@@ -8,7 +8,13 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.upgrades import UpgradeRecord
 
-from ..utils import GLOBAL_DB_VERSION, MIN_SUPPORTED_GLOBAL_DB_VERSION, _get_setting_value
+from ..utils import (
+    GLOBAL_DB_VERSION,
+    MIN_SUPPORTED_GLOBAL_DB_VERSION,
+    _add_setting_value,
+    _delete_setting_value,
+    _get_setting_value,
+)
 from .v2_v3 import migrate_to_v3
 
 logger = logging.getLogger(__name__)
@@ -26,7 +32,7 @@ UPGRADES_LIST = [
 ]
 
 
-def maybe_upgrade_globaldb(connection: 'DBConnection', dbpath: Path) -> bool:
+def maybe_upgrade_globaldb(connection: 'DBConnection', global_dir: Path) -> bool:
     """Maybe upgrade the global DB. Returns True if this is a fresh DB. In that
     case the caller should make sure to input the latest version in the settings.
     In all other cases returns False"""
@@ -59,8 +65,16 @@ def maybe_upgrade_globaldb(connection: 'DBConnection', dbpath: Path) -> bool:
         to_version = upgrade.from_version + 1
         # Create a backup
         tmp_db_filename = f'{ts_now()}_global_db_v{db_version}.backup'
-        tmp_db_path = dbpath.parent / tmp_db_filename
-        shutil.copyfile(dbpath, tmp_db_path)
+        tmp_db_path = global_dir / tmp_db_filename
+        shutil.copyfile(global_dir / 'global.db', tmp_db_path)
+
+        with connection.write_ctx() as write_cursor:
+            _add_setting_value(
+                write_cursor=write_cursor,
+                name='ongoing_upgrade_from_version',
+                value=upgrade.from_version,
+            )
+
         try:
             upgrade.function(connection)
         except BaseException as e:
@@ -70,12 +84,13 @@ def maybe_upgrade_globaldb(connection: 'DBConnection', dbpath: Path) -> bool:
                 f'{to_version}: {str(e)}'
             )
             log.error(error_message)
-            shutil.copyfile(tmp_db_path, dbpath)
+            shutil.copyfile(tmp_db_path, global_dir / 'global.db')
             raise ValueError(error_message) from e
 
         # single upgrade succesfull
-        with connection.write_ctx() as cursor:
-            cursor.execute(
+        with connection.write_ctx() as write_cursor:
+            _delete_setting_value(write_cursor=write_cursor, name='ongoing_upgrade_from_version')
+            write_cursor.execute(
                 'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
                 ('version', str(GLOBAL_DB_VERSION)),
             )

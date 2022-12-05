@@ -132,6 +132,7 @@ class Rotkehlchen():
         GlobalDBHandler(
             data_dir=self.data_dir,
             sql_vm_instructions_cb=self.args.sqlite_instructions,
+            msg_aggregator=self.msg_aggregator,
         )
         self.data = DataHandler(
             self.data_dir,
