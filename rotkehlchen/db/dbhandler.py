@@ -236,7 +236,6 @@ class DBHandler:
         self.user_data_dir = user_data_dir
         self.sql_vm_instructions_cb = sql_vm_instructions_cb
         self.sqlcipher_version = detect_sqlcipher_version()
-        self.last_write_ts: Optional[Timestamp] = None
         self.setting_to_default_type = {
             'version': (int, ROTKEHLCHEN_DB_VERSION),
             'last_write_ts': (int, Timestamp(0)),
@@ -589,39 +588,17 @@ class DBHandler:
         """Get a write context for the user db and after write is finished
         also update the last write timestamp
         """
-        cursor = self.conn.cursor()
-        cursor.execute('BEGIN TRANSACTION')
-        try:
+        # TODO: Rethink this
+        with self.conn.write_ctx(commit_ts=True) as cursor:
             yield cursor
-        except Exception:
-            self.conn.rollback()
-            raise
-        else:
-            # Also keep it in memory for faster querying
-            self.last_write_ts = ts_now()
-            cursor.execute(
-                'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
-                ('last_write_ts', str(self.last_write_ts)),
-            )
-            self.conn.commit()
-        finally:
-            cursor.close()
 
     @contextmanager
     def transient_write(self) -> Iterator[DBCursor]:
         """Get a write context for the transient user db and after write is finished
         also commit
         """
-        cursor = self.conn_transient.cursor()
-        try:
+        with self.conn_transient.write_ctx() as cursor:
             yield cursor
-        except Exception:
-            self.conn.rollback()
-            raise
-        else:
-            self.conn_transient.commit()
-        finally:
-            cursor.close()
 
     # pylint: disable=no-self-use
     def get_settings(self, cursor: 'DBCursor', have_premium: bool = False) -> DBSettings:
