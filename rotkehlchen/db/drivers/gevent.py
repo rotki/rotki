@@ -31,6 +31,7 @@ DEFAULT_SANITY_CHECK_MESSAGE = (
     'github or contact us in our discord server.'
 )
 
+CONTEXT_SWITCH_WAIT = 1  # seconds to wait for a status change in a DB context switch
 import logging
 
 logger: 'RotkehlchenLogger' = logging.getLogger(__name__)  # type: ignore
@@ -328,31 +329,32 @@ class DBConnection:
 
     @contextmanager
     def write_ctx(self, commit_ts: bool = False) -> Generator['DBCursor', None, None]:
-        cursor = self.cursor()
-        if self._conn.in_transaction is True:
-            with self.savepoint_ctx() as cursor:
-                yield cursor
-                return
-        else:
-            cursor.execute('BEGIN TRANSACTION')
-            try:
-                yield cursor
-            except Exception:
-                while len(self.savepoints) != 0:
-                    gevent.sleep(1)
-                self._conn.rollback()
-                raise
+        with self.critical_section():
+            cursor = self.cursor()
+            if self._conn.in_transaction is True:
+                with self.savepoint_ctx() as cursor:
+                    yield cursor
+                    return
             else:
-                while len(self.savepoints) != 0:
-                    gevent.sleep(1)
-                if commit_ts is True:
-                    cursor.execute(
-                        'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
-                        ('last_write_ts', str(ts_now())),
-                    )
-                self._conn.commit()
-            finally:
-                cursor.close()
+                cursor.execute('BEGIN TRANSACTION')
+                try:
+                    yield cursor
+                except Exception:
+                    while len(self.savepoints) != 0:
+                        gevent.sleep(CONTEXT_SWITCH_WAIT)
+                    self._conn.rollback()
+                    raise
+                else:
+                    while len(self.savepoints) != 0:
+                        gevent.sleep(CONTEXT_SWITCH_WAIT)
+                    if commit_ts is True:
+                        cursor.execute(
+                            'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+                            ('last_write_ts', str(ts_now())),
+                        )
+                    self._conn.commit()
+                finally:
+                    cursor.close()
 
     @contextmanager
     def savepoint_ctx(
@@ -370,12 +372,12 @@ class DBConnection:
             yield cursor
         except Exception:
             while len(self.savepoints) > savepoints_length_before + 1:
-                gevent.sleep(1)
+                gevent.sleep(CONTEXT_SWITCH_WAIT)
             self.rollback_savepoint(savepoint_name)
             raise
         else:
             while len(self.savepoints) > savepoints_length_before + 1:
-                gevent.sleep(1)
+                gevent.sleep(CONTEXT_SWITCH_WAIT)
             self.release_savepoint(savepoint_name)
         finally:
             cursor.close()
