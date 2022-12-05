@@ -40,8 +40,7 @@ class OptimismInquirer(EvmNodeInquirer):
             etherscan_node=OPTIMISM_ETHERSCAN_NODE,
             etherscan_node_name=OPTIMISM_ETHERSCAN_NODE_NAME,
             contracts=EvmContracts[Literal[ChainID.OPTIMISM]](
-                contracts_filename='eth_contracts.json',  # TODO: Change
-                abi_filename='eth_abi.json',
+                chain_id=ChainID.OPTIMISM,
             ),
             connect_at_start=connect_at_start,
             rpc_timeout=rpc_timeout,

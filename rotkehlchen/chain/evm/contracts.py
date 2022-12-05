@@ -1,5 +1,5 @@
 import json
-import os
+import logging
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -19,6 +19,8 @@ from web3._utils.abi import get_abi_output_types
 from web3.types import BlockIdentifier
 
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi
+from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, ChecksumEvmAddress
 
 if TYPE_CHECKING:
@@ -27,7 +29,8 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.chain.evm.types import WeightedNode
 
-
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 WEB3 = Web3()
 
 
@@ -139,29 +142,29 @@ class EvmContracts(Generic[T]):
     - ERC721TOKEN
     """
 
-    def __init__(self, contracts_filename: str, abi_filename: str) -> None:
-        self.contracts: dict[str, dict[str, Any]] = {}
-        self.abi_entries: dict[str, list[dict[str, Any]]] = {}
-        dir_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-        with open(os.path.join(dir_path, 'data', contracts_filename)) as f:
-            self.contracts = json.loads(f.read())
-
-        with open(os.path.join(dir_path, 'data', abi_filename)) as f:
-            self.abi_entries = json.loads(f.read())
+    def __init__(self, chain_id: T) -> None:
+        self.chain_id = chain_id
 
     def contract_or_none(self, name: str) -> Optional[EvmContract]:
         """Gets details of an evm contract from the contracts json file
 
         Returns None if missing
         """
-        contract = self.contracts.get(name, None)
-        if contract is None:
-            return None
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            cursor.execute(
+                'SELECT contract_data.address, contract_abi.value, contract_data.deployed_block '
+                'FROM contract_data LEFT JOIN contract_abi ON contract_data.abi=contract_abi.id'
+                ' WHERE contract_data.chain_id=? AND contract_data.name=?',
+                (self.chain_id.serialize_for_db(), name),
+            )
+            result = cursor.fetchone()
+            if result is None:
+                return None
 
         return EvmContract(
-            address=contract['address'],
-            abi=contract['abi'],
-            deployed_block=contract['deployed_block'],
+            address=result[0],
+            abi=json.loads(result[1]),  # not handling json error -- assuming DB consistency
+            deployed_block=result[2] if result[2] else 0,
         )
 
     @overload
@@ -186,7 +189,20 @@ class EvmContracts(Generic[T]):
 
         Returns None if missing
         """
-        return self.abi_entries.get(name, None)
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            cursor.execute('SELECT value FROM contract_abi WHERE name=?',(name,))
+            result = cursor.fetchone()
+            if result is None:
+                return None
+            try:
+                abi_data = json.loads(result[0])
+            except json.decoder.JSONDecodeError as e:
+                log.error(
+                    f'Failed to decode {name} abi {result[0]} from DB as json due to {str(e)}',
+                )
+                return None
+
+            return abi_data
 
     @overload
     def abi(self: 'EvmContracts[Literal[ChainID.ETHEREUM]]', name: 'ETHEREUM_KNOWN_ABI') -> list[dict[str, Any]]:  # noqa: E501

@@ -355,7 +355,4 @@ def blockchain(
 
 @pytest.fixture(name='ethereum_contracts')
 def fixture_ethereum_contracts():
-    return EvmContracts[Literal[ChainID.ETHEREUM]](
-        contracts_filename='eth_contracts.json',
-        abi_filename='eth_abi.json',
-    )
+    return EvmContracts[Literal[ChainID.ETHEREUM]](ChainID.ETHEREUM)

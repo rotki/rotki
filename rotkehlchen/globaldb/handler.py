@@ -52,9 +52,9 @@ log = RotkehlchenLogsAdapter(logger)
 
 ALL_ASSETS_TABLES_QUERY = """
 SELECT assets.identifier, name, symbol, chain, assets.type, custom_assets.type FROM assets
-LEFT JOIN common_asset_details on assets.identifier = common_asset_details.identifier
-LEFT JOIN evm_tokens ON evm_tokens.identifier= assets.identifier
-LEFT JOIN custom_assets ON custom_assets.identifier= assets.identifier
+LEFT JOIN common_asset_details on assets.identifier=common_asset_details.identifier
+LEFT JOIN evm_tokens ON evm_tokens.identifier=assets.identifier
+LEFT JOIN custom_assets ON custom_assets.identifier=assets.identifier
 """
 
 
