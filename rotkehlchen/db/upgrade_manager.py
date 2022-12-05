@@ -218,6 +218,14 @@ class DBUpgradeManager():
                 tmp_db_path,
             )
 
+            # Add a flag to the db that an upgrade is happening
+            with self.db.user_write() as write_cursor:
+                self.db.set_setting(
+                    write_cursor=write_cursor,
+                    name='ongoing_upgrade_from_version',
+                    value=upgrade.from_version,
+                )
+
             try:
                 kwargs = upgrade.kwargs if upgrade.kwargs is not None else {}
                 upgrade.function(db=self.db, progress_handler=progress_handler, **kwargs)
@@ -242,4 +250,5 @@ class DBUpgradeManager():
 
         # Upgrade success all is good
         with self.db.user_write() as cursor:
+            self.db.delete_setting(write_cursor=cursor, name='ongoing_upgrade_from_version')
             self.db.set_setting(write_cursor=cursor, name='version', value=to_version)
