@@ -719,6 +719,7 @@ INSERT INTO assets(identifier, type, name) VALUES
 ("eip155:56/erc20:0x1e155e26085Be757780B45a5420D9f16a938f76b", "C", "KaraStar KARA"),
 ("eip155:56/erc20:0x86a53fcd199212FEa44FA7e16EB1f28812be911D", "C", "Inflation Hedging Coin"),
 ("eip155:56/erc20:0x4ffA6BB42d1a1A6d8e79935CcF1457d55deCff3f", "C", "REV3AL");
+
 INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protocol) VALUES 
 ("eip155:100/erc20:0x21a42669643f45Bc0e086b8Fc2ed70c23D67509d", "A", 100, "0x21a42669643f45Bc0e086b8Fc2ed70c23D67509d", 18, NULL),
 ("eip155:100/erc20:0x256eb8a51f382650B2A1e946b8811953640ee47D", "A", 100, "0x256eb8a51f382650B2A1e946b8811953640ee47D", 18, NULL),
@@ -1440,6 +1441,7 @@ INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protoco
 ("eip155:56/erc20:0x1e155e26085Be757780B45a5420D9f16a938f76b", "A", 56, "0x1e155e26085Be757780B45a5420D9f16a938f76b", 6, NULL),
 ("eip155:56/erc20:0x86a53fcd199212FEa44FA7e16EB1f28812be911D", "A", 56, "0x86a53fcd199212FEa44FA7e16EB1f28812be911D", 18, NULL),
 ("eip155:56/erc20:0x4ffA6BB42d1a1A6d8e79935CcF1457d55deCff3f", "A", 56, "0x4ffA6BB42d1a1A6d8e79935CcF1457d55deCff3f", 18, NULL);
+
 INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked, started, swapped_for) VALUES 
 ("eip155:100/erc20:0x21a42669643f45Bc0e086b8Fc2ed70c23D67509d", "FOX", "shapeshift-fox-token", NULL, NULL, 1625851095, NULL),
 ("eip155:100/erc20:0x256eb8a51f382650B2A1e946b8811953640ee47D", "DATA", "streamr", "DATA", NULL, 1630618945, NULL),
