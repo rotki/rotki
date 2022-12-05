@@ -497,8 +497,6 @@ def test_globaldb_pragma_foreign_keys(globaldb):
     In this test we do:
     - Deactivate the check, insert assets and activate it again
     - Deactivate them and activate them again without pending transactions
-    - Start a transaction, check that the change doesn't take effect, commit
-    and see that then it works.
 
     The reason for this test's existence is to verify our assumptions on sqlite
     and PRAGMAs and to check that they hold for the versions we use. If this test
@@ -531,12 +529,6 @@ def test_globaldb_pragma_foreign_keys(globaldb):
         NULL, "AIDU", "", NULL, 123, NULL);
         """,
     )
-    # activate them again should fail since we haven't finished
-    cursor.switch_foreign_keys('ON')
-    cursor.execute('PRAGMA foreign_keys')
-    assert cursor.fetchone()[0] == 0
-    # To change them again we have to commit the pending transaction
-    cursor.execute('COMMIT;')
     # activate them again
     cursor.switch_foreign_keys('ON')
     cursor.execute('PRAGMA foreign_keys')
@@ -551,19 +543,6 @@ def test_globaldb_pragma_foreign_keys(globaldb):
     cursor.execute('PRAGMA foreign_keys')
     # Now restrictions should be enabled
     assert cursor.fetchone()[0] == 1
-
-    # Start a transaction and they should fail to change to off
-    # since the transaction hasn't finished
-    cursor.execute('begin')
-    cursor.switch_foreign_keys('OFF')
-    cursor.execute('PRAGMA foreign_keys')
-    assert cursor.fetchone()[0] == 1
-    # Finish the transaction
-    cursor.execute('commit')
-    cursor.switch_foreign_keys('OFF')
-    cursor.execute('PRAGMA foreign_keys')
-    # Now the pragma should be off
-    assert cursor.fetchone()[0] == 0
 
 
 def test_global_db_restore(globaldb, database):

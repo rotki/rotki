@@ -129,11 +129,15 @@ class Rotkehlchen():
         self.msg_aggregator.rotki_notifier = self.rotki_notifier
         self.exchange_manager = ExchangeManager(msg_aggregator=self.msg_aggregator)
         # Initialize the GlobalDBHandler singleton. Has to be initialized BEFORE asset resolver
-        GlobalDBHandler(
+        globaldb = GlobalDBHandler(
             data_dir=self.data_dir,
             sql_vm_instructions_cb=self.args.sqlite_instructions,
-            msg_aggregator=self.msg_aggregator,
         )
+        if globaldb.used_backup is True:
+            self.msg_aggregator.add_warning(
+                'Your global database was left in an half-upgraded state. '
+                'Restored from the latest backup we could find',
+            )
         self.data = DataHandler(
             self.data_dir,
             self.msg_aggregator,

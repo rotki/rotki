@@ -6,6 +6,7 @@ import pytest
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.globaldb.upgrades.manager import maybe_upgrade_globaldb
 from rotkehlchen.globaldb.upgrades.v2_v3 import OTHER_EVM_CHAINS_ASSETS
+from rotkehlchen.globaldb.utils import GLOBAL_DB_FILENAME
 from rotkehlchen.types import ChainID, EvmTokenKind
 
 # TODO: Perhaps have a saved version of that global DB for the tests and query it too?
@@ -61,6 +62,7 @@ def test_upgrade_v2_v3(globaldb):
         maybe_upgrade_globaldb(
             connection=globaldb.conn,
             global_dir=globaldb._data_directory / 'global_data',
+            db_filename=GLOBAL_DB_FILENAME,
         )
 
     assert globaldb.get_setting_value('version', None) == 3

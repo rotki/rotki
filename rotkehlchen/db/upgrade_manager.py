@@ -250,5 +250,5 @@ class DBUpgradeManager():
 
         # Upgrade success all is good
         with self.db.user_write() as cursor:
-            self.db.delete_setting(write_cursor=cursor, name='ongoing_upgrade_from_version')
+            cursor.execute('DELETE FROM settings WHERE name=?', ('ongoing_upgrade_from_version',))
             self.db.set_setting(write_cursor=cursor, name='version', value=to_version)

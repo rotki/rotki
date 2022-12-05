@@ -6,9 +6,9 @@ if TYPE_CHECKING:
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 
-def _do_upgrade(write_cursor: 'DBCursor', progress_handler: 'DBUpgradeProgressHandler') -> None:
-    write_cursor.execute('DROP TABLE IF EXISTS balancer_events;')
-    write_cursor.execute("""
+def _do_upgrade(cursor: 'DBCursor', progress_handler: 'DBUpgradeProgressHandler') -> None:
+    cursor.execute('DROP TABLE IF EXISTS balancer_events;')
+    cursor.execute("""
 CREATE TABLE IF NOT EXISTS balancer_events (
     tx_hash VARCHAR[42] NOT NULL,
     log_index INTEGER NOT NULL,
@@ -30,12 +30,12 @@ CREATE TABLE IF NOT EXISTS balancer_events (
     PRIMARY KEY (tx_hash, log_index)
 );
 """)
-    write_cursor.execute('DROP TABLE IF EXISTS balancer_pools;')
-    write_cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "balancer_events%";')
+    cursor.execute('DROP TABLE IF EXISTS balancer_pools;')
+    cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "balancer_events%";')
     progress_handler.new_step()
 
-    write_cursor.execute('DROP TABLE IF EXISTS amm_swaps;')
-    write_cursor.execute("""
+    cursor.execute('DROP TABLE IF EXISTS amm_swaps;')
+    cursor.execute("""
 CREATE TABLE IF NOT EXISTS amm_swaps (
     tx_hash VARCHAR[42] NOT NULL,
     log_index INTEGER NOT NULL,
@@ -54,12 +54,12 @@ CREATE TABLE IF NOT EXISTS amm_swaps (
     FOREIGN KEY(token1_identifier) REFERENCES assets(identifier) ON UPDATE CASCADE,
     PRIMARY KEY (tx_hash, log_index)
 );""")
-    write_cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "balancer_trades%";')
-    write_cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "uniswap_trades%";')
+    cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "balancer_trades%";')
+    cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "uniswap_trades%";')
     progress_handler.new_step()
 
-    write_cursor.execute('DROP TABLE IF EXISTS uniswap_events;')
-    write_cursor.execute("""
+    cursor.execute('DROP TABLE IF EXISTS uniswap_events;')
+    cursor.execute("""
 CREATE TABLE IF NOT EXISTS uniswap_events (
     tx_hash VARCHAR[42] NOT NULL,
     log_index INTEGER NOT NULL,
@@ -77,7 +77,7 @@ CREATE TABLE IF NOT EXISTS uniswap_events (
     FOREIGN KEY(token1_identifier) REFERENCES assets(identifier) ON UPDATE CASCADE,
     PRIMARY KEY (tx_hash, log_index)
 );""")
-    write_cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "uniswap_events%";')
+    cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "uniswap_events%";')
     progress_handler.new_step()
 
 
@@ -87,5 +87,5 @@ def upgrade_v26_to_v27(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
     - Deletes and recreates the tables that were changed after removing UnknownEthereumToken
     """
     progress_handler.set_total_steps(3)
-    with db.user_write() as write_cursor:
-        _do_upgrade(write_cursor=write_cursor, progress_handler=progress_handler)
+    with db.user_write() as cursor:
+        _do_upgrade(cursor=cursor, progress_handler=progress_handler)

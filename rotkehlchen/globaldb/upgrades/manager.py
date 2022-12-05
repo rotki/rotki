@@ -8,13 +8,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.upgrades import UpgradeRecord
 
-from ..utils import (
-    GLOBAL_DB_VERSION,
-    MIN_SUPPORTED_GLOBAL_DB_VERSION,
-    _add_setting_value,
-    _delete_setting_value,
-    _get_setting_value,
-)
+from ..utils import GLOBAL_DB_VERSION, MIN_SUPPORTED_GLOBAL_DB_VERSION, globaldb_get_setting_value
 from .v2_v3 import migrate_to_v3
 
 logger = logging.getLogger(__name__)
@@ -32,14 +26,20 @@ UPGRADES_LIST = [
 ]
 
 
-def maybe_upgrade_globaldb(connection: 'DBConnection', global_dir: Path) -> bool:
-    """Maybe upgrade the global DB. Returns True if this is a fresh DB. In that
+def maybe_upgrade_globaldb(
+        connection: 'DBConnection',
+        global_dir: Path,
+        db_filename: str,
+) -> bool:
+    """Maybe upgrade the global DB.
+
+    Returns True if this is a fresh DB. In that
     case the caller should make sure to input the latest version in the settings.
     In all other cases returns False"""
 
     try:
         with connection.read_ctx() as cursor:
-            db_version = _get_setting_value(cursor, 'version', GLOBAL_DB_VERSION)
+            db_version = globaldb_get_setting_value(cursor, 'version', GLOBAL_DB_VERSION)
     except sqlite3.OperationalError:  # pylint: disable=no-member
         return True  # fresh DB -- nothing to upgrade
 
@@ -66,13 +66,12 @@ def maybe_upgrade_globaldb(connection: 'DBConnection', global_dir: Path) -> bool
         # Create a backup
         tmp_db_filename = f'{ts_now()}_global_db_v{db_version}.backup'
         tmp_db_path = global_dir / tmp_db_filename
-        shutil.copyfile(global_dir / 'global.db', tmp_db_path)
+        shutil.copyfile(global_dir / db_filename, tmp_db_path)
 
-        with connection.write_ctx() as write_cursor:
-            _add_setting_value(
-                write_cursor=write_cursor,
-                name='ongoing_upgrade_from_version',
-                value=upgrade.from_version,
+        with connection.write_ctx() as cursor:
+            cursor.execute(
+                'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+                ('ongoing_upgrade_from_version', str(upgrade.from_version)),
             )
 
         try:
@@ -84,12 +83,15 @@ def maybe_upgrade_globaldb(connection: 'DBConnection', global_dir: Path) -> bool
                 f'{to_version}: {str(e)}'
             )
             log.error(error_message)
-            shutil.copyfile(tmp_db_path, global_dir / 'global.db')
+            shutil.copyfile(tmp_db_path, global_dir / db_filename)
             raise ValueError(error_message) from e
 
         # single upgrade succesfull
         with connection.write_ctx() as write_cursor:
-            _delete_setting_value(write_cursor=write_cursor, name='ongoing_upgrade_from_version')
+            write_cursor.execute(
+                'DELETE FROM settings WHERE name=?',
+                ('ongoing_upgrade_from_version',),
+            )
             write_cursor.execute(
                 'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
                 ('version', str(GLOBAL_DB_VERSION)),

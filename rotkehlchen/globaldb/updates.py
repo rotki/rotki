@@ -403,10 +403,10 @@ class AssetsUpdater():
         global_db_path = data_directory / 'global_data' / 'global.db'
         with TemporaryDirectory() as tmpdirname:
             tmpdir = Path(tmpdirname)
-            connection = initialize_globaldb(
+            connection, _ = initialize_globaldb(
                 global_dir=tmpdir,
+                db_filename='temp.db',
                 sql_vm_instructions_cb=GlobalDBHandler().conn.sql_vm_instructions_cb,
-                msg_aggregator=GlobalDBHandler()._msg_aggregator,  # type: ignore  # msg_aggregator is definitely not None here  # noqa: E501
             )
             with GlobalDBHandler().conn.critical_section():
                 # make sure global DB is not accessed anywhere else

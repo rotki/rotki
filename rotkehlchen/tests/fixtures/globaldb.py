@@ -16,7 +16,6 @@ from rotkehlchen.globaldb.utils import GLOBAL_DB_VERSION
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.tests.utils.database import mock_db_schema_sanity_check
 from rotkehlchen.types import Price, Timestamp
-from rotkehlchen.user_messages import MessagesAggregator
 
 if TYPE_CHECKING:
     from rotkehlchen.utils.upgrades import UpgradeRecord
@@ -55,7 +54,10 @@ def create_globaldb(
     # is called make sure its instance is always starting from scratch
     GlobalDBHandler._GlobalDBHandler__instance = None  # type: ignore
 
-    handler = GlobalDBHandler(data_dir=data_directory, sql_vm_instructions_cb=sql_vm_instructions_cb, msg_aggregator=MessagesAggregator())  # noqa: E501
+    handler = GlobalDBHandler(
+        data_dir=data_directory,
+        sql_vm_instructions_cb=sql_vm_instructions_cb,
+    )
     return handler
 
 

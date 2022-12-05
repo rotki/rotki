@@ -33,7 +33,6 @@ from rotkehlchen.types import (
     Price,
     Timestamp,
 )
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import timestamp_to_date, ts_now
 from rotkehlchen.utils.serialization import (
     deserialize_asset_with_oracles_from_db,
@@ -42,7 +41,7 @@ from rotkehlchen.utils.serialization import (
 
 from .schema import DB_SCRIPT_CREATE_TABLES
 from .upgrades.manager import maybe_upgrade_globaldb
-from .utils import GLOBAL_DB_VERSION, _add_setting_value, _delete_setting_value, _get_setting_value
+from .utils import GLOBAL_DB_FILENAME, GLOBAL_DB_VERSION, globaldb_get_setting_value
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -59,29 +58,34 @@ LEFT JOIN custom_assets ON custom_assets.identifier= assets.identifier
 """
 
 
-def _initialize_and_check_abandoned_upgrades(
+def _initialize_and_check_unfinished_upgrades(
         global_dir: Path,
+        db_filename: str,
         sql_vm_instructions_cb: int,
-        msg_aggregator: 'MessagesAggregator',
-) -> DBConnection:
+) -> tuple[DBConnection, bool]:
     """
     Checks the database whether there are any not finished upgrades and automatically uses a
     backup if there are any. If no backup found, throws an error.
+
+    Returns the DB connection and true if a DB backup was used and False otherwise
     """
     connection = DBConnection(
-        path=global_dir / 'global.db',
+        path=global_dir / db_filename,
         connection_type=DBConnectionType.GLOBAL,
         sql_vm_instructions_cb=sql_vm_instructions_cb,
     )
+    try:
+        with connection.read_ctx() as cursor:
+            ongoing_upgrade_from_version = globaldb_get_setting_value(
+                cursor=cursor,
+                name='ongoing_upgrade_from_version',
+                default_value=-1,
+            )
+    except sqlite3.OperationalError:  # pylint: disable=no-member
+        ongoing_upgrade_from_version = -1  # Fresh DB
 
-    with connection.read_ctx() as cursor:
-        ongoing_upgrade_from_version = _get_setting_value(
-            cursor=cursor,
-            name='ongoing_upgrade_from_version',
-            default_value=-1,
-        )
     if ongoing_upgrade_from_version == -1:
-        return connection  # We are all good
+        return connection, False  # We are all good
 
     # Otherwise replace the db with a backup and relogin
     connection.close()
@@ -98,33 +102,40 @@ def _initialize_and_check_abandoned_upgrades(
 
     backup_to_use = sorted(found_backups)[-1]  # Use latest backup
     shutil.copyfile(
-        os.path.join(global_dir, backup_to_use),
-        os.path.join(global_dir, 'global.db'),
-    )
-    msg_aggregator.add_warning(
-        f'Your global database was in a half-upgraded state. '
-        f'Trying to login with a backup {backup_to_use}',
+        global_dir / backup_to_use,
+        global_dir / db_filename,
     )
     connection = DBConnection(
-        path=global_dir / 'global.db',
+        path=global_dir / db_filename,
         connection_type=DBConnectionType.GLOBAL,
         sql_vm_instructions_cb=sql_vm_instructions_cb,
     )
-    return connection
+    return connection, True
 
 
 def initialize_globaldb(
         global_dir: Path,
+        db_filename: str,
         sql_vm_instructions_cb: int,
-        msg_aggregator: 'MessagesAggregator',
-) -> DBConnection:
-    """Initialie globaldb. May raise DBSchemaError if GlobalDB's schema is malformed."""
-    connection = _initialize_and_check_abandoned_upgrades(
+) -> tuple[DBConnection, bool]:
+    """Initialize globaldb.
+
+    - global_dir: The directory in which to find the global.db to initialize
+    - db_filename: The filename of the DB. Almost always: global.db.
+    - sql_vm_instructions_cb is a connection setting. Check DBConnection for details.
+
+    May raise DBSchemaError if GlobalDB's schema is malformed.
+    """
+    connection, used_backup = _initialize_and_check_unfinished_upgrades(
         global_dir=global_dir,
+        db_filename=db_filename,
         sql_vm_instructions_cb=sql_vm_instructions_cb,
-        msg_aggregator=msg_aggregator,
     )
-    is_fresh_db = maybe_upgrade_globaldb(connection=connection, global_dir=global_dir)
+    is_fresh_db = maybe_upgrade_globaldb(
+        connection=connection,
+        global_dir=global_dir,
+        db_filename=db_filename,
+    )
     connection.executescript(DB_SCRIPT_CREATE_TABLES)
     if is_fresh_db is True:
         with connection.write_ctx() as cursor:
@@ -133,27 +144,29 @@ def initialize_globaldb(
                 ('version', str(GLOBAL_DB_VERSION)),
             )
     connection.schema_sanity_check()
-    return connection
+    return connection, used_backup
 
 
 def _initialize_global_db_directory(
         data_dir: Path,
         sql_vm_instructions_cb: int,
-        msg_aggregator: 'MessagesAggregator',
-) -> DBConnection:
-    """Initialize globaldb directory. May raise DBSchemaError if GlobalDB's schema is malformed."""
+) -> tuple[DBConnection, bool]:
+    """Initialize globaldb directory. May raise DBSchemaError if GlobalDB's schema is malformed.
+
+    Returns the DB connection and True if a DB backup was used and False otherwise
+    """
     global_dir = data_dir / 'global_data'
     global_dir.mkdir(parents=True, exist_ok=True)
-    dbname = global_dir / 'global.db'
+    dbname = global_dir / GLOBAL_DB_FILENAME
     if not dbname.is_file():
         # if no global db exists, copy the built-in file
         root_dir = Path(__file__).resolve().parent.parent
         builtin_data_dir = root_dir / 'data'
-        shutil.copyfile(builtin_data_dir / 'global.db', global_dir / 'global.db')
+        shutil.copyfile(builtin_data_dir / GLOBAL_DB_FILENAME, global_dir / GLOBAL_DB_FILENAME)
     return initialize_globaldb(
         global_dir=global_dir,
+        db_filename=GLOBAL_DB_FILENAME,
         sql_vm_instructions_cb=sql_vm_instructions_cb,
-        msg_aggregator=msg_aggregator,
     )
 
 
@@ -174,15 +187,14 @@ class GlobalDBHandler():
     """A singleton class controlling the global DB"""
     __instance: Optional['GlobalDBHandler'] = None
     _data_directory: Optional[Path] = None
-    _msg_aggregator: Optional['MessagesAggregator'] = None
     _packaged_db_conn: Optional[DBConnection] = None
     conn: DBConnection
+    used_backup: bool  # specifies if the global DB was restored from a backup
 
     def __new__(
             cls,
             data_dir: Optional[Path] = None,
             sql_vm_instructions_cb: Optional[int] = None,
-            msg_aggregator: Optional[MessagesAggregator] = None,
     ) -> 'GlobalDBHandler':
         """
         Initializes the GlobalDB.
@@ -196,11 +208,9 @@ class GlobalDBHandler():
             return GlobalDBHandler.__instance
         assert data_dir is not None, 'First instantiation of GlobalDBHandler should have a data_dir'  # noqa: E501
         assert sql_vm_instructions_cb is not None, 'First instantiation of GlobalDBHandler should have a sql_vm_instructions_cb'  # noqa: E501
-        assert msg_aggregator is not None, 'First instantiation of GlobalDBHandler should have a msg_aggregator'  # noqa: E501
         GlobalDBHandler.__instance = object.__new__(cls)
         GlobalDBHandler.__instance._data_directory = data_dir
-        GlobalDBHandler.__instance._msg_aggregator = msg_aggregator
-        GlobalDBHandler.__instance.conn = _initialize_global_db_directory(data_dir, sql_vm_instructions_cb, msg_aggregator)  # noqa: E501
+        GlobalDBHandler.__instance.conn, GlobalDBHandler.__instance.used_backup = _initialize_global_db_directory(data_dir, sql_vm_instructions_cb)  # noqa: E501
         return GlobalDBHandler.__instance
 
     @staticmethod
@@ -211,10 +221,10 @@ class GlobalDBHandler():
             return GlobalDBHandler()._packaged_db_conn  # type: ignore
 
         global_dir = Path(__file__).resolve().parent.parent / 'data'
-        packaged_db_conn = initialize_globaldb(
+        packaged_db_conn, _ = initialize_globaldb(
             global_dir=global_dir,
+            db_filename=GLOBAL_DB_FILENAME,
             sql_vm_instructions_cb=DEFAULT_SQL_VM_INSTRUCTIONS_CB,
-            msg_aggregator=GlobalDBHandler()._msg_aggregator,  # type: ignore  # Definitely is not None here  # noqa: E501
         )
         GlobalDBHandler()._packaged_db_conn = packaged_db_conn
         return packaged_db_conn
@@ -223,23 +233,22 @@ class GlobalDBHandler():
     def get_schema_version() -> int:
         """Get the version of the DB Schema"""
         with GlobalDBHandler().conn.read_ctx() as cursor:
-            return _get_setting_value(cursor, 'version', GLOBAL_DB_VERSION)
+            return globaldb_get_setting_value(cursor, 'version', GLOBAL_DB_VERSION)
 
     @staticmethod
     def get_setting_value(name: str, default_value: int) -> int:
         """Get the value of a setting or default. Typing is always int for now"""
         with GlobalDBHandler().conn.read_ctx() as cursor:
-            return _get_setting_value(cursor, name, default_value)
+            return globaldb_get_setting_value(cursor, name, default_value)
 
     @staticmethod
-    def add_setting_value(write_cursor: 'DBCursor', name: str, value: Any) -> None:
+    def add_setting_value(name: str, value: Any) -> None:
         """Add the value of a setting"""
-        _add_setting_value(write_cursor, name, value)
-
-    @staticmethod
-    def delete_setting_value(write_cursor: 'DBCursor', name: str) -> None:
-        """Delete a setting"""
-        _delete_setting_value(write_cursor, name)
+        with GlobalDBHandler().conn.write_ctx() as write_cursor:
+            write_cursor.execute(
+                'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+                (name, str(value)),
+            )
 
     @staticmethod
     def add_asset(
@@ -1607,25 +1616,31 @@ class GlobalDBHandler():
             user_db.update_owned_assets_in_globaldb(user_db_cursor)
 
             try:
-                with GlobalDBHandler().conn.write_ctx() as write_cursor:
+                with GlobalDBHandler().conn.read_ctx() as read_cursor:
                     # First check that the operation can be made. If the difference is not the
                     # empty set the operation is dangerous and the user should be notified.
-                    diff_ids = GlobalDBHandler().get_user_added_assets(write_cursor, user_db_cursor, user_db=user_db, only_owned=True)  # noqa: E501
+                    diff_ids = GlobalDBHandler().get_user_added_assets(
+                        cursor=read_cursor,
+                        user_db_write_cursor=user_db_cursor,
+                        user_db=user_db,
+                        only_owned=True,
+                    )
                     if len(diff_ids) != 0 and not force:
                         msg = 'There are assets that can not be deleted. Check logs for more details.'  # noqa: E501
                         return False, msg
-                    write_cursor.execute(f'ATTACH DATABASE "{builtin_database}" AS clean_db;')
+                    read_cursor.execute(f'ATTACH DATABASE "{builtin_database}" AS clean_db;')
                     # Check that versions match
-                    query = write_cursor.execute('SELECT value from clean_db.settings WHERE name="version";')  # noqa: E501
+                    query = read_cursor.execute('SELECT value from clean_db.settings WHERE name="version";')  # noqa: E501
                     version = query.fetchone()
-                    if version is None or int(version[0]) != _get_setting_value(write_cursor, 'version', GLOBAL_DB_VERSION):  # noqa: E501
-                        write_cursor.execute(detach_database)
+                    if version is None or int(version[0]) != globaldb_get_setting_value(read_cursor, 'version', GLOBAL_DB_VERSION):  # noqa: E501
+                        read_cursor.execute(detach_database)
                         msg = (
                             'Failed to restore assets. Global database is not '
                             'updated to the latest version'
                         )
                         return False, msg
 
+                with GlobalDBHandler().conn.write_ctx() as write_cursor:
                     # If versions match drop tables
                     write_cursor.execute('DELETE FROM assets')
                     write_cursor.execute('DELETE FROM asset_collections')
@@ -1651,13 +1666,13 @@ class GlobalDBHandler():
                     # Update the owned assets table
                     user_db.update_owned_assets_in_globaldb(user_db_cursor)
             except sqlite3.Error as e:
-                with GlobalDBHandler().conn.write_ctx() as write_cursor:
-                    write_cursor.execute(detach_database)
+                with GlobalDBHandler().conn.read_ctx() as read_cursor:
+                    read_cursor.execute(detach_database)
                 log.error(f'Failed to restore assets in globaldb due to {str(e)}')
                 return False, 'Failed to restore assets. Read logs to get more information.'
 
-        with GlobalDBHandler().conn.write_ctx() as write_cursor:
-            write_cursor.execute(detach_database)
+        with GlobalDBHandler().conn.read_ctx() as read_cursor:
+            read_cursor.execute(detach_database)
 
         return True, ''
 
@@ -1672,25 +1687,28 @@ class GlobalDBHandler():
         detach_database = 'DETACH DATABASE "clean_db";'
 
         try:
-            with GlobalDBHandler().conn.write_ctx() as write_cursor:
-                write_cursor.execute(f'ATTACH DATABASE "{builtin_database}" AS clean_db;')
+            with GlobalDBHandler().conn.read_ctx() as read_cursor:
+                read_cursor.execute(f'ATTACH DATABASE "{builtin_database}" AS clean_db;')
                 # Check that versions match
-                query = write_cursor.execute('SELECT value from clean_db.settings WHERE name="version";')  # noqa: E501
+                query = read_cursor.execute('SELECT value from clean_db.settings WHERE name="version";')  # noqa: E501
                 version = query.fetchone()
-                if version is None or int(version[0]) != _get_setting_value(write_cursor, 'version', GLOBAL_DB_VERSION):  # noqa: E501
-                    write_cursor.execute(detach_database)
+                if version is None or int(version[0]) != globaldb_get_setting_value(read_cursor, 'version', GLOBAL_DB_VERSION):  # noqa: E501
+                    read_cursor.execute(detach_database)
                     msg = (
                         'Failed to restore assets. Global database is not '
                         'updated to the latest version'
                     )
                     return False, msg
+
                 # Get the list of ids that we will restore
-                query = write_cursor.execute('SELECT identifier from clean_db.assets;')
+                query = read_cursor.execute('SELECT identifier from clean_db.assets;')
                 shipped_asset_ids = set(query.fetchall())
                 asset_ids = ', '.join([f'"{id[0]}"' for id in shipped_asset_ids])
-                query = write_cursor.execute('SELECT id FROM clean_db.asset_collections')
+                query = read_cursor.execute('SELECT id FROM clean_db.asset_collections')
                 shipped_collection_ids = set(query.fetchall())
                 collection_ids = ', '.join([f'"{id[0]}"' for id in shipped_collection_ids])
+
+            with GlobalDBHandler().conn.write_ctx() as write_cursor:
                 # If versions match drop tables
                 write_cursor.switch_foreign_keys('OFF')
                 write_cursor.execute(f'DELETE FROM assets WHERE identifier IN ({asset_ids});')
@@ -1710,12 +1728,12 @@ class GlobalDBHandler():
                 write_cursor.switch_foreign_keys('ON')
         except sqlite3.Error as e:
             log.error(f'Failed to restore assets in globaldb due to {str(e)}')
-            with GlobalDBHandler().conn.write_ctx() as write_cursor:
-                write_cursor.execute(detach_database)
+            with GlobalDBHandler().conn.read_ctx() as read_cursor:
+                read_cursor.execute(detach_database)
             return False, 'Failed to restore assets. Read logs to get more information.'
 
-        with GlobalDBHandler().conn.write_ctx() as write_cursor:
-            write_cursor.execute(detach_database)
+        with GlobalDBHandler().conn.read_ctx() as read_cursor:
+            read_cursor.execute(detach_database)
         return True, ''
 
     @staticmethod
@@ -1726,8 +1744,11 @@ class GlobalDBHandler():
             only_owned: bool = False,
     ) -> set[str]:
         """
-        Create a list of the asset identifiers added by the user. If only_owned
-        the assets added by the user and at some point he had are returned.
+        Create a list of the asset identifiers added by the user.
+
+        If only_owned the assets added by the user and at some point he had are returned.
+        Given cursor of the Global DB must be read only
+
         May raise:
         - sqlite3.Error if the user_db couldn't be correctly attached
         """
