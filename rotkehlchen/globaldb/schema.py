@@ -260,6 +260,26 @@ CREATE TABLE IF NOT EXISTS general_cache (
 );
 """
 
+DB_CREATE_CONTRACT_ABI = """
+CREATE TABLE IF NOT EXISTS contract_abi (
+    id INTEGER PRIMARY KEY,
+    value TEXT NOT NULL,
+    name TEXT
+);
+"""
+
+DB_CREATE_CONTRACT_DATA = """
+CREATE TABLE IF NOT EXISTS contract_data (
+    address VARCHAR[42] NOT NULL,
+    chain_id INTEGER NOT NULL,
+    name TEXT,
+    abi TEXT,
+    deployed_block INTEGER,
+    FOREIGN KEY(abi) REFERENCES contract_abi(id) ON UPDATE CASCADE ON DELETE SET NULL,
+    PRIMARY_KEY(address, chain_id)
+);
+"""
+
 DB_SCRIPT_CREATE_TABLES = f"""
 PRAGMA foreign_keys=off;
 BEGIN TRANSACTION;

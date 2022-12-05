@@ -57,8 +57,7 @@ class EthereumInquirer(EvmNodeInquirer):
             etherscan_node=ETHEREUM_ETHERSCAN_NODE,
             etherscan_node_name=ETHEREUM_ETHERSCAN_NODE_NAME,
             contracts=EvmContracts[Literal[ChainID.ETHEREUM]](
-                contracts_filename='eth_contracts.json',
-                abi_filename='eth_abi.json',
+                chain_id=ChainID.ETHEREUM,
             ),
             connect_at_start=connect_at_start,
             rpc_timeout=rpc_timeout,
