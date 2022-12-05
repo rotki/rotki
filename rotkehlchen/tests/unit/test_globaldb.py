@@ -505,7 +505,7 @@ def test_globaldb_pragma_foreign_keys(globaldb):
     fails we know that something has changed and we will need to adjust our strategy.
     """
     cursor = globaldb.conn.cursor()
-    cursor.execute('PRAGMA foreign_keys = OFF;')
+    cursor.switch_foreign_keys('OFF')
     cursor.execute('PRAGMA foreign_keys')
     # Now restrictions should be disabled
     assert cursor.fetchone()[0] == 0
@@ -532,22 +532,22 @@ def test_globaldb_pragma_foreign_keys(globaldb):
         """,
     )
     # activate them again should fail since we haven't finished
-    cursor.execute('PRAGMA foreign_keys = ON;')
+    cursor.switch_foreign_keys('ON')
     cursor.execute('PRAGMA foreign_keys')
     assert cursor.fetchone()[0] == 0
     # To change them again we have to commit the pending transaction
     cursor.execute('COMMIT;')
     # activate them again
-    cursor.execute('PRAGMA foreign_keys = ON;')
+    cursor.switch_foreign_keys('ON')
     cursor.execute('PRAGMA foreign_keys')
     assert cursor.fetchone()[0] == 1
 
     # deactivate them
-    cursor.execute('PRAGMA foreign_keys = OFF;')
+    cursor.switch_foreign_keys('OFF')
     globaldb.conn.commit()
     cursor.execute('PRAGMA foreign_keys')
     assert cursor.fetchone()[0] == 0
-    cursor.execute('PRAGMA foreign_keys = ON;')
+    cursor.switch_foreign_keys('ON')
     cursor.execute('PRAGMA foreign_keys')
     # Now restrictions should be enabled
     assert cursor.fetchone()[0] == 1
@@ -555,12 +555,12 @@ def test_globaldb_pragma_foreign_keys(globaldb):
     # Start a transaction and they should fail to change to off
     # since the transaction hasn't finished
     cursor.execute('begin')
-    cursor.execute('PRAGMA foreign_keys = OFF;')
+    cursor.switch_foreign_keys('OFF')
     cursor.execute('PRAGMA foreign_keys')
     assert cursor.fetchone()[0] == 1
     # Finish the transaction
     cursor.execute('commit')
-    cursor.execute('PRAGMA foreign_keys = OFF;')
+    cursor.switch_foreign_keys('OFF')
     cursor.execute('PRAGMA foreign_keys')
     # Now the pragma should be off
     assert cursor.fetchone()[0] == 0

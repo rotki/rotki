@@ -389,32 +389,30 @@ def migrate_to_v3(connection: 'DBConnection') -> None:
         log.debug('Purge/delete tables with outdated information')
         # Some of these tables like user_owned_assets are recreated in an identical state but are
         # dropped and recreated since they have references to a table that is dropped and modified
-        cursor.executescript("""
-        PRAGMA foreign_keys=off;
-        DROP TABLE IF EXISTS user_owned_assets;
-        DROP TABLE IF EXISTS assets;
-        DROP TABLE IF EXISTS ethereum_tokens;
-        DROP TABLE IF EXISTS evm_tokens;
-        DROP TABLE IF EXISTS common_asset_details;
-        DROP TABLE IF EXISTS underlying_tokens_list;
-        DROP TABLE IF EXISTS price_history;
-        DROP TABLE IF EXISTS binance_pairs;
-        PRAGMA foreign_keys=on;
-        """)
+        cursor.switch_foreign_keys('OFF')
+        cursor.execute('DROP TABLE IF EXISTS user_owned_assets')
+        cursor.execute('DROP TABLE IF EXISTS assets')
+        cursor.execute('DROP TABLE IF EXISTS ethereum_tokens')
+        cursor.execute('DROP TABLE IF EXISTS evm_tokens')
+        cursor.execute('DROP TABLE IF EXISTS common_asset_details')
+        cursor.execute('DROP TABLE IF EXISTS underlying_tokens_list')
+        cursor.execute('DROP TABLE IF EXISTS price_history')
+        cursor.execute('DROP TABLE IF EXISTS binance_pairs')
+        cursor.switch_foreign_keys('ON')
 
         log.debug('Create new tables')
-        cursor.executescript("""
+        cursor.execute("""
         CREATE TABLE IF NOT EXISTS token_kinds (
           token_kind    CHAR(1)       PRIMARY KEY NOT NULL,
           seq     INTEGER UNIQUE
-        );
-        /* ERC20 */
-        INSERT OR IGNORE INTO token_kinds(token_kind, seq) VALUES ('A', 1);
-        /* ERC721 */
-        INSERT OR IGNORE INTO token_kinds(token_kind, seq) VALUES ('B', 2);
-        /* UNKNOWN */
-        INSERT OR IGNORE INTO token_kinds(token_kind, seq) VALUES ('C', 3);
-        """)
+        );""")
+        # ERC20
+        cursor.execute('INSERT OR IGNORE INTO token_kinds(token_kind, seq) VALUES ("A", 1)')
+        # ERC721
+        cursor.execute('INSERT OR IGNORE INTO token_kinds(token_kind, seq) VALUES ("B", 2)')
+        # UNKNOWN
+        cursor.execute('INSERT OR IGNORE INTO token_kinds(token_kind, seq) VALUES ("C", 3)')
+
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS assets (
             identifier TEXT PRIMARY KEY NOT NULL COLLATE NOCASE,
@@ -519,7 +517,7 @@ def migrate_to_v3(connection: 'DBConnection') -> None:
         );
         """)
 
-        cursor.executescript('PRAGMA foreign_keys=off;')
+        cursor.switch_foreign_keys('OFF')
         log.debug('Input common asset data')
         cursor.executemany(COMMON_ASSETS_INSERT, common_asset_details)
         cursor.executemany(COMMON_ASSETS_INSERT, common_asset_details_others)
@@ -531,7 +529,7 @@ def migrate_to_v3(connection: 'DBConnection') -> None:
         cursor.executemany(PRICES_INSERT, updated_prices)
         log.debug('Input binance pairs')
         cursor.executemany(BINANCE_INSERT, updated_binance_pairs)
-        cursor.executescript('PRAGMA foreign_keys=on;')
+        cursor.switch_foreign_keys('ON')
         log.debug('Input evm and underlying tokens')
         cursor.executemany(EVM_TOKEN_INSERT, evm_tuples)
         cursor.executemany(UNDERLYING_TOKEN_INSERT, mappings)
@@ -545,8 +543,9 @@ def migrate_to_v3(connection: 'DBConnection') -> None:
         # This file contains the EVM version of the assets that are currently in the
         # database and are not EVM (matic tokens, Otimism tokens, etc) + their variants in
         # other chains. And populates them properly via sql statements
-        with open(dir_path / 'data' / 'globaldb_v2_v3_assets.sql') as f:
-            sql_sentences = f.read()
-            cursor.executescript(sql_sentences)
-        connection.commit()
+        with open(dir_path / 'data' / 'globaldb_v2_v3_assets.sql', 'r') as f:
+            raw_sql_sentences = f.read()
+            per_table_sentences = raw_sql_sentences.split('\n\n')
+            for sql_sentences in per_table_sentences:
+                cursor.execute(sql_sentences)
         log.debug('Finished globaldb v2->v3 upgrade')

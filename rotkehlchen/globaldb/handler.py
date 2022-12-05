@@ -1630,7 +1630,7 @@ class GlobalDBHandler():
                     write_cursor.execute('DELETE FROM assets')
                     write_cursor.execute('DELETE FROM asset_collections')
                     # Copy assets
-                    write_cursor.execute('PRAGMA foreign_keys = OFF;')
+                    write_cursor.switch_foreign_keys('OFF')
                     write_cursor.execute('INSERT INTO assets SELECT * FROM clean_db.assets;')
                     write_cursor.execute('INSERT INTO evm_tokens SELECT * FROM clean_db.evm_tokens;')  # noqa: E501
                     write_cursor.execute('INSERT INTO underlying_tokens_list SELECT * FROM clean_db.underlying_tokens_list;')  # noqa: E501
@@ -1638,16 +1638,16 @@ class GlobalDBHandler():
                     write_cursor.execute('INSERT INTO asset_collections SELECT * FROM clean_db.asset_collections')  # noqa: E501
                     write_cursor.execute('INSERT INTO multiasset_mappings SELECT * FROM clean_db.multiasset_mappings')  # noqa: E501
                     # Don't copy custom_assets since there are no custom assets in clean_db
-                    write_cursor.execute('PRAGMA foreign_keys = ON;')
+                    write_cursor.switch_foreign_keys('ON')
 
-                    user_db_cursor.execute('PRAGMA foreign_keys = OFF;')
+                    user_db_cursor.switch_foreign_keys('OFF')
                     user_db_cursor.execute('DELETE FROM assets;')
                     # Get ids for assets to insert them in the user db
                     write_cursor.execute('SELECT identifier from assets')
                     ids = write_cursor.fetchall()
                     ids_proccesed = ", ".join([f'("{id[0]}")' for id in ids])
                     user_db_cursor.execute(f'INSERT INTO assets(identifier) VALUES {ids_proccesed};')  # noqa: E501
-                    user_db_cursor.execute('PRAGMA foreign_keys = ON;')
+                    user_db_cursor.switch_foreign_keys('ON')
                     # Update the owned assets table
                     user_db.update_owned_assets_in_globaldb(user_db_cursor)
             except sqlite3.Error as e:
@@ -1692,7 +1692,7 @@ class GlobalDBHandler():
                 shipped_collection_ids = set(query.fetchall())
                 collection_ids = ', '.join([f'"{id[0]}"' for id in shipped_collection_ids])
                 # If versions match drop tables
-                write_cursor.execute('PRAGMA foreign_keys = OFF;')
+                write_cursor.switch_foreign_keys('OFF')
                 write_cursor.execute(f'DELETE FROM assets WHERE identifier IN ({asset_ids});')
                 write_cursor.execute(f'DELETE FROM evm_tokens WHERE identifier IN ({asset_ids});')
                 write_cursor.execute(f'DELETE FROM underlying_tokens_list WHERE parent_token_entry IN ({asset_ids});')  # noqa: E501
@@ -1707,7 +1707,7 @@ class GlobalDBHandler():
                 write_cursor.execute('INSERT INTO asset_collections SELECT * FROM clean_db.asset_collections')  # noqa: E501
                 write_cursor.execute('INSERT INTO multiasset_mappings SELECT * FROM clean_db.multiasset_mappings')  # noqa: E501
                 # TODO: think about how to implement multiassets insertion
-                write_cursor.execute('PRAGMA foreign_keys = ON;')
+                write_cursor.switch_foreign_keys('ON')
         except sqlite3.Error as e:
             log.error(f'Failed to restore assets in globaldb due to {str(e)}')
             with GlobalDBHandler().conn.write_ctx() as write_cursor:

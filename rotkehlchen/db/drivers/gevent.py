@@ -107,6 +107,20 @@ class DBCursor:
             logger.trace(f'FINISH EXECUTESCRIPT {script}')
         return self
 
+    def switch_foreign_keys(
+            self,
+            on_or_off: Literal['ON', 'OFF'],
+            restart_transaction: bool = True,
+    ) -> None:
+        """
+        Switches foreign keys ON or OFF depending on `on_or_off`. Important! When switching
+        foreign keys a commit always happens which means that if you had a transaction, it might
+        need to be restarted which this function does if `restart_transaction` is True.
+        """
+        self.executescript(f'PRAGMA foreign_keys={on_or_off}')
+        if restart_transaction is True:
+            self.execute('BEGIN TRANSACTION')
+
     def fetchone(self) -> Any:
         if __debug__:
             logger.trace('CURSOR FETCHONE')
@@ -231,9 +245,17 @@ class DBConnection:
         # `dict` which preserves the order of its keys. So we use dict with None values.
         self.savepoints: dict[str, None] = {}
         if connection_type == DBConnectionType.GLOBAL:
-            self._conn = sqlite3.connect(path, check_same_thread=False)
+            self._conn = sqlite3.connect(
+                database=path,
+                check_same_thread=False,
+                isolation_level=None,
+            )
         else:
-            self._conn = sqlcipher.connect(path, check_same_thread=False)  # pylint: disable=no-member  # noqa: E501
+            self._conn = sqlcipher.connect(  # pylint: disable=no-member
+                database=path,
+                check_same_thread=False,
+                isolation_level=None,
+            )
         self._set_progress_handler()
         self.minimized_schema = None
         if connection_type == DBConnectionType.USER:
