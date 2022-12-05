@@ -17,10 +17,6 @@ import {
   getPools
 } from '@/store/defi/xswap-utils';
 import { OnError } from '@/store/typing';
-import {
-  uniswapEventsNumericKeys,
-  uniswapNumericKeys
-} from '@/types/defi/protocols';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 import { TaskMeta } from '@/types/task';
@@ -53,8 +49,7 @@ export const useSushiswapStore = defineStore('defi/sushiswap', () => {
 
   const fetchBalances = async (refresh = false): Promise<void> => {
     const meta: TaskMeta = {
-      title: t('actions.defi.sushiswap_balances.task.title').toString(),
-      numericKeys: uniswapNumericKeys
+      title: t('actions.defi.sushiswap_balances.task.title').toString()
     };
 
     const onError: OnError = {
@@ -72,6 +67,7 @@ export const useSushiswapStore = defineStore('defi/sushiswap', () => {
           section: Section.DEFI_SUSHISWAP_BALANCES,
           meta,
           query: async () => await api.defi.fetchSushiswapBalances(),
+          parser: XswapBalances.parse,
           onError
         },
         state: {
@@ -90,8 +86,7 @@ export const useSushiswapStore = defineStore('defi/sushiswap', () => {
 
   const fetchEvents = async (refresh = false): Promise<void> => {
     const meta: TaskMeta = {
-      title: t('actions.defi.sushiswap_events.task.title').toString(),
-      numericKeys: uniswapEventsNumericKeys
+      title: t('actions.defi.sushiswap_events.task.title').toString()
     };
 
     const onError: OnError = {
@@ -109,6 +104,7 @@ export const useSushiswapStore = defineStore('defi/sushiswap', () => {
           section: Section.DEFI_SUSHISWAP_EVENTS,
           meta,
           query: async () => await api.defi.fetchSushiswapEvents(),
+          parser: XswapEvents.parse,
           onError
         },
         state: {

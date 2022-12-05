@@ -24,7 +24,7 @@
 import { PropType } from 'vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
-import { DefiAsset } from '@/store/defi/types';
+import { DefiAsset } from '@/types/defi/overview';
 import { createEvmIdentifierFromAddress } from '@/utils/assets';
 
 defineProps({

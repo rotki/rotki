@@ -20,7 +20,7 @@ export const useAssetInfoApi = () => {
       { identifiers },
       {
         validateStatus: validStatus,
-        transformResponse: setupTransformer([], true)
+        transformResponse: setupTransformer(true)
       }
     );
     return AssetMap.parse(handleResponse(response));

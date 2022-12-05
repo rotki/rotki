@@ -1,33 +1,38 @@
 import { Balance } from '@rotki/common';
+import { z } from 'zod';
 import { ProtocolVersion } from '@/services/defi/consts';
 
 export const WITHDRAW = 'withdraw';
 export const DEPOSIT = 'deposit';
 export const YEARN_EVENTS = [WITHDRAW, DEPOSIT] as const;
 
-export type YearnEventType = typeof YEARN_EVENTS[number];
+const YearnEventType = z.enum(YEARN_EVENTS);
 
-interface YearnVaultEvent {
-  readonly eventType: YearnEventType;
-  readonly blockNumber: number;
-  readonly timestamp: number;
-  readonly fromAsset: string;
-  readonly fromValue: Balance;
-  readonly toAsset: string;
-  readonly toValue: Balance;
-  readonly realizedPnl: Balance | null;
-  readonly txHash: string;
-  readonly logIndex: number;
-}
+export type YearnEventType = z.infer<typeof YearnEventType>;
 
-interface YearnVault {
-  readonly events: YearnVaultEvent[];
-  readonly profitLoss: Balance;
-}
+const YearnVaultEvent = z.object({
+  eventType: YearnEventType,
+  blockNumber: z.number(),
+  timestamp: z.number(),
+  fromAsset: z.string(),
+  fromValue: Balance,
+  toAsset: z.string(),
+  toValue: Balance,
+  realizedPnl: Balance.nullable(),
+  txHash: z.string(),
+  logIndex: z.number()
+});
 
-type AccountYearnVault = Readonly<Record<string, YearnVault>>;
+const YearnVault = z.object({
+  events: z.array(YearnVaultEvent),
+  profitLoss: Balance
+});
 
-export type YearnVaultsHistory = Readonly<Record<string, AccountYearnVault>>;
+const AccountYearnVault = z.record(YearnVault);
+
+export const YearnVaultsHistory = z.record(AccountYearnVault);
+
+export type YearnVaultsHistory = z.infer<typeof YearnVaultsHistory>;
 
 export interface YearnVaultProfitLoss {
   readonly value: Balance;
@@ -35,21 +40,27 @@ export interface YearnVaultProfitLoss {
   readonly vault: string;
 }
 
-export interface YearnVaultBalance {
-  readonly underlyingToken: string;
-  readonly vaultToken: string;
-  readonly underlyingValue: Balance;
-  readonly vaultValue: Balance;
-  readonly roi: string;
-}
+const YearnVaultBalance = z.object({
+  underlyingToken: z.string(),
+  vaultToken: z.string(),
+  underlyingValue: Balance,
+  vaultValue: Balance,
+  roi: z.string()
+});
 
-export interface YearnVaultAsset extends YearnVaultBalance {
-  readonly vault: string;
-  readonly version: ProtocolVersion;
-}
+export type YearnVaultBalance = z.infer<typeof YearnVaultBalance>;
 
-type AccountYearnVaultEntry = Readonly<Record<string, YearnVaultBalance>>;
+const YearnVaultAsset = z
+  .object({
+    vault: z.string(),
+    version: z.nativeEnum(ProtocolVersion)
+  })
+  .merge(YearnVaultBalance);
 
-export type YearnVaultsBalances = Readonly<
-  Record<string, AccountYearnVaultEntry>
->;
+export type YearnVaultAsset = z.infer<typeof YearnVaultAsset>;
+
+const AccountYearnVaultEntry = z.record(YearnVaultBalance);
+
+export const YearnVaultsBalances = z.record(AccountYearnVaultEntry);
+
+export type YearnVaultsBalances = z.infer<typeof YearnVaultsBalances>;

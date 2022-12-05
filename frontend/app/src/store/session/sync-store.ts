@@ -1,6 +1,5 @@
 import { Severity } from '@rotki/common/lib/messages';
 import { MaybeRef } from '@vueuse/core';
-import { balanceKeys } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
 import { SYNC_DOWNLOAD, SyncAction } from '@/services/types-api';
 import { useNotifications } from '@/store/notifications';
@@ -41,8 +40,7 @@ export const useSyncStoreStore = defineStore('syncStore', () => {
         taskId,
         taskType,
         {
-          title: tc('actions.session.force_sync.task.title'),
-          numericKeys: balanceKeys
+          title: tc('actions.session.force_sync.task.title')
         }
       );
 

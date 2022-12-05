@@ -102,8 +102,7 @@ export const useAssetMovements = defineStore('history/assetMovements', () => {
         description: tc('actions.asset_movements.task.description', undefined, {
           exchange
         }),
-        location,
-        numericKeys: []
+        location
       };
 
       const { result } = await awaitTask<

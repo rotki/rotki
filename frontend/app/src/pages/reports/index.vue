@@ -192,7 +192,7 @@ const importData = async () => {
   if (!get(reportDebugData)) return;
   set(importDataLoading, true);
 
-  let success = false;
+  let success: boolean;
   let message = '';
 
   const { awaitTask } = useTasks();
@@ -204,8 +204,7 @@ const importData = async () => {
       : await api.reports.uploadReportData(get(reportDebugData)!);
 
     const { result } = await awaitTask<boolean, TaskMeta>(taskId, taskType, {
-      title: tc('profit_loss_reports.debug.import_message.title'),
-      numericKeys: []
+      title: tc('profit_loss_reports.debug.import_message.title')
     });
     success = result;
   } catch (e: any) {

@@ -41,7 +41,8 @@
 </template>
 
 <script setup lang="ts">
-import { PropType } from 'vue';
+import { BigNumber } from '@rotki/common';
+import { ComputedRef, PropType } from 'vue';
 import LoanDebt from '@/components/defi/loan/LoanDebt.vue';
 import LoanHeader from '@/components/defi/loan/LoanHeader.vue';
 import MakerDaoVaultCollateral from '@/components/defi/loan/loans/makerdao/MakerDaoVaultCollateral.vue';
@@ -52,12 +53,7 @@ import { useInterop } from '@/electron-interop';
 import { VaultEventsList } from '@/premium/premium';
 import { usePremiumStore } from '@/store/session/premium';
 import { useSessionSettingsStore } from '@/store/settings/session';
-import {
-  MakerDAOVault,
-  MakerDAOVaultDetails,
-  MakerDAOVaultEvent,
-  MakerDAOVaultModel
-} from '@/types/defi/maker';
+import { MakerDAOVaultEvent, MakerDAOVaultModel } from '@/types/defi/maker';
 import { Zero } from '@/utils/bignumbers';
 
 const props = defineProps({
@@ -77,16 +73,15 @@ const openLink = (url: string) => {
   openUrl(url);
 };
 
-const totalInterestOwed = computed(() => {
+const totalInterestOwed: ComputedRef<BigNumber> = computed(() => {
   const makerVault = get(vault);
   if ('totalInterestOwed' in makerVault) {
-    return (get(vault) as MakerDAOVault & MakerDAOVaultDetails)
-      .totalInterestOwed;
+    return makerVault.totalInterestOwed;
   }
   return Zero;
 });
 
-const events = computed<MakerDAOVaultEvent[] | undefined>(() => {
+const events: ComputedRef<MakerDAOVaultEvent[] | undefined> = computed(() => {
   const makerVault = get(vault);
   if ('totalInterestOwed' in makerVault) {
     return makerVault.events;

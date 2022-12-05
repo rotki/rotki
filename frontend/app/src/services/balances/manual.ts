@@ -1,9 +1,6 @@
 import { ActionResult } from '@rotki/common/lib/data';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
-import {
-  balanceAxiosTransformer,
-  basicAxiosTransformer
-} from '@/services/consts';
+import { basicAxiosTransformer } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
 import { PendingTask } from '@/services/types-api';
 import {
@@ -33,7 +30,7 @@ export const useManualBalancesApi = () => {
       'balances/manual',
       axiosSnakeCaseTransformer({ balances, asyncQuery: true }),
       {
-        transformResponse: balanceAxiosTransformer,
+        transformResponse: basicAxiosTransformer,
         validateStatus: validWithParamsSessionAndExternalService
       }
     );
@@ -47,7 +44,7 @@ export const useManualBalancesApi = () => {
       'balances/manual',
       axiosSnakeCaseTransformer({ balances, asyncQuery: true }),
       {
-        transformResponse: balanceAxiosTransformer,
+        transformResponse: basicAxiosTransformer,
         validateStatus: validWithParamsSessionAndExternalService
       }
     );
@@ -61,11 +58,11 @@ export const useManualBalancesApi = () => {
       'balances/manual',
       {
         data: { ids },
-        transformResponse: balanceAxiosTransformer,
+        transformResponse: basicAxiosTransformer,
         validateStatus: validWithParamsSessionAndExternalService
       }
     );
-    return handleResponse(response);
+    return ManualBalances.parse(handleResponse(response));
   };
 
   return {

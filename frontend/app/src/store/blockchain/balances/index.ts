@@ -59,8 +59,7 @@ export const useBlockchainBalancesStore = defineStore(
             chain,
             title: tc('actions.balances.blockchain.task.title', 0, {
               chain
-            }),
-            numericKeys: []
+            })
           } as BlockchainMetadata,
           true
         );

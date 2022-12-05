@@ -76,8 +76,7 @@ export const useEthAccountsStore = defineStore(
             title: tc('actions.add_eth2_validator.task.title'),
             description: tc('actions.add_eth2_validator.task.description', 0, {
               id
-            }),
-            numericKeys: []
+            })
           }
         );
         if (result) {

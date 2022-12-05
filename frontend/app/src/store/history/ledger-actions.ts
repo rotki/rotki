@@ -90,8 +90,7 @@ export const useLedgerActions = defineStore('history/ledgerActions', () => {
         description: tc('actions.ledger_actions.task.description', undefined, {
           exchange
         }),
-        location,
-        numericKeys: []
+        location
       };
 
       const { result } = await awaitTask<

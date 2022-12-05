@@ -14,7 +14,7 @@ export const useHistoryIgnoringApi = () => {
     return api.instance
       .get<ActionResult<IgnoredActions>>('/actions/ignored', {
         validateStatus: validStatus,
-        transformResponse: setupTransformer([])
+        transformResponse: setupTransformer()
       })
       .then(handleResponse)
       .then(result => IgnoredActions.parse(result));

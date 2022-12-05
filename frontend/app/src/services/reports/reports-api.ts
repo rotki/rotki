@@ -134,7 +134,7 @@ export class ReportsApi {
       '/history/actionable_items',
       {
         validateStatus: validStatus,
-        transformResponse: setupTransformer([])
+        transformResponse: setupTransformer()
       }
     );
 
@@ -145,7 +145,7 @@ export class ReportsApi {
   async fetchReports(): Promise<Reports> {
     const response = await this.axios.get<ActionResult<Reports>>('/reports', {
       validateStatus: validStatus,
-      transformResponse: setupTransformer([])
+      transformResponse: setupTransformer()
     });
     const data = handleResponse(response);
     return Reports.parse(data);
@@ -156,7 +156,7 @@ export class ReportsApi {
       ActionResult<ProfitLossReportOverview>
     >(`/reports/${reportId}`, {
       validateStatus: validStatus,
-      transformResponse: setupTransformer([])
+      transformResponse: setupTransformer()
     });
     const data = handleResponse(response);
     const overview = ProfitLossReportOverview.parse(data);
@@ -171,7 +171,7 @@ export class ReportsApi {
       ActionResult<ProfitLossReportEvents>
     >(`/reports/${reportId}/data`, page, {
       validateStatus: validStatus,
-      transformResponse: setupTransformer([])
+      transformResponse: setupTransformer()
     });
     const data = handleResponse(response);
     return ProfitLossReportEvents.parse(data);
@@ -181,7 +181,7 @@ export class ReportsApi {
     return this.axios
       .delete<ActionResult<boolean>>(`/reports/${reportId}`, {
         validateStatus: validStatus,
-        transformResponse: setupTransformer([])
+        transformResponse: setupTransformer()
       })
       .then(handleResponse);
   }

@@ -137,8 +137,7 @@ export const useAssetInfoRetrieval = defineStore(
           taskId,
           taskType,
           {
-            title: tc('actions.assets.erc20.task.title', 0, { address }),
-            numericKeys: []
+            title: tc('actions.assets.erc20.task.title', 0, { address })
           }
         );
         return result;

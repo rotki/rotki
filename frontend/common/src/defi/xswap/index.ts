@@ -1,13 +1,12 @@
-import { default as BigNumber } from "bignumber.js";
-import { z } from 'zod';
+import { z } from "zod";
 import { Balance, NumericString } from "../../index";
 
 export const XswapAsset = z.object({
   asset: z.string(),
   totalAmount: NumericString.nullish(),
   usdPrice: NumericString,
-  userBalance: Balance,
-})
+  userBalance: Balance
+});
 export type XswapAsset = z.infer<typeof XswapAsset>;
 
 export const XswapBalance = z.object({
@@ -17,48 +16,54 @@ export const XswapBalance = z.object({
   totalSupply: NumericString.nullish(),
   nftId: z.string().nullish(),
   priceRange: z.array(NumericString).nullish(),
-  userBalance: Balance,
-})
+  userBalance: Balance
+});
 export type XswapBalance = z.infer<typeof XswapBalance>;
 
 export const XswapBalances = z.record(z.array(XswapBalance));
 export type XswapBalances = z.infer<typeof XswapBalances>;
 
 export enum XswapEventType {
-  MINT = 'mint',
-  BURN = 'burn',
+  MINT = "mint",
+  BURN = "burn",
 }
 
-interface XswapEvent {
-  readonly amount0: BigNumber;
-  readonly amount1: BigNumber;
-  readonly eventType: XswapEventType;
-  readonly logIndex: number;
-  readonly lpAmount: BigNumber;
-  readonly timestamp: number;
-  readonly txHash: string;
-  readonly usdPrice: BigNumber;
-}
+const XswapEvent = z.object({
+  amount0: NumericString,
+  amount1: NumericString,
+  eventType: z.nativeEnum(XswapEventType),
+  logIndex: z.number(),
+  lpAmount: NumericString,
+  timestamp: z.number(),
+  txHash: z.string(),
+  usdPrice: NumericString
+});
 
-interface XswapPoolDetails {
-  readonly address: string;
-  readonly events: XswapEvent[];
-  readonly poolAddress: string;
-  readonly profitLoss0: BigNumber;
-  readonly profitLoss1: BigNumber;
-  readonly token0: string;
-  readonly token1: string;
-  readonly usdProfitLoss: BigNumber;
-}
+type XswapEvent = z.infer<typeof XswapEvent>;
+
+const XswapPoolDetails = z.object({
+  address: z.string(),
+  events: z.array(XswapEvent),
+  poolAddress: z.string(),
+  profitLoss0: NumericString,
+  profitLoss1: NumericString,
+  token0: z.string(),
+  token1: z.string(),
+  usdProfitLoss: NumericString
+});
+
+export type XswapPoolDetails = z.infer<typeof XswapPoolDetails>;
 
 export const XswapPool = z.object({
   address: z.string(),
   assets: z.array(z.string())
-})
+});
 
 export type XswapPool = z.infer<typeof XswapPool>;
 
-export type XswapEvents = Readonly<Record<string, XswapPoolDetails[]>>;
+export const XswapEvents = z.record(z.array(XswapPoolDetails))
+
+export type XswapEvents = z.infer<typeof XswapEvents>;
 
 export type XswapPoolProfit = Omit<XswapPoolDetails, "events" | "address">
 

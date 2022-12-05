@@ -40,8 +40,7 @@ export const useBtcAccountsStore = defineStore(
           description: tc('actions.balances.xpub_removal.task.description', 0, {
             xpub: payload.xpub
           }),
-          blockchain: payload.blockchain,
-          numericKeys: []
+          blockchain: payload.blockchain
         } as BlockchainMetadata);
       } catch (e: any) {
         logger.error(e);

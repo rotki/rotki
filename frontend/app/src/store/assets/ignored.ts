@@ -88,8 +88,7 @@ export const useIgnoredAssetsStore = defineStore('ignoredAssets', () => {
       const taskType = TaskType.UPDATE_IGNORED_ASSETS;
       const { taskId } = await reQueryIgnoredAssets();
       const taskMeta = {
-        title: t('actions.session.update_ignored_assets.task.title').toString(),
-        numericKeys: []
+        title: t('actions.session.update_ignored_assets.task.title').toString()
       };
 
       const { result } = await awaitTask<number, TaskMeta>(

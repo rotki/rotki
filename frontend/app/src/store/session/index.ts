@@ -124,8 +124,7 @@ export const useSessionStore = defineStore('session', () => {
           UserAccount | SyncConflictPayload,
           TaskMeta
         >(taskId, taskType, {
-          title: '',
-          numericKeys: []
+          title: ''
         });
 
         if (message && 'remoteLastModified' in result) {

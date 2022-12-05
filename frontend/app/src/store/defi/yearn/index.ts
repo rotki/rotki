@@ -2,7 +2,6 @@ import { ComputedRef, Ref } from 'vue';
 import { usePremium } from '@/composables/premium';
 import { useModules } from '@/composables/session/modules';
 import { useStatusUpdater } from '@/composables/status';
-import { balanceKeys } from '@/services/consts';
 import { ProtocolVersion } from '@/services/defi/consts';
 import { api } from '@/services/rotkehlchen-api';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
@@ -197,15 +196,15 @@ export const useYearnStore = defineStore('defi/yearn', () => {
         {
           title: t('actions.defi.yearn_vaults.task.title', {
             version
-          }).toString(),
-          numericKeys: balanceKeys
+          }).toString()
         }
       );
 
+      const balances = YearnVaultsBalances.parse(result);
       if (isV1) {
-        set(vaultsBalances, result);
+        set(vaultsBalances, balances);
       } else {
-        set(vaultsV2Balances, result);
+        set(vaultsV2Balances, balances);
       }
     } catch (e: any) {
       notify({
@@ -270,15 +269,15 @@ export const useYearnStore = defineStore('defi/yearn', () => {
         {
           title: t('actions.defi.yearn_vaults_history.task.title', {
             version: payload.version
-          }).toString(),
-          numericKeys: balanceKeys
+          }).toString()
         }
       );
 
+      const data = YearnVaultsHistory.parse(result);
       if (isV1) {
-        set(vaultsHistory, result);
+        set(vaultsHistory, data);
       } else {
-        set(vaultsV2History, result);
+        set(vaultsV2History, data);
       }
     } catch (e: any) {
       notify({

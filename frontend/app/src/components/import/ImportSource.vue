@@ -143,7 +143,6 @@ const uploadPackaged = async (file: string) => {
 
     const taskMeta = {
       title: t('file_upload.task.title', { source: sourceVal }).toString(),
-      numericKeys: [],
       source: sourceVal
     };
 
@@ -182,8 +181,7 @@ const uploadFile = async () => {
           {
             title: t('file_upload.task.title', {
               source: get(source)
-            }).toString(),
-            numericKeys: []
+            }).toString()
           }
         );
 

@@ -224,11 +224,7 @@ export const useTasks = defineStore('tasks', () => {
     lock(task.id);
 
     try {
-      const result = await api.queryTaskResult(
-        task.id,
-        task.meta.numericKeys,
-        task.meta.transform
-      );
+      const result = await api.queryTaskResult(task.id);
       assert(result !== null);
       handleResult(result, task);
     } catch (e: any) {

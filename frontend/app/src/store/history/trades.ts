@@ -91,8 +91,7 @@ export const useTrades = defineStore('history/trades', () => {
         description: tc('actions.trades.task.description', undefined, {
           exchange
         }),
-        location,
-        numericKeys: []
+        location
       };
 
       const { result } = await awaitTask<

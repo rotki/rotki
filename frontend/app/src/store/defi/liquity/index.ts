@@ -28,8 +28,7 @@ export const useLiquityStore = defineStore('defi/liquity', () => {
 
   const fetchPools = async (refresh = false): Promise<void> => {
     const meta: TaskMeta = {
-      title: tc('actions.defi.liquity_pools.task.title'),
-      numericKeys: []
+      title: tc('actions.defi.liquity_pools.task.title')
     };
 
     const onError: OnError = {
@@ -66,8 +65,7 @@ export const useLiquityStore = defineStore('defi/liquity', () => {
 
   const fetchBalances = async (refresh = false): Promise<void> => {
     const meta: TaskMeta = {
-      title: t('actions.defi.liquity.task.title').toString(),
-      numericKeys: []
+      title: t('actions.defi.liquity.task.title').toString()
     };
 
     const onError: OnError = {
@@ -104,8 +102,7 @@ export const useLiquityStore = defineStore('defi/liquity', () => {
 
   const fetchEvents = async (refresh = false): Promise<void> => {
     const meta: TaskMeta = {
-      title: t('actions.defi.liquity_events.task.title').toString(),
-      numericKeys: []
+      title: t('actions.defi.liquity_events.task.title').toString()
     };
 
     const onError: OnError = {
@@ -143,8 +140,7 @@ export const useLiquityStore = defineStore('defi/liquity', () => {
 
   const fetchStaking = async (refresh = false): Promise<void> => {
     const meta: TaskMeta = {
-      title: t('actions.defi.liquity_staking.task.title').toString(),
-      numericKeys: []
+      title: t('actions.defi.liquity_staking.task.title').toString()
     };
 
     const onError: OnError = {

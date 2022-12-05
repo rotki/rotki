@@ -229,8 +229,7 @@ export const useReports = defineStore('reports', () => {
         taskId,
         TaskType.TRADE_HISTORY,
         {
-          title: t('actions.reports.generate.task.title').toString(),
-          numericKeys: []
+          title: t('actions.reports.generate.task.title').toString()
         }
       );
 
@@ -282,9 +281,8 @@ export const useReports = defineStore('reports', () => {
         taskId,
         TaskType.TRADE_HISTORY,
         {
-          title: t('actions.reports.generate.task.title').toString(),
-          numericKeys: [],
-          transform: false
+          title: t('actions.reports.generate.task.title').toString()
+          //TODO skip transform?
         }
       );
 

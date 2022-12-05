@@ -176,8 +176,7 @@ export const useEthBalancesStore = defineStore('balances/eth', () => {
         taskId,
         taskType,
         {
-          title: tc('actions.balances.loopring.task.title'),
-          numericKeys: []
+          title: tc('actions.balances.loopring.task.title')
         }
       );
 

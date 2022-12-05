@@ -67,8 +67,7 @@ export const useBlockchainAccountsStore = defineStore(
             0,
             { address }
           ),
-          blockchain,
-          numericKeys: []
+          blockchain
         } as BlockchainMetadata,
         true
       );
@@ -108,8 +107,7 @@ export const useBlockchainAccountsStore = defineStore(
               0,
               { count: accounts.length }
             ),
-            blockchain,
-            numericKeys: []
+            blockchain
           } as BlockchainMetadata
         );
       } catch (e: any) {

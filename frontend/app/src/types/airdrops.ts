@@ -1,40 +1,6 @@
-export interface PoapDeliveryDetails {
-  readonly amount: string;
-  readonly link: string;
-  readonly name: string;
-  readonly event: string;
-}
+import { NumericString } from '@rotki/common';
+import { z } from 'zod';
 
-export interface Airdrop {
-  readonly address: string;
-  readonly source: AirdropType;
-  readonly amount?: string;
-  readonly link?: string;
-  readonly asset?: string;
-  readonly details?: PoapDeliveryDetails[];
-}
-
-export interface AirdropDetail {
-  readonly amount: string;
-  readonly asset: string;
-  readonly link: string;
-}
-
-export interface PoapDelivery {
-  readonly assets: number[];
-  readonly event: string;
-  readonly link: string;
-  readonly name: string;
-}
-
-type AirdropDetails = RegularAirdrop & PoapDetails;
-type RegularAirdrop = {
-  readonly [source in Exclude<AirdropType, 'poap'>]?: AirdropDetail;
-};
-
-export type Airdrops = Readonly<Record<string, AirdropDetails>>;
-
-export type AirdropType = typeof AIRDROPS[number];
 export const AIRDROP_UNISWAP = 'uniswap';
 export const AIRDROP_1INCH = '1inch';
 export const AIRDROP_TORNADO = 'tornado';
@@ -51,7 +17,8 @@ export const AIRDROP_PARASWAP = 'psp';
 export const AIRDROP_SADDLE = 'sdl';
 export const AIRDROP_COW_GNOSIS = 'cowGnosis';
 export const AIRDROP_COW_MAINNET = 'cowMainnet';
-export const AIRDROPS = [
+
+const AIRDROPS = [
   AIRDROP_1INCH,
   AIRDROP_TORNADO,
   AIRDROP_UNISWAP,
@@ -70,6 +37,51 @@ export const AIRDROPS = [
   AIRDROP_SADDLE
 ] as const;
 
-interface PoapDetails {
-  readonly [AIRDROP_POAP]?: PoapDelivery[];
-}
+const AirdropType = z.enum(AIRDROPS);
+
+export type AirdropType = z.infer<typeof AirdropType>;
+
+const PoapDeliveryDetails = z.object({
+  amount: NumericString,
+  link: z.string(),
+  name: z.string(),
+  event: z.string()
+});
+
+export type PoapDeliveryDetails = z.infer<typeof PoapDeliveryDetails>;
+
+const Airdrop = z.object({
+  address: z.string(),
+  source: AirdropType,
+  amount: NumericString.optional(),
+  link: z.string().optional(),
+  asset: z.string().optional(),
+  details: z.array(PoapDeliveryDetails).optional()
+});
+
+export type Airdrop = z.infer<typeof Airdrop>;
+
+const AirdropDetail = z.object({
+  amount: NumericString,
+  asset: z.string(),
+  link: z.string()
+});
+
+export type AirdropDetail = z.infer<typeof AirdropDetail>;
+
+const PoapDelivery = z.object({
+  assets: z.array(z.number()),
+  event: z.string(),
+  link: z.string(),
+  name: z.string()
+});
+
+export type PoapDelivery = z.infer<typeof PoapDelivery>;
+
+const AirdropDetails = z.record(
+  AirdropDetail.or(z.array(PoapDelivery)).optional()
+);
+
+export const Airdrops = z.record(AirdropDetails);
+
+export type Airdrops = z.infer<typeof Airdrops>;

@@ -3,7 +3,6 @@ import { Ref } from 'vue';
 import { usePremium } from '@/composables/premium';
 import { useModules } from '@/composables/session/modules';
 import { useStatusUpdater } from '@/composables/status';
-import { balanceKeys } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
 import { useNotifications } from '@/store/notifications';
 import { getStatus, setStatus } from '@/store/status';
@@ -11,19 +10,18 @@ import { useTasks } from '@/store/tasks';
 import { isLoading } from '@/store/utils';
 import {
   ApiMakerDAOVault,
+  ApiMakerDAOVaults,
   DSRBalances,
   DSRHistory,
-  dsrKeys,
   MakerDAOVault,
-  MakerDAOVaultDetails,
-  vaultDetailsKeys,
-  vaultKeys
+  MakerDAOVaultDetails
 } from '@/types/defi/maker';
 import { Module } from '@/types/modules';
 import { Section, Status } from '@/types/status';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { bigNumberify, Zero } from '@/utils/bignumbers';
+import { logger } from '@/utils/logging';
 
 const convertMakerDAOVaults = (vaults: ApiMakerDAOVault[]): MakerDAOVault[] =>
   vaults.map(vault => ({
@@ -52,7 +50,7 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
     defaultDsrBalances()
   ) as Ref<DSRBalances>;
   const makerDAOVaults: Ref<MakerDAOVault[]> = ref([]);
-  const makerDAOVaultDetails: Ref<MakerDAOVaultDetails[]> = ref([]);
+  const makerDAOVaultDetails: Ref<MakerDAOVaultDetails> = ref([]);
 
   const { awaitTask } = useTasks();
   const { notify } = useNotifications();
@@ -84,12 +82,12 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
         taskId,
         taskType,
         {
-          title: tc('actions.defi.dsr_balances.task.title'),
-          numericKeys: dsrKeys
+          title: tc('actions.defi.dsr_balances.task.title')
         }
       );
-      set(dsrBalances, result);
+      set(dsrBalances, DSRBalances.parse(result));
     } catch (e: any) {
+      logger.error(e);
       const message = tc(
         'actions.defi.dsr_balances.error.description',
         undefined,
@@ -132,12 +130,11 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
         taskId,
         taskType,
         {
-          title: tc('actions.defi.dsr_history.task.title'),
-          numericKeys: balanceKeys
+          title: tc('actions.defi.dsr_history.task.title')
         }
       );
 
-      set(dsrHistory, result);
+      set(dsrHistory, DSRHistory.parse(result));
     } catch (e: any) {
       const message = tc(
         'actions.defi.dsr_history.error.description',
@@ -176,17 +173,20 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
     try {
       const taskType = TaskType.MAKEDAO_VAULTS;
       const { taskId } = await api.defi.makerDAOVaults();
-      const { result } = await awaitTask<ApiMakerDAOVault[], TaskMeta>(
+      const { result } = await awaitTask<ApiMakerDAOVaults, TaskMeta>(
         taskId,
         taskType,
         {
-          title: tc('actions.defi.makerdao_vaults.task.title'),
-          numericKeys: vaultKeys
+          title: tc('actions.defi.makerdao_vaults.task.title')
         }
       );
 
-      set(makerDAOVaults, convertMakerDAOVaults(result));
+      set(
+        makerDAOVaults,
+        convertMakerDAOVaults(ApiMakerDAOVaults.parse(result))
+      );
     } catch (e: any) {
+      logger.error(e);
       const message = tc(
         'actions.defi.makerdao_vaults.error.description',
         undefined,
@@ -224,17 +224,17 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
 
     try {
       const { taskId } = await api.defi.makerDAOVaultDetails();
-      const { result } = await awaitTask<MakerDAOVaultDetails[], TaskMeta>(
+      const { result } = await awaitTask<MakerDAOVaultDetails, TaskMeta>(
         taskId,
         TaskType.MAKERDAO_VAULT_DETAILS,
         {
-          title: tc('actions.defi.makerdao_vault_details.task.title'),
-          numericKeys: vaultDetailsKeys
+          title: tc('actions.defi.makerdao_vault_details.task.title')
         }
       );
 
-      set(makerDAOVaultDetails, result);
+      set(makerDAOVaultDetails, MakerDAOVaultDetails.parse(result));
     } catch (e: any) {
+      logger.error(e);
       const message = tc(
         'actions.defi.makerdao_vault_details.error.description',
         undefined,

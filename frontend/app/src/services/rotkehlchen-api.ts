@@ -1,10 +1,7 @@
 import { ActionResult } from '@rotki/common/lib/data';
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import { AssetApi } from '@/services/assets/asset-api';
-import {
-  axiosSnakeCaseTransformer,
-  setupTransformer
-} from '@/services/axios-tranformers';
+import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
 import { BalancesApi } from '@/services/balances/balances-api';
 import { basicAxiosTransformer } from '@/services/consts';
 import { DefiApi } from '@/services/defi/defi-api';
@@ -210,23 +207,11 @@ export class RotkehlchenApi {
     return handleResponse(response);
   }
 
-  async queryTaskResult<T>(
-    id: number,
-    numericKeys?: string[] | null,
-    transform = true
-  ): Promise<ActionResult<T>> {
-    const requiresSetup = numericKeys || numericKeys === null;
-    const transformer = requiresSetup
-      ? setupTransformer(numericKeys)
-      : this.axios.defaults.transformResponse;
-
+  async queryTaskResult<T>(id: number): Promise<ActionResult<T>> {
     const config: Partial<AxiosRequestConfig> = {
-      validateStatus: validTaskStatus
+      validateStatus: validTaskStatus,
+      transformResponse: basicAxiosTransformer
     };
-
-    if (transform) {
-      config.transformResponse = transformer;
-    }
 
     const response = await this.axios.get<
       ActionResult<TaskResultResponse<ActionResult<T>>>

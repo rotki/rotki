@@ -14,10 +14,8 @@ import {
   ManualPrices,
   AssetPriceArray
 } from '@/services/assets/types';
-import {
-  axiosSnakeCaseTransformer,
-  setupTransformer
-} from '@/services/axios-tranformers';
+import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
+import { basicAxiosTransformer } from '@/services/consts';
 import { PendingTask } from '@/services/types-api';
 import {
   handleResponse,
@@ -35,7 +33,7 @@ export class AssetApi {
 
   constructor(axios: AxiosInstance) {
     this.axios = axios;
-    this.baseTransformer = setupTransformer([]);
+    this.baseTransformer = basicAxiosTransformer;
   }
 
   addEthereumToken(

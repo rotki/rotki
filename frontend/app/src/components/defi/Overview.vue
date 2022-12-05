@@ -105,7 +105,7 @@ import { PropType } from 'vue';
 import DefiAsset from '@/components/defi/DefiAsset.vue';
 import InfoRow from '@/components/defi/display/InfoRow.vue';
 import StatCard from '@/components/display/StatCard.vue';
-import { DefiProtocolSummary } from '@/store/defi/types';
+import { DefiProtocolSummary } from '@/types/defi/overview';
 
 const props = defineProps({
   summary: {
