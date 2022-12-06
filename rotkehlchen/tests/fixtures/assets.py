@@ -1,11 +1,9 @@
-from unittest.mock import patch
 
 import pytest
 
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants.resolver import evm_address_to_identifier
-from rotkehlchen.tests.utils.mock import MockResponse
 
 
 @pytest.fixture(name='force_reinitialize_asset_resolver')
