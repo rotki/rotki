@@ -5,7 +5,6 @@ import pytest
 from eth_utils import is_checksum_address
 
 from rotkehlchen.assets.asset import Asset, CryptoAsset, CustomAsset, EvmToken, FiatAsset, Nft
-from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.spam_assets import KNOWN_ETH_SPAM_TOKENS
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.assets.utils import get_or_create_evm_token, symbol_to_ethereum_token
