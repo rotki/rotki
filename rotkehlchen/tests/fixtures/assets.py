@@ -8,22 +8,6 @@ from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.tests.utils.mock import MockResponse
 
 
-@pytest.fixture(name='mock_asset_meta_github_response')
-def fixture_mock_asset_meta_github_response() -> str:
-    return '{"md5": "", "version": 0}'
-
-
-@pytest.fixture(name='mock_asset_github_response')
-def fixture_mock_asset_github_response() -> str:
-    return '{}'
-
-
-@pytest.fixture(name='query_github_for_assets')
-def fixture_query_github_for_assets() -> bool:
-    """If True, the default behavior of querying github for latest assets will occur"""
-    return False
-
-
 @pytest.fixture(name='force_reinitialize_asset_resolver')
 def fixture_force_reinitialize_asset_resolver() -> bool:
     """If True, the asset resolver instance will be force to start frm scratch"""
@@ -36,9 +20,6 @@ def fixture_force_reinitialize_asset_resolver() -> bool:
 @pytest.fixture(autouse=True)
 def asset_resolver(
         globaldb,
-        query_github_for_assets,
-        mock_asset_meta_github_response,
-        mock_asset_github_response,
         force_reinitialize_asset_resolver,
         use_clean_caching_directory,
         user_ethereum_tokens,
@@ -54,22 +35,7 @@ def asset_resolver(
     if force_reinitialize_asset_resolver or use_clean_caching_directory:
         AssetResolver._AssetResolver__instance = None
 
-    if query_github_for_assets:
-        resolver = AssetResolver()
-    else:
-        # mock the github request to return version lower than anything possible
-        def mock_get_request(url: str) -> MockResponse:
-            if url == 'https://raw.githubusercontent.com/rotki/rotki/develop/rotkehlchen/data/all_assets.meta':  # noqa: E501
-                return MockResponse(200, mock_asset_meta_github_response)
-            if url == 'https://raw.githubusercontent.com/rotki/rotki/develop/rotkehlchen/data/all_assets.json':  # noqa: E501
-                return MockResponse(200, mock_asset_github_response)
-            # else
-            raise AssertionError('This mock should receive no other urls')
-
-        get_patch = patch('requests.get', side_effect=mock_get_request)
-        with get_patch:
-            resolver = AssetResolver()
-
+    resolver = AssetResolver()
     # add any custom ethereum tokens given by the fixtures for a test
     if user_ethereum_tokens is not None:
         if generatable_user_ethereum_tokens is False:

@@ -133,19 +133,19 @@ DEFI_PROTOCOLS_TO_SKIP_ASSETS = {
     'Compound': True,  # True means all
     # Curve balances are detected by our scan for ERC20 tokens
     'Curve': True,  # True means all
-    # Chitoken is in our all_assets.json
+    # Chitoken is is in our packaged DB
     'Chi Gastoken by 1inch': True,  # True means all
     # yearn vault balances are detected by the yTokens
     'yearn.finance • Vaults': True,  # True means all
     'Yearn Token Vaults': True,
-    # Synthetix SNX token is in all_assets.json
+    # Synthetix SNX token is in our packaged DB
     'Synthetix': ['SNX'],
-    # Ampleforth's AMPL token is in all_assets.json
+    # Ampleforth's AMPL token is in our packaged DB
     'Ampleforth': ['AMPL'],
     # MakerDao vault balances are already detected by our code.
     # Note that DeFi SDK only detects them for the proxies.
     'Multi-Collateral Dai': True,  # True means all
-    # We already got some pie dao tokens in all_assets.json
+    # We already got some pie dao tokens in the packaged DB
     'PieDAO': ['BCP', 'BTC++', 'DEFI++', 'DEFI+S', 'DEFI+L', 'YPIE'],
 }
 DEFI_PROTOCOLS_TO_SKIP_LIABILITIES = {

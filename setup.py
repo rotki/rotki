@@ -30,8 +30,6 @@ setup(
         'rotkehlchen': [
             'data/eth_abi.json',
             'data/eth_contracts.json',
-            'data/all_assets.json',
-            'data/all_assets.meta',
             'data/uniswapv2_lp_tokens.json',
             'data/uniswapv2_lp_tokens.meta',
             'data/global.db',
