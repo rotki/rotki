@@ -262,7 +262,7 @@ CREATE TABLE IF NOT EXISTS general_cache (
 
 DB_CREATE_CONTRACT_ABI = """
 CREATE TABLE IF NOT EXISTS contract_abi (
-    id INTEGER PRIMARY KEY,
+    id INTEGER NOT NULL PRIMARY KEY,
     value TEXT NOT NULL,
     name TEXT
 );
@@ -273,10 +273,10 @@ CREATE TABLE IF NOT EXISTS contract_data (
     address VARCHAR[42] NOT NULL,
     chain_id INTEGER NOT NULL,
     name TEXT,
-    abi TEXT,
+    abi INTEGER NOT NULL,
     deployed_block INTEGER,
     FOREIGN KEY(abi) REFERENCES contract_abi(id) ON UPDATE CASCADE ON DELETE SET NULL,
-    PRIMARY_KEY(address, chain_id)
+    PRIMARY KEY(address, chain_id)
 );
 """
 
@@ -299,6 +299,8 @@ BEGIN TRANSACTION;
 {DB_CREATE_CUSTOM_ASSET}
 {DB_CREATE_ASSET_COLLECTIONS}
 {DB_CREATE_GENERAL_CACHE}
+{DB_CREATE_CONTRACT_ABI}
+{DB_CREATE_CONTRACT_DATA}
 COMMIT;
 PRAGMA foreign_keys=on;
 """
