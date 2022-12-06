@@ -190,7 +190,7 @@ class EvmContracts(Generic[T]):
         Returns None if missing
         """
         with GlobalDBHandler().conn.read_ctx() as cursor:
-            cursor.execute('SELECT value FROM contract_abi WHERE name=?',(name,))
+            cursor.execute('SELECT value FROM contract_abi WHERE name=?', (name,))
             result = cursor.fetchone()
             if result is None:
                 return None
