@@ -265,6 +265,9 @@ class GlobalDBHandler():
         # and the query increased in complexity since we need to join more tables and the test
         # showed that the query using joins is slower than this one with the subquery.
         # test with subquery took on average 1.17 seconds and with joins 1.53 seconds.
+        # The point that prevents this query from being really slow is that the subquery comes
+        # filtered from the frontend where we set a limit in the number of results that goes
+        # in the range from 10 to 100 and this guarantees that the size of the subquery is small.
         underlying_tokens_query = (
             f'SELECT parent_token_entry, address, token_kind, weight FROM underlying_tokens_list '
             f'LEFT JOIN evm_tokens ON underlying_tokens_list.identifier=evm_tokens.identifier '
