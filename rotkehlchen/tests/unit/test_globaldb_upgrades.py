@@ -1,5 +1,8 @@
 import shutil
+from contextlib import ExitStack
+from copy import deepcopy
 from pathlib import Path
+from typing import Literal
 from unittest.mock import patch
 
 import pytest
@@ -8,8 +11,17 @@ from rotkehlchen.assets.types import AssetType
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
 from rotkehlchen.errors.misc import DBUpgradeError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.globaldb.upgrades.manager import maybe_upgrade_globaldb
+from rotkehlchen.globaldb.upgrades.manager import UPGRADES_LIST, maybe_upgrade_globaldb
 from rotkehlchen.globaldb.upgrades.v2_v3 import OTHER_EVM_CHAINS_ASSETS
+from rotkehlchen.globaldb.upgrades.v3_v4 import (
+    MAKERDAO_ABI_GROUP_1,
+    MAKERDAO_ABI_GROUP_2,
+    MAKERDAO_ABI_GROUP_3,
+    YEARN_ABI_GROUP_1,
+    YEARN_ABI_GROUP_2,
+    YEARN_ABI_GROUP_3,
+    YEARN_ABI_GROUP_4,
+)
 from rotkehlchen.globaldb.utils import GLOBAL_DB_FILENAME
 from rotkehlchen.tests.fixtures.globaldb import create_globaldb
 from rotkehlchen.types import ChainID, EvmTokenKind
@@ -34,12 +46,29 @@ def _count_v2_v3_assets_inserted() -> int:
     return assets_inserted_by_update - 1
 
 
+def _patch_for_upgrade_to(stack: ExitStack, version: Literal[2, 3]) -> ExitStack:
+    stack.enter_context(
+        patch(
+            'rotkehlchen.globaldb.upgrades.manager.GLOBAL_DB_VERSION',
+            version,
+        ),
+    )
+    original_list = deepcopy(UPGRADES_LIST)
+    stack.enter_context(
+        patch(
+            'rotkehlchen.globaldb.upgrades.manager.UPGRADES_LIST',
+            original_list[:version - 2],
+        ),
+    )
+    return stack
+
+
 @pytest.mark.parametrize('globaldb_upgrades', [[]])
 @pytest.mark.parametrize('globaldb_version', [2])
 @pytest.mark.parametrize('target_globaldb_version', [2])
 @pytest.mark.parametrize('reload_user_assets', [False])
 def test_upgrade_v2_v3(globaldb):
-    """At the start of this test global DB is upgraded to v3"""
+    """Test globalDB upgrade v2->v3"""
     # Check the state before upgrading
     with globaldb.conn.read_ctx() as cursor:
         assert globaldb.get_setting_value('version', None) == 2
@@ -64,7 +93,8 @@ def test_upgrade_v2_v3(globaldb):
         }
 
     # execute upgrade
-    with patch('rotkehlchen.globaldb.utils.GLOBAL_DB_VERSION', 2):
+    with ExitStack() as stack:
+        _patch_for_upgrade_to(stack, 3)
         maybe_upgrade_globaldb(
             connection=globaldb.conn,
             global_dir=globaldb._data_directory / 'global_data',
@@ -149,7 +179,6 @@ def test_upgrade_v2_v3(globaldb):
         assert cursor.fetchone()[0] == 0
 
 
-@pytest.mark.parametrize('globaldb_upgrades', [[]])
 @pytest.mark.parametrize('globaldb_version', [2])
 @pytest.mark.parametrize('target_globaldb_version', [2])
 @pytest.mark.parametrize('reload_user_assets', [False])
@@ -180,3 +209,48 @@ def test_unfinished_upgrades(globaldb: GlobalDBHandler):
     assert globaldb.get_setting_value('ongoing_upgrade_from_version', -1) == -1
     with globaldb.conn.read_ctx() as cursor:
         assert cursor.execute('SELECT value FROM settings WHERE name="is_backup"').fetchone()[0] == 'Yes'  # noqa: E501
+
+
+@pytest.mark.parametrize('globaldb_upgrades', [[]])
+@pytest.mark.parametrize('globaldb_version', [3])
+@pytest.mark.parametrize('target_globaldb_version', [3])
+@pytest.mark.parametrize('reload_user_assets', [False])
+def test_upgrade_v3_v4(globaldb):
+    """Test the global DB upgrade from v3 to v4"""
+    # Check the state before upgrading
+    with globaldb.conn.read_ctx() as cursor:
+        assert globaldb.get_setting_value('version', None) == 3
+        cursor.execute(
+            'SELECT COUNT(*) FROM sqlite_master WHERE type="table" and name IN (?, ?)',
+            ('contract_abi', 'contract_data'),
+        )
+        assert cursor.fetchone()[0] == 2
+
+    # execute upgrade
+    with ExitStack() as stack:
+        _patch_for_upgrade_to(stack, 4)
+        maybe_upgrade_globaldb(
+            connection=globaldb.conn,
+            global_dir=globaldb._data_directory / 'global_data',
+            db_filename=GLOBAL_DB_FILENAME,
+        )
+
+    assert globaldb.get_setting_value('version', None) == 4
+    with globaldb.conn.read_ctx() as cursor:
+        cursor.execute(
+            'SELECT COUNT(*) FROM sqlite_master WHERE type="table" and name IN (?, ?)',
+            ('contract_abi', 'contract_data'),
+        )
+        eth_contracts_length = 93
+        assert cursor.fetchone()[0] == 2
+        cursor.execute('SELECT COUNT(*) FROM contract_data')
+        assert cursor.fetchone()[0] == eth_contracts_length + 1  # len(eth_contracts) + 1 in dxdao file  # noqa: E501
+
+        groups = [MAKERDAO_ABI_GROUP_1, MAKERDAO_ABI_GROUP_2, MAKERDAO_ABI_GROUP_3, YEARN_ABI_GROUP_1, YEARN_ABI_GROUP_2, YEARN_ABI_GROUP_3, YEARN_ABI_GROUP_4]  # noqa: E501
+        cursor.execute('SELECT COUNT(*) FROM contract_abi')
+        assert cursor.fetchone()[0] == (  # len(eth_abi) + contracts_length - uniswap_NFT_MANAGER - len(7 abi groups) + 7  # noqa: E501
+            15 +
+            eth_contracts_length + 1 - 1 -
+            sum(len(x) for x in groups) +
+            len(groups)
+        )
