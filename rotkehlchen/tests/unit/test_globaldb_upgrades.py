@@ -1,13 +1,19 @@
+import shutil
 from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 
 from rotkehlchen.assets.types import AssetType
+from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
+from rotkehlchen.errors.misc import DBUpgradeError
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.upgrades.manager import maybe_upgrade_globaldb
 from rotkehlchen.globaldb.upgrades.v2_v3 import OTHER_EVM_CHAINS_ASSETS
 from rotkehlchen.globaldb.utils import GLOBAL_DB_FILENAME
+from rotkehlchen.tests.fixtures.globaldb import create_globaldb
 from rotkehlchen.types import ChainID, EvmTokenKind
+from rotkehlchen.utils.misc import ts_now
 
 # TODO: Perhaps have a saved version of that global DB for the tests and query it too?
 ASSETS_IN_V2_GLOBALDB = 3095
@@ -141,3 +147,36 @@ def test_upgrade_v2_v3(globaldb):
             ('BIFI', 'BIFI'),
         )
         assert cursor.fetchone()[0] == 0
+
+
+@pytest.mark.parametrize('globaldb_upgrades', [[]])
+@pytest.mark.parametrize('globaldb_version', [2])
+@pytest.mark.parametrize('target_globaldb_version', [2])
+@pytest.mark.parametrize('reload_user_assets', [False])
+def test_unfinished_upgrades(globaldb: GlobalDBHandler):
+    assert globaldb.used_backup is False
+    globaldb.add_setting_value(  # Pretend that an upgrade was started
+        name='ongoing_upgrade_from_version',
+        value=2,
+    )
+    # There are no backups, so it is supposed to raise an error
+    with pytest.raises(DBUpgradeError):
+        create_globaldb(globaldb._data_directory, 0)
+
+    # Add a backup
+    backup_path = globaldb._data_directory / 'global_data' / f'{ts_now()}_global_db_v2.backup'  # type: ignore  # _data_directory is definitely not null here  # noqa: E501
+    shutil.copy(Path(__file__).parent.parent / 'data' / 'v2_global.db', backup_path)
+    backup_connection = DBConnection(
+        path=str(backup_path),
+        connection_type=DBConnectionType.GLOBAL,
+        sql_vm_instructions_cb=0,
+    )
+    with backup_connection.write_ctx() as write_cursor:
+        write_cursor.execute('INSERT INTO settings VALUES("is_backup", "Yes")')  # mark as a backup  # noqa: E501
+
+    globaldb = create_globaldb(globaldb._data_directory, 0)  # Now the backup should be used
+    assert globaldb.used_backup is True
+    # Check that there is no setting left
+    assert globaldb.get_setting_value('ongoing_upgrade_from_version', -1) == -1
+    with globaldb.conn.read_ctx() as cursor:
+        assert cursor.execute('SELECT value FROM settings WHERE name="is_backup"').fetchone()[0] == 'Yes'  # noqa: E501
