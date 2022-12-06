@@ -526,6 +526,7 @@ def test_query_vaults_wbtc(rotkehlchen_api_server, ethereum_accounts):
     )
 
 
+@requires_env([TestEnvironment.NIGHTLY])
 @flaky(max_runs=3, min_passes=1)  # some makerdao vault tests take long time and may time out
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
 @pytest.mark.parametrize('ethereum_modules', [['makerdao_vaults']])
