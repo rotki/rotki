@@ -15,14 +15,14 @@ const CompoundRewards = z.record(CompoundReward);
 
 const CompoundLending = z.object({
   balance: Balance,
-  apy: z.string().nullish()
+  apy: z.string().nullable()
 });
 
 const CompoundLendingEntries = z.record(CompoundLending);
 
 const CompoundBorrowing = z.object({
   balance: Balance,
-  apy: z.string()
+  apy: z.string().nullable()
 });
 
 const CompoundBorrowingEntries = z.record(CompoundBorrowing);

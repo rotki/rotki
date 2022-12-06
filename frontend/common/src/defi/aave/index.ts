@@ -63,13 +63,23 @@ const AaveBaseEvent = z.object({
 
 const AaveEvent = z.object({
   asset: z.string(),
-  atoken: z.string().optional(),
   value: Balance
 }).merge(AaveBaseEvent);
 
-const AaveLendingEvent = z.object({
-  eventType: z.nativeEnum(AaveLendingEventType)
+const BaseAaveLendingEvent = z.object({
+  eventType: z.nativeEnum(AaveLendingEventType),
 }).merge(AaveEvent);
+
+const AaveLendingInterestEvent = z.object({
+  eventType: z.literal(AaveLendingEventType.INTEREST),
+}).merge(BaseAaveLendingEvent);
+
+const AaveMovementEvent = z.object({
+  eventType: z.literal(AaveLendingEventType.DEPOSIT).or(z.literal(AaveLendingEventType.WITHDRAWAL)),
+  atoken: z.string(),
+}).merge(BaseAaveLendingEvent);
+
+const AaveLendingEvent = AaveLendingInterestEvent.or(AaveMovementEvent);
 
 export type AaveLendingEvent = z.infer<typeof AaveLendingEvent>;
 
@@ -79,7 +89,7 @@ export const AaveLiquidationEvent = z.object({
   collateralAsset: z.string(),
   principalAsset: z.string(),
   principalBalance: Balance
-}).merge(AaveEvent);
+}).merge(AaveBaseEvent);
 
 export type AaveLiquidationEvent = z.infer<typeof AaveLiquidationEvent>;
 

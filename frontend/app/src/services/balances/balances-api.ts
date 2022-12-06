@@ -7,7 +7,6 @@ import {
 import { AxiosInstance } from 'axios';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
 import { EthDetectedTokensRecord } from '@/services/balances/types';
-import { basicAxiosTransformer } from '@/services/consts';
 import { PendingTask } from '@/services/types-api';
 import {
   handleResponse,
@@ -57,11 +56,7 @@ export class BalancesApi {
   async addEth2Validator(payload: Eth2Validator): Promise<PendingTask> {
     const response = await this.axios.put<ActionResult<PendingTask>>(
       '/blockchains/ETH2/validators',
-      axiosSnakeCaseTransformer({ ...payload, asyncQuery: true }),
-      {
-        transformResponse: basicAxiosTransformer,
-        validateStatus: validWithSessionAndExternalService
-      }
+      axiosSnakeCaseTransformer({ ...payload, asyncQuery: true })
     );
 
     return handleResponse(response);
@@ -71,7 +66,6 @@ export class BalancesApi {
     const response = await this.axios.get<ActionResult<Eth2Validators>>(
       '/blockchains/ETH2/validators',
       {
-        transformResponse: basicAxiosTransformer,
         validateStatus: validWithSessionStatus
       }
     );
@@ -88,7 +82,6 @@ export class BalancesApi {
         data: axiosSnakeCaseTransformer({
           validators
         }),
-        transformResponse: basicAxiosTransformer,
         validateStatus: validWithSessionStatus
       }
     );
@@ -103,7 +96,6 @@ export class BalancesApi {
       '/blockchains/ETH2/validators',
       axiosSnakeCaseTransformer({ ownershipPercentage, validatorIndex }),
       {
-        transformResponse: basicAxiosTransformer,
         validateStatus: validWithSessionAndExternalService
       }
     );
@@ -124,8 +116,7 @@ export class BalancesApi {
           addresses
         }),
         {
-          validateStatus: validWithParamsSessionAndExternalService,
-          transformResponse: basicAxiosTransformer
+          validateStatus: validWithParamsSessionAndExternalService
         }
       )
       .then(handleResponse);

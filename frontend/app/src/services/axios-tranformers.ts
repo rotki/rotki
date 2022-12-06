@@ -72,9 +72,11 @@ export const axiosNoRootCamelCaseTransformer: AxiosResponseTransformer = (
   _headers
 ) => convertKeys(data, true, true);
 
-const jsonTransformer: AxiosResponseTransformer = (data, _headers) => {
+const jsonTransformer: AxiosResponseTransformer = (data, headers) => {
   let result = data;
-  if (typeof data === 'string') {
+  const contentType = headers?.['content-type'];
+  const isJson = contentType?.includes('application/json') ?? false;
+  if (isJson && typeof data === 'string') {
     try {
       result = JSON.parse(data);
       // eslint-disable-next-line no-empty
@@ -89,3 +91,5 @@ export const setupTransformer = (
   jsonTransformer,
   skipRoot ? axiosNoRootCamelCaseTransformer : axiosCamelCaseTransformer
 ];
+
+export const basicAxiosTransformer = setupTransformer();

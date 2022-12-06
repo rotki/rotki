@@ -1,10 +1,6 @@
 import { ActionResult } from '@rotki/common/lib/data';
-import { AxiosInstance, AxiosResponseTransformer } from 'axios';
-import {
-  axiosSnakeCaseTransformer,
-  setupTransformer
-} from '@/services/axios-tranformers';
-import { basicAxiosTransformer } from '@/services/consts';
+import { AxiosInstance } from 'axios';
+import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
 import { ProtocolVersion } from '@/services/defi/consts';
 import { ApiImplementation, PendingTask } from '@/services/types-api';
 import {
@@ -15,18 +11,15 @@ import {
 
 export class DefiApi {
   private readonly axios: AxiosInstance;
-  private readonly baseTransformer: AxiosResponseTransformer[];
 
   private get api(): ApiImplementation {
     return {
-      axios: this.axios,
-      baseTransformer: this.baseTransformer
+      axios: this.axios
     };
   }
 
   constructor(axios: AxiosInstance) {
     this.axios = axios;
-    this.baseTransformer = setupTransformer();
   }
 
   async dsrBalance(): Promise<PendingTask> {
@@ -154,8 +147,7 @@ export class DefiApi {
         params: axiosSnakeCaseTransformer({
           asyncQuery: true
         }),
-        validateStatus: validWithSessionAndExternalService,
-        transformResponse: basicAxiosTransformer
+        validateStatus: validWithSessionAndExternalService
       }
     );
 

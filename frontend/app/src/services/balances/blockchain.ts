@@ -1,7 +1,6 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { ActionResult } from '@rotki/common/lib/data';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
-import { basicAxiosTransformer } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
 import { PendingTask } from '@/services/types-api';
 import {
@@ -16,8 +15,7 @@ export const useBlockchainBalanceApi = () => {
       'blockchains/ETH/modules/loopring/balances',
       {
         params: axiosSnakeCaseTransformer({ asyncQuery: true }),
-        validateStatus: validWithSessionAndExternalService,
-        transformResponse: basicAxiosTransformer
+        validateStatus: validWithSessionAndExternalService
       }
     );
     return handleResponse(response);
@@ -36,8 +34,7 @@ export const useBlockchainBalanceApi = () => {
         asyncQuery: true,
         ignoreCache: ignoreCache ? true : undefined
       }),
-      validateStatus: validWithParamsSessionAndExternalService,
-      transformResponse: basicAxiosTransformer
+      validateStatus: validWithParamsSessionAndExternalService
     });
     return handleResponse(response);
   }

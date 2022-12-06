@@ -1,4 +1,3 @@
-import { basicAxiosTransformer } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validWithSessionStatus } from '@/services/utils';
 import {
@@ -13,8 +12,7 @@ export const useBackupApi = () => {
     const response = await api.instance.get<DatabaseInfoResponse>(
       '/database/info',
       {
-        validateStatus: validWithSessionStatus,
-        transformResponse: basicAxiosTransformer
+        validateStatus: validWithSessionStatus
       }
     );
 

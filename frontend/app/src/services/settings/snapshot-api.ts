@@ -1,6 +1,5 @@
 import { ActionResult } from '@rotki/common/lib/data';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
-import { basicAxiosTransformer } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
 import {
   handleResponse,
@@ -15,8 +14,7 @@ export const useSnapshotApi = () => {
     const response = await api.instance.get<ActionResult<Snapshot>>(
       `/snapshots/${timestamp}`,
       {
-        validateStatus: validWithoutSessionStatus,
-        transformResponse: basicAxiosTransformer
+        validateStatus: validWithoutSessionStatus
       }
     );
 
@@ -31,8 +29,7 @@ export const useSnapshotApi = () => {
       `/snapshots/${timestamp}`,
       axiosSnakeCaseTransformer(payload),
       {
-        validateStatus: validStatus,
-        transformResponse: basicAxiosTransformer
+        validateStatus: validStatus
       }
     );
 
@@ -53,8 +50,7 @@ export const useSnapshotApi = () => {
           path,
           action: 'export'
         }),
-        validateStatus: validWithoutSessionStatus,
-        transformResponse: basicAxiosTransformer
+        validateStatus: validWithoutSessionStatus
       }
     );
 
@@ -76,8 +72,7 @@ export const useSnapshotApi = () => {
       '/snapshots',
       {
         data: axiosSnakeCaseTransformer(payload),
-        validateStatus: validWithoutSessionStatus,
-        transformResponse: basicAxiosTransformer
+        validateStatus: validWithoutSessionStatus
       }
     );
 
@@ -95,8 +90,7 @@ export const useSnapshotApi = () => {
         locationDataSnapshotFile
       }),
       {
-        validateStatus: validWithSessionAndExternalService,
-        transformResponse: basicAxiosTransformer
+        validateStatus: validWithSessionAndExternalService
       }
     );
     return handleResponse(response);

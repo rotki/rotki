@@ -1,7 +1,6 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { ActionResult } from '@rotki/common/lib/data';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
-import { basicAxiosTransformer } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
 import {
   BtcAccountData,
@@ -28,8 +27,7 @@ const performAsyncQuery = async (
       ...payload
     }),
     {
-      validateStatus: validWithParamsSessionAndExternalService,
-      transformResponse: basicAxiosTransformer
+      validateStatus: validWithParamsSessionAndExternalService
     }
   );
 
@@ -96,8 +94,7 @@ export const useBlockchainAccountsApi = () => {
           asyncQuery: true,
           accounts: accounts
         }),
-        validateStatus: validWithParamsSessionAndExternalService,
-        transformResponse: basicAxiosTransformer
+        validateStatus: validWithParamsSessionAndExternalService
       }
     );
 
@@ -128,8 +125,7 @@ export const useBlockchainAccountsApi = () => {
       url,
       axiosSnakeCaseTransformer(data),
       {
-        validateStatus: validWithParamsSessionAndExternalService,
-        transformResponse: basicAxiosTransformer
+        validateStatus: validWithParamsSessionAndExternalService
       }
     );
 
@@ -147,8 +143,7 @@ export const useBlockchainAccountsApi = () => {
     const response = await api.instance.patch<
       ActionResult<GeneralAccountData[]>
     >(`/blockchains/${blockchain}`, payloadToData(payload), {
-      validateStatus: validWithParamsSessionAndExternalService,
-      transformResponse: basicAxiosTransformer
+      validateStatus: validWithParamsSessionAndExternalService
     });
 
     return handleResponse(response);
@@ -160,8 +155,7 @@ export const useBlockchainAccountsApi = () => {
     const response = await api.instance.get<ActionResult<GeneralAccountData[]>>(
       `/blockchains/${blockchain}`,
       {
-        validateStatus: validWithSessionStatus,
-        transformResponse: basicAxiosTransformer
+        validateStatus: validWithSessionStatus
       }
     );
     return handleResponse(response);
@@ -173,8 +167,7 @@ export const useBlockchainAccountsApi = () => {
     const response = await api.instance.get<ActionResult<BtcAccountData>>(
       `/blockchains/${blockchain}`,
       {
-        validateStatus: validWithSessionStatus,
-        transformResponse: basicAxiosTransformer
+        validateStatus: validWithSessionStatus
       }
     );
 
@@ -194,8 +187,7 @@ export const useBlockchainAccountsApi = () => {
           derivationPath: derivationPath ? derivationPath : undefined,
           asyncQuery: true
         }),
-        validateStatus: validWithParamsSessionAndExternalService,
-        transformResponse: basicAxiosTransformer
+        validateStatus: validWithParamsSessionAndExternalService
       }
     );
 

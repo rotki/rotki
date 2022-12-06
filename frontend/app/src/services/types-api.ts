@@ -1,6 +1,6 @@
 import { NumericString } from '@rotki/common';
 import { SupportedAsset } from '@rotki/common/lib/data';
-import { AxiosInstance, AxiosResponseTransformer } from 'axios';
+import { AxiosInstance } from 'axios';
 import { z } from 'zod';
 import { ActiveLogLevel } from '@/electron-main/ipc';
 
@@ -67,7 +67,6 @@ export interface TaskStatus {
 
 export interface ApiImplementation {
   readonly axios: AxiosInstance;
-  readonly baseTransformer: AxiosResponseTransformer[];
 }
 
 const NumericBackendArgument = z.object({

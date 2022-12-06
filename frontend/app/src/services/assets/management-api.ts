@@ -1,6 +1,5 @@
 import { ActionResult } from '@rotki/common/lib/data';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
-import { basicAxiosTransformer } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
 import { SupportedAssets } from '@/services/types-api';
 import {
@@ -21,8 +20,7 @@ export const useAssetManagementApi = () => {
       '/assets/all',
       axiosSnakeCaseTransformer(pagination),
       {
-        validateStatus: validWithSessionAndExternalService,
-        transformResponse: basicAxiosTransformer
+        validateStatus: validWithSessionAndExternalService
       }
     );
 
@@ -36,8 +34,7 @@ export const useAssetManagementApi = () => {
       '/assets/custom',
       axiosSnakeCaseTransformer(pagination),
       {
-        validateStatus: validWithSessionAndExternalService,
-        transformResponse: basicAxiosTransformer
+        validateStatus: validWithSessionAndExternalService
       }
     );
 

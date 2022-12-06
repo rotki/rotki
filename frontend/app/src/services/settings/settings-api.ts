@@ -1,6 +1,5 @@
 import { ActionResult } from '@rotki/common/lib/data';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
-import { basicAxiosTransformer } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
 import { BackendConfiguration } from '@/services/types-api';
 import {
@@ -20,8 +19,7 @@ export const useSettingsApi = () => {
         settings: settings
       }),
       {
-        validateStatus: validStatus,
-        transformResponse: basicAxiosTransformer
+        validateStatus: validStatus
       }
     );
     const data = handleResponse(response);
@@ -32,8 +30,7 @@ export const useSettingsApi = () => {
     const response = await api.instance.get<ActionResult<UserSettingsModel>>(
       '/settings',
       {
-        validateStatus: validWithSessionStatus,
-        transformResponse: basicAxiosTransformer
+        validateStatus: validWithSessionStatus
       }
     );
 
@@ -43,10 +40,7 @@ export const useSettingsApi = () => {
 
   const backendSettings = async (): Promise<BackendConfiguration> => {
     const response = await api.instance.get<ActionResult<BackendConfiguration>>(
-      '/settings/configuration',
-      {
-        transformResponse: basicAxiosTransformer
-      }
+      '/settings/configuration'
     );
     return BackendConfiguration.parse(handleResponse(response));
   };

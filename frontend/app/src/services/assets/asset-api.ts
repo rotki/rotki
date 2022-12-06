@@ -1,6 +1,6 @@
 import { ActionResult, SupportedAsset } from '@rotki/common/lib/data';
 import { OwnedAssets } from '@rotki/common/lib/statistics';
-import { AxiosInstance, AxiosResponseTransformer } from 'axios';
+import { AxiosInstance } from 'axios';
 import {
   AssetIdResponse,
   ConflictResolution,
@@ -15,7 +15,6 @@ import {
   AssetPriceArray
 } from '@/services/assets/types';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
-import { basicAxiosTransformer } from '@/services/consts';
 import { PendingTask } from '@/services/types-api';
 import {
   handleResponse,
@@ -29,11 +28,9 @@ import { assert } from '@/utils/assertions';
 
 export class AssetApi {
   private readonly axios: AxiosInstance;
-  private readonly baseTransformer: AxiosResponseTransformer[];
 
   constructor(axios: AxiosInstance) {
     this.axios = axios;
-    this.baseTransformer = basicAxiosTransformer;
   }
 
   addEthereumToken(
@@ -44,8 +41,7 @@ export class AssetApi {
         '/assets/ethereum',
         axiosSnakeCaseTransformer({ token }),
         {
-          validateStatus: validStatus,
-          transformResponse: this.baseTransformer
+          validateStatus: validStatus
         }
       )
       .then(handleResponse);
@@ -59,8 +55,7 @@ export class AssetApi {
         '/assets/ethereum',
         axiosSnakeCaseTransformer({ token }),
         {
-          validateStatus: validStatus,
-          transformResponse: this.baseTransformer
+          validateStatus: validStatus
         }
       )
       .then(handleResponse);
@@ -102,8 +97,7 @@ export class AssetApi {
         '/assets/all',
         axiosSnakeCaseTransformer(asset),
         {
-          validateStatus: validStatus,
-          transformResponse: this.baseTransformer
+          validateStatus: validStatus
         }
       )
       .then(handleResponse);
@@ -115,8 +109,7 @@ export class AssetApi {
         '/assets/all',
         axiosSnakeCaseTransformer(asset),
         {
-          validateStatus: validStatus,
-          transformResponse: this.baseTransformer
+          validateStatus: validStatus
         }
       )
       .then(handleResponse);
@@ -135,8 +128,7 @@ export class AssetApi {
     return this.axios
       .get<ActionResult<PendingTask>>('/assets/updates', {
         params: axiosSnakeCaseTransformer({ asyncQuery: true }),
-        validateStatus: validWithoutSessionStatus,
-        transformResponse: this.baseTransformer
+        validateStatus: validWithoutSessionStatus
       })
       .then(handleResponse);
   }
@@ -153,8 +145,7 @@ export class AssetApi {
 
     return this.axios
       .post<ActionResult<PendingTask>>('/assets/updates', data, {
-        validateStatus: validStatus,
-        transformResponse: this.baseTransformer
+        validateStatus: validStatus
       })
       .then(handleResponse);
   }
@@ -171,8 +162,7 @@ export class AssetApi {
       '/assets/replace',
       data,
       {
-        validateStatus: validStatus,
-        transformResponse: this.baseTransformer
+        validateStatus: validStatus
       }
     );
     return handleResponse(response);
@@ -185,8 +175,7 @@ export class AssetApi {
       '/assets/prices/historical',
       {
         params: axiosSnakeCaseTransformer(payload),
-        validateStatus: validWithoutSessionStatus,
-        transformResponse: this.baseTransformer
+        validateStatus: validWithoutSessionStatus
       }
     );
 
@@ -239,8 +228,7 @@ export class AssetApi {
     return this.axios
       .delete<ActionResult<boolean>>('/assets/updates', {
         data: axiosSnakeCaseTransformer({ reset, ignoreWarnings }),
-        validateStatus: validStatus,
-        transformResponse: this.baseTransformer
+        validateStatus: validStatus
       })
       .then(handleResponse);
   }
@@ -250,8 +238,7 @@ export class AssetApi {
       '/nfts/prices',
       null,
       {
-        validateStatus: validStatus,
-        transformResponse: this.baseTransformer
+        validateStatus: validStatus
       }
     );
 
@@ -265,8 +252,7 @@ export class AssetApi {
       '/assets/prices/latest/all',
       payload,
       {
-        validateStatus: validStatus,
-        transformResponse: this.baseTransformer
+        validateStatus: validStatus
       }
     );
 
@@ -279,8 +265,7 @@ export class AssetApi {
         '/assets/prices/latest',
         axiosSnakeCaseTransformer(payload),
         {
-          validateStatus: validStatus,
-          transformResponse: this.baseTransformer
+          validateStatus: validStatus
         }
       )
       .then(handleResponse);
@@ -292,8 +277,7 @@ export class AssetApi {
         validateStatus: validStatus,
         data: {
           asset
-        },
-        transformResponse: this.baseTransformer
+        }
       })
       .then(handleResponse);
   }
@@ -371,8 +355,7 @@ export class AssetApi {
   async getCustomAssetTypes(): Promise<string[]> {
     return this.axios
       .get<ActionResult<string[]>>('/assets/custom/types', {
-        validateStatus: validStatus,
-        transformResponse: this.baseTransformer
+        validateStatus: validStatus
       })
       .then(handleResponse);
   }
@@ -385,8 +368,7 @@ export class AssetApi {
         '/assets/custom',
         axiosSnakeCaseTransformer(asset),
         {
-          validateStatus: validStatus,
-          transformResponse: this.baseTransformer
+          validateStatus: validStatus
         }
       )
       .then(handleResponse);
@@ -398,8 +380,7 @@ export class AssetApi {
         '/assets/custom',
         axiosSnakeCaseTransformer(asset),
         {
-          validateStatus: validStatus,
-          transformResponse: this.baseTransformer
+          validateStatus: validStatus
         }
       )
       .then(handleResponse);

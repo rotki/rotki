@@ -1,6 +1,5 @@
 import { ActionResult } from '@rotki/common/lib/data';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
-import { basicAxiosTransformer } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
 import { PendingTask } from '@/services/types-api';
 import {
@@ -27,8 +26,7 @@ export const useNftBalanceApi = () => {
           ...payload
         }),
         paramsSerializer,
-        validateStatus: validWithParamsSessionAndExternalService,
-        transformResponse: basicAxiosTransformer
+        validateStatus: validWithParamsSessionAndExternalService
       })
       .then(handleResponse);
   };
@@ -60,8 +58,7 @@ export const useNftBalanceApi = () => {
         nftId: identifier
       },
       {
-        validateStatus: validStatus,
-        transformResponse: basicAxiosTransformer
+        validateStatus: validStatus
       }
     );
 

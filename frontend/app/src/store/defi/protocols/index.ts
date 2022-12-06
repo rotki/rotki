@@ -142,7 +142,7 @@ export const useDefiSupportedProtocolsStore = defineStore(
                 protocol: DefiProtocol.AAVE,
                 address,
                 asset: event.asset,
-                atoken: event.atoken,
+                atoken: 'atoken' in event ? event.atoken : '',
                 value: event.value,
                 blockNumber: event.blockNumber,
                 timestamp: event.timestamp,
@@ -520,7 +520,7 @@ export const useDefiSupportedProtocolsStore = defineStore(
             const selectedLoan = borrowing[asset];
 
             if (selectedLoan) {
-              apy = selectedLoan.apy;
+              apy = selectedLoan.apy ?? '';
               debt = selectedLoan.balance;
               collateral = Object.keys(lending).map(asset => ({
                 asset,

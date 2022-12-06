@@ -1,7 +1,6 @@
 import { ActionResult } from '@rotki/common/lib/data';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
 import { OracleCacheMeta } from '@/services/balances/types';
-import { basicAxiosTransformer } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
 import { PendingTask } from '@/services/types-api';
 import {
@@ -31,8 +30,7 @@ export const usePriceApi = () => {
           toAsset
         }),
         {
-          validateStatus: validWithSessionAndExternalService,
-          transformResponse: basicAxiosTransformer
+          validateStatus: validWithSessionAndExternalService
         }
       )
       .then(handleResponse);
@@ -48,8 +46,7 @@ export const usePriceApi = () => {
           fromAsset,
           toAsset
         }),
-        validateStatus: validStatus,
-        transformResponse: basicAxiosTransformer
+        validateStatus: validStatus
       })
       .then(handleResponse);
 
@@ -58,8 +55,7 @@ export const usePriceApi = () => {
   ): Promise<OracleCacheMeta[]> =>
     api.instance
       .get<ActionResult<OracleCacheMeta[]>>(`/oracles/${source}/cache`, {
-        validateStatus: validWithSessionAndExternalService,
-        transformResponse: basicAxiosTransformer
+        validateStatus: validWithSessionAndExternalService
       })
       .then(handleResponse);
 
@@ -77,8 +73,7 @@ export const usePriceApi = () => {
           targetAsset: toAsset
         }),
         {
-          validateStatus: validWithSessionAndExternalService,
-          transformResponse: basicAxiosTransformer
+          validateStatus: validWithSessionAndExternalService
         }
       )
       .then(handleResponse);
@@ -98,8 +93,7 @@ export const usePriceApi = () => {
           ignoreCache: ignoreCache ? ignoreCache : undefined
         }),
         {
-          validateStatus: validWithSessionAndExternalService,
-          transformResponse: basicAxiosTransformer
+          validateStatus: validWithSessionAndExternalService
         }
       )
       .then(handleResponse);
@@ -115,8 +109,7 @@ export const usePriceApi = () => {
           currencies
         },
         paramsSerializer,
-        validateStatus: validWithoutSessionStatus,
-        transformResponse: basicAxiosTransformer
+        validateStatus: validWithoutSessionStatus
       }
     );
 

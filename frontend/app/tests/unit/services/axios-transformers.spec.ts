@@ -7,12 +7,13 @@ import { bigNumberify } from '@/utils/bignumbers';
 
 describe('axios transformers', () => {
   test('transform json to camelCase', async () => {
-    const json = '{"amount":"10","test_label":"label","data":[{"amount":"2"}]}';
+    const json =
+      '{"amount":"10","test_label":"label","data":[{"amount":"2","usd_value":"10"}]}';
     const parsed = JSON.parse(json);
     expect(axiosCamelCaseTransformer(parsed)).toMatchObject({
       amount: '10',
       testLabel: 'label',
-      data: [{ amount: '2' }]
+      data: [{ amount: '2', usdValue: '10' }]
     });
   });
 

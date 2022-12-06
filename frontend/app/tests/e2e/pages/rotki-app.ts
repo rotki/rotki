@@ -1,6 +1,8 @@
+import { TK } from '../../common/tk';
+
 export class RotkiApp {
   private loadEnv(): void {
-    const apiKey = Cypress.env('ETHERSCAN_API_KEY');
+    const apiKey = Cypress.env('ETHERSCAN_API_KEY') ?? TK.join();
     if (apiKey) {
       cy.log('Using CYPRESS_ETHERSCAN_API_KEY env variable');
       cy.addEtherscanKey(apiKey);

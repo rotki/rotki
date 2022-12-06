@@ -1,9 +1,5 @@
 import { ActionResult } from '@rotki/common/lib/data';
-import {
-  axiosSnakeCaseTransformer,
-  setupTransformer
-} from '@/services/axios-tranformers';
-import { basicAxiosTransformer } from '@/services/consts';
+import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validStatus } from '@/services/utils';
 import { IgnoreActionType } from '@/store/history/types';
@@ -13,8 +9,7 @@ export const useHistoryIgnoringApi = () => {
   const fetchIgnored = async (): Promise<IgnoredActions> => {
     return api.instance
       .get<ActionResult<IgnoredActions>>('/actions/ignored', {
-        validateStatus: validStatus,
-        transformResponse: setupTransformer()
+        validateStatus: validStatus
       })
       .then(handleResponse)
       .then(result => IgnoredActions.parse(result));
@@ -31,8 +26,7 @@ export const useHistoryIgnoringApi = () => {
         actionType
       }),
       {
-        validateStatus: validStatus,
-        transformResponse: basicAxiosTransformer
+        validateStatus: validStatus
       }
     );
 
@@ -50,8 +44,7 @@ export const useHistoryIgnoringApi = () => {
           actionIds,
           actionType
         }),
-        validateStatus: validStatus,
-        transformResponse: basicAxiosTransformer
+        validateStatus: validStatus
       }
     );
 

@@ -1,9 +1,11 @@
 import { ActionResult } from '@rotki/common/lib/data';
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import { AssetApi } from '@/services/assets/asset-api';
-import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
+import {
+  axiosSnakeCaseTransformer,
+  basicAxiosTransformer
+} from '@/services/axios-tranformers';
 import { BalancesApi } from '@/services/balances/balances-api';
-import { basicAxiosTransformer } from '@/services/consts';
 import { DefiApi } from '@/services/defi/defi-api';
 import { HistoryApi } from '@/services/history/history-api';
 import { ReportsApi } from '@/services/reports/reports-api';
@@ -80,7 +82,8 @@ export class RotkehlchenApi {
     this._serverUrl = this.defaultServerUrl;
     this.axios = axios.create({
       baseURL: `${this.serverUrl}/api/1/`,
-      timeout: 30000
+      timeout: 30000,
+      transformResponse: basicAxiosTransformer
     });
     this.setupCancellation();
     ({
@@ -116,7 +119,8 @@ export class RotkehlchenApi {
     this._serverUrl = serverUrl;
     this.axios = axios.create({
       baseURL: `${serverUrl}/api/1/`,
-      timeout: 30000
+      timeout: 30000,
+      transformResponse: basicAxiosTransformer
     });
     this.setupCancellation();
     ({
@@ -173,8 +177,7 @@ export class RotkehlchenApi {
       '/premium/sync',
       axiosSnakeCaseTransformer({ asyncQuery: true, action }),
       {
-        validateStatus: validWithParamsSessionAndExternalService,
-        transformResponse: basicAxiosTransformer
+        validateStatus: validWithParamsSessionAndExternalService
       }
     );
 
@@ -182,9 +185,7 @@ export class RotkehlchenApi {
   }
 
   async ping(): Promise<PendingTask> {
-    const ping = await this.axios.get<ActionResult<PendingTask>>('/ping', {
-      transformResponse: basicAxiosTransformer
-    }); // no validate status here since defaults work
+    const ping = await this.axios.get<ActionResult<PendingTask>>('/ping'); // no validate status here since defaults work
     return handleResponse(ping);
   }
 
@@ -192,16 +193,14 @@ export class RotkehlchenApi {
     const response = await this.axios.get<ActionResult<BackendInfo>>('/info', {
       params: axiosSnakeCaseTransformer({
         checkForUpdates
-      }),
-      transformResponse: basicAxiosTransformer
+      })
     });
     return BackendInfo.parse(handleResponse(response));
   }
 
   async queryTasks(): Promise<TaskStatus> {
     const response = await this.axios.get<ActionResult<TaskStatus>>(`/tasks`, {
-      validateStatus: validTaskStatus,
-      transformResponse: basicAxiosTransformer
+      validateStatus: validTaskStatus
     });
 
     return handleResponse(response);
@@ -209,8 +208,7 @@ export class RotkehlchenApi {
 
   async queryTaskResult<T>(id: number): Promise<ActionResult<T>> {
     const config: Partial<AxiosRequestConfig> = {
-      validateStatus: validTaskStatus,
-      transformResponse: basicAxiosTransformer
+      validateStatus: validTaskStatus
     };
 
     const response = await this.axios.get<
@@ -248,8 +246,7 @@ export class RotkehlchenApi {
         asyncQuery: true
       }),
       {
-        validateStatus: validStatus,
-        transformResponse: basicAxiosTransformer
+        validateStatus: validStatus
       }
     );
 
@@ -262,7 +259,6 @@ export class RotkehlchenApi {
       data,
       {
         validateStatus: validStatus,
-        transformResponse: basicAxiosTransformer,
         headers: {
           'Content-Type': 'multipart/form-data'
         }
@@ -310,8 +306,7 @@ export class RotkehlchenApi {
     );
     const response = await this.axios.get<ActionResult<PendingTask>>('/nfts', {
       params: axiosSnakeCaseTransformer(params),
-      validateStatus: validWithoutSessionStatus,
-      transformResponse: basicAxiosTransformer
+      validateStatus: validWithoutSessionStatus
     });
 
     return handleResponse(response);

@@ -1,6 +1,5 @@
 import { ActionResult } from '@rotki/common/lib/data';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
-import { basicAxiosTransformer } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse } from '@/services/utils';
 import { Collection } from '@/types/collection';
@@ -17,9 +16,7 @@ export const useUserNotesApi = () => {
   ): Promise<Collection<UserNote>> => {
     const response = await api.instance.post<
       ActionResult<Collection<UserNote>>
-    >('/notes', axiosSnakeCaseTransformer(filter), {
-      transformResponse: basicAxiosTransformer
-    });
+    >('/notes', axiosSnakeCaseTransformer(filter));
 
     return mapCollectionResponse<UserNote>(
       UserNoteCollectionResponse.parse(handleResponse(response))
@@ -29,10 +26,7 @@ export const useUserNotesApi = () => {
   const addUserNote = async (payload: Partial<UserNote>): Promise<number> => {
     const response = await api.instance.put<ActionResult<number>>(
       '/notes',
-      axiosSnakeCaseTransformer(payload),
-      {
-        transformResponse: basicAxiosTransformer
-      }
+      axiosSnakeCaseTransformer(payload)
     );
 
     return handleResponse(response);
@@ -43,10 +37,7 @@ export const useUserNotesApi = () => {
   ): Promise<boolean> => {
     const response = await api.instance.patch<ActionResult<boolean>>(
       '/notes',
-      axiosSnakeCaseTransformer(payload),
-      {
-        transformResponse: basicAxiosTransformer
-      }
+      axiosSnakeCaseTransformer(payload)
     );
 
     return handleResponse(response);
@@ -58,8 +49,7 @@ export const useUserNotesApi = () => {
       {
         data: {
           identifier
-        },
-        transformResponse: basicAxiosTransformer
+        }
       }
     );
 
