@@ -4,7 +4,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.drivers.gevent import DBCursor
 
 
-GLOBAL_DB_VERSION = 3
+GLOBAL_DB_VERSION = 4
 MIN_SUPPORTED_GLOBAL_DB_VERSION = 2
 GLOBAL_DB_FILENAME = 'global.db'
 
