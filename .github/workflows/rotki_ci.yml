@@ -24,12 +24,12 @@ jobs:
       backend_tasks: ${{ steps.checker.outputs.backend_tasks }}
       frontend_tasks: ${{ steps.checker.outputs.frontend_tasks }}
       documentation_tasks: ${{ steps.checker.outputs.documentation_tasks }}
-      test_environment: ${{env.TEST_ENVIRONMENT}}
+      test_environment: ${{ steps.checker.outputs.test_environment }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
       - name: Run check action
-        uses: rotki/action-job-checker@v1
+        uses: rotki/action-job-checker@v2
         id: checker
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
