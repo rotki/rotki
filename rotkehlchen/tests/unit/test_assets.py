@@ -242,7 +242,7 @@ def test_cryptocompare_asset_support(cryptocompare):
             test_warnings.warn(UserWarning(msg))
 
 
-def test_all_assets_json_tokens_address_is_checksummed():
+def test_assets_tokens_addresses_are_checksummed():
     """Test that all ethereum saved token asset addresses are checksummed"""
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         if not asset_data.asset_type == AssetType.EVM_TOKEN:
@@ -544,26 +544,6 @@ def test_coingecko_identifiers_are_reachable():
                 msg += f'\nSuggestion: id:{s[0]} name:{s[1]} symbol:{s[2]}'
         if not found:
             test_warnings.warn(UserWarning(msg))
-
-
-@pytest.mark.parametrize('mock_asset_meta_github_response', ['{"md5": "", "version": 99999999}'])
-@pytest.mark.parametrize('use_clean_caching_directory', [True])
-@pytest.mark.parametrize('mock_asset_github_response', ["""{
-"COMPRLASSET2": {
-    "coingecko": "",
-    "name": "Completely real asset, totally not for testing only",
-    "symbol": "COMPRLASSET2",
-    "type": "not existing type"
-}
-}"""])
-@pytest.mark.parametrize('force_reinitialize_asset_resolver', [True])
-def test_asset_with_unknown_type_does_not_crash(asset_resolver):  # pylint: disable=unused-argument
-    """Test that finding an asset with an unknown type does not crash rotki"""
-    with pytest.raises(UnknownAsset):
-        CryptoAsset('COMPRLASSET2')
-    # After the test runs we must reset the asset resolver so that it goes back to
-    # the normal list of assets
-    AssetResolver._AssetResolver__instance = None
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
