@@ -1,4 +1,4 @@
-import builtins  # noqa: T100
+import builtins
 import json
 from dataclasses import dataclass, field
 from typing import Any, Callable, Optional, TypeVar
