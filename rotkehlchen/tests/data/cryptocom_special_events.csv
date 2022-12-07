@@ -14,3 +14,4 @@ Timestamp (UTC),Transaction Description,Currency,Amount,To Currency,To Amount,Na
 2021-01-01 21:00:00,Invest Deposit,ETC,-1.0,,,USD,-100,-100,invest_deposit
 2021-10-28 03:16:37,Supercharger Reward,AXS,0.00356292,,,EUR,0.38,0.4430698990794,supercharger_reward_to_app_credited
 2021-10-28 03:16:38,USDC -> EUR,USDC,-12.94,,,EUR,-11.3,-12.64961995,card_top_up
+2021-10-29 03:16:38,Card Cashback Reversal,CRO,-0.5678,,,USD,0.25,0.25,card_cashback_reverted

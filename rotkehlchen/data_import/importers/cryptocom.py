@@ -66,7 +66,6 @@ class CryptocomImporter(BaseExchangeImporter):
         if row_type in (
             'crypto_purchase',
             'crypto_exchange',
-            'card_cashback_reverted',
             'viban_purchase',
             'crypto_viban_exchange',
             'recurring_buy_order',
@@ -180,7 +179,7 @@ class CryptocomImporter(BaseExchangeImporter):
                 notes=notes,
             )
             self.add_ledger_action(cursor, action)
-        elif row_type in ('crypto_payment', 'reimbursement_reverted'):
+        elif row_type in ('crypto_payment', 'reimbursement_reverted', 'card_cashback_reverted'):
             asset = asset_from_cryptocom(csv_row['Currency'])
             amount = abs(deserialize_asset_amount(csv_row['Amount']))
             action = LedgerAction(
