@@ -1,7 +1,12 @@
+from contextlib import ExitStack
+from copy import deepcopy
+from typing import Literal
+from unittest.mock import patch
 
 from rotkehlchen.assets.asset import EvmToken, UnderlyingToken
 from rotkehlchen.constants.assets import A_MKR
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.upgrades.manager import UPGRADES_LIST
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.types import ChainID, EvmTokenKind, Timestamp
 
@@ -69,3 +74,20 @@ USER_TOKEN3 = EvmToken.initialize(
         UnderlyingToken(address=underlying_address4, token_kind=EvmTokenKind.ERC20, weight=FVal('0.45')),  # noqa: E501
     ],
 )
+
+
+def patch_for_globaldb_upgrade_to(stack: ExitStack, version: Literal[2, 3]) -> ExitStack:
+    stack.enter_context(
+        patch(
+            'rotkehlchen.globaldb.upgrades.manager.GLOBAL_DB_VERSION',
+            version,
+        ),
+    )
+    original_list = deepcopy(UPGRADES_LIST)
+    stack.enter_context(
+        patch(
+            'rotkehlchen.globaldb.upgrades.manager.UPGRADES_LIST',
+            original_list[:version - 2],
+        ),
+    )
+    return stack
