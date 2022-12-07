@@ -12,8 +12,6 @@ export interface TaskMeta {
   readonly title: string;
   readonly description?: string;
   readonly ignoreResult?: boolean;
-  readonly numericKeys?: string[] | null;
-  readonly transform?: boolean;
 }
 
 export interface ExchangeMeta extends TaskMeta {
@@ -23,11 +21,6 @@ export interface ExchangeMeta extends TaskMeta {
 export interface BlockchainMetadata extends TaskMeta {
   readonly blockchain?: Blockchain;
 }
-
-export interface AddressMeta extends TaskMeta {
-  readonly address: string;
-}
-
 export interface TaskResultResponse<T> {
   outcome: T | null;
   status: 'completed' | 'not-found' | 'pending';

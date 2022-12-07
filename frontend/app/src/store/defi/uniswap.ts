@@ -17,7 +17,6 @@ import {
 } from '@/store/defi/xswap-utils';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { OnError } from '@/store/typing';
-import { uniswapEventsNumericKeys } from '@/types/defi/protocols';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 import { TaskMeta } from '@/types/task';
@@ -91,8 +90,7 @@ export const useUniswapStore = defineStore('defi/uniswap', () => {
 
   const fetchV2Balances = async (refresh = false): Promise<void> => {
     const meta: TaskMeta = {
-      title: t('actions.defi.uniswap.task.title', { v: 2 }).toString(),
-      numericKeys: []
+      title: t('actions.defi.uniswap.task.title', { v: 2 }).toString()
     };
 
     const onError: OnError = {
@@ -131,7 +129,6 @@ export const useUniswapStore = defineStore('defi/uniswap', () => {
   const fetchV3Balances = async (refresh = false): Promise<void> => {
     const meta = {
       title: t('actions.defi.uniswap.task.title', { v: 3 }).toString(),
-      numericKeys: [],
       premium: get(isPremium)
     };
 
@@ -171,8 +168,7 @@ export const useUniswapStore = defineStore('defi/uniswap', () => {
 
   const fetchEvents = async (refresh = false): Promise<void> => {
     const meta: TaskMeta = {
-      title: tc('actions.defi.uniswap_events.task.title'),
-      numericKeys: uniswapEventsNumericKeys
+      title: tc('actions.defi.uniswap_events.task.title')
     };
 
     const onError: OnError = {
@@ -190,6 +186,7 @@ export const useUniswapStore = defineStore('defi/uniswap', () => {
           section: Section.DEFI_UNISWAP_EVENTS,
           meta,
           query: async () => await api.defi.fetchUniswapEvents(),
+          parser: XswapEvents.parse,
           onError
         },
         state: {

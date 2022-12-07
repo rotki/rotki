@@ -93,7 +93,6 @@ export const useTransactions = defineStore('history/transactions', () => {
               address
             }).toString()
           : undefined,
-        numericKeys: [],
         address
       };
 
@@ -262,8 +261,7 @@ export const useTransactions = defineStore('history/transactions', () => {
     });
     const taskMeta = {
       title: t('actions.transactions_events.task.title').toString(),
-      description: t('actions.transactions_events.task.description').toString(),
-      numericKeys: []
+      description: t('actions.transactions_events.task.description').toString()
     };
 
     const { result } = await awaitTask(taskId, taskType, taskMeta, true);

@@ -1,6 +1,5 @@
 import { ActionResult } from '@rotki/common/lib/data';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
-import { basicAxiosTransformer } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
 import { PendingTask } from '@/services/types-api';
 import {
@@ -26,8 +25,7 @@ export const useEthNamesApi = () => {
         ignoreCache: asyncQuery
       }),
       {
-        validateStatus: validWithSessionAndExternalService,
-        transformResponse: basicAxiosTransformer
+        validateStatus: validWithSessionAndExternalService
       }
     );
 
@@ -54,8 +52,7 @@ export const useEthNamesApi = () => {
       `/names/addressbook/${location}`,
       addresses ? { addresses } : null,
       {
-        validateStatus: validWithSessionAndExternalService,
-        transformResponse: basicAxiosTransformer
+        validateStatus: validWithSessionAndExternalService
       }
     );
 
@@ -70,8 +67,7 @@ export const useEthNamesApi = () => {
       `/names/addressbook/${location}`,
       { entries },
       {
-        validateStatus: validWithSessionAndExternalService,
-        transformResponse: basicAxiosTransformer
+        validateStatus: validWithSessionAndExternalService
       }
     );
 
@@ -86,8 +82,7 @@ export const useEthNamesApi = () => {
       `/names/addressbook/${location}`,
       { entries },
       {
-        validateStatus: validWithSessionAndExternalService,
-        transformResponse: basicAxiosTransformer
+        validateStatus: validWithSessionAndExternalService
       }
     );
 
@@ -114,8 +109,7 @@ export const useEthNamesApi = () => {
       '/names',
       { addresses },
       {
-        validateStatus: validWithSessionAndExternalService,
-        transformResponse: basicAxiosTransformer
+        validateStatus: validWithSessionAndExternalService
       }
     );
 

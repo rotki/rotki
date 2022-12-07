@@ -106,8 +106,7 @@ export const useNonFungibleBalancesStore = defineStore(
           NonFungibleBalancesCollectionResponse,
           TaskMeta
         >(taskId, taskType, {
-          title: tc('actions.nft_balances.task.title'),
-          numericKeys: []
+          title: tc('actions.nft_balances.task.title')
         });
 
         setStatus(

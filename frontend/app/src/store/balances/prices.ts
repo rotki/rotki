@@ -57,8 +57,7 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
         taskId,
         taskType,
         {
-          title: t('actions.session.fetch_prices.task.title').toString(),
-          numericKeys: []
+          title: t('actions.session.fetch_prices.task.title').toString()
         },
         true
       );
@@ -113,8 +112,7 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
       );
 
       const meta: TaskMeta = {
-        title: t('actions.balances.exchange_rates.task.title').toString(),
-        numericKeys: []
+        title: t('actions.balances.exchange_rates.task.title').toString()
       };
 
       const { result } = await awaitTask<ExchangeRates, TaskMeta>(
@@ -173,8 +171,7 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
               toAsset,
               date: convertFromTimestamp(timestamp)
             }
-          ).toString(),
-          numericKeys: null
+          ).toString()
         },
         true
       );
@@ -215,8 +212,7 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
             fromAsset,
             toAsset,
             source
-          }).toString(),
-          numericKeys: null
+          }).toString()
         },
         true
       );

@@ -1,19 +1,11 @@
 import { Balance } from '@rotki/common';
 import { DefiProtocol } from '@rotki/common/lib/blockchain';
-
-export type CollateralAssetType = 'ETH' | 'BAT' | 'USDC' | 'WBTC';
-export type DefiBalanceType = 'Asset' | 'Debt';
-
-export interface Collateral<T extends CollateralAssetType | string>
-  extends Balance {
+export interface Collateral<T = string> extends Balance {
   readonly asset: T;
 }
 
-export interface CollateralizedLoan<
-  C extends
-    | Collateral<CollateralAssetType | string>
-    | Collateral<CollateralAssetType | string>[]
-> extends DefiLoan {
+export interface CollateralizedLoan<C extends Collateral | Collateral[]>
+  extends DefiLoan {
   readonly collateral: C;
   readonly debt: Balance;
 }

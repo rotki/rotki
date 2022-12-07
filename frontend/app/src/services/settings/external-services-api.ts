@@ -1,6 +1,5 @@
 import { ActionResult } from '@rotki/common/lib/data';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
-import { basicAxiosTransformer } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
 import {
   handleResponse,
@@ -18,8 +17,7 @@ export const useExternalServicesApi = () => {
     const response = await api.instance.get<ActionResult<ExternalServiceKeys>>(
       '/external_services',
       {
-        validateStatus: validWithSessionStatus,
-        transformResponse: basicAxiosTransformer
+        validateStatus: validWithSessionStatus
       }
     );
 
@@ -36,8 +34,7 @@ export const useExternalServicesApi = () => {
         services: keys
       }),
       {
-        validateStatus: validStatus,
-        transformResponse: basicAxiosTransformer
+        validateStatus: validStatus
       }
     );
 
@@ -54,8 +51,7 @@ export const useExternalServicesApi = () => {
       data: {
         services: [serviceToDelete]
       },
-      validateStatus: validStatus,
-      transformResponse: basicAxiosTransformer
+      validateStatus: validStatus
     });
 
     const data = handleResponse(response);

@@ -4,7 +4,6 @@ import { Blockchain, DefiProtocol } from '@rotki/common/lib/blockchain';
 import sortBy from 'lodash/sortBy';
 import { ComputedRef, Ref } from 'vue';
 import { usePremium } from '@/composables/premium';
-import { balanceKeys } from '@/services/consts';
 import { ProtocolVersion } from '@/services/defi/consts';
 import { api } from '@/services/rotkehlchen-api';
 import {
@@ -18,11 +17,6 @@ import { useLiquityStore } from '@/store/defi/liquity';
 import { useMakerDaoStore } from '@/store/defi/makerdao';
 import { useDefiSupportedProtocolsStore } from '@/store/defi/protocols';
 import { useSushiswapStore } from '@/store/defi/sushiswap';
-import {
-  AllDefiProtocols,
-  DefiProtocolSummary,
-  TokenInfo
-} from '@/store/defi/types';
 import { useUniswapStore } from '@/store/defi/uniswap';
 import { useYearnStore } from '@/store/defi/yearn';
 import { useNotifications } from '@/store/notifications';
@@ -39,6 +33,11 @@ import {
   PoapDelivery
 } from '@/types/airdrops';
 import {
+  AllDefiProtocols,
+  DefiProtocolSummary,
+  TokenInfo
+} from '@/types/defi/overview';
+import {
   AAVE,
   COMPOUND,
   getProtocolIcon,
@@ -53,7 +52,7 @@ import { Module } from '@/types/modules';
 import { Section, Status } from '@/types/status';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { Zero } from '@/utils/bignumbers';
+import { bigNumberify, Zero } from '@/utils/bignumbers';
 import { uniqueStrings } from '@/utils/data';
 import { logger } from '@/utils/logging';
 
@@ -103,14 +102,14 @@ export const useDefiStore = defineStore('defi', () => {
         }
         const airdrop = data[address];
         for (const source in airdrop) {
-          const element = airdrop[source as AirdropType];
+          const element = airdrop[source];
           if (source === AIRDROP_POAP) {
             const details = element as PoapDelivery[];
             result.push({
               address,
               source: source as AirdropType,
               details: details.map(value => ({
-                amount: '1',
+                amount: bigNumberify('1'),
                 link: value.link,
                 name: value.name,
                 event: value.event
@@ -139,7 +138,7 @@ export const useDefiStore = defineStore('defi', () => {
         protocol: DefiProtocol,
         balances: AddressIndexed<any>,
         history: AddressIndexed<any> | string[]
-      ) => {
+      ): string[] => {
         const addresses: string[] = [];
         if (protocols.length === 0 || protocols.includes(protocol)) {
           const uniqueAddresses: string[] = [
@@ -471,12 +470,11 @@ export const useDefiStore = defineStore('defi', () => {
         taskId,
         taskType,
         {
-          title: tc('actions.defi.balances.task.title'),
-          numericKeys: balanceKeys
+          title: tc('actions.defi.balances.task.title')
         }
       );
 
-      set(allProtocols, result);
+      set(allProtocols, AllDefiProtocols.parse(result));
     } catch (e: any) {
       const title = tc('actions.defi.balances.error.title');
       const message = tc('actions.defi.balances.error.description', undefined, {
@@ -586,11 +584,10 @@ export const useDefiStore = defineStore('defi', () => {
         taskId,
         TaskType.DEFI_AIRDROPS,
         {
-          title: t('actions.defi.airdrops.task.title').toString(),
-          numericKeys: balanceKeys
+          title: t('actions.defi.airdrops.task.title').toString()
         }
       );
-      set(airdrops, result);
+      set(airdrops, Airdrops.parse(result));
     } catch (e: any) {
       notify({
         title: t('actions.defi.airdrops.error.title').toString(),

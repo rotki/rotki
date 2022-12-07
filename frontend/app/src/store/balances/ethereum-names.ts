@@ -77,8 +77,7 @@ export const useEthNamesStore = defineStore('ethNames', () => {
         const taskType = TaskType.FETCH_ENS_NAMES;
         const { taskId } = await getEnsNamesTask(latestEnsAddresses);
         await awaitTask<EthNames, TaskMeta>(taskId, taskType, {
-          title: tc('ens_names.task.title'),
-          numericKeys: []
+          title: tc('ens_names.task.title')
         });
       } else {
         await getEnsNames(latestEnsAddresses);

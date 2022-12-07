@@ -45,7 +45,6 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
               address
             }
           ),
-          numericKeys: [],
           address
         };
 

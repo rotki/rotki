@@ -4,11 +4,11 @@ import { assetSymbolToIdentifierMap } from '@rotki/common/lib/data';
 import {
   AaveBalances,
   AaveBorrowingEventType,
-  AaveEvent,
   AaveHistory,
   AaveHistoryEvents,
   AaveHistoryTotal,
   AaveLending,
+  AaveLendingEvent,
   AaveLendingEventType,
   isAaveLiquidationEvent
 } from '@rotki/common/lib/defi/aave';
@@ -40,7 +40,6 @@ import { CompoundBalances, CompoundLoan } from '@/types/defi/compound';
 import {
   DSRBalances,
   DSRHistory,
-  MakerDAOVaultDetails,
   MakerDAOVaultModel
 } from '@/types/defi/maker';
 import { YearnVaultsHistory } from '@/types/defi/yearn';
@@ -49,10 +48,20 @@ import { assert } from '@/utils/assertions';
 import { Zero, zeroBalance } from '@/utils/bignumbers';
 import { uniqueStrings } from '@/utils/data';
 
-const isLendingEvent = (value: AaveHistoryEvents): value is AaveEvent => {
+const isLendingEvent = (
+  value: AaveHistoryEvents
+): value is AaveLendingEvent => {
   const lending: string[] = Object.values(AaveLendingEventType);
   return lending.indexOf(value.eventType) !== -1;
 };
+
+type NullableLoan =
+  | MakerDAOVaultModel
+  | AaveLoan
+  | CompoundLoan
+  | LiquityLoan
+  | null;
+
 export const useDefiSupportedProtocolsStore = defineStore(
   'defi/supportedProtocols',
   () => {
@@ -133,7 +142,7 @@ export const useDefiSupportedProtocolsStore = defineStore(
                 protocol: DefiProtocol.AAVE,
                 address,
                 asset: event.asset,
-                atoken: event.atoken,
+                atoken: 'atoken' in event ? event.atoken : '',
                 value: event.value,
                 blockNumber: event.blockNumber,
                 timestamp: event.timestamp,
@@ -365,11 +374,7 @@ export const useDefiSupportedProtocolsStore = defineStore(
         return sortBy(loans, 'identifier');
       });
 
-    const loan = (
-      identifier?: string
-    ): ComputedRef<
-      MakerDAOVaultModel | AaveLoan | CompoundLoan | LiquityLoan | null
-    > =>
+    const loan = (identifier?: string): ComputedRef<NullableLoan> =>
       computed(() => {
         const id = identifier?.toLocaleLowerCase();
         const allLoans = get(loans());
@@ -391,9 +396,7 @@ export const useDefiSupportedProtocolsStore = defineStore(
             return null;
           }
 
-          const makerVaultDetails = get(
-            makerDAOVaultDetails
-          ) as MakerDAOVaultDetails[];
+          const makerVaultDetails = get(makerDAOVaultDetails);
           const details = makerVaultDetails.find(
             details => details.identifier.toString().toLocaleLowerCase() === id
           );
@@ -517,7 +520,7 @@ export const useDefiSupportedProtocolsStore = defineStore(
             const selectedLoan = borrowing[asset];
 
             if (selectedLoan) {
-              apy = selectedLoan.apy;
+              apy = selectedLoan.apy ?? '';
               debt = selectedLoan.balance;
               collateral = Object.keys(lending).map(asset => ({
                 asset,

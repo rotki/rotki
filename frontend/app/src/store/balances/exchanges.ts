@@ -256,8 +256,7 @@ export const useExchangeBalancesStore = defineStore(
           location,
           title: t('actions.balances.exchange_balances.task.title', {
             location
-          }).toString(),
-          numericKeys: []
+          }).toString()
         };
 
         const { result } = await awaitTask<AssetBalances, ExchangeMeta>(

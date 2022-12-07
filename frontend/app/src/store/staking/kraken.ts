@@ -82,8 +82,7 @@ export const useKrakenStakingStore = defineStore('staking/kraken', () => {
     const { taskId } = await api.refreshKrakenStaking();
 
     const taskMeta: TaskMeta = {
-      title: t('actions.kraken_staking.task.title').toString(),
-      numericKeys: []
+      title: t('actions.kraken_staking.task.title').toString()
     };
 
     await awaitTask<KrakenStakingEvents, TaskMeta>(

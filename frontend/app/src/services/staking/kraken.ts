@@ -3,7 +3,6 @@ import {
   axiosSnakeCaseTransformer,
   getUpdatedKey
 } from '@/services/axios-tranformers';
-import { basicAxiosTransformer } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
 import { PendingTask } from '@/services/types-api';
 import {
@@ -32,8 +31,7 @@ export const useKrakenApi = () => {
           ) ?? []
       }),
       {
-        validateStatus: validWithSessionAndExternalService,
-        transformResponse: basicAxiosTransformer
+        validateStatus: validWithSessionAndExternalService
       }
     );
     return handleResponse(response);

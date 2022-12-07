@@ -3,7 +3,6 @@ import {
   axiosSnakeCaseTransformer,
   setupTransformer
 } from '@/services/axios-tranformers';
-import { basicAxiosTransformer } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
 import { PendingTask } from '@/services/types-api';
 import {
@@ -20,7 +19,7 @@ export const useAssetInfoApi = () => {
       { identifiers },
       {
         validateStatus: validStatus,
-        transformResponse: setupTransformer([], true)
+        transformResponse: setupTransformer(true)
       }
     );
     return AssetMap.parse(handleResponse(response));
@@ -41,7 +40,6 @@ export const useAssetInfoApi = () => {
       }),
       {
         validateStatus: validStatus,
-        transformResponse: basicAxiosTransformer,
         signal
       }
     );
@@ -56,8 +54,7 @@ export const useAssetInfoApi = () => {
           asyncQuery: true,
           address
         }),
-        validateStatus: validWithoutSessionStatus,
-        transformResponse: basicAxiosTransformer
+        validateStatus: validWithoutSessionStatus
       }
     );
 

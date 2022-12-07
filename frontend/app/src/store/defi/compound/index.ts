@@ -2,7 +2,6 @@ import { Ref } from 'vue';
 import { usePremium } from '@/composables/premium';
 import { useModules } from '@/composables/session/modules';
 import { useStatusUpdater } from '@/composables/status';
-import { balanceKeys } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
 import { toProfitLossModel } from '@/store/defi/utils';
 import { useNotifications } from '@/store/notifications';
@@ -14,6 +13,7 @@ import { Module } from '@/types/modules';
 import { Section, Status } from '@/types/status';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
+import { logger } from '@/utils/logging';
 
 export const defaultCompoundHistory = (): CompoundHistory => ({
   events: [],
@@ -70,11 +70,10 @@ export const useCompoundStore = defineStore('defi/compound', () => {
         taskId,
         taskType,
         {
-          title: tc('actions.defi.compound.task.title'),
-          numericKeys: balanceKeys
+          title: tc('actions.defi.compound.task.title')
         }
       );
-      set(balances, result);
+      set(balances, CompoundBalances.parse(result));
     } catch (e: any) {
       notify({
         title: tc('actions.defi.compound.error.title'),
@@ -112,13 +111,13 @@ export const useCompoundStore = defineStore('defi/compound', () => {
         taskId,
         taskType,
         {
-          title: tc('actions.defi.compound_history.task.title'),
-          numericKeys: balanceKeys
+          title: tc('actions.defi.compound_history.task.title')
         }
       );
 
-      set(history, result);
+      set(history, CompoundHistory.parse(result));
     } catch (e: any) {
+      logger.error(e);
       notify({
         title: tc('actions.defi.compound_history.error.title'),
         message: tc(

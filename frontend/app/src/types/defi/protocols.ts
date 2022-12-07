@@ -1,4 +1,4 @@
-import { balanceKeys } from '@/services/consts';
+import { z } from 'zod';
 
 const FINNEXUS = 'FinNexus';
 const PICKLE_FINANCE = 'Pickle Finance';
@@ -210,7 +210,10 @@ export const OVERVIEW_PROTOCOLS = [
   GELATO
 ] as const;
 
-export type OverviewDefiProtocol = typeof OVERVIEW_PROTOCOLS[number];
+export const OverviewDefiProtocol = z.enum(OVERVIEW_PROTOCOLS);
+
+export type OverviewDefiProtocol = z.infer<typeof OverviewDefiProtocol>;
+
 const ICON_LIST: { [protocol in OverviewDefiProtocol]: string } = {
   [ONEINCH_LIQUIDITY]: '1inch.svg',
   [ONEINCH_LP_STAKING]: '1inch.svg',
@@ -320,28 +323,3 @@ const ICON_LIST: { [protocol in OverviewDefiProtocol]: string } = {
 export function getProtocolIcon(name: OverviewDefiProtocol): string {
   return ICON_LIST[name] ?? '';
 }
-
-/**
- * @deprecated
- * replace with zod schema parser
- */
-export const uniswapNumericKeys = [
-  ...balanceKeys,
-  'usd_price',
-  'total_amount',
-  'total_supply'
-];
-
-/**
- * @deprecated
- * replace with zod schema parser
- */
-export const uniswapEventsNumericKeys = [
-  'amount0',
-  'amount1',
-  'lp_amount',
-  'usd_price',
-  'profit_loss0',
-  'profit_loss1',
-  'usd_profit_loss'
-];

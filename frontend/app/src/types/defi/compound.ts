@@ -1,4 +1,5 @@
-import { Balance, HasBalance } from '@rotki/common';
+import { Balance } from '@rotki/common';
+import { z } from 'zod';
 import {
   DEFI_EVENT_BORROW,
   DEFI_EVENT_LIQUIDATION,
@@ -6,29 +7,35 @@ import {
 } from '@/services/defi/events';
 import { Collateral, CollateralizedLoan } from '@/types/defi/index';
 
-interface CompoundReward extends HasBalance {}
+const CompoundReward = z.object({
+  balance: Balance
+});
 
-type CompoundRewards = Readonly<Record<string, CompoundReward>>;
+const CompoundRewards = z.record(CompoundReward);
 
-interface CompoundLending extends HasBalance {
-  readonly apy: string | null;
-}
+const CompoundLending = z.object({
+  balance: Balance,
+  apy: z.string().nullable()
+});
 
-type CompoundLendingEntries = Readonly<Record<string, CompoundLending>>;
+const CompoundLendingEntries = z.record(CompoundLending);
 
-interface CompoundBorrowing extends HasBalance {
-  readonly apy: string;
-}
+const CompoundBorrowing = z.object({
+  balance: Balance,
+  apy: z.string().nullable()
+});
 
-type CompoundBorrowingEntries = Readonly<Record<string, CompoundBorrowing>>;
+const CompoundBorrowingEntries = z.record(CompoundBorrowing);
 
-interface CompoundBalance {
-  readonly rewards: CompoundRewards;
-  readonly lending: CompoundLendingEntries;
-  readonly borrowing: CompoundBorrowingEntries;
-}
+const CompoundBalance = z.object({
+  rewards: CompoundRewards,
+  lending: CompoundLendingEntries,
+  borrowing: CompoundBorrowingEntries
+});
 
-export type CompoundBalances = Readonly<Record<string, CompoundBalance>>;
+export const CompoundBalances = z.record(CompoundBalance);
+
+export type CompoundBalances = z.infer<typeof CompoundBalances>;
 
 export const COMPOUND_EVENT_TYPES = [
   'mint',
@@ -38,39 +45,45 @@ export const COMPOUND_EVENT_TYPES = [
   DEFI_EVENT_LIQUIDATION,
   'comp'
 ] as const;
-export type CompoundEventType = typeof COMPOUND_EVENT_TYPES[number];
 
-interface CompoundEvent {
-  readonly eventType: CompoundEventType;
-  readonly address: string;
-  readonly blockNumber: number;
-  readonly timestamp: number;
-  readonly asset: string;
-  readonly toAsset?: string;
-  readonly value: Balance;
-  readonly toValue?: Balance;
-  readonly realizedPnl?: Balance;
-  readonly txHash: string;
-  readonly logIndex: number;
-}
+const CompoundEventType = z.enum(COMPOUND_EVENT_TYPES);
+export type CompoundEventType = z.infer<typeof CompoundEventType>;
 
-type CompoundAssetProfitAndLoss = Readonly<Record<string, Balance>>;
+const CompoundEvent = z.object({
+  eventType: CompoundEventType,
+  address: z.string(),
+  blockNumber: z.number(),
+  timestamp: z.number(),
+  asset: z.string(),
+  toAsset: z.string().nullable(),
+  value: Balance,
+  toValue: Balance.nullable(),
+  realizedPnl: Balance.nullable(),
+  txHash: z.string(),
+  logIndex: z.number()
+});
 
-export type CompoundProfitAndLoss = Readonly<
-  Record<string, CompoundAssetProfitAndLoss>
->;
+type CompoundEvent = z.infer<typeof CompoundEvent>;
 
-export interface CompoundHistory {
-  readonly events: CompoundEvent[];
-  readonly interestProfit: CompoundProfitAndLoss;
-  readonly debtLoss: CompoundProfitAndLoss;
-  readonly rewards: CompoundProfitAndLoss;
-  readonly liquidationProfit: CompoundProfitAndLoss;
-}
+const CompoundAssetProfitAndLoss = z.record(Balance);
+
+const CompoundProfitAndLoss = z.record(CompoundAssetProfitAndLoss);
+
+export type CompoundProfitAndLoss = z.infer<typeof CompoundProfitAndLoss>;
+
+export const CompoundHistory = z.object({
+  events: z.array(CompoundEvent),
+  interestProfit: CompoundProfitAndLoss,
+  debtLoss: CompoundProfitAndLoss,
+  rewards: CompoundProfitAndLoss,
+  liquidationProfit: CompoundProfitAndLoss
+});
+
+export type CompoundHistory = z.infer<typeof CompoundHistory>;
 
 type IdedCompoundEvent = CompoundEvent & { id: string };
 
-export interface CompoundLoan extends CollateralizedLoan<Collateral<string>[]> {
+export interface CompoundLoan extends CollateralizedLoan<Collateral[]> {
   readonly apy: string;
   readonly events: IdedCompoundEvent[];
 }

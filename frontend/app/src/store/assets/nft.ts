@@ -30,8 +30,7 @@ export const useNftsStore = defineStore('assets/nfts', () => {
         taskId,
         taskType,
         {
-          title: t('actions.session.fetch_nfts.task.title').toString(),
-          numericKeys: []
+          title: t('actions.session.fetch_nfts.task.title').toString()
         }
       );
       return {

@@ -1,6 +1,5 @@
 import { ActionResult } from '@rotki/common/lib/data';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
-import { basicAxiosTransformer } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
 import { PendingTask } from '@/services/types-api';
 import {
@@ -55,8 +54,7 @@ export const useAssetIgnoreApi = () => {
       null,
       {
         params: axiosSnakeCaseTransformer({ asyncQuery: true }),
-        validateStatus: validWithoutSessionStatus,
-        transformResponse: basicAxiosTransformer
+        validateStatus: validWithoutSessionStatus
       }
     );
 

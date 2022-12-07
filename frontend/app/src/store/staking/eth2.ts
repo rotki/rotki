@@ -74,8 +74,7 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
           taskId,
           taskType,
           {
-            title: tc('actions.staking.eth2.task.title'),
-            numericKeys: []
+            title: tc('actions.staking.eth2.task.title')
           }
         );
 
@@ -105,8 +104,7 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
           taskId,
           taskType,
           {
-            title: `${t('actions.staking.eth2_deposits.task.title')}`,
-            numericKeys: []
+            title: `${t('actions.staking.eth2_deposits.task.title')}`
           }
         );
 
@@ -159,10 +157,7 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
 
       const taskMeta: TaskMeta = {
         title: t('actions.eth2_staking_stats.task.title').toString(),
-        description: t(
-          'actions.eth2_staking_stats.task.description'
-        ).toString(),
-        numericKeys: []
+        description: t('actions.eth2_staking_stats.task.description').toString()
       };
 
       const { result } = await awaitTask<Eth2DailyStats, TaskMeta>(

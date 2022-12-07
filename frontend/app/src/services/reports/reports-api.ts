@@ -1,10 +1,6 @@
 import { ActionResult } from '@rotki/common/lib/data';
 import { AxiosInstance } from 'axios';
-import {
-  axiosSnakeCaseTransformer,
-  setupTransformer
-} from '@/services/axios-tranformers';
-import { basicAxiosTransformer } from '@/services/consts';
+import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
 import { PendingTask } from '@/services/types-api';
 import { handleResponse, validStatus, validTaskStatus } from '@/services/utils';
 import { ActionStatus } from '@/store/types';
@@ -38,8 +34,7 @@ export class ReportsApi {
           fromTimestamp: start,
           toTimestamp: end
         }),
-        validateStatus: validStatus,
-        transformResponse: basicAxiosTransformer
+        validateStatus: validStatus
       }
     );
     return handleResponse(response);
@@ -91,8 +86,7 @@ export class ReportsApi {
         ...payload
       }),
       {
-        validateStatus: validStatus,
-        transformResponse: basicAxiosTransformer
+        validateStatus: validStatus
       }
     );
     return handleResponse(response);
@@ -106,8 +100,7 @@ export class ReportsApi {
         asyncQuery: true
       }),
       {
-        validateStatus: validStatus,
-        transformResponse: basicAxiosTransformer
+        validateStatus: validStatus
       }
     );
     return handleResponse(response);
@@ -133,8 +126,7 @@ export class ReportsApi {
     const response = await this.axios.get<ActionResult<ReportActionableItem>>(
       '/history/actionable_items',
       {
-        validateStatus: validStatus,
-        transformResponse: setupTransformer([])
+        validateStatus: validStatus
       }
     );
 
@@ -144,8 +136,7 @@ export class ReportsApi {
 
   async fetchReports(): Promise<Reports> {
     const response = await this.axios.get<ActionResult<Reports>>('/reports', {
-      validateStatus: validStatus,
-      transformResponse: setupTransformer([])
+      validateStatus: validStatus
     });
     const data = handleResponse(response);
     return Reports.parse(data);
@@ -155,8 +146,7 @@ export class ReportsApi {
     const response = await this.axios.get<
       ActionResult<ProfitLossReportOverview>
     >(`/reports/${reportId}`, {
-      validateStatus: validStatus,
-      transformResponse: setupTransformer([])
+      validateStatus: validStatus
     });
     const data = handleResponse(response);
     const overview = ProfitLossReportOverview.parse(data);
@@ -170,8 +160,7 @@ export class ReportsApi {
     const response = await this.axios.post<
       ActionResult<ProfitLossReportEvents>
     >(`/reports/${reportId}/data`, page, {
-      validateStatus: validStatus,
-      transformResponse: setupTransformer([])
+      validateStatus: validStatus
     });
     const data = handleResponse(response);
     return ProfitLossReportEvents.parse(data);
@@ -180,8 +169,7 @@ export class ReportsApi {
   deleteReport(reportId: number): Promise<boolean> {
     return this.axios
       .delete<ActionResult<boolean>>(`/reports/${reportId}`, {
-        validateStatus: validStatus,
-        transformResponse: setupTransformer([])
+        validateStatus: validStatus
       })
       .then(handleResponse);
   }

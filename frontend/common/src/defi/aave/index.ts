@@ -1,5 +1,5 @@
-import { BigNumber } from "bignumber.js";
-import { Balance, Diff, HasBalance } from "../../index";
+import { z } from "zod";
+import { Balance, NumericString } from "../../index";
 
 enum AaveBorrowRate {
   STABLE = "stable",
@@ -11,23 +11,31 @@ export interface AaveBorrowingRates {
   readonly variableApr: string;
 }
 
-interface AaveBorrowingAsset extends HasBalance, AaveBorrowingRates {
-}
+const AaveBorrowingAsset = z.object({
+  balance: Balance,
+  stableApr: z.string(),
+  variableApr: z.string()
+});
 
-interface AaveLendingAsset extends HasBalance {
-  readonly apy: string;
-}
+const AaveLendingAsset = z.object({
+  balance: Balance,
+  apy: z.string()
+});
 
-type AaveBorrowing = Readonly<Record<string, AaveBorrowingAsset>>;
+const AaveBorrowing = z.record(AaveBorrowingAsset);
 
-export type AaveLending = Readonly<Record<string, AaveLendingAsset>>;
+const AaveLending = z.record(AaveLendingAsset);
 
-interface AaveBalance {
-  readonly lending: AaveLending;
-  readonly borrowing: AaveBorrowing;
-}
+export type AaveLending = z.infer<typeof AaveLending>;
 
-export type AaveBalances = Readonly<Record<string, AaveBalance>>;
+const AaveBalance = z.object({
+  lending: AaveLending,
+  borrowing: AaveBorrowing
+});
+
+export const AaveBalances = z.record(AaveBalance);
+
+export type AaveBalances = z.infer<typeof AaveBalances>;
 
 export enum AaveBorrowingEventType {
   REPAY = "repay",
@@ -43,58 +51,79 @@ export enum AaveLendingEventType {
 
 export type AaveEventType = AaveLendingEventType | AaveBorrowingEventType;
 
-interface AaveBaseEvent {
-  readonly eventType: AaveEventType;
-  readonly blockNumber: number;
-  readonly timestamp: number;
-  readonly txHash: string;
-  readonly logIndex: number;
-}
+const AaveEventType = z.nativeEnum(AaveLendingEventType).or(z.nativeEnum(AaveBorrowingEventType));
 
-export interface AaveEvent extends AaveBaseEvent {
-  readonly eventType: Diff<AaveEventType, typeof AaveBorrowingEventType.LIQUIDATION>;
-  readonly asset: string;
-  readonly atoken: string;
-  readonly value: Balance;
-}
+const AaveBaseEvent = z.object({
+  eventType: AaveEventType,
+  blockNumber: z.number(),
+  timestamp: z.number(),
+  txHash: z.string(),
+  logIndex: z.number()
+});
 
-export interface AaveLiquidationEvent extends AaveBaseEvent {
-  readonly eventType: typeof AaveBorrowingEventType.LIQUIDATION;
-  readonly collateralAsset: string;
-  readonly collateralBalance: Balance;
-  readonly principalAsset: string;
-  readonly principalBalance: Balance;
-}
+const AaveEvent = z.object({
+  asset: z.string(),
+  value: Balance
+}).merge(AaveBaseEvent);
+
+const BaseAaveLendingEvent = z.object({
+  eventType: z.nativeEnum(AaveLendingEventType),
+}).merge(AaveEvent);
+
+const AaveLendingInterestEvent = z.object({
+  eventType: z.literal(AaveLendingEventType.INTEREST),
+}).merge(BaseAaveLendingEvent);
+
+const AaveMovementEvent = z.object({
+  eventType: z.literal(AaveLendingEventType.DEPOSIT).or(z.literal(AaveLendingEventType.WITHDRAWAL)),
+  atoken: z.string(),
+}).merge(BaseAaveLendingEvent);
+
+const AaveLendingEvent = AaveLendingInterestEvent.or(AaveMovementEvent);
+
+export type AaveLendingEvent = z.infer<typeof AaveLendingEvent>;
+
+export const AaveLiquidationEvent = z.object({
+  eventType: z.literal(AaveBorrowingEventType.LIQUIDATION),
+  collateralBalance: Balance,
+  collateralAsset: z.string(),
+  principalAsset: z.string(),
+  principalBalance: Balance
+}).merge(AaveBaseEvent);
+
+export type AaveLiquidationEvent = z.infer<typeof AaveLiquidationEvent>;
 
 export function isAaveLiquidationEvent(value: AaveHistoryEvents): value is AaveLiquidationEvent {
   return value.eventType === AaveBorrowingEventType.LIQUIDATION;
 }
 
-interface AaveRepayEvent extends AaveEvent {
-  readonly eventType: typeof AaveBorrowingEventType.REPAY;
-  readonly fee: Balance;
-}
+const AaveRepayEvent = z.object({
+  eventType: z.literal(AaveBorrowingEventType.REPAY),
+  fee: Balance
+}).merge(AaveEvent);
 
-interface AaveBorrowEvent extends AaveEvent {
-  readonly eventType: typeof AaveBorrowingEventType.BORROW;
-  readonly borrowRateMode: AaveBorrowRate;
-  readonly borrowRate: BigNumber;
-  readonly accruedBorrowInterest: BigNumber;
-}
+const AaveBorrowEvent = z.object({
+  eventType: z.literal(AaveBorrowingEventType.BORROW),
+  borrowRateMode: z.nativeEnum(AaveBorrowRate),
+  borrowRate: NumericString,
+  accruedBorrowInterest: NumericString
+}).merge(AaveEvent);
 
-export type AaveBorrowingEvent =
-  | AaveLiquidationEvent
-  | AaveRepayEvent
-  | AaveBorrowEvent;
-export type AaveHistoryEvents = AaveEvent | AaveBorrowingEvent;
+const AaveBorrowingEvent = AaveLiquidationEvent.or(AaveRepayEvent).or(AaveBorrowEvent);
+const AaveHistoryEvents = AaveBorrowingEvent.or(AaveLendingEvent);
+export type AaveHistoryEvents = z.infer<typeof AaveHistoryEvents>;
 
-export type AaveHistoryTotal = Readonly<Record<string, Balance>>;
+const AaveHistoryTotal = z.record(Balance);
 
-interface AaveAccountHistory {
-  readonly events: AaveHistoryEvents[];
-  readonly totalEarnedInterest: AaveHistoryTotal;
-  readonly totalEarnedLiquidations: AaveHistoryTotal;
-  readonly totalLost: AaveHistoryTotal;
-}
+export type AaveHistoryTotal = z.infer<typeof AaveHistoryTotal>;
 
-export type AaveHistory = Readonly<Record<string, AaveAccountHistory>>;
+const AaveAccountingHistory = z.object({
+  events: z.array(AaveHistoryEvents),
+  totalEarnedInterest: AaveHistoryTotal,
+  totalEarnedLiquidations: AaveHistoryTotal,
+  totalLost: AaveHistoryTotal
+});
+
+export const AaveHistory = z.record(AaveAccountingHistory);
+
+export type AaveHistory = z.infer<typeof AaveHistory>;

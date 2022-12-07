@@ -1,16 +1,14 @@
-import { Balance, BigNumber } from '@rotki/common';
-import { HasBalance } from '@rotki/common/lib';
+import { Balance, BigNumber, HasBalance } from '@rotki/common';
 import { DefiProtocol } from '@rotki/common/lib/blockchain';
 import {
   AaveBorrowingRates,
   AaveHistoryEvents,
   AaveHistoryTotal
 } from '@rotki/common/lib/defi/aave';
-import { Collateral, CollateralizedLoan, DefiBalanceType } from '@/types/defi';
+import { Collateral, CollateralizedLoan } from '@/types/defi';
 import { CompoundEventType } from '@/types/defi/compound';
 import { EventType } from '@/types/defi/event-type';
 import { MakerDAOLendingHistoryExtras } from '@/types/defi/maker';
-import { OverviewDefiProtocol } from '@/types/defi/protocols';
 import { YearnEventType } from '@/types/defi/yearn';
 
 export interface LoanSummary {
@@ -69,45 +67,3 @@ export interface DefiLendingHistory<T extends DefiProtocol> {
   timestamp: number;
   txHash: string;
 }
-
-interface DefiProtocolInfo {
-  readonly name: OverviewDefiProtocol;
-}
-
-interface DefiProtocolInfoWithIcon extends DefiProtocolInfo {
-  readonly icon: string;
-}
-
-export interface TokenInfo {
-  readonly tokenName: string;
-  readonly tokenSymbol: string;
-}
-
-export interface DefiProtocolSummary {
-  readonly protocol: DefiProtocolInfoWithIcon;
-  readonly balanceUsd?: BigNumber;
-  readonly assets: DefiAsset[];
-  readonly tokenInfo: TokenInfo | null;
-  readonly deposits: boolean;
-  readonly liabilities: boolean;
-  readonly depositsUrl?: string;
-  readonly liabilitiesUrl?: string;
-  readonly totalCollateralUsd: BigNumber;
-  readonly totalDebtUsd: BigNumber;
-  readonly totalLendingDepositUsd: BigNumber;
-}
-
-export interface DefiAsset extends HasBalance {
-  readonly tokenAddress: string;
-  readonly tokenName: string;
-  readonly tokenSymbol: string;
-}
-
-interface DefiProtocolData {
-  readonly protocol: DefiProtocolInfo;
-  readonly balanceType: DefiBalanceType;
-  readonly baseBalance: DefiAsset;
-  readonly underlyingBalances: DefiAsset[];
-}
-
-export type AllDefiProtocols = Readonly<Record<string, DefiProtocolData[]>>;

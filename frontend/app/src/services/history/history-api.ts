@@ -4,7 +4,6 @@ import {
   axiosSnakeCaseTransformer,
   getUpdatedKey
 } from '@/services/axios-tranformers';
-import { basicAxiosTransformer } from '@/services/consts';
 import { PendingTask } from '@/services/types-api';
 import {
   handleResponse,
@@ -56,8 +55,7 @@ export class HistoryApi {
   async associatedLocations(): Promise<TradeLocation[]> {
     return this.axios
       .get<ActionResult<TradeLocation[]>>('/locations/associated', {
-        validateStatus: validStatus,
-        transformResponse: basicAxiosTransformer
+        validateStatus: validStatus
       })
       .then(handleResponse);
   }
@@ -73,8 +71,7 @@ export class HistoryApi {
           ...payload
         }),
         paramsSerializer,
-        validateStatus: validWithParamsSessionAndExternalService,
-        transformResponse: basicAxiosTransformer
+        validateStatus: validWithParamsSessionAndExternalService
       })
       .then(handleResponse);
   }
@@ -97,7 +94,6 @@ export class HistoryApi {
     return this.axios
       .put<ActionResult<Trade>>('/trades', trade, {
         validateStatus: validStatus,
-        transformResponse: basicAxiosTransformer,
         transformRequest: this.requestTransformer
       })
       .then(handleResponse);
@@ -107,7 +103,6 @@ export class HistoryApi {
     return this.axios
       .patch<ActionResult<Trade>>('/trades', trade, {
         validateStatus: validStatus,
-        transformResponse: basicAxiosTransformer,
         transformRequest: this.requestTransformer
       })
       .then(handleResponse);
@@ -133,8 +128,7 @@ export class HistoryApi {
           ...payload
         }),
         paramsSerializer,
-        validateStatus: validWithParamsSessionAndExternalService,
-        transformResponse: basicAxiosTransformer
+        validateStatus: validWithParamsSessionAndExternalService
       })
       .then(handleResponse);
   }
@@ -175,8 +169,7 @@ export class HistoryApi {
             ) ?? []
         }),
         paramsSerializer,
-        validateStatus: validWithParamsSessionAndExternalService,
-        transformResponse: basicAxiosTransformer
+        validateStatus: validWithParamsSessionAndExternalService
       })
       .then(handleResponse);
   }
@@ -206,10 +199,7 @@ export class HistoryApi {
         axiosSnakeCaseTransformer({
           asyncQuery: true,
           ...payload
-        }),
-        {
-          transformResponse: basicAxiosTransformer
-        }
+        })
       )
       .then(handleResponse);
   }
@@ -220,7 +210,6 @@ export class HistoryApi {
     return this.axios
       .put<ActionResult<{ identifier: number }>>('/history/events', event, {
         validateStatus: validStatus,
-        transformResponse: basicAxiosTransformer,
         transformRequest: this.requestTransformer
       })
       .then(handleResponse);
@@ -229,9 +218,7 @@ export class HistoryApi {
   async editTransactionEvent(event: NewEthTransactionEvent): Promise<boolean> {
     return this.axios
       .patch<ActionResult<boolean>>('/history/events', event, {
-        validateStatus: validStatus,
-        transformResponse: basicAxiosTransformer,
-        transformRequest: this.requestTransformer
+        validateStatus: validStatus
       })
       .then(handleResponse);
   }
@@ -256,8 +243,7 @@ export class HistoryApi {
           ...payload
         }),
         paramsSerializer,
-        validateStatus: validWithParamsSessionAndExternalService,
-        transformResponse: basicAxiosTransformer
+        validateStatus: validWithParamsSessionAndExternalService
       })
       .then(handleResponse);
   }
@@ -285,7 +271,6 @@ export class HistoryApi {
         axiosSnakeCaseTransformer(ledgerAction),
         {
           validateStatus: validStatus,
-          transformResponse: basicAxiosTransformer,
           transformRequest: this.requestTransformer
         }
       )
@@ -299,7 +284,6 @@ export class HistoryApi {
         axiosSnakeCaseTransformer(ledgerAction),
         {
           validateStatus: validStatus,
-          transformResponse: basicAxiosTransformer,
           transformRequest: this.requestTransformer
         }
       )
@@ -319,8 +303,7 @@ export class HistoryApi {
     const response = await this.axios.get<ActionResult<ReportProgress>>(
       `/history/status`,
       {
-        validateStatus: validWithSessionStatus,
-        transformResponse: basicAxiosTransformer
+        validateStatus: validWithSessionStatus
       }
     );
     const data = handleResponse(response);
@@ -332,8 +315,7 @@ export class HistoryApi {
       .get<ActionResult<string[]>>(
         '/blockchains/ETH/modules/data/counterparties',
         {
-          validateStatus: validStatus,
-          transformResponse: basicAxiosTransformer
+          validateStatus: validStatus
         }
       )
       .then(handleResponse);

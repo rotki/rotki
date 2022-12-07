@@ -3,35 +3,33 @@ import { AxiosResponse } from 'axios';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
 import { ApiImplementation, PendingTask } from '@/services/types-api';
 
-export function fetchExternalAsync(
-  api: ApiImplementation,
-  url: string,
-  params?: Record<string, any>
-) {
-  return api.axios
-    .get<ActionResult<PendingTask>>(url, {
-      validateStatus: validWithSessionAndExternalService,
-      params: axiosSnakeCaseTransformer({
-        asyncQuery: true,
-        ...(params ? params : {})
-      }),
-      transformResponse: api.baseTransformer
-    })
-    .then(handleResponse);
-}
-
 type Parser<T> = (response: AxiosResponse<ActionResult<T>>) => ActionResult<T>;
 
-export function handleResponse<T>(
+export const handleResponse = <T>(
   response: AxiosResponse<ActionResult<T>>,
   parse: Parser<T> = response => response.data
-): T {
+): T => {
   const { result, message } = parse(response);
   if (result) {
     return result;
   }
   throw new Error(message);
-}
+};
+
+export const fetchExternalAsync = async (
+  api: ApiImplementation,
+  url: string,
+  params?: Record<string, any>
+): Promise<PendingTask> => {
+  const result = await api.axios.get<ActionResult<PendingTask>>(url, {
+    validateStatus: validWithSessionAndExternalService,
+    params: axiosSnakeCaseTransformer({
+      asyncQuery: true,
+      ...(params ? params : {})
+    })
+  });
+  return handleResponse(result);
+};
 
 export function paramsSerializer(params: Record<string, any>): string {
   const list = [];

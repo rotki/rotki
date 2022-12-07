@@ -2,32 +2,6 @@ import { BigNumber } from '@rotki/common';
 import { AxiosRequestTransformer, AxiosResponseTransformer } from 'axios';
 import { isEvmIdentifier } from '@/utils/assets';
 
-const isNumber = /^-?\d+(\.\d+)?((\d(.\d+)?)?[Ee][-+]\d+)?$/;
-
-const createReviver =
-  (numericKeys: string[] | null): ((key: string, value: any) => any) =>
-  (key: string, value: any) => {
-    const checkForBN = numericKeys === null || numericKeys.includes(key);
-    if (
-      checkForBN &&
-      value &&
-      typeof value === 'string' &&
-      isNumber.test(value)
-    ) {
-      return new BigNumber(value);
-    }
-
-    if (numericKeys?.includes(key) && isObject(value)) {
-      for (const sub of Object.keys(value)) {
-        const valueElement = value[sub];
-        if (typeof valueElement === 'string' && isNumber.test(valueElement)) {
-          value[sub] = new BigNumber(valueElement);
-        }
-      }
-    }
-    return value;
-  };
-
 const isObject = (data: any): boolean =>
   typeof data === 'object' &&
   data !== null &&
@@ -98,28 +72,24 @@ export const axiosNoRootCamelCaseTransformer: AxiosResponseTransformer = (
   _headers
 ) => convertKeys(data, true, true);
 
-export const setupJsonTransformer: (
-  numericKeys: string[] | null
-) => AxiosResponseTransformer = numericKeys => {
-  const reviver = createReviver(numericKeys);
-  return (data, _headers) => {
-    let result = data;
-    if (typeof data === 'string') {
-      try {
-        result = JSON.parse(data, reviver);
-        // eslint-disable-next-line no-empty
-      } catch (e: any) {}
-    }
-    return result;
-  };
+const jsonTransformer: AxiosResponseTransformer = (data, headers) => {
+  let result = data;
+  const contentType = headers?.['content-type'];
+  const isJson = contentType?.includes('application/json') ?? false;
+  if (isJson && typeof data === 'string') {
+    try {
+      result = JSON.parse(data);
+      // eslint-disable-next-line no-empty
+    } catch (e: any) {}
+  }
+  return result;
 };
 
-export function setupTransformer(
-  numericKeys: string[] | null = null,
+export const setupTransformer = (
   skipRoot = false
-): AxiosResponseTransformer[] {
-  return [
-    setupJsonTransformer(numericKeys),
-    skipRoot ? axiosNoRootCamelCaseTransformer : axiosCamelCaseTransformer
-  ];
-}
+): AxiosResponseTransformer[] => [
+  jsonTransformer,
+  skipRoot ? axiosNoRootCamelCaseTransformer : axiosCamelCaseTransformer
+];
+
+export const basicAxiosTransformer = setupTransformer();

@@ -1,7 +1,6 @@
 import { ActionResult } from '@rotki/common/lib/data';
 import { AxiosResponse } from 'axios';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
-import { basicAxiosTransformer } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
 import { PendingTask } from '@/services/types-api';
 import {
@@ -42,8 +41,7 @@ export const useExchangeApi = () => {
           asyncQuery: true,
           ignoreCache: ignoreCache ? true : undefined
         }),
-        validateStatus: validStatus,
-        transformResponse: basicAxiosTransformer
+        validateStatus: validStatus
       }
     );
 
@@ -81,7 +79,6 @@ export const useExchangeApi = () => {
     const response = await api.instance.get<ActionResult<Exchanges>>(
       '/exchanges',
       {
-        transformResponse: basicAxiosTransformer,
         validateStatus: validWithSessionStatus
       }
     );

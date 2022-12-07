@@ -1,61 +1,64 @@
-import { Balance, BigNumber } from '@rotki/common';
-import { balanceKeys } from '@/services/consts';
-import {
-  Collateral,
-  CollateralAssetType,
-  CollateralizedLoan
-} from '@/types/defi/index';
+import { Balance, BigNumber, NumericString } from '@rotki/common';
+import { z } from 'zod';
+import { Collateral, CollateralizedLoan } from '@/types/defi/index';
 
-export type DSRMovementType = 'withdrawal' | 'deposit';
-export type MakerDAOVaultEventType =
-  | 'deposit'
-  | 'withdraw'
-  | 'generate'
-  | 'payback'
-  | 'liquidation';
+const DSRMovementType = z.enum(['withdrawal', 'deposit'] as const);
 
-export interface ApiMakerDAOVault {
-  readonly identifier: number;
-  readonly collateralType: string;
-  readonly owner: string;
-  readonly collateralAsset: CollateralAssetType;
-  readonly collateral: Balance;
-  readonly debt: Balance;
-  readonly collateralizationRatio: string | null;
-  readonly liquidationRatio: string;
-  readonly liquidationPrice: BigNumber | null;
-  readonly stabilityFee: string;
-}
+export type DSRMovementType = z.infer<typeof DSRMovementType>;
 
-export interface DSRBalances {
-  readonly currentDsr: BigNumber;
-  readonly balances: Record<
-    string,
-    {
-      amount: BigNumber;
-      usdValue: BigNumber;
-    }
-  >;
-}
+const MakerDAOVaultEventType = z.enum([
+  'deposit',
+  'withdraw',
+  'generate',
+  'payback',
+  'liquidation'
+] as const);
 
-interface DSRHistoryItem {
-  readonly gainSoFar: Balance;
-  readonly movements: DSRMovement[];
-}
+export const ApiMakerDAOVault = z.object({
+  identifier: z.number(),
+  collateralType: z.string(),
+  owner: z.string(),
+  collateralAsset: z.string(),
+  collateral: Balance,
+  debt: Balance,
+  collateralizationRatio: z.string().nullable(),
+  liquidationRatio: z.string(),
+  liquidationPrice: NumericString.nullable(),
+  stabilityFee: z.string()
+});
 
-export type DSRHistory = Readonly<Record<string, DSRHistoryItem>>;
+export type ApiMakerDAOVault = z.infer<typeof ApiMakerDAOVault>;
 
-interface DSRMovement {
-  readonly movementType: DSRMovementType;
-  readonly gainSoFar: Balance;
-  readonly value: Balance;
-  readonly blockNumber: number;
-  readonly timestamp: number;
-  readonly txHash: string;
-}
+export const ApiMakerDAOVaults = z.array(ApiMakerDAOVault);
 
-export interface MakerDAOVault
-  extends CollateralizedLoan<Collateral<CollateralAssetType>> {
+export type ApiMakerDAOVaults = z.infer<typeof ApiMakerDAOVaults>;
+
+export const DSRBalances = z.object({
+  currentDsr: NumericString,
+  balances: z.record(Balance)
+});
+
+export type DSRBalances = z.infer<typeof DSRBalances>;
+
+const DSRMovement = z.object({
+  movementType: DSRMovementType,
+  gainSoFar: Balance,
+  value: Balance,
+  blockNumber: z.number(),
+  timestamp: z.number(),
+  txHash: z.string()
+});
+
+const DSRHistoryItem = z.object({
+  gainSoFar: Balance,
+  movements: z.array(DSRMovement)
+});
+
+export const DSRHistory = z.record(DSRHistoryItem);
+
+export type DSRHistory = z.infer<typeof DSRHistory>;
+
+export interface MakerDAOVault extends CollateralizedLoan<Collateral> {
   readonly collateralType: string;
   readonly collateralizationRatio?: string;
   readonly stabilityFee: string;
@@ -63,29 +66,31 @@ export interface MakerDAOVault
   readonly liquidationPrice: BigNumber;
 }
 
-export interface MakerDAOVaultDetails {
-  readonly identifier: string;
-  readonly creationTs: number;
-  readonly totalInterestOwed: BigNumber;
-  readonly totalLiquidated: Balance;
-  readonly events: MakerDAOVaultEvent[];
-}
+const MakerDAOVaultEvent = z.object({
+  eventType: MakerDAOVaultEventType,
+  value: Balance,
+  timestamp: z.number(),
+  txHash: z.string()
+});
 
-export interface MakerDAOVaultEvent {
-  readonly eventType: MakerDAOVaultEventType;
-  readonly value: Balance;
-  readonly timestamp: number;
-  readonly txHash: string;
-}
+export type MakerDAOVaultEvent = z.infer<typeof MakerDAOVaultEvent>;
+
+const MakerDAOVaultDetail = z.object({
+  identifier: z.number().transform(arg => arg.toString()),
+  creationTs: z.number(),
+  totalInterestOwed: NumericString,
+  totalLiquidated: Balance,
+  events: z.array(MakerDAOVaultEvent)
+});
+export type MakerDAOVaultDetail = z.infer<typeof MakerDAOVaultDetail>;
+
+export const MakerDAOVaultDetails = z.array(MakerDAOVaultDetail);
+export type MakerDAOVaultDetails = z.infer<typeof MakerDAOVaultDetails>;
 
 export type MakerDAOVaultModel =
   | MakerDAOVault
-  | (MakerDAOVault & MakerDAOVaultDetails);
+  | (MakerDAOVault & MakerDAOVaultDetail);
 
 export interface MakerDAOLendingHistoryExtras {
   gainSoFar: Balance;
 }
-
-export const dsrKeys = [...balanceKeys, 'current_dsr'];
-export const vaultDetailsKeys = [...balanceKeys, 'total_interest_owed'];
-export const vaultKeys = [...balanceKeys, 'liquidation_price'];

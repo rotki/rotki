@@ -1,5 +1,4 @@
 import { ActionResult } from '@rotki/common/lib/data';
-import { basicAxiosTransformer } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validWithSessionStatus } from '@/services/utils';
 import { Messages, PeriodicClientQueryResult } from '@/types/session';
@@ -17,8 +16,7 @@ export const useSessionApi = () => {
     const response = await api.instance.get<
       ActionResult<PeriodicClientQueryResult>
     >('/periodic', {
-      validateStatus: validWithSessionStatus,
-      transformResponse: basicAxiosTransformer
+      validateStatus: validWithSessionStatus
     });
 
     return handleResponse(response);

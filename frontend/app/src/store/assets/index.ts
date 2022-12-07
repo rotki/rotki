@@ -26,8 +26,7 @@ export const useAssets = defineStore('assets', () => {
         taskId,
         taskType,
         {
-          title: t('actions.assets.versions.task.title').toString(),
-          numericKeys: []
+          title: t('actions.assets.versions.task.title').toString()
         }
       );
 
@@ -62,8 +61,7 @@ export const useAssets = defineStore('assets', () => {
         taskId,
         TaskType.ASSET_UPDATE_PERFORM,
         {
-          title: t('actions.assets.update.task.title').toString(),
-          numericKeys: []
+          title: t('actions.assets.update.task.title').toString()
         }
       );
 

@@ -4,8 +4,6 @@ import { Ref } from 'vue';
 import { usePremium } from '@/composables/premium';
 import { useModules } from '@/composables/session/modules';
 import { useStatusUpdater } from '@/composables/status';
-import { balanceKeys } from '@/services/consts';
-import { aaveHistoryKeys } from '@/services/defi/consts';
 import { api } from '@/services/rotkehlchen-api';
 import { useNotifications } from '@/store/notifications';
 import { getStatus, setStatus } from '@/store/status';
@@ -16,6 +14,7 @@ import { Section, Status } from '@/types/status';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { balanceSum } from '@/utils/calculation';
+import { logger } from '@/utils/logging';
 
 export const useAaveStore = defineStore('defi/aave', () => {
   const balances: Ref<AaveBalances> = ref({});
@@ -80,11 +79,10 @@ export const useAaveStore = defineStore('defi/aave', () => {
         taskId,
         taskType,
         {
-          title: tc('actions.defi.aave_balances.task.title'),
-          numericKeys: balanceKeys
+          title: tc('actions.defi.aave_balances.task.title')
         }
       );
-      set(balances, result);
+      set(balances, AaveBalances.parse(result));
     } catch (e: any) {
       const message = tc(
         'actions.defi.aave_balances.error.description',
@@ -133,13 +131,13 @@ export const useAaveStore = defineStore('defi/aave', () => {
         taskId,
         taskType,
         {
-          title: tc('actions.defi.aave_history.task.title'),
-          numericKeys: aaveHistoryKeys
+          title: tc('actions.defi.aave_history.task.title')
         }
       );
 
-      set(history, result);
+      set(history, AaveHistory.parse(result));
     } catch (e: any) {
+      logger.error(e);
       const message = tc(
         'actions.defi.aave_history.error.description',
         undefined,

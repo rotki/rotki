@@ -6,7 +6,6 @@ import {
   TimedBalances
 } from '@rotki/common/lib/statistics';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
-import { basicAxiosTransformer } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validStatus } from '@/services/utils';
 
@@ -38,8 +37,7 @@ export const useStatisticsApi = () => {
         asset
       }),
       {
-        validateStatus: validStatus,
-        transformResponse: basicAxiosTransformer
+        validateStatus: validStatus
       }
     );
 
@@ -52,8 +50,7 @@ export const useStatisticsApi = () => {
         '/statistics/value_distribution',
         {
           params: axiosSnakeCaseTransformer({ distributionBy: 'location' }),
-          validateStatus: validStatus,
-          transformResponse: basicAxiosTransformer
+          validateStatus: validStatus
         }
       );
       return LocationData.parse(handleResponse(statistics));
@@ -65,8 +62,7 @@ export const useStatisticsApi = () => {
         ActionResult<TimedAssetBalances>
       >('/statistics/value_distribution', {
         params: axiosSnakeCaseTransformer({ distributionBy: 'asset' }),
-        validateStatus: validStatus,
-        transformResponse: basicAxiosTransformer
+        validateStatus: validStatus
       });
       return TimedAssetBalances.parse(handleResponse(statistics));
     };

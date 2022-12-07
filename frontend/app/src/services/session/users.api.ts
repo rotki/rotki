@@ -1,6 +1,5 @@
 import { ActionResult } from '@rotki/common/lib/data';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
-import { basicAxiosTransformer } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
 import { PendingTask } from '@/services/types-api';
 import {
@@ -79,8 +78,7 @@ export const useUsersApi = () => {
         syncDatabase: premiumSetup?.syncDatabase
       }),
       {
-        validateStatus: validStatus,
-        transformResponse: basicAxiosTransformer
+        validateStatus: validStatus
       }
     );
     const account = handleResponse(response);
@@ -97,8 +95,7 @@ export const useUsersApi = () => {
         asyncQuery: true
       }),
       {
-        validateStatus: validAccountOperationStatus,
-        transformResponse: basicAxiosTransformer
+        validateStatus: validAccountOperationStatus
       }
     );
 

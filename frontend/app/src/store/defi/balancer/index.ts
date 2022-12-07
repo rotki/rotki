@@ -166,8 +166,7 @@ export const useBalancerStore = defineStore('defi/balancer', () => {
 
   const fetchBalances = async (refresh = false) => {
     const meta: TaskMeta = {
-      title: t('actions.defi.balancer_balances.task.title').toString(),
-      numericKeys: []
+      title: t('actions.defi.balancer_balances.task.title').toString()
     };
 
     const onError: OnError = {
@@ -204,8 +203,7 @@ export const useBalancerStore = defineStore('defi/balancer', () => {
 
   const fetchEvents = async (refresh = false) => {
     const meta: TaskMeta = {
-      title: t('actions.defi.balancer_events.task.title').toString(),
-      numericKeys: []
+      title: t('actions.defi.balancer_events.task.title').toString()
     };
 
     const onError: OnError = {
