@@ -1,10 +1,5 @@
 ﻿<template>
-  <v-form
-    :value="value"
-    data-cy="trade-form"
-    class="external-trade-form"
-    @input="input"
-  >
+  <v-form :value="value" data-cy="trade-form" class="external-trade-form">
     <v-row>
       <v-col>
         <v-row class="pt-1">
@@ -50,10 +45,9 @@
                   outlined
                   required
                   data-cy="base-asset"
-                  :rules="baseRules"
+                  :error-messages="v$.base.$errors.map(e => e.$message)"
                   :hint="t('external_trade_form.base_asset.hint')"
                   :label="t('external_trade_form.base_asset.label')"
-                  :error-messages="errorMessages['baseAsset']"
                   @focus="delete errorMessages['baseAsset']"
                 />
               </v-col>
@@ -66,10 +60,9 @@
                   required
                   outlined
                   data-cy="quote-asset"
-                  :rules="quoteRules"
+                  :error-messages="v$.quote.$errors.map(e => e.$message)"
                   :hint="t('external_trade_form.quote_asset.hint')"
                   :label="t('external_trade_form.quote_asset.label')"
-                  :error-messages="errorMessages['quoteAsset']"
                   @focus="delete errorMessages['quoteAsset']"
                 />
               </v-col>
@@ -79,12 +72,11 @@
                 v-model="amount"
                 required
                 outlined
-                :rules="amountRules"
+                :error-messages="v$.amount.$errors.map(e => e.$message)"
                 data-cy="amount"
                 :label="t('common.amount')"
                 persistent-hint
                 :hint="t('external_trade_form.amount.hint')"
-                :error-messages="errorMessages['amount']"
                 @focus="delete errorMessages['amount']"
               />
               <div
@@ -100,7 +92,7 @@
                   :disabled="selectedCalculationInput !== 'rate'"
                   :label="t('external_trade_form.rate.label')"
                   :loading="fetching"
-                  :rules="rateRules"
+                  :error-messages="v$.rate.$errors.map(e => e.$message)"
                   data-cy="rate"
                   :hide-details="selectedCalculationInput !== 'rate'"
                   :class="`${
@@ -110,14 +102,13 @@
                   }`"
                   filled
                   persistent-hint
-                  :error-messages="errorMessages['rate']"
                   @focus="delete errorMessages['rate']"
                 />
                 <amount-input
                   ref="quoteAmountInput"
                   v-model="quoteAmount"
                   :disabled="selectedCalculationInput !== 'quoteAmount'"
-                  :rules="quoteAmountRules"
+                  :error-messages="v$.quoteAmount.$errors.map(e => e.$message)"
                   data-cy="quote-amount"
                   :hide-details="selectedCalculationInput !== 'quoteAmount'"
                   :class="`${
@@ -127,7 +118,6 @@
                   }`"
                   :label="t('external_trade_form.quote_amount.label')"
                   filled
-                  :error-messages="errorMessages['quote_amount']"
                   @focus="delete errorMessages['quote_amount']"
                 />
                 <v-btn
@@ -221,8 +211,7 @@
               :required="!!feeCurrency"
               :label="t('external_trade_form.fee.label')"
               :hint="t('external_trade_form.fee.hint')"
-              :error-messages="errorMessages['fee']"
-              :rules="feeRules"
+              :error-messages="v$.fee.$errors.map(e => e.$message)"
               @focus="delete errorMessages['fee']"
               @input="triggerFeeValidator"
             />
@@ -237,8 +226,7 @@
               :label="t('external_trade_form.fee_currency.label')"
               :hint="t('external_trade_form.fee_currency.hint')"
               :required="!!fee"
-              :error-messages="errorMessages['feeCurrency']"
-              :rules="feeCurrencyRules"
+              :error-messages="v$.feeCurrency.$errors.map(e => e.$message)"
               @focus="delete errorMessages['feeCurrency']"
               @input="triggerFeeValidator"
             />
@@ -275,8 +263,10 @@
 <script setup lang="ts">
 import { BigNumber } from '@rotki/common';
 
+import useVuelidate from '@vuelidate/core';
+import { helpers, required, requiredIf } from '@vuelidate/validators';
 import dayjs from 'dayjs';
-import { PropType } from 'vue';
+import { PropType, Ref } from 'vue';
 import { convertKeys } from '@/services/axios-tranformers';
 import { deserializeApiErrorMessage } from '@/services/converters';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
@@ -340,36 +330,71 @@ const { assetSymbol } = useAssetInfoRetrieval();
 const baseSymbol = assetSymbol(base);
 const quoteSymbol = assetSymbol(quote);
 
-const baseRules = [
-  (v: string) => !!v || t('external_trade_form.validation.non_empty_base')
-];
-const quoteRules = [
-  (v: string) => !!v || t('external_trade_form.validation.non_empty_quote')
-];
-const amountRules = [
-  (v: string) => !!v || t('external_trade_form.validation.non_empty_amount')
-];
-const rateRules = [
-  (v: string) => !!v || t('external_trade_form.validation.non_empty_rate')
-];
-const quoteAmountRules = [
-  (v: string) =>
-    !!v || t('external_trade_form.validation.non_empty_quote_amount')
-];
+const rules = {
+  base: {
+    required: helpers.withMessage(
+      t('external_trade_form.validation.non_empty_base').toString(),
+      required
+    )
+  },
+  quote: {
+    required: helpers.withMessage(
+      t('external_trade_form.validation.non_empty_quote').toString(),
+      required
+    )
+  },
+  amount: {
+    required: helpers.withMessage(
+      t('external_trade_form.validation.non_empty_amount').toString(),
+      required
+    )
+  },
+  rate: {
+    required: helpers.withMessage(
+      t('external_trade_form.validation.non_empty_rate').toString(),
+      required
+    )
+  },
+  quoteAmount: {
+    required: helpers.withMessage(
+      t('external_trade_form.validation.non_empty_quote_amount').toString(),
+      required
+    )
+  },
+  fee: {
+    required: helpers.withMessage(
+      t('external_trade_form.validation.non_empty_fee').toString(),
+      requiredIf(feeCurrency as unknown as Ref<boolean>)
+    )
+  },
+  feeCurrency: {
+    required: helpers.withMessage(
+      t('external_trade_form.validation.non_empty_fee_currency').toString(),
+      requiredIf(fee as unknown as Ref<boolean>)
+    )
+  }
+};
 
-const feeRules = [
-  (v: string) =>
-    !!v ||
-    !get(feeCurrency) ||
-    t('external_trade_form.validation.non_empty_fee')
-];
+const v$ = useVuelidate(
+  rules,
+  {
+    base,
+    quote,
+    amount,
+    rate,
+    quoteAmount,
+    fee,
+    feeCurrency
+  },
+  {
+    $autoDirty: true,
+    $externalResults: errorMessages
+  }
+);
 
-const feeCurrencyRules = [
-  (v: string) =>
-    !!v ||
-    !get(fee) ||
-    t('external_trade_form.validation.non_empty_fee_currency')
-];
+watch(v$, ({ $invalid }) => {
+  input(!$invalid);
+});
 
 const triggerFeeValidator = () => {
   get(feeInput)?.textInput?.validate(true);

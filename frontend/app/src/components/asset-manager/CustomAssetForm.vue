@@ -1,5 +1,5 @@
 <template>
-  <v-form :value="valid">
+  <v-form :value="!v$.$invalid">
     <v-row class="mt-2">
       <v-col cols="12" md="6">
         <v-text-field
@@ -91,15 +91,12 @@ const emit = defineEmits<{
 }>();
 
 const { edit } = toRefs(props);
-const valid = ref(false);
 
 const input = (asset: Partial<CustomAsset>) => {
   set(formData, { ...get(formData), ...asset });
 };
 
 const assetIconForm: Ref<InstanceType<typeof AssetIconForm> | null> = ref(null);
-
-watch(valid, value => emit('valid', value));
 
 const { t, tc } = useI18n();
 
@@ -135,7 +132,7 @@ const v$ = useVuelidate(
 );
 
 watch(v$, ({ $invalid }) => {
-  set(valid, !$invalid);
+  emit('valid', !$invalid);
 });
 
 const saveIcon = (identifier: string) => {

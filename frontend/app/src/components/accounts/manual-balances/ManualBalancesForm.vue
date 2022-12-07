@@ -1,7 +1,7 @@
 <template>
   <v-form
     ref="form"
-    :value="valid"
+    :value="!v$.$invalid"
     :class="$style.form"
     data-cy="manual-balance-form"
   >
@@ -150,7 +150,6 @@ const { t, tc } = useI18n();
 
 const { edit, context } = toRefs(props);
 
-const valid = ref(false);
 const pending = ref(false);
 
 const errors: Ref<Record<string, string[]>> = ref({});
@@ -344,10 +343,8 @@ const v$ = useVuelidate(
 );
 
 watch(v$, ({ $invalid }) => {
-  set(valid, !$invalid);
+  input(!$invalid);
 });
-
-watch(valid, value => input(value));
 
 watch(asset, async asset => {
   const form = get(priceForm);

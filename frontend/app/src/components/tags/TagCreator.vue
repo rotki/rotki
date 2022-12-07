@@ -1,5 +1,5 @@
 <template>
-  <v-form ref="form" v-model="valid">
+  <v-form ref="form" :value="!v$.$invalid">
     <v-row>
       <tag-icon class="tag-creator__preview" :tag="tag" />
       <v-tooltip bottom>
@@ -27,7 +27,7 @@
               outlined
               class="tag_creator__name"
               :label="t('common.name')"
-              :rules="rules"
+              :error-messages="v$.name.$errors.map(e => e.$message)"
               :value="tag.name"
               :disabled="editMode"
               @input="changed({ name: $event })"
@@ -103,7 +103,7 @@
           width="100"
           depressed
           color="primary"
-          :disabled="!valid"
+          :disabled="v$.$invalid"
           @click="save"
         >
           {{ t('common.actions.save') }}
@@ -114,6 +114,8 @@
 </template>
 
 <script setup lang="ts">
+import useVuelidate from '@vuelidate/core';
+import { helpers, required } from '@vuelidate/validators';
 import { PropType, Ref } from 'vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
 import { TagEvent } from '@/types/tags';
@@ -129,12 +131,25 @@ const emit = defineEmits(['changed', 'save', 'cancel']);
 const { t } = useI18n();
 
 const { tag } = toRefs(props);
-const valid = ref<boolean>(false);
 
 const form: Ref<any> = ref(null);
-const rules = [
-  (v: string) => !!v || t('tag_creator.validation.empty_name').toString()
-];
+
+const rules = {
+  name: {
+    required: helpers.withMessage(
+      t('tag_creator.validation.empty_name').toString(),
+      required
+    )
+  }
+};
+
+const v$ = useVuelidate(
+  rules,
+  {
+    name: computed(() => get(tag).name)
+  },
+  { $autoDirty: true }
+);
 
 const changed = (event: TagEvent) => {
   emit('changed', {
@@ -145,6 +160,9 @@ const changed = (event: TagEvent) => {
 
 const save = () => {
   get(form)?.reset();
+  nextTick(() => {
+    get(v$).$reset();
+  });
   emit('save', get(tag));
 };
 

@@ -34,15 +34,15 @@
         </v-col>
         <v-col md="6">
           <v-select
-            v-model="chain"
+            v-model="evmChain"
             outlined
             :label="t('asset_form.labels.chain')"
             :disabled="!isEvmToken || !!edit"
             :items="evmChainsData"
             item-text="label"
             item-value="identifier"
-            :error-messages="errors['chain']"
-            @focus="delete errors['chain']"
+            :error-messages="errors['evm_chain']"
+            @focus="delete errors['evm_chain']"
           />
         </v-col>
         <v-col md="6">
@@ -312,7 +312,7 @@ const started = ref<string>('');
 const coingecko = ref<string>('');
 const cryptocompare = ref<string>('');
 const assetType = ref<string>(EVM_TOKEN);
-const chain = ref<string>();
+const evmChain = ref<string>();
 const tokenKind = ref<string>();
 const types = ref<string[]>([EVM_TOKEN]);
 const identifier = ref<string>('');
@@ -375,7 +375,7 @@ const asset: ComputedRef<Omit<SupportedAsset, 'identifier' | 'type'>> =
       underlyingTokens: ut.length > 0 ? ut : undefined,
       swappedFor: onlyIfTruthy(get(swappedFor)),
       protocol: onlyIfTruthy(get(protocol)),
-      chain: (get(chain) as EvmChain) || null,
+      evmChain: (get(evmChain) as EvmChain) || null,
       tokenKind: (get(tokenKind) as EvmTokenKind) || null
     };
   });
@@ -420,7 +420,7 @@ onMounted(() => {
   set(decimals, token.decimals ? token.decimals.toString() : '');
   set(protocol, token.protocol ?? '');
   set(underlyingTokens, token.underlyingTokens ?? []);
-  set(chain, token.evmChain);
+  set(evmChain, token.evmChain);
   set(tokenKind, token.tokenKind);
 });
 
@@ -443,7 +443,7 @@ const saveAsset = async () => {
   let newIdentifier: string;
   const assetVal = get(asset);
   const payload = {
-    ...omit(assetVal, ['decimals', 'address', 'chain', 'type', 'tokenKind']),
+    ...omit(assetVal, ['decimals', 'address', 'evmChain', 'type', 'tokenKind']),
     assetType: get(assetType)
   };
   if (get(edit)) {

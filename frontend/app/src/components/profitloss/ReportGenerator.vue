@@ -1,5 +1,5 @@
 <template>
-  <v-form v-model="valid">
+  <v-form :value="valid">
     <card>
       <template #title>
         {{ t('common.actions.generate') }}
@@ -21,7 +21,7 @@
           <span>{{ t('profit_loss_report.settings_tooltip') }}</span>
         </v-tooltip>
       </template>
-      <range-selector v-model="range" />
+      <range-selector v-model="range" @update:valid="valid = $event" />
       <template #buttons>
         <v-row no-gutters>
           <v-col>

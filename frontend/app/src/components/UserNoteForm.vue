@@ -1,5 +1,5 @@
 <template>
-  <v-form :value="valid" class="pt-2">
+  <v-form :value="!v$.$invalid" class="pt-2">
     <div>
       <v-text-field
         :value="value.title"
@@ -37,8 +37,6 @@ const emit = defineEmits(['input', 'valid']);
 const { t } = useI18n();
 const { value } = toRefs(props);
 
-const valid = ref(false);
-
 const input = (newInput: Partial<UserNote>) => {
   emit('input', { ...get(value), ...newInput });
 };
@@ -59,7 +57,6 @@ const v$ = useVuelidate(
 );
 
 watch(v$, ({ $invalid }) => {
-  set(valid, !$invalid);
-  emit('valid', get(valid));
+  emit('valid', !$invalid);
 });
 </script>

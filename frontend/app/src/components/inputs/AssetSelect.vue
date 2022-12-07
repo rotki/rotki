@@ -8,7 +8,6 @@
     :hint="hint"
     single-line
     :label="label"
-    :rules="rules"
     :clearable="clearable"
     :persistent-hint="persistentHint"
     :required="required"
@@ -131,11 +130,6 @@ const props = defineProps({
   },
   label: { required: false, type: String, default: 'Asset' },
   value: { required: false, type: String, default: '' },
-  rules: {
-    required: false,
-    type: Array as PropType<((v: string) => boolean | string)[]>,
-    default: () => []
-  },
   disabled: { required: false, type: Boolean, default: false },
   outlined: { required: false, type: Boolean, default: false },
   clearable: { required: false, type: Boolean, default: false },

@@ -1,5 +1,5 @@
 <template>
-  <v-form ref="form" data-cy="exchange-keys" :value="value" @input="input">
+  <v-form ref="form" data-cy="exchange-keys" :value="value">
     <v-row class="pt-2">
       <v-col cols="12" md="6">
         <v-autocomplete
@@ -35,7 +35,7 @@
           v-if="edit"
           outlined
           :value="exchange.newName"
-          :rules="nameRules"
+          :error-messages="v$.newName.$errors.map(e => e.$message)"
           data-cy="name"
           :label="tc('common.name')"
           @input="onUpdateExchange({ ...exchange, newName: $event })"
@@ -44,7 +44,7 @@
           v-else
           outlined
           :value="exchange.name"
-          :rules="nameRules"
+          :error-messages="v$.name.$errors.map(e => e.$message)"
           data-cy="name"
           :label="tc('common.name')"
           @input="onUpdateExchange({ ...exchange, name: $event })"
@@ -62,7 +62,7 @@
       @change="onUpdateExchange({ ...exchange, krakenAccountType: $event })"
     />
 
-    <div class="text-subtitle-2 mt-2 pb-4">
+    <div v-if="edit" class="text-subtitle-2 mt-2 pb-4">
       {{ tc('exchange_settings.keys') }}
       <v-tooltip top open-delay="400">
         <template #activator="{ on, attrs }">
@@ -86,7 +86,7 @@
         outlined
         :disabled="edit && !editKeys"
         :value="exchange.apiKey"
-        :rules="!edit || editKeys ? apiKeyRules : []"
+        :error-messages="v$.apiKey.$errors.map(e => e.$message)"
         data-cy="api-key"
         :label="tc('exchange_settings.inputs.api_key')"
         @input="onUpdateExchange({ ...exchange, apiKey: $event })"
@@ -98,7 +98,7 @@
         outlined
         :disabled="edit && !editKeys"
         :value="exchange.apiSecret"
-        :rules="!edit || editKeys ? apiSecretRules : []"
+        :error-messages="v$.apiSecret.$errors.map(e => e.$message)"
         data-cy="api-secret"
         prepend-icon="mdi-lock"
         :label="tc('exchange_settings.inputs.api_secret')"
@@ -111,7 +111,7 @@
         :disabled="edit && !editKeys"
         outlined
         :value="exchange.passphrase"
-        :rules="!edit || editKeys ? passphraseRules : []"
+        :error-messages="v$.passphrase.$errors.map(e => e.$message)"
         prepend-icon="mdi-key-plus"
         data-cy="passphrase"
         :label="tc('exchange_settings.inputs.passphrase')"
@@ -149,6 +149,8 @@
 </template>
 
 <script setup lang="ts">
+import useVuelidate from '@vuelidate/core';
+import { helpers, or, requiredIf, requiredUnless } from '@vuelidate/validators';
 import { PropType } from 'vue';
 import ExchangeDisplay from '@/components/display/ExchangeDisplay.vue';
 import BinancePairsSelector from '@/components/helper/BinancePairsSelector.vue';
@@ -193,22 +195,6 @@ const isBinance = computed(() => {
     location === SupportedExchange.BINANCEUS
   );
 });
-
-const nameRules = computed(() => [
-  (v: string) => !!v || tc('exchange_keys_form.name.non_empty')
-]);
-
-const apiKeyRules = computed(() => [
-  (v: string) => !!v || tc('exchange_keys_form.api_key.non_empty')
-]);
-
-const apiSecretRules = computed(() => [
-  (v: string) => !!v || tc('exchange_keys_form.api_secret.non_empty')
-]);
-
-const passphraseRules = computed(() => [
-  (v: string) => !!v || tc('exchange_keys_form.passphrase.non_empty')
-]);
 
 const { tradeLocations } = useTradeLocations();
 
@@ -281,6 +267,47 @@ onMounted(() => {
 
 const krakenAccountTypes = KrakenAccountType.options;
 const exchanges = SUPPORTED_EXCHANGES;
+
+const sensitiveFieldEditable = computed(() => !get(edit) || get(editKeys));
+
+const rules = {
+  name: {
+    required: helpers.withMessage(
+      tc('exchange_keys_form.name.non_empty'),
+      requiredUnless(edit)
+    )
+  },
+  newName: {
+    required: helpers.withMessage(
+      tc('exchange_keys_form.name.non_empty'),
+      requiredIf(edit)
+    )
+  },
+  apiKey: {
+    required: helpers.withMessage(
+      tc('exchange_keys_form.api_key.non_empty'),
+      requiredIf(sensitiveFieldEditable)
+    )
+  },
+  apiSecret: {
+    required: helpers.withMessage(
+      tc('exchange_keys_form.api_secret.non_empty'),
+      requiredIf(sensitiveFieldEditable)
+    )
+  },
+  passphrase: {
+    required: helpers.withMessage(
+      tc('exchange_keys_form.passphrase.non_empty'),
+      or(requiredIf(sensitiveFieldEditable), requiredIf(requiresPassphrase))
+    )
+  }
+};
+
+const v$ = useVuelidate(rules, exchange, { $autoDirty: true });
+
+watch(v$, ({ $invalid }) => {
+  input(!$invalid);
+});
 </script>
 
 <style lang="scss" scoped>

@@ -1,5 +1,5 @@
 <template>
-  <v-form :value="valid">
+  <v-form :value="!v$.$invalid">
     <v-row class="mt-2">
       <v-col cols="12" md="6">
         <asset-select
@@ -80,8 +80,6 @@ const emit = defineEmits(['input', 'valid']);
 const { value } = toRefs(props);
 const { assetSymbol } = useAssetInfoRetrieval();
 
-const valid = ref(false);
-
 const fromAsset = computed(({ value }) => get(assetSymbol(value.fromAsset)));
 const toAsset = computed(({ value }) => get(assetSymbol(value.toAsset)));
 
@@ -91,8 +89,6 @@ const numericPrice = bigNumberifyFromRef(price);
 const input = (price: Partial<ManualPriceFormPayload>) => {
   emit('input', { ...get(value), ...price });
 };
-
-watch(valid, value => emit('valid', value));
 
 watch(value, val => {
   set(price, val.price);
@@ -140,6 +136,6 @@ const v$ = useVuelidate(
 );
 
 watch(v$, ({ $invalid }) => {
-  set(valid, !$invalid);
+  emit('valid', !$invalid);
 });
 </script>
