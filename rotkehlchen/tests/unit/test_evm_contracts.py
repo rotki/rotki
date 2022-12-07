@@ -1,16 +1,35 @@
+import json
+
 from eth_utils import is_checksum_address
 
-
-def test_ethereum_contracts(ethereum_contracts):
-    """Test that all ethereum contract entries have legal data"""
-    for _, entry in ethereum_contracts.contracts.items():
-        assert len(entry) == 3
-        assert is_checksum_address(entry['address'])
-        assert entry['deployed_block'] > 0
-        assert isinstance(entry['abi'], list)
+from rotkehlchen.types import ChainID
 
 
-def test_ethereum_abi(ethereum_contracts):
-    """Test that the ethereum abi entries have legal data"""
-    for _, entry in ethereum_contracts.abi_entries.items():
-        assert isinstance(entry, list)
+def test_evm_contracts_data(globaldb):
+    """Test that all evm contract entries in the packaged global DB have legal data"""
+    serialized_chain_ids = [x.serialize_for_db() for x in ChainID]
+    with globaldb.conn.read_ctx() as cursor:
+        cursor.execute('SELECT address, chain_id, name, abi, deployed_block FROM contract_data')
+        for entry in cursor:
+            assert is_checksum_address(entry[0])
+            assert isinstance(entry[1], int) and entry[1] in serialized_chain_ids
+            assert isinstance(entry[2], str)
+            assert isinstance(entry[3], int)
+            assert isinstance(entry[4], int) and entry[4] > 0
+
+
+def test_evm_abi_data(globaldb):
+    """Test that the evm abi entries in the packaged globalDB have legal data"""
+    abis_set = {0}
+    with globaldb.conn.read_ctx() as cursor:
+        cursor.execute('SELECT id, value FROM contract_abi')
+        for entry in cursor:
+            assert isinstance(entry[0], int)
+            # read the abi, and make sure it's the most compressed version it can be
+            # and that it's unique
+            assert isinstance(entry[1], str)
+            json_abi = json.loads(entry[1])
+            serialized_abi = json.dumps(json_abi, separators=(',', ':'))
+            assert serialized_abi == entry[1]
+            assert entry[1] not in abis_set
+            abis_set.add(entry[1])

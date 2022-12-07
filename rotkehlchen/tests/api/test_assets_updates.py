@@ -157,10 +157,11 @@ INSERT INTO assets(identifier, name, type) VALUES("EUR", "Ευρώ", "A"); INSER
 
         errors = rotki.msg_aggregator.consume_errors()
         warnings = rotki.msg_aggregator.consume_warnings()
+
         assert len(errors) == 0, f'Found errors: {errors}'
         assert len(warnings) == 2
-        assert 'Skipping assets update 999999993 since it requires a min schema of 1 and max schema of 2 while the local DB schema version is 3. You will have to follow an alternative method to obtain the assets of this update. Easiest would be to reset global DB' in warnings[0]  # noqa: E501
-        assert 'Skipping assets update 999999996 since it requires a min schema of 4. Please upgrade rotki to get this assets update' in warnings[1]  # noqa: E501
+        assert f'Skipping assets update 999999993 since it requires a min schema of {GLOBAL_DB_VERSION - 2} and max schema of {GLOBAL_DB_VERSION - 1} while the local DB schema version is {GLOBAL_DB_VERSION}. You will have to follow an alternative method to obtain the assets of this update. Easiest would be to reset global DB' in warnings[0]  # noqa: E501
+        assert f'Skipping assets update 999999996 since it requires a min schema of {GLOBAL_DB_VERSION + 1}. Please upgrade rotki to get this assets update' in warnings[1]  # noqa: E501
 
         assert result is True
         assert globaldb.get_setting_value(ASSETS_VERSION_KEY, None) == 999999995

@@ -4,7 +4,11 @@ if TYPE_CHECKING:
     from rotkehlchen.db.drivers.gevent import DBCursor
 
 
+# Whenever you upgrade the global DB make sure to:
+# 1. Go to assets repo and tweak the min/max schema of the updates
+# 2. Tweak ASSETS_FILE_IMPORT_ACCEPTED_GLOBALDB_VERSIONS
 GLOBAL_DB_VERSION = 4
+ASSETS_FILE_IMPORT_ACCEPTED_GLOBALDB_VERSIONS = (3, GLOBAL_DB_VERSION)
 MIN_SUPPORTED_GLOBAL_DB_VERSION = 2
 GLOBAL_DB_FILENAME = 'global.db'
 

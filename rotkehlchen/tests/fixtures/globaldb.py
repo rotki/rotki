@@ -15,6 +15,7 @@ from rotkehlchen.globaldb.upgrades.manager import UPGRADES_LIST
 from rotkehlchen.globaldb.utils import GLOBAL_DB_VERSION
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.tests.utils.database import mock_db_schema_sanity_check
+from rotkehlchen.tests.utils.globaldb import patch_for_globaldb_upgrade_to
 from rotkehlchen.types import Price, Timestamp
 
 if TYPE_CHECKING:
@@ -91,6 +92,8 @@ def _initialize_fixture_globaldb(
             )
         if target_globaldb_version != GLOBAL_DB_VERSION:
             stack.enter_context(mock_db_schema_sanity_check())
+            patch_for_globaldb_upgrade_to(stack, target_globaldb_version)
+
         globaldb = create_globaldb(new_data_dir, sql_vm_instructions_cb)
 
     return globaldb

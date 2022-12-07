@@ -9,7 +9,8 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.types import AssetData, AssetType
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
-from rotkehlchen.globaldb.handler import GLOBAL_DB_VERSION, GlobalDBHandler
+from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.globaldb.utils import ASSETS_FILE_IMPORT_ACCEPTED_GLOBALDB_VERSIONS
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.schemas import ExportedAssetsSchema
 
@@ -37,10 +38,10 @@ def import_assets_from_file(
     with open(path) as f:
         data = ExportedAssetsSchema().loads(f.read())
 
-    if int(data['version']) != GLOBAL_DB_VERSION:
+    if int(data['version']) not in ASSETS_FILE_IMPORT_ACCEPTED_GLOBALDB_VERSIONS:
         raise InputError(
-            f'Provided file is for a different version of rotki. File version: '
-            f'{data["version"]} rotki version: {GLOBAL_DB_VERSION}',
+            f'Provided file is for a different version of rotki. GlobalDB File version: '
+            f'{data["version"]} Accepted GlobalDB version by rotki: {ASSETS_FILE_IMPORT_ACCEPTED_GLOBALDB_VERSIONS}',  # noqa: E501
         )
     if data['assets'] is None:
         raise InputError('The imported file is missing a valid list of assets')
