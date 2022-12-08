@@ -7,12 +7,9 @@
       </span>
     </div>
     <v-card-text>
-      <v-img
-        class="mt-4 mb-2"
-        contain
-        max-width="72px"
-        src="/assets/images/rotkehlchen_no_text.png"
-      />
+      <div class="mt-4 mb-2">
+        <rotki-logo width="72px" />
+      </div>
       <div class="d-flex flex-row align-center mt-4" :class="css.version">
         <div class="font-weight-bold">{{ version.version }}</div>
         <div class="font-weight-regular ml-4">

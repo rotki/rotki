@@ -9,7 +9,9 @@
     clipped
     app
   >
-    <div v-if="!isMini" class="text-center app__logo" />
+    <div v-if="!isMini" class="app__logo">
+      <rotki-logo height="150px" />
+    </div>
     <div v-else class="app__logo-mini">
       {{ t('app.name') }}
     </div>
@@ -31,6 +33,7 @@
 import { storeToRefs } from 'pinia';
 import { defineAsyncComponent, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
+import RotkiLogo from '@/components/common/RotkiLogo.vue';
 import { useTheme } from '@/composables/common';
 import { useMainStore } from '@/store/main';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
@@ -49,24 +52,21 @@ const { t } = useI18n();
 <style scoped lang="scss">
 .app {
   &__logo {
-    min-height: 150px;
     margin-bottom: 15px;
     margin-top: 15px;
-    background: url(./assets/images/rotkehlchen_no_text.png) no-repeat center;
-    background-size: contain;
-  }
 
-  &__logo-mini {
-    text-align: center;
-    align-self: center;
-    font-size: 3em;
-    font-weight: bold;
-    height: 150px;
-    width: 64px;
-    writing-mode: vertical-lr;
-    transform: rotate(-180deg);
-    margin-bottom: 15px;
-    margin-top: 15px;
+    &-mini {
+      text-align: center;
+      align-self: center;
+      font-size: 3em;
+      font-weight: bold;
+      height: 150px;
+      width: 64px;
+      writing-mode: vertical-lr;
+      transform: rotate(-180deg);
+      margin-bottom: 15px;
+      margin-top: 15px;
+    }
   }
 
   &__navigation-drawer {

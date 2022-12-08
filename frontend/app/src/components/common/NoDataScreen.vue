@@ -1,19 +1,15 @@
 <template>
-  <component :is="full ? 'full-size-content' : 'div'">
+  <component :is="full ? FullSizeContent : 'div'">
     <v-row align="center" justify="center" :class="{ 'mb-10': !full }">
-      <v-col cols="auto" :class="$style.logo">
+      <v-col cols="auto" :class="css.logo">
         <slot name="logo">
-          <v-img
-            contain
-            :max-width="$vuetify.breakpoint.mobile ? '100px' : '200px'"
-            src="/assets/images/rotkehlchen_no_text.png"
-          />
+          <rotki-logo :width="isMobile ? '100px' : '200px'" />
         </slot>
       </v-col>
     </v-row>
     <v-row class="text-center">
       <v-col>
-        <div v-if="$slots.title" class="text-h5">
+        <div v-if="slots.title" class="text-h5">
           <slot name="title" />
         </div>
         <slot />
@@ -22,17 +18,17 @@
   </component>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue';
+<script setup lang="ts">
 import FullSizeContent from '@/components/common/FullSizeContent.vue';
+import { useTheme } from '@/composables/common';
 
-export default defineComponent({
-  name: 'NoDataScreen',
-  components: { FullSizeContent },
-  props: {
-    full: { required: false, type: Boolean, default: true }
-  }
+defineProps({
+  full: { required: false, type: Boolean, default: true }
 });
+
+const slots = useSlots();
+const css = useCssModule();
+const { isMobile } = useTheme();
 </script>
 
 <style module lang="scss">
