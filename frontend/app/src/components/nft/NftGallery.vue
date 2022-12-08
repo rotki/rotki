@@ -193,6 +193,11 @@ const itemsPerPage = computed(() => {
   }
   return 8;
 });
+
+watch(breakpoint, () => {
+  set(page, 1);
+});
+
 const selectedAccount = ref<GeneralAccount | null>(null);
 const selectedCollection = ref<string | null>(null);
 const premium = usePremium();
