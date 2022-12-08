@@ -463,6 +463,8 @@ class APIServer():
             environ={'rotki_notifier': self.rotki_notifier},
             error_log=wsgi_logger,
         )
+        # this is to prevent littering logs with geventwebsocket upgrade messages
+        logging.getLogger('geventwebsocket.handler').setLevel(logging.ERROR)
 
         if 'pytest' not in sys.modules:  # do not check
             if __debug__:
