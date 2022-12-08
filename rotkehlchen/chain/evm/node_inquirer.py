@@ -186,10 +186,9 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         self.chain_id = blockchain.to_chain_id()
         self.chain_name = self.blockchain.name.lower()
         # BalanceScanner from mycrypto: https://github.com/MyCryptoHQ/eth-scan
-        self.contract_scan = self.contracts.contract('ETH_SCAN')
+        self.contract_scan = self.contracts.contract('BALANCE_SCAN')
         # Multicall from MakerDAO: https://github.com/makerdao/multicall/
-        self.contract_multicall = self.contracts.contract('ETH_MULTICALL')
-        self.contract_multicall_2 = self.contracts.contract('ETH_MULTICALL_2')
+        self.contract_multicall = self.contracts.contract('MULTICALL2')
         self.queried_archive_connection = False
         self.archive_connection = False
 
@@ -920,7 +919,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         Uses MULTICALL_2 contract. If require success is set to False any call in the list
         of calls is allowed to fail.
         source: https://etherscan.io/address/0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696#code"""
-        return self.contract_multicall_2.call(
+        return self.contract_multicall.call(
             node_inquirer=self,
             method_name='tryAggregate',
             arguments=[require_success, calls],
