@@ -16,7 +16,8 @@ Changelog
 * :bug:`-` Users will be able to edit EVM tokens again and the information about underlying tokens will be correctly displayed.
 * :bug:`-` Fix an issue with nginx websocket proxying on docker.
 * :bug:`-` Now `Card Cashback Reversal` entries from cryptocom csv will be imported correctly.
-* :bug:`-` Make ethereum queries faster by removing dead open nodes. If the user has not customized the nodes they will be automatically replaced with the new ones. Otherwise a manual action is needed.
+* :bug:`-` Default list of open nodes has been modified. Users who used only defaults may notice an increase in speed. For others it depends on their selection and they are encouraged to review and modify their ethereum nodes list.
+
 
 * :release:`1.26.1 <2022-11-04>`
 * :feature:`5080` For custom assets with custom price there should no longer be any double conversion. So 1 euro should always be one euro.

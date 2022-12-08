@@ -6,6 +6,8 @@ from rotkehlchen.data_migrations.migrations.migration_2 import data_migration_2
 from rotkehlchen.data_migrations.migrations.migration_3 import data_migration_3
 from rotkehlchen.data_migrations.migrations.migration_4 import data_migration_4
 from rotkehlchen.data_migrations.migrations.migration_5 import data_migration_5
+from rotkehlchen.data_migrations.migrations.migration_6 import data_migration_6
+
 
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
@@ -29,6 +31,7 @@ MIGRATION_LIST = [
     MigrationRecord(version=3, function=data_migration_3),
     MigrationRecord(version=4, function=data_migration_4),
     MigrationRecord(version=5, function=data_migration_5),
+    MigrationRecord(version=6, function=data_migration_6),
 ]
 LAST_DATA_MIGRATION = len(MIGRATION_LIST)
 
