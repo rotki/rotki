@@ -220,8 +220,8 @@ def test_migration_4(rotkehlchen_api_server):
                     assert web3_node.weight == FVal(node['weight'])
                     continue
         assert len(web3_nodes) >= 5
-        assert web3_nodes[5].node_info.owned is True
-        assert web3_nodes[5].node_info.endpoint == 'https://localhost:5222'
+        assert web3_nodes[4].node_info.owned is True
+        assert web3_nodes[4].node_info.endpoint == 'https://localhost:5222'
 
 
 @pytest.mark.parametrize('data_migration_version', [None])
@@ -285,3 +285,118 @@ def test_migration_5(rotkehlchen_api_server):
     assert Path(icons_path, '_ceth_0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490_small.png').exists() is False  # noqa: E501
     assert Path(icons_path, '_ceth_0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D_small.png').exists() is False  # noqa: E501
     assert Path(icons_path, '_ceth_0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9_small.png').exists() is False  # noqa: E501
+
+
+def _get_nodes():
+    """Reads old (as of 1.26.1) and new nodes from json files and returns them"""
+    dir_path = Path(__file__).resolve().parent.parent.parent
+    with open(dir_path / 'data' / 'nodes_as_of_1-26-1.json', 'r') as f:
+        old_nodes_info = json.loads(f.read())
+    old_nodes = [
+        [node['name'], node['endpoint'], node['owned'], node['weight'], node['active'], node['blockchain']]  # noqa: E501
+        for node in old_nodes_info
+    ]
+    with open(dir_path / 'data' / 'nodes.json', 'r') as f:
+        new_nodes_info = json.loads(f.read())
+    new_nodes = {
+        (node['name'], node['endpoint'], node['owned'], node['weight'], node['blockchain'])  # noqa: E501
+        for node in new_nodes_info
+    }
+    return old_nodes, new_nodes
+
+
+def _write_nodes_and_migrate(database, rotki, nodes_to_write):
+    """
+    Writes the given nodes to the DB and applies 6th migration.
+    Returns nodes from the DB after the migration.
+    """
+    with database.user_write() as write_cursor:
+        write_cursor.executemany(
+            'INSERT INTO web3_nodes (name, endpoint, owned, weight, active, blockchain) VALUES (?, ?, ?, ?, ?, ?)',  # noqa: E501
+            nodes_to_write,
+        )
+    migration_patch = patch(
+        'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
+        new=[MIGRATION_LIST[5]],
+    )
+    with migration_patch:
+        DataMigrationManager(rotki).maybe_migrate_data()
+
+    # Now nodes should be the new defaults
+    with database.conn.read_ctx() as cursor:
+        nodes_in_db = cursor.execute('SELECT name, endpoint, owned, weight, blockchain FROM web3_nodes').fetchall()  # noqa: E501
+
+    return nodes_in_db
+
+
+@pytest.mark.parametrize('data_migration_version', [None])
+@pytest.mark.parametrize('perform_migrations_at_unlock', [False])
+@pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('perform_nodes_insertion', [False])
+def test_migration_6_default_rpc_nodes(rotkehlchen_api_server):
+    """
+    Test that the sixth data migration works when the user has not customized the nodes.
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    database = rotki.data.db
+    old_nodes, new_nodes = _get_nodes()
+
+    nodes_in_db = _write_nodes_and_migrate(database, rotki, old_nodes)
+
+    # Now nodes should be the new defaults
+    assert set(nodes_in_db) == new_nodes
+    assert FVal(sum([FVal(node[3]) for node in nodes_in_db])) == ONE
+
+
+@pytest.mark.parametrize('data_migration_version', [None])
+@pytest.mark.parametrize('perform_migrations_at_unlock', [False])
+@pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('perform_nodes_insertion', [False])
+def test_migration_6_customized_rpc_nodes(rotkehlchen_api_server):
+    """
+    Test that the sixth data migration works when the user has customized the rpc nodes.
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    database = rotki.data.db
+    old_nodes, _ = _get_nodes()
+
+    old_nodes[-1][0] = 'Renamed cloudflare'  # customize a node
+    # Also add a new node
+    old_nodes.append(('flashbots', 'https://rpc.flashbots.net/', False, 0.1, True, 'ETH'))
+
+    nodes_in_db = _write_nodes_and_migrate(database, rotki, old_nodes)
+
+    # Create the expected list of nodes. Check that the customized node is still there, all dead
+    # nodes were removed and that the nodes were reweighed properly.
+    expected_nodes = {
+        ('etherscan', '', False, 0.6, 'ETH'),
+        ('Renamed cloudflare', 'https://cloudflare-eth.com/', False, 0.2, 'ETH'),
+        ('flashbots', 'https://rpc.flashbots.net/', False, 0.2, 'ETH'),
+    }
+
+    assert set(nodes_in_db) == expected_nodes
+
+
+@pytest.mark.parametrize('data_migration_version', [None])
+@pytest.mark.parametrize('perform_migrations_at_unlock', [False])
+@pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('perform_nodes_insertion', [False])
+def test_migration_6_own_node(rotkehlchen_api_server):
+    """
+    Test that the sixth data migration works when user has no customized nodes but has
+    an own node set.
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    database = rotki.data.db
+    old_nodes, new_nodes = _get_nodes()
+    # Add an owned node
+    old_nodes.append(('Owned node', 'http://localhost:8045', True, 1, True, 'ETH'))
+
+    nodes_in_db = _write_nodes_and_migrate(database, rotki, old_nodes)
+    # Create the expected list of nodes. Check that the owned node is still there and that the
+    # defaults were replaced.
+    expected_nodes = {*new_nodes, ('Owned node', 'http://localhost:8045', 1, 1, 'ETH')}
+    assert set(nodes_in_db) == expected_nodes
