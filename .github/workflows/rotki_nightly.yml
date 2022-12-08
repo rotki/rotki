@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, macos-11 ]
+        os: [ ubuntu-20.04, macos-11 ]
     runs-on: ${{ matrix.os }}
     name: 'Backend tests on ${{ matrix.os }}'
     environment: test
