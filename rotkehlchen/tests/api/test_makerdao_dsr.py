@@ -111,7 +111,7 @@ def mock_etherscan_for_dsr(
     makerdao_dai_join = contracts.contract('MAKERDAO_DAI_JOIN')
     makerdao_pot = contracts.contract('MAKERDAO_POT')
     makerdao_vat = contracts.contract('MAKERDAO_VAT')
-    eth_multicall = contracts.contract('ETH_MULTICALL')
+    eth_multicall = contracts.contract('MULTICALL2')
 
     proxy1 = make_evm_address()
     proxy2 = make_evm_address()
@@ -171,7 +171,8 @@ def mock_etherscan_for_dsr(
                 if '&apikey' in data:
                     data = data.split('&apikey')[0]
 
-                fn_abi = contract.functions.abi[1]
+                fn_abi = contract.functions.abi[0]
+                assert fn_abi['name'] == 'aggregate', 'Abi position of multicall aggregate changed'
                 output_types = get_abi_output_types(fn_abi)
                 args = [1, proxies]
                 result = '0x' + web3.codec.encode_abi(output_types, args).hex()

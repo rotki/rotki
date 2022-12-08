@@ -205,8 +205,8 @@ def mock_etherscan_query(
         extra_flags: Optional[list[str]],
         original_requests_get,
 ):
-    eth_scan = ethereum.contracts.contract('ETH_SCAN')
-    eth_multicall = ethereum.contracts.contract('ETH_MULTICALL')
+    eth_scan = ethereum.contracts.contract('BALANCE_SCAN')
+    eth_multicall = ethereum.contracts.contract('MULTICALL2')
     original_queries = [] if original_queries is None else original_queries
     extra_flags = [] if extra_flags is None else extra_flags
 
@@ -351,7 +351,7 @@ def mock_etherscan_query(
                     data = data.split('&apikey')[0]
 
                 # Get the multicall aggregate input data
-                fn_abi = contract.functions.abi[1]
+                fn_abi = contract.functions.abi[0]
                 assert fn_abi['name'] == 'aggregate', 'Abi position of multicall aggregate changed'
                 input_types = get_abi_input_types(fn_abi)
                 output_types = get_abi_output_types(fn_abi)

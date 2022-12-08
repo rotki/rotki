@@ -141,9 +141,10 @@ def _add_eth_abis_json(cursor: 'DBCursor') -> None:
     log.debug('Exit _add_eth_abis_json')
 
 
-def _add_eth_contracts_json(cursor: 'DBCursor') -> None:
+def _add_eth_contracts_json(cursor: 'DBCursor') -> tuple[int, int]:
     log.debug('Enter _add_eth_contracts_json')
 
+    eth_scan_abi_id, multicall_abi_id = None, None
     root_dir = Path(__file__).resolve().parent.parent.parent
     with open(root_dir / 'data' / 'eth_contracts.json') as f:
         contract_entries = json.loads(f.read())
@@ -152,6 +153,9 @@ def _add_eth_contracts_json(cursor: 'DBCursor') -> None:
 
     contract_entries.update(dxdao_contracts)
     for contract_key, items in contract_entries.items():
+        if contract_key == 'ETH_MULTICALL':
+            continue  # skip it as is superseded by multicall2
+
         serialized_abi = json.dumps(items['abi'], separators=(',', ':'))
         if contract_key == 'UNISWAP_V3_NFT_MANAGER':
             abi_id = _get_abi(cursor, 'ERC721_TOKEN')
@@ -198,11 +202,20 @@ def _add_eth_contracts_json(cursor: 'DBCursor') -> None:
                 serialized_abi=serialized_abi,
             )
         else:  # need to add the abi to the DB
+            if contract_key == 'ETH_SCAN':
+                contract_key = 'BALANCE_SCAN'  # let's rename to non eth-specific
+            elif contract_key == 'ETH_MULTICALL_2':
+                contract_key = 'MULTICALL2'  # let's rename to non eth-specific
             abi_id = _insert_abi_return_id(
                 cursor=cursor,
                 name=contract_key,
                 serialized_abi=serialized_abi,
             )
+
+        if contract_key == 'BALANCE_SCAN':
+            eth_scan_abi_id = abi_id
+        elif contract_key == 'MULTICALL2':
+            multicall_abi_id = abi_id
 
         cursor.execute(
             'INSERT INTO contract_data(address, chain_id, name, abi, deployed_block) '
@@ -210,7 +223,37 @@ def _add_eth_contracts_json(cursor: 'DBCursor') -> None:
             (items['address'], 1, contract_key, abi_id, items['deployed_block']),
         )
 
+    if eth_scan_abi_id is None or multicall_abi_id is None:
+        raise DBUpgradeError(
+            'Failed to find either eth_scan or multicall abi id during v3->v4 global DB upgrade',
+        )
+
     log.debug('Exit _add_eth_contracts_json')
+    return eth_scan_abi_id, multicall_abi_id
+
+
+def _add_optimism_contracts(cursor: 'DBCursor', eth_scan_abi_id: int, multicall_abi_id: int) -> None:  # noqa: E501
+    log.debug('Enter _add_optimism_contracts')
+
+    cursor.executemany(
+        'INSERT INTO contract_data(address, chain_id, name, abi, deployed_block) '
+        'VALUES(?, ?, ?, ?, ?)',
+        [(
+            '0x1e21bc42FaF802A0F115dC998e2F0d522aDb1F68',
+            10,
+            'BALANCE_SCAN',
+            eth_scan_abi_id,
+            46787373,
+        ), (
+            '0x2DC0E2aa608532Da689e89e237dF582B783E552C',
+            10,
+            'MULTICALL2',
+            multicall_abi_id,
+            722566,
+        )],
+    )
+
+    log.debug('Exit _add_optimism_contracts')
 
 
 def migrate_to_v4(connection: 'DBConnection') -> None:
@@ -226,6 +269,7 @@ def migrate_to_v4(connection: 'DBConnection') -> None:
     with connection.write_ctx() as cursor:
         _create_new_tables(cursor)
         _add_eth_abis_json(cursor)
-        _add_eth_contracts_json(cursor)
+        eth_scan_abi_id, multicall_abi_id = _add_eth_contracts_json(cursor)
+        _add_optimism_contracts(cursor, eth_scan_abi_id, multicall_abi_id)
 
     log.debug('Finished globaldb v3->v4 upgrade')
