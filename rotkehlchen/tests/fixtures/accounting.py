@@ -8,8 +8,6 @@ import pytest
 
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.chain.ethereum.accounting.aggregator import EVMAccountingAggregator
-from rotkehlchen.chain.ethereum.oracles.saddle import SaddleOracle
-from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
 from rotkehlchen.config import default_data_directory
 from rotkehlchen.constants import ONE
 from rotkehlchen.externalapis.coingecko import Coingecko
@@ -19,7 +17,8 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.manual_price_oracles import ManualCurrentOracle
 from rotkehlchen.inquirer import DEFAULT_CURRENT_PRICE_ORACLES_ORDER, CurrentPriceOracle, Inquirer
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.types import ChainID, Timestamp
+from rotkehlchen.tests.utils.inquirer import inquirer_inject_ethereum_set_order
+from rotkehlchen.types import Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -196,6 +195,7 @@ def _create_inquirer(
         mocked_current_prices_with_oracles,
         current_price_oracles_order,
         ethereum_manager,
+        add_defi_oracles,
         ignore_mocked_prices_for=None,
 ) -> Inquirer:
     # Since this is a singleton and we want it initialized everytime the fixture
@@ -211,18 +211,16 @@ def _create_inquirer(
         manualcurrent=ManualCurrentOracle(),
         msg_aggregator=MessagesAggregator(),
     )
-    if ethereum_manager is not None:
-        inquirer.inject_evm_managers([(ChainID.ETHEREUM, ethereum_manager)])
-        uniswap_v2_oracle = UniswapV2Oracle(ethereum_manager.node_inquirer)
-        uniswap_v3_oracle = UniswapV3Oracle(ethereum_manager.node_inquirer)
-        saddle_oracle = SaddleOracle(ethereum_manager)
-        Inquirer().add_defi_oracles(
-            uniswap_v2=uniswap_v2_oracle,
-            uniswap_v3=uniswap_v3_oracle,
-            saddle=saddle_oracle,
-        )
-    inquirer.set_oracles_order(current_price_oracles_order)
 
+    if ethereum_manager is not None:
+        inquirer_inject_ethereum_set_order(
+            inquirer=inquirer,
+            add_defi_oracles=add_defi_oracles,
+            current_price_oracles_order=current_price_oracles_order,
+            ethereum_manager=ethereum_manager,
+        )
+
+    inquirer.set_oracles_order(current_price_oracles_order)
     if not should_mock_current_price_queries:
         return inquirer
 
@@ -361,9 +359,9 @@ def fixture_inquirer(
         current_price_oracles_order,
         ignore_mocked_prices_for,
 ):
-    """This version of the inquirer doesn't make use of the defi oracles and is initialized
-    with ethereum_manager as None. To make use of the defi oracles use `inquirer_defi`.
-    The reason is that some tests became really slow because they exhausted the coingecko/cc
+    """This version of the inquirer doesn't make use of the defi oracles.
+    To make use of the defi oracles use `inquirer_defi`. The reason is that some
+    tests became really slow because they exhausted the coingecko/cc
     oracles and used the defi ones.
     """
     return _create_inquirer(
@@ -372,6 +370,7 @@ def fixture_inquirer(
         mocked_prices=mocked_current_prices,
         mocked_current_prices_with_oracles=mocked_current_prices_with_oracles,
         current_price_oracles_order=current_price_oracles_order,
+        add_defi_oracles=False,
         ethereum_manager=None,
         ignore_mocked_prices_for=ignore_mocked_prices_for,
     )
@@ -389,6 +388,9 @@ def session_inquirer(
     """
     The ethereum_manager argument is defined as None for the reasons explained in the
     `inquirer` fixture
+
+    This fixtures is only used by 3 exchanges session objects for convenience.
+    At the time of writing: poloniex, kraken, bittrex. Grep to be sure current state of things
     """
     return _create_inquirer(
         data_directory=session_data_dir,
@@ -397,6 +399,7 @@ def session_inquirer(
         mocked_current_prices_with_oracles=session_mocked_current_prices_with_oracles,
         current_price_oracles_order=session_current_price_oracles_order,
         ethereum_manager=None,
+        add_defi_oracles=False,
     )
 
 
@@ -421,5 +424,6 @@ def fixture_inquirer_defi(
         mocked_current_prices_with_oracles=mocked_current_prices_with_oracles,
         current_price_oracles_order=current_price_oracles_order,
         ethereum_manager=ethereum_manager,
+        add_defi_oracles=True,
         ignore_mocked_prices_for=ignore_mocked_prices_for,
     )

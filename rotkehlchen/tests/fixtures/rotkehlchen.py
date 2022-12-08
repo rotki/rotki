@@ -12,6 +12,7 @@ from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.db.upgrade_manager import DBUpgradeManager
 from rotkehlchen.exchanges.constants import EXCHANGES_WITH_PASSPHRASE
 from rotkehlchen.history.price import PriceHistorian
+from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.premium.premium import Premium, PremiumCredentials
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.api import create_api_server
@@ -29,6 +30,7 @@ from rotkehlchen.tests.utils.database import (
 from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
 from rotkehlchen.tests.utils.factories import make_random_b64bytes
 from rotkehlchen.tests.utils.history import maybe_mock_historical_price_queries
+from rotkehlchen.tests.utils.inquirer import inquirer_inject_ethereum_set_order
 from rotkehlchen.tests.utils.substrate import wait_until_all_substrate_nodes_connected
 from rotkehlchen.types import AVAILABLE_MODULES_MAP, Location
 
@@ -132,6 +134,7 @@ def initialize_mock_rotkehlchen_instance(
         perform_migrations_at_unlock,
         perform_upgrades_at_unlock,
         perform_nodes_insertion,
+        current_price_oracles_order,
 ):
     if not start_with_logged_in_user:
         return
@@ -215,6 +218,13 @@ def initialize_mock_rotkehlchen_instance(
             sync_approval='no',
             premium_credentials=None,
         )
+
+    inquirer_inject_ethereum_set_order(
+        inquirer=Inquirer(),
+        add_defi_oracles=False,
+        current_price_oracles_order=current_price_oracles_order,
+        ethereum_manager=rotki.chains_aggregator.ethereum,
+    )
     # configure when task manager should run for tests
     rotki.task_manager.max_tasks_num = max_tasks_num
 
@@ -302,6 +312,7 @@ def fixture_rotkehlchen_api_server(
         perform_migrations_at_unlock,
         perform_upgrades_at_unlock,
         perform_nodes_insertion,
+        current_price_oracles_order,
 ):
     """A partially mocked rotkehlchen server instance"""
 
@@ -339,6 +350,7 @@ def fixture_rotkehlchen_api_server(
         perform_migrations_at_unlock=perform_migrations_at_unlock,
         perform_upgrades_at_unlock=perform_upgrades_at_unlock,
         perform_nodes_insertion=perform_nodes_insertion,
+        current_price_oracles_order=current_price_oracles_order,
     )
     yield api_server
     api_server.stop()
@@ -374,6 +386,7 @@ def rotkehlchen_instance(
         perform_migrations_at_unlock,
         perform_upgrades_at_unlock,
         perform_nodes_insertion,
+        current_price_oracles_order,
 ):
     """A partially mocked rotkehlchen instance"""
 
@@ -406,6 +419,7 @@ def rotkehlchen_instance(
         perform_migrations_at_unlock=perform_migrations_at_unlock,
         perform_upgrades_at_unlock=perform_upgrades_at_unlock,
         perform_nodes_insertion=perform_nodes_insertion,
+        current_price_oracles_order=current_price_oracles_order,
     )
     return uninitialized_rotkehlchen
 
