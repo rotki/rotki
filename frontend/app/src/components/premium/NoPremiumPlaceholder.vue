@@ -8,6 +8,7 @@
               <rotki-logo
                 :width="currentBreakpoint.xsOnly ? 110 : 160"
                 :height="currentBreakpoint.xsOnly ? 110 : 160"
+                :url="remoteEmptyScreenLogo"
               />
             </div>
           </v-col>
@@ -54,6 +55,8 @@ defineProps({
 
 const { t } = useI18n();
 const { currentBreakpoint } = useTheme();
+const remoteEmptyScreenLogo =
+  'https://raw.githubusercontent.com/rotki/data/main/assets/icons/empty_screen_logo.png';
 </script>
 
 <style module lang="scss">

@@ -3,7 +3,10 @@
     <v-row align="center" justify="center" :class="{ 'mb-10': !full }">
       <v-col cols="auto" :class="css.logo">
         <slot name="logo">
-          <rotki-logo :width="isMobile ? '100px' : '200px'" />
+          <rotki-logo
+            :width="isMobile ? '100px' : '200px'"
+            :url="remoteEmptyScreenLogo"
+          />
         </slot>
       </v-col>
     </v-row>
@@ -29,6 +32,8 @@ defineProps({
 const slots = useSlots();
 const css = useCssModule();
 const { isMobile } = useTheme();
+const remoteEmptyScreenLogo =
+  'https://raw.githubusercontent.com/rotki/data/main/assets/icons/empty_screen_logo.png';
 </script>
 
 <style module lang="scss">

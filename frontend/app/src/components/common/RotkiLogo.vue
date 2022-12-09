@@ -11,7 +11,7 @@
     :width="width"
     :height="height"
     contain
-    :src="remoteLogo"
+    :src="url"
     @loadstart="error = false"
     @load="error = false"
     @error="error = true"
@@ -30,10 +30,13 @@ defineProps({
     required: false,
     type: [String, Number],
     default: 'auto'
+  },
+  url: {
+    required: false,
+    type: String,
+    default: null
   }
 });
 
 const error: Ref<boolean> = ref(false);
-const remoteLogo =
-  'https://raw.githubusercontent.com/rotki/rotki/develop/frontend/app/public/remote/logo.png';
 </script>
