@@ -1,8 +1,8 @@
 import { api } from '@/services/rotkehlchen-api';
 import { useUsersApi } from '@/services/session/users.api';
-import { Version } from '@/store/types';
-import { Nullable } from '@/types';
-import { LogLevel } from '@/utils/log-level';
+import { type Version } from '@/store/types';
+import { type Nullable } from '@/types';
+import { type LogLevel } from '@/utils/log-level';
 import { getDefaultLogLevel, logger, setLevel } from '@/utils/logging';
 
 let intervalId: any = null;
@@ -18,14 +18,14 @@ export const useMainStore = defineStore('main', () => {
 
   const updateNeeded = computed(() => {
     const { version: appVersion, downloadUrl } = get(version);
-    return appVersion.indexOf('dev') >= 0 ? false : !!downloadUrl;
+    return appVersion.includes('dev') ? false : !!downloadUrl;
   });
 
   const appVersion = computed(() => {
     const { version: appVersion } = get(version);
     const indexOfDev = appVersion.indexOf('dev');
     return indexOfDev > 0
-      ? appVersion.substring(0, indexOfDev + 3)
+      ? appVersion.slice(0, Math.max(0, indexOfDev + 3))
       : appVersion;
   });
 

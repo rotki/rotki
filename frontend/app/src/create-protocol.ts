@@ -1,7 +1,7 @@
-import { readFile } from 'fs';
-import * as path from 'path';
-import { URL } from 'url';
-import { Protocol, protocol } from 'electron';
+import { readFile } from 'node:fs';
+import * as path from 'node:path';
+import { URL } from 'node:url';
+import { type Protocol, protocol } from 'electron';
 
 export default (scheme: string, customProtocol?: Protocol) => {
   (customProtocol || protocol).registerBufferProtocol(

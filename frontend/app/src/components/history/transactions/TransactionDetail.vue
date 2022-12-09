@@ -74,10 +74,10 @@
   </card>
 </template>
 <script setup lang="ts">
-import { BigNumber } from '@rotki/common';
-import { PropType } from 'vue';
-import { EthTransactionEntry } from '@/store/history/types';
-import { toUnit, Unit } from '@/utils/calculation';
+import { type BigNumber } from '@rotki/common';
+import { type PropType } from 'vue';
+import { type EthTransactionEntry } from '@/store/history/types';
+import { Unit, toUnit } from '@/utils/calculation';
 
 const props = defineProps({
   transaction: {

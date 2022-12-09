@@ -1,6 +1,6 @@
 import { NumericString } from '@rotki/common';
 import { SupportedAsset } from '@rotki/common/lib/data';
-import { AxiosInstance } from 'axios';
+import { type AxiosInstance } from 'axios';
 import { z } from 'zod';
 import { ActiveLogLevel } from '@/electron-main/ipc';
 
@@ -21,7 +21,12 @@ export const SupportedAssets = z.object({
 
 export type SupportedAssets = z.infer<typeof SupportedAssets>;
 
-export class TaskNotFoundError extends Error {}
+export class TaskNotFoundError extends Error {
+  constructor(msg: string) {
+    super(msg);
+    this.name = 'TaskNotFoundError';
+  }
+}
 
 export interface PendingTask {
   readonly taskId: number;

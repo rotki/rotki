@@ -68,8 +68,11 @@
 </template>
 
 <script setup lang="ts">
-import { XswapAsset, XswapBalance } from '@rotki/common/lib/defi/xswap';
-import { PropType } from 'vue';
+import {
+  type XswapAsset,
+  type XswapBalance
+} from '@rotki/common/lib/defi/xswap';
+import { type PropType } from 'vue';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { One } from '@/utils/bignumbers';
 

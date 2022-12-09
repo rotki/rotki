@@ -1,7 +1,7 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { Ref } from 'vue';
-import { GeneralAccountData } from '@/services/types-api';
-import { RestChains } from '@/types/blockchain/chains';
+import { type Ref } from 'vue';
+import { type GeneralAccountData } from '@/services/types-api';
+import { type RestChains } from '@/types/blockchain/chains';
 import { removeTags } from '@/utils/tags';
 
 export const useChainsAccountsStore = defineStore(

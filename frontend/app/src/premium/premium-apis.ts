@@ -1,23 +1,23 @@
-import { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
-import { ProfitLossModel } from '@rotki/common/lib/defi';
+import { type AssetBalanceWithPrice, type BigNumber } from '@rotki/common';
+import { type ProfitLossModel } from '@rotki/common/lib/defi';
 import {
-  AssetsApi,
-  BalancerApi,
-  BalancesApi,
-  CompoundApi,
-  StatisticsApi,
-  SushiApi,
-  UserSettingsApi,
-  UtilsApi
+  type AssetsApi,
+  type BalancerApi,
+  type BalancesApi,
+  type CompoundApi,
+  type StatisticsApi,
+  type SushiApi,
+  type UserSettingsApi,
+  type UtilsApi
 } from '@rotki/common/lib/premium';
 import {
-  LocationData,
-  OwnedAssets,
-  TimedAssetBalances,
-  TimedBalances
+  type LocationData,
+  type OwnedAssets,
+  type TimedAssetBalances,
+  type TimedBalances
 } from '@rotki/common/lib/statistics';
-import { MaybeRef } from '@vueuse/core';
-import { ComputedRef } from 'vue';
+import { type MaybeRef } from '@vueuse/core';
+import { type ComputedRef } from 'vue';
 import { setupLiquidityPosition } from '@/composables/defi';
 import { truncateAddress } from '@/filters';
 import { api } from '@/services/rotkehlchen-api';

@@ -1,8 +1,11 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Severity } from '@rotki/common/lib/messages';
-import { MaybeRef } from '@vueuse/core';
+import { type MaybeRef } from '@vueuse/core';
 import { useNonFungibleBalancesStore } from '@/store/balances/non-fungible';
-import { AccountPayload, AddAccountsPayload } from '@/store/balances/types';
+import {
+  type AccountPayload,
+  type AddAccountsPayload
+} from '@/store/balances/types';
 import { useAccountBalancesStore } from '@/store/blockchain/accountbalances';
 import { useBlockchainAccountsStore } from '@/store/blockchain/accounts';
 import { useBlockchainBalancesStore } from '@/store/blockchain/balances';
@@ -117,10 +120,11 @@ export const useBlockchainStore = defineStore('blockchain', () => {
 
     const failedPayload: AccountPayload[] = [];
 
-    if (filteredPayload.length === 1) {
-      if (promiseResult[0].status === 'rejected') {
-        throw promiseResult[0].reason;
-      }
+    if (
+      filteredPayload.length === 1 &&
+      promiseResult[0].status === 'rejected'
+    ) {
+      throw promiseResult[0].reason;
     }
 
     promiseResult.forEach((res, index) => {

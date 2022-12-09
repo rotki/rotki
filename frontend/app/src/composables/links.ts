@@ -1,4 +1,4 @@
-import { Ref } from 'vue';
+import { type Ref } from 'vue';
 import { useInterop } from '@/electron-interop';
 
 export const useLinks = (url?: Ref<string>) => {

@@ -214,8 +214,8 @@
 
 <script setup lang="ts">
 import { dropRight } from 'lodash';
-import { PropType, Ref } from 'vue';
-import { DataTableHeader } from 'vuetify';
+import { type PropType, type Ref } from 'vue';
+import { type DataTableHeader } from 'vuetify';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
@@ -237,10 +237,14 @@ import { setupIgnore } from '@/composables/history';
 import { Routes } from '@/router/routes';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useTrades } from '@/store/history/trades';
-import { IgnoreActionType, TradeEntry } from '@/store/history/types';
+import { IgnoreActionType, type TradeEntry } from '@/store/history/types';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { TradeLocation } from '@/types/history/trade-location';
-import { NewTrade, Trade, TradeRequestPayload } from '@/types/history/trades';
+import { type TradeLocation } from '@/types/history/trade-location';
+import {
+  type NewTrade,
+  type Trade,
+  type TradeRequestPayload
+} from '@/types/history/trades';
 import { Section } from '@/types/status';
 
 interface PaginationOptions {
@@ -284,7 +288,7 @@ const { tc } = useI18n();
 const loading = isSectionLoading(Section.TRADES);
 
 const tableHeaders = computed<DataTableHeader[]>(() => {
-  let overview = get(locationOverview);
+  const overview = get(locationOverview);
   const headers: DataTableHeader[] = [
     {
       text: '',
@@ -388,8 +392,8 @@ const promptForDelete = (trade: TradeEntry) => {
       : tc('closed_trades.description.for')
   ).toLocaleLowerCase();
 
-  let base = get(assetSymbol(trade.baseAsset));
-  let quote = get(assetSymbol(trade.quoteAsset));
+  const base = get(assetSymbol(trade.baseAsset));
+  const quote = get(assetSymbol(trade.quoteAsset));
   set(
     confirmationMessage,
     tc('closed_trades.confirmation.message', 0, {
@@ -458,7 +462,7 @@ const confirmSave = async () => {
 };
 
 const saveData = async (trade: NewTrade | TradeEntry) => {
-  if ((<TradeEntry>trade).tradeId) {
+  if ((trade as TradeEntry).tradeId) {
     return await editExternalTrade(trade as TradeEntry);
   }
   return await addExternalTrade(trade as NewTrade);

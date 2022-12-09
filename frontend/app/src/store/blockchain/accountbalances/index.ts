@@ -1,14 +1,14 @@
-import { GeneralAccount } from '@rotki/common/lib/account';
+import { type GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { ComputedRef, Ref } from 'vue';
+import { type ComputedRef, type Ref } from 'vue';
 import {
-  AssetBreakdown,
-  BlockchainAccountWithBalance
+  type AssetBreakdown,
+  type BlockchainAccountWithBalance
 } from '@/store/balances/types';
 import { useBtcAccountBalancesStore } from '@/store/blockchain/accountbalances/btc';
 import { useChainAccountBalancesStore } from '@/store/blockchain/accountbalances/chain';
 import { useEthAccountBalancesStore } from '@/store/blockchain/accountbalances/eth';
-import { BlockchainTotal } from '@/types/blockchain';
+import { type BlockchainTotal } from '@/types/blockchain';
 import { sortDesc } from '@/utils/bignumbers';
 import { uniqueStrings } from '@/utils/data';
 
@@ -59,14 +59,13 @@ export const useAccountBalancesStore = defineStore(
 
       const accounts = get(mapping[blockchain]);
       return accounts
-        .map(account => {
+        .flatMap(account => {
           const acc = [account.address.toLocaleLowerCase()];
           if ('xpub' in account) {
             acc.push(account.xpub);
           }
           return acc;
         })
-        .flat()
         .filter(uniqueStrings);
     };
 

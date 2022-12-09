@@ -1,4 +1,4 @@
-import { ExternalTrade } from '../../support/types';
+import { type ExternalTrade } from '../../support/types';
 import { selectAsset } from '../../support/utils';
 
 export class TradeHistoryPage {

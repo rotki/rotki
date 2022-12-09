@@ -105,10 +105,10 @@ jobs:
         uses: actions/cache@v3
         with:
           path: |
-            frontend/app/.eslintcache
-            frontend/common/.eslintcache
+            frontend/.eslintcache
           key: ${{ runner.os }}-eslint-${{ github.ref_name }}
           restore-keys: |
+            ${{ runner.os }}-eslint-${{ github.ref_name }}          
             ${{ runner.os }}-eslint-${{ github.base_ref || github.ref_name }}
       - name: Install dependencies
         working-directory: ./frontend
@@ -120,18 +120,12 @@ jobs:
       - name: Build
         working-directory: ./frontend
         run: |
-          if [ ${{ github.event_name }} == 'push' ]; then          
-            npm run build -w @rotki/common
-          else
+          if [ ${{ github.event_name }} != 'push' ]; then                    
             npm run build
           fi
       - name: Lint code
         working-directory: ./frontend
         run: npm run lint
-      - name: Lint style
-        if: ${{ github.event_name != 'push' }}
-        working-directory: ./frontend/app
-        run: npm run lint:style
 
   unittest-frontend:
     name: 'Frontend unit tests'

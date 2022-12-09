@@ -1,4 +1,4 @@
-import { mount, Wrapper } from '@vue/test-utils';
+import { type Wrapper, mount } from '@vue/test-utils';
 import { set } from '@vueuse/core';
 import flushPromises from 'flush-promises/index';
 import { createPinia, setActivePinia, storeToRefs } from 'pinia';
@@ -38,7 +38,7 @@ describe('PremiumSettings.vue', () => {
   }
 
   beforeEach(() => {
-    document.body.setAttribute('data-app', 'true');
+    document.body.dataset.app = 'true';
     wrapper = createWrapper();
   });
 

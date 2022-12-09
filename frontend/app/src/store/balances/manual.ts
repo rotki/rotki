@@ -1,30 +1,30 @@
-import { BigNumber } from '@rotki/common';
-import { MaybeRef } from '@vueuse/core';
-import { ComputedRef, Ref } from 'vue';
+import { type BigNumber } from '@rotki/common';
+import { type MaybeRef } from '@vueuse/core';
+import { type ComputedRef, type Ref } from 'vue';
 import { useStatusUpdater } from '@/composables/status';
 import { useManualBalancesApi } from '@/services/balances/manual';
 import { BalanceType } from '@/services/balances/types';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useBalancePricesStore } from '@/store/balances/prices';
-import { AssetBreakdown } from '@/store/balances/types';
+import { type AssetBreakdown } from '@/store/balances/types';
 import { useMessageStore } from '@/store/message';
 import { useNotifications } from '@/store/notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTasks } from '@/store/tasks';
-import { ActionStatus } from '@/store/types';
+import { type ActionStatus } from '@/store/types';
 import {
-  LocationBalance,
-  BalanceByLocation,
-  AssetBalances
+  type AssetBalances,
+  type BalanceByLocation,
+  type LocationBalance
 } from '@/types/balances';
 import {
-  ManualBalance,
-  ManualBalances,
-  ManualBalanceWithValue
+  type ManualBalance,
+  type ManualBalanceWithValue,
+  ManualBalances
 } from '@/types/manual-balances';
-import { AssetPrices } from '@/types/prices';
+import { type AssetPrices } from '@/types/prices';
 import { Section, Status } from '@/types/status';
-import { TaskMeta } from '@/types/task';
+import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { appendAssetBalance } from '@/utils/balances';
 import { sortDesc } from '@/utils/bignumbers';

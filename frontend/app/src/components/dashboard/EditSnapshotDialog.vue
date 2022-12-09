@@ -82,7 +82,7 @@
   </v-dialog>
 </template>
 <script setup lang="ts">
-import { ComputedRef, Ref } from 'vue';
+import { type ComputedRef, type Ref } from 'vue';
 import EditBalancesSnapshotTable from '@/components/dashboard/EditBalancesSnapshotTable.vue';
 import EditLocationDataSnapshotTable from '@/components/dashboard/EditLocationDataSnapshotTable.vue';
 import EditSnapshotTotal from '@/components/dashboard/EditSnapshotTotal.vue';
@@ -91,10 +91,10 @@ import { useMessageStore } from '@/store/message';
 import { useNotifications } from '@/store/notifications';
 import { useStatisticsStore } from '@/store/statistics';
 import {
-  BalanceSnapshot,
-  LocationDataSnapshot,
-  Snapshot,
-  SnapshotPayload
+  type BalanceSnapshot,
+  type LocationDataSnapshot,
+  type Snapshot,
+  type SnapshotPayload
 } from '@/types/snapshots';
 import { sortDesc } from '@/utils/bignumbers';
 

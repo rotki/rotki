@@ -3,7 +3,10 @@ import { useAppNavigation } from '@/composables/navigation';
 import { usePremiumReminder } from '@/composables/premium';
 import { useSessionStore } from '@/store/session';
 import { useSessionAuthStore } from '@/store/session/auth';
-import { CreateAccountPayload, LoginCredentials } from '@/types/login';
+import {
+  type CreateAccountPayload,
+  type LoginCredentials
+} from '@/types/login';
 import { setLastLogin } from '@/utils/account-management';
 
 export const useAccountManagement = () => {

@@ -1,28 +1,28 @@
 import isEqual from 'lodash/isEqual';
-import { Ref } from 'vue';
+import { type Ref } from 'vue';
 import { useStatusUpdater } from '@/composables/status';
 import { api } from '@/services/rotkehlchen-api';
 import { useAssociatedLocationsStore } from '@/store/history/associated-locations';
-import { TradeEntry } from '@/store/history/types';
+import { type TradeEntry } from '@/store/history/types';
 import {
   defaultHistoricPayloadState,
   mapCollectionEntriesWithMeta
 } from '@/store/history/utils';
 import { useNotifications } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
-import { ActionStatus } from '@/store/types';
-import { Collection, CollectionResponse } from '@/types/collection';
-import { SupportedExchange } from '@/types/exchanges';
-import { EntryWithMeta } from '@/types/history/meta';
-import { TradeLocation } from '@/types/history/trade-location';
+import { type ActionStatus } from '@/store/types';
+import { type Collection, type CollectionResponse } from '@/types/collection';
+import { type SupportedExchange } from '@/types/exchanges';
+import { type EntryWithMeta } from '@/types/history/meta';
+import { type TradeLocation } from '@/types/history/trade-location';
 import {
-  NewTrade,
-  Trade,
+  type NewTrade,
+  type Trade,
   TradeCollectionResponse,
-  TradeRequestPayload
+  type TradeRequestPayload
 } from '@/types/history/trades';
 import { Section, Status } from '@/types/status';
-import { TaskMeta } from '@/types/task';
+import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { useTradeLocations } from '@/types/trades';
 import {

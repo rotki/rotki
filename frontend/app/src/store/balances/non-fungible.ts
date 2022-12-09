@@ -1,21 +1,21 @@
-import { BigNumber } from '@rotki/common';
+import { type BigNumber } from '@rotki/common';
 import isEqual from 'lodash/isEqual';
-import { Ref } from 'vue';
+import { type Ref } from 'vue';
 import { useStatusUpdater } from '@/composables/status';
 import { useNftBalanceApi } from '@/services/balances/nft';
 import { useNotifications } from '@/store/notifications';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTasks } from '@/store/tasks';
-import { Collection } from '@/types/collection';
+import { type Collection } from '@/types/collection';
 import { Module } from '@/types/modules';
 import {
-  NonFungibleBalance,
+  type NonFungibleBalance,
   NonFungibleBalancesCollectionResponse,
-  NonFungibleBalancesRequestPayload
+  type NonFungibleBalancesRequestPayload
 } from '@/types/nfbalances';
 import { Section, Status } from '@/types/status';
-import { TaskMeta } from '@/types/task';
+import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { Zero } from '@/utils/bignumbers';
 import {

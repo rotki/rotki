@@ -239,7 +239,7 @@
 
     <div class="my-4">
       <asset-icon-form
-        ref="assetIconForm"
+        :ref="assetIconFormRef"
         :identifier="identifier"
         refreshable
       />
@@ -250,14 +250,13 @@
 <script setup lang="ts">
 import { onlyIfTruthy } from '@rotki/common';
 import {
-  EvmChain,
-  EvmTokenKind,
-  SupportedAsset,
-  UnderlyingToken
+  type EvmChain,
+  type EvmTokenKind,
+  type SupportedAsset,
+  type UnderlyingToken
 } from '@rotki/common/lib/data';
 import { omit } from 'lodash';
-import { ComputedRef, PropType, Ref } from 'vue';
-import AssetIconForm from '@/components/asset-manager/AssetIconForm.vue';
+import { type ComputedRef, type PropType, type Ref } from 'vue';
 import UnderlyingTokenManager from '@/components/asset-manager/UnderlyingTokenManager.vue';
 import CopyButton from '@/components/helper/CopyButton.vue';
 import Fragment from '@/components/helper/Fragment';
@@ -279,6 +278,7 @@ import {
   sanitizeAddress,
   toSentenceCase
 } from '@/utils/text';
+import AssetIconForm from '@/components/asset-manager/AssetIconForm.vue';
 
 function time(t: string): number | undefined {
   return t ? convertToTimestamp(t) : undefined;
@@ -326,7 +326,8 @@ const dontAutoFetch = ref<boolean>(false);
 
 const underlyingTokens = ref<UnderlyingToken[]>([]);
 
-const assetIconForm: Ref<InstanceType<typeof AssetIconForm> | null> = ref(null);
+const assetIconFormRef: Ref<InstanceType<typeof AssetIconForm> | null> =
+  ref(null);
 const errors = ref<Record<string, string[]>>({});
 
 const isEvmToken = computed<boolean>(() => {
@@ -366,7 +367,7 @@ const asset: ComputedRef<Omit<SupportedAsset, 'identifier' | 'type'>> =
       address: get(address),
       name: get(name),
       symbol: get(symbol),
-      decimals: parseInt(get(decimals)),
+      decimals: Number.parseInt(get(decimals)),
       coingecko: get(coingeckoEnabled) ? onlyIfTruthy(get(coingecko)) : null,
       cryptocompare: get(cryptocompareEnabled)
         ? onlyIfTruthy(get(cryptocompare))
@@ -497,7 +498,7 @@ const save = async () => {
       ? await saveEthereumToken()
       : await saveAsset();
     set(identifier, newIdentifier);
-    await get(assetIconForm)?.saveIcon(newIdentifier);
+    await get(assetIconFormRef)?.saveIcon(newIdentifier);
     return true;
   } catch (e: any) {
     const message = deserializeApiErrorMessage(e.message) as any;

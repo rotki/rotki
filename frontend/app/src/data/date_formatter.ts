@@ -1,5 +1,5 @@
 export class DateFormatter {
-  private regex = /%-?[a-zA-Z]/gm;
+  private regex = /%-?[A-Za-z]/gm;
   private translations: Record<string, (date: Date, locale: string) => string> =
     {
       a: (date: Date, locale: string) =>
@@ -71,7 +71,7 @@ export class DateFormatter {
 
   private static amPm(date: Date, locale: string): string {
     const timeString = date.toLocaleTimeString(locale, { hour12: true });
-    return timeString.substr(timeString.length - 2);
+    return timeString.slice(-2);
   }
 
   private static timezone(date: Date, locale: string): string {
@@ -122,7 +122,7 @@ export class DateFormatter {
       }
 
       m.forEach(match => {
-        const matched = match.substr(1);
+        const matched = match.slice(1);
         formattedString = formattedString.replace(
           match,
           this.translations[matched]?.(date, this.locale) || ''

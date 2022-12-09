@@ -1,4 +1,4 @@
-import { ActionResult } from '@rotki/common/lib/data';
+import { type ActionResult } from '@rotki/common/lib/data';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
@@ -7,9 +7,9 @@ import {
   validWithSessionStatus
 } from '@/services/utils';
 import {
-  ExternalServiceKey,
+  type ExternalServiceKey,
   ExternalServiceKeys,
-  ExternalServiceName
+  type ExternalServiceName
 } from '@/types/user';
 
 export const useExternalServicesApi = () => {

@@ -1,14 +1,14 @@
-import { Ref } from 'vue';
+import { type Ref } from 'vue';
 import { convertKeys } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import { useNotifications } from '@/store/notifications';
-import { Nullable } from '@/types';
+import { type Nullable } from '@/types';
 import {
   LegacyMessageData,
   MESSAGE_WARNING,
   PremiumStatusUpdateData,
   SocketMessageType,
-  WebsocketMessage
+  type WebsocketMessage
 } from '@/types/websocket-messages';
 import { startPromise } from '@/utils';
 import { logger } from '@/utils/logging';
@@ -93,23 +93,23 @@ export const useWebsocketStore = defineStore('websocket', () => {
       const ws = new WebSocket(url);
       set(connection, ws);
       ws.onmessage = async (event): Promise<void> => await handleMessage(event);
-      ws.onopen = (): void => {
+      ws.addEventListener('open', (): void => {
         logger.debug('websocket connected');
         set(connected, true);
         resolve(true);
-      };
+      });
       ws.onerror = (): void => {
         logger.error('websocket connection failed');
         set(connected, false);
         resolve(false);
       };
-      ws.onclose = (event): void => {
+      ws.addEventListener('close', (event): void => {
         logger.debug('websocket connection closed');
         set(connected, false);
         if (!event.wasClean) {
           startPromise(reconnect());
         }
-      };
+      });
     });
   }
 

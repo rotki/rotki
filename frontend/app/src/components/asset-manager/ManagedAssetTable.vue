@@ -154,9 +154,9 @@
 </template>
 
 <script setup lang="ts">
-import { SupportedAsset } from '@rotki/common/lib/data';
-import { PropType, Ref } from 'vue';
-import { DataTableHeader } from 'vuetify';
+import { type SupportedAsset } from '@rotki/common/lib/data';
+import { type PropType, type Ref } from 'vue';
+import { type DataTableHeader } from 'vuetify';
 import AssetUnderlyingTokens from '@/components/asset-manager/AssetUnderlyingTokens.vue';
 import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
 import CopyButton from '@/components/helper/CopyButton.vue';
@@ -169,12 +169,12 @@ import { CUSTOM_ASSET } from '@/services/assets/consts';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useMessageStore } from '@/store/message';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { ActionStatus } from '@/store/types';
+import { type ActionStatus } from '@/store/types';
 import {
-  AssetPagination,
-  AssetPaginationOptions,
-  defaultAssetPagination,
-  IgnoredAssetsHandlingType
+  type AssetPagination,
+  type AssetPaginationOptions,
+  type IgnoredAssetsHandlingType,
+  defaultAssetPagination
 } from '@/types/assets';
 import { convertPagination } from '@/types/pagination';
 import { getAddressFromEvmIdentifier, isEvmIdentifier } from '@/utils/assets';
@@ -329,7 +329,7 @@ const massIgnore = async (ignored: boolean) => {
 const updatePaginationHandler = (updateOptions: AssetPaginationOptions) => {
   set(options, updateOptions);
 
-  let apiPagination = convertPagination<SupportedAsset>(
+  const apiPagination = convertPagination<SupportedAsset>(
     updateOptions,
     'symbol'
   ) as AssetPagination;

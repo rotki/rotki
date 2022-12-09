@@ -1,4 +1,4 @@
-import { BigNumber } from '@rotki/common';
+import { type BigNumber } from '@rotki/common';
 
 export interface Collection<T> {
   data: T[];

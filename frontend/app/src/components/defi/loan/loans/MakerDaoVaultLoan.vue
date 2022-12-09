@@ -41,8 +41,8 @@
 </template>
 
 <script setup lang="ts">
-import { BigNumber } from '@rotki/common';
-import { ComputedRef, PropType } from 'vue';
+import { type BigNumber } from '@rotki/common';
+import { type ComputedRef, type PropType } from 'vue';
 import LoanDebt from '@/components/defi/loan/LoanDebt.vue';
 import LoanHeader from '@/components/defi/loan/LoanHeader.vue';
 import MakerDaoVaultCollateral from '@/components/defi/loan/loans/makerdao/MakerDaoVaultCollateral.vue';
@@ -53,7 +53,10 @@ import { useInterop } from '@/electron-interop';
 import { VaultEventsList } from '@/premium/premium';
 import { usePremiumStore } from '@/store/session/premium';
 import { useSessionSettingsStore } from '@/store/settings/session';
-import { MakerDAOVaultEvent, MakerDAOVaultModel } from '@/types/defi/maker';
+import {
+  type MakerDAOVaultEvent,
+  type MakerDAOVaultModel
+} from '@/types/defi/maker';
 import { Zero } from '@/utils/bignumbers';
 
 const props = defineProps({

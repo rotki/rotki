@@ -94,8 +94,8 @@
 </template>
 
 <script setup lang="ts">
-import { PropType, useListeners } from 'vue';
-import { DataTableHeader } from 'vuetify';
+import { type PropType, useListeners } from 'vue';
+import { type DataTableHeader } from 'vuetify';
 import { useFooterProps } from '@/config/datatable.common';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 

@@ -1,4 +1,4 @@
-import { ExternalLedgerAction } from '../../support/types';
+import { type ExternalLedgerAction } from '../../support/types';
 import { selectAsset, selectLocation } from '../../support/utils';
 
 export class LedgerActionPage {

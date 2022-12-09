@@ -1,14 +1,14 @@
-import { ActionResult } from '@rotki/common/lib/data';
+import { type ActionResult } from '@rotki/common/lib/data';
 import {
   Eth2DailyStats,
-  Eth2DailyStatsPayload
+  type Eth2DailyStatsPayload
 } from '@rotki/common/lib/staking/eth2';
 import {
   axiosSnakeCaseTransformer,
   getUpdatedKey
 } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
-import { PendingTask } from '@/services/types-api';
+import { type PendingTask } from '@/services/types-api';
 import {
   handleResponse,
   validWithSessionAndExternalService

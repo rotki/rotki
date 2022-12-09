@@ -1,5 +1,5 @@
-import { AssetInfo } from '@rotki/common/lib/data';
-import { ComputedRef, Ref } from 'vue';
+import { type AssetInfo } from '@rotki/common/lib/data';
+import { type ComputedRef, type Ref } from 'vue';
 import { useAssetInfoApi } from '@/services/assets/info';
 import { startPromise } from '@/utils';
 import { logger } from '@/utils/logging';

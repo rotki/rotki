@@ -37,9 +37,9 @@
 
 <script setup lang="ts">
 import dayjs from 'dayjs';
-import { PropType } from 'vue';
+import { type PropType } from 'vue';
 import { useReports } from '@/store/reports';
-import { Task, TaskMeta } from '@/types/task';
+import { type Task, type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 
 const props = defineProps({

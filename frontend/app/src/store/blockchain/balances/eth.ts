@@ -1,8 +1,8 @@
-import { AssetBalance } from '@rotki/common';
+import { type AssetBalance } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { MaybeRef } from '@vueuse/core';
+import { type MaybeRef } from '@vueuse/core';
 import isEmpty from 'lodash/isEmpty';
-import { ComputedRef, Ref } from 'vue';
+import { type ComputedRef, type Ref } from 'vue';
 import { useStatusUpdater } from '@/composables/status';
 import { useBlockchainBalanceApi } from '@/services/balances/blockchain';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
@@ -10,16 +10,16 @@ import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useNotifications } from '@/store/notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTasks } from '@/store/tasks';
-import { AccountAssetBalances, AssetBalances } from '@/types/balances';
+import { AccountAssetBalances, type AssetBalances } from '@/types/balances';
 import {
-  BlockchainAssetBalances,
-  BlockchainBalances
+  type BlockchainAssetBalances,
+  type BlockchainBalances
 } from '@/types/blockchain/balances';
-import { EthChains, isEthChain } from '@/types/blockchain/chains';
+import { type EthChains, isEthChain } from '@/types/blockchain/chains';
 import { Module } from '@/types/modules';
-import { AssetPrices } from '@/types/prices';
+import { type AssetPrices } from '@/types/prices';
 import { Section, Status } from '@/types/status';
-import { TaskMeta } from '@/types/task';
+import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { removeZeroAssets, toSortedAssetBalanceArray } from '@/utils/balances';
 import { balanceSum } from '@/utils/calculation';

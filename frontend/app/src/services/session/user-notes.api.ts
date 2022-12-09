@@ -1,12 +1,12 @@
-import { ActionResult } from '@rotki/common/lib/data';
+import { type ActionResult } from '@rotki/common/lib/data';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse } from '@/services/utils';
-import { Collection } from '@/types/collection';
+import { type Collection } from '@/types/collection';
 import {
-  UserNote,
+  type UserNote,
   UserNoteCollectionResponse,
-  UserNotesFilter
+  type UserNotesFilter
 } from '@/types/notes';
 import { mapCollectionResponse } from '@/utils/collection';
 

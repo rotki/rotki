@@ -65,7 +65,7 @@ const circle = computed<Style>(() => {
 
 const text = computed<string>(() => {
   if (get(asset).length > 3) {
-    return get(asset).substr(0, 3);
+    return get(asset).slice(0, 3);
   }
   return get(asset);
 });

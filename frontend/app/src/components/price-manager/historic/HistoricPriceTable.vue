@@ -52,14 +52,17 @@
 </template>
 
 <script setup lang="ts">
-import { NotificationPayload, Severity } from '@rotki/common/lib/messages';
-import { PropType } from 'vue';
-import { DataTableHeader } from 'vuetify';
+import { type NotificationPayload, Severity } from '@rotki/common/lib/messages';
+import { type PropType } from 'vue';
+import { type DataTableHeader } from 'vuetify';
 import RowActions from '@/components/helper/RowActions.vue';
-import { HistoricalPrice, ManualPricePayload } from '@/services/assets/types';
+import {
+  type HistoricalPrice,
+  type ManualPricePayload
+} from '@/services/assets/types';
 import { api } from '@/services/rotkehlchen-api';
 import { useNotifications } from '@/store/notifications';
-import { Nullable } from '@/types';
+import { type Nullable } from '@/types';
 import { nonNullProperties } from '@/utils/data';
 
 const props = defineProps({

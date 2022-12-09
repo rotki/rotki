@@ -29,7 +29,7 @@
 <script setup lang="ts">
 import {
   TimeFramePeriod,
-  TimeFrameSetting
+  type TimeFrameSetting
 } from '@rotki/common/lib/settings/graphs';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useSessionSettingsStore } from '@/store/settings/session';

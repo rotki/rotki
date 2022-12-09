@@ -21,10 +21,10 @@
   </div>
 </template>
 <script setup lang="ts">
-import { PropType } from 'vue';
+import { type PropType } from 'vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
-import { DefiAsset } from '@/types/defi/overview';
+import { type DefiAsset } from '@/types/defi/overview';
 import { createEvmIdentifierFromAddress } from '@/utils/assets';
 
 defineProps({

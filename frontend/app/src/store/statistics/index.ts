@@ -1,9 +1,9 @@
-import { BigNumber } from '@rotki/common';
+import { type BigNumber } from '@rotki/common';
 import { TimeUnit } from '@rotki/common/lib/settings';
 import { timeframes } from '@rotki/common/lib/settings/graphs';
-import { NetValue } from '@rotki/common/lib/statistics';
+import { type NetValue } from '@rotki/common/lib/statistics';
 import dayjs from 'dayjs';
-import { ComputedRef } from 'vue';
+import { type ComputedRef } from 'vue';
 import { setupLiquidityPosition } from '@/composables/defi';
 import { useStatisticsApi } from '@/services/statistics/statistics-api';
 import { useAggregatedBalancesStore } from '@/store/balances/aggregated';
@@ -14,7 +14,7 @@ import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { CURRENCY_USD } from '@/types/currencies';
-import { bigNumberify, One, Zero } from '@/utils/bignumbers';
+import { One, Zero, bigNumberify } from '@/utils/bignumbers';
 
 const defaultNetValue = (): NetValue => ({
   times: [],
@@ -114,7 +114,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
       period: selectedTimeframe,
       currency,
       netWorth: totalNW.toFormat(floatPrecision),
-      delta: delta,
+      delta,
       percentage: percentage.isFinite() ? percentage.toFormat(2) : '-',
       up
     };
@@ -156,8 +156,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
         return nv;
       }
 
-      for (let i = 0; i < times.length; i++) {
-        const time = times[i];
+      for (const [i, time] of times.entries()) {
         if (time < startingDate) {
           continue;
         }
@@ -165,7 +164,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
         nv.data.push(convert(data[i]));
       }
 
-      const now = Math.floor(new Date().getTime() / 1000);
+      const now = Math.floor(Date.now() / 1000);
       const netWorth = get(totalNetWorth).toNumber();
       return {
         times: [...nv.times, now],

@@ -48,7 +48,7 @@
 </template>
 
 <script setup lang="ts">
-import { getCurrentInstance, onMounted, PropType, ref } from 'vue';
+import { type PropType, getCurrentInstance, onMounted, ref } from 'vue';
 
 import { Module, SUPPORTED_MODULES } from '@/types/modules';
 import { assert } from '@/utils/assertions';

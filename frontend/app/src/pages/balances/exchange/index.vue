@@ -103,15 +103,15 @@
 </template>
 
 <script setup lang="ts">
-import { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
-import { PropType } from 'vue';
+import { type AssetBalanceWithPrice, type BigNumber } from '@rotki/common';
+import { type PropType } from 'vue';
 import ExchangeAmountRow from '@/components/accounts/exchanges/ExchangeAmountRow.vue';
 import AssetBalances from '@/components/AssetBalances.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import { Routes } from '@/router/routes';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { useTasks } from '@/store/tasks';
-import { SupportedExchange } from '@/types/exchanges';
+import { type SupportedExchange } from '@/types/exchanges';
 import { TaskType } from '@/types/task-type';
 import { Zero } from '@/utils/bignumbers';
 import { uniqueStrings } from '@/utils/data';
@@ -168,7 +168,7 @@ const openExchangeDetails = async () => {
 };
 
 const balances = computed(() => {
-  let currentExchange = get(exchange);
+  const currentExchange = get(exchange);
   return get(store.getBalances(currentExchange));
 });
 

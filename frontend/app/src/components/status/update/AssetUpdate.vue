@@ -110,17 +110,17 @@
 </template>
 
 <script setup lang="ts">
-import { Ref } from 'vue';
+import { type Ref } from 'vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import Fragment from '@/components/helper/Fragment';
 import ConflictDialog from '@/components/status/update/ConflictDialog.vue';
 import { useBackendManagement } from '@/composables/backend';
-import { ConflictResolution } from '@/services/assets/types';
+import { type ConflictResolution } from '@/services/assets/types';
 import { useAssets } from '@/store/assets';
 import { useMainStore } from '@/store/main';
 import { useMessageStore } from '@/store/message';
 import { useSessionStore } from '@/store/session';
-import { AssetUpdateConflictResult } from '@/types/assets';
+import { type AssetUpdateConflictResult } from '@/types/assets';
 
 const props = defineProps({
   auto: { required: false, default: false, type: Boolean }
@@ -192,18 +192,16 @@ const skip = () => {
 };
 
 const onChange = (value: string) => {
-  const number = parseInt(value);
+  const number = Number.parseInt(value);
   const local = get(localVersion);
   if (isNaN(number)) {
     set(upToVersion, local + 1);
+  } else if (number < local) {
+    set(upToVersion, local + 1);
+  } else if (number > get(remoteVersion)) {
+    set(upToVersion, get(remoteVersion));
   } else {
-    if (number < local) {
-      set(upToVersion, local + 1);
-    } else if (number > get(remoteVersion)) {
-      set(upToVersion, get(remoteVersion));
-    } else {
-      set(upToVersion, number);
-    }
+    set(upToVersion, number);
   }
 };
 

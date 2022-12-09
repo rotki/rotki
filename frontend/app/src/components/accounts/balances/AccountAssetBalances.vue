@@ -38,9 +38,9 @@
 </template>
 
 <script setup lang="ts">
-import { AssetBalance } from '@rotki/common';
-import { PropType } from 'vue';
-import { DataTableHeader } from 'vuetify';
+import { type AssetBalance } from '@rotki/common';
+import { type PropType } from 'vue';
+import { type DataTableHeader } from 'vuetify';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import { useBalancePricesStore } from '@/store/balances/prices';

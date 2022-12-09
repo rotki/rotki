@@ -1,4 +1,4 @@
-import { Tag } from '@/types/user';
+import { type Tag } from '@/types/user';
 
 export interface TagEvent {
   readonly name?: string;

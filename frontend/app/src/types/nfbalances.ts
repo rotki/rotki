@@ -1,8 +1,8 @@
 import { NumericString } from '@rotki/common';
 import { z } from 'zod';
 import { PriceInformation } from '@/services/assets/types';
-import { IgnoredAssetsHandlingType } from '@/types/assets';
-import { PaginationRequestPayload } from '@/types/common';
+import { type IgnoredAssetsHandlingType } from '@/types/assets';
+import { type PaginationRequestPayload } from '@/types/common';
 
 export const NonFungibleBalance = PriceInformation.merge(
   z.object({

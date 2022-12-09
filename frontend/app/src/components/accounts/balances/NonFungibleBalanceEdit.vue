@@ -30,8 +30,8 @@
 </template>
 
 <script setup lang="ts">
-import { PropType } from 'vue';
-import { NonFungibleBalance } from '@/types/nfbalances';
+import { type PropType } from 'vue';
+import { type NonFungibleBalance } from '@/types/nfbalances';
 import { assert } from '@/utils/assertions';
 
 const props = defineProps({
@@ -47,7 +47,7 @@ const { value } = toRefs(props);
 const asset = ref<string | null>(null);
 const price = ref<string | null>(null);
 const valid = computed(() => {
-  return get(asset) && get(price) && !isNaN(parseInt(get(price)!));
+  return get(asset) && get(price) && !isNaN(Number.parseInt(get(price)!));
 });
 const close = () => emit('close');
 const save = () => {

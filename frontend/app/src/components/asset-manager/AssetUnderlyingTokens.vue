@@ -31,8 +31,8 @@
 </template>
 
 <script setup lang="ts">
-import { SupportedAsset } from '@rotki/common/lib/data';
-import { PropType } from 'vue';
+import { type SupportedAsset } from '@rotki/common/lib/data';
+import { type PropType } from 'vue';
 
 defineProps({
   cols: {

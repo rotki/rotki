@@ -51,18 +51,18 @@
 </template>
 
 <script setup lang="ts">
-import { BigNumber } from '@rotki/common';
-import { GeneralAccount } from '@rotki/common/lib/account';
+import { type BigNumber } from '@rotki/common';
+import { type GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { ComputedRef } from 'vue';
-import { DataTableHeader } from 'vuetify';
+import { type ComputedRef } from 'vue';
+import { type DataTableHeader } from 'vuetify';
 import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import TagFilter from '@/components/inputs/TagFilter.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
 import { useAggregatedBalancesStore } from '@/store/balances/aggregated';
 import { useBalancesBreakdownStore } from '@/store/balances/breakdown';
-import { AssetBreakdown } from '@/store/balances/types';
+import { type AssetBreakdown } from '@/store/balances/types';
 import { useAccountBalancesStore } from '@/store/blockchain/accountbalances';
 import { useEthAccountsStore } from '@/store/blockchain/accounts/eth';
 import { useGeneralSettingsStore } from '@/store/settings/general';
@@ -122,9 +122,8 @@ const visibleAssetLocations = computed<AssetLocations>(() => {
   }
 
   return get(assetLocations).filter(assetLocation => {
-    if (assetLocation.tags) {
-      return get(onlyTags).every(tag => assetLocation.tags?.includes(tag));
-    }
+    const tags = assetLocation.tags ?? [];
+    return get(onlyTags).every(tag => tags.includes(tag));
   });
 });
 

@@ -35,10 +35,10 @@
 </template>
 
 <script setup lang="ts">
-import { PropType } from 'vue';
+import { type PropType } from 'vue';
 import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
 import { useTheme } from '@/composables/common';
-import { AssetMovement } from '@/types/defi';
+import { type AssetMovement } from '@/types/defi';
 
 defineProps({
   movement: { required: true, type: Object as PropType<AssetMovement> },

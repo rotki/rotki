@@ -1,9 +1,9 @@
-import { ActionResult } from '@rotki/common/lib/data';
+import { type ActionResult } from '@rotki/common/lib/data';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
-import { PendingTask } from '@/services/types-api';
+import { type PendingTask } from '@/services/types-api';
 import { handleResponse, validStatus } from '@/services/utils';
-import { AllBalancePayload } from '@/store/balances/types';
+import { type AllBalancePayload } from '@/store/balances/types';
 
 export const useBalancesApi = () => {
   const queryBalancesAsync = async (

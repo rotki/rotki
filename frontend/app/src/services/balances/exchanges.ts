@@ -1,14 +1,18 @@
-import { ActionResult } from '@rotki/common/lib/data';
-import { AxiosResponse } from 'axios';
+import { type ActionResult } from '@rotki/common/lib/data';
+import { type AxiosResponse } from 'axios';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
-import { PendingTask } from '@/services/types-api';
+import { type PendingTask } from '@/services/types-api';
 import {
   handleResponse,
   validStatus,
   validWithSessionStatus
 } from '@/services/utils';
-import { Exchange, ExchangePayload, Exchanges } from '@/types/exchanges';
+import {
+  type Exchange,
+  type ExchangePayload,
+  Exchanges
+} from '@/types/exchanges';
 import { nonNullProperties } from '@/utils/data';
 
 export const useExchangeApi = () => {
@@ -92,7 +96,7 @@ export const useExchangeApi = () => {
       '/exchanges/binance/pairs',
       {
         params: axiosSnakeCaseTransformer({
-          location: location
+          location
         })
       }
     );
@@ -108,7 +112,7 @@ export const useExchangeApi = () => {
       `/exchanges/binance/pairs/${name}`,
       {
         params: axiosSnakeCaseTransformer({
-          location: location
+          location
         })
       }
     );

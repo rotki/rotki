@@ -1,11 +1,11 @@
-import { LedgerAction } from '@/types/history/ledger-actions';
-import { EntryMeta } from '@/types/history/meta';
-import { AssetMovement } from '@/types/history/movements';
-import { Trade } from '@/types/history/trades';
+import { type LedgerAction } from '@/types/history/ledger-actions';
+import { type EntryMeta } from '@/types/history/meta';
+import { type AssetMovement } from '@/types/history/movements';
+import { type Trade } from '@/types/history/trades';
 import {
-  EthTransaction,
-  EthTransactionEvent,
-  TxEntryMeta
+  type EthTransaction,
+  type EthTransactionEvent,
+  type TxEntryMeta
 } from '@/types/history/tx';
 
 export interface TradeEntry extends Trade, EntryMeta {}

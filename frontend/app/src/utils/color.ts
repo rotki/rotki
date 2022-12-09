@@ -11,9 +11,9 @@ export const invertColor = (color: string, bw = true): string => {
 
   assert(color.length === 6, `Invalid color: ${color}`);
 
-  const r = parseInt(color.slice(0, 2), 16);
-  const g = parseInt(color.slice(2, 4), 16);
-  const b = parseInt(color.slice(4, 6), 16);
+  const r = Number.parseInt(color.slice(0, 2), 16);
+  const g = Number.parseInt(color.slice(2, 4), 16);
+  const b = Number.parseInt(color.slice(4, 6), 16);
 
   if (bw) {
     return r * 0.299 + g * 0.587 + b * 0.114 > 186 ? '000000' : 'FFFFFF';

@@ -99,10 +99,10 @@
 </template>
 
 <script setup lang="ts">
-import { BigNumber } from '@rotki/common';
+import { type BigNumber } from '@rotki/common';
 import { dropRight } from 'lodash';
-import { Ref } from 'vue';
-import { DataTableHeader } from 'vuetify';
+import { type Ref } from 'vue';
+import { type DataTableHeader } from 'vuetify';
 import DashboardExpandableTable from '@/components/dashboard/DashboardExpandableTable.vue';
 import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
 import NftDetails from '@/components/helper/NftDetails.vue';
@@ -114,11 +114,11 @@ import { useNonFungibleBalancesStore } from '@/store/balances/non-fungible';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatisticsStore } from '@/store/statistics';
-import { Collection } from '@/types/collection';
+import { type Collection } from '@/types/collection';
 import { DashboardTableType } from '@/types/frontend-settings';
 import {
-  NonFungibleBalance,
-  NonFungibleBalancesRequestPayload
+  type NonFungibleBalance,
+  type NonFungibleBalancesRequestPayload
 } from '@/types/nfbalances';
 import { Section } from '@/types/status';
 import { TableColumn } from '@/types/table-column';

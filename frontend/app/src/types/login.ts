@@ -1,6 +1,6 @@
-import { SyncConflictPayload } from '@/store/session/types';
-import { Exchange } from '@/types/exchanges';
-import { UserSettingsModel } from '@/types/user';
+import { type SyncConflictPayload } from '@/store/session/types';
+import { type Exchange } from '@/types/exchanges';
+import { type UserSettingsModel } from '@/types/user';
 
 export type SyncApproval = 'yes' | 'no' | 'unknown';
 
@@ -25,6 +25,7 @@ export class SyncConflictError extends Error {
   constructor(message: string, payload: SyncConflictPayload) {
     super(message);
     this.payload = payload;
+    this.name = 'SyncConflictError';
   }
 }
 

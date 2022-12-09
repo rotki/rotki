@@ -1,10 +1,13 @@
-import { Blockchain } from '@rotki/common/lib/blockchain';
-import { MaybeRef } from '@vueuse/core';
-import { Ref } from 'vue';
-import { AssetBalances } from '@/types/balances';
-import { BlockchainBalances, BtcBalances } from '@/types/blockchain/balances';
-import { BtcChains, isBtcChain } from '@/types/blockchain/chains';
-import { AssetPrices } from '@/types/prices';
+import { type Blockchain } from '@rotki/common/lib/blockchain';
+import { type MaybeRef } from '@vueuse/core';
+import { type Ref } from 'vue';
+import { type AssetBalances } from '@/types/balances';
+import {
+  type BlockchainBalances,
+  type BtcBalances
+} from '@/types/blockchain/balances';
+import { type BtcChains, isBtcChain } from '@/types/blockchain/chains';
+import { type AssetPrices } from '@/types/prices';
 import { removeZeroAssets } from '@/utils/balances';
 import { updateBtcPrices, updateTotalsPrices } from '@/utils/prices';
 

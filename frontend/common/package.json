@@ -2,46 +2,36 @@
   "name": "@rotki/common",
   "version": "1.0.0",
   "description": "Rotki common frontend code",
-  "main": "lib/index.js",
-  "module": "lib/index.js",
+  "license": "AGPL-3.0",
+  "homepage": "https://rotki.com",
+  "repository": "https://github.com/rotki/rotki",
+  "author": "Rotki Solutions GmbH <info@rotki.com>",
   "files": [
     "lib/"
   ],
+  "main": "lib/index.js",
+  "module": "lib/index.js",
   "types": "lib/index.d.ts",
   "scripts": {
-    "preinstall": "node ../check-versions.js",
     "postinstall": "npm run build",
     "build": "rimraf lib && tsc -m es6",
-    "watch": "tsc -w -m es6",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "lint:fix": "eslint --cache --fix . --ext .js,.jsx,.ts,.tsx",
-    "lint": "eslint --cache . --ext .js,.jsx,.ts,.tsx"
-  },
-  "author": "Rotki Solutions GmbH <info@rotki.com>",
-  "homepage": "https://rotki.com",
-  "license": "AGPL-3.0",
-  "repository": "https://github.com/rotki/rotki",
-  "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "5.45.0",
-    "@typescript-eslint/parser": "5.45.0",
-    "core-js": "3.26.1",
-    "eslint": "8.28.0",
-    "eslint-config-prettier": "8.5.0",
-    "eslint-import-resolver-alias": "1.1.2",
-    "eslint-plugin-import": "2.26.0",
-    "prettier": "2.8.0",
-    "rimraf": "3.0.2",
-    "typescript": "4.9.3"
-  },
-  "engines": {
-    "node": ">=16 <17",
-    "npm": ">=8 <9"
-  },
-  "dependencies": {
-    "bignumber.js": "9.1.0",
-    "zod": "3.19.1"
+    "watch": "tsc -w -m es6"
   },
   "peerDependencies": {
-    "vue": "2.7.14"
+    "@vueuse/core": "9.6.0",
+    "vue": "2.7.14",
+    "vue-i18n": "8.28.2"
+  },
+  "dependencies": {
+    "bignumber.js": "9.1.1",
+    "zod": "3.19.1"
+  },
+  "devDependencies": {
+    "@vueuse/core": "9.6.0",
+    "core-js": "3.26.1",
+    "rimraf": "3.0.2",
+    "typescript": "4.9.4",
+    "vue": "2.7.14",
+    "vue-i18n": "8.28.2"
   }
 }

@@ -65,19 +65,19 @@
 </template>
 
 <script setup lang="ts">
-import { NotificationPayload, Severity } from '@rotki/common/lib/messages';
-import { ComputedRef, PropType } from 'vue';
-import { DataTableHeader } from 'vuetify';
+import { type NotificationPayload, Severity } from '@rotki/common/lib/messages';
+import { type ComputedRef, type PropType } from 'vue';
+import { type DataTableHeader } from 'vuetify';
 import PriceRefresh from '@/components/helper/PriceRefresh.vue';
 import RowActions from '@/components/helper/RowActions.vue';
-import { ManualPrice } from '@/services/assets/types';
+import { type ManualPrice } from '@/services/assets/types';
 import { api } from '@/services/rotkehlchen-api';
 import { useBalancesStore } from '@/store/balances';
 import { useAggregatedBalancesStore } from '@/store/balances/aggregated';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useNotifications } from '@/store/notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { Nullable } from '@/types';
+import { type Nullable } from '@/types';
 import { CURRENCY_USD } from '@/types/currencies';
 import { isNft } from '@/utils/nft';
 
@@ -193,8 +193,7 @@ const { assetPrice } = useBalancePricesStore();
 
 const latestAssets: ComputedRef<string[]> = computed(() => {
   return get(latestPrices)
-    .map(({ fromAsset, toAsset }) => [fromAsset, toAsset])
-    .flat()
+    .flatMap(({ fromAsset, toAsset }) => [fromAsset, toAsset])
     .filter(asset => asset !== CURRENCY_USD);
 });
 

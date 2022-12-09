@@ -1,4 +1,4 @@
-import { BigNumber } from '@rotki/common';
+import { type BigNumber } from '@rotki/common';
 import { LpType } from '@rotki/common/lib/defi';
 import { bigNumberSum } from '@/filters';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';

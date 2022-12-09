@@ -12,10 +12,10 @@
 </template>
 
 <script setup lang="ts">
-import { ComputedRef } from 'vue';
+import { type ComputedRef } from 'vue';
 import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
-import { AssetInfoWithId } from '@/types/assets';
+import { type AssetInfoWithId } from '@/types/assets';
 
 const props = defineProps({
   asset: {

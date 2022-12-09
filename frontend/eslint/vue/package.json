@@ -1,0 +1,30 @@
+{
+  "name": "@rotki/eslint-config-vue",
+  "version": "1.0.0",
+  "description": "",
+  "license": "AGPL-3.0",
+  "author": "Rotki Solutions GmbH <info@rotki.com>",
+  "files": [
+    "index.js"
+  ],
+  "main": "index.js",
+  "peerDependencies": {
+    "eslint": ">=8.10.0",
+    "vue": ">=2.7.0 || ^3.0.0"
+  },
+  "peerDependenciesMeta": {
+    "vue": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "@rotki/eslint-config-ts": "1.0.0",
+    "eslint-define-config": "1.12.0",
+    "eslint-plugin-vue": "9.8.0",
+    "eslint-plugin-vuetify": "1.1.0",
+    "local-pkg": "0.4.2"
+  },
+  "devDependencies": {
+    "eslint": "8.29.0"
+  }
+}

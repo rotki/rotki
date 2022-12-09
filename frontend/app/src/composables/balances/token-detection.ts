@@ -1,5 +1,5 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { MaybeRef } from '@vueuse/core';
+import { type MaybeRef } from '@vueuse/core';
 import { useBlockchainBalancesStore } from '@/store/blockchain/balances';
 import { useBlockchainTokensStore } from '@/store/blockchain/tokens';
 import { useTasks } from '@/store/tasks';
@@ -17,10 +17,7 @@ export const useTokenDetection = (
   const detectingTokens = computed<boolean>(() => {
     const address = get(accountAddress);
     return get(
-      isTaskRunning(
-        TaskType.FETCH_DETECTED_TOKENS,
-        address ? { address: address } : {}
-      )
+      isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, address ? { address } : {})
     );
   });
 

@@ -1,8 +1,8 @@
-import { AddressIndexed } from '@rotki/common';
-import { DefiAccount } from '@rotki/common/lib/account';
+import { type AddressIndexed } from '@rotki/common';
+import { type DefiAccount } from '@rotki/common/lib/account';
 import { Blockchain, DefiProtocol } from '@rotki/common/lib/blockchain';
 import sortBy from 'lodash/sortBy';
-import { ComputedRef, Ref } from 'vue';
+import { type ComputedRef, type Ref } from 'vue';
 import { usePremium } from '@/composables/premium';
 import { ProtocolVersion } from '@/services/defi/consts';
 import { api } from '@/services/rotkehlchen-api';
@@ -23,36 +23,36 @@ import { useNotifications } from '@/store/notifications';
 import { getStatus, setStatus } from '@/store/status';
 import { useTasks } from '@/store/tasks';
 import { isLoading } from '@/store/utils';
-import { Writeable } from '@/types';
+import { type Writeable } from '@/types';
 import {
-  Airdrop,
   AIRDROP_POAP,
-  AirdropDetail,
+  type Airdrop,
+  type AirdropDetail,
+  type AirdropType,
   Airdrops,
-  AirdropType,
-  PoapDelivery
+  type PoapDelivery
 } from '@/types/airdrops';
 import {
   AllDefiProtocols,
-  DefiProtocolSummary,
-  TokenInfo
+  type DefiProtocolSummary,
+  type TokenInfo
 } from '@/types/defi/overview';
 import {
   AAVE,
   COMPOUND,
-  getProtocolIcon,
   LIQUITY,
   MAKERDAO_DSR,
   MAKERDAO_VAULTS,
-  OverviewDefiProtocol,
+  type OverviewDefiProtocol,
   YEARN_FINANCE_VAULTS,
-  YEARN_FINANCE_VAULTS_V2
+  YEARN_FINANCE_VAULTS_V2,
+  getProtocolIcon
 } from '@/types/defi/protocols';
 import { Module } from '@/types/modules';
 import { Section, Status } from '@/types/status';
-import { TaskMeta } from '@/types/task';
+import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { bigNumberify, Zero } from '@/utils/bignumbers';
+import { Zero, bigNumberify } from '@/utils/bignumbers';
 import { uniqueStrings } from '@/utils/data';
 import { logger } from '@/utils/logging';
 
@@ -249,7 +249,7 @@ export const useDefiStore = defineStore('defi', () => {
         : get(lendingStore.loanSummary(filter));
       return {
         protocol: {
-          name: name,
+          name,
           icon: getProtocolIcon(name)
         },
         liabilities: !noLiabilities,
@@ -274,8 +274,7 @@ export const useDefiStore = defineStore('defi', () => {
     const defiProtocols = get(allProtocols);
     for (const address of Object.keys(defiProtocols)) {
       const protocols = defiProtocols[address];
-      for (let i = 0; i < protocols.length; i++) {
-        const entry = protocols[i];
+      for (const entry of protocols) {
         const protocol = entry.protocol.name;
 
         if (protocol === AAVE) {

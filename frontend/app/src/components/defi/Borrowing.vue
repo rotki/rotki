@@ -90,7 +90,7 @@
 
 <script setup lang="ts">
 import { DefiProtocol } from '@rotki/common/lib/blockchain';
-import { PropType } from 'vue';
+import { type PropType } from 'vue';
 import FullSizeContent from '@/components/common/FullSizeContent.vue';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
 import DefiSelectorItem from '@/components/defi/DefiSelectorItem.vue';
@@ -103,7 +103,7 @@ import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
 import { useSectionLoading } from '@/composables/common';
 import { useDefiSupportedProtocolsStore } from '@/store/defi/protocols';
-import { Module } from '@/types/modules';
+import { type Module } from '@/types/modules';
 import { Section } from '@/types/status';
 
 defineProps({
@@ -152,9 +152,7 @@ onMounted(async () => {
   const currentRoute = get(route);
   const queryElement = currentRoute.query['protocol'];
   const protocols = Object.values(DefiProtocol);
-  const protocolIndex = protocols.findIndex(
-    protocol => protocol === queryElement
-  );
+  const protocolIndex = protocols.indexOf(queryElement as DefiProtocol);
   if (protocolIndex >= 0) {
     set(protocol, protocols[protocolIndex]);
   }

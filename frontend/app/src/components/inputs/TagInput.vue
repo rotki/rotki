@@ -85,11 +85,11 @@
 </template>
 
 <script setup lang="ts">
-import { PropType } from 'vue';
+import { type PropType } from 'vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
 import TagManager from '@/components/tags/TagManager.vue';
 import { useTagStore } from '@/store/session/tags';
-import { Tag } from '@/types/user';
+import { type Tag } from '@/types/user';
 import { invertColor, randomColor } from '@/utils/color';
 import { checkIfDevelopment } from '@/utils/env-utils';
 import { logger } from '@/utils/logging';
@@ -174,8 +174,7 @@ const attemptTagCreation = (element: string) => {
 
 const input = (_value: (string | Tag)[]) => {
   const tags: string[] = [];
-  for (let i = 0; i < _value.length; i++) {
-    const element = _value[i];
+  for (const element of _value) {
     if (typeof element === 'string') {
       attemptTagCreation(element);
       tags.push(element);

@@ -60,7 +60,7 @@
 </template>
 
 <script setup lang="ts">
-import { Ref } from 'vue';
+import { type Ref } from 'vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import { useNonFungibleBalancesStore } from '@/store/balances/non-fungible';
 import { useSettingsStore } from '@/store/settings';

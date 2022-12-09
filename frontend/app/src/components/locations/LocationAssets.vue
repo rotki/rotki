@@ -5,8 +5,8 @@
   </card>
 </template>
 <script setup lang="ts">
-import { AssetBalanceWithPrice } from '@rotki/common';
-import { ComputedRef } from 'vue';
+import { type AssetBalanceWithPrice } from '@rotki/common';
+import { type ComputedRef } from 'vue';
 import AssetBalances from '@/components/AssetBalances.vue';
 import { useBalancesBreakdownStore } from '@/store/balances/breakdown';
 import { useTasks } from '@/store/tasks';

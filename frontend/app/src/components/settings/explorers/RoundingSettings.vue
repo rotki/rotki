@@ -36,10 +36,10 @@
 </template>
 
 <script setup lang="ts">
-import { BigNumber } from '@rotki/common';
+import { type BigNumber } from '@rotki/common';
 import RoundingSelector from '@/components/settings/explorers/RoundingSelector.vue';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { RoundingMode } from '@/types/frontend-settings';
+import { type RoundingMode } from '@/types/frontend-settings';
 import { bigNumberify } from '@/utils/bignumbers';
 
 const frontendSettingsStore = useFrontendSettingsStore();

@@ -123,11 +123,14 @@
 </template>
 
 <script setup lang="ts">
-import { GeneralAccount } from '@rotki/common/lib/account';
+import { type GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { LpType } from '@rotki/common/lib/defi';
-import { XswapAsset, XswapBalance } from '@rotki/common/lib/defi/xswap';
-import { ComputedRef } from 'vue';
+import {
+  type XswapAsset,
+  type XswapBalance
+} from '@rotki/common/lib/defi/xswap';
+import { type ComputedRef } from 'vue';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import PaginatedCards from '@/components/common/PaginatedCards.vue';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
@@ -180,7 +183,7 @@ const secondaryRefreshing = isSectionRefreshing(Section.DEFI_UNISWAP_EVENTS);
 const premium = usePremium();
 
 const selectedAddresses = computed(() => {
-  let account = get(selectedAccount);
+  const account = get(selectedAccount);
   return account ? [account.address] : [];
 });
 

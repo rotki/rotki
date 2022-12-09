@@ -72,7 +72,7 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Severity } from '@rotki/common/lib/messages';
-import { PropType } from 'vue';
+import { type PropType } from 'vue';
 import AddressInput from '@/components/accounts/blockchain/AddressInput.vue';
 import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
 import Eth2Input from '@/components/accounts/blockchain/Eth2Input.vue';
@@ -84,10 +84,10 @@ import { useInterop } from '@/electron-interop';
 import { deserializeApiErrorMessage } from '@/services/converters';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
 import {
-  AccountPayload,
-  BlockchainAccountPayload,
-  BlockchainAccountWithBalance,
-  XpubPayload
+  type AccountPayload,
+  type BlockchainAccountPayload,
+  type BlockchainAccountWithBalance,
+  type XpubPayload
 } from '@/store/balances/types';
 import { useBlockchainStore } from '@/store/blockchain';
 import { useBlockchainAccountsStore } from '@/store/blockchain/accounts';
@@ -96,13 +96,13 @@ import { useMessageStore } from '@/store/message';
 import { useNotifications } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
 import {
-  AccountInput,
+  type AccountInput,
   MANUAL_ADD,
   METAMASK_IMPORT,
   XPUB_ADD
 } from '@/types/account-input';
-import { Eth2Validator } from '@/types/balances';
-import { Module } from '@/types/modules';
+import { type Eth2Validator } from '@/types/balances';
+import { type Module } from '@/types/modules';
 import { TaskType } from '@/types/task-type';
 import { startPromise } from '@/utils';
 import { assert } from '@/utils/assertions';
@@ -308,7 +308,7 @@ const metamaskImport = async (): Promise<boolean> => {
 
     await addAccounts({
       blockchain: Blockchain.ETH,
-      payload: payload,
+      payload,
       modules: get(selectedModules)
     });
     return true;
@@ -348,7 +348,7 @@ const manualAdd = async () => {
     } else {
       const entries = get(addresses);
       const payload = entries.map(address => ({
-        address: address,
+        address,
         label: get(label),
         tags: get(tags)
       }));

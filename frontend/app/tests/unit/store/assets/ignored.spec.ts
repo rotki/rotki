@@ -14,7 +14,7 @@ describe('store::assets/ignored', () => {
   const store: ReturnType<typeof useIgnoredAssetsStore> =
     useIgnoredAssetsStore();
 
-  beforeEach(function () {
+  beforeEach(() => {
     vi.clearAllMocks();
   });
 

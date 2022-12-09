@@ -1,8 +1,8 @@
-import { ComputedRef, Ref } from 'vue';
+import { type ComputedRef, type Ref } from 'vue';
 import { useAssetInfoApi } from '@/services/assets/info';
 import { useTransactions } from '@/store/history/transactions';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { MatchedKeyword, SearchMatcher } from '@/types/filtering';
+import { type MatchedKeyword, type SearchMatcher } from '@/types/filtering';
 import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
 
 enum TransactionFilterKeys {

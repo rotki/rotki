@@ -46,9 +46,9 @@
 </template>
 
 <script setup lang="ts">
-import { GeneralAccount } from '@rotki/common/lib/account';
+import { type GeneralAccount } from '@rotki/common/lib/account';
 import makeBlockie from 'ethereum-blockies-base64';
-import { PropType } from 'vue';
+import { type PropType } from 'vue';
 import { useTheme } from '@/composables/common';
 import { truncateAddress, truncationPoints } from '@/filters';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
@@ -86,7 +86,7 @@ const breakpoint = computed<string>(() => {
 });
 
 const truncationLength = computed<number>(() => {
-  let truncationPoint = truncationPoints[get(breakpoint)];
+  const truncationPoint = truncationPoints[get(breakpoint)];
   if (truncationPoint && get(account).label) {
     return 4;
   }
@@ -128,7 +128,7 @@ const label = computed<string>(() => {
   }
 
   if (length > 0) {
-    return label.substr(0, length) + '...';
+    return `${label.slice(0, Math.max(0, length))}...`;
   }
 
   return label;

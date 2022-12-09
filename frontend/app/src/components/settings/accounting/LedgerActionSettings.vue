@@ -73,7 +73,7 @@ const changed = async (update: (value: any) => void) => {
 const { taxableLedgerActions } = storeToRefs(useAccountingSettingsStore());
 
 onMounted(() => {
-  for (let taxableAction of get(taxableLedgerActions)) {
+  for (const taxableAction of get(taxableLedgerActions)) {
     taxable.value[taxableAction] = true;
   }
 });

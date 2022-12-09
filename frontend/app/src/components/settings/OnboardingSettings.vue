@@ -207,19 +207,19 @@ import {
   numeric,
   required
 } from '@vuelidate/validators';
-import { Ref } from 'vue';
+import { type Ref } from 'vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import LanguageSetting from '@/components/settings/general/language/LanguageSetting.vue';
 import { useBackendManagement } from '@/composables/backend';
 import { useInterop } from '@/electron-interop';
-import { BackendOptions } from '@/electron-main/ipc';
+import { type BackendOptions } from '@/electron-main/ipc';
 import { useSettingsApi } from '@/services/settings/settings-api';
 import {
-  BackendConfiguration,
-  NumericBackendArgument
+  type BackendConfiguration,
+  type NumericBackendArgument
 } from '@/services/types-api';
 import { useMainStore } from '@/store/main';
-import { Properties, Writeable } from '@/types';
+import { type Properties, type Writeable } from '@/types';
 import { LogLevel } from '@/utils/log-level';
 
 interface Args {
@@ -231,7 +231,7 @@ interface Args {
 
 const updateArgument = (args: Args) => {
   if (args.value !== args.arg.value.toString()) {
-    const numeric = parseInt(args.value);
+    const numeric = Number.parseInt(args.value);
     if (isFinite(numeric) && !isNaN(numeric)) {
       args.options[args.key] = numeric;
     } else {
@@ -417,7 +417,7 @@ const selectDataDirectory = async function () {
   }
 
   try {
-    let title = tc('backend_settings.data_directory.select');
+    const title = tc('backend_settings.data_directory.select');
     const directory = await openDirectory(title);
     if (directory) {
       set(userDataDirectory, directory);

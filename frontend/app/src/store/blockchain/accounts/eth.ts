@@ -1,21 +1,21 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { Message } from '@rotki/common/lib/messages';
+import { type Message } from '@rotki/common/lib/messages';
 import {
-  Eth2ValidatorEntry,
-  Eth2Validators
+  type Eth2ValidatorEntry,
+  type Eth2Validators
 } from '@rotki/common/lib/staking/eth2';
-import { Ref } from 'vue';
+import { type Ref } from 'vue';
 import { useStatusUpdater } from '@/composables/status';
 import { api } from '@/services/rotkehlchen-api';
-import { GeneralAccountData } from '@/services/types-api';
+import { type GeneralAccountData } from '@/services/types-api';
 import { useMessageStore } from '@/store/message';
 import { useNotifications } from '@/store/notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTasks } from '@/store/tasks';
-import { Eth2Validator } from '@/types/balances';
+import { type Eth2Validator } from '@/types/balances';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
-import { TaskMeta } from '@/types/task';
+import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { logger } from '@/utils/logging';
 import { removeTags } from '@/utils/tags';

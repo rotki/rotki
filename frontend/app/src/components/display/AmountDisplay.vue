@@ -104,8 +104,8 @@
 
 <script setup lang="ts">
 import { BigNumber } from '@rotki/common';
-import { MaybeRef } from '@vueuse/core';
-import { ComputedRef, PropType } from 'vue';
+import { type MaybeRef } from '@vueuse/core';
+import { type ComputedRef, type PropType } from 'vue';
 import AmountCurrency from '@/components/display/AmountCurrency.vue';
 import { displayAmountFormatter } from '@/data/amount_formatter';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
@@ -113,7 +113,7 @@ import { useBalancePricesStore } from '@/store/balances/prices';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';
-import { Currency, CURRENCY_USD, useCurrencies } from '@/types/currencies';
+import { CURRENCY_USD, type Currency, useCurrencies } from '@/types/currencies';
 import { One } from '@/utils/bignumbers';
 import RoundingMode = BigNumber.RoundingMode;
 

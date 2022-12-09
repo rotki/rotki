@@ -1,15 +1,15 @@
-import { MaybeRef } from '@vueuse/core';
+import { type MaybeRef } from '@vueuse/core';
 import isEqual from 'lodash/isEqual';
-import { ComputedRef, Ref } from 'vue';
+import { type ComputedRef, type Ref } from 'vue';
 import {
-  EthDetectedTokensInfo,
-  EthDetectedTokensRecord
+  type EthDetectedTokensInfo,
+  type EthDetectedTokensRecord
 } from '@/services/balances/types';
 import { api } from '@/services/rotkehlchen-api';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useEthBalancesStore } from '@/store/blockchain/balances/eth';
 import { useTasks } from '@/store/tasks';
-import { TaskMeta } from '@/types/task';
+import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { logger } from '@/utils/logging';
 

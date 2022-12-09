@@ -1,6 +1,6 @@
 import {
   Eth2DailyStats,
-  Eth2DailyStatsPayload,
+  type Eth2DailyStatsPayload,
   Eth2Deposits,
   Eth2Details
 } from '@rotki/common/lib/staking/eth2';
@@ -13,7 +13,7 @@ import { useNotifications } from '@/store/notifications';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useTasks } from '@/store/tasks';
 import { Section, Status } from '@/types/status';
-import { TaskMeta } from '@/types/task';
+import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { Zero } from '@/utils/bignumbers';
 import { logger } from '@/utils/logging';

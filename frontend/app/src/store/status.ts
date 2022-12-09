@@ -1,7 +1,7 @@
-import { MaybeRef } from '@vueuse/core';
-import { ComputedRef } from 'vue';
-import { StatusPayload } from '@/store/types';
-import { defiSections, Section, Status } from '@/types/status';
+import { type MaybeRef } from '@vueuse/core';
+import { type ComputedRef } from 'vue';
+import { type StatusPayload } from '@/store/types';
+import { Section, Status, defiSections } from '@/types/status';
 
 const isLoading = (status: MaybeRef<Status>): boolean =>
   get(status) === Status.LOADING ||
@@ -83,7 +83,7 @@ export const setStatus: (newStatus: Status, section: Section) => void = (
     return;
   }
   setStatus({
-    section: section,
+    section,
     status: newStatus
   });
 };

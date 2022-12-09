@@ -81,14 +81,14 @@
 </template>
 
 <script setup lang="ts">
-import { DataTableHeader } from 'vuetify';
+import { type DataTableHeader } from 'vuetify';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import TagCreator from '@/components/tags/TagCreator.vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
 import { useTagStore } from '@/store/session/tags';
 import { defaultTag } from '@/types/tags';
-import { Tag } from '@/types/user';
+import { type Tag } from '@/types/user';
 
 defineProps({
   dialog: { required: false, type: Boolean, default: false }

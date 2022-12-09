@@ -1,6 +1,6 @@
-import { BigNumber } from '@rotki/common';
-import { TooltipDisplayOption } from '@rotki/common/lib/settings/graphs';
-import { TooltipModel } from 'chart.js';
+import { type BigNumber } from '@rotki/common';
+import { type TooltipDisplayOption } from '@rotki/common/lib/settings/graphs';
+import { type TooltipModel } from 'chart.js';
 import { useTheme } from '@/composables/common';
 import { assert } from '@/utils/assertions';
 import { bigNumberify } from '@/utils/bignumbers';
@@ -24,13 +24,13 @@ export const useGraph = (canvasId: string) => {
 
   const baseColor = computed(() => {
     const activeTheme = get(theme);
-    const graphColor = activeTheme.currentTheme['graph'];
+    const graphColor = activeTheme.currentTheme.graph;
     return (graphColor ? graphColor : '#96DFD2') as string;
   });
 
   const fadeColor = computed(() => {
     const activeTheme = get(theme);
-    const graphFade = activeTheme.currentTheme['graphFade'];
+    const graphFade = activeTheme.currentTheme.graphFade;
     return (graphFade ? graphFade : white) as string;
   });
 

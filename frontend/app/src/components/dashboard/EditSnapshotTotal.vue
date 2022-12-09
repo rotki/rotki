@@ -68,17 +68,20 @@
   </div>
 </template>
 <script setup lang="ts">
-import { BigNumber } from '@rotki/common';
+import { type BigNumber } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
-import { PropType } from 'vue';
+import { type PropType } from 'vue';
 import { bigNumberSum } from '@/filters';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { CURRENCY_USD } from '@/types/currencies';
-import { BalanceSnapshot, LocationDataSnapshot } from '@/types/snapshots';
+import {
+  type BalanceSnapshot,
+  type LocationDataSnapshot
+} from '@/types/snapshots';
 import { assert } from '@/utils/assertions';
-import { bigNumberify, One, Zero } from '@/utils/bignumbers';
+import { One, Zero, bigNumberify } from '@/utils/bignumbers';
 import { isNft } from '@/utils/nft';
 
 const props = defineProps({
@@ -204,7 +207,7 @@ const save = () => {
   const val = get(value);
   const index = val.findIndex(item => item.location === 'total')!;
 
-  let newValue = [...val];
+  const newValue = [...val];
 
   newValue[index].usdValue = get(numericTotal);
 

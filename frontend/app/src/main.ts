@@ -1,6 +1,6 @@
 /* istanbul ignore file */
 
-import { createPinia, PiniaVuePlugin } from 'pinia';
+import { PiniaVuePlugin, createPinia } from 'pinia';
 import Vue, { provide } from 'vue';
 import App from '@/App.vue';
 import '@/filters';
@@ -31,19 +31,19 @@ if (import.meta.env.MODE === 'production' && import.meta.env.VITE_TEST) {
   if (import.meta.hot) {
     import.meta.hot.on('vite:beforeFullReload', () => {
       logger.info('vite:reload detected');
-      throw '(skipping full reload)';
+      throw new Error('(skipping full reload)');
     });
   }
 }
 
 Vue.directive('blur', {
-  inserted: function (el) {
-    el.onfocus = ({ target }): void => {
+  inserted(el) {
+    el.addEventListener('focus', ({ target }): void => {
       if (!target) {
         return;
       }
       (target as any).blur();
-    };
+    });
   }
 });
 

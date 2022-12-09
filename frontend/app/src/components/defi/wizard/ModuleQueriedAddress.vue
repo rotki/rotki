@@ -13,13 +13,13 @@
 </template>
 
 <script setup lang="ts">
-import { GeneralAccount } from '@rotki/common/lib/account';
+import { type GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { PropType, Ref } from 'vue';
+import { type PropType, type Ref } from 'vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import { useAccountBalancesStore } from '@/store/blockchain/accountbalances';
 import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
-import { Module } from '@/types/modules';
+import { type Module } from '@/types/modules';
 
 const props = defineProps({
   module: { required: true, type: String as PropType<Module> }
@@ -31,7 +31,7 @@ const selectedAccounts: Ref<GeneralAccount[]> = ref([]);
 const { tc } = useI18n();
 const ETH = Blockchain.ETH;
 
-let store = useQueriedAddressesStore();
+const store = useQueriedAddressesStore();
 const { queriedAddresses } = storeToRefs(store);
 const { addQueriedAddress, deleteQueriedAddress } = store;
 

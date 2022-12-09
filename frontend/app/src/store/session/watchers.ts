@@ -1,4 +1,4 @@
-import { Watcher, WatcherTypes } from '@/services/session/types';
+import { type Watcher, type WatcherTypes } from '@/services/session/types';
 import { useWatchersApi } from '@/services/session/watchers-api';
 import { useNotifications } from '@/store/notifications';
 import { usePremiumStore } from '@/store/session/premium';
@@ -11,8 +11,8 @@ export const useWatchersStore = defineStore('session/watchers', () => {
   const loanWatchers = computed(() => {
     const loanWatcherTypes = ['makervault_collateralization_ratio'];
 
-    return get(watchers).filter(
-      watcher => loanWatcherTypes.indexOf(watcher.type) > -1
+    return get(watchers).filter(watcher =>
+      loanWatcherTypes.includes(watcher.type)
     );
   });
 

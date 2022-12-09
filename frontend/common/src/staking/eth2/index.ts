@@ -1,5 +1,5 @@
-import { z } from "zod";
-import { Balance, NumericString, Percentage } from "../../index";
+import { z } from 'zod';
+import { Balance, NumericString, Percentage } from '../../index';
 
 export const Eth2Deposit = z.object({
   fromAddress: z.string(),
@@ -9,13 +9,13 @@ export const Eth2Deposit = z.object({
   txHash: z.string(),
   timestamp: z.number(),
   txIndex: z.number().nonnegative()
-})
+});
 
-export type Eth2Deposit  = z.infer<typeof Eth2Deposit>
+export type Eth2Deposit = z.infer<typeof Eth2Deposit>;
 
-export const Eth2Deposits = z.array(Eth2Deposit)
+export const Eth2Deposits = z.array(Eth2Deposit);
 
-export type Eth2Deposits = z.infer<typeof Eth2Deposits>
+export type Eth2Deposits = z.infer<typeof Eth2Deposits>;
 
 const Eth2DailyStat = z.object({
   validatorIndex: z.number().nonnegative(),
@@ -34,7 +34,7 @@ const Eth2DailyStat = z.object({
   depositedBalance: Balance
 });
 
-export type Eth2DailyStat = z.infer<typeof Eth2DailyStat>
+export type Eth2DailyStat = z.infer<typeof Eth2DailyStat>;
 
 export const Eth2DailyStats = z.object({
   entries: z.array(Eth2DailyStat),
@@ -42,9 +42,9 @@ export const Eth2DailyStats = z.object({
   entriesTotal: z.number().nonnegative(),
   sumPnl: NumericString,
   sumUsdValue: NumericString
-})
+});
 
-export type Eth2DailyStats = z.infer<typeof Eth2DailyStats>
+export type Eth2DailyStats = z.infer<typeof Eth2DailyStats>;
 
 const Eth2Detail = z.object({
   eth1Depositor: z.string(),
@@ -57,18 +57,18 @@ const Eth2Detail = z.object({
   performance1y: Balance
 });
 
-export type Eth2Detail = z.infer<typeof Eth2Detail>
+export type Eth2Detail = z.infer<typeof Eth2Detail>;
 
 export const Eth2Details = z.array(Eth2Detail);
 
-export type Eth2Details = z.infer<typeof Eth2Details>
+export type Eth2Details = z.infer<typeof Eth2Details>;
 
 export interface Eth2DailyStatsPayload {
   readonly limit: number;
   readonly offset: number;
   readonly orderByAttributes: string[];
   readonly ascending: boolean[];
-  readonly validators?: number[]
+  readonly validators?: number[];
   readonly fromTimestamp?: number;
   readonly toTimestamp?: number;
   readonly onlyCache?: boolean;

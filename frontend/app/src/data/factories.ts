@@ -1,9 +1,9 @@
 import { Defaults } from '@/data/defaults';
-import { Currency } from '@/types/currencies';
+import { type Currency } from '@/types/currencies';
 import {
-  AccountingSettings,
+  type AccountingSettings,
   CostBasisMethod,
-  GeneralSettings
+  type GeneralSettings
 } from '@/types/user';
 
 export const defaultGeneralSettings = (
@@ -15,7 +15,7 @@ export const defaultGeneralSettings = (
   balanceSaveFrequency: Defaults.BALANCE_SAVE_FREQUENCY,
   dateDisplayFormat: Defaults.DEFAULT_DATE_DISPLAY_FORMAT,
   submitUsageAnalytics: Defaults.ANONYMOUS_USAGE_ANALYTICS,
-  mainCurrency: mainCurrency,
+  mainCurrency,
   activeModules: [],
   btcDerivationGapLimit: Defaults.BTC_DERIVATION_GAP_LIMIT,
   displayDateInLocaltime: Defaults.DISPLAY_DATE_IN_LOCALTIME,

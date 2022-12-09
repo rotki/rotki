@@ -70,14 +70,14 @@
 </template>
 
 <script setup lang="ts">
-import { ComputedRef, PropType } from 'vue';
-import { DataTableHeader } from 'vuetify';
+import { type ComputedRef, type PropType } from 'vue';
+import { type DataTableHeader } from 'vuetify';
 import Fragment from '@/components/helper/Fragment';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import { displayDateFormatter } from '@/data/date_formatter';
 import { useBackupApi } from '@/services/backup';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { UserDbBackup } from '@/types/backup';
+import { type UserDbBackup } from '@/types/backup';
 import { assert } from '@/utils/assertions';
 import { getFilepath } from '@/utils/backups';
 import { size } from '@/utils/data';

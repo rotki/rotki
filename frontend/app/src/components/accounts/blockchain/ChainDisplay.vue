@@ -6,8 +6,8 @@
   </list-item>
 </template>
 <script setup lang="ts">
-import { Blockchain } from '@rotki/common/lib/blockchain';
-import { PropType } from 'vue';
+import { type Blockchain } from '@rotki/common/lib/blockchain';
+import { type PropType } from 'vue';
 import ListItem from '@/components/helper/ListItem.vue';
 
 defineProps({

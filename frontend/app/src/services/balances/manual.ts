@@ -1,13 +1,13 @@
-import { ActionResult } from '@rotki/common/lib/data';
+import { type ActionResult } from '@rotki/common/lib/data';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
-import { PendingTask } from '@/services/types-api';
+import { type PendingTask } from '@/services/types-api';
 import {
   handleResponse,
   validWithParamsSessionAndExternalService,
   validWithSessionAndExternalService
 } from '@/services/utils';
-import { ManualBalance, ManualBalances } from '@/types/manual-balances';
+import { type ManualBalance, ManualBalances } from '@/types/manual-balances';
 
 export const useManualBalancesApi = () => {
   const queryManualBalances = async (): Promise<PendingTask> => {

@@ -1,8 +1,8 @@
-import { ActionResult } from '@rotki/common/lib/data';
-import { AxiosInstance } from 'axios';
+import { type ActionResult } from '@rotki/common/lib/data';
+import { type AxiosInstance } from 'axios';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
 import { ProtocolVersion } from '@/services/defi/consts';
-import { ApiImplementation, PendingTask } from '@/services/types-api';
+import { type ApiImplementation, type PendingTask } from '@/services/types-api';
 import {
   fetchExternalAsync,
   handleResponse,

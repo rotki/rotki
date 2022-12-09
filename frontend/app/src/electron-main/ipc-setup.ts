@@ -1,18 +1,22 @@
 import {
-  BrowserWindow,
+  type BrowserWindow,
+  Menu,
   dialog,
   ipcMain,
-  Menu,
   nativeTheme,
   safeStorage,
   shell
 } from 'electron';
-import { ProgressInfo } from 'electron-builder';
+import { type ProgressInfo } from 'electron-builder';
 import Store from 'electron-store';
 import { autoUpdater } from 'electron-updater';
 import { loadConfig } from '@/electron-main/config';
 import { startHttp, stopHttp } from '@/electron-main/http';
-import { BackendOptions, SystemVersion, TrayUpdate } from '@/electron-main/ipc';
+import {
+  type BackendOptions,
+  type SystemVersion,
+  type TrayUpdate
+} from '@/electron-main/ipc';
 import {
   IPC_BACKEND_PROCESS_DETECTED,
   IPC_CHECK_FOR_UPDATES,
@@ -38,11 +42,15 @@ import {
   IPC_TRAY_UPDATE,
   IPC_VERSION
 } from '@/electron-main/ipc-commands';
-import { debugSettings, getUserMenu, MenuActions } from '@/electron-main/menu';
+import {
+  type MenuActions,
+  debugSettings,
+  getUserMenu
+} from '@/electron-main/menu';
 import { selectPort } from '@/electron-main/port-utils';
-import { TrayManager } from '@/electron-main/tray-manager';
-import PyHandler from '@/py-handler';
+import { type TrayManager } from '@/electron-main/tray-manager';
 import { checkIfDevelopment } from '@/utils/env-utils';
+import type PyHandler from '@/py-handler';
 
 const isDevelopment = checkIfDevelopment();
 
@@ -314,7 +322,7 @@ function setupDownloadUpdate(getWindow: WindowProvider, pyHandler: PyHandler) {
 function setupCheckForUpdates(pyHandler: PyHandler) {
   ipcMain.on(IPC_CHECK_FOR_UPDATES, async event => {
     if (isDevelopment) {
-      console.log('Running in development skipping auto-updater check');
+      console.warn('Running in development skipping auto-updater check');
       return;
     }
     autoUpdater.once('update-available', () => {

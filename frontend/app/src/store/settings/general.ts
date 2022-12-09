@@ -1,11 +1,15 @@
-import { ComputedRef } from 'vue';
+import { type ComputedRef } from 'vue';
 import { defaultGeneralSettings } from '@/data/factories';
-import { AddressNamePriority } from '@/types/address-name-priorities';
-import { Currency, SupportedCurrency, useCurrencies } from '@/types/currencies';
-import { Exchange } from '@/types/exchanges';
-import { Module } from '@/types/modules';
-import { PriceOracle } from '@/types/price-oracle';
-import { GeneralSettings } from '@/types/user';
+import { type AddressNamePriority } from '@/types/address-name-priorities';
+import {
+  type Currency,
+  type SupportedCurrency,
+  useCurrencies
+} from '@/types/currencies';
+import { type Exchange } from '@/types/exchanges';
+import { type Module } from '@/types/modules';
+import { type PriceOracle } from '@/types/price-oracle';
+import { type GeneralSettings } from '@/types/user';
 
 export const useGeneralSettingsStore = defineStore('settings/general', () => {
   const { defaultCurrency } = useCurrencies();

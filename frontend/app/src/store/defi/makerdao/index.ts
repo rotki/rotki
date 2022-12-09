@@ -1,5 +1,5 @@
 import { DefiProtocol } from '@rotki/common/lib/blockchain';
-import { Ref } from 'vue';
+import { type Ref } from 'vue';
 import { usePremium } from '@/composables/premium';
 import { useModules } from '@/composables/session/modules';
 import { useStatusUpdater } from '@/composables/status';
@@ -9,18 +9,18 @@ import { getStatus, setStatus } from '@/store/status';
 import { useTasks } from '@/store/tasks';
 import { isLoading } from '@/store/utils';
 import {
-  ApiMakerDAOVault,
+  type ApiMakerDAOVault,
   ApiMakerDAOVaults,
   DSRBalances,
   DSRHistory,
-  MakerDAOVault,
+  type MakerDAOVault,
   MakerDAOVaultDetails
 } from '@/types/defi/maker';
 import { Module } from '@/types/modules';
 import { Section, Status } from '@/types/status';
-import { TaskMeta } from '@/types/task';
+import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { bigNumberify, Zero } from '@/utils/bignumbers';
+import { Zero, bigNumberify } from '@/utils/bignumbers';
 import { logger } from '@/utils/logging';
 
 const convertMakerDAOVaults = (vaults: ApiMakerDAOVault[]): MakerDAOVault[] =>
@@ -32,7 +32,7 @@ const convertMakerDAOVaults = (vaults: ApiMakerDAOVault[]): MakerDAOVault[] =>
     collateralizationRatio: vault.collateralizationRatio ?? undefined,
     liquidationPrice: vault.liquidationPrice
       ? vault.liquidationPrice
-      : bigNumberify(NaN)
+      : bigNumberify(Number.NaN)
   }));
 
 const defaultDsrBalances = (): DSRBalances => ({

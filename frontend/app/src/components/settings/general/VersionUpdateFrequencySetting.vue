@@ -103,7 +103,8 @@ const resetVersionUpdateCheckFrequency = () => {
   );
 };
 
-const frequencyTransform = (value: string) => (value ? parseInt(value) : value);
+const frequencyTransform = (value: string) =>
+  value ? Number.parseInt(value) : value;
 const switchTransform = (value: boolean) => (value ? 24 : -1);
 
 onMounted(() => {

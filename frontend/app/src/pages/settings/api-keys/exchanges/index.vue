@@ -81,7 +81,7 @@
 </template>
 
 <script setup lang="ts">
-import { DataTableHeader } from 'vuetify';
+import { type DataTableHeader } from 'vuetify';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
@@ -92,10 +92,10 @@ import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { useNotifications } from '@/store/notifications';
 import { useSettingsStore } from '@/store/settings';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { Nullable, Writeable } from '@/types';
+import { type Nullable, type Writeable } from '@/types';
 import {
-  Exchange,
-  ExchangePayload,
+  type Exchange,
+  type ExchangePayload,
   SupportedExchange
 } from '@/types/exchanges';
 import { useTradeLocations } from '@/types/trades';
@@ -151,7 +151,7 @@ const resetNonSyncingExchanges = () => {
 const toggleSync = async (exchange: Exchange) => {
   const index = findNonSyncExchangeIndex(exchange);
 
-  let data = [...get(nonSyncingExchanges)];
+  const data = [...get(nonSyncingExchanges)];
 
   let enable = true;
 

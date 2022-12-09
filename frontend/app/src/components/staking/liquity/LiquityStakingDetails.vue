@@ -48,15 +48,15 @@
 </template>
 
 <script setup lang="ts">
-import { AssetBalance } from '@rotki/common';
-import { GeneralAccount } from '@rotki/common/lib/account';
+import { type AssetBalance } from '@rotki/common';
+import { type GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import {
-  LiquityPoolDetail,
-  LiquityPoolDetails,
-  LiquityStaking
+  type LiquityPoolDetail,
+  type LiquityPoolDetails,
+  type LiquityStaking
 } from '@rotki/common/lib/liquity';
-import { ComputedRef } from 'vue';
+import { type ComputedRef } from 'vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import TransactionContent from '@/components/history/transactions/TransactionContent.vue';
 import LiquityPools from '@/components/staking/liquity/LiquityPools.vue';
@@ -97,7 +97,7 @@ const stakingList: ComputedRef<AssetBalance[]> = computed(() => {
 
     if (assetStake) {
       staked[asset] = {
-        asset: asset,
+        asset,
         usdValue: assetStake.usdValue.plus(addressStake.usdValue),
         amount: assetStake.amount.plus(addressStake.amount)
       };

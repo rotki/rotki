@@ -1,5 +1,5 @@
-import { ComputedRef, Ref } from 'vue';
-import { MatchedKeyword, SearchMatcher } from '@/types/filtering';
+import { type ComputedRef, type Ref } from 'vue';
+import { type MatchedKeyword, type SearchMatcher } from '@/types/filtering';
 
 enum AssetFilterKeys {
   SYMBOL = 'symbol',

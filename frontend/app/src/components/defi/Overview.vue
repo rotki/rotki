@@ -101,11 +101,11 @@
 </template>
 
 <script setup lang="ts">
-import { PropType } from 'vue';
+import { type PropType } from 'vue';
 import DefiAsset from '@/components/defi/DefiAsset.vue';
 import InfoRow from '@/components/defi/display/InfoRow.vue';
 import StatCard from '@/components/display/StatCard.vue';
-import { DefiProtocolSummary } from '@/types/defi/overview';
+import { type DefiProtocolSummary } from '@/types/defi/overview';
 
 const props = defineProps({
   summary: {

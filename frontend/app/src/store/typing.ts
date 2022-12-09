@@ -1,9 +1,9 @@
-import { Ref } from 'vue';
-import { PendingTask } from '@/services/types-api';
-import { Module } from '@/types/modules';
-import { Section } from '@/types/status';
-import { TaskMeta } from '@/types/task';
-import { TaskType } from '@/types/task-type';
+import { type Ref } from 'vue';
+import { type PendingTask } from '@/services/types-api';
+import { type Module } from '@/types/modules';
+import { type Section } from '@/types/status';
+import { type TaskMeta } from '@/types/task';
+import { type TaskType } from '@/types/task-type';
 
 export interface OnError {
   readonly title: string;

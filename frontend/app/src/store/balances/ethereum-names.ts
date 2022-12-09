@@ -4,11 +4,11 @@ import { useNotifications } from '@/store/notifications';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useTasks } from '@/store/tasks';
 import {
-  EthAddressBookLocation,
-  EthNames,
-  EthNamesEntries
+  type EthAddressBookLocation,
+  type EthNames,
+  type EthNamesEntries
 } from '@/types/eth-names';
-import { TaskMeta } from '@/types/task';
+import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { uniqueStrings } from '@/utils/data';
 import { logger } from '@/utils/logging';
@@ -64,7 +64,7 @@ export const useEthNamesStore = defineStore('ethNames', () => {
     addresses: string[],
     forceUpdate = false
   ): Promise<void> => {
-    if (addresses.length < 1) return;
+    if (addresses.length === 0) return;
 
     const changed = updateEnsAddresses(addresses);
 

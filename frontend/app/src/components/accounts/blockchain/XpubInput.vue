@@ -68,15 +68,15 @@
 
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { PropType } from 'vue';
-import { XpubPayload } from '@/store/balances/types';
+import { type PropType } from 'vue';
+import { type XpubPayload } from '@/store/balances/types';
 import { trimOnPaste } from '@/utils/event';
 import {
+  XpubPrefix,
+  type XpubType,
   getKeyType,
   getPrefix,
-  keyType,
-  XpubPrefix,
-  XpubType
+  keyType
 } from '@/utils/xpub';
 
 const FIELD_XPUB = 'xpub';
@@ -115,7 +115,7 @@ const fields = {
   DERIVATION_PATH: FIELD_DERIVATION_PATH
 };
 
-const isPrefixed = (value: string) => value.match(/([xzy]pub)(.*)/);
+const isPrefixed = (value: string) => value.match(/([x-z]pub)(.*)/);
 const setXpubKeyType = (value: string) => {
   const match = isPrefixed(value);
   if (match && match.length === 3) {

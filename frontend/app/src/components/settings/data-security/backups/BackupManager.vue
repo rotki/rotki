@@ -59,14 +59,14 @@
 
 <script setup lang="ts">
 import { Severity } from '@rotki/common/lib/messages';
-import { Ref } from 'vue';
+import { type Ref } from 'vue';
 import Fragment from '@/components/helper/Fragment';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import DatabaseBackups from '@/components/settings/data-security/backups/DatabaseBackups.vue';
 import DatabaseInfoDisplay from '@/components/settings/data-security/backups/DatabaseInfoDisplay.vue';
 import { useBackupApi } from '@/services/backup';
 import { useNotifications } from '@/store/notifications';
-import { DatabaseInfo, UserDbBackup } from '@/types/backup';
+import { type DatabaseInfo, type UserDbBackup } from '@/types/backup';
 import { getFilepath } from '@/utils/backups';
 import { size } from '@/utils/data';
 import { logger } from '@/utils/logging';
@@ -102,7 +102,7 @@ const setupBackupInfo = () => {
       separatorLength = 2;
     }
 
-    return filepath.substr(0, index + separatorLength);
+    return filepath.slice(0, Math.max(0, index + separatorLength));
   });
 
   const userDb = computed(() => {

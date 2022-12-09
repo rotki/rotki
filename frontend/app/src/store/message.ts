@@ -1,5 +1,5 @@
-import { SemiPartial } from '@rotki/common';
-import { Message } from '@rotki/common/lib/messages';
+import { type SemiPartial } from '@rotki/common';
+import { type Message } from '@rotki/common/lib/messages';
 
 const emptyMessage = (): Message => ({
   title: '',

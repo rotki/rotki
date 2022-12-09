@@ -99,7 +99,7 @@
       @cancel="showCustomAssetForm = false"
     >
       <custom-asset-form
-        ref="customAssetForm"
+        :ref="customAssetFormRef"
         :types="customAssetTypes"
         :edit="false"
         @valid="customAssetFormValid = $event"
@@ -111,9 +111,8 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
-import { PropType, Ref } from 'vue';
+import { type PropType, type Ref } from 'vue';
 import ManualBalancesPriceForm from '@/components/accounts/manual-balances/ManualBalancesPriceForm.vue';
-import CustomAssetForm from '@/components/asset-manager/CustomAssetForm.vue';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import BalanceTypeInput from '@/components/inputs/BalanceTypeInput.vue';
@@ -125,11 +124,12 @@ import { api } from '@/services/rotkehlchen-api';
 import { useBalancesStore } from '@/store/balances';
 import { useManualBalancesStore } from '@/store/balances/manual';
 import { useMessageStore } from '@/store/message';
-import { TradeLocation } from '@/types/history/trade-location';
-import { ManualBalance } from '@/types/manual-balances';
+import { type TradeLocation } from '@/types/history/trade-location';
+import { type ManualBalance } from '@/types/manual-balances';
 import { startPromise } from '@/utils';
 import { bigNumberify } from '@/utils/bignumbers';
 import { toMessages } from '@/utils/validation-errors';
+import CustomAssetForm from '@/components/asset-manager/CustomAssetForm.vue';
 
 const props = defineProps({
   edit: {
@@ -217,7 +217,7 @@ const save = async () => {
     balanceType: get(balanceType)
   };
 
-  let usedAsset: string = get(asset);
+  const usedAsset: string = get(asset);
 
   const idVal = get(id);
   const isEdit = get(edit) && idVal;
@@ -277,7 +277,7 @@ watch(label, label => {
   }
 });
 
-const customAssetForm: Ref<InstanceType<typeof CustomAssetForm> | null> =
+const customAssetFormRef: Ref<InstanceType<typeof CustomAssetForm> | null> =
   ref(null);
 const showCustomAssetForm: Ref<boolean> = ref(false);
 const customAssetFormValid: Ref<boolean> = ref(false);
@@ -297,7 +297,7 @@ const saveCustomAsset = async () => {
   set(customAssetFormSaving, true);
 
   set(customAssetFormSaving, true);
-  const identifier = await get(customAssetForm)?.save();
+  const identifier = await get(customAssetFormRef)?.save();
 
   if (identifier) {
     set(showCustomAssetForm, false);

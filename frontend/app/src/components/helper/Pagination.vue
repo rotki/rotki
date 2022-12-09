@@ -68,7 +68,7 @@ const newPage = (data?: any) => {
     return;
   }
 
-  const page = parseInt(data);
+  const page = Number.parseInt(data);
   if (isNaN(page)) {
     return;
   }

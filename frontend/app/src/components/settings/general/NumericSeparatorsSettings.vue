@@ -109,7 +109,7 @@ const callIfThousandsValid = (
   value: string,
   method: (value: string) => void
 ) => {
-  let validator = get(v$);
+  const validator = get(v$);
   callIfValid(value, method, () => validator.thousandSeparator.$error);
 };
 
@@ -117,7 +117,7 @@ const callIfDecimalsValid = (
   value: string,
   method: (value: string) => void
 ) => {
-  let validator = get(v$);
+  const validator = get(v$);
   callIfValid(value, method, () => validator.decimalSeparator.$error);
 };
 

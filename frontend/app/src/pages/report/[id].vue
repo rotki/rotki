@@ -53,7 +53,7 @@
 </template>
 
 <script setup lang="ts">
-import { ComputedRef } from 'vue';
+import { type ComputedRef } from 'vue';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import AccountingSettingsDisplay from '@/components/profitloss/AccountingSettingsDisplay.vue';
@@ -65,7 +65,7 @@ import ReportHeader from '@/components/profitloss/ReportHeader.vue';
 import { useInterop } from '@/electron-interop';
 import { Routes } from '@/router/routes';
 import { useReports } from '@/store/reports';
-import { SelectedReport } from '@/types/reports';
+import { type SelectedReport } from '@/types/reports';
 
 const loading = ref(true);
 const refreshing = ref(false);
@@ -86,7 +86,7 @@ const settings = computed(() => get(selectedReport).settings);
 const initialOpenReportActionable = ref<boolean>(false);
 
 const currentRoute = get(route);
-const reportId = parseInt(currentRoute.params.id as string);
+const reportId = Number.parseInt(currentRoute.params.id as string);
 const latest = isLatestReport(reportId);
 
 const { tc } = useI18n();

@@ -275,13 +275,13 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
-import { ComputedRef, PropType, Ref } from 'vue';
+import { type ComputedRef, type PropType, type Ref } from 'vue';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import { useInterop } from '@/electron-interop';
 import { useSessionStore } from '@/store/session';
-import { SyncConflict } from '@/store/session/types';
-import { LoginCredentials, SyncApproval } from '@/types/login';
-import { LoginStatusData } from '@/types/websocket-messages';
+import { type SyncConflict } from '@/store/session/types';
+import { type LoginCredentials, type SyncApproval } from '@/types/login';
+import { type LoginStatusData } from '@/types/websocket-messages';
 import {
   deleteBackendUrl,
   getBackendUrl,
@@ -304,7 +304,11 @@ const KEY_USERNAME = 'rotki.username';
 const props = defineProps({
   loading: { required: true, type: Boolean },
   syncConflict: { required: true, type: Object as PropType<SyncConflict> },
-  errors: { required: false, type: Array, default: () => [] },
+  errors: {
+    required: false,
+    type: Array as PropType<string[]>,
+    default: () => []
+  },
   loginStatus: {
     required: false,
     type: Object as PropType<LoginStatusData | null>,
@@ -372,7 +376,7 @@ const rules = {
     ),
     isValidUsername: helpers.withMessage(
       tc('login.validation.valid_username'),
-      (v: string): boolean => !!(v && /^[0-9a-zA-Z_.-]+$/.test(v))
+      (v: string): boolean => !!(v && /^[\w.-]+$/.test(v))
     )
   },
   password: {
@@ -391,7 +395,7 @@ const rules = {
       (v: string): boolean =>
         !get(customBackendDisplay) ||
         (v.length < 300 &&
-          /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}(\.[a-zA-Z0-9()]{1,6})?\b([-a-zA-Z0-9()@:%_+.~#?&/=]*)$/.test(
+          /^https?:\/\/(www\.)?[\w#%+.:=@~-]{1,256}(\.[\d()A-Za-z]{1,6})?\b([\w#%&()+./:=?@~-]*)$/.test(
             v
           ))
     )
@@ -421,9 +425,7 @@ watch(password, () => {
 });
 
 const isLoggedInError = computed<boolean>(() => {
-  return !!(get(errors) as string[]).find(error =>
-    error.includes('is already logged in')
-  );
+  return get(errors).some(error => error.includes('is already logged in'));
 });
 
 const logout = async () => {

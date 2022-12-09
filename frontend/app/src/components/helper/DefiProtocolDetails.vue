@@ -11,7 +11,7 @@
   </span>
 </template>
 <script setup lang="ts">
-import { PropType } from 'vue';
+import { type PropType } from 'vue';
 
 interface Item {
   icon: string;

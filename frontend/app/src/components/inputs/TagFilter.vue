@@ -43,10 +43,10 @@
 </template>
 
 <script setup lang="ts">
-import { PropType } from 'vue';
+import { type PropType } from 'vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
 import { useTagStore } from '@/store/session/tags';
-import { Tag } from '@/types/user';
+import { type Tag } from '@/types/user';
 
 const props = defineProps({
   value: { required: true, type: Array as PropType<string[]> },

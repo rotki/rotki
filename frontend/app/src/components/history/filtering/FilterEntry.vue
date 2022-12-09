@@ -21,8 +21,8 @@
 </template>
 
 <script setup lang="ts">
-import { PropType } from 'vue';
-import { SearchMatcher } from '@/types/filtering';
+import { type PropType } from 'vue';
+import { type SearchMatcher } from '@/types/filtering';
 
 defineProps({
   matcher: {

@@ -1,5 +1,9 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import { Interop, Listeners, TrayUpdate } from '@/electron-main/ipc';
+import {
+  type Interop,
+  type Listeners,
+  type TrayUpdate
+} from '@/electron-main/ipc';
 import {
   IPC_ABOUT,
   IPC_BACKEND_PROCESS_DETECTED,

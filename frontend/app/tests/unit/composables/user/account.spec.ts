@@ -6,7 +6,7 @@ import { useInterop } from '@/electron-interop';
 import { useSessionStore } from '@/store/session';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { usePremiumStore } from '@/store/session/premium';
-import { ActionSuccess } from '@/store/types';
+import { type ActionSuccess } from '@/store/types';
 
 vi.mock('vue-router/composables', () => ({
   useRoute: vi.fn(),

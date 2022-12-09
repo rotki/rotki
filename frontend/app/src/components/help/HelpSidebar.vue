@@ -158,7 +158,7 @@ const downloadBrowserLog = async () => {
     const messages = data.map((item: any) => item.message).join('\n');
 
     downloadFileByUrl(
-      'data:text/plain;charset=utf-8,' + encodeURIComponent(messages),
+      `data:text/plain;charset=utf-8,${encodeURIComponent(messages)}`,
       'frontend_log.txt'
     );
   });

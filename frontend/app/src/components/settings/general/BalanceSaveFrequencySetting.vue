@@ -62,7 +62,7 @@ const resetBalanceSaveFrequency = () => {
   set(balanceSaveFrequency, get(frequency).toString());
 };
 
-const transform = (value?: string) => (value ? parseInt(value) : value);
+const transform = (value?: string) => (value ? Number.parseInt(value) : value);
 const successMessage = (frequency: string) =>
   tc('general_settings.validation.balance_frequency.success', 0, {
     frequency

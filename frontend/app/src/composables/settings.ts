@@ -2,13 +2,13 @@ import { promiseTimeout } from '@vueuse/core';
 import { useSettingsStore } from '@/store/settings';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import {
-  SessionSettings,
+  type SessionSettings,
   useSessionSettingsStore
 } from '@/store/settings/session';
-import { ActionStatus } from '@/store/types';
-import { FrontendSettingsPayload } from '@/types/frontend-settings';
-import { BaseMessage } from '@/types/messages';
-import { SettingsUpdate } from '@/types/user';
+import { type ActionStatus } from '@/store/types';
+import { type FrontendSettingsPayload } from '@/types/frontend-settings';
+import { type BaseMessage } from '@/types/messages';
+import { type SettingsUpdate } from '@/types/user';
 import { logger } from '@/utils/logging';
 
 export enum SettingLocation {
@@ -39,10 +39,8 @@ const getActionStatus = async (
       message = {
         success: messages?.success || ''
       };
-    } else {
-      if (result.message) {
-        message.error = `${message.error} (${result.message})`;
-      }
+    } else if (result.message) {
+      message.error = `${message.error} (${result.message})`;
     }
   } catch (e) {
     logger.error(e);

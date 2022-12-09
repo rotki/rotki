@@ -16,7 +16,7 @@
             <div slot="tooltip">
               {{ t('dashboard.exchange_balances.tooltip') }}
             </div>
-            <div v-if="exchanges.length < 1">
+            <div v-if="exchanges.length === 0">
               <v-card-actions class="px-4">
                 <v-btn
                   text
@@ -94,7 +94,7 @@
             <div slot="tooltip">
               {{ t('dashboard.manual_balances.tooltip') }}
             </div>
-            <div v-if="manualBalanceByLocation.length < 1">
+            <div v-if="manualBalanceByLocation.length === 0">
               <v-card-actions class="px-4">
                 <v-btn
                   text

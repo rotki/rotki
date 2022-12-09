@@ -1,26 +1,29 @@
 import {
-  AssetBalance,
-  AssetBalanceWithPrice,
-  Balance,
-  BigNumber,
-  HasBalance
+  type AssetBalance,
+  type AssetBalanceWithPrice,
+  type Balance,
+  type BigNumber,
+  type HasBalance
 } from '@rotki/common';
-import { Blockchain } from '@rotki/common/lib/blockchain';
-import { MaybeRef } from '@vueuse/core';
-import { ComputedRef } from 'vue';
+import { type Blockchain } from '@rotki/common/lib/blockchain';
+import { type MaybeRef } from '@vueuse/core';
+import { type ComputedRef } from 'vue';
 import { bigNumberSum } from '@/filters';
-import { BtcAccountData, GeneralAccountData } from '@/services/types-api';
 import {
-  AccountWithBalance,
-  AssetBreakdown,
-  BlockchainAccountWithBalance
+  type BtcAccountData,
+  type GeneralAccountData
+} from '@/services/types-api';
+import {
+  type AccountWithBalance,
+  type AssetBreakdown,
+  type BlockchainAccountWithBalance
 } from '@/store/balances/types';
-import { AssetBalances } from '@/types/balances';
+import { type AssetBalances } from '@/types/balances';
 import {
-  BlockchainAssetBalances,
-  BtcBalances
+  type BlockchainAssetBalances,
+  type BtcBalances
 } from '@/types/blockchain/balances';
-import { NoPrice, sortDesc, Zero, zeroBalance } from '@/utils/bignumbers';
+import { NoPrice, Zero, sortDesc, zeroBalance } from '@/utils/bignumbers';
 import { assetSum, balanceSum } from '@/utils/calculation';
 import { getTags } from '@/utils/tags';
 
@@ -269,8 +272,7 @@ export const getBtcBreakdown = (
   }
 
   if (xpubs) {
-    for (let i = 0; i < xpubs.length; i++) {
-      const xpub = xpubs[i];
+    for (const [i, xpub] of xpubs.entries()) {
       const addresses = xpub.addresses;
       const tags = accounts?.xpubs[i].tags;
       for (const address in addresses) {

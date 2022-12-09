@@ -1,15 +1,15 @@
-import { Balance, BigNumber, HasBalance } from '@rotki/common';
-import { DefiProtocol } from '@rotki/common/lib/blockchain';
+import { type Balance, type BigNumber, type HasBalance } from '@rotki/common';
+import { type DefiProtocol } from '@rotki/common/lib/blockchain';
 import {
-  AaveBorrowingRates,
-  AaveHistoryEvents,
-  AaveHistoryTotal
+  type AaveBorrowingRates,
+  type AaveHistoryEvents,
+  type AaveHistoryTotal
 } from '@rotki/common/lib/defi/aave';
-import { Collateral, CollateralizedLoan } from '@/types/defi';
-import { CompoundEventType } from '@/types/defi/compound';
-import { EventType } from '@/types/defi/event-type';
-import { MakerDAOLendingHistoryExtras } from '@/types/defi/maker';
-import { YearnEventType } from '@/types/defi/yearn';
+import { type Collateral, type CollateralizedLoan } from '@/types/defi';
+import { type CompoundEventType } from '@/types/defi/compound';
+import { type EventType } from '@/types/defi/event-type';
+import { type MakerDAOLendingHistoryExtras } from '@/types/defi/maker';
+import { type YearnEventType } from '@/types/defi/yearn';
 
 export interface LoanSummary {
   readonly totalCollateralUsd: BigNumber;

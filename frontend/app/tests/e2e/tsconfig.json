@@ -4,6 +4,7 @@
     "types": ["cypress", "node"],
     "target": "ES5"
   },
-  "include": ["**/*.ts", ".eslintrc.js"],
+  "include": ["**/*.ts"],
+  "exclude": ["node_modules/**", "**/.*"],
   "compileOnSave": false
 }

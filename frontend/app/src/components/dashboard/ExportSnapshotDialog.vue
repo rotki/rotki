@@ -58,8 +58,8 @@
   </v-dialog>
 </template>
 <script setup lang="ts">
-import { BigNumber } from '@rotki/common';
-import { Message } from '@rotki/common/lib/messages';
+import { type BigNumber } from '@rotki/common';
+import { type Message } from '@rotki/common/lib/messages';
 import dayjs from 'dayjs';
 import EditSnapshotDialog from '@/components/dashboard/EditSnapshotDialog.vue';
 import { interop } from '@/electron-interop';

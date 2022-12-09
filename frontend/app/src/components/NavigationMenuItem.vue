@@ -50,7 +50,7 @@
 </template>
 
 <script setup lang="ts">
-import { PropType, VueConstructor } from 'vue';
+import { type PropType, type VueConstructor } from 'vue';
 import { useTheme } from '@/composables/common';
 
 defineProps({

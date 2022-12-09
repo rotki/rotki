@@ -1,4 +1,4 @@
-import { NotificationData } from '@rotki/common/lib/messages';
+import { type NotificationData } from '@rotki/common/lib/messages';
 import { useNotifications } from '@/store/notifications';
 
 export const setupNotifications = () => {

@@ -93,7 +93,7 @@
 
 <script setup lang="ts">
 import { Severity } from '@rotki/common/lib/messages';
-import { Ref } from 'vue';
+import { type Ref } from 'vue';
 import { useBackendManagement } from '@/composables/backend';
 import { api } from '@/services/rotkehlchen-api';
 import { useMainStore } from '@/store/main';

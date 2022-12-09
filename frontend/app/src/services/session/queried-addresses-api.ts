@@ -1,8 +1,8 @@
-import { ActionResult } from '@rotki/common/lib/data';
+import { type ActionResult } from '@rotki/common/lib/data';
 import { api } from '@/services/rotkehlchen-api';
 import {
-  QueriedAddresses,
-  QueriedAddressPayload
+  type QueriedAddressPayload,
+  type QueriedAddresses
 } from '@/services/session/types';
 import {
   handleResponse,

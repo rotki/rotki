@@ -1,5 +1,5 @@
-import { z } from "zod";
-import { Balance, NumericString } from "../../index";
+import { z } from 'zod';
+import { Balance, NumericString } from '../../index';
 
 export const XswapAsset = z.object({
   asset: z.string(),
@@ -24,8 +24,8 @@ export const XswapBalances = z.record(z.array(XswapBalance));
 export type XswapBalances = z.infer<typeof XswapBalances>;
 
 export enum XswapEventType {
-  MINT = "mint",
-  BURN = "burn",
+  MINT = 'mint',
+  BURN = 'burn'
 }
 
 const XswapEvent = z.object({
@@ -61,13 +61,12 @@ export const XswapPool = z.object({
 
 export type XswapPool = z.infer<typeof XswapPool>;
 
-export const XswapEvents = z.record(z.array(XswapPoolDetails))
+export const XswapEvents = z.record(z.array(XswapPoolDetails));
 
 export type XswapEvents = z.infer<typeof XswapEvents>;
 
-export type XswapPoolProfit = Omit<XswapPoolDetails, "events" | "address">
+export type XswapPoolProfit = Omit<XswapPoolDetails, 'events' | 'address'>;
 
 export interface XswapEventDetails
   extends XswapEvent,
-    Pick<XswapPoolDetails, "address" | "poolAddress" | "token0" | "token1"> {
-}
+    Pick<XswapPoolDetails, 'address' | 'poolAddress' | 'token0' | 'token1'> {}

@@ -209,13 +209,13 @@
 
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { ComputedRef, Ref } from 'vue';
+import { type ComputedRef, type Ref } from 'vue';
 import AccountBalances from '@/components/accounts/AccountBalances.vue';
 import AccountForm from '@/components/accounts/AccountForm.vue';
 import AssetBalances from '@/components/AssetBalances.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import PriceRefresh from '@/components/helper/PriceRefresh.vue';
-import { BlockchainAccountWithBalance } from '@/store/balances/types';
+import { type BlockchainAccountWithBalance } from '@/store/balances/types';
 import { useBtcAccountBalancesStore } from '@/store/blockchain/accountbalances/btc';
 import { useChainAccountBalancesStore } from '@/store/blockchain/accountbalances/chain';
 import { useEthAccountBalancesStore } from '@/store/blockchain/accountbalances/eth';

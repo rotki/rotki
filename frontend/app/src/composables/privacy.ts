@@ -1,4 +1,4 @@
-import { PrivacyMode } from '@/store/session/types';
+import { type PrivacyMode } from '@/store/session/types';
 import { useSessionSettingsStore } from '@/store/settings/session';
 
 export const usePrivacyMode = () => {

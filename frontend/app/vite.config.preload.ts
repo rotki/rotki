@@ -1,5 +1,5 @@
-import { builtinModules } from 'module';
-import { join } from 'path';
+import { builtinModules } from 'node:module';
+import { join } from 'node:path';
 import { defineConfig } from 'vite';
 
 const PACKAGE_ROOT = __dirname;
@@ -10,7 +10,7 @@ export default defineConfig({
   envDir: process.cwd(),
   resolve: {
     alias: {
-      '@': join(PACKAGE_ROOT, 'src') + '/'
+      '@': `${join(PACKAGE_ROOT, 'src')}/`
     }
   },
   build: {

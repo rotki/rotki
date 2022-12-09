@@ -100,16 +100,16 @@
 </template>
 
 <script setup lang="ts">
-import { SupportedAsset } from '@rotki/common/lib/data';
-import { PropType, Ref, useListeners } from 'vue';
-import { DataTableHeader } from 'vuetify';
+import { type SupportedAsset } from '@rotki/common/lib/data';
+import { type PropType, type Ref, useListeners } from 'vue';
+import { type DataTableHeader } from 'vuetify';
 import ConflictRow from '@/components/status/update/ConflictRow.vue';
 import {
-  ConflictResolution,
-  ConflictResolutionStrategy
+  type ConflictResolution,
+  type ConflictResolutionStrategy
 } from '@/services/assets/types';
-import { Writeable } from '@/types';
-import { AssetUpdateConflictResult } from '@/types/assets';
+import { type Writeable } from '@/types';
+import { type AssetUpdateConflictResult } from '@/types/assets';
 import { uniqueStrings } from '@/utils/data';
 
 const props = defineProps({
@@ -198,8 +198,8 @@ const valid = computed(() => {
     return false;
   }
 
-  for (let i = 0; i < resolved.length; i++) {
-    if (resolved[i] !== identifiers[i]) {
+  for (const [i, element] of resolved.entries()) {
+    if (element !== identifiers[i]) {
       return false;
     }
   }

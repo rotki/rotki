@@ -19,7 +19,7 @@
 </template>
 
 <script setup lang="ts">
-import { Ref } from 'vue';
+import { type Ref } from 'vue';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const abbreviate: Ref<boolean> = ref(false);

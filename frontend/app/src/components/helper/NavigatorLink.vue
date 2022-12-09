@@ -9,8 +9,8 @@
   </component>
 </template>
 <script setup lang="ts">
-import { PropType } from 'vue';
-import { RawLocation } from 'vue-router';
+import { type PropType } from 'vue';
+import { type RawLocation } from 'vue-router';
 
 const props = defineProps({
   component: { required: false, type: String, default: 'span' },

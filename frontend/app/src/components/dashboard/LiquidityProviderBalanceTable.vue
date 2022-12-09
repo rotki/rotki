@@ -98,11 +98,14 @@
   </dashboard-expandable-table>
 </template>
 <script setup lang="ts">
-import { BigNumber } from '@rotki/common';
-import { XswapAsset, XswapBalance } from '@rotki/common/lib/defi/xswap';
+import { type BigNumber } from '@rotki/common';
+import {
+  type XswapAsset,
+  type XswapBalance
+} from '@rotki/common/lib/defi/xswap';
 import { isEqual } from 'lodash';
-import { Ref } from 'vue';
-import { DataTableHeader } from 'vuetify';
+import { type Ref } from 'vue';
+import { type DataTableHeader } from 'vuetify';
 import DashboardExpandableTable from '@/components/dashboard/DashboardExpandableTable.vue';
 import LiquidityProviderBalanceDetails from '@/components/dashboard/LiquidityProviderBalanceDetails.vue';
 import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
@@ -121,8 +124,8 @@ import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatisticsStore } from '@/store/statistics';
 import {
-  DashboardTablesVisibleColumns,
-  DashboardTableType
+  DashboardTableType,
+  type DashboardTablesVisibleColumns
 } from '@/types/frontend-settings';
 import { Section } from '@/types/status';
 import { TableColumn } from '@/types/table-column';

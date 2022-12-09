@@ -1,7 +1,7 @@
-import { BigNumber } from '@rotki/common';
-import { ComputedRef, Ref } from 'vue';
+import { type BigNumber } from '@rotki/common';
+import { type ComputedRef, type Ref } from 'vue';
 import { usePremium } from '@/composables/premium';
-import { Collection, CollectionResponse } from '@/types/collection';
+import { type Collection, type CollectionResponse } from '@/types/collection';
 import { Zero } from '@/utils/bignumbers';
 
 export const mapCollectionResponse = <T>(

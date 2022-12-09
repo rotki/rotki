@@ -220,15 +220,19 @@ import { useTheme } from '@/composables/common';
 import { usePremium } from '@/composables/premium';
 import { interop } from '@/electron-interop';
 import { useSnapshotApi } from '@/services/settings/snapshot-api';
-import { SYNC_DOWNLOAD, SYNC_UPLOAD, SyncAction } from '@/services/types-api';
+import {
+  SYNC_DOWNLOAD,
+  SYNC_UPLOAD,
+  type SyncAction
+} from '@/services/types-api';
 import { useBalancesStore } from '@/store/balances';
-import { AllBalancePayload } from '@/store/balances/types';
+import { type AllBalancePayload } from '@/store/balances/types';
 import { useMessageStore } from '@/store/message';
 import { useSessionStore } from '@/store/session';
 import { usePeriodicStore } from '@/store/session/periodic';
 import { useSyncStoreStore } from '@/store/session/sync-store';
 import { useTasks } from '@/store/tasks';
-import { Writeable } from '@/types';
+import { type Writeable } from '@/types';
 import { TaskType } from '@/types/task-type';
 import { startPromise } from '@/utils';
 

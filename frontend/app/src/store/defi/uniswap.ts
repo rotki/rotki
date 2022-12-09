@@ -1,11 +1,11 @@
 import {
-  XswapBalance,
+  type XswapBalance,
   XswapBalances,
-  XswapEventDetails,
+  type XswapEventDetails,
   XswapEvents,
-  XswapPoolProfit
+  type XswapPoolProfit
 } from '@rotki/common/lib/defi/xswap';
-import { ComputedRef, Ref } from 'vue';
+import { type ComputedRef, type Ref } from 'vue';
 import { usePremium } from '@/composables/premium';
 import { useStatusUpdater } from '@/composables/status';
 import { api } from '@/services/rotkehlchen-api';
@@ -16,10 +16,10 @@ import {
   getPools
 } from '@/store/defi/xswap-utils';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { OnError } from '@/store/typing';
+import { type OnError } from '@/store/typing';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
-import { TaskMeta } from '@/types/task';
+import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { uniqueStrings } from '@/utils/data';
 import { fetchDataAsync } from '@/utils/fetch-async';

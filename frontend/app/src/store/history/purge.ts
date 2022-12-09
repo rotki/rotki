@@ -3,7 +3,7 @@ import { ALL_CENTRALIZED_EXCHANGES } from '@/services/session/consts';
 import { useAssetMovements } from '@/store/history/asset-movements';
 import { useLedgerActions } from '@/store/history/ledger-actions';
 import { useTrades } from '@/store/history/trades';
-import { SupportedExchange } from '@/types/exchanges';
+import { type SupportedExchange } from '@/types/exchanges';
 import { Section } from '@/types/status';
 
 export const usePurgeStore = defineStore('history/purge', () => {

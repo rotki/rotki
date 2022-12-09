@@ -1,8 +1,8 @@
 import {
-  mount,
-  ThisTypedMountOptions,
-  Wrapper,
-  WrapperArray
+  type ThisTypedMountOptions,
+  type Wrapper,
+  type WrapperArray,
+  mount
 } from '@vue/test-utils';
 import { PiniaVuePlugin } from 'pinia';
 import { expect } from 'vitest';

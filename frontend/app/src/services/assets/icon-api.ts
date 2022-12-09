@@ -1,4 +1,4 @@
-import { ActionResult } from '@rotki/common/lib/data';
+import { type ActionResult } from '@rotki/common/lib/data';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse } from '@/services/utils';
 

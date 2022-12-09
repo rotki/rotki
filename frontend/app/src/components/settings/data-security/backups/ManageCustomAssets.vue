@@ -91,7 +91,7 @@ const exportZip = async () => {
     return;
   }
   set(downloading, true);
-  let result = await exportCustomAssets();
+  const result = await exportCustomAssets();
   if (result.success) {
     set(downloaded, true);
     start();

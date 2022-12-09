@@ -1,7 +1,7 @@
-import { Ref } from 'vue';
+import { type Ref } from 'vue';
 import { api } from '@/services/rotkehlchen-api';
 import { useNotifications } from '@/store/notifications';
-import { TradeLocation } from '@/types/history/trade-location';
+import { type TradeLocation } from '@/types/history/trade-location';
 import { logger } from '@/utils/logging';
 
 export const useAssociatedLocationsStore = defineStore(

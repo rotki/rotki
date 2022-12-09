@@ -1,6 +1,6 @@
 import { NumericString } from '@rotki/common';
 import { z } from 'zod';
-import { Quarter } from '@/types/frontend-settings';
+import { type Quarter } from '@/types/frontend-settings';
 import { BaseAccountingSettings } from '@/types/user';
 
 export enum ProfitLossEventTypeEnum {

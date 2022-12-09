@@ -12,8 +12,8 @@
   </div>
 </template>
 <script setup lang="ts">
-import { PropType } from 'vue';
-import { Collection } from '@/types/collection';
+import { type PropType } from 'vue';
+import { type Collection } from '@/types/collection';
 import { getCollectionData, setupEntryLimit } from '@/utils/collection';
 
 const props = defineProps({

@@ -47,8 +47,8 @@
   </v-sheet>
 </template>
 <script setup lang="ts">
-import { BigNumber } from '@rotki/common';
-import { PropType } from 'vue';
+import { type BigNumber } from '@rotki/common';
+import { type PropType } from 'vue';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 
 defineProps({

@@ -266,18 +266,22 @@ import { BigNumber } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
 import dayjs from 'dayjs';
-import { PropType, Ref } from 'vue';
+import { type PropType, type Ref } from 'vue';
 import { convertKeys } from '@/services/axios-tranformers';
 import { deserializeApiErrorMessage } from '@/services/converters';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useBalancePricesStore } from '@/store/balances/prices';
-import { TradeEntry } from '@/store/history/types';
+import { type TradeEntry } from '@/store/history/types';
 import { useTasks } from '@/store/tasks';
-import { ActionStatus } from '@/store/types';
-import { Writeable } from '@/types';
-import { NewTrade, Trade, TradeType } from '@/types/history/trades';
+import { type ActionStatus } from '@/store/types';
+import { type Writeable } from '@/types';
+import {
+  type NewTrade,
+  type Trade,
+  type TradeType
+} from '@/types/history/trades';
 import { TaskType } from '@/types/task-type';
-import { bigNumberifyFromRef, Zero } from '@/utils/bignumbers';
+import { Zero, bigNumberifyFromRef } from '@/utils/bignumbers';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 
 const props = defineProps({

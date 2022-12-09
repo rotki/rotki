@@ -1,10 +1,15 @@
-import * as Chart from 'chart.js';
 import Vue from 'vue';
 import { useStatisticsApi } from '@/services/statistics/statistics-api';
 import { checkIfDevelopment } from '@/utils/env-utils';
 import { logger } from '@/utils/logging';
+import type * as Chart from 'chart.js';
 
-class ComponentLoadFailed extends Error {}
+class ComponentLoadFailedError extends Error {
+  constructor() {
+    super();
+    this.name = 'ComponentLoadFailedError';
+  }
+}
 
 const findComponents = (): string[] =>
   Object.getOwnPropertyNames(window).filter(value =>
@@ -29,7 +34,7 @@ const loadComponents = async (): Promise<string[]> => {
     const result = await api.queryStatisticsRenderer();
     const script = document.createElement('script');
     script.text = result;
-    document.head.appendChild(script);
+    document.head.append(script);
 
     components = findComponents();
 
@@ -64,7 +69,7 @@ const load = async (name: string) => {
     logger.error(e);
   }
 
-  throw new ComponentLoadFailed();
+  throw new ComponentLoadFailedError();
 };
 
 const PremiumLoading = async () =>
@@ -78,7 +83,7 @@ const createFactory = (
   component: Promise<any>,
   options?: { loading?: any; error?: any }
 ) => ({
-  component: component,
+  component,
   loading: options?.loading ?? PremiumLoading,
   error: options?.error ?? PremiumLoadingError,
   delay: 500,

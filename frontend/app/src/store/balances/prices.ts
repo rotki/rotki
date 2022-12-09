@@ -1,24 +1,24 @@
-import { BigNumber } from '@rotki/common';
-import { MaybeRef } from '@vueuse/core';
-import { ComputedRef } from 'vue';
+import { type BigNumber } from '@rotki/common';
+import { type MaybeRef } from '@vueuse/core';
+import { type ComputedRef } from 'vue';
 import { useStatusUpdater } from '@/composables/status';
 import { usePriceApi } from '@/services/balances/price';
-import { FetchPricePayload } from '@/store/balances/types';
+import { type FetchPricePayload } from '@/store/balances/types';
 import { useNotifications } from '@/store/notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTasks } from '@/store/tasks';
-import { ActionStatus } from '@/store/types';
-import { Balances } from '@/types/blockchain/balances';
-import { useCurrencies, CURRENCY_USD } from '@/types/currencies';
+import { type ActionStatus } from '@/store/types';
+import { type Balances } from '@/types/blockchain/balances';
+import { CURRENCY_USD, useCurrencies } from '@/types/currencies';
 import {
   AssetPriceResponse,
-  AssetPrices,
-  HistoricPricePayload,
-  HistoricPrices,
-  OracleCachePayload
+  type AssetPrices,
+  type HistoricPricePayload,
+  type HistoricPrices,
+  type OracleCachePayload
 } from '@/types/prices';
 import { Section, Status } from '@/types/status';
-import { TaskMeta } from '@/types/task';
+import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { ExchangeRates } from '@/types/user';
 import { bigNumberify } from '@/utils/bignumbers';
@@ -177,7 +177,7 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
       );
 
       return result.assets[fromAsset][timestamp];
-    } catch (e) {
+    } catch {
       return bigNumberify(-1);
     }
   };

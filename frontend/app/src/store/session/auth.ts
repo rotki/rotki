@@ -1,5 +1,5 @@
-import { SyncConflict } from '@/store/session/types';
-import { LoginStatusData } from '@/types/websocket-messages';
+import { type SyncConflict } from '@/store/session/types';
+import { type LoginStatusData } from '@/types/websocket-messages';
 
 const defaultSyncConflict = (): SyncConflict => ({
   message: '',

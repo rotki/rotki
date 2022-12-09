@@ -145,8 +145,8 @@ import { useMessageStore } from '@/store/message';
 import { useNotifications } from '@/store/notifications';
 import { usePeriodicStore } from '@/store/session/periodic';
 import {
-  EthereumRpcNode,
-  EthereumRpcNodeList,
+  type EthereumRpcNode,
+  type EthereumRpcNodeList,
   getPlaceholderNode
 } from '@/types/settings';
 import { assert } from '@/utils/assertions';
@@ -240,7 +240,7 @@ const edit = (item: EthereumRpcNode) => {
 
 const deleteNode = async () => {
   try {
-    let node = get(confirmDelete);
+    const node = get(confirmDelete);
     assert(node);
     const identifier = node.identifier;
     set(confirmDelete, null);

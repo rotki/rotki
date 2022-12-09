@@ -1,0 +1,24 @@
+{
+  "name": "@rotki/eslint-config-ts",
+  "version": "1.0.0",
+  "description": "",
+  "license": "AGPL-3.0",
+  "author": "Rotki Solutions GmbH <info@rotki.com>",
+  "files": [
+    "index.js"
+  ],
+  "main": "index.js",
+  "peerDependencies": {
+    "eslint": ">=8.10.0"
+  },
+  "dependencies": {
+    "@rotki/eslint-config-basic": "1.0.0",
+    "@typescript-eslint/eslint-plugin": "5.46.0",
+    "@typescript-eslint/parser": "5.46.0",
+    "eslint-define-config": "1.12.0",
+    "typescript": "4.9.4"
+  },
+  "devDependencies": {
+    "eslint": "8.29.0"
+  }
+}

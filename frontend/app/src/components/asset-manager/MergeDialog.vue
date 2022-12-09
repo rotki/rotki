@@ -56,7 +56,7 @@
 
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
-import { helpers, requiredIf } from '@vuelidate/validators';
+import { helpers, requiredUnless } from '@vuelidate/validators';
 import { useAssets } from '@/store/assets';
 
 defineProps({
@@ -116,13 +116,13 @@ const rules = {
   source: {
     required: helpers.withMessage(
       t('merge_dialog.source.non_empty').toString(),
-      requiredIf(computed(() => !get(done)))
+      requiredUnless(done)
     )
   },
   target: {
     required: helpers.withMessage(
       t('merge_dialog.target.non_empty').toString(),
-      requiredIf(computed(() => !get(done)))
+      requiredUnless(done)
     )
   }
 };

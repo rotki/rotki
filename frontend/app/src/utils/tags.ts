@@ -1,8 +1,8 @@
-import { MaybeRef } from '@vueuse/core';
+import { type MaybeRef } from '@vueuse/core';
 import {
-  BtcAccountData,
-  GeneralAccountData,
-  XpubAccountData
+  type BtcAccountData,
+  type GeneralAccountData,
+  type XpubAccountData
 } from '@/services/types-api';
 
 const removeTag = (tags: string[] | null, tagName: string): string[] | null => {

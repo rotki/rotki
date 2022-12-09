@@ -34,7 +34,7 @@ import { useAssetMovements } from '@/store/history/asset-movements';
 import { useLedgerActions } from '@/store/history/ledger-actions';
 import { useTrades } from '@/store/history/trades';
 import { Section } from '@/types/status';
-import { TradeLocationData } from '@/types/trades';
+import { type TradeLocationData } from '@/types/trades';
 
 const props = defineProps({
   identifier: { required: true, type: String }

@@ -31,8 +31,8 @@
 </template>
 
 <script setup lang="ts">
-import { Balance } from '@rotki/common';
-import { PropType } from 'vue';
+import { type Balance } from '@rotki/common';
+import { type PropType } from 'vue';
 import AssetLink from '@/components/assets/AssetLink.vue';
 
 const props = defineProps({

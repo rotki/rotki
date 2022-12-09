@@ -1,5 +1,5 @@
-import { Nullable } from '@rotki/common';
-import { Pinned } from '@/store/session/types';
+import { type Nullable } from '@rotki/common';
+import { type Pinned } from '@/store/session/types';
 
 export const useAreaVisibilityStore = defineStore('session/visibility', () => {
   const showAbout = ref(false);

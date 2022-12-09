@@ -1,8 +1,8 @@
-import { Balance, BigNumber, NumericString } from '@rotki/common';
+import { type Balance, type BigNumber, NumericString } from '@rotki/common';
 import { forEach } from 'lodash';
 import { z } from 'zod';
-import { PriceOracle, PriceOracleEnum } from '@/types/price-oracle';
-import { MissingPrice } from '@/types/reports';
+import { type PriceOracle, PriceOracleEnum } from '@/types/price-oracle';
+import { type MissingPrice } from '@/types/reports';
 
 export const AssetPriceInput = z.tuple([
   NumericString,

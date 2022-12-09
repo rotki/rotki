@@ -152,7 +152,7 @@ const tooltip = computed(() => {
 });
 
 const url = computed<string>(() => {
-  let id = get(identifier);
+  const id = get(identifier);
   if (get(symbol) === 'WETH') {
     return `./assets/images/defi/weth.svg`;
   }
@@ -161,19 +161,21 @@ const url = computed<string>(() => {
   return assetImageUrl(id, get(changeable) ? currentTimestamp : undefined);
 });
 
-const chainIconSize = computed(() => `${(parseInt(get(size)) * 50) / 100}px`);
+const chainIconSize = computed(
+  () => `${(Number.parseInt(get(size)) * 50) / 100}px`
+);
 const chainWrapperSize = computed(
-  () => `${parseInt(get(chainIconSize)) + 4}px`
+  () => `${Number.parseInt(get(chainIconSize)) + 4}px`
 );
 const chainIconMargin = computed(() => `-${get(chainIconSize)}`);
 const chainIconPosition = computed(() => {
-  return `${(parseInt(get(chainIconSize)) * 50) / 100}px`;
+  return `${(Number.parseInt(get(chainIconSize)) * 50) / 100}px`;
 });
 
 const placeholderStyle = computed(() => {
-  let pad = get(padding);
-  let width = get(size);
-  let prop = `calc(${pad} + ${pad} + ${width})`;
+  const pad = get(padding);
+  const width = get(size);
+  const prop = `calc(${pad} + ${pad} + ${width})`;
   return {
     'min-width': prop,
     height: prop

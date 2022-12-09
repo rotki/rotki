@@ -1,8 +1,8 @@
-import { ActionResult } from '@rotki/common/lib/data';
+import { type ActionResult } from '@rotki/common/lib/data';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validStatus } from '@/services/utils';
-import { EthereumRpcNode, EthereumRpcNodeList } from '@/types/settings';
+import { type EthereumRpcNode, EthereumRpcNodeList } from '@/types/settings';
 
 export const useEthNodesApi = () => {
   const fetchEthereumNodes = async (): Promise<EthereumRpcNodeList> => {

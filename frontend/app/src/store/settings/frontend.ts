@@ -1,25 +1,25 @@
 import { BigNumber } from '@rotki/common';
-import { Theme, ThemeColors } from '@rotki/common/lib/settings';
+import { type Theme, type ThemeColors } from '@rotki/common/lib/settings';
 import {
-  TimeFramePeriod,
-  TimeFrameSetting
+  type TimeFramePeriod,
+  type TimeFrameSetting
 } from '@rotki/common/lib/settings/graphs';
-import { ComputedRef } from 'vue';
+import { type ComputedRef } from 'vue';
 import { useLastLanguage } from '@/composables/session/language';
 import { getBnFormat } from '@/data/amount_formatter';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
 import { useSettingsApi } from '@/services/settings/settings-api';
-import { ActionStatus } from '@/store/types';
-import { CurrencyLocation } from '@/types/currency-location';
-import { DateFormat } from '@/types/date-format';
+import { type ActionStatus } from '@/store/types';
+import { type CurrencyLocation } from '@/types/currency-location';
+import { type DateFormat } from '@/types/date-format';
 import {
-  DashboardTablesVisibleColumns,
-  ExplorersSettings,
+  type DashboardTablesVisibleColumns,
+  type ExplorersSettings,
   FrontendSettings,
-  FrontendSettingsPayload,
-  ProfitLossTimeframe,
-  RefreshPeriod,
-  RoundingMode,
+  type FrontendSettingsPayload,
+  type ProfitLossTimeframe,
+  type RefreshPeriod,
+  type RoundingMode,
   SupportedLanguage
 } from '@/types/frontend-settings';
 import { assert } from '@/utils/assertions';

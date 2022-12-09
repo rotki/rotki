@@ -1,5 +1,5 @@
-import { Validation, ValidationArgs } from '@vuelidate/core';
-import { MaybeRef } from '@vueuse/core';
+import { type Validation, type ValidationArgs } from '@vuelidate/core';
+import { type MaybeRef } from '@vueuse/core';
 
 export const useValidation = <V extends ValidationArgs>(
   v$: MaybeRef<Validation<V>>

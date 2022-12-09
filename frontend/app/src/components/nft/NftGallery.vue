@@ -112,9 +112,9 @@
 
 <script setup lang="ts">
 import { BigNumber } from '@rotki/common';
-import { GeneralAccount } from '@rotki/common/lib/account';
+import { type GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { PropType, Ref } from 'vue';
+import { type PropType, type Ref } from 'vue';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import NoDataScreen from '@/components/common/NoDataScreen.vue';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
@@ -126,11 +126,11 @@ import NftGalleryItem from '@/components/nft/NftGalleryItem.vue';
 import { useTheme } from '@/composables/common';
 import { usePremium } from '@/composables/premium';
 import { useInterop } from '@/electron-interop';
-import { AssetPriceArray } from '@/services/assets/types';
+import { type AssetPriceArray } from '@/services/assets/types';
 import { api } from '@/services/rotkehlchen-api';
 import { useNftsStore } from '@/store/assets/nft';
-import { GalleryNft, Nft, Nfts } from '@/store/session/types';
-import { Module } from '@/types/modules';
+import { type GalleryNft, type Nft, type Nfts } from '@/store/session/types';
+import { type Module } from '@/types/modules';
 import { uniqueStrings } from '@/utils/data';
 
 defineProps({

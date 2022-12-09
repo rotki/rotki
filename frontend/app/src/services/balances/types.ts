@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { EXTERNAL_EXCHANGES } from '@/data/defaults';
+import { type EXTERNAL_EXCHANGES } from '@/data/defaults';
 
 export type SupportedExternalExchanges = typeof EXTERNAL_EXCHANGES[number];
 

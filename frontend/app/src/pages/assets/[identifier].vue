@@ -47,7 +47,7 @@
 </template>
 
 <script setup lang="ts">
-import { RawLocation } from 'vue-router';
+import { type RawLocation } from 'vue-router';
 import AssetLocations from '@/components/assets/AssetLocations.vue';
 import AssetValueRow from '@/components/assets/AssetValueRow.vue';
 import { usePremium } from '@/composables/premium';

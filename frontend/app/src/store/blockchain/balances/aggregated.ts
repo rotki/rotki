@@ -1,6 +1,10 @@
-import { AssetBalance, AssetBalanceWithPrice, BigNumber } from '@rotki/common';
-import { MaybeRef } from '@vueuse/core';
-import { ComputedRef } from 'vue';
+import {
+  type AssetBalance,
+  type AssetBalanceWithPrice,
+  type BigNumber
+} from '@rotki/common';
+import { type MaybeRef } from '@vueuse/core';
+import { type ComputedRef } from 'vue';
 import { bigNumberSum } from '@/filters';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
@@ -8,7 +12,7 @@ import { useBalancePricesStore } from '@/store/balances/prices';
 import { useBtcBalancesStore } from '@/store/blockchain/balances/btc';
 import { useChainBalancesStore } from '@/store/blockchain/balances/chains';
 import { useEthBalancesStore } from '@/store/blockchain/balances/eth';
-import { AssetBalances } from '@/types/balances';
+import { type AssetBalances } from '@/types/balances';
 import {
   appendAssetBalance,
   mergeAssociatedAssets,

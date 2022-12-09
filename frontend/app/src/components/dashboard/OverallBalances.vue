@@ -83,8 +83,8 @@ import { TimeUnit } from '@rotki/common/lib/settings';
 import {
   TimeFramePeriod,
   TimeFramePersist,
-  timeframes,
-  TimeFrameSetting
+  type TimeFrameSetting,
+  timeframes
 } from '@rotki/common/lib/settings/graphs';
 import dayjs from 'dayjs';
 import NetWorthChart from '@/components/dashboard/NetWorthChart.vue';
@@ -160,7 +160,7 @@ const balanceDelta = computed(() => {
 
 const timeframeData = computed(() => {
   const all = get(allTimeframes);
-  let selection = get(timeframe);
+  const selection = get(timeframe);
   const startingDate = all[selection].startingDate();
   return get(getNetValue(startingDate));
 });

@@ -72,7 +72,7 @@
 </template>
 
 <script setup lang="ts">
-import { Ref } from 'vue';
+import { type Ref } from 'vue';
 import ManualBalancesForm from '@/components/accounts/manual-balances/ManualBalancesForm.vue';
 import ManualBalanceTable from '@/components/accounts/manual-balances/ManualBalanceTable.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
@@ -80,7 +80,7 @@ import Fragment from '@/components/helper/Fragment';
 import PriceRefresh from '@/components/helper/PriceRefresh.vue';
 import { BalanceType } from '@/services/balances/types';
 import { useManualBalancesStore } from '@/store/balances/manual';
-import { ManualBalance } from '@/types/manual-balances';
+import { type ManualBalance } from '@/types/manual-balances';
 
 const form = ref<any | null>(null);
 const balanceToEdit: Ref<ManualBalance | null> = ref(null);

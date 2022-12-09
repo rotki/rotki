@@ -139,9 +139,9 @@ import { useMessageStore } from '@/store/message';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Module } from '@/types/modules';
 import {
-  ExternalServiceKey,
-  ExternalServiceKeys,
-  ExternalServiceName
+  type ExternalServiceKey,
+  type ExternalServiceKeys,
+  type ExternalServiceName
 } from '@/types/user';
 
 const etherscanKey = ref('');

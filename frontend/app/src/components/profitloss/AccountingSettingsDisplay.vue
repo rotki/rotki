@@ -111,10 +111,13 @@
 </template>
 
 <script setup lang="ts">
-import { PropType } from 'vue';
+import { type PropType } from 'vue';
 import { useCostBasisMethod } from '@/store/reports/consts';
-import { ActionDataEntry } from '@/store/types';
-import { BaseAccountingSettings, CostBasisMethod } from '@/types/user';
+import { type ActionDataEntry } from '@/store/types';
+import {
+  type BaseAccountingSettings,
+  type CostBasisMethod
+} from '@/types/user';
 
 const props = defineProps({
   accountingSettings: {

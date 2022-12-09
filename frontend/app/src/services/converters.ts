@@ -3,7 +3,7 @@ export function deserializeApiErrorMessage(
 ): Record<string, string[]> | undefined {
   try {
     return JSON.parse(message);
-  } catch (e) {
+  } catch {
     return undefined;
   }
 }

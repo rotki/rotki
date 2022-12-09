@@ -42,7 +42,10 @@ import dayjs from 'dayjs';
 
 import ReportPeriodSelector from '@/components/profitloss/ReportPeriodSelector.vue';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { PeriodChangedEvent, SelectionChangedEvent } from '@/types/reports';
+import {
+  type PeriodChangedEvent,
+  type SelectionChangedEvent
+} from '@/types/reports';
 import { convertToTimestamp } from '@/utils/date';
 
 const props = defineProps({

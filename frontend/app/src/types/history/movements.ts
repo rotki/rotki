@@ -1,7 +1,7 @@
 // Asset Movements
 import { NumericString } from '@rotki/common';
 import { z } from 'zod';
-import { PaginationRequestPayload } from '@/types/common';
+import { type PaginationRequestPayload } from '@/types/common';
 import { EntryMeta } from '@/types/history/meta';
 import { TradeLocation } from '@/types/history/trade-location';
 

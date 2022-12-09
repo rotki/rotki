@@ -12,8 +12,8 @@
   </div>
 </template>
 <script setup lang="ts">
-import { DefiProtocol } from '@rotki/common/lib/blockchain';
-import { PropType } from 'vue';
+import { type DefiProtocol } from '@rotki/common/lib/blockchain';
+import { type PropType } from 'vue';
 import { useSessionSettingsStore } from '@/store/settings/session';
 
 interface DefiProtocolInfo {
@@ -36,7 +36,7 @@ const { t } = useI18n();
 const identifier = computed<string>(() => {
   const { identifier } = get(item);
   if (get(scrambleData)) {
-    if (parseInt(identifier)) {
+    if (Number.parseInt(identifier)) {
       return t('defi_selector_item.vault').toString();
     } else if (identifier.includes('-')) {
       return identifier.split('-')[0];

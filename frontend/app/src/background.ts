@@ -1,11 +1,11 @@
-import path from 'path';
-import { app, BrowserWindow, Menu, MenuItem, protocol } from 'electron';
+import path from 'node:path';
+import { BrowserWindow, Menu, MenuItem, app, protocol } from 'electron';
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer';
 import windowStateKeeper from 'electron-window-state';
 import { ipcSetup } from '@/electron-main/ipc-setup';
 import { getUserMenu } from '@/electron-main/menu';
 import { TrayManager } from '@/electron-main/tray-manager';
-import { Nullable } from '@/types';
+import { type Nullable } from '@/types';
 import { checkIfDevelopment } from '@/utils/env-utils';
 import createProtocol from './create-protocol';
 import PyHandler from './py-handler';

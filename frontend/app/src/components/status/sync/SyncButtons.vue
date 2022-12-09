@@ -41,7 +41,11 @@
 </template>
 
 <script setup lang="ts">
-import { SYNC_DOWNLOAD, SYNC_UPLOAD, SyncAction } from '@/services/types-api';
+import {
+  SYNC_DOWNLOAD,
+  SYNC_UPLOAD,
+  type SyncAction
+} from '@/services/types-api';
 import { usePremiumStore } from '@/store/session/premium';
 
 defineProps({

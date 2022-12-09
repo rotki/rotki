@@ -27,7 +27,7 @@
 </template>
 
 <script setup lang="ts">
-import { PropType, ref, useAttrs, useListeners } from 'vue';
+import { type PropType, ref, useAttrs, useListeners } from 'vue';
 
 const rootAttrs = useAttrs();
 const rootListeners = useListeners();

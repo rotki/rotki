@@ -49,8 +49,8 @@
 </template>
 
 <script setup lang="ts">
-import { AssetBalance, BigNumber } from '@rotki/common';
-import { ComputedRef, PropType } from 'vue';
+import { type AssetBalance, type BigNumber } from '@rotki/common';
+import { type ComputedRef, type PropType } from 'vue';
 import LoanDebt from '@/components/defi/loan/LoanDebt.vue';
 import LoanHeader from '@/components/defi/loan/LoanHeader.vue';
 import LiquityCollateral from '@/components/defi/loan/loans/liquity/LiquityCollateral.vue';
@@ -59,7 +59,7 @@ import PremiumCard from '@/components/display/PremiumCard.vue';
 import { isSectionLoading } from '@/composables/common';
 import { usePremium } from '@/composables/premium';
 import { LiquityTroveEvents } from '@/premium/premium';
-import { LiquityLoan } from '@/store/defi/liquity/types';
+import { type LiquityLoan } from '@/store/defi/liquity/types';
 import { Section } from '@/types/status';
 
 const props = defineProps({

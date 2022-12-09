@@ -1,13 +1,13 @@
-import { ActionResult } from '@rotki/common/lib/data';
+import { type ActionResult } from '@rotki/common/lib/data';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
   handleResponse,
   validStatus,
-  validWithoutSessionStatus,
-  validWithSessionAndExternalService
+  validWithSessionAndExternalService,
+  validWithoutSessionStatus
 } from '@/services/utils';
-import { Snapshot, SnapshotPayload } from '@/types/snapshots';
+import { Snapshot, type SnapshotPayload } from '@/types/snapshots';
 
 export const useSnapshotApi = () => {
   const getSnapshotData = async (timestamp: number): Promise<Snapshot> => {

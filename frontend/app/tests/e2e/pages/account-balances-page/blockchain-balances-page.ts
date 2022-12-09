@@ -1,5 +1,5 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { bigNumberify, Zero } from '@/utils/bignumbers';
+import { Zero, bigNumberify } from '@/utils/bignumbers';
 import { AccountBalancesPage } from './index';
 
 export interface FixtureBlockchainBalance {

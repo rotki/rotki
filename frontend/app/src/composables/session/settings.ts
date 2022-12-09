@@ -7,8 +7,8 @@ import { useAccountingSettingsStore } from '@/store/settings/accounting';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';
-import { Exchange } from '@/types/exchanges';
-import { UserSettingsModel } from '@/types/user';
+import { type Exchange } from '@/types/exchanges';
+import { type UserSettingsModel } from '@/types/user';
 
 export const useSessionSettings = () => {
   const { premium, premiumSync } = storeToRefs(usePremiumStore());

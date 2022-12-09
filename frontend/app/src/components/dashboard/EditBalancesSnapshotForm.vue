@@ -81,14 +81,14 @@
   </v-form>
 </template>
 <script setup lang="ts">
-import { BigNumber } from '@rotki/common';
+import { type BigNumber } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
-import { PropType } from 'vue';
+import { type PropType } from 'vue';
 import EditBalancesSnapshotLocationSelector from '@/components/dashboard/EditBalancesSnapshotLocationSelector.vue';
 import BalanceTypeInput from '@/components/inputs/BalanceTypeInput.vue';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { BalanceSnapshotPayload } from '@/types/snapshots';
+import { type BalanceSnapshotPayload } from '@/types/snapshots';
 import { isNft } from '@/utils/nft';
 
 const props = defineProps({

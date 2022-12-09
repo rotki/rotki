@@ -1,6 +1,6 @@
 import { Balance, NumericString } from '@rotki/common';
 import { z } from 'zod';
-import { PaginationRequestPayload } from '@/types/common';
+import { type PaginationRequestPayload } from '@/types/common';
 import { EntryMeta } from '@/types/history/meta';
 
 const EthTransactionEventExtraData = z

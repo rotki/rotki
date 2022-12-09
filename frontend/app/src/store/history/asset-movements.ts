@@ -1,27 +1,27 @@
 import isEqual from 'lodash/isEqual';
-import { Ref } from 'vue';
+import { type Ref } from 'vue';
 import { useStatusUpdater } from '@/composables/status';
 import { api } from '@/services/rotkehlchen-api';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
 import { useAssociatedLocationsStore } from '@/store/history/associated-locations';
-import { AssetMovementEntry } from '@/store/history/types';
+import { type AssetMovementEntry } from '@/store/history/types';
 import {
   defaultHistoricPayloadState,
   mapCollectionEntriesWithMeta
 } from '@/store/history/utils';
 import { useNotifications } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
-import { Collection, CollectionResponse } from '@/types/collection';
-import { SupportedExchange } from '@/types/exchanges';
-import { EntryWithMeta } from '@/types/history/meta';
+import { type Collection, type CollectionResponse } from '@/types/collection';
+import { type SupportedExchange } from '@/types/exchanges';
+import { type EntryWithMeta } from '@/types/history/meta';
 import {
-  AssetMovement,
+  type AssetMovement,
   AssetMovementCollectionResponse,
-  AssetMovementRequestPayload
+  type AssetMovementRequestPayload
 } from '@/types/history/movements';
-import { TradeLocation } from '@/types/history/trade-location';
+import { type TradeLocation } from '@/types/history/trade-location';
 import { Section, Status } from '@/types/status';
-import { TaskMeta } from '@/types/task';
+import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { useTradeLocations } from '@/types/trades';
 import {

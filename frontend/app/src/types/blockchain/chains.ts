@@ -1,4 +1,4 @@
-import { Nullable } from '@rotki/common';
+import { type Nullable } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { EvmChain } from '@rotki/common/lib/data';
 

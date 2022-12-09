@@ -265,12 +265,12 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, required, sameAs } from '@vuelidate/validators';
-import { Ref } from 'vue';
+import { type Ref } from 'vue';
 import PremiumCredentials from '@/components/account-management/PremiumCredentials.vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import { useMainStore } from '@/store/main';
-import { CreateAccountPayload } from '@/types/login';
+import { type CreateAccountPayload } from '@/types/login';
 
 const props = defineProps({
   loading: { required: true, type: Boolean },
@@ -314,7 +314,7 @@ const rules = {
     ),
     isValidUsername: helpers.withMessage(
       tc('create_account.select_credentials.validation.valid_username'),
-      (v: string): boolean => !!(v && /^[0-9a-zA-Z_.-]+$/.test(v))
+      (v: string): boolean => !!(v && /^[\w.-]+$/.test(v))
     )
   },
   password: {

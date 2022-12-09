@@ -3,10 +3,10 @@
 </template>
 
 <script setup lang="ts">
-import { ComputedRef } from 'vue';
+import { type ComputedRef } from 'vue';
 import TabNavigation from '@/components/helper/TabNavigation.vue';
 import { useAppRoutes } from '@/router/routes';
-import { TabContent } from '@/types/tabs';
+import { type TabContent } from '@/types/tabs';
 
 const { appRoutes } = useAppRoutes();
 

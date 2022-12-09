@@ -1,4 +1,4 @@
-import { Balance, BigNumber } from '@rotki/common';
+import { Balance, type BigNumber } from '@rotki/common';
 import { z } from 'zod';
 
 export interface Eth2Validator {

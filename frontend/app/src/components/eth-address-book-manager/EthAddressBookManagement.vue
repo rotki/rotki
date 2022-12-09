@@ -104,9 +104,9 @@ import EthNamesHint from '@/components/EthNamesHint.vue';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
 import { useMessageStore } from '@/store/message';
 import {
-  EthAddressBookLocation,
-  EthNamesEntry,
-  EthNamesPayload
+  type EthAddressBookLocation,
+  type EthNamesEntry,
+  type EthNamesPayload
 } from '@/types/eth-names';
 
 const search = ref<string>('');

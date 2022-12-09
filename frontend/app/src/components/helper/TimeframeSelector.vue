@@ -30,9 +30,9 @@
 <script setup lang="ts">
 import {
   TimeFramePersist,
-  TimeFrameSetting
+  type TimeFrameSetting
 } from '@rotki/common/lib/settings/graphs';
-import { PropType } from 'vue';
+import { type PropType } from 'vue';
 import { usePremium } from '@/composables/premium';
 import { isPeriodAllowed } from '@/store/settings/utils';
 

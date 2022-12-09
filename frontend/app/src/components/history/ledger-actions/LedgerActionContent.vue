@@ -183,8 +183,8 @@
 
 <script setup lang="ts">
 import { dropRight } from 'lodash';
-import { PropType, Ref } from 'vue';
-import { DataTableHeader } from 'vuetify';
+import { type PropType, type Ref } from 'vue';
+import { type DataTableHeader } from 'vuetify';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
@@ -205,13 +205,16 @@ import { useLedgerActionsFilter } from '@/composables/filters/ledger-actions';
 import { setupIgnore } from '@/composables/history';
 import { Routes } from '@/router/routes';
 import { useLedgerActions } from '@/store/history/ledger-actions';
-import { IgnoreActionType, LedgerActionEntry } from '@/store/history/types';
 import {
-  LedgerAction,
-  LedgerActionRequestPayload,
-  NewLedgerAction
+  IgnoreActionType,
+  type LedgerActionEntry
+} from '@/store/history/types';
+import {
+  type LedgerAction,
+  type LedgerActionRequestPayload,
+  type NewLedgerAction
 } from '@/types/history/ledger-actions';
-import { TradeLocation } from '@/types/history/trade-location';
+import { type TradeLocation } from '@/types/history/trade-location';
 import { Section } from '@/types/status';
 
 interface PaginationOptions {
@@ -336,7 +339,7 @@ const confirmSave = async () => {
 };
 
 const saveData = async (ledgerAction: NewLedgerAction | LedgerActionEntry) => {
-  if ((<LedgerActionEntry>ledgerAction).identifier) {
+  if ((ledgerAction as LedgerActionEntry).identifier) {
     return await editLedgerAction(ledgerAction as LedgerActionEntry);
   }
   return await addLedgerAction(ledgerAction as NewLedgerAction);
@@ -410,7 +413,7 @@ onMounted(async () => {
   }
 });
 
-let tableHeaders = computed<DataTableHeader[]>(() => {
+const tableHeaders = computed<DataTableHeader[]>(() => {
   const headers: DataTableHeader[] = [
     {
       text: '',

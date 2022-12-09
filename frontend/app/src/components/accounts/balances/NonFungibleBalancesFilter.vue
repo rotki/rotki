@@ -48,9 +48,9 @@
 </template>
 
 <script setup lang="ts">
-import { PropType } from 'vue';
-import { IgnoredAssetsHandlingType } from '@/types/assets';
-import { NonFungibleBalance } from '@/types/nfbalances';
+import { type PropType } from 'vue';
+import { type IgnoredAssetsHandlingType } from '@/types/assets';
+import { type NonFungibleBalance } from '@/types/nfbalances';
 
 defineProps({
   selected: {

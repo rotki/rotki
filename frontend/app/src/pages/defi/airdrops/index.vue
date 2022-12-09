@@ -96,10 +96,10 @@
 </template>
 
 <script setup lang="ts">
-import { GeneralAccount } from '@rotki/common/lib/account';
+import { type GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { Ref } from 'vue';
-import { DataTableHeader } from 'vuetify';
+import { type Ref } from 'vue';
+import { type DataTableHeader } from 'vuetify';
 import PoapDeliveryAirdrops from '@/components/defi/airdrops/PoapDeliveryAirdrops.vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import DataTable from '@/components/helper/DataTable.vue';
@@ -109,7 +109,6 @@ import { useSectionLoading } from '@/composables/common';
 import { useInterop } from '@/electron-interop';
 import { useDefiStore } from '@/store/defi';
 import {
-  Airdrop,
   AIRDROP_1INCH,
   AIRDROP_CONVEX,
   AIRDROP_CORNICHON,
@@ -126,7 +125,8 @@ import {
   AIRDROP_SADDLE,
   AIRDROP_TORNADO,
   AIRDROP_UNISWAP,
-  AirdropType
+  type Airdrop,
+  type AirdropType
 } from '@/types/airdrops';
 import { Section } from '@/types/status';
 
@@ -222,7 +222,7 @@ const refreshing = isSectionRefreshing(section);
 
 const entries = computed(() => {
   const addresses = get(selectedAccounts).map(({ address }) => address);
-  let airdrops = get(defiStore.airdropList(addresses));
+  const airdrops = get(defiStore.airdropList(addresses));
   return airdrops.map((value, index) => ({
     ...value,
     index

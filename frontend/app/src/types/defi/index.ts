@@ -1,5 +1,5 @@
-import { Balance } from '@rotki/common';
-import { DefiProtocol } from '@rotki/common/lib/blockchain';
+import { type Balance } from '@rotki/common';
+import { type DefiProtocol } from '@rotki/common/lib/blockchain';
 export interface Collateral<T = string> extends Balance {
   readonly asset: T;
 }

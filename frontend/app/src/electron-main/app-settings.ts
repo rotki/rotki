@@ -1,6 +1,6 @@
-import fs from 'fs';
-import path from 'path';
-import { app, App } from 'electron';
+import fs from 'node:fs';
+import path from 'node:path';
+import { type App, app } from 'electron';
 
 class AppSettingManager {
   private readonly _appSettings: AppSettings = {
@@ -46,7 +46,7 @@ class AppSettingManager {
           }
         }
       } catch (e: any) {
-        console.log(e);
+        console.error(e);
       }
     }
 

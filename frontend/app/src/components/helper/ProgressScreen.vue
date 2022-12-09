@@ -61,9 +61,9 @@ const { progress } = toRefs(props);
 const percentage = computed(() => {
   const currentProgress = get(progress);
   try {
-    const number = parseFloat(currentProgress);
+    const number = Number.parseFloat(currentProgress);
     return number.toFixed(2);
-  } catch (e: any) {
+  } catch {
     return currentProgress;
   }
 });

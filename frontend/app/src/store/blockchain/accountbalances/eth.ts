@@ -1,21 +1,24 @@
-import { Balance, HasBalance } from '@rotki/common';
+import { type Balance, type HasBalance } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { Eth2Validators } from '@rotki/common/lib/staking/eth2';
-import { ComputedRef } from 'vue';
+import { type Eth2Validators } from '@rotki/common/lib/staking/eth2';
+import { type ComputedRef } from 'vue';
 import { useSectionLoading } from '@/composables/common';
 import {
-  AccountWithBalance,
-  AccountWithBalanceAndSharedOwnership,
-  AssetBreakdown,
-  BlockchainAccountWithBalance
+  type AccountWithBalance,
+  type AccountWithBalanceAndSharedOwnership,
+  type AssetBreakdown,
+  type BlockchainAccountWithBalance
 } from '@/store/balances/types';
 import { useEthAccountsStore } from '@/store/blockchain/accounts/eth';
 import { useEthBalancesStore } from '@/store/blockchain/balances/eth';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { Writeable } from '@/types';
-import { AccountAssetBalances } from '@/types/balances';
-import { BlockchainTotal, SubBlockchainTotal } from '@/types/blockchain';
-import { BlockchainAssetBalances } from '@/types/blockchain/balances';
+import { type Writeable } from '@/types';
+import { type AccountAssetBalances } from '@/types/balances';
+import {
+  type BlockchainTotal,
+  type SubBlockchainTotal
+} from '@/types/blockchain';
+import { type BlockchainAssetBalances } from '@/types/blockchain/balances';
 import { L2_LOOPRING } from '@/types/protocols';
 import { Section } from '@/types/status';
 import { ReadOnlyTag } from '@/types/user';

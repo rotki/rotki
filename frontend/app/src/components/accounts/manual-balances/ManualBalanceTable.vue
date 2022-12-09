@@ -115,7 +115,7 @@
 </template>
 
 <script setup lang="ts">
-import { PropType } from 'vue';
+import { type PropType } from 'vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
@@ -126,7 +126,7 @@ import { aggregateTotal } from '@/filters';
 import { useManualBalancesStore } from '@/store/balances/manual';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { ManualBalance } from '@/types/manual-balances';
+import { type ManualBalance } from '@/types/manual-balances';
 import { assert } from '@/utils/assertions';
 import { One } from '@/utils/bignumbers';
 
@@ -169,10 +169,8 @@ const visibleBalances = computed<ManualBalance[]>(() => {
     mappedBalances = get(balances);
   } else {
     mappedBalances = get(balances).filter(balance => {
-      const tags = balance.tags;
-      if (tags) {
-        return selectedTags.every(tag => tags.includes(tag));
-      }
+      const tags = balance.tags ?? [];
+      return selectedTags.every(tag => tags.includes(tag));
     });
   }
 

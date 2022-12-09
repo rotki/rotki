@@ -1,5 +1,5 @@
-import { mount, Wrapper } from '@vue/test-utils';
-import { createPinia, Pinia, setActivePinia } from 'pinia';
+import { type Wrapper, mount } from '@vue/test-utils';
+import { type Pinia, createPinia, setActivePinia } from 'pinia';
 import Vuetify from 'vuetify';
 import ModuleSelector from '@/components/defi/wizard/ModuleSelector.vue';
 import { defaultGeneralSettings } from '@/data/factories';
@@ -36,7 +36,7 @@ describe('ModuleSelector.vue', () => {
     api = useSettingsApi();
     const { defaultCurrency } = useCurrencies();
 
-    document.body.setAttribute('data-app', 'true');
+    document.body.dataset.app = 'true';
     settingsStore.update({
       ...defaultGeneralSettings(get(defaultCurrency)),
       activeModules: [Module.AAVE]

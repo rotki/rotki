@@ -51,11 +51,15 @@
 </template>
 
 <script setup lang="ts">
-import { AssetInfo } from '@rotki/common/lib/data';
-import { PropType } from 'vue';
+import { type AssetInfo } from '@rotki/common/lib/data';
+import { type PropType } from 'vue';
 import NoFilterAvailable from '@/components/history/filtering/NoFilterAvailable.vue';
 import SuggestedItem from '@/components/history/filtering/SuggestedItem.vue';
-import { MatchedKeyword, SearchMatcher, Suggestion } from '@/types/filtering';
+import {
+  type MatchedKeyword,
+  type SearchMatcher,
+  type Suggestion
+} from '@/types/filtering';
 import { assert } from '@/utils/assertions';
 import { logger } from '@/utils/logging';
 import { splitSearch } from '@/utils/search';
@@ -68,7 +72,7 @@ const props = defineProps({
 });
 
 const emit = defineEmits({
-  'update:matches'(matches: MatchedKeyword<any>) {
+  'update:matches': function (matches: MatchedKeyword<any>) {
     return !!matches;
   }
 });
@@ -197,17 +201,19 @@ const applySuggestion = async () => {
         logger.debug('Matcher missing asset=true or string=true', matcher);
       }
 
-      if (suggestedItems.length === 0) {
-        if ('validate' in matcher && matcher.validate(keyword)) {
-          nextTick(() =>
-            applyFilter({
-              key,
-              value: keyword,
-              index: 0,
-              total: 1
-            })
-          );
-        }
+      if (
+        suggestedItems.length === 0 &&
+        'validate' in matcher &&
+        matcher.validate(keyword)
+      ) {
+        nextTick(() =>
+          applyFilter({
+            key,
+            value: keyword,
+            index: 0,
+            total: 1
+          })
+        );
       }
     }
     if (!key) {
@@ -255,7 +261,7 @@ const moveSuggestion = (up: boolean) => {
 
 // TODO: This is too specific for custom asset, move it!
 const getDisplayValue = (suggestion: Suggestion) => {
-  let value = suggestion.value;
+  const value = suggestion.value;
   if (typeof value === 'string') {
     return value;
   }

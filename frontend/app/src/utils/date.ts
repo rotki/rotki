@@ -33,7 +33,7 @@ export function convertToTimestamp(
   dateFormat: DateFormat = DateFormat.DateMonthYearHourMinuteSecond
 ): number {
   let format: string = getDateInputISOFormat(dateFormat);
-  if (date.indexOf(' ') > -1) {
+  if (date.includes(' ')) {
     format += ' HH:mm';
     if (date.charAt(date.length - 6) === ':') {
       format += ':ss';
@@ -72,7 +72,7 @@ export function convertDateByTimezone(
   toTimezone = toTimezone || dayjs.tz.guess();
 
   let format: string = getDateInputISOFormat(dateFormat);
-  if (date.indexOf(' ') > -1) {
+  if (date.includes(' ')) {
     format += ' HH:mm';
     if (date.charAt(date.length - 6) === ':') {
       format += ':ss';

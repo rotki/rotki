@@ -1,8 +1,8 @@
-import * as fs from 'fs';
-import { builtinModules } from 'module';
-import { platform } from 'os';
-import { join, parse } from 'path';
-import { defineConfig, Plugin } from 'vite';
+import * as fs from 'node:fs';
+import { builtinModules } from 'node:module';
+import { platform } from 'node:os';
+import { join, parse } from 'node:path';
+import { type Plugin, defineConfig } from 'vite';
 
 const PACKAGE_ROOT = __dirname;
 const isDevelopment = process.env.NODE_ENV === 'development';
@@ -44,7 +44,7 @@ export default defineConfig({
   envDir: process.cwd(),
   resolve: {
     alias: {
-      '@': join(PACKAGE_ROOT, 'src') + '/'
+      '@': `${join(PACKAGE_ROOT, 'src')}/`
     }
   },
   plugins: [binaryDependencyPlugin()],

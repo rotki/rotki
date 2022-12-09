@@ -1,23 +1,23 @@
 import {
-  BalancerBalance,
+  type BalancerBalance,
   BalancerBalances,
-  BalancerEvent,
+  type BalancerEvent,
   BalancerEvents,
-  BalancerProfitLoss
+  type BalancerProfitLoss
 } from '@rotki/common/lib/defi/balancer';
-import { XswapPool } from '@rotki/common/lib/defi/xswap';
+import { type XswapPool } from '@rotki/common/lib/defi/xswap';
 import cloneDeep from 'lodash/cloneDeep';
-import { ComputedRef, Ref } from 'vue';
+import { type ComputedRef, type Ref } from 'vue';
 import { usePremium } from '@/composables/premium';
 import { useModules } from '@/composables/session/modules';
 import { useStatusUpdater } from '@/composables/status';
 import { api } from '@/services/rotkehlchen-api';
-import { OnError } from '@/store/typing';
+import { type OnError } from '@/store/typing';
 import { filterAddresses } from '@/store/utils';
-import { Writeable } from '@/types';
+import { type Writeable } from '@/types';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
-import { TaskMeta } from '@/types/task';
+import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { balanceSum } from '@/utils/calculation';
 import { fetchDataAsync } from '@/utils/fetch-async';
@@ -123,8 +123,7 @@ export const useBalancerStore = defineStore('defi/balancer', () => {
     computed(() => {
       const balancerProfitLoss: Record<string, BalancerProfitLoss> = {};
       filterAddresses(get(events), addresses, item => {
-        for (let i = 0; i < item.length; i++) {
-          const entry = item[i];
+        for (const entry of item) {
           if (!balancerProfitLoss[entry.poolAddress]) {
             const assets = entry.poolTokens.map(token => token.token);
             balancerProfitLoss[entry.poolAddress] = {
@@ -147,8 +146,7 @@ export const useBalancerStore = defineStore('defi/balancer', () => {
       const result: BalancerEvent[] = [];
       const perAddressEvents = get(events);
       filterAddresses(perAddressEvents, addresses, item => {
-        for (let i = 0; i < item.length; i++) {
-          const poolDetail = item[i];
+        for (const poolDetail of item) {
           const assets = poolDetail.poolTokens.map(pool => pool.token);
           result.push(
             ...poolDetail.events.map(value => ({
@@ -222,8 +220,8 @@ export const useBalancerStore = defineStore('defi/balancer', () => {
           section: Section.DEFI_BALANCER_EVENTS,
           query: async () => await api.defi.fetchBalancerEvents(),
           parser: data => BalancerEvents.parse(data),
-          meta: meta,
-          onError: onError
+          meta,
+          onError
         },
         requires: {
           premium: true,

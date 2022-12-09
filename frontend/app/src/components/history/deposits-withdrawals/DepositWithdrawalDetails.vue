@@ -10,11 +10,11 @@
   </table-expand-container>
 </template>
 <script setup lang="ts">
-import { PropType } from 'vue';
+import { type PropType } from 'vue';
 
 import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
 import MovementLinks from '@/components/history/MovementLinks.vue';
-import { AssetMovementEntry } from '@/store/history/types';
+import { type AssetMovementEntry } from '@/store/history/types';
 
 defineProps({
   span: {

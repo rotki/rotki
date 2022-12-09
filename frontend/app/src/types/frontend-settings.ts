@@ -129,7 +129,7 @@ export const FrontendSettings = z.object({
   queryPeriod: z.preprocess(
     queryPeriod =>
       Math.min(
-        parseInt(queryPeriod as string) || Defaults.DEFAULT_QUERY_PERIOD,
+        Number.parseInt(queryPeriod as string) || Defaults.DEFAULT_QUERY_PERIOD,
         Constraints.MAX_SECONDS_DELAY
       ),
     QueryPeriod.default(Defaults.DEFAULT_QUERY_PERIOD)
@@ -147,7 +147,7 @@ export const FrontendSettings = z.object({
   refreshPeriod: z.preprocess(
     refreshPeriod =>
       Math.min(
-        parseInt(refreshPeriod as string) || -1,
+        Number.parseInt(refreshPeriod as string) || -1,
         Constraints.MAX_MINUTES_DELAY
       ),
     RefreshPeriod.default(-1)
@@ -167,7 +167,7 @@ export const FrontendSettings = z.object({
   versionUpdateCheckFrequency: z.preprocess(
     versionUpdateCheckFrequency =>
       Math.min(
-        parseInt(versionUpdateCheckFrequency as string) ||
+        Number.parseInt(versionUpdateCheckFrequency as string) ||
           Defaults.DEFAULT_VERSION_UPDATE_CHECK_FREQUENCY,
         Constraints.MAX_HOURS_DELAY
       ),

@@ -65,7 +65,7 @@
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import { useSettingsStore } from '@/store/settings';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useCurrencies, Currency } from '@/types/currencies';
+import { type Currency, useCurrencies } from '@/types/currencies';
 
 const { update } = useSettingsStore();
 const { currency } = storeToRefs(useGeneralSettingsStore());
@@ -85,9 +85,7 @@ const filteredCurrencies = computed<Currency[]>(() => {
   return supportedCurrencies.filter(({ name, tickerSymbol }) => {
     const currencyName = name.toLocaleLowerCase();
     const symbol = tickerSymbol.toLocaleLowerCase();
-    return (
-      currencyName.indexOf(filterValue) >= 0 || symbol.indexOf(filterValue) >= 0
-    );
+    return currencyName.includes(filterValue) || symbol.includes(filterValue);
   });
 });
 

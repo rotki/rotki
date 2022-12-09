@@ -1,4 +1,4 @@
-import { Ref } from 'vue';
+import { type Ref } from 'vue';
 import { useBalancesStore } from '@/store/balances';
 import { useNotifications } from '@/store/notifications';
 import { useSessionAuthStore } from '@/store/session/auth';

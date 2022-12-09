@@ -89,9 +89,9 @@
 </template>
 
 <script setup lang="ts">
-import { SupportedAsset } from '@rotki/common/lib/data';
-import { PropType, Ref } from 'vue';
-import { DataTableHeader } from 'vuetify';
+import { type SupportedAsset } from '@rotki/common/lib/data';
+import { type PropType, type Ref } from 'vue';
+import { type DataTableHeader } from 'vuetify';
 import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
 import CopyButton from '@/components/helper/CopyButton.vue';
 import RowActions from '@/components/helper/RowActions.vue';
@@ -99,9 +99,9 @@ import RowExpander from '@/components/helper/RowExpander.vue';
 import { useCustomAssetFilter } from '@/composables/filters/custom-assets';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import {
-  CustomAsset,
-  CustomAssetPagination,
-  CustomAssetPaginationOptions,
+  type CustomAsset,
+  type CustomAssetPagination,
+  type CustomAssetPaginationOptions,
   defaultCustomAssetPagination
 } from '@/types/assets';
 import { convertPagination } from '@/types/pagination';
@@ -178,7 +178,7 @@ const updatePaginationHandler = (
 };
 
 watch([options, filters] as const, ([options, filters]) => {
-  let apiPagination = convertPagination<CustomAsset>(
+  const apiPagination = convertPagination<CustomAsset>(
     options,
     'name'
   ) as CustomAssetPagination;

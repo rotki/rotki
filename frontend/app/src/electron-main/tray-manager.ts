@@ -1,8 +1,8 @@
-import path from 'path';
-import { app, BrowserWindow, Menu, Tray } from 'electron';
+import path from 'node:path';
+import { type BrowserWindow, Menu, Tray, app } from 'electron';
 import { settingsManager } from '@/electron-main/app-settings';
-import { TrayUpdate } from '@/electron-main/ipc';
-import { Nullable } from '@/types';
+import { type TrayUpdate } from '@/electron-main/ipc';
+import { type Nullable } from '@/types';
 import { assert } from '@/utils/assertions';
 import { checkIfDevelopment } from '@/utils/env-utils';
 
@@ -78,11 +78,11 @@ export class TrayManager {
     let icon: string;
     if (up) {
       icon = 'rotki_up.png';
-      color = '\x1b[32m';
+      color = '\u001B[32m';
       indicator = '▲';
     } else {
       icon = 'rotki_down.png';
-      color = '\x1b[31m';
+      color = '\u001B[31m';
       indicator = '▼';
     }
 

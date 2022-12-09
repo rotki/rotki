@@ -1,5 +1,5 @@
-import { MaybeRef } from '@vueuse/core';
-import { ComputedRef } from 'vue';
+import { type MaybeRef } from '@vueuse/core';
+import { type ComputedRef } from 'vue';
 import {
   EXCHANGE_BALANCER,
   EXCHANGE_BISQ,
@@ -18,7 +18,7 @@ import {
   TRADE_LOCATION_REALESTATE
 } from '@/data/defaults';
 import { SupportedExchange } from '@/types/exchanges';
-import { TradeLocation } from '@/types/history/trade-location';
+import { type TradeLocation } from '@/types/history/trade-location';
 import { assert } from '@/utils/assertions';
 
 export interface TradeLocationData {

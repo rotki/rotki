@@ -1,5 +1,5 @@
-import { AssetBalance } from '@rotki/common';
-import { AssetInfo } from '@rotki/common/lib/data';
+import { type AssetBalance } from '@rotki/common';
+import { type AssetInfo } from '@rotki/common/lib/data';
 import { assert } from '@/utils/assertions';
 
 const levenshtein = (a: string, b: string): number => {
@@ -21,7 +21,7 @@ const levenshtein = (a: string, b: string): number => {
     res = 0;
   const alen = a.length,
     blen = b.length,
-    row = Array(alen);
+    row = new Array(alen);
   for (i = 0; i <= alen; i++) {
     row[i] = i;
   }
@@ -140,5 +140,5 @@ export const createEvmIdentifierFromAddress = (
 };
 
 export const getValidSelectorFromEvmAddress = (address: string): string => {
-  return address.replace(/[^a-z0-9]/gi, '');
+  return address.replace(/[^\da-z]/gi, '');
 };

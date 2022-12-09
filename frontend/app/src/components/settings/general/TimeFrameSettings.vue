@@ -93,9 +93,9 @@
 import {
   TimeFramePeriod,
   TimeFramePersist,
-  TimeFrameSetting
+  type TimeFrameSetting
 } from '@rotki/common/lib/settings/graphs';
-import { PropType } from 'vue';
+import { type PropType } from 'vue';
 import Fragment from '@/components/helper/Fragment';
 import { usePremium } from '@/composables/premium';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';

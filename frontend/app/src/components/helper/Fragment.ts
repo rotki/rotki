@@ -1,3 +1,4 @@
+/* eslint-disable unicorn/prefer-modern-dom-apis */
 import Vue from 'vue';
 import { assert } from '@/utils/assertions';
 
@@ -18,7 +19,7 @@ const unfreeze = (object: any, property: any, value = null) => {
   Object.defineProperty(object, property, {
     configurable: true,
     writable: true,
-    value: value
+    value
   });
 };
 
@@ -110,15 +111,15 @@ export default Vue.extend({
 
     // add fragment attribute on the children
     const fragment = this.$props.name;
-    if (children && children.length)
+    if (children && children.length > 0)
       children.forEach(
         child =>
           (child.data = {
             ...child.data,
-            attrs: { fragment: fragment, ...(child.data || {}).attrs }
+            attrs: { fragment, ...(child.data || {}).attrs }
           })
       );
 
-    return h('div', { attrs: { fragment: fragment } }, children);
+    return h('div', { attrs: { fragment } }, children);
   }
 });

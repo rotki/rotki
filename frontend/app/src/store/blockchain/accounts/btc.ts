@@ -1,12 +1,12 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { Ref } from 'vue';
+import { type Ref } from 'vue';
 import { useBlockchainAccountsApi } from '@/services/accounts';
-import { BtcAccountData } from '@/services/types-api';
-import { XpubPayload } from '@/store/balances/types';
+import { type BtcAccountData } from '@/services/types-api';
+import { type XpubPayload } from '@/store/balances/types';
 import { useNotifications } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
-import { BtcChains } from '@/types/blockchain/chains';
-import { BlockchainMetadata } from '@/types/task';
+import { type BtcChains } from '@/types/blockchain/chains';
+import { type BlockchainMetadata } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { logger } from '@/utils/logging';
 import { removeBtcTags } from '@/utils/tags';

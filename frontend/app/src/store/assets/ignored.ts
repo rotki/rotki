@@ -1,10 +1,10 @@
-import { MaybeRef } from '@vueuse/core';
+import { type MaybeRef } from '@vueuse/core';
 import { useAssetIgnoreApi } from '@/services/assets/ignore';
 import { useMessageStore } from '@/store/message';
 import { useNotifications } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
-import { ActionStatus } from '@/store/types';
-import { TaskMeta } from '@/types/task';
+import { type ActionStatus } from '@/store/types';
+import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 
 export const useIgnoredAssetsStore = defineStore('ignoredAssets', () => {

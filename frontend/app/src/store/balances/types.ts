@@ -1,8 +1,8 @@
-import { Balance, HasBalance } from '@rotki/common';
-import { GeneralAccount } from '@rotki/common/lib/account';
-import { Blockchain } from '@rotki/common/lib/blockchain';
-import { Module } from '@/types/modules';
-import { Section } from '@/types/status';
+import { type Balance, type HasBalance } from '@rotki/common';
+import { type GeneralAccount } from '@rotki/common/lib/account';
+import { type Blockchain } from '@rotki/common/lib/blockchain';
+import { type Module } from '@/types/modules';
+import { type Section } from '@/types/status';
 
 export enum XpubKeyType {
   P2TR = 'p2tr',

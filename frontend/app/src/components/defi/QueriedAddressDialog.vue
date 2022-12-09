@@ -96,15 +96,15 @@
 </template>
 
 <script setup lang="ts">
-import { GeneralAccount } from '@rotki/common/lib/account';
+import { type GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { PropType, Ref } from 'vue';
+import { type PropType, type Ref } from 'vue';
 import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
 import { useAccountBalancesStore } from '@/store/blockchain/accountbalances';
 import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
-import { Nullable } from '@/types';
-import { Module, SUPPORTED_MODULES } from '@/types/modules';
+import { type Nullable } from '@/types';
+import { type Module, SUPPORTED_MODULES } from '@/types/modules';
 import { assert } from '@/utils/assertions';
 
 const props = defineProps({
@@ -124,13 +124,13 @@ const ETH = Blockchain.ETH;
 
 const store = useQueriedAddressesStore();
 const { addQueriedAddress, deleteQueriedAddress } = store;
-let { queriedAddresses } = storeToRefs(useQueriedAddressesStore());
+const { queriedAddresses } = storeToRefs(useQueriedAddressesStore());
 const { accounts } = storeToRefs(useAccountBalancesStore());
 
 const { tc } = useI18n();
 
 const moduleName = computed(() => {
-  let currentModule = get(module);
+  const currentModule = get(module);
   if (!currentModule) {
     return '';
   }
@@ -141,7 +141,7 @@ const moduleName = computed(() => {
 });
 
 const addresses = computed(() => {
-  let currentModule = get(module);
+  const currentModule = get(module);
   if (!currentModule) {
     return [];
   }
@@ -150,9 +150,9 @@ const addresses = computed(() => {
 });
 
 const usableAddresses = computed(() => {
-  let currentModule = get(module);
-  let accountList = get(accounts);
-  let moduleAddresses = get(addresses);
+  const currentModule = get(module);
+  const accountList = get(accounts);
+  const moduleAddresses = get(addresses);
   if (!currentModule || moduleAddresses.length === 0) {
     return accountList
       .filter(({ chain }) => chain === ETH)

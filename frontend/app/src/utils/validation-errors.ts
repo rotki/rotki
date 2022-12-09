@@ -1,4 +1,4 @@
-import { ErrorObject } from '@vuelidate/core';
+import { type ErrorObject } from '@vuelidate/core';
 
 /**
  * Converts an array of vuelidate's ErrorObject to an array of

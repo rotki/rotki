@@ -3,7 +3,7 @@ import { Zero } from '@/utils/bignumbers';
 import { Guid } from '../../../common/guid';
 import { AccountBalancesPage } from '../../pages/account-balances-page';
 import {
-  FixtureManualBalance,
+  type FixtureManualBalance,
   ManualBalancesPage
 } from '../../pages/account-balances-page/manual-balances-page';
 import { DashboardPage } from '../../pages/dashboard-page';
@@ -140,7 +140,7 @@ describe('balances', () => {
     });
   });
 
-  it('edit and add new', function () {
+  it('edit and add new', () => {
     const newAmount = '300';
     manualBalancesPage.visit();
     manualBalancesPage.editBalance(1, newAmount);

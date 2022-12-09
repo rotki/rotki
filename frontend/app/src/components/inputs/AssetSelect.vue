@@ -100,14 +100,14 @@
 </template>
 
 <script setup lang="ts">
-import { PropType, Ref } from 'vue';
+import { type PropType, type Ref } from 'vue';
 import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import NftDetails from '@/components/helper/NftDetails.vue';
 import { useAssetInfoApi } from '@/services/assets/info';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { NftAsset } from '@/store/assets/nft';
-import { AssetInfoWithId } from '@/types/assets';
+import { type NftAsset } from '@/store/assets/nft';
+import { type AssetInfoWithId } from '@/types/assets';
 import { getValidSelectorFromEvmAddress } from '@/utils/assets';
 
 const props = defineProps({
@@ -160,8 +160,8 @@ const { assetSearch, assetMapping } = useAssetInfoApi();
 const { tc } = useI18n();
 
 const errors = computed(() => {
-  let messages = get(errorMessages);
-  let errorMessage = get(error);
+  const messages = get(errorMessages);
+  const errorMessage = get(error);
   if (errorMessage) {
     messages.push(errorMessage);
   }
@@ -171,9 +171,9 @@ const errors = computed(() => {
 const visibleAssets = computed<AssetInfoWithId[]>(() => {
   const itemsVal = get(items);
   const excludesVal = get(excludes);
-  let knownAssets = get(assets);
+  const knownAssets = get(assets);
 
-  let includeIgnored = get(showIgnored);
+  const includeIgnored = get(showIgnored);
   return knownAssets.filter((asset: AssetInfoWithId) => {
     const unIgnored = includeIgnored || !get(isAssetIgnored(asset.identifier));
 
@@ -234,7 +234,7 @@ watchThrottled(
     }
     set(error, '');
     set(loading, true);
-    let controller = new AbortController();
+    const controller = new AbortController();
     pending[search] = controller;
     await searchAssets(search, controller.signal);
     set(loading, false);

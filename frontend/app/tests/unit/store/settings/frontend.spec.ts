@@ -4,7 +4,7 @@ import {
   TimeFramePeriod,
   TimeFramePersist
 } from '@rotki/common/lib/settings/graphs';
-import { createPinia, Pinia } from 'pinia';
+import { type Pinia, createPinia } from 'pinia';
 import { Defaults } from '@/data/defaults';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
@@ -14,7 +14,7 @@ import { CurrencyLocation } from '@/types/currency-location';
 import { DateFormat } from '@/types/date-format';
 import {
   DashboardTableType,
-  FrontendSettings,
+  type FrontendSettings,
   Quarter,
   SupportedLanguage
 } from '@/types/frontend-settings';
