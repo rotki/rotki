@@ -8,7 +8,7 @@
     </div>
     <v-card-text>
       <div class="mt-4 mb-2">
-        <rotki-logo width="72px" />
+        <rotki-logo width="72px" :url="remoteAboutLogo" />
       </div>
       <div class="d-flex flex-row align-center mt-4" :class="css.version">
         <div class="font-weight-bold">{{ version.version }}</div>
@@ -147,6 +147,7 @@
 
 <script setup lang="ts">
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
+import RotkiLogo from '@/components/common/RotkiLogo.vue';
 import AppUpdateIndicator from '@/components/status/AppUpdateIndicator.vue';
 import { usePremium } from '@/composables/premium';
 import { useInterop } from '@/electron-interop';
@@ -236,6 +237,9 @@ const versionText = computed(() => {
 
   return versionText;
 });
+
+const remoteAboutLogo =
+  'https://raw.githubusercontent.com/rotki/data/main/assets/icons/about_logo.png';
 </script>
 
 <style module lang="scss">

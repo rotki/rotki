@@ -10,7 +10,7 @@
     app
   >
     <div v-if="!isMini" class="app__logo">
-      <rotki-logo height="150px" />
+      <rotki-logo height="150px" :url="remoteDrawerImage" />
     </div>
     <div v-else class="app__logo-mini">
       {{ t('app.name') }}
@@ -45,6 +45,9 @@ const NavigationMenu = defineAsyncComponent(
 const { isMini, showDrawer } = storeToRefs(useAreaVisibilityStore());
 const { appVersion } = toRefs(useMainStore());
 const { appBarColor } = useTheme();
+
+const remoteDrawerImage =
+  'https://raw.githubusercontent.com/rotki/data/main/assets/icons/drawer_logo.png';
 
 const { t } = useI18n();
 </script>
