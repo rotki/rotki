@@ -43,10 +43,10 @@ if [ "$1" != 'minor' ] && [ "$1" != 'major' ] && [ "$1" != 'patch' ]; then
   exit 1
 fi
 
-NPM_VERSION="$(npm -v)"
-vercomp $NPM_VERSION "7.0.0"
+PNPM_VERSION="$(pnpm -v)"
+vercomp $PNPM_VERSION "7.17.0"
 if [ "$?" == '2' ]; then
-    echo 'npm version should be > 7.0.0'
+    echo 'pnpm version should be > 7.0.0'
     exit 1
 fi
 
@@ -67,13 +67,6 @@ if [ -d 'scripts' ]; then
 else
   cd "$ROOT_DIR" || exit 1
 fi
-
-cd frontend || exit 1
-
-npm version --no-git-tag-version "$1" -w rotki
-node bump.js
-git add app/package.json
-git add package-lock.json
 
 cd "$ROOT_DIR" || exit 1
 

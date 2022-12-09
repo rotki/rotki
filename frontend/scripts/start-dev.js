@@ -55,8 +55,7 @@ process.on('beforeExit', terminateSubprocesses);
 
 if (startDevProxy) {
   logger.info('Starting dev-proxy');
-  const devProxyProcess = spawn('npm run serve', {
-    cwd: './dev-proxy',
+  const devProxyProcess = spawn('pnpm run --filter @rotki/dev-proxy serve', {
     shell: true,
     stdio: [process.stdin]
   });
@@ -72,7 +71,7 @@ if (startDevProxy) {
 }
 
 logger.info('Starting @rotki/common watch');
-const commonProcesses = spawn('npm run watch -w @rotki/common', {
+const commonProcesses = spawn('pnpm run --filter @rotki/common watch', {
   shell: true,
   stdio: [process.stdin]
 });
@@ -122,15 +121,17 @@ const getDebuggerPort = () => {
   }
 };
 const debuggerPort = getDebuggerPort();
-const args = debuggerPort ? ` -- --remote-debugging-port=${debuggerPort}` : '';
+const args = debuggerPort ? ` --remote-debugging-port=${debuggerPort}` : '';
 if (args) {
   logger.info(`starting rotki with args: ${args}`);
 }
 
-const serveCmd = noElectron ? 'npm run serve' : 'npm run electron:serve';
+const serveCmd = noElectron
+  ? 'pnpm run --filter rotki serve'
+  : 'pnpm run --filter rotki electron:serve';
 const cmd = platform() === 'win32' ? serveCmd : `sleep 20 && ${serveCmd}`;
 
-const devRotkiProcess = spawn(`${cmd} -w rotki${args}`, {
+const devRotkiProcess = spawn(`${cmd} ${args}`, {
   shell: true,
   stdio: [process.stdin]
 });

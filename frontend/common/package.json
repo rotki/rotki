@@ -13,7 +13,7 @@
   "module": "lib/index.js",
   "types": "lib/index.d.ts",
   "scripts": {
-    "postinstall": "npm run build",
+    "postinstall": "pnpm run build",
     "build": "rimraf lib && tsc -m es6",
     "watch": "tsc -w -m es6"
   },

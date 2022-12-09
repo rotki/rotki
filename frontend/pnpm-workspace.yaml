@@ -1,0 +1,5 @@
+packages:
+  - app
+  - common
+  - dev-proxy
+  - 'eslint/*'

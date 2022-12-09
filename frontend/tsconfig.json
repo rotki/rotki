@@ -28,5 +28,5 @@
     }
   ],
   "include": [".eslintrc.js"],
-  "exclude": ["node_modules", "common/lib", "cypress"]
+  "exclude": ["node_modules/**", "**/.*", "cypress"]
 }

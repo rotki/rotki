@@ -55,16 +55,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Load env
-        uses: rotki/action-env@v1
-        with:
-          env_file: .github/.env.ci
-      - name: Setup node  # not sure this step is needed
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: 'frontend/package-lock.json'
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v2
         with:
@@ -90,17 +80,21 @@ jobs:
         uses: rotki/action-env@v1
         with:
           env_file: .github/.env.ci
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
       - name: Setup node
         uses: actions/setup-node@v3
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: 'frontend/package-lock.json'
+          cache: 'pnpm'
+          cache-dependency-path: 'frontend/pnpm-lock.yaml'
       - name: Cache cypress
         uses: actions/cache@v3
         with:
           path: ~/.cache/Cypress
-          key: ${{ runner.os }}-node--ci-${{ hashFiles('frontend/package-lock.json') }}
+          key: ${{ runner.os }}-node--ci-${{ hashFiles('frontend/pnpm-lock.yaml') }}
       - name: Store eslint cache
         uses: actions/cache@v3
         with:
@@ -112,20 +106,16 @@ jobs:
             ${{ runner.os }}-eslint-${{ github.base_ref || github.ref_name }}
       - name: Install dependencies
         working-directory: ./frontend
-        run: |
-          npm install -g npm@8
-          if ! npm ci --exit-code; then
-            npm ci
-          fi
+        run: pnpm install --frozen-lockfile
       - name: Build
         working-directory: ./frontend
         run: |
           if [ ${{ github.event_name }} != 'push' ]; then                    
-            npm run build
+            pnpm run build
           fi
       - name: Lint code
         working-directory: ./frontend
-        run: npm run lint
+        run: pnpm run lint
 
   unittest-frontend:
     name: 'Frontend unit tests'
@@ -141,28 +131,27 @@ jobs:
         uses: rotki/action-env@v1
         with:
           env_file: .github/.env.ci
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
       - name: Setup node
         uses: actions/setup-node@v3
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: 'frontend/package-lock.json'
+          cache: 'pnpm'
+          cache-dependency-path: 'frontend/pnpm-lock.yaml'
       - name: Cache cypress
         uses: actions/cache@v3
         with:
           path: ~/.cache/Cypress
-          key: ${{ runner.os }}-node--ci-${{ hashFiles('frontend/package-lock.json') }}
+          key: ${{ runner.os }}-node--ci-${{ hashFiles('frontend/pnpm-lock.yaml') }}
       - name: Install dependencies
         working-directory: ./frontend
-        run: |
-          npm install -g npm@8
-          if ! npm ci --exit-code; then
-            npm ci
-          fi
-          npm run build -w @rotki/common
+        run: pnpm install --frozen-lockfile
       - name: Run unit tests
         working-directory: ./frontend/app
-        run: npm run test:unit
+        run: pnpm run --filter rotki test:unit
       - name: Upload coverage
         uses: codecov/codecov-action@v3
         with:
@@ -207,15 +196,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Load env
-        uses: rotki/action-env@v1
-        with:
-          env_file: .github/.env.ci
-      - name: Setup python  # not sure if this step is needed
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'pip'
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v2
         with:

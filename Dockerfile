@@ -5,8 +5,8 @@ ARG BUILDARCH
 WORKDIR /app
 COPY frontend/ .
 RUN if [ "$BUILDARCH" != "amd64" ]; then apt-get update && apt-get install -y build-essential python3 --no-install-recommends; fi
-RUN npm install -g npm@8 && npm ci
-RUN npm run docker:build
+RUN npm install -g pnpm@7 && pnpm install --no-optional
+RUN pnpm run docker:build
 
 FROM python:3.9-buster as backend-build-stage
 

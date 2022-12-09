@@ -10,7 +10,8 @@
   "main": "index.js",
   "peerDependencies": {
     "eslint": ">=8.10.0",
-    "vue": ">=2.7.0 || ^3.0.0"
+    "vue": ">=2.7.0 || ^3.0.0",
+    "vuetify": "2.6.12"
   },
   "peerDependenciesMeta": {
     "vue": {
@@ -18,13 +19,15 @@
     }
   },
   "dependencies": {
-    "@rotki/eslint-config-ts": "1.0.0",
+    "@rotki/eslint-config-ts": "workspace:*",
     "eslint-define-config": "1.12.0",
     "eslint-plugin-vue": "9.8.0",
     "eslint-plugin-vuetify": "1.1.0",
     "local-pkg": "0.4.2"
   },
   "devDependencies": {
-    "eslint": "8.29.0"
+    "eslint": "8.29.0",
+    "vue": "2.7.14",
+    "vuetify": "2.6.12"
   }
 }

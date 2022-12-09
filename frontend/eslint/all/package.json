@@ -13,8 +13,8 @@
     "eslint": ">=8.1.0"
   },
   "dependencies": {
-    "@rotki/eslint-config-prettier": "1.0.0",
-    "@rotki/eslint-config-vue": "1.0.0"
+    "@rotki/eslint-config-prettier": "workspace:*",
+    "@rotki/eslint-config-vue": "workspace:*"
   },
   "devDependencies": {
     "eslint": "8.29.0"

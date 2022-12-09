@@ -17,6 +17,10 @@ jobs:
         uses: rotki/action-env@v1
         with:
           env_file: .github/.env.ci
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
       - name: Setup python
         uses: actions/setup-python@v4
         with:
@@ -26,15 +30,15 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: 'frontend/package-lock.json'
+          cache: 'pnpm'
+          cache-dependency-path: 'frontend/pnpm-lock.yaml'
       - name: Store frontend cache
         uses: actions/cache@v3
         with:
           path: |
             ~/.cache/Cypress  
             frontend/app/components.d.ts
-          key: ${{ runner.os }}-e2e-js-${{ hashFiles('frontend/package-lock.json') }}
+          key: ${{ runner.os }}-e2e-js-${{ hashFiles('frontend/pnpm-lock.yaml') }}
       - name: Store test data
         uses: actions/cache@v3
         with:
@@ -49,21 +53,15 @@ jobs:
           pip install -e .
       - name: Restore dependencies
         working-directory: ./frontend
-        run: |
-          npm install -g npm@8
-          if ! npm ci --exit-code; then
-            npm ci
-          fi
-          npm run build -w @rotki/common
+        run: pnpm install --frozen-lockfile
       - name: Run e2e tests
-        uses: cypress-io/github-action@v4
         env:
           ARGS: "--browser chrome"
           CYPRESS_ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
-        with:
-          install: false
-          command: npm run test:integration-ci
-          working-directory: ./frontend/app
+        run: |
+          pnpx cypress install
+          pnpm run --filter rotki test:integration-ci
+        working-directory: ./frontend
       - name: Upload coverage
         uses: codecov/codecov-action@v3
         with:
