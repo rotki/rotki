@@ -102,6 +102,7 @@ a = Entrypoint(
         ('rotkehlchen/data/global.db', 'rotkehlchen/data'),
         ('rotkehlchen/data/globaldb_v2_v3_assets.sql', 'rotkehlchen/data'),
         ('rotkehlchen/data/nodes.json', 'rotkehlchen/data'),
+        ('rotkehlchen/data/nodes_as_of_1-26-1.json', 'rotkehlchen/data'),
         # TODO
         # We probably should have a better way to specify some data should be loaded
         # by a module in pyinstaller. Should be loaded dynamically by rotki and not

@@ -26,7 +26,7 @@ setup(
     url='https://github.com/rotki/rotki',
     packages=find_packages('.'),
     package_data={
-        # Data files to package in the Rotki python package wheel. While
+        # Data files to package in the rotki python package wheel. While
         # pyinstaller does not use this list, changes here should be kept in
         # sync with rotkehlchen.spec
         'rotkehlchen': [
@@ -39,6 +39,7 @@ setup(
             'data/global.db',
             'data/globaldb_v2_v3_assets.sql',
             'data/nodes.json',
+            'data/nodes_as_of_1-26-1.json',
             'chain/ethereum/modules/dxdaomesa/data/contracts.json',
         ],
     },
