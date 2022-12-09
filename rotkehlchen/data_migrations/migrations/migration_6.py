@@ -85,5 +85,8 @@ def data_migration_6(write_cursor: 'DBCursor', rotki: 'Rotkehlchen') -> None:
     )
     # Connect to the nodes since the migration happens after the ethereum manager initialization
     nodes_to_connect = rotki.data.db.get_web3_nodes(blockchain=SupportedBlockchain.ETHEREUM, only_active=True)  # noqa: E501
-    rotki.chain_manager.ethereum.connect_to_multiple_nodes(nodes_to_connect)
+    # when we sync a remote database the migrations are executed but the chain_manager
+    # has not been created yet
+    if hasattr(rotki, 'chain_manger') is True:
+        rotki.chain_manager.ethereum.connect_to_multiple_nodes(nodes_to_connect)
     log.debug('Exit data_migration_6')
