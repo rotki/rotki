@@ -1,12 +1,12 @@
 <template>
-  <v-form :value="value" class="pt-4" @input="input">
+  <v-form :value="value" class="pt-4">
     <div class="mb-4">
       <location-selector
         :value="form.location"
         :excludes="excludedLocations"
         outlined
         :label="tc('common.location')"
-        :rules="locationRules"
+        :error-messages="v$.location.$errors.map(e => e.$message)"
         @input="updateForm({ location: getLocation($event) })"
       />
     </div>
@@ -19,13 +19,15 @@
             symbol: currencySymbol
           })
         "
-        :rules="valueRules"
+        :error-messages="v$.value.$errors.map(e => e.$message)"
         @input="updateForm({ usdValue: $event })"
       />
     </div>
   </v-form>
 </template>
 <script setup lang="ts">
+import useVuelidate from '@vuelidate/core';
+import { helpers, required } from '@vuelidate/validators';
 import { PropType } from 'vue';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import { useGeneralSettingsStore } from '@/store/settings/general';
@@ -71,13 +73,31 @@ const updateForm = (partial: Partial<LocationDataSnapshotPayload>) => {
 
 const getLocation = (location: any) => location as string;
 
-const locationRules = computed(() => [
-  (v: string) =>
-    !!v || tc('dashboard.snapshot.edit.dialog.location_data.rules.location')
-]);
+const rules = {
+  location: {
+    required: helpers.withMessage(
+      tc('dashboard.snapshot.edit.dialog.location_data.rules.location'),
+      required
+    )
+  },
+  value: {
+    required: helpers.withMessage(
+      tc('dashboard.snapshot.edit.dialog.location_data.rules.value'),
+      required
+    )
+  }
+};
 
-const valueRules = computed(() => [
-  (v: string) =>
-    !!v || tc('dashboard.snapshot.edit.dialog.location_data.rules.value')
-]);
+const v$ = useVuelidate(
+  rules,
+  {
+    location: computed(() => get(form).location),
+    value: computed(() => get(form).usdValue)
+  },
+  { $autoDirty: true }
+);
+
+watch(v$, ({ $invalid }) => {
+  input(!$invalid);
+});
 </script>

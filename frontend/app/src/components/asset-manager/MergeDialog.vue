@@ -16,7 +16,7 @@
           v-if="!done"
           depressed
           color="primary"
-          :disabled="!valid || pending"
+          :disabled="v$.$invalid || pending"
           :loading="pending"
           @click="merge()"
         >
@@ -26,16 +26,15 @@
 
       <div v-if="done">{{ t('merge_dialog.done') }}</div>
 
-      <v-form v-else v-model="valid">
+      <v-form v-else :value="!v$.$invalid">
         <v-text-field
           v-model="source"
           :label="t('merge_dialog.source.label')"
-          :rules="sourceRules"
+          :error-messages="v$.source.$errors.map(e => e.$message)"
           outlined
           :disabled="pending"
           persistent-hint
           :hint="t('merge_dialog.source_hint')"
-          :error-messages="errorMessages"
           @focus="clearErrors()"
         />
         <v-row align="center" justify="center" class="my-4">
@@ -46,7 +45,7 @@
         <asset-select
           v-model="target"
           outlined
-          :rules="targetRules"
+          :error-messages="v$.target.$errors.map(e => e.$message)"
           :label="tc('merge_dialog.target.label')"
           :disabled="pending"
         />
@@ -56,6 +55,8 @@
 </template>
 
 <script setup lang="ts">
+import useVuelidate from '@vuelidate/core';
+import { helpers, requiredIf } from '@vuelidate/validators';
 import { useAssets } from '@/store/assets';
 
 defineProps({
@@ -64,7 +65,6 @@ defineProps({
 
 const emit = defineEmits(['input']);
 const done = ref(false);
-const valid = ref(false);
 const errorMessages = ref<string[]>([]);
 const target = ref('');
 const source = ref('');
@@ -77,9 +77,9 @@ const reset = () => {
   set(done, false);
   set(target, '');
   set(source, '');
-  set(valid, false);
   set(pending, false);
   set(errorMessages, []);
+  get(v$).$reset();
 };
 
 const clearErrors = () => {
@@ -112,10 +112,30 @@ const input = (value: boolean) => {
   setTimeout(() => reset(), 100);
 };
 
-const sourceRules = [
-  (v: string) => !!v || t('merge_dialog.source.non_empty').toString()
-];
-const targetRules = [
-  (v: string) => !!v || t('merge_dialog.target.non_empty').toString()
-];
+const rules = {
+  source: {
+    required: helpers.withMessage(
+      t('merge_dialog.source.non_empty').toString(),
+      requiredIf(computed(() => !get(done)))
+    )
+  },
+  target: {
+    required: helpers.withMessage(
+      t('merge_dialog.target.non_empty').toString(),
+      requiredIf(computed(() => !get(done)))
+    )
+  }
+};
+
+const v$ = useVuelidate(
+  rules,
+  {
+    source,
+    target
+  },
+  {
+    $autoDirty: true,
+    $externalResults: computed(() => ({ source: get(errorMessages) }))
+  }
+);
 </script>

@@ -3,7 +3,6 @@
     :value="value"
     data-cy="ledger-action-form"
     class="ledger-action-form"
-    @input="input"
   >
     <location-selector
       v-model="location"
@@ -11,9 +10,8 @@
       required
       outlined
       data-cy="location"
-      :rules="locationRules"
+      :error-messages="v$.location.$errors.map(e => e.$message)"
       :label="tc('common.location')"
-      :error-messages="errorMessages['location']"
       @focus="delete errorMessages['location']"
     />
 
@@ -45,8 +43,7 @@
           outlined
           required
           data-cy="asset"
-          :rules="assetRules"
-          :error-messages="errorMessages['asset']"
+          :error-messages="v$.asset.$errors.map(e => e.$message)"
           @focus="delete errorMessages['asset']"
         />
       </v-col>
@@ -55,11 +52,10 @@
         <amount-input
           v-model="amount"
           outlined
-          :rules="amountRules"
+          :error-messages="v$.amount.$errors.map(e => e.$message)"
           required
           data-cy="amount"
           :label="tc('common.amount')"
-          :error-messages="errorMessages['amount']"
           @focus="delete errorMessages['amount']"
         />
       </v-col>
@@ -140,6 +136,8 @@
 </template>
 
 <script setup lang="ts">
+import useVuelidate from '@vuelidate/core';
+import { helpers, required } from '@vuelidate/validators';
 import dayjs from 'dayjs';
 import { PropType } from 'vue';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
@@ -200,18 +198,40 @@ const errorMessages = ref<Record<string, string[]>>({});
 
 const { t, tc } = useI18n();
 
-const amountRules = [
-  (v: string) =>
-    !!v || t('ledger_action_form.amount.validation.non_empty').toString()
-];
-const assetRules = [
-  (v: string) =>
-    !!v || t('ledger_action_form.asset.validation.non_empty').toString()
-];
-const locationRules = [
-  (v: string) =>
-    !!v || t('ledger_action_form.location.validation.non_empty').toString()
-];
+const rules = {
+  amount: {
+    required: helpers.withMessage(
+      t('ledger_action_form.amount.validation.non_empty').toString(),
+      required
+    )
+  },
+  asset: {
+    required: helpers.withMessage(
+      t('ledger_action_form.asset.validation.non_empty').toString(),
+      required
+    )
+  },
+  location: {
+    required: helpers.withMessage(
+      t('ledger_action_form.location.validation.non_empty').toString(),
+      required
+    )
+  }
+};
+
+const v$ = useVuelidate(
+  rules,
+  {
+    amount,
+    asset,
+    location
+  },
+  { $autoDirty: true, $externalResults: errorMessages }
+);
+
+watch(v$, ({ $invalid }) => {
+  input(!$invalid);
+});
 
 const reset = () => {
   set(id, null);

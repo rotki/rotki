@@ -1,5 +1,5 @@
 <template>
-  <v-form :value="valid">
+  <v-form :value="!v$.$invalid">
     <div class="mt-2">
       <div>
         <v-select
@@ -68,7 +68,6 @@ const props = defineProps({
 const emit = defineEmits(['input', 'valid']);
 const { t } = useI18n();
 const { value } = toRefs(props);
-const valid = ref(false);
 
 const search = ref<string | null>('');
 
@@ -133,7 +132,6 @@ const v$ = useVuelidate(
 );
 
 watch(v$, ({ $invalid }) => {
-  set(valid, !$invalid);
-  emit('valid', get(valid));
+  emit('valid', !$invalid);
 });
 </script>

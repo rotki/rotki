@@ -27,7 +27,7 @@
         <v-stepper-items>
           <v-stepper-content step="1">
             <v-card-text>
-              <v-form v-model="premiumFormValid">
+              <v-form :value="premiumFormValid">
                 <v-alert text color="primary">
                   <i18n
                     tag="div"
@@ -86,6 +86,7 @@
                   @update:api-key="apiKey = $event"
                   @update:api-secret="apiSecret = $event"
                   @update:sync-database="syncDatabase = $event"
+                  @update:valid="premiumFormValid = $event"
                 />
               </v-form>
             </v-card-text>
@@ -105,7 +106,7 @@
                 class="create-account__premium__button__continue"
                 depressed
                 color="primary"
-                :disabled="!premiumFormValid"
+                :disabled="premiumEnabled && !premiumFormValid"
                 :loading="loading"
                 data-cy="create-account__premium__button__continue"
                 @click="step = 2"
@@ -116,7 +117,7 @@
           </v-stepper-content>
           <v-stepper-content step="2">
             <v-card-text>
-              <v-form ref="form" v-model="credentialsFormValid">
+              <v-form ref="form" :value="credentialsFormValid">
                 <v-text-field
                   v-model="username"
                   outlined
@@ -127,7 +128,7 @@
                     tc('create_account.select_credentials.label_username')
                   "
                   prepend-inner-icon="mdi-account"
-                  :rules="usernameRules"
+                  :error-messages="v$.username.$errors.map(e => e.$message)"
                   :disabled="loading"
                   required
                 />
@@ -153,7 +154,7 @@
                     tc('create_account.select_credentials.label_password')
                   "
                   prepend-icon="mdi-lock"
-                  :rules="passwordRules"
+                  :error-messages="v$.password.$errors.map(e => e.$message)"
                   :disabled="loading"
                   required
                 />
@@ -162,8 +163,9 @@
                   outlined
                   class="create-account__fields__password-repeat"
                   prepend-icon="mdi-repeat"
-                  :error-messages="errorMessages"
-                  :rules="passwordConfirmRules"
+                  :error-messages="
+                    v$.passwordConfirm.$errors.map(e => e.$message)
+                  "
                   :disabled="loading"
                   :label="
                     tc(
@@ -261,6 +263,8 @@
 </template>
 
 <script setup lang="ts">
+import useVuelidate from '@vuelidate/core';
+import { helpers, required, sameAs } from '@vuelidate/validators';
 import { Ref } from 'vue';
 import PremiumCredentials from '@/components/account-management/PremiumCredentials.vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
@@ -294,55 +298,61 @@ const apiKey: Ref<string> = ref('');
 const apiSecret: Ref<string> = ref('');
 const syncDatabase: Ref<boolean> = ref(false);
 
-const premiumFormValid: Ref<boolean> = ref(true);
+const premiumFormValid: Ref<boolean> = ref(false);
 const credentialsFormValid: Ref<boolean> = ref(false);
-const errorMessages: Ref<string[]> = ref([]);
 const step: Ref<number> = ref(1);
 
 const form: Ref<any> = ref(null);
 
 const { tc } = useI18n();
 
-const usernameRules = [
-  (v: string) =>
-    !!v ||
-    tc('create_account.select_credentials.validation.non_empty_username'),
-
-  (v: string) =>
-    (v && /^[0-9a-zA-Z_.-]+$/.test(v)) ||
-    tc('create_account.select_credentials.validation.valid_username')
-];
-
-const passwordRules = [
-  (v: string) =>
-    !!v || tc('create_account.select_credentials.validation.non_empty_password')
-];
-const passwordConfirmRules = [
-  (v: string) =>
-    !!v ||
-    tc(
-      'create_account.select_credentials.validation.non_empty_password_confirmation'
+const rules = {
+  username: {
+    required: helpers.withMessage(
+      tc('create_account.select_credentials.validation.non_empty_username'),
+      required
+    ),
+    isValidUsername: helpers.withMessage(
+      tc('create_account.select_credentials.validation.valid_username'),
+      (v: string): boolean => !!(v && /^[0-9a-zA-Z_.-]+$/.test(v))
     )
-];
-
-const updateConfirmationError = () => {
-  if (get(errorMessages).length > 0) {
-    return;
+  },
+  password: {
+    required: helpers.withMessage(
+      tc('create_account.select_credentials.validation.non_empty_password'),
+      required
+    )
+  },
+  passwordConfirm: {
+    required: helpers.withMessage(
+      tc(
+        'create_account.select_credentials.validation.non_empty_password_confirmation'
+      ),
+      required
+    ),
+    isMatch: helpers.withMessage(
+      tc(
+        'create_account.select_credentials.validation.password_confirmation_mismatch'
+      ),
+      sameAs(password)
+    )
   }
-
-  get(errorMessages).push(
-    tc(
-      'create_account.select_credentials.validation.password_confirmation_mismatch'
-    )
-  );
 };
 
-watch([password, passwordConfirm], ([passwordValue, passwordConfirmValue]) => {
-  if (passwordValue && passwordValue !== passwordConfirmValue) {
-    updateConfirmationError();
-  } else {
-    get(errorMessages).pop();
+const v$ = useVuelidate(
+  rules,
+  {
+    username,
+    password,
+    passwordConfirm
+  },
+  {
+    $autoDirty: true
   }
+);
+
+watch(v$, ({ $invalid }) => {
+  set(credentialsFormValid, !$invalid);
 });
 
 const confirm = () => {

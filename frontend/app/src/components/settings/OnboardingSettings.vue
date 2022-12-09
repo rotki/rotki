@@ -42,7 +42,7 @@
       </template>
     </v-text-field>
 
-    <v-form v-model="formValid">
+    <v-form :value="formValid">
       <v-text-field
         v-model="userLogDirectory"
         :disabled="!!fileConfig.logDirectory"
@@ -114,7 +114,7 @@
               :persistent-hint="!!fileConfig.maxSizeInMbAllLogs"
               :clearable="!isDefault(configuration?.maxSizeInMbAllLogs)"
               :loading="!configuration"
-              :rules="nonNegativeNumberRules"
+              :error-messages="v$.maxLogSize.$errors.map(e => e.$message)"
               type="number"
             />
             <v-text-field
@@ -130,7 +130,7 @@
               :persistent-hint="!!fileConfig.maxLogfilesNum"
               :clearable="!isDefault(configuration?.maxLogfilesNum)"
               :loading="!configuration"
-              :rules="nonNegativeNumberRules"
+              :error-messages="v$.maxLogFiles.$errors.map(e => e.$message)"
               type="number"
             />
 
@@ -147,7 +147,9 @@
               :persistent-hint="!!fileConfig.sqliteInstructions"
               :clearable="!isDefault(configuration?.sqliteInstructions)"
               :loading="!configuration"
-              :rules="nonNegativeNumberRules"
+              :error-messages="
+                v$.sqliteInstructions.$errors.map(e => e.$message)
+              "
               type="number"
             />
 
@@ -197,6 +199,14 @@
 </template>
 
 <script setup lang="ts">
+import useVuelidate from '@vuelidate/core';
+import {
+  and,
+  helpers,
+  minValue,
+  numeric,
+  required
+} from '@vuelidate/validators';
 import { Ref } from 'vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import LanguageSetting from '@/components/settings/general/language/LanguageSetting.vue';
@@ -345,12 +355,35 @@ const valid = computed(() => {
 
 const { openDirectory } = useInterop();
 
-const nonNegativeNumberRules = computed(() => {
-  return [
-    (v: string) => !!v || tc('backend_settings.errors.non_empty'),
-    (v: string) =>
-      parseInt(v) >= 0 || tc('backend_settings.errors.min', 0, { min: 0 })
-  ];
+const nonNegativeNumberRules = {
+  required: helpers.withMessage(
+    tc('backend_settings.errors.non_empty'),
+    required
+  ),
+  nonNegative: helpers.withMessage(
+    tc('backend_settings.errors.min', 0, { min: 0 }),
+    and(numeric, minValue(0))
+  )
+};
+
+const rules = {
+  maxLogSize: nonNegativeNumberRules,
+  maxLogFiles: nonNegativeNumberRules,
+  sqliteInstructions: nonNegativeNumberRules
+};
+
+const v$ = useVuelidate(
+  rules,
+  {
+    maxLogSize,
+    maxLogFiles,
+    sqliteInstructions
+  },
+  { $autoDirty: true }
+);
+
+watch(v$, ({ $invalid }) => {
+  set(formValid, !$invalid);
 });
 
 const icon = (level: LogLevel): string => {

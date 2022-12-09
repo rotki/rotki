@@ -1,11 +1,11 @@
 <template>
-  <v-form :value="value" class="pt-4" @input="input">
+  <v-form :value="value" class="pt-4">
     <div>
       <balance-type-input
         :value="form.category"
         outlined
         :label="t('common.category')"
-        :rules="categoryRules"
+        :error-messages="v$.category.$errors.map(e => e.$message)"
         @input="updateForm({ category: $event })"
       />
     </div>
@@ -33,7 +33,7 @@
         :show-ignored="true"
         :label="tc('common.asset')"
         :enable-association="false"
-        :rules="assetRules"
+        :error-messages="v$.assetIdentifier.$errors.map(e => e.$message)"
         @input="updateForm({ assetIdentifier: $event })"
       />
       <v-text-field
@@ -41,7 +41,7 @@
         :value="form.assetIdentifier"
         :label="t('common.asset')"
         outlined
-        :rules="assetRules"
+        :error-messages="v$.assetIdentifier.$errors.map(e => e.$message)"
         :hint="t('dashboard.snapshot.edit.dialog.balances.nft_hint')"
         @input="updateForm({ assetIdentifier: $event })"
       />
@@ -52,7 +52,7 @@
         :value="form.amount"
         outlined
         :label="t('common.amount')"
-        :rules="amountRules"
+        :error-messages="v$.amount.$errors.map(e => e.$message)"
         @input="updateForm({ amount: $event })"
       />
     </div>
@@ -65,7 +65,7 @@
             symbol: currencySymbol
           })
         "
-        :rules="valueRules"
+        :error-messages="v$.usdValue.$errors.map(e => e.$message)"
         @input="updateForm({ usdValue: $event })"
       />
     </div>
@@ -82,6 +82,8 @@
 </template>
 <script setup lang="ts">
 import { BigNumber } from '@rotki/common';
+import useVuelidate from '@vuelidate/core';
+import { helpers, required } from '@vuelidate/validators';
 import { PropType } from 'vue';
 import EditBalancesSnapshotLocationSelector from '@/components/dashboard/EditBalancesSnapshotLocationSelector.vue';
 import BalanceTypeInput from '@/components/inputs/BalanceTypeInput.vue';
@@ -158,26 +160,44 @@ watch(assetType, assetType => {
   }
 });
 
-const categoryRules = [
-  (v: string) =>
-    !!v ||
-    t('dashboard.snapshot.edit.dialog.balances.rules.category').toString()
-];
-const assetRules = [
-  (v: string) =>
-    !!v || t('dashboard.snapshot.edit.dialog.balances.rules.asset').toString(),
-  (v: string) =>
-    !get(excludedAssets).includes(v) ||
-    t(
-      'dashboard.snapshot.edit.dialog.balances.rules.asset_non_duplicate'
-    ).toString()
-];
-const amountRules = [
-  (v: string) =>
-    !!v || t('dashboard.snapshot.edit.dialog.balances.rules.amount').toString()
-];
-const valueRules = [
-  (v: string) =>
-    !!v || t('dashboard.snapshot.edit.dialog.balances.rules.value').toString()
-];
+const rules = {
+  category: {
+    required: helpers.withMessage(
+      t('dashboard.snapshot.edit.dialog.balances.rules.category').toString(),
+      required
+    )
+  },
+  assetIdentifier: {
+    required: helpers.withMessage(
+      t('dashboard.snapshot.edit.dialog.balances.rules.asset').toString(),
+      required
+    ),
+    nonDuplicate: helpers.withMessage(
+      t(
+        'dashboard.snapshot.edit.dialog.balances.rules.asset_non_duplicate'
+      ).toString(),
+      (v: string): boolean => !get(excludedAssets).includes(v)
+    )
+  },
+  amount: {
+    required: helpers.withMessage(
+      t('dashboard.snapshot.edit.dialog.balances.rules.amount').toString(),
+      required
+    )
+  },
+  usdValue: {
+    required: helpers.withMessage(
+      t('dashboard.snapshot.edit.dialog.balances.rules.value').toString(),
+      required
+    )
+  }
+};
+
+const v$ = useVuelidate(rules, form, {
+  $autoDirty: true
+});
+
+watch(v$, ({ $invalid }) => {
+  input(!$invalid);
+});
 </script>

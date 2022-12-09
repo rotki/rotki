@@ -1,5 +1,5 @@
 <template>
-  <card light class="tag-manager">
+  <card class="tag-manager">
     <template #title>
       {{ tc('tag_manager.title') }}
     </template>

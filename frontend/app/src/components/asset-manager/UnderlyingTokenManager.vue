@@ -1,5 +1,5 @@
 <template>
-  <v-form ref="form" v-model="valid">
+  <v-form ref="form" :value="!v$.$invalid">
     <div class="text-h6">
       {{ tc('underlying_token_manager.labels.tokens') }}
     </div>
@@ -7,7 +7,7 @@
       <v-col cols="12" md="7">
         <v-text-field
           v-model="underlyingAddress"
-          :rules="addressRules"
+          :error-messages="v$.address.$errors.map(e => e.$message)"
           outlined
           :label="tc('common.address')"
         />
@@ -28,14 +28,14 @@
           type="number"
           max="100"
           min="1"
-          :rules="weightRules"
+          :error-messages="v$.weight.$errors.map(e => e.$message)"
           persistent-hint
           :hint="tc('underlying_token_manager.hint')"
           outlined
           :label="tc('underlying_token_manager.labels.weight')"
         >
           <template #append-outer>
-            <v-btn icon :disabled="!valid" class="mt-n2" @click="addToken">
+            <v-btn icon :disabled="v$.$invalid" class="mt-n2" @click="addToken">
               <v-icon>mdi-plus</v-icon>
             </v-btn>
           </template>
@@ -80,6 +80,8 @@
 
 <script setup lang="ts">
 import { EvmTokenKind, UnderlyingToken } from '@rotki/common/lib/data';
+import useVuelidate from '@vuelidate/core';
+import { between, helpers, numeric, required } from '@vuelidate/validators';
 import { PropType } from 'vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import { evmTokenKindsData } from '@/services/assets/consts';
@@ -95,34 +97,42 @@ const { value } = toRefs(props);
 
 const input = (value: UnderlyingToken[]) => emit('input', value);
 
-const valid = ref<boolean>(false);
 const underlyingAddress = ref<string>('');
 const tokenKind = ref<EvmTokenKind>(EvmTokenKind.ERC20);
 const underlyingWeight = ref<string>('');
 const form = ref<any>(null);
 
-const addressRules = [
-  (v: string) =>
-    !!v || tc('underlying_token_manager.validation.address_non_empty')
-];
-
-const weightRules = [
-  (v: string) => {
-    if (!v) {
-      return tc('underlying_token_manager.validation.non_empty');
-    }
-    const number = parseInt(v);
-    if (isNaN(number)) {
-      return tc('underlying_token_manager.validation.not_valid');
-    }
-
-    if (number < 1 || number > 100) {
-      return tc('underlying_token_manager.validation.out_of_range');
-    }
-
-    return true;
+const rules = {
+  address: {
+    required: helpers.withMessage(
+      tc('underlying_token_manager.validation.address_non_empty'),
+      required
+    )
+  },
+  weight: {
+    required: helpers.withMessage(
+      tc('underlying_token_manager.validation.non_empty'),
+      required
+    ),
+    notNaN: helpers.withMessage(
+      tc('underlying_token_manager.validation.not_valid'),
+      numeric
+    ),
+    minMax: helpers.withMessage(
+      tc('underlying_token_manager.validation.out_of_range'),
+      between(1, 100)
+    )
   }
-];
+};
+
+const v$ = useVuelidate(
+  rules,
+  {
+    address: underlyingAddress,
+    weight: underlyingWeight
+  },
+  { $autoDirty: true, $stopPropagation: true }
+);
 
 const addToken = () => {
   const underlyingTokens = [...get(value)];
@@ -143,6 +153,7 @@ const addToken = () => {
   }
 
   (get(form) as any)?.reset();
+  get(v$).$reset();
   input(underlyingTokens);
 };
 

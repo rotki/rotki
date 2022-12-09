@@ -5,7 +5,6 @@
     :prepend-icon="outlined ? null : prependIcon"
     :prepend-inner-icon="outlined ? prependIcon : null"
     :type="revealed ? 'text' : 'password'"
-    :rules="rules"
     :label="label"
     :hint="hint"
     :disabled="disabled"

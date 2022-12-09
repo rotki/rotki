@@ -49,6 +49,7 @@
       :disabled="loading || !!edit"
       @update:validator="validator = $event"
     />
+
     <div v-else>
       <v-text-field
         v-model="label"

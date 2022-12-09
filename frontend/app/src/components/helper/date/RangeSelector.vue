@@ -13,7 +13,8 @@
           outlined
           label="Start Date"
           limit-now
-          :rules="startRules"
+          allow-empty
+          :error-messages="v$.start.$errors.map(e => e.$message)"
           @input="$emit('input', { start: $event, end: value.end })"
         />
       </v-col>
@@ -23,7 +24,7 @@
           outlined
           label="End Date"
           limit-now
-          :rules="endRules"
+          :error-messages="v$.end.$errors.map(e => e.$message)"
           @input="$emit('input', { start: value.start, end: $event })"
         />
       </v-col>
@@ -35,6 +36,8 @@
 </template>
 
 <script setup lang="ts">
+import useVuelidate from '@vuelidate/core';
+import { helpers, requiredIf } from '@vuelidate/validators';
 import dayjs from 'dayjs';
 
 import ReportPeriodSelector from '@/components/profitloss/ReportPeriodSelector.vue';
@@ -42,14 +45,20 @@ import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { PeriodChangedEvent, SelectionChangedEvent } from '@/types/reports';
 import { convertToTimestamp } from '@/utils/date';
 
-defineProps({
+const props = defineProps({
   value: {
     type: Object,
     required: true
   }
 });
 
-const emit = defineEmits(['input']);
+const { value } = toRefs(props);
+
+const emit = defineEmits<{
+  (e: 'input', value: Object): void;
+  (e: 'update:valid', valid: boolean): void;
+}>();
+
 const store = useFrontendSettingsStore();
 const { profitLossReportPeriod } = storeToRefs(store);
 const invalidRange = computed(
@@ -64,9 +73,17 @@ const year = computed(() => get(profitLossReportPeriod).year);
 const quarter = computed(() => get(profitLossReportPeriod).quarter);
 const custom = computed(() => get(year) === 'custom');
 
+const input = (data: { start: string; end: string }) => {
+  emit('input', data);
+};
+
+const updateValid = (valid: boolean) => {
+  emit('update:valid', valid);
+};
+
 const onChanged = async (event: SelectionChangedEvent) => {
   if (event.year === 'custom') {
-    emit('input', { start: '', end: '' });
+    input({ start: '', end: '' });
   }
 
   await store.updateSetting({
@@ -76,7 +93,7 @@ const onChanged = async (event: SelectionChangedEvent) => {
 
 const onPeriodChange = (period: PeriodChangedEvent | null) => {
   if (period === null) {
-    emit('input', { start: '', end: '' });
+    input({ start: '', end: '' });
     return;
   }
 
@@ -85,15 +102,36 @@ const onPeriodChange = (period: PeriodChangedEvent | null) => {
   if (convertToTimestamp(period.end) > dayjs().unix()) {
     end = dayjs().format('DD/MM/YYYY HH:mm:ss');
   }
-  emit('input', { start, end });
+  input({ start, end });
 };
 
 const { t } = useI18n();
 
-const startRules = [
-  (v: string) => !!v || t('generate.validation.empty_start_date').toString()
-];
-const endRules = [
-  (v: string) => !!v || t('generate.validation.empty_end_date').toString()
-];
+const rules = {
+  start: {
+    required: helpers.withMessage(
+      t('generate.validation.empty_start_date').toString(),
+      requiredIf(custom)
+    )
+  },
+  end: {
+    required: helpers.withMessage(
+      t('generate.validation.empty_end_date').toString(),
+      requiredIf(custom)
+    )
+  }
+};
+
+const v$ = useVuelidate(
+  rules,
+  {
+    start: computed(() => get(value).start),
+    end: computed(() => get(value).end)
+  },
+  { $autoDirty: false }
+);
+
+watch(v$, ({ $invalid }) => {
+  updateValid(!$invalid);
+});
 </script>

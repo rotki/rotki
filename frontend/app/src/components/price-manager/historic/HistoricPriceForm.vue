@@ -1,5 +1,5 @@
 <template>
-  <v-form v-model="valid">
+  <v-form :value="!v$.$invalid">
     <v-row class="mt-2">
       <v-col cols="12" md="6">
         <asset-select
@@ -7,7 +7,7 @@
           :label="tc('price_form.from_asset')"
           outlined
           :disabled="edit"
-          :rules="fromAssetRules"
+          :error-messages="v$.fromAsset.$errors.map(e => e.$message)"
           @input="input({ fromAsset: $event })"
         />
       </v-col>
@@ -17,7 +17,7 @@
           :label="tc('price_form.to_asset')"
           :disabled="edit"
           outlined
-          :rules="toAssetRules"
+          :error-messages="v$.toAsset.$errors.map(e => e.$message)"
           @input="input({ toAsset: $event })"
         />
       </v-col>
@@ -27,7 +27,7 @@
         <amount-input
           v-model="price"
           outlined
-          :rules="priceRules"
+          :error-messages="v$.price.$errors.map(e => e.$message)"
           :label="tc('common.price')"
         />
         <div
@@ -62,7 +62,7 @@
           :label="tc('common.datetime')"
           seconds
           :disabled="edit"
-          :rules="dateRules"
+          :error-messages="v$.date.$errors.map(e => e.$message)"
           @input="input({ timestamp: convertToTimestamp($event) })"
         />
       </v-col>
@@ -71,6 +71,8 @@
 </template>
 
 <script setup lang="ts">
+import useVuelidate from '@vuelidate/core';
+import { helpers, required } from '@vuelidate/validators';
 import { PropType } from 'vue';
 import { HistoricalPriceFormPayload } from '@/services/assets/types';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
@@ -93,8 +95,6 @@ const emit = defineEmits(['input', 'valid']);
 const { value } = toRefs(props);
 const { assetSymbol } = useAssetInfoRetrieval();
 
-const valid = ref(false);
-
 const date = computed(({ value }) =>
   value.timestamp ? convertFromTimestamp(value.timestamp, true) : ''
 );
@@ -107,8 +107,6 @@ const numericPrice = bigNumberifyFromRef(price);
 const input = (price: Partial<HistoricalPriceFormPayload>) => {
   emit('input', { ...get(value), ...price });
 };
-
-watch(valid, value => emit('valid', value));
 
 watch(value, val => {
   set(price, val.price);
@@ -124,16 +122,45 @@ onMounted(() => {
 
 const { t, tc } = useI18n();
 
-const fromAssetRules = [
-  (v: string) => !!v || t('price_form.from_non_empty').toString()
-];
-const toAssetRules = [
-  (v: string) => !!v || t('price_form.to_non_empty').toString()
-];
-const priceRules = [
-  (v: string) => !!v || t('price_form.price_non_empty').toString()
-];
-const dateRules = [
-  (v: string) => !!v || t('price_form.date_non_empty').toString()
-];
+const rules = {
+  fromAsset: {
+    required: helpers.withMessage(
+      t('price_form.from_non_empty').toString(),
+      required
+    )
+  },
+  toAsset: {
+    required: helpers.withMessage(
+      t('price_form.to_non_empty').toString(),
+      required
+    )
+  },
+  price: {
+    required: helpers.withMessage(
+      t('price_form.price_non_empty').toString(),
+      required
+    )
+  },
+  date: {
+    required: helpers.withMessage(
+      t('price_form.date_non_empty').toString(),
+      required
+    )
+  }
+};
+
+const v$ = useVuelidate(
+  rules,
+  {
+    fromAsset: computed(() => get(value).fromAsset),
+    toAsset: computed(() => get(value).toAsset),
+    price,
+    date
+  },
+  { $autoDirty: true }
+);
+
+watch(v$, ({ $invalid }) => {
+  emit('valid', !$invalid);
+});
 </script>

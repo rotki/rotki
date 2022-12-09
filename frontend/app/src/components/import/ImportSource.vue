@@ -4,7 +4,7 @@
       <div class="mb-2">
         <slot name="upload-title" />
       </div>
-      <v-form ref="form" v-model="valid">
+      <v-form ref="form" :value="!v$.$invalid">
         <file-upload
           :loading="loading"
           :uploaded="uploaded"
@@ -27,7 +27,7 @@
           v-model="dateInputFormat"
           class="mt-2"
           outlined
-          :rules="dateFormatRules"
+          :error-messages="v$.dateInputFormat.$errors.map(e => e.$message)"
           :placeholder="t('file_upload.date_input_format.placeholder')"
           :hint="
             t('file_upload.date_input_format.hint', {
@@ -61,7 +61,7 @@
             depressed
             block
             data-cy="button-import"
-            :disabled="!valid || !file || loading"
+            :disabled="v$.$invalid || !file || loading"
             @click="uploadFile"
           >
             {{ t('common.actions.import') }}
@@ -74,6 +74,8 @@
 </template>
 
 <script setup lang="ts">
+import useVuelidate from '@vuelidate/core';
+import { helpers, required } from '@vuelidate/validators';
 import { PropType } from 'vue';
 import FileUpload from '@/components/import/FileUpload.vue';
 import DateFormatHelp from '@/components/settings/controls/DateFormatHelp.vue';
@@ -99,7 +101,6 @@ const { source } = toRefs(props);
 const dateInputFormat = ref<string | null>(null);
 const uploaded = ref(false);
 const errorMessage = ref('');
-const valid = ref<boolean>(true);
 const formatHelp = ref<boolean>(false);
 const file = ref<File | null>(null);
 
@@ -109,17 +110,26 @@ const upload = (selectedFile: File) => {
   set(file, selectedFile);
 };
 
-const dateFormatRules = [
-  (v: string) => {
-    if (!v) {
-      return t('general_settings.date_display.validation.empty');
-    }
-    if (!displayDateFormatter.containsValidDirectives(v)) {
-      return t('general_settings.date_display.validation.invalid').toString();
-    }
-    return true;
+const rules = {
+  dateInputFormat: {
+    required: helpers.withMessage(
+      t('general_settings.date_display.validation.empty').toString(),
+      required
+    ),
+    validDate: helpers.withMessage(
+      t('general_settings.date_display.validation.invalid').toString(),
+      (v: string): boolean => displayDateFormatter.containsValidDirectives(v)
+    )
   }
-];
+};
+
+const v$ = useVuelidate(
+  rules,
+  {
+    dateInputFormat
+  },
+  { $autoDirty: true }
+);
 
 const dateInputFormatExample = computed(() => {
   const now = new Date();
@@ -162,16 +172,18 @@ const uploadPackaged = async (file: string) => {
 };
 
 const uploadFile = async () => {
-  if (get(file)) {
+  const fileVal = get(file);
+  if (fileVal) {
     if (interop.isPackaged && api.defaultBackend) {
-      await uploadPackaged(get(file)!.path);
+      await uploadPackaged(fileVal.path);
     } else {
       const formData = new FormData();
       formData.append('source', get(source));
-      formData.append('file', get(file)!);
+      formData.append('file', fileVal);
       formData.append('async_query', 'true');
-      if (get(dateInputFormat)) {
-        formData.append('timestamp_format', get(dateInputFormat)!);
+      const dateInputFormatVal = get(dateInputFormat);
+      if (dateInputFormatVal) {
+        formData.append('timestamp_format', dateInputFormatVal);
       }
       try {
         const { taskId } = await api.importFile(formData);

@@ -6,8 +6,12 @@
           {{ tc('common.total') }}
         </div>
         <div class="mb-4">
-          <v-form v-model="valid">
-            <amount-input v-model="total" outlined :rules="totalRules" />
+          <v-form :value="!v$.$invalid">
+            <amount-input
+              v-model="total"
+              outlined
+              :error-messages="v$.total.$errors.map(e => e.$message)"
+            />
 
             <div class="text--secondary text-caption">
               <i18n path="dashboard.snapshot.edit.dialog.total.warning">
@@ -56,7 +60,7 @@
         <v-icon>mdi-chevron-left</v-icon>
         {{ tc('common.actions.back') }}
       </v-btn>
-      <v-btn color="primary" :disabled="!valid" @click="save">
+      <v-btn color="primary" :disabled="v$.$invalid" @click="save">
         {{ tc('common.actions.finish') }}
         <v-icon>mdi-chevron-right</v-icon>
       </v-btn>
@@ -65,6 +69,8 @@
 </template>
 <script setup lang="ts">
 import { BigNumber } from '@rotki/common';
+import useVuelidate from '@vuelidate/core';
+import { helpers, required } from '@vuelidate/validators';
 import { PropType } from 'vue';
 import { bigNumberSum } from '@/filters';
 import { useBalancePricesStore } from '@/store/balances/prices';
@@ -99,8 +105,6 @@ const { value, balancesSnapshot } = toRefs(props);
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
 const total = ref<string>('');
-const valid = ref<boolean>(false);
-
 const { tc } = useI18n();
 
 const { exchangeRate } = useBalancePricesStore();
@@ -207,9 +211,22 @@ const save = () => {
   input(newValue);
 };
 
-const totalRules = computed(() => [
-  (v: string) => !!v || tc('dashboard.snapshot.edit.dialog.total.rules.total')
-]);
+const rules = {
+  total: {
+    required: helpers.withMessage(
+      tc('dashboard.snapshot.edit.dialog.total.rules.total'),
+      required
+    )
+  }
+};
+
+const v$ = useVuelidate(
+  rules,
+  {
+    total
+  },
+  { $autoDirty: true }
+);
 
 const suggestionsLabel = computed(() => ({
   total: tc('dashboard.snapshot.edit.dialog.total.use_calculated_total'),

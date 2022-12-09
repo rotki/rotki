@@ -5,7 +5,7 @@
         {{ tc('login.title') }}
       </v-card-title>
       <v-card-text class="pb-2">
-        <v-form ref="form" v-model="valid">
+        <v-form ref="form" :value="!v$.$invalid">
           <v-text-field
             ref="usernameRef"
             v-model="username"
@@ -15,7 +15,7 @@
             single-line
             :label="tc('login.label_username')"
             prepend-inner-icon="mdi-account"
-            :rules="usernameRules"
+            :error-messages="v$.username.$errors.map(e => e.$message)"
             :disabled="
               loading || !!syncConflict.message || customBackendDisplay
             "
@@ -27,7 +27,7 @@
             ref="passwordRef"
             v-model="password"
             outlined
-            :rules="passwordRules"
+            :error-messages="v$.password.$errors.map(e => e.$message)"
             :disabled="
               loading || !!syncConflict.message || customBackendDisplay
             "
@@ -101,7 +101,9 @@
                     v-model="customBackendUrl"
                     outlined
                     prepend-inner-icon="mdi-server"
-                    :rules="customBackendRules"
+                    :error-messages="
+                      v$.customBackendUrl.$errors.map(e => e.$message)
+                    "
                     :disabled="customBackendSaved"
                     :label="tc('login.custom_backend.label')"
                     :placeholder="tc('login.custom_backend.placeholder')"
@@ -244,7 +246,7 @@
             depressed
             color="primary"
             :disabled="
-              !valid ||
+              v$.$invalid ||
               loading ||
               !!syncConflict.message ||
               customBackendDisplay
@@ -271,6 +273,8 @@
   </v-slide-y-transition>
 </template>
 <script setup lang="ts">
+import useVuelidate from '@vuelidate/core';
+import { helpers, required, requiredIf } from '@vuelidate/validators';
 import { ComputedRef, PropType, Ref } from 'vue';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import { useInterop } from '@/electron-interop';
@@ -331,7 +335,6 @@ const customBackendDisplay: Ref<boolean> = ref(false);
 const customBackendUrl: Ref<string> = ref('');
 const customBackendSessionOnly: Ref<boolean> = ref(false);
 const customBackendSaved: Ref<boolean> = ref(false);
-const valid: Ref<boolean> = ref(false);
 
 const form: Ref<any> = ref(null);
 const usernameRef: Ref<any> = ref(null);
@@ -361,26 +364,51 @@ const primaryProgress: ComputedRef<Progress | null> = computed(() => {
 
 const { tc } = useI18n();
 
-const customBackendRules = [
-  (v: string) => !!v || tc('login.custom_backend.validation.non_empty'),
-  (v: string) =>
-    (v &&
-      v.length < 300 &&
-      /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}(\.[a-zA-Z0-9()]{1,6})?\b([-a-zA-Z0-9()@:%_+.~#?&/=]*)$/.test(
-        v
-      )) ||
-    tc('login.custom_backend.validation.url')
-];
+const rules = {
+  username: {
+    required: helpers.withMessage(
+      tc('login.validation.non_empty_username'),
+      required
+    ),
+    isValidUsername: helpers.withMessage(
+      tc('login.validation.valid_username'),
+      (v: string): boolean => !!(v && /^[0-9a-zA-Z_.-]+$/.test(v))
+    )
+  },
+  password: {
+    required: helpers.withMessage(
+      tc('login.validation.non_empty_password'),
+      required
+    )
+  },
+  customBackendUrl: {
+    required: helpers.withMessage(
+      tc('login.custom_backend.validation.non_empty'),
+      requiredIf(customBackendDisplay)
+    ),
+    isValidUrl: helpers.withMessage(
+      tc('login.custom_backend.validation.url'),
+      (v: string): boolean =>
+        !get(customBackendDisplay) ||
+        (v.length < 300 &&
+          /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}(\.[a-zA-Z0-9()]{1,6})?\b([-a-zA-Z0-9()@:%_+.~#?&/=]*)$/.test(
+            v
+          ))
+    )
+  }
+};
 
-const usernameRules = [
-  (v: string) => !!v || tc('login.validation.non_empty_username'),
-  (v: string) =>
-    (v && /^[0-9a-zA-Z_.-]+$/.test(v)) || tc('login.validation.valid_username')
-];
-
-const passwordRules = [
-  (v: string) => !!v || tc('login.validation.non_empty_password')
-];
+const v$ = useVuelidate(
+  rules,
+  {
+    username,
+    password,
+    customBackendUrl
+  },
+  {
+    $autoDirty: true
+  }
+);
 
 const { clearPassword, getPassword, isPackaged, storePassword } = useInterop();
 
