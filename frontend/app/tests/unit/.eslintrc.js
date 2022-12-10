@@ -1,5 +1,6 @@
 module.exports = {
   rules: {
-    'max-lines': 'off'
+    'max-lines': 'off',
+    'import/max-dependencies': 'off'
   }
 };

@@ -4,12 +4,11 @@ import flushPromises from 'flush-promises/index';
 import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import Vuetify from 'vuetify';
 import Card from '@/components/helper/Card.vue';
-import { interop } from '@/electron-interop';
 import PremiumSettings from '@/pages/settings/api-keys/premium/index.vue';
 import { api } from '@/services/rotkehlchen-api';
 import { usePremiumStore } from '@/store/session/premium';
 
-vi.mock('@/electron-interop', () => {
+vi.mock('@/composables/electron-interop', () => {
   const mockInterop = {
     premiumUserLoggedIn: vi.fn()
   };
@@ -59,7 +58,8 @@ describe('PremiumSettings.vue', () => {
     await wrapper.vm.$nextTick();
     await flushPromises();
 
-    expect(interop.premiumUserLoggedIn).toHaveBeenCalledWith(true);
+    const { premiumUserLoggedIn } = useInterop();
+    expect(premiumUserLoggedIn).toHaveBeenCalledWith(true);
   });
 
   test('updates premium status upon removing keys', async () => {
@@ -76,6 +76,7 @@ describe('PremiumSettings.vue', () => {
     await wrapper.vm.$nextTick();
     await flushPromises();
 
-    expect(interop.premiumUserLoggedIn).toHaveBeenCalledWith(false);
+    const { premiumUserLoggedIn } = useInterop();
+    expect(premiumUserLoggedIn).toHaveBeenCalledWith(false);
   });
 });

@@ -1,6 +1,3 @@
-import { useBackendManagement } from '@/composables/backend';
-import { useAppNavigation } from '@/composables/navigation';
-import { usePremiumReminder } from '@/composables/premium';
 import { useSessionStore } from '@/store/session';
 import { useSessionAuthStore } from '@/store/session/auth';
 import {

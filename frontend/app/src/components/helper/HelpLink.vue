@@ -19,7 +19,6 @@
 
 <script setup lang="ts">
 import { toRefs } from 'vue';
-import { useLinks } from '@/composables/links';
 
 const props = defineProps({
   url: { required: true, type: String },

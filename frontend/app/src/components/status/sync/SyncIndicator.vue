@@ -216,9 +216,7 @@ import Fragment from '@/components/helper/Fragment';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import FileUpload from '@/components/import/FileUpload.vue';
 import SyncButtons from '@/components/status/sync/SyncButtons.vue';
-import { useTheme } from '@/composables/common';
-import { usePremium } from '@/composables/premium';
-import { interop } from '@/electron-interop';
+
 import { useSnapshotApi } from '@/services/settings/snapshot-api';
 import {
   SYNC_DOWNLOAD,
@@ -244,6 +242,7 @@ const { forceSync } = useSyncStoreStore();
 const { fetchBalances } = useBalancesStore();
 const { currentBreakpoint } = useTheme();
 const premium = usePremium();
+const { appSession } = useInterop();
 
 const pending = ref<boolean>(false);
 const confirmChecked = ref<boolean>(false);
@@ -324,7 +323,7 @@ const importSnapshot = async () => {
   let success = false;
   let message = '';
   try {
-    if (interop.appSession) {
+    if (appSession) {
       await api.importBalancesSnapshot(
         get(balanceSnapshotFile)!.path,
         get(locationDataSnapshotFile)!.path

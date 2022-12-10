@@ -6,7 +6,6 @@
 <script setup lang="ts">
 import Borrowing from '@/components/defi/Borrowing.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
-import { useModules } from '@/composables/session/modules';
 import { Module } from '@/types/modules';
 
 const modules: Module[] = [

@@ -49,7 +49,6 @@
 
 <script setup lang="ts">
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
-import { usePrivacyMode } from '@/composables/privacy';
 
 const { t, tc } = useI18n();
 

@@ -49,7 +49,6 @@
 import { type GeneralAccount } from '@rotki/common/lib/account';
 import makeBlockie from 'ethereum-blockies-base64';
 import { type PropType } from 'vue';
-import { useTheme } from '@/composables/common';
 import { truncateAddress, truncationPoints } from '@/filters';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
 import { useSessionSettingsStore } from '@/store/settings/session';

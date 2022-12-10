@@ -1,10 +1,7 @@
 import { DefiProtocol } from '@rotki/common/lib/blockchain';
 import { type Ref } from 'vue';
-import { usePremium } from '@/composables/premium';
-import { useModules } from '@/composables/session/modules';
-import { useStatusUpdater } from '@/composables/status';
 import { api } from '@/services/rotkehlchen-api';
-import { useNotifications } from '@/store/notifications';
+import { useNotificationsStore } from '@/store/notifications';
 import { getStatus, setStatus } from '@/store/status';
 import { useTasks } from '@/store/tasks';
 import { isLoading } from '@/store/utils';
@@ -53,7 +50,7 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
   const makerDAOVaultDetails: Ref<MakerDAOVaultDetails> = ref([]);
 
   const { awaitTask } = useTasks();
-  const { notify } = useNotifications();
+  const { notify } = useNotificationsStore();
   const { activeModules } = useModules();
   const premium = usePremium();
   const { tc } = useI18n();
@@ -195,7 +192,7 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
         }
       );
       const title = tc('actions.defi.makerdao_vaults.error.title');
-      const { notify } = useNotifications();
+      const { notify } = useNotificationsStore();
       notify({
         title,
         message,

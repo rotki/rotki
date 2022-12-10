@@ -3,7 +3,6 @@ import { type DefiAccount } from '@rotki/common/lib/account';
 import { Blockchain, DefiProtocol } from '@rotki/common/lib/blockchain';
 import sortBy from 'lodash/sortBy';
 import { type ComputedRef, type Ref } from 'vue';
-import { usePremium } from '@/composables/premium';
 import { ProtocolVersion } from '@/services/defi/consts';
 import { api } from '@/services/rotkehlchen-api';
 import {
@@ -19,7 +18,7 @@ import { useDefiSupportedProtocolsStore } from '@/store/defi/protocols';
 import { useSushiswapStore } from '@/store/defi/sushiswap';
 import { useUniswapStore } from '@/store/defi/uniswap';
 import { useYearnStore } from '@/store/defi/yearn';
-import { useNotifications } from '@/store/notifications';
+import { useNotificationsStore } from '@/store/notifications';
 import { getStatus, setStatus } from '@/store/status';
 import { useTasks } from '@/store/tasks';
 import { isLoading } from '@/store/utils';
@@ -65,7 +64,7 @@ export const useDefiStore = defineStore('defi', () => {
   const airdrops: Ref<Airdrops> = ref({});
 
   const { awaitTask } = useTasks();
-  const { notify } = useNotifications();
+  const { notify } = useNotificationsStore();
   const premium = usePremium();
 
   const liquityStore = useLiquityStore();

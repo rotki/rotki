@@ -261,7 +261,6 @@ import UnderlyingTokenManager from '@/components/asset-manager/UnderlyingTokenMa
 import CopyButton from '@/components/helper/CopyButton.vue';
 import Fragment from '@/components/helper/Fragment';
 import HelpLink from '@/components/helper/HelpLink.vue';
-import { useInterop } from '@/electron-interop';
 import {
   CUSTOM_ASSET,
   EVM_TOKEN,

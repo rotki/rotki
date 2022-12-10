@@ -37,7 +37,6 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
 import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
-import { useTheme } from '@/composables/common';
 import { type AssetMovement } from '@/types/defi';
 
 defineProps({

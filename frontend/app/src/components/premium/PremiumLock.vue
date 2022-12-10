@@ -6,9 +6,9 @@
         icon
         target="_blank"
         v-bind="$attrs"
-        :href="interop.isPackaged ? undefined : interop.premiumURL"
+        :href="isPackaged ? undefined : premiumURL"
         v-on="on"
-        @click="interop.isPackaged ? interop.navigateToPremium() : undefined"
+        @click="isPackaged ? navigateToPremium() : undefined"
       >
         <v-icon>mdi-lock</v-icon>
       </v-btn>
@@ -17,7 +17,6 @@
   </v-tooltip>
 </template>
 <script setup lang="ts">
-import { interop } from '@/electron-interop';
-
 const { t } = useI18n();
+const { isPackaged, premiumURL, navigateToPremium } = useInterop();
 </script>

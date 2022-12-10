@@ -57,8 +57,7 @@
 import { type PropType } from 'vue';
 import NotesDisplay from '@/components/helper/table/NotesDisplay.vue';
 import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
-import { useTheme } from '@/composables/common';
-import { useLinks } from '@/composables/links';
+
 import { type LedgerActionEntry } from '@/store/history/types';
 
 const props = defineProps({

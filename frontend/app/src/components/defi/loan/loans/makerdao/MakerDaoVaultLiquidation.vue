@@ -69,8 +69,7 @@ import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import StatCard from '@/components/display/StatCard.vue';
 import PremiumLock from '@/components/premium/PremiumLock.vue';
-import { useTheme } from '@/composables/common';
-import { usePremium } from '@/composables/premium';
+
 import { type MakerDAOVaultModel } from '@/types/defi/maker';
 import { Zero } from '@/utils/bignumbers';
 

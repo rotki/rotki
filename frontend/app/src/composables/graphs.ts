@@ -1,7 +1,6 @@
 import { type BigNumber } from '@rotki/common';
 import { type TooltipDisplayOption } from '@rotki/common/lib/settings/graphs';
 import { type TooltipModel } from 'chart.js';
-import { useTheme } from '@/composables/common';
 import { assert } from '@/utils/assertions';
 import { bigNumberify } from '@/utils/bignumbers';
 

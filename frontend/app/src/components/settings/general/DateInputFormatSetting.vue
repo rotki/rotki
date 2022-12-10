@@ -21,7 +21,7 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
-import { useValidation } from '@/composables/validation';
+
 import { displayDateFormatter } from '@/data/date_formatter';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 

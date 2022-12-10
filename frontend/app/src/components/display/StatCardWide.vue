@@ -45,7 +45,6 @@
 
 <script setup lang="ts">
 import PremiumLock from '@/components/premium/PremiumLock.vue';
-import { useTheme } from '@/composables/common';
 import { assert } from '@/utils/assertions';
 
 const props = defineProps({

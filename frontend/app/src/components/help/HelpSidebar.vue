@@ -81,8 +81,7 @@
 </template>
 
 <script setup lang="ts">
-import { interop } from '@/electron-interop';
-import { useNotifications } from '@/store/notifications';
+import { useNotificationsStore } from '@/store/notifications';
 import { downloadFileByUrl } from '@/utils/download';
 import IndexedDb from '@/utils/indexed-db';
 
@@ -131,6 +130,8 @@ defineProps({
   visible: { required: true, type: Boolean }
 });
 
+const interop = useInterop();
+
 const emit = defineEmits(['visible:update', 'about']);
 
 const visibleUpdate = (_visible: boolean) => {
@@ -147,7 +148,7 @@ const downloadBrowserLog = async () => {
 
   await loggerDb.getAll((data: any) => {
     if (data?.length === 0) {
-      const { notify } = useNotifications();
+      const { notify } = useNotificationsStore();
       notify({
         title: t('help_sidebar.browser_log.error.empty.title').toString(),
         message: t('help_sidebar.browser_log.error.empty.message').toString(),

@@ -149,8 +149,6 @@
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import RotkiLogo from '@/components/common/RotkiLogo.vue';
 import AppUpdateIndicator from '@/components/status/AppUpdateIndicator.vue';
-import { usePremium } from '@/composables/premium';
-import { useInterop } from '@/electron-interop';
 import { type SystemVersion } from '@/electron-main/ipc';
 import { useMainStore } from '@/store/main';
 import { type WebVersion } from '@/types';

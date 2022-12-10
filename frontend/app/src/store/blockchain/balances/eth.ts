@@ -3,11 +3,10 @@ import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type MaybeRef } from '@vueuse/core';
 import isEmpty from 'lodash/isEmpty';
 import { type ComputedRef, type Ref } from 'vue';
-import { useStatusUpdater } from '@/composables/status';
 import { useBlockchainBalanceApi } from '@/services/balances/blockchain';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
-import { useNotifications } from '@/store/notifications';
+import { useNotificationsStore } from '@/store/notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTasks } from '@/store/tasks';
 import { AccountAssetBalances, type AssetBalances } from '@/types/balances';
@@ -51,7 +50,7 @@ export const useEthBalancesStore = defineStore('balances/eth', () => {
 
   const { activeModules } = storeToRefs(useGeneralSettingsStore());
   const { awaitTask } = useTasks();
-  const { notify } = useNotifications();
+  const { notify } = useNotificationsStore();
   const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
   const { isAssetIgnored } = useIgnoredAssetsStore();
   const { queryLoopringBalances } = useBlockchainBalanceApi();

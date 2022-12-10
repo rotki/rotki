@@ -23,7 +23,6 @@
 
 <script setup lang="ts">
 import FullSizeContent from '@/components/common/FullSizeContent.vue';
-import { useTheme } from '@/composables/common';
 
 defineProps({
   full: { required: false, type: Boolean, default: true }

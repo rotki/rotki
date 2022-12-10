@@ -70,7 +70,6 @@ import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import FileUpload from '@/components/import/FileUpload.vue';
 import ReportGenerator from '@/components/profitloss/ReportGenerator.vue';
 import ReportsTable from '@/components/profitloss/ReportsTable.vue';
-import { interop } from '@/electron-interop';
 import { Routes } from '@/router/routes';
 import { api } from '@/services/rotkehlchen-api';
 import { useMessageStore } from '@/store/message';
@@ -99,6 +98,7 @@ const router = useRouter();
 const route = useRoute();
 
 const { tc } = useI18n();
+const { appSession, openDirectory } = useInterop();
 
 onMounted(async () => {
   const query = get(route).query;
@@ -148,10 +148,10 @@ const exportData = async ({ start, end }: ProfitLossReportPeriod) => {
   let message: Message | null = null;
 
   try {
-    const isLocal = interop.appSession;
+    const isLocal = appSession;
     if (isLocal) {
       const directoryPath =
-        (await interop.openDirectory(
+        (await openDirectory(
           tc('profit_loss_reports.debug.select_directory')
         )) || '';
       if (!directoryPath) return;
@@ -199,7 +199,7 @@ const importData = async () => {
   const taskType = TaskType.IMPORT_PNL_REPORT_DATA;
 
   try {
-    const { taskId } = interop.appSession
+    const { taskId } = appSession
       ? await api.reports.importReportData(get(reportDebugData)!.path)
       : await api.reports.uploadReportData(get(reportDebugData)!);
 

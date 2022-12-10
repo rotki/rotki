@@ -33,7 +33,6 @@
 <script setup lang="ts">
 import { DefiProtocol } from '@rotki/common/lib/blockchain';
 import ConfirmableReset from '@/components/helper/ConfirmableReset.vue';
-import { usePremium } from '@/composables/premium';
 
 defineProps({
   loading: {

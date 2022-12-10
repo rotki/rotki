@@ -1,4 +1,3 @@
-import { useStatusUpdater } from '@/composables/status';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useBalancesStore } from '@/store/balances';
 import { useHistory } from '@/store/history';

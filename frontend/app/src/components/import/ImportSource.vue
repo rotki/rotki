@@ -80,7 +80,6 @@ import { type PropType } from 'vue';
 import FileUpload from '@/components/import/FileUpload.vue';
 import DateFormatHelp from '@/components/settings/controls/DateFormatHelp.vue';
 import { displayDateFormatter } from '@/data/date_formatter';
-import { interop } from '@/electron-interop';
 import { api } from '@/services/rotkehlchen-api';
 import { useTasks } from '@/store/tasks';
 import { DateFormat } from '@/types/date-format';
@@ -105,6 +104,7 @@ const formatHelp = ref<boolean>(false);
 const file = ref<File | null>(null);
 
 const { t } = useI18n();
+const { isPackaged } = useInterop();
 
 const upload = (selectedFile: File) => {
   set(file, selectedFile);
@@ -174,7 +174,7 @@ const uploadPackaged = async (file: string) => {
 const uploadFile = async () => {
   const fileVal = get(file);
   if (fileVal) {
-    if (interop.isPackaged && api.defaultBackend) {
+    if (isPackaged && api.defaultBackend) {
       await uploadPackaged(fileVal.path);
     } else {
       const formData = new FormData();

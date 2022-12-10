@@ -65,7 +65,7 @@ import RefreshButton from '@/components/helper/RefreshButton.vue';
 import DatabaseBackups from '@/components/settings/data-security/backups/DatabaseBackups.vue';
 import DatabaseInfoDisplay from '@/components/settings/data-security/backups/DatabaseInfoDisplay.vue';
 import { useBackupApi } from '@/services/backup';
-import { useNotifications } from '@/store/notifications';
+import { useNotificationsStore } from '@/store/notifications';
 import { type DatabaseInfo, type UserDbBackup } from '@/types/backup';
 import { getFilepath } from '@/utils/backups';
 import { size } from '@/utils/data';
@@ -129,7 +129,7 @@ const setupBackupInfo = () => {
       set(backupInfo, await info());
     } catch (e: any) {
       logger.error(e);
-      const { notify } = useNotifications();
+      const { notify } = useNotificationsStore();
       notify({
         display: true,
         title: t('database_backups.load_error.title').toString(),
@@ -179,7 +179,7 @@ const setupBackupActions = (
       set(selected, []);
     } catch (e: any) {
       logger.error(e);
-      const { notify } = useNotifications();
+      const { notify } = useNotificationsStore();
       notify({
         display: true,
         title: t('database_backups.delete_error.title').toString(),
@@ -213,7 +213,7 @@ const setupBackupActions = (
       }
     } catch (e: any) {
       logger.error(e);
-      const { notify } = useNotifications();
+      const { notify } = useNotificationsStore();
       notify({
         display: true,
         title: t('database_backups.delete_error.title').toString(),
@@ -232,7 +232,7 @@ const setupBackupActions = (
     try {
       set(saving, true);
       const filepath = await createBackup();
-      const { notify } = useNotifications();
+      const { notify } = useNotificationsStore();
       notify({
         display: true,
         severity: Severity.INFO,
@@ -245,7 +245,7 @@ const setupBackupActions = (
       await refresh();
     } catch (e: any) {
       logger.error(e);
-      const { notify } = useNotifications();
+      const { notify } = useNotificationsStore();
       notify({
         display: true,
         title: t('database_backups.backup_error.title').toString(),

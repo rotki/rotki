@@ -17,7 +17,6 @@
 
 <script setup lang="ts">
 import { type PropType } from 'vue';
-import { useInterop } from '@/electron-interop';
 import { truncateAddress } from '@/filters';
 import { assert } from '@/utils/assertions';
 

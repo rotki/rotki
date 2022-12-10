@@ -94,10 +94,9 @@
 <script setup lang="ts">
 import { Severity } from '@rotki/common/lib/messages';
 import { type Ref } from 'vue';
-import { useBackendManagement } from '@/composables/backend';
 import { api } from '@/services/rotkehlchen-api';
 import { useMainStore } from '@/store/main';
-import { useNotifications } from '@/store/notifications';
+import { useNotificationsStore } from '@/store/notifications';
 import { useSessionStore } from '@/store/session';
 
 defineProps({
@@ -114,7 +113,7 @@ const done = ref(false);
 type ResetType = 'soft' | 'hard';
 const resetType: Ref<ResetType> = ref('soft');
 
-const { notify } = useNotifications();
+const { notify } = useNotificationsStore();
 const { connect, setConnected } = useMainStore();
 const { logout } = useSessionStore();
 

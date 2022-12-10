@@ -1,9 +1,8 @@
 import { type BigNumber } from '@rotki/common';
 import isEqual from 'lodash/isEqual';
 import { type Ref } from 'vue';
-import { useStatusUpdater } from '@/composables/status';
 import { useNftBalanceApi } from '@/services/balances/nft';
-import { useNotifications } from '@/store/notifications';
+import { useNotificationsStore } from '@/store/notifications';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTasks } from '@/store/tasks';
@@ -50,7 +49,7 @@ export const useNonFungibleBalancesStore = defineStore(
 
     const { activeModules } = storeToRefs(useGeneralSettingsStore());
     const { awaitTask, isTaskRunning } = useTasks();
-    const { notify } = useNotifications();
+    const { notify } = useNotificationsStore();
     const { tc } = useI18n();
 
     const updateRequestPayload = async (

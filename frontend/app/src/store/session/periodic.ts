@@ -1,5 +1,5 @@
 import { useSessionApi } from '@/services/session';
-import { useNotifications } from '@/store/notifications';
+import { useNotificationsStore } from '@/store/notifications';
 import { backoff } from '@/utils/backoff';
 
 export const usePeriodicStore = defineStore('session/periodic', () => {
@@ -8,7 +8,7 @@ export const usePeriodicStore = defineStore('session/periodic', () => {
   const connectedEthNodes = ref<string[]>([]);
   const periodicRunning = ref(false);
 
-  const { notify } = useNotifications();
+  const { notify } = useNotificationsStore();
   const { t } = useI18n();
   const { fetchPeriodicData } = useSessionApi();
 

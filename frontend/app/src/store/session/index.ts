@@ -1,7 +1,4 @@
 import { type ComputedRef } from 'vue';
-import { useLastLanguage } from '@/composables/session/language';
-import { useSessionSettings } from '@/composables/session/settings';
-import { useInterop } from '@/electron-interop';
 import { useExchangeApi } from '@/services/balances/exchanges';
 import { useUsersApi } from '@/services/session/users.api';
 import { useSettingsApi } from '@/services/settings/settings-api';

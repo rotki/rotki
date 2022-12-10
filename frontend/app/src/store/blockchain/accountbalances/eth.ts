@@ -2,7 +2,6 @@ import { type Balance, type HasBalance } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type Eth2Validators } from '@rotki/common/lib/staking/eth2';
 import { type ComputedRef } from 'vue';
-import { useSectionLoading } from '@/composables/common';
 import {
   type AccountWithBalance,
   type AccountWithBalanceAndSharedOwnership,

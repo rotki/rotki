@@ -114,7 +114,7 @@ import { type Ref } from 'vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import Fragment from '@/components/helper/Fragment';
 import ConflictDialog from '@/components/status/update/ConflictDialog.vue';
-import { useBackendManagement } from '@/composables/backend';
+
 import { type ConflictResolution } from '@/services/assets/types';
 import { useAssets } from '@/store/assets';
 import { useMainStore } from '@/store/main';

@@ -9,7 +9,7 @@ import { type ActionStatus } from '@/store/types';
 import { type EntryMeta } from '@/types/history/meta';
 import { uniqueStrings } from '@/utils/data';
 
-export const setupIgnore = <T extends EntryMeta>(
+export const useIgnore = <T extends EntryMeta>(
   type: IgnoreActionType,
   selected: Ref<T[]>,
   refresh: () => any,

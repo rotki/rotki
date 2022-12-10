@@ -149,7 +149,6 @@
 </template>
 
 <script setup lang="ts">
-import { useRefresh } from '@/composables/balances/refresh';
 import { useAggregatedBalancesStore } from '@/store/balances/aggregated';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { useManualBalancesStore } from '@/store/balances/manual';

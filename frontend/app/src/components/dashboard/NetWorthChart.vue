@@ -106,8 +106,6 @@ import {
 } from 'chart.js';
 import dayjs from 'dayjs';
 import { type PropType } from 'vue';
-import { useTheme } from '@/composables/common';
-import { useGraph, useTooltip } from '@/composables/graphs';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { type ValueOverTime } from '@/types/graphs';

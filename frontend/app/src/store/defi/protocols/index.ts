@@ -14,7 +14,6 @@ import {
 } from '@rotki/common/lib/defi/aave';
 import sortBy from 'lodash/sortBy';
 import { type ComputedRef } from 'vue';
-import { usePremium } from '@/composables/premium';
 import { truncateAddress } from '@/filters';
 import { ProtocolVersion } from '@/services/defi/consts';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';

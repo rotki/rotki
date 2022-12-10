@@ -1,10 +1,9 @@
 import { type BigNumber } from '@rotki/common';
 import { type MaybeRef } from '@vueuse/core';
 import { type ComputedRef } from 'vue';
-import { useStatusUpdater } from '@/composables/status';
 import { usePriceApi } from '@/services/balances/price';
 import { type FetchPricePayload } from '@/store/balances/types';
-import { useNotifications } from '@/store/notifications';
+import { useNotificationsStore } from '@/store/notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTasks } from '@/store/tasks';
 import { type ActionStatus } from '@/store/types';
@@ -30,7 +29,7 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
   const exchangeRates = ref<ExchangeRates>({});
 
   const { awaitTask, isTaskRunning } = useTasks();
-  const { notify } = useNotifications();
+  const { notify } = useNotificationsStore();
   const { t } = useI18n();
   const {
     getPriceCache,

@@ -15,7 +15,6 @@
 <script setup lang="ts">
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import LedgerActionContent from '@/components/history/ledger-actions/LedgerActionContent.vue';
-import { useSectionLoading } from '@/composables/common';
 import { useLedgerActions } from '@/store/history/ledger-actions';
 import { Section } from '@/types/status';
 

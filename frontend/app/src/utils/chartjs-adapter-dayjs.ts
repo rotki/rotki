@@ -1,5 +1,4 @@
 import { _adapters } from 'chart.js';
-
 import dayjs, { type QUnitType } from 'dayjs';
 
 import AdvancedFormat from 'dayjs/plugin/advancedFormat';

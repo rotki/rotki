@@ -2,7 +2,7 @@ import { storeToRefs } from 'pinia';
 import { beforeAll, beforeEach, describe, expect, test, vi } from 'vitest';
 import { usePremiumReminder } from '@/composables/premium';
 import { useAccountManagement } from '@/composables/user/account';
-import { useInterop } from '@/electron-interop';
+import { useInterop } from '@/composables/electron-interop';
 import { useSessionStore } from '@/store/session';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { usePremiumStore } from '@/store/session/premium';
@@ -22,7 +22,7 @@ vi.mock('@/store/session', () => ({
   })
 }));
 
-vi.mock('@/electron-interop', () => ({
+vi.mock('@/composables/electron-interop', () => ({
   useInterop: vi.fn().mockReturnValue({
     premiumUserLoggedIn: vi.fn()
   })

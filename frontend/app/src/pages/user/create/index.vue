@@ -10,8 +10,6 @@
 
 <script setup lang="ts">
 import CreateAccountForm from '@/components/account-management/CreateAccountForm.vue';
-import { useAppNavigation } from '@/composables/navigation';
-import { useAccountManagement } from '@/composables/user/account';
 
 const { navigateToUserLogin } = useAppNavigation();
 const { createNewAccount, error, loading } = useAccountManagement();

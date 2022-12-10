@@ -1,6 +1,5 @@
 import isEqual from 'lodash/isEqual';
 import { type Ref } from 'vue';
-import { useStatusUpdater } from '@/composables/status';
 import { api } from '@/services/rotkehlchen-api';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
 import { useAssociatedLocationsStore } from '@/store/history/associated-locations';
@@ -9,7 +8,7 @@ import {
   defaultHistoricPayloadState,
   mapCollectionEntriesWithMeta
 } from '@/store/history/utils';
-import { useNotifications } from '@/store/notifications';
+import { useNotificationsStore } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
 import { type Collection, type CollectionResponse } from '@/types/collection';
 import { type SupportedExchange } from '@/types/exchanges';
@@ -152,7 +151,7 @@ export const useAssetMovements = defineStore('history/assetMovements', () => {
 
       if (!onlyCache || onlyLocation) {
         setStatus(Status.REFRESHING);
-        const { notify } = useNotifications();
+        const { notify } = useNotificationsStore();
 
         const locations = onlyLocation
           ? [onlyLocation]

@@ -10,8 +10,6 @@
   </component>
 </template>
 <script setup lang="ts">
-import { useTheme } from '@/composables/common';
-
 const props = defineProps({
   component: { required: false, type: String, default: 'div' },
   height: { required: false, type: String, default: 'auto' },

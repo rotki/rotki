@@ -10,7 +10,6 @@
 </template>
 
 <script setup lang="ts">
-import { useInterop } from '@/electron-interop';
 import { useMainStore } from '@/store/main';
 import { useSessionStore } from '@/store/session';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';

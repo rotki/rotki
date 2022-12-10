@@ -72,9 +72,9 @@
 <script setup lang="ts">
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import LanguageSelectorItem from '@/components/settings/general/language/LanguageSelectorItem.vue';
-import { useLastLanguage } from '@/composables/session/language';
+
 import { supportedLanguages } from '@/data/supported-language';
-import { useInterop } from '@/electron-interop';
+
 import { useSessionStore } from '@/store/session';
 import { SupportedLanguage } from '@/types/frontend-settings';
 

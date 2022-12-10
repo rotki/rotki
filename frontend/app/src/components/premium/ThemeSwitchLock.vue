@@ -24,8 +24,6 @@
   </v-tooltip>
 </template>
 <script setup lang="ts">
-import { useLinks } from '@/composables/links';
-
 const { href, onLinkClick } = useLinks();
 const { t } = useI18n();
 </script>

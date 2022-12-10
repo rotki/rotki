@@ -8,7 +8,6 @@
 <script setup lang="ts">
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import NftGallery from '@/components/nft/NftGallery.vue';
-import { useModules } from '@/composables/session/modules';
 import { Module } from '@/types/modules';
 
 const modules = [Module.NFTS];

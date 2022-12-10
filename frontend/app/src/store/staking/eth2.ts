@@ -6,10 +6,8 @@ import {
 } from '@rotki/common/lib/staking/eth2';
 import { omitBy } from 'lodash';
 import isEqual from 'lodash/isEqual';
-import { usePremium } from '@/composables/premium';
-import { useStatusUpdater } from '@/composables/status';
 import { useEth2Api } from '@/services/staking/eth2';
-import { useNotifications } from '@/store/notifications';
+import { useNotificationsStore } from '@/store/notifications';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useTasks } from '@/store/tasks';
 import { Section, Status } from '@/types/status';
@@ -45,7 +43,7 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
   const pagination = ref<Eth2DailyStatsPayload>(defaultPagination());
   const premium = usePremium();
   const { awaitTask, isTaskRunning } = useTasks();
-  const { notify } = useNotifications();
+  const { notify } = useNotificationsStore();
   const { t, tc } = useI18n();
 
   const api = useEth2Api();

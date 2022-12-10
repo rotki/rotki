@@ -11,7 +11,6 @@
 </template>
 
 <script setup lang="ts">
-import { useSectionLoading } from '@/composables/common';
 import { useTransactions } from '@/store/history/transactions';
 import { Section } from '@/types/status';
 

@@ -1,4 +1,3 @@
-import { useInterop } from '@/electron-interop';
 import { BackendOptions } from '@/electron-main/ipc';
 import { useMainStore } from '@/store/main';
 import { type Writeable } from '@/types';

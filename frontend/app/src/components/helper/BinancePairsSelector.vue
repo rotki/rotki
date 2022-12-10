@@ -52,9 +52,8 @@
 
 <script setup lang="ts">
 import { Severity } from '@rotki/common/lib/messages';
-import { useTheme } from '@/composables/common';
 import { useExchangeApi } from '@/services/balances/exchanges';
-import { useNotifications } from '@/store/notifications';
+import { useNotificationsStore } from '@/store/notifications';
 import { uniqueStrings } from '@/utils/data';
 
 const props = defineProps({
@@ -96,7 +95,7 @@ onMounted(async () => {
     const description = t('binance_market_selector.query_user.error', {
       message: e.message
     }).toString();
-    const { notify } = useNotifications();
+    const { notify } = useNotificationsStore();
     notify({
       title,
       message: description,
@@ -112,7 +111,7 @@ onMounted(async () => {
     const description = t('binance_market_selector.query_all.error', {
       message: e.message
     }).toString();
-    const { notify } = useNotifications();
+    const { notify } = useNotificationsStore();
     notify({
       title,
       message: description,

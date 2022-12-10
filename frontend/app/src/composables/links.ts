@@ -1,5 +1,4 @@
 import { type Ref } from 'vue';
-import { useInterop } from '@/electron-interop';
 
 export const useLinks = (url?: Ref<string>) => {
   const { isPackaged, premiumURL, openUrl } = useInterop();

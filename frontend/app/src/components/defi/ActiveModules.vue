@@ -67,7 +67,6 @@
 import { type PropType, type Ref } from 'vue';
 import QueriedAddressDialog from '@/components/defi/QueriedAddressDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
-import { useTheme } from '@/composables/common';
 import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
 import { useSettingsStore } from '@/store/settings';
 import { useGeneralSettingsStore } from '@/store/settings/general';

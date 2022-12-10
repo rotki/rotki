@@ -118,7 +118,6 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type PropType } from 'vue';
-import { useInterop } from '@/electron-interop';
 import {
   type AccountInput,
   MANUAL_ADD,

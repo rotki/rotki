@@ -1,6 +1,5 @@
 import { type SemiPartial } from '@rotki/common';
 import { type NotificationPayload, Severity } from '@rotki/common/lib/messages';
-import { usePremium } from '@/composables/premium';
 import { convertKeys } from '@/services/axios-tranformers';
 import { useTxQueryStatus } from '@/store/history/query-status';
 import { useSessionAuthStore } from '@/store/session/auth';

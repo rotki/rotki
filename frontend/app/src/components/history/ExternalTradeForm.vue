@@ -262,7 +262,6 @@
 
 <script setup lang="ts">
 import { BigNumber } from '@rotki/common';
-
 import useVuelidate from '@vuelidate/core';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
 import dayjs from 'dayjs';

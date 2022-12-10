@@ -139,11 +139,7 @@ import UniswapPoolDetails from '@/components/defi/uniswap/UniswapPoolDetails.vue
 import LpPoolIcon from '@/components/display/defi/LpPoolIcon.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
-import { useSectionLoading } from '@/composables/common';
-import { setupLiquidityPosition } from '@/composables/defi';
-import { usePremium } from '@/composables/premium';
-import { useModules } from '@/composables/session/modules';
-import { useInterop } from '@/electron-interop';
+
 import { UniswapDetails } from '@/premium/premium';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useUniswapStore } from '@/store/defi/uniswap';
@@ -230,6 +226,6 @@ onMounted(async () => {
   await Promise.all([fetchBalances(false), fetchEvents(false)]);
 });
 
-const { getPoolName } = setupLiquidityPosition();
+const { getPoolName } = useLiquidityPosition();
 const lpType = LpType.UNISWAP_V2;
 </script>

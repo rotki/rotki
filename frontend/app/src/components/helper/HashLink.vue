@@ -74,8 +74,6 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import makeBlockie from 'ethereum-blockies-base64';
 import { type PropType } from 'vue';
-import { useTheme } from '@/composables/common';
-import { useLinks } from '@/composables/links';
 import { truncateAddress } from '@/filters';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';

@@ -49,9 +49,6 @@ import AnimationsButton from '@/components/user/AnimationsButton.vue';
 import LoginHeader from '@/components/user/LoginHeader.vue';
 import LoginIcon from '@/components/user/LoginIcon.vue';
 import LoginOverlay from '@/components/user/LoginOverlay.vue';
-import { usePremiumReminder } from '@/composables/premium';
-import { useAutoLogin } from '@/composables/user/account';
-import { useInterop } from '@/electron-interop';
 import { useMainStore } from '@/store/main';
 
 const css = useCssModule();

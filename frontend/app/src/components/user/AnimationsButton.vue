@@ -24,8 +24,6 @@
 </template>
 
 <script setup lang="ts">
-import { useAnimation } from '@/composables/user/animations';
-
 const { t } = useI18n();
 const { animationEnabled, toggleAnimation } = useAnimation();
 </script>

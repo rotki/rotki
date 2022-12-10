@@ -61,7 +61,7 @@ import {
   type ManualPricePayload
 } from '@/services/assets/types';
 import { api } from '@/services/rotkehlchen-api';
-import { useNotifications } from '@/store/notifications';
+import { useNotificationsStore } from '@/store/notifications';
 import { type Nullable } from '@/types';
 import { nonNullProperties } from '@/utils/data';
 
@@ -85,7 +85,7 @@ const loading = ref(false);
 const pending = ref<Nullable<HistoricalPrice>>(null);
 const showConfirmation = computed(() => !!get(pending));
 
-const { notify } = useNotifications();
+const { notify } = useNotificationsStore();
 const { tc } = useI18n();
 
 const headers = computed<DataTableHeader[]>(() => [

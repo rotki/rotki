@@ -1,7 +1,5 @@
 import isEqual from 'lodash/isEqual';
 import { type Ref } from 'vue';
-
-import { useStatusUpdater } from '@/composables/status';
 import { api } from '@/services/rotkehlchen-api';
 import { useAssociatedLocationsStore } from '@/store/history/associated-locations';
 import { type LedgerActionEntry } from '@/store/history/types';
@@ -9,7 +7,7 @@ import {
   defaultHistoricPayloadState,
   mapCollectionEntriesWithMeta
 } from '@/store/history/utils';
-import { useNotifications } from '@/store/notifications';
+import { useNotificationsStore } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
 import { type ActionStatus } from '@/store/types';
 import { type Collection, type CollectionResponse } from '@/types/collection';
@@ -129,7 +127,7 @@ export const useLedgerActions = defineStore('history/ledgerActions', () => {
 
       if (!onlyCache || onlyLocation) {
         setStatus(Status.REFRESHING);
-        const { notify } = useNotifications();
+        const { notify } = useNotificationsStore();
 
         const exchange = onlyLocation
           ? exchangeName(onlyLocation as TradeLocation)

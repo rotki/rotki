@@ -4,7 +4,7 @@ import { api } from '@/services/rotkehlchen-api';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
 import { filterAddressesFromWords } from '@/store/history/utils';
 import { useMessageStore } from '@/store/message';
-import { useNotifications } from '@/store/notifications';
+import { useNotificationsStore } from '@/store/notifications';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useTasks } from '@/store/tasks';
 import { CURRENCY_USD } from '@/types/currencies';
@@ -30,7 +30,7 @@ const notify = (info: {
 }): void => {
   logger.error(info.error);
   const message = info.error?.message ?? info.error ?? '';
-  const { notify } = useNotifications();
+  const { notify } = useNotificationsStore();
   notify({
     title: info.title,
     message: info.message({ message }),

@@ -51,7 +51,7 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, not, numeric, required, sameAs } from '@vuelidate/validators';
-import { useValidation } from '@/composables/validation';
+
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const thousandSeparator = ref<string>('');

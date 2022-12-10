@@ -1,6 +1,6 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type ComputedRef } from 'vue';
-import { useSectionLoading } from '@/composables/common';
+
 import {
   type AccountWithBalance,
   type AssetBreakdown

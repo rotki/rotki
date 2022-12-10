@@ -8,7 +8,7 @@ import { useUniswapStore } from '@/store/defi/uniswap';
 import { createEvmIdentifierFromAddress } from '@/utils/assets';
 import { sortDesc } from '@/utils/bignumbers';
 
-export const setupLiquidityPosition = () => {
+export const useLiquidityPosition = () => {
   const { uniswapV2Balances, uniswapV3Balances } = useUniswapStore();
   const { balanceList: sushiswapBalances } = useSushiswapStore();
   const { balancerBalances } = useBalancerStore();

@@ -51,7 +51,6 @@
 
 <script setup lang="ts">
 import { type PropType, type VueConstructor } from 'vue';
-import { useTheme } from '@/composables/common';
 
 defineProps({
   showTooltips: { required: false, type: Boolean, default: false },

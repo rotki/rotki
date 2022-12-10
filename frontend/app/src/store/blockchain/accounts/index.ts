@@ -12,7 +12,7 @@ import {
 import { useBtcAccountsStore } from '@/store/blockchain/accounts/btc';
 import { useChainsAccountsStore } from '@/store/blockchain/accounts/chains';
 import { useEthAccountsStore } from '@/store/blockchain/accounts/eth';
-import { useNotifications } from '@/store/notifications';
+import { useNotificationsStore } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
 import { type BlockchainBalances } from '@/types/blockchain/balances';
 import {
@@ -46,7 +46,7 @@ export const useBlockchainAccountsStore = defineStore(
     const { removeTag: removeChainTag, update: updateChain } =
       useChainsAccountsStore();
     const { awaitTask } = useTasks();
-    const { notify } = useNotifications();
+    const { notify } = useNotificationsStore();
     const { tc } = useI18n();
 
     const addAccount = async (

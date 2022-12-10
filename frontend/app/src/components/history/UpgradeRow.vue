@@ -61,8 +61,6 @@
 </template>
 <script setup lang="ts">
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
-import { useTheme } from '@/composables/common';
-import { useInterop } from '@/electron-interop';
 
 defineProps({
   colspan: { required: true, type: Number },

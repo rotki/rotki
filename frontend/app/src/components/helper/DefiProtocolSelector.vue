@@ -40,7 +40,6 @@
 <script setup lang="ts">
 import { DefiProtocol } from '@rotki/common/lib/blockchain';
 import { type PropType } from 'vue';
-
 import DefiProtocolDetails from '@/components/helper/DefiProtocolDetails.vue';
 
 interface Protocol {

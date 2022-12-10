@@ -45,7 +45,6 @@
 
 <script setup lang="ts">
 import { type PropType } from 'vue';
-import { useTheme } from '@/composables/common';
 import { type TabContent, getClass } from '@/types/tabs';
 import { checkIfDevelopment } from '@/utils/env-utils';
 

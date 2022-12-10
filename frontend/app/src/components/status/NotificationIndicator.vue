@@ -29,15 +29,15 @@
 
 <script setup lang="ts">
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
-import { setupNotifications } from '@/composables/notifications';
 import { useTasks } from '@/store/tasks';
+import { useNotificationsStore } from '@/store/notifications';
 
 defineProps({
   visible: { required: true, type: Boolean }
 });
 
 const emit = defineEmits(['click']);
-const { count } = setupNotifications();
+const { count } = storeToRefs(useNotificationsStore());
 const click = () => {
   emit('click');
 };

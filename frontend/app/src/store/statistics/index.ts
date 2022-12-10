@@ -4,12 +4,11 @@ import { timeframes } from '@rotki/common/lib/settings/graphs';
 import { type NetValue } from '@rotki/common/lib/statistics';
 import dayjs from 'dayjs';
 import { type ComputedRef } from 'vue';
-import { setupLiquidityPosition } from '@/composables/defi';
 import { useStatisticsApi } from '@/services/statistics/statistics-api';
 import { useAggregatedBalancesStore } from '@/store/balances/aggregated';
 import { useNonFungibleBalancesStore } from '@/store/balances/non-fungible';
 import { useBalancePricesStore } from '@/store/balances/prices';
-import { useNotifications } from '@/store/notifications';
+import { useNotificationsStore } from '@/store/notifications';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';
@@ -26,7 +25,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
 
   const settingsStore = useFrontendSettingsStore();
   const { nftsInNetValue } = storeToRefs(settingsStore);
-  const { notify } = useNotifications();
+  const { notify } = useNotificationsStore();
   const { currencySymbol, floatingPrecision } = storeToRefs(
     useGeneralSettingsStore()
   );
@@ -35,7 +34,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
   const { timeframe } = storeToRefs(useSessionSettingsStore());
   const { exchangeRate } = useBalancePricesStore();
 
-  const { lpTotal } = setupLiquidityPosition();
+  const { lpTotal } = useLiquidityPosition();
 
   const { t } = useI18n();
 

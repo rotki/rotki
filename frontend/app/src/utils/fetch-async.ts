@@ -1,8 +1,7 @@
 import { Severity } from '@rotki/common/lib/messages';
 import * as logger from 'loglevel';
 import { type Ref } from 'vue';
-import { useStatusUpdater } from '@/composables/status';
-import { useNotifications } from '@/store/notifications';
+import { useNotificationsStore } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
 import { type FetchData } from '@/store/typing';
 import { Section, Status } from '@/types/status';
@@ -41,7 +40,7 @@ export async function fetchDataAsync<T extends TaskMeta, R>(
     set(state, task.parser ? task.parser(result) : result);
   } catch (e: any) {
     logger.error(`action failure for task ${TaskType[task.type]}:`, e);
-    const { notify } = useNotifications();
+    const { notify } = useNotificationsStore();
     notify({
       title: task.onError.title,
       message: task.onError.error(e.message),

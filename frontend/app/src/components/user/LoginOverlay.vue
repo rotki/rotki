@@ -13,9 +13,6 @@
 </template>
 
 <script setup lang="ts">
-import { useTheme } from '@/composables/common';
-import { useAnimation } from '@/composables/user/animations';
-
 const isTest = !!import.meta.env.VITE_TEST;
 const css = useCssModule();
 const { currentBreakpoint } = useTheme();

@@ -14,7 +14,6 @@
 
 <script setup lang="ts">
 import ErrorScreen from '@/components/error/ErrorScreen.vue';
-import { useInterop } from '@/electron-interop';
 
 defineProps({
   message: { required: true, type: String }

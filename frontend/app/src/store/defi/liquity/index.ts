@@ -5,9 +5,6 @@ import {
   TroveEvents
 } from '@rotki/common/lib/liquity';
 import { type Ref } from 'vue';
-import { usePremium } from '@/composables/premium';
-import { useModules } from '@/composables/session/modules';
-import { useStatusUpdater } from '@/composables/status';
 import { api } from '@/services/rotkehlchen-api';
 import { type OnError } from '@/store/typing';
 import { Module } from '@/types/modules';

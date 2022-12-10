@@ -1,5 +1,4 @@
 import { type MaybeRef } from '@vueuse/core';
-import { useStatusUpdater } from '@/composables/status';
 import { useBalancesApi } from '@/services/balances';
 import { useAggregatedBalancesStore } from '@/store/balances/aggregated';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
@@ -9,7 +8,7 @@ import { useBalancePricesStore } from '@/store/balances/prices';
 import { type AllBalancePayload } from '@/store/balances/types';
 import { useBlockchainStore } from '@/store/blockchain';
 import { useBlockchainBalancesStore } from '@/store/blockchain/balances';
-import { useNotifications } from '@/store/notifications';
+import { useNotificationsStore } from '@/store/notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTasks } from '@/store/tasks';
 import { CURRENCY_USD } from '@/types/currencies';
@@ -33,7 +32,7 @@ export const useBalancesStore = defineStore('balances', () => {
   const { prices } = storeToRefs(priceStore);
   const { assetPrice, fetchPrices, fetchExchangeRates, exchangeRate } =
     priceStore;
-  const { notify } = useNotifications();
+  const { notify } = useNotificationsStore();
   const { isTaskRunning, addTask } = useTasks();
   const { tc } = useI18n();
   const { currencySymbol, currency } = storeToRefs(useGeneralSettingsStore());

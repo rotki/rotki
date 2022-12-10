@@ -80,7 +80,6 @@ import XpubInput from '@/components/accounts/blockchain/XpubInput.vue';
 import InputModeSelect from '@/components/accounts/InputModeSelect.vue';
 import ModuleActivator from '@/components/accounts/ModuleActivator.vue';
 import TagInput from '@/components/inputs/TagInput.vue';
-import { useInterop } from '@/electron-interop';
 import { deserializeApiErrorMessage } from '@/services/converters';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
 import {
@@ -93,7 +92,7 @@ import { useBlockchainStore } from '@/store/blockchain';
 import { useBlockchainAccountsStore } from '@/store/blockchain/accounts';
 import { useEthAccountsStore } from '@/store/blockchain/accounts/eth';
 import { useMessageStore } from '@/store/message';
-import { useNotifications } from '@/store/notifications';
+import { useNotificationsStore } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
 import {
   type AccountInput,
@@ -322,7 +321,7 @@ const metamaskImport = async (): Promise<boolean> => {
         error: e.message
       }
     ).toString();
-    const { notify } = useNotifications();
+    const { notify } = useNotificationsStore();
     notify({
       title,
       message: description,

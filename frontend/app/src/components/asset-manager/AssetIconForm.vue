@@ -46,10 +46,9 @@
   </div>
 </template>
 <script setup lang="ts">
-import { useInterop } from '@/electron-interop';
 import { useAssetIconApi } from '@/services/assets/icon-api';
 import { useMessageStore } from '@/store/message';
-import { useNotifications } from '@/store/notifications';
+import { useNotificationsStore } from '@/store/notifications';
 
 const props = defineProps({
   identifier: {
@@ -72,7 +71,7 @@ const icon = ref<File | null>(null);
 
 const refreshIconLoading = ref<boolean>(false);
 const timestamp = ref<number | null>(null);
-const { notify } = useNotifications();
+const { notify } = useNotificationsStore();
 const { appSession } = useInterop();
 const { setMessage } = useMessageStore();
 const { refreshIcon: refresh, setIcon, uploadIcon } = useAssetIconApi();
