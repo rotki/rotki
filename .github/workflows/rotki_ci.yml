@@ -264,7 +264,7 @@ jobs:
     needs: ['lint-backend', 'check-changes']
     uses: ./.github/workflows/task_backend_tests.yml
     with:
-      os: ubuntu-latest
+      os: ubuntu-20.04
       test_environment: ${{needs.check-changes.outputs.test_environment}}
 
   test-e2e:

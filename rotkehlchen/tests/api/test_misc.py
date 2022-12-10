@@ -140,7 +140,7 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
         api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain='ETH'),
     )
     result = assert_proper_response_with_result(response)
-    assert len(result) == 7
+    assert len(result) == 5
     for node in result:
         if node['name'] != ETHEREUM_ETHERSCAN_NODE_NAME:
             assert node['endpoint'] != ''
@@ -152,7 +152,7 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
     # try to delete a node
     response = requests.delete(
         api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain='ETH'),
-        json={'identifier': 5},
+        json={'identifier': 2},
     )
     assert_proper_response(response)
     # check that is not anymore in the returned list
@@ -160,16 +160,16 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
         api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain='ETH'),
     )
     result = assert_proper_response_with_result(response)
-    assert not any([node['name'] == '1inch' for node in result])
+    assert not any([node['name'] == 'cloudflare' for node in result])
 
     # now try to add it again
     response = requests.put(
         api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain='ETH'),
         json={
-            'name': '1inch',
-            'endpoint': 'https://web3.1inch.exchange',
+            'name': 'cloudflae',
+            'endpoint': 'https://cloudflare-eth.com/',
             'owned': False,
-            'weight': '15',
+            'weight': '20',
             'active': True,
         },
     )
@@ -179,10 +179,10 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
     )
     result = assert_proper_response_with_result(response)
     for node in result:
-        if node['name'] == '1inch':
-            assert FVal(node['weight']) == 15
+        if node['name'] == 'cloudflare':
+            assert FVal(node['weight']) == 20
             assert node['active'] is True
-            assert node['endpoint'] == 'https://web3.1inch.exchange'
+            assert node['endpoint'] == 'https://cloudflare-eth.com/'
             assert node['owned'] is False
             assert node['blockchain'] == 'ETH'
             break
@@ -226,11 +226,11 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
     response = requests.patch(
         api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain='ETH'),
         json={
-            'identifier': 8,
-            'name': '1inch',
+            'identifier': 4,
+            'name': 'ankr',
             'endpoint': 'ewarwae',
             'owned': True,
-            'weight': '40',
+            'weight': '20',
             'active': True,
         },
     )
@@ -240,9 +240,9 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
     )
     result = assert_proper_response_with_result(response)
     for node in result:
-        if node['identifier'] == 8:
-            assert FVal(node['weight']) == 40
-            assert node['name'] == '1inch'
+        if node['identifier'] == 4:
+            assert FVal(node['weight']) == 20
+            assert node['name'] == 'ankr'
             assert node['active'] is True
             assert node['endpoint'] == 'ewarwae'
             assert node['owned'] is True
@@ -253,11 +253,11 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
     response = requests.patch(
         api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain='ETH'),
         json={
-            'identifier': 8,
-            'name': 'oneinch',
+            'identifier': 4,
+            'name': 'anchor',
             'endpoint': 'ewarwae',
             'owned': True,
-            'weight': '40',
+            'weight': '20',
             'active': True,
         },
     )
@@ -267,16 +267,16 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
     )
     result = assert_proper_response_with_result(response)
     for node in result:
-        if node['identifier'] == 8:
-            assert FVal(node['weight']) == 40
-            assert node['name'] == 'oneinch'
+        if node['identifier'] == 4:
+            assert FVal(node['weight']) == 20
+            assert node['name'] == 'anchor'
             assert node['active'] is True
             assert node['endpoint'] == 'ewarwae'
             assert node['owned'] is True
             assert node['blockchain'] == 'ETH'
             break
 
-    result = assert_proper_response_with_result(response)
+    # add a new node
     response = requests.put(
         api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain='ETH'),
         json={
@@ -287,15 +287,16 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
             'active': True,
         },
     )
+    result = assert_proper_response_with_result(response)
     # set owned to false and see that we have the expected amount of nodes
     response = requests.patch(
         api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain='ETH'),
         json={
-            'identifier': 4,
-            'name': 'avado pool',
-            'endpoint': 'https://mainnet.eth.cloud.ava.do/',
+            'identifier': 5,
+            'name': 'myetherwallet',
+            'endpoint': 'https://https://nodes.mewapi.io/rpc/eth.cloud.ava.do/',
             'owned': False,
-            'weight': '0',
+            'weight': '10',
             'active': False,
         },
     )
@@ -306,8 +307,8 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
     result = assert_proper_response_with_result(response)
     # Check that the rebalancing didn't get affected by the owned node
     for node in result:
-        if node['name'] == '1inch':
-            assert FVal(node['weight']) == 40
+        if node['name'] == 'anchor':
+            assert FVal(node['weight']) == 20
             break
 
     # Try to edit etherscan weight

@@ -11,7 +11,7 @@ jobs:
   linux:
     uses: ./.github/workflows/task_backend_tests.yml
     with:
-      os: ubuntu-latest
+      os: ubuntu-20.04
       test_environment: nightly
     secrets: inherit
 

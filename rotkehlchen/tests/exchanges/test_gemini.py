@@ -1,3 +1,4 @@
+import os
 import warnings as test_warnings
 from unittest.mock import patch
 
@@ -22,6 +23,7 @@ from rotkehlchen.types import AssetMovementCategory, Location, Timestamp
 from rotkehlchen.utils.misc import ts_now
 
 
+@pytest.mark.skipif('CI' in os.environ, reason='temporarily skip gemini in CI')
 def test_gemini_validate_key(sandbox_gemini):
     """Test that validate api key works for a correct api key
 
@@ -32,6 +34,7 @@ def test_gemini_validate_key(sandbox_gemini):
     assert msg == ''
 
 
+@pytest.mark.skipif('CI' in os.environ, reason='temporarily skip gemini in CI')
 @pytest.mark.parametrize('gemini_sandbox_api_secret', [b'16NFMLWrVWf1TrHQtVExRFmBovnq'])
 def test_gemini_wrong_secret(sandbox_gemini):
     """Test that giving wrong api secret is detected
@@ -45,6 +48,7 @@ def test_gemini_wrong_secret(sandbox_gemini):
     assert 'Invalid API Key or API secret' in msg
 
 
+@pytest.mark.skipif('CI' in os.environ, reason='temporarily skip gemini in CI')
 @pytest.mark.parametrize('gemini_sandbox_api_key', ['fddad'])
 def test_gemini_wrong_key(sandbox_gemini):
     """Test that giving wrong api key is detected
@@ -58,6 +62,7 @@ def test_gemini_wrong_key(sandbox_gemini):
     assert 'Invalid API Key or API secret' in msg
 
 
+@pytest.mark.skipif('CI' in os.environ, reason='temporarily skip gemini in CI')
 @pytest.mark.parametrize('gemini_test_base_uri', ['https://api.gemini.com'])
 def test_gemini_all_symbols_are_known(sandbox_gemini):
     """Test that the gemini trade pairs are all supported by rotki
@@ -89,6 +94,7 @@ def test_gemini_all_symbols_are_known(sandbox_gemini):
         assert quote is not None
 
 
+@pytest.mark.skipif('CI' in os.environ, reason='temporarily skip gemini in CI')
 @pytest.mark.parametrize('gemini_sandbox_api_key', [SANDBOX_GEMINI_WP_API_KEY])
 @pytest.mark.parametrize('gemini_sandbox_api_secret', [SANDBOX_GEMINI_WP_API_SECRET])
 def test_gemini_wrong_key_permissions(sandbox_gemini):
@@ -97,6 +103,7 @@ def test_gemini_wrong_key_permissions(sandbox_gemini):
     assert not result
 
 
+@pytest.mark.skipif('CI' in os.environ, reason='temporarily skip gemini in CI')
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_gemini_query_balances(sandbox_gemini):
     """Test that querying the balances endpoint works correctly
@@ -121,6 +128,7 @@ def test_gemini_query_balances(sandbox_gemini):
     assert balances[A_BCH].usd_value > ZERO
 
 
+@pytest.mark.skipif('CI' in os.environ, reason='temporarily skip gemini in CI')
 def test_gemini_query_trades(sandbox_gemini):
     """Test that querying the trades endpoint works correctly
 
@@ -160,6 +168,7 @@ def test_gemini_query_trades(sandbox_gemini):
     )
 
 
+@pytest.mark.skipif('CI' in os.environ, reason='temporarily skip gemini in CI')
 def test_gemini_query_all_trades_pagination(sandbox_gemini):
     """Test that querying the trades endpoint works correctly including
     combining results from multiple requests
@@ -247,6 +256,7 @@ def mock_gemini_transfers(gemini, original_requests_request):
     return patch.object(gemini.session, 'request', wraps=mock_requests_requests)
 
 
+@pytest.mark.skipif('CI' in os.environ, reason='temporarily skip gemini in CI')
 def test_gemini_query_deposits_withdrawals(sandbox_gemini):
     """Test that querying the asset movements endpoint works correctly
 

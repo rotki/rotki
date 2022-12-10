@@ -328,24 +328,34 @@ class GlobalDBHandler():
         underlying_tokens: dict[str, list[dict[str, str]]] = defaultdict(list)
         prepared_filter_query, bindings = filter_query.prepare()
         parent_query = """
-        SELECT A.identifier AS identifier, A.type, B.address, B.decimals, A.name, C.symbol, C.started, C.forked, C.swapped_for, C.coingecko, C.cryptocompare, B.protocol, B.chain, B.token_kind, D.notes, D.type AS custom_asset_type
-        FROM assets as A
+        SELECT A.identifier AS identifier, A.type, B.address, B.decimals, A.name, C.symbol,
+        C.started, C.forked, C.swapped_for, C.coingecko, C.cryptocompare, B.protocol, B.chain,
+        B.token_kind, D.notes, D.type AS custom_asset_type FROM
+        assets as A
         LEFT JOIN common_asset_details AS C ON C.identifier = A.identifier
         LEFT JOIN evm_tokens as B ON B.identifier = A.identifier
         LEFT JOIN custom_assets as D ON D.identifier = A.identifier
-        """  # noqa: E501
+        """
         query = f'SELECT * FROM ({parent_query}) {prepared_filter_query}'
-        underlying_tokens_query = """
-        SELECT assets.identifier AS identifier, address, token_kind, parent_token_entry, weight, name, symbol, type, chain
-        FROM underlying_tokens_list
-        INNER JOIN assets ON assets.identifier = parent_token_entry
-        INNER JOIN evm_tokens ON assets.identifier=evm_tokens.identifier
-        INNER JOIN common_asset_details ON common_asset_details.identifier = assets.identifier
-        """  # noqa: E501
+        # Get the identifier of the EVM tokens in the filter and query the underlying tokens where
+        # parent_token_entry is in that set of identifiers. We need to join with evm_tokens since
+        # the address column is present there. @yabirgb tested using JOIN instead of a subquery
+        # and the query increased in complexity since we need to join more tables and the test
+        # showed that the query using joins is slower than this one with the subquery.
+        # test with subquery took on average 1.17 seconds and with joins 1.53 seconds.
+        # The point that prevents this query from being really slow is that the subquery comes
+        # filtered from the frontend where we set a limit in the number of results that goes
+        # in the range from 10 to 100 and this guarantees that the size of the subquery is small.
+        underlying_tokens_query = (
+            f'SELECT parent_token_entry, address, token_kind, weight FROM underlying_tokens_list '
+            f'LEFT JOIN evm_tokens ON underlying_tokens_list.identifier=evm_tokens.identifier '
+            f'WHERE parent_token_entry IN (SELECT identifier FROM ({query}))'
+        )
+
         with GlobalDBHandler().conn.read_ctx() as cursor:
             # get all underlying tokens
-            for entry in cursor.execute(f'SELECT * FROM ({underlying_tokens_query}) {prepared_filter_query}', bindings):  # noqa: E501
-                underlying_tokens[entry[0]].append(UnderlyingToken.deserialize_from_db((entry[1], entry[2], entry[4])).serialize())  # noqa: E501
+            for entry in cursor.execute(underlying_tokens_query, bindings):
+                underlying_tokens[entry[0]].append(UnderlyingToken.deserialize_from_db((entry[1], entry[2], entry[3])).serialize())  # noqa: E501
 
             cursor.execute(query, bindings)
             for entry in cursor:

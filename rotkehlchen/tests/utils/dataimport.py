@@ -464,6 +464,17 @@ def assert_cryptocom_special_events_import_results(rotki: Rotkehlchen):
     assert len(warnings) == 0
 
     expected_actions = [LedgerAction(
+        identifier=7,
+        timestamp=Timestamp(1635477398),
+        action_type=LedgerActionType.EXPENSE,
+        location=Location.CRYPTOCOM,
+        amount=AssetAmount(FVal('0.5678')),
+        asset=asset_from_cryptocom('CRO'),
+        rate=None,
+        rate_asset=None,
+        link=None,
+        notes=get_cryptocom_note('Card Cashback Reversal'),
+    ), LedgerAction(
         identifier=6,
         timestamp=Timestamp(1635390997),
         action_type=LedgerActionType.INCOME,

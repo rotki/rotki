@@ -7,10 +7,12 @@ import requests
 
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.assets.asset import Asset, EvmToken, UnderlyingToken
+from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BAT
-from rotkehlchen.constants.resolver import ethaddress_to_identifier
+from rotkehlchen.constants.resolver import ethaddress_to_identifier, evm_address_to_identifier
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.tests.utils.api import (
@@ -612,3 +614,173 @@ def test_add_non_ethereum_token(rotkehlchen_api_server):
     assert token.symbol == 'XYZ'
     assert token.chain_id == ChainID.BINANCE
     assert token.protocol == 'my-own-protocol'
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_adding_evm_token_with_underlying_token(rotkehlchen_api_server):
+    """
+    Test that the adding an evm token with underlying tokens is correctly processed by the API
+    """
+    token_address = string_to_evm_address('0xD2F574637898526FCddfb3D487cc73c957Fa0268')
+    token_identifier = evm_address_to_identifier(
+        address=token_address,
+        chain_id=ChainID.ETHEREUM,
+        token_type=EvmTokenKind.ERC20,
+    )
+    swapped_for = evm_address_to_identifier(
+        address='0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+        chain_id=ChainID.ETHEREUM,
+        token_type=EvmTokenKind.ERC20,
+    )
+    payload = {
+        'token': {
+            'address': token_address,
+            'name': 'my balancer token',
+            'symbol': 'BPT',
+            'decimals': 18,
+            'coingecko': 'blackpool-token',
+            'cryptocompare': '',
+            'underlying_tokens': [
+                {
+                    'address': '0xB2FdD60AD80ca7bA89B9BAb3b5336c2601C020b4',
+                    'token_kind': 'erc20',
+                    'weight': '50',
+                },
+                {
+                    'address': '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+                    'token_kind': 'erc20',
+                    'weight': '50',
+                },
+            ],
+            'chain': 'ethereum',
+            'token_kind': 'erc20',
+            'protocol': 'balancer',
+            'swapped_for': swapped_for,
+            'started': 10,
+        },
+    }
+    # also add a token with the similar name to test pagination
+    new_token_address = make_ethereum_address()
+    underlying_token_1 = make_ethereum_address()
+    underlying_token_2 = make_ethereum_address()
+    new_token_id = ethaddress_to_identifier(new_token_address)
+    bp_token_2 = EvmToken.initialize(
+        name='my balancer token b',
+        symbol='BPT',
+        address=new_token_address,
+        chain_id=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC20,
+        underlying_tokens=[
+            UnderlyingToken(
+                address=underlying_token_1,
+                weight=FVal('0.5'),
+                token_kind=EvmTokenKind.ERC20,
+            ),
+            UnderlyingToken(
+                address=underlying_token_2,
+                weight=FVal('0.5'),
+                token_kind=EvmTokenKind.ERC20,
+            ),
+        ],
+    )
+    GlobalDBHandler().add_asset(
+        asset_id=new_token_id,
+        asset_type=AssetType.EVM_TOKEN,
+        data=bp_token_2,
+    )
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ethereumassetsresource',
+        ),
+        json=payload,
+    )
+    result = assert_proper_response_with_result(response)
+    assert result['identifier'] == token_identifier
+
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'allassetsresource',
+        ),
+        json={
+            'identifiers': [token_identifier],
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    underlying_tokens = [
+        {
+            'address': '0xB2FdD60AD80ca7bA89B9BAb3b5336c2601C020b4',
+            'token_kind': 'erc20',
+            'weight': '50.0',
+        },
+        {
+            'address': '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+            'token_kind': 'erc20',
+            'weight': '50.0',
+        },
+    ]
+    expected_result = [
+        {
+            'identifier': token_identifier,
+            'type': 'evm token',
+            'name': 'my balancer token',
+            'address': token_address,
+            'chain': 'ethereum',
+            'token_kind': 'erc20',
+            'decimals': 18,
+            'underlying_tokens': underlying_tokens,
+            'protocol': 'balancer',
+            'symbol': 'BPT',
+            'started': 10,
+            'swapped_for': swapped_for,
+            'forked': None,
+            'cryptocompare': '',
+            'coingecko': 'blackpool-token',
+        },
+    ]
+    assert result['entries'] == expected_result
+
+    # Check that pagination with underlying tokens returns the correct result
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'allassetsresource',
+        ),
+        json={
+            'name': 'my balancer token',
+            'limit': 2,
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    assert result['entries_found'] == 2
+    assert result['entries'][1]['underlying_tokens'] == underlying_tokens
+    assert len(result['entries'][0]['underlying_tokens']) == 2
+
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'allassetsresource',
+        ),
+        json={
+            'name': 'my balancer token',
+            'limit': 1,
+            'offset': 1,
+            'order_by_attributes': ['name'],
+            'ascending': [True],
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    assert result['entries_found'] == 2
+    assert result['entries'][0]['underlying_tokens'] == [
+        {
+            'address': underlying_token_1,
+            'token_kind': 'erc20',
+            'weight': '50.0',
+        },
+        {
+            'address': underlying_token_2,
+            'token_kind': 'erc20',
+            'weight': '50.0',
+        },
+    ]

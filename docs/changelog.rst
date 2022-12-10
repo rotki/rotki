@@ -2,9 +2,11 @@
 Changelog
 =========
 
-* :feature:`5150` Add option to abbreviates large number. For example to show 1.234.567 as 1.23 M.
+* :feature:`5150` Add option to abbreviate large number. For example to show 1.234.567 as 1.23 M.
 * :feature:`4940` Users will now be able to reset the assets database without losing any custom information they may have added.
 * :feature:`4487` Users can now customize the order of how addresses are resolved to human readable names.
+
+* :release:`1.26.2 <2022-12-09>`
 * :bug:`5187` Fix issue where the blockchain balances were refreshed, when only changing the label or the tags of an account.
 * :bug:`5170` Fix issue where loopring balances is not updated when blockchain balances are manually refreshed.
 * :bug:`-` Users will now be able to import binance trades of type Buy + Transaction Related from CSV exports.
@@ -16,8 +18,10 @@ Changelog
 * :bug:`2934` Users will now be able to deploy the docker image on a subpath instead of the root domain.
 * :bug:`-` Users won't get errors querying prices due the usage of defi oracles for querying prices of NFTs.
 * :bug:`-` Fix an edge-case problem with synchronizing database with the server.
+* :bug:`-` Users will be able to edit EVM tokens again and the information about underlying tokens will be correctly displayed.
 * :bug:`-` Fix an issue with nginx websocket proxying on docker.
-
+* :bug:`-` Now `Card Cashback Reversal` entries from cryptocom csv will be imported correctly.
+* :bug:`-` Default list of open nodes has been modified. Users who used only defaults may notice an increase in speed. For others it depends on their selection and they are encouraged to review and modify their ethereum nodes list.
 
 * :release:`1.26.1 <2022-11-04>`
 * :feature:`5144` Add HIFO and ACB options for cost basis method.

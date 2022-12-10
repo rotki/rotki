@@ -9,7 +9,9 @@
     clipped
     app
   >
-    <div v-if="!isMini" class="text-center app__logo" />
+    <div v-if="!isMini" class="app__logo">
+      <rotki-logo height="150px" :url="remoteDrawerImage" />
+    </div>
     <div v-else class="app__logo-mini">
       {{ t('app.name') }}
     </div>
@@ -28,7 +30,9 @@
 </template>
 
 <script setup lang="ts">
+import RotkiLogo from '@/components/common/RotkiLogo.vue';
 import NavigationMenu from '@/components/NavigationMenu.vue';
+
 import { useTheme } from '@/composables/common';
 import { useMainStore } from '@/store/main';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
@@ -37,30 +41,30 @@ const { isMini, showDrawer } = storeToRefs(useAreaVisibilityStore());
 const { appVersion } = toRefs(useMainStore());
 const { appBarColor } = useTheme();
 
+const remoteDrawerImage =
+  'https://raw.githubusercontent.com/rotki/data/main/assets/icons/drawer_logo.png';
+
 const { t } = useI18n();
 </script>
 
 <style scoped lang="scss">
 .app {
   &__logo {
-    min-height: 150px;
     margin-bottom: 15px;
     margin-top: 15px;
-    background: url(./assets/images/rotkehlchen_no_text.png) no-repeat center;
-    background-size: contain;
-  }
 
-  &__logo-mini {
-    text-align: center;
-    align-self: center;
-    font-size: 3em;
-    font-weight: bold;
-    height: 150px;
-    width: 64px;
-    writing-mode: vertical-lr;
-    transform: rotate(-180deg);
-    margin-bottom: 15px;
-    margin-top: 15px;
+    &-mini {
+      text-align: center;
+      align-self: center;
+      font-size: 3em;
+      font-weight: bold;
+      height: 150px;
+      width: 64px;
+      writing-mode: vertical-lr;
+      transform: rotate(-180deg);
+      margin-bottom: 15px;
+      margin-top: 15px;
+    }
   }
 
   &__navigation-drawer {

@@ -5,10 +5,10 @@
         <v-row align="center" justify="center">
           <v-col cols="auto">
             <div :class="$style.logo">
-              <v-img
-                contain
-                :class="$style.image"
-                src="/assets/images/rotkehlchen_no_text.png"
+              <rotki-logo
+                :width="currentBreakpoint.xsOnly ? 110 : 160"
+                :height="currentBreakpoint.xsOnly ? 110 : 160"
+                :url="remoteEmptyScreenLogo"
               />
             </div>
           </v-col>
@@ -42,6 +42,7 @@
 <script setup lang="ts">
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import FullSizeContent from '@/components/common/FullSizeContent.vue';
+import { useTheme } from '@/composables/common';
 import { interop } from '@/electron-interop';
 
 defineProps({
@@ -52,6 +53,9 @@ defineProps({
 });
 
 const { t } = useI18n();
+const { currentBreakpoint } = useTheme();
+const remoteEmptyScreenLogo =
+  'https://raw.githubusercontent.com/rotki/data/main/assets/icons/empty_screen_logo.png';
 </script>
 
 <style module lang="scss">
@@ -67,16 +71,6 @@ const { t } = useI18n();
   @media only screen and (max-width: 400px) {
     width: 200px !important;
     height: 200px !important;
-  }
-}
-
-.image {
-  width: 160px !important;
-  height: 160px !important;
-
-  @media only screen and (max-width: 400px) {
-    width: 110px !important;
-    height: 110px !important;
   }
 }
 </style>

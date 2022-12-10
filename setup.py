@@ -12,7 +12,7 @@ directory = pathlib.Path(__file__).parent
 requirements_txt = directory.joinpath('requirements.txt').read_text()
 requirements = [str(r) for r in parse_requirements(requirements_txt)]
 
-version = '1.26.1'  # Do not edit: this is maintained by bumpversion (see .bumpversion.cfg)
+version = '1.26.2'  # Do not edit: this is maintained by bumpversion (see .bumpversion.cfg)
 
 setup(
     name='rotkehlchen',
@@ -24,7 +24,7 @@ setup(
     url='https://github.com/rotki/rotki',
     packages=find_packages('.'),
     package_data={
-        # Data files to package in the Rotki python package wheel. While
+        # Data files to package in the rotki python package wheel. While
         # pyinstaller does not use this list, changes here should be kept in
         # sync with rotkehlchen.spec
         'rotkehlchen': [
@@ -35,6 +35,7 @@ setup(
             'data/global.db',
             'data/globaldb_v2_v3_assets.sql',
             'data/nodes.json',
+            'data/nodes_as_of_1-26-1.json',
             'chain/ethereum/modules/dxdaomesa/data/contracts.json',
         ],
     },

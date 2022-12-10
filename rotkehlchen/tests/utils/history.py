@@ -1202,5 +1202,13 @@ def assert_pnl_debug_import(filepath: Path, database: DBHandler) -> None:
         serialized_ignored_actions_from_db = {
             k.serialize(): v for k, v in ignored_actions_ids_from_db.items()
         }
+
+    # Since db upgrade and data migration change often do not compare here
+    assert settings_from_file['last_data_migration'] == 5
+    assert settings_from_file['version'] == 35
+    for x in ('version', 'last_data_migration'):
+        settings_from_db.pop(x)
+        settings_from_file.pop(x)
+
     assert settings_from_file == settings_from_db
     assert serialized_ignored_actions_from_db == ignored_actions_ids_from_file

@@ -3161,7 +3161,7 @@ class DBHandler:
                 for entry in cursor
             ]
 
-    def _rebalance_rpc_nodes_weights(
+    def rebalance_rpc_nodes_weights(
             self,
             write_cursor: 'DBCursor',
             proportion_to_share: FVal,
@@ -3213,7 +3213,7 @@ class DBHandler:
                     f'Node for {node.node_info.blockchain} with name {node.node_info.name} '
                     f'already exists in db',
                 ) from e
-            self._rebalance_rpc_nodes_weights(
+            self.rebalance_rpc_nodes_weights(
                 write_cursor=cursor,
                 proportion_to_share=ONE - node.weight,
                 exclude_identifier=cursor.lastrowid,
@@ -3244,7 +3244,7 @@ class DBHandler:
             if cursor.rowcount == 0:
                 raise InputError(f'Node with identifier {node.identifier} doesn\'t exist')
 
-            self._rebalance_rpc_nodes_weights(
+            self.rebalance_rpc_nodes_weights(
                 write_cursor=cursor,
                 proportion_to_share=ONE - node.weight,
                 exclude_identifier=node.identifier,
@@ -3260,7 +3260,7 @@ class DBHandler:
             cursor.execute('DELETE FROM rpc_nodes WHERE identifier=? AND blockchain=?', (identifier, blockchain.value))   # noqa: E501
             if cursor.rowcount == 0:
                 raise InputError(f'node with id {identifier} and blockchain {blockchain.value} was not found in the database')  # noqa: E501
-            self._rebalance_rpc_nodes_weights(
+            self.rebalance_rpc_nodes_weights(
                 write_cursor=cursor,
                 proportion_to_share=ONE,
                 exclude_identifier=None,
