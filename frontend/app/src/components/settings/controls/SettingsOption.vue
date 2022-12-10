@@ -5,16 +5,16 @@
 </template>
 
 <script setup lang="ts">
-import { MaybeRef } from '@vueuse/core';
-import { PropType } from 'vue';
+import { type MaybeRef } from '@vueuse/core';
+import { type PropType } from 'vue';
 import {
   SettingLocation,
   useClearableMessages,
   useSettings
 } from '@/composables/settings';
-import { SessionSettings } from '@/store/settings/session';
-import { FrontendSettingsPayload } from '@/types/frontend-settings';
-import { SettingsUpdate } from '@/types/user';
+import { type SessionSettings } from '@/store/settings/session';
+import { type FrontendSettingsPayload } from '@/types/frontend-settings';
+import { type SettingsUpdate } from '@/types/user';
 
 const props = defineProps({
   setting: {
@@ -90,7 +90,7 @@ const update = async (newValue: any) => {
     ? SettingLocation.FRONTEND
     : SettingLocation.GENERAL;
 
-  let result = await updateSetting(settingKey, settingValue, location, {
+  const result = await updateSetting(settingKey, settingValue, location, {
     success: getMessage(successMessage, newValue),
     error: getMessage(errorMessage, newValue)
   });

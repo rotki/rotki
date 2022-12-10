@@ -25,8 +25,8 @@
   </div>
 </template>
 <script setup lang="ts">
-import { AssetBalance } from '@rotki/common';
-import { PropType } from 'vue';
+import { type AssetBalance } from '@rotki/common';
+import { type PropType } from 'vue';
 
 defineProps({
   staking: {

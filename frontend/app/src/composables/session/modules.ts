@@ -1,13 +1,12 @@
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { Module } from '@/types/modules';
+import { type Module } from '@/types/modules';
 
 export const useModules = () => {
   const { activeModules } = storeToRefs(useGeneralSettingsStore());
 
   const isAnyModuleEnabled = (modules: Module[]) => {
-    return computed(
-      () =>
-        get(activeModules).filter(module => modules.includes(module)).length > 0
+    return computed(() =>
+      get(activeModules).some(module => modules.includes(module))
     );
   };
 

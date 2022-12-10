@@ -1,4 +1,4 @@
-import { mount, Wrapper } from '@vue/test-utils';
+import { type Wrapper, mount } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
 import { setActivePinia } from 'pinia';
 import Vuetify from 'vuetify';

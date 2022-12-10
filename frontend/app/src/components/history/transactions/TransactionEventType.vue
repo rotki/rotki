@@ -53,10 +53,10 @@
   </div>
 </template>
 <script setup lang="ts">
-import { PropType } from 'vue';
+import { type PropType } from 'vue';
 import { useTheme } from '@/composables/common';
-import { EthTransactionEventEntry } from '@/store/history/types';
-import { ActionDataEntry } from '@/store/types';
+import { type EthTransactionEventEntry } from '@/store/history/types';
+import { type ActionDataEntry } from '@/store/types';
 import { getEventCounterpartyData, useEventTypeData } from '@/utils/history';
 
 const props = defineProps({

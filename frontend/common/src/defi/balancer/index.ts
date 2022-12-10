@@ -1,6 +1,6 @@
-import {default as BigNumber} from "bignumber.js";
-import {z} from "zod";
-import {Balance, NumericString} from "../../index";
+import { type default as BigNumber } from 'bignumber.js';
+import { z } from 'zod';
+import { Balance, NumericString } from '../../index';
 import { XswapPool } from '../xswap';
 
 const BalancerUnderlyingToken = z.object({
@@ -9,32 +9,32 @@ const BalancerUnderlyingToken = z.object({
   userBalance: Balance,
   usdPrice: NumericString,
   weight: z.string()
-})
+});
 
-export type BalancerUnderlyingToken =z.infer<typeof BalancerUnderlyingToken>
+export type BalancerUnderlyingToken = z.infer<typeof BalancerUnderlyingToken>;
 
 const BalancerBalance = z.object({
   address: z.string(),
   tokens: z.array(BalancerUnderlyingToken),
   totalAmount: NumericString,
   userBalance: Balance
-})
+});
 
-export type BalancerBalance = z.infer<typeof BalancerBalance>
+export type BalancerBalance = z.infer<typeof BalancerBalance>;
 
-export const BalancerBalances = z.record(z.array(BalancerBalance))
-export type BalancerBalances = z.infer<typeof BalancerBalances>
+export const BalancerBalances = z.record(z.array(BalancerBalance));
+export type BalancerBalances = z.infer<typeof BalancerBalances>;
 
 const PoolToken = z.object({
   token: z.string(),
   weight: z.string()
-})
+});
 
-const PoolAmounts = z.record(NumericString)
+const PoolAmounts = z.record(NumericString);
 
-export type PoolAmounts = z.infer<typeof PoolAmounts>
+export type PoolAmounts = z.infer<typeof PoolAmounts>;
 
-const BalancerEvent =z.object({
+const BalancerEvent = z.object({
   txHash: z.string(),
   logIndex: z.number(),
   timestamp: z.number(),
@@ -42,9 +42,9 @@ const BalancerEvent =z.object({
   lpBalance: Balance,
   amounts: PoolAmounts,
   pool: XswapPool.optional()
-})
+});
 
-export type BalancerEvent = z.infer<typeof BalancerEvent>
+export type BalancerEvent = z.infer<typeof BalancerEvent>;
 
 const BalancerPoolDetails = z.object({
   poolAddress: z.string(),
@@ -52,15 +52,14 @@ const BalancerPoolDetails = z.object({
   events: z.array(BalancerEvent),
   profitLossAmounts: PoolAmounts,
   usdProfitLoss: NumericString
-})
+});
 
-export const BalancerEvents = z.record(z.array(BalancerPoolDetails))
-export type BalancerEvents = z.infer<typeof BalancerEvents>
+export const BalancerEvents = z.record(z.array(BalancerPoolDetails));
+export type BalancerEvents = z.infer<typeof BalancerEvents>;
 
 export interface BalancerProfitLoss {
   readonly pool: XswapPool;
   readonly tokens: string[];
   readonly usdProfitLoss: BigNumber;
   readonly profitLossAmount: PoolAmounts;
-
 }

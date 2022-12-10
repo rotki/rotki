@@ -35,8 +35,8 @@
   </stat-card>
 </template>
 <script setup lang="ts">
-import { LiquityPoolDetail } from '@rotki/common/lib/liquity';
-import { PropType } from 'vue';
+import { type LiquityPoolDetail } from '@rotki/common/lib/liquity';
+import { type PropType } from 'vue';
 import StatCard from '@/components/display/StatCard.vue';
 
 defineProps({

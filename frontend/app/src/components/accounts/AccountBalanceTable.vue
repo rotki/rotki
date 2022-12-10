@@ -129,12 +129,12 @@
 </template>
 
 <script setup lang="ts">
-import { Balance } from '@rotki/common';
+import { type Balance } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import isEqual from 'lodash/isEqual';
 import sortBy from 'lodash/sortBy';
-import { PropType, useListeners } from 'vue';
-import { DataTableHeader } from 'vuetify';
+import { type PropType, useListeners } from 'vue';
+import { type DataTableHeader } from 'vuetify';
 import AccountGroupHeader from '@/components/accounts/AccountGroupHeader.vue';
 import AccountBalanceDetails from '@/components/accounts/balances/AccountBalanceDetails.vue';
 import Eth2ValidatorLimitRow from '@/components/accounts/blockchain/eth2/Eth2ValidatorLimitRow.vue';
@@ -149,14 +149,14 @@ import { useTheme } from '@/composables/common';
 import { useStatusUpdater } from '@/composables/status';
 import { bigNumberSum } from '@/filters';
 import {
-  BlockchainAccountWithBalance,
-  XpubAccountWithBalance,
-  XpubPayload
+  type BlockchainAccountWithBalance,
+  type XpubAccountWithBalance,
+  type XpubPayload
 } from '@/store/balances/types';
 import { useEthBalancesStore } from '@/store/blockchain/balances/eth';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTasks } from '@/store/tasks';
-import { Properties } from '@/types';
+import { type Properties } from '@/types';
 import { chainSection } from '@/types/blockchain';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
@@ -304,8 +304,8 @@ const nonExpandedBalances = computed<BlockchainAccountWithBalance[]>(() => {
         );
         return (
           xpubEntry ?? {
-            xpub: xpub,
-            derivationPath: derivationPath,
+            xpub,
+            derivationPath,
             address: '',
             label: '',
             tags: [],
@@ -427,7 +427,7 @@ const groupBy = (
 ) => {
   const record = {} as Record<string, BlockchainAccountWithBalance[]>;
 
-  for (let item of items) {
+  for (const item of items) {
     const key =
       'xpub' in item ? groupBy.map(value => item[value]).join(':') : '';
     if (record[key]) {

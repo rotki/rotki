@@ -151,13 +151,13 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, or, requiredIf, requiredUnless } from '@vuelidate/validators';
-import { PropType } from 'vue';
+import { type PropType } from 'vue';
 import ExchangeDisplay from '@/components/display/ExchangeDisplay.vue';
 import BinancePairsSelector from '@/components/helper/BinancePairsSelector.vue';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import {
-  ExchangePayload,
+  type ExchangePayload,
   KrakenAccountType,
   SUPPORTED_EXCHANGES,
   SupportedExchange

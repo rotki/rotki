@@ -1,10 +1,10 @@
 import {
-  BackendOptions,
-  Listeners,
-  SystemVersion,
-  TrayUpdate
+  type BackendOptions,
+  type Listeners,
+  type SystemVersion,
+  type TrayUpdate
 } from '@/electron-main/ipc';
-import { WebVersion } from '@/types';
+import { type WebVersion } from '@/types';
 import { getBackendUrl } from '@/utils/account-management';
 import { assert } from '@/utils/assertions';
 

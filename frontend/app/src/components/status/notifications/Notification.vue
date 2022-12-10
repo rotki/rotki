@@ -47,9 +47,9 @@
 </template>
 
 <script setup lang="ts">
-import { NotificationData, Severity } from '@rotki/common/lib/messages';
+import { type NotificationData, Severity } from '@rotki/common/lib/messages';
 import dayjs from 'dayjs';
-import { PropType } from 'vue';
+import { type PropType } from 'vue';
 import { useTheme } from '@/composables/common';
 
 const props = defineProps({

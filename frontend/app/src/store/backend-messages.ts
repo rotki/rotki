@@ -58,7 +58,7 @@ export const useBackendMessagesStore = defineStore('backendMessages', () => {
       start();
     }
     const search = window.location.search;
-    const skipUpdate = search.indexOf('skip_update') >= 0;
+    const skipUpdate = search.includes('skip_update');
     if (skipUpdate) {
       sessionStorage.setItem('skip_update', '1');
     }

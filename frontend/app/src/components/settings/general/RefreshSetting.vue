@@ -100,7 +100,7 @@ const resetRefreshPeriod = () => {
   set(refreshPeriod, get(refreshEnabled) ? period.toString() : '');
 };
 
-const transform = (value: string) => (value ? parseInt(value) : value);
+const transform = (value: string) => (value ? Number.parseInt(value) : value);
 const transformSwitch = (value: boolean) => (value ? 30 : -1);
 
 onMounted(() => {

@@ -1,8 +1,8 @@
-import { ActionResult } from '@rotki/common/lib/data';
+import { type ActionResult } from '@rotki/common/lib/data';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validStatus } from '@/services/utils';
-import { IgnoreActionType } from '@/store/history/types';
+import { type IgnoreActionType } from '@/store/history/types';
 import { IgnoredActions } from '@/types/history/ignored';
 
 export const useHistoryIgnoringApi = () => {

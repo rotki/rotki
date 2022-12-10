@@ -64,7 +64,7 @@
 </template>
 
 <script setup lang="ts">
-import { Message } from '@rotki/common/lib/messages';
+import { type Message } from '@rotki/common/lib/messages';
 import ErrorScreen from '@/components/error/ErrorScreen.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import FileUpload from '@/components/import/FileUpload.vue';
@@ -78,10 +78,10 @@ import { useReports } from '@/store/reports';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
 import { useTasks } from '@/store/tasks';
 import {
-  ProfitLossReportDebugPayload,
-  ProfitLossReportPeriod
+  type ProfitLossReportDebugPayload,
+  type ProfitLossReportPeriod
 } from '@/types/reports';
-import { TaskMeta } from '@/types/task';
+import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { downloadFileByUrl } from '@/utils/download';
 
@@ -108,8 +108,8 @@ onMounted(async () => {
 
     if (start && end) {
       const period = {
-        start: parseInt(start),
-        end: parseInt(end)
+        start: Number.parseInt(start),
+        end: Number.parseInt(end)
       };
 
       await generate(period);
@@ -140,7 +140,7 @@ const generate = async (period: ProfitLossReportPeriod) => {
 const { setMessage } = useMessageStore();
 
 const exportData = async ({ start, end }: ProfitLossReportPeriod) => {
-  let payload: ProfitLossReportDebugPayload = {
+  const payload: ProfitLossReportDebugPayload = {
     fromTimestamp: start,
     toTimestamp: end
   };

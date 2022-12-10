@@ -1,8 +1,8 @@
-import { Blockchain } from '@rotki/common/lib/blockchain';
-import { ActionResult } from '@rotki/common/lib/data';
+import { type Blockchain } from '@rotki/common/lib/blockchain';
+import { type ActionResult } from '@rotki/common/lib/data';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
-import { PendingTask } from '@/services/types-api';
+import { type PendingTask } from '@/services/types-api';
 import {
   handleResponse,
   validWithParamsSessionAndExternalService,

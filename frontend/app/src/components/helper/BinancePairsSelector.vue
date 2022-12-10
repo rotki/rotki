@@ -129,14 +129,14 @@ const filter = (item: string, queryText: string) => {
   const query = queryText.toLocaleLowerCase();
   const pair = item.toLocaleLowerCase();
 
-  return pair.indexOf(query) > -1;
+  return pair.includes(query);
 };
 
 watch(search, search => {
   if (search) {
     const pairs = search.split(' ');
     if (pairs.length > 0) {
-      const useLastPairs = search.substr(search.length - 1) === ' ';
+      const useLastPairs = search.slice(-1) === ' ';
       if (useLastPairs) {
         search = '';
       } else {

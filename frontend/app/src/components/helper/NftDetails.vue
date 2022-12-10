@@ -55,7 +55,7 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ComputedRef } from 'vue';
+import { type ComputedRef } from 'vue';
 import { useSectionLoading } from '@/composables/common';
 import { useAssetCacheStore } from '@/store/assets/asset-cache';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';

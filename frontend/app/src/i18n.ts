@@ -1,5 +1,5 @@
 import Vue from 'vue';
-import VueI18n, { LocaleMessages } from 'vue-i18n';
+import VueI18n, { type LocaleMessages } from 'vue-i18n';
 import { createI18n } from 'vue-i18n-composable';
 
 Vue.use(VueI18n);
@@ -10,14 +10,14 @@ function loadLocaleMessages(): LocaleMessages {
     const locales = import.meta.globEager('./locales/*.json') as any;
 
     for (const key in locales) {
-      const matched = key.match(/([A-Za-z0-9-_]+)\./i);
+      const matched = key.match(/([\w-]+)\./i);
       if (matched && matched.length > 1) {
         const locale = matched[1];
         messages[locale] = locales[key].default;
       }
     }
     // eslint-disable-next-line no-empty
-  } catch (e) {}
+  } catch {}
   return messages;
 }
 

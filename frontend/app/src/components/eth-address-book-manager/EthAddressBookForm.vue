@@ -45,9 +45,12 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
-import { PropType } from 'vue';
+import { type PropType } from 'vue';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
-import { EthAddressBookLocation, EthNamesPayload } from '@/types/eth-names';
+import {
+  type EthAddressBookLocation,
+  type EthNamesPayload
+} from '@/types/eth-names';
 import {
   isValidEthAddress,
   sanitizeAddress,

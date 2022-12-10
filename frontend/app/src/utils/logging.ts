@@ -1,7 +1,7 @@
 import logger, {
-  LoggingMethod,
-  LogLevelNames,
-  LogLevelNumbers
+  type LogLevelNames,
+  type LogLevelNumbers,
+  type LoggingMethod
 } from 'loglevel';
 import { useInterop } from '@/electron-interop';
 import { checkIfDevelopment } from '@/utils/env-utils';

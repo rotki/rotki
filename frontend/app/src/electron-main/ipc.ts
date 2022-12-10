@@ -1,6 +1,6 @@
-import { DebugSettings } from '@rotki/common/lib/settings';
+import { type DebugSettings } from '@rotki/common/lib/settings';
 import { z } from 'zod';
-import { BackendCode } from '@/electron-main/backend-code';
+import { type BackendCode } from '@/electron-main/backend-code';
 import { LogLevel } from '@/utils/log-level';
 
 interface MetamaskImportError {

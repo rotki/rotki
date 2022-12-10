@@ -3,7 +3,7 @@
 // eslint-disable-next-line import/no-unresolved
 import { setupLayouts } from 'virtual:generated-layouts';
 import Vue from 'vue';
-import Router, { Route } from 'vue-router';
+import Router, { type Route } from 'vue-router';
 import { Routes } from '@/router/routes';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { NoteLocation } from '@/types/notes';
@@ -439,7 +439,7 @@ const router = new Router({
     document.body.scrollTo(0, 0);
     return { x: 0, y: 0 };
   },
-  routes: routes
+  routes
 });
 
 router.beforeEach((to, from, next) => {
@@ -452,12 +452,10 @@ router.beforeEach((to, from, next) => {
       return;
     }
     next();
+  } else if (to.path.startsWith(Routes.USER)) {
+    next();
   } else {
-    if (to.path.startsWith(Routes.USER)) {
-      next();
-    } else {
-      next(Routes.USER_LOGIN);
-    }
+    next(Routes.USER_LOGIN);
   }
 });
 

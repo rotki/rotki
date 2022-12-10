@@ -65,8 +65,8 @@
 </template>
 
 <script setup lang="ts">
-import { PropType } from 'vue';
-import { DataTableHeader } from 'vuetify';
+import { type PropType } from 'vue';
+import { type DataTableHeader } from 'vuetify';
 import ValueAccuracyHint from '@/components/helper/hint/ValueAccuracyHint.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
@@ -77,10 +77,10 @@ import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useKrakenStakingEventTypes } from '@/store/staking/consts';
 import {
-  KrakenStakingEvents,
-  KrakenStakingEventType,
-  KrakenStakingPagination,
-  KrakenStakingPaginationOptions
+  type KrakenStakingEventType,
+  type KrakenStakingEvents,
+  type KrakenStakingPagination,
+  type KrakenStakingPaginationOptions
 } from '@/types/staking';
 
 const props = defineProps({

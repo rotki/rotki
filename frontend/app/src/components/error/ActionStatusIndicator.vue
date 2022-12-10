@@ -17,8 +17,8 @@
 </template>
 
 <script setup lang="ts">
-import { PropType } from 'vue';
-import { BaseMessage } from '@/types/messages';
+import { type PropType } from 'vue';
+import { type BaseMessage } from '@/types/messages';
 
 defineProps({
   status: {

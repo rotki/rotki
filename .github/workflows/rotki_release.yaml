@@ -120,22 +120,25 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
       - name: Setup node
         uses: actions/setup-node@v3
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: 'frontend/package-lock.json'
+          cache: 'pnpm'
+          cache-dependency-path: 'frontend/pnpm-lock.yaml'
       - name: Cache cypress
         uses: actions/cache@v3
         with:
           path: ~/cache/Cypress
-          key: ${{ runner.os }}-node--packaging-${{ hashFiles('frontend/package-lock.json') }}
+          key: ${{ runner.os }}-node--packaging-${{ hashFiles('frontend/pnpm-lock.yaml') }}
       - name: Package
         id: packaging
         run: |
           echo "::group::packaging dependencies"
-          npm install -g npm@8
           pip3 install --upgrade pip==${{ env.PIP_VERSION }}
           pip3 install packaging requests wheel
           echo "::endgroup::"
@@ -219,21 +222,23 @@ jobs:
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
       - name: Set up python
         run: packaging/setup-macos-python.sh ${{ env.PYTHON_VERSION }} ${{ env.PYTHON_MACOS }}
       - name: Setup node
         uses: actions/setup-node@v3
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: 'frontend/package-lock.json'
+          cache: 'pnpm'
+          cache-dependency-path: 'frontend/pnpm-lock.yaml'
       - name: Cache cypress
         uses: actions/cache@v3
         with:
           path: ~/Library/Caches/Cypress
-          key: ${{ runner.os }}-node--packaging-${{ hashFiles('frontend/package-lock.json') }}
-      - name: Update npm
-        run: npm install -g npm@8
+          key: ${{ runner.os }}-node--packaging-${{ hashFiles('frontend/pnpm-lock.yaml') }}
       - name: Package
         id: packaging
         run: |
@@ -286,17 +291,21 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
       - name: Setup node
         uses: actions/setup-node@v3
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: 'frontend/package-lock.json'
+          cache: 'pnpm'
+          cache-dependency-path: 'frontend/pnpm-lock.yaml'
       - name: Cache Cypress
         uses: actions/cache@v3
         with:
           path: ~\AppData\Local\Cypress
-          key: ${{ runner.os }}-node--packaging-${{ hashFiles('frontend/package-lock.json') }}
+          key: ${{ runner.os }}-node--packaging-${{ hashFiles('frontend/pnpm-lock.yaml') }}
       - name: Persist Build Dependencies
         uses: actions/cache@v3
         with:
@@ -309,7 +318,6 @@ jobs:
           CSC_KEY_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
         run: |
           echo ::group::"packaging dependencies"
-          npm install -g npm@8.12.2 # pinned version because of bug in 8.13.[0,1] check npm/cli#5066
           pip3 install --upgrade pip==${{ env.PIP_VERSION }}
           pip3 install packaging requests wheel
           echo ::endgroup::

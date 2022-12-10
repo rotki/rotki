@@ -5,8 +5,8 @@
 </template>
 
 <script setup lang="ts">
-import { PropType } from 'vue';
-import { Suggestion } from '@/types/filtering';
+import { type PropType } from 'vue';
+import { type Suggestion } from '@/types/filtering';
 
 const props = defineProps({
   suggestion: {
@@ -20,7 +20,7 @@ const { suggestion } = toRefs(props);
 const displayValue = computed(() => {
   const item = get(suggestion);
 
-  let value = item.value;
+  const value = item.value;
   if (typeof value === 'string') {
     return value;
   }

@@ -1,13 +1,16 @@
-import { Blockchain } from '@rotki/common/lib/blockchain';
-import { MaybeRef } from '@vueuse/core';
+import { type Blockchain } from '@rotki/common/lib/blockchain';
+import { type MaybeRef } from '@vueuse/core';
 import cloneDeep from 'lodash/cloneDeep';
-import { AccountAssetBalances, AssetBalances } from '@/types/balances';
 import {
-  Balances,
-  BlockchainAssetBalances,
-  BtcBalances
+  type AccountAssetBalances,
+  type AssetBalances
+} from '@/types/balances';
+import {
+  type Balances,
+  type BlockchainAssetBalances,
+  type BtcBalances
 } from '@/types/blockchain/balances';
-import { AssetPrices } from '@/types/prices';
+import { type AssetPrices } from '@/types/prices';
 
 export const updateTotalsPrices = <T extends Blockchain>(
   state: MaybeRef<Record<T, AssetBalances>>,
@@ -115,13 +118,12 @@ export const updateBtcPrices = (
     }
     const xpubs = balance.xpubs;
     if (xpubs) {
-      for (let i = 0; i < xpubs.length; i++) {
-        const xpub = xpubs[i];
+      for (const xpub of xpubs) {
         for (const address in xpub.addresses) {
           const balance = xpub.addresses[address];
           const amount = balance.amount;
           xpub.addresses[address] = {
-            amount: amount,
+            amount,
             usdValue: amount.times(assetPrice.usdPrice ?? assetPrice.value)
           };
         }

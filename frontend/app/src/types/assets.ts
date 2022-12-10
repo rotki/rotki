@@ -2,10 +2,10 @@ import { NumericString } from '@rotki/common';
 import {
   AssetInfo,
   AssetInfoWithTransformer,
-  SupportedAsset
+  type SupportedAsset
 } from '@rotki/common/lib/data';
 import { z } from 'zod';
-import { ApiPagination, TablePagination } from '@/types/pagination';
+import { type ApiPagination, type TablePagination } from '@/types/pagination';
 
 export interface AssetDBVersion {
   readonly local: number;
@@ -78,7 +78,7 @@ export const defaultAssetPagination = (
   itemsPerPage: number
 ): AssetPaginationOptions => ({
   page: 1,
-  itemsPerPage: itemsPerPage,
+  itemsPerPage,
   sortBy: ['symbol' as keyof SupportedAsset],
   sortDesc: [false]
 });
@@ -118,7 +118,7 @@ export const defaultCustomAssetPagination = (
   itemsPerPage: number
 ): CustomAssetPaginationOptions => ({
   page: 0,
-  itemsPerPage: itemsPerPage,
+  itemsPerPage,
   sortBy: ['name' as keyof CustomAsset],
   sortDesc: [false]
 });

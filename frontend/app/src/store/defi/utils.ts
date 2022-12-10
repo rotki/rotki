@@ -1,6 +1,6 @@
-import { BigNumber, HasBalance } from '@rotki/common';
-import { ProfitLossModel } from '@rotki/common/lib/defi';
-import { CompoundProfitAndLoss } from '@/types/defi/compound';
+import { type BigNumber, type HasBalance } from '@rotki/common';
+import { type ProfitLossModel } from '@rotki/common/lib/defi';
+import { type CompoundProfitAndLoss } from '@/types/defi/compound';
 import { Zero } from '@/utils/bignumbers';
 
 export function balanceUsdValueSum(balances: HasBalance[]): BigNumber {

@@ -95,7 +95,7 @@
         </span>
       </template>
       <template
-        v-if="balances.length > 0 && (!search || search.length < 1)"
+        v-if="balances.length > 0 && (!search || search.length === 0)"
         #body.append="{ isMobile }"
       >
         <row-append
@@ -116,9 +116,13 @@
 </template>
 
 <script setup lang="ts">
-import { AssetBalance, AssetBalanceWithPrice, BigNumber } from '@rotki/common';
-import { PropType } from 'vue';
-import { DataTableHeader } from 'vuetify';
+import {
+  type AssetBalance,
+  type AssetBalanceWithPrice,
+  type BigNumber
+} from '@rotki/common';
+import { type PropType } from 'vue';
+import { type DataTableHeader } from 'vuetify';
 import DashboardExpandableTable from '@/components/dashboard/DashboardExpandableTable.vue';
 import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
@@ -129,9 +133,9 @@ import { useBalancePricesStore } from '@/store/balances/prices';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatisticsStore } from '@/store/statistics';
-import { Nullable } from '@/types';
+import { type Nullable } from '@/types';
 import { CURRENCY_USD } from '@/types/currencies';
-import { DashboardTableType } from '@/types/frontend-settings';
+import { type DashboardTableType } from '@/types/frontend-settings';
 import { TableColumn } from '@/types/table-column';
 import { getSortItems } from '@/utils/assets';
 import { One } from '@/utils/bignumbers';
@@ -176,7 +180,7 @@ const assetFilter = (
   const keyword = search?.toLocaleLowerCase()?.trim() ?? '';
   const name = get(assetName(item.asset))?.toLocaleLowerCase()?.trim();
   const symbol = get(assetSymbol(item.asset))?.toLocaleLowerCase()?.trim();
-  return symbol.indexOf(keyword) >= 0 || name.indexOf(keyword) >= 0;
+  return symbol.includes(keyword) || name.includes(keyword);
 };
 
 const statisticsStore = useStatisticsStore();

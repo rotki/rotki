@@ -236,32 +236,32 @@
 </template>
 
 <script setup lang="ts">
-import { GeneralAccount } from '@rotki/common/lib/account';
-import { ComputedRef, PropType, Ref } from 'vue';
-import { DataTableHeader } from 'vuetify';
+import { type GeneralAccount } from '@rotki/common/lib/account';
+import { type ComputedRef, type PropType, type Ref } from 'vue';
+import { type DataTableHeader } from 'vuetify';
 import TransactionEventForm from '@/components/history/TransactionEventForm.vue';
 import { isSectionLoading } from '@/composables/common';
 import { useTransactionFilter } from '@/composables/filters/transactions';
 import { setupIgnore } from '@/composables/history';
 import { useTransactions } from '@/store/history/transactions';
 import {
-  EthTransactionEntry,
-  EthTransactionEventEntry,
+  type EthTransactionEntry,
+  type EthTransactionEventEntry,
   IgnoreActionType
 } from '@/store/history/types';
 import { useTasks } from '@/store/tasks';
-import { Writeable } from '@/types';
-import { Collection } from '@/types/collection';
+import { type Writeable } from '@/types';
+import { type Collection } from '@/types/collection';
 import {
-  EthTransaction,
-  NewEthTransactionEvent,
-  TransactionRequestPayload
+  type EthTransaction,
+  type NewEthTransactionEvent,
+  type TransactionRequestPayload
 } from '@/types/history/tx';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import {
-  HistoryEventType,
-  TransactionEventProtocol
+  type HistoryEventType,
+  type TransactionEventProtocol
 } from '@/types/transaction';
 import { getCollectionData } from '@/utils/collection';
 
@@ -502,7 +502,7 @@ const confirmSave = async () => {
 const saveData = async (
   event: NewEthTransactionEvent | EthTransactionEventEntry
 ) => {
-  if ((<EthTransactionEventEntry>event).identifier) {
+  if ((event as EthTransactionEventEntry).identifier) {
     return await editTransactionEvent(event as EthTransactionEventEntry);
   }
   return await addTransactionEvent(event as NewEthTransactionEvent);

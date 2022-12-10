@@ -1,6 +1,8 @@
-import { z } from "zod";
+import { z } from 'zod';
 
-export interface DebugSettings { persistStore: boolean };
+export interface DebugSettings {
+  persistStore: boolean;
+}
 
 export interface Themes {
   readonly light: ThemeColors;
@@ -11,7 +13,7 @@ export const ThemeColors = z.object({
   primary: z.string(),
   accent: z.string(),
   graph: z.string()
-})
+});
 
 export type ThemeColors = z.infer<typeof ThemeColors>;
 

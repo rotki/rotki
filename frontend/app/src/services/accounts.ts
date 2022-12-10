@@ -1,19 +1,22 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { ActionResult } from '@rotki/common/lib/data';
+import { type ActionResult } from '@rotki/common/lib/data';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
-  BtcAccountData,
-  GeneralAccountData,
-  PendingTask
+  type BtcAccountData,
+  type GeneralAccountData,
+  type PendingTask
 } from '@/services/types-api';
 import {
   handleResponse,
   validWithParamsSessionAndExternalService,
   validWithSessionStatus
 } from '@/services/utils';
-import { BlockchainAccountPayload, XpubPayload } from '@/store/balances/types';
-import { BtcChains } from '@/types/blockchain/chains';
+import {
+  type BlockchainAccountPayload,
+  type XpubPayload
+} from '@/store/balances/types';
+import { type BtcChains } from '@/types/blockchain/chains';
 import { assert } from '@/utils/assertions';
 
 const performAsyncQuery = async (
@@ -92,7 +95,7 @@ export const useBlockchainAccountsApi = () => {
       {
         data: axiosSnakeCaseTransformer({
           asyncQuery: true,
-          accounts: accounts
+          accounts
         }),
         validateStatus: validWithParamsSessionAndExternalService
       }

@@ -5,9 +5,9 @@
 </template>
 
 <script setup lang="ts">
-import { PropType } from 'vue';
+import { type PropType } from 'vue';
 import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
-import { EventType } from '@/types/defi/event-type';
+import { type EventType } from '@/types/defi/event-type';
 
 const props = defineProps({
   eventType: { required: true, type: String as PropType<EventType> }

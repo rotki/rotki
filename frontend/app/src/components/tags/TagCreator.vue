@@ -116,10 +116,10 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
-import { PropType, Ref } from 'vue';
+import { type PropType, type Ref } from 'vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
-import { TagEvent } from '@/types/tags';
-import { Tag } from '@/types/user';
+import { type TagEvent } from '@/types/tags';
+import { type Tag } from '@/types/user';
 import { invertColor, randomColor } from '@/utils/color';
 
 const props = defineProps({

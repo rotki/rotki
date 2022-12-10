@@ -1,7 +1,7 @@
-import { Application } from 'express';
+import { type Application } from 'express';
 
 export function enableCors(server: Application): void {
-  server.use(function (req, res, next) {
+  server.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader(
       'Access-Control-Allow-Methods',

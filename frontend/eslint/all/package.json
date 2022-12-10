@@ -1,0 +1,22 @@
+{
+  "name": "@rotki/eslint-config",
+  "version": "1.0.0",
+  "description": "",
+  "keywords": [],
+  "license": "AGPL-3.0",
+  "author": "Rotki Solutions GmbH <info@rotki.com>",
+  "files": [
+    "index.js"
+  ],
+  "main": "index.js",
+  "peerDependencies": {
+    "eslint": ">=8.1.0"
+  },
+  "dependencies": {
+    "@rotki/eslint-config-prettier": "workspace:*",
+    "@rotki/eslint-config-vue": "workspace:*"
+  },
+  "devDependencies": {
+    "eslint": "8.29.0"
+  }
+}

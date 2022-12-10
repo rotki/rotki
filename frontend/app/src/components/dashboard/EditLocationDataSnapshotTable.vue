@@ -82,9 +82,9 @@
   </div>
 </template>
 <script setup lang="ts">
-import { BigNumber } from '@rotki/common';
-import { PropType } from 'vue';
-import { DataTableHeader } from 'vuetify';
+import { type BigNumber } from '@rotki/common';
+import { type PropType } from 'vue';
+import { type DataTableHeader } from 'vuetify';
 import EditLocationDataSnapshotForm from '@/components/dashboard/EditLocationDataSnapshotForm.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import RowActions from '@/components/helper/RowActions.vue';
@@ -92,10 +92,10 @@ import { useBalancePricesStore } from '@/store/balances/prices';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { CURRENCY_USD } from '@/types/currencies';
 import {
-  LocationDataSnapshot,
-  LocationDataSnapshotPayload
+  type LocationDataSnapshot,
+  type LocationDataSnapshotPayload
 } from '@/types/snapshots';
-import { bigNumberify, One, sortDesc, Zero } from '@/utils/bignumbers';
+import { One, Zero, bigNumberify, sortDesc } from '@/utils/bignumbers';
 
 type IndexedLocationDataSnapshot = LocationDataSnapshot & { index: number };
 
@@ -225,7 +225,7 @@ const save = () => {
       ? bigNumberify(formVal.usdValue)
       : bigNumberify(formVal.usdValue).dividedBy(get(fiatExchangeRate));
 
-  let newValue = [...val];
+  const newValue = [...val];
   const payload = {
     timestamp: timestampVal,
     location: formVal.location,
@@ -264,7 +264,7 @@ const confirmDelete = () => {
 
   if (index === null) return;
 
-  let newValue = [...val];
+  const newValue = [...val];
   newValue.splice(index, 1);
 
   input(newValue);

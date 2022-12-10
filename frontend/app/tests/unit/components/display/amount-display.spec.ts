@@ -1,7 +1,7 @@
 import { BigNumber } from '@rotki/common';
-import { mount, Wrapper } from '@vue/test-utils';
+import { type Wrapper, mount } from '@vue/test-utils';
 import { set } from '@vueuse/core';
-import { Pinia, setActivePinia, storeToRefs } from 'pinia';
+import { type Pinia, setActivePinia, storeToRefs } from 'pinia';
 import Vuetify from 'vuetify';
 import { VTooltip } from 'vuetify/lib/components';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
@@ -55,7 +55,7 @@ describe('AmountDisplay.vue', () => {
   beforeEach(async () => {
     pinia = createCustomPinia();
     setActivePinia(pinia);
-    document.body.setAttribute('data-app', 'true');
+    document.body.dataset.app = 'true';
     const store = useGeneralSettingsStore();
     const { findCurrency } = useCurrencies();
     const mainCurrency = findCurrency('EUR');

@@ -85,10 +85,10 @@
 </template>
 
 <script setup lang="ts">
-import { PropType } from 'vue';
+import { type PropType } from 'vue';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import IconLink from '@/components/base/IconLink.vue';
-import { GalleryNft } from '@/store/session/types';
+import { type GalleryNft } from '@/store/session/types';
 import { isVideo } from '@/utils/nft';
 
 const props = defineProps({

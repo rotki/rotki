@@ -70,7 +70,7 @@ const { callIfValid } = useValidation(v$);
 
 const { restart } = useMonitorStore();
 
-const transform = (value: string) => (value ? parseInt(value) : value);
+const transform = (value: string) => (value ? Number.parseInt(value) : value);
 
 onMounted(() => {
   resetQueryPeriod();

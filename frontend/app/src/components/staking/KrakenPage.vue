@@ -68,7 +68,7 @@ const { load } = useKrakenStakingStore();
 const { connectedExchanges } = storeToRefs(useExchangeBalancesStore());
 const isKrakenConnected = computed(() => {
   const exchanges = get(connectedExchanges);
-  return !!exchanges.find(
+  return exchanges.some(
     ({ location }) => location === SupportedExchange.KRAKEN
   );
 });

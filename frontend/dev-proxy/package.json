@@ -1,39 +1,25 @@
 {
-  "name": "dev-proxy",
+  "name": "@rotki/dev-proxy",
   "version": "1.0.0",
   "description": "",
-  "scripts": {
-    "serve": "nodemon -r dotenv/config src/index.ts",
-    "lint": "eslint --fix .",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "preinstall": "node ../check-versions.js"
-  },
   "keywords": [],
-  "author": "Rotki Solutions GmbH",
   "license": "AGPL-3.0",
+  "author": "Rotki Solutions GmbH",
+  "scripts": {
+    "serve": "nodemon -r dotenv/config src/index.ts"
+  },
   "dependencies": {
     "body-parser": "1.20.1",
     "express": "4.18.2",
     "http-proxy-middleware": "2.0.6"
   },
   "devDependencies": {
+    "@types/body-parser": "1.19.2",
     "@types/express": "4.17.14",
-    "@types/node": "16.18.3",
-    "@typescript-eslint/eslint-plugin": "5.43.0",
-    "@typescript-eslint/parser": "5.43.0",
+    "@types/node": "16.18.6",
     "dotenv": "16.0.3",
-    "eslint": "8.27.0",
-    "eslint-config-prettier": "8.5.0",
-    "eslint-import-resolver-alias": "1.1.2",
-    "eslint-plugin-import": "2.26.0",
-    "eslint-plugin-prettier": "4.2.1",
     "nodemon": "2.0.20",
-    "prettier": "2.7.1",
     "ts-node": "10.9.1",
-    "typescript": "4.8.4"
-  },
-  "engines": {
-    "node": ">=16 <17",
-    "npm": ">=8 <9"
+    "typescript": "4.9.4"
   }
 }

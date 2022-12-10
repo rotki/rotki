@@ -124,18 +124,18 @@
 
 <script setup lang="ts">
 import { Severity } from '@rotki/common/lib/messages';
-import { DataTableHeader } from 'vuetify';
+import { type DataTableHeader } from 'vuetify';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import Fragment from '@/components/helper/Fragment';
 import PrioritizedListEntry from '@/components/helper/PrioritizedListEntry.vue';
-import { OracleCacheMeta } from '@/services/balances/types';
+import { type OracleCacheMeta } from '@/services/balances/types';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useNotifications } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
 import { PriceOracle } from '@/types/price-oracle';
-import { PrioritizedListItemData } from '@/types/prioritized-list-data';
+import { type PrioritizedListItemData } from '@/types/prioritized-list-data';
 import { CRYPTOCOMPARE_PRIO_LIST_ITEM } from '@/types/prioritized-list-id';
 import { TaskType } from '@/types/task-type';
 import { assert } from '@/utils/assertions';
@@ -273,8 +273,8 @@ const fetchPrices = async () => {
     await load();
   }
 
-  let from = get(assetSymbol(fromAssetVal));
-  let to = get(assetSymbol(toAssetVal));
+  const from = get(assetSymbol(fromAssetVal));
+  const to = get(assetSymbol(toAssetVal));
   const message = status.success
     ? t('oracle_cache_management.notification.success', {
         fromAsset: from,

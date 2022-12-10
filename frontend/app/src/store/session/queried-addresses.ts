@@ -1,7 +1,7 @@
 import { useQueriedAddressApi } from '@/services/session/queried-addresses-api';
 import {
-  QueriedAddresses,
-  QueriedAddressPayload
+  type QueriedAddressPayload,
+  type QueriedAddresses
 } from '@/services/session/types';
 import { useMessageStore } from '@/store/message';
 

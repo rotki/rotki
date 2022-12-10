@@ -238,16 +238,16 @@
   </div>
 </template>
 <script setup lang="ts">
-import { Nullable } from '@rotki/common';
-import { PropType } from 'vue';
+import { type Nullable } from '@rotki/common';
+import { type PropType } from 'vue';
 import ReportMissingAcquisitions from '@/components/profitloss/ReportMissingAcquisitions.vue';
 import ReportMissingPrices from '@/components/profitloss/ReportMissingPrices.vue';
 import { Routes } from '@/router/routes';
 import { useReports } from '@/store/reports';
-import { Pinned } from '@/store/session/types';
+import { type Pinned } from '@/store/session/types';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
-import { EditableMissingPrice } from '@/types/prices';
-import { SelectedReport } from '@/types/reports';
+import { type EditableMissingPrice } from '@/types/prices';
+import { type SelectedReport } from '@/types/reports';
 import { toSentenceCase } from '@/utils/text';
 
 const props = defineProps({

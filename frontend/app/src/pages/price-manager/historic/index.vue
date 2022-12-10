@@ -64,12 +64,12 @@ import BigDialog from '@/components/dialogs/BigDialog.vue';
 import HistoricPriceForm from '@/components/price-manager/historic/HistoricPriceForm.vue';
 import HistoricPriceTable from '@/components/price-manager/historic/HistoricPriceTable.vue';
 import {
-  HistoricalPrice,
-  HistoricalPriceFormPayload
+  type HistoricalPrice,
+  type HistoricalPriceFormPayload
 } from '@/services/assets/types';
 import { api } from '@/services/rotkehlchen-api';
 import { useMessageStore } from '@/store/message';
-import { Nullable } from '@/types';
+import { type Nullable } from '@/types';
 
 const emptyPrice: () => HistoricalPriceFormPayload = () => ({
   fromAsset: '',

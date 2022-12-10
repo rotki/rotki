@@ -1,7 +1,7 @@
-import { ActionResult } from '@rotki/common/lib/data';
+import { type ActionResult } from '@rotki/common/lib/data';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validWithSessionStatus } from '@/services/utils';
-import { Messages, PeriodicClientQueryResult } from '@/types/session';
+import { type Messages, type PeriodicClientQueryResult } from '@/types/session';
 
 export const useSessionApi = () => {
   async function consumeMessages(): Promise<Messages> {

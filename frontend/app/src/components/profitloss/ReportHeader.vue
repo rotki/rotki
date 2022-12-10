@@ -25,8 +25,8 @@
   </v-row>
 </template>
 <script setup lang="ts">
-import { PropType } from 'vue';
-import { ProfitLossReportPeriod } from '@/types/reports';
+import { type PropType } from 'vue';
+import { type ProfitLossReportPeriod } from '@/types/reports';
 
 defineProps({
   period: {

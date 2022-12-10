@@ -25,17 +25,17 @@
   </div>
 </template>
 <script setup lang="ts">
-import { NotificationPayload, Severity } from '@rotki/common/lib/messages';
-import { PropType, Ref } from 'vue';
-import { DataTableHeader } from 'vuetify';
+import { type NotificationPayload, Severity } from '@rotki/common/lib/messages';
+import { type PropType, type Ref } from 'vue';
+import { type DataTableHeader } from 'vuetify';
 import RowActions from '@/components/helper/RowActions.vue';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
 import { useNotifications } from '@/store/notifications';
-import { Nullable } from '@/types';
+import { type Nullable } from '@/types';
 import {
-  EthAddressBookLocation,
-  EthNamesEntries,
-  EthNamesEntry
+  type EthAddressBookLocation,
+  type EthNamesEntries,
+  type EthNamesEntry
 } from '@/types/eth-names';
 
 const addressBookDeletion = (location: Ref<EthAddressBookLocation>) => {

@@ -54,9 +54,9 @@
 </template>
 
 <script setup lang="ts">
-import { LpType } from '@rotki/common/lib/defi';
-import { XswapPool } from '@rotki/common/lib/defi/xswap';
-import { PropType } from 'vue';
+import { type LpType } from '@rotki/common/lib/defi';
+import { type XswapPool } from '@rotki/common/lib/defi/xswap';
+import { type PropType } from 'vue';
 import { setupLiquidityPosition } from '@/composables/defi';
 
 const props = defineProps({
@@ -77,12 +77,12 @@ const { getPoolName } = setupLiquidityPosition();
 const filter = (item: XswapPool, queryText: string) => {
   const searchString = queryText.toLocaleLowerCase();
   const name = getPoolName(get(type), item.assets).toLowerCase();
-  return name.indexOf(searchString) > -1;
+  return name.includes(searchString);
 };
 
 const remove = (asset: XswapPool) => {
   const addresses = [...get(value)];
-  const index = addresses.findIndex(address => address === asset.address);
+  const index = addresses.indexOf(asset.address);
   addresses.splice(index, 1);
   input(addresses);
 };

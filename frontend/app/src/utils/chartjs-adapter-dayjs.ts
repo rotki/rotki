@@ -1,13 +1,13 @@
 import { _adapters } from 'chart.js';
 
-import type { TimeUnit } from 'chart.js';
-import dayjs, { QUnitType } from 'dayjs';
+import dayjs, { type QUnitType } from 'dayjs';
 
 import AdvancedFormat from 'dayjs/plugin/advancedFormat';
 import CustomParseFormat from 'dayjs/plugin/customParseFormat';
 import isoWeek from 'dayjs/plugin/isoWeek';
 import LocalizedFormat from 'dayjs/plugin/localizedFormat';
 import QuarterOfYear from 'dayjs/plugin/quarterOfYear';
+import type { TimeUnit } from 'chart.js';
 
 dayjs.extend(AdvancedFormat);
 dayjs.extend(QuarterOfYear);
@@ -30,7 +30,7 @@ const FORMATS = {
 
 _adapters._date.override({
   formats: () => FORMATS,
-  parse: function (value: any, format?: TimeUnit) {
+  parse(value: any, format?: TimeUnit) {
     const valueType = typeof value;
 
     if (value === null || valueType === 'undefined') {
@@ -46,16 +46,16 @@ _adapters._date.override({
     }
     return null;
   },
-  format: function (time: any, format: TimeUnit): string {
+  format(time: any, format: TimeUnit): string {
     return dayjs(time).format(format);
   },
-  add: function (time: any, amount: number, unit: QUnitType & TimeUnit) {
+  add(time: any, amount: number, unit: QUnitType & TimeUnit) {
     return dayjs(time).add(amount, unit).valueOf();
   },
-  diff: function (max: any, min: any, unit: TimeUnit) {
+  diff(max: any, min: any, unit: TimeUnit) {
     return dayjs(max).diff(dayjs(min), unit);
   },
-  startOf: function (
+  startOf(
     time: any,
     unit: (TimeUnit & QUnitType) | 'isoWeek',
     weekday?: number
@@ -68,7 +68,7 @@ _adapters._date.override({
     }
     return dayjs(time).startOf(unit).valueOf();
   },
-  endOf: function (time: any, unit: TimeUnit & QUnitType) {
+  endOf(time: any, unit: TimeUnit & QUnitType) {
     return dayjs(time).endOf(unit).valueOf();
   }
 });

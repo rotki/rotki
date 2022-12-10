@@ -1,10 +1,10 @@
-import { ActionResult } from '@rotki/common/lib/data';
-import { AxiosInstance, AxiosRequestTransformer } from 'axios';
+import { type ActionResult } from '@rotki/common/lib/data';
+import { type AxiosInstance, type AxiosRequestTransformer } from 'axios';
 import {
   axiosSnakeCaseTransformer,
   getUpdatedKey
 } from '@/services/axios-tranformers';
-import { PendingTask } from '@/services/types-api';
+import { type PendingTask } from '@/services/types-api';
 import {
   handleResponse,
   paramsSerializer,
@@ -12,32 +12,32 @@ import {
   validWithParamsSessionAndExternalService,
   validWithSessionStatus
 } from '@/services/utils';
-import { CollectionResponse } from '@/types/collection';
+import { type CollectionResponse } from '@/types/collection';
 import {
-  LedgerAction,
+  type LedgerAction,
   LedgerActionCollectionResponse,
-  LedgerActionRequestPayload,
-  NewLedgerAction
+  type LedgerActionRequestPayload,
+  type NewLedgerAction
 } from '@/types/history/ledger-actions';
-import { EntryWithMeta } from '@/types/history/meta';
+import { type EntryWithMeta } from '@/types/history/meta';
 import {
-  AssetMovement,
+  type AssetMovement,
   AssetMovementCollectionResponse,
-  AssetMovementRequestPayload
+  type AssetMovementRequestPayload
 } from '@/types/history/movements';
-import { TradeLocation } from '@/types/history/trade-location';
+import { type TradeLocation } from '@/types/history/trade-location';
 import {
-  NewTrade,
-  Trade,
+  type NewTrade,
+  type Trade,
   TradeCollectionResponse,
-  TradeRequestPayload
+  type TradeRequestPayload
 } from '@/types/history/trades';
 import {
-  EthTransaction,
+  type EthTransaction,
   EthTransactionCollectionResponse,
-  NewEthTransactionEvent,
-  TransactionEventRequestPayload,
-  TransactionRequestPayload
+  type NewEthTransactionEvent,
+  type TransactionEventRequestPayload,
+  type TransactionRequestPayload
 } from '@/types/history/tx';
 import { ReportProgress } from '@/types/reports';
 

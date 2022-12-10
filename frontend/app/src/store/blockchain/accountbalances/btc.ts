@@ -1,13 +1,13 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { ComputedRef } from 'vue';
+import { type ComputedRef } from 'vue';
 import { useSectionLoading } from '@/composables/common';
 import {
-  AssetBreakdown,
-  BlockchainAccountWithBalance
+  type AssetBreakdown,
+  type BlockchainAccountWithBalance
 } from '@/store/balances/types';
 import { useBtcAccountsStore } from '@/store/blockchain/accounts/btc';
 import { useBtcBalancesStore } from '@/store/blockchain/balances/btc';
-import { BlockchainTotal } from '@/types/blockchain';
+import { type BlockchainTotal } from '@/types/blockchain';
 import { Section } from '@/types/status';
 import {
   btcAccountsWithBalances,

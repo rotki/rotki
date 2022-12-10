@@ -1,5 +1,5 @@
-import { Blockchain } from '@rotki/common/lib/blockchain';
-import { TaskType } from '@/types/task-type';
+import { type Blockchain } from '@rotki/common/lib/blockchain';
+import { type TaskType } from '@/types/task-type';
 
 export interface Task<T extends TaskMeta> {
   readonly id: number;

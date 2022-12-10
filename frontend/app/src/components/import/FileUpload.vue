@@ -96,9 +96,9 @@
 </template>
 
 <script setup lang="ts">
-import { PropType } from 'vue';
+import { type PropType } from 'vue';
 
-import { ImportSourceType, SOURCES } from '@/types/upload-types';
+import { type ImportSourceType, SOURCES } from '@/types/upload-types';
 
 const props = defineProps({
   source: {

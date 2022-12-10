@@ -1,4 +1,4 @@
-import { app, BrowserWindow, MenuItem, shell } from 'electron';
+import { type BrowserWindow, type MenuItem, app, shell } from 'electron';
 import { settingsManager } from '@/electron-main/app-settings';
 import {
   IPC_ABOUT,

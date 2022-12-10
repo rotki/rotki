@@ -1,5 +1,5 @@
-import { ActionResult } from '@rotki/common/lib/data';
-import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
+import { type ActionResult } from '@rotki/common/lib/data';
+import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios';
 import { AssetApi } from '@/services/assets/asset-api';
 import {
   axiosSnakeCaseTransformer,
@@ -11,22 +11,22 @@ import { HistoryApi } from '@/services/history/history-api';
 import { ReportsApi } from '@/services/reports/reports-api';
 import {
   BackendInfo,
-  PendingTask,
-  SyncAction,
+  type PendingTask,
+  type SyncAction,
   TaskNotFoundError,
-  TaskStatus
+  type TaskStatus
 } from '@/services/types-api';
 import {
   handleResponse,
   validAuthorizedStatus,
   validStatus,
   validTaskStatus,
-  validWithoutSessionStatus,
-  validWithParamsSessionAndExternalService
+  validWithParamsSessionAndExternalService,
+  validWithoutSessionStatus
 } from '@/services/utils';
 import { SyncConflictPayload } from '@/store/session/types';
 import { SyncConflictError } from '@/types/login';
-import { TaskResultResponse } from '@/types/task';
+import { type TaskResultResponse } from '@/types/task';
 
 export class RotkehlchenApi {
   private axios: AxiosInstance;
@@ -273,7 +273,7 @@ export class RotkehlchenApi {
       '/exchanges/binance/pairs',
       {
         params: axiosSnakeCaseTransformer({
-          location: location
+          location
         })
       }
     );
@@ -289,7 +289,7 @@ export class RotkehlchenApi {
       `/exchanges/binance/pairs/${name}`,
       {
         params: axiosSnakeCaseTransformer({
-          location: location
+          location
         })
       }
     );

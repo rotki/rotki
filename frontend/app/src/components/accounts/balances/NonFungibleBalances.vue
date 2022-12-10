@@ -118,8 +118,8 @@
 
 <script setup lang="ts">
 import { dropRight } from 'lodash';
-import { PropType, Ref } from 'vue';
-import { DataTableHeader } from 'vuetify';
+import { type PropType, type Ref } from 'vue';
+import { type DataTableHeader } from 'vuetify';
 import NonFungibleBalanceEdit from '@/components/accounts/balances/NonFungibleBalanceEdit.vue';
 import NonFungibleBalancesFilter from '@/components/accounts/balances/NonFungibleBalancesFilter.vue';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
@@ -128,19 +128,19 @@ import RefreshButton from '@/components/helper/RefreshButton.vue';
 import RowAction from '@/components/helper/RowActions.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import { isSectionLoading } from '@/composables/common';
-import { ManualPriceFormPayload } from '@/services/assets/types';
+import { type ManualPriceFormPayload } from '@/services/assets/types';
 import { api } from '@/services/rotkehlchen-api';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useNonFungibleBalancesStore } from '@/store/balances/non-fungible';
 import { useMessageStore } from '@/store/message';
 import { useNotifications } from '@/store/notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { ActionStatus } from '@/store/types';
-import { IgnoredAssetsHandlingType } from '@/types/assets';
-import { Module } from '@/types/modules';
+import { type ActionStatus } from '@/store/types';
+import { type IgnoredAssetsHandlingType } from '@/types/assets';
+import { type Module } from '@/types/modules';
 import {
-  NonFungibleBalance,
-  NonFungibleBalancesRequestPayload
+  type NonFungibleBalance,
+  type NonFungibleBalancesRequestPayload
 } from '@/types/nfbalances';
 import { Section } from '@/types/status';
 import { assert } from '@/utils/assertions';
@@ -251,7 +251,7 @@ const deletePrice = async () => {
   try {
     await api.assets.deleteLatestPrice(price.id);
     await fetch();
-  } catch (e: any) {
+  } catch {
     notify({
       title: tc('non_fungible_balances.delete.error.title'),
       message: tc('non_fungible_balances.delete.error.message', 0, {

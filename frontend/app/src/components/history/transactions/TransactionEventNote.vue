@@ -94,7 +94,7 @@ const formatNotes = (
     }
 
     const isAmount =
-      !isNaN(parseFloat(word)) &&
+      !isNaN(Number.parseFloat(word)) &&
       bigNumberify(word).eq(amount) &&
       amount.gt(0) &&
       index < words.length - 1 &&

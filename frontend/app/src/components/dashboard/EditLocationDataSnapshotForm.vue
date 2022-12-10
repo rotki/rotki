@@ -28,10 +28,10 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
-import { PropType } from 'vue';
+import { type PropType } from 'vue';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { LocationDataSnapshotPayload } from '@/types/snapshots';
+import { type LocationDataSnapshotPayload } from '@/types/snapshots';
 
 const props = defineProps({
   value: {

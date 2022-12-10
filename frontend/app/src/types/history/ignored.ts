@@ -14,9 +14,9 @@ export const IgnoredActions = z
       ethereumTransactions?: string[];
       trades?: string[];
     } = {
-      ledgerActions: arg['ledger_action'],
-      assetMovements: arg['asset_movement'],
-      ethereumTransactions: arg['ethereum_transaction'],
+      ledgerActions: arg.ledger_action,
+      assetMovements: arg.asset_movement,
+      ethereumTransactions: arg.ethereum_transaction,
       trades: arg.trade
     };
     return ignoredActions;

@@ -1,9 +1,9 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { MaybeRef } from '@vueuse/core';
+import { type MaybeRef } from '@vueuse/core';
 import { useStatusUpdater } from '@/composables/status';
 import { useBlockchainBalanceApi } from '@/services/balances/blockchain';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
-import { BlockchainBalancePayload } from '@/store/balances/types';
+import { type BlockchainBalancePayload } from '@/store/balances/types';
 import { useBtcBalancesStore } from '@/store/blockchain/balances/btc';
 import { useChainBalancesStore } from '@/store/blockchain/balances/chains';
 import { useEthBalancesStore } from '@/store/blockchain/balances/eth';
@@ -11,9 +11,9 @@ import { useNotifications } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
 import { chainSection } from '@/types/blockchain';
 import { BlockchainBalances } from '@/types/blockchain/balances';
-import { AssetPrices } from '@/types/prices';
+import { type AssetPrices } from '@/types/prices';
 import { Status } from '@/types/status';
-import { BlockchainMetadata } from '@/types/task';
+import { type BlockchainMetadata } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { logger } from '@/utils/logging';
 

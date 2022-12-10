@@ -1,6 +1,6 @@
-import { Balance, BigNumber, NumericString } from '@rotki/common';
+import { Balance, type BigNumber, NumericString } from '@rotki/common';
 import { z } from 'zod';
-import { Collateral, CollateralizedLoan } from '@/types/defi/index';
+import { type Collateral, type CollateralizedLoan } from '@/types/defi/index';
 
 const DSRMovementType = z.enum(['withdrawal', 'deposit'] as const);
 

@@ -2,7 +2,7 @@ import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validWithSessionStatus } from '@/services/utils';
 import {
   CreateDatabaseResponse,
-  DatabaseInfo,
+  type DatabaseInfo,
   DatabaseInfoResponse,
   DeleteDatabaseResponse
 } from '@/types/backup';

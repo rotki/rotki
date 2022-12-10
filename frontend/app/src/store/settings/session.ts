@@ -1,6 +1,6 @@
 import { TimeFramePeriod } from '@rotki/common/lib/settings/graphs';
 import { PrivacyMode } from '@/store/session/types';
-import { ActionStatus } from '@/store/types';
+import { type ActionStatus } from '@/store/types';
 
 const useSharedLocalStorage = createSharedComposable(useLocalStorage);
 const isAnimationEnabledSetting = useSharedLocalStorage(

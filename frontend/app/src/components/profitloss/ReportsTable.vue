@@ -98,8 +98,8 @@
 </template>
 
 <script setup lang="ts">
-import { ComputedRef, Ref } from 'vue';
-import { DataTableHeader } from 'vuetify';
+import { type ComputedRef, type Ref } from 'vue';
+import { type DataTableHeader } from 'vuetify';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import RowExpander from '@/components/helper/RowExpander.vue';
@@ -108,7 +108,7 @@ import ExportReportCsv from '@/components/profitloss/ExportReportCsv.vue';
 import ProfitLossOverview from '@/components/profitloss/ProfitLossOverview.vue';
 import { Routes } from '@/router/routes';
 import { useReports } from '@/store/reports';
-import { Report } from '@/types/reports';
+import { type Report } from '@/types/reports';
 import { size } from '@/utils/data';
 import { calculateTotalProfitLoss } from '@/utils/report';
 

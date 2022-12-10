@@ -51,10 +51,10 @@
   </table-expand-container>
 </template>
 <script setup lang="ts">
-import { AssetBalanceWithPrice } from '@rotki/common';
-import { XswapAsset } from '@rotki/common/lib/defi/xswap';
-import { PropType } from 'vue';
-import { DataTableHeader } from 'vuetify';
+import { type AssetBalanceWithPrice } from '@rotki/common';
+import { type XswapAsset } from '@rotki/common/lib/defi/xswap';
+import { type PropType } from 'vue';
+import { type DataTableHeader } from 'vuetify';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
 import { useTheme } from '@/composables/common';

@@ -1,16 +1,16 @@
 import makeBlockie from 'ethereum-blockies-base64';
 import {
   transactionEventProtocolData,
-  useTransactionEventTypeData,
-  transactionEventTypeMapping
+  transactionEventTypeMapping,
+  useTransactionEventTypeData
 } from '@/store/history/consts';
-import { EthTransactionEventEntry } from '@/store/history/types';
-import { ActionDataEntry } from '@/store/types';
+import { type EthTransactionEventEntry } from '@/store/history/types';
+import { type ActionDataEntry } from '@/store/types';
 import {
   HistoryEventSubType,
   HistoryEventType,
   TransactionEventProtocol,
-  TransactionEventType
+  type TransactionEventType
 } from '@/types/transaction';
 import { isValidEthAddress } from '@/utils/text';
 

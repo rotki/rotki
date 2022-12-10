@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-const fs = require('fs');
-const path = require('path');
+const fs = require('node:fs');
+const path = require('node:path');
 const { ArgumentParser } = require('argparse');
 const { build } = require('vite');
 
@@ -15,7 +15,7 @@ parser.add_argument('--mode', { help: 'mode docker', default: 'production' });
 const { mode } = parser.parse_args();
 
 const injectEnv = (envName = '.env') => {
-  const envPath = path.resolve(__dirname, '../' + envName);
+  const envPath = path.resolve(__dirname, `../${envName}`);
   const envExists = fs.existsSync(envPath);
   if (envExists) {
     require('dotenv').config({ path: envPath, override: true });

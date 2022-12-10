@@ -1,4 +1,4 @@
-import { BigNumber } from '@rotki/common';
+import { type BigNumber } from '@rotki/common';
 import { Zero } from '@/utils/bignumbers';
 
 export const truncationPoints: Record<string, number> = {
@@ -27,11 +27,10 @@ export function truncateAddress(address: string, truncLength = 4): string {
     return address;
   }
 
-  return (
-    address.slice(0, truncLength + startPadding) +
-    '...' +
-    address!.slice(address!.length - truncLength, address!.length)
-  );
+  return `${address.slice(0, truncLength + startPadding)}...${address!.slice(
+    address!.length - truncLength,
+    address!.length
+  )}`;
 }
 
 export function bigNumberSum(value: BigNumber[]): BigNumber {

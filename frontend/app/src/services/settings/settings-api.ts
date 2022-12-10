@@ -1,4 +1,4 @@
-import { ActionResult } from '@rotki/common/lib/data';
+import { type ActionResult } from '@rotki/common/lib/data';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import { BackendConfiguration } from '@/services/types-api';
@@ -7,7 +7,7 @@ import {
   validStatus,
   validWithSessionStatus
 } from '@/services/utils';
-import { SettingsUpdate, UserSettingsModel } from '@/types/user';
+import { type SettingsUpdate, UserSettingsModel } from '@/types/user';
 
 export const useSettingsApi = () => {
   const setSettings = async (
@@ -16,7 +16,7 @@ export const useSettingsApi = () => {
     const response = await api.instance.put<ActionResult<UserSettingsModel>>(
       '/settings',
       axiosSnakeCaseTransformer({
-        settings: settings
+        settings
       }),
       {
         validateStatus: validStatus

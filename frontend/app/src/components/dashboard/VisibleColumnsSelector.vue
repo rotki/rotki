@@ -24,11 +24,11 @@
   </v-list>
 </template>
 <script setup lang="ts">
-import { PropType } from 'vue';
+import { type PropType } from 'vue';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import {
-  DashboardTableType,
-  FrontendSettingsPayload
+  type DashboardTableType,
+  type FrontendSettingsPayload
 } from '@/types/frontend-settings';
 import { TableColumn } from '@/types/table-column';
 

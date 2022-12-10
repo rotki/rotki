@@ -22,8 +22,8 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
-import { PropType } from 'vue';
-import { UserNote } from '@/types/notes';
+import { type PropType } from 'vue';
+import { type UserNote } from '@/types/notes';
 
 const props = defineProps({
   value: {

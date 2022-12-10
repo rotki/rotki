@@ -74,14 +74,14 @@
 </template>
 
 <script setup lang="ts">
-import { PropType } from 'vue';
-import { DataTableHeader } from 'vuetify';
+import { type PropType } from 'vue';
+import { type DataTableHeader } from 'vuetify';
 import {
-  EthTransactionEntry,
-  EthTransactionEventEntry
+  type EthTransactionEntry,
+  type EthTransactionEventEntry
 } from '@/store/history/types';
 import { transformEntryWithMeta } from '@/store/history/utils';
-import { EthTransactionEventWithMeta } from '@/types/history/tx';
+import { type EthTransactionEventWithMeta } from '@/types/history/tx';
 
 const TransactionEventNote = defineAsyncComponent(
   () => import('@/components/history/transactions/TransactionEventNote.vue')

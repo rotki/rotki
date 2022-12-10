@@ -1,14 +1,14 @@
-import { AssetInfo } from '@rotki/common/lib/data';
-import { MaybeRef } from '@vueuse/core';
-import { ComputedRef } from 'vue';
+import { type AssetInfo } from '@rotki/common/lib/data';
+import { type MaybeRef } from '@vueuse/core';
+import { type ComputedRef } from 'vue';
 import { CUSTOM_ASSET } from '@/services/assets/consts';
 import { useAssetInfoApi } from '@/services/assets/info';
 import { useAssetCacheStore } from '@/store/assets/asset-cache';
-import { ERC20Token } from '@/store/balances/types';
+import { type ERC20Token } from '@/store/balances/types';
 import { useNotifications } from '@/store/notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTasks } from '@/store/tasks';
-import { TaskMeta } from '@/types/task';
+import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { getAddressFromEvmIdentifier, isEvmIdentifier } from '@/utils/assets';
 
@@ -26,7 +26,7 @@ export const useAssetInfoRetrieval = defineStore(
       () => {
         const associationMap: Record<string, string> = {};
         if (get(treatEth2AsEth)) {
-          associationMap['ETH2'] = 'ETH';
+          associationMap.ETH2 = 'ETH';
         }
         return associationMap;
       }

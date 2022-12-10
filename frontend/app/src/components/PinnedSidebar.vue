@@ -19,7 +19,7 @@
   </v-navigation-drawer>
 </template>
 <script setup lang="ts">
-import { ComputedRef } from 'vue';
+import { type ComputedRef } from 'vue';
 import ReportActionableCard from '@/components/profitloss/ReportActionableCard.vue';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
 
@@ -37,10 +37,8 @@ const { pinned } = storeToRefs(useAreaVisibilityStore());
 
 const component: ComputedRef<any> = computed(() => {
   const pinnedValue = get(pinned);
-  if (pinnedValue) {
-    if (pinnedValue.name === 'report-actionable-card')
-      return ReportActionableCard;
-  }
+  if (pinnedValue && pinnedValue.name === 'report-actionable-card')
+    return ReportActionableCard;
   return null;
 });
 </script>

@@ -1,13 +1,13 @@
-import { ActionResult } from '@rotki/common/lib/data';
+import { type ActionResult } from '@rotki/common/lib/data';
 import dayjs from 'dayjs';
 import find from 'lodash/find';
 import toArray from 'lodash/toArray';
-import { ComputedRef, Ref } from 'vue';
+import { type ComputedRef, type Ref } from 'vue';
 
 import { api } from '@/services/rotkehlchen-api';
 import { TaskNotFoundError } from '@/services/types-api';
 import { SyncConflictError } from '@/types/login';
-import { Task, TaskMeta } from '@/types/task';
+import { type Task, type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { assert } from '@/utils/assertions';
 import { checkIfDevelopment } from '@/utils/env-utils';
@@ -17,7 +17,7 @@ export type TaskMap<T extends TaskMeta> = Record<number, Task<T>>;
 
 const unlockTask = (lockedTasks: Ref<number[]>, taskId: number): number[] => {
   const locked = [...get(lockedTasks)];
-  const idIndex = locked.findIndex(value => value === taskId);
+  const idIndex = locked.indexOf(taskId);
   locked.splice(idIndex, 1);
   return locked;
 };

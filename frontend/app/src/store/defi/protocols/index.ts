@@ -1,19 +1,19 @@
-import { Balance, BigNumber } from '@rotki/common';
+import { type Balance, BigNumber } from '@rotki/common';
 import { DefiProtocol } from '@rotki/common/lib/blockchain';
 import { assetSymbolToIdentifierMap } from '@rotki/common/lib/data';
 import {
-  AaveBalances,
+  type AaveBalances,
   AaveBorrowingEventType,
-  AaveHistory,
-  AaveHistoryEvents,
-  AaveHistoryTotal,
-  AaveLending,
-  AaveLendingEvent,
+  type AaveHistory,
+  type AaveHistoryEvents,
+  type AaveHistoryTotal,
+  type AaveLending,
+  type AaveLendingEvent,
   AaveLendingEventType,
   isAaveLiquidationEvent
 } from '@rotki/common/lib/defi/aave';
 import sortBy from 'lodash/sortBy';
-import { ComputedRef } from 'vue';
+import { type ComputedRef } from 'vue';
 import { usePremium } from '@/composables/premium';
 import { truncateAddress } from '@/filters';
 import { ProtocolVersion } from '@/services/defi/consts';
@@ -21,28 +21,31 @@ import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useAaveStore } from '@/store/defi/aave';
 import { useCompoundStore } from '@/store/defi/compound';
 import { useLiquityStore } from '@/store/defi/liquity';
-import { LiquityLoan } from '@/store/defi/liquity/types';
+import { type LiquityLoan } from '@/store/defi/liquity/types';
 import { useMakerDaoStore } from '@/store/defi/makerdao';
 import {
-  AaveLoan,
-  BaseDefiBalance,
-  DefiBalance,
-  DefiLendingHistory,
-  LoanSummary
+  type AaveLoan,
+  type BaseDefiBalance,
+  type DefiBalance,
+  type DefiLendingHistory,
+  type LoanSummary
 } from '@/store/defi/types';
 import { balanceUsdValueSum } from '@/store/defi/utils';
 import { useYearnStore } from '@/store/defi/yearn';
 import { getStatus, setStatus } from '@/store/status';
 import { isLoading } from '@/store/utils';
-import { Writeable } from '@/types';
-import { Collateral, DefiLoan } from '@/types/defi';
-import { CompoundBalances, CompoundLoan } from '@/types/defi/compound';
+import { type Writeable } from '@/types';
+import { type Collateral, type DefiLoan } from '@/types/defi';
 import {
-  DSRBalances,
-  DSRHistory,
-  MakerDAOVaultModel
+  type CompoundBalances,
+  type CompoundLoan
+} from '@/types/defi/compound';
+import {
+  type DSRBalances,
+  type DSRHistory,
+  type MakerDAOVaultModel
 } from '@/types/defi/maker';
-import { YearnVaultsHistory } from '@/types/defi/yearn';
+import { type YearnVaultsHistory } from '@/types/defi/yearn';
 import { Section, Status } from '@/types/status';
 import { assert } from '@/utils/assertions';
 import { Zero, zeroBalance } from '@/utils/bignumbers';
@@ -52,7 +55,7 @@ const isLendingEvent = (
   value: AaveHistoryEvents
 ): value is AaveLendingEvent => {
   const lending: string[] = Object.values(AaveLendingEventType);
-  return lending.indexOf(value.eventType) !== -1;
+  return lending.includes(value.eventType);
 };
 
 type NullableLoan =
@@ -209,7 +212,7 @@ export const useDefiSupportedProtocolsStore = defineStore(
                   protocol: isV1
                     ? DefiProtocol.YEARN_VAULTS
                     : DefiProtocol.YEARN_VAULTS_V2,
-                  address: address,
+                  address,
                   asset: event.fromAsset,
                   value: event.fromValue,
                   blockNumber: event.blockNumber,
@@ -501,7 +504,7 @@ export const useDefiSupportedProtocolsStore = defineStore(
               ...lending[asset].balance
             })),
             totalLost: lost,
-            liquidationEarned: liquidationEarned,
+            liquidationEarned,
             events
           } as AaveLoan;
         }
@@ -558,7 +561,7 @@ export const useDefiSupportedProtocolsStore = defineStore(
           const { balances, events } = useLiquityStore();
 
           return {
-            owner: owner,
+            owner,
             protocol: loan.protocol,
             balance: balances[owner],
             events: events[owner] ?? []
@@ -841,7 +844,7 @@ export const useDefiSupportedProtocolsStore = defineStore(
         let { usdValue, weight } = lendBalances
           .filter(({ balance }) => balance.usdValue.gt(0))
           .map(({ effectiveInterestRate, balance: { usdValue } }) => {
-            const n = parseFloat(effectiveInterestRate);
+            const n = Number.parseFloat(effectiveInterestRate);
             return {
               weight: usdValue.multipliedBy(n),
               usdValue
@@ -865,8 +868,8 @@ export const useDefiSupportedProtocolsStore = defineStore(
           return get(yearnStore.yearnVaultsAssets([], version))
             .filter(({ underlyingValue }) => underlyingValue.usdValue.gt(Zero))
             .map(({ underlyingValue: { usdValue }, roi }) => ({
-              usdValue: usdValue,
-              weight: usdValue.multipliedBy(parseFloat(roi))
+              usdValue,
+              weight: usdValue.multipliedBy(Number.parseFloat(roi))
             }))
             .reduce(
               ({ usdValue, weight: sWeight }, current) => ({
@@ -1045,7 +1048,7 @@ export const useDefiSupportedProtocolsStore = defineStore(
             .map(({ effectiveInterestRate, balance: { usdValue, amount } }) => {
               return {
                 weight: usdValue.multipliedBy(
-                  parseFloat(effectiveInterestRate)
+                  Number.parseFloat(effectiveInterestRate)
                 ),
                 usdValue,
                 amount

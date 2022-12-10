@@ -1081,26 +1081,26 @@ class FrontendBuilder:
         os.chmod(backend_binary, st.st_mode | stat.S_IEXEC)
 
     @staticmethod
-    def check_npm_version() -> None:
-        npm_version = version.parse(subprocess.check_output(
-            'npm --version',
+    def check_pnpm_version() -> None:
+        pnpm_version = version.parse(subprocess.check_output(
+            'pnpm --version',
             encoding='utf-8',
             shell=True,
         ))
-        required_version = version.parse('8.0.0')
-        if npm_version < required_version:
-            logger.error(f'The system npm version is < 8.0.0 ({npm_version})')
+        required_version = version.parse('7.18.0')
+        if pnpm_version < required_version:
+            logger.error(f'The system pnpm version is < 7.18.0 ({pnpm_version})')
             sys.exit(1)
 
     @log_group('electron app build')
     def build(self) -> None:
         self.__env.sanity_check()
-        self.check_npm_version()
+        self.check_pnpm_version()
         self.__storage.check_backend()
         os.chdir(self.__frontend_directory)
         frontend_env = self.__env.get_frontend_env()
 
-        self.__restore_npm_dependencies()
+        self.__restore_pnpm_dependencies()
         self.__ensure_backend_executable()
 
         sign_env = {}
@@ -1113,13 +1113,13 @@ class FrontendBuilder:
             sign_env = self.__env.win_sign_env()
 
         logger.info('Calling build')
-        ret_code = subprocess.call('npm run build', shell=True, env=frontend_env)
+        ret_code = subprocess.call('pnpm run build', shell=True, env=frontend_env)
         if ret_code != 0:
             logger.error('build failed')
             sys.exit(1)
 
         package_ret_code = subprocess.call(
-            'npm run electron:package',
+            'pnpm run electron:package',
             shell=True,
             env=frontend_env | sign_env,
         )
@@ -1148,23 +1148,27 @@ class FrontendBuilder:
             self.__win.cleanup_certificate()
 
     @staticmethod
-    @log_group('npm ci')
-    def __restore_npm_dependencies() -> None:
+    @log_group('pnpm install')
+    def __restore_pnpm_dependencies() -> None:
         node_version = subprocess.check_output(
             'node --version',
             shell=True,
             encoding='utf8',
         ).strip()
-        npm_version = subprocess.check_output('npm --version', shell=True, encoding='utf8').strip()
+        pnpm_version = subprocess.check_output(
+            'pnpm --version',
+            shell=True,
+            encoding='utf8',
+        ).strip()
         logger.info(
-            f'Restoring dependencies using Node.js {node_version} and npm@{npm_version}',
+            f'Restoring dependencies using Node.js {node_version} and pnpm@{pnpm_version}',
         )
         ret_code = subprocess.call(
-            'npm ci --prefer-offline --silent',
+            'pnpm install --no-optional',
             shell=True,
         )
         if ret_code != 0:
-            logger.error('failed to npm ci')
+            logger.error('pnpm install failed')
 
 
 def main() -> None:

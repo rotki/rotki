@@ -38,7 +38,7 @@
 </template>
 
 <script setup lang="ts">
-import { PropType } from 'vue';
+import { type PropType } from 'vue';
 import ActionStatusIndicator from '@/components/error/ActionStatusIndicator.vue';
 import {
   ALL_CENTRALIZED_EXCHANGES,
@@ -47,10 +47,10 @@ import {
   ALL_TRANSACTIONS,
   PURGABLE
 } from '@/services/session/consts';
-import { Purgeable } from '@/services/session/types';
-import { BaseMessage } from '@/types/messages';
+import { type Purgeable } from '@/services/session/types';
+import { type BaseMessage } from '@/types/messages';
 import { SUPPORTED_MODULES } from '@/types/modules';
-import { PurgeParams } from '@/types/purge';
+import { type PurgeParams } from '@/types/purge';
 import { useTradeLocations } from '@/types/trades';
 
 defineProps({

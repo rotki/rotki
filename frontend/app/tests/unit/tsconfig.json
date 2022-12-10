@@ -1,15 +1,9 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "types": [
-      "vuetify",
-      "vitest/globals"
-    ]
+    "types": ["vuetify", "vitest/globals"]
   },
-  "include": [
-    "**/*.ts",
-    ".eslintrc.js",
-    "../../src/auto-imports.d.ts"
-  ],
+  "include": ["**/*.ts", "../../src/auto-imports.d.ts"],
+  "exclude": ["node_modules/**", "**/.*"],
   "compileOnSave": false
 }

@@ -54,10 +54,13 @@ import { omit } from 'lodash';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import LatestPriceForm from '@/components/price-manager/latest/LatestPriceForm.vue';
 import LatestPriceTable from '@/components/price-manager/latest/LatestPriceTable.vue';
-import { ManualPrice, ManualPriceFormPayload } from '@/services/assets/types';
+import {
+  type ManualPrice,
+  type ManualPriceFormPayload
+} from '@/services/assets/types';
 import { api } from '@/services/rotkehlchen-api';
 import { useMessageStore } from '@/store/message';
-import { Nullable } from '@/types';
+import { type Nullable } from '@/types';
 
 const emptyPrice: () => ManualPriceFormPayload = () => ({
   fromAsset: '',

@@ -1,7 +1,7 @@
-import { ActionResult } from '@rotki/common/lib/data';
+import { type ActionResult } from '@rotki/common/lib/data';
 import {
   LocationData,
-  NetValue,
+  type NetValue,
   TimedAssetBalances,
   TimedBalances
 } from '@rotki/common/lib/statistics';

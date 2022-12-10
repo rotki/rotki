@@ -66,11 +66,11 @@
 </template>
 
 <script setup lang="ts">
-import { AssetInfo } from '@rotki/common/lib/data';
-import { ComputedRef, PropType, Ref } from 'vue';
+import { type AssetInfo } from '@rotki/common/lib/data';
+import { type ComputedRef, type PropType, type Ref } from 'vue';
 import FilterEntry from '@/components/history/filtering/FilterEntry.vue';
 import SuggestedItem from '@/components/history/filtering/SuggestedItem.vue';
-import { SearchMatcher, Suggestion } from '@/types/filtering';
+import { type SearchMatcher, type Suggestion } from '@/types/filtering';
 import { compareSymbols } from '@/utils/assets';
 import { logger } from '@/utils/logging';
 import { splitSearch } from '@/utils/search';
@@ -123,19 +123,19 @@ const updateSuggestion = (value: Suggestion[], index: number) => {
   emit('suggest', {
     key: value[index].key,
     value: value[index].value,
-    index: index,
+    index,
     total: value.length
   });
 };
 
 const click = (key: string) => {
-  if (key.trim().length) {
+  if (key.trim().length > 0) {
     emit('click', key);
   }
 };
 
 const applyFilter = (item: Suggestion) => {
-  let value = typeof item.value === 'string' ? item.value : item.value.symbol;
+  const value = typeof item.value === 'string' ? item.value : item.value.symbol;
   if (value) {
     emit('apply:filter', item);
   }

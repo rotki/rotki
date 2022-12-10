@@ -176,7 +176,7 @@ import { BigNumber } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import dayjs from 'dayjs';
-import { PropType } from 'vue';
+import { type PropType } from 'vue';
 import ValueAccuracyHint from '@/components/helper/hint/ValueAccuracyHint.vue';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
@@ -185,22 +185,25 @@ import { deserializeApiErrorMessage } from '@/services/converters';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useHistoryEventTypeData } from '@/store/history/consts';
 import {
-  EthTransactionEntry,
-  EthTransactionEventEntry
+  type EthTransactionEntry,
+  type EthTransactionEventEntry
 } from '@/store/history/types';
 import { useMessageStore } from '@/store/message';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTasks } from '@/store/tasks';
-import { ActionStatus } from '@/store/types';
-import { Writeable } from '@/types';
+import { type ActionStatus } from '@/store/types';
+import { type Writeable } from '@/types';
 import { CURRENCY_USD } from '@/types/currencies';
 import {
-  EthTransactionEvent,
-  NewEthTransactionEvent
+  type EthTransactionEvent,
+  type NewEthTransactionEvent
 } from '@/types/history/tx';
 import { TaskType } from '@/types/task-type';
-import { HistoryEventSubType, HistoryEventType } from '@/types/transaction';
-import { bigNumberifyFromRef, One, Zero } from '@/utils/bignumbers';
+import {
+  HistoryEventSubType,
+  type HistoryEventType
+} from '@/types/transaction';
+import { One, Zero, bigNumberifyFromRef } from '@/utils/bignumbers';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { useEventTypeData } from '@/utils/history';
 

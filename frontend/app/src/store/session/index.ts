@@ -1,4 +1,4 @@
-import { ComputedRef } from 'vue';
+import { type ComputedRef } from 'vue';
 import { useLastLanguage } from '@/composables/session/language';
 import { useSessionSettings } from '@/composables/session/settings';
 import { useInterop } from '@/electron-interop';
@@ -9,23 +9,23 @@ import { useMessageStore } from '@/store/message';
 import { useMonitorStore } from '@/store/monitor';
 import { useSessionAuthStore } from '@/store/session/auth';
 import {
-  ChangePasswordPayload,
-  SyncConflictPayload
+  type ChangePasswordPayload,
+  type SyncConflictPayload
 } from '@/store/session/types';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useTasks } from '@/store/tasks';
-import { ActionStatus } from '@/store/types';
-import { Exchange } from '@/types/exchanges';
-import { SupportedLanguage } from '@/types/frontend-settings';
+import { type ActionStatus } from '@/store/types';
+import { type Exchange } from '@/types/exchanges';
+import { type SupportedLanguage } from '@/types/frontend-settings';
 import {
-  CreateAccountPayload,
-  LoginCredentials,
+  type CreateAccountPayload,
+  type LoginCredentials,
   SyncConflictError,
-  UnlockPayload
+  type UnlockPayload
 } from '@/types/login';
-import { TaskMeta } from '@/types/task';
+import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { UserAccount, UserSettingsModel } from '@/types/user';
+import { UserAccount, type UserSettingsModel } from '@/types/user';
 import { lastLogin } from '@/utils/account-management';
 import { logger } from '@/utils/logging';
 
@@ -172,8 +172,7 @@ export const useSessionStore = defineStore('session', () => {
   const logoutRemoteSession = async (): Promise<ActionStatus> => {
     try {
       const loggedUsers = await usersApi.loggedUsers();
-      for (let i = 0; i < loggedUsers.length; i++) {
-        const user = loggedUsers[i];
+      for (const user of loggedUsers) {
         await usersApi.logout(user);
       }
       return { success: true };

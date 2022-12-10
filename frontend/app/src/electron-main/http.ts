@@ -1,11 +1,11 @@
-import fs from 'fs';
+import fs from 'node:fs';
 import http, {
-  IncomingMessage,
-  OutgoingHttpHeaders,
-  Server,
-  ServerResponse
-} from 'http';
-import path from 'path';
+  type IncomingMessage,
+  type OutgoingHttpHeaders,
+  type Server,
+  type ServerResponse
+} from 'node:http';
+import path from 'node:path';
 import { assert } from '@/utils/assertions';
 import { checkIfDevelopment } from '@/utils/env-utils';
 
@@ -78,7 +78,7 @@ function handleAddresses(
       cb(payload.addresses);
       res.writeHead(STATUS_OK);
       res.end();
-    } catch (e: any) {
+    } catch {
       invalidRequest(res, 'Malformed JSON');
     }
   });
@@ -130,7 +130,7 @@ function handleRequests(
   const contentLengthHeader = req.headers['content-length'];
   if (contentLengthHeader) {
     try {
-      const contentLength = parseInt(contentLengthHeader);
+      const contentLength = Number.parseInt(contentLengthHeader);
       if (contentLength > 524288) {
         invalidRequest(
           res,
@@ -139,7 +139,7 @@ function handleRequests(
         );
         return;
       }
-    } catch (e: any) {
+    } catch {
       invalidRequest(
         res,
         'No valid content length',
@@ -170,6 +170,7 @@ function handleRequests(
 
 export function startHttp(cb: Callback, port = 43432): number {
   if (!(server && server.listening)) {
+    // eslint-disable-next-line no-console
     console.log(
       `Metamask Import Server: Listening at: http://localhost:${port}`
     );
@@ -183,6 +184,7 @@ export function startHttp(cb: Callback, port = 43432): number {
 }
 
 export function stopHttp() {
+  // eslint-disable-next-line no-console
   console.log('Metamask Import Server: Stopped');
   if (server && server.listening) {
     server.close();

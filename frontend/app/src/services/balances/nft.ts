@@ -1,7 +1,7 @@
-import { ActionResult } from '@rotki/common/lib/data';
+import { type ActionResult } from '@rotki/common/lib/data';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
-import { PendingTask } from '@/services/types-api';
+import { type PendingTask } from '@/services/types-api';
 import {
   handleResponse,
   paramsSerializer,
@@ -11,7 +11,7 @@ import {
 import {
   NonFungibleBalance,
   NonFungibleBalancesCollectionResponse,
-  NonFungibleBalancesRequestPayload
+  type NonFungibleBalancesRequestPayload
 } from '@/types/nfbalances';
 
 export const useNftBalanceApi = () => {

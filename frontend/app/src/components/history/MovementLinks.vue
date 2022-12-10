@@ -19,9 +19,9 @@
 </template>
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { PropType } from 'vue';
+import { type PropType } from 'vue';
 import HashLink from '@/components/helper/HashLink.vue';
-import { AssetMovement } from '@/types/history/movements';
+import { type AssetMovement } from '@/types/history/movements';
 import { isEvmIdentifier } from '@/utils/assets';
 import { isValidTxHash } from '@/utils/text';
 

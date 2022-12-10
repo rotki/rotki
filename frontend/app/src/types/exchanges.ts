@@ -1,7 +1,7 @@
-import { BigNumber } from '@rotki/common';
+import { type BigNumber } from '@rotki/common';
 import { z } from 'zod';
-import { Nullable } from '@/types';
-import { AssetBalances } from '@/types/balances';
+import { type Nullable } from '@/types';
+import { type AssetBalances } from '@/types/balances';
 
 export const KrakenAccountType = z.enum(['starter', 'intermediate', 'pro']);
 export type KrakenAccountType = z.infer<typeof KrakenAccountType>;

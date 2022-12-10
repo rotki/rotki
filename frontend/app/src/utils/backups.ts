@@ -1,5 +1,5 @@
-import { Ref } from 'vue';
-import { UserDbBackup } from '@/types/backup';
+import { type Ref } from 'vue';
+import { type UserDbBackup } from '@/types/backup';
 
 export const getFilepath = (
   db: UserDbBackup,

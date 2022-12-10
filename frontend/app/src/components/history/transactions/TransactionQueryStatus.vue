@@ -218,7 +218,7 @@
 <script setup lang="ts">
 import { useTxQueryStatus } from '@/store/history/query-status';
 import {
-  EthereumTransactionQueryData,
+  type EthereumTransactionQueryData,
   EthereumTransactionsQueryStatus
 } from '@/types/websocket-messages';
 import { toSentenceCase } from '@/utils/text';

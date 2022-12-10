@@ -1,6 +1,5 @@
-import { SemiPartial } from '@rotki/common';
-import { NotificationPayload, Severity } from '@rotki/common/lib/messages';
-import VueI18n from 'vue-i18n';
+import { type SemiPartial } from '@rotki/common';
+import { type NotificationPayload, Severity } from '@rotki/common/lib/messages';
 import { usePremium } from '@/composables/premium';
 import { convertKeys } from '@/services/axios-tranformers';
 import { useTxQueryStatus } from '@/store/history/query-status';
@@ -9,10 +8,11 @@ import {
   BalanceSnapshotError,
   EthereumTransactionQueryData,
   LoginStatusData,
-  PremiumStatusUpdateData,
-  SocketMessageType,
-  WebsocketMessage
+  type PremiumStatusUpdateData,
+  type SocketMessageType,
+  type WebsocketMessage
 } from '@/types/websocket-messages';
+import type VueI18n from 'vue-i18n';
 
 export const handleSnapshotError = (
   message: WebsocketMessage<SocketMessageType>,
@@ -41,7 +41,7 @@ export const handleLegacyMessage = (
 ): SemiPartial<NotificationPayload, 'title' | 'message'> => {
   return {
     title: tc('notification_messages.backend.title'),
-    message: message,
+    message,
     display: !isWarning,
     severity: isWarning ? Severity.WARNING : Severity.ERROR
   };

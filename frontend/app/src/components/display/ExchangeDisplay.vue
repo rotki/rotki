@@ -8,10 +8,10 @@
 </template>
 
 <script setup lang="ts">
-import { PropType } from 'vue';
+import { type PropType } from 'vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
-import { SupportedExchange } from '@/types/exchanges';
-import { TradeLocationData, useTradeLocations } from '@/types/trades';
+import { type SupportedExchange } from '@/types/exchanges';
+import { type TradeLocationData, useTradeLocations } from '@/types/trades';
 import { toSentenceCase } from '@/utils/text';
 
 const props = defineProps({

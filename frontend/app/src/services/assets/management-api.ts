@@ -1,4 +1,4 @@
-import { ActionResult } from '@rotki/common/lib/data';
+import { type ActionResult } from '@rotki/common/lib/data';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import { SupportedAssets } from '@/services/types-api';
@@ -7,8 +7,8 @@ import {
   validWithSessionAndExternalService
 } from '@/services/utils';
 import {
-  AssetPagination,
-  CustomAssetPagination,
+  type AssetPagination,
+  type CustomAssetPagination,
   CustomAssets
 } from '@/types/assets';
 

@@ -19,7 +19,7 @@ describe('assets', () => {
     before(() => {
       page.visit();
       page.ignoredAssets().then(ignored => {
-        ignoredAssets = parseInt(ignored);
+        ignoredAssets = Number.parseInt(ignored);
       });
     });
 

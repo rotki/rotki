@@ -1,13 +1,13 @@
 import {
-  XswapBalance,
-  XswapBalances,
-  XswapEventDetails,
-  XswapEvents,
-  XswapPool,
-  XswapPoolProfit
+  type XswapBalance,
+  type XswapBalances,
+  type XswapEventDetails,
+  type XswapEvents,
+  type XswapPool,
+  type XswapPoolProfit
 } from '@rotki/common/lib/defi/xswap';
 import cloneDeep from 'lodash/cloneDeep';
-import { Writeable } from '@/types';
+import { type Writeable } from '@/types';
 import { balanceSum } from '@/utils/calculation';
 
 export function getPools(
@@ -65,9 +65,9 @@ export function getEventDetails(
         eventDetails.push({
           ...event,
           address,
-          poolAddress: poolAddress,
-          token0: token0,
-          token1: token1
+          poolAddress,
+          token0,
+          token1
         });
       }
     }

@@ -1,4 +1,4 @@
-import { default as net } from 'net';
+import { default as net } from 'node:net';
 
 export const DEFAULT_PORT = 4242;
 

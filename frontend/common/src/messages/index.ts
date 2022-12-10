@@ -1,7 +1,7 @@
 export enum Severity {
-  WARNING = "warning",
-  ERROR = "error",
-  INFO = "info"
+  WARNING = 'warning',
+  ERROR = 'error',
+  INFO = 'info'
 }
 
 export interface Message {

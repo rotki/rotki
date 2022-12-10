@@ -151,9 +151,9 @@ import RotkiLogo from '@/components/common/RotkiLogo.vue';
 import AppUpdateIndicator from '@/components/status/AppUpdateIndicator.vue';
 import { usePremium } from '@/composables/premium';
 import { useInterop } from '@/electron-interop';
-import { SystemVersion } from '@/electron-main/ipc';
+import { type SystemVersion } from '@/electron-main/ipc';
 import { useMainStore } from '@/store/main';
-import { WebVersion } from '@/types';
+import { type WebVersion } from '@/types';
 
 const css = useCssModule();
 

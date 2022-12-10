@@ -461,20 +461,22 @@ Build from Source
 Linux
 =========
 
-Make sure you have `node.js <https://nodejs.org/en/>`_ and `npm <https://www.npmjs.com/>`_. If you don't, use your linux distro's package manager to get them.
+Make sure you have `node.js <https://nodejs.org/en/>`_ and `pnpm <https://pnpm.io/>`_. If you don't, use your linux distro's package manager to get them.
 
-rotki uses npm v8. To check if you have version 8 of npm you can run::
+rotki uses pnpm v7. To check if you have version 7 of pnpm you can run::
 
-    npm --version
+    pnpm --version
 
-If you are on an older version of npm, you can install it by::
+If you are on an older version of pnpm, you can install it by::
 
-    npm install -g npm@8
+    pnpm install -g pnpm@7
+    # or if you don't have it installed you can
+    npm install -g pnpm@7
 
-Install electron and any other npm dependencies by::
+Install electron and any other dependencies by::
 
     cd frontend
-    npm ci
+    pnpm install
 
 Create a new `virtual environment <http://docs.python-guide.org/en/latest/dev/virtualenvs/>`_ with python 3.9 to install all the python dependencies. If you don't have ``mkvirtualenv`` then check how to get it depending on your distribution. `Here <https://virtualenvwrapper.readthedocs.io/en/latest/install.html#basic-installation>`__ is a guide for Ubuntu and `here <https://wiki.archlinux.org/index.php/Python/Virtual_environment>`__ is one for ArchLinux::
 
@@ -493,13 +495,13 @@ Since the electron application is located in a different directory you also need
 
     pip install -e .
 
-Before starting the application you need to build the common package. To do this you can go to ``frontend`` and
-run ``npm run build -w @rotki/common``.
+If you modified the @rotki/common package you might need to rebuild it. To do this you can go to ``frontend`` and
+run ``pnpm run --filter @rotki/common build``.
 
-After that you can start the application from the ``frontend`` directory by typing ``npm run dev``.
+After that you can start the application from the ``frontend`` directory by typing ``pnpm run dev``.
 
 If you don't want to do the development inside electron or you want to test any non-electron features in your browsers
-you can alternatively start ``npm run dev:web`` this will start everything except electron. After the vue development
+you can alternatively start ``pnpm run dev:web`` this will start everything except electron. After the vue development
 server was finished starting up you should be able to access the url from your browser. Keep in mind that this
 works only for localhost access and a proxy might be needed to access it from a different machine.
 
@@ -575,24 +577,25 @@ rotki uses `Electron <https://electronjs.org>`, we need to install it. To do so 
 
     $ brew install node
 
-rotki uses npm v8. To check if you have version 8 of npm you can run::
+rotki uses pnpm v7. To check if you have version 7 of pnpm you can run::
 
-    npm --version
+    pnpm --version
 
-If you are on an older version of npm, you can install it by::
+If you are on an older version of pnpm, you can install it by::
 
-    npm install -g npm@8
+    pnpm install -g pnpm@7
+    # or if you never installed it before you can
+    npm install -g pnpm@7
 
 
-Almost there, we can now install all the Node.js dependencies of the frontend app. Using a recent Node.js version such as 14.16.0, it should be smooth. Also since ``npm`` uses ``gyp`` and that requires python 2.7 make sure to set it up appropriately before invoking ``npm``::
+Almost there, we can now install all the Node.js dependencies of the frontend app:
 
     $ cd frontend
-    $ npm ci
-    $ npm run build -w @rotki/common
+    $ pnpm install
 
 You can now start rotki, still from the ``frontend`` directory::
 
-    $ npm run dev
+    $ pnpm run dev
 
 Packaging
 -------------
@@ -609,9 +612,13 @@ This is a guide on how to set up a rotki development environment in Windows from
 Dependencies
 -------------
 
-Node & npm
+Node & pnpm
 ^^^^^^^^^^^^^^^^^^^^
-Install `node (includes npm) <https://nodejs.org/en/download/>`_.
+Install `node <https://nodejs.org/en/download/>`_.
+Install ``pnpm``::
+
+    $ npm install -g pnpm@7
+
 
 Python
 ^^^^^^^^^^^^^^^^^^^^
@@ -696,15 +703,15 @@ Installing Electron and Running rotki
 1. In your terminal, navigate to your rotki development directory and enter the following commands to install electron and its dependencies::
 
     cd frontend
-    npm ci
+    pnpm install
 
-2. Next you should build the ``@rotki/common`` library::
+2. If you get any errors you might need to build the ``@rotki/common`` library::
 
-    npm run build -w @rotki/common
+    pnpm run --filter @rotki/common build
 
 3. At this point, your terminal's cwd should be ``<rotki development directory>\frontend\`` and the rotki virtualenv should be activated. You should now be able to start rotki in development mode by executing::
 
-    npm run electron:serve -w rotki
+    pnpm run dev
 
 After the app is built, if everything went well you should see the below text in your terminal and a new electron window that has opened with the rotki app running. ::
 
@@ -751,3 +758,4 @@ Docker
 To build Docker image from source using ``Dockerfile``::
 
     $ docker build -t rotki .
+

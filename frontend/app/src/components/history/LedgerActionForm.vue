@@ -139,18 +139,21 @@
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import dayjs from 'dayjs';
-import { PropType } from 'vue';
+import { type PropType } from 'vue';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import { convertKeys } from '@/services/axios-tranformers';
 import { deserializeApiErrorMessage } from '@/services/converters';
 import { useLedgerActionData } from '@/store/history/consts';
-import { LedgerActionEntry } from '@/store/history/types';
-import { ActionStatus } from '@/store/types';
-import { Writeable } from '@/types';
-import { LedgerAction, NewLedgerAction } from '@/types/history/ledger-actions';
+import { type LedgerActionEntry } from '@/store/history/types';
+import { type ActionStatus } from '@/store/types';
+import { type Writeable } from '@/types';
+import {
+  type LedgerAction,
+  type NewLedgerAction
+} from '@/types/history/ledger-actions';
 import { LedgerActionType } from '@/types/ledger-actions';
-import { bigNumberifyFromRef, Zero } from '@/utils/bignumbers';
+import { Zero, bigNumberifyFromRef } from '@/utils/bignumbers';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 
 const props = defineProps({

@@ -46,7 +46,7 @@
 </template>
 
 <script setup lang="ts">
-import { Ref } from 'vue';
+import { type Ref } from 'vue';
 import CustomAssetForm from '@/components/asset-manager/CustomAssetForm.vue';
 import CustomAssetTable from '@/components/asset-manager/CustomAssetTable.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
@@ -55,10 +55,10 @@ import { useAssetManagementApi } from '@/services/assets/management-api';
 import { api } from '@/services/rotkehlchen-api';
 import { useMessageStore } from '@/store/message';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { Nullable } from '@/types';
+import { type Nullable } from '@/types';
 import {
-  CustomAsset,
-  CustomAssetPagination,
+  type CustomAsset,
+  type CustomAssetPagination,
   defaultCustomAssetPagination
 } from '@/types/assets';
 import { convertPagination } from '@/types/pagination';
@@ -162,7 +162,7 @@ watch(pagination, () => refresh());
 
 const refresh = async () => {
   set(loading, true);
-  let supportedAssets = await queryAllCustomAssets(get(pagination));
+  const supportedAssets = await queryAllCustomAssets(get(pagination));
   set(assets, supportedAssets.entries);
   set(totalEntries, supportedAssets.entriesFound);
   set(types, await api.assets.getCustomAssetTypes());

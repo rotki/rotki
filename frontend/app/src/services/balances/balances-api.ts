@@ -1,13 +1,13 @@
-import { Nullable } from '@rotki/common';
-import { ActionResult } from '@rotki/common/lib/data';
+import { type Nullable } from '@rotki/common';
+import { type ActionResult } from '@rotki/common/lib/data';
 import {
-  Eth2ValidatorEntry,
+  type Eth2ValidatorEntry,
   Eth2Validators
 } from '@rotki/common/lib/staking/eth2';
-import { AxiosInstance } from 'axios';
+import { type AxiosInstance } from 'axios';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
 import { EthDetectedTokensRecord } from '@/services/balances/types';
-import { PendingTask } from '@/services/types-api';
+import { type PendingTask } from '@/services/types-api';
 import {
   handleResponse,
   validStatus,
@@ -15,9 +15,9 @@ import {
   validWithSessionAndExternalService,
   validWithSessionStatus
 } from '@/services/utils';
-import { Eth2Validator } from '@/types/balances';
-import { SupportedExchange } from '@/types/exchanges';
-import { Module } from '@/types/modules';
+import { type Eth2Validator } from '@/types/balances';
+import { type SupportedExchange } from '@/types/exchanges';
+import { type Module } from '@/types/modules';
 
 export class BalancesApi {
   private readonly axios: AxiosInstance;

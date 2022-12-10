@@ -1,12 +1,12 @@
 import { Severity } from '@rotki/common/lib/messages';
 import * as logger from 'loglevel';
-import { Ref } from 'vue';
+import { type Ref } from 'vue';
 import { useStatusUpdater } from '@/composables/status';
 import { useNotifications } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
-import { FetchData } from '@/store/typing';
+import { type FetchData } from '@/store/typing';
 import { Section, Status } from '@/types/status';
-import { TaskMeta } from '@/types/task';
+import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 
 export async function fetchDataAsync<T extends TaskMeta, R>(

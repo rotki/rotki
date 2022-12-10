@@ -1,10 +1,10 @@
 import isEqual from 'lodash/isEqual';
-import { Ref } from 'vue';
+import { type Ref } from 'vue';
 import { useStatusUpdater } from '@/composables/status';
 import { api } from '@/services/rotkehlchen-api';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
 import { useEthBalancesStore } from '@/store/blockchain/balances/eth';
-import { EthTransactionEntry } from '@/store/history/types';
+import { type EthTransactionEntry } from '@/store/history/types';
 import {
   defaultHistoricPayloadState,
   filterAddressesFromWords,
@@ -12,18 +12,18 @@ import {
 } from '@/store/history/utils';
 import { useNotifications } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
-import { ActionStatus } from '@/store/types';
-import { Collection, CollectionResponse } from '@/types/collection';
-import { EntryWithMeta } from '@/types/history/meta';
-import { TradeRequestPayload } from '@/types/history/trades';
+import { type ActionStatus } from '@/store/types';
+import { type Collection, type CollectionResponse } from '@/types/collection';
+import { type EntryWithMeta } from '@/types/history/meta';
+import { type TradeRequestPayload } from '@/types/history/trades';
 import {
-  EthTransaction,
+  type EthTransaction,
   EthTransactionCollectionResponse,
-  NewEthTransactionEvent,
-  TransactionRequestPayload
+  type NewEthTransactionEvent,
+  type TransactionRequestPayload
 } from '@/types/history/tx';
 import { Section, Status } from '@/types/status';
-import { TaskMeta } from '@/types/task';
+import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import {
   defaultCollectionState,
@@ -285,12 +285,11 @@ export const useTransactions = defineStore('history/transactions', () => {
     transactions: EthTransactionEntry[]
   ): string[] => {
     return transactions
-      .map(transaction => {
+      .flatMap(transaction => {
         return transaction.decodedEvents!.map(event => {
           return event.entry.notes;
         });
       })
-      .flat()
       .join(' ')
       .split(/\s|\\n/);
   };

@@ -1,18 +1,18 @@
 import {
   LiquityBalances,
+  LiquityPoolDetails,
   LiquityStaking,
-  TroveEvents,
-  LiquityPoolDetails
+  TroveEvents
 } from '@rotki/common/lib/liquity';
-import { Ref } from 'vue';
+import { type Ref } from 'vue';
 import { usePremium } from '@/composables/premium';
 import { useModules } from '@/composables/session/modules';
 import { useStatusUpdater } from '@/composables/status';
 import { api } from '@/services/rotkehlchen-api';
-import { OnError } from '@/store/typing';
+import { type OnError } from '@/store/typing';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
-import { TaskMeta } from '@/types/task';
+import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { fetchDataAsync } from '@/utils/fetch-async';
 

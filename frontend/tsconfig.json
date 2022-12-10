@@ -18,28 +18,15 @@
     "sourceMap": true,
     "isolatedModules": true,
     "paths": {
-      "@/*": [
-        "app/src/*"
-      ]
+      "@/*": ["app/src/*"]
     },
-    "lib": [
-      "es2020",
-      "dom",
-      "dom.iterable",
-      "scripthost"
-    ]
+    "lib": ["es2020", "dom", "dom.iterable", "scripthost"]
   },
   "references": [
     {
       "path": "app"
-    },
+    }
   ],
-  "include": [
-    ".eslintrc.js"
-  ],
-  "exclude": [
-    "node_modules",
-    "common/lib",
-    "cypress"
-  ]
+  "include": [".eslintrc.js"],
+  "exclude": ["node_modules/**", "**/.*", "cypress"]
 }

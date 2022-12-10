@@ -1,10 +1,10 @@
 import {
-  DataUtilities,
-  DateUtilities,
-  PremiumInterface,
-  SettingsApi
+  type DataUtilities,
+  type DateUtilities,
+  type PremiumInterface,
+  type SettingsApi
 } from '@rotki/common/lib/premium';
-import { Themes, TimeUnit } from '@rotki/common/lib/settings';
+import { type Themes, type TimeUnit } from '@rotki/common/lib/settings';
 import dayjs from 'dayjs';
 import { displayDateFormatter } from '@/data/date_formatter';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
@@ -20,8 +20,8 @@ import {
 } from '@/premium/premium-apis';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { DateFormat } from '@/types/date-format';
-import { FrontendSettingsPayload } from '@/types/frontend-settings';
+import { type DateFormat } from '@/types/date-format';
+import { type FrontendSettingsPayload } from '@/types/frontend-settings';
 import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
 
 const date: DateUtilities = {

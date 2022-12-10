@@ -1,4 +1,4 @@
-import { Nullable } from '@rotki/common';
+import { type Nullable } from '@rotki/common';
 
 export const splitSearch: (keyword: Nullable<string>) => string[] = (
   keyword: Nullable<string>
@@ -11,7 +11,7 @@ export const splitSearch: (keyword: Nullable<string>) => string[] = (
     return [keyword.trim(), ''];
   }
 
-  const key = keyword.substring(0, index).trim();
+  const key = keyword.slice(0, Math.max(0, index)).trim();
   const value = keyword.substring(index + 1, keyword.length).trim();
   return [key, value];
 };

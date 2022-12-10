@@ -32,13 +32,13 @@ import {
   ALL_MODULES,
   ALL_TRANSACTIONS
 } from '@/services/session/consts';
-import { Purgeable } from '@/services/session/types';
+import { type Purgeable } from '@/services/session/types';
 import { useConfirmStore } from '@/store/confirm';
 import { useSessionPurgeStore } from '@/store/session/purge';
-import { SUPPORTED_EXCHANGES, SupportedExchange } from '@/types/exchanges';
-import { BaseMessage } from '@/types/messages';
+import { SUPPORTED_EXCHANGES, type SupportedExchange } from '@/types/exchanges';
+import { type BaseMessage } from '@/types/messages';
 import { Module } from '@/types/modules';
-import { PurgeParams } from '@/types/purge';
+import { type PurgeParams } from '@/types/purge';
 
 const source = ref<Purgeable>(ALL_TRANSACTIONS);
 const status = ref<BaseMessage | null>(null);
@@ -73,15 +73,13 @@ const purgeSource = async (source: Purgeable) => {
       api.balances.deleteModuleData(Module.UNISWAP),
       api.balances.deleteModuleData(Module.BALANCER)
     ]);
-  } else {
-    if (
-      SUPPORTED_EXCHANGES.includes(source as any) ||
-      EXTERNAL_EXCHANGES.includes(source as any)
-    ) {
-      await api.balances.deleteExchangeData(source as SupportedExchange);
-    } else if (Object.values(Module).includes(source as any)) {
-      await api.balances.deleteModuleData(source as Module);
-    }
+  } else if (
+    SUPPORTED_EXCHANGES.includes(source as any) ||
+    EXTERNAL_EXCHANGES.includes(source as any)
+  ) {
+    await api.balances.deleteExchangeData(source as SupportedExchange);
+  } else if (Object.values(Module).includes(source as any)) {
+    await api.balances.deleteModuleData(source as Module);
   }
   await purgeCache(source);
 };
@@ -98,7 +96,7 @@ const purge = async (source: PurgeParams) => {
       error: ''
     });
     setTimeout(() => set(status, null), 5000);
-  } catch (e: any) {
+  } catch {
     set(status, {
       error: tc('data_management.error', 0, {
         source: source.text

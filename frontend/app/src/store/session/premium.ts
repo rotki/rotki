@@ -1,6 +1,6 @@
 import { api } from '@/services/rotkehlchen-api';
-import { PremiumCredentialsPayload } from '@/store/session/types';
-import { ActionStatus } from '@/store/types';
+import { type PremiumCredentialsPayload } from '@/store/session/types';
+import { type ActionStatus } from '@/store/types';
 
 export const usePremiumStore = defineStore('session/premium', () => {
   const premium = ref(false);

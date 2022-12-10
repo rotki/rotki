@@ -1,7 +1,7 @@
-import { ActionResult } from '@rotki/common/lib/data';
+import { type ActionResult } from '@rotki/common/lib/data';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
-import { PendingTask } from '@/services/types-api';
+import { type PendingTask } from '@/services/types-api';
 import {
   handleResponse,
   validAccountOperationStatus,
@@ -9,9 +9,9 @@ import {
   validStatus
 } from '@/services/utils';
 import {
-  AccountSession,
-  CreateAccountPayload,
-  LoginCredentials
+  type AccountSession,
+  type CreateAccountPayload,
+  type LoginCredentials
 } from '@/types/login';
 import { UserAccount } from '@/types/user';
 

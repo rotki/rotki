@@ -4,7 +4,7 @@ export class Guid {
   public static newGuid(): Guid {
     return new Guid(
       'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
-        const r = (Math.random() * 16) | 0;
+        const r = Math.trunc(Math.random() * 16);
         const v = c === 'x' ? r : (r & 0x3) | 0x8;
         return v.toString(16);
       })
@@ -21,15 +21,13 @@ export class Guid {
 
   public static isValid(str: string): boolean {
     const validRegex =
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      /^[\da-f]{8}-[\da-f]{4}-[1-5][\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}$/i;
     return validRegex.test(str);
   }
 
   constructor(value?: string) {
-    if (value) {
-      if (Guid.isValid(value)) {
-        this.value = value;
-      }
+    if (value && Guid.isValid(value)) {
+      this.value = value;
     }
   }
 

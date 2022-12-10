@@ -1,5 +1,5 @@
 import { defaultAccountingSettings } from '@/data/factories';
-import { AccountingSettings } from '@/types/user';
+import { type AccountingSettings } from '@/types/user';
 
 export const useAccountingSettingsStore = defineStore(
   'settings/accounting',

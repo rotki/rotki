@@ -155,10 +155,10 @@
 </template>
 
 <script setup lang="ts">
-import { GeneralAccount } from '@rotki/common/lib/account';
+import { type GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { LpType } from '@rotki/common/lib/defi';
-import { XswapAsset } from '@rotki/common/lib/defi/xswap';
+import { type XswapAsset } from '@rotki/common/lib/defi/xswap';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import PaginatedCards from '@/components/common/PaginatedCards.vue';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
@@ -204,7 +204,7 @@ const primaryRefreshing = isSectionRefreshing(Section.DEFI_UNISWAP_V3_BALANCES);
 const secondaryRefreshing = isSectionRefreshing(Section.DEFI_UNISWAP_EVENTS);
 
 const selectedAddresses = computed(() => {
-  let account = get(selectedAccount);
+  const account = get(selectedAccount);
   return account ? [account.address] : [];
 });
 

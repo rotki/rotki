@@ -1,5 +1,5 @@
 import {
-  EthereumTransactionQueryData,
+  type EthereumTransactionQueryData,
   EthereumTransactionsQueryStatus
 } from '@/types/websocket-messages';
 

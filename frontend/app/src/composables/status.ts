@@ -1,5 +1,5 @@
 import { useStatusStore } from '@/store/status';
-import { Section, Status } from '@/types/status';
+import { type Section, Status } from '@/types/status';
 
 export const useStatusUpdater = (section: Section, ignore = false) => {
   const { setStatus, getStatus, isLoading } = useStatusStore();
@@ -9,7 +9,7 @@ export const useStatusUpdater = (section: Section, ignore = false) => {
     }
     setStatus({
       section: otherSection ?? section,
-      status: status
+      status
     });
   };
 

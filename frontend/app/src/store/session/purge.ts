@@ -1,15 +1,15 @@
 import { EXTERNAL_EXCHANGES } from '@/data/defaults';
-import { SupportedExternalExchanges } from '@/services/balances/types';
+import { type SupportedExternalExchanges } from '@/services/balances/types';
 import {
   ALL_CENTRALIZED_EXCHANGES,
   ALL_DECENTRALIZED_EXCHANGES,
   ALL_MODULES
 } from '@/services/session/consts';
-import { Purgeable } from '@/services/session/types';
+import { type Purgeable } from '@/services/session/types';
 import { useDefiStore } from '@/store/defi';
 import { usePurgeStore } from '@/store/history/purge';
 import { useStakingStore } from '@/store/staking';
-import { SUPPORTED_EXCHANGES, SupportedExchange } from '@/types/exchanges';
+import { SUPPORTED_EXCHANGES, type SupportedExchange } from '@/types/exchanges';
 import { Module } from '@/types/modules';
 
 export const useSessionPurgeStore = defineStore('session/purge', () => {

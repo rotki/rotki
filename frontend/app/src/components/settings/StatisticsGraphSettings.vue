@@ -57,11 +57,11 @@ const emit = defineEmits(['updated']);
 const multiplier = ref('0');
 const visible = ref(false);
 const numericMultiplier = computed(() => {
-  const multi = parseInt(get(multiplier));
+  const multi = Number.parseInt(get(multiplier));
   return isNaN(multi) ? 0 : multi;
 });
 const invalid = computed(() => {
-  const numericValue = parseInt(get(multiplier));
+  const numericValue = Number.parseInt(get(multiplier));
   return isNaN(numericValue) || numericValue < 0;
 });
 

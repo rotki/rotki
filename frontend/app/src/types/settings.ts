@@ -6,7 +6,7 @@ const EthereumRpcNode = z.object({
   endpoint: z.string(),
   owned: z.boolean(),
   weight: z.preprocess(
-    weight => parseFloat(weight as string),
+    weight => Number.parseFloat(weight as string),
     z.number().nonnegative().max(100)
   ),
   active: z.boolean(),

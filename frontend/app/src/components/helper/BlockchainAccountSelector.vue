@@ -77,9 +77,9 @@
 </template>
 
 <script setup lang="ts">
-import { GeneralAccount } from '@rotki/common/lib/account';
-import { Blockchain } from '@rotki/common/lib/blockchain';
-import { PropType } from 'vue';
+import { type GeneralAccount } from '@rotki/common/lib/account';
+import { type Blockchain } from '@rotki/common/lib/blockchain';
+import { type PropType } from 'vue';
 import AccountDisplay from '@/components/display/AccountDisplay.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
 import { useTheme } from '@/composables/common';
@@ -155,14 +155,13 @@ const filter = (item: GeneralAccount, queryText: string) => {
   const address = item.address.toLocaleLowerCase();
   const query = queryText.toLocaleLowerCase();
 
-  const labelMatches = text.indexOf(query) > -1;
-  const addressMatches = address.indexOf(query) > -1;
+  const labelMatches = text.includes(query);
+  const addressMatches = address.includes(query);
 
-  const tagMatches =
-    item.tags
-      .map(tag => tag.toLocaleLowerCase())
-      .join(' ')
-      .indexOf(query) > -1;
+  const tagMatches = item.tags
+    .map(tag => tag.toLocaleLowerCase())
+    .join(' ')
+    .includes(query);
 
   return labelMatches || tagMatches || addressMatches;
 };

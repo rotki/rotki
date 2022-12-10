@@ -63,18 +63,18 @@ import SettingCategory from '@/components/settings/SettingCategory.vue';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import {
   PrioritizedListData,
-  PrioritizedListItemData
+  type PrioritizedListItemData
 } from '@/types/prioritized-list-data';
 import {
-  CRYPTOCOMPARE_PRIO_LIST_ITEM,
   COINGECKO_PRIO_LIST_ITEM,
-  UNISWAP2_PRIO_LIST_ITEM,
-  UNISWAP3_PRIO_LIST_ITEM,
-  SADDLE_PRIO_LIST_ITEM,
+  CRYPTOCOMPARE_PRIO_LIST_ITEM,
+  DEFILAMA_PRIO_LIST_ITEM,
   MANUALCURRENT_PRIO_LIST_ITEM,
   MANUAL_PRIO_LIST_ITEM,
-  DEFILAMA_PRIO_LIST_ITEM,
-  PrioritizedListId
+  type PrioritizedListId,
+  SADDLE_PRIO_LIST_ITEM,
+  UNISWAP2_PRIO_LIST_ITEM,
+  UNISWAP3_PRIO_LIST_ITEM
 } from '@/types/prioritized-list-id';
 
 const currentOracles = ref<PrioritizedListId[]>([]);

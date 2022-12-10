@@ -34,7 +34,7 @@
 </template>
 <script setup lang="ts">
 import { LpType } from '@rotki/common/lib/defi';
-import { PropType } from 'vue';
+import { type PropType } from 'vue';
 
 const props = defineProps({
   assets: {

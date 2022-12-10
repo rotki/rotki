@@ -55,9 +55,12 @@
 
 <script setup lang="ts">
 import dayjs from 'dayjs';
-import { PropType } from 'vue';
+import { type PropType } from 'vue';
 import { Quarter } from '@/types/frontend-settings';
-import { PeriodChangedEvent, SelectionChangedEvent } from '@/types/reports';
+import {
+  type PeriodChangedEvent,
+  type SelectionChangedEvent
+} from '@/types/reports';
 
 const QUARTER_STARTS: { [quarter in Quarter]: string } = {
   [Quarter.ALL]: '01/01',

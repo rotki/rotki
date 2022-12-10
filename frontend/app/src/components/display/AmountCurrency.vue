@@ -27,8 +27,8 @@
 </template>
 
 <script setup lang="ts">
-import { PropType } from 'vue';
-import { Currency } from '@/types/currencies';
+import { type PropType } from 'vue';
+import { type Currency } from '@/types/currencies';
 
 const props = defineProps({
   currency: { required: true, type: Object as PropType<Currency> },
@@ -37,7 +37,7 @@ const props = defineProps({
     default: 'none',
     type: String as PropType<'none' | 'ticker' | 'symbol' | 'name'>,
     validator: (showCurrency: string) => {
-      return ['none', 'ticker', 'symbol', 'name'].indexOf(showCurrency) > -1;
+      return ['none', 'ticker', 'symbol', 'name'].includes(showCurrency);
     }
   },
   asset: { required: false, default: '', type: String },

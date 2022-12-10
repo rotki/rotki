@@ -1,6 +1,6 @@
 import { AssetEntry, NumericString } from '@rotki/common';
 import { z } from 'zod';
-import { CONFLICT_RESOLUTION } from '@/services/assets/consts';
+import { type CONFLICT_RESOLUTION } from '@/services/assets/consts';
 
 export interface AssetIdResponse {
   readonly identifier: string;

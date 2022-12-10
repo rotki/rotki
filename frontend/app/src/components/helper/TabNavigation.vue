@@ -44,9 +44,9 @@
 </template>
 
 <script setup lang="ts">
-import { PropType } from 'vue';
+import { type PropType } from 'vue';
 import { useTheme } from '@/composables/common';
-import { TabContent, getClass } from '@/types/tabs';
+import { type TabContent, getClass } from '@/types/tabs';
 import { checkIfDevelopment } from '@/utils/env-utils';
 
 const props = defineProps({
@@ -68,7 +68,7 @@ const visibleTabs = computed(() => {
 const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
 
 const isRouterVisible = (route: string, tab: TabContent) => {
-  return route.indexOf(tab.route) >= 0 && tab.route === get(selectedTab);
+  return route.includes(tab.route) && tab.route === get(selectedTab);
 };
 </script>
 

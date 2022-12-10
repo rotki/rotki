@@ -1,7 +1,7 @@
 export function chunkArray<T>(myArray: T[], size: number): T[][] {
   const results: T[][] = [];
 
-  while (myArray.length) {
+  while (myArray.length > 0) {
     results.push(myArray.splice(0, size));
   }
 
@@ -19,8 +19,8 @@ export const uniqueStrings = function <T = string>(
 export function nonNullProperties<T extends object>(object: T): Partial<T> {
   const partial: Partial<T> = {};
   const keys = Object.keys(object);
-  for (let i = 0; i < keys.length; i++) {
-    const key = keys[i] as keyof T;
+  for (const obKey of keys) {
+    const key = obKey as keyof T;
     if (object[key] === null) {
       continue;
     }
@@ -43,7 +43,10 @@ export const size = (bytes: number): string => {
 export function randomHex(characters = 40): string {
   let hex = '';
   for (let i = 0; i < characters - 2; i++) {
-    const randByte = parseInt((Math.random() * 16).toString(), 10).toString(16);
+    const randByte = Number.parseInt(
+      (Math.random() * 16).toString(),
+      10
+    ).toString(16);
     hex += randByte;
   }
   return `0x${hex}ff`;

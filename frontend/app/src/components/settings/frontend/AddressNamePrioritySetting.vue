@@ -31,7 +31,7 @@ import { useEthNamesStore } from '@/store/balances/ethereum-names';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import {
   PrioritizedListData,
-  PrioritizedListItemData
+  type PrioritizedListItemData
 } from '@/types/prioritized-list-data';
 import {
   BLOCKCHAIN_ACCOUNT_PRIO_LIST_ITEM,
@@ -39,25 +39,21 @@ import {
   ETHEREUM_TOKENS_PRIO_LIST_ITEM,
   GLOBAL_ADDRESSBOOK_PRIO_LIST_ITEM,
   HARDCODED_MAPPINGS_PRIO_LIST_ITEM,
-  PrioritizedListId,
-  PRIVATE_ADDRESSBOOK_PRIO_LIST_ITEM
+  PRIVATE_ADDRESSBOOK_PRIO_LIST_ITEM,
+  type PrioritizedListId
 } from '@/types/prioritized-list-id';
 
 const currentAddressNamePriorities = ref<PrioritizedListId[]>([]);
 const { addressNamePriority } = storeToRefs(useGeneralSettingsStore());
 const { fetchEthNames } = useEthNamesStore();
 
-const finishEditing = () => {
+const finishEditing = async () => {
   resetCurrentAddressNamePriorities();
-  refetchEthNames();
+  await fetchEthNames();
 };
 
 const resetCurrentAddressNamePriorities = () => {
   set(currentAddressNamePriorities, get(addressNamePriority));
-};
-
-const refetchEthNames = () => {
-  void fetchEthNames();
 };
 
 const availableCurrentAddressNamePriorities =

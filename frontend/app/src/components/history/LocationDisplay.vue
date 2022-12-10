@@ -19,14 +19,14 @@
 </template>
 
 <script setup lang="ts">
-import { ComputedRef, PropType } from 'vue';
+import { type ComputedRef, type PropType } from 'vue';
 import ListItem from '@/components/helper/ListItem.vue';
 import NavigatorLink from '@/components/helper/NavigatorLink.vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
 import { useLocationInfo } from '@/composables/balances';
 import { Routes } from '@/router/routes';
-import { TradeLocation } from '@/types/history/trade-location';
-import { TradeLocationData } from '@/types/trades';
+import { type TradeLocation } from '@/types/history/trade-location';
+import { type TradeLocationData } from '@/types/trades';
 
 const props = defineProps({
   identifier: { required: true, type: String as PropType<TradeLocation> },

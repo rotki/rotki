@@ -9,7 +9,7 @@ import { useManualBalancesApi } from '@/services/balances/manual';
 import { BalanceType } from '@/services/balances/types';
 import { useManualBalancesStore } from '@/store/balances/manual';
 import { useTasks } from '@/store/tasks';
-import { AssetPrices } from '@/types/prices';
+import { type AssetPrices } from '@/types/prices';
 import { bigNumberify } from '@/utils/bignumbers';
 
 vi.mock('@/store/balances/prices', () => ({

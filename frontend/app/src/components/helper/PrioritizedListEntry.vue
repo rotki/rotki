@@ -21,12 +21,12 @@
 </template>
 
 <script setup lang="ts">
-import { PropType } from 'vue';
+import { type PropType } from 'vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import { AddressNamePriority } from '@/types/address-name-priorities';
 import { PriceOracle } from '@/types/price-oracle';
-import { PrioritizedListItemData } from '@/types/prioritized-list-data';
-import { PrioritizedListId } from '@/types/prioritized-list-id';
+import { type PrioritizedListItemData } from '@/types/prioritized-list-data';
+import { type PrioritizedListId } from '@/types/prioritized-list-id';
 import { toSentenceCase } from '@/utils/text';
 
 const props = defineProps({
@@ -39,7 +39,7 @@ const props = defineProps({
 const { data } = toRefs(props);
 
 const size = computed<string>(() => {
-  let defaultSize = '48px';
+  const defaultSize = '48px';
   if (get(data).extraDisplaySize) {
     return get(data).extraDisplaySize ?? defaultSize;
   }

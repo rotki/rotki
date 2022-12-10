@@ -1,4 +1,4 @@
-const path = require('path');
+const path = require('node:path');
 
 /** @type 'production' | 'development'' */
 const mode = (process.env.NODE_ENV = process.env.NODE_ENV || 'development');

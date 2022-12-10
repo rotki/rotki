@@ -1,11 +1,11 @@
-import fs from 'fs';
-import * as http from 'http';
-import * as querystring from 'querystring';
-import { urlencoded, json } from 'body-parser';
-import express, { Request, Response } from 'express';
+import fs from 'node:fs';
+import * as querystring from 'node:querystring';
+import { json, urlencoded } from 'body-parser';
+import express, { type Request, type Response } from 'express';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import { statistics } from './mocked-apis/statistics';
 import { enableCors } from './setup';
+import type * as http from 'node:http';
 
 const server = express();
 
@@ -46,7 +46,7 @@ if (fs.existsSync('async-mock.json')) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function manipulateResponse(res: Response, callback: (original: any) => any) {
-  const _write = res.write;
+  const originalWrite = res.write;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   res.write = (chunk: any) => {
     const response = chunk.toString();
@@ -57,7 +57,7 @@ function manipulateResponse(res: Response, callback: (original: any) => any) {
       res.statusMessage = 'OK';
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
-      _write.call(res, payload);
+      originalWrite.call(res, payload);
       return true;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (e: any) {
@@ -76,7 +76,7 @@ const mockAsync: {
 } = {
   pending: [],
   completed: [],
-  taskResponses: {},
+  taskResponses: {}
 };
 
 const counter: { [url: string]: { [method: string]: number } } = {};
@@ -102,11 +102,11 @@ setInterval(() => {
 
 const createResult = (result: unknown): Record<string, unknown> => ({
   result,
-  message: '',
+  message: ''
 });
 
 function handleTasksStatus(res: Response) {
-  manipulateResponse(res, (data) => {
+  manipulateResponse(res, data => {
     const result = data.result;
     if (result && result.pending) {
       result.pending.push(...mockAsync.pending);
@@ -127,16 +127,16 @@ function handleTasksStatus(res: Response) {
 function handleTaskRequest(url: string, tasks: string, res: Response) {
   const task = url.replace(tasks, '');
   try {
-    const taskId = parseInt(task);
-    if (isNaN(taskId)) {
+    const taskId = Number.parseInt(task);
+    if (Number.isNaN(taskId)) {
       return;
     }
     if (mockAsync.completed.includes(taskId)) {
       const outcome = mockAsync.taskResponses[taskId];
       manipulateResponse(res, () =>
         createResult({
-          outcome: outcome,
-          status: 'completed',
+          outcome,
+          status: 'completed'
         })
       );
       delete mockAsync.taskResponses[taskId];
@@ -146,7 +146,7 @@ function handleTaskRequest(url: string, tasks: string, res: Response) {
       manipulateResponse(res, () =>
         createResult({
           outcome: null,
-          status: 'pending',
+          status: 'pending'
         })
       );
     }
@@ -158,12 +158,10 @@ function handleTaskRequest(url: string, tasks: string, res: Response) {
 function increaseCounter(baseUrl: string, method: string) {
   if (!counter[baseUrl]) {
     counter[baseUrl] = { [method]: 1 };
+  } else if (!counter[baseUrl][method]) {
+    counter[baseUrl][method] = 1;
   } else {
-    if (!counter[baseUrl][method]) {
-      counter[baseUrl][method] = 1;
-    } else {
-      counter[baseUrl][method] += 1;
-    }
+    counter[baseUrl][method] += 1;
   }
 }
 
@@ -174,7 +172,7 @@ function getCounter(baseUrl: string, method: string): number {
 function handleAsyncQuery(url: string, req: Request, res: Response) {
   const mockedUrls = Object.keys(mockedAsyncCalls);
   const baseUrl = url.split('?')[0];
-  const index = mockedUrls.findIndex((value) => value.indexOf(baseUrl) >= 0);
+  const index = mockedUrls.findIndex(value => value.includes(baseUrl));
 
   if (index < 0) {
     return;
@@ -202,7 +200,7 @@ function handleAsyncQuery(url: string, req: Request, res: Response) {
   } else {
     pendingResponse = {
       result: null,
-      message: 'There is something wrong with this mock',
+      message: 'There is something wrong with this mock'
     };
   }
 
@@ -211,27 +209,27 @@ function handleAsyncQuery(url: string, req: Request, res: Response) {
   mockAsync.taskResponses[taskId] = pendingResponse;
   manipulateResponse(res, () => ({
     result: {
-      task_id: taskId,
+      task_id: taskId
     },
-    message: '',
+    message: ''
   }));
 }
 
 function isAsyncQuery(req: Request) {
   return (
     req.method !== 'GET' &&
-    req.rawHeaders.findIndex(
-      (h) => h.toLocaleLowerCase().indexOf('application/json') >= 0
+    req.rawHeaders.findIndex(h =>
+      h.toLocaleLowerCase().includes('application/json')
     ) &&
     req.body &&
-    req.body['async_query'] === true
+    req.body.async_query === true
   );
 }
 
 function isPreflight(req: Request) {
   const mockedUrls = Object.keys(mockedAsyncCalls);
   const baseUrl = req.url.split('?')[0];
-  const index = mockedUrls.findIndex((value) => value.indexOf(baseUrl) >= 0);
+  const index = mockedUrls.findIndex(value => value.includes(baseUrl));
   return req.method === 'OPTIONS' && index >= 0;
 }
 
@@ -240,7 +238,7 @@ function onProxyReq(
   req: Request,
   _res: Response
 ) {
-  if (!req.body || !Object.keys(req.body).length) {
+  if (!req.body || Object.keys(req.body).length === 0) {
     return;
   }
 
@@ -261,7 +259,7 @@ function onProxyReq(
 }
 
 function mockPreflight(res: Response) {
-  const _write = res.write;
+  const originalWrite = res.write;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   res.write = (chunk: any) => {
     try {
@@ -279,10 +277,10 @@ function mockPreflight(res: Response) {
       res.statusMessage = 'OK';
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
-      _write.call(res, chunk);
+      originalWrite.call(res, chunk);
       return true;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (e: any) {
+    } catch {
       return false;
     }
   };
@@ -345,7 +343,7 @@ server.use(
     target: backend,
     onProxyRes,
     onProxyReq,
-    ws: true,
+    ws: true
   })
 );
 

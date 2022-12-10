@@ -1,6 +1,6 @@
-import { ProfitLossModel } from '@rotki/common/lib/defi';
+import { type ProfitLossModel } from '@rotki/common/lib/defi';
 import { AaveBalances, AaveHistory } from '@rotki/common/lib/defi/aave';
-import { Ref } from 'vue';
+import { type Ref } from 'vue';
 import { usePremium } from '@/composables/premium';
 import { useModules } from '@/composables/session/modules';
 import { useStatusUpdater } from '@/composables/status';
@@ -11,7 +11,7 @@ import { useTasks } from '@/store/tasks';
 import { isLoading } from '@/store/utils';
 import { Module } from '@/types/modules';
 import { Section, Status } from '@/types/status';
-import { TaskMeta } from '@/types/task';
+import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { balanceSum } from '@/utils/calculation';
 import { logger } from '@/utils/logging';

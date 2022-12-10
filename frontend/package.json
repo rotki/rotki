@@ -1,46 +1,45 @@
 {
   "name": "rotki-workspace",
   "version": "1.0.0",
+  "packageManager": "pnpm@7.18.0",
   "description": "A portfolio tracking, asset analytics and tax reporting application specializing in Cryptoassets that protects your privacy",
-  "author": "Rotki Solutions GmbH <info@rotki.com>",
-  "engines": {
-    "node": ">=16 <17",
-    "npm": ">=8 <9"
-  },
-  "homepage": "https://rotki.com",
   "license": "AGPL-3.0",
+  "homepage": "https://rotki.com",
   "repository": "https://github.com/rotki/rotki",
-  "workspaces": [
-    "app",
-    "common"
-  ],
+  "author": "Rotki Solutions GmbH <info@rotki.com>",
   "scripts": {
-    "preinstall": "node check-versions.js",
-    "electron:build": "npm run build -w common && npm run electron:build -w app",
-    "electron:package": "npm run electron:package -w app",
-    "build": "npm run build -w common && npm run build -w app",
-    "docker:build": "npm run build -w common && npm run build -w app -- --mode docker",
-    "lint": "npm run lint -w common && npm run lint:check -w app && npm run lint:style -w app",
-    "lint:fix": "npm run lint:fix -w common && npm run lint -w app",
-    "check": "npm run lint && npm run build && npm run test:unit -w app",
-    "check:all": "npm run lint && npm run build && npm run test:unit --w app && npm run test:integration-ci -w app",
+    "preinstall": "npx only-allow pnpm && node scripts/check-versions.js",
+    "electron:build": "pnpm run --filter @rotki/common && pnpm run --filter rotki electron:build",
+    "electron:package": "pnpm run --filter rotki electron:package",
+    "build": "pnpm run --filter @rotki/common build && pnpm run --filter rotki build",
+    "docker:build": "pnpm run --filter @rotki/common build && pnpm run --filter rotki build --mode docker",
+    "lint": "eslint --cache . && pnpm run -r lint:style",
+    "lint:fix": "eslint --cache . --fix",
+    "check": "pnpm run lint && pnpm run build && pnpm run --filter rotki test:unit",
+    "check:all": "pnpm run lint && pnpm run build && pnpm run --filter @rotki/common test:unit --w app && pnpm run --filter rotki test:integration-ci",
     "check:return-type": "eslint --no-eslintrc --env \"node\" --parser \"@typescript-eslint/parser\" --plugin \"@typescript-eslint\",\"import\" --rule \"{@typescript-eslint/explicit-function-return-type:warn}\" '{app,common}/src/**/*.ts'",
     "clean:modules": "rimraf node_modules app/node_modules common/node_modules app/dist app/electron-build common/lib",
-    "dev": "node start-dev.js",
-    "dev:web": "node start-dev.js --web"
+    "dev": "node scripts/start-dev.js",
+    "dev:web": "node scripts/start-dev.js --web"
   },
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "5.45.0",
-    "@typescript-eslint/parser": "5.45.0",
+    "@rotki/eslint-config": "workspace:*",
     "argparse": "2.0.1",
     "dotenv": "14.3.2",
-    "eslint": "8.28.0",
-    "eslint-config-prettier": "8.5.0",
-    "eslint-import-resolver-alias": "1.1.2",
-    "eslint-plugin-import": "2.26.0",
+    "eslint": "8.29.0",
     "jsdom": "20.0.3",
     "rimraf": "3.0.2",
     "semver": "7.3.8",
-    "typescript": "4.9.3"
-  }
+    "typescript": "4.9.4"
+  },
+  "engines": {
+    "node": ">=16 <17",
+    "pnpm": ">=7 <8"
+  },
+  "workspaces": [
+    "app",
+    "common",
+    "dev-proxy",
+    "eslint/*"
+  ]
 }

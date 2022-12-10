@@ -18,7 +18,7 @@ export const toSentenceCase = (string: string): string => {
  * toCapitalCase('this is a sentence'); // This Is A Sentence
  */
 export const toCapitalCase = (string: string): string => {
-  return string.replace(/\p{L}+('\p{L}+)?/gu, function (txt) {
+  return string.replace(/\p{L}+('\p{L}+)?/gu, txt => {
     return txt.charAt(0).toUpperCase() + txt.slice(1);
   });
 };
@@ -94,7 +94,7 @@ export const pluralize = (word: string, amount?: number): string => {
     'wood'
   ];
   // save some time in the case that singular and plural are the same
-  if (uncountable.indexOf(word.toLowerCase()) >= 0) {
+  if (uncountable.includes(word.toLowerCase())) {
     return word;
   }
   // check for irregular forms
@@ -127,15 +127,15 @@ export const pluralizeLastWord = (sentence: string): string => {
 
 export const sanitizeAddress = (address?: string): string => {
   if (!address) return '';
-  return address.replace(/[^A-Z0-9]+/gi, '');
+  return address.replace(/[^\da-z]+/gi, '');
 };
 
 export const isValidEthAddress = (address?: string): boolean => {
   if (!address) return false;
-  return !!address.match(/^0x[a-fA-F0-9]{40}$/);
+  return !!address.match(/^0x[\dA-Fa-f]{40}$/);
 };
 
 export const isValidTxHash = (address?: string): boolean => {
   if (!address) return false;
-  return !!address.match(/^0x[a-fA-F0-9]{64}$/);
+  return !!address.match(/^0x[\dA-Fa-f]{64}$/);
 };

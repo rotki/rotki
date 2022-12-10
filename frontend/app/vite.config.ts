@@ -1,6 +1,5 @@
-/// <reference types="vitest" />
-import { builtinModules } from 'module';
-import { join, resolve } from 'path';
+import { builtinModules } from 'node:module';
+import { join, resolve } from 'node:path';
 import vue from '@vitejs/plugin-vue2';
 import AutoImport from 'unplugin-auto-import/vite';
 import { VuetifyResolver } from 'unplugin-vue-components/resolvers';

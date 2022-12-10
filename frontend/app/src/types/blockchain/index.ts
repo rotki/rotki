@@ -1,9 +1,12 @@
-import { BigNumber } from '@rotki/common';
-import { Blockchain } from '@rotki/common/lib/blockchain';
+import { type BigNumber } from '@rotki/common';
+import { type Blockchain } from '@rotki/common/lib/blockchain';
 import { Routes } from '@/router/routes';
-import { ChainSections } from '@/store/balances/types';
-import { ActionDataEntry } from '@/store/types';
-import { L2_LOOPRING, SupportedSubBlockchainProtocol } from '@/types/protocols';
+import { type ChainSections } from '@/store/balances/types';
+import { type ActionDataEntry } from '@/store/types';
+import {
+  L2_LOOPRING,
+  type SupportedSubBlockchainProtocol
+} from '@/types/protocols';
 import { Section } from '@/types/status';
 
 export const chainSection: ChainSections = {

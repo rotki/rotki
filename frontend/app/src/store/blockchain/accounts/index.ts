@@ -1,19 +1,26 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { useBlockchainAccountsApi } from '@/services/accounts';
-import { BtcAccountData, GeneralAccountData } from '@/services/types-api';
 import {
-  AccountPayload,
-  BasicBlockchainAccountPayload,
-  BlockchainAccountPayload
+  type BtcAccountData,
+  type GeneralAccountData
+} from '@/services/types-api';
+import {
+  type AccountPayload,
+  type BasicBlockchainAccountPayload,
+  type BlockchainAccountPayload
 } from '@/store/balances/types';
 import { useBtcAccountsStore } from '@/store/blockchain/accounts/btc';
 import { useChainsAccountsStore } from '@/store/blockchain/accounts/chains';
 import { useEthAccountsStore } from '@/store/blockchain/accounts/eth';
 import { useNotifications } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
-import { BlockchainBalances } from '@/types/blockchain/balances';
-import { BtcChains, isBtcChain, isRestChain } from '@/types/blockchain/chains';
-import { BlockchainMetadata } from '@/types/task';
+import { type BlockchainBalances } from '@/types/blockchain/balances';
+import {
+  type BtcChains,
+  isBtcChain,
+  isRestChain
+} from '@/types/blockchain/chains';
+import { type BlockchainMetadata } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { assert } from '@/utils/assertions';
 import { logger } from '@/utils/logging';

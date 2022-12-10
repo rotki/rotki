@@ -20,6 +20,8 @@
 </template>
 
 <script setup lang="ts">
+import { logger } from '@/utils/logging';
+
 const updateSW = ref<((refresh: boolean) => Promise<void>) | undefined>(
   undefined
 );
@@ -40,23 +42,23 @@ onMounted(async () => {
           setInterval(async () => {
             await registration?.update();
           }, 1000 * 60);
-          console.log('Service worker has been registered.');
+          logger.info('Service worker has been registered.');
         },
         onOfflineReady: () => {
           set(offlineReady, true);
-          console.log('Offline ready');
+          logger.info('Offline ready');
         },
         onNeedRefresh: () => {
           set(needRefresh, true);
-          console.log('New content is available, please refresh.');
+          logger.info('New content is available, please refresh.');
         },
         onRegisterError: (error: any) => {
-          console.error('Error during service worker registration:', error);
+          logger.error('Error during service worker registration:', error);
         }
       })
     );
   } catch {
-    console.log('PWA disabled.');
+    logger.info('PWA disabled.');
   }
 });
 

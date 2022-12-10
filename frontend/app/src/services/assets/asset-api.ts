@@ -1,29 +1,29 @@
-import { ActionResult, SupportedAsset } from '@rotki/common/lib/data';
+import { type ActionResult, type SupportedAsset } from '@rotki/common/lib/data';
 import { OwnedAssets } from '@rotki/common/lib/statistics';
-import { AxiosInstance } from 'axios';
+import { type AxiosInstance } from 'axios';
 import {
-  AssetIdResponse,
-  ConflictResolution,
-  HistoricalPrice,
-  HistoricalPriceDeletePayload,
-  HistoricalPriceFormPayload,
-  ManualPricePayload,
+  type AssetIdResponse,
+  AssetPriceArray,
+  type ConflictResolution,
+  type HistoricalPrice,
+  type HistoricalPriceDeletePayload,
+  type HistoricalPriceFormPayload,
   HistoricalPrices,
-  ManualPriceFormPayload,
-  ManualPrice,
-  ManualPrices,
-  AssetPriceArray
+  type ManualPrice,
+  type ManualPriceFormPayload,
+  type ManualPricePayload,
+  ManualPrices
 } from '@/services/assets/types';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
-import { PendingTask } from '@/services/types-api';
+import { type PendingTask } from '@/services/types-api';
 import {
   handleResponse,
   validFileOperationStatus,
   validStatus,
   validWithoutSessionStatus
 } from '@/services/utils';
-import { ActionStatus } from '@/store/types';
-import { CustomAsset } from '@/types/assets';
+import { type ActionStatus } from '@/store/types';
+import { type CustomAsset } from '@/types/assets';
 import { assert } from '@/utils/assertions';
 
 export class AssetApi {
@@ -325,9 +325,9 @@ export class AssetApi {
           link.id = 'custom-assets-link';
           link.href = url;
           link.setAttribute('download', 'assets.zip');
-          document.body.appendChild(link);
+          document.body.append(link);
           link.click();
-          document.body.removeChild(link);
+          link.remove();
           return { success: true };
         }
         const body = await (response.data as Blob).text();

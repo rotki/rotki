@@ -38,17 +38,17 @@
 </template>
 
 <script setup lang="ts">
-import { BigNumber } from '@rotki/common';
+import { type BigNumber } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { ComputedRef, PropType } from 'vue';
+import { type ComputedRef, type PropType } from 'vue';
 import BlockchainBalanceCardDetails from '@/components/dashboard/BlockchainBalanceCardDetails.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import Fragment from '@/components/helper/Fragment';
 import { Routes } from '@/router/routes';
-import { ActionDataEntry } from '@/store/types';
+import { type ActionDataEntry } from '@/store/types';
 import {
-  BlockchainTotal,
+  type BlockchainTotal,
   SupportedSubBlockchainProtocolData
 } from '@/types/blockchain';
 import { toSentenceCase } from '@/utils/text';

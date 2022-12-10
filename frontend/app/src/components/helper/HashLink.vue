@@ -73,14 +73,18 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import makeBlockie from 'ethereum-blockies-base64';
-import { PropType } from 'vue';
+import { type PropType } from 'vue';
 import { useTheme } from '@/composables/common';
 import { useLinks } from '@/composables/links';
 import { truncateAddress } from '@/filters';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useSessionSettingsStore } from '@/store/settings/session';
-import { Chains, ExplorerUrls, explorerUrls } from '@/types/asset-urls';
+import {
+  type Chains,
+  type ExplorerUrls,
+  explorerUrls
+} from '@/types/asset-urls';
 import { randomHex } from '@/utils/data';
 
 const props = defineProps({

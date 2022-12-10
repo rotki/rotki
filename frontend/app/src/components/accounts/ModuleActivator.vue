@@ -43,16 +43,16 @@
 </template>
 
 <script setup lang="ts">
-import { Ref } from 'vue';
+import { type Ref } from 'vue';
 import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { Module, SUPPORTED_MODULES } from '@/types/modules';
+import { type Module, SUPPORTED_MODULES } from '@/types/modules';
 
 const emit = defineEmits(['update:selection']);
 
 const enabledModules: Ref<Module[]> = ref([]);
 const { activeModules } = storeToRefs(useGeneralSettingsStore());
-let queriedAddressesStore = useQueriedAddressesStore();
+const queriedAddressesStore = useQueriedAddressesStore();
 const { queriedAddresses } = storeToRefs(queriedAddressesStore);
 
 const updateSelection = (modules: string[]) => {

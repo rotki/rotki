@@ -1,7 +1,7 @@
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { Collection } from '@/types/collection';
-import { PaginationRequestPayload } from '@/types/common';
-import { EntryMeta, EntryWithMeta } from '@/types/history/meta';
+import { type Collection } from '@/types/collection';
+import { type PaginationRequestPayload } from '@/types/common';
+import { type EntryMeta, type EntryWithMeta } from '@/types/history/meta';
 import { uniqueStrings } from '@/utils/data';
 import { isValidEthAddress } from '@/utils/text';
 

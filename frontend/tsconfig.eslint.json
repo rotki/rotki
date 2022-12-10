@@ -3,5 +3,6 @@
   "compilerOptions": {
     "noEmit": true
   },
-  "include": ["**/*.ts", ".eslintrc.js"]
+  "include": ["**/*.ts"],
+  "exclude": ["node_modules/**", "**/.*"]
 }

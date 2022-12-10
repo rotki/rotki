@@ -27,8 +27,8 @@
 
 <script setup lang="ts">
 import { BigNumber } from '@rotki/common';
-import { PropType } from 'vue';
-import { TradeLocation } from '@/types/history/trade-location';
+import { type PropType } from 'vue';
+import { type TradeLocation } from '@/types/history/trade-location';
 import { useTradeLocations } from '@/types/trades';
 
 defineProps({

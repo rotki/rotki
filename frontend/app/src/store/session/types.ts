@@ -1,4 +1,4 @@
-import { BigNumber, NumericString } from '@rotki/common';
+import { type BigNumber, NumericString } from '@rotki/common';
 import { z } from 'zod';
 
 export enum PrivacyMode {

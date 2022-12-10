@@ -34,9 +34,9 @@
 </template>
 
 <script setup lang="ts">
-import { PropType, useListeners } from 'vue';
+import { type PropType, useListeners } from 'vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
-import { TradeLocationData, useTradeLocations } from '@/types/trades';
+import { type TradeLocationData, useTradeLocations } from '@/types/trades';
 
 const props = defineProps({
   value: { required: false, type: String, default: '' },

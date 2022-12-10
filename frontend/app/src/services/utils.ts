@@ -1,7 +1,7 @@
-import { ActionResult } from '@rotki/common/lib/data';
-import { AxiosResponse } from 'axios';
+import { type ActionResult } from '@rotki/common/lib/data';
+import { type AxiosResponse } from 'axios';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
-import { ApiImplementation, PendingTask } from '@/services/types-api';
+import { type ApiImplementation, type PendingTask } from '@/services/types-api';
 
 type Parser<T> = (response: AxiosResponse<ActionResult<T>>) => ActionResult<T>;
 
@@ -53,7 +53,7 @@ export function paramsSerializer(params: Record<string, any>): string {
  * @return true if the status code is considered valid.
  */
 const isValid = (validStatuses: number[], status: number): boolean =>
-  validStatuses.indexOf(status) >= 0;
+  validStatuses.includes(status);
 
 /**
  * Used to validate a status. This validation considers valid responses the following

@@ -30,7 +30,7 @@ const GeneralSettings = z.object({
   balanceSaveFrequency: z.preprocess(
     balanceSaveFrequency =>
       Math.min(
-        parseInt(balanceSaveFrequency as string),
+        Number.parseInt(balanceSaveFrequency as string),
         Constraints.MAX_HOURS_DELAY
       ),
     z.number().int().max(Constraints.MAX_HOURS_DELAY)

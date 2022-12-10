@@ -100,16 +100,17 @@
   </fragment>
 </template>
 <script setup lang="ts">
-import { Balance, BigNumber } from '@rotki/common';
-import { PropType } from 'vue';
+import { type Balance, type BigNumber } from '@rotki/common';
+import { type ComputedRef, type PropType } from 'vue';
 import CopyButton from '@/components/helper/CopyButton.vue';
 import Fragment from '@/components/helper/Fragment';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
 import { useTheme } from '@/composables/common';
 import { bigNumberSum, truncateAddress, truncationPoints } from '@/filters';
-import { XpubAccountWithBalance } from '@/store/balances/types';
+import { type XpubAccountWithBalance } from '@/store/balances/types';
 import { balanceUsdValueSum } from '@/store/defi/utils';
 import { useSessionSettingsStore } from '@/store/settings/session';
+import { assert } from '@/utils/assertions';
 
 const props = defineProps({
   group: { required: true, type: String },
@@ -132,8 +133,10 @@ const mobileClass = computed<string | null>(() => {
   return get(xsOnly) ? 'v-data-table__mobile-row' : null;
 });
 
-const xpub = computed<XpubAccountWithBalance>(() => {
-  return get(items).filter(item => !item.address)[0];
+const xpub: ComputedRef<XpubAccountWithBalance> = computed(() => {
+  const account = get(items).find(item => !item.address);
+  assert(account);
+  return account;
 });
 
 const label = computed<string>(() => {

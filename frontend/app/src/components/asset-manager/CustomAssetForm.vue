@@ -41,7 +41,10 @@
     </v-row>
 
     <div class="my-4">
-      <asset-icon-form ref="assetIconForm" :identifier="formData.identifier" />
+      <asset-icon-form
+        :ref="assetIconFormRef"
+        :identifier="formData.identifier"
+      />
     </div>
   </v-form>
 </template>
@@ -49,11 +52,11 @@
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import { omit } from 'lodash';
-import { PropType, Ref } from 'vue';
-import AssetIconForm from '@/components/asset-manager/AssetIconForm.vue';
+import { type PropType, type Ref } from 'vue';
 import { api } from '@/services/rotkehlchen-api';
 import { useMessageStore } from '@/store/message';
-import { CustomAsset } from '@/types/assets';
+import { type CustomAsset } from '@/types/assets';
+import AssetIconForm from '@/components/asset-manager/AssetIconForm.vue';
 
 const props = defineProps({
   edit: {
@@ -96,7 +99,8 @@ const input = (asset: Partial<CustomAsset>) => {
   set(formData, { ...get(formData), ...asset });
 };
 
-const assetIconForm: Ref<InstanceType<typeof AssetIconForm> | null> = ref(null);
+const assetIconFormRef: Ref<InstanceType<typeof AssetIconForm> | null> =
+  ref(null);
 
 const { t, tc } = useI18n();
 
@@ -136,7 +140,7 @@ watch(v$, ({ $invalid }) => {
 });
 
 const saveIcon = (identifier: string) => {
-  get(assetIconForm)?.saveIcon(identifier);
+  get(assetIconFormRef)?.saveIcon(identifier);
 };
 
 const { setMessage } = useMessageStore();

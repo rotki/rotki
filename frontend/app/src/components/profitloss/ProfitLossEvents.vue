@@ -124,8 +124,8 @@
 </template>
 
 <script setup lang="ts">
-import { PropType } from 'vue';
-import { DataTableHeader } from 'vuetify';
+import { type PropType } from 'vue';
+import { type DataTableHeader } from 'vuetify';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
@@ -135,10 +135,10 @@ import CostBasisTable from '@/components/profitloss/CostBasisTable.vue';
 import ProfitLossEventType from '@/components/profitloss/ProfitLossEventType.vue';
 import { usePremium } from '@/composables/premium';
 import {
-  ProfitLossEvent,
-  ProfitLossEvents,
+  type ProfitLossEvent,
   ProfitLossEventTypeEnum,
-  SelectedReport
+  type ProfitLossEvents,
+  type SelectedReport
 } from '@/types/reports';
 
 interface PaginationOptions {
@@ -275,7 +275,7 @@ const updatePagination = async (options: PaginationOptions | null) => {
   }
   const { itemsPerPage, page } = options;
 
-  const reportId = parseInt(get(route).params.id as string);
+  const reportId = Number.parseInt(get(route).params.id as string);
 
   emit('update:page', {
     reportId,

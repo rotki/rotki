@@ -1,5 +1,5 @@
 import { BigNumber } from '@rotki/common';
-import { PiniaPluginContext } from 'pinia';
+import { type PiniaPluginContext } from 'pinia';
 import { bigNumberify } from '@/utils/bignumbers';
 import { logger } from '@/utils/logging';
 
@@ -20,6 +20,7 @@ function convert(data: any): any {
   Object.keys(data).map(key => {
     const datum = data[key];
     converted[key] = convert(datum);
+    return key;
   });
 
   return converted;

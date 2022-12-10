@@ -1,5 +1,5 @@
-import { Message } from '@rotki/common/lib/messages';
-import { ComputedRef, Ref } from 'vue';
+import { type Message } from '@rotki/common/lib/messages';
+import { type ComputedRef, type Ref } from 'vue';
 import { api } from '@/services/rotkehlchen-api';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
 import { filterAddressesFromWords } from '@/store/history/utils';
@@ -9,18 +9,18 @@ import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useTasks } from '@/store/tasks';
 import { CURRENCY_USD } from '@/types/currencies';
 import {
-  ProfitLossEvents,
   ProfitLossEventTypeEnum,
-  ProfitLossReportDebugPayload,
-  ProfitLossReportPeriod,
-  ReportActionableItem,
-  ReportError,
-  Reports,
-  SelectedReport
+  type ProfitLossEvents,
+  type ProfitLossReportDebugPayload,
+  type ProfitLossReportPeriod,
+  type ReportActionableItem,
+  type ReportError,
+  type Reports,
+  type SelectedReport
 } from '@/types/reports';
-import { TaskMeta } from '@/types/task';
+import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { AccountingSettings } from '@/types/user';
+import { type AccountingSettings } from '@/types/user';
 import { logger } from '@/utils/logging';
 
 const notify = (info: {

@@ -1,5 +1,5 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { MaybeRef } from '@vueuse/core';
+import { type MaybeRef } from '@vueuse/core';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { useBlockchainBalancesStore } from '@/store/blockchain/balances';
 import { useEthBalancesStore } from '@/store/blockchain/balances/eth';

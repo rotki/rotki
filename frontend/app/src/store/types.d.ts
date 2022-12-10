@@ -1,4 +1,4 @@
-import { Section, Status } from '@/types/status';
+import { type Section, type Status } from '@/types/status';
 
 interface ActionFailure {
   readonly message: string;

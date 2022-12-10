@@ -92,25 +92,25 @@
 
 <script setup lang="ts">
 import {
-  getTimeframeByRange,
-  Timeframe,
   TimeFramePeriod,
-  Timeframes
+  type Timeframe,
+  type Timeframes,
+  getTimeframeByRange
 } from '@rotki/common/lib/settings/graphs';
-import { NetValue } from '@rotki/common/lib/statistics';
+import { type NetValue } from '@rotki/common/lib/statistics';
 import {
   Chart,
-  ChartConfiguration,
-  ChartOptions,
-  TooltipOptions
+  type ChartConfiguration,
+  type ChartOptions,
+  type TooltipOptions
 } from 'chart.js';
 import dayjs from 'dayjs';
-import { PropType } from 'vue';
+import { type PropType } from 'vue';
 import { useTheme } from '@/composables/common';
 import { useGraph, useTooltip } from '@/composables/graphs';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { ValueOverTime } from '@/types/graphs';
+import { type ValueOverTime } from '@/types/graphs';
 import { assert } from '@/utils/assertions';
 import { bigNumberify } from '@/utils/bignumbers';
 

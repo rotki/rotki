@@ -63,7 +63,7 @@
 
 <script setup lang="ts">
 import dayjs from 'dayjs';
-import { PropType, Ref } from 'vue';
+import { type PropType, type Ref } from 'vue';
 import { timezones } from '@/data/timezones';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { DateFormat } from '@/types/date-format';
@@ -81,7 +81,7 @@ const isValid = (
   format: DateFormat,
   seconds = false
 ): boolean => {
-  let dateFormat = getDateInputISOFormat(format);
+  const dateFormat = getDateInputISOFormat(format);
 
   if (seconds) {
     return (

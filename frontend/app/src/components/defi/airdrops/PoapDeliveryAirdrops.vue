@@ -34,12 +34,12 @@
 </template>
 
 <script setup lang="ts">
-import { PropType } from 'vue';
-import { DataTableHeader } from 'vuetify';
+import { type PropType } from 'vue';
+import { type DataTableHeader } from 'vuetify';
 import DataTable from '@/components/helper/DataTable.vue';
 import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
 import { useInterop } from '@/electron-interop';
-import { PoapDeliveryDetails } from '@/types/airdrops';
+import { type PoapDeliveryDetails } from '@/types/airdrops';
 import { default as images } from './poap.json';
 
 const events = [

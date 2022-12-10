@@ -113,8 +113,8 @@
   </v-dialog>
 </template>
 <script setup lang="ts">
-import { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
-import { Ref } from 'vue';
+import { type AssetBalanceWithPrice, type BigNumber } from '@rotki/common';
+import { type Ref } from 'vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
@@ -127,8 +127,8 @@ import { useAggregatedBalancesStore } from '@/store/balances/aggregated';
 import { useBalancesBreakdownStore } from '@/store/balances/breakdown';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { Exchange } from '@/types/exchanges';
-import { TradeLocationData } from '@/types/trades';
+import { type Exchange } from '@/types/exchanges';
+import { type TradeLocationData } from '@/types/trades';
 
 interface SearchItem {
   value: number;
@@ -176,7 +176,7 @@ const getItemText = (item: SearchItemWithoutValue): string => {
   const text = item.texts ? item.texts.join(' ') : item.text;
   return (
     text
-      ?.replace(/[^\w\s]/g, ' ')
+      ?.replace(/[^\s\w]/g, ' ')
       .replace(/\s+/g, ' ')
       .trim() ?? ''
   );
@@ -422,8 +422,8 @@ const getAssets = async (
   keyword: string
 ): Promise<SearchItemWithoutValue[]> => {
   try {
-    let matches = await assetSearch(keyword, 5);
-    let assetBalances = get(balances()) as AssetBalanceWithPrice[];
+    const matches = await assetSearch(keyword, 5);
+    const assetBalances = get(balances()) as AssetBalanceWithPrice[];
     const map: Record<string, string> = {};
     for (const match of matches) {
       map[match.identifier] = match.symbol ?? match.name ?? '';
@@ -443,7 +443,7 @@ const getAssets = async (
           asset
         };
       });
-  } catch (e) {
+  } catch {
     return [];
   }
 };

@@ -1,9 +1,9 @@
-import { ActionResult } from '@rotki/common/lib/data';
+import { type ActionResult } from '@rotki/common/lib/data';
 import { api } from '@/services/rotkehlchen-api';
 import { NftResponse } from '@/store/session/types';
 import { useTasks } from '@/store/tasks';
-import { AssetInfoWithId } from '@/types/assets';
-import { TaskMeta } from '@/types/task';
+import { type AssetInfoWithId } from '@/types/assets';
+import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 
 /**

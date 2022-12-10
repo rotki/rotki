@@ -5,7 +5,7 @@ import { Guid } from '../../../common/guid';
 import { AccountBalancesPage } from '../../pages/account-balances-page';
 import {
   BlockchainBalancesPage,
-  FixtureBlockchainBalance
+  type FixtureBlockchainBalance
 } from '../../pages/account-balances-page/blockchain-balances-page';
 import { DashboardPage } from '../../pages/dashboard-page';
 import { RotkiApp } from '../../pages/rotki-app';

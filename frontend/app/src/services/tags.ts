@@ -1,4 +1,4 @@
-import { ActionResult } from '@rotki/common/lib/data';
+import { type ActionResult } from '@rotki/common/lib/data';
 import {
   axiosNoRootCamelCaseTransformer,
   axiosSnakeCaseTransformer
@@ -9,7 +9,7 @@ import {
   validStatus,
   validWithSessionStatus
 } from '@/services/utils';
-import { Tag, Tags } from '@/types/user';
+import { type Tag, Tags } from '@/types/user';
 
 export const useTagsApi = () => {
   const queryTags = async (): Promise<Tags> => {

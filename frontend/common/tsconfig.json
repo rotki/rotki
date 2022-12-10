@@ -4,12 +4,8 @@
     "declaration": true,
     "declarationDir": "./lib",
     "outDir": "./lib",
-    "target": "es2020",
+    "target": "es2020"
   },
-  "include": [
-    "src/**/*.ts"
-  ],
-  "exclude": [
-    "lib"
-  ]
+  "include": ["src/**/*.ts"],
+  "exclude": ["lib/**", "node_modules/**", "**/.*"]
 }

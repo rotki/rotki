@@ -62,10 +62,10 @@
   </div>
 </template>
 <script setup lang="ts">
-import { PropType } from 'vue';
-import { DataTableHeader } from 'vuetify';
+import { type PropType } from 'vue';
+import { type DataTableHeader } from 'vuetify';
 import RowExpander from '@/components/helper/RowExpander.vue';
-import { MissingAcquisition, SelectedReport } from '@/types/reports';
+import { type MissingAcquisition, type SelectedReport } from '@/types/reports';
 
 type GroupedItems = Record<string, MissingAcquisition[]>;
 interface MappedGroupedItems {

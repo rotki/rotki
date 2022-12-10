@@ -1,6 +1,6 @@
 import {
   TimeFramePeriod,
-  TimeFrameSetting
+  type TimeFrameSetting
 } from '@rotki/common/lib/settings/graphs';
 
 export function isPeriodAllowed(period: TimeFrameSetting): boolean {

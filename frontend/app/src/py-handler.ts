@@ -1,16 +1,16 @@
-import { ChildProcess, spawn } from 'child_process';
-import * as fs from 'fs';
-import * as os from 'os';
-import * as path from 'path';
-import stream from 'stream';
-import { app, App, BrowserWindow, ipcMain } from 'electron';
+import { type ChildProcess, spawn } from 'node:child_process';
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
+import { type App, type BrowserWindow, app, ipcMain } from 'electron';
 import psList from 'ps-list';
-import { Task, tasklist } from 'tasklist';
+import { type Task, tasklist } from 'tasklist';
 import { BackendCode } from '@/electron-main/backend-code';
-import { BackendOptions } from '@/electron-main/ipc';
+import { type BackendOptions } from '@/electron-main/ipc';
 import { DEFAULT_PORT, selectPort } from '@/electron-main/port-utils';
 import { assert } from '@/utils/assertions';
 import { wait } from '@/utils/backoff';
+import type stream from 'node:stream';
 
 const streamToString = (
   ioStream: stream.Readable,
@@ -155,19 +155,20 @@ export default class PyHandler {
       }
       const message = `${new Date(Date.now()).toISOString()}: ${msg}`;
 
+      // eslint-disable-next-line no-console
       console.log(message);
       if (!fs.existsSync(this.logDir)) {
         fs.mkdirSync(this.logDir);
       }
       fs.appendFileSync(this.electronLogFile, `${message}\n`);
-    } catch (e) {
+    } catch {
       // Not much we can do if an error happens here.
     }
   }
 
   setCorsURL(url: string) {
     if (url.endsWith('/')) {
-      this._corsURL = url.substring(0, url.length - 1);
+      this._corsURL = url.slice(0, Math.max(0, url.length - 1));
     } else {
       this._corsURL = url;
     }
@@ -185,6 +186,7 @@ export default class PyHandler {
   }
 
   logAndQuit(msg: string) {
+    // eslint-disable-next-line no-console
     console.log(msg);
     this.app.quit();
   }
@@ -211,7 +213,7 @@ export default class PyHandler {
 
     if (os.platform() === 'darwin') {
       const release = os.release().split('.');
-      if (release.length > 0 && parseInt(release[0]) < 17) {
+      if (release.length > 0 && Number.parseInt(release[0]) < 17) {
         this.setFailureNotification(
           window,
           'rotki requires at least macOS High Sierra',
@@ -222,8 +224,8 @@ export default class PyHandler {
     } else if (os.platform() === 'win32') {
       const release = os.release().split('.');
       if (release.length > 1) {
-        const major = parseInt(release[0]);
-        const minor = parseInt(release[1]);
+        const major = Number.parseInt(release[0]);
+        const minor = Number.parseInt(release[1]);
 
         // Win 7 (v6.1) or earlier
         const v = major + minor * 0.1;
@@ -248,13 +250,11 @@ export default class PyHandler {
     const [, scheme, host, oldPort] = match;
     assert(host);
 
-    if (port !== DEFAULT_PORT) {
-      if (parseInt(oldPort) !== port) {
-        this._serverUrl = `${scheme}://${host}:${port}`;
-        this.logToFile(
-          `Default port ${oldPort} was in use. Starting backend at ${port}`
-        );
-      }
+    if (port !== DEFAULT_PORT && Number.parseInt(oldPort) !== port) {
+      this._serverUrl = `${scheme}://${host}:${port}`;
+      this.logToFile(
+        `Default port ${oldPort} was in use. Starting backend at ${port}`
+      );
     }
 
     this._port = port;
@@ -281,6 +281,7 @@ export default class PyHandler {
       );
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const handler = this;
     this.onChildError = (err: Error) => {
       this.logToFile(
@@ -389,7 +390,7 @@ export default class PyHandler {
     if (this.rpcFailureNotifier) {
       clearInterval(this.rpcFailureNotifier);
     }
-    this.rpcFailureNotifier = setInterval(function () {
+    this.rpcFailureNotifier = setInterval(() => {
       window?.webContents.send('failed', backendOutput, code);
     }, 2000);
   }
@@ -495,9 +496,8 @@ export default class PyHandler {
 
     const args = ['/f', '/t'];
 
-    for (let i = 0; i < pids.length; i++) {
-      args.push('/PID');
-      args.push(pids[i].toString());
+    for (const pid of pids) {
+      args.push('/PID', pid.toString());
     }
 
     this.logToFile(

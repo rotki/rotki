@@ -113,9 +113,9 @@
   </div>
 </template>
 <script setup lang="ts">
-import { BigNumber } from '@rotki/common';
-import { PropType } from 'vue';
-import { DataTableHeader } from 'vuetify';
+import { type BigNumber } from '@rotki/common';
+import { type PropType } from 'vue';
+import { type DataTableHeader } from 'vuetify';
 import EditBalancesSnapshotForm from '@/components/dashboard/EditBalancesSnapshotForm.vue';
 import EditBalancesSnapshotLocationSelector from '@/components/dashboard/EditBalancesSnapshotLocationSelector.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
@@ -127,11 +127,11 @@ import { useBalancePricesStore } from '@/store/balances/prices';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { CURRENCY_USD } from '@/types/currencies';
 import {
-  BalanceSnapshot,
-  BalanceSnapshotPayload,
-  Snapshot
+  type BalanceSnapshot,
+  type BalanceSnapshotPayload,
+  type Snapshot
 } from '@/types/snapshots';
-import { bigNumberify, One, sortDesc, Zero } from '@/utils/bignumbers';
+import { One, Zero, bigNumberify, sortDesc } from '@/utils/bignumbers';
 import { isNft } from '@/utils/nft';
 import { toSentenceCase } from '@/utils/text';
 
@@ -413,7 +413,7 @@ const save = () => {
       ? bigNumberify(formVal.usdValue)
       : bigNumberify(formVal.usdValue).dividedBy(get(fiatExchangeRate));
 
-  let balancesSnapshot = [...val.balancesSnapshot];
+  const balancesSnapshot = [...val.balancesSnapshot];
   const payload = {
     timestamp: timestampVal,
     category: formVal.category,
@@ -456,7 +456,7 @@ const confirmDelete = () => {
 
   if (index === null) return;
 
-  let balancesSnapshot = [...val.balancesSnapshot];
+  const balancesSnapshot = [...val.balancesSnapshot];
   balancesSnapshot.splice(index, 1);
 
   updateData(balancesSnapshot, location, get(previewDeleteLocationBalance));

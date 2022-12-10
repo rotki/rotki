@@ -33,11 +33,11 @@ You can provide this configuration in a `.env` file in the `dev-proxy` directory
 
 ## Starting the proxy
 
-After entering the directory you have to run the following commands:
+From the parent directory
 
 ```bash
-npm ci
-npm run serve
+pnpm install
+pnpm run --filter @rotki/dev-proxy serve
 ```
 
 ## Setup rotki
@@ -56,7 +56,7 @@ VITE_BACKEND_URL=http://localhost:4243
 After that you can start rotki via:
 
 ```bash
-npm run electron:serve
+pnpm run dev
 ```
 
 ## Serving the premium components
@@ -98,7 +98,7 @@ directory. Follow a similar structure as the example.
         },
         "message": ""
       }
-    ],
+    ]
   }
 }
 ```

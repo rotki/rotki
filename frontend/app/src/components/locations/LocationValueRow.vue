@@ -20,7 +20,7 @@
   </v-row>
 </template>
 <script setup lang="ts">
-import { BigNumber } from '@rotki/common';
+import { type BigNumber } from '@rotki/common';
 import { useBalancesBreakdownStore } from '@/store/balances/breakdown';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Zero } from '@/utils/bignumbers';

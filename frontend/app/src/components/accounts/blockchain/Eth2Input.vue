@@ -34,11 +34,11 @@
 
 <script setup lang="ts">
 import { onlyIfTruthy } from '@rotki/common';
-import { PropType } from 'vue';
-import { Eth2Validator } from '@/types/balances';
+import { type PropType } from 'vue';
+import { type Eth2Validator } from '@/types/balances';
 
 const isValid = (percentage: string) => {
-  const perc = parseFloat(percentage);
+  const perc = Number.parseFloat(percentage);
   return isFinite(perc) && perc >= 0 && perc <= 100;
 };
 

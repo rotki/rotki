@@ -31,10 +31,10 @@
 </template>
 
 <script setup lang="ts">
-import { PropType } from 'vue';
+import { type PropType } from 'vue';
 import LoanRow from '@/components/defi/loan/LoanRow.vue';
 import StatCard from '@/components/display/StatCard.vue';
-import { CompoundLoan } from '@/types/defi/compound';
+import { type CompoundLoan } from '@/types/defi/compound';
 import { totalCollateral } from '@/utils/total-collateral';
 
 const props = defineProps({

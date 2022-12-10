@@ -73,8 +73,8 @@
 </template>
 
 <script setup lang="ts">
-import { SupportedAsset } from '@rotki/common/lib/data';
-import { Ref } from 'vue';
+import { type SupportedAsset } from '@rotki/common/lib/data';
+import { type Ref } from 'vue';
 import IgnoreScamAssetsButton from '@/components/asset-manager/IgnoreScamAssetsButton.vue';
 import ManagedAssetForm from '@/components/asset-manager/ManagedAssetForm.vue';
 import ManagedAssetTable from '@/components/asset-manager/ManagedAssetTable.vue';
@@ -88,8 +88,8 @@ import { useAssetManagementApi } from '@/services/assets/management-api';
 import { api } from '@/services/rotkehlchen-api';
 import { useMessageStore } from '@/store/message';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { Nullable } from '@/types';
-import { AssetPagination, defaultAssetPagination } from '@/types/assets';
+import { type Nullable } from '@/types';
+import { type AssetPagination, defaultAssetPagination } from '@/types/assets';
 import { convertPagination } from '@/types/pagination';
 import { assert } from '@/utils/assertions';
 
@@ -200,7 +200,7 @@ const confirmDelete = async () => {
   if (asset.type === EVM_TOKEN) {
     await deleteAsset(asset.identifier);
   } else {
-    let address = asset.address;
+    const address = asset.address;
     assert(address);
     await deleteToken(address, asset.evmChain as string);
   }
@@ -233,7 +233,7 @@ watch(pagination, () => refresh());
 
 const refresh = async () => {
   set(loading, true);
-  let supportedAssets = await queryAllAssets(get(pagination));
+  const supportedAssets = await queryAllAssets(get(pagination));
   set(assets, supportedAssets.entries);
   set(totalEntries, supportedAssets.entriesFound);
   set(loading, false);

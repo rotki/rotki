@@ -1,4 +1,4 @@
-import { AssetInfoWithId, AssetsWithId } from '@/types/assets';
+import { type AssetInfoWithId, type AssetsWithId } from '@/types/assets';
 
 export type StringSuggestion = () => string[];
 export type AssetSuggestion = (value: string) => Promise<AssetsWithId>;

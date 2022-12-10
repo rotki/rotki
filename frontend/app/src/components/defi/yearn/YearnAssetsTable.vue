@@ -1,5 +1,5 @@
 <template>
-  <card v-if="vaults.length !== 0" outlined-body>
+  <card v-if="vaults.length > 0" outlined-body>
     <template #title>
       {{ t('yearn_asset_table.title') }}
     </template>
@@ -29,13 +29,13 @@
 </template>
 
 <script setup lang="ts">
-import { PropType } from 'vue';
-import { DataTableHeader } from 'vuetify';
+import { type PropType } from 'vue';
+import { type DataTableHeader } from 'vuetify';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import { ProtocolVersion } from '@/services/defi/consts';
 import { useYearnStore } from '@/store/defi/yearn';
-import { YearnVaultAsset } from '@/types/defi/yearn';
+import { type YearnVaultAsset } from '@/types/defi/yearn';
 
 const props = defineProps({
   loading: { required: true, type: Boolean },

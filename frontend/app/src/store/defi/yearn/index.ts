@@ -1,4 +1,4 @@
-import { ComputedRef, Ref } from 'vue';
+import { type ComputedRef, type Ref } from 'vue';
 import { usePremium } from '@/composables/premium';
 import { useModules } from '@/composables/session/modules';
 import { useStatusUpdater } from '@/composables/status';
@@ -11,15 +11,15 @@ import { useTasks } from '@/store/tasks';
 import { isLoading } from '@/store/utils';
 import {
   DEPOSIT,
-  YearnVaultAsset,
-  YearnVaultBalance,
-  YearnVaultProfitLoss,
+  type YearnVaultAsset,
+  type YearnVaultBalance,
+  type YearnVaultProfitLoss,
   YearnVaultsBalances,
   YearnVaultsHistory
 } from '@/types/defi/yearn';
 import { Module } from '@/types/modules';
 import { Section, Status } from '@/types/status';
-import { TaskMeta } from '@/types/task';
+import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { isEvmIdentifier } from '@/utils/assets';
 import { zeroBalance } from '@/utils/bignumbers';

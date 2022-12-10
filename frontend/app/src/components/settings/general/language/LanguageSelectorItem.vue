@@ -18,7 +18,7 @@
   </div>
 </template>
 <script setup lang="ts">
-import { PropType, useCssModule } from 'vue';
+import { type PropType, useCssModule } from 'vue';
 
 defineProps({
   countries: {

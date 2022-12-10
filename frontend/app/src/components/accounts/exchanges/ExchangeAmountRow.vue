@@ -25,8 +25,8 @@
 
 <script setup lang="ts">
 import { BigNumber } from '@rotki/common';
-import { PropType } from 'vue';
-import { SupportedExchange } from '@/types/exchanges';
+import { type PropType } from 'vue';
+import { type SupportedExchange } from '@/types/exchanges';
 import { useTradeLocations } from '@/types/trades';
 
 const props = defineProps({

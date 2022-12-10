@@ -1,15 +1,15 @@
-import { ActionResult } from '@rotki/common/lib/data';
-import { AxiosInstance } from 'axios';
+import { type ActionResult } from '@rotki/common/lib/data';
+import { type AxiosInstance } from 'axios';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
-import { PendingTask } from '@/services/types-api';
+import { type PendingTask } from '@/services/types-api';
 import { handleResponse, validStatus, validTaskStatus } from '@/services/utils';
-import { ActionStatus } from '@/store/types';
+import { type ActionStatus } from '@/store/types';
 import {
-  ProfitLossOverview,
-  ProfitLossReportDebugPayload,
+  type ProfitLossOverview,
+  type ProfitLossReportDebugPayload,
   ProfitLossReportEvents,
   ProfitLossReportOverview,
-  ProfitLossReportPeriod,
+  type ProfitLossReportPeriod,
   ReportActionableItem,
   Reports
 } from '@/types/reports';

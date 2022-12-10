@@ -1,15 +1,15 @@
-const { spawn } = require('child_process');
-const fs = require('fs');
-const os = require('os');
-const path = require('path');
+const { spawn } = require('node:child_process');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
 
 if (!(process.env.CI || process.env.VIRTUAL_ENV)) {
-  process.stdout.write(`\x1b[31mError\x1b[0m: Not CI or VIRTUAL_ENV\n\n`);
+  process.stdout.write(`\u001B[31mError\u001B[0m: Not CI or VIRTUAL_ENV\n\n`);
   process.exit(1);
 }
 
 const tmpDir = process.env.CI ? os.homedir() : os.tmpdir();
-let tempPath = path.join(tmpDir, 'rotki-e2e');
+const tempPath = path.join(tmpDir, 'rotki-e2e');
 
 process.stdout.write(`Using ${tempPath} to start tests\n`);
 

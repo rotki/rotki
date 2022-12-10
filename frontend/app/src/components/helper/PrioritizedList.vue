@@ -127,16 +127,19 @@
 </template>
 
 <script setup lang="ts">
-import { ComputedRef, PropType } from 'vue';
+import { type ComputedRef, type PropType } from 'vue';
 import ActionStatusIndicator from '@/components/error/ActionStatusIndicator.vue';
 import PrioritizedListEntry from '@/components/helper/PrioritizedListEntry.vue';
-import { Nullable } from '@/types';
-import { BaseMessage } from '@/types/messages';
+import { type Nullable } from '@/types';
+import { type BaseMessage } from '@/types/messages';
 import {
   PrioritizedListData,
-  PrioritizedListItemData
+  type PrioritizedListItemData
 } from '@/types/prioritized-list-data';
-import { PrioritizedListId, EmptyListId } from '@/types/prioritized-list-id';
+import {
+  EmptyListId,
+  type PrioritizedListId
+} from '@/types/prioritized-list-id';
 import { assert } from '@/utils/assertions';
 import { pluralize } from '@/utils/text';
 
@@ -166,7 +169,7 @@ const input = (items: string[]) => emit('input', items);
 const itemNameTr = computed(() => {
   const name = get(itemDataName);
   return {
-    name: name,
+    name,
     namePluralized: pluralize(name, 2)
   };
 });

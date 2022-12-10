@@ -17,8 +17,7 @@ export class DefiPage {
       module => !ignoredModules.includes(module)
     );
 
-    for (let i = 0; i < values.length; i++) {
-      const module = values[i];
+    for (const module of values) {
       if (module === Module.AAVE) {
         continue;
       }

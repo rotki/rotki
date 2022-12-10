@@ -1,5 +1,8 @@
 import { BigNumber } from '@rotki/common';
-import { AxiosRequestTransformer, AxiosResponseTransformer } from 'axios';
+import {
+  type AxiosRequestTransformer,
+  type AxiosResponseTransformer
+} from 'axios';
 import { isEvmIdentifier } from '@/utils/assets';
 
 const isObject = (data: any): boolean =>
@@ -52,6 +55,7 @@ export const convertKeys = (
     converted[updatedKey] = isObject(datum)
       ? convertKeys(datum, camelCase, skipKey && key === 'result')
       : datum;
+    return key;
   });
 
   return converted;
@@ -80,7 +84,7 @@ const jsonTransformer: AxiosResponseTransformer = (data, headers) => {
     try {
       result = JSON.parse(data);
       // eslint-disable-next-line no-empty
-    } catch (e: any) {}
+    } catch {}
   }
   return result;
 };

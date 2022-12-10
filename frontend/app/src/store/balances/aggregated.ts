@@ -1,6 +1,6 @@
-import { AssetBalance, AssetBalanceWithPrice } from '@rotki/common';
-import { MaybeRef } from '@vueuse/core';
-import { ComputedRef } from 'vue';
+import { type AssetBalance, type AssetBalanceWithPrice } from '@rotki/common';
+import { type MaybeRef } from '@vueuse/core';
+import { type ComputedRef } from 'vue';
 import { useManualAssetBalances } from '@/composables/balances/manual';
 import { setupLiquidityPosition } from '@/composables/defi';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
@@ -9,7 +9,7 @@ import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useAggregatedBlockchainBalancesStore } from '@/store/blockchain/balances/aggregated';
 import { samePriceAssets } from '@/types/blockchain';
-import { AssetPriceInfo } from '@/types/prices';
+import { type AssetPriceInfo } from '@/types/prices';
 import {
   sumAssetBalances,
   toStoredAssetBalanceWithPrice

@@ -34,12 +34,12 @@
 </template>
 
 <script setup lang="ts">
-import { PropType } from 'vue';
-import { DataTableHeader } from 'vuetify';
+import { type PropType } from 'vue';
+import { type DataTableHeader } from 'vuetify';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
-import { BaseDefiBalance } from '@/store/defi/types';
+import { type BaseDefiBalance } from '@/store/defi/types';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 
 defineProps({

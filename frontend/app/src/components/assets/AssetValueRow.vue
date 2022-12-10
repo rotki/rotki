@@ -52,7 +52,7 @@
 <script setup lang="ts">
 import CardTitle from '@/components/typography/CardTitle.vue';
 import { useAggregatedBalancesStore } from '@/store/balances/aggregated';
-import { AssetPriceInfo } from '@/types/prices';
+import { type AssetPriceInfo } from '@/types/prices';
 
 const props = defineProps({
   identifier: { required: true, type: String }

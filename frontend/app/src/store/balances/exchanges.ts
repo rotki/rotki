@@ -1,28 +1,31 @@
-import { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
-import { MaybeRef } from '@vueuse/core';
-import { ComputedRef, Ref } from 'vue';
+import { type AssetBalanceWithPrice, type BigNumber } from '@rotki/common';
+import { type MaybeRef } from '@vueuse/core';
+import { type ComputedRef, type Ref } from 'vue';
 import { useStatusUpdater } from '@/composables/status';
 import { useExchangeApi } from '@/services/balances/exchanges';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useBalancePricesStore } from '@/store/balances/prices';
-import { AssetBreakdown, ExchangeBalancePayload } from '@/store/balances/types';
+import {
+  type AssetBreakdown,
+  type ExchangeBalancePayload
+} from '@/store/balances/types';
 import { usePurgeStore } from '@/store/history/purge';
 import { useMessageStore } from '@/store/message';
 import { useNotifications } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
 import { AssetBalances } from '@/types/balances';
 import {
-  EditExchange,
-  Exchange,
-  ExchangeData,
-  ExchangeInfo,
-  ExchangeSetupPayload,
-  SupportedExchange
+  type EditExchange,
+  type Exchange,
+  type ExchangeData,
+  type ExchangeInfo,
+  type ExchangeSetupPayload,
+  type SupportedExchange
 } from '@/types/exchanges';
-import { AssetPrices } from '@/types/prices';
+import { type AssetPrices } from '@/types/prices';
 import { Section, Status } from '@/types/status';
-import { ExchangeMeta } from '@/types/task';
+import { type ExchangeMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { assert } from '@/utils/assertions';
 import {

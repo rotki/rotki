@@ -1,6 +1,6 @@
-import { ActionResult } from '@rotki/common/lib/data';
+import { type ActionResult } from '@rotki/common/lib/data';
 import { api } from '@/services/rotkehlchen-api';
-import { Watcher, WatcherTypes } from '@/services/session/types';
+import { type Watcher, type WatcherTypes } from '@/services/session/types';
 import {
   handleResponse,
   validWithParamsSessionAndExternalService,

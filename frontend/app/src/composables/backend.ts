@@ -1,9 +1,9 @@
 import { useInterop } from '@/electron-interop';
 import { BackendOptions } from '@/electron-main/ipc';
 import { useMainStore } from '@/store/main';
-import { Writeable } from '@/types';
+import { type Writeable } from '@/types';
 import { deleteBackendUrl, getBackendUrl } from '@/utils/account-management';
-import { LogLevel } from '@/utils/log-level';
+import { type LogLevel } from '@/utils/log-level';
 import { getDefaultLogLevel, setLevel } from '@/utils/logging';
 
 const BACKEND_OPTIONS = 'BACKEND_OPTIONS';
@@ -21,7 +21,7 @@ export const loadUserOptions: () => Partial<BackendOptions> = () => {
       options = defaultConfig;
     }
     return options;
-  } catch (e) {
+  } catch {
     return defaultConfig;
   }
 };

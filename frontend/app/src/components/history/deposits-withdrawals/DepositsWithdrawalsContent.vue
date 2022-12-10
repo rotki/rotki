@@ -129,8 +129,8 @@
 
 <script setup lang="ts">
 import { dropRight } from 'lodash';
-import { PropType, Ref } from 'vue';
-import { DataTableHeader } from 'vuetify';
+import { type PropType, type Ref } from 'vue';
+import { type DataTableHeader } from 'vuetify';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import DataTable from '@/components/helper/DataTable.vue';
@@ -148,15 +148,15 @@ import { setupIgnore } from '@/composables/history';
 import { Routes } from '@/router/routes';
 import { useAssetMovements } from '@/store/history/asset-movements';
 import {
-  AssetMovementEntry,
+  type AssetMovementEntry,
   IgnoreActionType,
-  TradeEntry
+  type TradeEntry
 } from '@/store/history/types';
 import {
-  AssetMovement,
-  AssetMovementRequestPayload
+  type AssetMovement,
+  type AssetMovementRequestPayload
 } from '@/types/history/movements';
-import { TradeLocation } from '@/types/history/trade-location';
+import { type TradeLocation } from '@/types/history/trade-location';
 import { Section } from '@/types/status';
 
 interface PaginationOptions {
@@ -187,7 +187,7 @@ const options: Ref<PaginationOptions | null> = ref(null);
 const { tc } = useI18n();
 
 const tableHeaders = computed<DataTableHeader[]>(() => {
-  let overview = get(locationOverview);
+  const overview = get(locationOverview);
   const headers: DataTableHeader[] = [
     {
       text: '',

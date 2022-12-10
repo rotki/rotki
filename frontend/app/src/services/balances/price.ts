@@ -1,17 +1,17 @@
-import { ActionResult } from '@rotki/common/lib/data';
+import { type ActionResult } from '@rotki/common/lib/data';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
-import { OracleCacheMeta } from '@/services/balances/types';
+import { type OracleCacheMeta } from '@/services/balances/types';
 import { api } from '@/services/rotkehlchen-api';
-import { PendingTask } from '@/services/types-api';
+import { type PendingTask } from '@/services/types-api';
 import {
   handleResponse,
   paramsSerializer,
   validStatus,
-  validWithoutSessionStatus,
-  validWithSessionAndExternalService
+  validWithSessionAndExternalService,
+  validWithoutSessionStatus
 } from '@/services/utils';
-import { SupportedCurrency } from '@/types/currencies';
-import { PriceOracle } from '@/types/price-oracle';
+import { type SupportedCurrency } from '@/types/currencies';
+import { type PriceOracle } from '@/types/price-oracle';
 
 export const usePriceApi = () => {
   const createPriceCache = async (

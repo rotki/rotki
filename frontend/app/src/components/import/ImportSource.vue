@@ -76,7 +76,7 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
-import { PropType } from 'vue';
+import { type PropType } from 'vue';
 import FileUpload from '@/components/import/FileUpload.vue';
 import DateFormatHelp from '@/components/settings/controls/DateFormatHelp.vue';
 import { displayDateFormatter } from '@/data/date_formatter';
@@ -84,9 +84,9 @@ import { interop } from '@/electron-interop';
 import { api } from '@/services/rotkehlchen-api';
 import { useTasks } from '@/store/tasks';
 import { DateFormat } from '@/types/date-format';
-import { TaskMeta } from '@/types/task';
+import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { ImportSourceType } from '@/types/upload-types';
+import { type ImportSourceType } from '@/types/upload-types';
 
 const props = defineProps({
   icon: {

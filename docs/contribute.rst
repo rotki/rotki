@@ -422,7 +422,7 @@ them by:
 
 ::
 
-    npm run test:unit -w app
+    pnpm run --filter rotki test:unit
 
 These are supposed to be small tests ensuring that parts of the code work good in isolation.
 
@@ -434,13 +434,13 @@ To run the e2e tests you need to run the following command inside the frontend d
 
 ::
 
-    npm run test:integration-ci -w app
+    pnpm run --filter rotki test:integration-ci
 
 The above command will run the e2e tests in headless mode. If you want to debug specific tests you can also run:
 
 ::
 
-    npm run test:integration -w
+    pnpm run --filter test:integration
 
 This command will open the Cypress Test Runner window where you can select specific suites to execute.
 
@@ -451,7 +451,7 @@ Before committing and pushing your commits ensure that you fix any lint issues. 
 
 ::
 
-    npm run lint:fix
+    pnpm run lint:fix
 
 .. note::
 

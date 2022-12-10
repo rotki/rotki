@@ -1,4 +1,4 @@
-import { XpubKeyType, XpubPayload } from '@/store/balances/types';
+import { XpubKeyType, type XpubPayload } from '@/store/balances/types';
 
 export enum XpubPrefix {
   P2TR = 'p2tr',
@@ -59,7 +59,7 @@ export const keyType: XpubType[] = [
 ];
 
 export const isPrefixed = (value: string): RegExpMatchArray | null =>
-  value.match(/([xzy]pub)(.*)/);
+  value.match(/([x-z]pub)(.*)/);
 
 export const xpubToPayload = (
   xpub: string,

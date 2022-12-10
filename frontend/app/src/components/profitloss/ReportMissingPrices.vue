@@ -86,19 +86,19 @@
   </div>
 </template>
 <script setup lang="ts">
-import { BigNumber } from '@rotki/common';
-import { PropType, Ref } from 'vue';
-import { DataTableHeader } from 'vuetify';
+import { type BigNumber } from '@rotki/common';
+import { type PropType, type Ref } from 'vue';
+import { type DataTableHeader } from 'vuetify';
 import {
-  HistoricalPrice,
-  HistoricalPriceDeletePayload,
-  HistoricalPriceFormPayload
+  type HistoricalPrice,
+  type HistoricalPriceDeletePayload,
+  type HistoricalPriceFormPayload
 } from '@/services/assets/types';
 import { deserializeApiErrorMessage } from '@/services/converters';
 import { api } from '@/services/rotkehlchen-api';
 import { useBalancePricesStore } from '@/store/balances/prices';
-import { EditableMissingPrice } from '@/types/prices';
-import { MissingPrice } from '@/types/reports';
+import { type EditableMissingPrice } from '@/types/prices';
+import { type MissingPrice } from '@/types/reports';
 
 const props = defineProps({
   items: { required: true, type: Array as PropType<MissingPrice[]> },
@@ -177,10 +177,8 @@ const updatePrice = async (item: EditableMissingPrice) => {
       } else {
         await api.assets.addHistoricalPrice(formPayload);
       }
-    } else {
-      if (item.saved) {
-        await api.assets.deleteHistoricalPrice(payload);
-      }
+    } else if (item.saved) {
+      await api.assets.deleteHistoricalPrice(payload);
     }
   } catch (e: any) {
     const message = deserializeApiErrorMessage(e.message) as any;

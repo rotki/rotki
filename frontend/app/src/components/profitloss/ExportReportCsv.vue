@@ -60,7 +60,7 @@ const { t } = useI18n();
 const showMessage = (description: string) => {
   setMessage({
     title: t('profit_loss_report.csv_export_error').toString(),
-    description: description,
+    description,
     success: false
   });
 };

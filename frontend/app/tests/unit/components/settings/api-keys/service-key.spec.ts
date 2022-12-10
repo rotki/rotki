@@ -1,4 +1,4 @@
-import { mount, Wrapper } from '@vue/test-utils';
+import { type Wrapper, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import Vuetify from 'vuetify';
 import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';

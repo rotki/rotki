@@ -20,10 +20,10 @@
   </div>
 </template>
 <script setup lang="ts">
-import { PropType } from 'vue';
+import { type PropType } from 'vue';
 import ReportActionableCard from '@/components/profitloss/ReportActionableCard.vue';
 import { useReports } from '@/store/reports';
-import { SelectedReport } from '@/types/reports';
+import { type SelectedReport } from '@/types/reports';
 
 const props = defineProps({
   report: {

@@ -94,8 +94,8 @@
 </template>
 
 <script setup lang="ts">
-import { BigNumber } from '@rotki/common';
-import { GeneralAccount } from '@rotki/common/lib/account';
+import { type BigNumber } from '@rotki/common';
+import { type GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain, DefiProtocol } from '@rotki/common/lib/blockchain';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
 import DepositProtocolReset from '@/components/defi/DepositProtocolReset.vue';
@@ -123,7 +123,7 @@ import { useAaveStore } from '@/store/defi/aave';
 import { useDefiSupportedProtocolsStore } from '@/store/defi/protocols';
 import { useYearnStore } from '@/store/defi/yearn';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { YearnVaultProfitLoss } from '@/types/defi/yearn';
+import { type YearnVaultProfitLoss } from '@/types/defi/yearn';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 
@@ -156,34 +156,34 @@ const { tc } = useI18n();
 
 const isProtocol = (protocol: DefiProtocol) =>
   computed(() => {
-    let protocols = get(selectedProtocols);
+    const protocols = get(selectedProtocols);
     return protocols.length > 0 && protocols.includes(protocol);
   });
 
 const selectedAddresses = computed(() => {
-  let account = get(selectedAccount);
+  const account = get(selectedAccount);
   return account ? [account.address] : [];
 });
 
 const selectedProtocols = computed(() => {
-  let selected = get(protocol);
+  const selected = get(protocol);
   return selected ? [selected] : [];
 });
 
 const defiAddresses = computed(() => {
-  let protocols = get(selectedProtocols);
+  const protocols = get(selectedProtocols);
   return get(defiStore.defiAccounts(protocols)).map(({ address }) => address);
 });
 
 const lendingBalances = computed(() => {
-  let protocols = get(selectedProtocols);
-  let addresses = get(selectedAddresses);
+  const protocols = get(selectedProtocols);
+  const addresses = get(selectedAddresses);
   return get(store.aggregatedLendingBalances(protocols, addresses));
 });
 
 const history = computed(() => {
-  let protocols = get(selectedProtocols);
-  let addresses = get(selectedAddresses);
+  const protocols = get(selectedProtocols);
+  const addresses = get(selectedAddresses);
   return get(store.lendingHistory(protocols, addresses));
 });
 
@@ -192,20 +192,20 @@ const totalEarnedInAave = computed(() => {
 });
 
 const effectiveInterestRate = computed<string>(() => {
-  let protocols = get(selectedProtocols);
-  let addresses = get(selectedAddresses);
+  const protocols = get(selectedProtocols);
+  const addresses = get(selectedAddresses);
   return get(store.effectiveInterestRate(protocols, addresses));
 });
 
 const totalLendingDeposit = computed<BigNumber>(() => {
-  let protocols = get(selectedProtocols);
-  let addresses = get(selectedAddresses);
+  const protocols = get(selectedProtocols);
+  const addresses = get(selectedAddresses);
   return get(store.totalLendingDeposit(protocols, addresses));
 });
 
 const totalUsdEarned = computed<BigNumber>(() => {
-  let protocols = get(selectedProtocols);
-  let addresses = get(selectedAddresses);
+  const protocols = get(selectedProtocols);
+  const addresses = get(selectedAddresses);
   return get(store.totalUsdEarned(protocols, addresses));
 });
 
@@ -258,9 +258,7 @@ onMounted(async () => {
   const currentRoute = get(route);
   const queryElement = currentRoute.query['protocol'];
   const protocols = Object.values(DefiProtocol);
-  const protocolIndex = protocols.findIndex(
-    protocol => protocol === queryElement
-  );
+  const protocolIndex = protocols.indexOf(queryElement as DefiProtocol);
   if (protocolIndex >= 0) {
     set(protocol, protocols[protocolIndex]);
   }

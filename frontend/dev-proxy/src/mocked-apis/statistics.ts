@@ -1,6 +1,6 @@
-import fs from 'fs';
-import path from 'path';
-import { Application } from 'express';
+import fs from 'node:fs';
+import path from 'node:path';
+import { type Application } from 'express';
 
 export function statistics(server: Application, componentsDir: string): void {
   server.get('/api/1/statistics/renderer', (_, res) => {
@@ -8,8 +8,8 @@ export function statistics(server: Application, componentsDir: string): void {
     const contents = fs.readdirSync(dist);
     let latest = 0;
     let latestFile = '';
-    for (let i = 0; i < contents.length; i++) {
-      const file = path.join(dist, contents[i]);
+    for (const content of contents) {
+      const file = path.join(dist, content);
       const { birthtimeMs } = fs.statSync(file);
       if (birthtimeMs > latest) {
         latest = birthtimeMs;
@@ -26,7 +26,7 @@ export function statistics(server: Application, componentsDir: string): void {
 
     res.jsonp({
       result,
-      message: '',
+      message: ''
     });
   });
 }

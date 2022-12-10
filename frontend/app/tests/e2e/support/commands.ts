@@ -24,12 +24,13 @@
 // -- This is will overwrite an existing command --
 // Cypress.Commands.overwrite("visit", (originalFn, url, options) => { ... })
 
-import { ExternalLedgerAction, ExternalTrade } from './types';
+import { type ExternalLedgerAction, type ExternalTrade } from './types';
 
 const logout = () => {
   cy.request({
     url: 'http://localhost:22221/api/1/users',
-    method: 'GET'
+    method: 'GET',
+    failOnStatusCode: false
   })
     .its('body')
     .then(body => {
@@ -58,7 +59,8 @@ const updateAssets = () => {
     method: 'DELETE',
     body: {
       reset: 'soft'
-    }
+    },
+    failOnStatusCode: false
   })
     .its('body')
     .then(body => {
@@ -77,13 +79,14 @@ const disableModules = () => {
       settings: {
         active_modules: []
       }
-    }
+    },
+    failOnStatusCode: false
   })
     .its('body')
     .then(body => {
       const result = body.result;
       if (result) {
-        cy.log(`settings updated: ${JSON.stringify(result['active_modules'])}`);
+        cy.log(`settings updated: ${JSON.stringify(result.active_modules)}`);
       }
     });
 };
@@ -96,7 +99,7 @@ const createAccount = (username: string, password = '1234') => {
       method: 'PUT',
       body: {
         name: username,
-        password: password,
+        password,
         initial_settings: {
           submit_usage_analytics: true
         }

@@ -44,8 +44,8 @@
 </template>
 
 <script setup lang="ts">
-import { Eth2ValidatorEntry } from '@rotki/common/lib/staking/eth2';
-import { PropType } from 'vue';
+import { type Eth2ValidatorEntry } from '@rotki/common/lib/staking/eth2';
+import { type PropType } from 'vue';
 import ValidatorDisplay from '@/components/helper/display/icons/ValidatorDisplay.vue';
 import { useTheme } from '@/composables/common';
 
@@ -79,8 +79,8 @@ const filter = (
   queryText: string
 ) => {
   return (
-    publicKey.indexOf(queryText) >= 0 ||
-    validatorIndex.toString().indexOf(queryText) >= 0
+    publicKey.includes(queryText) ||
+    validatorIndex.toString().includes(queryText)
   );
 };
 

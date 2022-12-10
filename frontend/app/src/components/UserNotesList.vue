@@ -146,15 +146,15 @@
   </fragment>
 </template>
 <script setup lang="ts">
-import { Ref } from 'vue';
+import { type Ref } from 'vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import Fragment from '@/components/helper/Fragment';
 import UserNoteForm from '@/components/UserNoteForm.vue';
 import { usePremium } from '@/composables/premium';
 import { useInterop } from '@/electron-interop';
 import { useUserNotesApi } from '@/services/session/user-notes.api';
-import { Collection } from '@/types/collection';
-import { UserNote, UserNotesFilter } from '@/types/notes';
+import { type Collection } from '@/types/collection';
+import { type UserNote, type UserNotesFilter } from '@/types/notes';
 import {
   defaultCollectionState,
   getCollectionData,

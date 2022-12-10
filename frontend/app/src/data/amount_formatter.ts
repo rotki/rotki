@@ -5,7 +5,7 @@ const abbreviationList = [
   [9, 'B'],
   [6, 'M'],
   [3, 'K']
-];
+] as const;
 
 export class AmountFormatter {
   format(
@@ -21,19 +21,17 @@ export class AmountFormatter {
 
     if (abbreviateNumber) {
       const usedAbbreviation = abbreviationList.find(([digitNum, _]) => {
-        return amount.abs().gte(Math.pow(10, digitNum as number));
+        return amount.abs().gte((10 ** digitNum) as number);
       });
 
       if (usedAbbreviation) {
-        return (
-          amount
-            .dividedBy(Math.pow(10, usedAbbreviation[0] as number))
-            .toFormat(
-              precision,
-              usedRoundingMode,
-              getBnFormat(thousandSeparator, decimalSeparator)
-            ) + ` ${usedAbbreviation[1]}`
-        );
+        return `${amount
+          .dividedBy((10 ** usedAbbreviation[0]) as number)
+          .toFormat(
+            precision,
+            usedRoundingMode,
+            getBnFormat(thousandSeparator, decimalSeparator)
+          )} ${usedAbbreviation[1]}`;
       }
     }
 

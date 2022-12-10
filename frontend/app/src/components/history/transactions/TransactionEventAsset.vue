@@ -26,11 +26,11 @@
   </div>
 </template>
 <script setup lang="ts">
-import { AssetBalance } from '@rotki/common';
-import { ComputedRef, PropType } from 'vue';
+import { type AssetBalance } from '@rotki/common';
+import { type ComputedRef, type PropType } from 'vue';
 import TransactionEventExtraData from '@/components/history/transactions/TransactionEventExtraData.vue';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
-import { EthTransactionEventEntry } from '@/store/history/types';
+import { type EthTransactionEventEntry } from '@/store/history/types';
 import { TransactionEventType } from '@/types/transaction';
 import { getEventType } from '@/utils/history';
 

@@ -64,15 +64,15 @@
 </template>
 
 <script setup lang="ts">
-import { PropType, Ref } from 'vue';
+import { type PropType, type Ref } from 'vue';
 import QueriedAddressDialog from '@/components/defi/QueriedAddressDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import { useTheme } from '@/composables/common';
 import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
 import { useSettingsStore } from '@/store/settings';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { Nullable } from '@/types';
-import { Module, SUPPORTED_MODULES } from '@/types/modules';
+import { type Nullable } from '@/types';
+import { type Module, SUPPORTED_MODULES } from '@/types/modules';
 import { assert } from '@/utils/assertions';
 
 interface ModuleWithStatus {

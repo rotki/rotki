@@ -1,18 +1,18 @@
-import { ActionResult } from '@rotki/common/lib/data';
+import { type ActionResult } from '@rotki/common/lib/data';
 import {
   axiosSnakeCaseTransformer,
   getUpdatedKey
 } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
-import { PendingTask } from '@/services/types-api';
+import { type PendingTask } from '@/services/types-api';
 import {
   handleResponse,
   validWithSessionAndExternalService
 } from '@/services/utils';
 import {
-  emptyPagination,
   KrakenStakingEvents,
-  KrakenStakingPagination
+  type KrakenStakingPagination,
+  emptyPagination
 } from '@/types/staking';
 
 export const useKrakenApi = () => {

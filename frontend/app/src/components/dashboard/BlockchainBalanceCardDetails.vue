@@ -30,10 +30,10 @@
 </template>
 
 <script setup lang="ts">
-import { PropType } from 'vue';
+import { type PropType } from 'vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
-import { ActionDataEntry } from '@/store/types';
-import { SubBlockchainTotal } from '@/types/blockchain';
+import { type ActionDataEntry } from '@/store/types';
+import { type SubBlockchainTotal } from '@/types/blockchain';
 
 defineProps({
   child: {

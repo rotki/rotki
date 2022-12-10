@@ -1,5 +1,5 @@
-import { PURGABLE } from '@/services/session/consts';
-import { Module } from '@/types/modules';
+import { type PURGABLE } from '@/services/session/consts';
+import { type Module } from '@/types/modules';
 
 export type WatcherType = 'makervault_collateralization_ratio';
 export type WatcherTypes = WatcherType;

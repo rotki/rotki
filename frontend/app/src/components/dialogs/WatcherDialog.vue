@@ -147,12 +147,12 @@
 </template>
 
 <script setup lang="ts">
-import { PropType, Ref } from 'vue';
+import { type PropType, type Ref } from 'vue';
 import {
-  Watcher,
-  WatcherOpTypes,
-  WatcherType,
-  WatcherTypes
+  type Watcher,
+  type WatcherOpTypes,
+  type WatcherType,
+  type WatcherTypes
 } from '@/services/session/types';
 import { useWatchersStore } from '@/store/session/watchers';
 
@@ -195,7 +195,7 @@ const existingWatchersEdit: Ref<Record<string, boolean>> = ref({});
 
 const { tc } = useI18n();
 
-let store = useWatchersStore();
+const store = useWatchersStore();
 const { watchers } = storeToRefs(store);
 const { addWatchers, editWatchers, deleteWatchers } = store;
 
@@ -238,7 +238,7 @@ const watcherOperations = computed(() => ({
 }));
 
 const operations = computed(() => {
-  let operations = get(watcherOperations);
+  const operations = get(watcherOperations);
   const type = get(watcherType);
   if (!type) {
     return [];
@@ -286,7 +286,7 @@ const addWatcher = async () => {
   }
 
   const watcherData: Omit<Watcher<WatcherType>, 'identifier'> = {
-    type: type,
+    type,
     args: {
       ratio: value,
       op: operation,

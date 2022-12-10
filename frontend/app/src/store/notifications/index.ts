@@ -1,7 +1,7 @@
-import { SemiPartial } from '@rotki/common';
+import { type SemiPartial } from '@rotki/common';
 import {
-  NotificationData,
-  NotificationPayload,
+  type NotificationData,
+  type NotificationPayload,
   Severity
 } from '@rotki/common/lib/messages';
 import { useSessionApi } from '@/services/session';
@@ -31,12 +31,12 @@ const createNotification = (
     severity: Severity.INFO
   }
 ): NotificationData => ({
-  title: title,
-  message: message,
-  severity: severity,
+  title,
+  message,
+  severity,
   display: display ?? false,
   duration: duration ?? 5000,
-  id: id,
+  id,
   date: new Date()
 });
 
@@ -102,8 +102,7 @@ export const useNotifications = defineStore('notifications', () => {
     }
 
     const notifications = [...get(data)];
-    for (let i = 0; i < ids.length; i++) {
-      const id = ids[i];
+    for (const id of ids) {
       const index = notifications.findIndex(({ id: idA }) => idA === id);
       if (index < 0) {
         continue;
@@ -134,7 +133,7 @@ export const useNotifications = defineStore('notifications', () => {
       } else {
         logger.error('unsupported message:', message);
       }
-    } catch (e: any) {
+    } catch {
       notify(handleLegacyMessage(message, isWarning, tc));
     }
   };

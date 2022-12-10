@@ -1,6 +1,6 @@
-import { MaybeRef } from '@vueuse/core';
-import { ComputedRef, Ref } from 'vue';
-import { MatchedKeyword, SearchMatcher } from '@/types/filtering';
+import { type MaybeRef } from '@vueuse/core';
+import { type ComputedRef, type Ref } from 'vue';
+import { type MatchedKeyword, type SearchMatcher } from '@/types/filtering';
 
 enum CustomAssetFilterKeys {
   NAME = 'name',

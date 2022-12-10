@@ -71,9 +71,12 @@
 </template>
 
 <script setup lang="ts">
-import { PropType } from 'vue';
+import { type PropType } from 'vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
-import { ProfitLossOverviewItem, SelectedReport } from '@/types/reports';
+import {
+  type ProfitLossOverviewItem,
+  type SelectedReport
+} from '@/types/reports';
 import { calculateTotalProfitLoss } from '@/utils/report';
 import { pluralizeLastWord, toCapitalCase } from '@/utils/text';
 

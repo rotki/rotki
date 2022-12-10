@@ -83,7 +83,7 @@
 
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { PropType } from 'vue';
+import { type PropType } from 'vue';
 import AccountBalanceTable from '@/components/accounts/AccountBalanceTable.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import TagFilter from '@/components/inputs/TagFilter.vue';
@@ -91,9 +91,9 @@ import CardTitle from '@/components/typography/CardTitle.vue';
 import { useRefresh } from '@/composables/balances/refresh';
 import { useTokenDetection } from '@/composables/balances/token-detection';
 import {
-  AccountWithBalance,
-  BlockchainAccountWithBalance,
-  XpubPayload
+  type AccountWithBalance,
+  type BlockchainAccountWithBalance,
+  type XpubPayload
 } from '@/store/balances/types';
 import { useBlockchainStore } from '@/store/blockchain';
 import { useBlockchainAccountsStore } from '@/store/blockchain/accounts';

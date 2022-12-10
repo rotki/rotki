@@ -19,7 +19,7 @@ exports.default = async function notarizing(context) {
 
   return await notarize({
     appBundleId: 'com.rotki.app',
-    appPath: appPath,
+    appPath,
     appleId: process.env.APPLEID,
     appleIdPassword: process.env.APPLEIDPASS
   })

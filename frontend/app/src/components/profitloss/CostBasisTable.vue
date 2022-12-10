@@ -87,10 +87,10 @@
 </template>
 
 <script setup lang="ts">
-import { PropType } from 'vue';
-import { DataTableHeader } from 'vuetify';
+import { type PropType } from 'vue';
+import { type DataTableHeader } from 'vuetify';
 import DataTable from '@/components/helper/DataTable.vue';
-import { CostBasis } from '@/types/reports';
+import { type CostBasis } from '@/types/reports';
 
 const props = defineProps({
   costBasis: { required: true, type: Object as PropType<CostBasis> },

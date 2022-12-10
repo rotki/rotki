@@ -1,9 +1,12 @@
-import { Ref } from 'vue';
+import { type Ref } from 'vue';
 import { useHistory } from '@/store/history';
-import { IgnoreActionPayload, IgnoreActionType } from '@/store/history/types';
+import {
+  type IgnoreActionPayload,
+  type IgnoreActionType
+} from '@/store/history/types';
 import { useMessageStore } from '@/store/message';
-import { ActionStatus } from '@/store/types';
-import { EntryMeta } from '@/types/history/meta';
+import { type ActionStatus } from '@/store/types';
+import { type EntryMeta } from '@/types/history/meta';
 import { uniqueStrings } from '@/utils/data';
 
 export const setupIgnore = <T extends EntryMeta>(
@@ -50,7 +53,7 @@ export const setupIgnore = <T extends EntryMeta>(
     }
     const payload: IgnoreActionPayload = {
       actionIds: ids,
-      type: type
+      type
     };
     if (ignored) {
       status = await ignoreActions(payload);

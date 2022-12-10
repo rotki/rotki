@@ -1,6 +1,6 @@
-import fs from 'fs';
-import { BackendOptions } from '@/electron-main/ipc';
-import { Writeable } from '@/types';
+import fs from 'node:fs';
+import { type BackendOptions } from '@/electron-main/ipc';
+import { type Writeable } from '@/types';
 import { LogLevel } from '@/utils/log-level';
 
 const CONFIG_FILE = 'rotki_config.json';
@@ -44,19 +44,19 @@ export function loadConfig(): Partial<BackendOptions> {
     }
 
     if (MAX_LOG_SIZE in config) {
-      options.maxSizeInMbAllLogs = parseInt(config[MAX_LOG_SIZE]);
+      options.maxSizeInMbAllLogs = Number.parseInt(config[MAX_LOG_SIZE]);
     }
 
     if (MAX_LOG_NUMBER in config) {
-      options.maxLogfilesNum = parseInt(config[MAX_LOG_NUMBER]);
+      options.maxLogfilesNum = Number.parseInt(config[MAX_LOG_NUMBER]);
     }
 
     if (SQLITE_INSTRUCTIONS in config) {
-      options.sqliteInstructions = parseInt(config[SQLITE_INSTRUCTIONS]);
+      options.sqliteInstructions = Number.parseInt(config[SQLITE_INSTRUCTIONS]);
     }
 
     return options;
-  } catch (e) {
+  } catch {
     return options;
   }
 }

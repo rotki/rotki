@@ -1,11 +1,11 @@
-import { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
-import { ComputedRef } from 'vue';
+import { type AssetBalanceWithPrice, type BigNumber } from '@rotki/common';
+import { type ComputedRef } from 'vue';
 import { TRADE_LOCATION_BLOCKCHAIN } from '@/data/defaults';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { useManualBalancesStore } from '@/store/balances/manual';
 import { useBalancePricesStore } from '@/store/balances/prices';
-import { AssetBreakdown } from '@/store/balances/types';
+import { type AssetBreakdown } from '@/store/balances/types';
 import { useAccountBalancesStore } from '@/store/blockchain/accountbalances';
 import { useAggregatedBlockchainBalancesStore } from '@/store/blockchain/balances/aggregated';
 import { mergeAssetBalances } from '@/utils/balances';

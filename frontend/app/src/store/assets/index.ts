@@ -1,17 +1,17 @@
 import { interop } from '@/electron-interop';
-import { AssetUpdatePayload } from '@/services/assets/types';
+import { type AssetUpdatePayload } from '@/services/assets/types';
 import { api } from '@/services/rotkehlchen-api';
 import { useNotifications } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
-import { ActionStatus } from '@/store/types';
+import { type ActionStatus } from '@/store/types';
 import {
-  ApplyUpdateResult,
-  AssetDBVersion,
-  AssetMergePayload,
-  AssetUpdateCheckResult,
-  AssetUpdateResult
+  type ApplyUpdateResult,
+  type AssetDBVersion,
+  type AssetMergePayload,
+  type AssetUpdateCheckResult,
+  type AssetUpdateResult
 } from '@/types/assets';
-import { TaskMeta } from '@/types/task';
+import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 
 export const useAssets = defineStore('assets', () => {

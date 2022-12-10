@@ -41,10 +41,10 @@
 </template>
 
 <script setup lang="ts">
-import { PropType } from 'vue';
+import { type PropType } from 'vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
-import { TradeLocation } from '@/types/history/trade-location';
-import { TradeLocationData, useTradeLocations } from '@/types/trades';
+import { type TradeLocation } from '@/types/history/trade-location';
+import { type TradeLocationData, useTradeLocations } from '@/types/trades';
 
 const { t } = useI18n();
 
