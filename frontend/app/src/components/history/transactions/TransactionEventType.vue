@@ -54,7 +54,7 @@
 </template>
 <script setup lang="ts">
 import { type PropType } from 'vue';
-import { useTheme } from '@/composables/common';
+
 import { type EthTransactionEventEntry } from '@/store/history/types';
 import { type ActionDataEntry } from '@/store/types';
 import { getEventCounterpartyData, useEventTypeData } from '@/utils/history';

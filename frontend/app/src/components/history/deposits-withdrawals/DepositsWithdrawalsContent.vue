@@ -142,9 +142,7 @@ import TableFilter from '@/components/history/filtering/TableFilter.vue';
 import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
-import { isSectionLoading } from '@/composables/common';
-import { useAssetMovementFilters } from '@/composables/filters/asset-movement';
-import { setupIgnore } from '@/composables/history';
+
 import { Routes } from '@/router/routes';
 import { useAssetMovements } from '@/store/history/asset-movements';
 import {
@@ -244,7 +242,7 @@ const { updateAssetMovementsPayload } = assetMovementStore;
 
 const fetch = (refresh = false) => emit('fetch', refresh);
 
-const { ignore } = setupIgnore(
+const { ignore } = useIgnore(
   IgnoreActionType.MOVEMENTS,
   selected,
   fetch,

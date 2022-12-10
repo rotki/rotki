@@ -62,7 +62,6 @@ import { type BigNumber } from '@rotki/common';
 import { type Message } from '@rotki/common/lib/messages';
 import dayjs from 'dayjs';
 import EditSnapshotDialog from '@/components/dashboard/EditSnapshotDialog.vue';
-import { interop } from '@/electron-interop';
 import { api } from '@/services/rotkehlchen-api';
 import { useSnapshotApi } from '@/services/settings/snapshot-api';
 import { useMessageStore } from '@/store/message';
@@ -116,6 +115,7 @@ const { setMessage } = useMessageStore();
 const { t, tc } = useI18n();
 
 const snapshotApi = useSnapshotApi();
+const interop = useInterop();
 
 const exportSnapshotCSV = async () => {
   let message: Message | null = null;

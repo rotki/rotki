@@ -108,9 +108,6 @@ import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSele
 import DefiProtocolSelector from '@/components/helper/DefiProtocolSelector.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
-import { useSectionLoading } from '@/composables/common';
-import { usePremium } from '@/composables/premium';
-import { useInterop } from '@/electron-interop';
 import {
   AaveEarnedDetails,
   CompoundLendingDetails,

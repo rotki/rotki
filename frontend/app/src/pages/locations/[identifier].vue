@@ -28,8 +28,6 @@ import LedgerActionContent from '@/components/history/ledger-actions/LedgerActio
 import LocationIcon from '@/components/history/LocationIcon.vue';
 import LocationAssets from '@/components/locations/LocationAssets.vue';
 import LocationValueRow from '@/components/locations/LocationValueRow.vue';
-import { useLocationInfo } from '@/composables/balances';
-import { isSectionLoading } from '@/composables/common';
 import { useAssetMovements } from '@/store/history/asset-movements';
 import { useLedgerActions } from '@/store/history/ledger-actions';
 import { useTrades } from '@/store/history/trades';

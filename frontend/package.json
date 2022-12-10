@@ -20,6 +20,7 @@
     "check:return-type": "eslint --no-eslintrc --env \"node\" --parser \"@typescript-eslint/parser\" --plugin \"@typescript-eslint\",\"import\" --rule \"{@typescript-eslint/explicit-function-return-type:warn}\" '{app,common}/src/**/*.ts'",
     "clean:modules": "rimraf node_modules app/node_modules common/node_modules app/dist app/electron-build common/lib",
     "dev": "node scripts/start-dev.js",
+    "test": "pnpm run --filter rotki test:unit:run && pnpm run --filter rotki test:integration-ci",
     "dev:web": "node scripts/start-dev.js --web"
   },
   "devDependencies": {

@@ -108,7 +108,6 @@ import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelecto
 import NftDetails from '@/components/helper/NftDetails.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
-import { useSectionLoading } from '@/composables/common';
 import { Routes } from '@/router/routes';
 import { useNonFungibleBalancesStore } from '@/store/balances/non-fungible';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';

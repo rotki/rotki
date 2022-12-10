@@ -12,7 +12,7 @@ import { useBlockchainBalancesStore } from '@/store/blockchain/balances';
 import { useEthBalancesStore } from '@/store/blockchain/balances/eth';
 import { useBlockchainTokensStore } from '@/store/blockchain/tokens';
 import { useDefiStore } from '@/store/defi';
-import { useNotifications } from '@/store/notifications';
+import { useNotificationsStore } from '@/store/notifications';
 import { useSettingsStore } from '@/store/settings';
 import { useStatusStore } from '@/store/status';
 import { useTasks } from '@/store/tasks';
@@ -32,7 +32,7 @@ export const useBlockchainStore = defineStore('blockchain', () => {
   const { resetDefiStatus } = useStatusStore();
 
   const { isTaskRunning } = useTasks();
-  const { notify } = useNotifications();
+  const { notify } = useNotificationsStore();
   const { tc } = useI18n();
 
   const getNewAccountPayload = (

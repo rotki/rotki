@@ -35,8 +35,6 @@
 </template>
 
 <script setup lang="ts">
-import { useTheme } from '@/composables/common';
-
 const props = defineProps({
   value: {
     required: true,

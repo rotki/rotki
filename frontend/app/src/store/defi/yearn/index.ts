@@ -1,11 +1,8 @@
 import { type ComputedRef, type Ref } from 'vue';
-import { usePremium } from '@/composables/premium';
-import { useModules } from '@/composables/session/modules';
-import { useStatusUpdater } from '@/composables/status';
 import { ProtocolVersion } from '@/services/defi/consts';
 import { api } from '@/services/rotkehlchen-api';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
-import { useNotifications } from '@/store/notifications';
+import { useNotificationsStore } from '@/store/notifications';
 import { getStatus, setStatus } from '@/store/status';
 import { useTasks } from '@/store/tasks';
 import { isLoading } from '@/store/utils';
@@ -32,7 +29,7 @@ export const useYearnStore = defineStore('defi/yearn', () => {
   const vaultsV2History: Ref<YearnVaultsHistory> = ref({});
 
   const { awaitTask } = useTasks();
-  const { notify } = useNotifications();
+  const { notify } = useNotificationsStore();
   const { activeModules } = useModules();
   const { assetSymbol } = useAssetInfoRetrieval();
   const premium = usePremium();

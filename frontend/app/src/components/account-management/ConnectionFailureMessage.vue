@@ -19,7 +19,6 @@
   </div>
 </template>
 <script setup lang="ts">
-import { useInterop } from '@/electron-interop';
 import { api } from '@/services/rotkehlchen-api';
 import { useMainStore } from '@/store/main';
 

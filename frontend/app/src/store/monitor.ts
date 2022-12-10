@@ -1,6 +1,6 @@
 import { type Ref } from 'vue';
 import { useBalancesStore } from '@/store/balances';
-import { useNotifications } from '@/store/notifications';
+import { useNotificationsStore } from '@/store/notifications';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { usePeriodicStore } from '@/store/session/periodic';
 import { useWatchersStore } from '@/store/session/watchers';
@@ -20,7 +20,7 @@ export const useMonitorStore = defineStore('monitor', () => {
 
   const { logged } = storeToRefs(useSessionAuthStore());
   const { check } = usePeriodicStore();
-  const { consume } = useNotifications();
+  const { consume } = useNotificationsStore();
   const { fetchWatchers } = useWatchersStore();
   const { monitor } = useTasks();
   const { autoRefresh } = useBalancesStore();

@@ -90,7 +90,6 @@ import dayjs from 'dayjs';
 import NetWorthChart from '@/components/dashboard/NetWorthChart.vue';
 import Loading from '@/components/helper/Loading.vue';
 import TimeframeSelector from '@/components/helper/TimeframeSelector.vue';
-import { useSectionLoading } from '@/composables/common';
 import { usePremiumStore } from '@/store/session/premium';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';

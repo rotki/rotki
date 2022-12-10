@@ -5,11 +5,10 @@ import {
   type Eth2Validators
 } from '@rotki/common/lib/staking/eth2';
 import { type Ref } from 'vue';
-import { useStatusUpdater } from '@/composables/status';
 import { api } from '@/services/rotkehlchen-api';
 import { type GeneralAccountData } from '@/services/types-api';
 import { useMessageStore } from '@/store/message';
-import { useNotifications } from '@/store/notifications';
+import { useNotificationsStore } from '@/store/notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTasks } from '@/store/tasks';
 import { type Eth2Validator } from '@/types/balances';
@@ -34,7 +33,7 @@ export const useEthAccountsStore = defineStore(
 
     const { awaitTask } = useTasks();
     const { activeModules } = storeToRefs(useGeneralSettingsStore());
-    const { notify } = useNotifications();
+    const { notify } = useNotificationsStore();
     const { setMessage } = useMessageStore();
     const { t, tc } = useI18n();
 

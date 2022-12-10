@@ -12,8 +12,6 @@
 </template>
 
 <script setup lang="ts">
-import { useProxy } from '@/composables/common';
-
 const top = ref(0);
 const proxy = useProxy();
 onMounted(() => {

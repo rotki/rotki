@@ -41,8 +41,6 @@
 </template>
 
 <script setup lang="ts">
-import { useTokenDetection } from '@/composables/balances/token-detection';
-
 const props = defineProps({
   address: {
     required: true,

@@ -118,9 +118,6 @@ import { type Ref } from 'vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
-import { useLocationInfo } from '@/composables/balances';
-import { useTheme } from '@/composables/common';
-import { interop } from '@/electron-interop';
 import { useAppRoutes } from '@/router/routes';
 import { useAssetInfoApi } from '@/services/assets/info';
 import { useAggregatedBalancesStore } from '@/store/balances/aggregated';
@@ -540,6 +537,7 @@ const change = async (index: number) => {
   }
 };
 
+const interop = useInterop();
 onBeforeMount(async () => {
   set(isMac, await interop.isMac());
 

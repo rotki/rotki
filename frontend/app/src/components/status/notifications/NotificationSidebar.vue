@@ -85,9 +85,9 @@ import orderBy from 'lodash/orderBy';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import Notification from '@/components/status/notifications/Notification.vue';
 import PendingTasks from '@/components/status/notifications/PendingTasks.vue';
-import { useTheme } from '@/composables/common';
-import { setupNotifications } from '@/composables/notifications';
+
 import { useTasks } from '@/store/tasks';
+import { useNotificationsStore } from '@/store/notifications';
 
 defineProps({
   visible: { required: true, type: Boolean }
@@ -98,7 +98,10 @@ const { t, tc } = useI18n();
 const emit = defineEmits(['close']);
 const confirmClear = ref(false);
 
-const { reset, remove, data } = setupNotifications();
+const notificationStore = useNotificationsStore();
+const { data } = storeToRefs(notificationStore);
+const { remove } = notificationStore;
+
 const close = () => {
   emit('close');
 };
@@ -112,7 +115,7 @@ const input = (visible: boolean) => {
 
 const clear = () => {
   confirmClear.value = false;
-  reset();
+  notificationStore.$reset();
   close();
 };
 

@@ -277,7 +277,6 @@ import useVuelidate from '@vuelidate/core';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
 import { type ComputedRef, type PropType, type Ref } from 'vue';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
-import { useInterop } from '@/electron-interop';
 import { useSessionStore } from '@/store/session';
 import { type SyncConflict } from '@/store/session/types';
 import { type LoginCredentials, type SyncApproval } from '@/types/login';

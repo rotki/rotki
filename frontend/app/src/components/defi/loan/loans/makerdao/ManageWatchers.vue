@@ -40,8 +40,7 @@ import { type PropType } from 'vue';
 import WatcherDialog from '@/components/dialogs/WatcherDialog.vue';
 import Fragment from '@/components/helper/Fragment';
 import PremiumLock from '@/components/premium/PremiumLock.vue';
-import { useTheme } from '@/composables/common';
-import { usePremium } from '@/composables/premium';
+
 import { useWatchersStore } from '@/store/session/watchers';
 import { type MakerDAOVaultModel } from '@/types/defi/maker';
 

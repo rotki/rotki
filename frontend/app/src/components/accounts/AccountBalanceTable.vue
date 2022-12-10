@@ -144,9 +144,6 @@ import RowActions from '@/components/helper/RowActions.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import RowExpander from '@/components/helper/RowExpander.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
-import { useTokenDetection } from '@/composables/balances/token-detection';
-import { useTheme } from '@/composables/common';
-import { useStatusUpdater } from '@/composables/status';
 import { bigNumberSum } from '@/filters';
 import {
   type BlockchainAccountWithBalance,

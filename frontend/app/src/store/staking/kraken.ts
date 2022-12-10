@@ -1,7 +1,6 @@
-import { useStatusUpdater } from '@/composables/status';
 import { useKrakenApi } from '@/services/staking/kraken';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
-import { useNotifications } from '@/store/notifications';
+import { useNotificationsStore } from '@/store/notifications';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useTasks } from '@/store/tasks';
 import {
@@ -73,7 +72,7 @@ export const useKrakenStakingStore = defineStore('staking/kraken', () => {
   });
 
   const { isTaskRunning, awaitTask } = useTasks();
-  const { notify } = useNotifications();
+  const { notify } = useNotificationsStore();
   const { isFirstLoad, loading, setStatus, resetStatus } = useStatusUpdater(
     Section.STAKING_KRAKEN
   );

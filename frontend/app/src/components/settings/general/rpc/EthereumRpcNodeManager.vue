@@ -142,7 +142,7 @@ import RpcNodeForm from '@/components/settings/general/rpc/RpcNodeForm.vue';
 import { deserializeApiErrorMessage } from '@/services/converters';
 import { useEthNodesApi } from '@/services/settings/eth-nodes-api';
 import { useMessageStore } from '@/store/message';
-import { useNotifications } from '@/store/notifications';
+import { useNotificationsStore } from '@/store/notifications';
 import { usePeriodicStore } from '@/store/session/periodic';
 import {
   type EthereumRpcNode,
@@ -160,7 +160,7 @@ const selectedNode = ref<EthereumRpcNode>(getPlaceholderNode());
 const confirmDelete = ref<EthereumRpcNode | null>(null);
 const errors = ref<Record<string, string[] | string>>({});
 
-const { notify } = useNotifications();
+const { notify } = useNotificationsStore();
 const { setMessage } = useMessageStore();
 const { tc } = useI18n();
 

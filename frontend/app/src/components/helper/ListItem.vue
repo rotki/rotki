@@ -35,7 +35,6 @@
 
 <script setup lang="ts">
 import { type PropType } from 'vue';
-import { useTheme } from '@/composables/common';
 
 const props = defineProps({
   title: {

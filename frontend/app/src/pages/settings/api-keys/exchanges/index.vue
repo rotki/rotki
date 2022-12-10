@@ -87,9 +87,9 @@ import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import ExchangeKeysForm from '@/components/settings/api-keys/ExchangeKeysForm.vue';
-import { useInterop } from '@/electron-interop';
+
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
-import { useNotifications } from '@/store/notifications';
+import { useNotificationsStore } from '@/store/notifications';
 import { useSettingsStore } from '@/store/settings';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { type Nullable, type Writeable } from '@/types';
@@ -167,7 +167,7 @@ const toggleSync = async (exchange: Exchange) => {
   });
 
   if ('message' in status) {
-    const { notify } = useNotifications();
+    const { notify } = useNotificationsStore();
     notify({
       title: tc('exchange_settings.sync.messages.title'),
       message: tc('exchange_settings.sync.messages.description', 0, {

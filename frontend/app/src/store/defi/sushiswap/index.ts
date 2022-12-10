@@ -6,9 +6,6 @@ import {
   type XswapPoolProfit
 } from '@rotki/common/lib/defi/xswap';
 import { type ComputedRef, type Ref } from 'vue';
-import { usePremium } from '@/composables/premium';
-import { useModules } from '@/composables/session/modules';
-import { useStatusUpdater } from '@/composables/status';
 import { api } from '@/services/rotkehlchen-api';
 import {
   getBalances,

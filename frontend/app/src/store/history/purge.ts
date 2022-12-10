@@ -1,4 +1,3 @@
-import { useStatusUpdater } from '@/composables/status';
 import { ALL_CENTRALIZED_EXCHANGES } from '@/services/session/consts';
 import { useAssetMovements } from '@/store/history/asset-movements';
 import { useLedgerActions } from '@/store/history/ledger-actions';

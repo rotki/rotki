@@ -57,7 +57,6 @@
 import { type LpType } from '@rotki/common/lib/defi';
 import { type XswapPool } from '@rotki/common/lib/defi/xswap';
 import { type PropType } from 'vue';
-import { setupLiquidityPosition } from '@/composables/defi';
 
 const props = defineProps({
   pools: { required: true, type: Array as PropType<XswapPool[]> },
@@ -72,7 +71,7 @@ const emit = defineEmits(['input']);
 const { value, type } = toRefs(props);
 const input = (_value: string[]) => emit('input', _value);
 
-const { getPoolName } = setupLiquidityPosition();
+const { getPoolName } = useLiquidityPosition();
 
 const filter = (item: XswapPool, queryText: string) => {
   const searchString = queryText.toLocaleLowerCase();

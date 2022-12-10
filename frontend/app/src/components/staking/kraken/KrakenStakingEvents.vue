@@ -72,7 +72,7 @@ import RefreshButton from '@/components/helper/RefreshButton.vue';
 import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
 import TableFilter from '@/components/history/filtering/TableFilter.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
-import { useKrakenStakingFilter } from '@/composables/filters/kraken-staking';
+
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useKrakenStakingEventTypes } from '@/store/staking/consts';

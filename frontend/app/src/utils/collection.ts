@@ -1,6 +1,5 @@
 import { type BigNumber } from '@rotki/common';
 import { type ComputedRef, type Ref } from 'vue';
-import { usePremium } from '@/composables/premium';
 import { type Collection, type CollectionResponse } from '@/types/collection';
 import { Zero } from '@/utils/bignumbers';
 

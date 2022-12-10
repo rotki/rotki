@@ -1,7 +1,7 @@
 import { type Ref } from 'vue';
 import { convertKeys } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
-import { useNotifications } from '@/store/notifications';
+import { useNotificationsStore } from '@/store/notifications';
 import { type Nullable } from '@/types';
 import {
   LegacyMessageData,
@@ -24,7 +24,7 @@ export const useWebsocketStore = defineStore('websocket', () => {
   const connection: Ref<Nullable<WebSocket>> = ref(null);
   const connected: Ref<boolean> = ref(false);
 
-  const { notify } = useNotifications();
+  const { notify } = useNotificationsStore();
   const { tc } = useI18n();
 
   const handleMessage = async (event: MessageEvent<any>): Promise<void> => {

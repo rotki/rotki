@@ -1,14 +1,13 @@
 import { type BigNumber } from '@rotki/common';
 import { type MaybeRef } from '@vueuse/core';
 import { type ComputedRef, type Ref } from 'vue';
-import { useStatusUpdater } from '@/composables/status';
 import { useManualBalancesApi } from '@/services/balances/manual';
 import { BalanceType } from '@/services/balances/types';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { type AssetBreakdown } from '@/store/balances/types';
 import { useMessageStore } from '@/store/message';
-import { useNotifications } from '@/store/notifications';
+import { useNotificationsStore } from '@/store/notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTasks } from '@/store/tasks';
 import { type ActionStatus } from '@/store/types';
@@ -34,7 +33,7 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
   const manualBalancesData: Ref<ManualBalanceWithValue[]> = ref([]);
 
   const { t, tc } = useI18n();
-  const { notify } = useNotifications();
+  const { notify } = useNotificationsStore();
   const { setMessage } = useMessageStore();
   const { awaitTask } = useTasks();
   const { exchangeRate } = useBalancePricesStore();

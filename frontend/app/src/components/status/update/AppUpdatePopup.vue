@@ -98,7 +98,7 @@
 
 <script setup lang="ts">
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
-import { useInterop } from '@/electron-interop';
+
 import { useSessionStore } from '@/store/session';
 
 const releaseNotesLink = 'https://github.com/rotki/rotki/releases';

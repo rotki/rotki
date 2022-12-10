@@ -30,7 +30,7 @@ import { type PropType, type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
 import RowActions from '@/components/helper/RowActions.vue';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
-import { useNotifications } from '@/store/notifications';
+import { useNotificationsStore } from '@/store/notifications';
 import { type Nullable } from '@/types';
 import {
   type EthAddressBookLocation,
@@ -47,7 +47,7 @@ const addressBookDeletion = (location: Ref<EthAddressBookLocation>) => {
   };
 
   const { tc } = useI18n();
-  const { notify } = useNotifications();
+  const { notify } = useNotificationsStore();
   const { deleteEthAddressBook } = useEthNamesStore();
 
   const deleteAddressBook = async () => {

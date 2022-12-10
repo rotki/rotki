@@ -150,8 +150,6 @@ import { type Ref } from 'vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import Fragment from '@/components/helper/Fragment';
 import UserNoteForm from '@/components/UserNoteForm.vue';
-import { usePremium } from '@/composables/premium';
-import { useInterop } from '@/electron-interop';
 import { useUserNotesApi } from '@/services/session/user-notes.api';
 import { type Collection } from '@/types/collection';
 import { type UserNote, type UserNotesFilter } from '@/types/notes';

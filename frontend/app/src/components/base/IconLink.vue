@@ -24,8 +24,6 @@
 
 <script setup lang="ts">
 import { toRefs } from 'vue';
-import { useTheme } from '@/composables/common';
-import { useLinks } from '@/composables/links';
 
 const props = defineProps({
   text: {

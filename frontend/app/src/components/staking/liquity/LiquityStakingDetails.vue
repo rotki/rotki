@@ -61,7 +61,7 @@ import RefreshButton from '@/components/helper/RefreshButton.vue';
 import TransactionContent from '@/components/history/transactions/TransactionContent.vue';
 import LiquityPools from '@/components/staking/liquity/LiquityPools.vue';
 import LiquityStake from '@/components/staking/liquity/LiquityStake.vue';
-import { isSectionLoading } from '@/composables/common';
+
 import { useLiquityStore } from '@/store/defi/liquity';
 import { useTransactions } from '@/store/history/transactions';
 import { Section } from '@/types/status';

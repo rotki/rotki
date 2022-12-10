@@ -1,13 +1,13 @@
 import { type Ref } from 'vue';
 import { api } from '@/services/rotkehlchen-api';
-import { useNotifications } from '@/store/notifications';
+import { useNotificationsStore } from '@/store/notifications';
 import { type TradeLocation } from '@/types/history/trade-location';
 import { logger } from '@/utils/logging';
 
 export const useAssociatedLocationsStore = defineStore(
   'history/associated-locations',
   () => {
-    const { notify } = useNotifications();
+    const { notify } = useNotificationsStore();
     const { t } = useI18n();
     const associatedLocations: Ref<TradeLocation[]> = ref([]);
     const fetchAssociatedLocations = async (): Promise<void> => {

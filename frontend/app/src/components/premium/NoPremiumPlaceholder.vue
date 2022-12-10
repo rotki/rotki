@@ -28,7 +28,7 @@
             >
               <base-external-link
                 text="website."
-                :href="interop.premiumURL"
+                :href="premiumURL"
                 class="font-weight-medium"
               />
             </i18n>
@@ -42,8 +42,6 @@
 <script setup lang="ts">
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import FullSizeContent from '@/components/common/FullSizeContent.vue';
-import { useTheme } from '@/composables/common';
-import { interop } from '@/electron-interop';
 
 defineProps({
   text: {
@@ -53,6 +51,7 @@ defineProps({
 });
 
 const { t } = useI18n();
+const { premiumURL } = useInterop();
 const { currentBreakpoint } = useTheme();
 const remoteEmptyScreenLogo =
   'https://raw.githubusercontent.com/rotki/data/main/assets/icons/empty_screen_logo.png';

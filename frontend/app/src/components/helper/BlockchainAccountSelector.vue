@@ -82,7 +82,6 @@ import { type Blockchain } from '@rotki/common/lib/blockchain';
 import { type PropType } from 'vue';
 import AccountDisplay from '@/components/display/AccountDisplay.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
-import { useTheme } from '@/composables/common';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
 import { useAccountBalancesStore } from '@/store/blockchain/accountbalances';
 

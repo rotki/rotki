@@ -112,9 +112,6 @@ import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelecto
 import NftDetails from '@/components/helper/NftDetails.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
-import { useSectionLoading } from '@/composables/common';
-import { setupLiquidityPosition } from '@/composables/defi';
-import { usePremium } from '@/composables/premium';
 import { Routes } from '@/router/routes';
 import { useEthBalancesStore } from '@/store/blockchain/balances/eth';
 import { useBalancerStore } from '@/store/defi/balancer';
@@ -205,7 +202,7 @@ const {
 const { fetchBalances: fetchSushiswapBalances } = useSushiswapStore();
 const { fetchBalances: fetchBalancerBalances } = useBalancerStore();
 
-const { lpAggregatedBalances, lpTotal, getPoolName } = setupLiquidityPosition();
+const { lpAggregatedBalances, lpTotal, getPoolName } = useLiquidityPosition();
 const balances = lpAggregatedBalances(true);
 const totalInUsd = lpTotal(true);
 

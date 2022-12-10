@@ -132,7 +132,7 @@ import PrioritizedListEntry from '@/components/helper/PrioritizedListEntry.vue';
 import { type OracleCacheMeta } from '@/services/balances/types';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useBalancePricesStore } from '@/store/balances/prices';
-import { useNotifications } from '@/store/notifications';
+import { useNotificationsStore } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
 import { PriceOracle } from '@/types/price-oracle';
 import { type PrioritizedListItemData } from '@/types/prioritized-list-data';
@@ -227,7 +227,7 @@ const confirmDelete = (entry: OracleCacheMeta) => {
   set(deleteEntry, entry);
 };
 
-const { notify } = useNotifications();
+const { notify } = useNotificationsStore();
 const { assetSymbol } = useAssetInfoRetrieval();
 
 const clearCache = async () => {

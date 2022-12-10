@@ -105,7 +105,6 @@ import { type ComputedRef, type PropType } from 'vue';
 import CopyButton from '@/components/helper/CopyButton.vue';
 import Fragment from '@/components/helper/Fragment';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
-import { useTheme } from '@/composables/common';
 import { bigNumberSum, truncateAddress, truncationPoints } from '@/filters';
 import { type XpubAccountWithBalance } from '@/store/balances/types';
 import { balanceUsdValueSum } from '@/store/defi/utils';

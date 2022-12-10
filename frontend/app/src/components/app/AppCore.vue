@@ -41,8 +41,6 @@ import AppIndicators from '@/components/app/AppIndicators.vue';
 import AppSidebars from '@/components/app/AppSidebars.vue';
 import NotificationPopup from '@/components/status/notifications/NotificationPopup.vue';
 import AssetUpdate from '@/components/status/update/AssetUpdate.vue';
-import { useTheme } from '@/composables/common';
-import { useInterop } from '@/electron-interop';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
 import { useStatisticsStore } from '@/store/statistics';
 

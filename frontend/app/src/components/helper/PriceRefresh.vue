@@ -13,7 +13,6 @@
 
 <script setup lang="ts">
 import { type ComputedRef, type PropType } from 'vue';
-import { useSectionLoading } from '@/composables/common';
 import { useBalancesStore } from '@/store/balances';
 import { useAggregatedBalancesStore } from '@/store/balances/aggregated';
 import { useTasks } from '@/store/tasks';

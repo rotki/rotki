@@ -75,11 +75,6 @@
 <script setup lang="ts">
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import ThemeControl from '@/components/premium/ThemeControl.vue';
-import { useTheme } from '@/composables/common';
-import { useDarkMode } from '@/composables/dark-mode';
-import { useAppNavigation } from '@/composables/navigation';
-import { usePrivacyMode } from '@/composables/privacy';
-import { useInterop } from '@/electron-interop';
 import { useConfirmStore } from '@/store/confirm';
 import { useSessionStore } from '@/store/session';
 import { useSessionAuthStore } from '@/store/session/auth';

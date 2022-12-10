@@ -47,11 +47,16 @@
 
 <script setup lang="ts">
 import Notification from '@/components/status/notifications/Notification.vue';
-import { setupNotifications } from '@/composables/notifications';
-import { emptyNotification } from '@/store/notifications';
+import {
+  emptyNotification,
+  useNotificationsStore
+} from '@/store/notifications';
 
 const visibleNotification = ref(emptyNotification());
-const { queue, displayed } = setupNotifications();
+const notificationStore = useNotificationsStore();
+const { queue } = storeToRefs(notificationStore);
+const { displayed } = notificationStore;
+
 const dismiss = async (id: number) => {
   await displayed([id]);
   set(visibleNotification, { ...get(visibleNotification), display: false });

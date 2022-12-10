@@ -164,7 +164,6 @@ import DataTable from '@/components/helper/DataTable.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import RowExpander from '@/components/helper/RowExpander.vue';
 import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
-import { useAssetFilter } from '@/composables/filters/assets';
 import { CUSTOM_ASSET } from '@/services/assets/consts';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useMessageStore } from '@/store/message';

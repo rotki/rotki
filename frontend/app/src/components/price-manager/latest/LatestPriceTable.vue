@@ -75,7 +75,7 @@ import { api } from '@/services/rotkehlchen-api';
 import { useBalancesStore } from '@/store/balances';
 import { useAggregatedBalancesStore } from '@/store/balances/aggregated';
 import { useBalancePricesStore } from '@/store/balances/prices';
-import { useNotifications } from '@/store/notifications';
+import { useNotificationsStore } from '@/store/notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { type Nullable } from '@/types';
 import { CURRENCY_USD } from '@/types/currencies';
@@ -102,7 +102,7 @@ const loading = ref(false);
 const pending = ref<Nullable<ManualPrice>>(null);
 const showConfirmation = computed(() => !!get(pending));
 
-const { notify } = useNotifications();
+const { notify } = useNotificationsStore();
 const { tc } = useI18n();
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());

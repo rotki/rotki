@@ -210,8 +210,6 @@ import {
 import { type Ref } from 'vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import LanguageSetting from '@/components/settings/general/language/LanguageSetting.vue';
-import { useBackendManagement } from '@/composables/backend';
-import { useInterop } from '@/electron-interop';
 import { type BackendOptions } from '@/electron-main/ipc';
 import { useSettingsApi } from '@/services/settings/settings-api';
 import {

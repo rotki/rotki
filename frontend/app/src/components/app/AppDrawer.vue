@@ -32,8 +32,6 @@
 <script setup lang="ts">
 import RotkiLogo from '@/components/common/RotkiLogo.vue';
 import NavigationMenu from '@/components/NavigationMenu.vue';
-
-import { useTheme } from '@/composables/common';
 import { useMainStore } from '@/store/main';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
 

@@ -1,6 +1,6 @@
 import isEqual from 'lodash/isEqual';
 import { useEthNamesApi } from '@/services/balances/ethereum-names';
-import { useNotifications } from '@/store/notifications';
+import { useNotificationsStore } from '@/store/notifications';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useTasks } from '@/store/tasks';
 import {
@@ -31,7 +31,7 @@ export const useEthNamesStore = defineStore('ethNames', () => {
   });
 
   const { awaitTask } = useTasks();
-  const { notify } = useNotifications();
+  const { notify } = useNotificationsStore();
   const { t, tc } = useI18n();
 
   const {

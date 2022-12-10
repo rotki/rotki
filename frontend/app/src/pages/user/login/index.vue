@@ -13,9 +13,6 @@
 
 <script setup lang="ts">
 import LoginForm from '@/components/account-management/LoginForm.vue';
-import { useBackendManagement } from '@/composables/backend';
-import { useAppNavigation } from '@/composables/navigation';
-import { useAccountManagement } from '@/composables/user/account';
 import { useSessionAuthStore } from '@/store/session/auth';
 
 const { navigateToUserCreation } = useAppNavigation();

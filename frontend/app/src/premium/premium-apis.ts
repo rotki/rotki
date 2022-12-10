@@ -18,7 +18,6 @@ import {
 } from '@rotki/common/lib/statistics';
 import { type MaybeRef } from '@vueuse/core';
 import { type ComputedRef } from 'vue';
-import { setupLiquidityPosition } from '@/composables/defi';
 import { truncateAddress } from '@/filters';
 import { api } from '@/services/rotkehlchen-api';
 import { useStatisticsApi } from '@/services/statistics/statistics-api';
@@ -176,6 +175,6 @@ export const sushiApi = (): SushiApi => {
 export const utilsApi = (): UtilsApi => {
   return {
     truncate: truncateAddress,
-    getPoolName: setupLiquidityPosition().getPoolName
+    getPoolName: useLiquidityPosition().getPoolName
   };
 };

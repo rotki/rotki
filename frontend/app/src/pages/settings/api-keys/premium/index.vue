@@ -107,7 +107,7 @@ import { type Ref } from 'vue';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
-import { useInterop } from '@/electron-interop';
+
 import { useSessionAuthStore } from '@/store/session/auth';
 import { usePremiumStore } from '@/store/session/premium';
 import { type PremiumCredentialsPayload } from '@/store/session/types';

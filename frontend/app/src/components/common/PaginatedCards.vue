@@ -18,7 +18,6 @@
 
 <script setup lang="ts">
 import { type PropType } from 'vue';
-import { useTheme } from '@/composables/common';
 
 type GetKey = (item: any) => string;
 

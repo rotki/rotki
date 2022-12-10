@@ -20,7 +20,6 @@
 <script setup lang="ts">
 import { type TooltipDisplayOption } from '@rotki/common/lib/settings/graphs';
 import { type PropType } from 'vue';
-import { useTheme } from '@/composables/common';
 
 defineProps({
   tooltipOption: {

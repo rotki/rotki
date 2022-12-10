@@ -58,7 +58,7 @@
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import DateFormatHelp from '@/components/settings/controls/DateFormatHelp.vue';
-import { useValidation } from '@/composables/validation';
+
 import { displayDateFormatter } from '@/data/date_formatter';
 import { Defaults } from '@/data/defaults';
 import { useGeneralSettingsStore } from '@/store/settings/general';

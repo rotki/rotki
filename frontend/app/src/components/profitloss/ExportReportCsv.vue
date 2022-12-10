@@ -15,7 +15,7 @@
       </template>
       <span>
         {{
-          packaged
+          isPackaged
             ? t('profit_loss_report.export_csv')
             : t('profit_loss_report.download_csv')
         }}
@@ -31,7 +31,7 @@
   >
     <v-icon small class="mr-2"> mdi-export </v-icon>
     {{
-      packaged
+      isPackaged
         ? t('profit_loss_report.export_csv')
         : t('profit_loss_report.download_csv')
     }}
@@ -39,7 +39,6 @@
 </template>
 
 <script setup lang="ts">
-import { interop } from '@/electron-interop';
 import { api } from '@/services/rotkehlchen-api';
 import { useMessageStore } from '@/store/message';
 import { useReports } from '@/store/reports';
@@ -56,6 +55,7 @@ const { createCsv } = useReports();
 const { setMessage } = useMessageStore();
 
 const { t } = useI18n();
+const { isPackaged, openDirectory } = useInterop();
 
 const showMessage = (description: string) => {
   setMessage({
@@ -67,8 +67,8 @@ const showMessage = (description: string) => {
 
 const exportCSV = async () => {
   try {
-    if (interop.isPackaged && api.defaultBackend) {
-      const directory = await interop.openDirectory(
+    if (isPackaged && api.defaultBackend) {
+      const directory = await openDirectory(
         t('profit_loss_report.select_directory').toString()
       );
       if (!directory) {
@@ -87,6 +87,4 @@ const exportCSV = async () => {
     showMessage(e.message);
   }
 };
-
-const packaged = computed(() => interop.isPackaged);
 </script>

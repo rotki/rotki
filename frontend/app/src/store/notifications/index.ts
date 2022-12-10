@@ -42,7 +42,7 @@ const createNotification = (
 
 export const emptyNotification = (): NotificationData => createNotification();
 
-export const useNotifications = defineStore('notifications', () => {
+export const useNotificationsStore = defineStore('notifications', () => {
   const data = ref<NotificationData[]>([]);
   const { tc } = useI18n();
   const { consumeMessages } = useSessionApi();

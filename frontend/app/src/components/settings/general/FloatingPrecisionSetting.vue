@@ -27,7 +27,7 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
-import { useValidation } from '@/composables/validation';
+
 import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const floatingPrecision = ref<string>('0');

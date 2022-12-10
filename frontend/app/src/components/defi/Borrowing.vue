@@ -101,7 +101,6 @@ import StatCardWide from '@/components/display/StatCardWide.vue';
 import DefiProtocolSelector from '@/components/helper/DefiProtocolSelector.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
-import { useSectionLoading } from '@/composables/common';
 import { useDefiSupportedProtocolsStore } from '@/store/defi/protocols';
 import { type Module } from '@/types/modules';
 import { Section } from '@/types/status';

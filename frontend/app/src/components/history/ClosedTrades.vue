@@ -231,9 +231,6 @@ import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import TradeDetails from '@/components/history/TradeDetails.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
-import { isSectionLoading } from '@/composables/common';
-import { useTradeFilters } from '@/composables/filters/trades';
-import { setupIgnore } from '@/composables/history';
 import { Routes } from '@/router/routes';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useTrades } from '@/store/history/trades';
@@ -525,7 +522,7 @@ watch(filters, async (filters, oldValue) => {
 
 const fetch = (refresh = false) => emit('fetch', refresh);
 
-const { ignore } = setupIgnore(
+const { ignore } = useIgnore(
   IgnoreActionType.TRADES,
   selected,
   fetch,

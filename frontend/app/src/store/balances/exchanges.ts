@@ -1,7 +1,6 @@
 import { type AssetBalanceWithPrice, type BigNumber } from '@rotki/common';
 import { type MaybeRef } from '@vueuse/core';
 import { type ComputedRef, type Ref } from 'vue';
-import { useStatusUpdater } from '@/composables/status';
 import { useExchangeApi } from '@/services/balances/exchanges';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
@@ -12,7 +11,7 @@ import {
 } from '@/store/balances/types';
 import { usePurgeStore } from '@/store/history/purge';
 import { useMessageStore } from '@/store/message';
-import { useNotifications } from '@/store/notifications';
+import { useNotificationsStore } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
 import { AssetBalances } from '@/types/balances';
 import {
@@ -47,7 +46,7 @@ export const useExchangeBalancesStore = defineStore(
     const { t, tc } = useI18n();
 
     const { awaitTask, isTaskRunning, metadata } = useTasks();
-    const { notify } = useNotifications();
+    const { notify } = useNotificationsStore();
     const { setMessage } = useMessageStore();
     const { purgeHistoryLocation } = usePurgeStore();
     const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();

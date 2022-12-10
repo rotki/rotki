@@ -5,7 +5,7 @@ import { CUSTOM_ASSET } from '@/services/assets/consts';
 import { useAssetInfoApi } from '@/services/assets/info';
 import { useAssetCacheStore } from '@/store/assets/asset-cache';
 import { type ERC20Token } from '@/store/balances/types';
-import { useNotifications } from '@/store/notifications';
+import { useNotificationsStore } from '@/store/notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTasks } from '@/store/tasks';
 import { type TaskMeta } from '@/types/task';
@@ -19,7 +19,7 @@ export const useAssetInfoRetrieval = defineStore(
     const { retrieve, isPending } = useAssetCacheStore();
     const { treatEth2AsEth } = storeToRefs(useGeneralSettingsStore());
     const { tc } = useI18n();
-    const { notify } = useNotifications();
+    const { notify } = useNotificationsStore();
     const { awaitTask } = useTasks();
 
     const assetAssociationMap: ComputedRef<Record<string, string>> = computed(

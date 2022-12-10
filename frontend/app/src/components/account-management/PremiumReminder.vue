@@ -36,9 +36,6 @@
   </v-card>
 </template>
 <script setup lang="ts">
-import { useAppNavigation } from '@/composables/navigation';
-import { useInterop } from '@/electron-interop';
-
 const { navigateToPremium, premiumURL, isPackaged } = useInterop();
 const { navigateToDashboard } = useAppNavigation();
 

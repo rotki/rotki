@@ -6,7 +6,6 @@
 <script setup lang="ts">
 import NonFungibleBalances from '@/components/accounts/balances/NonFungibleBalances.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
-import { useModules } from '@/composables/session/modules';
 import { Module } from '@/types/modules';
 
 const { isModuleEnabled } = useModules();

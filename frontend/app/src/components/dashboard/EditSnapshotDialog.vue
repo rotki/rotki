@@ -88,7 +88,7 @@ import EditLocationDataSnapshotTable from '@/components/dashboard/EditLocationDa
 import EditSnapshotTotal from '@/components/dashboard/EditSnapshotTotal.vue';
 import { useSnapshotApi } from '@/services/settings/snapshot-api';
 import { useMessageStore } from '@/store/message';
-import { useNotifications } from '@/store/notifications';
+import { useNotificationsStore } from '@/store/notifications';
 import { useStatisticsStore } from '@/store/statistics';
 import {
   type BalanceSnapshot,
@@ -149,7 +149,7 @@ const close = () => {
   emit('close');
 };
 
-const { notify } = useNotifications();
+const { notify } = useNotificationsStore();
 
 const updateLocationDataSnapshot = (
   locationDataSnapshot: LocationDataSnapshot[]

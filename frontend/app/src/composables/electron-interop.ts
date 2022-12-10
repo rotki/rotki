@@ -13,10 +13,7 @@ const BASE_DOCS_URL = 'https://rotki.readthedocs.io';
 const premiumURL = `${BASEURL}products/`;
 const electronApp = !!window.interop;
 
-/**
- * @deprecated use {@link useInterop} instead
- */
-export const interop = {
+const interop = {
   get premiumURL() {
     return premiumURL;
   },

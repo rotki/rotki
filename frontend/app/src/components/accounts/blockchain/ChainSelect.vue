@@ -23,7 +23,7 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type PropType } from 'vue';
 import ChainDisplay from '@/components/accounts/blockchain/ChainDisplay.vue';
-import { useModules } from '@/composables/session/modules';
+
 import { Module } from '@/types/modules';
 
 interface SupportedChain {

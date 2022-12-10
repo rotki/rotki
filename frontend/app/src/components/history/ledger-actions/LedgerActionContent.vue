@@ -200,9 +200,7 @@ import LedgerActionDetails from '@/components/history/ledger-actions/LedgerActio
 import LedgerActionForm from '@/components/history/LedgerActionForm.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
-import { isSectionLoading } from '@/composables/common';
-import { useLedgerActionsFilter } from '@/composables/filters/ledger-actions';
-import { setupIgnore } from '@/composables/history';
+
 import { Routes } from '@/router/routes';
 import { useLedgerActions } from '@/store/history/ledger-actions';
 import {
@@ -468,7 +466,7 @@ const getClass = (item: LedgerActionEntry) => {
 };
 const loading = isSectionLoading(Section.LEDGER_ACTIONS);
 
-const { ignore } = setupIgnore(
+const { ignore } = useIgnore(
   IgnoreActionType.LEDGER_ACTIONS,
   selected,
   fetch,

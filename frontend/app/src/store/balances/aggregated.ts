@@ -1,8 +1,6 @@
 import { type AssetBalance, type AssetBalanceWithPrice } from '@rotki/common';
 import { type MaybeRef } from '@vueuse/core';
 import { type ComputedRef } from 'vue';
-import { useManualAssetBalances } from '@/composables/balances/manual';
-import { setupLiquidityPosition } from '@/composables/defi';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
@@ -79,7 +77,7 @@ export const useAggregatedBalancesStore = defineStore(
           return asset;
         });
 
-        const { lpAggregatedBalances } = setupLiquidityPosition();
+        const { lpAggregatedBalances } = useLiquidityPosition();
         const lpBalances = get(lpAggregatedBalances(false));
         const lpAssets = lpBalances
           .map(item => item.asset)

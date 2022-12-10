@@ -50,7 +50,6 @@
 import { type NotificationData, Severity } from '@rotki/common/lib/messages';
 import dayjs from 'dayjs';
 import { type PropType } from 'vue';
-import { useTheme } from '@/composables/common';
 
 const props = defineProps({
   popup: { required: false, type: Boolean, default: false },

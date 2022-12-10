@@ -36,8 +36,7 @@ import LoanDebt from '@/components/defi/loan/LoanDebt.vue';
 import LoanHeader from '@/components/defi/loan/LoanHeader.vue';
 import AaveCollateral from '@/components/defi/loan/loans/aave/AaveCollateral.vue';
 import PremiumCard from '@/components/display/PremiumCard.vue';
-import { isSectionLoading } from '@/composables/common';
-import { usePremium } from '@/composables/premium';
+
 import { AaveBorrowingDetails } from '@/premium/premium';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { type AaveLoan } from '@/store/defi/types';

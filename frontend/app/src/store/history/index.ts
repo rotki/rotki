@@ -1,7 +1,7 @@
 import { useHistoryIgnoringApi } from '@/services/history/history-ignoring-api';
 import { type IgnoreActionPayload } from '@/store/history/types';
 import { useMessageStore } from '@/store/message';
-import { useNotifications } from '@/store/notifications';
+import { useNotificationsStore } from '@/store/notifications';
 import { type ActionStatus } from '@/store/types';
 import { type IgnoredActions } from '@/types/history/ignored';
 import { logger } from '@/utils/logging';
@@ -9,7 +9,7 @@ import { logger } from '@/utils/logging';
 export const useHistory = defineStore('history', () => {
   const ignored = ref<IgnoredActions>({});
 
-  const { notify } = useNotifications();
+  const { notify } = useNotificationsStore();
   const { setMessage } = useMessageStore();
   const { t } = useI18n();
 

@@ -1,6 +1,5 @@
 import isEqual from 'lodash/isEqual';
 import { type Ref } from 'vue';
-import { useStatusUpdater } from '@/composables/status';
 import { api } from '@/services/rotkehlchen-api';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
 import { useEthBalancesStore } from '@/store/blockchain/balances/eth';
@@ -10,7 +9,7 @@ import {
   filterAddressesFromWords,
   mapCollectionEntriesWithMeta
 } from '@/store/history/utils';
-import { useNotifications } from '@/store/notifications';
+import { useNotificationsStore } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
 import { type ActionStatus } from '@/store/types';
 import { type Collection, type CollectionResponse } from '@/types/collection';
@@ -128,7 +127,7 @@ export const useTransactions = defineStore('history/transactions', () => {
 
       if (!onlyCache) {
         setStatus(Status.REFRESHING);
-        const { notify } = useNotifications();
+        const { notify } = useNotificationsStore();
         const refreshAddressTxs = get(ethAddresses).map((address: string) =>
           fetchTransactionsHandler(false, {
             address

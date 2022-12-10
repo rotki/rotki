@@ -1,7 +1,7 @@
 import { type MaybeRef } from '@vueuse/core';
 import { useAssetIgnoreApi } from '@/services/assets/ignore';
 import { useMessageStore } from '@/store/message';
-import { useNotifications } from '@/store/notifications';
+import { useNotificationsStore } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
 import { type ActionStatus } from '@/store/types';
 import { type TaskMeta } from '@/types/task';
@@ -9,7 +9,7 @@ import { TaskType } from '@/types/task-type';
 
 export const useIgnoredAssetsStore = defineStore('ignoredAssets', () => {
   const ignoredAssets = ref<string[]>([]);
-  const { notify } = useNotifications();
+  const { notify } = useNotificationsStore();
   const { setMessage } = useMessageStore();
   const { t, tc } = useI18n();
 
@@ -124,7 +124,7 @@ export const useIgnoredAssetsStore = defineStore('ignoredAssets', () => {
           error: e.message
         }
       );
-      const { notify } = useNotifications();
+      const { notify } = useNotificationsStore();
       notify({
         title,
         message,

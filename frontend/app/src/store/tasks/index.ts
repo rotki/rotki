@@ -3,7 +3,6 @@ import dayjs from 'dayjs';
 import find from 'lodash/find';
 import toArray from 'lodash/toArray';
 import { type ComputedRef, type Ref } from 'vue';
-
 import { api } from '@/services/rotkehlchen-api';
 import { TaskNotFoundError } from '@/services/types-api';
 import { SyncConflictError } from '@/types/login';

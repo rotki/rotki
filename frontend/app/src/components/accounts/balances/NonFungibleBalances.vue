@@ -127,13 +127,13 @@ import NftDetails from '@/components/helper/NftDetails.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import RowAction from '@/components/helper/RowActions.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
-import { isSectionLoading } from '@/composables/common';
+
 import { type ManualPriceFormPayload } from '@/services/assets/types';
 import { api } from '@/services/rotkehlchen-api';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useNonFungibleBalancesStore } from '@/store/balances/non-fungible';
 import { useMessageStore } from '@/store/message';
-import { useNotifications } from '@/store/notifications';
+import { useNotificationsStore } from '@/store/notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { type ActionStatus } from '@/store/types';
 import { type IgnoredAssetsHandlingType } from '@/types/assets';
@@ -167,7 +167,7 @@ const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const options: Ref<PaginationOptions | null> = ref(null);
 
 const { tc } = useI18n();
-const { notify } = useNotifications();
+const { notify } = useNotificationsStore();
 
 const edit: Ref<NonFungibleBalance | null> = ref(null);
 const confirmDelete: Ref<NonFungibleBalance | null> = ref(null);

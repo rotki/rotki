@@ -240,9 +240,7 @@ import { type GeneralAccount } from '@rotki/common/lib/account';
 import { type ComputedRef, type PropType, type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
 import TransactionEventForm from '@/components/history/TransactionEventForm.vue';
-import { isSectionLoading } from '@/composables/common';
-import { useTransactionFilter } from '@/composables/filters/transactions';
-import { setupIgnore } from '@/composables/history';
+
 import { useTransactions } from '@/store/history/transactions';
 import {
   type EthTransactionEntry,
@@ -406,7 +404,7 @@ const { filters, matchers, updateFilter } = useTransactionFilter(
   !!get(protocol)
 );
 
-const { ignore } = setupIgnore(
+const { ignore } = useIgnore(
   IgnoreActionType.ETH_TRANSACTIONS,
   selected,
   fetch,

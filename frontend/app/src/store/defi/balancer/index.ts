@@ -8,9 +8,6 @@ import {
 import { type XswapPool } from '@rotki/common/lib/defi/xswap';
 import cloneDeep from 'lodash/cloneDeep';
 import { type ComputedRef, type Ref } from 'vue';
-import { usePremium } from '@/composables/premium';
-import { useModules } from '@/composables/session/modules';
-import { useStatusUpdater } from '@/composables/status';
 import { api } from '@/services/rotkehlchen-api';
 import { type OnError } from '@/store/typing';
 import { filterAddresses } from '@/store/utils';
