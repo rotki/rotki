@@ -32,7 +32,7 @@ args = p.parse_args()
 db_name: Literal['user', 'global'] = args.db_name
 
 # Make dictionary of table_name: table_properites. Without whitespaces. For example:
-# {"ens_mappings": "CREATETABLEIFNOTEXISTSens_mappings(addressTEXTNOTNULLPRIMARYKEY,ens_nameTEXTUNIQUE,last_updateINTEGERNOTNULL);"}  # noqa: E501
+# this {"ens_mappings": "CREATETABLEIFNOTEXISTSens_mappings(addressTEXTNOTNULLPRIMARYKEY,ens_nameTEXTUNIQUE,last_updateINTEGERNOTNULL);"}  # noqa: E501
 db_script = USER_DB_CREATE_TABLES if db_name == 'user' else GLOBAL_DB_CREATE_TABLES
 regexp_result = re.findall(
     pattern=r'CREATETABLEIFNOTEXISTS(.+?)\((.+?)\);',
