@@ -23,7 +23,7 @@ from rotkehlchen.globaldb.handler import GLOBAL_DB_VERSION, GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.serialization.deserialize import deserialize_asset_amount
 from rotkehlchen.tests.fixtures.globaldb import create_globaldb
-from rotkehlchen.tests.utils.factories import make_ethereum_address
+from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.globaldb import create_initial_globaldb_test_tokens
 from rotkehlchen.types import (
     ChainID,
@@ -150,7 +150,7 @@ def test_add_edit_token_with_wrong_swapped_for(globaldb):
     # To unit test it we need to even hack it a bit. Make a new token, add it in the DB
     # then delete it and then try to add a new one referencing the old one. Since we
     # need to obtain a valid EvmToken object
-    address_to_delete = make_ethereum_address()
+    address_to_delete = make_evm_address()
     token_to_delete = EvmToken.initialize(
         address=address_to_delete,
         chain_id=ChainID.ETHEREUM,
@@ -179,7 +179,7 @@ def test_add_edit_token_with_wrong_swapped_for(globaldb):
             asset_id='NEWID',
             asset_type=AssetType.EVM_TOKEN,
             data=EvmToken.initialize(
-                address=make_ethereum_address(),
+                address=make_evm_address(),
                 chain_id=ChainID.ETHEREUM,
                 token_kind=EvmTokenKind.ERC20,
                 swapped_for=asset_to_delete,
@@ -553,7 +553,7 @@ def test_global_db_restore(globaldb, database):
     the amount of assets is the expected
     """
     # Add a custom eth token
-    address_to_delete = make_ethereum_address()
+    address_to_delete = make_evm_address()
     token_to_delete = EvmToken.initialize(
         address=address_to_delete,
         chain_id=ChainID.ETHEREUM,
@@ -568,7 +568,7 @@ def test_global_db_restore(globaldb, database):
         data=token_to_delete,
     )
     # Add a token with underlying token
-    with_underlying_address = make_ethereum_address()
+    with_underlying_address = make_evm_address()
     with_underlying = EvmToken.initialize(
         address=with_underlying_address,
         chain_id=ChainID.ETHEREUM,
@@ -690,7 +690,7 @@ def test_global_db_reset(globaldb, database):
     In addition a token is edited and we check that was correctly restored.
     """
     # Add a custom eth token
-    address_to_delete = make_ethereum_address()
+    address_to_delete = make_evm_address()
     token_to_delete = EvmToken.initialize(
         address=address_to_delete,
         chain_id=ChainID.ETHEREUM,
@@ -705,7 +705,7 @@ def test_global_db_reset(globaldb, database):
         data=token_to_delete,
     )
     # Add a token with underlying token
-    with_underlying_address = make_ethereum_address()
+    with_underlying_address = make_evm_address()
     with_underlying = EvmToken.initialize(
         address=with_underlying_address,
         chain_id=ChainID.ETHEREUM,
@@ -915,14 +915,14 @@ def test_asset_deletion(globaldb):
 
     # Creating custom evm token to also check that underlying tokens are cleared
     token_data = EvmToken.initialize(
-        address=make_ethereum_address(),
+        address=make_evm_address(),
         chain_id=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
         symbol='a',
         name='b',
         decimals=0,
         underlying_tokens=[UnderlyingToken(
-            address=make_ethereum_address(),
+            address=make_evm_address(),
             token_kind=EvmTokenKind.ERC20,
             weight=ONE,
         )],

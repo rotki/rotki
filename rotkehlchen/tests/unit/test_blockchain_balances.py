@@ -5,7 +5,7 @@ from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.balances import BlockchainBalances
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETH
-from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, make_ethereum_address
+from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, make_evm_address
 from rotkehlchen.tests.utils.xpubs import setup_db_for_xpub_tests_impl
 from rotkehlchen.types import ChainID, EvmTokenKind
 
@@ -41,8 +41,8 @@ def fixture_blockchain_balances(use_db, data_dir, username, sql_vm_instructions_
         all_btc_addresses = (UNIT_BTC_ADDRESS1,)
         xpub_data = None
 
-    address1 = make_ethereum_address()
-    address2 = make_ethereum_address()
+    address1 = make_evm_address()
+    address2 = make_evm_address()
     a.eth[address1] = BalanceSheet()
     a.eth[address1].assets[A_ETH] = Balance(amount=1, usd_value=1)
     a.optimism[address2].assets[OPTIMISM_OP_TOKEN] = Balance(amount=1, usd_value=1)
@@ -53,7 +53,7 @@ def fixture_blockchain_balances(use_db, data_dir, username, sql_vm_instructions_
 
 def test_copy():
     a = BlockchainBalances(None)
-    address = make_ethereum_address()
+    address = make_evm_address()
     a.eth[address] = BalanceSheet()
     a.eth[address].assets['ETH'] = Balance(amount=1, usd_value=1)
     b = a.copy()

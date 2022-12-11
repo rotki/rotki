@@ -22,7 +22,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response_with_result,
 )
 from rotkehlchen.tests.utils.constants import A_MKR
-from rotkehlchen.tests.utils.factories import make_ethereum_address
+from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.globaldb import (
     USER_TOKEN3,
     create_initial_expected_globaldb_test_tokens,
@@ -81,7 +81,7 @@ def test_query_user_tokens(rotkehlchen_api_server):
     assert all(x['address'] is not None for x in result), 'All returned tokens should have address'  # noqa: E501
 
     # test that querying an unknown address for a token is properly handled
-    unknown_address = make_ethereum_address()
+    unknown_address = make_evm_address()
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
@@ -173,15 +173,15 @@ def test_adding_user_tokens(rotkehlchen_api_server):
 
     # now test that adding a token with underlying tokens adding up to more than 100% is caught
     bad_token = EvmToken.initialize(
-        address=make_ethereum_address(),
+        address=make_evm_address(),
         chain_id=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
         decimals=18,
         name='foo',
         symbol='BBB',
         underlying_tokens=[
-            UnderlyingToken(address=make_ethereum_address(), weight=FVal('0.5055'), token_kind=EvmTokenKind.ERC20),  # noqa: E501
-            UnderlyingToken(address=make_ethereum_address(), weight=FVal('0.7055'), token_kind=EvmTokenKind.ERC20),  # noqa: E501
+            UnderlyingToken(address=make_evm_address(), weight=FVal('0.5055'), token_kind=EvmTokenKind.ERC20),  # noqa: E501
+            UnderlyingToken(address=make_evm_address(), weight=FVal('0.7055'), token_kind=EvmTokenKind.ERC20),  # noqa: E501
         ],
     )
     serialized_token = bad_token.to_dict()
@@ -206,15 +206,15 @@ def test_adding_user_tokens(rotkehlchen_api_server):
     )
     # and test that adding a token with underlying tokens adding up to less than 100% is caught
     bad_token = EvmToken.initialize(
-        address=make_ethereum_address(),
+        address=make_evm_address(),
         chain_id=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
         decimals=18,
         name='foo',
         symbol='BBB',
         underlying_tokens=[
-            UnderlyingToken(address=make_ethereum_address(), weight=FVal('0.1055'), token_kind=EvmTokenKind.ERC20),  # noqa: E501
-            UnderlyingToken(address=make_ethereum_address(), weight=FVal('0.2055'), token_kind=EvmTokenKind.ERC20),  # noqa: E501
+            UnderlyingToken(address=make_evm_address(), weight=FVal('0.1055'), token_kind=EvmTokenKind.ERC20),  # noqa: E501
+            UnderlyingToken(address=make_evm_address(), weight=FVal('0.2055'), token_kind=EvmTokenKind.ERC20),  # noqa: E501
         ],
     )
     serialized_token = bad_token.to_dict()
@@ -239,7 +239,7 @@ def test_adding_user_tokens(rotkehlchen_api_server):
     )
     # and test that adding a token with empty list of underlying tokens and not null is an error
     bad_token = EvmToken.initialize(
-        address=make_ethereum_address(),
+        address=make_evm_address(),
         chain_id=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
         decimals=18,
@@ -270,7 +270,7 @@ def test_adding_user_tokens(rotkehlchen_api_server):
     # test that adding invalid coingecko fails
     bad_identifier = 'INVALIDID'
     bad_token = {
-        'address': make_ethereum_address(),
+        'address': make_evm_address(),
         'evm_chain': 'ethereum',
         'token_kind': 'erc20',
         'decimals': 18,
@@ -357,7 +357,7 @@ def test_editing_user_tokens(rotkehlchen_api_server):
     del non_existing_token['identifier']
     del non_existing_token['asset_type']
     del non_existing_token['forked']
-    non_existing_address = make_ethereum_address()
+    non_existing_address = make_evm_address()
     non_existing_token['address'] = non_existing_address
     response = requests.patch(
         api_url_for(
@@ -458,7 +458,7 @@ def test_deleting_user_tokens(rotkehlchen_api_server):
     assert result == initial_underlying_num, 'check underlying tokens mapping is unchanged'  # noqa: E501
 
     # test that deleting a non existing address is handled properly
-    non_existing_address = make_ethereum_address()
+    non_existing_address = make_evm_address()
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
@@ -660,9 +660,9 @@ def test_adding_evm_token_with_underlying_token(rotkehlchen_api_server):
         },
     }
     # also add a token with the similar name to test pagination
-    new_token_address = make_ethereum_address()
-    underlying_token_1 = make_ethereum_address()
-    underlying_token_2 = make_ethereum_address()
+    new_token_address = make_evm_address()
+    underlying_token_1 = make_evm_address()
+    underlying_token_2 = make_evm_address()
     new_token_id = ethaddress_to_identifier(new_token_address)
     bp_token_2 = EvmToken.initialize(
         name='my balancer token b',

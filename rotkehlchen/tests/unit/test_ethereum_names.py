@@ -4,13 +4,13 @@ from unittest.mock import Mock
 import pytest
 
 from rotkehlchen.chain.ethereum.names import FetcherFunc, NamePrioritizer
-from rotkehlchen.tests.utils.factories import make_ethereum_address
+from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import AddressNameSource, ChecksumEvmAddress
 
 
 @pytest.fixture(name='evm_address')
 def fixture_evm_address() -> ChecksumEvmAddress:
-    return make_ethereum_address()
+    return make_evm_address()
 
 
 def test_get_prioritized_name(evm_address: ChecksumEvmAddress) -> None:

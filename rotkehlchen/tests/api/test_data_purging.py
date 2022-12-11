@@ -9,7 +9,7 @@ from rotkehlchen.tests.utils.exchanges import (
     check_saved_events_for_exchange,
     mock_exchange_data_in_db,
 )
-from rotkehlchen.tests.utils.factories import make_ethereum_address
+from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import (
     BlockchainAccountData,
     ChainID,
@@ -56,7 +56,7 @@ def test_purge_single_exchange_data(rotkehlchen_api_server_with_exchanges, added
 
 def test_purge_ethereum_transaction_data(rotkehlchen_api_server):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    addr1 = make_ethereum_address()
+    addr1 = make_evm_address()
     db = DBEvmTx(rotki.data.db)
     with rotki.data.db.user_write() as cursor:
         rotki.data.db.add_blockchain_accounts(
@@ -74,7 +74,7 @@ def test_purge_ethereum_transaction_data(rotkehlchen_api_server):
                 timestamp=1,
                 block_number=1,
                 from_address=addr1,
-                to_address=make_ethereum_address(),
+                to_address=make_evm_address(),
                 value=ONE,
                 gas=ONE,
                 gas_price=ONE,

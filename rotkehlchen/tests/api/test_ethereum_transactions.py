@@ -41,9 +41,9 @@ from rotkehlchen.tests.utils.ethereum import (
 )
 from rotkehlchen.tests.utils.factories import (
     generate_tx_entries_response,
-    make_ethereum_address,
     make_ethereum_event,
     make_ethereum_transaction,
+    make_evm_address,
 )
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
@@ -620,7 +620,7 @@ def test_query_transactions_over_limit(
         timestamp=x,
         block_number=x,
         from_address=ethereum_accounts[0],
-        to_address=make_ethereum_address(),
+        to_address=make_evm_address(),
         value=x,
         gas=x,
         gas_price=x,
@@ -634,7 +634,7 @@ def test_query_transactions_over_limit(
         timestamp=x,
         block_number=x,
         from_address=ethereum_accounts[1],
-        to_address=make_ethereum_address(),
+        to_address=make_evm_address(),
         value=x,
         gas=x,
         gas_price=x,
@@ -693,7 +693,7 @@ def test_query_transactions_from_to_address(
         timestamp=0,
         block_number=0,
         from_address=ethereum_accounts[0],
-        to_address=make_ethereum_address(),
+        to_address=make_evm_address(),
         value=1,
         gas=1,
         gas_price=1,
@@ -718,7 +718,7 @@ def test_query_transactions_from_to_address(
         chain_id=ChainID.ETHEREUM,
         timestamp=0,
         block_number=0,
-        from_address=make_ethereum_address(),
+        from_address=make_evm_address(),
         to_address=ethereum_accounts[0],
         value=1,
         gas=1,
@@ -772,7 +772,7 @@ def test_query_transactions_removed_address(
         timestamp=0,
         block_number=0,
         from_address=ethereum_accounts[0],
-        to_address=make_ethereum_address(),
+        to_address=make_evm_address(),
         value=1,
         gas=1,
         gas_price=1,
@@ -785,7 +785,7 @@ def test_query_transactions_removed_address(
         timestamp=0,
         block_number=0,
         from_address=ethereum_accounts[0],
-        to_address=make_ethereum_address(),
+        to_address=make_evm_address(),
         value=1,
         gas=1,
         gas_price=1,
@@ -797,7 +797,7 @@ def test_query_transactions_removed_address(
         chain_id=ChainID.ETHEREUM,
         timestamp=0,
         block_number=0,
-        from_address=make_ethereum_address(),
+        from_address=make_evm_address(),
         to_address=ethereum_accounts[1],
         value=1,
         gas=1,
@@ -879,7 +879,7 @@ def test_transaction_same_hash_same_nonce_two_tracked_accounts(
         def mocked_request_dict(url, *_args, **_kwargs):
 
             addr1_tx = f"""{{"blockNumber":"1","timeStamp":"1","hash":"0x9c81f44c29ff0226f835cd0a8a2f2a7eca6db52a711f8211b566fd15d3e0e8d4","nonce":"0","blockHash":"0xd3cabad6adab0b52ea632c386ea19403680571e682c62cb589b5abcd76de2159","transactionIndex":"0","from":"{eth_accounts[0]}","to":"{eth_accounts[1]}","value":"1","gas":"2000000","gasPrice":"10000000000000","isError":"0","txreceipt_status":"","input":"0x","contractAddress":"","cumulativeGasUsed":"1436963","gasUsed":"1436963","confirmations":"1"}}"""  # noqa: E501
-            addr2_txs = f"""{addr1_tx}, {{"blockNumber":"2","timeStamp":"2","hash":"0x1c81f54c29ff0226f835cd0a2a2f2a7eca6db52a711f8211b566fd15d3e0e8d4","nonce":"1","blockHash":"0xd1cabad2adab0b56ea632c386ea19403680571e682c62cb589b5abcd76de2159","transactionIndex":"0","from":"{eth_accounts[1]}","to":"{make_ethereum_address()}","value":"1","gas":"2000000","gasPrice":"10000000000000","isError":"0","txreceipt_status":"","input":"0x","contractAddress":"","cumulativeGasUsed":"1436963","gasUsed":"1436963","confirmations":"1"}}"""  # noqa: E501
+            addr2_txs = f"""{addr1_tx}, {{"blockNumber":"2","timeStamp":"2","hash":"0x1c81f54c29ff0226f835cd0a2a2f2a7eca6db52a711f8211b566fd15d3e0e8d4","nonce":"1","blockHash":"0xd1cabad2adab0b56ea632c386ea19403680571e682c62cb589b5abcd76de2159","transactionIndex":"0","from":"{eth_accounts[1]}","to":"{make_evm_address()}","value":"1","gas":"2000000","gasPrice":"10000000000000","isError":"0","txreceipt_status":"","input":"0x","contractAddress":"","cumulativeGasUsed":"1436963","gasUsed":"1436963","confirmations":"1"}}"""  # noqa: E501
             if '=txlistinternal&' in url:
                 # don't return any internal transactions
                 payload = '{"status":"1","message":"OK","result":[]}'

@@ -4,7 +4,7 @@ import pytest
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.db.ens import DBEns
-from rotkehlchen.tests.utils.factories import make_ethereum_address
+from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import ChecksumEvmAddress, EnsMapping, Timestamp
 from rotkehlchen.utils.misc import ts_now
 
@@ -14,8 +14,8 @@ START_TS = Timestamp(1279940400)
 def _simple_ens_setup(database, freezer) -> tuple[DBEns, ChecksumEvmAddress, ChecksumEvmAddress]:
     dbens = DBEns(database)
     freezer.move_to(datetime.fromtimestamp(START_TS))
-    addy1 = make_ethereum_address()
-    addy2 = make_ethereum_address()
+    addy1 = make_evm_address()
+    addy2 = make_evm_address()
     with database.user_write() as cursor:
         dbens.add_ens_mapping(cursor, addy1, 'addy1', ts_now())
         dbens.add_ens_mapping(cursor, addy2, 'addy2', ts_now())
@@ -136,7 +136,7 @@ def test_multiple_ens_mapping_none(database, freezer):
 @pytest.mark.freeze_time
 def test_conflict(database, freezer):
     dbens, addy1, addy2 = _simple_ens_setup(database, freezer)
-    addy3 = make_ethereum_address()
+    addy3 = make_evm_address()
     with database.user_write() as cursor:
         dbens.add_ens_mapping(cursor, addy1, 'addy1', ts_now())  # adding existing mapping == noop
 

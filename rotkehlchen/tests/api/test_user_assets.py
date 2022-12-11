@@ -27,7 +27,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response_with_result,
     assert_simple_ok_response,
 )
-from rotkehlchen.tests.utils.factories import make_ethereum_address
+from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import EvmTokenKind, Location
 
 
@@ -827,7 +827,7 @@ def test_replace_asset_edge_cases(rotkehlchen_api_server, globaldb):
 @pytest.mark.parametrize('with_custom_path', [False, True])
 def test_exporting_user_assets_list(rotkehlchen_api_server, globaldb, with_custom_path):
     """Test that the endpoint for exporting user assets works correctly"""
-    eth_address = make_ethereum_address()
+    eth_address = make_evm_address()
     identifier = ethaddress_to_identifier(eth_address)
     globaldb.add_asset(
         asset_id=identifier,

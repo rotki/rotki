@@ -20,7 +20,7 @@ from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.serialize import process_result_list
-from rotkehlchen.tests.utils.factories import make_ethereum_address
+from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import Timestamp, deserialize_evm_tx_hash
 from rotkehlchen.utils.misc import ts_now
 
@@ -274,8 +274,8 @@ def test_get_eth2_staking_deposits_fetch_from_db(  # pylint: disable=unused-argu
 
 
 def test_eth2_deposits_serialization():
-    addr1 = make_ethereum_address()
-    addr2 = make_ethereum_address()
+    addr1 = make_evm_address()
+    addr2 = make_evm_address()
     deposits = [
         Eth2Deposit(
             from_address=addr1,

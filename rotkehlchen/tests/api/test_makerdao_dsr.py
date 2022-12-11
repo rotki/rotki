@@ -24,7 +24,7 @@ from rotkehlchen.tests.utils.api import (
     wait_for_async_task_with_result,
 )
 from rotkehlchen.tests.utils.checks import assert_serialized_lists_equal
-from rotkehlchen.tests.utils.factories import make_ethereum_address
+from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.makerdao import mock_proxies_for
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import ChecksumEvmAddress
@@ -113,8 +113,8 @@ def mock_etherscan_for_dsr(
     makerdao_vat = contracts.contract('MAKERDAO_VAT')
     eth_multicall = contracts.contract('ETH_MULTICALL')
 
-    proxy1 = make_ethereum_address()
-    proxy2 = make_ethereum_address()
+    proxy1 = make_evm_address()
+    proxy2 = make_evm_address()
     targets = [address_to_32byteshexstr(proxy1), address_to_32byteshexstr(proxy2), '0x0000000000000000000000000000000000000000000000000000000000000000']  # noqa: E501
 
     sorted_accounts = sorted(zip([account1, account2, account3], targets), key=lambda x: x[0])

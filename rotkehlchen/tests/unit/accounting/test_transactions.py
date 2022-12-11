@@ -13,7 +13,7 @@ from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.accounting import accounting_history_process, check_pnls_and_csv
-from rotkehlchen.tests.utils.factories import make_ethereum_address
+from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.tests.utils.messages import no_message_errors
 from rotkehlchen.types import Location, Timestamp
@@ -24,7 +24,7 @@ def test_receiving_value_from_tx(accountant, google_service):
     """
     Test that receiving a transaction that provides value works fine
     """
-    addr2 = make_ethereum_address()
+    addr2 = make_evm_address()
     tx_hash = HistoryBaseEntry.deserialize_event_identifier('0x5cc0e6e62753551313412492296d5e57bea0a9d1ce507cc96aa4aa076c5bde7a')  # noqa: E501
     history = [
         HistoryBaseEntry(
@@ -32,7 +32,7 @@ def test_receiving_value_from_tx(accountant, google_service):
             sequence_index=0,
             timestamp=1569924574000,
             location=Location.BLOCKCHAIN,
-            location_label=make_ethereum_address(),
+            location_label=make_evm_address(),
             asset=A_ETH,
             balance=Balance(amount=FVal('1.5')),
             notes=f'Received 1.5 ETH from {addr2}',
@@ -77,7 +77,7 @@ def test_gas_fees_after_year(accountant, google_service):
             sequence_index=0,
             timestamp=1640493374000,  # 4072.51 EUR/ETH
             location=Location.BLOCKCHAIN,
-            location_label=make_ethereum_address(),
+            location_label=make_evm_address(),
             asset=A_ETH,
             balance=Balance(amount=FVal('0.01')),
             notes='Burned 0.01 ETH for gas',
