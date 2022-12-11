@@ -7,15 +7,15 @@ from rotkehlchen.assets.asset import EvmToken, UnderlyingToken
 from rotkehlchen.constants.assets import A_MKR
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.upgrades.manager import UPGRADES_LIST
-from rotkehlchen.tests.utils.factories import make_ethereum_address
+from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import ChainID, EvmTokenKind, Timestamp
 
-underlying_address1 = make_ethereum_address()
-underlying_address2 = make_ethereum_address()
-underlying_address3 = make_ethereum_address()
+underlying_address1 = make_evm_address()
+underlying_address2 = make_evm_address()
+underlying_address3 = make_evm_address()
 
-user_token_address1 = make_ethereum_address()
-user_token_address2 = make_ethereum_address()
+user_token_address1 = make_evm_address()
+user_token_address2 = make_evm_address()
 
 
 def create_initial_globaldb_test_tokens() -> list[EvmToken]:
@@ -58,8 +58,8 @@ def create_initial_expected_globaldb_test_tokens():
     ] + [initial_tokens[1]]
 
 
-underlying_address4 = make_ethereum_address()
-user_token_address3 = make_ethereum_address()
+underlying_address4 = make_evm_address()
+user_token_address3 = make_evm_address()
 USER_TOKEN3 = EvmToken.initialize(
     address=user_token_address3,
     chain_id=ChainID.ETHEREUM,

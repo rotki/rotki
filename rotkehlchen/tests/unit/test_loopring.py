@@ -6,7 +6,7 @@ from rotkehlchen.chain.ethereum.modules.l2.loopring import Loopring
 from rotkehlchen.constants.assets import A_DPI, A_ETH, A_LRC
 from rotkehlchen.db.loopring import DBLoopring
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.factories import make_ethereum_address
+from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.mock import MockResponse
 
 
@@ -40,8 +40,8 @@ def test_loopring_accountid_mapping(database):
     db = DBLoopring(database)
     id1 = 55
     id2 = 67
-    addr1 = make_ethereum_address()
-    addr2 = make_ethereum_address()
+    addr1 = make_evm_address()
+    addr2 = make_evm_address()
 
     with database.user_write() as cursor:
         assert db.get_accountid_mapping(cursor, addr1) is None
@@ -51,7 +51,7 @@ def test_loopring_accountid_mapping(database):
         assert db.get_accountid_mapping(cursor, addr2) == id2
 
         # assure nothing happens with non existing address
-        db.remove_accountid_mapping(cursor, make_ethereum_address())
+        db.remove_accountid_mapping(cursor, make_evm_address())
 
         db.remove_accountid_mapping(cursor, addr1)
         assert db.get_accountid_mapping(cursor, addr1) is None

@@ -65,7 +65,7 @@ def make_api_secret() -> ApiSecret:
     return ApiSecret(base64.b64encode(make_random_b64bytes(128)))
 
 
-def make_ethereum_address() -> ChecksumEvmAddress:
+def make_evm_address() -> ChecksumEvmAddress:
     return to_checksum_address('0x' + make_random_bytes(20).hex())
 
 
@@ -77,8 +77,8 @@ def make_ethereum_transaction(tx_hash: Optional[bytes] = None) -> EvmTransaction
         chain_id=ChainID.ETHEREUM,
         timestamp=Timestamp(0),
         block_number=0,
-        from_address=make_ethereum_address(),
-        to_address=make_ethereum_address(),
+        from_address=make_evm_address(),
+        to_address=make_evm_address(),
         value=1,
         gas=1,
         gas_price=1,

@@ -40,7 +40,7 @@ from rotkehlchen.tests.utils.api import (
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.ethereum import INFURA_TEST
-from rotkehlchen.tests.utils.factories import make_ethereum_address
+from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.types import SupportedBlockchain, Timestamp, deserialize_evm_tx_hash
 
@@ -110,7 +110,7 @@ def check_vault_history(name, expected_history, result_history):
     'CI' in os.environ,
     reason='This test contributes in rate limiting of infura apis',
 )
-@pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC1, make_ethereum_address()]])
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC1, make_evm_address()]])
 @pytest.mark.parametrize('ethereum_modules', [['yearn_vaults']])
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
 @pytest.mark.parametrize('should_mock_price_queries', [True])

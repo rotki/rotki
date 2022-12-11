@@ -16,7 +16,7 @@ from rotkehlchen.constants.misc import ONE
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.aave import A_ADAI_V1
-from rotkehlchen.tests.utils.factories import make_ethereum_address
+from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import Timestamp, deserialize_evm_tx_hash
 from rotkehlchen.user_messages import MessagesAggregator
 
@@ -27,7 +27,7 @@ def test_add_and_get_aave_events(data_dir, username, sql_vm_instructions_cb):
     data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
     data.unlock(username, '123', create_new=True)
 
-    addr1 = make_ethereum_address()
+    addr1 = make_evm_address()
     addr1_events = [AaveDepositWithdrawalEvent(
         event_type='deposit',
         asset=A_DAI,
@@ -54,7 +54,7 @@ def test_add_and_get_aave_events(data_dir, username, sql_vm_instructions_cb):
     with data.db.user_write() as cursor:
         data.db.add_aave_events(cursor, address=addr1, events=addr1_events)
 
-        addr2 = make_ethereum_address()
+        addr2 = make_evm_address()
         addr2_events = [AaveDepositWithdrawalEvent(
             event_type='deposit',
             asset=A_DAI,
@@ -81,7 +81,7 @@ def test_add_and_get_aave_events(data_dir, username, sql_vm_instructions_cb):
         data.db.add_aave_events(cursor, address=addr2, events=addr2_events)
 
         # addr3 has all types of aave events so we test serialization/deserialization
-        addr3 = make_ethereum_address()
+        addr3 = make_evm_address()
         addr3_events = [AaveDepositWithdrawalEvent(
             event_type='deposit',
             asset=A_DAI,
@@ -186,7 +186,7 @@ def test_add_and_get_yearn_vault_events(
     data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
     data.unlock(username, '123', create_new=True)
 
-    addr1 = make_ethereum_address()
+    addr1 = make_evm_address()
     addr1_events = [YearnVaultEvent(
         event_type='deposit',
         from_asset=A_DAI,
@@ -218,7 +218,7 @@ def test_add_and_get_yearn_vault_events(
     )]
     with data.db.user_write() as cursor:
         add_yearn_vaults_events(write_cursor=cursor, address=addr1, events=addr1_events)
-        addr2 = make_ethereum_address()
+        addr2 = make_evm_address()
         addr2_events = [YearnVaultEvent(
             event_type='deposit',
             from_asset=A_DAI,

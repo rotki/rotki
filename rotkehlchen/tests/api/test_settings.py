@@ -13,7 +13,7 @@ from rotkehlchen.tests.utils.api import (
     assert_simple_ok_response,
 )
 from rotkehlchen.tests.utils.constants import A_JPY
-from rotkehlchen.tests.utils.factories import make_ethereum_address
+from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.mock import MockWeb3
 from rotkehlchen.types import (
     ChecksumEvmAddress,
@@ -433,7 +433,7 @@ def assert_queried_addresses_match(
 
 def test_queried_addresses_per_protocol(rotkehlchen_api_server):
     # First add some queried addresses per protocol
-    address1 = make_ethereum_address()
+    address1 = make_evm_address()
     data = {'module': 'aave', 'address': address1}
     response = requests.put(
         api_url_for(rotkehlchen_api_server, "queriedaddressesresource"), json=data,
@@ -441,7 +441,7 @@ def test_queried_addresses_per_protocol(rotkehlchen_api_server):
     result = assert_proper_response_with_result(response)
     assert result == {'aave': [address1]}
 
-    address2 = make_ethereum_address()
+    address2 = make_evm_address()
     data = {'module': 'makerdao_vaults', 'address': address2}
     response = requests.put(
         api_url_for(rotkehlchen_api_server, "queriedaddressesresource"), json=data,
@@ -475,7 +475,7 @@ def test_queried_addresses_per_protocol(rotkehlchen_api_server):
     )
 
     # add an address and then remove it
-    address3 = make_ethereum_address()
+    address3 = make_evm_address()
     data = {'module': 'makerdao_dsr', 'address': address3}
     response = requests.put(
         api_url_for(rotkehlchen_api_server, "queriedaddressesresource"), json=data,

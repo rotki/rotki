@@ -16,7 +16,7 @@ from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.fval import FVal
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.tests.utils.blockchain import get_web3_from_inquirer, set_web3_in_inquirer
-from rotkehlchen.tests.utils.factories import make_ethereum_address
+from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.makerdao import VaultTestData, create_web3_mock, mock_proxies
 
 
@@ -49,7 +49,7 @@ def fixture_makerdao_test_data(
     vault0 = MakerdaoVault(
         identifier=1,
         owner=user_address,
-        urn=make_ethereum_address(),
+        urn=make_evm_address(),
         collateral_type='ETH-A',
         collateral_asset=A_ETH.resolve_to_crypto_asset(),
         collateral=Balance(FVal('3.1'), FVal('850.1')),
@@ -62,7 +62,7 @@ def fixture_makerdao_test_data(
     vault1 = MakerdaoVault(
         identifier=2,
         owner=user_address,
-        urn=make_ethereum_address(),
+        urn=make_evm_address(),
         collateral_type='BAT-A',
         collateral_asset=A_BAT.resolve_to_crypto_asset(),
         collateral=Balance(FVal('255.1'), FVal('0.09055272442179537436299490395')),
@@ -73,7 +73,7 @@ def fixture_makerdao_test_data(
         stability_fee=FVal('0.0075'),
     )
     expected_vaults = [vault0, vault1]
-    proxy_address = make_ethereum_address()
+    proxy_address = make_evm_address()
     return VaultTestData(
         vaults=expected_vaults,
         proxy_mappings={user_address: proxy_address},
@@ -133,7 +133,7 @@ def test_get_vault_balance(
         mocked_current_prices,
 ):
     debt_value = FVal('2000')
-    owner = make_ethereum_address()
+    owner = make_evm_address()
     vault = MakerdaoVault(
         identifier=1,
         collateral_type='ETH-A',
@@ -144,7 +144,7 @@ def test_get_vault_balance(
         collateralization_ratio='990%',
         liquidation_ratio=FVal(1.5),
         liquidation_price=FVal('50'),  # not calculated to be correct
-        urn=make_ethereum_address(),
+        urn=make_evm_address(),
         stability_fee=ZERO,
     )
     expected_result = BalanceSheet(

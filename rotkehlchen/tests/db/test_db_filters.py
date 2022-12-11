@@ -9,12 +9,12 @@ from rotkehlchen.db.filtering import (
     DBTimestampFilter,
     EvmTransactionsFilterQuery,
 )
-from rotkehlchen.tests.utils.factories import make_ethereum_address
+from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import Location, Timestamp
 
 
 def test_ethereum_transaction_filter():
-    addresses = [make_ethereum_address()]
+    addresses = [make_evm_address()]
     filter_query = EvmTransactionsFilterQuery.make(
         limit=10,
         offset=10,
@@ -41,7 +41,7 @@ def test_ethereum_transaction_filter():
 def test_filter_arguments(and_op, order_by, pagination):
     """This one is just like the ethereum transactions filter test, but also using
     it as a testbed to test combinations of arguments"""
-    addresses = [make_ethereum_address(), make_ethereum_address()]
+    addresses = [make_evm_address(), make_evm_address()]
     address_filter = DBETHTransactionJoinsFilter(and_op=False, addresses=addresses)
     time_filter = DBTimestampFilter(and_op=True, from_ts=Timestamp(1), to_ts=Timestamp(999))
     location_filter = DBLocationFilter(and_op=True, location=Location.KRAKEN)

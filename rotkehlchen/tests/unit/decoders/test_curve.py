@@ -13,7 +13,7 @@ from rotkehlchen.constants.misc import EXP18, ZERO
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.tests.utils.factories import make_ethereum_address
+from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import (
     ChainID,
     EvmInternalTransaction,
@@ -39,7 +39,7 @@ def _populate_curve_pools(evm_tx_decoder):
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
         for pool_address in TEST_CURVE_POOLS:
             # whatever since lp tokens are not used in curve decoder
-            lp_token_address = make_ethereum_address()
+            lp_token_address = make_evm_address()
             GlobalDBHandler().set_general_cache_values(
                 write_cursor=write_cursor,
                 key_parts=[GeneralCacheType.CURVE_LP_TOKENS],

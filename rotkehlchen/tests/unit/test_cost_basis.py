@@ -13,7 +13,7 @@ from rotkehlchen.constants.assets import A_3CRV, A_BTC, A_ETH, A_EUR, A_WETH
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.factories import make_ethereum_address, make_random_bytes
+from rotkehlchen.tests.utils.factories import make_evm_address, make_random_bytes
 from rotkehlchen.types import CostBasisMethod, Location, Timestamp, make_evm_tx_hash
 
 
@@ -934,7 +934,7 @@ def test_swaps_taxability(accountant, taxable):
             sequence_index=1,
             timestamp=Timestamp(1469020840),
             location=Location.BLOCKCHAIN,
-            location_label=make_ethereum_address(),
+            location_label=make_evm_address(),
             asset=A_ETH,
             balance=Balance(amount=ONE, usd_value=ONE),
             notes='Swap 0.15 ETH in uniswap-v2 from 0x3CAdf2cA458376a6a5feA2EF3612346037D5A787',
@@ -947,7 +947,7 @@ def test_swaps_taxability(accountant, taxable):
             sequence_index=2,
             timestamp=Timestamp(1469020840),
             location=Location.BLOCKCHAIN,
-            location_label=make_ethereum_address(),
+            location_label=make_evm_address(),
             asset=A_3CRV,
             balance=Balance(amount=ONE, usd_value=ONE),
             notes='Receive 462.967761432322996701 3CRV in uniswap-v2 from 0x3CAdf2cA458376a6a5feA2EF3612346037D5A787',  # noqa: E501

@@ -20,7 +20,7 @@ from rotkehlchen.externalapis.beaconchain import BeaconChain
 from rotkehlchen.externalapis.covalent import Covalent
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
-from rotkehlchen.tests.utils.factories import make_ethereum_address
+from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.substrate import (
     KUSAMA_DEFAULT_OWN_RPC_ENDPOINT,
     KUSAMA_MAIN_ASSET_DECIMALS,
@@ -38,7 +38,7 @@ def fixture_number_of_eth_accounts():
 
 @pytest.fixture(name='ethereum_accounts')
 def fixture_ethereum_accounts(number_of_eth_accounts) -> list[ChecksumEvmAddress]:
-    return [make_ethereum_address() for x in range(number_of_eth_accounts)]
+    return [make_evm_address() for x in range(number_of_eth_accounts)]
 
 
 @pytest.fixture(name='btc_accounts')

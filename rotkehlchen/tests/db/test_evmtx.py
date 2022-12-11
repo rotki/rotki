@@ -8,7 +8,7 @@ from rotkehlchen.tests.utils.constants import (
     ETH_ADDRESS3,
     MOCK_INPUT_DATA,
 )
-from rotkehlchen.tests.utils.factories import make_ethereum_address
+from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import (
     BlockchainAccountData,
     ChainID,
@@ -117,7 +117,7 @@ def test_add_get_evm_transactions(data_dir, username, sql_vm_instructions_cb):
         assert result == []
 
         # Now try transaction by relevant addresses
-        result = dbevmtx.get_evm_transactions(cursor, EvmTransactionsFilterQuery.make(addresses=[ETH_ADDRESS1, make_ethereum_address()], chain_id=ChainID.ETHEREUM), has_premium=True)  # noqa: E501
+        result = dbevmtx.get_evm_transactions(cursor, EvmTransactionsFilterQuery.make(addresses=[ETH_ADDRESS1, make_evm_address()], chain_id=ChainID.ETHEREUM), has_premium=True)  # noqa: E501
         assert result == [tx1, tx3]
 
 
@@ -128,7 +128,7 @@ def test_query_also_internal_evm_transactions(data_dir, username, sql_vm_instruc
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
     data.unlock(username, '123', create_new=True)
-    address_4 = make_ethereum_address()
+    address_4 = make_evm_address()
 
     with data.db.user_write() as cursor:
         data.db.add_blockchain_accounts(
@@ -162,7 +162,7 @@ def test_query_also_internal_evm_transactions(data_dir, username, sql_vm_instruc
         timestamp=Timestamp(1451706400),
         block_number=3,
         from_address=ETH_ADDRESS2,
-        to_address=make_ethereum_address(),
+        to_address=make_evm_address(),
         value=FVal('4000000'),
         gas=FVal('5000000'),
         gas_price=FVal('2000000000'),
@@ -190,7 +190,7 @@ def test_query_also_internal_evm_transactions(data_dir, username, sql_vm_instruc
         timestamp=Timestamp(1628064001),
         block_number=6,
         from_address=ETH_ADDRESS1,
-        to_address=make_ethereum_address(),
+        to_address=make_evm_address(),
         value=FVal('1000000'),
         gas=FVal('5000000'),
         gas_price=FVal('2000000000'),
@@ -204,7 +204,7 @@ def test_query_also_internal_evm_transactions(data_dir, username, sql_vm_instruc
         timestamp=Timestamp(1629064001),
         block_number=7,
         from_address=ETH_ADDRESS1,
-        to_address=make_ethereum_address(),
+        to_address=make_evm_address(),
         value=FVal('1000000'),
         gas=FVal('5000000'),
         gas_price=FVal('2000000000'),
@@ -228,8 +228,8 @@ def test_query_also_internal_evm_transactions(data_dir, username, sql_vm_instruc
         trace_id=21,
         timestamp=Timestamp(1629064001),
         block_number=55,
-        from_address=make_ethereum_address(),
-        to_address=make_ethereum_address(),
+        from_address=make_evm_address(),
+        to_address=make_evm_address(),
         value=0,
     )
     internal_tx3 = EvmInternalTransaction(

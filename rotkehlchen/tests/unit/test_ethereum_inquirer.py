@@ -10,7 +10,7 @@ from rotkehlchen.tests.utils.ethereum import (
     ETHEREUM_TEST_PARAMETERS,
     wait_until_all_nodes_connected,
 )
-from rotkehlchen.tests.utils.factories import make_ethereum_address
+from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import (
     BlockchainAccountData,
     ChainID,
@@ -61,8 +61,8 @@ def test_get_transaction_receipt(
     assert result['logs'][0]['logIndex'] == 235
     assert result['logs'][1]['logIndex'] == 236
 
-    from_addy = make_ethereum_address()
-    to_addy = make_ethereum_address()
+    from_addy = make_evm_address()
+    to_addy = make_evm_address()
     db = DBEvmTx(database)
     with database.user_write() as cursor:
         database.add_blockchain_accounts(

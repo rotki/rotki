@@ -42,7 +42,7 @@ from rotkehlchen.tests.utils.factories import (
     UNIT_BTC_ADDRESS1,
     UNIT_BTC_ADDRESS2,
     UNIT_BTC_ADDRESS3,
-    make_ethereum_address,
+    make_evm_address,
 )
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.tests.utils.substrate import (
@@ -345,7 +345,7 @@ def _add_blockchain_accounts_test_start(
                 "blockchainbalancesresource",
             ))
 
-    new_eth_accounts = [make_ethereum_address(), make_ethereum_address()]
+    new_eth_accounts = [make_evm_address(), make_evm_address()]
     all_eth_accounts = ethereum_accounts + new_eth_accounts
     eth_balances = ['1000000', '2000000', '3000000', '4000000']
     token_balances = {A_RDN: ['0', '4000000', '0', '250000000']}
@@ -606,7 +606,7 @@ def test_add_blockchain_accounts_concurrent(
         rotkehlchen_api_server,
 ):
     """Test that if we add blockchain accounts concurrently we won't get any duplicates"""
-    ethereum_accounts = [make_ethereum_address(), make_ethereum_address(), make_ethereum_address()]
+    ethereum_accounts = [make_evm_address(), make_evm_address(), make_evm_address()]
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
     query_accounts = ethereum_accounts.copy()
@@ -667,7 +667,7 @@ def test_add_blockchain_accounts_concurrent(
 def test_no_etherscan_is_detected(rotkehlchen_api_server):
     """Make sure that interacting with ethereum without an etherscan key is given a warning"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    new_address = make_ethereum_address()
+    new_address = make_evm_address()
     setup = setup_balances(rotki, ethereum_accounts=[new_address], btc_accounts=None)
 
     with ExitStack() as stack:
@@ -919,7 +919,7 @@ def test_blockchain_accounts_endpoint_errors(rotkehlchen_api_server, rest_api_po
     assert invalid_btc_account not in rotki.chains_aggregator.accounts.btc, assert_msg
 
     # Provide not existing but valid ETH account for removal
-    unknown_account = make_ethereum_address()
+    unknown_account = make_evm_address()
     data = {'accounts': [unknown_account]}
     response = requests.delete(
         api_url_for(rotkehlchen_api_server, "blockchainsaccountsresource", blockchain='ETH'),
@@ -1044,7 +1044,7 @@ def test_add_blockchain_accounts_with_tags_and_label_and_querying_them(rotkehlch
     assert_proper_response(response)
 
     # Now add 3 accounts. Some of them use these tags, some dont
-    new_eth_accounts = [make_ethereum_address(), make_ethereum_address(), make_ethereum_address()]
+    new_eth_accounts = [make_evm_address(), make_evm_address(), make_evm_address()]
     accounts_data = [{
         "address": new_eth_accounts[0],
         "label": 'my metamask',
@@ -1707,7 +1707,7 @@ def test_remove_nonexisting_blockchain_account_along_with_existing(
         eth_balances=eth_balances,
         token_balances=None,
     )
-    unknown_account = make_ethereum_address()
+    unknown_account = make_evm_address()
     with ExitStack() as stack:
         setup.enter_ethereum_patches(stack)
         response = requests.delete(api_url_for(
