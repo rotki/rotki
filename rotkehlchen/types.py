@@ -360,7 +360,11 @@ class CovalentTransaction(NamedTuple):
 
 
 class SupportedBlockchain(SerializableEnumValueMixin):
-    """These are the blockchains for which account tracking is supported """
+    """
+    These are the blockchains rotki is aware of. Only subset of those are currently supported
+
+    The currently supported types are in the SUPPORTED_CHAINS Type Literal.
+    """
     ETHEREUM = 'ETH'
     ETHEREUM_BEACONCHAIN = 'ETH2'
     BITCOIN = 'BTC'
@@ -374,6 +378,10 @@ class SupportedBlockchain(SerializableEnumValueMixin):
     MATIC = 'MATIC'
     FANTOM = 'FANTOM'
     ARBITRUM = 'ARBITRUM'
+
+    def get_key(self) -> str:
+        """Returns the key to be used as attribute for this chain in the code"""
+        return self.value.lower()
 
     def get_address_type(self) -> Callable:
         if self in (SupportedBlockchain.ETHEREUM, SupportedBlockchain.AVALANCHE):
@@ -419,6 +427,31 @@ class SupportedBlockchain(SerializableEnumValueMixin):
     def from_chain_id(cls, chain: ChainID) -> 'SupportedBlockchain':
         return CHAINID_TO_SUPPORTED_BLOCKCHAIN[chain]
 
+
+SUPPORTED_CHAINS = Literal[  # The currently supported chains
+    SupportedBlockchain.ETHEREUM,
+    SupportedBlockchain.ETHEREUM_BEACONCHAIN,
+    SupportedBlockchain.KUSAMA,
+    SupportedBlockchain.AVALANCHE,
+    SupportedBlockchain.POLKADOT,
+    SupportedBlockchain.OPTIMISM,
+    SupportedBlockchain.BITCOIN_CASH,
+    SupportedBlockchain.BITCOIN,
+]
+
+SUPPORTED_NON_BITCOIN_CHAINS = Literal[  # The list above without bitcoins
+    SupportedBlockchain.ETHEREUM,
+    SupportedBlockchain.ETHEREUM_BEACONCHAIN,
+    SupportedBlockchain.KUSAMA,
+    SupportedBlockchain.AVALANCHE,
+    SupportedBlockchain.POLKADOT,
+    SupportedBlockchain.OPTIMISM,
+]
+
+SUPPORTED_BITCOIN_CHAINS = Literal[  # The list above only with bitcoin based chains
+    SupportedBlockchain.BITCOIN,
+    SupportedBlockchain.BITCOIN_CASH,
+]
 
 SUPPORTED_BLOCKCHAIN_TO_CHAINID = {
     SupportedBlockchain.ETHEREUM: ChainID.ETHEREUM,
