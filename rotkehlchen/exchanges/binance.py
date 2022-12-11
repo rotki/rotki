@@ -452,7 +452,7 @@ class Binance(ExchangeInterface):
                 # At least one endpoint (/sapi/v1/fiat/payments) can omit the data
                 # key in the response object instead of returning an empty list like
                 # other endpoints.
-                # returns: {'code': '000000', 'message': 'success', 'success': True, 'total': 0}  # noqa: E501
+                # returns this {'code': '000000', 'message': 'success', 'success': True, 'total': 0}  # noqa: E501
                 return []
 
         if not isinstance(result, list):

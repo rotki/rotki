@@ -482,7 +482,7 @@ class Independentreserve(ExchangeInterface):
                         'fromTimestampUtc': timestamp_to_iso8601(start_ts, utc_as_z=True),
                         'toTimestampUtc': timestamp_to_iso8601(end_ts, utc_as_z=True),
                         # if we filter by tx type in my tests I started getting
-                        # {"Message":"A server error occurred. Please wait a few minutes and try again."}   # noqa: E501
+                        # this {"Message":"A server error occurred. Please wait a few minutes and try again."}   # noqa: E501
                         # 'txTypes': 'Deposit,Withdrawal',  # there is also DepositFee
                     },
                 )
