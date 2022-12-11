@@ -5,6 +5,8 @@ Changelog
 * :feature:`5150` Add option to abbreviate large number. For example to show 1.234.567 as 1.23 M.
 * :feature:`4940` Users will now be able to reset the assets database without losing any custom information they may have added.
 * :feature:`4487` Users can now customize the order of how addresses are resolved to human readable names.
+* :feature:`5001` The PnL report can now be generated with the Highest-In First Out (HIFO) accounting method.
+* :feature:`1793` The PnL report can now be generated with the average cost basis accounting method.
 
 * :release:`1.26.2 <2022-12-09>`
 * :bug:`5187` Fix issue where the blockchain balances were refreshed, when only changing the label or the tags of an account.
