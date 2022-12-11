@@ -47,18 +47,32 @@ select = [
     "F",
     "W",
     "C",
+    # "I",  # isort -- not using since does not play well with running isort too
+    # "D",  # pydocstule -- too many docstuff we don't use
     "N",
     "B",
     "T",
     "UP",
     "YTT",
+    # "ANN",  # flake8-annotations -- looks like mypy already covers this?
+    # "S",  # bandit has too many false positives
+    # "BLE",  # blind-except -- already pylint does this and we got ignores where needed
+    # "FBT",  # FBT -- not sure I agree with the concept of boolean trap
+    # "A",  # flake8-builtins -- we got some shadowed builtins. Should probably fix this
+    # "Q",  # flake8-quotes -- does not seem to be configurable for us
     "ERA",
     "PGH",
-    "PLC",
     "RUF",
     "ICN",
     "RET",
     "SIM",
+    # "TID",  # tidy-imports -- we use relative imports from parent in some cases. Maybe stop?
+    # "ARG",  # flake8-unused-arguments -- pylint already does this and we got ignores where needed
+    "PLC",
+    "PLE",
+    "PLR",
+    "PLW",
+    # "RUF",  # ruff specific rules, we enable only those we need below
 ]
 extend-select = [
     "Q002",  # Single quote docstring found but double quotes preferred
