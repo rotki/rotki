@@ -14,3 +14,4 @@ from rotkehlchen.tests.fixtures.pylint import *  # noqa: F403
 from rotkehlchen.tests.fixtures.rotkehlchen import *  # noqa: F403
 from rotkehlchen.tests.fixtures.variables import *  # noqa: F403
 from rotkehlchen.tests.fixtures.websockets import *  # noqa: F403
+from rotkehlchen.tests.fixtures.xpubs import *  # noqa: F403
