@@ -352,7 +352,7 @@ class Ftx(ExchangeInterface):
             # remove possible duplicates
             deduped = [
                 r for r in step if
-                'id' in r.keys() and r['id'] not in ids
+                'id' in r and r['id'] not in ids
             ]
             ids |= {r['id'] for r in deduped}
             final_data.extend(deduped)

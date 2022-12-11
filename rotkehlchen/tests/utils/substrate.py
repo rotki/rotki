@@ -117,7 +117,7 @@ def wait_until_all_substrate_nodes_connected(
         with gevent.Timeout(timeout):
             while connected != all_nodes:
                 for node in substrate_manager_connect_at_start:
-                    if node in substrate_manager.available_node_attributes_map.keys():
+                    if node in substrate_manager.available_node_attributes_map:
                         connected.add(node)
 
                 gevent.sleep(0.1)

@@ -275,7 +275,7 @@ class YearnVaultsV2(EthereumModule):
                 vaults[vault_token_symbol]['events'].append(event)
 
             # Sort events in each vault
-            for key in vaults.keys():
+            for key in vaults:
                 vaults[key]['events'].sort(key=lambda x: x.timestamp)
                 total_pnl = self._process_vault_events(vaults[key]['events'])
                 balances = eth_balances.get(address)
