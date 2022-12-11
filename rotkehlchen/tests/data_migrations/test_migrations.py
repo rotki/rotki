@@ -317,7 +317,7 @@ def _write_nodes_and_migrate(database, rotki, nodes_to_write):
     """
     with database.user_write() as write_cursor:
         write_cursor.executemany(
-            'INSERT INTO web3_nodes (name, endpoint, owned, weight, active, blockchain) VALUES (?, ?, ?, ?, ?, ?)',  # noqa: E501
+            'INSERT INTO rpc_nodes (name, endpoint, owned, weight, active, blockchain) VALUES (?, ?, ?, ?, ?, ?)',  # noqa: E501
             nodes_to_write,
         )
     migration_patch = patch(
@@ -329,7 +329,7 @@ def _write_nodes_and_migrate(database, rotki, nodes_to_write):
 
     # Now nodes should be the new defaults
     with database.conn.read_ctx() as cursor:
-        nodes_in_db = cursor.execute('SELECT name, endpoint, owned, weight, blockchain FROM web3_nodes').fetchall()  # noqa: E501
+        nodes_in_db = cursor.execute('SELECT name, endpoint, owned, weight, blockchain FROM rpc_nodes').fetchall()  # noqa: E501
 
     return nodes_in_db
 

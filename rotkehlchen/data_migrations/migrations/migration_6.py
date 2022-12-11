@@ -42,7 +42,7 @@ def update_nodes_in_database(write_cursor: 'DBCursor') -> None:
     }
 
     nodes_in_db = set(write_cursor.execute(
-        'SELECT name, endpoint FROM web3_nodes WHERE blockchain=? AND owned=0',
+        'SELECT name, endpoint FROM rpc_nodes WHERE blockchain=? AND owned=0',
         (SupportedBlockchain.ETHEREUM.value,),
     ))
 
@@ -50,7 +50,7 @@ def update_nodes_in_database(write_cursor: 'DBCursor') -> None:
         # If nodes in the db are exactly same as old defaults, replace them with new defaults
         log.debug('Completely replacing ethereum rpc nodes with new defaults')
         write_cursor.execute(
-            'DELETE FROM web3_nodes WHERE blockchain=? AND owned=0',
+            'DELETE FROM rpc_nodes WHERE blockchain=? AND owned=0',
             (SupportedBlockchain.ETHEREUM.value,),
         )
         new_nodes_tuples = [
@@ -58,14 +58,14 @@ def update_nodes_in_database(write_cursor: 'DBCursor') -> None:
             for node in new_nodes_info
         ]
         write_cursor.executemany(
-            'INSERT INTO web3_nodes(name, endpoint, owned, active, weight, blockchain) VALUES (?, ?, ?, ?, ?, ?)',  # noqa: E501
+            'INSERT INTO rpc_nodes(name, endpoint, owned, active, weight, blockchain) VALUES (?, ?, ?, ?, ?, ?)',  # noqa: E501
             new_nodes_tuples,
         )
     else:
         # Else just delete dead nodes
         log.debug('Deleting dead ethereum rpc nodes but keeping the other ones')
         write_cursor.execute(
-            f'DELETE FROM web3_nodes WHERE endpoint IN ({",".join("?"*len(DEAD_NODES_RPCS))}) AND blockchain=?',  # noqa: E501
+            f'DELETE FROM rpc_nodes WHERE endpoint IN ({",".join("?"*len(DEAD_NODES_RPCS))}) AND blockchain=?',  # noqa: E501
             [*DEAD_NODES_RPCS, SupportedBlockchain.ETHEREUM.value],
         )
 
