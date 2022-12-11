@@ -42,9 +42,26 @@ disallow_untyped_defs = false
 [tool.ruff]
 line-length = 99
 
-select = ["E", "F", "W", "C", "N", "B", "T", "UP", "YTT", "ERA", "PGH", "PLC", "RUF", "ICN", "RET"]
+select = [
+    "E",
+    "F",
+    "W",
+    "C",
+    "N",
+    "B",
+    "T",
+    "UP",
+    "YTT",
+    "ERA",
+    "PGH",
+    "PLC",
+    "RUF",
+    "ICN",
+    "RET",
+    "SIM",
+]
 extend-select = [
-    "Q002",  #
+    "Q002",  # Single quote docstring found but double quotes preferred
     "Q003",  # Change outer quotes to avoid escaping inner quotes
 ]
 ignore = [
