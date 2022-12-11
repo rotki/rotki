@@ -42,8 +42,9 @@ disallow_untyped_defs = false
 [tool.ruff]
 line-length = 99
 
-select = ["E", "F", "W", "C", "N", "B", "T", "UP", "YTT", "ERA", "PGH", "PLC", "RUF"]
+select = ["E", "F", "W", "C", "N", "B", "T", "UP", "YTT", "ERA", "PGH", "PLC", "RUF", "ICN", "RET"]
 extend-select = [
+    "Q002",  #
     "Q003",  # Change outer quotes to avoid escaping inner quotes
 ]
 ignore = [
@@ -52,6 +53,12 @@ ignore = [
     "C901",  # function too complex
     "RUF001",  # AmbiguousUnicodeCharacterString
     "RUF002",  # AmbiguousUnicodeCharacterDocstring
+    "RET501",  # Explicitly returning None
+    "RET504",  # Unnecessary variable assignment before `return
+    "RET505",  # https://github.com/charliermarsh/ruff/issues/1035
+    "RET506",  # https://github.com/charliermarsh/ruff/issues/1035
+    "RET507",  # https://github.com/charliermarsh/ruff/issues/1035
+    "RET508",  # https://github.com/charliermarsh/ruff/issues/1035
 ]
 # Exclude a variety of commonly ignored directories.
 exclude = [
@@ -79,6 +86,9 @@ exclude = [
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 target-version = "py39"
 per-file-ignores = {"tools/*" = ["T201"],"rotkehlchen/__main__.py" = ["T201"],"rotkehlchen/api/server.py" = ["T201"],"rotkehlchen/args.py" = ["T201"],"rotkehlchen/db/minimized_schema.py" = ["E501"],"rotkehlchen/globaldb/minimized_schema.py" = ["E501"]}
+
+[tool.ruff.flake8-quotes]
+docstring-quotes = "double"
 
 # -- isort config section --
 
