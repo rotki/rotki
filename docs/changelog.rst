@@ -2,6 +2,9 @@
 Changelog
 =========
 
+* :bug:`-` Transfers between tracked accounts will now have a correct label in the UI.
+
+
 * :release:`1.26.2 <2022-12-09>`
 * :bug:`5187` Fix issue where the blockchain balances were refreshed, when only changing the label or the tags of an account.
 * :bug:`5170` Fix issue where loopring balances is not updated when blockchain balances are manually refreshed.

@@ -77,7 +77,7 @@ class BaseDecoderTools():
             event_type = HistoryEventType.TRANSFER
             location_label = from_address
             counterparty = to_address
-            verb = 'Send'
+            verb = 'Transfer'
         elif tracked_from:
             if to_exchange is not None:
                 event_type = HistoryEventType.DEPOSIT
@@ -131,7 +131,7 @@ class BaseDecoderTools():
         amount_raw_or_token_id = hex_or_bytes_to_int(tx_log.data)
         if token.token_kind == EvmTokenKind.ERC20:
             amount = token_normalized_value(token_amount=amount_raw_or_token_id, token=token)
-            if event_type == HistoryEventType.SPEND:
+            if event_type in {HistoryEventType.SPEND, HistoryEventType.TRANSFER}:
                 notes = f'{verb} {amount} {token.symbol} from {location_label} to {counterparty}'
             else:
                 notes = f'{verb} {amount} {token.symbol} from {counterparty} to {location_label}'
@@ -151,7 +151,7 @@ class BaseDecoderTools():
             amount = ONE
             name = 'ERC721 token' if token.name == '' else token.name
             extra_data = {'token_id': token_id, 'token_name': name}
-            if event_type == HistoryEventType.SPEND:
+            if event_type in {HistoryEventType.SPEND, HistoryEventType.TRANSFER}:
                 notes = f'{verb} {name} with id {token_id} from {location_label} to {counterparty}'  # noqa: E501
             else:
                 notes = f'{verb} {name} with id {token_id} from {counterparty} to {location_label}'  # noqa: E501
