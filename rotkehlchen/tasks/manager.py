@@ -10,7 +10,8 @@ from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.chain.aggregator import ChainsAggregator
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
-from rotkehlchen.chain.ethereum.utils import should_update_curve_cache
+from rotkehlchen.chain.ethereum.modules.yearn.utils import query_yearn_vaults
+from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.evmtx import DBEvmTx
@@ -35,6 +36,7 @@ from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
     ExchangeLocationID,
+    GeneralCacheType,
     Location,
     Optional,
     SupportedBlockchain,
@@ -115,6 +117,7 @@ class TaskManager():
         self.activate_premium = activate_premium
         self.query_balances = query_balances
         self.update_curve_pools_cache = update_curve_pools_cache
+        self.query_yearn_vaults = query_yearn_vaults
         self.last_premium_status_check = ts_now()
         self.msg_aggregator = msg_aggregator
         self.premium_check_retries = 0
@@ -131,6 +134,7 @@ class TaskManager():
             self._maybe_check_premium_status,
             self._maybe_update_snapshot_balances,
             self._maybe_update_curve_pools,
+            self._maybe_update_yearn_vaults,
         ]
         if self.premium_sync_manager is not None:
             self.potential_tasks.append(self._maybe_schedule_db_upload)
@@ -542,7 +546,7 @@ class TaskManager():
     def _maybe_update_curve_pools(self) -> Optional[list[gevent.Greenlet]]:
         """Function that schedules curve pools update task if either there is no curve pools cache
         yet or this cache has expired (i.e. it's been more than a week since last update)."""
-        if should_update_curve_cache() is False:
+        if should_update_protocol_cache(GeneralCacheType.CURVE_LP_TOKENS) is False:
             return None
 
         ethereum = self.chains_aggregator.get_chain_manager(SupportedBlockchain.ETHEREUM)
@@ -553,6 +557,18 @@ class TaskManager():
             method=self.update_curve_pools_cache,
             tx_decoder=ethereum.transactions_decoder,
         )]
+
+    def _maybe_update_yearn_vaults(self) -> Optional[gevent.Greenlet]:
+        if should_update_protocol_cache(GeneralCacheType.YEARN_VAULTS) is True:
+            return self.greenlet_manager.spawn_and_track(
+                after_seconds=None,
+                task_name='Update yearn vaults',
+                exception_is_error=True,
+                method=self.query_yearn_vaults,
+                db=self.database,
+            )
+
+        return None
 
     def _schedule(self) -> None:
         """Schedules background tasks"""
