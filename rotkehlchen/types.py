@@ -53,6 +53,8 @@ DEFAULT_OFF_MODULES = {'makerdao_dsr', 'yearn_vaults'}
 
 
 UNISWAP_PROTOCOL = 'UNI-V2'
+# this variable is used in the decoders and maps to the protocol field used in the database
+# for yearn vaults v1
 YEARN_VAULTS_V1_PROTOCOL = 'yearn-v1'
 YEARN_VAULTS_V2_PROTOCOL = 'yearn_vaults_v2'
 CURVE_POOL_PROTOCOL = 'curve_pool'
@@ -681,6 +683,7 @@ class GeneralCacheType(Enum):
     CURVE_LP_TOKENS = auto()
     CURVE_POOL_ADDRESS = auto()  # get pool addr by lp token
     CURVE_POOL_TOKENS = auto()  # get pool tokens by pool addr
+    YEARN_VAULTS = auto()  # get yearn vaults information
 
     def serialize(self) -> str:
         # Using custom serialize method instead of SerializableEnumMixin since mixin replaces

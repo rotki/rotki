@@ -11,12 +11,12 @@ from rotkehlchen.chain.evm.manager import EvmManager
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress
+from rotkehlchen.types import ChecksumEvmAddress, GeneralCacheType
 from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
 
 from .decoding.decoder import EthereumTransactionDecoder
 from .tokens import EthereumTokens
-from .utils import should_update_curve_cache
+from .utils import should_update_protocol_cache
 
 if TYPE_CHECKING:
 
@@ -90,7 +90,7 @@ class EthereumManager(EvmManager, LockableQueryMixIn):
         2. Queries information about curve pools' addresses, lp tokens and used coins
         3. Saves queried information in the cache in globaldb
         """
-        if should_update_curve_cache() is False:
+        if should_update_protocol_cache(GeneralCacheType.CURVE_LP_TOKENS) is False:
             if tx_decoder is not None:
                 self._update_curve_decoder(tx_decoder)
             return False
