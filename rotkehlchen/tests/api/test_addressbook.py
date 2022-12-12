@@ -4,6 +4,7 @@ import pytest
 import requests
 from eth_utils import to_checksum_address
 
+from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.ens import DBEns
 from rotkehlchen.tests.utils.api import (
@@ -13,13 +14,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response_with_result,
 )
 from rotkehlchen.tests.utils.factories import make_addressbook_entries
-from rotkehlchen.types import (
-    AddressbookEntry,
-    AddressbookType,
-    BlockchainAccountData,
-    SupportedBlockchain,
-    Timestamp,
-)
+from rotkehlchen.types import AddressbookEntry, AddressbookType, SupportedBlockchain, Timestamp
 
 
 @pytest.mark.parametrize('book_type', [AddressbookType.GLOBAL, AddressbookType.PRIVATE])

@@ -41,8 +41,8 @@ from rotkehlchen.serialization.deserialize import (
 )
 from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.types import (
+    SUPPORTED_EVM_CHAINS,
     ChecksumEvmAddress,
-    EVMChain,
     EvmTokenKind,
     EvmTransaction,
     EVMTxHash,
@@ -167,7 +167,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             greenlet_manager: GreenletManager,
             database: 'DBHandler',
             etherscan: Etherscan,
-            blockchain: EVMChain,
+            blockchain: SUPPORTED_EVM_CHAINS,
             etherscan_node: WeightedNode,
             etherscan_node_name: str,
             contracts: EvmContracts,

@@ -8,10 +8,10 @@ import pytest
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
+from rotkehlchen.chain.accounts import BlockchainAccounts
 from rotkehlchen.constants.misc import DEFAULT_SQL_VM_INSTRUCTIONS_CB
 from rotkehlchen.data_migrations.migrations.migration_4 import read_and_write_nodes_in_database
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.db.utils import BlockchainAccounts
 from rotkehlchen.tests.utils.database import (
     _use_prepared_db,
     add_blockchain_accounts_to_db,

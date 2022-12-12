@@ -11,6 +11,7 @@ from eth_utils import to_checksum_address
 from flaky import flaky
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.ethereum.defi.structures import (
     DefiBalance,
     DefiProtocol,
@@ -51,7 +52,7 @@ from rotkehlchen.tests.utils.substrate import (
     SUBSTRATE_ACC1_KSM_ADDR,
     SUBSTRATE_ACC2_KSM_ADDR,
 )
-from rotkehlchen.types import BlockchainAccountData, SupportedBlockchain
+from rotkehlchen.types import SupportedBlockchain
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

@@ -6,6 +6,7 @@ from typing import Any
 import gevent
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.ethereum.constants import ETHEREUM_ETHERSCAN_NODE
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -18,7 +19,6 @@ from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
-    BlockchainAccountData,
     ChainID,
     EvmTransaction,
     EVMTxHash,

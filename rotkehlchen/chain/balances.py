@@ -8,7 +8,6 @@ from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.chain.substrate.types import KusamaAddress, PolkadotAddress
 from rotkehlchen.constants.assets import A_BCH, A_BTC
 from rotkehlchen.types import (
-    SUPPORTED_CHAINS,
     SUPPORTED_NON_BITCOIN_CHAINS,
     BTCAddress,
     ChecksumEvmAddress,
@@ -37,7 +36,7 @@ class BlockchainBalances:
 
         Each iteration returns the chain shortname used in the code and the balances dict
         """
-        for supported_chain in get_args(SUPPORTED_CHAINS):
+        for supported_chain in SupportedBlockchain:
             chain_key = supported_chain.get_key()
             yield (chain_key, getattr(self, chain_key))
 
@@ -70,7 +69,7 @@ class BlockchainBalances:
         return balances
 
     def __post_init__(self) -> None:
-        for supported_chain in get_args(SUPPORTED_CHAINS):
+        for supported_chain in SupportedBlockchain:
             chain_key = supported_chain.get_key()
             if chain_key in ('btc', 'bch'):
                 setattr(self, chain_key, defaultdict(Balance))

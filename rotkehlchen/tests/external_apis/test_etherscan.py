@@ -4,6 +4,7 @@ from unittest.mock import patch
 import pytest
 from eth_utils import to_checksum_address
 
+from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.ethereum.constants import ETHEREUM_BEGIN, GENESIS_HASH
 from rotkehlchen.chain.ethereum.etherscan import EthereumEtherscan
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
@@ -13,7 +14,6 @@ from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
 from rotkehlchen.serialization.deserialize import deserialize_evm_transaction
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (
-    BlockchainAccountData,
     ChainID,
     EvmInternalTransaction,
     EvmTransaction,

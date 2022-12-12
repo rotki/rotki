@@ -152,6 +152,7 @@ from rotkehlchen.assets.asset import (
 )
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
+from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
@@ -174,16 +175,15 @@ from rotkehlchen.db.utils import DBAssetBalance, LocationData
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.types import (
+    SUPPORTED_EVM_CHAINS,
     AddressbookEntry,
     AddressbookType,
     ApiKey,
     ApiSecret,
     AssetAmount,
-    BlockchainAccountData,
     ChainID,
     ChecksumEvmAddress,
     Eth2PubKey,
-    EVMChain,
     EVMTxHash,
     ExternalService,
     ExternalServiceApiCredentials,
@@ -2653,7 +2653,7 @@ class DetectTokensResource(BaseMethodView):
     @use_kwargs(post_schema, location='json_and_view_args')
     def post(
             self,
-            blockchain: EVMChain,
+            blockchain: SUPPORTED_EVM_CHAINS,
             async_query: bool,
             only_cache: bool,
             addresses: Optional[list[ChecksumEvmAddress]],

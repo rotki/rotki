@@ -11,6 +11,7 @@ from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
+from rotkehlchen.chain.accounts import BlockchainAccountData, BlockchainAccounts
 from rotkehlchen.constants import ONE, YEAR_IN_SECONDS
 from rotkehlchen.constants.assets import A_1INCH, A_BTC, A_DAI, A_ETH, A_ETH2, A_USD
 from rotkehlchen.constants.misc import ZERO
@@ -44,12 +45,7 @@ from rotkehlchen.db.settings import (
     DBSettings,
     ModifiableDBSettings,
 )
-from rotkehlchen.db.utils import (
-    BlockchainAccounts,
-    DBAssetBalance,
-    LocationData,
-    SingleDBAssetBalance,
-)
+from rotkehlchen.db.utils import DBAssetBalance, LocationData, SingleDBAssetBalance
 from rotkehlchen.errors.api import AuthenticationError
 from rotkehlchen.errors.misc import DBSchemaError, InputError
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
@@ -74,7 +70,6 @@ from rotkehlchen.types import (
     ApiSecret,
     AssetAmount,
     AssetMovementCategory,
-    BlockchainAccountData,
     CostBasisMethod,
     ExternalService,
     ExternalServiceApiCredentials,

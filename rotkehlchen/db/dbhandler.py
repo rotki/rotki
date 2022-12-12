@@ -17,6 +17,7 @@ from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.assets.asset import Asset, AssetWithOracles, EvmToken
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
+from rotkehlchen.chain.accounts import BlockchainAccountData, BlockchainAccounts
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.xpub import (
     XpubData,
@@ -71,7 +72,6 @@ from rotkehlchen.db.settings import (
 )
 from rotkehlchen.db.upgrade_manager import DBUpgradeManager
 from rotkehlchen.db.utils import (
-    BlockchainAccounts,
     DBAssetBalance,
     LocationData,
     SingleDBAssetBalance,
@@ -106,7 +106,6 @@ from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
     AssetMovementCategory,
-    BlockchainAccountData,
     BlockchainAddress,
     BTCAddress,
     ChainID,
@@ -1313,23 +1312,18 @@ class DBHandler:
 
     def get_blockchain_accounts(self, cursor: 'DBCursor') -> BlockchainAccounts:
         """Returns a Blockchain accounts instance containing all blockchain account addresses"""
-        eth_list = []
-        btc_list = []
-        bch_list = []
-        ksm_list = []
-        dot_list = []
-        avax_list = []
-
-        supported_blockchains = {blockchain.value for blockchain in SupportedBlockchain}
+        accounts = BlockchainAccounts()
         cursor.execute(
             'SELECT blockchain, account FROM blockchain_accounts;',
         )
         for entry in cursor:
-            if entry[0] not in supported_blockchains:
-                log.warning(f'Unknown blockchain {entry[0]} found in DB. Ignoring...')
+            try:
+                blockchain = SupportedBlockchain.deserialize(entry[0])
+            except DeserializationError:
+                log.warning(f'Unsupported blockchain {entry[0]} found in DB. Ignoring...')
                 continue
 
-            if not is_valid_db_blockchain_account(blockchain=entry[0], account=entry[1]):
+            if blockchain is None or is_valid_db_blockchain_account(blockchain=blockchain, account=entry[1]) is False:  # noqa: E501
                 self.msg_aggregator.add_warning(
                     f'Invalid {entry[0]} account in DB: {entry[1]}. '
                     f'This should not happen unless the DB was manually modified. '
@@ -1338,20 +1332,10 @@ class DBHandler:
                 )
                 continue
 
-            if entry[0] == SupportedBlockchain.BITCOIN.value:
-                btc_list.append(entry[1])
-            elif entry[0] == SupportedBlockchain.BITCOIN_CASH.value:
-                bch_list.append(entry[1])
-            elif entry[0] == SupportedBlockchain.ETHEREUM.value:
-                eth_list.append(entry[1])
-            elif entry[0] == SupportedBlockchain.KUSAMA.value:
-                ksm_list.append(entry[1])
-            elif entry[0] == SupportedBlockchain.AVALANCHE.value:
-                avax_list.append(entry[1])
-            elif entry[0] == SupportedBlockchain.POLKADOT.value:
-                dot_list.append(entry[1])
+            accounts_list = getattr(accounts, blockchain.get_key())
+            accounts_list.append(entry[1])
 
-        return BlockchainAccounts(eth=eth_list, btc=btc_list, bch=bch_list, ksm=ksm_list, dot=dot_list, avax=avax_list)  # noqa: E501
+        return accounts
 
     def get_blockchain_account_data(
             self,

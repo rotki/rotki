@@ -20,6 +20,7 @@ from rotkehlchen.balances.manual import (
     account_for_manually_tracked_asset_balances,
     get_manually_tracked_balances,
 )
+from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.aggregator import ChainsAggregator
 from rotkehlchen.chain.avalanche.manager import AvalancheManager
 from rotkehlchen.chain.ethereum.accounting.aggregator import EVMAccountingAggregator
@@ -67,7 +68,6 @@ from rotkehlchen.tasks.manager import DEFAULT_MAX_TASKS_NUM, TaskManager
 from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
-    BlockchainAccountData,
     ChainID,
     ChecksumEvmAddress,
     ListOfBlockchainAddresses,

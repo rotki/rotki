@@ -1,6 +1,7 @@
 import pytest
 import requests
 
+from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.constants import ONE
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
@@ -11,7 +12,6 @@ from rotkehlchen.tests.utils.exchanges import (
 )
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import (
-    BlockchainAccountData,
     ChainID,
     EvmTransaction,
     Location,

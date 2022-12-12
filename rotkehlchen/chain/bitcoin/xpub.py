@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Optional
 from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.bitcoin import have_bitcoin_transactions
 from rotkehlchen.chain.bitcoin.bch import have_bch_transactions
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
@@ -13,7 +14,7 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import BlockchainAccountData, BTCAddress, SupportedBlockchain
+from rotkehlchen.types import BTCAddress, SupportedBlockchain
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.aggregator import ChainsAggregator
