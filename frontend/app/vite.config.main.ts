@@ -22,7 +22,13 @@ const binaryDependencyPlugin = (): Plugin => {
         return;
       }
       const parsedPath = parse(rootDir);
-      const psList = join(parsedPath.dir, 'node_modules', 'ps-list', 'vendor');
+      const psList = join(
+        parsedPath.dir,
+        'app',
+        'node_modules',
+        'ps-list',
+        'vendor'
+      );
       const files = fs.readdirSync(psList);
       const output = join(rootDir, outDir, 'vendor');
       if (!fs.existsSync(output)) {
