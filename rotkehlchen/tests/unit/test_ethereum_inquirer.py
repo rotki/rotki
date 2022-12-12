@@ -1,5 +1,6 @@
 import pytest
 
+from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.ethereum.constants import ETHEREUM_ETHERSCAN_NODE_NAME
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
@@ -12,7 +13,6 @@ from rotkehlchen.tests.utils.ethereum import (
 )
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import (
-    BlockchainAccountData,
     ChainID,
     EvmTransaction,
     SupportedBlockchain,

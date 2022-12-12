@@ -1,3 +1,4 @@
+from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
@@ -10,7 +11,6 @@ from rotkehlchen.tests.utils.constants import (
 )
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import (
-    BlockchainAccountData,
     ChainID,
     EvmInternalTransaction,
     EvmTransaction,

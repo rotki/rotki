@@ -8,6 +8,7 @@ from rotkehlchen.accounting.structures.balance import Balance, BalanceType
 from rotkehlchen.accounting.structures.base import StakingEvent
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalanceWithValue
+from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.chain.ethereum.defi.structures import (
     DefiBalance,
@@ -67,7 +68,6 @@ from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.inquirer import CurrentPriceOracle
 from rotkehlchen.types import (
     AssetMovementCategory,
-    BlockchainAccountData,
     ChainID,
     CostBasisMethod,
     EvmTokenKind,

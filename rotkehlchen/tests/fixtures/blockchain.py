@@ -2,6 +2,7 @@ from typing import Literal, Optional, Sequence
 
 import pytest
 
+from rotkehlchen.chain.accounts import BlockchainAccounts
 from rotkehlchen.chain.aggregator import ChainsAggregator
 from rotkehlchen.chain.avalanche.manager import AvalancheManager
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
@@ -15,7 +16,6 @@ from rotkehlchen.chain.substrate.manager import SubstrateChainProperties, Substr
 from rotkehlchen.chain.substrate.types import KusamaAddress, PolkadotAddress, SubstrateChain
 from rotkehlchen.constants.assets import A_DOT, A_KSM
 from rotkehlchen.db.settings import DEFAULT_BTC_DERIVATION_GAP_LIMIT
-from rotkehlchen.db.utils import BlockchainAccounts
 from rotkehlchen.externalapis.beaconchain import BeaconChain
 from rotkehlchen.externalapis.covalent import Covalent
 from rotkehlchen.premium.premium import Premium

@@ -19,6 +19,7 @@ from web3.exceptions import BadFunctionCallOutput
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
+from rotkehlchen.chain.accounts import BlockchainAccounts
 from rotkehlchen.chain.bitcoin import get_bitcoin_addresses_balances
 from rotkehlchen.chain.bitcoin.bch import get_bitcoin_cash_addresses_balances
 from rotkehlchen.chain.bitcoin.bch.utils import force_address_to_legacy_address
@@ -61,7 +62,6 @@ from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery
 from rotkehlchen.db.queried_addresses import QueriedAddresses
-from rotkehlchen.db.utils import BlockchainAccounts
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import (
     EthSyncError,
@@ -905,7 +905,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             manager: 'EvmManager',
             balances: DefaultDict[ChecksumEvmAddress, BalanceSheet],
     ) -> None:
-        """Queries evm token balance via either etherscan or ethereum node
+        """Queries evm token balance via either etherscan or evm node
 
         Should come here during addition of a new account or querying of all token
         balances.

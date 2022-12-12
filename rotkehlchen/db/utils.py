@@ -19,22 +19,11 @@ from typing_extensions import Concatenate, ParamSpec
 
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
-from rotkehlchen.chain.substrate.types import KusamaAddress, PolkadotAddress
+from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.substrate.utils import is_valid_kusama_address, is_valid_polkadot_address
 from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import (
-    BlockchainAccountData,
-    BTCAddress,
-    ChecksumEvmAddress,
-    EVMChain,
-    HexColorCode,
-    ListOfBlockchainAddresses,
-    Location,
-    Price,
-    SupportedBlockchain,
-    Timestamp,
-)
+from rotkehlchen.types import HexColorCode, Location, Price, SupportedBlockchain, Timestamp
 from rotkehlchen.utils.misc import pairwise_longest, rgetattr, timestamp_to_date
 
 if TYPE_CHECKING:
@@ -118,39 +107,6 @@ def need_cursor(path_to_context_manager: str) -> Callable[[Callable[Concatenate[
 
         return _impl  # type: ignore
     return _need_cursor
-
-
-class BlockchainAccounts(NamedTuple):
-    eth: list[ChecksumEvmAddress]
-    btc: list[BTCAddress]
-    bch: list[BTCAddress]
-    ksm: list[KusamaAddress]
-    dot: list[PolkadotAddress]
-    avax: list[ChecksumEvmAddress]
-
-    @overload
-    def get(self, blockchain: EVMChain) -> list[ChecksumEvmAddress]:
-        ...
-
-    @overload
-    def get(self, blockchain: SupportedBlockchain) -> ListOfBlockchainAddresses:
-        ...
-
-    def get(self, blockchain: SupportedBlockchain) -> ListOfBlockchainAddresses:
-        if blockchain == SupportedBlockchain.BITCOIN:
-            return self.btc
-        if blockchain == SupportedBlockchain.BITCOIN_CASH:
-            return self.bch
-        if blockchain == SupportedBlockchain.ETHEREUM:
-            return self.eth
-        if blockchain == SupportedBlockchain.KUSAMA:
-            return self.ksm
-        if blockchain == SupportedBlockchain.POLKADOT:
-            return self.dot
-        if blockchain == SupportedBlockchain.AVALANCHE:
-            return self.avax
-
-        raise AssertionError(f'Unsupported blockchain: {blockchain}')
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -323,22 +279,22 @@ def insert_tag_mappings(
 
 
 def is_valid_db_blockchain_account(
-        blockchain: str,
+        blockchain: SupportedBlockchain,
         account: str,
 ) -> bool:
     """Validates a blockchain address already stored in DB."""
-    if blockchain == SupportedBlockchain.BITCOIN.value:
+    if blockchain == SupportedBlockchain.BITCOIN:
         return True
-    if blockchain == SupportedBlockchain.BITCOIN_CASH.value:
+    if blockchain == SupportedBlockchain.BITCOIN_CASH:
         return True
-    if blockchain in (SupportedBlockchain.ETHEREUM.value, SupportedBlockchain.AVALANCHE.value):
+    if blockchain.is_evm():
         return is_checksum_address(account)
-    if blockchain == SupportedBlockchain.KUSAMA.value:
+    if blockchain == SupportedBlockchain.KUSAMA:
         return is_valid_kusama_address(account)
-    if blockchain == SupportedBlockchain.POLKADOT.value:
+    if blockchain == SupportedBlockchain.POLKADOT:
         return is_valid_polkadot_address(account)
 
-    raise AssertionError(f'Unknown blockchain: {blockchain}')
+    raise AssertionError(f'Should not store blockchain: {blockchain} addresses in the DB')
 
 
 def _append_or_combine(balances: list[SingleDBAssetBalance], entry: SingleDBAssetBalance) -> list[SingleDBAssetBalance]:  # noqa: E501

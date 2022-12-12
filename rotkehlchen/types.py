@@ -1,5 +1,5 @@
 from enum import Enum, auto
-from typing import Any, Callable, Literal, NamedTuple, NewType, Optional, Union
+from typing import Any, Callable, Literal, NamedTuple, NewType, Optional, Union, get_args
 
 from eth_typing import ChecksumAddress
 from hexbytes import HexBytes as Web3HexBytes
@@ -361,9 +361,7 @@ class CovalentTransaction(NamedTuple):
 
 class SupportedBlockchain(SerializableEnumValueMixin):
     """
-    These are the blockchains rotki is aware of. Only subset of those are currently supported
-
-    The currently supported types are in the SUPPORTED_CHAINS Type Literal.
+    These are the currently supported chains in any capacity in rotki
     """
     ETHEREUM = 'ETH'
     ETHEREUM_BEACONCHAIN = 'ETH2'
@@ -373,18 +371,13 @@ class SupportedBlockchain(SerializableEnumValueMixin):
     AVALANCHE = 'AVAX'
     POLKADOT = 'DOT'
     OPTIMISM = 'OPTIMISM'
-    BINANCE = 'BINANCE'
-    GNOSIS = 'GNOSIS'
-    MATIC = 'MATIC'
-    FANTOM = 'FANTOM'
-    ARBITRUM = 'ARBITRUM'
 
     def get_key(self) -> str:
         """Returns the key to be used as attribute for this chain in the code"""
         return self.value.lower()
 
     def get_address_type(self) -> Callable:
-        if self in (SupportedBlockchain.ETHEREUM, SupportedBlockchain.AVALANCHE):
+        if self.is_evm():
             return ChecksumEvmAddress
         if self == SupportedBlockchain.ETHEREUM_BEACONCHAIN:
             return Eth2PubKey
@@ -395,6 +388,9 @@ class SupportedBlockchain(SerializableEnumValueMixin):
         if self == SupportedBlockchain.POLKADOT:
             return PolkadotAddress
         raise AssertionError(f'Invalid SupportedBlockchain value: {self}')
+
+    def is_evm(self) -> bool:
+        return self in get_args(SUPPORTED_EVM_CHAINS)
 
     def ens_coin_type(self) -> int:
         """Return the CoinType number according to EIP-2304, multichain address
@@ -428,18 +424,13 @@ class SupportedBlockchain(SerializableEnumValueMixin):
         return CHAINID_TO_SUPPORTED_BLOCKCHAIN[chain]
 
 
-SUPPORTED_CHAINS = Literal[  # The currently supported chains
+SUPPORTED_EVM_CHAINS = Literal[
     SupportedBlockchain.ETHEREUM,
-    SupportedBlockchain.ETHEREUM_BEACONCHAIN,
-    SupportedBlockchain.KUSAMA,
-    SupportedBlockchain.AVALANCHE,
-    SupportedBlockchain.POLKADOT,
     SupportedBlockchain.OPTIMISM,
-    SupportedBlockchain.BITCOIN_CASH,
-    SupportedBlockchain.BITCOIN,
+    SupportedBlockchain.AVALANCHE,
 ]
 
-SUPPORTED_NON_BITCOIN_CHAINS = Literal[  # The list above without bitcoins
+SUPPORTED_NON_BITCOIN_CHAINS = Literal[
     SupportedBlockchain.ETHEREUM,
     SupportedBlockchain.ETHEREUM_BEACONCHAIN,
     SupportedBlockchain.KUSAMA,
@@ -448,7 +439,7 @@ SUPPORTED_NON_BITCOIN_CHAINS = Literal[  # The list above without bitcoins
     SupportedBlockchain.OPTIMISM,
 ]
 
-SUPPORTED_BITCOIN_CHAINS = Literal[  # The list above only with bitcoin based chains
+SUPPORTED_BITCOIN_CHAINS = Literal[
     SupportedBlockchain.BITCOIN,
     SupportedBlockchain.BITCOIN_CASH,
 ]
@@ -456,27 +447,12 @@ SUPPORTED_BITCOIN_CHAINS = Literal[  # The list above only with bitcoin based ch
 SUPPORTED_BLOCKCHAIN_TO_CHAINID = {
     SupportedBlockchain.ETHEREUM: ChainID.ETHEREUM,
     SupportedBlockchain.OPTIMISM: ChainID.OPTIMISM,
-    SupportedBlockchain.BINANCE: ChainID.BINANCE,
-    SupportedBlockchain.GNOSIS: ChainID.GNOSIS,
-    SupportedBlockchain.MATIC: ChainID.MATIC,
-    SupportedBlockchain.FANTOM: ChainID.FANTOM,
-    SupportedBlockchain.ARBITRUM: ChainID.ARBITRUM,
     SupportedBlockchain.AVALANCHE: ChainID.AVALANCHE,
 }
 CHAINID_TO_SUPPORTED_BLOCKCHAIN = {
     value: key
     for key, value in SUPPORTED_BLOCKCHAIN_TO_CHAINID.items()
 }
-EVMChain = Literal[  # keep in sync with SUPPORTED_BLOCKCHAIN_TO_CHAINID
-    SupportedBlockchain.ETHEREUM,
-    SupportedBlockchain.OPTIMISM,
-    SupportedBlockchain.BINANCE,
-    SupportedBlockchain.GNOSIS,
-    SupportedBlockchain.MATIC,
-    SupportedBlockchain.FANTOM,
-    SupportedBlockchain.ARBITRUM,
-    SupportedBlockchain.AVALANCHE,
-]
 NON_EVM_CHAINS = set(SupportedBlockchain) - set(SUPPORTED_BLOCKCHAIN_TO_CHAINID.keys())
 
 
@@ -555,12 +531,6 @@ class AssetMovementCategory(DBEnumMixIn):
     """Supported Asset Movement Types so far only deposit and withdrawals"""
     DEPOSIT = 1
     WITHDRAWAL = 2
-
-
-class BlockchainAccountData(NamedTuple):
-    address: BlockchainAddress
-    label: Optional[str] = None
-    tags: Optional[list[str]] = None
 
 
 class ExchangeApiCredentials(NamedTuple):

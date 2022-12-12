@@ -11,9 +11,9 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address, deserialize_timestamp
 from rotkehlchen.types import (
+    SUPPORTED_EVM_CHAINS,
     ChainID,
     ChecksumEvmAddress,
-    EVMChain,
     EvmInternalTransaction,
     EvmTransaction,
     EVMTxHash,
@@ -227,7 +227,7 @@ class DBEvmTx():
         total_found_result = cursor.execute(query, bindings)
         return txs, total_found_result.fetchone()[0]  # always returns result
 
-    def purge_evm_transaction_data(self, chain: EVMChain) -> None:
+    def purge_evm_transaction_data(self, chain: SUPPORTED_EVM_CHAINS) -> None:
         """Deletes all evm transaction related data from the DB"""
         with self.db.user_write() as cursor:
             cursor.executemany(
@@ -435,7 +435,7 @@ class DBEvmTx():
             self,
             write_cursor: 'DBCursor',
             address: ChecksumEvmAddress,
-            chain: EVMChain,
+            chain: SUPPORTED_EVM_CHAINS,
     ) -> None:
         """Delete all of the particular evm chain transactions related data
         to the given address from the DB.
@@ -481,7 +481,7 @@ class DBEvmTx():
             self,
             cursor: 'DBCursor',
             address: ChecksumEvmAddress,
-            chain: EVMChain,
+            chain: SUPPORTED_EVM_CHAINS,
     ) -> tuple[Timestamp, Timestamp]:
         """Gets the most conservative range that was queried for the
         transactions of an address for a specific evm chain

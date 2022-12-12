@@ -50,6 +50,7 @@ from rotkehlchen.balances.manual import (
     get_manually_tracked_balances,
     remove_manually_tracked_balances,
 )
+from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.airdrops import check_airdrops
 from rotkehlchen.chain.ethereum.modules.eth2.constants import FREE_VALIDATORS_LIMIT
@@ -145,15 +146,14 @@ from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.serialization.serialize import process_result, process_result_list
 from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
+    SUPPORTED_EVM_CHAINS,
     AddressbookEntry,
     AddressbookType,
     ApiKey,
     ApiSecret,
     AssetAmount,
-    BlockchainAccountData,
     ChecksumEvmAddress,
     Eth2PubKey,
-    EVMChain,
     EvmTokenKind,
     EVMTxHash,
     ExternalService,
@@ -4643,9 +4643,9 @@ class RestAPI():
             async_query: bool,
             only_cache: bool,
             addresses: Optional[list[ChecksumEvmAddress]],
-            blockchain: EVMChain,
+            blockchain: SUPPORTED_EVM_CHAINS,
     ) -> Response:
-        manager = self.rotkehlchen.chains_aggregator.get_chain_manager(blockchain)  # type: ignore
+        manager = self.rotkehlchen.chains_aggregator.get_chain_manager(blockchain)
         if addresses is None:
             addresses = self.rotkehlchen.chains_aggregator.accounts.get(blockchain)
         if async_query is True:

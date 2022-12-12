@@ -1,5 +1,6 @@
 import os
 import random
+from dataclasses import asdict
 from pathlib import Path
 from shutil import copyfile
 from typing import Any, Optional
@@ -7,14 +8,13 @@ from unittest.mock import _patch, patch
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
+from rotkehlchen.chain.accounts import BlockchainAccountData, BlockchainAccounts
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.settings import ModifiableDBSettings
-from rotkehlchen.db.utils import BlockchainAccounts
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.tests.utils.constants import DEFAULT_TESTS_MAIN_CURRENCY
 from rotkehlchen.types import (
     ApiKey,
-    BlockchainAccountData,
     ExternalService,
     ExternalServiceApiCredentials,
     SupportedBlockchain,
@@ -50,7 +50,7 @@ def maybe_include_cryptocompare_key(db: DBHandler, include_cryptocompare_key: bo
 def add_blockchain_accounts_to_db(db: DBHandler, blockchain_accounts: BlockchainAccounts) -> None:
     try:
         with db.user_write() as cursor:
-            for name, value in blockchain_accounts._asdict().items():
+            for name, value in asdict(blockchain_accounts).items():
                 db.add_blockchain_accounts(
                     cursor,
                     SupportedBlockchain(name.upper()),
