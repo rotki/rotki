@@ -466,19 +466,33 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
 
         return tx_receipt  # type: ignore  # tx_receipt was just added in the DB so should be there  # noqa: E501
 
-    def get_receipts_for_transactions_missing_them(self, limit: Optional[int] = None) -> None:
+    def get_receipts_for_transactions_missing_them(
+            self,
+            limit: Optional[int] = None,
+            addresses: Optional[list[ChecksumEvmAddress]] = None,
+    ) -> None:
         """
         Searches the database for up to `limit` transactions that have no corresponding receipt
         and for each one of them queries the receipt and saves it in the DB.
 
         It's protected by a lock to not enter the same code twice
         (i.e. from periodic tasks and from pnl report history events gathering)
+
+        If the addresses argument is provided then it is used to filter the transactions missing
+        their receipt. If it is None then no distinction is made among the transactions.
         """
         with self.missing_receipts_lock:
             dbevmtx = DBEvmTx(self.database)
             with self.database.conn.read_ctx() as cursor:
+                if addresses is None:
+                    tx_filter_query = None
+                else:
+                    tx_filter_query = EvmTransactionsFilterQuery.make(
+                        addresses=addresses,
+                    )
+
                 hash_results = dbevmtx.get_transaction_hashes_no_receipt(
-                    tx_filter_query=None,
+                    tx_filter_query=tx_filter_query,
                     limit=limit,
                 )
 

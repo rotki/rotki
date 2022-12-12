@@ -246,7 +246,7 @@ class DBEvmTx():
             limit: Optional[int],
     ) -> list[EVMTxHash]:
         cursor = self.db.conn.cursor()
-        querystr = 'SELECT DISTINCT tx_hash FROM evm_transactions '
+        querystr = 'SELECT DISTINCT evm_transactions.tx_hash FROM evm_transactions '
         bindings = ()
         if tx_filter_query is not None:
             filter_query, bindings = tx_filter_query.prepare(with_order=False, with_pagination=False)  # type: ignore  # noqa: E501
@@ -254,7 +254,7 @@ class DBEvmTx():
         else:
             querystr += ' WHERE '
 
-        querystr += 'tx_hash NOT IN (SELECT tx_hash from evmtx_receipts)'
+        querystr += 'evm_transactions.tx_hash NOT IN (SELECT tx_hash from evmtx_receipts)'
         if limit is not None:
             querystr += 'LIMIT ?'
             bindings = (*bindings, limit)  # type: ignore
