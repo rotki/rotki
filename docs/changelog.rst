@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :bug:`-` Transfers between tracked accounts will now have a correct label in the UI.
+* :bug:`5038` Premium users with big databases should no longer see the error: "Upload data to server died with exception: database plaintext is locked"
 
 
 * :release:`1.26.2 <2022-12-09>`
