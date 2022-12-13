@@ -3158,6 +3158,11 @@
       "unclaimed_rewards": "Unclaimed rewards"
     },
     "statistics": {
+      "asset_amount_and_value_over_time": "Asset amount and value over time",
+      "max_visible": "Maximum assets to show",
+      "max_visible_required": "You cannot show more than {availableAssets} assets",
+      "min_visible_required": "You have to show at least one asset.",
+      "netvalue_over_time": "Netvalue over time",
       "no_balance_snapshot_data_available": "No balance snapshot data available.",
       "range_selector": {
         "clear": "Clear",
@@ -3167,7 +3172,11 @@
         "no_entries_available_before": "There are no entries available before"
       },
       "refresh_the_net_value_data": "Refresh the net value data",
-      "show_graph_for_selected_range": "Show the graph for the selected range"
+      "select_asset": "Select asset",
+      "show_graph_for_selected_range": "Show the graph for the selected range",
+      "value_distribution_by_asset": "Value distribution by asset",
+      "value_distribution_by_location": "Value distribution by location",
+      "visible_percentage": "% of visible items only:"
     },
     "theme_manager": {
       "dark_theme": "Dark Theme",

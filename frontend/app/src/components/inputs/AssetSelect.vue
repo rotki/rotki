@@ -6,7 +6,6 @@
     :items="visibleAssets"
     class="asset-select"
     :hint="hint"
-    single-line
     :label="label"
     :clearable="clearable"
     :persistent-hint="persistentHint"
@@ -288,6 +287,8 @@ watch(value, async () => {
 
     &__selections {
       margin-top: 4px;
+      display: flex;
+      flex-flow: nowrap;
     }
   }
 }
