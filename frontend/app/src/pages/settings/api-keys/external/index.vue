@@ -216,7 +216,8 @@ const showConfirmation = (service: ExternalServiceName) => {
   show(
     {
       title: tc('external_services.confirmation.title'),
-      message: tc('external_services.confirmation.message')
+      message: tc('external_services.confirmation.message'),
+      type: 'info'
     },
     async () => await confirm(service)
   );

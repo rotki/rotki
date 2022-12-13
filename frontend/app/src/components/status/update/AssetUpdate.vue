@@ -93,25 +93,11 @@
       @cancel="showConflictDialog = false"
       @resolve="updateAssets($event)"
     />
-    <confirm-dialog
-      v-if="done"
-      single-action
-      display
-      :title="tc('asset_update.success.title')"
-      :primary-action="tc('asset_update.success.ok')"
-      :message="
-        tc('asset_update.success.description', 0, {
-          remoteVersion
-        })
-      "
-      @confirm="updateComplete()"
-    />
   </fragment>
 </template>
 
 <script setup lang="ts">
 import { type Ref } from 'vue';
-import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import Fragment from '@/components/helper/Fragment';
 import ConflictDialog from '@/components/status/update/ConflictDialog.vue';
 
@@ -121,6 +107,7 @@ import { useMainStore } from '@/store/main';
 import { useMessageStore } from '@/store/message';
 import { useSessionStore } from '@/store/session';
 import { type AssetUpdateConflictResult } from '@/types/assets';
+import { useConfirmStore } from '@/store/confirm';
 
 const props = defineProps({
   auto: { required: false, default: false, type: Boolean }
@@ -137,7 +124,6 @@ const upToVersion: Ref<number> = ref(0);
 const partial: Ref<boolean> = ref(false);
 
 const conflicts: Ref<AssetUpdateConflictResult[]> = ref([]);
-const done: Ref<boolean> = ref(false);
 
 const skipped = useLocalStorage('rotki_skip_asset_db_version', undefined);
 
@@ -212,7 +198,7 @@ const updateAssets = async (resolution?: ConflictResolution) => {
   const updateResult = await applyUpdates({ version, resolution });
   if (updateResult.done) {
     set(skipped, undefined);
-    set(done, true);
+    showDoneConfirmation();
   } else if (updateResult.conflicts) {
     set(conflicts, updateResult.conflicts);
     set(showConflictDialog, true);
@@ -236,6 +222,22 @@ onMounted(async () => {
     await check();
   }
 });
+
+const { show } = useConfirmStore();
+
+const showDoneConfirmation = () => {
+  show(
+    {
+      title: tc('asset_update.success.title'),
+      message: tc('asset_update.success.description', 0, {
+        remoteVersion: get(remoteVersion)
+      }),
+      primaryAction: tc('asset_update.success.ok'),
+      singleAction: true
+    },
+    updateComplete
+  );
+};
 </script>
 
 <style scoped lang="scss">

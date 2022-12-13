@@ -37,23 +37,12 @@
           v-if="selected.length > 0"
           depressed
           color="error"
-          @click="showConfirmMassDelete = true"
+          @click="showMassDeleteConfirmation"
         >
           {{ t('backup_manager.delete_selected') }}
         </v-btn>
       </template>
     </card>
-    <confirm-dialog
-      :display="!!showConfirmMassDelete"
-      :title="tc('database_backups.confirm.title')"
-      :message="
-        tc('database_backups.confirm.mass_message', 0, {
-          length: selected.length
-        })
-      "
-      @cancel="showConfirmMassDelete = false"
-      @confirm="massRemove"
-    />
   </fragment>
 </template>
 
@@ -70,6 +59,7 @@ import { type DatabaseInfo, type UserDbBackup } from '@/types/backup';
 import { getFilepath } from '@/utils/backups';
 import { size } from '@/utils/data';
 import { logger } from '@/utils/logging';
+import { useConfirmStore } from '@/store/confirm';
 
 const isSameEntry = (firstDb: UserDbBackup, secondDb: UserDbBackup) => {
   return (
@@ -157,8 +147,7 @@ const setupBackupActions = (
   directory: Ref<string>,
   backupInfo: Ref<DatabaseInfo | null | undefined>,
   refresh: () => Promise<void>,
-  selected: Ref<UserDbBackup[]>,
-  showConfirmMassDelete: Ref<boolean>
+  selected: Ref<UserDbBackup[]>
 ) => {
   const { t } = useI18n();
   const { deleteBackup } = useBackupApi();
@@ -188,8 +177,6 @@ const setupBackupActions = (
         }).toString()
       });
     }
-
-    set(showConfirmMassDelete, false);
   };
 
   const remove = async (db: UserDbBackup) => {
@@ -260,7 +247,6 @@ const setupBackupActions = (
   return { remove, massRemove, backup, saving };
 };
 
-const showConfirmMassDelete = ref<boolean>(false);
 const selected = ref<UserDbBackup[]>([]);
 
 const { t, tc } = useI18n();
@@ -275,7 +261,20 @@ const { backup, saving, remove, massRemove } = setupBackupActions(
   directory,
   backupInfo,
   loadInfo,
-  selected,
-  showConfirmMassDelete
+  selected
 );
+
+const { show } = useConfirmStore();
+
+const showMassDeleteConfirmation = () => {
+  show(
+    {
+      title: tc('database_backups.confirm.title'),
+      message: tc('database_backups.confirm.mass_message', 0, {
+        length: get(selected).length
+      })
+    },
+    massRemove
+  );
+};
 </script>

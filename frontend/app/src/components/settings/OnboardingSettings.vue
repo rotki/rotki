@@ -174,7 +174,7 @@
       <v-btn depressed @click="dismiss()">
         {{ tc('common.actions.cancel') }}
       </v-btn>
-      <v-btn depressed @click="confirmReset = true">
+      <v-btn depressed @click="showResetConfirmation">
         {{ tc('backend_settings.actions.reset') }}
       </v-btn>
       <v-btn
@@ -186,15 +186,6 @@
         {{ tc('common.actions.save') }}
       </v-btn>
     </template>
-
-    <confirm-dialog
-      v-if="confirmReset"
-      :message="tc('backend_settings.confirm.message')"
-      :display="confirmReset"
-      :title="tc('backend_settings.confirm.title')"
-      @confirm="reset"
-      @cancel="confirmReset = false"
-    />
   </card>
 </template>
 
@@ -208,7 +199,6 @@ import {
   required
 } from '@vuelidate/validators';
 import { type Ref } from 'vue';
-import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import LanguageSetting from '@/components/settings/general/language/LanguageSetting.vue';
 import { type BackendOptions } from '@/electron-main/ipc';
 import { useSettingsApi } from '@/services/settings/settings-api';
@@ -219,6 +209,7 @@ import {
 import { useMainStore } from '@/store/main';
 import { type Properties, type Writeable } from '@/types';
 import { LogLevel } from '@/utils/log-level';
+import { useConfirmStore } from '@/store/confirm';
 
 interface Args {
   value: string;
@@ -456,6 +447,18 @@ watch(dataDirectory, directory => {
 });
 
 const levels = Object.values(LogLevel);
+
+const { show } = useConfirmStore();
+
+const showResetConfirmation = () => {
+  show(
+    {
+      title: tc('backend_settings.confirm.title'),
+      message: tc('backend_settings.confirm.message')
+    },
+    reset
+  );
+};
 </script>
 
 <style scoped lang="scss">

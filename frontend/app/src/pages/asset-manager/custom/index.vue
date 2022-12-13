@@ -13,7 +13,7 @@
       :types="types"
       @add="add()"
       @edit="edit($event)"
-      @delete-asset="toDeleteAsset = $event"
+      @delete-asset="showDeleteConfirmation($event)"
       @update:pagination="pagination = $event"
     />
     <big-dialog
@@ -33,15 +33,6 @@
         @valid="valid = $event"
       />
     </big-dialog>
-    <confirm-dialog
-      :title="tc('asset_management.confirm_delete.title')"
-      :message="
-        tc('asset_management.confirm_delete.message', 0, deleteAssetSymbol)
-      "
-      :display="!!toDeleteAsset"
-      @confirm="confirmDelete"
-      @cancel="toDeleteAsset = null"
-    />
   </v-container>
 </template>
 
@@ -62,7 +53,7 @@ import {
   defaultCustomAssetPagination
 } from '@/types/assets';
 import { convertPagination } from '@/types/pagination';
-import { assert } from '@/utils/assertions';
+import { useConfirmStore } from '@/store/confirm';
 
 const props = defineProps({
   identifier: { required: false, type: String, default: null }
@@ -79,7 +70,6 @@ const assets = ref<CustomAsset[]>([]);
 const valid = ref<boolean>(false);
 const showForm = ref<boolean>(false);
 const saving = ref<boolean>(false);
-const toDeleteAsset = ref<Nullable<CustomAsset>>(null);
 const totalEntries = ref(0);
 const pagination: Ref<CustomAssetPagination> = ref(
   convertPagination(defaultCustomAssetPagination(get(itemsPerPage)), 'name')
@@ -87,10 +77,6 @@ const pagination: Ref<CustomAssetPagination> = ref(
 const editMode = ref<boolean>(false);
 
 const { tc } = useI18n();
-
-const deleteAssetSymbol = computed(() => ({
-  asset: get(toDeleteAsset)?.name ?? ''
-}));
 
 const dialogTitle = computed<string>(() => {
   return get(editMode)
@@ -147,13 +133,6 @@ const deleteAsset = async (identifier: string) => {
   }
 };
 
-const confirmDelete = async () => {
-  const asset = get(toDeleteAsset);
-  set(toDeleteAsset, null);
-  assert(asset);
-  await deleteAsset(asset.identifier);
-};
-
 onMounted(async () => {
   await refresh();
 });
@@ -200,4 +179,18 @@ onMounted(async () => {
 watch(identifier, identifier => {
   editAsset(identifier);
 });
+
+const { show } = useConfirmStore();
+
+const showDeleteConfirmation = (item: CustomAsset) => {
+  show(
+    {
+      title: tc('asset_management.confirm_delete.title'),
+      message: tc('asset_management.confirm_delete.message', 0, {
+        asset: item?.name ?? ''
+      })
+    },
+    async () => await deleteAsset(item.identifier)
+  );
+};
 </script>

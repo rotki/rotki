@@ -60,7 +60,11 @@
                 </v-icon>
               </v-col>
               <v-col>
-                <v-icon small class="mr-2" @click="deleteItem(item)">
+                <v-icon
+                  small
+                  class="mr-2"
+                  @click="showDeleteConfirmation(item)"
+                >
                   mdi-delete
                 </v-icon>
               </v-col>
@@ -69,26 +73,18 @@
         </data-table>
       </card>
     </div>
-
-    <confirm-dialog
-      :title="tc('tag_manager.confirmation.title')"
-      :message="tc('tag_manager.confirmation.message', 0, { tagToDelete })"
-      :display="!!tagToDelete"
-      @confirm="confirmDelete"
-      @cancel="tagToDelete = ''"
-    />
   </card>
 </template>
 
 <script setup lang="ts">
 import { type DataTableHeader } from 'vuetify';
-import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import TagCreator from '@/components/tags/TagCreator.vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
 import { useTagStore } from '@/store/session/tags';
 import { defaultTag } from '@/types/tags';
 import { type Tag } from '@/types/user';
+import { useConfirmStore } from '@/store/confirm';
 
 defineProps({
   dialog: { required: false, type: Boolean, default: false }
@@ -102,7 +98,6 @@ const { tags } = storeToRefs(store);
 
 const tag = ref<Tag>(defaultTag());
 const editMode = ref<boolean>(false);
-const tagToDelete = ref<string>('');
 const search = ref<string>('');
 
 const { tc } = useI18n();
@@ -151,14 +146,18 @@ const editItem = (newTag: Tag) => {
   set(editMode, true);
 };
 
-const deleteItem = (selectedTag: Tag) => {
-  set(tagToDelete, selectedTag.name);
-};
+const { show } = useConfirmStore();
 
-const confirmDelete = async () => {
-  const tagName = get(tagToDelete);
-  set(tagToDelete, '');
-  await deleteTag(tagName);
+const showDeleteConfirmation = (selectedTag: Tag) => {
+  show(
+    {
+      title: tc('tag_manager.confirmation.title'),
+      message: tc('tag_manager.confirmation.message', 0, {
+        tagToDelete: selectedTag.name
+      })
+    },
+    () => deleteTag(selectedTag.name)
+  );
 };
 </script>
 

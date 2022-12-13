@@ -71,7 +71,7 @@
               :delete-tooltip="tc('non_fungible_balances.row.delete')"
               :edit-tooltip="tc('non_fungible_balances.row.edit')"
               :delete-disabled="!item.manuallyInput"
-              @delete-click="confirmDelete = item"
+              @delete-click="showDeleteConfirmation(item)"
               @edit-click="edit = item"
             />
           </template>
@@ -101,17 +101,6 @@
       :value="edit"
       @close="edit = null"
       @save="setPrice($event.price, $event.asset)"
-    />
-    <confirm-dialog
-      :display="!!confirmDelete"
-      :title="tc('non_fungible_balances.delete.title')"
-      :message="
-        tc('non_fungible_balances.delete.message', 0, {
-          asset: deleteAsset
-        })
-      "
-      @confirm="deletePrice"
-      @cancel="confirmDelete = null"
     />
   </card>
 </template>
@@ -145,6 +134,7 @@ import {
 import { Section } from '@/types/status';
 import { assert } from '@/utils/assertions';
 import { uniqueStrings } from '@/utils/data';
+import { useConfirmStore } from '@/store/confirm';
 
 interface PaginationOptions {
   page: number;
@@ -170,12 +160,6 @@ const { tc } = useI18n();
 const { notify } = useNotificationsStore();
 
 const edit: Ref<NonFungibleBalance | null> = ref(null);
-const confirmDelete: Ref<NonFungibleBalance | null> = ref(null);
-
-const deleteAsset = computed(() => {
-  const balance = get(confirmDelete);
-  return !balance ? '' : balance.name ?? balance.id;
-});
 
 const selected: Ref<NonFungibleBalance[]> = ref([]);
 const ignoredAssetsHandling = ref<IgnoredAssetsHandlingType>('exclude');
@@ -244,18 +228,15 @@ const setPrice = async (price: string, toAsset: string) => {
   }
 };
 
-const deletePrice = async () => {
-  const price = get(confirmDelete);
-  assert(price);
-  set(confirmDelete, null);
+const deletePrice = async (toDeletePrice: NonFungibleBalance) => {
   try {
-    await api.assets.deleteLatestPrice(price.id);
+    await api.assets.deleteLatestPrice(toDeletePrice.id);
     await fetch();
   } catch {
     notify({
       title: tc('non_fungible_balances.delete.error.title'),
       message: tc('non_fungible_balances.delete.error.message', 0, {
-        asset: price.name ?? price.id
+        asset: toDeletePrice.name ?? toDeletePrice.id
       }),
       display: true
     });
@@ -369,6 +350,20 @@ watch(ignoredAssetsHandling, async (filters, oldValue) => {
 onMounted(async () => {
   await updatePayloadHandler();
 });
+
+const { show } = useConfirmStore();
+
+const showDeleteConfirmation = (item: NonFungibleBalance) => {
+  show(
+    {
+      title: tc('non_fungible_balances.delete.title'),
+      message: tc('non_fungible_balances.delete.message', 0, {
+        asset: !item ? '' : item.name ?? item.id
+      })
+    },
+    () => deletePrice(item)
+  );
+};
 </script>
 <style scoped lang="scss">
 .non-fungible-balances {

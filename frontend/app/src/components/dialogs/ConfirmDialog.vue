@@ -33,7 +33,6 @@
           <v-spacer />
           <v-btn
             v-if="!singleAction"
-            color="primary"
             depressed
             outlined
             text

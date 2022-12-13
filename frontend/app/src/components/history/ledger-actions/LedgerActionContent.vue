@@ -170,14 +170,6 @@
         :save-data="saveData"
       />
     </big-dialog>
-    <confirm-dialog
-      :display="ledgerActionsToDelete.length > 0"
-      :title="tc('ledger_actions.delete.title')"
-      confirm-type="warning"
-      :message="confirmationMessage"
-      @cancel="ledgerActionsToDelete = []"
-      @confirm="deleteLedgerActionHandler()"
-    />
   </fragment>
 </template>
 
@@ -186,7 +178,6 @@ import { dropRight } from 'lodash';
 import { type PropType, type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
-import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import Fragment from '@/components/helper/Fragment';
@@ -214,6 +205,7 @@ import {
 } from '@/types/history/ledger-actions';
 import { type TradeLocation } from '@/types/history/trade-location';
 import { Section } from '@/types/status';
+import { useConfirmStore } from '@/store/confirm';
 
 interface PaginationOptions {
   page: number;
@@ -276,6 +268,8 @@ const editLedgerActionHandler = (ledgerAction: LedgerActionEntry) => {
 const promptForDelete = (ledgerAction: LedgerActionEntry) => {
   set(confirmationMessage, tc('ledger_actions.delete.message'));
   set(ledgerActionsToDelete, [ledgerAction]);
+
+  showDeleteConfirmation();
 };
 
 const massDelete = () => {
@@ -293,6 +287,8 @@ const massDelete = () => {
       length: get(ledgerActionsToDelete).length
     })
   );
+
+  showDeleteConfirmation();
 };
 
 const deleteLedgerActionHandler = async () => {
@@ -472,4 +468,16 @@ const { ignore } = useIgnore(
   fetch,
   getId
 );
+
+const { show } = useConfirmStore();
+
+const showDeleteConfirmation = () => {
+  show(
+    {
+      title: tc('ledger_actions.delete.title'),
+      message: get(confirmationMessage)
+    },
+    deleteLedgerActionHandler
+  );
+};
 </script>

@@ -201,14 +201,6 @@
         :save-data="saveData"
       />
     </big-dialog>
-    <confirm-dialog
-      :display="tradesToDelete.length > 0"
-      :title="tc('closed_trades.confirmation.title')"
-      confirm-type="warning"
-      :message="confirmationMessage"
-      @cancel="tradesToDelete = []"
-      @confirm="deleteTradeHandler()"
-    />
   </fragment>
 </template>
 
@@ -217,7 +209,6 @@ import { dropRight } from 'lodash';
 import { type PropType, type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
-import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import Fragment from '@/components/helper/Fragment';
@@ -243,6 +234,7 @@ import {
   type TradeRequestPayload
 } from '@/types/history/trades';
 import { Section } from '@/types/status';
+import { useConfirmStore } from '@/store/confirm';
 
 interface PaginationOptions {
   page: number;
@@ -400,6 +392,7 @@ const promptForDelete = (trade: TradeEntry) => {
     })
   );
   set(tradesToDelete, [trade]);
+  showDeleteConfirmation();
 };
 
 const massDelete = () => {
@@ -417,6 +410,8 @@ const massDelete = () => {
       length: get(tradesToDelete).length
     })
   );
+
+  showDeleteConfirmation();
 };
 
 const deleteTradeHandler = async () => {
@@ -537,4 +532,16 @@ onMounted(async () => {
     await router.replace({ query: {} });
   }
 });
+
+const { show } = useConfirmStore();
+
+const showDeleteConfirmation = () => {
+  show(
+    {
+      title: tc('closed_trades.confirmation.title'),
+      message: get(confirmationMessage)
+    },
+    deleteTradeHandler
+  );
+};
 </script>

@@ -25,7 +25,7 @@
               icon
               class="mx-1"
               v-on="on"
-              @click="pendingDeletion = item"
+              @click="showDeleteConfirmation(item)"
             >
               <v-icon small> mdi-delete-outline </v-icon>
             </v-btn>
@@ -59,13 +59,6 @@
         </row-append>
       </template>
     </data-table>
-    <confirm-dialog
-      :display="!!pendingDeletion"
-      :title="tc('database_backups.confirm.title')"
-      :message="tc('database_backups.confirm.message', 0, messageInfo)"
-      @cancel="pendingDeletion = null"
-      @confirm="remove"
-    />
   </fragment>
 </template>
 
@@ -78,9 +71,9 @@ import { displayDateFormatter } from '@/data/date_formatter';
 import { useBackupApi } from '@/services/backup';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { type UserDbBackup } from '@/types/backup';
-import { assert } from '@/utils/assertions';
 import { getFilepath } from '@/utils/backups';
 import { size } from '@/utils/data';
+import { useConfirmStore } from '@/store/confirm';
 
 const props = defineProps({
   items: { required: true, type: Array as PropType<UserDbBackup[]> },
@@ -114,33 +107,11 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
 ]);
 
 const { items, directory } = toRefs(props);
-const pendingDeletion = ref<UserDbBackup | null>(null);
 
 const { dateDisplayFormat } = storeToRefs(useGeneralSettingsStore());
 
-const messageInfo = computed(() => {
-  const db = get(pendingDeletion);
-  if (db) {
-    return {
-      size: size(db.size),
-      date: displayDateFormatter.format(
-        new Date(db.time * 1000),
-        get(dateDisplayFormat)
-      )
-    };
-  }
-
-  return {
-    size: 0,
-    date: 0
-  };
-});
-
-const remove = () => {
-  const value = get(pendingDeletion);
-  set(pendingDeletion, null);
-  assert(value);
-  emit('remove', value);
+const remove = (item: UserDbBackup & { index: number }) => {
+  emit('remove', item);
 };
 
 const totalSize = computed(() =>
@@ -161,4 +132,33 @@ const itemsWithIndex: ComputedRef<(UserDbBackup & { index: number })[]> =
       index
     }));
   });
+
+const { show } = useConfirmStore();
+
+const showDeleteConfirmation = (item: UserDbBackup & { index: number }) => {
+  const messageInfo = () => {
+    if (item) {
+      return {
+        size: size(item.size),
+        date: displayDateFormatter.format(
+          new Date(item.time * 1000),
+          get(dateDisplayFormat)
+        )
+      };
+    }
+
+    return {
+      size: 0,
+      date: 0
+    };
+  };
+
+  show(
+    {
+      title: tc('database_backups.confirm.title'),
+      message: tc('database_backups.confirm.message', 0, messageInfo)
+    },
+    () => remove(item)
+  );
+};
 </script>

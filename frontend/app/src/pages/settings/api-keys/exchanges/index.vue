@@ -43,19 +43,13 @@
           <row-actions
             :delete-tooltip="tc('exchange_settings.delete.tooltip')"
             :edit-tooltip="tc('exchange_settings.edit.tooltip')"
-            @delete-click="confirmRemoval(item)"
+            @delete-click="showRemoveConfirmation(item)"
             @edit-click="editExchange(item)"
           />
         </template>
       </data-table>
     </card>
-    <confirm-dialog
-      :display="confirmation"
-      :title="tc('exchange_settings.confirmation.title')"
-      :message="tc('exchange_settings.confirmation.message', 0, message)"
-      @cancel="confirmation = false"
-      @confirm="remove()"
-    />
+
     <big-dialog
       :display="showForm"
       :title="
@@ -84,7 +78,6 @@
 import { type DataTableHeader } from 'vuetify';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
-import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import ExchangeKeysForm from '@/components/settings/api-keys/ExchangeKeysForm.vue';
 
@@ -92,14 +85,14 @@ import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { useNotificationsStore } from '@/store/notifications';
 import { useSettingsStore } from '@/store/settings';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { type Nullable, type Writeable } from '@/types';
+import { type Writeable } from '@/types';
 import {
   type Exchange,
   type ExchangePayload,
   SupportedExchange
 } from '@/types/exchanges';
 import { useTradeLocations } from '@/types/trades';
-import { assert } from '@/utils/assertions';
+import { useConfirmStore } from '@/store/confirm';
 
 const placeholder: () => ExchangePayload = () => ({
   location: SupportedExchange.KRAKEN,
@@ -114,8 +107,6 @@ const placeholder: () => ExchangePayload = () => ({
 });
 
 const nonSyncingExchanges = ref<Exchange[]>([]);
-const pendingRemoval = ref<Nullable<Exchange>>(null);
-const confirmation = ref<boolean>(false);
 
 const store = useExchangeBalancesStore();
 const { setupExchange, removeExchange } = store;
@@ -187,20 +178,6 @@ const toggleSync = async (exchange: Exchange) => {
 
 const { exchangeName } = useTradeLocations();
 
-const message = computed(() => {
-  const exchange = get(pendingRemoval);
-
-  return {
-    name: exchange?.name ?? '',
-    location: exchange ? exchangeName(exchange.location) : ''
-  };
-});
-
-const confirmRemoval = (exchangePayload: Exchange) => {
-  set(confirmation, true);
-  set(pendingRemoval, exchangePayload);
-};
-
 const addExchange = () => {
   set(edit, false);
   set(showForm, true);
@@ -246,12 +223,8 @@ const setup = async () => {
   }
 };
 
-const remove = async () => {
-  set(confirmation, false);
-  const pending = get(pendingRemoval);
-  assert(pending !== null);
-  set(pendingRemoval, null);
-  const success = await removeExchange(pending);
+const remove = async (item: Exchange) => {
+  const success = await removeExchange(item);
 
   if (success) {
     set(exchange, placeholder());
@@ -294,6 +267,21 @@ const headers: DataTableHeader[] = [
     sortable: false
   }
 ];
+
+const { show } = useConfirmStore();
+
+const showRemoveConfirmation = (item: Exchange) => {
+  show(
+    {
+      title: tc('exchange_settings.confirmation.title'),
+      message: tc('exchange_settings.confirmation.message', 0, {
+        name: item?.name ?? '',
+        location: item ? exchangeName(item.location) : ''
+      })
+    },
+    () => remove(item)
+  );
+};
 </script>
 
 <style scoped lang="scss">

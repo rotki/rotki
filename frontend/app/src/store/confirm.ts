@@ -3,6 +3,8 @@ import { type Ref } from 'vue';
 interface ConfirmationMessage {
   title: string;
   message: string;
+  type?: string;
+  singleAction?: boolean;
   primaryAction?: string;
   secondaryAction?: string;
 }
@@ -11,17 +13,20 @@ type AwaitableFunc = () => Promise<void>;
 type VoidFunc = () => void;
 type Func = VoidFunc | AwaitableFunc;
 
-const defaultOnConfirm: Func = () => {};
+const defaultFunc: Func = () => {};
 
 const defaultMessage = (): ConfirmationMessage => ({
   title: '',
-  message: ''
+  message: '',
+  type: 'warning',
+  singleAction: false
 });
 
 export const useConfirmStore = defineStore('confirm', () => {
   const visible = ref(false);
   const confirmation: Ref<ConfirmationMessage> = ref(defaultMessage());
-  const onConfirm: Ref<Func> = ref(defaultOnConfirm);
+  const onConfirm: Ref<Func> = ref(defaultFunc);
+  const onDismiss: Ref<Func> = ref(defaultFunc);
 
   const { start, stop } = useTimeoutFn(
     () => {
@@ -31,15 +36,24 @@ export const useConfirmStore = defineStore('confirm', () => {
     { immediate: false }
   );
 
-  const show = (message: ConfirmationMessage, method: Func) => {
+  const show = (
+    message: ConfirmationMessage,
+    onConfirmFunc: Func,
+    onDismissFunc?: Func
+  ) => {
     set(confirmation, message);
-    set(onConfirm, method);
+    set(onConfirm, onConfirmFunc);
+    if (onDismissFunc) {
+      set(onDismiss, onDismissFunc);
+    }
     set(visible, true);
     stop();
   };
 
-  const dismiss = () => {
+  const dismiss = async () => {
     set(visible, false);
+    const method = get(onDismiss);
+    await method();
     start();
   };
 

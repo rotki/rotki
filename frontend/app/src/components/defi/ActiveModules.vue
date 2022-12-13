@@ -11,10 +11,8 @@
             <v-tooltip open-delay="400" top>
               <template #activator="{ on, attrs }">
                 <v-btn
-                  x-small
                   v-bind="attrs"
                   icon
-                  class="ma-2"
                   :class="module.enabled ? null : 'active-modules__disabled'"
                   v-on="on"
                   @click="onModulePress(module)"
@@ -50,15 +48,6 @@
         :module="manageModule"
         @close="manageModule = null"
       />
-      <confirm-dialog
-        :title="tc('active_modules.enable.title')"
-        :message="
-          tc('active_modules.enable.description', 0, getName(confirmEnable))
-        "
-        :display="!!confirmEnable"
-        @cancel="confirmEnable = null"
-        @confirm="enableModule()"
-      />
     </v-col>
   </v-row>
 </template>
@@ -66,13 +55,13 @@
 <script setup lang="ts">
 import { type PropType, type Ref } from 'vue';
 import QueriedAddressDialog from '@/components/defi/QueriedAddressDialog.vue';
-import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
 import { useSettingsStore } from '@/store/settings';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { type Nullable } from '@/types';
 import { type Module, SUPPORTED_MODULES } from '@/types/modules';
 import { assert } from '@/utils/assertions';
+import { useConfirmStore } from '@/store/confirm';
 
 interface ModuleWithStatus {
   readonly identifier: Module;
@@ -112,6 +101,7 @@ const onModulePress = (module: ModuleWithStatus) => {
   if (module.enabled) {
     set(manageModule, module.identifier);
   } else {
+    showConfirmation();
     set(confirmEnable, module.identifier);
   }
 };
@@ -144,6 +134,23 @@ const getName = (module: Nullable<Module>) => ({
 onMounted(async () => {
   await fetchQueriedAddresses();
 });
+
+const { show } = useConfirmStore();
+
+const showConfirmation = () => {
+  show(
+    {
+      title: tc('active_modules.enable.title'),
+      message: tc(
+        'active_modules.enable.description',
+        0,
+        getName(get(confirmEnable))
+      ),
+      type: 'info'
+    },
+    enableModule
+  );
+};
 </script>
 
 <style scoped lang="scss">
