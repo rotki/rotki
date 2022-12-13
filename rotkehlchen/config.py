@@ -2,6 +2,7 @@ import logging
 import os
 import platform
 import shutil
+import sys
 from pathlib import Path
 
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -42,14 +43,18 @@ def default_data_directory() -> Path:
     An interesting lirary that finds the data directories per OS is this:
     https://github.com/ActiveState/appdirs/blob/master/appdirs.py
     """
+    data_dir_name = 'data'
+    if getattr(sys, 'frozen', False) is False:
+        data_dir_name = 'develop_data'
+
     if platform.system() == 'Linux':
         xdgconfig = get_xdg_data_home()
-        datadir = xdgconfig / 'rotki' / 'data'
+        datadir = xdgconfig / 'rotki' / data_dir_name
     elif platform.system() == 'Windows':
         appdata = get_win32_appdata()
-        datadir = appdata / 'rotki' / 'data'
+        datadir = appdata / 'rotki' / data_dir_name
     elif platform.system() == 'Darwin':
-        datadir = Path(os.path.expanduser('~/Library/Application Support/rotki/data'))
+        datadir = Path(os.path.expanduser(f'~/Library/Application Support/rotki/{data_dir_name}'))  # noqa: E501
     else:
         raise AssertionError(f'rotki running in unknown system: {platform.system()}')
 
