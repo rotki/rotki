@@ -54,7 +54,7 @@ importers:
       cleave.js: 1.6.0
       cross-env: 7.0.3
       csv: 6.2.5
-      cypress: 12.0.2
+      cypress: 12.1.0
       dayjs: 1.11.7
       dmg-license: 1.0.11
       dotenv: 14.3.2
@@ -142,7 +142,7 @@ importers:
     optionalDependencies:
       '@babel/core': 7.20.5
       '@babel/preset-env': 7.20.2_@babel+core@7.20.5
-      '@cypress/code-coverage': 3.10.0_oz6lncoo2zhkotfo3nazkuxz4i
+      '@cypress/code-coverage': 3.10.0_uqjcjenvjnc5jmbyccs4qxeja4
       babel-loader: 8.3.0_ztqwsvkb6z73luspkai6ilstpu
       webpack: 5.75.0
     devDependencies:
@@ -161,7 +161,7 @@ importers:
       c8: 7.12.0
       cross-env: 7.0.3
       csv: 6.2.5
-      cypress: 12.0.2
+      cypress: 12.1.0
       dmg-license: 1.0.11
       dotenv: 14.3.2
       dotenv-cli: 5.1.0
@@ -1435,7 +1435,7 @@ packages:
       postcss-selector-parser: 6.0.11
     dev: true
 
-  /@cypress/code-coverage/3.10.0_oz6lncoo2zhkotfo3nazkuxz4i:
+  /@cypress/code-coverage/3.10.0_uqjcjenvjnc5jmbyccs4qxeja4:
     resolution: {integrity: sha512-K5pW2KPpK4vKMXqxd6vuzo6m9BNgpAv1LcrrtmqAtOJ1RGoEILXYZVost0L6Q+V01NyY7n7jXIIfS7LR3nP6YA==}
     requiresBuild: true
     peerDependencies:
@@ -1443,7 +1443,7 @@ packages:
     dependencies:
       '@cypress/webpack-preprocessor': 5.15.6_lxwsdojuovvngvdkxl6v3c5p3q
       chalk: 4.1.2
-      cypress: 12.0.2
+      cypress: 12.1.0
       dayjs: 1.10.7
       debug: 4.3.4
       execa: 4.1.0
@@ -3770,8 +3770,8 @@ packages:
       stream-transform: 3.2.1
     dev: true
 
-  /cypress/12.0.2:
-    resolution: {integrity: sha512-WnLx1DpnbF1vbpDBkgP14rK5yS3U+Gvxrv2fsB4Owma26oIyENj7DDRnsJbSZuTfG4mcuUJxAkRHJR2wBqBfMA==}
+  /cypress/12.1.0:
+    resolution: {integrity: sha512-7fz8N84uhN1+ePNDsfQvoWEl4P3/VGKKmAg+bJQFY4onhA37Ys+6oBkGbNdwGeC7n2QqibNVPhk8x3YuQLwzfw==}
     engines: {node: ^14.0.0 || ^16.0.0 || >=18.0.0}
     hasBin: true
     requiresBuild: true
