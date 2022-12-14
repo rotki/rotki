@@ -11,6 +11,7 @@ from typing import (
     Optional,
     TypeVar,
     Union,
+    cast,
     overload,
 )
 
@@ -75,6 +76,7 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.types import (
+    SUPPORTED_EVM_CHAINS,
     BTCAddress,
     ChecksumEvmAddress,
     Eth2PubKey,
@@ -424,12 +426,11 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
     def query_balances(
             self,
             blockchain: Optional[SupportedBlockchain] = None,
-            beaconchain_fetch_eth1: bool = False,
             ignore_cache: bool = False,
     ) -> BlockchainBalancesUpdate:
         """Queries either all, or specific blockchain balances
 
-        If querying beaconchain and beaconchain_fetch_eth1 is true then each eth1 address is also
+        If querying beaconchain and ignore_cache is true then each eth1 address is also
         checked for the validators it has deposited and the deposits are fetched.
 
         May raise:
@@ -438,38 +439,18 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         - EthSyncError if querying the token balances through a provided ethereum
         client and the chain is not synced
         """
-        should_query_eth = not blockchain or blockchain == SupportedBlockchain.ETHEREUM
-        should_query_eth2 = not blockchain or blockchain == SupportedBlockchain.ETHEREUM_BEACONCHAIN  # noqa: E501
-        should_query_btc = not blockchain or blockchain == SupportedBlockchain.BITCOIN
-        should_query_bch = not blockchain or blockchain == SupportedBlockchain.BITCOIN_CASH
-        should_query_ksm = not blockchain or blockchain == SupportedBlockchain.KUSAMA
-        should_query_dot = not blockchain or blockchain == SupportedBlockchain.POLKADOT
-        should_query_avax = not blockchain or blockchain == SupportedBlockchain.AVALANCHE
-
-        if should_query_eth:
-            self.query_ethereum_balances(
-                ignore_cache=ignore_cache,
-            )
-        if should_query_eth2:
-            self.query_ethereum_beaconchain_balances(
-                fetch_validators_for_eth1=beaconchain_fetch_eth1,  # document this better
-                ignore_cache=ignore_cache,
-            )
-        if should_query_btc:
-            self.query_btc_balances(ignore_cache=ignore_cache)
-        if should_query_bch:
-            self.query_bch_balances(ignore_cache=ignore_cache)
-        if should_query_ksm:
-            self.query_kusama_balances(ignore_cache=ignore_cache)
-        if should_query_dot:
-            self.query_polkadot_balances(ignore_cache=ignore_cache)
-        if should_query_avax:
-            self.query_avax_balances(ignore_cache=ignore_cache)
-        if ignore_cache is True:
-            self.derive_new_addresses_from_xpubs(
-                should_derive_bch_xpubs=should_query_bch,
-                should_derive_btc_xpubs=should_query_btc,
-            )
+        xpub_manager = XpubManager(chains_aggregator=self)
+        if blockchain is not None:
+            query_method = f'query_{blockchain.get_key()}_balances'
+            getattr(self, query_method)(ignore_cache=ignore_cache)
+            if ignore_cache is True and blockchain.is_bitcoin():
+                xpub_manager.check_for_new_xpub_addresses(blockchain=blockchain)  # type: ignore # is checked in the if  # noqa: E501
+        else:  # all chains
+            for chain in SupportedBlockchain:
+                query_method = f'query_{chain.get_key()}_balances'
+                getattr(self, query_method)(ignore_cache=ignore_cache)
+                if ignore_cache is True and chain.is_bitcoin():
+                    xpub_manager.check_for_new_xpub_addresses(blockchain=blockchain)  # type: ignore # is checked in the if  # noqa: E501
 
         self.totals = self.balances.recalculate_totals()
         return self.get_balances_update()
@@ -536,7 +517,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
     @protect_with_lock()
     @cache_response_timewise()
-    def query_kusama_balances(
+    def query_ksm_balances(
             self,  # pylint: disable=unused-argument
             wait_available_node: bool = True,
             # Kwargs here is so linters don't complain when the "magic" ignore_cache kwarg is given
@@ -592,7 +573,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
     @protect_with_lock()
     @cache_response_timewise()
-    def query_polkadot_balances(
+    def query_dot_balances(
             self,  # pylint: disable=unused-argument
             wait_available_node: bool = True,
             # Kwargs here is so linters don't complain when the "magic" ignore_cache kwarg is given
@@ -774,7 +755,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
           as etherscan (from on_account_addition or on_account_removal callback)"""
         with self.eth_lock:
             # we are adding/removing accounts, make sure query cache is flushed
-            self.flush_cache('query_ethereum_balances')
+            self.flush_cache('query_eth_balances')
 
             for account in accounts:
                 address = string_to_evm_address(account)
@@ -845,20 +826,18 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         # we are adding/removing accounts, make sure query cache is flushed
         self.flush_cache('query_balances')
         self.flush_cache('query_balances', blockchain=blockchain)
-        self.flush_cache('query_balances', blockchain=None, ignore_cache=False, beaconchain_fetch_eth1=False)  # noqa: E501
-        self.flush_cache('query_balances', blockchain=blockchain, ignore_cache=False, beaconchain_fetch_eth1=False)  # noqa: E501
+        self.flush_cache('query_balances', blockchain=None, ignore_cache=False)
+        self.flush_cache('query_balances', blockchain=blockchain, ignore_cache=False)
 
         # recalculate totals
         if append_or_remove == 'remove':  # at addition no balances are queried so no need
             self.totals = self.balances.recalculate_totals()
 
     @protect_with_lock()
-    @cache_response_timewise()
-    def query_ethereum_beaconchain_balances(
-            self,  # pylint: disable=unused-argument
-            fetch_validators_for_eth1: bool,
-            # Kwargs here is so linters don't complain when the "magic" ignore_cache kwarg is given
-            **kwargs: Any,
+    @cache_response_timewise(forward_ignore_cache=True)
+    def query_eth2_balances(
+            self,
+            ignore_cache: bool,
     ) -> None:
         """Queries ethereum beacon chain balances
 
@@ -874,7 +853,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.balances.eth2.clear()
         balance_mapping = eth2.get_balances(
             addresses=self.queried_addresses_for_module('eth2'),
-            fetch_validators_for_eth1=fetch_validators_for_eth1,
+            fetch_validators_for_eth1=ignore_cache,
         )
         for pubkey, balance in balance_mapping.items():
             self.balances.eth2[pubkey] = BalanceSheet(
@@ -954,9 +933,49 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             self.defi_balances_last_query_ts = ts_now()
             return self.defi_balances
 
+    def query_evm_chain_balances(self, chain: SUPPORTED_EVM_CHAINS) -> None:
+        """Queries all the balances for an evm chain and populates the state
+
+        May raise:
+        - RemoteError if an external service such as Etherscan or cryptocompare
+        is queried and there is a problem with its query.
+        - EthSyncError if querying the token balances through a provided ethereum
+        client and the chain is not synced
+        """
+        accounts = self.accounts.get(chain)
+        if len(accounts) == 0:
+            return
+
+        # Query ETH/gas token balances
+        eth_usd_price = Inquirer().find_usd_price(A_ETH)
+        manager = cast('EvmManager', self.get_chain_manager(chain))
+        chain_balances = self.balances.get(chain)
+        queried_balances = manager.node_inquirer.get_multi_balance(accounts)
+        for account, balance in queried_balances.items():
+            usd_value = balance * eth_usd_price
+            chain_balances[account] = BalanceSheet(
+                assets=defaultdict(Balance, {
+                    self.eth_asset: Balance(balance, usd_value),
+                }),
+            )
+        self.query_evm_tokens(manager=manager, balances=chain_balances)
+
     @protect_with_lock()
     @cache_response_timewise()
-    def query_ethereum_balances(
+    def query_optimism_balances(
+            self,  # pylint: disable=unused-argument
+            # Kwargs here is so linters don't complain when the "magic" ignore_cache kwarg is given
+            **kwargs: Any,
+    ) -> None:
+        """
+        Queries all the optimism balances and populates the state.
+        Same potential exceptions as ethereum
+        """
+        self.query_evm_chain_balances(chain=SupportedBlockchain.OPTIMISM)
+
+    @protect_with_lock()
+    @cache_response_timewise()
+    def query_eth_balances(
             self,  # pylint: disable=unused-argument
             # Kwargs here is so linters don't complain when the "magic" ignore_cache kwarg is given
             **kwargs: Any,
@@ -969,22 +988,8 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         - EthSyncError if querying the token balances through a provided ethereum
         client and the chain is not synced
         """
-        if len(self.accounts.eth) == 0:
-            return
-
-        # Query ethereum ETH balances
-        eth_usd_price = Inquirer().find_usd_price(A_ETH)
-        balances = self.ethereum.node_inquirer.get_multi_balance(self.accounts.eth)
-        for account, balance in balances.items():
-            usd_value = balance * eth_usd_price
-            self.balances.eth[account] = BalanceSheet(
-                assets=defaultdict(Balance, {
-                    self.eth_asset: Balance(balance, usd_value),
-                }),
-            )
-
+        self.query_evm_chain_balances(chain=SupportedBlockchain.ETHEREUM)
         self.query_defi_balances()
-        self.query_evm_tokens(manager=self.ethereum, balances=self.balances.eth)
         self._add_eth_protocol_balances(eth_balances=self.balances.eth)
 
     def _add_eth_protocol_balances(self, eth_balances: DefaultDict[ChecksumEvmAddress, BalanceSheet]) -> None:  # noqa: E501
@@ -1257,11 +1262,11 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             ownership_proportion=ownership_proportion,
         )
         self.flush_cache('get_eth2_daily_stats')
-        self.flush_cache('query_ethereum_beaconchain_balances')
+        self.flush_cache('query_eth2_balances')
         self.flush_cache('query_balances')
         self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN)
-        self.flush_cache('query_balances', blockchain=None, ignore_cache=False, beaconchain_fetch_eth1=False)  # noqa: E501
-        self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN, ignore_cache=False, beaconchain_fetch_eth1=False)  # noqa: E501
+        self.flush_cache('query_balances', blockchain=None, ignore_cache=False)
+        self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN, ignore_cache=False)  # noqa: E501
 
     def add_eth2_validator(
             self,
@@ -1288,13 +1293,13 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.flush_cache('get_eth2_staking_details')
         self.flush_cache('get_eth2_history_events')
         self.flush_cache('get_eth2_daily_stats')
-        self.flush_cache('query_ethereum_beaconchain_balances')
+        self.flush_cache('query_eth2_balances')
         self.flush_cache('query_balances')
         self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN)
-        self.flush_cache('query_balances', blockchain=None, ignore_cache=False, beaconchain_fetch_eth1=False)  # noqa: E501
-        self.flush_cache('query_balances', blockchain=None, ignore_cache=True, beaconchain_fetch_eth1=True)  # noqa: E501
-        self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN, ignore_cache=False, beaconchain_fetch_eth1=False)  # noqa: E501
-        self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN, ignore_cache=True, beaconchain_fetch_eth1=True)  # noqa: E501
+        self.flush_cache('query_balances', blockchain=None, ignore_cache=False)
+        self.flush_cache('query_balances', blockchain=None, ignore_cache=True)
+        self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN, ignore_cache=False)  # noqa: E501
+        self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN, ignore_cache=True)  # noqa: E501
 
     def delete_eth2_validator(
             self,

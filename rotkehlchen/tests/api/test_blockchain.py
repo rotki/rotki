@@ -249,8 +249,8 @@ def test_query_blockchain_balances_ignore_cache(
     setup = setup_balances(rotki, ethereum_accounts=ethereum_accounts, btc_accounts=btc_accounts)
     eth_query = patch.object(
         rotki.chains_aggregator,
-        'query_ethereum_balances',
-        wraps=rotki.chains_aggregator.query_ethereum_balances,
+        'query_eth_balances',
+        wraps=rotki.chains_aggregator.query_eth_balances,
     )
     tokens_query = patch.object(
         rotki.chains_aggregator,

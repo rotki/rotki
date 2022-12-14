@@ -250,8 +250,8 @@ def test_query_all_balances_ignore_cache(
     poloniex = try_get_first_exchange(rotki.exchange_manager, Location.POLONIEX)
     eth_query_patch = patch.object(
         rotki.chains_aggregator,
-        'query_ethereum_balances',
-        wraps=rotki.chains_aggregator.query_ethereum_balances,
+        'query_eth_balances',
+        wraps=rotki.chains_aggregator.query_eth_balances,
     )
     btc_query_patch = patch.object(
         rotki.chains_aggregator,
@@ -266,10 +266,9 @@ def test_query_all_balances_ignore_cache(
     original_binance_query_dict = binance.api_query_dict
     binance_query_patch = patch.object(binance, 'api_query_dict', wraps=binance.api_query_dict)
     poloniex_query_patch = patch.object(poloniex, 'api_query_list', wraps=poloniex.api_query_list)
-    derive_new_addresses_from_xpubs_patch = patch.object(
-        rotki.chains_aggregator,
-        'derive_new_addresses_from_xpubs',
-        wraps=rotki.chains_aggregator.derive_new_addresses_from_xpubs,
+    check_for_new_xpub_addresses_patch = patch(
+        'rotkehlchen.chain.bitcoin.xpub.XpubManager.check_for_new_xpub_addresses',
+        return_value=None,
     )
 
     with ExitStack() as stack:
@@ -285,7 +284,7 @@ def test_query_all_balances_ignore_cache(
             stack.enter_context(tokens_query_patch),
             stack.enter_context(binance_query_patch),
             stack.enter_context(poloniex_query_patch),
-            stack.enter_context(derive_new_addresses_from_xpubs_patch),
+            stack.enter_context(check_for_new_xpub_addresses_patch),
         ]
 
         # Query all balances for the first time and test it works
@@ -306,7 +305,7 @@ def test_query_all_balances_ignore_cache(
             if fn._mock_wraps == original_binance_query_dict:
                 assert fn.call_count == 3
             # addresses are not derived from xpubs when `ignore_cache` is False
-            elif fn == rotki.chains_aggregator.derive_new_addresses_from_xpubs:
+            elif fn._mock_name == 'check_for_new_xpub_addresses':
                 assert fn.call_count == 0
             else:
                 assert fn.call_count == 1
@@ -331,7 +330,7 @@ def test_query_all_balances_ignore_cache(
             if fn._mock_wraps == original_binance_query_dict:
                 assert fn.call_count == 3, msg
             # addresses are not derived from xpubs when `ignore_cache` is False
-            elif fn == rotki.chains_aggregator.derive_new_addresses_from_xpubs:
+            elif fn._mock_name == 'check_for_new_xpub_addresses':
                 assert fn.call_count == 0, msg
             else:
                 assert fn.call_count == 1, msg
@@ -357,8 +356,8 @@ def test_query_all_balances_ignore_cache(
             if fn._mock_wraps == original_binance_query_dict:
                 assert fn.call_count == 6, msg
             # addresses are derived from xpubs when `ignore_cache` is True
-            elif fn == rotki.chains_aggregator.derive_new_addresses_from_xpubs:
-                assert fn.call_count == 1, msg
+            elif fn._mock_name == 'check_for_new_xpub_addresses':
+                assert fn.call_count == 2, msg  # 2 is for btc + bch
             else:
                 assert fn.call_count == 2, msg
         msg = 'etherscan call count should have doubled after forced token detection'

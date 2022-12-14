@@ -1,13 +1,15 @@
 from collections import defaultdict
 from copy import deepcopy
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, DefaultDict, Iterator, Literal, get_args
+from typing import TYPE_CHECKING, Any, DefaultDict, Iterator, Literal, get_args, overload
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.chain.substrate.types import KusamaAddress, PolkadotAddress
 from rotkehlchen.constants.assets import A_BCH, A_BTC
 from rotkehlchen.types import (
+    SUPPORTED_BITCOIN_CHAINS,
+    SUPPORTED_EVM_CHAINS,
     SUPPORTED_NON_BITCOIN_CHAINS,
     BTCAddress,
     ChecksumEvmAddress,
@@ -30,6 +32,30 @@ class BlockchainBalances:
     ksm: dict[KusamaAddress, BalanceSheet] = field(init=False)
     dot: dict[PolkadotAddress, BalanceSheet] = field(init=False)
     avax: DefaultDict[ChecksumEvmAddress, BalanceSheet] = field(init=False)
+
+    @overload
+    def get(self, chain: SUPPORTED_EVM_CHAINS) -> DefaultDict[ChecksumEvmAddress, BalanceSheet]:
+        ...
+
+    @overload
+    def get(self, chain: SUPPORTED_BITCOIN_CHAINS) -> dict[BTCAddress, Balance]:
+        ...
+
+    @overload
+    def get(self, chain: Literal[SupportedBlockchain.ETHEREUM_BEACONCHAIN]) -> DefaultDict[Eth2PubKey, BalanceSheet]:  # noqa: E501
+        ...
+
+    @overload
+    def get(self, chain: Literal[SupportedBlockchain.KUSAMA]) -> dict[KusamaAddress, BalanceSheet]:
+        ...
+
+    @overload
+    def get(self, chain: Literal[SupportedBlockchain.POLKADOT]) -> dict[PolkadotAddress, BalanceSheet]:  # noqa: E501
+        ...
+
+    def get(self, chain: SupportedBlockchain) -> dict:
+        """Get the appropriate balances dict corresponding to the given chain"""
+        return getattr(self, chain.get_key())
 
     def __iter__(self) -> Iterator[tuple[str, dict]]:
         """Easy way to iterate through all chains

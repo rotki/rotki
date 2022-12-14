@@ -116,7 +116,7 @@ def test_multiple_concurrent_ethereum_blockchain_queries(blockchain):
 
     with etherscan_patch, evmtokens_max_chunks_patch, defi_balances_mock, add_defi_mock, beaconchain_patch:  # noqa: E501
         greenlets = [
-            # can't call query_ethereum_balances directly since we have to update totals
+            # can't call query_eth_balances directly since we have to update totals
             gevent.spawn_later(0.01 * x, blockchain.query_balances, blockchain=SupportedBlockchain.ETHEREUM)  # noqa: E501
             for x in range(5)
         ]

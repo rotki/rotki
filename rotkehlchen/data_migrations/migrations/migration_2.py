@@ -14,7 +14,7 @@ def _do_query_validator_data(rotki: 'Rotkehlchen') -> None:
     if eth2 is None:
         return
 
-    lock_key = function_sig_key('query_ethereum_beaconchain_balances', arguments_matter=False, skip_ignore_cache=False)  # noqa: E501
+    lock_key = function_sig_key('query_eth2_balances', arguments_matter=False, skip_ignore_cache=False)  # noqa: E501
     lock = rotki.chains_aggregator.query_locks_map[lock_key]
 
     with lock:
