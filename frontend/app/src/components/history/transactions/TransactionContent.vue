@@ -396,7 +396,7 @@ const confirmationPrimaryAction: Ref<string> = ref('');
 const valid: Ref<boolean> = ref(false);
 const form = ref<InstanceType<typeof TransactionEventForm> | null>(null);
 
-const getId = (item: EthTransactionEntry) => item.txHash;
+const getId = (item: EthTransactionEntry) => item.chainId + item.txHash;
 
 const selected: Ref<EthTransactionEntry[]> = ref([]);
 

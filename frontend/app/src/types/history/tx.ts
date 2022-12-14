@@ -39,6 +39,7 @@ export const EthTransaction = z.object({
   txHash: z.string(),
   timestamp: z.number(),
   blockNumber: z.number(),
+  chainId: z.number(),
   fromAddress: z.string(),
   toAddress: z.string().nullish(),
   value: NumericString,
