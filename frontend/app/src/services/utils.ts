@@ -1,7 +1,7 @@
 import { type ActionResult } from '@rotki/common/lib/data';
-import { type AxiosResponse } from 'axios';
+import { type AxiosInstance, type AxiosResponse } from 'axios';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
-import { type ApiImplementation, type PendingTask } from '@/services/types-api';
+import { type PendingTask } from '@/services/types-api';
 
 type Parser<T> = (response: AxiosResponse<ActionResult<T>>) => ActionResult<T>;
 
@@ -17,11 +17,11 @@ export const handleResponse = <T>(
 };
 
 export const fetchExternalAsync = async (
-  api: ApiImplementation,
+  api: AxiosInstance,
   url: string,
   params?: Record<string, any>
 ): Promise<PendingTask> => {
-  const result = await api.axios.get<ActionResult<PendingTask>>(url, {
+  const result = await api.get<ActionResult<PendingTask>>(url, {
     validateStatus: validWithSessionAndExternalService,
     params: axiosSnakeCaseTransformer({
       asyncQuery: true,

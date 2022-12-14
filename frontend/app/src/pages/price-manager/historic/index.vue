@@ -67,9 +67,9 @@ import {
   type HistoricalPrice,
   type HistoricalPriceFormPayload
 } from '@/services/assets/types';
-import { api } from '@/services/rotkehlchen-api';
 import { useMessageStore } from '@/store/message';
 import { type Nullable } from '@/types';
+import { useAssetPricesApi } from '@/services/assets/prices';
 
 const emptyPrice: () => HistoricalPriceFormPayload = () => ({
   fromAsset: '',
@@ -92,6 +92,7 @@ const valid = ref(false);
 const editMode = ref(false);
 
 const { setMessage } = useMessageStore();
+const { editHistoricalPrice, addHistoricalPrice } = useAssetPricesApi();
 const router = useRouter();
 const route = useRoute();
 const { tc } = useI18n();
@@ -125,9 +126,9 @@ const managePrice = async (
 ) => {
   try {
     if (edit) {
-      await api.assets.editHistoricalPrice(price);
+      await editHistoricalPrice(price);
     } else {
-      await api.assets.addHistoricalPrice(price);
+      await addHistoricalPrice(price);
     }
 
     set(showForm, false);

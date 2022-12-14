@@ -4,7 +4,6 @@ import { Blockchain, DefiProtocol } from '@rotki/common/lib/blockchain';
 import sortBy from 'lodash/sortBy';
 import { type ComputedRef, type Ref } from 'vue';
 import { ProtocolVersion } from '@/services/defi/consts';
-import { api } from '@/services/rotkehlchen-api';
 import {
   ALL_DECENTRALIZED_EXCHANGES,
   ALL_MODULES
@@ -54,6 +53,7 @@ import { TaskType } from '@/types/task-type';
 import { Zero, bigNumberify } from '@/utils/bignumbers';
 import { uniqueStrings } from '@/utils/data';
 import { logger } from '@/utils/logging';
+import { useDefiApi } from '@/services/defi';
 
 type ResetStateParams =
   | Module
@@ -77,6 +77,11 @@ export const useDefiStore = defineStore('defi', () => {
   const uniswapStore = useUniswapStore();
   const lendingStore = useDefiSupportedProtocolsStore();
   const { t, tc } = useI18n();
+
+  const {
+    fetchAllDefi: fetchAllDefiCaller,
+    fetchAirdrops: fetchAirdropsCaller
+  } = useDefiApi();
 
   const {
     vaultsBalances: yearnV1Balances,
@@ -463,7 +468,7 @@ export const useDefiStore = defineStore('defi', () => {
     setStatus(Status.LOADING, section);
     try {
       const taskType = TaskType.DEFI_BALANCES;
-      const { taskId } = await api.defi.fetchAllDefi();
+      const { taskId } = await fetchAllDefiCaller();
       const { result } = await awaitTask<AllDefiProtocols, TaskMeta>(
         taskId,
         taskType,
@@ -577,7 +582,7 @@ export const useDefiStore = defineStore('defi', () => {
     setStatus(newStatus, section);
 
     try {
-      const { taskId } = await api.defi.fetchAirdrops();
+      const { taskId } = await fetchAirdropsCaller();
       const { result } = await awaitTask<Airdrops, TaskMeta>(
         taskId,
         TaskType.DEFI_AIRDROPS,

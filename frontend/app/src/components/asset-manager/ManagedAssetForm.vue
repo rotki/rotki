@@ -268,7 +268,6 @@ import {
   evmTokenKindsData
 } from '@/services/assets/consts';
 import { deserializeApiErrorMessage } from '@/services/converters';
-import { api } from '@/services/rotkehlchen-api';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useMessageStore } from '@/store/message';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
@@ -278,6 +277,7 @@ import {
   toSentenceCase
 } from '@/utils/text';
 import AssetIconForm from '@/components/asset-manager/AssetIconForm.vue';
+import { useAssetManagementApi } from '@/services/assets/management-api';
 
 function time(t: string): number | undefined {
   return t ? convertToTimestamp(t) : undefined;
@@ -335,6 +335,14 @@ const isEvmToken = computed<boolean>(() => {
 
 const { setMessage } = useMessageStore();
 
+const {
+  getAssetTypes,
+  editEthereumToken,
+  addEthereumToken,
+  editAsset,
+  addAsset
+} = useAssetManagementApi();
+
 watch(address, async () => {
   const sanitizedAddress = sanitizeAddress(get(address));
   if (get(address) !== sanitizedAddress) {
@@ -382,7 +390,7 @@ const asset: ComputedRef<Omit<SupportedAsset, 'identifier' | 'type'>> =
 
 onBeforeMount(async () => {
   try {
-    const queriedTypes = await api.assets.assetTypes();
+    const queriedTypes = await getAssetTypes();
     set(
       types,
       queriedTypes.filter(item => item !== CUSTOM_ASSET)
@@ -428,13 +436,9 @@ const saveEthereumToken = async () => {
   let newIdentifier: string;
   const tokenVal = get(asset)!;
   if (get(edit) && get(identifier)) {
-    ({ identifier: newIdentifier } = await api.assets.editEthereumToken(
-      tokenVal
-    ));
+    ({ identifier: newIdentifier } = await editEthereumToken(tokenVal));
   } else {
-    ({ identifier: newIdentifier } = await api.assets.addEthereumToken(
-      tokenVal
-    ));
+    ({ identifier: newIdentifier } = await addEthereumToken(tokenVal));
   }
   return newIdentifier;
 };
@@ -448,9 +452,9 @@ const saveAsset = async () => {
   };
   if (get(edit)) {
     newIdentifier = get(identifier);
-    await api.assets.editAsset({ ...payload, identifier: newIdentifier });
+    await editAsset({ ...payload, identifier: newIdentifier });
   } else {
-    ({ identifier: newIdentifier } = await api.assets.addAsset(payload));
+    ({ identifier: newIdentifier } = await addAsset(payload));
   }
   return newIdentifier;
 };

@@ -8,7 +8,6 @@ import {
 import { type XswapPool } from '@rotki/common/lib/defi/xswap';
 import cloneDeep from 'lodash/cloneDeep';
 import { type ComputedRef, type Ref } from 'vue';
-import { api } from '@/services/rotkehlchen-api';
 import { type OnError } from '@/store/typing';
 import { filterAddresses } from '@/store/utils';
 import { type Writeable } from '@/types';
@@ -18,6 +17,7 @@ import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { balanceSum } from '@/utils/calculation';
 import { fetchDataAsync } from '@/utils/fetch-async';
+import { useBalancerApi } from '@/services/defi/balancer';
 
 export const useBalancerStore = defineStore('defi/balancer', () => {
   const events: Ref<BalancerEvents> = ref({});
@@ -26,6 +26,7 @@ export const useBalancerStore = defineStore('defi/balancer', () => {
   const { activeModules } = useModules();
   const isPremium = usePremium();
   const { t } = useI18n();
+  const { fetchBalancerBalances, fetchBalancerEvents } = useBalancerApi();
 
   const addresses = computed(() => Object.keys(get(balances)));
 
@@ -177,7 +178,7 @@ export const useBalancerStore = defineStore('defi/balancer', () => {
         task: {
           type: TaskType.BALANCER_BALANCES,
           section: Section.DEFI_BALANCER_BALANCES,
-          query: async () => await api.defi.fetchBalancerBalances(),
+          query: async () => await fetchBalancerBalances(),
           parser: data => BalancerBalances.parse(data),
           meta,
           onError
@@ -215,7 +216,7 @@ export const useBalancerStore = defineStore('defi/balancer', () => {
         task: {
           type: TaskType.BALANCER_EVENT,
           section: Section.DEFI_BALANCER_EVENTS,
-          query: async () => await api.defi.fetchBalancerEvents(),
+          query: async () => await fetchBalancerEvents(),
           parser: data => BalancerEvents.parse(data),
           meta,
           onError

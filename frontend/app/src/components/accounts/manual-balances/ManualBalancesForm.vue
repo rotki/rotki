@@ -119,7 +119,6 @@ import TagInput from '@/components/inputs/TagInput.vue';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import { BalanceType } from '@/services/balances/types';
 import { deserializeApiErrorMessage } from '@/services/converters';
-import { api } from '@/services/rotkehlchen-api';
 import { useBalancesStore } from '@/store/balances';
 import { useManualBalancesStore } from '@/store/balances/manual';
 import { useMessageStore } from '@/store/message';
@@ -129,6 +128,7 @@ import { startPromise } from '@/utils';
 import { bigNumberify } from '@/utils/bignumbers';
 import { toMessages } from '@/utils/validation-errors';
 import CustomAssetForm from '@/components/asset-manager/CustomAssetForm.vue';
+import { useAssetManagementApi } from '@/services/assets/management-api';
 
 const props = defineProps({
   edit: {
@@ -284,9 +284,11 @@ const customAssetFormSaving: Ref<boolean> = ref(false);
 
 const customAssetTypes = ref<string[]>([]);
 
+const { getCustomAssetTypes } = useAssetManagementApi();
+
 const openCustomAssetForm = async () => {
   if (get(customAssetTypes).length === 0) {
-    set(customAssetTypes, await api.assets.getCustomAssetTypes());
+    set(customAssetTypes, await getCustomAssetTypes());
   }
 
   set(showCustomAssetForm, true);

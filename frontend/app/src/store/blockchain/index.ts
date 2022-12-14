@@ -164,19 +164,27 @@ export const useBlockchainStore = defineStore('blockchain', () => {
 
     if (registeredAddresses.length > 0) {
       try {
+        await fetchAccounts(blockchain);
         if (blockchain === Blockchain.ETH && modules) {
-          await enableModule({
-            enable: modules,
-            addresses: registeredAddresses
-          });
+          startPromise(
+            enableModule({
+              enable: modules,
+              addresses: registeredAddresses
+            })
+          );
         }
         resetDefi();
         resetDefiStatus();
-        if (blockchain === Blockchain.ETH) {
-          await fetchDetected(registeredAddresses);
-        }
-        startPromise(fetchNonFungibleBalances());
-        startPromise(refreshAccounts(blockchain));
+        startPromise(
+          (async () => {
+            if (blockchain === Blockchain.ETH) {
+              await fetchDetected(registeredAddresses);
+            }
+            await refreshAccounts(blockchain);
+          })()
+        );
+
+        startPromise(fetchNonFungibleBalances(true));
       } catch (e: any) {
         logger.error(e);
         const description = tc(

@@ -66,11 +66,11 @@
 
 <script setup lang="ts">
 import { Severity } from '@rotki/common/lib/messages';
-import { api } from '@/services/rotkehlchen-api';
 import { useMainStore } from '@/store/main';
 import { useNotificationsStore } from '@/store/notifications';
-import { useSessionStore } from '@/store/session';
+import { useAssetsApi } from '@/services/assets';
 import { useConfirmStore } from '@/store/confirm';
+import { useSessionStore } from '@/store/session';
 
 defineProps({
   dropdown: {
@@ -85,6 +85,7 @@ type ResetType = 'soft' | 'hard';
 const { notify } = useNotificationsStore();
 const { connect, setConnected } = useMainStore();
 const { logout } = useSessionStore();
+const { restoreAssetsDatabase } = useAssetsApi();
 
 const { restartBackend } = useBackendManagement();
 
@@ -92,7 +93,7 @@ const { t, tc } = useI18n();
 
 async function restoreAssets(resetType: ResetType) {
   try {
-    const updated = await api.assets.restoreAssetsDatabase(
+    const updated = await restoreAssetsDatabase(
       resetType,
       resetType === 'hard'
     );

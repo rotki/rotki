@@ -1,5 +1,9 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type ActionResult } from '@rotki/common/lib/data';
+import {
+  type Eth2ValidatorEntry,
+  Eth2Validators
+} from '@rotki/common/lib/staking/eth2';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
@@ -10,6 +14,7 @@ import {
 import {
   handleResponse,
   validWithParamsSessionAndExternalService,
+  validWithSessionAndExternalService,
   validWithSessionStatus
 } from '@/services/utils';
 import {
@@ -18,6 +23,7 @@ import {
 } from '@/store/balances/types';
 import { type BtcChains } from '@/types/blockchain/chains';
 import { assert } from '@/utils/assertions';
+import { type Eth2Validator } from '@/types/balances';
 
 const performAsyncQuery = async (
   url: string,
@@ -197,6 +203,58 @@ export const useBlockchainAccountsApi = () => {
     return handleResponse(response);
   };
 
+  const getEth2Validators = async (): Promise<Eth2Validators> => {
+    const response = await api.instance.get<ActionResult<Eth2Validators>>(
+      '/blockchains/ETH2/validators',
+      {
+        validateStatus: validWithSessionStatus
+      }
+    );
+    const result = handleResponse(response);
+    return Eth2Validators.parse(result);
+  };
+
+  const addEth2Validator = async (
+    payload: Eth2Validator
+  ): Promise<PendingTask> => {
+    const response = await api.instance.put<ActionResult<PendingTask>>(
+      '/blockchains/ETH2/validators',
+      axiosSnakeCaseTransformer({ ...payload, asyncQuery: true })
+    );
+
+    return handleResponse(response);
+  };
+
+  const deleteEth2Validators = async (
+    validators: Eth2ValidatorEntry[]
+  ): Promise<boolean> => {
+    const response = await api.instance.delete<ActionResult<boolean>>(
+      '/blockchains/ETH2/validators',
+      {
+        data: axiosSnakeCaseTransformer({
+          validators
+        }),
+        validateStatus: validWithSessionStatus
+      }
+    );
+    return handleResponse(response);
+  };
+
+  const editEth2Validator = async ({
+    ownershipPercentage,
+    validatorIndex
+  }: Eth2Validator): Promise<boolean> => {
+    const response = await api.instance.patch<ActionResult<boolean>>(
+      '/blockchains/ETH2/validators',
+      axiosSnakeCaseTransformer({ ownershipPercentage, validatorIndex }),
+      {
+        validateStatus: validWithSessionAndExternalService
+      }
+    );
+
+    return handleResponse(response);
+  };
+
   return {
     addBlockchainAccount,
     removeBlockchainAccount,
@@ -204,6 +262,10 @@ export const useBlockchainAccountsApi = () => {
     editBtcAccount,
     queryAccounts,
     queryBtcAccounts,
-    deleteXpub
+    deleteXpub,
+    getEth2Validators,
+    addEth2Validator,
+    editEth2Validator,
+    deleteEth2Validators
   };
 };

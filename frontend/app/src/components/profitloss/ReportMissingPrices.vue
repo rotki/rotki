@@ -95,10 +95,10 @@ import {
   type HistoricalPriceFormPayload
 } from '@/services/assets/types';
 import { deserializeApiErrorMessage } from '@/services/converters';
-import { api } from '@/services/rotkehlchen-api';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { type EditableMissingPrice } from '@/types/prices';
 import { type MissingPrice } from '@/types/reports';
+import { useAssetPricesApi } from '@/services/assets/prices';
 
 const props = defineProps({
   items: { required: true, type: Array as PropType<MissingPrice[]> },
@@ -109,17 +109,23 @@ const { t, tc } = useI18n();
 const { items } = toRefs(props);
 const prices = ref<HistoricalPrice[]>([]);
 const errorMessages: Ref<Record<string, string[]>> = ref({});
+const {
+  fetchHistoricalPrices,
+  addHistoricalPrice,
+  editHistoricalPrice,
+  deleteHistoricalPrice
+} = useAssetPricesApi();
 
 const createKey = (item: MissingPrice) => {
   return item.fromAsset + item.toAsset + item.time;
 };
 
-const fetchHistoricalPrices = async () => {
-  set(prices, await api.assets.historicalPrices());
+const getHistoricalPrices = async () => {
+  set(prices, await fetchHistoricalPrices());
 };
 
 onMounted(async () => {
-  await fetchHistoricalPrices();
+  await getHistoricalPrices();
 });
 
 const refreshedHistoricalPrices: Ref<Record<string, BigNumber>> = ref({});
@@ -173,12 +179,12 @@ const updatePrice = async (item: EditableMissingPrice) => {
       };
 
       if (item.saved) {
-        await api.assets.editHistoricalPrice(formPayload);
+        await editHistoricalPrice(formPayload);
       } else {
-        await api.assets.addHistoricalPrice(formPayload);
+        await addHistoricalPrice(formPayload);
       }
     } else if (item.saved) {
-      await api.assets.deleteHistoricalPrice(payload);
+      await deleteHistoricalPrice(payload);
     }
   } catch (e: any) {
     const message = deserializeApiErrorMessage(e.message) as any;
@@ -190,7 +196,7 @@ const updatePrice = async (item: EditableMissingPrice) => {
     });
   }
 
-  await fetchHistoricalPrices();
+  await getHistoricalPrices();
 };
 
 const tableRef = ref<any>(null);

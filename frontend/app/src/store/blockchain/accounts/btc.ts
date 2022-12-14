@@ -26,7 +26,7 @@ export const useBtcAccountsStore = defineStore(
     const { notify } = useNotificationsStore();
     const { tc } = useI18n();
 
-    const api = useBlockchainAccountsApi();
+    const { deleteXpub: deleteXpubCaller } = useBlockchainAccountsApi();
 
     const deleteXpub = async (payload: XpubPayload) => {
       try {
@@ -34,7 +34,7 @@ export const useBtcAccountsStore = defineStore(
         if (get(isTaskRunning(taskType))) {
           return;
         }
-        const { taskId } = await api.deleteXpub(payload);
+        const { taskId } = await deleteXpubCaller(payload);
         await awaitTask<boolean, BlockchainMetadata>(taskId, taskType, {
           title: tc('actions.balances.xpub_removal.task.title'),
           description: tc('actions.balances.xpub_removal.task.description', 0, {

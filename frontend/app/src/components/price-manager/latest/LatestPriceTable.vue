@@ -64,7 +64,6 @@ import { type DataTableHeader } from 'vuetify';
 import PriceRefresh from '@/components/helper/PriceRefresh.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import { type ManualPrice } from '@/services/assets/types';
-import { api } from '@/services/rotkehlchen-api';
 import { useBalancesStore } from '@/store/balances';
 import { useAggregatedBalancesStore } from '@/store/balances/aggregated';
 import { useBalancePricesStore } from '@/store/balances/prices';
@@ -72,6 +71,7 @@ import { useNotificationsStore } from '@/store/notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { CURRENCY_USD } from '@/types/currencies';
 import { isNft } from '@/utils/nft';
+import { useAssetPricesApi } from '@/services/assets/prices';
 import { useConfirmStore } from '@/store/confirm';
 
 const props = defineProps({
@@ -130,11 +130,12 @@ const headers = computed<DataTableHeader[]>(() => [
 ]);
 
 const { refreshPrices } = useBalancesStore();
+const { deleteLatestPrice, fetchLatestPrices } = useAssetPricesApi();
 
 const deletePrice = async (item: ManualPrice) => {
   const { fromAsset } = item;
   try {
-    await api.assets.deleteLatestPrice(fromAsset);
+    await deleteLatestPrice(fromAsset);
     await refresh();
   } catch (e: any) {
     const notification: NotificationPayload = {
@@ -149,10 +150,10 @@ const deletePrice = async (item: ManualPrice) => {
   }
 };
 
-const fetchLatestPrices = async () => {
+const getLatestPrices = async () => {
   set(loading, true);
   try {
-    set(latestPrices, await api.assets.fetchLatestPrices());
+    set(latestPrices, await fetchLatestPrices());
   } catch (e: any) {
     const notification: NotificationPayload = {
       title: tc('price_table.fetch.failure.title'),
@@ -171,7 +172,7 @@ const fetchLatestPrices = async () => {
 const { assets } = useAggregatedBalancesStore();
 
 const refresh = async () => {
-  await fetchLatestPrices();
+  await getLatestPrices();
   await refreshPrices(false, [...get(latestAssets), ...get(assets())]);
 };
 

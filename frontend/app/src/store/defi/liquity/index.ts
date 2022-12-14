@@ -5,13 +5,13 @@ import {
   TroveEvents
 } from '@rotki/common/lib/liquity';
 import { type Ref } from 'vue';
-import { api } from '@/services/rotkehlchen-api';
 import { type OnError } from '@/store/typing';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { fetchDataAsync } from '@/utils/fetch-async';
+import { useLiquityApi } from '@/services/defi/liquity';
 
 export const useLiquityStore = defineStore('defi/liquity', () => {
   const balances = ref<LiquityBalances>({}) as Ref<LiquityBalances>;
@@ -22,6 +22,12 @@ export const useLiquityStore = defineStore('defi/liquity', () => {
   const isPremium = usePremium();
   const { activeModules } = useModules();
   const { t, tc } = useI18n();
+  const {
+    fetchLiquityStakingPools,
+    fetchLiquityBalances,
+    fetchLiquityTroveEvents,
+    fetchLiquityStaking
+  } = useLiquityApi();
 
   const fetchPools = async (refresh = false): Promise<void> => {
     const meta: TaskMeta = {
@@ -42,7 +48,7 @@ export const useLiquityStore = defineStore('defi/liquity', () => {
           type: TaskType.LIQUITY_STAKING_POOLS,
           section: Section.DEFI_LIQUITY_STAKING_POOLS,
           meta,
-          query: async () => await api.defi.fetchLiquityStakingPools(),
+          query: async () => await fetchLiquityStakingPools(),
           parser: result => LiquityPoolDetails.parse(result),
           onError
         },
@@ -79,7 +85,7 @@ export const useLiquityStore = defineStore('defi/liquity', () => {
           type: TaskType.LIQUITY_BALANCES,
           section: Section.DEFI_LIQUITY_BALANCES,
           meta,
-          query: async () => await api.defi.fetchLiquityBalances(),
+          query: async () => await fetchLiquityBalances(),
           parser: result => LiquityBalances.parse(result),
           onError
         },
@@ -116,7 +122,7 @@ export const useLiquityStore = defineStore('defi/liquity', () => {
           type: TaskType.LIQUITY_EVENTS,
           section: Section.DEFI_LIQUITY_EVENTS,
           meta,
-          query: async () => await api.defi.fetchLiquityTroveEvents(),
+          query: async () => await fetchLiquityTroveEvents(),
           parser: result => TroveEvents.parse(result),
           onError
         },
@@ -154,7 +160,7 @@ export const useLiquityStore = defineStore('defi/liquity', () => {
           type: TaskType.LIQUITY_STAKING,
           section: Section.DEFI_LIQUITY_STAKING,
           meta,
-          query: async () => await api.defi.fetchLiquityStaking(),
+          query: async () => await fetchLiquityStaking(),
           parser: result => LiquityStaking.parse(result),
           onError
         },

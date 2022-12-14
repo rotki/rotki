@@ -4,15 +4,15 @@ import { handleResponse, validWithSessionStatus } from '@/services/utils';
 import { type Messages, type PeriodicClientQueryResult } from '@/types/session';
 
 export const useSessionApi = () => {
-  async function consumeMessages(): Promise<Messages> {
+  const consumeMessages = async (): Promise<Messages> => {
     const response = await api.instance.get<ActionResult<Messages>>(
       '/messages'
     );
 
     return handleResponse(response);
-  }
+  };
 
-  async function fetchPeriodicData(): Promise<PeriodicClientQueryResult> {
+  const fetchPeriodicData = async (): Promise<PeriodicClientQueryResult> => {
     const response = await api.instance.get<
       ActionResult<PeriodicClientQueryResult>
     >('/periodic', {
@@ -20,7 +20,7 @@ export const useSessionApi = () => {
     });
 
     return handleResponse(response);
-  }
+  };
 
   return {
     consumeMessages,

@@ -75,7 +75,6 @@ import BigDialog from '@/components/dialogs/BigDialog.vue';
 import { Routes } from '@/router/routes';
 import { EVM_TOKEN } from '@/services/assets/consts';
 import { useAssetManagementApi } from '@/services/assets/management-api';
-import { api } from '@/services/rotkehlchen-api';
 import { useMessageStore } from '@/store/message';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { type Nullable } from '@/types';
@@ -106,14 +105,14 @@ const pagination: Ref<AssetPagination> = ref(
 );
 
 const { tc } = useI18n();
+const { queryAllAssets, deleteEthereumToken, deleteAsset } =
+  useAssetManagementApi();
 
 const dialogTitle = computed<string>(() => {
   return get(asset)
     ? tc('asset_management.edit_title')
     : tc('asset_management.add_title');
 });
-
-const { queryAllAssets } = useAssetManagementApi();
 
 const add = () => {
   set(asset, null);
@@ -149,7 +148,7 @@ const save = async () => {
 
 const deleteToken = async (address: string, chain: string) => {
   try {
-    const success = await api.assets.deleteEthereumToken(address, chain);
+    const success = await deleteEthereumToken(address, chain);
     if (success) {
       await refresh();
     }
@@ -163,9 +162,9 @@ const deleteToken = async (address: string, chain: string) => {
   }
 };
 
-const deleteAsset = async (identifier: string) => {
+const deleteAssetHandler = async (identifier: string) => {
   try {
-    const success = await api.assets.deleteAsset(identifier);
+    const success = await deleteAsset(identifier);
     if (success) {
       await refresh();
     }
@@ -181,7 +180,7 @@ const deleteAsset = async (identifier: string) => {
 
 const confirmDelete = async (toDeleteAsset: SupportedAsset) => {
   if (toDeleteAsset.type === EVM_TOKEN) {
-    await deleteAsset(toDeleteAsset.identifier);
+    await deleteAssetHandler(toDeleteAsset.identifier);
   } else {
     const address = toDeleteAsset.address;
     assert(address);

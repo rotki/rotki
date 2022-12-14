@@ -124,11 +124,11 @@ import RefreshButton from '@/components/helper/RefreshButton.vue';
 import SortingSelector from '@/components/helper/SortingSelector.vue';
 import NftGalleryItem from '@/components/nft/NftGalleryItem.vue';
 import { type AssetPriceArray } from '@/services/assets/types';
-import { api } from '@/services/rotkehlchen-api';
 import { useNftsStore } from '@/store/assets/nft';
 import { type GalleryNft, type Nft, type Nfts } from '@/store/session/types';
 import { type Module } from '@/types/modules';
 import { uniqueStrings } from '@/utils/data';
+import { useAssetPricesApi } from '@/services/assets/prices';
 
 defineProps({
   modules: {
@@ -289,9 +289,11 @@ const noData = computed(
     !(get(selectedCollection) || get(selectedAccount))
 );
 
+const { fetchNftsPrices } = useAssetPricesApi();
+
 const fetchPrices = async () => {
   try {
-    const data = await api.assets.fetchNftsPrices();
+    const data = await fetchNftsPrices();
     set(prices, data);
   } catch (e: any) {
     set(priceError, e.message);

@@ -4,8 +4,7 @@ import {
   type Eth2ValidatorEntry,
   type Eth2Validators
 } from '@rotki/common/lib/staking/eth2';
-import { type Ref } from 'vue';
-import { api } from '@/services/rotkehlchen-api';
+import { type ComputedRef, type Ref } from 'vue';
 import { type GeneralAccountData } from '@/services/types-api';
 import { useMessageStore } from '@/store/message';
 import { useNotificationsStore } from '@/store/notifications';
@@ -18,6 +17,7 @@ import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { logger } from '@/utils/logging';
 import { removeTags } from '@/utils/tags';
+import { useBlockchainAccountsApi } from '@/services/accounts';
 
 const defaultValidators = (): Eth2Validators => ({
   entries: [],
@@ -37,12 +37,19 @@ export const useEthAccountsStore = defineStore(
     const { setMessage } = useMessageStore();
     const { t, tc } = useI18n();
 
+    const {
+      getEth2Validators,
+      addEth2Validator: addEth2ValidatorCaller,
+      editEth2Validator: editEth2ValidatorCaller,
+      deleteEth2Validators: deleteEth2ValidatorsCaller
+    } = useBlockchainAccountsApi();
+
     const fetchEth2Validators = async () => {
       if (!get(activeModules).includes(Module.ETH2)) {
         return;
       }
       try {
-        const validators = await api.balances.getEth2Validators();
+        const validators = await getEth2Validators();
         set(eth2Validators, validators);
       } catch (e: any) {
         logger.error(e);
@@ -67,7 +74,7 @@ export const useEthAccountsStore = defineStore(
       const id = payload.publicKey || payload.validatorIndex;
       try {
         const taskType = TaskType.ADD_ETH2_VALIDATOR;
-        const { taskId } = await api.balances.addEth2Validator(payload);
+        const { taskId } = await addEth2ValidatorCaller(payload);
         const { result } = await awaitTask<boolean, TaskMeta>(
           taskId,
           taskType,
@@ -110,7 +117,7 @@ export const useEthAccountsStore = defineStore(
 
       const id = payload.validatorIndex;
       try {
-        const success = await api.balances.editEth2Validator(payload);
+        const success = await editEth2ValidatorCaller(payload);
 
         if (success) {
           const { resetStatus } = useStatusUpdater(Section.STAKING_ETH2);
@@ -142,9 +149,7 @@ export const useEthAccountsStore = defineStore(
         const cachedValidators = entries.filter(({ publicKey }) =>
           validators.includes(publicKey)
         );
-        const success = await api.balances.deleteEth2Validators(
-          cachedValidators
-        );
+        const success = await deleteEth2ValidatorsCaller(cachedValidators);
         if (success) {
           const remainingValidators = entries.filter(
             ({ publicKey }) => !validators.includes(publicKey)
@@ -200,8 +205,13 @@ export const useEthAccountsStore = defineStore(
       set(eth, removeTags(get(eth), tag));
     };
 
+    const ethAddresses: ComputedRef<string[]> = computed(() => {
+      return get(eth).map(({ address }) => address);
+    });
+
     return {
       eth,
+      ethAddresses,
       eth2Validators,
       getEth2Account,
       addEth2Validator,

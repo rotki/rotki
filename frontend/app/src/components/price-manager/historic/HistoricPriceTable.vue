@@ -53,9 +53,9 @@ import {
   type HistoricalPrice,
   type ManualPricePayload
 } from '@/services/assets/types';
-import { api } from '@/services/rotkehlchen-api';
 import { useNotificationsStore } from '@/store/notifications';
 import { nonNullProperties } from '@/utils/data';
+import { useAssetPricesApi } from '@/services/assets/prices';
 import { useConfirmStore } from '@/store/confirm';
 
 const props = defineProps({
@@ -78,6 +78,7 @@ const loading = ref(false);
 
 const { notify } = useNotificationsStore();
 const { tc } = useI18n();
+const { deleteHistoricalPrice, fetchHistoricalPrices } = useAssetPricesApi();
 
 const headers = computed<DataTableHeader[]>(() => [
   {
@@ -116,7 +117,7 @@ const headers = computed<DataTableHeader[]>(() => [
 const deletePrice = async (item: HistoricalPrice) => {
   const { price, ...payload } = item!;
   try {
-    await api.assets.deleteHistoricalPrice(payload);
+    await deleteHistoricalPrice(payload);
     await refresh();
   } catch (e: any) {
     const notification: NotificationPayload = {
@@ -134,7 +135,7 @@ const deletePrice = async (item: HistoricalPrice) => {
 const fetchPrices = async (payload?: Partial<ManualPricePayload>) => {
   set(loading, true);
   try {
-    set(prices, await api.assets.historicalPrices(payload));
+    set(prices, await fetchHistoricalPrices(payload));
   } catch (e: any) {
     const notification: NotificationPayload = {
       title: tc('price_table.fetch.failure.title'),

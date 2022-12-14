@@ -1,6 +1,5 @@
 import { DefiProtocol } from '@rotki/common/lib/blockchain';
 import { type Ref } from 'vue';
-import { api } from '@/services/rotkehlchen-api';
 import { useNotificationsStore } from '@/store/notifications';
 import { getStatus, setStatus } from '@/store/status';
 import { useTasks } from '@/store/tasks';
@@ -19,6 +18,7 @@ import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { Zero, bigNumberify } from '@/utils/bignumbers';
 import { logger } from '@/utils/logging';
+import { useMakerDaoApi } from '@/services/defi/makerdao';
 
 const convertMakerDAOVaults = (vaults: ApiMakerDAOVault[]): MakerDAOVault[] =>
   vaults.map(vault => ({
@@ -54,6 +54,12 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
   const { activeModules } = useModules();
   const premium = usePremium();
   const { tc } = useI18n();
+  const {
+    fetchDsrBalances: fetchDSRBalancesCaller,
+    fetchDsrHistories: fetchDsrHistoriesCaller,
+    fetchMakerDAOVaults: fetchMakerDAOVaultsCaller,
+    fetchMakerDAOVaultDetails: fetchMakerDAOVaultDetailsCaller
+  } = useMakerDaoApi();
 
   const fetchDSRBalances = async (refresh = false): Promise<void> => {
     if (!get(activeModules).includes(Module.MAKERDAO_DSR)) {
@@ -74,7 +80,7 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
 
     try {
       const taskType = TaskType.DSR_BALANCE;
-      const { taskId } = await api.defi.dsrBalance();
+      const { taskId } = await fetchDSRBalancesCaller();
       const { result } = await awaitTask<DSRBalances, TaskMeta>(
         taskId,
         taskType,
@@ -122,7 +128,7 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
 
     try {
       const taskType = TaskType.DSR_HISTORY;
-      const { taskId } = await api.defi.dsrHistory();
+      const { taskId } = await fetchDsrHistoriesCaller();
       const { result } = await awaitTask<DSRHistory, TaskMeta>(
         taskId,
         taskType,
@@ -168,8 +174,8 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
     setStatus(newStatus, section);
 
     try {
-      const taskType = TaskType.MAKEDAO_VAULTS;
-      const { taskId } = await api.defi.makerDAOVaults();
+      const taskType = TaskType.MAKERDAO_VAULTS;
+      const { taskId } = await fetchMakerDAOVaultsCaller();
       const { result } = await awaitTask<ApiMakerDAOVaults, TaskMeta>(
         taskId,
         taskType,
@@ -220,7 +226,7 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
     setStatus(newStatus, section);
 
     try {
-      const { taskId } = await api.defi.makerDAOVaultDetails();
+      const { taskId } = await fetchMakerDAOVaultDetailsCaller();
       const { result } = await awaitTask<MakerDAOVaultDetails, TaskMeta>(
         taskId,
         TaskType.MAKERDAO_VAULT_DETAILS,
