@@ -131,6 +131,7 @@ const AaveBorrowEvent = z
 
 const AaveBorrowingEvent =
   AaveLiquidationEvent.or(AaveRepayEvent).or(AaveBorrowEvent);
+export type AaveBorrowingEvent = z.infer<typeof AaveBorrowingEvent>;
 const AaveHistoryEvents = AaveBorrowingEvent.or(AaveLendingEvent);
 export type AaveHistoryEvents = z.infer<typeof AaveHistoryEvents>;
 
