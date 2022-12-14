@@ -3221,6 +3221,7 @@
         "no_entries_available_before": "There are no entries available before"
       },
       "refresh_the_net_value_data": "Refresh the net value data",
+      "select_asset": "Select asset",
       "show_graph_for_selected_range": "Show the graph for the selected range",
       "value_distribution_by_asset": "Value distribution by asset",
       "value_distribution_by_location": "Value distribution by location",
