@@ -18,6 +18,7 @@ def test_decoders_initialization(ethereum_transaction_decoder):
     assert set(ethereum_transaction_decoder.decoders.keys()) == {
         'Aavev1',
         'Airdrops',
+        'Balancer',
         'Compound',
         'Curve',
         'Dxdaomesa',
@@ -75,6 +76,8 @@ def test_decoders_initialization(ethereum_transaction_decoder):
         'weth',
         'yearn-v1',
         'yearn-v2',
+        'balancer-v1',
+        'balancer-v2',
     }
 
 
