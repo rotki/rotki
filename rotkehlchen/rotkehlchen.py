@@ -712,7 +712,6 @@ class Rotkehlchen():
         try:
             blockchain_result = self.chains_aggregator.query_balances(
                 blockchain=None,
-                beaconchain_fetch_eth1=ignore_cache,
                 ignore_cache=ignore_cache,
             )
             if len(blockchain_result.totals.assets) != 0:

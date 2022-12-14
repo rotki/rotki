@@ -392,6 +392,9 @@ class SupportedBlockchain(SerializableEnumValueMixin):
     def is_evm(self) -> bool:
         return self in get_args(SUPPORTED_EVM_CHAINS)
 
+    def is_bitcoin(self) -> bool:
+        return self in get_args(SUPPORTED_BITCOIN_CHAINS)
+
     def ens_coin_type(self) -> int:
         """Return the CoinType number according to EIP-2304, multichain address
         resolution for ENS domains.
