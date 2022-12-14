@@ -94,7 +94,7 @@
                     v-bind="attrs"
                     icon
                     v-on="on"
-                    @click="confirmDelete(item)"
+                    @click="showDeleteConfirmation(item)"
                   >
                     <v-icon>mdi-delete</v-icon>
                   </v-btn>
@@ -106,26 +106,12 @@
         </v-sheet>
       </v-card-text>
     </v-card>
-    <confirm-dialog
-      :display="confirmClear"
-      :title="tc('oracle_cache_management.delete_confirmation.title')"
-      :message="
-        t('oracle_cache_management.delete_confirmation.message', {
-          selection,
-          fromAsset: deleteFromAsset,
-          toAsset: deleteToAsset
-        }).toString()
-      "
-      @confirm="clearCache"
-      @cancel="confirmClear = false"
-    />
   </fragment>
 </template>
 
 <script setup lang="ts">
 import { Severity } from '@rotki/common/lib/messages';
 import { type DataTableHeader } from 'vuetify';
-import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import Fragment from '@/components/helper/Fragment';
 import PrioritizedListEntry from '@/components/helper/PrioritizedListEntry.vue';
@@ -138,7 +124,7 @@ import { PriceOracle } from '@/types/price-oracle';
 import { type PrioritizedListItemData } from '@/types/prioritized-list-data';
 import { CRYPTOCOMPARE_PRIO_LIST_ITEM } from '@/types/prioritized-list-id';
 import { TaskType } from '@/types/task-type';
-import { assert } from '@/utils/assertions';
+import { useConfirmStore } from '@/store/confirm';
 
 const { t, tc } = useI18n();
 
@@ -177,7 +163,6 @@ const cacheData = ref<OracleCacheMeta[]>([]);
 const fromAsset = ref<string>('');
 const toAsset = ref<string>('');
 const selection = ref<PriceOracle>(PriceOracle.CRYPTOCOMPARE);
-const deleteEntry = ref<OracleCacheMeta | null>(null);
 
 const load = async () => {
   set(loading, true);
@@ -204,38 +189,14 @@ watch(selection, async () => {
   await load();
 });
 
-const deleteFromAsset = computed<string>(() => {
-  const deleteEntryVal = get(deleteEntry);
-  if (deleteEntryVal?.fromAsset) {
-    return get(assetSymbol(deleteEntryVal.fromAsset));
-  }
-  return '';
-});
-
-const deleteToAsset = computed<string>(() => {
-  const deleteEntryVal = get(deleteEntry);
-  if (deleteEntryVal?.toAsset) {
-    return get(assetSymbol(deleteEntryVal.toAsset));
-  }
-  return '';
-});
-
 const pending = isTaskRunning(TaskType.CREATE_PRICE_CACHE);
-
-const confirmDelete = (entry: OracleCacheMeta) => {
-  set(confirmClear, true);
-  set(deleteEntry, entry);
-};
 
 const { notify } = useNotificationsStore();
 const { assetSymbol } = useAssetInfoRetrieval();
 
-const clearCache = async () => {
-  const deleteEntryVal = get(deleteEntry);
-  assert(deleteEntryVal);
-  const { fromAsset, toAsset } = deleteEntryVal;
+const clearCache = async (entry: OracleCacheMeta) => {
+  const { fromAsset, toAsset } = entry;
   set(confirmClear, false);
-  set(deleteEntry, null);
   try {
     await deletePriceCache(get(selection), fromAsset, toAsset);
     await load();
@@ -300,5 +261,26 @@ const fetchPrices = async () => {
 const clearFilter = () => {
   set(fromAsset, '');
   set(toAsset, '');
+};
+
+const { show } = useConfirmStore();
+
+const showDeleteConfirmation = (entry: OracleCacheMeta) => {
+  const deleteFromAsset = entry?.fromAsset
+    ? get(assetSymbol(entry.fromAsset))
+    : '';
+  const deleteToAsset = entry?.toAsset ? get(assetSymbol(entry.toAsset)) : '';
+
+  show(
+    {
+      title: tc('oracle_cache_management.delete_confirmation.title'),
+      message: t('oracle_cache_management.delete_confirmation.message', {
+        selection: get(selection),
+        fromAsset: deleteFromAsset,
+        toAsset: deleteToAsset
+      }).toString()
+    },
+    () => clearCache(entry)
+  );
 };
 </script>

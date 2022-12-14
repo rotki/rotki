@@ -48,18 +48,11 @@
             :disabled="loading"
             :delete-tooltip="tc('price_table.actions.delete.tooltip')"
             :edit-tooltip="tc('price_table.actions.edit.tooltip')"
-            @delete-click="pending = item"
+            @delete-click="showDeleteConfirmation(item)"
             @edit-click="$emit('edit', item)"
           />
         </template>
       </data-table>
-      <confirm-dialog
-        :title="tc('price_table.delete.dialog.title')"
-        :message="tc('price_table.delete.dialog.message')"
-        :display="showConfirmation"
-        @confirm="deletePrice"
-        @cancel="dismiss"
-      />
     </card>
   </div>
 </template>
@@ -77,9 +70,9 @@ import { useAggregatedBalancesStore } from '@/store/balances/aggregated';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useNotificationsStore } from '@/store/notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { type Nullable } from '@/types';
 import { CURRENCY_USD } from '@/types/currencies';
 import { isNft } from '@/utils/nft';
+import { useConfirmStore } from '@/store/confirm';
 
 const props = defineProps({
   assetFilter: {
@@ -99,8 +92,6 @@ const { assetFilter, refreshing } = toRefs(props);
 
 const latestPrices = ref<ManualPrice[]>([]);
 const loading = ref(false);
-const pending = ref<Nullable<ManualPrice>>(null);
-const showConfirmation = computed(() => !!get(pending));
 
 const { notify } = useNotificationsStore();
 const { tc } = useI18n();
@@ -138,15 +129,10 @@ const headers = computed<DataTableHeader[]>(() => [
   }
 ]);
 
-const dismiss = () => {
-  set(pending, null);
-};
-
 const { refreshPrices } = useBalancesStore();
 
-const deletePrice = async () => {
-  const { fromAsset } = get(pending)!;
-  set(pending, null);
+const deletePrice = async (item: ManualPrice) => {
+  const { fromAsset } = item;
   try {
     await api.assets.deleteLatestPrice(fromAsset);
     await refresh();
@@ -217,4 +203,16 @@ watch(refreshing, async refreshing => {
 });
 
 onMounted(refresh);
+
+const { show } = useConfirmStore();
+
+const showDeleteConfirmation = (item: ManualPrice) => {
+  show(
+    {
+      title: tc('price_table.delete.dialog.title'),
+      message: tc('price_table.delete.dialog.message')
+    },
+    () => deletePrice(item)
+  );
+};
 </script>

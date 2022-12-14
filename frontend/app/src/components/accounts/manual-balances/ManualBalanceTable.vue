@@ -84,7 +84,7 @@
           :edit-tooltip="tc('manual_balances_table.edit_tooltip')"
           :delete-tooltip="tc('manual_balances_table.delete_tooltip')"
           @edit-click="edit(item)"
-          @delete-click="pendingDeletion = item.id"
+          @delete-click="showDeleteConfirmation(item.id)"
         />
       </template>
       <template v-if="visibleBalances.length > 0" #body.append="{ isMobile }">
@@ -103,14 +103,6 @@
         </row-append>
       </template>
     </data-table>
-    <confirm-dialog
-      v-if="pendingDeletion !== null"
-      display
-      :title="tc('manual_balances_table.delete_dialog.title')"
-      :message="tc('manual_balances_table.delete_dialog.message')"
-      @cancel="pendingDeletion = null"
-      @confirm="deleteBalance()"
-    />
   </card>
 </template>
 
@@ -127,8 +119,8 @@ import { useManualBalancesStore } from '@/store/balances/manual';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { type ManualBalance } from '@/types/manual-balances';
-import { assert } from '@/utils/assertions';
 import { One } from '@/utils/bignumbers';
+import { useConfirmStore } from '@/store/confirm';
 
 const props = defineProps({
   title: { required: true, type: String },
@@ -141,7 +133,6 @@ const emit = defineEmits(['refresh', 'edit']);
 const { t, tc } = useI18n();
 
 const { balances } = toRefs(props);
-const pendingDeletion = ref<number | null>(null);
 const onlyTags = ref<string[]>([]);
 const refresh = () => {
   emit('refresh');
@@ -152,13 +143,6 @@ const edit = (balance: ManualBalance) => {
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { deleteManualBalance } = useManualBalancesStore();
-
-const deleteBalance = async () => {
-  const id = get(pendingDeletion);
-  assert(id);
-  set(pendingDeletion, null);
-  await deleteManualBalance(id);
-};
 
 const { assetPrice } = useBalancePricesStore();
 
@@ -237,6 +221,18 @@ const headers = computed(() => [
     width: '50'
   }
 ]);
+
+const { show } = useConfirmStore();
+
+const showDeleteConfirmation = (id: number) => {
+  show(
+    {
+      title: tc('manual_balances_table.delete_dialog.title'),
+      message: tc('manual_balances_table.delete_dialog.message')
+    },
+    () => deleteManualBalance(id)
+  );
+};
 </script>
 
 <style module lang="scss">

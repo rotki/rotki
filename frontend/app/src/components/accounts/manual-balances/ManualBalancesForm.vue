@@ -81,7 +81,6 @@
     <location-selector
       v-model="location"
       class="manual-balances-form__location"
-      attach=".manual-balances-form__location"
       outlined
       :error-messages="toMessages(v$.location.$errors)"
       :disabled="pending"

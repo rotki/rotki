@@ -21,7 +21,7 @@
             tc('dashboard.snapshot.edit.dialog.actions.delete_item')
           "
           @edit-click="editClick(item)"
-          @delete-click="deleteClick(item)"
+          @delete-click="showDeleteConfirmation(item)"
         />
       </template>
     </data-table>
@@ -69,16 +69,6 @@
         @update:form="updateForm"
       />
     </big-dialog>
-
-    <confirm-dialog
-      :display="showDeleteConfirmation"
-      :title="tc('dashboard.snapshot.edit.dialog.location_data.delete_title')"
-      :message="
-        tc('dashboard.snapshot.edit.dialog.location_data.delete_confirmation')
-      "
-      @cancel="clearDeleteDialog"
-      @confirm="confirmDelete"
-    />
   </div>
 </template>
 <script setup lang="ts">
@@ -96,6 +86,7 @@ import {
   type LocationDataSnapshotPayload
 } from '@/types/snapshots';
 import { One, Zero, bigNumberify, sortDesc } from '@/utils/bignumbers';
+import { useConfirmStore } from '@/store/confirm';
 
 type IndexedLocationDataSnapshot = LocationDataSnapshot & { index: number };
 
@@ -115,9 +106,7 @@ const emit = defineEmits(['update:step', 'input']);
 const { value, timestamp } = toRefs(props);
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const showForm = ref<boolean>(false);
-const showDeleteConfirmation = ref<boolean>(false);
 const editedIndex = ref<number | null>(null);
-const deletedIndex = ref<number | null>(null);
 const form = ref<LocationDataSnapshotPayload | null>(null);
 const valid = ref<boolean>(false);
 const loading = ref<boolean>(false);
@@ -192,11 +181,6 @@ const editClick = (item: IndexedLocationDataSnapshot) => {
   set(showForm, true);
 };
 
-const deleteClick = (item: IndexedLocationDataSnapshot) => {
-  set(deletedIndex, item.index);
-  set(showDeleteConfirmation, true);
-};
-
 const add = () => {
   set(editedIndex, null);
   set(form, {
@@ -253,13 +237,7 @@ const updateForm = (newForm: LocationDataSnapshotPayload) => {
   set(form, newForm);
 };
 
-const clearDeleteDialog = () => {
-  set(deletedIndex, null);
-  set(showDeleteConfirmation, false);
-};
-
-const confirmDelete = () => {
-  const index = get(deletedIndex);
+const confirmDelete = (index: number) => {
   const val = get(value);
 
   if (index === null) return;
@@ -268,7 +246,6 @@ const confirmDelete = () => {
   newValue.splice(index, 1);
 
   input(newValue);
-  clearDeleteDialog();
 };
 
 const total = computed<BigNumber>(() => {
@@ -277,6 +254,20 @@ const total = computed<BigNumber>(() => {
   if (!totalEntry) return Zero;
   return totalEntry.usdValue;
 });
+
+const { show } = useConfirmStore();
+
+const showDeleteConfirmation = (item: IndexedLocationDataSnapshot) => {
+  show(
+    {
+      title: tc('dashboard.snapshot.edit.dialog.location_data.delete_title'),
+      message: tc(
+        'dashboard.snapshot.edit.dialog.location_data.delete_confirmation'
+      )
+    },
+    () => confirmDelete(item.index)
+  );
+};
 </script>
 <style module lang="scss">
 .asset {

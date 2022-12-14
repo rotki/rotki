@@ -61,7 +61,7 @@
                 outlined
                 color="primary"
                 type="submit"
-                @click="confirmDeletePremium = true"
+                @click="showDeleteConfirmation"
               >
                 {{ t('premium_settings.actions.delete') }}
               </v-btn>
@@ -89,23 +89,12 @@
         </template>
       </card>
     </v-col>
-    <confirm-dialog
-      :display="confirmDeletePremium"
-      confirm-type="warning"
-      :primary-action="tc('common.actions.delete')"
-      :secondary-action="tc('common.actions.cancel')"
-      :title="tc('premium_settings.delete_confirmation.title')"
-      :message="tc('premium_settings.delete_confirmation.message')"
-      @confirm="remove"
-      @cancel="confirmDeletePremium = false"
-    />
   </v-row>
 </template>
 
 <script setup lang="ts">
 import { type Ref } from 'vue';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
-import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
 
 import { useSessionAuthStore } from '@/store/session/auth';
@@ -113,6 +102,7 @@ import { usePremiumStore } from '@/store/session/premium';
 import { type PremiumCredentialsPayload } from '@/store/session/types';
 import { useSettingsStore } from '@/store/settings';
 import { trimOnPaste } from '@/utils/event';
+import { useConfirmStore } from '@/store/confirm';
 
 const { username } = storeToRefs(useSessionAuthStore());
 const { update } = useSettingsStore();
@@ -128,7 +118,6 @@ const apiKey: Ref<string> = ref('');
 const apiSecret: Ref<string> = ref('');
 const sync: Ref<boolean> = ref(false);
 const edit: Ref<boolean> = ref(true);
-const confirmDeletePremium: Ref<boolean> = ref(false);
 const errorMessages: Ref<string[]> = ref([]);
 
 const clearErrors = () => {
@@ -192,7 +181,6 @@ const setupPremium = async () => {
 
 const remove = async () => {
   clearErrors();
-  set(confirmDeletePremium, false);
   if (!get(premium)) {
     return;
   }
@@ -212,6 +200,20 @@ onMounted(() => {
   set(sync, get(premiumSync));
   set(edit, !get(premium) && !get(edit));
 });
+
+const { show } = useConfirmStore();
+
+const showDeleteConfirmation = () => {
+  show(
+    {
+      title: tc('premium_settings.delete_confirmation.title'),
+      message: tc('premium_settings.delete_confirmation.message'),
+      primaryAction: tc('common.actions.delete'),
+      secondaryAction: tc('common.actions.cancel')
+    },
+    remove
+  );
+};
 </script>
 
 <style scoped lang="scss">

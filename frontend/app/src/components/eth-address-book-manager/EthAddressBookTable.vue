@@ -10,18 +10,11 @@
           :disabled="loading"
           :delete-tooltip="tc('eth_address_book.actions.delete.tooltip')"
           :edit-tooltip="tc('eth_address_book.actions.edit.tooltip')"
-          @delete-click="pending = item"
+          @delete-click="showDeleteConfirmation(item)"
           @edit-click="edit(item)"
         />
       </template>
     </data-table>
-    <confirm-dialog
-      :title="tc('eth_address_book.actions.delete.dialog.title')"
-      :message="tc('eth_address_book.actions.delete.dialog.message')"
-      :display="showConfirmation"
-      @confirm="deleteAddressBook"
-      @cancel="dismiss"
-    />
   </div>
 </template>
 <script setup lang="ts">
@@ -31,30 +24,21 @@ import { type DataTableHeader } from 'vuetify';
 import RowActions from '@/components/helper/RowActions.vue';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
 import { useNotificationsStore } from '@/store/notifications';
-import { type Nullable } from '@/types';
 import {
   type EthAddressBookLocation,
   type EthNamesEntries,
   type EthNamesEntry
 } from '@/types/eth-names';
+import { useConfirmStore } from '@/store/confirm';
 
 const addressBookDeletion = (location: Ref<EthAddressBookLocation>) => {
-  const pending = ref<Nullable<EthNamesEntry>>(null);
-  const showConfirmation = computed(() => !!get(pending));
-
-  const dismiss = () => {
-    set(pending, null);
-  };
+  const { show } = useConfirmStore();
 
   const { tc } = useI18n();
   const { notify } = useNotificationsStore();
   const { deleteEthAddressBook } = useEthNamesStore();
 
-  const deleteAddressBook = async () => {
-    if (!get(pending)) return;
-    const address = get(pending)!.address;
-    set(pending, null);
-
+  const deleteAddressBook = async (address: string) => {
     try {
       await deleteEthAddressBook(get(location), [address]);
     } catch (e: any) {
@@ -70,11 +54,18 @@ const addressBookDeletion = (location: Ref<EthAddressBookLocation>) => {
     }
   };
 
+  const showDeleteConfirmation = (item: EthNamesEntry) => {
+    show(
+      {
+        title: tc('eth_address_book.actions.delete.dialog.title'),
+        message: tc('eth_address_book.actions.delete.dialog.message')
+      },
+      () => deleteAddressBook(item.address)
+    );
+  };
+
   return {
-    showConfirmation,
-    pending,
-    deleteAddressBook,
-    dismiss
+    showDeleteConfirmation
   };
 };
 
@@ -138,6 +129,5 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
   }
 ]);
 
-const { showConfirmation, pending, deleteAddressBook, dismiss } =
-  addressBookDeletion(location);
+const { showDeleteConfirmation } = addressBookDeletion(location);
 </script>

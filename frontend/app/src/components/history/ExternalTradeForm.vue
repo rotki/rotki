@@ -543,6 +543,7 @@ const fetchPrice = async () => {
     fromAsset,
     toAsset
   });
+
   if (rateFromHistoricPrice.gt(0)) {
     set(rate, rateFromHistoricPrice.toFixed());
     updateRate(true);

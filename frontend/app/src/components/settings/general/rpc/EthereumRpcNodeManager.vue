@@ -84,7 +84,7 @@
                   :delete-disabled="isEtherscan(item)"
                   :edit-tooltip="tc('ethereum_rpc_node_manager.edit_tooltip')"
                   @edit-click="edit(item)"
-                  @delete-click="confirmDelete = item"
+                  @delete-click="showDeleteConfirmation(item)"
                 />
               </v-col>
             </v-row>
@@ -119,18 +119,6 @@
         @update:valid="updateValid($event)"
       />
     </big-dialog>
-    <confirm-dialog
-      :title="tc('ethereum_rpc_node_manager.confirm.title')"
-      :display="!!confirmDelete"
-      :message="
-        tc('ethereum_rpc_node_manager.confirm.message', 0, {
-          node: confirmDelete?.name,
-          endpoint: confirmDelete?.endpoint
-        })
-      "
-      @confirm="deleteNode"
-      @cancel="confirmDelete = null"
-    />
   </card>
 </template>
 
@@ -149,7 +137,7 @@ import {
   type EthereumRpcNodeList,
   getPlaceholderNode
 } from '@/types/settings';
-import { assert } from '@/utils/assertions';
+import { useConfirmStore } from '@/store/confirm';
 
 const nodes = ref<EthereumRpcNodeList>([]);
 const showForm = ref(false);
@@ -157,7 +145,6 @@ const valid = ref(false);
 const loading = ref(false);
 const isEdit = ref(false);
 const selectedNode = ref<EthereumRpcNode>(getPlaceholderNode());
-const confirmDelete = ref<EthereumRpcNode | null>(null);
 const errors = ref<Record<string, string[] | string>>({});
 
 const { notify } = useNotificationsStore();
@@ -238,12 +225,9 @@ const edit = (item: EthereumRpcNode) => {
   set(selectedNode, item);
 };
 
-const deleteNode = async () => {
+const deleteNode = async (node: EthereumRpcNode) => {
   try {
-    const node = get(confirmDelete);
-    assert(node);
     const identifier = node.identifier;
-    set(confirmDelete, null);
     await api.deleteEthereumNode(identifier);
     await loadNodes();
   } catch (e: any) {
@@ -280,6 +264,21 @@ const isEtherscan = (item: EthereumRpcNode) => item.name === 'etherscan';
 
 const isNodeConnected = (item: EthereumRpcNode): boolean => {
   return get(connectedEthNodes).includes(item.name) || isEtherscan(item);
+};
+
+const { show } = useConfirmStore();
+
+const showDeleteConfirmation = (item: EthereumRpcNode) => {
+  show(
+    {
+      title: tc('ethereum_rpc_node_manager.confirm.title'),
+      message: tc('ethereum_rpc_node_manager.confirm.message', 0, {
+        node: item.name,
+        endpoint: item.endpoint
+      })
+    },
+    () => deleteNode(item)
+  );
 };
 </script>
 

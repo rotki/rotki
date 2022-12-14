@@ -220,18 +220,6 @@
         :save-data="saveData"
       />
     </big-dialog>
-    <confirm-dialog
-      :display="eventToDelete !== null || transactionToIgnore !== null"
-      :title="confirmationTitle"
-      confirm-type="warning"
-      :message="confirmationMessage"
-      :primary-action="confirmationPrimaryAction"
-      @cancel="
-        eventToDelete = null;
-        transactionToIgnore = null;
-      "
-      @confirm="deleteEventHandler()"
-    />
   </fragment>
 </template>
 
@@ -262,6 +250,7 @@ import {
   type TransactionEventProtocol
 } from '@/types/transaction';
 import { getCollectionData } from '@/utils/collection';
+import { useConfirmStore } from '@/store/confirm';
 
 interface PaginationOptions {
   page: number;
@@ -457,6 +446,7 @@ const promptForDelete = ({
     );
     set(transactionToIgnore, tx);
   }
+  showDeleteConfirmation();
 };
 
 const deleteEventHandler = async () => {
@@ -607,6 +597,25 @@ watch([loading, eventTaskLoading], ([sectionLoading, eventTaskLoading]) => {
 onUnmounted(() => {
   pause();
 });
+
+const { show } = useConfirmStore();
+
+const resetPendingDeletion = () => {
+  set(eventToDelete, null);
+  set(transactionToIgnore, null);
+};
+
+const showDeleteConfirmation = () => {
+  show(
+    {
+      title: get(confirmationTitle),
+      message: get(confirmationMessage),
+      primaryAction: get(confirmationPrimaryAction)
+    },
+    deleteEventHandler,
+    resetPendingDeletion
+  );
+};
 </script>
 <style module lang="scss">
 .table {

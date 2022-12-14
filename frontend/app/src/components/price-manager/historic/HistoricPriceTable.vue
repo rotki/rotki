@@ -36,18 +36,11 @@
           :disabled="loading"
           :delete-tooltip="tc('price_table.actions.delete.tooltip')"
           :edit-tooltip="tc('price_table.actions.edit.tooltip')"
-          @delete-click="pending = item"
+          @delete-click="showDeleteConfirmation(item)"
           @edit-click="$emit('edit', item)"
         />
       </template>
     </data-table>
-    <confirm-dialog
-      :title="tc('price_table.delete.dialog.title')"
-      :message="tc('price_table.delete.dialog.message')"
-      :display="showConfirmation"
-      @confirm="deletePrice"
-      @cancel="dismiss"
-    />
   </card>
 </template>
 
@@ -62,8 +55,8 @@ import {
 } from '@/services/assets/types';
 import { api } from '@/services/rotkehlchen-api';
 import { useNotificationsStore } from '@/store/notifications';
-import { type Nullable } from '@/types';
 import { nonNullProperties } from '@/utils/data';
+import { useConfirmStore } from '@/store/confirm';
 
 const props = defineProps({
   filter: {
@@ -82,8 +75,6 @@ const { filter, refreshing } = toRefs(props);
 
 const prices = ref<HistoricalPrice[]>([]);
 const loading = ref(false);
-const pending = ref<Nullable<HistoricalPrice>>(null);
-const showConfirmation = computed(() => !!get(pending));
 
 const { notify } = useNotificationsStore();
 const { tc } = useI18n();
@@ -122,13 +113,8 @@ const headers = computed<DataTableHeader[]>(() => [
   }
 ]);
 
-const dismiss = () => {
-  set(pending, null);
-};
-
-const deletePrice = async () => {
-  const { price, ...payload } = get(pending)!;
-  set(pending, null);
+const deletePrice = async (item: HistoricalPrice) => {
+  const { price, ...payload } = item!;
   try {
     await api.assets.deleteHistoricalPrice(payload);
     await refresh();
@@ -181,4 +167,16 @@ watch(refreshing, async refreshing => {
 });
 
 onMounted(fetchPrices);
+
+const { show } = useConfirmStore();
+
+const showDeleteConfirmation = (item: HistoricalPrice) => {
+  show(
+    {
+      title: tc('price_table.delete.dialog.title'),
+      message: tc('price_table.delete.dialog.message')
+    },
+    () => deletePrice(item)
+  );
+};
 </script>

@@ -40,7 +40,7 @@
       :server-item-length="totalEntries"
       @add="add()"
       @edit="edit($event)"
-      @delete-asset="toDeleteAsset = $event"
+      @delete-asset="showDeleteConfirmation($event)"
       @update:pagination="pagination = $event"
     />
     <big-dialog
@@ -60,15 +60,6 @@
         :saving="saving"
       />
     </big-dialog>
-    <confirm-dialog
-      :title="tc('asset_management.confirm_delete.title')"
-      :message="
-        tc('asset_management.confirm_delete.message', 0, deleteAssetSymbol)
-      "
-      :display="!!toDeleteAsset"
-      @confirm="confirmDelete"
-      @cancel="toDeleteAsset = null"
-    />
   </v-container>
 </template>
 
@@ -81,7 +72,6 @@ import ManagedAssetTable from '@/components/asset-manager/ManagedAssetTable.vue'
 import MergeDialog from '@/components/asset-manager/MergeDialog.vue';
 import RestoreAssetDbButton from '@/components/asset-manager/RestoreAssetDbButton.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
-import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import { Routes } from '@/router/routes';
 import { EVM_TOKEN } from '@/services/assets/consts';
 import { useAssetManagementApi } from '@/services/assets/management-api';
@@ -92,6 +82,7 @@ import { type Nullable } from '@/types';
 import { type AssetPagination, defaultAssetPagination } from '@/types/assets';
 import { convertPagination } from '@/types/pagination';
 import { assert } from '@/utils/assertions';
+import { useConfirmStore } from '@/store/confirm';
 
 const props = defineProps({
   identifier: { required: false, type: String, default: null }
@@ -107,7 +98,6 @@ const validForm = ref<boolean>(false);
 const showForm = ref<boolean>(false);
 const saving = ref<boolean>(false);
 const asset = ref<Nullable<SupportedAsset>>(null);
-const toDeleteAsset = ref<Nullable<SupportedAsset>>(null);
 const mergeTool = ref<boolean>(false);
 const form = ref<any>(null);
 const totalEntries = ref(0);
@@ -116,10 +106,6 @@ const pagination: Ref<AssetPagination> = ref(
 );
 
 const { tc } = useI18n();
-
-const deleteAssetSymbol = computed(() => ({
-  asset: get(toDeleteAsset)?.symbol ?? ''
-}));
 
 const dialogTitle = computed<string>(() => {
   return get(asset)
@@ -193,16 +179,13 @@ const deleteAsset = async (identifier: string) => {
   }
 };
 
-const confirmDelete = async () => {
-  const asset = get(toDeleteAsset);
-  set(toDeleteAsset, null);
-  assert(asset);
-  if (asset.type === EVM_TOKEN) {
-    await deleteAsset(asset.identifier);
+const confirmDelete = async (toDeleteAsset: SupportedAsset) => {
+  if (toDeleteAsset.type === EVM_TOKEN) {
+    await deleteAsset(toDeleteAsset.identifier);
   } else {
-    const address = asset.address;
+    const address = toDeleteAsset.address;
     assert(address);
-    await deleteToken(address, asset.evmChain as string);
+    await deleteToken(address, toDeleteAsset.evmChain as string);
   }
 };
 
@@ -237,5 +220,19 @@ const refresh = async () => {
   set(assets, supportedAssets.entries);
   set(totalEntries, supportedAssets.entriesFound);
   set(loading, false);
+};
+
+const { show } = useConfirmStore();
+
+const showDeleteConfirmation = (item: SupportedAsset) => {
+  show(
+    {
+      title: tc('asset_management.confirm_delete.title'),
+      message: tc('asset_management.confirm_delete.message', 0, {
+        asset: item?.symbol ?? ''
+      })
+    },
+    async () => await confirmDelete(item)
+  );
 };
 </script>

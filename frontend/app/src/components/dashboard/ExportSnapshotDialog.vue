@@ -30,7 +30,7 @@
           <v-icon class="mr-2">mdi-pencil-outline</v-icon>
           {{ t('common.actions.edit') }}
         </v-btn>
-        <v-btn color="error" @click="deleteSnapshotConfirmationDialog = true">
+        <v-btn color="error" @click="showDeleteConfirmation">
           <v-icon class="mr-2">mdi-delete-outline</v-icon>
           {{ t('common.actions.delete') }}
         </v-btn>
@@ -41,14 +41,6 @@
         </v-btn>
       </template>
     </card>
-    <confirm-dialog
-      v-if="deleteSnapshotConfirmationDialog"
-      display
-      :title="tc('dashboard.snapshot.delete.dialog.title')"
-      :message="tc('dashboard.snapshot.delete.dialog.message')"
-      @cancel="deleteSnapshotConfirmationDialog = false"
-      @confirm="deleteSnapshot"
-    />
     <edit-snapshot-dialog
       v-if="editMode"
       :timestamp="timestamp"
@@ -69,6 +61,7 @@ import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatisticsStore } from '@/store/statistics';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import { downloadFileByUrl } from '@/utils/download';
+import { useConfirmStore } from '@/store/confirm';
 
 const props = defineProps({
   value: { required: false, type: Boolean, default: false },
@@ -81,8 +74,6 @@ const emit = defineEmits(['input']);
 const { timestamp, balance } = toRefs(props);
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const editMode = ref<boolean>(false);
-
-const deleteSnapshotConfirmationDialog = ref<boolean>(false);
 
 const updateVisibility = (visible: boolean) => {
   emit('input', visible);
@@ -196,13 +187,23 @@ const deleteSnapshot = async () => {
     };
   }
 
-  set(deleteSnapshotConfirmationDialog, false);
-
   setMessage(message);
 };
 
 const finish = () => {
   updateVisibility(false);
   set(editMode, false);
+};
+
+const { show } = useConfirmStore();
+
+const showDeleteConfirmation = () => {
+  show(
+    {
+      title: tc('dashboard.snapshot.delete.dialog.title'),
+      message: tc('dashboard.snapshot.delete.dialog.message')
+    },
+    deleteSnapshot
+  );
 };
 </script>

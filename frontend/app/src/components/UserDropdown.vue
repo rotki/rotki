@@ -99,7 +99,8 @@ const showConfirmation = () =>
   show(
     {
       title: tc('user_dropdown.confirmation.title'),
-      message: tc('user_dropdown.confirmation.message')
+      message: tc('user_dropdown.confirmation.message'),
+      type: 'info'
     },
     async () => {
       if (isPackaged && get(savedRememberPassword)) {

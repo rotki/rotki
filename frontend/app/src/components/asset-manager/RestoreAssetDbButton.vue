@@ -8,7 +8,7 @@
           </v-btn>
         </template>
         <v-list>
-          <v-list-item two-line link @click="restoreClick('soft')">
+          <v-list-item two-line link @click="showRestoreConfirmation('soft')">
             <v-list-item-content>
               <v-list-item-title>
                 {{ t('asset_update.restore.soft_reset') }}
@@ -18,7 +18,7 @@
               </v-list-item-subtitle>
             </v-list-item-content>
           </v-list-item>
-          <v-list-item two-line link @click="restoreClick('hard')">
+          <v-list-item two-line link @click="showRestoreConfirmation('hard')">
             <v-list-item-content>
               <v-list-item-title>
                 {{ t('asset_update.restore.hard_reset') }}
@@ -39,7 +39,7 @@
             depressed
             color="primary"
             v-on="on"
-            @click="restoreClick('soft')"
+            @click="showRestoreConfirmation('soft')"
           >
             {{ t('asset_update.restore.soft_reset') }}
           </v-btn>
@@ -53,7 +53,7 @@
             depressed
             color="primary"
             v-on="on"
-            @click="restoreClick('hard')"
+            @click="showRestoreConfirmation('hard')"
           >
             {{ t('asset_update.restore.hard_reset') }}
           </v-btn>
@@ -61,43 +61,16 @@
         <span>{{ t('asset_update.restore.hard_reset_hint') }}</span>
       </v-tooltip>
     </template>
-    <confirm-dialog
-      :display="confirmRestore"
-      :title="tc('asset_update.restore.delete_confirmation.title')"
-      :message="
-        resetType === 'soft'
-          ? tc('asset_update.restore.delete_confirmation.soft_reset_message')
-          : tc('asset_update.restore.delete_confirmation.hard_reset_message')
-      "
-      @confirm="restoreAssets"
-      @cancel="confirmRestore = false"
-    />
-    <confirm-dialog
-      :display="doubleConfirmation"
-      :title="tc('asset_update.restore.hard_restore_confirmation.title')"
-      :message="tc('asset_update.restore.hard_restore_confirmation.message')"
-      @confirm="confirmReset"
-      @cancel="doubleConfirmation = false"
-    />
-    <confirm-dialog
-      v-if="done"
-      single-action
-      display
-      :title="tc('asset_update.restore.success.title')"
-      :primary-action="tc('asset_update.success.ok')"
-      :message="tc('asset_update.restore.success.description')"
-      @confirm="updateComplete()"
-    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { Severity } from '@rotki/common/lib/messages';
-import { type Ref } from 'vue';
 import { api } from '@/services/rotkehlchen-api';
 import { useMainStore } from '@/store/main';
 import { useNotificationsStore } from '@/store/notifications';
 import { useSessionStore } from '@/store/session';
+import { useConfirmStore } from '@/store/confirm';
 
 defineProps({
   dropdown: {
@@ -107,11 +80,7 @@ defineProps({
   }
 });
 
-const confirmRestore = ref(false);
-const doubleConfirmation = ref(false);
-const done = ref(false);
 type ResetType = 'soft' | 'hard';
-const resetType: Ref<ResetType> = ref('soft');
 
 const { notify } = useNotificationsStore();
 const { connect, setConnected } = useMainStore();
@@ -121,30 +90,20 @@ const { restartBackend } = useBackendManagement();
 
 const { t, tc } = useI18n();
 
-const restoreClick = (type: ResetType) => {
-  set(resetType, type);
-  set(confirmRestore, true);
-};
-
-async function confirmReset() {
-  await restoreAssets();
-}
-
-async function restoreAssets() {
+async function restoreAssets(resetType: ResetType) {
   try {
-    set(confirmRestore, false);
     const updated = await api.assets.restoreAssetsDatabase(
-      get(resetType),
-      get(resetType) === 'hard'
+      resetType,
+      resetType === 'hard'
     );
     if (updated) {
-      set(done, true);
+      showDoneConfirmation();
     }
   } catch (e: any) {
     const title = t('asset_update.restore.title').toString();
     const message = e.toString();
     if (message.includes('There are assets that can not')) {
-      set(doubleConfirmation, true);
+      showDoubleConfirmation(resetType);
     }
     notify({
       title,
@@ -161,4 +120,41 @@ async function updateComplete() {
   await restartBackend();
   await connect();
 }
+
+const { show } = useConfirmStore();
+
+const showRestoreConfirmation = (type: ResetType) => {
+  show(
+    {
+      title: tc('asset_update.restore.delete_confirmation.title'),
+      message:
+        type === 'soft'
+          ? tc('asset_update.restore.delete_confirmation.soft_reset_message')
+          : tc('asset_update.restore.delete_confirmation.hard_reset_message')
+    },
+    () => restoreAssets(type)
+  );
+};
+
+const showDoubleConfirmation = (type: ResetType) => {
+  show(
+    {
+      title: tc('asset_update.restore.hard_restore_confirmation.title'),
+      message: tc('asset_update.restore.hard_restore_confirmation.message')
+    },
+    () => restoreAssets(type)
+  );
+};
+
+const showDoneConfirmation = () => {
+  show(
+    {
+      title: tc('asset_update.restore.success.title'),
+      message: tc('asset_update.restore.success.description'),
+      primaryAction: tc('asset_update.success.ok'),
+      singleAction: true
+    },
+    updateComplete
+  );
+};
 </script>

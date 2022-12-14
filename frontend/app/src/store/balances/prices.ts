@@ -13,7 +13,7 @@ import {
   AssetPriceResponse,
   type AssetPrices,
   type HistoricPricePayload,
-  type HistoricPrices,
+  HistoricPrices,
   type OracleCachePayload
 } from '@/types/prices';
 import { Section, Status } from '@/types/status';
@@ -175,7 +175,8 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
         true
       );
 
-      return result.assets[fromAsset][timestamp];
+      const parsed = HistoricPrices.parse(result);
+      return parsed.assets[fromAsset][timestamp];
     } catch {
       return bigNumberify(-1);
     }

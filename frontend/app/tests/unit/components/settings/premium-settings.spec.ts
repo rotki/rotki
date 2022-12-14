@@ -7,6 +7,7 @@ import Card from '@/components/helper/Card.vue';
 import PremiumSettings from '@/pages/settings/api-keys/premium/index.vue';
 import { api } from '@/services/rotkehlchen-api';
 import { usePremiumStore } from '@/store/session/premium';
+import { useConfirmStore } from '@/store/confirm';
 
 vi.mock('@/composables/electron-interop', () => {
   const mockInterop = {
@@ -72,8 +73,9 @@ describe('PremiumSettings.vue', () => {
     await wrapper.find('.premium-settings__button__delete').trigger('click');
     await wrapper.vm.$nextTick();
     await flushPromises();
-    await wrapper.find('[data-cy=button-confirm]').trigger('click');
-    await wrapper.vm.$nextTick();
+
+    const { confirm } = useConfirmStore();
+    await confirm();
     await flushPromises();
 
     const { premiumUserLoggedIn } = useInterop();

@@ -182,11 +182,12 @@ describe('store::balances/manual', () => {
     test('success', async () => {
       const mockResponse = {
         DAI: {
-          [timestamp]: bigNumberify(10)
+          [timestamp]: '10'
         }
       };
+
       vi.mocked(useTasks().awaitTask).mockResolvedValue({
-        result: { assets: mockResponse },
+        result: { assets: mockResponse, targetAsset: 'USD' },
         meta: { title: '' }
       });
 
@@ -207,7 +208,7 @@ describe('store::balances/manual', () => {
 
     test('failed', async () => {
       vi.mocked(useTasks().awaitTask).mockResolvedValue({
-        result: null,
+        result: { assets: {}, targetAsset: 'USD' },
         meta: { title: '' }
       });
 

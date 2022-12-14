@@ -50,14 +50,14 @@ export interface OracleCachePayload {
   readonly purgeOld: boolean;
 }
 
-type TimedPrices = Record<string, BigNumber>;
+const TimedPrices = z.record(NumericString);
+const AssetTimedPrices = z.record(TimedPrices);
 
-type AssetTimedPrices = Record<string, TimedPrices>;
-
-export interface HistoricPrices {
-  readonly assets: AssetTimedPrices;
-  readonly targetAsset: string;
-}
+export const HistoricPrices = z.object({
+  assets: AssetTimedPrices,
+  targetAsset: z.string()
+});
+export type HistoricPrices = z.infer<typeof HistoricPrices>;
 
 export interface HistoricPricePayload {
   readonly fromAsset: string;

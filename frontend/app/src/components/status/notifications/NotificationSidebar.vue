@@ -5,6 +5,7 @@
     absolute
     clipped
     :value="visible"
+    :stateless="dialogVisible"
     right
     temporary
     hide-overlay
@@ -35,7 +36,7 @@
             class="text-caption text-lowercase"
             color="accent"
             :disabled="notifications.length === 0"
-            @click="confirmClear = true"
+            @click="showConfirmation"
           >
             {{ t('notification_sidebar.clear_tooltip') }}
           </v-btn>
@@ -69,25 +70,17 @@
         </div>
       </div>
     </div>
-
-    <confirm-dialog
-      :display="confirmClear"
-      :title="tc('notification_sidebar.confirmation.title')"
-      :message="tc('notification_sidebar.confirmation.message')"
-      @cancel="confirmClear = false"
-      @confirm="clear()"
-    />
   </v-navigation-drawer>
 </template>
 
 <script setup lang="ts">
 import orderBy from 'lodash/orderBy';
-import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import Notification from '@/components/status/notifications/Notification.vue';
 import PendingTasks from '@/components/status/notifications/PendingTasks.vue';
 
 import { useTasks } from '@/store/tasks';
 import { useNotificationsStore } from '@/store/notifications';
+import { useConfirmStore } from '@/store/confirm';
 
 defineProps({
   visible: { required: true, type: Boolean }
@@ -96,7 +89,9 @@ defineProps({
 const { t, tc } = useI18n();
 
 const emit = defineEmits(['close']);
-const confirmClear = ref(false);
+const confirmStore = useConfirmStore();
+const { visible: dialogVisible } = storeToRefs(confirmStore);
+const { show } = confirmStore;
 
 const notificationStore = useNotificationsStore();
 const { data } = storeToRefs(notificationStore);
@@ -114,9 +109,19 @@ const input = (visible: boolean) => {
 };
 
 const clear = () => {
-  confirmClear.value = false;
   notificationStore.$reset();
   close();
+};
+
+const showConfirmation = () => {
+  show(
+    {
+      title: tc('notification_sidebar.confirmation.title'),
+      message: tc('notification_sidebar.confirmation.message'),
+      type: 'info'
+    },
+    clear
+  );
 };
 
 const notifications = computed(() => {
