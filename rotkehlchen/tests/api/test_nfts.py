@@ -319,7 +319,7 @@ def test_nft_balances_and_prices(rotkehlchen_api_server):
     ), json={
         'identifiers': [NFT_ID_FOR_TEST_ACC4],
     })
-    result = assert_proper_response_with_result(response)[NFT_ID_FOR_TEST_ACC4]
+    result = assert_proper_response_with_result(response)['assets'][NFT_ID_FOR_TEST_ACC4]
     assert result == {
         'name': 'yabir.eth',
         'asset_type': 'nft',

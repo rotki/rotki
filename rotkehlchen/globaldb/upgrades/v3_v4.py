@@ -256,6 +256,21 @@ def _add_optimism_contracts(cursor: 'DBCursor', eth_scan_abi_id: int, multicall_
     log.debug('Exit _add_optimism_contracts')
 
 
+def _add_assets_collections(cursor: 'DBCursor') -> None:
+    """
+    Insert in the global db the assets collection properties for the assets we know and
+    create the collections.
+    """
+    log.debug('Enter _add_assets_collections')
+    root_dir = Path(__file__).resolve().parent.parent.parent
+    with open(root_dir / 'data' / 'assets_collections.sql') as f:
+        raw_sql_sentences = f.read()
+        per_table_sentences = raw_sql_sentences.split('\n\n')
+        for sql_sentences in per_table_sentences:
+            cursor.execute(sql_sentences)
+        log.debug('Exit _add_assets_collections')
+
+
 def migrate_to_v4(connection: 'DBConnection') -> None:
     """Upgrades globalDB to v4 by creating and populating the contract data + abi tables.
 
@@ -271,5 +286,6 @@ def migrate_to_v4(connection: 'DBConnection') -> None:
         _add_eth_abis_json(cursor)
         eth_scan_abi_id, multicall_abi_id = _add_eth_contracts_json(cursor)
         _add_optimism_contracts(cursor, eth_scan_abi_id, multicall_abi_id)
+        _add_assets_collections(cursor)
 
     log.debug('Finished globaldb v3->v4 upgrade')

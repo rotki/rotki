@@ -556,13 +556,15 @@ def test_get_assets_mappings(rotkehlchen_api_server):
         json={'identifiers': queried_assets},
     )
     result = assert_proper_response_with_result(response)
-    assert len(result) == len(queried_assets)
-    for identifier, details in result.items():
+    assets = result['assets']
+    assert len(assets) == len(queried_assets)
+    for identifier, details in assets.items():
         assert identifier in queried_assets
         if identifier == A_DAI.identifier:
             assert details['evm_chain'] == 'ethereum'
             assert 'custom_asset_type' not in details.keys()
             assert details['asset_type'] != 'custom asset'
+            assert details['collection_id'] == '23'
         elif identifier == custom_asset_id:
             assert details['custom_asset_type'] == 'random'
             assert details['asset_type'] == 'custom asset'
@@ -570,6 +572,13 @@ def test_get_assets_mappings(rotkehlchen_api_server):
             assert 'evm_chain' not in details.keys()
             assert 'custom_asset_type' not in details.keys()
             assert details['asset_type'] != 'custom asset'
+
+    assert result['asset_collections'] == {
+        '23': {
+            'name': 'Multi Collateral Dai',
+            'symbol': 'DAI',
+        },
+    }
 
     # check that providing an invalid identifier returns only valid ones if any.
     response = requests.post(
@@ -580,8 +589,9 @@ def test_get_assets_mappings(rotkehlchen_api_server):
         json={'identifiers': ['BTC', 'TRY', 'invalid']},
     )
     result = assert_proper_response_with_result(response)
-    assert len(result) == 2
-    assert all([identifier in ('BTC', 'TRY') for identifier in result.keys()])
+    assets = result['assets']
+    assert len(assets) == 2
+    assert all([identifier in ('BTC', 'TRY') for identifier in assets.keys()])
 
 
 def test_search_assets(rotkehlchen_api_server):
