@@ -29,19 +29,34 @@ from rotkehlchen.utils.misc import ts_now
 ASSETS_IN_V2_GLOBALDB = 3095
 
 
-def _count_v2_v3_assets_inserted() -> int:
-    """Counts and returns how many assets are to be inserted by globaldb_v2_v3_assets.sql"""
-    assets_inserted_by_update = 0
+def _count_sql_file_sentences(file_name: str, skip_statements: int = 0):
+    """
+    Count the sql lines in scripts used during upgrades. If the skip_statements argument is
+    provided it ignores the [skip_statements first] statements and counts the rows for
+    [the skip_statements + 1] statement.
+    """
+    insertions_made = 0
+    skipped_statements = 0
     dir_path = Path(__file__).resolve().parent.parent.parent
-    with open(dir_path / 'data' / 'globaldb_v2_v3_assets.sql') as f:
+    with open(dir_path / 'data' / file_name) as f:
+        insertions_made = 0
         line = ' '
         while line:
             line = f.readline()
-            assets_inserted_by_update += 1
+            if skipped_statements < skip_statements:
+                if ';' in line:
+                    skipped_statements += 1
+                continue
+
+            if skipped_statements == skip_statements and 'INSERT' in line:
+                insertions_made = 1
+                continue
+
+            insertions_made += 1
             if ';' in line:
                 break
 
-    return assets_inserted_by_update - 1
+    return insertions_made - 1
 
 
 @pytest.mark.parametrize('globaldb_upgrades', [[]])
@@ -83,7 +98,7 @@ def test_upgrade_v2_v3(globaldb):
         )
 
     assert globaldb.get_setting_value('version', None) == 3
-    assets_inserted_by_update = _count_v2_v3_assets_inserted()
+    assets_inserted_by_update = _count_sql_file_sentences('globaldb_v2_v3_assets.sql')
     with globaldb.conn.read_ctx() as cursor:
         # test that we have the same number of assets before and after the migration
         # So same assets as before plus the new ones we add via the sql file minus the ones we skip
@@ -235,6 +250,11 @@ def test_upgrade_v3_v4(globaldb):
             'SELECT COUNT(*) from contract_data WHERE name in (?, ?, ?)',
             ('ETH_SCAN', 'ETH_MULTICALL', 'ETH_MULTICALL2'),
         ).fetchone()[0] == 0
+
+        cursor.execute('SELECT COUNT(*) FROM asset_collections')
+        assert cursor.fetchone()[0] == _count_sql_file_sentences('assets_collections.sql')
+        cursor.execute('SELECT COUNT(*) FROM multiasset_mappings')
+        assert cursor.fetchone()[0] == _count_sql_file_sentences('assets_collections.sql', skip_statements=1)  # noqa: E501
 
 
 @pytest.mark.parametrize('globaldb_version', [2])

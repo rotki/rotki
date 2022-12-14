@@ -3114,35 +3114,45 @@ Get asset identifiers mappings
       Content-Type: application/json
 
       {
-          "result": {
-              "eip155:1/erc20:0xB6eD7644C69416d67B522e20bC294A9a9B405B31": {
-                  "name": "0xBitcoin",
-                  "symbol": "0xBTC",
-                  "asset_type": "evm token"
-              },
-              "DCR": {
-                  "name": "Decred",
-                  "symbol": "DCR",
-                  "asset_type": "own chain"
-              },
-              "eip155:1/erc20:0xcC4eF9EEAF656aC1a2Ab886743E98e97E090ed38": {
-                  "name": "DigitalDevelopersFund",
-                  "symbol": "DDF",
-                  "chain_id": 1,
-                  "is_custom_asset": false,
-		  "asset_type": "evm token"
-              },
-              "_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_26612040215479394739615825115912800930061094786769410446114278812336794170041": {
-	              "name": "Mooncat 151",
-		          "asset_type": "nft",
-		          "collection_name": "Mooncats",
-		          "image_url": "https://myimg.com"
-	          }
+        "result": {
+          "assets": {
+            "eip155:1/erc20:0xB6eD7644C69416d67B522e20bC294A9a9B405B31": {
+              "name": "0xBitcoin",
+              "symbol": "0xBTC",
+              "asset_type": "evm token",
+              "collection_id": "0"
+            },
+            "DCR": {
+              "name": "Decred",
+              "symbol": "DCR",
+              "asset_type": "own chain"
+            },
+            "eip155:1/erc20:0xcC4eF9EEAF656aC1a2Ab886743E98e97E090ed38": {
+              "name": "DigitalDevelopersFund",
+              "symbol": "DDF",
+              "chain_id": 1,
+              "is_custom_asset": false,
+              "asset_type": "evm token"
+            },
+            "_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_26612040215479394739615825115912800930061094786769410446114278812336794170041": {
+              "name": "Mooncat 151",
+              "asset_type": "nft",
+              "collection_name": "Mooncats",
+              "image_url": "https://myimg.com"
+            }
           },
-          "message": ""
+          "asset_collections": {
+            "0": {
+              "name": "0xBitcoin",
+              "symbol": "0xBTC"
+            }
+          }
+        },
+        "message": ""
       }
 
-   :resjson object result: A mapping of identifiers to (1) their name, symbol & chain(if available) if they are assets. And to (2) their name, collection name and image url if they are nfts.
+   :resjson object assets: A mapping of identifiers to (1) their name, symbol & chain(if available) if they are assets. And to (2) their name, collection name and image url if they are nfts.
+   :resjson object asset_collections: A mapping of asset collections ids to their properties.
    :resjson string name: Name of the asset/nft.
    :resjson string symbol: Symbol of the asset. Will only exist for non-nft assets.
    :resjson int chain_id: This value might not be included in all the results. Chain id of the chain where the asset is located if the asset is an EVM token.

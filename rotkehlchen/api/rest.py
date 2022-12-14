@@ -1374,13 +1374,17 @@ class RestAPI():
 
     def get_assets_mappings(self, identifiers: list[str]) -> Response:
         try:
-            asset_mappings = GlobalDBHandler().get_assets_mappings(identifiers)
+            asset_mappings, asset_collections = GlobalDBHandler().get_assets_mappings(identifiers)
             nft_mappings = self.rotkehlchen.data.db.get_nft_mappings(identifiers)
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
+        data_dict = {
+            'assets': asset_mappings | nft_mappings,
+            'asset_collections': asset_collections,
+        }
         return api_response(
             # Using | is safe since keys in asset_mappings and nft_mappings don't intersect
-            _wrap_in_ok_result(asset_mappings | nft_mappings),
+            _wrap_in_ok_result(data_dict),
             status_code=HTTPStatus.OK,
         )
 

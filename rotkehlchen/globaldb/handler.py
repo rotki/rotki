@@ -50,11 +50,26 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-ALL_ASSETS_TABLES_QUERY = """
-SELECT assets.identifier, name, symbol, chain, assets.type, custom_assets.type FROM assets
-LEFT JOIN common_asset_details on assets.identifier=common_asset_details.identifier
+
+_ALL_ASSETS_TABLES_JOINS = """
+FROM assets LEFT JOIN common_asset_details on assets.identifier=common_asset_details.identifier
 LEFT JOIN evm_tokens ON evm_tokens.identifier=assets.identifier
 LEFT JOIN custom_assets ON custom_assets.identifier=assets.identifier
+"""
+
+
+ALL_ASSETS_TABLES_QUERY = f"""
+SELECT assets.identifier, name, symbol, chain, assets.type, custom_assets.type
+{_ALL_ASSETS_TABLES_JOINS}
+"""
+
+
+ALL_ASSETS_TABLES_QUERY_WITH_COLLECTIONS = f"""
+SELECT assets.identifier, assets.name, common_asset_details.symbol, chain, assets.type,
+custom_assets.type, collection_id, asset_collections.name, asset_collections.symbol
+{_ALL_ASSETS_TABLES_JOINS}
+LEFT JOIN multiasset_mappings ON assets.identifier=multiasset_mappings.asset
+LEFT JOIN asset_collections ON multiasset_mappings.collection_id=asset_collections.id
 """
 
 
@@ -408,16 +423,18 @@ class GlobalDBHandler():
         return assets_info, entries_found
 
     @staticmethod
-    def get_assets_mappings(identifiers: list[str]) -> dict[str, dict]:
+    def get_assets_mappings(identifiers: list[str]) -> tuple[dict[str, dict], dict[str, dict[str, str]]]:  # noqa: E501
         """
-        Given a list of asset identifiers, return a list of asset information(id, name, symbol)
-        for those identifiers.
+        Given a list of asset identifiers, return a list of asset information
+        (id, name, symbol, collection) for those identifiers and a dictionary that maps the
+        collection id to their properties.
         """
         result = {}
+        asset_collections = {}
         identifiers_query = f'assets.identifier IN ({",".join("?" * len(identifiers))})'
         with GlobalDBHandler().conn.read_ctx() as cursor:
             cursor.execute(
-                ALL_ASSETS_TABLES_QUERY + 'WHERE ' + identifiers_query,
+                ALL_ASSETS_TABLES_QUERY_WITH_COLLECTIONS + 'WHERE ' + identifiers_query,
                 tuple(identifiers),
             )
             for entry in cursor:
@@ -430,8 +447,14 @@ class GlobalDBHandler():
                     result[entry[0]].update({'evm_chain': ChainID.deserialize_from_db(entry[3]).to_name()})  # noqa: E501
                 if entry[5] is not None:
                     result[entry[0]].update({'custom_asset_type': entry[5]})
-
-        return result
+                if entry[6] is not None:
+                    result[entry[0]].update({'collection_id': str(entry[6])})
+                    if entry[6] not in asset_collections:
+                        asset_collections[str(entry[6])] = {
+                            'name': entry[7],
+                            'symbol': entry[8],
+                        }
+        return result, asset_collections
 
     @staticmethod
     def search_assets(
