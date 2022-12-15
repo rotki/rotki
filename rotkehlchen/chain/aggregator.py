@@ -455,18 +455,6 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.totals = self.balances.recalculate_totals()
         return self.get_balances_update()
 
-    def derive_new_addresses_from_xpubs(
-            self,
-            should_derive_btc_xpubs: bool = False,
-            should_derive_bch_xpubs: bool = False,
-    ) -> None:
-        """Derive new addresses from xpubs."""
-        xpub_manager = XpubManager(chains_aggregator=self)
-        if should_derive_btc_xpubs is True:
-            xpub_manager.check_for_new_xpub_addresses(blockchain=SupportedBlockchain.BITCOIN)
-        if should_derive_bch_xpubs is True:
-            xpub_manager.check_for_new_xpub_addresses(blockchain=SupportedBlockchain.BITCOIN_CASH)
-
     @protect_with_lock()
     @cache_response_timewise()
     def query_btc_balances(
