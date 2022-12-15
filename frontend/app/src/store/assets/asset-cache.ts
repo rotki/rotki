@@ -3,6 +3,7 @@ import { type ComputedRef, type Ref } from 'vue';
 import { useAssetInfoApi } from '@/services/assets/info';
 import { startPromise } from '@/utils';
 import { logger } from '@/utils/logging';
+import { getUpdatedKey } from '@/services/axios-tranformers';
 
 const CACHE_EXPIRY = 1000 * 60 * 10;
 const CACHE_SIZE = 500;
@@ -13,6 +14,7 @@ export const useAssetCacheStore = defineStore('assets/cache', () => {
   const cache: Ref<Record<string, AssetInfo | null>> = ref({});
   const pending: Ref<Record<string, boolean>> = ref({});
   const batch: Ref<string[]> = ref([]);
+  const fetchedAssetCollections: Ref<Record<string, AssetInfo>> = ref({});
 
   const { assetMapping } = useAssetInfoApi();
 
@@ -64,8 +66,14 @@ export const useAssetCacheStore = defineStore('assets/cache', () => {
     try {
       const response = await assetMapping(keys);
       for (const key of keys) {
-        if (response[key]) {
-          put(key, response[key]);
+        const { assetCollections, assets } = response;
+        set(fetchedAssetCollections, {
+          ...get(fetchedAssetCollections),
+          ...assetCollections
+        });
+        const item = assets[getUpdatedKey(key, true)];
+        if (item) {
+          put(key, item);
         } else {
           logger.debug(`unknown key: ${key}`);
           unknown.set(key, Date.now() + CACHE_EXPIRY);
@@ -129,6 +137,7 @@ export const useAssetCacheStore = defineStore('assets/cache', () => {
 
   return {
     cache,
+    fetchedAssetCollections,
     isPending,
     retrieve,
     reset

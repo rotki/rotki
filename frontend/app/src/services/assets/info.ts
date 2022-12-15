@@ -1,8 +1,5 @@
 import { type ActionResult } from '@rotki/common/lib/data';
-import {
-  axiosSnakeCaseTransformer,
-  setupTransformer
-} from '@/services/axios-tranformers';
+import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import { type PendingTask } from '@/services/types-api';
 import {
@@ -18,8 +15,7 @@ export const useAssetInfoApi = () => {
       '/assets/mappings',
       { identifiers },
       {
-        validateStatus: validStatus,
-        transformResponse: setupTransformer(true)
+        validateStatus: validStatus
       }
     );
     return AssetMap.parse(handleResponse(response));

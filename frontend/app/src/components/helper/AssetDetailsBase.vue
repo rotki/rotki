@@ -16,7 +16,8 @@ const props = defineProps({
   changeable: { required: false, type: Boolean, default: false },
   hideName: { required: false, type: Boolean, default: false },
   dense: { required: false, type: Boolean, default: false },
-  enableAssociation: { required: false, type: Boolean, default: true }
+  enableAssociation: { required: false, type: Boolean, default: true },
+  showChain: { required: false, type: Boolean, default: true }
 });
 
 const { asset, opensDetails } = toRefs(props);
@@ -68,6 +69,7 @@ const loading: ComputedRef<boolean> = computed(() =>
         :styled="assetStyled"
         :identifier="asset.identifier"
         :enable-association="enableAssociation"
+        :show-chain="showChain"
       />
     </template>
   </list-item>

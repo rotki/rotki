@@ -71,6 +71,7 @@ export const AssetInfo = z.object({
   assetType: z.string().nullish(),
   isCustomAsset: z.boolean().nullish(),
   customAssetType: z.string().nullish(),
+  collectionId: z.string().nullish(),
   collectionName: z.string().nullish(),
   imageUrl: z.string().nullish()
 });

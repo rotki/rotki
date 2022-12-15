@@ -25,9 +25,13 @@ describe('store::assets/cache', () => {
     const key = 'KEY';
     const asset = {
       name: 'KEY Asset',
-      symbol: 'KEY'
+      symbol: 'KEY',
+      isCustomAsset: false
     };
-    const mapping: AssetMap = { [key]: asset };
+    const mapping: AssetMap = {
+      assetCollections: {},
+      assets: { [key]: asset }
+    };
     vi.mocked(useAssetInfoApi().assetMapping).mockResolvedValue(mapping);
     const firstRetrieval: ComputedRef<AssetInfo | null> = store.retrieve('KEY');
     const secondRetrieval: ComputedRef<AssetInfo | null> =
@@ -40,7 +44,10 @@ describe('store::assets/cache', () => {
   });
 
   it('should not request failed assets twice unless they expire', async () => {
-    vi.mocked(useAssetInfoApi().assetMapping).mockResolvedValue({});
+    vi.mocked(useAssetInfoApi().assetMapping).mockResolvedValue({
+      assetCollections: {},
+      assets: {}
+    });
     const firstRetrieval: ComputedRef<AssetInfo | null> = store.retrieve('KEY');
     const secondRetrieval: ComputedRef<AssetInfo | null> =
       store.retrieve('KEY');
@@ -61,9 +68,13 @@ describe('store::assets/cache', () => {
     const key = 'KEY';
     const asset = {
       name: 'KEY Asset',
-      symbol: 'KEY'
+      symbol: 'KEY',
+      isCustomAsset: false
     };
-    const mapping: AssetMap = { [key]: asset };
+    const mapping: AssetMap = {
+      assetCollections: {},
+      assets: { [key]: asset }
+    };
     vi.mocked(useAssetInfoApi().assetMapping).mockResolvedValue(mapping);
     const firstRetrieval: ComputedRef<AssetInfo | null> = store.retrieve('KEY');
     vi.advanceTimersToNextTimer();
@@ -82,11 +93,12 @@ describe('store::assets/cache', () => {
   it('should stop caching assets after cache limit is reached', async () => {
     vi.mocked(useAssetInfoApi().assetMapping).mockImplementation(
       async identifier => {
-        const mapping: AssetMap = {};
+        const mapping: AssetMap = { assetCollections: {}, assets: {} };
         for (const id of identifier) {
-          mapping[id] = {
+          mapping.assets[id] = {
             symbol: id,
-            name: `name ${id}`
+            name: `name ${id}`,
+            isCustomAsset: false
           };
         }
         return mapping;

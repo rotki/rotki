@@ -49,7 +49,8 @@ export const useAssetInfoRetrieval = defineStore(
 
     const assetInfo = (
       identifier: MaybeRef<string | undefined>,
-      enableAssociation: MaybeRef<boolean> = true
+      enableAssociation: MaybeRef<boolean> = true,
+      isCollectionParent: MaybeRef<boolean> = false
     ): ComputedRef<AssetInfo | null> =>
       computed(() => {
         const id = get(identifier);
@@ -75,9 +76,16 @@ export const useAssetInfoRetrieval = defineStore(
             isCustomAsset
           };
         }
+        const { fetchedAssetCollections } = storeToRefs(useAssetCacheStore());
+        const collectionData =
+          get(isCollectionParent) && data?.collectionId
+            ? get(fetchedAssetCollections)[data.collectionId]
+            : null;
 
-        const name = data?.name || getAssetNameFallback(id);
-        const symbol = data?.symbol || getAssetNameFallback(id);
+        const name =
+          collectionData?.name || data?.name || getAssetNameFallback(id);
+        const symbol =
+          collectionData?.symbol || data?.symbol || getAssetNameFallback(id);
 
         return {
           ...data,

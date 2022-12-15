@@ -8,6 +8,7 @@ import {
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type MaybeRef } from '@vueuse/core';
 import { type ComputedRef } from 'vue';
+import { groupBy } from 'lodash';
 import { bigNumberSum } from '@/filters';
 import {
   type BtcAccountData,
@@ -26,6 +27,8 @@ import {
 import { NoPrice, Zero, sortDesc, zeroBalance } from '@/utils/bignumbers';
 import { assetSum, balanceSum } from '@/utils/calculation';
 import { getTags } from '@/utils/tags';
+import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
+import { useAssetCacheStore } from '@/store/assets/asset-cache';
 
 export const removeZeroAssets = (entries: AssetBalances): AssetBalances => {
   const balances = { ...entries };
@@ -105,23 +108,66 @@ export const sumAssetBalances = (
   return summed;
 };
 
-const toSortedArray = <T extends Balance>(
+const toSortedAndGroupedArray = <T extends Balance>(
   ownedAssets: AssetBalances,
   isIgnored: (asset: string) => boolean,
-  map: (asset: string) => T
+  map: (asset: string) => T & { asset: string }
 ): T[] => {
-  return Object.keys(ownedAssets)
+  const { assetInfo } = useAssetInfoRetrieval();
+  const { fetchedAssetCollections } = storeToRefs(useAssetCacheStore());
+
+  const data = Object.keys(ownedAssets)
     .filter(asset => !isIgnored(asset))
-    .map(map)
-    .sort((a, b) => sortDesc(a.usdValue, b.usdValue));
+    .map(map);
+
+  const groupedBalances = groupBy(data, balance => {
+    const info = get(assetInfo(balance.asset));
+
+    if (info?.collectionId) {
+      return `collection-${info.collectionId}`;
+    }
+
+    return balance.asset;
+  });
+
+  const mapped: T[] = [];
+
+  Object.keys(groupedBalances).forEach(key => {
+    const grouped = groupedBalances[key];
+    const isAssetCollection = key.startsWith('collection-');
+    const collectionKey = key.split('collection-')[1];
+    const assetCollectionInfo = !isAssetCollection
+      ? false
+      : get(fetchedAssetCollections)?.[collectionKey];
+
+    if (assetCollectionInfo && grouped.length > 1) {
+      const sumBalance = grouped.reduce(
+        (accumulator, currentBalance) =>
+          balanceSum(accumulator, currentBalance),
+        zeroBalance()
+      );
+
+      const parent: T = {
+        ...grouped[0],
+        ...sumBalance,
+        breakdown: grouped
+      };
+
+      mapped.push(parent);
+    } else {
+      mapped.push(...grouped);
+    }
+  });
+
+  return mapped.sort((a, b) => sortDesc(a.usdValue, b.usdValue));
 };
 
-export const toStoredAssetBalanceWithPrice = (
+export const toSortedAssetBalanceWithPrice = (
   ownedAssets: AssetBalances,
   isIgnored: (asset: string) => boolean,
   getPrice: (asset: string) => ComputedRef<BigNumber | null | undefined>
 ): AssetBalanceWithPrice[] => {
-  return toSortedArray(ownedAssets, isIgnored, asset => ({
+  return toSortedAndGroupedArray(ownedAssets, isIgnored, asset => ({
     asset,
     amount: ownedAssets[asset].amount,
     usdValue: ownedAssets[asset].usdValue,
@@ -133,7 +179,7 @@ export const toSortedAssetBalanceArray = (
   ownedAssets: AssetBalances,
   isIgnored: (asset: string) => boolean
 ): AssetBalance[] =>
-  toSortedArray(ownedAssets, isIgnored, asset => ({
+  toSortedAndGroupedArray(ownedAssets, isIgnored, asset => ({
     asset,
     amount: ownedAssets[asset].amount,
     usdValue: ownedAssets[asset].usdValue

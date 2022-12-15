@@ -17,7 +17,7 @@ import {
   appendAssetBalance,
   mergeAssociatedAssets,
   toSortedAssetBalanceArray,
-  toStoredAssetBalanceWithPrice
+  toSortedAssetBalanceWithPrice
 } from '@/utils/balances';
 import { balanceSum } from '@/utils/calculation';
 
@@ -106,7 +106,7 @@ export const useAggregatedBlockchainBalancesStore = defineStore(
           totals,
           getAssociatedAssetIdentifier
         );
-        return toStoredAssetBalanceWithPrice(
+        return toSortedAssetBalanceWithPrice(
           get(ownedAssets),
           asset => get(isAssetIgnored(asset)),
           assetPrice

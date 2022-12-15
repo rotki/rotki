@@ -16,13 +16,14 @@ const props = defineProps({
   opensDetails: { required: false, type: Boolean, default: false },
   hideName: { required: false, type: Boolean, default: false },
   dense: { required: false, type: Boolean, default: false },
-  enableAssociation: { required: false, type: Boolean, default: true }
+  enableAssociation: { required: false, type: Boolean, default: true },
+  isCollectionParent: { required: false, type: Boolean, default: false }
 });
 
-const { asset, enableAssociation } = toRefs(props);
+const { asset, enableAssociation, isCollectionParent } = toRefs(props);
 const { assetInfo } = useAssetInfoRetrieval();
 
-const assetDetails = assetInfo(asset, enableAssociation);
+const assetDetails = assetInfo(asset, enableAssociation, isCollectionParent);
 
 const currentAsset: ComputedRef<AssetInfoWithId> = computed(() => {
   return {
@@ -41,6 +42,7 @@ const currentAsset: ComputedRef<AssetInfoWithId> = computed(() => {
       :dense="dense"
       :asset-styled="assetStyled"
       :enable-association="enableAssociation"
+      :show-chain="!isCollectionParent"
     />
   </div>
 </template>

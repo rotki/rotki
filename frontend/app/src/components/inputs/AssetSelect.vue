@@ -153,7 +153,7 @@ const checkValue = async () => {
     ...get(assets),
     {
       identifier: val,
-      ...mapping[val]
+      ...mapping.assets[val]
     }
   ]);
 };

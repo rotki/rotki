@@ -299,6 +299,7 @@ defineExpose({
               text
               color="primary"
               class="mt-1 py-6"
+              :disabled="pending"
               v-on="on"
               @click="openCustomAssetForm"
             >
