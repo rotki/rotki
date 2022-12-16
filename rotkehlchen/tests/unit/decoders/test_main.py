@@ -17,6 +17,7 @@ def test_decoders_initialization(ethereum_transaction_decoder):
     """Make sure that all decoders we have created are detected and initialized"""
     assert set(ethereum_transaction_decoder.decoders.keys()) == {
         'Aavev1',
+        'Aavev2',
         'Airdrops',
         'Balancer',
         'Compound',
@@ -71,6 +72,7 @@ def test_decoders_initialization(ethereum_transaction_decoder):
         'convex',
         'votium',
         'aave-v1',
+        'aave-v2',
         'compound',
         'dxdaomesa',
         '1inch-v1',
