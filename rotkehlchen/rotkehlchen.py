@@ -30,7 +30,6 @@ from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.ethereum.oracles.saddle import SaddleOracle
 from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
 from rotkehlchen.chain.substrate.manager import SubstrateManager
-from rotkehlchen.chain.substrate.types import SubstrateChain
 from rotkehlchen.chain.substrate.utils import (
     KUSAMA_NODES_TO_CONNECT_AT_START,
     POLKADOT_NODES_TO_CONNECT_AT_START,
@@ -285,7 +284,7 @@ class Rotkehlchen():
         )
         ethereum_manager = EthereumManager(ethereum_inquirer)
         kusama_manager = SubstrateManager(
-            chain=SubstrateChain.KUSAMA,
+            chain=SupportedBlockchain.KUSAMA,
             msg_aggregator=self.msg_aggregator,
             greenlet_manager=self.greenlet_manager,
             connect_at_start=KUSAMA_NODES_TO_CONNECT_AT_START,
@@ -293,7 +292,7 @@ class Rotkehlchen():
             own_rpc_endpoint=settings.ksm_rpc_endpoint,
         )
         polkadot_manager = SubstrateManager(
-            chain=SubstrateChain.POLKADOT,
+            chain=SupportedBlockchain.POLKADOT,
             msg_aggregator=self.msg_aggregator,
             greenlet_manager=self.greenlet_manager,
             connect_at_start=POLKADOT_NODES_TO_CONNECT_AT_START,

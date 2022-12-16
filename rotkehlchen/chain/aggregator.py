@@ -45,7 +45,6 @@ from rotkehlchen.chain.ethereum.modules import (
 from rotkehlchen.chain.ethereum.modules.eth2.structures import Eth2Validator
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.substrate.manager import wait_until_a_node_is_available
-from rotkehlchen.chain.substrate.types import KusamaAddress, PolkadotAddress
 from rotkehlchen.chain.substrate.utils import SUBSTRATE_NODE_CONNECTION_TIMEOUT
 from rotkehlchen.constants.assets import (
     A_AVAX,
@@ -77,7 +76,8 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.types import (
     SUPPORTED_EVM_CHAINS,
-    BTCAddress,
+    SUPPORTED_SUBSTRATE_CHAINS,
+    BlockchainAddress,
     ChecksumEvmAddress,
     Eth2PubKey,
     ListOfBlockchainAddresses,

@@ -13,7 +13,7 @@ from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
 from rotkehlchen.chain.evm.contracts import EvmContracts
 from rotkehlchen.chain.evm.types import NodeName
 from rotkehlchen.chain.substrate.manager import SubstrateChainProperties, SubstrateManager
-from rotkehlchen.chain.substrate.types import KusamaAddress, PolkadotAddress, SubstrateChain
+from rotkehlchen.chain.substrate.types import SubstrateAddress
 from rotkehlchen.constants.assets import A_DOT, A_KSM
 from rotkehlchen.db.settings import DEFAULT_BTC_DERIVATION_GAP_LIMIT
 from rotkehlchen.externalapis.beaconchain import BeaconChain
@@ -28,7 +28,7 @@ from rotkehlchen.tests.utils.substrate import (
     POLKADOT_SS58_FORMAT,
     wait_until_all_substrate_nodes_connected,
 )
-from rotkehlchen.types import BTCAddress, ChainID, ChecksumEvmAddress
+from rotkehlchen.types import BTCAddress, ChainID, ChecksumEvmAddress, SupportedBlockchain
 
 
 @pytest.fixture(name='number_of_eth_accounts')
@@ -52,7 +52,7 @@ def fixture_bch_accounts() -> list[BTCAddress]:
 
 
 @pytest.fixture(name='ksm_accounts')
-def fixture_ksm_accounts() -> list[KusamaAddress]:
+def fixture_ksm_accounts() -> list[SubstrateAddress]:
     """As per feature requirements, instantiating SubstrateManager won't trigger
     the logic that attempts to connect to the nodes. Use this fixture with KSM
     addresses on tests (e.g. integration/API tests) that require connection
@@ -62,7 +62,7 @@ def fixture_ksm_accounts() -> list[KusamaAddress]:
 
 
 @pytest.fixture(name='dot_accounts')
-def fixture_dot_accounts() -> list[PolkadotAddress]:
+def fixture_dot_accounts() -> list[SubstrateAddress]:
     """As per feature requirements, instantiating SubstrateManager won't trigger
     the logic that attempts to connect to the nodes. Use this fixture with KSM
     addresses on tests (e.g. integration/API tests) that require connection
@@ -81,8 +81,8 @@ def fixture_blockchain_accounts(
         ethereum_accounts: list[ChecksumEvmAddress],
         btc_accounts: list[BTCAddress],
         bch_accounts: list[BTCAddress],
-        ksm_accounts: list[KusamaAddress],
-        dot_accounts: list[PolkadotAddress],
+        ksm_accounts: list[SubstrateAddress],
+        dot_accounts: list[SubstrateAddress],
         avax_accounts: list[ChecksumEvmAddress],
 ) -> BlockchainAccounts:
     return BlockchainAccounts(
@@ -208,7 +208,7 @@ def _make_substrate_manager(
         rpc_endpoint if rpc_endpoint is not None else KUSAMA_DEFAULT_OWN_RPC_ENDPOINT
     )
     substrate_manager = SubstrateManager(
-        chain=SubstrateChain.KUSAMA,
+        chain=SupportedBlockchain.KUSAMA,
         msg_aggregator=messages_aggregator,
         greenlet_manager=greenlet_manager,
         connect_at_start=connect_at_start,
@@ -222,7 +222,7 @@ def _make_substrate_manager(
         substrate_manager._set_available_nodes_call_order()
         # NB: for speeding up tests, instead of requesting the properties of
         # the chain, we manually set them.
-        if chain_type == SubstrateChain.KUSAMA:
+        if chain_type == SupportedBlockchain.KUSAMA:
             substrate_manager.chain_properties = SubstrateChainProperties(
                 ss58_format=KUSAMA_SS58_FORMAT,
                 token=A_KSM,
@@ -257,7 +257,7 @@ def fixture_kusama_manager(
         messages_aggregator=messages_aggregator,
         greenlet_manager=greenlet_manager,
         accounts=ksm_accounts,
-        chain_type=SubstrateChain.KUSAMA,
+        chain_type=SupportedBlockchain.KUSAMA,
         rpc_endpoint=ksm_rpc_endpoint,
         available_node_attributes_map=kusama_available_node_attributes_map,
         connect_at_start=kusama_manager_connect_at_start,
@@ -277,7 +277,7 @@ def fixture_polkadot_manager(
         messages_aggregator=messages_aggregator,
         greenlet_manager=greenlet_manager,
         accounts=dot_accounts,
-        chain_type=SubstrateChain.POLKADOT,
+        chain_type=SupportedBlockchain.POLKADOT,
         rpc_endpoint=dot_rpc_endpoint,
         available_node_attributes_map=polkadot_available_node_attributes_map,
         connect_at_start=polkadot_manager_connect_at_start,

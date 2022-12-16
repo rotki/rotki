@@ -4,12 +4,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from rotkehlchen.chain.substrate.manager import SubstrateManager
-from rotkehlchen.chain.substrate.types import (
-    BlockNumber,
-    KusamaNodeName,
-    NodeNameAttributes,
-    SubstrateChain,
-)
+from rotkehlchen.chain.substrate.types import BlockNumber, KusamaNodeName, NodeNameAttributes
 from rotkehlchen.constants.assets import A_KSM
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.misc import RemoteError
@@ -19,6 +14,7 @@ from rotkehlchen.tests.utils.substrate import (
     SUBSTRATE_ACC2_KSM_ADDR,
     attempt_connect_test_nodes,
 )
+from rotkehlchen.types import SupportedBlockchain
 
 
 class AccountInfo(NamedTuple):
@@ -30,7 +26,7 @@ def fixture_kusama_available_node_attributes_map():
     """Attempt to connect to Kusama nodes and return the available nodes map.
     The connection will persist along the session.
     """
-    available_node_attributes_map = attempt_connect_test_nodes(SubstrateChain.KUSAMA)
+    available_node_attributes_map = attempt_connect_test_nodes(SupportedBlockchain.KUSAMA)
     return available_node_attributes_map
 
 
@@ -61,7 +57,7 @@ def test_get_accounts_balance(kusama_manager):
 
 def test_get_chain_id(kusama_manager):
     chain_id = kusama_manager.get_chain_id()
-    assert chain_id == str(SubstrateChain.KUSAMA)
+    assert chain_id == 'Kusama'
 
 
 def test_get_chain_properties(kusama_manager):

@@ -35,12 +35,7 @@ from rotkehlchen.chain.constants import NON_BITCOIN_CHAINS
 from rotkehlchen.chain.ethereum.constants import ETHEREUM_ETHERSCAN_NODE_NAME
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
-from rotkehlchen.chain.substrate.types import (
-    KusamaAddress,
-    PolkadotAddress,
-    SubstrateChain,
-    SubstratePublicKey,
-)
+from rotkehlchen.chain.substrate.types import SubstrateAddress, SubstratePublicKey
 from rotkehlchen.chain.substrate.utils import (
     get_substrate_address_from_public_key,
     is_valid_kusama_address,
@@ -78,6 +73,7 @@ from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
     DEFAULT_ADDRESS_NAME_PRIORITY,
     NON_EVM_CHAINS,
+    SUPPORTED_SUBSTRATE_CHAINS,
     AddressbookEntry,
     AddressbookType,
     AssetMovementCategory,
@@ -1481,29 +1477,11 @@ def _transform_eth_address(
     return address
 
 
-@overload
 def _transform_substrate_address(
         ethereum_inquirer: EthereumInquirer,
         given_address: str,
-        chain: Literal['Kusama'],
-) -> KusamaAddress:
-    ...
-
-
-@overload
-def _transform_substrate_address(
-        ethereum_inquirer: EthereumInquirer,
-        given_address: str,
-        chain: Literal['Polkadot'],
-) -> PolkadotAddress:
-    ...
-
-
-def _transform_substrate_address(
-        ethereum_inquirer: EthereumInquirer,
-        given_address: str,
-        chain: Literal['Kusama', 'Polkadot'],
-) -> Union[KusamaAddress, PolkadotAddress]:
+        chain: SUPPORTED_SUBSTRATE_CHAINS,
+) -> SubstrateAddress:
     """Returns a DOT or KSM address (if exists) given an ENS domain. At this point any
     given address has been already validated either as an ENS name or as a
     valid Substrate address (ss58 format).
@@ -1519,15 +1497,12 @@ def _transform_substrate_address(
     https://github.com/ensdomains/address-encoder/blob/master/src/index.ts
     """
     if not given_address.endswith('.eth'):
-        if chain == 'Polkadot':
-            return PolkadotAddress(given_address)
-        if chain == 'Kusama':
-            return KusamaAddress(given_address)
+        return SubstrateAddress(given_address)
 
     try:
         resolved_address = ethereum_inquirer.ens_lookup(
             given_address,
-            blockchain=SupportedBlockchain.POLKADOT if chain == 'Polkadot' else SupportedBlockchain.KUSAMA,  # noqa: E501
+            blockchain=chain,
         )
     except (RemoteError, InputError) as e:
         raise ValidationError(
@@ -1538,28 +1513,17 @@ def _transform_substrate_address(
 
     if resolved_address is None:
         raise ValidationError(
-            f'Given ENS address {given_address} could not be resolved for ' + chain,
+            f'Given ENS address {given_address} could not be resolved for {chain}',
             field_name='address',
         ) from None
 
-    address: Union[PolkadotAddress, KusamaAddress]
     try:
-        if chain == 'Polkadot':
-            address = get_substrate_address_from_public_key(
-                chain=SubstrateChain.POLKADOT,
-                public_key=SubstratePublicKey(resolved_address),
-            )
-            log.debug(f'Resolved polkadot ENS {given_address} to {address}')
-            return PolkadotAddress(address)
-
-        # else can only be kusama
         address = get_substrate_address_from_public_key(
-            chain=SubstrateChain.KUSAMA,
+            chain=chain,
             public_key=SubstratePublicKey(resolved_address),
         )
-        log.debug(f'Resolved kusama ENS {given_address} to {address}')
-        return KusamaAddress(address)
-
+        log.debug(f'Resolved {chain} ENS {given_address} to {address}')
+        return address
     except (TypeError, ValueError) as e:
         raise ValidationError(
             f'Given ENS address {given_address} does not contain a valid '
@@ -1603,19 +1567,12 @@ class BlockchainAccountsPatchSchema(Schema):
                     ethereum_inquirer=self.ethereum_inquirer,
                     given_address=account['address'],
                 )
-        if data['blockchain'] == SupportedBlockchain.KUSAMA:
+        if data['blockchain'].is_substrate():
             for idx, account in enumerate(data['accounts']):
                 data['accounts'][idx]['address'] = _transform_substrate_address(
                     ethereum_inquirer=self.ethereum_inquirer,
                     given_address=account['address'],
-                    chain='Kusama',
-                )
-        if data['blockchain'] == SupportedBlockchain.POLKADOT:
-            for idx, account in enumerate(data['accounts']):
-                data['accounts'][idx]['address'] = _transform_substrate_address(
-                    ethereum_inquirer=self.ethereum_inquirer,
-                    given_address=account['address'],
-                    chain='Polkadot',
+                    chain=data['blockchain'],
                 )
 
         return data
@@ -1656,16 +1613,12 @@ class BlockchainAccountsDeleteSchema(AsyncQueryArgumentSchema):
             data['accounts'] = [
                 _transform_eth_address(self.ethereum_inquirer, x) for x in data['accounts']
             ]
-        if data['blockchain'] == SupportedBlockchain.KUSAMA:
+        if data['blockchain'].is_substrate():
             data['accounts'] = [
                 _transform_substrate_address(
-                    self.ethereum_inquirer, x, 'Kusama') for x in data['accounts']
+                    self.ethereum_inquirer, x, data['blockchain']) for x in data['accounts']
             ]
-        if data['blockchain'] == SupportedBlockchain.POLKADOT:
-            data['accounts'] = [
-                _transform_substrate_address(
-                    self.ethereum_inquirer, x, 'Polkadot') for x in data['accounts']
-            ]
+
         return data
 
 

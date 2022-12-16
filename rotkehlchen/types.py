@@ -11,7 +11,7 @@ from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn
 from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 from rotkehlchen.utils.mixins.serializableenumvalue import SerializableEnumValueMixin
 
-from rotkehlchen.chain.substrate.types import KusamaAddress, PolkadotAddress  # isort:skip # noqa: E501
+from rotkehlchen.chain.substrate.types import SubstrateAddress  # isort:skip
 
 ModuleName = Literal[
     'makerdao_dsr',
@@ -156,15 +156,13 @@ BlockchainAddress = Union[
     EvmAddress,
     BTCAddress,
     ChecksumEvmAddress,
-    KusamaAddress,
-    PolkadotAddress,
+    SubstrateAddress,
     str,
 ]
 ListOfBlockchainAddresses = Union[
     list[BTCAddress],
     list[ChecksumEvmAddress],
-    list[KusamaAddress],
-    list[PolkadotAddress],
+    list[SubstrateAddress],
 ]
 
 
@@ -383,16 +381,18 @@ class SupportedBlockchain(SerializableEnumValueMixin):
             return Eth2PubKey
         if self in (SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH):
             return BTCAddress
-        if self == SupportedBlockchain.KUSAMA:
-            return KusamaAddress
-        if self == SupportedBlockchain.POLKADOT:
-            return PolkadotAddress
+        if self.is_substrate():
+            return SubstrateAddress
+
         raise AssertionError(f'Invalid SupportedBlockchain value: {self}')
 
     def is_evm(self) -> bool:
         return self in get_args(SUPPORTED_EVM_CHAINS)
 
     def is_bitcoin(self) -> bool:
+        return self in get_args(SUPPORTED_BITCOIN_CHAINS)
+
+    def is_substrate(self) -> bool:
         return self in get_args(SUPPORTED_BITCOIN_CHAINS)
 
     def ens_coin_type(self) -> int:
@@ -445,6 +445,11 @@ SUPPORTED_NON_BITCOIN_CHAINS = Literal[
 SUPPORTED_BITCOIN_CHAINS = Literal[
     SupportedBlockchain.BITCOIN,
     SupportedBlockchain.BITCOIN_CASH,
+]
+
+SUPPORTED_SUBSTRATE_CHAINS = Literal[
+    SupportedBlockchain.POLKADOT,
+    SupportedBlockchain.KUSAMA,
 ]
 
 SUPPORTED_BLOCKCHAIN_TO_CHAINID = {

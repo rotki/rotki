@@ -2,12 +2,11 @@ import logging
 from functools import wraps
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
-from typing import Any, Callable, Iterable, Literal, NamedTuple, Optional, Sequence, cast
+from typing import Any, Callable, Iterable, NamedTuple, Optional, Sequence, Union, cast
 from urllib.parse import urlparse
 
 import gevent
 import requests
-from requests.adapters import Response
 from substrateinterface import SubstrateInterface
 from substrateinterface.exceptions import BlockNotFound, SubstrateRequestException
 from websocket import WebSocketException
@@ -22,23 +21,28 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_int_from_str
+from rotkehlchen.types import SUPPORTED_SUBSTRATE_CHAINS, SupportedBlockchain
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 from .types import (
     BlockNumber,
     DictNodeNameNodeAttributes,
+    KusamaNodeName,
     NodeName,
     NodeNameAttributes,
     NodesCallOrder,
+    PolkadotNodeName,
     SubstrateAddress,
-    SubstrateChain,
     SubstrateChainId,
 )
 from .utils import SUBSTRATE_NODE_CONNECTION_TIMEOUT
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+# Number of blocks after which to consider not synced
+SUBSTRATE_BLOCKS_THRESHOLD = 10
 
 
 class SubstrateChainProperties(NamedTuple):
@@ -112,7 +116,7 @@ def request_available_nodes(func: Callable) -> Callable:
 class SubstrateManager():
     def __init__(
             self,
-            chain: SubstrateChain,
+            chain: SUPPORTED_SUBSTRATE_CHAINS,
             greenlet_manager: GreenletManager,
             msg_aggregator: MessagesAggregator,
             connect_at_start: Sequence[NodeName],
@@ -142,9 +146,6 @@ class SubstrateManager():
         Subscan API documentation:
         https://docs.api.subscan.io
         """
-        if chain not in SubstrateChain:
-            raise AssertionError(f'Unexpected SubstrateManager chain: {chain}')
-
         log.debug(f'Initializing {chain} manager')
         self.chain = chain
         self.greenlet_manager = greenlet_manager
@@ -164,19 +165,18 @@ class SubstrateManager():
                 own_rpc_endpoint=own_rpc_endpoint,
             )
 
-    def _check_chain_id(self, node_interface: SubstrateInterface) -> None:
+    def _check_chain(self, node_interface: SubstrateInterface) -> None:
         """Validate a node connects to the expected chain.
 
         May raise:
-        - RemoteError: the chain ID request fails, or the chain ID is not the
+        - RemoteError: the chain request fails, or the chain is not the
         expected one.
         """
         # Check connection and chain ID
-        chain_id = self._get_chain_id(node_interface=node_interface)
-
-        if chain_id != str(self.chain):
+        chain = self._get_chain_id(node_interface=node_interface)
+        if chain != str(self.chain).capitalize():
             message = (
-                f'{self.chain} found unexpected chain {chain_id} when attempted '
+                f'{self.chain} found unexpected chain {chain} when attempted '
                 f'to connect to node at endpoint: {node_interface.url}, '
             )
             log.error(message)
@@ -221,7 +221,7 @@ class SubstrateManager():
             f'{self.chain} subscan API metadata last block',
             metadata_last_block=metadata_last_block,
         )
-        if metadata_last_block - last_block > self.chain.blocks_threshold():
+        if metadata_last_block - last_block > SUBSTRATE_BLOCKS_THRESHOLD:
             self.msg_aggregator.add_warning(
                 f'Found that {self.chain} node at endpoint {node_interface.url} '
                 f'is not synced with the chain. Node last block is {last_block}, '
@@ -248,7 +248,7 @@ class SubstrateManager():
 
         try:
             node_interface = self._get_node_interface(endpoint)
-            self._check_chain_id(node_interface)
+            self._check_chain(node_interface)
             last_block = self._check_node_synchronization(node_interface)
             self._set_chain_properties(node_interface)
         except RemoteError as e:
@@ -331,8 +331,7 @@ class SubstrateManager():
         return balance
 
     def _get_chain_id(self, node_interface: SubstrateInterface) -> SubstrateChainId:
-        """Return the chain identifier.
-        """
+        """Return the chain identifier (name for substrate chains)"""
         log.debug(f'{self.chain} querying chain ID', url=node_interface.url)
         try:
             chain_id = node_interface.chain
@@ -355,8 +354,7 @@ class SubstrateManager():
             self,
             node_interface: SubstrateInterface,
     ) -> SubstrateChainProperties:
-        """Return the chain properties.
-        """
+        """Return the chain properties"""
         log.debug(f'{self.chain} querying chain properties', url=node_interface.url)
         try:
             properties = node_interface.properties
@@ -418,7 +416,7 @@ class SubstrateManager():
         return BlockNumber(last_block)
 
     def _get_node_endpoint(self, node: NodeName) -> str:
-        if node == self.chain.node_name_type().OWN:
+        if node.value == 0:  # KusamaNodeName/PolkadotNodeName.OWN
             return self._format_own_rpc_endpoint(self.own_rpc_endpoint)
         return node.endpoint()
 
@@ -433,11 +431,10 @@ class SubstrateManager():
         a preset file for the given `type_registry_preset` argument.
         - ValueError and TypeError: invalid constructor arguments.
         """
-        si_attributes = self.chain.substrate_interface_attributes()
         try:
             node_interface = SubstrateInterface(
                 url=endpoint,
-                type_registry_preset=si_attributes.type_registry_preset,
+                type_registry_preset=self.chain.get_key(),
                 use_remote_preset=True,
             )
         except (requests.exceptions.RequestException, WebSocketException, SubstrateRequestException) as e:  # noqa: E501
@@ -457,12 +454,11 @@ class SubstrateManager():
 
         return node_interface
 
-    def _request_explorer_api(self, endpoint: Literal['metadata']) -> Response:
-        if endpoint == 'metadata':
-            url = f'{self.chain.chain_explorer_api()}/scan/metadata'
-        else:
-            raise AssertionError(f'Unexpected {self.chain} endpoint type: {endpoint}')
-
+    def _request_chain_metadata(self) -> dict[str, Any]:
+        """Subscan API metadata documentation:
+        https://docs.api.subscan.io/#metadata
+        """
+        url = f'https://{self.chain.get_key()}.api.subscan.io/api/scan/metadata'
         log.debug(f'{self.chain} subscan API request', request_url=url)
         try:
             response = requests.post(url=url, timeout=DEFAULT_TIMEOUT_TUPLE)
@@ -471,13 +467,6 @@ class SubstrateManager():
             log.error(message)
             raise RemoteError(message) from e
 
-        return response
-
-    def _request_chain_metadata(self) -> dict[str, Any]:
-        """Subscan API metadata documentation:
-        https://docs.api.subscan.io/#metadata
-        """
-        response = self._request_explorer_api(endpoint='metadata')
         if response.status_code != HTTPStatus.OK:
             message = (
                 f'{self.chain} chain metadata request was not successful. '
@@ -505,7 +494,11 @@ class SubstrateManager():
         preference, then are ordered depending on how close they are to the
         chain height; the higher 'weight_block' the better.
         """
-        own_node = self.chain.node_name_type().OWN
+        own_node: Union[KusamaNodeName, PolkadotNodeName]
+        if self.chain == SupportedBlockchain.KUSAMA:
+            own_node = KusamaNodeName.OWN
+        else:
+            own_node = PolkadotNodeName.OWN
         node_attributes_map = self.available_node_attributes_map.copy()
         own_node_attributes = node_attributes_map.pop(own_node, None)
         available_nodes_call_order = sorted(
@@ -619,16 +612,20 @@ class SubstrateManager():
         """Attempt to set the RPC endpoint for the user's own node.
         If connection at endpoint is successful it will set `own_rpc_endpoint`.
         """
-        own_node_name = self.chain.node_name_type().OWN
+        own_node: Union[KusamaNodeName, PolkadotNodeName]
+        if self.chain == SupportedBlockchain.KUSAMA:
+            own_node = KusamaNodeName.OWN
+        else:
+            own_node = PolkadotNodeName.OWN
         if endpoint == '':
             log.debug(f'{self.chain} removing own node at endpoint: {self.own_rpc_endpoint}')
-            self.available_node_attributes_map.pop(own_node_name, None)
+            self.available_node_attributes_map.pop(own_node, None)
             self._set_available_nodes_call_order()
             self.own_rpc_endpoint = ''
             return True, ''
 
         result, message = self._connect_node(
-            node=own_node_name,
+            node=own_node,
             endpoint=self._format_own_rpc_endpoint(endpoint),
         )
         if result is True:
