@@ -103,7 +103,8 @@ class EVMTransactionDecoder():
         self.undecoded_tx_query_lock = Semaphore()
 
     def _recursively_initialize_decoders(
-            self, package: Union[str, ModuleType],
+            self,
+            package: Union[str, ModuleType],
     ) -> tuple[
             dict[ChecksumEvmAddress, tuple[Any, ...]],
             list[Callable],

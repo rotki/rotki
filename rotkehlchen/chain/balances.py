@@ -1,7 +1,17 @@
 from collections import defaultdict
 from copy import deepcopy
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, DefaultDict, Iterator, Literal, Union, get_args, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    DefaultDict,
+    Iterator,
+    Literal,
+    Optional,
+    Union,
+    get_args,
+    overload,
+)
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.chain.bitcoin.xpub import XpubData
@@ -75,7 +85,7 @@ class BlockchainBalances:
             chain_key = supported_chain.get_key()
             yield (chain_key, getattr(self, chain_key))
 
-    def chains_with_tokens(self) -> Iterator[tuple[str, dict]]:
+    def chains_with_tokens(self) -> Iterator[tuple[SupportedBlockchain, str, dict]]:
         """
         Easy way to iterate through all but the bitcoin based chains
 
@@ -83,7 +93,7 @@ class BlockchainBalances:
         """
         for supported_chain in get_args(SUPPORTED_NON_BITCOIN_CHAINS):
             chain_key = supported_chain.get_key()
-            yield (chain_key, getattr(self, chain_key))
+            yield (supported_chain, chain_key, getattr(self, chain_key))
 
     def bitcoin_chains(self) -> Iterator[tuple[Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH], dict]]:  # noqa: E501
         """
@@ -114,7 +124,7 @@ class BlockchainBalances:
     def recalculate_totals(self) -> BalanceSheet:
         """Calculate and return new balance totals based on per-account data"""
         new_totals = BalanceSheet()
-        for _, chain_attribute in self.chains_with_tokens():
+        for _, _, chain_attribute in self.chains_with_tokens():
             for chain_balances in chain_attribute.values():
                 new_totals += chain_balances
 
@@ -125,15 +135,22 @@ class BlockchainBalances:
 
         return new_totals
 
-    def serialize(self) -> dict[str, dict]:
+    def serialize(self, given_chain: Optional[SupportedBlockchain]) -> dict[str, dict]:
+        """Serializes the blockchain balances to a dict for api consumption.
+
+        If no chain is given then all balances are serialized, while if a chain
+        is given the only that chain's balances are"""
         blockchain_balances: dict[str, dict] = {}
-        for chain_name, chain_attribute in self.chains_with_tokens():
-            if len(chain_attribute) == 0:
+        for chain, chain_name, chain_attribute in self.chains_with_tokens():
+            if len(chain_attribute) == 0 or (given_chain is not None and given_chain != chain):
                 continue
 
             blockchain_balances[chain_name.upper()] = {k: v.serialize() for k, v in chain_attribute.items()}  # noqa: E501
 
         for chain, chain_attribute in self.bitcoin_chains():
+            if given_chain is not None and given_chain != chain:
+                continue
+
             balances: dict[str, Any] = {}
             with self.db.conn.read_ctx() as cursor:
                 xpub_mappings = self.db.get_addresses_to_xpub_mapping(
@@ -194,11 +211,27 @@ class BlockchainBalances:
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
 class BlockchainBalancesUpdate:
+    given_chain: Optional[SupportedBlockchain]
     per_account: BlockchainBalances
     totals: BalanceSheet
 
     def serialize(self) -> dict[str, dict]:
+        """
+        Serializes a balance update in a state to be consumed by the API.
+
+        If given_chain is None, then it's for all chains, essentially returning all per account
+        balances and asset totals across all chain.
+        If chain is specified then it's only per account mapping and totals for that chain
+        """
+        if self.given_chain is None:
+            serialized_totals = self.totals.serialize()
+        else:
+            per_account = self.per_account.get(self.given_chain).copy()
+            totals = BalanceSheet()
+            for balances in per_account.values():
+                totals += balances
+            serialized_totals = totals.serialize()
         return {
-            'per_account': self.per_account.serialize(),
-            'totals': self.totals.serialize(),
+            'per_account': self.per_account.serialize(self.given_chain),
+            'totals': serialized_totals,
         }

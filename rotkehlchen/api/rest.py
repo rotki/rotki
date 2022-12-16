@@ -666,27 +666,6 @@ class RestAPI():
             status_code = HTTPStatus.BAD_GATEWAY
         else:
             result = balances.serialize()
-            # If only specific input blockchain was given ignore other results
-            totals: dict[str, Any] = {'assets': {}, 'liabilities': {}}
-            if blockchain == SupportedBlockchain.ETHEREUM:
-                result['per_account'].pop('BTC', None)
-                result['per_account'].pop('KSM', None)
-                result['per_account'].pop('DOT', None)
-                result['per_account'].pop('AVAX', None)
-                result['per_account'].pop('ETH2', None)
-                result['totals']['assets'].pop('BTC', None)
-                result['totals']['assets'].pop('KSM', None)
-                result['totals']['assets'].pop('DOT', None)
-                result['totals']['assets'].pop('AVAX', None)
-                result['totals']['assets'].pop('ETH2', None)
-            elif blockchain is not None:
-                native_token = blockchain.value
-                val = result['per_account'].get(native_token, None)
-                per_account = {native_token: val} if val else {}
-                val = result['totals']['assets'].get(native_token, None)
-                if val:
-                    totals['assets'] = {native_token: val}
-                result = {'per_account': per_account, 'totals': totals}
 
         return {'result': result, 'message': msg, 'status_code': status_code}
 
@@ -2081,7 +2060,7 @@ class RestAPI():
                 blockchain=blockchain,
                 accounts=accounts,
             )
-            balances_update = self.rotkehlchen.chains_aggregator.get_balances_update()
+            balances_update = self.rotkehlchen.chains_aggregator.get_balances_update(chain=None)  # return full update of balances  # noqa: E501
         except EthSyncError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
         except InputError as e:
