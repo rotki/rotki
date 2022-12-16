@@ -1,4 +1,4 @@
-from typing import NamedTuple, Optional
+from typing import Literal, NamedTuple, Optional
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
@@ -8,7 +8,7 @@ from rotkehlchen.fval import FVal
 
 class ActionItem(NamedTuple):
     """Action items to propagate to other decoders during decoding"""
-    action: str
+    action: Literal['transform', 'skip', 'skip & keep']
     sequence_index: int
     from_event_type: HistoryEventType
     from_event_subtype: HistoryEventSubType

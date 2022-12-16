@@ -59,6 +59,7 @@ class YearnDecoder(DecoderInterface):
             transaction: EvmTransaction,
             event: HistoryBaseEntry,
             action_items: list[ActionItem],  # pylint: disable=unused-argument
+            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
     ) -> bool:
         """
         Enrich ethereum transfers made during the execution of yearn contracts.
