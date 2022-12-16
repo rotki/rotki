@@ -132,7 +132,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
         - RemoteError if there are any problems with reaching Etherscan or if
         an unexpected response is returned
         """
-        query_str = f'https://api.{self.base_url}/api?module={module}&action={action}'
+        query_str = f'https://api-{self.base_url}/api?module={module}&action={action}'
         if options:
             for name, value in options.items():
                 query_str += f'&{name}={value}'

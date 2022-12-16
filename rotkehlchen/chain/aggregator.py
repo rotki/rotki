@@ -390,8 +390,10 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
         return instance
 
-    def get_balances_update(self) -> BlockchainBalancesUpdate:
+    def get_balances_update(self, chain: Optional[SupportedBlockchain]) -> BlockchainBalancesUpdate:  # noqa: E501
+        """Returns a balances update to be consumed by the API."""
         return BlockchainBalancesUpdate(
+            given_chain=chain,
             per_account=self.balances.copy(),
             totals=self.totals.copy(),
         )
@@ -467,7 +469,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                     xpub_manager.check_for_new_xpub_addresses(blockchain=blockchain)  # type: ignore # is checked in the if  # noqa: E501
 
         self.totals = self.balances.recalculate_totals()
-        return self.get_balances_update()
+        return self.get_balances_update(blockchain)
 
     @protect_with_lock()
     @cache_response_timewise()

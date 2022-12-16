@@ -38,5 +38,21 @@
         "owned": false,
         "active": true,
         "blockchain": "ETH"
+    },
+    {
+        "name": "optimism etherscan",
+        "endpoint": "",
+        "weight": 0.50,
+        "owned": false,
+        "active": true,
+        "blockchain": "OPTIMISM"
+    },
+    {
+        "name": "main optimism",
+        "endpoint": "https://mainnet.optimism.io",
+        "weight": 0.50,
+        "owned": false,
+        "active": true,
+        "blockchain": "OPTIMISM"
     }
 ]
