@@ -9,7 +9,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.utils.hexbytes import HexBytes
 from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn
 from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
-from rotkehlchen.utils.mixins.serializableenumvalue import SerializableEnumValueMixin
+from rotkehlchen.utils.mixins.serializableenumvalue import SerializableEnumValueMixin2
 
 from rotkehlchen.chain.substrate.types import SubstrateAddress  # isort:skip
 
@@ -357,7 +357,7 @@ class CovalentTransaction(NamedTuple):
         return self.tx_hash + self.from_address.replace('0x', '') + str(self.nonce)
 
 
-class SupportedBlockchain(SerializableEnumValueMixin):
+class SupportedBlockchain(SerializableEnumValueMixin2):
     """
     These are the currently supported chains in any capacity in rotki
     """
@@ -379,7 +379,7 @@ class SupportedBlockchain(SerializableEnumValueMixin):
             return ChecksumEvmAddress
         if self == SupportedBlockchain.ETHEREUM_BEACONCHAIN:
             return Eth2PubKey
-        if self in (SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH):
+        if self.is_bitcoin():
             return BTCAddress
         if self.is_substrate():
             return SubstrateAddress

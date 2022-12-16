@@ -1,6 +1,6 @@
 import logging
 from enum import auto
-from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Union, overload
+from typing import TYPE_CHECKING, Any, Callable, Literal, Optional
 from uuid import uuid4
 
 import webargs
@@ -1554,14 +1554,14 @@ class BlockchainAccountsPatchSchema(Schema):
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> Any:
-        if data['blockchain'] in (SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH):
+        if data['blockchain'].is_bitcoin():
             for idx, account in enumerate(data['accounts']):
                 data['accounts'][idx]['address'] = _transform_btc_or_bch_address(
                     ethereum_inquirer=self.ethereum_inquirer,
                     given_address=account['address'],
                     blockchain=data['blockchain'],
                 )
-        if data['blockchain'] in (SupportedBlockchain.ETHEREUM, SupportedBlockchain.AVALANCHE):
+        if data['blockchain'].is_evm():
             for idx, account in enumerate(data['accounts']):
                 data['accounts'][idx]['address'] = _transform_eth_address(
                     ethereum_inquirer=self.ethereum_inquirer,
@@ -1604,12 +1604,12 @@ class BlockchainAccountsDeleteSchema(AsyncQueryArgumentSchema):
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> Any:
-        if data['blockchain'] in (SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH):
+        if data['blockchain'].is_bitcoin():
             data['accounts'] = [
                 _transform_btc_or_bch_address(self.ethereum_inquirer, x, data['blockchain'])
                 for x in data['accounts']
             ]
-        if data['blockchain'] in (SupportedBlockchain.ETHEREUM, SupportedBlockchain.AVALANCHE):
+        if data['blockchain'].is_evm():
             data['accounts'] = [
                 _transform_eth_address(self.ethereum_inquirer, x) for x in data['accounts']
             ]

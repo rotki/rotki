@@ -26,10 +26,10 @@ from rotkehlchen.utils.misc import get_chunks
 from rotkehlchen.utils.network import request_get_dict
 
 from .constants import ETH2_DEPOSIT_ADDRESS, ETHEREUM_ETHERSCAN_NODE_NAME, WeightedNode
+from .etherscan import EthereumEtherscan
 from .utils import ENS_RESOLVER_ABI_MULTICHAIN_ADDRESS
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.etherscan import EthereumEtherscan
     from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
@@ -45,10 +45,13 @@ class EthereumInquirer(EvmNodeInquirer):
             self,
             greenlet_manager: GreenletManager,
             database: 'DBHandler',
-            etherscan: 'EthereumEtherscan',
             connect_at_start: Sequence[WeightedNode],
             rpc_timeout: int = DEFAULT_EVM_RPC_TIMEOUT,
     ) -> None:
+        etherscan = EthereumEtherscan(
+            database=database,
+            msg_aggregator=database.msg_aggregator,
+        )
         super().__init__(
             greenlet_manager=greenlet_manager,
             database=database,
@@ -63,7 +66,7 @@ class EthereumInquirer(EvmNodeInquirer):
             rpc_timeout=rpc_timeout,
         )
         self.blocks_subgraph = Graph('https://api.thegraph.com/subgraphs/name/blocklytics/ethereum-blocks')  # noqa: E501
-        self.etherscan = cast('EthereumEtherscan', self.etherscan)
+        self.etherscan = cast(EthereumEtherscan, self.etherscan)
         self.ens_reverse_records = self.contracts.contract('ENS_REVERSE_RECORDS')
 
     def ens_reverse_lookup(self, addresses: list[ChecksumEvmAddress]) -> dict[ChecksumEvmAddress, Optional[str]]:  # noqa: E501

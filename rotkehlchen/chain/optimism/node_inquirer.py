@@ -12,11 +12,10 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, SupportedBlockchain, Timestamp
 
 from .constants import OPTIMISM_ETHERSCAN_NODE, OPTIMISM_ETHERSCAN_NODE_NAME
+from .etherscan import OptimismEtherscan
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-
-    from .etherscan import OptimismEtherscan
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -28,10 +27,13 @@ class OptimismInquirer(EvmNodeInquirer):
             self,
             greenlet_manager: GreenletManager,
             database: 'DBHandler',
-            etherscan: 'OptimismEtherscan',
             connect_at_start: Sequence[WeightedNode],
             rpc_timeout: int = DEFAULT_EVM_RPC_TIMEOUT,
     ) -> None:
+        etherscan = OptimismEtherscan(
+            database=database,
+            msg_aggregator=database.msg_aggregator,
+        )
         super().__init__(
             greenlet_manager=greenlet_manager,
             database=database,
@@ -45,7 +47,7 @@ class OptimismInquirer(EvmNodeInquirer):
             connect_at_start=connect_at_start,
             rpc_timeout=rpc_timeout,
         )
-        self.etherscan = cast('OptimismEtherscan', self.etherscan)
+        self.etherscan = cast(OptimismEtherscan, self.etherscan)
 
     # -- Implementation of EvmNodeInquirer base methods --
 

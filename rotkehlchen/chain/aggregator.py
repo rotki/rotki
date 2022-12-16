@@ -5,12 +5,12 @@ from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     DefaultDict,
     Iterator,
     Literal,
     Optional,
     TypeVar,
-    Union,
     cast,
     overload,
 )
@@ -43,7 +43,6 @@ from rotkehlchen.chain.ethereum.modules import (
     YearnVaultsV2,
 )
 from rotkehlchen.chain.ethereum.modules.eth2.structures import Eth2Validator
-from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.substrate.manager import wait_until_a_node_is_available
 from rotkehlchen.chain.substrate.utils import SUBSTRATE_NODE_CONNECTION_TIMEOUT
 from rotkehlchen.constants.assets import (
@@ -104,6 +103,7 @@ if TYPE_CHECKING:
     )
     from rotkehlchen.chain.ethereum.modules.nft.nfts import Nfts
     from rotkehlchen.chain.evm.manager import EvmManager
+    from rotkehlchen.chain.optimism.manager import OptimismManager
     from rotkehlchen.chain.substrate.manager import SubstrateManager
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
@@ -168,6 +168,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             self,
             blockchain_accounts: BlockchainAccounts,
             ethereum_manager: 'EthereumManager',
+            optimism_manager: 'OptimismManager',
             kusama_manager: 'SubstrateManager',
             polkadot_manager: 'SubstrateManager',
             avalanche_manager: 'AvalancheManager',
@@ -183,6 +184,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         log.debug('Initializing ChainsAggregator')
         super().__init__()
         self.ethereum = ethereum_manager
+        self.optimism = optimism_manager
         self.kusama = kusama_manager
         self.polkadot = polkadot_manager
         self.avalanche = avalanche_manager
@@ -203,6 +205,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.ksm_lock = Semaphore()
         self.dot_lock = Semaphore()
         self.avax_lock = Semaphore()
+        self.optimism_lock = Semaphore()
 
         # Per account balances
         self.balances = BlockchainBalances(db=database)
@@ -220,6 +223,17 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             database=self.database,
         )
         self.eth_asset = A_ETH.resolve_to_crypto_asset()
+        # type ignores here are to keep the callable mappings generic enough
+        self.chain_modify_init: dict[SupportedBlockchain, Callable[[SupportedBlockchain, Literal['append', 'remove']], None]] = {  # noqa: E501
+            SupportedBlockchain.KUSAMA: self._init_substrate_account_modification,  # type:ignore
+            SupportedBlockchain.POLKADOT: self._init_substrate_account_modification,  # type:ignore
+        }
+        self.chain_modify_append: dict[SupportedBlockchain, Callable[[SupportedBlockchain, BlockchainAddress], None]] = {  # noqa: E501
+            SupportedBlockchain.ETHEREUM: self._append_eth_account_modification,  # type:ignore
+        }
+        self.chain_modify_remove: dict[SupportedBlockchain, Callable[[SupportedBlockchain, BlockchainAddress], None]] = {  # noqa: E501
+            SupportedBlockchain.ETHEREUM: self._remove_eth_account_modification,  # type:ignore
+        }
 
     def __del__(self) -> None:
         del self.ethereum
@@ -672,91 +686,43 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             append_or_remove='remove',
         )
 
-    def modify_dot_ksm_accounts(
+    def _init_substrate_account_modification(
             self,
-            accounts: Union[list[PolkadotAddress], list[KusamaAddress]],
-            blockchain: Literal[SupportedBlockchain.POLKADOT, SupportedBlockchain.KUSAMA],
+            blockchain: SUPPORTED_SUBSTRATE_CHAINS,
             append_or_remove: Literal['append', 'remove'],
     ) -> None:
-        """May raise:
-        - RemoteError if we couldn't connect to any node"""
-        lock: Semaphore = getattr(self, f'{blockchain.value.lower()}_lock')
-        address_type = blockchain.get_address_type()
-        substrate_manager: 'SubstrateManager' = getattr(self, blockchain.name.lower())
-        saved_accounts = self.accounts.get(blockchain=blockchain)
-        balances: Union[dict[PolkadotAddress, BalanceSheet], dict[KusamaAddress, BalanceSheet]]
-        balances = getattr(self.balances, blockchain.value.lower())
+        """Extra code to run when substrate account modification start"""
+        if append_or_remove != 'append':
+            return  # we only care about appending
 
-        with lock:
-            # we are adding/removing accounts, make sure query cache is flushed
-            self.flush_cache(f'query_{blockchain.name.lower()}_balances')
+        chain_key = blockchain.get_key()
+        substrate_manager: 'SubstrateManager' = getattr(self, chain_key)
+        # When adding account for the first time we should connect to the nodes
+        if len(substrate_manager.available_nodes_call_order) == 0:
+            substrate_manager.attempt_connections()
+            wait_until_a_node_is_available(
+                substrate_manager=substrate_manager,
+                seconds=SUBSTRATE_NODE_CONNECTION_TIMEOUT,
+            )
 
-            if append_or_remove == 'append':
-                # When adding account for the first time we should connect to the nodes
-                if len(substrate_manager.available_nodes_call_order) == 0:
-                    substrate_manager.attempt_connections()
-                    wait_until_a_node_is_available(
-                        substrate_manager=substrate_manager,
-                        seconds=SUBSTRATE_NODE_CONNECTION_TIMEOUT,
-                    )
-
-            for account in accounts:
-                address = address_type(account)
-                if append_or_remove == 'append':
-                    saved_accounts.append(address)
-                else:  # remove
-                    balances.pop(address, None)
-                    saved_accounts.remove(address)
-
-    def modify_btc_bch_avax_accounts(
+    def _append_eth_account_modification(
             self,
-            accounts: Union[list[BTCAddress], list[ChecksumEvmAddress]],
-            blockchain: Literal[
-                SupportedBlockchain.BITCOIN,
-                SupportedBlockchain.BITCOIN_CASH,
-                SupportedBlockchain.AVALANCHE,
-            ],
-            append_or_remove: Literal['append', 'remove'],
+            blockchain: Literal[SupportedBlockchain.ETHEREUM],  # pylint: disable=unused-argument
+            address: ChecksumEvmAddress,
     ) -> None:
-        # we are adding/removing accounts, make sure query cache is flushed
-        self.flush_cache(f'query_{blockchain.value.lower()}_balances')
+        """Extra code to run when eth account addition happens"""
+        for _, module in self.iterate_modules():
+            module.on_account_addition(address)
 
-        address_type = blockchain.get_address_type()
-        saved_accounts = self.accounts.get(blockchain=blockchain)
-        balances = getattr(self.balances, blockchain.value.lower())
-
-        for account in accounts:
-            address = address_type(account)
-            if append_or_remove == 'append':
-                saved_accounts.append(address)
-            else:  # remove
-                balances.pop(address, None)
-                saved_accounts.remove(address)
-
-    def modify_eth_accounts(
+    def _remove_eth_account_modification(
             self,
-            accounts: list[ChecksumEvmAddress],
-            append_or_remove: Literal['append', 'remove'],
+            blockchain: Literal[SupportedBlockchain.ETHEREUM],  # pylint: disable=unused-argument
+            address: ChecksumEvmAddress,
     ) -> None:
-        """May raise:
-        - RemoteError if there is a problem querying an external service such
-          as etherscan (from on_account_addition or on_account_removal callback)"""
-        with self.eth_lock:
-            # we are adding/removing accounts, make sure query cache is flushed
-            self.flush_cache('query_eth_balances')
-
-            for account in accounts:
-                address = string_to_evm_address(account)
-                if append_or_remove == 'append':
-                    self.accounts.eth.append(address)
-                    for _, module in self.iterate_modules():
-                        module.on_account_addition(address)
-                else:  # remove
-                    self.balances.eth.pop(address, None)
-                    self.accounts.eth.remove(address)
-                    self.defi_balances.pop(address, None)
-                    for _, module in self.iterate_modules():
-                        module.on_account_removal(address)
+        """Extra code to run when eth account removal happens"""
+        self.defi_balances.pop(address, None)
+        for _, module in self.iterate_modules():
+            module.on_account_removal(address)
 
     def modify_blockchain_accounts(
             self,
@@ -777,39 +743,27 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             accounts=accounts,
             append_or_remove=append_or_remove,
         )
-
-        if blockchain in {
-            SupportedBlockchain.BITCOIN,
-            SupportedBlockchain.BITCOIN_CASH,
-            SupportedBlockchain.AVALANCHE,
-        }:
-            # we use `type: ignore` here and in other methods since mypy doesn't understand that
-            # types of `blockchain` and `accounts` can be narrowed after if checks
-            self.modify_btc_bch_avax_accounts(
-                accounts=accounts,  # type: ignore
-                blockchain=blockchain,  # type: ignore
-                append_or_remove=append_or_remove,
-            )
-
-        elif blockchain == SupportedBlockchain.ETHEREUM:
-            self.modify_eth_accounts(
-                accounts=accounts,  # type: ignore
-                append_or_remove=append_or_remove,
-            )
-
-        elif blockchain in {SupportedBlockchain.POLKADOT, SupportedBlockchain.KUSAMA}:
-            self.modify_dot_ksm_accounts(
-                accounts=accounts,  # type: ignore
-                blockchain=blockchain,  # type: ignore
-                append_or_remove=append_or_remove,
-            )
-
-        else:
-            # That should not happen. Should be checked by marshmallow
-            raise AssertionError(
-                'Unsupported blockchain {} provided at remove_blockchain_account'.format(
-                    blockchain),
-            )
+        chain_key = blockchain.get_key()
+        lock = getattr(self, f'{chain_key}_lock')
+        saved_accounts = self.accounts.get(blockchain=blockchain)
+        balances = self.balances.get(chain=blockchain)
+        with lock:
+            self.flush_cache(f'query_{chain_key}_balances')
+            chain_modify_init = self.chain_modify_init.get(blockchain)
+            if chain_modify_init is not None:
+                chain_modify_init(blockchain, append_or_remove)
+            for account in accounts:
+                if append_or_remove == 'append':
+                    saved_accounts.append(account)  # type: ignore  # mypy can't understand each account has same type  # noqa: E501
+                    chain_modify_append = self.chain_modify_append.get(blockchain)
+                    if chain_modify_append is not None:
+                        chain_modify_append(blockchain, account)
+                else:  # remove
+                    balances.pop(account, None)  # type: ignore  # mypy can't understand each account has same type  # noqa: E501
+                    saved_accounts.remove(accounts)  # type: ignore  # mypy can't understand each account has same type  # noqa: E501
+                    chain_modify_remove = self.chain_modify_remove.get(blockchain)
+                    if chain_modify_remove is not None:
+                        chain_modify_remove(blockchain, account)
 
         # we are adding/removing accounts, make sure query cache is flushed
         self.flush_cache('query_balances')

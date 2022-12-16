@@ -19,6 +19,7 @@ from .tokens import EthereumTokens
 from .utils import should_update_curve_cache
 
 if TYPE_CHECKING:
+
     from rotkehlchen.chain.ethereum.decoding.decoder import EVMTransactionDecoder
 
     from .node_inquirer import EthereumInquirer

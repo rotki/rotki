@@ -1,16 +1,17 @@
 from collections import defaultdict
 from copy import deepcopy
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, DefaultDict, Iterator, Literal, get_args, overload
+from typing import TYPE_CHECKING, Any, DefaultDict, Iterator, Literal, Union, get_args, overload
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.chain.bitcoin.xpub import XpubData
-from rotkehlchen.chain.substrate.types import KusamaAddress, PolkadotAddress
+from rotkehlchen.chain.substrate.types import SubstrateAddress
 from rotkehlchen.constants.assets import A_BCH, A_BTC
 from rotkehlchen.types import (
     SUPPORTED_BITCOIN_CHAINS,
     SUPPORTED_EVM_CHAINS,
     SUPPORTED_NON_BITCOIN_CHAINS,
+    SUPPORTED_SUBSTRATE_CHAINS,
     BTCAddress,
     ChecksumEvmAddress,
     Eth2PubKey,
@@ -19,6 +20,14 @@ from rotkehlchen.types import (
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+
+
+ALL_BALANCE_TYPES = Union[
+    DefaultDict[ChecksumEvmAddress, BalanceSheet],
+    dict[BTCAddress, Balance],
+    DefaultDict[Eth2PubKey, BalanceSheet],
+    dict[SubstrateAddress, BalanceSheet],
+]
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -50,10 +59,10 @@ class BlockchainBalances:
         ...
 
     @overload
-    def get(self, chain: Literal[SupportedBlockchain.POLKADOT]) -> dict[PolkadotAddress, BalanceSheet]:  # noqa: E501
+    def get(self, chain: SupportedBlockchain) -> ALL_BALANCE_TYPES:
         ...
 
-    def get(self, chain: SupportedBlockchain) -> dict:
+    def get(self, chain: SupportedBlockchain) -> ALL_BALANCE_TYPES:
         """Get the appropriate balances dict corresponding to the given chain"""
         return getattr(self, chain.get_key())
 

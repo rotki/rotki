@@ -12,6 +12,10 @@ from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
 from rotkehlchen.chain.evm.contracts import EvmContracts
 from rotkehlchen.chain.evm.types import NodeName
+from rotkehlchen.chain.optimism.decoding.decoder import OptimismTransactionDecoder
+from rotkehlchen.chain.optimism.manager import OptimismManager
+from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
+from rotkehlchen.chain.optimism.transactions import OptimismTransactions
 from rotkehlchen.chain.substrate.manager import SubstrateChainProperties, SubstrateManager
 from rotkehlchen.chain.substrate.types import SubstrateAddress
 from rotkehlchen.constants.assets import A_DOT, A_KSM
@@ -100,11 +104,6 @@ def fixture_ethrpc_endpoint() -> Optional[str]:
     return None
 
 
-@pytest.fixture(name='ethereum_manager_connect_at_start')
-def fixture_ethereum_manager_connect_at_start() -> Sequence[NodeName]:
-    return ()
-
-
 @pytest.fixture(name='etherscan')
 def fixture_etherscan(database, messages_aggregator):
     return EthereumEtherscan(database=database, msg_aggregator=messages_aggregator)
@@ -115,15 +114,18 @@ def fixture_covalent_avalanche(messages_aggregator, database):
     return Covalent(database=database, msg_aggregator=messages_aggregator, chain_id='43114')
 
 
+@pytest.fixture(name='ethereum_manager_connect_at_start')
+def fixture_ethereum_manager_connect_at_start() -> Sequence[NodeName]:
+    return ()
+
+
 @pytest.fixture(name='ethereum_inquirer')
 def fixture_ethereum_inquirer(
-        etherscan,
         ethereum_manager_connect_at_start,
         greenlet_manager,
         database,
 ):
     ethereum_inquirer = EthereumInquirer(
-        etherscan=etherscan,
         greenlet_manager=greenlet_manager,
         database=database,
         connect_at_start=ethereum_manager_connect_at_start,
@@ -161,6 +163,59 @@ def fixture_eth_transactions(
 ):
     return EthereumTransactions(
         ethereum_inquirer=ethereum_inquirer,
+        database=database,
+    )
+
+
+@pytest.fixture(name='optimism_manager_connect_at_start')
+def fixture_optimism_manager_connect_at_start() -> Sequence[NodeName]:
+    return ()
+
+
+@pytest.fixture(name='optimism_inquirer')
+def fixture_optimism_inquirer(
+        optimism_manager_connect_at_start,
+        greenlet_manager,
+        database,
+):
+    optimism_inquirer = OptimismInquirer(
+        greenlet_manager=greenlet_manager,
+        database=database,
+        connect_at_start=optimism_manager_connect_at_start,
+    )
+    wait_until_all_nodes_connected(
+        connect_at_start=optimism_manager_connect_at_start,
+        evm_inquirer=optimism_inquirer,
+    )
+
+    return optimism_inquirer
+
+
+@pytest.fixture(name='optimism_manager')
+def fixture_optimism_manager(optimism_inquirer):
+    return OptimismManager(node_inquirer=optimism_inquirer)
+
+
+@pytest.fixture(name='optimism_transaction_decoder')
+def fixture_optimism_transaction_decoder(
+        database,
+        optimism_inquirer,
+        optimism_transactions,
+):
+    return OptimismTransactionDecoder(
+        database=database,
+        optimism_inquirer=optimism_inquirer,
+        transactions=optimism_transactions,
+    )
+
+
+@pytest.fixture(name='optimism_transactions')
+def fixture_optimism_transactions(
+        database,
+        optimism_inquirer,
+):
+    return OptimismTransactions(
+        optimism_inquirer=optimism_inquirer,
         database=database,
     )
 
@@ -315,6 +370,7 @@ def fixture_btc_derivation_gap_limit():
 @pytest.fixture
 def blockchain(
         ethereum_manager,
+        optimism_manager,
         kusama_manager,
         polkadot_manager,
         avalanche_manager,
@@ -337,6 +393,7 @@ def blockchain(
     chains_aggregator = ChainsAggregator(
         blockchain_accounts=blockchain_accounts,
         ethereum_manager=ethereum_manager,
+        optimism_manager=optimism_manager,
         kusama_manager=kusama_manager,
         polkadot_manager=polkadot_manager,
         avalanche_manager=avalanche_manager,
