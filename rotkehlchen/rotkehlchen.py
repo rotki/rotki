@@ -24,11 +24,12 @@ from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.aggregator import ChainsAggregator
 from rotkehlchen.chain.avalanche.manager import AvalancheManager
 from rotkehlchen.chain.ethereum.accounting.aggregator import EVMAccountingAggregator
-from rotkehlchen.chain.ethereum.etherscan import EthereumEtherscan
 from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.ethereum.oracles.saddle import SaddleOracle
 from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
+from rotkehlchen.chain.optimism.manager import OptimismManager
+from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
 from rotkehlchen.chain.substrate.manager import SubstrateManager
 from rotkehlchen.chain.substrate.utils import (
     KUSAMA_NODES_TO_CONNECT_AT_START,
@@ -256,7 +257,6 @@ class Rotkehlchen():
                 data_dir=self.data_dir,
                 should_submit=settings.submit_usage_analytics,
             )
-            etherscan = EthereumEtherscan(database=self.data.db, msg_aggregator=self.msg_aggregator)  # noqa: E501
             self.beaconchain = BeaconChain(database=self.data.db, msg_aggregator=self.msg_aggregator)  # noqa: E501
             # Initialize the price historian singleton
             PriceHistorian(
@@ -279,10 +279,16 @@ class Rotkehlchen():
         ethereum_inquirer = EthereumInquirer(
             greenlet_manager=self.greenlet_manager,
             database=self.data.db,
-            etherscan=etherscan,
             connect_at_start=ethereum_nodes,
         )
         ethereum_manager = EthereumManager(ethereum_inquirer)
+        optimism_nodes = self.data.db.get_rpc_nodes(blockchain=SupportedBlockchain.OPTIMISM, only_active=True)  # noqa: E501
+        optimism_inquirer = OptimismInquirer(
+            greenlet_manager=self.greenlet_manager,
+            database=self.data.db,
+            connect_at_start=optimism_nodes,
+        )
+        optimism_manager = OptimismManager(optimism_inquirer)
         kusama_manager = SubstrateManager(
             chain=SupportedBlockchain.KUSAMA,
             msg_aggregator=self.msg_aggregator,
@@ -324,6 +330,7 @@ class Rotkehlchen():
         self.chains_aggregator = ChainsAggregator(
             blockchain_accounts=blockchain_accounts,
             ethereum_manager=ethereum_manager,
+            optimism_manager=optimism_manager,
             kusama_manager=kusama_manager,
             polkadot_manager=polkadot_manager,
             avalanche_manager=avalanche_manager,

@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import Any, Optional
 
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.chain.ethereum.etherscan import EthereumEtherscan
 from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.ethereum.modules.uniswap.utils import uniswap_lp_token_balances
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -34,16 +33,14 @@ def init_ethereum(
         db: DBHandler,
 ) -> EthereumInquirer:
     nodes_to_connect = db.get_rpc_nodes(blockchain=SupportedBlockchain.ETHEREUM, only_active=True) if use_other_nodes else (WeightedNode(node_info=NodeName(name='own', endpoint=rpc_endpoint, owned=True, blockchain=SupportedBlockchain.ETHEREUM), weight=ONE, active=True),)  # noqa: E501
-    etherscan = EthereumEtherscan(database=None, msg_aggregator=msg_aggregator)
     api_key = os.environ.get('ETHERSCAN_API_KEY', None)
     greenlet_manager = GreenletManager(msg_aggregator=msg_aggregator)
-    etherscan.api_key = api_key
     eth_inquirer = EthereumInquirer(
-        etherscan=etherscan,
         greenlet_manager=greenlet_manager,
         connect_at_start=nodes_to_connect,
         database=db,
     )
+    eth_inquirer.etherscan.api_key = api_key
     wait_until_all_nodes_connected(
         connect_at_start=nodes_to_connect,
         evm_inquirer=eth_inquirer,

@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.evm.tokens import EvmTokens
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.types import ChecksumEvmAddress
+from rotkehlchen.types import ChainID, ChecksumEvmAddress
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -44,8 +44,9 @@ class EthereumTokens(EvmTokens):
         with self.db.conn.read_ctx() as cursor:
             ignored_assets = self.db.get_ignored_assets(cursor=cursor)
 
+        # TODO: Shouldn't this query be filtered in the DB?
         for asset in ignored_assets:  # don't query for the ignored tokens
-            if asset.is_evm_token():
+            if asset.is_evm_token() and asset.resolve_to_evm_token().chain_id == ChainID.ETHEREUM:
                 exceptions.append(EvmToken(asset.identifier).evm_address)
 
         return exceptions
