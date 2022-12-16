@@ -160,6 +160,10 @@ class EthereumTransactionDecoder(EVMTransactionDecoder):
                 if action_item.action == 'skip':
                     action_items.pop(idx)
                     return None
+                if action_item.action == 'skip & keep':
+                    # the action item is skipped but kept in the list of action items. Is used
+                    # to propagate information between event decoders and enrichers
+                    continue
 
                 # else atm only transform
                 if action_item.to_event_type is not None:

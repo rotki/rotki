@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Any, Callable, Optional
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.modules.balancer.types import BalancerV1EventTypes
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
@@ -10,15 +11,12 @@ from rotkehlchen.chain.evm.decoding.structures import ActionItem
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_WETH
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from .constants import CPT_BALANCER_V1, CPT_BALANCER_V2
-
-if TYPE_CHECKING:
-    from rotkehlchen.assets.asset import EvmToken
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
@@ -51,8 +49,8 @@ class BalancerDecoder(DecoderInterface):
         self.eth = A_ETH.resolve_to_crypto_asset()
         self.weth = A_WETH.resolve_to_evm_token()
 
-    def _decode_v1_pool_event(self, all_logs: list[EvmTxReceiptLog]) -> Optional[list[ActionItem]]:
-        """Read the list of logs in search for a Balancer V1 event and return the information
+    def _decode_v1_pool_event(self, all_logs: list[EvmTxReceiptLog]) -> Optional[list[dict[str, Any]]]:  # noqa: E501
+        """Read the list of logs in search for a Balancer v1 event and return the information
         needed to decode the transfers made in the transaction to/from the ds proxy
         """
         # The transfer event appears after the debt generation event, so we need to transform it
@@ -64,92 +62,28 @@ class BalancerDecoder(DecoderInterface):
         if len(target_logs) == 0:
             return None
 
-        action_items = []
+        events_information = []
         for target_log in target_logs:
             token_address = hex_or_bytes_to_address(target_log.topics[2])
             amount = hex_or_bytes_to_int(target_log.data[0:32])
             if target_log.topics[0] == JOIN_V1:
                 balancer_event_type = BalancerV1EventTypes.JOIN
-                from_event_type = HistoryEventType.SPEND
                 ds_address = hex_or_bytes_to_address(target_log.topics[1])
-
             else:
                 balancer_event_type = BalancerV1EventTypes.EXIT
-                from_event_type = HistoryEventType.RECEIVE
                 ds_address = target_log.address
 
-            action_item = ActionItem(
-                action='transform',
-                sequence_index=target_log.log_index,
-                from_event_type=from_event_type,
-                from_event_subtype=HistoryEventSubType.NONE,
-                asset=self.eth,
-                amount=ZERO,
-                to_event_type=None,
-                to_event_subtype=None,
-                to_counterparty=CPT_BALANCER_V1,
-                to_notes=None,
-                extra_data={
-                    'ds_address': ds_address,
-                    'token_address': token_address,
-                    'amount': amount,
-                    'type': balancer_event_type,
-                },
-            )
-            action_items.append(action_item)
+            proxy_event_information = {
+                'ds_address': ds_address,
+                'token_address': token_address,
+                'amount': amount,
+                'type': balancer_event_type,
+            }
+            events_information.append(proxy_event_information)
 
-        return action_items
+        return events_information
 
-    def _decode_swap_creation(
-            self,
-            tx_log: EvmTxReceiptLog,
-            decoded_events: list[HistoryBaseEntry],
-            action_items: list[ActionItem],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
-        # The transfer event appears after the debt generation event, so we need to transform it
-        from_token = hex_or_bytes_to_address(tx_log.topics[2])
-        to_token = hex_or_bytes_to_address(tx_log.topics[3])
-        amount_in = hex_or_bytes_to_int(tx_log.data[0:32])
-        amount_out = hex_or_bytes_to_int(tx_log.data[32:64])
-        action_item = ActionItem(
-            action='transform',
-            sequence_index=tx_log.log_index,
-            from_event_type=HistoryEventType.RECEIVE,
-            from_event_subtype=HistoryEventSubType.NONE,
-            asset=self.eth,
-            amount=ZERO,
-            to_event_type=HistoryEventType.WITHDRAWAL,
-            to_event_subtype=HistoryEventSubType.GENERATE_DEBT,
-            to_counterparty=CPT_BALANCER_V2,
-            to_notes=None,
-            extra_data={
-                'from_token': from_token,
-                'to_token': to_token,
-                'amount_in': amount_in,
-                'amount_out': amount_out,
-            },
-        )
-
-        amount_in_if_eth = asset_normalized_value(
-            amount=amount_in,
-            asset=self.eth,
-        )
-
-        if len(action_items) == 0 and from_token == self.weth.evm_address:
-            for event in decoded_events:
-                if (
-                    event.asset == A_ETH and event.balance.amount == amount_in_if_eth and
-                    event.event_type == HistoryEventType.SPEND and
-                    event.event_subtype == HistoryEventSubType.NONE
-                ):
-                    event.event_type = HistoryEventType.TRADE
-                    event.event_subtype = HistoryEventSubType.SPEND
-                    event.notes = f'Swap {event.balance.amount} {self.eth.symbol} in balancer V2 from {event.location_label}'  # noqa: E501
-                    event.counterparty = CPT_BALANCER_V2
-
-        return None, [action_item]
-
-    def decode_balancer_v2_event(
+    def decode_swap_creation(
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
@@ -157,13 +91,67 @@ class BalancerDecoder(DecoderInterface):
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: list[ActionItem],
     ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
-        if tx_log.topics[0] == V2_SWAP:
-            return self._decode_swap_creation(
-                tx_log=tx_log,
-                decoded_events=decoded_events,
-                action_items=action_items,
+        """
+        Decode swap in Balancer v2. At the beggining of the transaction a SWAP event is created
+        with the information of the tokens and amounts and later some transfers are executed.
+
+        We need to detect this swap event and then match the transferred amounts with the ones
+        in the swap event. A special case is the swap of ETH that is wrapped before being sent.
+        In this case the token is WETH but we have a tranfer of ETH from the user.
+        """
+        if tx_log.topics[0] != V2_SWAP:
+            return None, []
+
+        # The transfer event appears after the swap event, so we need to propagate information
+        from_token_address = hex_or_bytes_to_address(tx_log.topics[2])
+        to_token_address = hex_or_bytes_to_address(tx_log.topics[3])
+        amount_in = hex_or_bytes_to_int(tx_log.data[0:32])
+        amount_out = hex_or_bytes_to_int(tx_log.data[32:64])
+
+        # Create action item to propagate the information about the swap to the transfer enrichers
+        to_token = EvmToken(ethaddress_to_identifier(to_token_address))
+        to_amount = asset_normalized_value(
+            amount=amount_out,
+            asset=to_token,
+        )
+        action_item = ActionItem(
+            action='skip & keep',
+            sequence_index=tx_log.log_index,
+            from_event_type=HistoryEventType.RECEIVE,
+            from_event_subtype=HistoryEventSubType.NONE,
+            asset=to_token,
+            amount=to_amount,
+            to_event_type=None,
+            to_event_subtype=None,
+            to_counterparty=CPT_BALANCER_V2,
+            to_notes=None,
+            extra_data={
+                'from_token': from_token_address,
+                'amount_in': amount_in,
+            },
+        )
+
+        # When ETH is swapped it is wrapped to WETH and the ETH transfer happens before the SWAP
+        # event. We need to detect it if we haven't done it yet.
+        if len(action_items) == 0 and from_token_address == self.weth.evm_address:
+            # when swapping eth the transfer event appears before the V2_SWAP event so we need
+            # to check if the asset swapped was ETH or not.
+            amount_of_eth = asset_normalized_value(
+                amount=amount_in,
+                asset=self.eth,
             )
-        return None, []
+            for event in decoded_events:
+                if (
+                    event.asset == A_ETH and event.balance.amount == amount_of_eth and
+                    event.event_type == HistoryEventType.SPEND and
+                    event.event_subtype == HistoryEventSubType.NONE
+                ):
+                    event.event_type = HistoryEventType.TRADE
+                    event.event_subtype = HistoryEventSubType.SPEND
+                    event.notes = f'Swap {event.balance.amount} {self.eth.symbol} in Balancer v2'  # noqa: E501
+                    event.counterparty = CPT_BALANCER_V2
+
+        return None, [action_item]
 
     def _maybe_enrich_balancer_v2_transfers(  # pylint: disable=no-self-use
             self,
@@ -175,7 +163,7 @@ class BalancerDecoder(DecoderInterface):
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
     ) -> bool:
         """
-        Enrich tranfer transactions to address for jar deposits and withdrawals
+        Enrich tranfer transactions to account for swaps in balancer v2 protocol.
         May raise:
         - UnknownAsset
         - WrongAssetType
@@ -183,93 +171,89 @@ class BalancerDecoder(DecoderInterface):
         if action_items is None or len(action_items) == 0 or transaction.to_address != VAULT_ADDRESS:  # noqa: E501
             return False
 
-        assert action_items[-1].extra_data is not None
-        asset = event.asset.resolve_to_evm_token()
-        to_amount = asset_normalized_value(
-            amount=action_items[-1].extra_data['amount_out'],
-            asset=asset,
-        )
+        if action_items[-1].extra_data is None:
+            return False
 
+        asset = event.asset.resolve_to_evm_token()
         if (
-            action_items[-1].extra_data['to_token'] != tx_log.address or
-            event.balance.amount != to_amount
+            isinstance(action_items[-1].asset, EvmToken) is False or
+            action_items[-1].asset.evm_address != tx_log.address or  # type: ignore[attr-defined]  # noqa: E501 mypy fails to understand that due the previous statmenet in the or this check won't be evaluated if the asset isn't a token
+            action_items[-1].amount != event.balance.amount
         ):
             return False
 
-        is_receive = asset.evm_address == action_items[-1].extra_data['to_token']
-
         event.counterparty = CPT_BALANCER_V2
         event.event_type = HistoryEventType.TRADE
-        if is_receive:
+        if asset == event.asset:
             event.event_subtype = HistoryEventSubType.RECEIVE
-            event.notes = f'Receive {event.balance.amount} {asset.symbol} in balancer V2 from {event.location_label}'  # noqa: E501
+            event.notes = f'Receive {event.balance.amount} {asset.symbol} from Balancer v2'
         else:
             event.event_subtype = HistoryEventSubType.SPEND
 
         return True
 
     def _maybe_enrich_balancer_v1_events(
-        self,
-        token: 'EvmToken',
-        tx_log: EvmTxReceiptLog,  # pylint: disable=unused-argument
-        transaction: EvmTransaction,  # pylint: disable=unused-argument
-        event: HistoryBaseEntry,
-        action_items: list[ActionItem],  # pylint: disable=unused-argument
-        all_logs: list[EvmTxReceiptLog],
+            self,
+            token: 'EvmToken',
+            tx_log: EvmTxReceiptLog,  # pylint: disable=unused-argument
+            transaction: EvmTransaction,  # pylint: disable=unused-argument
+            event: HistoryBaseEntry,
+            action_items: list[ActionItem],  # pylint: disable=unused-argument
+            all_logs: list[EvmTxReceiptLog],
     ) -> bool:
-        actions = self._decode_v1_pool_event(all_logs=all_logs)
-        if actions is None:
+        """
+        Enrich balancer v1 transfer to read pool events of:
+        - Depositing in the pool
+        - Withdrawing from the pool
+
+        In balancer v1 pools are managed using a DSProxy so the account doesn't interact
+        directly with the pools.
+        """
+        events_information = self._decode_v1_pool_event(all_logs=all_logs)
+        if events_information is None:
             return False
 
-        for action in actions:
-            assert action.extra_data is not None
-            if (
-                action.extra_data['type'] == BalancerV1EventTypes.JOIN and
-                action.extra_data['ds_address'] == event.counterparty
-            ):
+        for proxied_event in events_information:
+            if proxied_event['ds_address'] != event.counterparty:
+                continue
+
+            if proxied_event['type'] == BalancerV1EventTypes.JOIN:
                 if (
                     event.event_type == HistoryEventType.RECEIVE and
                     event.event_subtype == HistoryEventSubType.NONE
                 ):
-                    # otherwise this is the event that we have to edit
                     event.event_type = HistoryEventType.STAKING
                     event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
                     event.counterparty = CPT_BALANCER_V1
-                    event.notes = f'Receive {event.balance.amount} {token.symbol} as deposit in Balancer V1 pool'  # noqa: E501
+                    event.notes = f'Receive {event.balance.amount} {token.symbol} from a Balancer v1 pool'  # noqa: E501
                     return True
                 if (
                     event.event_type == HistoryEventType.SPEND and
                     event.event_subtype == HistoryEventSubType.NONE
                 ):
-                    # otherwise this is the event that we have to edit
                     event.event_type = HistoryEventType.STAKING
                     event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                     event.counterparty = CPT_BALANCER_V1
-                    event.notes = f'Deposit {event.balance.amount} {token.symbol} in Balancer V1 pool'  # noqa: E501
+                    event.notes = f'Deposit {event.balance.amount} {token.symbol} to a Balancer v1 pool'  # noqa: E501
                     return True
-            if (
-                action.extra_data['type'] == BalancerV1EventTypes.EXIT and
-                action.extra_data['ds_address'] == event.counterparty
-            ):
+            elif proxied_event['type'] == BalancerV1EventTypes.EXIT:
                 if (
                     event.event_type == HistoryEventType.RECEIVE and
                     event.event_subtype == HistoryEventSubType.NONE
                 ):
-                    # otherwise this is the event that we have to edit
                     event.event_type = HistoryEventType.STAKING
                     event.event_subtype = HistoryEventSubType.REMOVE_ASSET
                     event.counterparty = CPT_BALANCER_V1
-                    event.notes = f'Receive {event.balance.amount} {token.symbol} after removing liquidity in Balancer V1 pool'  # noqa: E501
+                    event.notes = f'Receive {event.balance.amount} {token.symbol} after removing liquidity from a Balancer v1 pool'  # noqa: E501
                     return True
                 if (
                     event.event_type == HistoryEventType.SPEND and
                     event.event_subtype == HistoryEventSubType.NONE
                 ):
-                    # otherwise this is the event that we have to edit
                     event.event_type = HistoryEventType.STAKING
                     event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
                     event.counterparty = CPT_BALANCER_V1
-                    event.notes = f'Return {event.balance.amount} {token.symbol} to Balancer V1 pool'  # noqa: E501
+                    event.notes = f'Return {event.balance.amount} {token.symbol} to a Balancer v1 pool'  # noqa: E501
                     return True
 
         return False
@@ -278,7 +262,7 @@ class BalancerDecoder(DecoderInterface):
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
-            VAULT_ADDRESS: (self.decode_balancer_v2_event,),
+            VAULT_ADDRESS: (self.decode_swap_creation,),
         }
 
     def enricher_rules(self) -> list[Callable]:
