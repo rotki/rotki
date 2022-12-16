@@ -29,8 +29,8 @@ class BlockchainBalances:
     eth2: DefaultDict[Eth2PubKey, BalanceSheet] = field(init=False)
     btc: dict[BTCAddress, Balance] = field(init=False)
     bch: dict[BTCAddress, Balance] = field(init=False)
-    ksm: dict[KusamaAddress, BalanceSheet] = field(init=False)
-    dot: dict[PolkadotAddress, BalanceSheet] = field(init=False)
+    ksm: dict[SubstrateAddress, BalanceSheet] = field(init=False)
+    dot: dict[SubstrateAddress, BalanceSheet] = field(init=False)
     avax: DefaultDict[ChecksumEvmAddress, BalanceSheet] = field(init=False)
 
     @overload
@@ -46,7 +46,7 @@ class BlockchainBalances:
         ...
 
     @overload
-    def get(self, chain: Literal[SupportedBlockchain.KUSAMA]) -> dict[KusamaAddress, BalanceSheet]:
+    def get(self, chain: SUPPORTED_SUBSTRATE_CHAINS) -> dict[SubstrateAddress, BalanceSheet]:
         ...
 
     @overload

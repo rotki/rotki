@@ -1,6 +1,5 @@
 import pytest
 
-from rotkehlchen.chain.substrate.types import SubstrateChain
 from rotkehlchen.chain.substrate.utils import (
     get_substrate_address_from_public_key,
     is_valid_kusama_address,
@@ -13,6 +12,7 @@ from rotkehlchen.tests.utils.substrate import (
     SUBSTRATE_ACC2_KSM_ADDR,
     SUBSTRATE_ACC2_PUBLIC_KEY,
 )
+from rotkehlchen.types import SupportedBlockchain
 
 
 @pytest.mark.parametrize('value, is_valid', [
@@ -34,7 +34,7 @@ def test_is_valid_kusama_address(value, is_valid):
 ])
 def test_get_kusama_address_from_public_key(public_key, address):
     kusama_address = get_substrate_address_from_public_key(
-        chain=SubstrateChain.KUSAMA,
+        chain=SupportedBlockchain.KUSAMA,
         public_key=public_key,
     )
     assert kusama_address == address
@@ -47,6 +47,6 @@ def test_get_kusama_address_from_public_key(public_key, address):
 def test_get_kusama_address_from_public_key_invalid(public_key):
     with pytest.raises(ValueError):
         get_substrate_address_from_public_key(
-            chain=SubstrateChain.KUSAMA,
+            chain=SupportedBlockchain.KUSAMA,
             public_key=public_key,
         )

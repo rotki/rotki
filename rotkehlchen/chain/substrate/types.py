@@ -1,23 +1,23 @@
 from enum import Enum
-from typing import NamedTuple, NewType, TypeVar, Union
+from typing import NamedTuple, NewType, Union
 
 from substrateinterface import SubstrateInterface
 
-KusamaAddress = NewType('KusamaAddress', str)
-PolkadotAddress = NewType('PolkadotAddress', str)
-SubstrateAddress = TypeVar('SubstrateAddress', KusamaAddress, PolkadotAddress)
+SubstrateAddress = NewType('SubstrateAddress', str)
 SubstratePublicKey = NewType('SubstratePublicKey', str)
 
 SubstrateChainId = NewType('SubstrateChainId', str)
 BlockNumber = NewType('BlockNumber', int)
 
 
+# TODO: This is an idiotic design. KusamaNodeName and PolkadotName need to be combined or go away
+
 class KusamaNodeName(Enum):
     """Public nodes for Kusama.
 
     Taken from: https://github.com/polkadot-js/apps/blob/master/packages/apps-config/src/endpoints/production.ts#L34
     """  # noqa: E501
-    OWN = 0
+    OWN = 0  # make sure it's always 0 to match PolkadotNodeName
     PARITY = 1
     ONFINALITY = 2
     ELARA = 3
@@ -54,7 +54,7 @@ class PolkadotNodeName(Enum):
 
     Taken from: https://github.com/polkadot-js/apps/blob/master/packages/apps-config/src/endpoints/production.ts#L34
     """  # noqa: E501
-    OWN = 0
+    OWN = 0  # make sure it's always 0 to match KusamaNodeName
     PARITY = 1
     ONFINALITY = 2
     ELARA = 3
@@ -87,66 +87,6 @@ class PolkadotNodeName(Enum):
 
 
 NodeName = Union[KusamaNodeName, PolkadotNodeName]
-
-
-class SubstrateInterfaceAttributes(NamedTuple):
-    type_registry_preset: str
-
-
-class SubstrateChain(Enum):
-    """Supported Substrate chains.
-    """
-    KUSAMA = 1
-    POLKADOT = 2
-
-    def __str__(self) -> SubstrateChainId:
-        """Return the official chain identifier/name"""
-        if self == SubstrateChain.KUSAMA:
-            return SubstrateChainId('Kusama')
-        if self == SubstrateChain.POLKADOT:
-            return SubstrateChainId('Polkadot')
-
-        raise AssertionError(f'Unexpected Chain: {self}')
-
-    def chain_explorer_api(self) -> str:
-        """Return the explorer API.
-
-        NB: this simplified implementation relies on Subscan API supporting all
-        the chains we introduce.
-        """
-        if self == SubstrateChain.KUSAMA:
-            return 'https://kusama.api.subscan.io/api'
-        if self == SubstrateChain.POLKADOT:
-            return 'https://polkadot.api.subscan.io/api'
-
-        raise AssertionError(f'Unexpected Chain: {self}')
-
-    def substrate_interface_attributes(self) -> SubstrateInterfaceAttributes:
-        """Return the attributes for instantiating SubstrateInterface.
-        """
-        if self == SubstrateChain.KUSAMA:
-            return SubstrateInterfaceAttributes(type_registry_preset='kusama')
-        if self == SubstrateChain.POLKADOT:
-            return SubstrateInterfaceAttributes(type_registry_preset='polkadot')
-
-        raise AssertionError(f'Unexpected Chain: {self}')
-
-    def blocks_threshold(self) -> BlockNumber:
-        """Return the blocks difference that marks a node as unsynced.
-        """
-        if self in (SubstrateChain.KUSAMA, SubstrateChain.POLKADOT):
-            return BlockNumber(10)
-
-        raise AssertionError(f'Unexpected Chain: {self}')
-
-    def node_name_type(self) -> Union[type[KusamaNodeName], type[PolkadotNodeName]]:
-        """Return the NodeName enum.
-        """
-        if self == SubstrateChain.KUSAMA:
-            return KusamaNodeName
-        if self == SubstrateChain.POLKADOT:
-            return PolkadotNodeName
-        raise AssertionError(f'Unexpected Chain: {self}')
 
 
 class NodeNameAttributes(NamedTuple):

@@ -13,10 +13,10 @@ from rotkehlchen.chain.substrate.types import (
     KusamaNodeName,
     NodeName,
     NodeNameAttributes,
-    SubstrateChain,
 )
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.types import SupportedBlockchain
 
 NODE_CONNECTION_TIMEOUT = 15
 
@@ -45,7 +45,7 @@ KUSAMA_DEFAULT_OWN_RPC_ENDPOINT = 'http://localhost:9933'
 
 
 def attempt_connect_test_nodes(
-        chain: SubstrateChain,
+        chain: SupportedBlockchain,
         timeout: int = NODE_CONNECTION_TIMEOUT,
         node_names: Optional[Sequence[NodeName]] = None,
 ) -> DictNodeNameNodeAttributes:
@@ -59,7 +59,7 @@ def attempt_connect_test_nodes(
         try:
             node_interface = SubstrateInterface(
                 url=node.endpoint(),
-                type_registry_preset=si_attributes.type_registry_preset,
+                type_registry_preset='kusama',
                 use_remote_preset=True,
             )
         except (requests.exceptions.RequestException, SubstrateRequestException) as e:
@@ -77,11 +77,10 @@ def attempt_connect_test_nodes(
         )
         return node, node_attributes
 
-    if chain == SubstrateChain.KUSAMA:
+    if chain == SupportedBlockchain.KUSAMA:
         node_names = node_names or KUSAMA_TEST_NODES
-        si_attributes = chain.substrate_interface_attributes()
     else:
-        raise AssertionError(f'Unexpected substrate chain type: {chain}')
+        raise AssertionError(f'Unexpected substrate chain type: {chain} at test')
 
     greenlets = [gevent.spawn(attempt_connect_node, node) for node in node_names]
     jobs = gevent.joinall(greenlets, timeout=timeout)

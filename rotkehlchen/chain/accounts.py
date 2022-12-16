@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import NamedTuple, Optional, overload
 
-from rotkehlchen.chain.substrate.types import KusamaAddress, PolkadotAddress
+from rotkehlchen.chain.substrate.types import SubstrateAddress
 from rotkehlchen.types import (
     SUPPORTED_EVM_CHAINS,
     BlockchainAddress,
@@ -18,8 +18,8 @@ class BlockchainAccounts:
     optimism: list[ChecksumEvmAddress] = field(default_factory=list)
     btc: list[BTCAddress] = field(default_factory=list)
     bch: list[BTCAddress] = field(default_factory=list)
-    ksm: list[KusamaAddress] = field(default_factory=list)
-    dot: list[PolkadotAddress] = field(default_factory=list)
+    ksm: list[SubstrateAddress] = field(default_factory=list)
+    dot: list[SubstrateAddress] = field(default_factory=list)
     avax: list[ChecksumEvmAddress] = field(default_factory=list)
 
     @overload
