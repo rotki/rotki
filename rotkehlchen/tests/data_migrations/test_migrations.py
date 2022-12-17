@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
@@ -14,6 +15,10 @@ from rotkehlchen.data_migrations.manager import (
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.exchanges import check_saved_events_for_exchange
 from rotkehlchen.types import Location, SupportedBlockchain, TradeType
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.rotkehlchen import Rotkehlchen
 
 
 def _create_invalid_icon(icon_identifier: str, icons_dir: Path) -> Path:
@@ -215,6 +220,7 @@ def test_migration_4(rotkehlchen_api_server):
     with open(dir_path / 'data' / 'nodes.json') as f:
         nodes = json.loads(f.read())
         rpc_nodes = database.get_rpc_nodes(blockchain=SupportedBlockchain.ETHEREUM)
+        rpc_nodes += database.get_rpc_nodes(blockchain=SupportedBlockchain.OPTIMISM)
         assert len(rpc_nodes) == len(nodes) + 1
         for node in nodes:
             for rpc_node in rpc_nodes:
@@ -253,6 +259,7 @@ def test_migration_4_no_own_endpoint(rotkehlchen_api_server):
         )
         assert cursor.fetchone() is None, 'Setting should have been deleted'
     rpc_nodes = database.get_rpc_nodes(blockchain=SupportedBlockchain.ETHEREUM)
+    rpc_nodes += database.get_rpc_nodes(blockchain=SupportedBlockchain.OPTIMISM)
     with open(dir_path / 'data' / 'nodes.json') as f:
         nodes = json.loads(f.read())
         assert len(nodes) == len(rpc_nodes)
@@ -265,7 +272,7 @@ def test_migration_4_no_own_endpoint(rotkehlchen_api_server):
 @pytest.mark.parametrize('perform_nodes_insertion', [False])
 def test_migration_5(rotkehlchen_api_server):
     """
-    Test that the fith data migration for rotki works.
+    Test that the fifth data migration for rotki works.
     - Create two fake icons and check that the file name was correctly updated
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -293,24 +300,31 @@ def test_migration_5(rotkehlchen_api_server):
 
 
 def _get_nodes():
-    """Reads old (as of 1.26.1) and new nodes from json files and returns them"""
+    """Reads old (as of 1.26.1) and new nodes from json files and returns them
+
+    These tests ignore any non ETHEREUM nodes
+    """
     dir_path = Path(__file__).resolve().parent.parent.parent
     with open(dir_path / 'data' / 'nodes_as_of_1-26-1.json') as f:
         old_nodes_info = json.loads(f.read())
     old_nodes = [
-        [node['name'], node['endpoint'], node['owned'], node['weight'], node['active'], node['blockchain']]  # noqa: E501
+        [node['name'], node['endpoint'], node['owned'], str(node['weight']), node['active'], node['blockchain']]  # noqa: E501
         for node in old_nodes_info
     ]
     with open(dir_path / 'data' / 'nodes.json') as f:
         new_nodes_info = json.loads(f.read())
     new_nodes = {
-        (node['name'], node['endpoint'], node['owned'], node['weight'], node['blockchain'])  # noqa: E501
-        for node in new_nodes_info
+        (node['name'], node['endpoint'], node['owned'], str(node['weight']), node['blockchain'])  # noqa: E501
+        for node in new_nodes_info if node['blockchain'] == 'ETH'
     }
     return old_nodes, new_nodes
 
 
-def _write_nodes_and_migrate(database, rotki, nodes_to_write):
+def _write_nodes_and_migrate(
+        database: 'DBHandler',
+        rotki: 'Rotkehlchen',
+        nodes_to_write: list[tuple[str, str, bool, str, bool, str]],
+) -> list[tuple[str, str, bool, str, bool, str]]:
     """
     Writes the given nodes to the DB and applies 6th migration.
     Returns nodes from the DB after the migration.
@@ -351,7 +365,7 @@ def test_migration_6_default_rpc_nodes(rotkehlchen_api_server):
 
     # Now nodes should be the new defaults
     assert set(nodes_in_db) == new_nodes
-    assert FVal(sum([FVal(node[3]) for node in nodes_in_db])) == ONE
+    assert FVal(sum(FVal(node[3]) for node in nodes_in_db)) == ONE
 
 
 @pytest.mark.parametrize('data_migration_version', [None])
@@ -369,16 +383,16 @@ def test_migration_6_customized_rpc_nodes(rotkehlchen_api_server):
 
     old_nodes[-1][0] = 'Renamed cloudflare'  # customize a node
     # Also add a new node
-    old_nodes.append(('flashbots', 'https://rpc.flashbots.net/', False, 0.1, True, 'ETH'))
+    old_nodes.append(('flashbots', 'https://rpc.flashbots.net/', False, '0.1', True, 'ETH'))
 
     nodes_in_db = _write_nodes_and_migrate(database, rotki, old_nodes)
 
     # Create the expected list of nodes. Check that the customized node is still there, all dead
     # nodes were removed and that the nodes were reweighed properly.
     expected_nodes = {
-        ('etherscan', '', False, 0.6, 'ETH'),
-        ('Renamed cloudflare', 'https://cloudflare-eth.com/', False, 0.2, 'ETH'),
-        ('flashbots', 'https://rpc.flashbots.net/', False, 0.2, 'ETH'),
+        ('etherscan', '', False, '0.6', 'ETH'),
+        ('Renamed cloudflare', 'https://cloudflare-eth.com/', False, '0.2', 'ETH'),
+        ('flashbots', 'https://rpc.flashbots.net/', False, '0.2', 'ETH'),
     }
 
     assert set(nodes_in_db) == expected_nodes
@@ -398,10 +412,10 @@ def test_migration_6_own_node(rotkehlchen_api_server):
     database = rotki.data.db
     old_nodes, new_nodes = _get_nodes()
     # Add an owned node
-    old_nodes.append(('Owned node', 'http://localhost:8045', True, 1, True, 'ETH'))
+    old_nodes.append(('Owned node', 'http://localhost:8045', True, '1', True, 'ETH'))
 
     nodes_in_db = _write_nodes_and_migrate(database, rotki, old_nodes)
     # Create the expected list of nodes. Check that the owned node is still there and that the
     # defaults were replaced.
-    expected_nodes = {*new_nodes, ('Owned node', 'http://localhost:8045', 1, 1, 'ETH')}
+    expected_nodes = {*new_nodes, ('Owned node', 'http://localhost:8045', True, '1', 'ETH')}
     assert set(nodes_in_db) == expected_nodes

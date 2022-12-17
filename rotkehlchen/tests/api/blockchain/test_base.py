@@ -676,7 +676,7 @@ def test_no_etherscan_is_detected(rotkehlchen_api_server):
 
     warnings = rotki.msg_aggregator.consume_warnings()
     assert len(warnings) == 1
-    assert 'You do not have an eth Etherscan API key configured' in warnings[0]
+    assert 'You do not have an ethereum Etherscan API key configured' in warnings[0]
 
 
 @pytest.mark.parametrize('method', ['PUT', 'DELETE'])

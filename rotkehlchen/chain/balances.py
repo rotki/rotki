@@ -228,8 +228,16 @@ class BlockchainBalancesUpdate:
         else:
             per_account = self.per_account.get(self.given_chain).copy()
             totals = BalanceSheet()
-            for balances in per_account.values():
-                totals += balances
+
+            if self.given_chain.is_bitcoin():
+                asset = A_BTC if self.given_chain == SupportedBlockchain.BITCOIN else A_BCH
+                for balance in per_account.values():
+                    # we rely on value being same as symbol of chain coin
+                    totals.assets[asset] += balance
+            else:
+                for balances in per_account.values():
+                    totals += balances
+
             serialized_totals = totals.serialize()
         return {
             'per_account': self.per_account.serialize(self.given_chain),

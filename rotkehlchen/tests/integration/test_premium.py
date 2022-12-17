@@ -84,9 +84,9 @@ def test_upload_data_to_server(rotkehlchen_instance, username, db_password, db_s
         assert rotkehlchen_instance.data.db.get_setting(cursor, name='last_data_upload_ts') == 0
         now = ts_now()
         with patched_get, patched_put:
-            task = rotkehlchen_instance.task_manager._maybe_schedule_db_upload()
-            if task is not None:
-                gevent.wait([task])
+            tasks = rotkehlchen_instance.task_manager._maybe_schedule_db_upload()
+            if tasks is not None:
+                gevent.wait(tasks)
 
         if db_settings['premium_should_sync'] is False:
             assert rotkehlchen_instance.data.db.get_setting(cursor, name='last_data_upload_ts') == 0  # noqa: E501

@@ -162,7 +162,7 @@ def test_add_ksm_blockchain_account_invalid_ens_domain(rotkehlchen_api_server):
     assert_error_response(
         response=response,
         contained_in_msg=(
-            f'Given ENS address {invalid_ens_domain} could not be resolved for Kusama'
+            f'Given ENS address {invalid_ens_domain} could not be resolved for kusama'
         ),
         status_code=HTTPStatus.BAD_REQUEST,
     )

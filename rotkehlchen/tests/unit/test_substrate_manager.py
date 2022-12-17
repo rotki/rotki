@@ -43,7 +43,7 @@ def test_get_accounts_balance_invalid_account(kusama_manager):
     with pytest.raises(RemoteError) as e:
         kusama_manager.get_accounts_balance([SUBSTRATE_ACC1_KSM_ADDR, '13mB8stSf1vdP7WzbVr82YPgGGF7cBK9N7KxiVEac9UQgYj8'])  # noqa: E501
 
-    assert 'Kusama request failed after trying the following nodes' in str(e.value)
+    assert 'kusama request failed after trying the following nodes' in str(e.value)
 
 
 def test_get_accounts_balance(kusama_manager):

@@ -23,8 +23,13 @@ def read_and_write_nodes_in_database(write_cursor: 'DBCursor') -> None:
     with open(dir_path / 'data' / 'nodes.json') as f:
         nodes_info = json.loads(f.read())
         for node in nodes_info:
-            if node['blockchain'] != 'ETH':  # back then we only had ETH nodes
-                continue  # so this migration should only concern ETH nodes
+            # At v35->v36 DB upgrade we add optimism nodes so we need to make sure
+            # node does not already exist in the DB here.
+            got_it = write_cursor.execute(
+                'SELECT COUNT(*) FROM rpc_nodes WHERE name=?', (node['name'],),
+            ).fetchone()[0]
+            if got_it == 1:
+                continue
 
             write_cursor.execute(
                 'INSERT OR IGNORE INTO rpc_nodes(name, endpoint, owned, active, weight, blockchain) VALUES (?, ?, ?, ?, ?, ?);',  # noqa: E501
