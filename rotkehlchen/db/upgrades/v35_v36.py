@@ -441,6 +441,45 @@ def _upgrade_nfts_table(write_cursor: 'DBCursor') -> None:
     log.debug('Exit _upgrade_nfts_table')
 
 
+def _upgrade_rpc_nodes(write_cursor: 'DBCursor') -> None:
+    """
+    Change name of web3_nodes to rpc_nodes and fix the schema. Weight should be
+    a float from 0 to 1 saved as string, not an integer.
+
+    Really wonder why this was never seen before
+    """
+    log.debug('Enter _upgrade_rpc_nodes')
+
+    nodes_tuples = write_cursor.execute(
+        'SELECT name, endpoint, owned, active, weight, blockchain from web3_nodes',
+    ).fetchall()
+    write_cursor.execute('DROP TABLE IF EXISTS web3_nodes')
+    write_cursor.execute(
+        """CREATE TABLE IF NOT EXISTS rpc_nodes(
+        identifier INTEGER NOT NULL PRIMARY KEY,
+        name TEXT NOT NULL,
+        endpoint TEXT NOT NULL,
+        owned INTEGER NOT NULL CHECK (owned IN (0, 1)),
+        active INTEGER NOT NULL CHECK (active IN (0, 1)),
+        weight TEXT NOT NULL,
+        blockchain TEXT NOT NULL
+        );""",
+    )
+    nodes_tuples.extend([
+        ('optimism etherscan', '', False, True, '0.4', 'OPTIMISM'),
+        ('optimism official', 'https://mainnet.optimism.io', False, True, '0.2', 'OPTIMISM'),
+        ('optimism blastapi', 'https://optimism-mainnet.public.blastapi.io', False, True, '0.2', 'OPTIMISM'),  # noqa: E501
+        ('optimism ankr', 'https://rpc.ankr.com/optimism', False, True, '0.1', 'OPTIMISM'),
+        ('optimism 1rpc', 'https://1rpc.io/op', False, True, '0.1', 'OPTIMISM'),
+    ])
+    write_cursor.executemany(
+        'INSERT OR IGNORE INTO rpc_nodes(name, endpoint, owned, active, weight, blockchain) VALUES (?, ?, ?, ?, ?, ?)',  # noqa: E501
+        nodes_tuples,
+    )
+
+    log.debug('Exit _upgrade_rpc_nodes')
+
+
 def upgrade_v35_to_v36(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v35 to v36
 
@@ -454,7 +493,7 @@ def upgrade_v35_to_v36(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - rename web3_nodes to rpc_nodes
     """
     log.debug('Entered userdb v35->v36 upgrade')
-    progress_handler.set_total_steps(6)
+    progress_handler.set_total_steps(7)
     with db.user_write() as write_cursor:
         _remove_adex(write_cursor)
         progress_handler.new_step()
@@ -467,7 +506,8 @@ def upgrade_v35_to_v36(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         _upgrade_events_mappings(write_cursor)
         progress_handler.new_step()
         _upgrade_nfts_table(write_cursor)
-        write_cursor.execute('ALTER TABLE web3_nodes RENAME TO rpc_nodes;')
+        progress_handler.new_step()
+        _upgrade_rpc_nodes(write_cursor)
         progress_handler.new_step()
 
     log.debug('Finished userdb v35->v36 upgrade')

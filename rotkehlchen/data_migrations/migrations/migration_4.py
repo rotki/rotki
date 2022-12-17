@@ -23,6 +23,9 @@ def read_and_write_nodes_in_database(write_cursor: 'DBCursor') -> None:
     with open(dir_path / 'data' / 'nodes.json') as f:
         nodes_info = json.loads(f.read())
         for node in nodes_info:
+            if node['blockchain'] != 'ETH':  # back then we only had ETH nodes
+                continue  # so this migration should only concern ETH nodes
+
             write_cursor.execute(
                 'INSERT OR IGNORE INTO rpc_nodes(name, endpoint, owned, active, weight, blockchain) VALUES (?, ?, ?, ?, ?, ?);',  # noqa: E501
                 (
@@ -42,7 +45,7 @@ def copy_ethereum_rpc_endpoint(write_cursor: 'DBCursor') -> None:
         write_cursor.execute(
             'INSERT OR IGNORE INTO rpc_nodes(name, endpoint, owned, active, weight, blockchain) VALUES (?, ?, ?, ?, ?, ?);',  # noqa: E501
             (
-                "my node",
+                'my node',
                 endpoint[0],
                 1,
                 1,

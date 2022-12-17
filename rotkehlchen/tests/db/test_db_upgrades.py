@@ -1046,6 +1046,19 @@ def test_upgrade_db_35_to_36(user_data_dir):  # pylint: disable=unused-argument
     assert cursor.execute('SELECT COUNT(*) from history_events').fetchone()[0] == 558
     assert table_exists(cursor, 'web3_nodes')
     assert table_exists(cursor, 'rpc_nodes') is False
+    results = cursor.execute(
+        'SELECT name, endpoint, owned, active, weight, blockchain from web3_nodes ORDER by name',
+    ).fetchall()
+    old_nodes_results = [
+        ('1inch', 'https://web3.1inch.exchange', 0, 1, 0.15, 'ETH'),
+        ('avado pool', 'https://mainnet.eth.cloud.ava.do/', 0, 1, 0.05, 'ETH'),
+        ('blockscout', 'https://mainnet-nethermind.blockscout.com/', 0, 1, 0.1, 'ETH'),
+        ('cloudflare', 'https://cloudflare-eth.com/', 0, 1, 0.1, 'ETH'),
+        ('etherscan', '', 0, 1, 0.3, 'ETH'),
+        ('mycrypto', 'https://api.mycryptoapi.com/eth', 0, 1, 0.15, 'ETH'),
+        ('myetherwallet', 'https://names.mewapi.io/rpc/eth', 0, 1, 0.15, 'ETH'),
+    ]
+    assert results == old_nodes_results
     result = cursor.execute('SELECT sql from sqlite_master WHERE type="table" AND name="nfts"')
     assert result.fetchone()[0] == (
         'CREATE TABLE nfts (\n'
@@ -1171,6 +1184,18 @@ def test_upgrade_db_35_to_36(user_data_dir):  # pylint: disable=unused-argument
     assert cursor.execute('SELECT COUNT(*) from history_events').fetchone()[0] == 558
     assert table_exists(cursor, 'web3_nodes') is False
     assert table_exists(cursor, 'rpc_nodes') is True
+    upgraded_nodes_results = [(x[0], x[1], x[2], x[3], str(x[4]), x[5]) for x in old_nodes_results]
+    results = cursor.execute(
+        'SELECT name, endpoint, owned, active, weight, blockchain from rpc_nodes ORDER by name',
+    ).fetchall()
+    assert results == [
+        *upgraded_nodes_results,
+        ('optimism 1rpc', 'https://1rpc.io/op', False, True, '0.1', 'OPTIMISM'),
+        ('optimism ankr', 'https://rpc.ankr.com/optimism', False, True, '0.1', 'OPTIMISM'),
+        ('optimism blastapi', 'https://optimism-mainnet.public.blastapi.io', False, True, '0.2', 'OPTIMISM'),  # noqa: E501
+        ('optimism etherscan', '', False, True, '0.4', 'OPTIMISM'),
+        ('optimism official', 'https://mainnet.optimism.io', False, True, '0.2', 'OPTIMISM'),
+    ]
     result = cursor.execute('SELECT sql from sqlite_master WHERE type="table" AND name="nfts"')
     assert result.fetchone()[0] == (
         'CREATE TABLE nfts (\n'

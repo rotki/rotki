@@ -705,7 +705,7 @@ CREATE TABLE IF NOT EXISTS rpc_nodes(
     endpoint TEXT NOT NULL,
     owned INTEGER NOT NULL CHECK (owned IN (0, 1)),
     active INTEGER NOT NULL CHECK (active IN (0, 1)),
-    weight INTEGER NOT NULL,
+    weight TEXT NOT NULL,
     blockchain TEXT NOT NULL
 );
 """

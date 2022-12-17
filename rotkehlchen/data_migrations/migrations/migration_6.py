@@ -55,10 +55,10 @@ def update_nodes_in_database(write_cursor: 'DBCursor') -> None:
         )
         new_nodes_tuples = [
             (node['name'], node['endpoint'], False, True, str(FVal(node['weight'])), node['blockchain'])  # noqa: E501
-            for node in new_nodes_info
+            for node in new_nodes_info if node['blockchain'] == 'ETH'
         ]
         write_cursor.executemany(
-            'INSERT INTO rpc_nodes(name, endpoint, owned, active, weight, blockchain) VALUES (?, ?, ?, ?, ?, ?)',  # noqa: E501
+            'INSERT OR IGNORE INTO rpc_nodes(name, endpoint, owned, active, weight, blockchain) VALUES (?, ?, ?, ?, ?, ?)',  # noqa: E501
             new_nodes_tuples,
         )
     else:
