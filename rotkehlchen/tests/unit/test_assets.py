@@ -282,7 +282,7 @@ def test_case_does_not_matter_for_asset_constructor():
     'CI' in os.environ,
     reason='SLOW TEST -- it executes locally every time we check the assets so can be skipped',
 )
-def test_coingecko_identifiers_are_reachable():
+def test_coingecko_identifiers_are_reachable(socket_enabled):  # pylint: disable=unused-argument
     """
     Test that all assets have a coingecko entry and that all the identifiers exist in coingecko
     """
