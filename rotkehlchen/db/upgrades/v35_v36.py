@@ -61,6 +61,7 @@ def _upgrade_account_details(write_cursor: 'DBCursor') -> None:
     log.debug('Enter _upgrade_account_details')
 
     new_data = []
+    last_queried_timestamp_map: dict[str, int] = {}
     if table_exists(write_cursor, 'accounts_details'):
         write_cursor = write_cursor.execute('SELECT * FROM accounts_details')
         for entry in write_cursor:
@@ -71,7 +72,19 @@ def _upgrade_account_details(write_cursor: 'DBCursor') -> None:
                 )
                 continue
 
+            if entry[2] == 'last_queried_timestamp':
+                # Fix duplicated last_queried timestamp as seen here:
+                # https://github.com/rotki/rotki/pull/5257
+                timestamp = int(entry[3])
+                last_seen_timestamp = last_queried_timestamp_map.get(entry[0], 0)
+                if timestamp > last_seen_timestamp:
+                    last_queried_timestamp_map[entry[0]] = timestamp
+                continue
+
             new_data.append((entry[0], 1, entry[2], entry[3]))
+
+    for address, last_queried_timestamp in last_queried_timestamp_map.items():
+        new_data.append((address, 1, 'last_queried_timestamp', str(last_queried_timestamp)))
 
     write_cursor.execute('DROP TABLE IF EXISTS accounts_details;')
     write_cursor.execute("""

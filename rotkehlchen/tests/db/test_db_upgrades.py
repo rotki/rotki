@@ -1021,12 +1021,12 @@ def test_upgrade_db_35_to_36(user_data_dir):  # pylint: disable=unused-argument
         ('adex_events_0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', 0, 1669719423),
     ]
     accounts_details_result = cursor.execute('SELECT * from accounts_details').fetchall()
-    assert len(accounts_details_result) == 47
+    assert len(accounts_details_result) == 50
     for entry in accounts_details_result:
         if entry[2] == 'tokens':
             assert entry[3].startswith('eip155:1/erc')
         elif entry[2] == 'last_queried_timestamp':
-            assert entry[3] == '1669718731'
+            assert entry[3] in ('1669718731', '1669715131', '1669711531', '1669698971')
         else:
             raise AssertionError(f'Unexpected type {entry[2]} in accounts_details')
     transactions_result = cursor.execute('SELECT * from ethereum_transactions').fetchall()
