@@ -40,6 +40,11 @@ def pytest_addoption(parser):
         default=29870,
         help='Base port number used to avoid conflicts while running parallel tests.',
     )
+    parser.addoption(
+        '--no-network-mocking',
+        action='store_true',
+        help='If set then all tests that are aware of their mocking the network will not do that. Use this in order to easily skip mocks and test that using the network, the remote queries are still working fine and mocks dont need any changing.',  # noqa: E501
+    )
     parser.addoption('--profiler', default=None, choices=['flamegraph-trace'])
 
 

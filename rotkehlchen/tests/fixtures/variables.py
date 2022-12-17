@@ -43,3 +43,13 @@ def added_exchanges() -> Sequence[Location]:
         Location.BITSTAMP,
         Location.BITFINEX,
     )
+
+
+@pytest.fixture
+def network_mocking(request):
+    """Uses the --no-network-mocking argument. By default when not passed, the network
+    is mocked in all tests that are aware of it (by using this fixture).
+    Once the --no-network-mocking argument is passed all tests that use this fixture
+    switch to using the network instead.
+    """
+    return request.config.option.no_network_mocking is False
