@@ -42,15 +42,39 @@
     {
         "name": "optimism etherscan",
         "endpoint": "",
-        "weight": 0.50,
+        "weight": 0.40,
         "owned": false,
         "active": true,
         "blockchain": "OPTIMISM"
     },
     {
-        "name": "main optimism",
+        "name": "optimism official",
         "endpoint": "https://mainnet.optimism.io",
-        "weight": 0.50,
+        "weight": 0.20,
+        "owned": false,
+        "active": true,
+        "blockchain": "OPTIMISM"
+    },
+    {
+        "name": "optimism blastapi",
+        "endpoint": "https://optimism-mainnet.public.blastapi.io",
+        "weight": 0.20,
+        "owned": false,
+        "active": true,
+        "blockchain": "OPTIMISM"
+    },
+    {
+        "name": "optimism ankr",
+        "endpoint": "https://rpc.ankr.com/optimism",
+        "weight": 0.10,
+        "owned": false,
+        "active": true,
+        "blockchain": "OPTIMISM"
+    },
+    {
+        "name": "optimism 1rpc",
+        "endpoint": "https://1rpc.io/op",
+        "weight": 0.10,
         "owned": false,
         "active": true,
         "blockchain": "OPTIMISM"
