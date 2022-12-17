@@ -335,12 +335,12 @@ def test_try_start_same_task(rotkehlchen_api_server):
     )
 
     def simple_task():
-        return rotki.greenlet_manager.spawn_and_track(
+        return [rotki.greenlet_manager.spawn_and_track(
             method=lambda: gevent.sleep(0.1),
             after_seconds=None,
             task_name='Lol kek',
             exception_is_error=True,
-        )
+        )]
 
     with spawn_patch as patched:
         rotki.task_manager.potential_tasks = [rotki.task_manager._maybe_update_snapshot_balances]
@@ -359,7 +359,7 @@ def test_try_start_same_task(rotkehlchen_api_server):
             simple_task,  # check that mapping was updated
         }
         # Wait until our small greenlet finishes
-        gevent.wait([rotki.task_manager.running_greenlets[simple_task]])
+        gevent.wait(rotki.task_manager.running_greenlets[simple_task])
         rotki.task_manager.potential_tasks = []
         rotki.task_manager.schedule()  # clear the mapping
         assert rotki.task_manager.running_greenlets.keys() == {  # and check that it was removed

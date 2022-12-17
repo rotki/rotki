@@ -697,8 +697,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         if append_or_remove != 'append':
             return  # we only care about appending
 
-        chain_key = blockchain.get_key()
-        substrate_manager: 'SubstrateManager' = getattr(self, chain_key)
+        substrate_manager: 'SubstrateManager' = getattr(self, blockchain.name.lower())
         # When adding account for the first time we should connect to the nodes
         if len(substrate_manager.available_nodes_call_order) == 0:
             substrate_manager.attempt_connections()
@@ -762,7 +761,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                         chain_modify_append(blockchain, account)
                 else:  # remove
                     balances.pop(account, None)  # type: ignore  # mypy can't understand each account has same type  # noqa: E501
-                    saved_accounts.remove(accounts)  # type: ignore  # mypy can't understand each account has same type  # noqa: E501
+                    saved_accounts.remove(account)  # type: ignore  # mypy can't understand each account has same type  # noqa: E501
                     chain_modify_remove = self.chain_modify_remove.get(blockchain)
                     if chain_modify_remove is not None:
                         chain_modify_remove(blockchain, account)

@@ -463,8 +463,13 @@ def _upgrade_rpc_nodes(write_cursor: 'DBCursor') -> None:
     """
     log.debug('Enter _upgrade_rpc_nodes')
 
+    # using "ETH" directly since at this point all blockchain column values should beETH
+    # and there may be a problem (noticed it in the premium DB pulling tests) where
+    # web3_nodes did not run through v34->v35 upgrade properly so blockchain column is missing
+    # I suspect the tests I noticed it were developer who created the DB error, but
+    # since this is equivalent to reading the blockchain column, better safe thansorry
     nodes_tuples = write_cursor.execute(
-        'SELECT name, endpoint, owned, active, weight, blockchain from web3_nodes',
+        'SELECT name, endpoint, owned, active, weight, "ETH" from web3_nodes',
     ).fetchall()
     write_cursor.execute('DROP TABLE IF EXISTS web3_nodes')
     write_cursor.execute(

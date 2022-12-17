@@ -63,6 +63,7 @@ def test_add_get_external_service(rotkehlchen_api_server):
     assert result == expected_result
 
 
+@pytest.mark.parametrize('include_etherscan_key', [False])
 def test_delete_external_service(rotkehlchen_api_server):
     """Tests that delete external service credentials works"""
     # Add some data and see that the response shows they are added
@@ -75,7 +76,7 @@ def test_delete_external_service(rotkehlchen_api_server):
         {'name': 'cryptocompare', 'api_key': 'key2'},
     ]}
     response = requests.put(
-        api_url_for(rotkehlchen_api_server, "externalservicesresource"),
+        api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
         json=data,
     )
     result = assert_proper_response_with_result(response)
@@ -85,7 +86,7 @@ def test_delete_external_service(rotkehlchen_api_server):
     data = {'services': ['etherscan']}
     del expected_result['etherscan']
     response = requests.delete(
-        api_url_for(rotkehlchen_api_server, "externalservicesresource"),
+        api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
         json=data,
     )
     result = assert_proper_response_with_result(response)
@@ -93,7 +94,7 @@ def test_delete_external_service(rotkehlchen_api_server):
 
     # Query again and see that the modified services are returned
     response = requests.get(
-        api_url_for(rotkehlchen_api_server, "externalservicesresource"),
+        api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
     )
     result = assert_proper_response_with_result(response)
     assert result == expected_result
@@ -102,7 +103,7 @@ def test_delete_external_service(rotkehlchen_api_server):
     # that if the service is not in the DB, deletion is silently ignored
     data = {'services': ['etherscan', 'cryptocompare']}
     response = requests.delete(
-        api_url_for(rotkehlchen_api_server, "externalservicesresource"),
+        api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
         json=data,
     )
     result = assert_proper_response_with_result(response)
@@ -110,7 +111,7 @@ def test_delete_external_service(rotkehlchen_api_server):
 
     # Query again and see that the modified services are returned
     response = requests.get(
-        api_url_for(rotkehlchen_api_server, "externalservicesresource"),
+        api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
     )
     result = assert_proper_response_with_result(response)
     assert result == {}

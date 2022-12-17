@@ -133,11 +133,11 @@ def test_serialize(blockchain_balances):
             },
         },
     }
-    assert a.serialize() == expected_serialized_dict
+    assert a.serialize(given_chain=None) == expected_serialized_dict
 
     # change something and see it is also reflected in the serialized dict
     a.optimism[address2].assets[OPTIMISM_USDC_TOKEN] = Balance(amount=100, usd_value=100)
     expected_serialized_dict['OPTIMISM'][address2]['assets'][OPTIMISM_USDC_TOKEN.serialize()] = {'amount': '100', 'usd_value': '100'}  # noqa: E501
     a.eth[address1].assets.pop('ETH')
     expected_serialized_dict['ETH'][address1] = {'assets': {}, 'liabilities': {}}
-    assert a.serialize() == expected_serialized_dict
+    assert a.serialize(given_chain=None) == expected_serialized_dict

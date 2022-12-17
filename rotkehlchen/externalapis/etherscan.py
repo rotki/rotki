@@ -30,6 +30,7 @@ from rotkehlchen.types import (
     EvmTransaction,
     EVMTxHash,
     ExternalService,
+    SupportedBlockchain,
     Timestamp,
 )
 from rotkehlchen.user_messages import MessagesAggregator
@@ -67,6 +68,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
         super().__init__(database=database, service_name=service)
         self.msg_aggregator = msg_aggregator
         self.chain = chain
+        self.prefix_url = 'api.' if chain == SupportedBlockchain.ETHEREUM else 'api-'
         self.base_url = base_url
         self.session = requests.session()
         self.warning_given = False
@@ -132,7 +134,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
         - RemoteError if there are any problems with reaching Etherscan or if
         an unexpected response is returned
         """
-        query_str = f'https://api-{self.base_url}/api?module={module}&action={action}'
+        query_str = f'https://{self.prefix_url}{self.base_url}/api?module={module}&action={action}'
         if options:
             for name, value in options.items():
                 query_str += f'&{name}={value}'

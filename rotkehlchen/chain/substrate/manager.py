@@ -434,7 +434,7 @@ class SubstrateManager():
         try:
             node_interface = SubstrateInterface(
                 url=endpoint,
-                type_registry_preset=self.chain.get_key(),
+                type_registry_preset=self.chain.name.lower(),
                 use_remote_preset=True,
             )
         except (requests.exceptions.RequestException, WebSocketException, SubstrateRequestException) as e:  # noqa: E501

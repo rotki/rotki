@@ -148,7 +148,7 @@ def test_set_settings(rotkehlchen_api_server):
 @pytest.mark.parametrize('rpc_setting, error_msg', [
     (
         'ksm_rpc_endpoint',
-        'Kusama failed to connect to own node at endpoint',
+        'kusama failed to connect to own node at endpoint',
     ),
 ])
 def test_set_rpc_endpoint_fail_not_set_others(
@@ -164,7 +164,7 @@ def test_set_rpc_endpoint_fail_not_set_others(
         'main_currency': main_currency.identifier,
     }}
 
-    response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
+    response = requests.put(api_url_for(rotkehlchen_api_server, 'settingsresource'), json=data)
     assert_error_response(
         response=response,
         contained_in_msg=f'{error_msg} {rpc_endpoint}',
@@ -172,7 +172,7 @@ def test_set_rpc_endpoint_fail_not_set_others(
     )
 
     # Get settings and make sure they have not been modified
-    response = requests.get(api_url_for(rotkehlchen_api_server, "settingsresource"))
+    response = requests.get(api_url_for(rotkehlchen_api_server, 'settingsresource'))
     assert_proper_response(response)
     json_data = response.json()
     result = json_data['result']

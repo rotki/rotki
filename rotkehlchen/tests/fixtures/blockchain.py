@@ -6,16 +6,13 @@ from rotkehlchen.chain.accounts import BlockchainAccounts
 from rotkehlchen.chain.aggregator import ChainsAggregator
 from rotkehlchen.chain.avalanche.manager import AvalancheManager
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
-from rotkehlchen.chain.ethereum.etherscan import EthereumEtherscan
 from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
 from rotkehlchen.chain.evm.contracts import EvmContracts
 from rotkehlchen.chain.evm.types import NodeName
-from rotkehlchen.chain.optimism.decoding.decoder import OptimismTransactionDecoder
 from rotkehlchen.chain.optimism.manager import OptimismManager
 from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
-from rotkehlchen.chain.optimism.transactions import OptimismTransactions
 from rotkehlchen.chain.substrate.manager import SubstrateChainProperties, SubstrateManager
 from rotkehlchen.chain.substrate.types import SubstrateAddress
 from rotkehlchen.constants.assets import A_DOT, A_KSM
@@ -104,11 +101,6 @@ def fixture_ethrpc_endpoint() -> Optional[str]:
     return None
 
 
-@pytest.fixture(name='etherscan')
-def fixture_etherscan(database, messages_aggregator):
-    return EthereumEtherscan(database=database, msg_aggregator=messages_aggregator)
-
-
 @pytest.fixture(name='covalent_avalanche')
 def fixture_covalent_avalanche(messages_aggregator, database):
     return Covalent(database=database, msg_aggregator=messages_aggregator, chain_id='43114')
@@ -194,30 +186,6 @@ def fixture_optimism_inquirer(
 @pytest.fixture(name='optimism_manager')
 def fixture_optimism_manager(optimism_inquirer):
     return OptimismManager(node_inquirer=optimism_inquirer)
-
-
-@pytest.fixture(name='optimism_transaction_decoder')
-def fixture_optimism_transaction_decoder(
-        database,
-        optimism_inquirer,
-        optimism_transactions,
-):
-    return OptimismTransactionDecoder(
-        database=database,
-        optimism_inquirer=optimism_inquirer,
-        transactions=optimism_transactions,
-    )
-
-
-@pytest.fixture(name='optimism_transactions')
-def fixture_optimism_transactions(
-        database,
-        optimism_inquirer,
-):
-    return OptimismTransactions(
-        optimism_inquirer=optimism_inquirer,
-        database=database,
-    )
 
 
 @pytest.fixture(name='ksm_rpc_endpoint')
