@@ -1,3 +1,5 @@
+import re
+from contextlib import nullcontext
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -24,6 +26,7 @@ from rotkehlchen.tests.utils.factories import (
     UNIT_BTC_ADDRESS2,
     UNIT_BTC_ADDRESS3,
 )
+from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import BTCAddress
 
 
@@ -416,8 +419,67 @@ def test_valid_bitcoin_chains():
             assert blockchain in NON_BITCOIN_CHAINS
 
 
-def test_bitcoin_balance_api_resolver():
-    # Test blockstream will be hit for bch
+BLOCKCHAIN_INFO_RESULT = {
+    'addresses': [
+        {
+            'address': '34SjMcbLquZ7HmFmQiAHqEHY4mBEbvGeVL',
+            'final_balance': 0,
+            'n_tx': 0,
+            'total_received': 0,
+            'total_sent': 0,
+        },
+        {
+            'address': '3J7sT2fbDaF3XrjpWM5GsUyaDr7i7psi88',
+            'final_balance': 0,
+            'n_tx': 0,
+            'total_received': 0,
+            'total_sent': 0,
+        },
+        {
+            'address': '36Z62MQfJHF11DWqMMzc3rqLiDFGiVF8CB',
+            'final_balance': 0,
+            'n_tx': 0,
+            'total_received': 0,
+            'total_sent': 0,
+        },
+        {
+            'address': '33k4CdyQJFwXQD9giSKyo36mTvE9Y6C9cP',
+            'final_balance': 0,
+            'n_tx': 0,
+            'total_received': 0,
+            'total_sent': 0,
+        },
+        {
+            'address': '3FZbgi29cpjq2GjdwV8eyHuJJnkLtktZc5',
+            'final_balance': 2520331,
+            'n_tx': 238,
+            'total_received': 255627050,
+            'total_sent': 253106719,
+        },
+    ],
+    'wallet': {
+        'final_balance': 2520331,
+        'n_tx': 100,
+        'n_tx_filtered': 100,
+        'total_received': 255627050,
+        'total_sent': 253106719,
+    },
+    'txs': [],
+    'info': {
+        'latest_block': {
+            'hash': '000000000000000000024b14ba68f5f9ac5fbc6c3c41dd7ae939183ef62d9847',
+            'height': 767846,
+            'time': 1671317014,
+            'block_index': 767846,
+        },
+    },
+    'recommend_include_fee': True,
+}
+
+
+def test_bitcoin_balance_api_resolver(network_mocking):
+    """Test that bitcoin balances are queried and that if one source fails we use the next"""
+    address_re = re.compile(r'.*/address/(.*)')
     addresses = [
         BTCAddress('3FZbgi29cpjq2GjdwV8eyHuJJnkLtktZc5'),
         BTCAddress('34SjMcbLquZ7HmFmQiAHqEHY4mBEbvGeVL'),
@@ -426,25 +488,51 @@ def test_bitcoin_balance_api_resolver():
         BTCAddress('33k4CdyQJFwXQD9giSKyo36mTvE9Y6C9cP'),
     ]
 
+    def mock_blockstream_or_mempool_query(url, **kwargs):  # pylint: disable=unused-argument
+        match = address_re.search(url)
+        assert match
+        address = match.group(1)
+        contents = f"""{{
+        "address": "{address}",
+        "chain_stats": {{"funded_txo_count": 216, "funded_txo_sum": 255627050,
+        "spent_txo_count": 201, "spent_txo_sum": 253106719, "tx_count": 238
+        }},
+        "mempool_stats": {{
+        "funded_txo_count": 0, "funded_txo_sum": 0, "spent_txo_count": 0, "spent_txo_sum": 0,
+        "tx_count": 0}}}}"""
+        return MockResponse(200, contents)
+
     def check_balances(balances_to_check: dict[BTCAddress, FVal]) -> None:
         for addr in addresses:
             assert addr in balances_to_check
 
-    # Test balances are returned properly
-    balances = get_bitcoin_addresses_balances(addresses)
+    blockchain_info_mock = patch(
+        'rotkehlchen.chain.bitcoin.request_get_dict',
+        return_value=BLOCKCHAIN_INFO_RESULT,
+    ) if network_mocking else nullcontext()
+    blockstream_mempool_mock = patch(
+        'requests.get',
+        side_effect=mock_blockstream_or_mempool_query,
+    ) if network_mocking else nullcontext()
+
+    # Test balances are returned properly if first source works
+    with blockchain_info_mock:
+        balances = get_bitcoin_addresses_balances(addresses)
     check_balances(balances)
 
-    # One fails
+    # First source fails
     with patch('rotkehlchen.chain.bitcoin._query_blockchain_info', MagicMock(side_effect=KeyError('someProperty'))):  # noqa: E501
-        balances = get_bitcoin_addresses_balances(addresses)
+        with blockstream_mempool_mock:
+            balances = get_bitcoin_addresses_balances(addresses)
         check_balances(balances)
 
-        # Two fail
+        # Second source fails
         with patch('rotkehlchen.chain.bitcoin._query_blockstream_info', MagicMock(side_effect=RemoteError('Epic fail'))):  # noqa: E501
-            balances = get_bitcoin_addresses_balances(addresses)
+            with blockstream_mempool_mock:
+                balances = get_bitcoin_addresses_balances(addresses)
             check_balances(balances)
 
-            # Three fail - FATALITY!!!
+            # Third source fails - FATALITY!!!
             with patch('rotkehlchen.chain.bitcoin._query_mempool_space', MagicMock(side_effect=RemoteError('Fatality'))):  # noqa: E501
                 with pytest.raises(RemoteError):
                     get_bitcoin_addresses_balances(addresses)
