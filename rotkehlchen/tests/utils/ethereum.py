@@ -71,7 +71,7 @@ TEST_ADDR3 = string_to_evm_address('0xc37b40ABdB939635068d3c5f13E7faF686F03B65')
 
 # Test with etherscan and infura
 ETHEREUM_TEST_PARAMETERS: tuple[str, list[tuple]]
-if 'GITHUB_WORKFLOW' in os.environ:
+if 'GITHUB_WORKFLOW' in os.environ:  # TODO: Undo this if once all tests where it's used are mockable  # noqa: E501
     # For Github actions don't use infura. It seems that connecting to it
     # from Github actions hangs and times out
     ETHEREUM_TEST_PARAMETERS = ('ethereum_manager_connect_at_start, call_order', [
