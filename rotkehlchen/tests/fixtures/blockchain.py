@@ -1,4 +1,6 @@
+from contextlib import ExitStack
 from typing import Literal, Optional, Sequence
+from unittest.mock import patch
 
 import pytest
 
@@ -22,6 +24,11 @@ from rotkehlchen.externalapis.covalent import Covalent
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
 from rotkehlchen.tests.utils.factories import make_evm_address
+from rotkehlchen.tests.utils.mock import (
+    MOCK_WEB3_LAST_BLOCK_INT,
+    patch_etherscan_request,
+    patch_web3_request,
+)
 from rotkehlchen.tests.utils.substrate import (
     KUSAMA_DEFAULT_OWN_RPC_ENDPOINT,
     KUSAMA_MAIN_ASSET_DECIMALS,
@@ -111,11 +118,59 @@ def fixture_ethereum_manager_connect_at_start() -> Sequence[NodeName]:
     return ()
 
 
+@pytest.fixture(name='should_mock_web3')
+def fixture_should_mock_web3() -> bool:
+    """A fixture to specify if web3 should be mocked. Should be set at tests"""
+    return False
+
+
+@pytest.fixture(name='web3_mock_data')
+def fixture_web3_mock_data():
+    return {}
+
+
+@pytest.fixture(name='mock_other_web3')
+def fixture_mock_other_web3(network_mocking, should_mock_web3):
+    """Just like fixture_web3_mocking this decides but in boolean
+    without yielding if web3 and related stuff should be mocked"""
+    if network_mocking is False:
+        return False
+    if should_mock_web3:
+        return True
+    return False
+
+
+@pytest.fixture(name='web3_mocking')
+def fixture_web3_mocking(network_mocking, should_mock_web3, web3_mock_data):
+    """A fixture to mock web3 and all related (such as inquirer) stuff if needed.
+    When called all web3 requests are mocked and so are all related requests
+
+    Eventually web3 mocking and network mocking should be identical
+    but as we create web3 mocks we have to go step by step and activate where
+    possible
+    """
+    if network_mocking is False:
+        yield
+    elif should_mock_web3 is True:
+        with ExitStack() as stack:
+            stack.enter_context(patch_web3_request(web3_mock_data))
+            stack.enter_context(patch(
+                'rotkehlchen.chain.ethereum.node_inquirer.EthereumInquirer.query_highest_block',
+                return_value=MOCK_WEB3_LAST_BLOCK_INT,
+            ))
+            yield
+    else:
+        yield
+
+
 @pytest.fixture(name='ethereum_inquirer')
 def fixture_ethereum_inquirer(
         ethereum_manager_connect_at_start,
         greenlet_manager,
         database,
+        web3_mocking,  # pylint: disable=unused-argument
+        mock_other_web3,
+        web3_mock_data,
 ):
     ethereum_inquirer = EthereumInquirer(
         greenlet_manager=greenlet_manager,
@@ -126,8 +181,11 @@ def fixture_ethereum_inquirer(
         connect_at_start=ethereum_manager_connect_at_start,
         evm_inquirer=ethereum_inquirer,
     )
-
-    return ethereum_inquirer
+    if mock_other_web3 is True:
+        with patch_etherscan_request(etherscan=ethereum_inquirer.etherscan, mock_data=web3_mock_data):  # noqa: E501
+            yield ethereum_inquirer
+    else:
+        yield ethereum_inquirer
 
 
 @pytest.fixture(name='ethereum_manager')
