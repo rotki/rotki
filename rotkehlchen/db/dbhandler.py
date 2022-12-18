@@ -1246,6 +1246,10 @@ class DBHandler:
         returned_list = []
         for (key, value) in cursor:
             if key == EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS:
+                # At the moment last_queried_timestamp is not used. It used to be a cache for the
+                # query but since we made token detection not run it is no longer used, but is
+                # written. This will probably change in the future again. Related issue:
+                # https://github.com/rotki/rotki/issues/5252
                 last_queried_ts = deserialize_timestamp(value)
             else:  # should be EVM_ACCOUNTS_DETAILS_TOKENS
                 try:
@@ -1300,10 +1304,10 @@ class DBHandler:
         )
         # Delete previous entries for tokens
         write_cursor.execute(
-            'DELETE FROM evm_accounts_details WHERE account=? AND chain_id=? AND KEY=?',
-            (address, chain_id, EVM_ACCOUNTS_DETAILS_TOKENS),
+            'DELETE FROM evm_accounts_details WHERE account=? AND chain_id=? AND KEY IN(?, ?)',
+            (address, chain_id, EVM_ACCOUNTS_DETAILS_TOKENS, EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS),
         )
-        # Timestamp will get replaced
+        # Insert new values
         write_cursor.executemany(
             'INSERT OR REPLACE INTO evm_accounts_details '
             '(account, chain_id, key, value) VALUES (?, ?, ?, ?)',

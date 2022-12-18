@@ -470,3 +470,44 @@ def test_premium_toggle_chains_aggregator(blockchain, rotki_premium_credentials)
     blockchain.deactivate_premium_status()
     for _, module in blockchain.iterate_modules():
         assert module.premium is None
+
+
+@pytest.mark.parametrize('sql_vm_instructions_cb', [10])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_upload_data_to_server_big_db(rotkehlchen_instance, db_password):
+    """Test that if the server has bigger DB size and context switch happens it
+    all works out. Essentially a test for https://github.com/rotki/rotki/issues/5038
+
+    We emulate bigger size by just lowering sql_vm_instructions_cb to force a context switch
+    """
+    with rotkehlchen_instance.data.db.user_write() as cursor:
+        last_ts = rotkehlchen_instance.data.db.get_setting(cursor, name='last_data_upload_ts')
+        assert last_ts == 0
+        # Write anything in the DB to set a non-zero last_write_ts
+        rotkehlchen_instance.data.db.set_settings(cursor, ModifiableDBSettings(main_currency=A_EUR))  # noqa: E501
+    _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(db_password)
+    remote_hash = get_different_hash(our_hash)
+
+    patched_put = patch.object(
+        rotkehlchen_instance.premium.session,
+        'put',
+        return_value=None,
+    )
+    patched_get = create_patched_requests_get_for_premium(
+        session=rotkehlchen_instance.premium.session,
+        metadata_last_modify_ts=0,
+        metadata_data_hash=remote_hash,
+        # larger DB than ours
+        metadata_data_size=9999999999,
+        saved_data='foo',
+    )
+
+    with patched_get, patched_put as put_mock:
+        a = gevent.spawn(rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server)
+        b = gevent.spawn(rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server)
+        greenlets = [a, b]
+        gevent.joinall(greenlets)
+        for g in greenlets:
+            assert g.exception is None, f'One of the greenlets had an exception: {g.exception}'
+        # The upload mock should not have been called since the hash is the same
+        assert not put_mock.called

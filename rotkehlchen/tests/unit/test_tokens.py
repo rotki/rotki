@@ -1,4 +1,5 @@
-from unittest.mock import MagicMock
+from datetime import datetime
+from unittest.mock import MagicMock, patch
 
 import pytest
 from flaky import flaky
@@ -9,6 +10,7 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_OMG
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_LPT
+from rotkehlchen.utils.misc import ts_now
 
 
 @pytest.fixture(name='tokens')
@@ -73,3 +75,44 @@ def test_generate_chunks():
         ],
     ]
     assert generated_chunks == expected_chunks
+
+
+def test_last_queried_ts(evmtokens, freezer):
+    """
+    Checks that after detecting evm tokens last_queried_timestamp is updated and there
+    are no duplicates.
+    """
+    # We don't need to query the chain here, so mock tokens list
+    evm_tokens_patch = patch(
+        'rotkehlchen.globaldb.handler.GlobalDBHandler.get_ethereum_tokens',
+        new=lambda _, exceptions=None, except_protocols=None, protocol=None: [],
+    )
+    beginning = ts_now()
+    address = '0x4bBa290826C253BD854121346c370a9886d1bC26'
+    with evm_tokens_patch:
+        # Detect for the first time
+        evmtokens.detect_tokens(
+            only_cache=False,
+            addresses=[address],
+        )
+        after_first_query = evmtokens.db.conn.execute(
+            'SELECT key, value FROM accounts_details',
+        ).fetchall()
+        assert len(after_first_query) == 1
+        assert after_first_query[0][0] == 'last_queried_timestamp'
+        assert int(after_first_query[0][1]) >= beginning
+
+        continuation = beginning + 10
+        freezer.move_to(datetime.fromtimestamp(continuation))
+        # Detect again
+        evmtokens.detect_tokens(
+            only_cache=False,
+            addresses=['0x4bBa290826C253BD854121346c370a9886d1bC26'],
+        )
+        # Check that last_queried_timestamp was updated and that there are no duplicates
+        after_second_query = evmtokens.db.conn.execute(
+            'SELECT key, value FROM accounts_details',
+        ).fetchall()
+        assert len(after_second_query) == 1
+        assert after_second_query[0][0] == 'last_queried_timestamp'
+        assert int(after_second_query[0][1]) >= continuation

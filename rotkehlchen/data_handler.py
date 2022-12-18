@@ -193,8 +193,7 @@ class DataHandler():
 
         Returns a b64 encoded binary blob"""
         compressor = zlib.compressobj(level=9)
-        prefix = str(ts_now())  # not sure if NamedTemporaryFile always gives new name. So force it
-        with tempfile.NamedTemporaryFile(delete=False, prefix=prefix, suffix='.db') as tempdbfile:
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.db') as tempdbfile:
             tempdbpath = Path(tempdbfile.name)
             log.info(f'Compress and encrypt DB at temporary path: {tempdbpath}')
             tempdbfile.close()  # close the file to allow re-opening by export_unencrypted in windows https://github.com/rotki/rotki/issues/5051  # noqa: E501

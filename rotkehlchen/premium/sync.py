@@ -4,6 +4,8 @@ import shutil
 from enum import Enum
 from typing import Any, Literal, NamedTuple, Optional, Union
 
+from gevent.lock import Semaphore
+
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.data_migrations.manager import DataMigrationManager
 from rotkehlchen.errors.api import PremiumAuthenticationError, RotkehlchenPermissionError
@@ -45,6 +47,7 @@ class PremiumSyncManager():
         self.migration_manager = migration_manager
         self.password = password
         self.premium: Optional[Premium] = None
+        self.upload_lock = Semaphore()
 
     def _can_sync_data_from_server(self, new_account: bool) -> SyncCheckResult:
         """
@@ -142,9 +145,9 @@ class PremiumSyncManager():
         return True
 
     def maybe_upload_data_to_server(self, force_upload: bool = False) -> bool:
-        assert self.premium is not None, 'caller should make sure premium exists'
-        log.debug('Starting maybe_upload_data_to_server')
-        with self.data.db.user_write() as cursor:
+        with self.upload_lock:
+            assert self.premium is not None, 'caller should make sure premium exists'
+            log.debug('Starting maybe_upload_data_to_server')
             try:
                 metadata = self.premium.query_last_data_metadata()
             except (RemoteError, PremiumAuthenticationError) as e:
@@ -162,7 +165,8 @@ class PremiumSyncManager():
                 # same hash -- no need to upload anything
                 return False
 
-            our_last_write_ts = self.data.db.get_setting(cursor=cursor, name='last_write_ts')
+            with self.data.db.conn.read_ctx() as cursor:
+                our_last_write_ts = self.data.db.get_setting(cursor=cursor, name='last_write_ts')
             if our_last_write_ts <= metadata.last_modify_ts and not force_upload:
                 # Server's DB was modified after our local DB
                 log.debug(
@@ -194,9 +198,10 @@ class PremiumSyncManager():
 
             # update the last data upload value
             self.last_data_upload_ts = ts_now()
-            self.data.db.set_setting(cursor, name='last_data_upload_ts', value=self.last_data_upload_ts)  # noqa: E501
+            with self.data.db.user_write() as cursor:
+                self.data.db.set_setting(cursor, name='last_data_upload_ts', value=self.last_data_upload_ts)  # noqa: E501
 
-        log.debug('upload to server -- success')
+            log.debug('upload to server -- success')
         return True
 
     def sync_data(self, action: Literal['upload', 'download']) -> tuple[bool, str]:
