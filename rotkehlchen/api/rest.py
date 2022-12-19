@@ -1972,7 +1972,7 @@ class RestAPI():
             account_data: list[BlockchainAccountData],
     ) -> dict[str, Any]:
         try:
-            self.rotkehlchen.add_evm_accounts(account_data=account_data)
+            added_accounts = self.rotkehlchen.add_evm_accounts(account_data=account_data)
         except EthSyncError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
         except TagConstraintError as e:
@@ -1980,10 +1980,10 @@ class RestAPI():
         except RemoteError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
 
-        # we can be sure that all addresses from account_data were added since the addition
-        # would have failed otherwise
-        added_addresses = [x.address for x in account_data]
-        return _wrap_in_ok_result(added_addresses)
+        result = defaultdict(list)
+        for chain, address in added_accounts:
+            result[chain.value].append(address)
+        return _wrap_in_ok_result(result)
 
     def add_evm_accounts(
             self,

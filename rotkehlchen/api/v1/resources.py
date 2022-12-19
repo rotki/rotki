@@ -1405,7 +1405,7 @@ class EvmAccountsResource(BaseMethodView):
         )
 
     @require_loggedin_user()
-    @resource_parser.use_kwargs(make_put_schema, location='json_and_view_args')
+    @resource_parser.use_kwargs(make_put_schema, location='json_and_query')
     def put(
             self,
             accounts: list[dict[str, Any]],

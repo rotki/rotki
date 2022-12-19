@@ -35,7 +35,7 @@ def test_add_avax_blockchain_account_invalid(rotkehlchen_api_server):
 
     assert_error_response(
         response=response,
-        contained_in_msg=f'{SUBSTRATE_ACC1_DOT_ADDR} is not an ethereum address',
+        contained_in_msg=f'{SUBSTRATE_ACC1_DOT_ADDR} is not an evm address',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
