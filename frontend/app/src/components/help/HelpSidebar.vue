@@ -1,85 +1,3 @@
-<template>
-  <v-navigation-drawer
-    width="400px"
-    class="help-sidebar"
-    :class="$vuetify.breakpoint.smAndDown ? 'help-sidebar--mobile' : null"
-    absolute
-    clipped
-    :value="visible"
-    right
-    temporary
-    hide-overlay
-    @input="visibleUpdate($event)"
-  >
-    <v-row justify="space-between" class="mt-0 pa-4">
-      <v-col class="text-h5">{{ t('help_sidebar.title') }}</v-col>
-      <v-col cols="auto">
-        <v-btn icon @click="visibleUpdate(false)">
-          <v-icon>mdi-close</v-icon>
-        </v-btn>
-      </v-col>
-    </v-row>
-    <v-list class="mt-2">
-      <v-list-item
-        v-for="(item, index) in entries"
-        :key="index"
-        :href="interop.isPackaged ? null : item.link"
-        target="_blank"
-        @click="interop.isPackaged ? interop.openUrl(item.link) : null"
-      >
-        <v-list-item-avatar>
-          <v-icon>{{ item.icon }}</v-icon>
-        </v-list-item-avatar>
-        <v-list-item-content>
-          <v-list-item-title>
-            {{ item.title }}
-          </v-list-item-title>
-          <v-list-item-subtitle>
-            {{ item.subtitle }}
-          </v-list-item-subtitle>
-        </v-list-item-content>
-        <v-list-item-action>
-          <v-icon>mdi-chevron-right</v-icon>
-        </v-list-item-action>
-      </v-list-item>
-      <template v-if="!interop.isPackaged">
-        <v-list-item selectable @click="openAbout()">
-          <v-list-item-avatar>
-            <v-icon>mdi-information</v-icon>
-          </v-list-item-avatar>
-          <v-list-item-content>
-            <v-list-item-title>
-              {{ t('help_sidebar.about.title') }}
-            </v-list-item-title>
-            <v-list-item-subtitle>
-              {{ t('help_sidebar.about.subtitle') }}
-            </v-list-item-subtitle>
-          </v-list-item-content>
-          <v-list-item-action>
-            <v-icon>mdi-chevron-right</v-icon>
-          </v-list-item-action>
-        </v-list-item>
-        <v-list-item selectable @click="downloadBrowserLog()">
-          <v-list-item-avatar>
-            <v-icon>mdi-note-text</v-icon>
-          </v-list-item-avatar>
-          <v-list-item-content>
-            <v-list-item-title>
-              {{ t('help_sidebar.browser_log.title') }}
-            </v-list-item-title>
-            <v-list-item-subtitle>
-              {{ t('help_sidebar.browser_log.subtitle') }}
-            </v-list-item-subtitle>
-          </v-list-item-content>
-          <v-list-item-action>
-            <v-icon>mdi-chevron-right</v-icon>
-          </v-list-item-action>
-        </v-list-item>
-      </template>
-    </v-list>
-  </v-navigation-drawer>
-</template>
-
 <script setup lang="ts">
 import { useNotificationsStore } from '@/store/notifications';
 import { downloadFileByUrl } from '@/utils/download';
@@ -165,6 +83,88 @@ const downloadBrowserLog = async () => {
   });
 };
 </script>
+
+<template>
+  <v-navigation-drawer
+    width="400px"
+    class="help-sidebar"
+    :class="$vuetify.breakpoint.smAndDown ? 'help-sidebar--mobile' : null"
+    absolute
+    clipped
+    :value="visible"
+    right
+    temporary
+    hide-overlay
+    @input="visibleUpdate($event)"
+  >
+    <v-row justify="space-between" class="mt-0 pa-4">
+      <v-col class="text-h5">{{ t('help_sidebar.title') }}</v-col>
+      <v-col cols="auto">
+        <v-btn icon @click="visibleUpdate(false)">
+          <v-icon>mdi-close</v-icon>
+        </v-btn>
+      </v-col>
+    </v-row>
+    <v-list class="mt-2">
+      <v-list-item
+        v-for="(item, index) in entries"
+        :key="index"
+        :href="interop.isPackaged ? null : item.link"
+        target="_blank"
+        @click="interop.isPackaged ? interop.openUrl(item.link) : null"
+      >
+        <v-list-item-avatar>
+          <v-icon>{{ item.icon }}</v-icon>
+        </v-list-item-avatar>
+        <v-list-item-content>
+          <v-list-item-title>
+            {{ item.title }}
+          </v-list-item-title>
+          <v-list-item-subtitle>
+            {{ item.subtitle }}
+          </v-list-item-subtitle>
+        </v-list-item-content>
+        <v-list-item-action>
+          <v-icon>mdi-chevron-right</v-icon>
+        </v-list-item-action>
+      </v-list-item>
+      <template v-if="!interop.isPackaged">
+        <v-list-item selectable @click="openAbout()">
+          <v-list-item-avatar>
+            <v-icon>mdi-information</v-icon>
+          </v-list-item-avatar>
+          <v-list-item-content>
+            <v-list-item-title>
+              {{ t('help_sidebar.about.title') }}
+            </v-list-item-title>
+            <v-list-item-subtitle>
+              {{ t('help_sidebar.about.subtitle') }}
+            </v-list-item-subtitle>
+          </v-list-item-content>
+          <v-list-item-action>
+            <v-icon>mdi-chevron-right</v-icon>
+          </v-list-item-action>
+        </v-list-item>
+        <v-list-item selectable @click="downloadBrowserLog()">
+          <v-list-item-avatar>
+            <v-icon>mdi-note-text</v-icon>
+          </v-list-item-avatar>
+          <v-list-item-content>
+            <v-list-item-title>
+              {{ t('help_sidebar.browser_log.title') }}
+            </v-list-item-title>
+            <v-list-item-subtitle>
+              {{ t('help_sidebar.browser_log.subtitle') }}
+            </v-list-item-subtitle>
+          </v-list-item-content>
+          <v-list-item-action>
+            <v-icon>mdi-chevron-right</v-icon>
+          </v-list-item-action>
+        </v-list-item>
+      </template>
+    </v-list>
+  </v-navigation-drawer>
+</template>
 
 <style scoped lang="scss">
 .help-sidebar {

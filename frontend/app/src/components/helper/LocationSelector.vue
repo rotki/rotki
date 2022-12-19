@@ -1,38 +1,3 @@
-<template>
-  <v-autocomplete
-    v-bind="rootAttrs"
-    data-cy="location-input"
-    :value="value"
-    :items="locations"
-    :attach="attach"
-    item-value="identifier"
-    item-text="name"
-    auto-select-first
-    @input="change"
-    v-on="listeners"
-  >
-    <template #item="{ item, attrs, on }">
-      <location-icon
-        :id="`balance-location__${item.identifier}`"
-        v-bind="attrs"
-        horizontal
-        :item="item"
-        no-padding
-        v-on="on"
-      />
-    </template>
-    <template #selection="{ item, attrs, on }">
-      <location-icon
-        v-bind="attrs"
-        horizontal
-        :item="item"
-        no-padding
-        v-on="on"
-      />
-    </template>
-  </v-autocomplete>
-</template>
-
 <script setup lang="ts">
 import { type PropType, useListeners } from 'vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
@@ -89,3 +54,38 @@ const locations = computed<TradeLocationData[]>(() => {
   });
 });
 </script>
+
+<template>
+  <v-autocomplete
+    v-bind="rootAttrs"
+    data-cy="location-input"
+    :value="value"
+    :items="locations"
+    :attach="attach"
+    item-value="identifier"
+    item-text="name"
+    auto-select-first
+    @input="change"
+    v-on="listeners"
+  >
+    <template #item="{ item, attrs, on }">
+      <location-icon
+        :id="`balance-location__${item.identifier}`"
+        v-bind="attrs"
+        horizontal
+        :item="item"
+        no-padding
+        v-on="on"
+      />
+    </template>
+    <template #selection="{ item, attrs, on }">
+      <location-icon
+        v-bind="attrs"
+        horizontal
+        :item="item"
+        no-padding
+        v-on="on"
+      />
+    </template>
+  </v-autocomplete>
+</template>

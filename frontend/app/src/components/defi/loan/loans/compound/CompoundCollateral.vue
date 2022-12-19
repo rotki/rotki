@@ -1,3 +1,23 @@
+<script setup lang="ts">
+import { type PropType } from 'vue';
+import LoanRow from '@/components/defi/loan/LoanRow.vue';
+import StatCard from '@/components/display/StatCard.vue';
+import { type CompoundLoan } from '@/types/defi/compound';
+import { totalCollateral } from '@/utils/total-collateral';
+
+const props = defineProps({
+  loan: {
+    required: true,
+    type: Object as PropType<CompoundLoan>
+  }
+});
+
+const { loan } = toRefs(props);
+const { tc } = useI18n();
+const assetPadding = 5;
+const totalCollateralUsd = totalCollateral(loan);
+</script>
+
 <template>
   <stat-card :title="tc('loan_collateral.title')">
     <loan-row medium :title="tc('loan_collateral.locked_collateral')">
@@ -29,23 +49,3 @@
     </loan-row>
   </stat-card>
 </template>
-
-<script setup lang="ts">
-import { type PropType } from 'vue';
-import LoanRow from '@/components/defi/loan/LoanRow.vue';
-import StatCard from '@/components/display/StatCard.vue';
-import { type CompoundLoan } from '@/types/defi/compound';
-import { totalCollateral } from '@/utils/total-collateral';
-
-const props = defineProps({
-  loan: {
-    required: true,
-    type: Object as PropType<CompoundLoan>
-  }
-});
-
-const { loan } = toRefs(props);
-const { tc } = useI18n();
-const assetPadding = 5;
-const totalCollateralUsd = totalCollateral(loan);
-</script>

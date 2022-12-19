@@ -1,74 +1,4 @@
-﻿<template>
-  <div class="explorers mt-8">
-    <div class="text-h6">
-      {{ t('explorers.title') }}
-    </div>
-    <div class="text-subtitle-1">
-      {{ t('explorers.subtitle') }}
-    </div>
-
-    <v-select
-      v-model="selection"
-      class="mt-4"
-      outlined
-      :items="supportedExplorers"
-      :label="t('explorers.chain_selector')"
-      @change="onChange"
-    >
-      <template #item="{ item }">
-        <asset-details :asset="item" />
-      </template>
-      <template #selection="{ item }">
-        <asset-details :asset="item" />
-      </template>
-    </v-select>
-
-    <v-text-field
-      v-model="address"
-      outlined
-      clearable
-      :label="t('explorers.address')"
-      :hint="t('explorers.address_url', { addressUrl })"
-      :placeholder="addressUrl"
-      persistent-hint
-      @click:clear="saveAddress()"
-    >
-      <template #append-outer>
-        <v-btn
-          icon
-          :disabled="!isValid(address)"
-          class="mt-n2"
-          @click="saveAddress(address)"
-        >
-          <v-icon>mdi-content-save</v-icon>
-        </v-btn>
-      </template>
-    </v-text-field>
-    <v-text-field
-      v-model="tx"
-      outlined
-      clearable
-      :label="t('explorers.tx')"
-      :hint="t('explorers.tx_url', { txUrl })"
-      :placeholder="txUrl"
-      persistent-hint
-      @click:clear="saveTransaction()"
-    >
-      <template #append-outer>
-        <v-btn
-          icon
-          :disabled="!isValid(tx)"
-          class="mt-n2"
-          @click="saveTransaction(tx)"
-        >
-          <v-icon>mdi-content-save</v-icon>
-        </v-btn>
-      </template>
-    </v-text-field>
-  </div>
-</template>
-
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { explorerUrls } from '@/types/asset-urls';
@@ -151,6 +81,76 @@ const saveTransaction = async (newTransaction?: string) => {
 
 const { t } = useI18n();
 </script>
+
+<template>
+  <div class="explorers mt-8">
+    <div class="text-h6">
+      {{ t('explorers.title') }}
+    </div>
+    <div class="text-subtitle-1">
+      {{ t('explorers.subtitle') }}
+    </div>
+
+    <v-select
+      v-model="selection"
+      class="mt-4"
+      outlined
+      :items="supportedExplorers"
+      :label="t('explorers.chain_selector')"
+      @change="onChange"
+    >
+      <template #item="{ item }">
+        <asset-details :asset="item" />
+      </template>
+      <template #selection="{ item }">
+        <asset-details :asset="item" />
+      </template>
+    </v-select>
+
+    <v-text-field
+      v-model="address"
+      outlined
+      clearable
+      :label="t('explorers.address')"
+      :hint="t('explorers.address_url', { addressUrl })"
+      :placeholder="addressUrl"
+      persistent-hint
+      @click:clear="saveAddress()"
+    >
+      <template #append-outer>
+        <v-btn
+          icon
+          :disabled="!isValid(address)"
+          class="mt-n2"
+          @click="saveAddress(address)"
+        >
+          <v-icon>mdi-content-save</v-icon>
+        </v-btn>
+      </template>
+    </v-text-field>
+    <v-text-field
+      v-model="tx"
+      outlined
+      clearable
+      :label="t('explorers.tx')"
+      :hint="t('explorers.tx_url', { txUrl })"
+      :placeholder="txUrl"
+      persistent-hint
+      @click:clear="saveTransaction()"
+    >
+      <template #append-outer>
+        <v-btn
+          icon
+          :disabled="!isValid(tx)"
+          class="mt-n2"
+          @click="saveTransaction(tx)"
+        >
+          <v-icon>mdi-content-save</v-icon>
+        </v-btn>
+      </template>
+    </v-text-field>
+  </div>
+</template>
 
 <style scoped lang="scss">
 .explorers {

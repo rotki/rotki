@@ -1,22 +1,3 @@
-<template>
-  <div class="d-flex align-center">
-    <div class="ml-1 d-flex align-center">
-      <div
-        v-for="(country, index) in countries"
-        :key="country"
-        class="d-flex align-center"
-      >
-        <span v-if="index > 0" class="px-1">/</span>
-        <span :class="css.flag">
-          {{ getFlagEmoji(country) }}
-        </span>
-      </div>
-    </div>
-    <div class="ml-3">
-      {{ label }}
-    </div>
-  </div>
-</template>
 <script setup lang="ts">
 import { type PropType, useCssModule } from 'vue';
 
@@ -41,6 +22,25 @@ const getFlagEmoji = (code: string) => {
 
 const css = useCssModule();
 </script>
+<template>
+  <div class="d-flex align-center">
+    <div class="ml-1 d-flex align-center">
+      <div
+        v-for="(country, index) in countries"
+        :key="country"
+        class="d-flex align-center"
+      >
+        <span v-if="index > 0" class="px-1">/</span>
+        <span :class="css.flag">
+          {{ getFlagEmoji(country) }}
+        </span>
+      </div>
+    </div>
+    <div class="ml-3">
+      {{ label }}
+    </div>
+  </div>
+</template>
 
 <style lang="scss" module>
 .flag {

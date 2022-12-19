@@ -1,3 +1,22 @@
+<script setup lang="ts">
+const props = defineProps({
+  address: {
+    required: true,
+    type: String
+  },
+  loading: {
+    required: true,
+    type: Boolean
+  }
+});
+
+const { address } = toRefs(props);
+
+const { detectingTokens, detectedTokens, detectTokensAndQueryBalances } =
+  useTokenDetection(address);
+const { tc } = useI18n();
+</script>
+
 <template>
   <div class="d-flex align-center justify-end">
     <div class="mr-2">
@@ -39,22 +58,3 @@
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-const props = defineProps({
-  address: {
-    required: true,
-    type: String
-  },
-  loading: {
-    required: true,
-    type: Boolean
-  }
-});
-
-const { address } = toRefs(props);
-
-const { detectingTokens, detectedTokens, detectTokensAndQueryBalances } =
-  useTokenDetection(address);
-const { tc } = useI18n();
-</script>

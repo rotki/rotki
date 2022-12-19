@@ -1,3 +1,31 @@
+<script setup lang="ts">
+import { type PropType } from 'vue';
+import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
+import IconLink from '@/components/base/IconLink.vue';
+import { type GalleryNft } from '@/store/session/types';
+import { isVideo } from '@/utils/nft';
+
+const props = defineProps({
+  item: {
+    required: true,
+    type: Object as PropType<GalleryNft>
+  }
+});
+
+const { item } = toRefs(props);
+const name = computed(() =>
+  get(item).name ? get(item).name : get(item).collection.name
+);
+
+const imageUrl = computed(() => {
+  return get(item).imageUrl ?? './assets/images/placeholder.svg';
+});
+
+const isMediaVideo = computed(() => {
+  return isVideo(get(item).imageUrl);
+});
+</script>
+
 <template>
   <v-card class="mx-auto overflow-hidden">
     <base-external-link :href="item.externalLink">
@@ -83,34 +111,6 @@
     </v-card-actions>
   </v-card>
 </template>
-
-<script setup lang="ts">
-import { type PropType } from 'vue';
-import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
-import IconLink from '@/components/base/IconLink.vue';
-import { type GalleryNft } from '@/store/session/types';
-import { isVideo } from '@/utils/nft';
-
-const props = defineProps({
-  item: {
-    required: true,
-    type: Object as PropType<GalleryNft>
-  }
-});
-
-const { item } = toRefs(props);
-const name = computed(() =>
-  get(item).name ? get(item).name : get(item).collection.name
-);
-
-const imageUrl = computed(() => {
-  return get(item).imageUrl ?? './assets/images/placeholder.svg';
-});
-
-const isMediaVideo = computed(() => {
-  return isVideo(get(item).imageUrl);
-});
-</script>
 
 <style lang="scss" module>
 video {

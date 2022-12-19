@@ -1,4 +1,25 @@
-﻿<template>
+﻿<script setup lang="ts">
+const NavigatorLink = defineAsyncComponent(
+  () => import('@/components/helper/NavigatorLink.vue')
+);
+
+defineProps({
+  name: { required: true, type: String },
+  isLoading: { required: false, type: Boolean, default: false },
+  canRefresh: { required: false, type: Boolean, default: false },
+  navigatesTo: { required: false, type: String, default: '' }
+});
+
+const emit = defineEmits(['refresh']);
+
+const refresh = (balanceSource: string) => {
+  emit('refresh', balanceSource.toLowerCase());
+};
+
+const { t } = useI18n();
+</script>
+
+<template>
   <v-card
     :loading="isLoading"
     :class="`dashboard__summary-card__${name}`"
@@ -51,27 +72,6 @@
     </v-list>
   </v-card>
 </template>
-
-<script setup lang="ts">
-const NavigatorLink = defineAsyncComponent(
-  () => import('@/components/helper/NavigatorLink.vue')
-);
-
-defineProps({
-  name: { required: true, type: String },
-  isLoading: { required: false, type: Boolean, default: false },
-  canRefresh: { required: false, type: Boolean, default: false },
-  navigatesTo: { required: false, type: String, default: '' }
-});
-
-const emit = defineEmits(['refresh']);
-
-const refresh = (balanceSource: string) => {
-  emit('refresh', balanceSource.toLowerCase());
-};
-
-const { t } = useI18n();
-</script>
 
 <style scoped lang="scss">
 .summary-card {

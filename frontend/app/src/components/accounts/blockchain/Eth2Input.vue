@@ -1,37 +1,3 @@
-<template>
-  <v-row>
-    <v-col cols="12" md="4" lg="2">
-      <v-text-field
-        v-model="validatorIndex"
-        outlined
-        type="number"
-        :disabled="disabled"
-        :label="t('eth2_input.validator_index')"
-      />
-    </v-col>
-    <v-col cols="12" md="6" lg="8">
-      <v-text-field
-        v-model="publicKey"
-        outlined
-        :disabled="disabled"
-        :label="t('eth2_input.public_key')"
-      />
-    </v-col>
-    <v-col cols="12" md="2" lg="2">
-      <v-text-field
-        v-model="percentage"
-        outlined
-        :rules="percentageRules"
-        placeholder="100"
-        :label="t('eth2_input.ownership_percentage')"
-        persistent-hint
-        :hint="t('eth2_input.ownership.hint')"
-        suffix="%"
-      />
-    </v-col>
-  </v-row>
-</template>
-
 <script setup lang="ts">
 import { onlyIfTruthy } from '@rotki/common';
 import { type PropType } from 'vue';
@@ -95,3 +61,37 @@ const percentageRules = computed(() => [
     !v || isValid(v) || t('eth2_input.ownership.validation').toString()
 ]);
 </script>
+
+<template>
+  <v-row>
+    <v-col cols="12" md="4" lg="2">
+      <v-text-field
+        v-model="validatorIndex"
+        outlined
+        type="number"
+        :disabled="disabled"
+        :label="t('eth2_input.validator_index')"
+      />
+    </v-col>
+    <v-col cols="12" md="6" lg="8">
+      <v-text-field
+        v-model="publicKey"
+        outlined
+        :disabled="disabled"
+        :label="t('eth2_input.public_key')"
+      />
+    </v-col>
+    <v-col cols="12" md="2" lg="2">
+      <v-text-field
+        v-model="percentage"
+        outlined
+        :rules="percentageRules"
+        placeholder="100"
+        :label="t('eth2_input.ownership_percentage')"
+        persistent-hint
+        :hint="t('eth2_input.ownership.hint')"
+        suffix="%"
+      />
+    </v-col>
+  </v-row>
+</template>

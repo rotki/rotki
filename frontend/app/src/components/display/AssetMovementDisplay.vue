@@ -1,3 +1,19 @@
+<script setup lang="ts">
+import { type PropType } from 'vue';
+import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
+import { type AssetMovement } from '@/types/defi';
+
+defineProps({
+  movement: { required: true, type: Object as PropType<AssetMovement> },
+  gainLoss: { required: false, type: Boolean, default: false }
+});
+
+const { breakpoint, isMobile } = useTheme();
+const small = computed(
+  () => !(['xs', 'sm'].includes(get(breakpoint)) || get(isMobile))
+);
+</script>
+
 <template>
   <v-row
     align="center"
@@ -33,22 +49,6 @@
     </v-col>
   </v-row>
 </template>
-
-<script setup lang="ts">
-import { type PropType } from 'vue';
-import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
-import { type AssetMovement } from '@/types/defi';
-
-defineProps({
-  movement: { required: true, type: Object as PropType<AssetMovement> },
-  gainLoss: { required: false, type: Boolean, default: false }
-});
-
-const { breakpoint, isMobile } = useTheme();
-const small = computed(
-  () => !(['xs', 'sm'].includes(get(breakpoint)) || get(isMobile))
-);
-</script>
 
 <style module lang="scss">
 .row {

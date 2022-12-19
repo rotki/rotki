@@ -1,24 +1,3 @@
-<template>
-  <div v-if="needRefresh">
-    <v-dialog :value="true" persistent max-width="500">
-      <card>
-        <div class="pt-5 text-center">
-          {{ t('update_notifier.update_available') }}
-          <v-btn
-            depressed
-            class="ml-6"
-            color="primary"
-            :loading="updating"
-            @click="update"
-          >
-            {{ t('common.actions.update') }}
-          </v-btn>
-        </div>
-      </card>
-    </v-dialog>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { logger } from '@/utils/logging';
 
@@ -79,3 +58,24 @@ const update = async () => {
 
 const { t } = useI18n();
 </script>
+
+<template>
+  <div v-if="needRefresh">
+    <v-dialog :value="true" persistent max-width="500">
+      <card>
+        <div class="pt-5 text-center">
+          {{ t('update_notifier.update_available') }}
+          <v-btn
+            depressed
+            class="ml-6"
+            color="primary"
+            :loading="updating"
+            @click="update"
+          >
+            {{ t('common.actions.update') }}
+          </v-btn>
+        </div>
+      </card>
+    </v-dialog>
+  </div>
+</template>

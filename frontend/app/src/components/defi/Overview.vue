@@ -1,3 +1,43 @@
+<script setup lang="ts">
+import { type PropType } from 'vue';
+import DefiAsset from '@/components/defi/DefiAsset.vue';
+import InfoRow from '@/components/defi/display/InfoRow.vue';
+import StatCard from '@/components/display/StatCard.vue';
+import { type DefiProtocolSummary } from '@/types/defi/overview';
+
+const props = defineProps({
+  summary: {
+    required: true,
+    type: Object as PropType<DefiProtocolSummary>
+  }
+});
+
+const details = ref(false);
+const { summary } = toRefs(props);
+const { tc } = useI18n();
+const icon = computed(() => {
+  const { protocol } = get(summary);
+  if (!protocol.icon) {
+    return '';
+  }
+  return `./assets/images/defi/${protocol.icon}`;
+});
+
+const assets = computed(() => {
+  const { assets } = get(summary);
+  return assets.sort(
+    ({ balance: { usdValue } }, { balance: { usdValue: otherUsdValue } }) => {
+      if (usdValue.eq(otherUsdValue)) {
+        return 0;
+      }
+      return usdValue.gt(otherUsdValue) ? -1 : 1;
+    }
+  );
+});
+
+const css = useCssModule();
+</script>
+
 <template>
   <stat-card
     v-if="!summary.balanceUsd"
@@ -99,46 +139,6 @@
     </div>
   </stat-card>
 </template>
-
-<script setup lang="ts">
-import { type PropType } from 'vue';
-import DefiAsset from '@/components/defi/DefiAsset.vue';
-import InfoRow from '@/components/defi/display/InfoRow.vue';
-import StatCard from '@/components/display/StatCard.vue';
-import { type DefiProtocolSummary } from '@/types/defi/overview';
-
-const props = defineProps({
-  summary: {
-    required: true,
-    type: Object as PropType<DefiProtocolSummary>
-  }
-});
-
-const details = ref(false);
-const { summary } = toRefs(props);
-const { tc } = useI18n();
-const icon = computed(() => {
-  const { protocol } = get(summary);
-  if (!protocol.icon) {
-    return '';
-  }
-  return `./assets/images/defi/${protocol.icon}`;
-});
-
-const assets = computed(() => {
-  const { assets } = get(summary);
-  return assets.sort(
-    ({ balance: { usdValue } }, { balance: { usdValue: otherUsdValue } }) => {
-      if (usdValue.eq(otherUsdValue)) {
-        return 0;
-      }
-      return usdValue.gt(otherUsdValue) ? -1 : 1;
-    }
-  );
-});
-
-const css = useCssModule();
-</script>
 
 <style module lang="scss">
 .overview {

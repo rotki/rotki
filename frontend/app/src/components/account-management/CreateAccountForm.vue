@@ -1,3 +1,128 @@
+<script setup lang="ts">
+import useVuelidate from '@vuelidate/core';
+import { helpers, required, sameAs } from '@vuelidate/validators';
+import { type Ref } from 'vue';
+import PremiumCredentials from '@/components/account-management/PremiumCredentials.vue';
+import ExternalLink from '@/components/helper/ExternalLink.vue';
+import RevealableInput from '@/components/inputs/RevealableInput.vue';
+import { useMainStore } from '@/store/main';
+import { type CreateAccountPayload } from '@/types/login';
+
+const props = defineProps({
+  loading: { required: true, type: Boolean },
+  error: { required: false, type: String, default: '' }
+});
+
+const emit = defineEmits<{
+  (e: 'confirm', payload: CreateAccountPayload): void;
+  (e: 'cancel'): void;
+  (e: 'error:clear'): void;
+}>();
+const { error } = toRefs(props);
+
+const store = useMainStore();
+const { newUser } = toRefs(store);
+const username: Ref<string> = ref('');
+const password: Ref<string> = ref('');
+const passwordConfirm: Ref<string> = ref('');
+
+const premiumEnabled: Ref<boolean> = ref(false);
+const userPrompted: Ref<boolean> = ref(false);
+
+const submitUsageAnalytics: Ref<boolean> = ref(true);
+const apiKey: Ref<string> = ref('');
+const apiSecret: Ref<string> = ref('');
+const syncDatabase: Ref<boolean> = ref(false);
+
+const premiumFormValid: Ref<boolean> = ref(false);
+const credentialsFormValid: Ref<boolean> = ref(false);
+const step: Ref<number> = ref(1);
+
+const form: Ref<any> = ref(null);
+
+const { tc } = useI18n();
+
+const rules = {
+  username: {
+    required: helpers.withMessage(
+      tc('create_account.select_credentials.validation.non_empty_username'),
+      required
+    ),
+    isValidUsername: helpers.withMessage(
+      tc('create_account.select_credentials.validation.valid_username'),
+      (v: string): boolean => !!(v && /^[\w.-]+$/.test(v))
+    )
+  },
+  password: {
+    required: helpers.withMessage(
+      tc('create_account.select_credentials.validation.non_empty_password'),
+      required
+    )
+  },
+  passwordConfirm: {
+    required: helpers.withMessage(
+      tc(
+        'create_account.select_credentials.validation.non_empty_password_confirmation'
+      ),
+      required
+    ),
+    isMatch: helpers.withMessage(
+      tc(
+        'create_account.select_credentials.validation.password_confirmation_mismatch'
+      ),
+      sameAs(password)
+    )
+  }
+};
+
+const v$ = useVuelidate(
+  rules,
+  {
+    username,
+    password,
+    passwordConfirm
+  },
+  {
+    $autoDirty: true
+  }
+);
+
+watch(v$, ({ $invalid }) => {
+  set(credentialsFormValid, !$invalid);
+});
+
+const confirm = () => {
+  const payload: CreateAccountPayload = {
+    credentials: {
+      username: get(username),
+      password: get(password)
+    }
+  };
+
+  if (get(premiumEnabled)) {
+    payload.premiumSetup = {
+      apiKey: get(apiKey),
+      apiSecret: get(apiSecret),
+      submitUsageAnalytics: get(submitUsageAnalytics),
+      syncDatabase: get(syncDatabase)
+    };
+  }
+
+  emit('confirm', payload);
+};
+
+const cancel = () => emit('cancel');
+
+const errorClear = () => emit('error:clear');
+
+const back = () => {
+  set(step, Math.max(get(step) - 1, 1));
+  if (get(error)) {
+    errorClear();
+  }
+};
+</script>
+
 <template>
   <v-slide-y-transition>
     <div class="create-account">
@@ -261,131 +386,6 @@
     </div>
   </v-slide-y-transition>
 </template>
-
-<script setup lang="ts">
-import useVuelidate from '@vuelidate/core';
-import { helpers, required, sameAs } from '@vuelidate/validators';
-import { type Ref } from 'vue';
-import PremiumCredentials from '@/components/account-management/PremiumCredentials.vue';
-import ExternalLink from '@/components/helper/ExternalLink.vue';
-import RevealableInput from '@/components/inputs/RevealableInput.vue';
-import { useMainStore } from '@/store/main';
-import { type CreateAccountPayload } from '@/types/login';
-
-const props = defineProps({
-  loading: { required: true, type: Boolean },
-  error: { required: false, type: String, default: '' }
-});
-
-const emit = defineEmits<{
-  (e: 'confirm', payload: CreateAccountPayload): void;
-  (e: 'cancel'): void;
-  (e: 'error:clear'): void;
-}>();
-const { error } = toRefs(props);
-
-const store = useMainStore();
-const { newUser } = toRefs(store);
-const username: Ref<string> = ref('');
-const password: Ref<string> = ref('');
-const passwordConfirm: Ref<string> = ref('');
-
-const premiumEnabled: Ref<boolean> = ref(false);
-const userPrompted: Ref<boolean> = ref(false);
-
-const submitUsageAnalytics: Ref<boolean> = ref(true);
-const apiKey: Ref<string> = ref('');
-const apiSecret: Ref<string> = ref('');
-const syncDatabase: Ref<boolean> = ref(false);
-
-const premiumFormValid: Ref<boolean> = ref(false);
-const credentialsFormValid: Ref<boolean> = ref(false);
-const step: Ref<number> = ref(1);
-
-const form: Ref<any> = ref(null);
-
-const { tc } = useI18n();
-
-const rules = {
-  username: {
-    required: helpers.withMessage(
-      tc('create_account.select_credentials.validation.non_empty_username'),
-      required
-    ),
-    isValidUsername: helpers.withMessage(
-      tc('create_account.select_credentials.validation.valid_username'),
-      (v: string): boolean => !!(v && /^[\w.-]+$/.test(v))
-    )
-  },
-  password: {
-    required: helpers.withMessage(
-      tc('create_account.select_credentials.validation.non_empty_password'),
-      required
-    )
-  },
-  passwordConfirm: {
-    required: helpers.withMessage(
-      tc(
-        'create_account.select_credentials.validation.non_empty_password_confirmation'
-      ),
-      required
-    ),
-    isMatch: helpers.withMessage(
-      tc(
-        'create_account.select_credentials.validation.password_confirmation_mismatch'
-      ),
-      sameAs(password)
-    )
-  }
-};
-
-const v$ = useVuelidate(
-  rules,
-  {
-    username,
-    password,
-    passwordConfirm
-  },
-  {
-    $autoDirty: true
-  }
-);
-
-watch(v$, ({ $invalid }) => {
-  set(credentialsFormValid, !$invalid);
-});
-
-const confirm = () => {
-  const payload: CreateAccountPayload = {
-    credentials: {
-      username: get(username),
-      password: get(password)
-    }
-  };
-
-  if (get(premiumEnabled)) {
-    payload.premiumSetup = {
-      apiKey: get(apiKey),
-      apiSecret: get(apiSecret),
-      submitUsageAnalytics: get(submitUsageAnalytics),
-      syncDatabase: get(syncDatabase)
-    };
-  }
-
-  emit('confirm', payload);
-};
-
-const cancel = () => emit('cancel');
-
-const errorClear = () => emit('error:clear');
-
-const back = () => {
-  set(step, Math.max(get(step) - 1, 1));
-  if (get(error)) {
-    errorClear();
-  }
-};
-</script>
 
 <style scoped lang="scss">
 .create-account {

@@ -1,30 +1,3 @@
-<template>
-  <v-form :value="value" class="pt-4">
-    <div class="mb-4">
-      <location-selector
-        :value="form.location"
-        :excludes="excludedLocations"
-        outlined
-        :label="tc('common.location')"
-        :error-messages="v$.location.$errors.map(e => e.$message)"
-        @input="updateForm({ location: getLocation($event) })"
-      />
-    </div>
-    <div class="mb-4">
-      <amount-input
-        :value="form.usdValue"
-        outlined
-        :label="
-          tc('common.value_in_symbol', 0, {
-            symbol: currencySymbol
-          })
-        "
-        :error-messages="v$.value.$errors.map(e => e.$message)"
-        @input="updateForm({ usdValue: $event })"
-      />
-    </div>
-  </v-form>
-</template>
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
@@ -101,3 +74,30 @@ watch(v$, ({ $invalid }) => {
   input(!$invalid);
 });
 </script>
+<template>
+  <v-form :value="value" class="pt-4">
+    <div class="mb-4">
+      <location-selector
+        :value="form.location"
+        :excludes="excludedLocations"
+        outlined
+        :label="tc('common.location')"
+        :error-messages="v$.location.$errors.map(e => e.$message)"
+        @input="updateForm({ location: getLocation($event) })"
+      />
+    </div>
+    <div class="mb-4">
+      <amount-input
+        :value="form.usdValue"
+        outlined
+        :label="
+          tc('common.value_in_symbol', 0, {
+            symbol: currencySymbol
+          })
+        "
+        :error-messages="v$.value.$errors.map(e => e.$message)"
+        @input="updateForm({ usdValue: $event })"
+      />
+    </div>
+  </v-form>
+</template>

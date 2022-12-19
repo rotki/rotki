@@ -1,3 +1,29 @@
+<script setup lang="ts">
+import PremiumLock from '@/components/premium/PremiumLock.vue';
+import { assert } from '@/utils/assertions';
+
+const props = defineProps({
+  locked: { required: false, type: Boolean, default: false },
+  loading: { required: false, type: Boolean, default: false },
+  cols: { required: false, type: Number, default: 3 }
+});
+
+const { cols } = toRefs(props);
+const colsSize = {
+  2: 6,
+  3: 4,
+  4: 3
+};
+
+const { currentBreakpoint } = useTheme();
+
+const size = computed(() => {
+  const colNum = get(cols);
+  assert(colNum === 2 || colNum === 3 || colNum === 4);
+  return colsSize[colNum];
+});
+</script>
+
 <template>
   <v-card class="stat-card-wide" :loading="!locked && loading">
     <v-row v-if="!locked" no-gutters>
@@ -42,32 +68,6 @@
     </v-row>
   </v-card>
 </template>
-
-<script setup lang="ts">
-import PremiumLock from '@/components/premium/PremiumLock.vue';
-import { assert } from '@/utils/assertions';
-
-const props = defineProps({
-  locked: { required: false, type: Boolean, default: false },
-  loading: { required: false, type: Boolean, default: false },
-  cols: { required: false, type: Number, default: 3 }
-});
-
-const { cols } = toRefs(props);
-const colsSize = {
-  2: 6,
-  3: 4,
-  4: 3
-};
-
-const { currentBreakpoint } = useTheme();
-
-const size = computed(() => {
-  const colNum = get(cols);
-  assert(colNum === 2 || colNum === 3 || colNum === 4);
-  return colsSize[colNum];
-});
-</script>
 
 <style scoped lang="scss">
 .stat-card-wide {

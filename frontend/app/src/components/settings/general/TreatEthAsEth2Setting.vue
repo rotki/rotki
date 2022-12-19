@@ -1,3 +1,16 @@
+<script setup lang="ts">
+import { useGeneralSettingsStore } from '@/store/settings/general';
+
+const treatEth2asEth = ref<boolean>(false);
+const { treatEth2AsEth: enabled } = storeToRefs(useGeneralSettingsStore());
+
+onMounted(() => {
+  set(treatEth2asEth, get(enabled));
+});
+
+const { tc } = useI18n();
+</script>
+
 <template>
   <settings-option
     #default="{ error, success, update }"
@@ -15,16 +28,3 @@
     />
   </settings-option>
 </template>
-
-<script setup lang="ts">
-import { useGeneralSettingsStore } from '@/store/settings/general';
-
-const treatEth2asEth = ref<boolean>(false);
-const { treatEth2AsEth: enabled } = storeToRefs(useGeneralSettingsStore());
-
-onMounted(() => {
-  set(treatEth2asEth, get(enabled));
-});
-
-const { tc } = useI18n();
-</script>

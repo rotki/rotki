@@ -1,33 +1,3 @@
-<template>
-  <card v-if="vaults.length > 0" outlined-body>
-    <template #title>
-      {{ t('yearn_asset_table.title') }}
-    </template>
-    <data-table
-      :headers="headers"
-      :items="vaults"
-      sort-by="roi"
-      :loading="loading"
-    >
-      <template #item.version="{ item }">
-        {{ item.version }}
-      </template>
-      <template #item.underlyingValue.usdValue="{ item }">
-        <balance-display
-          :asset="item.underlyingToken"
-          :value="item.underlyingValue"
-        />
-      </template>
-      <template #item.vaultValue.usdValue="{ item }">
-        <balance-display :asset="item.vaultToken" :value="item.vaultValue" />
-      </template>
-      <template #item.roi="{ item }">
-        <percentage-display :value="item.roi" />
-      </template>
-    </data-table>
-  </card>
-</template>
-
 <script setup lang="ts">
 import { type PropType } from 'vue';
 import { type DataTableHeader } from 'vuetify';
@@ -90,3 +60,33 @@ const vaults = computed(() => {
   return [...v1Assets, ...v2Assets];
 });
 </script>
+
+<template>
+  <card v-if="vaults.length > 0" outlined-body>
+    <template #title>
+      {{ t('yearn_asset_table.title') }}
+    </template>
+    <data-table
+      :headers="headers"
+      :items="vaults"
+      sort-by="roi"
+      :loading="loading"
+    >
+      <template #item.version="{ item }">
+        {{ item.version }}
+      </template>
+      <template #item.underlyingValue.usdValue="{ item }">
+        <balance-display
+          :asset="item.underlyingToken"
+          :value="item.underlyingValue"
+        />
+      </template>
+      <template #item.vaultValue.usdValue="{ item }">
+        <balance-display :asset="item.vaultToken" :value="item.vaultValue" />
+      </template>
+      <template #item.roi="{ item }">
+        <percentage-display :value="item.roi" />
+      </template>
+    </data-table>
+  </card>
+</template>

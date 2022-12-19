@@ -1,94 +1,3 @@
-<template>
-  <fragment>
-    <v-row>
-      <v-col>
-        <div
-          class="text-h6"
-          v-text="t('timeframe_settings.default_timeframe')"
-        />
-        <div
-          class="text-subtitle-1"
-          v-text="t('timeframe_settings.default_timeframe_description')"
-        />
-      </v-col>
-    </v-row>
-    <v-row align="center" justify="center">
-      <v-col>
-        <v-card class="pa-4" outlined>
-          <div>
-            <div class="text-subtitle-1">
-              {{ t('timeframe_settings.visible_timeframes') }}
-            </div>
-
-            <div class="timeframe-settings">
-              <v-tooltip v-if="!premium" top>
-                <template #activator="{ on, attrs }">
-                  <v-icon small v-bind="attrs" v-on="on"> mdi-lock </v-icon>
-                </template>
-                <span v-text="t('overall_balances.premium_hint')" />
-              </v-tooltip>
-
-              <v-chip
-                v-for="(timeframe, i) in appendedVisibleTimeframes"
-                :key="i"
-                :class="chipClass(timeframe)"
-                class="ma-2"
-                small
-                :close="
-                  isTimeframesToggleable(timeframe) &&
-                  !isTimeframeDisabled(timeframe) &&
-                  selectableTimeframes.length > 1
-                "
-                :disabled="isTimeframeDisabled(timeframe)"
-                @click:close="removeVisibleTimeframe(timeframe)"
-                @click="timeframeChange(timeframe)"
-              >
-                {{ timeframe }}
-              </v-chip>
-            </div>
-          </div>
-
-          <template v-if="invisibleTimeframes.length > 0">
-            <v-divider class="my-4" />
-
-            <div>
-              <div class="text-subtitle-1">
-                {{ t('timeframe_settings.inactive_timeframes') }}
-              </div>
-              <div class="timeframe-settings">
-                <v-chip
-                  v-for="(timeframe, i) in invisibleTimeframes"
-                  :key="i"
-                  class="ma-2"
-                  small
-                  close-icon="mdi-plus"
-                  :close="isTimeframesToggleable(timeframe)"
-                  :disabled="isTimeframeDisabled(timeframe)"
-                  @click:close="addVisibleTimeframe(timeframe)"
-                  @click="addVisibleTimeframe(timeframe)"
-                >
-                  {{ timeframe }}
-                </v-chip>
-              </div>
-            </div>
-          </template>
-        </v-card>
-      </v-col>
-    </v-row>
-    <v-row no-gutters>
-      <v-col
-        :class="{
-          'success--text': !!message.success,
-          'error--text': !!message.error
-        }"
-        class="text-subtitle-2 message"
-      >
-        <div v-if="text" v-text="text" />
-      </v-col>
-    </v-row>
-  </fragment>
-</template>
-
 <script setup lang="ts">
 import {
   TimeFramePeriod,
@@ -223,6 +132,97 @@ const removeVisibleTimeframe = async (timeframe: TimeFrameSetting) => {
   );
 };
 </script>
+
+<template>
+  <fragment>
+    <v-row>
+      <v-col>
+        <div
+          class="text-h6"
+          v-text="t('timeframe_settings.default_timeframe')"
+        />
+        <div
+          class="text-subtitle-1"
+          v-text="t('timeframe_settings.default_timeframe_description')"
+        />
+      </v-col>
+    </v-row>
+    <v-row align="center" justify="center">
+      <v-col>
+        <v-card class="pa-4" outlined>
+          <div>
+            <div class="text-subtitle-1">
+              {{ t('timeframe_settings.visible_timeframes') }}
+            </div>
+
+            <div class="timeframe-settings">
+              <v-tooltip v-if="!premium" top>
+                <template #activator="{ on, attrs }">
+                  <v-icon small v-bind="attrs" v-on="on"> mdi-lock </v-icon>
+                </template>
+                <span v-text="t('overall_balances.premium_hint')" />
+              </v-tooltip>
+
+              <v-chip
+                v-for="(timeframe, i) in appendedVisibleTimeframes"
+                :key="i"
+                :class="chipClass(timeframe)"
+                class="ma-2"
+                small
+                :close="
+                  isTimeframesToggleable(timeframe) &&
+                  !isTimeframeDisabled(timeframe) &&
+                  selectableTimeframes.length > 1
+                "
+                :disabled="isTimeframeDisabled(timeframe)"
+                @click:close="removeVisibleTimeframe(timeframe)"
+                @click="timeframeChange(timeframe)"
+              >
+                {{ timeframe }}
+              </v-chip>
+            </div>
+          </div>
+
+          <template v-if="invisibleTimeframes.length > 0">
+            <v-divider class="my-4" />
+
+            <div>
+              <div class="text-subtitle-1">
+                {{ t('timeframe_settings.inactive_timeframes') }}
+              </div>
+              <div class="timeframe-settings">
+                <v-chip
+                  v-for="(timeframe, i) in invisibleTimeframes"
+                  :key="i"
+                  class="ma-2"
+                  small
+                  close-icon="mdi-plus"
+                  :close="isTimeframesToggleable(timeframe)"
+                  :disabled="isTimeframeDisabled(timeframe)"
+                  @click:close="addVisibleTimeframe(timeframe)"
+                  @click="addVisibleTimeframe(timeframe)"
+                >
+                  {{ timeframe }}
+                </v-chip>
+              </div>
+            </div>
+          </template>
+        </v-card>
+      </v-col>
+    </v-row>
+    <v-row no-gutters>
+      <v-col
+        :class="{
+          'success--text': !!message.success,
+          'error--text': !!message.error
+        }"
+        class="text-subtitle-2 message"
+      >
+        <div v-if="text" v-text="text" />
+      </v-col>
+    </v-row>
+  </fragment>
+</template>
 
 <style scoped lang="scss">
 .timeframe-settings {

@@ -1,3 +1,71 @@
+<script setup lang="ts">
+import RevealableInput from '@/components/inputs/RevealableInput.vue';
+import { trimOnPaste } from '@/utils/event';
+
+const props = defineProps({
+  value: { required: true, type: String },
+  title: { required: true, type: String },
+  description: { required: false, type: String, default: '' },
+  loading: { required: false, type: Boolean, default: false },
+  tooltip: { required: false, type: String, default: '' },
+  hint: { required: false, type: String, default: '' },
+  label: { required: false, type: String, default: '' }
+});
+
+const emit = defineEmits(['input', 'delete-key', 'save']);
+
+const { t } = useI18n();
+const { value } = toRefs(props);
+
+const deleteKey = () => emit('delete-key');
+const save = (value: string) => emit('save', value);
+
+const currentValue = ref<string | null>(null);
+const editMode = ref<boolean>(false);
+const cancellable = ref<boolean>(false);
+
+const onPaste = (event: ClipboardEvent) => {
+  const paste = trimOnPaste(event);
+  if (paste) {
+    set(currentValue, paste);
+  }
+};
+
+const updateStatus = () => {
+  if (!get(value)) {
+    set(cancellable, false);
+    set(editMode, true);
+  } else {
+    set(cancellable, true);
+    set(editMode, false);
+  }
+  set(currentValue, get(value));
+};
+
+const saveHandler = () => {
+  if (get(editMode)) {
+    save(get(currentValue)!);
+    set(editMode, false);
+    set(cancellable, true);
+  } else {
+    set(editMode, true);
+  }
+};
+
+const cancel = () => {
+  set(editMode, false);
+  set(currentValue, get(value));
+};
+
+onMounted(() => {
+  updateStatus();
+});
+
+watch(value, () => {
+  updateStatus();
+});
+</script>
+
 <template>
   <v-card flat>
     <v-card-title>
@@ -69,74 +137,6 @@
     </v-card-actions>
   </v-card>
 </template>
-
-<script setup lang="ts">
-import RevealableInput from '@/components/inputs/RevealableInput.vue';
-import { trimOnPaste } from '@/utils/event';
-
-const props = defineProps({
-  value: { required: true, type: String },
-  title: { required: true, type: String },
-  description: { required: false, type: String, default: '' },
-  loading: { required: false, type: Boolean, default: false },
-  tooltip: { required: false, type: String, default: '' },
-  hint: { required: false, type: String, default: '' },
-  label: { required: false, type: String, default: '' }
-});
-
-const emit = defineEmits(['input', 'delete-key', 'save']);
-
-const { t } = useI18n();
-const { value } = toRefs(props);
-
-const deleteKey = () => emit('delete-key');
-const save = (value: string) => emit('save', value);
-
-const currentValue = ref<string | null>(null);
-const editMode = ref<boolean>(false);
-const cancellable = ref<boolean>(false);
-
-const onPaste = (event: ClipboardEvent) => {
-  const paste = trimOnPaste(event);
-  if (paste) {
-    set(currentValue, paste);
-  }
-};
-
-const updateStatus = () => {
-  if (!get(value)) {
-    set(cancellable, false);
-    set(editMode, true);
-  } else {
-    set(cancellable, true);
-    set(editMode, false);
-  }
-  set(currentValue, get(value));
-};
-
-const saveHandler = () => {
-  if (get(editMode)) {
-    save(get(currentValue)!);
-    set(editMode, false);
-    set(cancellable, true);
-  } else {
-    set(editMode, true);
-  }
-};
-
-const cancel = () => {
-  set(editMode, false);
-  set(currentValue, get(value));
-};
-
-onMounted(() => {
-  updateStatus();
-});
-
-watch(value, () => {
-  updateStatus();
-});
-</script>
 
 <style scoped lang="scss">
 .service-key {

@@ -1,3 +1,32 @@
+<script setup lang="ts">
+import { type BigNumber } from '@rotki/common';
+import RoundingSelector from '@/components/settings/explorers/RoundingSelector.vue';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { type RoundingMode } from '@/types/frontend-settings';
+import { bigNumberify } from '@/utils/bignumbers';
+
+const frontendSettingsStore = useFrontendSettingsStore();
+const { amountRoundingMode, valueRoundingMode } = storeToRefs(
+  frontendSettingsStore
+);
+
+const numberExample: BigNumber = bigNumberify(0.0815);
+
+const setAmountRoundingMode = async (mode: RoundingMode) => {
+  await frontendSettingsStore.updateSetting({
+    amountRoundingMode: mode
+  });
+};
+
+const setValueRoundingMode = async (mode: RoundingMode) => {
+  await frontendSettingsStore.updateSetting({
+    valueRoundingMode: mode
+  });
+};
+
+const { t } = useI18n();
+</script>
+
 <template>
   <div class="rounding-settings mt-8">
     <div class="text-h6">
@@ -34,32 +63,3 @@
     </v-row>
   </div>
 </template>
-
-<script setup lang="ts">
-import { type BigNumber } from '@rotki/common';
-import RoundingSelector from '@/components/settings/explorers/RoundingSelector.vue';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { type RoundingMode } from '@/types/frontend-settings';
-import { bigNumberify } from '@/utils/bignumbers';
-
-const frontendSettingsStore = useFrontendSettingsStore();
-const { amountRoundingMode, valueRoundingMode } = storeToRefs(
-  frontendSettingsStore
-);
-
-const numberExample: BigNumber = bigNumberify(0.0815);
-
-const setAmountRoundingMode = async (mode: RoundingMode) => {
-  await frontendSettingsStore.updateSetting({
-    amountRoundingMode: mode
-  });
-};
-
-const setValueRoundingMode = async (mode: RoundingMode) => {
-  await frontendSettingsStore.updateSetting({
-    valueRoundingMode: mode
-  });
-};
-
-const { t } = useI18n();
-</script>

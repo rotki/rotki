@@ -1,9 +1,3 @@
-<template>
-  <badge-display>
-    {{ event }}
-  </badge-display>
-</template>
-
 <script setup lang="ts">
 import { type PropType } from 'vue';
 import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
@@ -18,3 +12,9 @@ const event = computed<string>(() => {
   return get(eventType) === 'comp' ? 'comp claimed' : get(eventType);
 });
 </script>
+
+<template>
+  <badge-display>
+    {{ event }}
+  </badge-display>
+</template>

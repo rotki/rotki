@@ -1,79 +1,3 @@
-<template>
-  <div class="exchange-settings" data-cy="exchanges">
-    <card outlined-body>
-      <template #title>
-        {{ tc('exchange_settings.title') }}
-      </template>
-      <template #subtitle>
-        <i18n path="exchange_settings.subtitle" tag="div">
-          <base-external-link
-            :text="tc('exchange_settings.usage_guide')"
-            :href="usageGuideURL + '#adding-an-exchange'"
-          />
-        </i18n>
-      </template>
-      <v-btn
-        absolute
-        fab
-        top
-        right
-        color="primary"
-        data-cy="add-exchange"
-        @click="addExchange()"
-      >
-        <v-icon> mdi-plus </v-icon>
-      </v-btn>
-      <data-table
-        key="index"
-        data-cy="exchange-table"
-        :items="connectedExchanges"
-        :headers="headers"
-        sort-by="name"
-      >
-        <template #item.location="{ item }">
-          <location-display :identifier="item.location" />
-        </template>
-        <template #item.syncEnabled="{ item }">
-          <v-switch
-            :input-value="!isNonSyncExchange(item)"
-            @change="toggleSync(item)"
-          />
-        </template>
-        <template #item.actions="{ item }">
-          <row-actions
-            :delete-tooltip="tc('exchange_settings.delete.tooltip')"
-            :edit-tooltip="tc('exchange_settings.edit.tooltip')"
-            @delete-click="showRemoveConfirmation(item)"
-            @edit-click="editExchange(item)"
-          />
-        </template>
-      </data-table>
-    </card>
-
-    <big-dialog
-      :display="showForm"
-      :title="
-        edit
-          ? tc('exchange_settings.dialog.edit.title')
-          : tc('exchange_settings.dialog.add.title')
-      "
-      :primary-action="tc('common.actions.save')"
-      :secondary-action="tc('common.actions.cancel')"
-      :action-disabled="!valid || pending"
-      :loading="pending"
-      @confirm="setup"
-      @cancel="cancel"
-    >
-      <exchange-keys-form
-        v-model="valid"
-        :exchange="exchange"
-        :edit="edit"
-        @update:exchange="exchange = $event"
-      />
-    </big-dialog>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { type DataTableHeader } from 'vuetify';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
@@ -283,6 +207,82 @@ const showRemoveConfirmation = (item: Exchange) => {
   );
 };
 </script>
+
+<template>
+  <div class="exchange-settings" data-cy="exchanges">
+    <card outlined-body>
+      <template #title>
+        {{ tc('exchange_settings.title') }}
+      </template>
+      <template #subtitle>
+        <i18n path="exchange_settings.subtitle" tag="div">
+          <base-external-link
+            :text="tc('exchange_settings.usage_guide')"
+            :href="usageGuideURL + '#adding-an-exchange'"
+          />
+        </i18n>
+      </template>
+      <v-btn
+        absolute
+        fab
+        top
+        right
+        color="primary"
+        data-cy="add-exchange"
+        @click="addExchange()"
+      >
+        <v-icon> mdi-plus </v-icon>
+      </v-btn>
+      <data-table
+        key="index"
+        data-cy="exchange-table"
+        :items="connectedExchanges"
+        :headers="headers"
+        sort-by="name"
+      >
+        <template #item.location="{ item }">
+          <location-display :identifier="item.location" />
+        </template>
+        <template #item.syncEnabled="{ item }">
+          <v-switch
+            :input-value="!isNonSyncExchange(item)"
+            @change="toggleSync(item)"
+          />
+        </template>
+        <template #item.actions="{ item }">
+          <row-actions
+            :delete-tooltip="tc('exchange_settings.delete.tooltip')"
+            :edit-tooltip="tc('exchange_settings.edit.tooltip')"
+            @delete-click="showRemoveConfirmation(item)"
+            @edit-click="editExchange(item)"
+          />
+        </template>
+      </data-table>
+    </card>
+
+    <big-dialog
+      :display="showForm"
+      :title="
+        edit
+          ? tc('exchange_settings.dialog.edit.title')
+          : tc('exchange_settings.dialog.add.title')
+      "
+      :primary-action="tc('common.actions.save')"
+      :secondary-action="tc('common.actions.cancel')"
+      :action-disabled="!valid || pending"
+      :loading="pending"
+      @confirm="setup"
+      @cancel="cancel"
+    >
+      <exchange-keys-form
+        v-model="valid"
+        :exchange="exchange"
+        :edit="edit"
+        @update:exchange="exchange = $event"
+      />
+    </big-dialog>
+  </div>
+</template>
 
 <style scoped lang="scss">
 .exchange-settings {

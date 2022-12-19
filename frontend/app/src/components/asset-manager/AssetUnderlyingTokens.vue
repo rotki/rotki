@@ -1,3 +1,21 @@
+<script setup lang="ts">
+import { type SupportedAsset } from '@rotki/common/lib/data';
+import { type PropType } from 'vue';
+
+defineProps({
+  cols: {
+    required: true,
+    type: Number
+  },
+  asset: {
+    required: true,
+    type: Object as PropType<SupportedAsset>
+  }
+});
+
+const { tc } = useI18n();
+</script>
+
 <template>
   <table-expand-container visible :colspan="cols" :padded="false">
     <template #title>
@@ -29,21 +47,3 @@
     </v-simple-table>
   </table-expand-container>
 </template>
-
-<script setup lang="ts">
-import { type SupportedAsset } from '@rotki/common/lib/data';
-import { type PropType } from 'vue';
-
-defineProps({
-  cols: {
-    required: true,
-    type: Number
-  },
-  asset: {
-    required: true,
-    type: Object as PropType<SupportedAsset>
-  }
-});
-
-const { tc } = useI18n();
-</script>

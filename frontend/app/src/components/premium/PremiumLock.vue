@@ -1,3 +1,7 @@
+<script setup lang="ts">
+const { t } = useI18n();
+const { isPackaged, premiumURL, navigateToPremium } = useInterop();
+</script>
 <template>
   <v-tooltip top>
     <template #activator="{ on }">
@@ -16,7 +20,3 @@
     <span v-text="t('premium_lock.tooltip')" />
   </v-tooltip>
 </template>
-<script setup lang="ts">
-const { t } = useI18n();
-const { isPackaged, premiumURL, navigateToPremium } = useInterop();
-</script>

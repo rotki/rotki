@@ -1,3 +1,16 @@
+<script setup lang="ts">
+import { type PropType } from 'vue';
+import { type BaseMessage } from '@/types/messages';
+
+defineProps({
+  status: {
+    required: false,
+    type: Object as PropType<BaseMessage | null>,
+    default: null
+  }
+});
+</script>
+
 <template>
   <div
     v-if="status && (status.success || status.error)"
@@ -15,19 +28,6 @@
     </v-alert>
   </div>
 </template>
-
-<script setup lang="ts">
-import { type PropType } from 'vue';
-import { type BaseMessage } from '@/types/messages';
-
-defineProps({
-  status: {
-    required: false,
-    type: Object as PropType<BaseMessage | null>,
-    default: null
-  }
-});
-</script>
 
 <style scoped lang="scss">
 .action-status-indicator {

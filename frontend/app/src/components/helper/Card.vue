@@ -1,3 +1,42 @@
+<script setup lang="ts">
+import { useListeners } from 'vue';
+import CardTitle from '@/components/typography/CardTitle.vue';
+
+const props = defineProps({
+  outlinedBody: { required: false, type: Boolean, default: false },
+  contained: { required: false, type: Boolean, default: false },
+  noRadiusBottom: { required: false, type: Boolean, default: false },
+  fullHeight: { required: false, type: Boolean, default: false }
+});
+
+const rootAttrs = useAttrs();
+const rootListeners = useListeners();
+
+const { contained } = toRefs(props);
+const body = ref<HTMLDivElement | null>(null);
+const actions = ref<HTMLDivElement | null>(null);
+const top = ref(206);
+
+onMounted(() => {
+  setTimeout(() => {
+    set(top, get(body)?.getBoundingClientRect().top ?? 0);
+  }, 1000);
+});
+
+const bodyStyle = computed(() => {
+  if (!get(contained)) {
+    return null;
+  }
+  const bodyTop = get(top);
+  const actionsHeight = get(actions)?.getBoundingClientRect().height ?? 0;
+  const diff = bodyTop + actionsHeight;
+
+  return {
+    height: `calc(100vh - ${diff}px)`
+  };
+});
+</script>
+
 <template>
   <v-card
     v-bind="rootAttrs"
@@ -57,45 +96,6 @@
     </v-card-actions>
   </v-card>
 </template>
-
-<script setup lang="ts">
-import { useListeners } from 'vue';
-import CardTitle from '@/components/typography/CardTitle.vue';
-
-const props = defineProps({
-  outlinedBody: { required: false, type: Boolean, default: false },
-  contained: { required: false, type: Boolean, default: false },
-  noRadiusBottom: { required: false, type: Boolean, default: false },
-  fullHeight: { required: false, type: Boolean, default: false }
-});
-
-const rootAttrs = useAttrs();
-const rootListeners = useListeners();
-
-const { contained } = toRefs(props);
-const body = ref<HTMLDivElement | null>(null);
-const actions = ref<HTMLDivElement | null>(null);
-const top = ref(206);
-
-onMounted(() => {
-  setTimeout(() => {
-    set(top, get(body)?.getBoundingClientRect().top ?? 0);
-  }, 1000);
-});
-
-const bodyStyle = computed(() => {
-  if (!get(contained)) {
-    return null;
-  }
-  const bodyTop = get(top);
-  const actionsHeight = get(actions)?.getBoundingClientRect().height ?? 0;
-  const diff = bodyTop + actionsHeight;
-
-  return {
-    height: `calc(100vh - ${diff}px)`
-  };
-});
-</script>
 
 <style module lang="scss">
 .title {

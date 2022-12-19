@@ -1,39 +1,3 @@
-<template>
-  <v-row align="center">
-    <v-col cols="auto">
-      <v-btn icon :disabled="value === 1" @click="previousPage">
-        <v-icon>mdi-chevron-left</v-icon>
-      </v-btn>
-    </v-col>
-    <v-col cols="auto">
-      <div
-        :class="{
-          [$style.pages]: true,
-          [$style.light]: !dark,
-          [$style.dark]: dark
-        }"
-      >
-        <v-autocomplete
-          :items="items"
-          :value="value"
-          single-line
-          hide-details
-          dense
-          hide-no-data
-          outlined
-          @change="newPage"
-        />
-      </div>
-    </v-col>
-    <v-col cols="auto">{{ t('pagination.of', { length }) }}</v-col>
-    <v-col cols="auto">
-      <v-btn icon :disabled="value === length" @click="nextPage">
-        <v-icon>mdi-chevron-right</v-icon>
-      </v-btn>
-    </v-col>
-  </v-row>
-</template>
-
 <script setup lang="ts">
 const props = defineProps({
   value: {
@@ -88,6 +52,42 @@ const previousPage = () => {
 const { dark } = useTheme();
 const { t } = useI18n();
 </script>
+
+<template>
+  <v-row align="center">
+    <v-col cols="auto">
+      <v-btn icon :disabled="value === 1" @click="previousPage">
+        <v-icon>mdi-chevron-left</v-icon>
+      </v-btn>
+    </v-col>
+    <v-col cols="auto">
+      <div
+        :class="{
+          [$style.pages]: true,
+          [$style.light]: !dark,
+          [$style.dark]: dark
+        }"
+      >
+        <v-autocomplete
+          :items="items"
+          :value="value"
+          single-line
+          hide-details
+          dense
+          hide-no-data
+          outlined
+          @change="newPage"
+        />
+      </div>
+    </v-col>
+    <v-col cols="auto">{{ t('pagination.of', { length }) }}</v-col>
+    <v-col cols="auto">
+      <v-btn icon :disabled="value === length" @click="nextPage">
+        <v-icon>mdi-chevron-right</v-icon>
+      </v-btn>
+    </v-col>
+  </v-row>
+</template>
 
 <style module lang="scss">
 .pages {

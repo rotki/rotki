@@ -1,3 +1,167 @@
+<script setup lang="ts">
+import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
+import DateDisplay from '@/components/display/DateDisplay.vue';
+import Fragment from '@/components/helper/Fragment';
+import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
+import FileUpload from '@/components/import/FileUpload.vue';
+import SyncButtons from '@/components/status/sync/SyncButtons.vue';
+
+import { useSnapshotApi } from '@/services/settings/snapshot-api';
+import {
+  SYNC_DOWNLOAD,
+  SYNC_UPLOAD,
+  type SyncAction
+} from '@/services/types-api';
+import { useBalancesStore } from '@/store/balances';
+import { type AllBalancePayload } from '@/store/balances/types';
+import { useMessageStore } from '@/store/message';
+import { useSessionStore } from '@/store/session';
+import { usePeriodicStore } from '@/store/session/periodic';
+import { useSyncStoreStore } from '@/store/session/sync-store';
+import { useTasks } from '@/store/tasks';
+import { type Writeable } from '@/types';
+import { TaskType } from '@/types/task-type';
+import { startPromise } from '@/utils';
+
+const { t, tc } = useI18n();
+const { logout } = useSessionStore();
+const { lastBalanceSave, lastDataUpload } = storeToRefs(usePeriodicStore());
+const { forceSync } = useSyncStoreStore();
+
+const { fetchBalances } = useBalancesStore();
+const { currentBreakpoint } = useTheme();
+const premium = usePremium();
+const { appSession } = useInterop();
+
+const pending = ref<boolean>(false);
+const confirmChecked = ref<boolean>(false);
+const ignoreErrors = ref<boolean>(false);
+const visible = ref<boolean>(false);
+const syncAction = ref<SyncAction>(SYNC_UPLOAD);
+const displayConfirmation = ref<boolean>(false);
+const balanceSnapshotUploader = ref<any>(null);
+const balanceSnapshotFile = ref<File | null>(null);
+const locationDataSnapshotUploader = ref<any>(null);
+const locationDataSnapshotFile = ref<File | null>(null);
+const importSnapshotLoading = ref<boolean>(false);
+const importSnapshotDialog = ref<boolean>(false);
+
+const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
+
+const isDownload = computed<boolean>(() => get(syncAction) === SYNC_DOWNLOAD);
+const textChoice = computed<number>(() =>
+  get(syncAction) === SYNC_UPLOAD ? 1 : 2
+);
+const message = computed<string>(() => {
+  return get(syncAction) === SYNC_UPLOAD
+    ? t('sync_indicator.upload_confirmation.message_upload').toString()
+    : t('sync_indicator.upload_confirmation.message_download').toString();
+});
+
+const refreshAllAndSave = async () => {
+  set(visible, false);
+  const payload: Writeable<Partial<AllBalancePayload>> = {
+    ignoreCache: true,
+    saveData: true
+  };
+  if (get(ignoreErrors)) {
+    payload.ignoreErrors = true;
+  }
+  await fetchBalances(payload);
+};
+
+const showConfirmation = (action: SyncAction) => {
+  set(visible, false);
+  set(syncAction, action);
+  set(displayConfirmation, true);
+};
+
+const performSync = async () => {
+  set(pending, true);
+  await forceSync(syncAction, logout);
+  set(pending, false);
+};
+
+const { isTaskRunning } = useTasks();
+const isSyncing = isTaskRunning(TaskType.FORCE_SYNC);
+
+watch(isSyncing, (current, prev) => {
+  if (current !== prev && !current) {
+    set(displayConfirmation, false);
+    set(confirmChecked, false);
+  }
+});
+
+const cancel = () => {
+  set(displayConfirmation, false);
+  set(confirmChecked, false);
+};
+
+const importFilesCompleted = computed<boolean>(
+  () => !!get(balanceSnapshotFile) && !!get(locationDataSnapshotFile)
+);
+
+const { setMessage } = useMessageStore();
+
+const api = useSnapshotApi();
+
+const importSnapshot = async () => {
+  if (!get(importFilesCompleted)) return;
+  set(importSnapshotLoading, true);
+
+  let success = false;
+  let message = '';
+  try {
+    if (appSession) {
+      await api.importBalancesSnapshot(
+        get(balanceSnapshotFile)!.path,
+        get(locationDataSnapshotFile)!.path
+      );
+    } else {
+      await api.uploadBalancesSnapshot(
+        get(balanceSnapshotFile)!,
+        get(locationDataSnapshotFile)!
+      );
+    }
+    success = true;
+  } catch (e: any) {
+    message = e.message;
+  }
+
+  if (!success) {
+    setMessage({
+      title: t('sync_indicator.import_snapshot.messages.title').toString(),
+      description: t(
+        'sync_indicator.import_snapshot.messages.failed_description',
+        {
+          message
+        }
+      ).toString()
+    });
+  } else {
+    setMessage({
+      title: t('sync_indicator.import_snapshot.messages.title').toString(),
+      description: t(
+        'sync_indicator.import_snapshot.messages.success_description',
+        {
+          message
+        }
+      ).toString(),
+      success: true
+    });
+
+    setTimeout(() => {
+      startPromise(logout());
+    }, 3000);
+  }
+
+  set(importSnapshotLoading, false);
+  get(balanceSnapshotUploader)?.removeFile();
+  get(locationDataSnapshotUploader)?.removeFile();
+  set(balanceSnapshotFile, null);
+  set(locationDataSnapshotFile, null);
+};
+</script>
 <template>
   <fragment>
     <v-menu
@@ -209,170 +373,6 @@
     </confirm-dialog>
   </fragment>
 </template>
-<script setup lang="ts">
-import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
-import DateDisplay from '@/components/display/DateDisplay.vue';
-import Fragment from '@/components/helper/Fragment';
-import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
-import FileUpload from '@/components/import/FileUpload.vue';
-import SyncButtons from '@/components/status/sync/SyncButtons.vue';
-
-import { useSnapshotApi } from '@/services/settings/snapshot-api';
-import {
-  SYNC_DOWNLOAD,
-  SYNC_UPLOAD,
-  type SyncAction
-} from '@/services/types-api';
-import { useBalancesStore } from '@/store/balances';
-import { type AllBalancePayload } from '@/store/balances/types';
-import { useMessageStore } from '@/store/message';
-import { useSessionStore } from '@/store/session';
-import { usePeriodicStore } from '@/store/session/periodic';
-import { useSyncStoreStore } from '@/store/session/sync-store';
-import { useTasks } from '@/store/tasks';
-import { type Writeable } from '@/types';
-import { TaskType } from '@/types/task-type';
-import { startPromise } from '@/utils';
-
-const { t, tc } = useI18n();
-const { logout } = useSessionStore();
-const { lastBalanceSave, lastDataUpload } = storeToRefs(usePeriodicStore());
-const { forceSync } = useSyncStoreStore();
-
-const { fetchBalances } = useBalancesStore();
-const { currentBreakpoint } = useTheme();
-const premium = usePremium();
-const { appSession } = useInterop();
-
-const pending = ref<boolean>(false);
-const confirmChecked = ref<boolean>(false);
-const ignoreErrors = ref<boolean>(false);
-const visible = ref<boolean>(false);
-const syncAction = ref<SyncAction>(SYNC_UPLOAD);
-const displayConfirmation = ref<boolean>(false);
-const balanceSnapshotUploader = ref<any>(null);
-const balanceSnapshotFile = ref<File | null>(null);
-const locationDataSnapshotUploader = ref<any>(null);
-const locationDataSnapshotFile = ref<File | null>(null);
-const importSnapshotLoading = ref<boolean>(false);
-const importSnapshotDialog = ref<boolean>(false);
-
-const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
-
-const isDownload = computed<boolean>(() => get(syncAction) === SYNC_DOWNLOAD);
-const textChoice = computed<number>(() =>
-  get(syncAction) === SYNC_UPLOAD ? 1 : 2
-);
-const message = computed<string>(() => {
-  return get(syncAction) === SYNC_UPLOAD
-    ? t('sync_indicator.upload_confirmation.message_upload').toString()
-    : t('sync_indicator.upload_confirmation.message_download').toString();
-});
-
-const refreshAllAndSave = async () => {
-  set(visible, false);
-  const payload: Writeable<Partial<AllBalancePayload>> = {
-    ignoreCache: true,
-    saveData: true
-  };
-  if (get(ignoreErrors)) {
-    payload.ignoreErrors = true;
-  }
-  await fetchBalances(payload);
-};
-
-const showConfirmation = (action: SyncAction) => {
-  set(visible, false);
-  set(syncAction, action);
-  set(displayConfirmation, true);
-};
-
-const performSync = async () => {
-  set(pending, true);
-  await forceSync(syncAction, logout);
-  set(pending, false);
-};
-
-const { isTaskRunning } = useTasks();
-const isSyncing = isTaskRunning(TaskType.FORCE_SYNC);
-
-watch(isSyncing, (current, prev) => {
-  if (current !== prev && !current) {
-    set(displayConfirmation, false);
-    set(confirmChecked, false);
-  }
-});
-
-const cancel = () => {
-  set(displayConfirmation, false);
-  set(confirmChecked, false);
-};
-
-const importFilesCompleted = computed<boolean>(
-  () => !!get(balanceSnapshotFile) && !!get(locationDataSnapshotFile)
-);
-
-const { setMessage } = useMessageStore();
-
-const api = useSnapshotApi();
-
-const importSnapshot = async () => {
-  if (!get(importFilesCompleted)) return;
-  set(importSnapshotLoading, true);
-
-  let success = false;
-  let message = '';
-  try {
-    if (appSession) {
-      await api.importBalancesSnapshot(
-        get(balanceSnapshotFile)!.path,
-        get(locationDataSnapshotFile)!.path
-      );
-    } else {
-      await api.uploadBalancesSnapshot(
-        get(balanceSnapshotFile)!,
-        get(locationDataSnapshotFile)!
-      );
-    }
-    success = true;
-  } catch (e: any) {
-    message = e.message;
-  }
-
-  if (!success) {
-    setMessage({
-      title: t('sync_indicator.import_snapshot.messages.title').toString(),
-      description: t(
-        'sync_indicator.import_snapshot.messages.failed_description',
-        {
-          message
-        }
-      ).toString()
-    });
-  } else {
-    setMessage({
-      title: t('sync_indicator.import_snapshot.messages.title').toString(),
-      description: t(
-        'sync_indicator.import_snapshot.messages.success_description',
-        {
-          message
-        }
-      ).toString(),
-      success: true
-    });
-
-    setTimeout(() => {
-      startPromise(logout());
-    }, 3000);
-  }
-
-  set(importSnapshotLoading, false);
-  get(balanceSnapshotUploader)?.removeFile();
-  get(locationDataSnapshotUploader)?.removeFile();
-  set(balanceSnapshotFile, null);
-  set(locationDataSnapshotFile, null);
-};
-</script>
 
 <style lang="scss" scoped>
 .balance-saved-indicator {

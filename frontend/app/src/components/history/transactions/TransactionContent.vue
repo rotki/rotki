@@ -1,228 +1,3 @@
-<template>
-  <fragment>
-    <card class="mt-8" outlined-body>
-      <template #title>
-        <refresh-button
-          :loading="loading"
-          :tooltip="tc('transactions.refresh_tooltip')"
-          @refresh="fetch(true)"
-        />
-        {{ usedTitle }}
-      </template>
-      <template #actions>
-        <v-row>
-          <v-col cols="12" md="7">
-            <v-row>
-              <v-col cols="auto">
-                <v-menu offset-y>
-                  <template #activator="{ on }">
-                    <v-btn color="primary" depressed height="40px" v-on="on">
-                      {{ tc('transactions.redecode_events.title') }}
-                    </v-btn>
-                  </template>
-                  <v-list>
-                    <v-list-item link @click="redecodeEvents()">
-                      <v-list-item-title>
-                        {{ tc('transactions.redecode_events.this_page') }}
-                      </v-list-item-title>
-                    </v-list-item>
-                    <v-list-item link @click="redecodeEvents(true)">
-                      <v-list-item-title>
-                        {{ tc('transactions.redecode_events.all') }}
-                      </v-list-item-title>
-                    </v-list-item>
-                  </v-list>
-                </v-menu>
-              </v-col>
-              <v-col v-if="!useExternalAccountFilter">
-                <div>
-                  <blockchain-account-selector
-                    v-model="account"
-                    :chains="['ETH']"
-                    dense
-                    :label="tc('transactions.filter.account')"
-                    outlined
-                    no-padding
-                    flat
-                  />
-                </div>
-              </v-col>
-            </v-row>
-          </v-col>
-          <v-col cols="12" md="5">
-            <div>
-              <table-filter
-                :matchers="matchers"
-                @update:matches="updateFilter($event)"
-              />
-            </div>
-          </v-col>
-        </v-row>
-      </template>
-
-      <collection-handler :collection="transactions">
-        <template #default="{ itemLength, showUpgradeRow, limit, total }">
-          <data-table
-            :expanded="data"
-            :headers="tableHeaders"
-            :items="data"
-            :loading="loading || eventTaskLoading"
-            :options="options"
-            :server-items-length="itemLength"
-            :single-select="false"
-            :item-class="getItemClass"
-            :class="$style.table"
-            @update:options="updatePaginationHandler($event)"
-          >
-            <template #item.ignoredInAccounting="{ item, isMobile }">
-              <div v-if="item.ignoredInAccounting" class="pl-4">
-                <badge-display v-if="isMobile" color="grey">
-                  <v-icon small> mdi-eye-off </v-icon>
-                  <span class="ml-2">
-                    {{ tc('common.ignored_in_accounting') }}
-                  </span>
-                </badge-display>
-                <v-tooltip v-else bottom>
-                  <template #activator="{ on }">
-                    <badge-display color="grey" v-on="on">
-                      <v-icon small> mdi-eye-off </v-icon>
-                    </badge-display>
-                  </template>
-                  <span>
-                    {{ tc('common.ignored_in_accounting') }}
-                  </span>
-                </v-tooltip>
-              </div>
-            </template>
-            <template #item.txHash="{ item }">
-              <hash-link
-                :text="item.txHash"
-                :truncate-length="8"
-                :full-address="$vuetify.breakpoint.lgAndUp"
-                tx
-              />
-              <v-chip
-                v-if="item.gasPrice.lt(0)"
-                small
-                text-color="white"
-                color="accent"
-                class="mb-1 mt-1"
-              >
-                {{ tc('transactions.details.internal_transaction') }}
-              </v-chip>
-            </template>
-            <template #item.timestamp="{ item }">
-              <date-display :timestamp="item.timestamp" />
-            </template>
-            <template #item.action="{ item }">
-              <div class="d-flex align-center">
-                <v-dialog width="600">
-                  <template #activator="{ on }">
-                    <v-btn small color="primary" text v-on="on">
-                      {{ tc('common.details') }}
-                      <v-icon small>mdi-chevron-right</v-icon>
-                    </v-btn>
-                  </template>
-
-                  <template #default="dialog">
-                    <transaction-detail
-                      :transaction="item"
-                      @close="dialog.value = false"
-                    />
-                  </template>
-                </v-dialog>
-                <v-menu
-                  transition="slide-y-transition"
-                  max-width="250px"
-                  offset-y
-                >
-                  <template #activator="{ on }">
-                    <v-btn class="ml-1" icon v-on="on">
-                      <v-icon>mdi-dots-vertical</v-icon>
-                    </v-btn>
-                  </template>
-                  <v-list>
-                    <v-list-item link @click="addEvent(item)">
-                      <v-list-item-icon class="mr-4">
-                        <v-icon>mdi-plus</v-icon>
-                      </v-list-item-icon>
-                      <v-list-item-content>
-                        {{ tc('transactions.actions.add_event') }}
-                      </v-list-item-content>
-                    </v-list-item>
-                    <v-list-item link @click="toggleIgnore(item)">
-                      <v-list-item-icon class="mr-4">
-                        <v-icon v-if="item.ignoredInAccounting">
-                          mdi-eye
-                        </v-icon>
-                        <v-icon v-else> mdi-eye-off </v-icon>
-                      </v-list-item-icon>
-                      <v-list-item-content>
-                        {{
-                          item.ignoredInAccounting
-                            ? tc('transactions.unignore')
-                            : tc('transactions.ignore')
-                        }}
-                      </v-list-item-content>
-                    </v-list-item>
-                    <v-list-item
-                      link
-                      :disabled="eventTaskLoading"
-                      @click="forceRedecodeEvents(item)"
-                    >
-                      <v-list-item-icon class="mr-4">
-                        <v-icon>mdi-database-refresh</v-icon>
-                      </v-list-item-icon>
-                      <v-list-item-content>
-                        {{ tc('transactions.actions.redecode_events') }}
-                      </v-list-item-content>
-                    </v-list-item>
-                  </v-list>
-                </v-menu>
-              </div>
-            </template>
-            <template #expanded-item="{ headers, item }">
-              <transaction-events
-                :transaction="item"
-                :colspan="headers.length"
-                @edit:event="editEventHandler"
-                @delete:event="promptForDelete"
-              />
-            </template>
-            <template #body.prepend="{ headers }">
-              <transaction-query-status :colspan="headers.length" />
-              <upgrade-row
-                v-if="showUpgradeRow"
-                :limit="limit"
-                :total="total"
-                :colspan="headers.length"
-                :label="tc('transactions.label')"
-              />
-            </template>
-          </data-table>
-        </template>
-      </collection-handler>
-    </card>
-    <big-dialog
-      :display="openDialog"
-      :title="dialogTitle"
-      :primary-action="tc('common.actions.save')"
-      :action-disabled="!valid"
-      :loading="loading"
-      @confirm="confirmSave()"
-      @cancel="clearDialog()"
-    >
-      <transaction-event-form
-        ref="form"
-        v-model="valid"
-        :transaction="selectedTransaction"
-        :edit="editableItem"
-        :save-data="saveData"
-      />
-    </big-dialog>
-  </fragment>
-</template>
-
 <script setup lang="ts">
 import { type GeneralAccount } from '@rotki/common/lib/account';
 import { type ComputedRef, type PropType, type Ref } from 'vue';
@@ -617,6 +392,231 @@ const showDeleteConfirmation = () => {
   );
 };
 </script>
+
+<template>
+  <fragment>
+    <card class="mt-8" outlined-body>
+      <template #title>
+        <refresh-button
+          :loading="loading"
+          :tooltip="tc('transactions.refresh_tooltip')"
+          @refresh="fetch(true)"
+        />
+        {{ usedTitle }}
+      </template>
+      <template #actions>
+        <v-row>
+          <v-col cols="12" md="7">
+            <v-row>
+              <v-col cols="auto">
+                <v-menu offset-y>
+                  <template #activator="{ on }">
+                    <v-btn color="primary" depressed height="40px" v-on="on">
+                      {{ tc('transactions.redecode_events.title') }}
+                    </v-btn>
+                  </template>
+                  <v-list>
+                    <v-list-item link @click="redecodeEvents()">
+                      <v-list-item-title>
+                        {{ tc('transactions.redecode_events.this_page') }}
+                      </v-list-item-title>
+                    </v-list-item>
+                    <v-list-item link @click="redecodeEvents(true)">
+                      <v-list-item-title>
+                        {{ tc('transactions.redecode_events.all') }}
+                      </v-list-item-title>
+                    </v-list-item>
+                  </v-list>
+                </v-menu>
+              </v-col>
+              <v-col v-if="!useExternalAccountFilter">
+                <div>
+                  <blockchain-account-selector
+                    v-model="account"
+                    :chains="['ETH']"
+                    dense
+                    :label="tc('transactions.filter.account')"
+                    outlined
+                    no-padding
+                    flat
+                  />
+                </div>
+              </v-col>
+            </v-row>
+          </v-col>
+          <v-col cols="12" md="5">
+            <div>
+              <table-filter
+                :matchers="matchers"
+                @update:matches="updateFilter($event)"
+              />
+            </div>
+          </v-col>
+        </v-row>
+      </template>
+
+      <collection-handler :collection="transactions">
+        <template #default="{ itemLength, showUpgradeRow, limit, total }">
+          <data-table
+            :expanded="data"
+            :headers="tableHeaders"
+            :items="data"
+            :loading="loading || eventTaskLoading"
+            :options="options"
+            :server-items-length="itemLength"
+            :single-select="false"
+            :item-class="getItemClass"
+            :class="$style.table"
+            @update:options="updatePaginationHandler($event)"
+          >
+            <template #item.ignoredInAccounting="{ item, isMobile }">
+              <div v-if="item.ignoredInAccounting" class="pl-4">
+                <badge-display v-if="isMobile" color="grey">
+                  <v-icon small> mdi-eye-off </v-icon>
+                  <span class="ml-2">
+                    {{ tc('common.ignored_in_accounting') }}
+                  </span>
+                </badge-display>
+                <v-tooltip v-else bottom>
+                  <template #activator="{ on }">
+                    <badge-display color="grey" v-on="on">
+                      <v-icon small> mdi-eye-off </v-icon>
+                    </badge-display>
+                  </template>
+                  <span>
+                    {{ tc('common.ignored_in_accounting') }}
+                  </span>
+                </v-tooltip>
+              </div>
+            </template>
+            <template #item.txHash="{ item }">
+              <hash-link
+                :text="item.txHash"
+                :truncate-length="8"
+                :full-address="$vuetify.breakpoint.lgAndUp"
+                tx
+              />
+              <v-chip
+                v-if="item.gasPrice.lt(0)"
+                small
+                text-color="white"
+                color="accent"
+                class="mb-1 mt-1"
+              >
+                {{ tc('transactions.details.internal_transaction') }}
+              </v-chip>
+            </template>
+            <template #item.timestamp="{ item }">
+              <date-display :timestamp="item.timestamp" />
+            </template>
+            <template #item.action="{ item }">
+              <div class="d-flex align-center">
+                <v-dialog width="600">
+                  <template #activator="{ on }">
+                    <v-btn small color="primary" text v-on="on">
+                      {{ tc('common.details') }}
+                      <v-icon small>mdi-chevron-right</v-icon>
+                    </v-btn>
+                  </template>
+
+                  <template #default="dialog">
+                    <transaction-detail
+                      :transaction="item"
+                      @close="dialog.value = false"
+                    />
+                  </template>
+                </v-dialog>
+                <v-menu
+                  transition="slide-y-transition"
+                  max-width="250px"
+                  offset-y
+                >
+                  <template #activator="{ on }">
+                    <v-btn class="ml-1" icon v-on="on">
+                      <v-icon>mdi-dots-vertical</v-icon>
+                    </v-btn>
+                  </template>
+                  <v-list>
+                    <v-list-item link @click="addEvent(item)">
+                      <v-list-item-icon class="mr-4">
+                        <v-icon>mdi-plus</v-icon>
+                      </v-list-item-icon>
+                      <v-list-item-content>
+                        {{ tc('transactions.actions.add_event') }}
+                      </v-list-item-content>
+                    </v-list-item>
+                    <v-list-item link @click="toggleIgnore(item)">
+                      <v-list-item-icon class="mr-4">
+                        <v-icon v-if="item.ignoredInAccounting">
+                          mdi-eye
+                        </v-icon>
+                        <v-icon v-else> mdi-eye-off </v-icon>
+                      </v-list-item-icon>
+                      <v-list-item-content>
+                        {{
+                          item.ignoredInAccounting
+                            ? tc('transactions.unignore')
+                            : tc('transactions.ignore')
+                        }}
+                      </v-list-item-content>
+                    </v-list-item>
+                    <v-list-item
+                      link
+                      :disabled="eventTaskLoading"
+                      @click="forceRedecodeEvents(item)"
+                    >
+                      <v-list-item-icon class="mr-4">
+                        <v-icon>mdi-database-refresh</v-icon>
+                      </v-list-item-icon>
+                      <v-list-item-content>
+                        {{ tc('transactions.actions.redecode_events') }}
+                      </v-list-item-content>
+                    </v-list-item>
+                  </v-list>
+                </v-menu>
+              </div>
+            </template>
+            <template #expanded-item="{ headers, item }">
+              <transaction-events
+                :transaction="item"
+                :colspan="headers.length"
+                @edit:event="editEventHandler"
+                @delete:event="promptForDelete"
+              />
+            </template>
+            <template #body.prepend="{ headers }">
+              <transaction-query-status :colspan="headers.length" />
+              <upgrade-row
+                v-if="showUpgradeRow"
+                :limit="limit"
+                :total="total"
+                :colspan="headers.length"
+                :label="tc('transactions.label')"
+              />
+            </template>
+          </data-table>
+        </template>
+      </collection-handler>
+    </card>
+    <big-dialog
+      :display="openDialog"
+      :title="dialogTitle"
+      :primary-action="tc('common.actions.save')"
+      :action-disabled="!valid"
+      :loading="loading"
+      @confirm="confirmSave()"
+      @cancel="clearDialog()"
+    >
+      <transaction-event-form
+        ref="form"
+        v-model="valid"
+        :transaction="selectedTransaction"
+        :edit="editableItem"
+        :save-data="saveData"
+      />
+    </big-dialog>
+  </fragment>
+</template>
 <style module lang="scss">
 .table {
   :global {

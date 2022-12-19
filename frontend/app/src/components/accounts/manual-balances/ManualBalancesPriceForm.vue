@@ -1,39 +1,3 @@
-<template>
-  <div>
-    <v-row>
-      <v-col class="col" md="6">
-        <amount-input
-          v-model="price"
-          :disabled="fetchingPrice || !isCustomPrice || pending"
-          :loading="fetchingPrice"
-          outlined
-          :label="tc('common.price')"
-        />
-      </v-col>
-
-      <v-col class="col" md="6">
-        <asset-select
-          v-model="priceAsset"
-          :disabled="fetchingPrice || !isCustomPrice || pending"
-          :loading="fetchingPrice"
-          outlined
-          :label="tc('manual_balances_form.fields.price_asset')"
-        />
-      </v-col>
-    </v-row>
-
-    <v-row v-if="fetchedPrice" class="mt-n10 mb-0">
-      <v-col cols="auto">
-        <v-checkbox
-          v-model="isCustomPrice"
-          :disabled="pending"
-          :label="tc('manual_balances_form.fields.input_manual_price')"
-        />
-      </v-col>
-    </v-row>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useGeneralSettingsStore } from '@/store/settings/general';
@@ -131,3 +95,39 @@ defineExpose({
   savePrice
 });
 </script>
+
+<template>
+  <div>
+    <v-row>
+      <v-col class="col" md="6">
+        <amount-input
+          v-model="price"
+          :disabled="fetchingPrice || !isCustomPrice || pending"
+          :loading="fetchingPrice"
+          outlined
+          :label="tc('common.price')"
+        />
+      </v-col>
+
+      <v-col class="col" md="6">
+        <asset-select
+          v-model="priceAsset"
+          :disabled="fetchingPrice || !isCustomPrice || pending"
+          :loading="fetchingPrice"
+          outlined
+          :label="tc('manual_balances_form.fields.price_asset')"
+        />
+      </v-col>
+    </v-row>
+
+    <v-row v-if="fetchedPrice" class="mt-n10 mb-0">
+      <v-col cols="auto">
+        <v-checkbox
+          v-model="isCustomPrice"
+          :disabled="pending"
+          :label="tc('manual_balances_form.fields.input_manual_price')"
+        />
+      </v-col>
+    </v-row>
+  </div>
+</template>

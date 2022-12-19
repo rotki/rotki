@@ -1,3 +1,62 @@
+<script setup lang="ts">
+import orderBy from 'lodash/orderBy';
+import Notification from '@/components/status/notifications/Notification.vue';
+import PendingTasks from '@/components/status/notifications/PendingTasks.vue';
+
+import { useTasks } from '@/store/tasks';
+import { useNotificationsStore } from '@/store/notifications';
+import { useConfirmStore } from '@/store/confirm';
+
+defineProps({
+  visible: { required: true, type: Boolean }
+});
+
+const { t, tc } = useI18n();
+
+const emit = defineEmits(['close']);
+const confirmStore = useConfirmStore();
+const { visible: dialogVisible } = storeToRefs(confirmStore);
+const { show } = confirmStore;
+
+const notificationStore = useNotificationsStore();
+const { data } = storeToRefs(notificationStore);
+const { remove } = notificationStore;
+
+const close = () => {
+  emit('close');
+};
+
+const input = (visible: boolean) => {
+  if (visible) {
+    return;
+  }
+  close();
+};
+
+const clear = () => {
+  notificationStore.$reset();
+  close();
+};
+
+const showConfirmation = () => {
+  show(
+    {
+      title: tc('notification_sidebar.confirmation.title'),
+      message: tc('notification_sidebar.confirmation.message'),
+      type: 'info'
+    },
+    clear
+  );
+};
+
+const notifications = computed(() => {
+  return orderBy(data.value, 'id', 'desc');
+});
+
+const { isMobile } = useTheme();
+const { hasRunningTasks } = storeToRefs(useTasks());
+</script>
+
 <template>
   <v-navigation-drawer
     :class="{ [$style.mobile]: isMobile, [$style.sidebar]: true }"
@@ -72,65 +131,6 @@
     </div>
   </v-navigation-drawer>
 </template>
-
-<script setup lang="ts">
-import orderBy from 'lodash/orderBy';
-import Notification from '@/components/status/notifications/Notification.vue';
-import PendingTasks from '@/components/status/notifications/PendingTasks.vue';
-
-import { useTasks } from '@/store/tasks';
-import { useNotificationsStore } from '@/store/notifications';
-import { useConfirmStore } from '@/store/confirm';
-
-defineProps({
-  visible: { required: true, type: Boolean }
-});
-
-const { t, tc } = useI18n();
-
-const emit = defineEmits(['close']);
-const confirmStore = useConfirmStore();
-const { visible: dialogVisible } = storeToRefs(confirmStore);
-const { show } = confirmStore;
-
-const notificationStore = useNotificationsStore();
-const { data } = storeToRefs(notificationStore);
-const { remove } = notificationStore;
-
-const close = () => {
-  emit('close');
-};
-
-const input = (visible: boolean) => {
-  if (visible) {
-    return;
-  }
-  close();
-};
-
-const clear = () => {
-  notificationStore.$reset();
-  close();
-};
-
-const showConfirmation = () => {
-  show(
-    {
-      title: tc('notification_sidebar.confirmation.title'),
-      message: tc('notification_sidebar.confirmation.message'),
-      type: 'info'
-    },
-    clear
-  );
-};
-
-const notifications = computed(() => {
-  return orderBy(data.value, 'id', 'desc');
-});
-
-const { isMobile } = useTheme();
-const { hasRunningTasks } = storeToRefs(useTasks());
-</script>
 
 <style module lang="scss">
 .sidebar {

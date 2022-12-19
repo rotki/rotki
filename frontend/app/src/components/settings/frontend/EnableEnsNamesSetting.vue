@@ -1,3 +1,16 @@
+<script setup lang="ts">
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+
+const enableEthNames = ref<boolean>(true);
+const { enableEthNames: enabled } = storeToRefs(useFrontendSettingsStore());
+
+onMounted(() => {
+  set(enableEthNames, get(enabled));
+});
+
+const { tc } = useI18n();
+</script>
+
 <template>
   <settings-option
     #default="{ error, success, update }"
@@ -15,16 +28,3 @@
     />
   </settings-option>
 </template>
-
-<script setup lang="ts">
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-
-const enableEthNames = ref<boolean>(true);
-const { enableEthNames: enabled } = storeToRefs(useFrontendSettingsStore());
-
-onMounted(() => {
-  set(enableEthNames, get(enabled));
-});
-
-const { tc } = useI18n();
-</script>

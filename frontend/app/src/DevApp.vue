@@ -1,3 +1,11 @@
+<script setup lang="ts">
+const reset = () => {
+  sessionStorage.removeItem('vuex');
+  window.location.reload();
+};
+
+const resetState = 'Reset State ->';
+</script>
 <template>
   <v-app id="rotki">
     <v-app-bar app fixed>
@@ -17,11 +25,3 @@
     </v-main>
   </v-app>
 </template>
-<script setup lang="ts">
-const reset = () => {
-  sessionStorage.removeItem('vuex');
-  window.location.reload();
-};
-
-const resetState = 'Reset State ->';
-</script>

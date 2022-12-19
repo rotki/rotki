@@ -1,24 +1,3 @@
-<template>
-  <div v-if="actionableItemsLength">
-    <v-dialog v-model="mainDialogOpen" max-width="1000">
-      <template #activator="{ on }">
-        <v-btn color="error" depressed v-on="on">
-          <span class="pr-2">
-            {{ tc('profit_loss_report.actionable.show_issues') }}
-          </span>
-          <v-chip x-small class="px-2" color="error darken-2">
-            {{ actionableItemsLength }}
-          </v-chip>
-        </v-btn>
-      </template>
-      <report-actionable-card
-        v-if="mainDialogOpen"
-        :report="report"
-        @set-dialog="mainDialogOpen = $event"
-      />
-    </v-dialog>
-  </div>
-</template>
 <script setup lang="ts">
 import { type PropType } from 'vue';
 import ReportActionableCard from '@/components/profitloss/ReportActionableCard.vue';
@@ -53,3 +32,24 @@ const actionableItemsLength = computed(() => {
 
 const { tc } = useI18n();
 </script>
+<template>
+  <div v-if="actionableItemsLength">
+    <v-dialog v-model="mainDialogOpen" max-width="1000">
+      <template #activator="{ on }">
+        <v-btn color="error" depressed v-on="on">
+          <span class="pr-2">
+            {{ tc('profit_loss_report.actionable.show_issues') }}
+          </span>
+          <v-chip x-small class="px-2" color="error darken-2">
+            {{ actionableItemsLength }}
+          </v-chip>
+        </v-btn>
+      </template>
+      <report-actionable-card
+        v-if="mainDialogOpen"
+        :report="report"
+        @set-dialog="mainDialogOpen = $event"
+      />
+    </v-dialog>
+  </div>
+</template>

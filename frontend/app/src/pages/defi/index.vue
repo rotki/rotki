@@ -1,14 +1,3 @@
-<template>
-  <div>
-    <tab-navigation
-      v-if="defiSetupDone"
-      :tab-contents="tabs"
-      no-content-margin
-    />
-    <defi-wizard v-else class="mt-8" />
-  </div>
-</template>
-
 <script setup lang="ts">
 import { type ComputedRef } from 'vue';
 import DefiWizard from '@/components/defi/wizard/DefiWizard.vue';
@@ -31,6 +20,17 @@ const tabs: ComputedRef<TabContent[]> = computed(() => {
 
 const { defiSetupDone } = storeToRefs(useFrontendSettingsStore());
 </script>
+
+<template>
+  <div>
+    <tab-navigation
+      v-if="defiSetupDone"
+      :tab-contents="tabs"
+      no-content-margin
+    />
+    <defi-wizard v-else class="mt-8" />
+  </div>
+</template>
 
 <style scoped lang="scss">
 .decentralized-finance {

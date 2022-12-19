@@ -1,47 +1,3 @@
-<template>
-  <div>
-    <settings-option
-      #default="{ error, success, update }"
-      setting="taxfreeAfterPeriod"
-      :transform="getTaxFreePeriod"
-      :success-message="switchSuccess"
-      @finished="resetTaxFreePeriod"
-    >
-      <v-switch
-        v-model="taxFreePeriod"
-        class="accounting-settings__taxfree-period"
-        :success-messages="success"
-        :error-messages="error"
-        :label="tc('accounting_settings.labels.tax_free')"
-        color="primary"
-        @change="update"
-      />
-    </settings-option>
-
-    <settings-option
-      #default="{ error, success, update }"
-      setting="taxfreeAfterPeriod"
-      :transform="getPeriod"
-      :success-message="numberSuccess"
-      @finished="resetTaxFreePeriod"
-    >
-      <v-text-field
-        v-model="taxFreeAfterPeriod"
-        outlined
-        class="accounting-settings__taxfree-period-days pt-4"
-        :success-messages="success"
-        :error-messages="
-          error || v$.taxFreeAfterPeriod.$errors.map(e => e.$message)
-        "
-        :disabled="!taxFreePeriod"
-        :label="tc('accounting_settings.labels.tax_free_period')"
-        type="number"
-        @change="callIfValid($event, update)"
-      />
-    </settings-option>
-  </div>
-</template>
-
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, minValue, required } from '@vuelidate/validators';
@@ -124,3 +80,47 @@ onMounted(() => {
   resetTaxFreePeriod();
 });
 </script>
+
+<template>
+  <div>
+    <settings-option
+      #default="{ error, success, update }"
+      setting="taxfreeAfterPeriod"
+      :transform="getTaxFreePeriod"
+      :success-message="switchSuccess"
+      @finished="resetTaxFreePeriod"
+    >
+      <v-switch
+        v-model="taxFreePeriod"
+        class="accounting-settings__taxfree-period"
+        :success-messages="success"
+        :error-messages="error"
+        :label="tc('accounting_settings.labels.tax_free')"
+        color="primary"
+        @change="update"
+      />
+    </settings-option>
+
+    <settings-option
+      #default="{ error, success, update }"
+      setting="taxfreeAfterPeriod"
+      :transform="getPeriod"
+      :success-message="numberSuccess"
+      @finished="resetTaxFreePeriod"
+    >
+      <v-text-field
+        v-model="taxFreeAfterPeriod"
+        outlined
+        class="accounting-settings__taxfree-period-days pt-4"
+        :success-messages="success"
+        :error-messages="
+          error || v$.taxFreeAfterPeriod.$errors.map(e => e.$message)
+        "
+        :disabled="!taxFreePeriod"
+        :label="tc('accounting_settings.labels.tax_free_period')"
+        type="number"
+        @change="callIfValid($event, update)"
+      />
+    </settings-option>
+  </div>
+</template>

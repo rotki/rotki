@@ -1,3 +1,21 @@
+<script setup lang="ts">
+import Fragment from '@/components/helper/Fragment';
+import KrakenStakingEvents from '@/components/staking/kraken/KrakenStakingEvents.vue';
+import KrakenStakingOverview from '@/components/staking/kraken/KrakenStakingOverview.vue';
+import KrakenStakingReceived from '@/components/staking/kraken/KrakenStakingReceived.vue';
+
+import { useKrakenStakingStore } from '@/store/staking/kraken';
+import { Section } from '@/types/status';
+
+const store = useKrakenStakingStore();
+const { load, updatePagination } = store;
+const { events } = toRefs(store);
+const { isSectionRefreshing } = useSectionLoading();
+const loading = isSectionRefreshing(Section.STAKING_KRAKEN);
+
+const refresh = () => load(true);
+</script>
+
 <template>
   <fragment>
     <v-row>
@@ -20,21 +38,3 @@
     />
   </fragment>
 </template>
-
-<script setup lang="ts">
-import Fragment from '@/components/helper/Fragment';
-import KrakenStakingEvents from '@/components/staking/kraken/KrakenStakingEvents.vue';
-import KrakenStakingOverview from '@/components/staking/kraken/KrakenStakingOverview.vue';
-import KrakenStakingReceived from '@/components/staking/kraken/KrakenStakingReceived.vue';
-
-import { useKrakenStakingStore } from '@/store/staking/kraken';
-import { Section } from '@/types/status';
-
-const store = useKrakenStakingStore();
-const { load, updatePagination } = store;
-const { events } = toRefs(store);
-const { isSectionRefreshing } = useSectionLoading();
-const loading = isSectionRefreshing(Section.STAKING_KRAKEN);
-
-const refresh = () => load(true);
-</script>

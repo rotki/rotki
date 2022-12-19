@@ -1,98 +1,3 @@
-<template>
-  <progress-screen v-if="loading">
-    <template #message>{{ tc('lending.loading') }}</template>
-  </progress-screen>
-  <div v-else>
-    <v-row no-gutters align="center">
-      <v-col>
-        <refresh-header
-          :loading="refreshing"
-          :title="tc('common.deposits')"
-          @refresh="refresh()"
-        >
-          <deposit-protocol-reset
-            :loading="refreshing"
-            @reset="reset($event)"
-          />
-          <template #actions>
-            <active-modules :modules="modules" />
-          </template>
-        </refresh-header>
-      </v-col>
-    </v-row>
-    <deposit-totals
-      :loading="historyLoading"
-      :effective-interest-rate="effectiveInterestRate"
-      :total-lending-deposit="totalLendingDeposit"
-      :total-usd-earned="totalUsdEarned"
-    />
-    <v-row class="mt-8" no-gutters>
-      <v-col cols="12" sm="6" class="pe-sm-4">
-        <blockchain-account-selector
-          v-model="selectedAccount"
-          class="pt-2"
-          hint
-          outlined
-          dense
-          :chains="chains"
-          :usable-addresses="defiAddresses"
-        />
-      </v-col>
-      <v-col cols="12" sm="6" class="ps-sm-4 pt-4 pt-sm-0">
-        <defi-protocol-selector v-model="protocol" />
-      </v-col>
-    </v-row>
-    <v-row v-if="!isYearnVaults && !isYearnVaultsV2" class="mt-8" no-gutters>
-      <v-col>
-        <stat-card :title="tc('common.assets')">
-          <lending-asset-table
-            :loading="refreshing"
-            :assets="lendingBalances"
-          />
-        </stat-card>
-      </v-col>
-    </v-row>
-    <yearn-assets-table
-      v-if="isYearnVaults || isYearnVaultsV2 || selectedProtocols.length === 0"
-      class="mt-8"
-      :version="yearnVersion"
-      :loading="refreshing"
-      :selected-addresses="selectedAddresses"
-    />
-    <template v-if="premium">
-      <compound-lending-details
-        v-if="isCompound"
-        class="mt-8"
-        :addresses="selectedAddresses"
-      />
-      <yearn-vaults-profit-details
-        v-if="
-          isYearnVaults || isYearnVaultsV2 || selectedProtocols.length === 0
-        "
-        class="mt-8"
-        :profit="yearnProfit"
-      />
-      <aave-earned-details
-        v-if="isAave || selectedProtocols.length === 0"
-        class="mt-8"
-        :profit="totalEarnedInAave"
-      />
-    </template>
-    <v-row class="loans__history mt-8" no-gutters>
-      <v-col cols="12">
-        <premium-card v-if="!premium" :title="tc('lending.history')" />
-        <lending-history
-          v-else
-          :loading="historyRefreshing"
-          :history="history"
-          :floating-precision="floatingPrecision"
-          @open-link="openUrl($event)"
-        />
-      </v-col>
-    </v-row>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { type BigNumber } from '@rotki/common';
 import { type GeneralAccount } from '@rotki/common/lib/account';
@@ -262,3 +167,98 @@ onMounted(async () => {
   await store.fetchLending();
 });
 </script>
+
+<template>
+  <progress-screen v-if="loading">
+    <template #message>{{ tc('lending.loading') }}</template>
+  </progress-screen>
+  <div v-else>
+    <v-row no-gutters align="center">
+      <v-col>
+        <refresh-header
+          :loading="refreshing"
+          :title="tc('common.deposits')"
+          @refresh="refresh()"
+        >
+          <deposit-protocol-reset
+            :loading="refreshing"
+            @reset="reset($event)"
+          />
+          <template #actions>
+            <active-modules :modules="modules" />
+          </template>
+        </refresh-header>
+      </v-col>
+    </v-row>
+    <deposit-totals
+      :loading="historyLoading"
+      :effective-interest-rate="effectiveInterestRate"
+      :total-lending-deposit="totalLendingDeposit"
+      :total-usd-earned="totalUsdEarned"
+    />
+    <v-row class="mt-8" no-gutters>
+      <v-col cols="12" sm="6" class="pe-sm-4">
+        <blockchain-account-selector
+          v-model="selectedAccount"
+          class="pt-2"
+          hint
+          outlined
+          dense
+          :chains="chains"
+          :usable-addresses="defiAddresses"
+        />
+      </v-col>
+      <v-col cols="12" sm="6" class="ps-sm-4 pt-4 pt-sm-0">
+        <defi-protocol-selector v-model="protocol" />
+      </v-col>
+    </v-row>
+    <v-row v-if="!isYearnVaults && !isYearnVaultsV2" class="mt-8" no-gutters>
+      <v-col>
+        <stat-card :title="tc('common.assets')">
+          <lending-asset-table
+            :loading="refreshing"
+            :assets="lendingBalances"
+          />
+        </stat-card>
+      </v-col>
+    </v-row>
+    <yearn-assets-table
+      v-if="isYearnVaults || isYearnVaultsV2 || selectedProtocols.length === 0"
+      class="mt-8"
+      :version="yearnVersion"
+      :loading="refreshing"
+      :selected-addresses="selectedAddresses"
+    />
+    <template v-if="premium">
+      <compound-lending-details
+        v-if="isCompound"
+        class="mt-8"
+        :addresses="selectedAddresses"
+      />
+      <yearn-vaults-profit-details
+        v-if="
+          isYearnVaults || isYearnVaultsV2 || selectedProtocols.length === 0
+        "
+        class="mt-8"
+        :profit="yearnProfit"
+      />
+      <aave-earned-details
+        v-if="isAave || selectedProtocols.length === 0"
+        class="mt-8"
+        :profit="totalEarnedInAave"
+      />
+    </template>
+    <v-row class="loans__history mt-8" no-gutters>
+      <v-col cols="12">
+        <premium-card v-if="!premium" :title="tc('lending.history')" />
+        <lending-history
+          v-else
+          :loading="historyRefreshing"
+          :history="history"
+          :floating-precision="floatingPrecision"
+          @open-link="openUrl($event)"
+        />
+      </v-col>
+    </v-row>
+  </div>
+</template>

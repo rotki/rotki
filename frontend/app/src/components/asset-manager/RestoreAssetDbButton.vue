@@ -1,69 +1,3 @@
-<template>
-  <div>
-    <template v-if="dropdown">
-      <v-menu offset-y>
-        <template #activator="{ on }">
-          <v-btn color="primary" depressed v-on="on">
-            {{ t('asset_update.restore.title') }}
-          </v-btn>
-        </template>
-        <v-list>
-          <v-list-item two-line link @click="showRestoreConfirmation('soft')">
-            <v-list-item-content>
-              <v-list-item-title>
-                {{ t('asset_update.restore.soft_reset') }}
-              </v-list-item-title>
-              <v-list-item-subtitle>
-                {{ t('asset_update.restore.soft_reset_hint') }}
-              </v-list-item-subtitle>
-            </v-list-item-content>
-          </v-list-item>
-          <v-list-item two-line link @click="showRestoreConfirmation('hard')">
-            <v-list-item-content>
-              <v-list-item-title>
-                {{ t('asset_update.restore.hard_reset') }}
-              </v-list-item-title>
-              <v-list-item-subtitle>
-                {{ t('asset_update.restore.hard_reset_hint') }}
-              </v-list-item-subtitle>
-            </v-list-item-content>
-          </v-list-item>
-        </v-list>
-      </v-menu>
-    </template>
-    <template v-else>
-      <v-tooltip top max-width="200">
-        <template #activator="{ on }">
-          <v-btn
-            outlined
-            depressed
-            color="primary"
-            v-on="on"
-            @click="showRestoreConfirmation('soft')"
-          >
-            {{ t('asset_update.restore.soft_reset') }}
-          </v-btn>
-        </template>
-        <span>{{ t('asset_update.restore.soft_reset_hint') }}</span>
-      </v-tooltip>
-      <v-tooltip top max-width="200">
-        <template #activator="{ on }">
-          <v-btn
-            class="ml-4"
-            depressed
-            color="primary"
-            v-on="on"
-            @click="showRestoreConfirmation('hard')"
-          >
-            {{ t('asset_update.restore.hard_reset') }}
-          </v-btn>
-        </template>
-        <span>{{ t('asset_update.restore.hard_reset_hint') }}</span>
-      </v-tooltip>
-    </template>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { Severity } from '@rotki/common/lib/messages';
 import { useMainStore } from '@/store/main';
@@ -159,3 +93,69 @@ const showDoneConfirmation = () => {
   );
 };
 </script>
+
+<template>
+  <div>
+    <template v-if="dropdown">
+      <v-menu offset-y>
+        <template #activator="{ on }">
+          <v-btn color="primary" depressed v-on="on">
+            {{ t('asset_update.restore.title') }}
+          </v-btn>
+        </template>
+        <v-list>
+          <v-list-item two-line link @click="showRestoreConfirmation('soft')">
+            <v-list-item-content>
+              <v-list-item-title>
+                {{ t('asset_update.restore.soft_reset') }}
+              </v-list-item-title>
+              <v-list-item-subtitle>
+                {{ t('asset_update.restore.soft_reset_hint') }}
+              </v-list-item-subtitle>
+            </v-list-item-content>
+          </v-list-item>
+          <v-list-item two-line link @click="showRestoreConfirmation('hard')">
+            <v-list-item-content>
+              <v-list-item-title>
+                {{ t('asset_update.restore.hard_reset') }}
+              </v-list-item-title>
+              <v-list-item-subtitle>
+                {{ t('asset_update.restore.hard_reset_hint') }}
+              </v-list-item-subtitle>
+            </v-list-item-content>
+          </v-list-item>
+        </v-list>
+      </v-menu>
+    </template>
+    <template v-else>
+      <v-tooltip top max-width="200">
+        <template #activator="{ on }">
+          <v-btn
+            outlined
+            depressed
+            color="primary"
+            v-on="on"
+            @click="showRestoreConfirmation('soft')"
+          >
+            {{ t('asset_update.restore.soft_reset') }}
+          </v-btn>
+        </template>
+        <span>{{ t('asset_update.restore.soft_reset_hint') }}</span>
+      </v-tooltip>
+      <v-tooltip top max-width="200">
+        <template #activator="{ on }">
+          <v-btn
+            class="ml-4"
+            depressed
+            color="primary"
+            v-on="on"
+            @click="showRestoreConfirmation('hard')"
+          >
+            {{ t('asset_update.restore.hard_reset') }}
+          </v-btn>
+        </template>
+        <span>{{ t('asset_update.restore.hard_reset_hint') }}</span>
+      </v-tooltip>
+    </template>
+  </div>
+</template>

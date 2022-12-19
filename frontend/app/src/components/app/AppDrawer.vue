@@ -1,3 +1,19 @@
+<script setup lang="ts">
+import RotkiLogo from '@/components/common/RotkiLogo.vue';
+import NavigationMenu from '@/components/NavigationMenu.vue';
+import { useMainStore } from '@/store/main';
+import { useAreaVisibilityStore } from '@/store/session/visibility';
+
+const { isMini, showDrawer } = storeToRefs(useAreaVisibilityStore());
+const { appVersion } = toRefs(useMainStore());
+const { appBarColor } = useTheme();
+
+const remoteDrawerImage =
+  'https://raw.githubusercontent.com/rotki/data/main/assets/icons/drawer_logo.png';
+
+const { t } = useI18n();
+</script>
+
 <template>
   <v-navigation-drawer
     v-model="showDrawer"
@@ -28,22 +44,6 @@
     </div>
   </v-navigation-drawer>
 </template>
-
-<script setup lang="ts">
-import RotkiLogo from '@/components/common/RotkiLogo.vue';
-import NavigationMenu from '@/components/NavigationMenu.vue';
-import { useMainStore } from '@/store/main';
-import { useAreaVisibilityStore } from '@/store/session/visibility';
-
-const { isMini, showDrawer } = storeToRefs(useAreaVisibilityStore());
-const { appVersion } = toRefs(useMainStore());
-const { appBarColor } = useTheme();
-
-const remoteDrawerImage =
-  'https://raw.githubusercontent.com/rotki/data/main/assets/icons/drawer_logo.png';
-
-const { t } = useI18n();
-</script>
 
 <style scoped lang="scss">
 .app {

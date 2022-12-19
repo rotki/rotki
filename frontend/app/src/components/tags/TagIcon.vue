@@ -1,3 +1,13 @@
+<script setup lang="ts">
+import { type PropType } from 'vue';
+import { type Tag } from '@/types/user';
+
+defineProps({
+  tag: { required: true, type: Object as PropType<Tag> },
+  small: { required: false, type: Boolean, default: false }
+});
+</script>
+
 <template>
   <v-chip
     class="tag font-weight-medium"
@@ -16,13 +26,3 @@
     <span>{{ tag.name }}</span>
   </v-chip>
 </template>
-
-<script setup lang="ts">
-import { type PropType } from 'vue';
-import { type Tag } from '@/types/user';
-
-defineProps({
-  tag: { required: true, type: Object as PropType<Tag> },
-  small: { required: false, type: Boolean, default: false }
-});
-</script>

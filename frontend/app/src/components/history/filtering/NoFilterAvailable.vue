@@ -1,70 +1,3 @@
-<template>
-  <div class="px-4 py-2">
-    <div v-if="suggestion" class="pb-2">
-      <div v-if="suggested.length > 0">
-        <div
-          v-for="(item, index) in suggested"
-          :key="item.index"
-          :tabindex="index"
-        >
-          <v-btn
-            text
-            color="primary"
-            :class="{
-              'fill-width': true,
-              [css.selected]: index === selectedSuggestion
-            }"
-            class="text-none text-body-1"
-            @click="applyFilter(item)"
-          >
-            <span class="text-start fill-width">
-              <suggested-item :suggestion="item" />
-            </span>
-          </v-btn>
-        </div>
-      </div>
-      <div v-else>
-        <div class="text--secondary">
-          {{ t('no_filter_available.no_suggestions', { search: keyword }) }}
-        </div>
-      </div>
-      <div
-        v-if="suggestion.hint"
-        class="caption-text text--secondary text-wrap"
-      >
-        {{ suggestion.hint }}
-      </div>
-    </div>
-    <div v-else-if="keyword" class="py-2">
-      <span>{{ t('no_filter_available.unsupported_filter') }}</span>
-      <span class="font-weight-medium ms-2">{{ keyword }}</span>
-    </div>
-    <div v-if="!suggestion">
-      <div class="caption-text text--secondary">
-        {{ t('no_filter_available.title') }}
-      </div>
-      <v-divider class="my-2" />
-      <filter-entry
-        v-for="matcher in available"
-        :key="matcher.key"
-        :matcher="matcher"
-        @click="click($event)"
-      />
-      <v-divider class="mt-2" />
-    </div>
-
-    <div class="caption-text text--secondary text--lighten-2 mt-2">
-      <span>{{ t('no_filter_available.hint.description') }}</span>
-      <span class="font-weight-medium">
-        {{ t('no_filter_available.hint.example') }}
-      </span>
-    </div>
-    <div class="caption-text text--secondary text--lighten-2 mt-2">
-      {{ t('no_filter_available.hint_filter') }}
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { type AssetInfo } from '@rotki/common/lib/data';
 import { type ComputedRef, type PropType, type Ref } from 'vue';
@@ -211,6 +144,73 @@ watch([keyword, suggestion], async ([keyword, suggestion]) => {
 
 const { t } = useI18n();
 </script>
+
+<template>
+  <div class="px-4 py-2">
+    <div v-if="suggestion" class="pb-2">
+      <div v-if="suggested.length > 0">
+        <div
+          v-for="(item, index) in suggested"
+          :key="item.index"
+          :tabindex="index"
+        >
+          <v-btn
+            text
+            color="primary"
+            :class="{
+              'fill-width': true,
+              [css.selected]: index === selectedSuggestion
+            }"
+            class="text-none text-body-1"
+            @click="applyFilter(item)"
+          >
+            <span class="text-start fill-width">
+              <suggested-item :suggestion="item" />
+            </span>
+          </v-btn>
+        </div>
+      </div>
+      <div v-else>
+        <div class="text--secondary">
+          {{ t('no_filter_available.no_suggestions', { search: keyword }) }}
+        </div>
+      </div>
+      <div
+        v-if="suggestion.hint"
+        class="caption-text text--secondary text-wrap"
+      >
+        {{ suggestion.hint }}
+      </div>
+    </div>
+    <div v-else-if="keyword" class="py-2">
+      <span>{{ t('no_filter_available.unsupported_filter') }}</span>
+      <span class="font-weight-medium ms-2">{{ keyword }}</span>
+    </div>
+    <div v-if="!suggestion">
+      <div class="caption-text text--secondary">
+        {{ t('no_filter_available.title') }}
+      </div>
+      <v-divider class="my-2" />
+      <filter-entry
+        v-for="matcher in available"
+        :key="matcher.key"
+        :matcher="matcher"
+        @click="click($event)"
+      />
+      <v-divider class="mt-2" />
+    </div>
+
+    <div class="caption-text text--secondary text--lighten-2 mt-2">
+      <span>{{ t('no_filter_available.hint.description') }}</span>
+      <span class="font-weight-medium">
+        {{ t('no_filter_available.hint.example') }}
+      </span>
+    </div>
+    <div class="caption-text text--secondary text--lighten-2 mt-2">
+      {{ t('no_filter_available.hint_filter') }}
+    </div>
+  </div>
+</template>
 
 <style module lang="scss">
 .selected {

@@ -1,3 +1,40 @@
+<script setup lang="ts">
+import FullSizeContent from '@/components/common/FullSizeContent.vue';
+import ProgressScreen from '@/components/helper/ProgressScreen.vue';
+import KrakenStaking from '@/components/staking/kraken/KrakenStaking.vue';
+import { useExchangeBalancesStore } from '@/store/balances/exchanges';
+import { useKrakenStakingStore } from '@/store/staking/kraken';
+import { SupportedExchange } from '@/types/exchanges';
+import { Section } from '@/types/status';
+
+const { shouldShowLoadingScreen } = useSectionLoading();
+const { load } = useKrakenStakingStore();
+
+const { connectedExchanges } = storeToRefs(useExchangeBalancesStore());
+const isKrakenConnected = computed(() => {
+  const exchanges = get(connectedExchanges);
+  return exchanges.some(
+    ({ location }) => location === SupportedExchange.KRAKEN
+  );
+});
+
+onMounted(async () => {
+  if (get(isKrakenConnected)) {
+    await load(false);
+  }
+});
+
+watch(isKrakenConnected, async isKrakenConnected => {
+  if (isKrakenConnected) {
+    await load(false);
+  }
+});
+
+const loading = shouldShowLoadingScreen(Section.STAKING_KRAKEN);
+
+const { t } = useI18n();
+</script>
+
 <template>
   <div>
     <full-size-content v-if="!isKrakenConnected">
@@ -51,43 +88,6 @@
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-import FullSizeContent from '@/components/common/FullSizeContent.vue';
-import ProgressScreen from '@/components/helper/ProgressScreen.vue';
-import KrakenStaking from '@/components/staking/kraken/KrakenStaking.vue';
-import { useExchangeBalancesStore } from '@/store/balances/exchanges';
-import { useKrakenStakingStore } from '@/store/staking/kraken';
-import { SupportedExchange } from '@/types/exchanges';
-import { Section } from '@/types/status';
-
-const { shouldShowLoadingScreen } = useSectionLoading();
-const { load } = useKrakenStakingStore();
-
-const { connectedExchanges } = storeToRefs(useExchangeBalancesStore());
-const isKrakenConnected = computed(() => {
-  const exchanges = get(connectedExchanges);
-  return exchanges.some(
-    ({ location }) => location === SupportedExchange.KRAKEN
-  );
-});
-
-onMounted(async () => {
-  if (get(isKrakenConnected)) {
-    await load(false);
-  }
-});
-
-watch(isKrakenConnected, async isKrakenConnected => {
-  if (isKrakenConnected) {
-    await load(false);
-  }
-});
-
-const loading = shouldShowLoadingScreen(Section.STAKING_KRAKEN);
-
-const { t } = useI18n();
-</script>
 
 <style lang="scss" module>
 .description {

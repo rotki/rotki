@@ -1,3 +1,26 @@
+<script setup lang="ts">
+import {
+  type XswapAsset,
+  type XswapBalance
+} from '@rotki/common/lib/defi/xswap';
+import { type PropType } from 'vue';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { One } from '@/utils/bignumbers';
+
+defineProps({
+  balance: { required: true, type: Object as PropType<XswapBalance> }
+});
+
+const details = ref<boolean>(false);
+
+const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+const { tc } = useI18n();
+
+const getTotal = ({ totalAmount, usdPrice }: XswapAsset) => {
+  return usdPrice.multipliedBy(totalAmount ?? One);
+};
+</script>
+
 <template>
   <v-dialog v-model="details" scrollable max-width="450px">
     <template #activator="{ on, attrs }">
@@ -66,26 +89,3 @@
     </card>
   </v-dialog>
 </template>
-
-<script setup lang="ts">
-import {
-  type XswapAsset,
-  type XswapBalance
-} from '@rotki/common/lib/defi/xswap';
-import { type PropType } from 'vue';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { One } from '@/utils/bignumbers';
-
-defineProps({
-  balance: { required: true, type: Object as PropType<XswapBalance> }
-});
-
-const details = ref<boolean>(false);
-
-const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { tc } = useI18n();
-
-const getTotal = ({ totalAmount, usdPrice }: XswapAsset) => {
-  return usdPrice.multipliedBy(totalAmount ?? One);
-};
-</script>

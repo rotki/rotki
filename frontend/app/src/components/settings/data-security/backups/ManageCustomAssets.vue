@@ -1,3 +1,53 @@
+<script setup lang="ts">
+import FileUpload from '@/components/import/FileUpload.vue';
+import { useAssets } from '@/store/assets';
+import { assert } from '@/utils/assertions';
+
+const zip = ref<File | null>(null);
+const importError = ref('');
+const exportError = ref('');
+const downloading = ref(false);
+const downloaded = ref(false);
+const uploading = ref(false);
+const uploaded = ref(false);
+
+const { importCustomAssets, exportCustomAssets } = useAssets();
+const importDisabled = computed(() => !get(zip));
+const { start, stop } = useTimeoutFn(() => set(downloaded, false), 4000);
+
+const importZip = async () => {
+  const file = get(zip);
+  assert(file);
+  set(uploading, true);
+  const result = await importCustomAssets(file);
+  if (result.success) {
+    set(uploaded, true);
+  } else {
+    set(importError, result.message);
+  }
+  set(uploading, false);
+  set(zip, null);
+};
+
+const exportZip = async () => {
+  stop();
+  if (get(downloading)) {
+    return;
+  }
+  set(downloading, true);
+  const result = await exportCustomAssets();
+  if (result.success) {
+    set(downloaded, true);
+    start();
+  } else {
+    set(exportError, result.message);
+  }
+  set(downloading, false);
+};
+
+const { t } = useI18n();
+</script>
+
 <template>
   <card>
     <template #title>{{ t('manage_user_assets.title') }}</template>
@@ -53,53 +103,3 @@
     </v-sheet>
   </card>
 </template>
-
-<script setup lang="ts">
-import FileUpload from '@/components/import/FileUpload.vue';
-import { useAssets } from '@/store/assets';
-import { assert } from '@/utils/assertions';
-
-const zip = ref<File | null>(null);
-const importError = ref('');
-const exportError = ref('');
-const downloading = ref(false);
-const downloaded = ref(false);
-const uploading = ref(false);
-const uploaded = ref(false);
-
-const { importCustomAssets, exportCustomAssets } = useAssets();
-const importDisabled = computed(() => !get(zip));
-const { start, stop } = useTimeoutFn(() => set(downloaded, false), 4000);
-
-const importZip = async () => {
-  const file = get(zip);
-  assert(file);
-  set(uploading, true);
-  const result = await importCustomAssets(file);
-  if (result.success) {
-    set(uploaded, true);
-  } else {
-    set(importError, result.message);
-  }
-  set(uploading, false);
-  set(zip, null);
-};
-
-const exportZip = async () => {
-  stop();
-  if (get(downloading)) {
-    return;
-  }
-  set(downloading, true);
-  const result = await exportCustomAssets();
-  if (result.success) {
-    set(downloaded, true);
-    start();
-  } else {
-    set(exportError, result.message);
-  }
-  set(downloading, false);
-};
-
-const { t } = useI18n();
-</script>

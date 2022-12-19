@@ -1,64 +1,3 @@
-<template>
-  <v-container>
-    <v-row justify="space-between" align="center" no-gutters>
-      <v-col>
-        <card-title>{{ tc('price_management.historic.title') }}</card-title>
-      </v-col>
-    </v-row>
-    <card class="mt-8">
-      <template #title>{{ tc('price_management.filter_title') }}</template>
-      <v-row>
-        <v-col cols="12" md="6">
-          <asset-select
-            v-model="filter.fromAsset"
-            outlined
-            :label="tc('price_management.from_asset')"
-            clearable
-            hide-details
-          />
-        </v-col>
-        <v-col cols="12" md="6">
-          <asset-select
-            v-model="filter.toAsset"
-            outlined
-            :label="tc('price_management.to_asset')"
-            clearable
-            hide-details
-          />
-        </v-col>
-      </v-row>
-    </card>
-    <historic-price-table
-      class="mt-12"
-      :filter="filter"
-      :refreshing="refreshing"
-      @edit="openForm($event)"
-      @refreshed="refreshing = false"
-    >
-      <v-btn absolute fab top right color="primary" @click="openForm()">
-        <v-icon> mdi-plus </v-icon>
-      </v-btn>
-    </historic-price-table>
-    <big-dialog
-      :display="showForm"
-      :title="
-        editMode
-          ? tc('price_management.dialog.edit_title')
-          : tc('price_management.dialog.add_title')
-      "
-      :action-disabled="!valid"
-      @confirm="managePrice(formData, editMode)"
-      @cancel="hideForm()"
-    >
-      <historic-price-form
-        v-model="formData"
-        :edit="editMode"
-        @valid="valid = $event"
-      />
-    </big-dialog>
-  </v-container>
-</template>
-
 <script setup lang="ts">
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import HistoricPriceForm from '@/components/price-manager/historic/HistoricPriceForm.vue';
@@ -160,3 +99,64 @@ onMounted(async () => {
   }
 });
 </script>
+
+<template>
+  <v-container>
+    <v-row justify="space-between" align="center" no-gutters>
+      <v-col>
+        <card-title>{{ tc('price_management.historic.title') }}</card-title>
+      </v-col>
+    </v-row>
+    <card class="mt-8">
+      <template #title>{{ tc('price_management.filter_title') }}</template>
+      <v-row>
+        <v-col cols="12" md="6">
+          <asset-select
+            v-model="filter.fromAsset"
+            outlined
+            :label="tc('price_management.from_asset')"
+            clearable
+            hide-details
+          />
+        </v-col>
+        <v-col cols="12" md="6">
+          <asset-select
+            v-model="filter.toAsset"
+            outlined
+            :label="tc('price_management.to_asset')"
+            clearable
+            hide-details
+          />
+        </v-col>
+      </v-row>
+    </card>
+    <historic-price-table
+      class="mt-12"
+      :filter="filter"
+      :refreshing="refreshing"
+      @edit="openForm($event)"
+      @refreshed="refreshing = false"
+    >
+      <v-btn absolute fab top right color="primary" @click="openForm()">
+        <v-icon> mdi-plus </v-icon>
+      </v-btn>
+    </historic-price-table>
+    <big-dialog
+      :display="showForm"
+      :title="
+        editMode
+          ? tc('price_management.dialog.edit_title')
+          : tc('price_management.dialog.add_title')
+      "
+      :action-disabled="!valid"
+      @confirm="managePrice(formData, editMode)"
+      @cancel="hideForm()"
+    >
+      <historic-price-form
+        v-model="formData"
+        :edit="editMode"
+        @valid="valid = $event"
+      />
+    </big-dialog>
+  </v-container>
+</template>

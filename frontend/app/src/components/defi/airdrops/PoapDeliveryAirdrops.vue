@@ -1,38 +1,3 @@
-<template>
-  <table-expand-container :visible="visible" :colspan="colspan" :padded="false">
-    <template #title>
-      {{ t('poap_delivery_airdrops.title') }}
-    </template>
-    <data-table :items="items" :headers="headers">
-      <template #item.name="{ item }">
-        <v-row align="center">
-          <v-col cols="auto">
-            <v-img
-              class="poap-delivery-airdrops__image"
-              width="36px"
-              height="36px"
-              contain
-              :src="getImage(item.event)"
-            />
-          </v-col>
-          <v-col> {{ item.name }}</v-col>
-        </v-row>
-      </template>
-      <template #item.link="{ item }">
-        <v-btn
-          icon
-          color="primary"
-          :target="isPackaged ? undefined : '_blank'"
-          :href="isPackaged ? undefined : item.link"
-          @click="isPackaged ? navigate(item.link) : undefined"
-        >
-          <v-icon>mdi-link</v-icon>
-        </v-btn>
-      </template>
-    </data-table>
-  </table-expand-container>
-</template>
-
 <script setup lang="ts">
 import { type PropType } from 'vue';
 import { type DataTableHeader } from 'vuetify';
@@ -91,6 +56,41 @@ const getImage = (event: EventType): string => {
 
 const { navigate, isPackaged } = useInterop();
 </script>
+
+<template>
+  <table-expand-container :visible="visible" :colspan="colspan" :padded="false">
+    <template #title>
+      {{ t('poap_delivery_airdrops.title') }}
+    </template>
+    <data-table :items="items" :headers="headers">
+      <template #item.name="{ item }">
+        <v-row align="center">
+          <v-col cols="auto">
+            <v-img
+              class="poap-delivery-airdrops__image"
+              width="36px"
+              height="36px"
+              contain
+              :src="getImage(item.event)"
+            />
+          </v-col>
+          <v-col> {{ item.name }}</v-col>
+        </v-row>
+      </template>
+      <template #item.link="{ item }">
+        <v-btn
+          icon
+          color="primary"
+          :target="isPackaged ? undefined : '_blank'"
+          :href="isPackaged ? undefined : item.link"
+          @click="isPackaged ? navigate(item.link) : undefined"
+        >
+          <v-icon>mdi-link</v-icon>
+        </v-btn>
+      </template>
+    </data-table>
+  </table-expand-container>
+</template>
 
 <style scoped lang="scss">
 .poap-delivery-airdrops {

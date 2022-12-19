@@ -1,29 +1,3 @@
-<template>
-  <settings-option
-    #default="{ error, success, update }"
-    setting="balanceSaveFrequency"
-    :transform="transform"
-    :error-message="tc('general_settings.validation.balance_frequency.error')"
-    :success-message="successMessage"
-    @finished="resetBalanceSaveFrequency"
-  >
-    <v-text-field
-      v-model="balanceSaveFrequency"
-      outlined
-      min="1"
-      :max="maxBalanceSaveFrequency"
-      class="mt-2 general-settings__fields__balance-save-frequency"
-      :label="tc('general_settings.labels.balance_saving_frequency')"
-      type="number"
-      :success-messages="success"
-      :error-messages="
-        error || v$.balanceSaveFrequency.$errors.map(e => e.$message)
-      "
-      @change="callIfValid($event, update)"
-    />
-  </settings-option>
-</template>
-
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { between, helpers, required } from '@vuelidate/validators';
@@ -72,3 +46,29 @@ onMounted(() => {
   resetBalanceSaveFrequency();
 });
 </script>
+
+<template>
+  <settings-option
+    #default="{ error, success, update }"
+    setting="balanceSaveFrequency"
+    :transform="transform"
+    :error-message="tc('general_settings.validation.balance_frequency.error')"
+    :success-message="successMessage"
+    @finished="resetBalanceSaveFrequency"
+  >
+    <v-text-field
+      v-model="balanceSaveFrequency"
+      outlined
+      min="1"
+      :max="maxBalanceSaveFrequency"
+      class="mt-2 general-settings__fields__balance-save-frequency"
+      :label="tc('general_settings.labels.balance_saving_frequency')"
+      type="number"
+      :success-messages="success"
+      :error-messages="
+        error || v$.balanceSaveFrequency.$errors.map(e => e.$message)
+      "
+      @change="callIfValid($event, update)"
+    />
+  </settings-option>
+</template>

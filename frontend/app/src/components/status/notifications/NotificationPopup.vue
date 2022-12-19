@@ -1,3 +1,45 @@
+<script setup lang="ts">
+import Notification from '@/components/status/notifications/Notification.vue';
+import {
+  emptyNotification,
+  useNotificationsStore
+} from '@/store/notifications';
+
+const visibleNotification = ref(emptyNotification());
+const notificationStore = useNotificationsStore();
+const { queue } = storeToRefs(notificationStore);
+const { displayed } = notificationStore;
+
+const dismiss = async (id: number) => {
+  await displayed([id]);
+  set(visibleNotification, { ...get(visibleNotification), display: false });
+};
+
+const dismissAll = async () => {
+  await displayed(get(queue).map(({ id }) => id));
+  set(visibleNotification, { ...get(visibleNotification), display: false });
+};
+
+watch(
+  queue,
+  () => {
+    const data = [...get(queue)];
+    if (!get(visibleNotification).display && data.length > 0) {
+      const next = data.shift();
+      if (!next) {
+        return;
+      }
+      nextTick(() => {
+        set(visibleNotification, next);
+      });
+    }
+  },
+  { deep: true }
+);
+
+const { t } = useI18n();
+</script>
+
 <template>
   <v-snackbar
     v-model="visibleNotification.display"
@@ -44,48 +86,6 @@
     </v-tooltip>
   </v-snackbar>
 </template>
-
-<script setup lang="ts">
-import Notification from '@/components/status/notifications/Notification.vue';
-import {
-  emptyNotification,
-  useNotificationsStore
-} from '@/store/notifications';
-
-const visibleNotification = ref(emptyNotification());
-const notificationStore = useNotificationsStore();
-const { queue } = storeToRefs(notificationStore);
-const { displayed } = notificationStore;
-
-const dismiss = async (id: number) => {
-  await displayed([id]);
-  set(visibleNotification, { ...get(visibleNotification), display: false });
-};
-
-const dismissAll = async () => {
-  await displayed(get(queue).map(({ id }) => id));
-  set(visibleNotification, { ...get(visibleNotification), display: false });
-};
-
-watch(
-  queue,
-  () => {
-    const data = [...get(queue)];
-    if (!get(visibleNotification).display && data.length > 0) {
-      const next = data.shift();
-      if (!next) {
-        return;
-      }
-      nextTick(() => {
-        set(visibleNotification, next);
-      });
-    }
-  },
-  { deep: true }
-);
-
-const { t } = useI18n();
-</script>
 <style module lang="scss">
 .popup {
   :global {

@@ -1,3 +1,27 @@
+<script setup lang="ts">
+const props = defineProps({
+  title: { required: true, type: String },
+  message: { required: true, type: String },
+  success: { required: false, type: Boolean, default: false }
+});
+
+const emit = defineEmits(['dismiss']);
+const { message, success } = toRefs(props);
+const visible = ref<boolean>(false);
+
+watch(message, message => {
+  set(visible, message.length > 0);
+});
+
+const icon = computed<string>(() => {
+  return get(success) ? 'mdi-check-circle ' : 'mdi-alert-circle';
+});
+
+const dismiss = () => emit('dismiss');
+
+const { t } = useI18n();
+</script>
+
 <template>
   <v-dialog v-model="visible" persistent max-width="500" class="message-dialog">
     <v-card>
@@ -38,30 +62,6 @@
     </v-card>
   </v-dialog>
 </template>
-
-<script setup lang="ts">
-const props = defineProps({
-  title: { required: true, type: String },
-  message: { required: true, type: String },
-  success: { required: false, type: Boolean, default: false }
-});
-
-const emit = defineEmits(['dismiss']);
-const { message, success } = toRefs(props);
-const visible = ref<boolean>(false);
-
-watch(message, message => {
-  set(visible, message.length > 0);
-});
-
-const icon = computed<string>(() => {
-  return get(success) ? 'mdi-check-circle ' : 'mdi-alert-circle';
-});
-
-const dismiss = () => emit('dismiss');
-
-const { t } = useI18n();
-</script>
 
 <style scoped lang="scss">
 .message-dialog {

@@ -1,17 +1,3 @@
-<template>
-  <blockchain-account-selector
-    no-padding
-    outlined
-    :value="selectedAccounts"
-    flat
-    :label="tc('common.select_address')"
-    multiple
-    :chains="[ETH]"
-    :loading="loading"
-    @input="added($event)"
-  />
-</template>
-
 <script setup lang="ts">
 import { type GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
@@ -78,3 +64,17 @@ watch(queriedAddresses, queried => {
   setSelectedAccounts(queriedForModule ? queriedForModule : []);
 });
 </script>
+
+<template>
+  <blockchain-account-selector
+    no-padding
+    outlined
+    :value="selectedAccounts"
+    flat
+    :label="tc('common.select_address')"
+    multiple
+    :chains="[ETH]"
+    :loading="loading"
+    @input="added($event)"
+  />
+</template>

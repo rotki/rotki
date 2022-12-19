@@ -1,3 +1,30 @@
+<script setup lang="ts">
+import { type PropType } from 'vue';
+import LoanDebt from '@/components/defi/loan/LoanDebt.vue';
+import LoanHeader from '@/components/defi/loan/LoanHeader.vue';
+import AaveCollateral from '@/components/defi/loan/loans/aave/AaveCollateral.vue';
+import PremiumCard from '@/components/display/PremiumCard.vue';
+
+import { AaveBorrowingDetails } from '@/premium/premium';
+import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
+import { type AaveLoan } from '@/store/defi/types';
+import { Section } from '@/types/status';
+
+const props = defineProps({
+  loan: {
+    required: true,
+    type: Object as PropType<AaveLoan>
+  }
+});
+
+const { loan } = toRefs(props);
+const premium = usePremium();
+const aaveHistoryLoading = isSectionLoading(Section.DEFI_AAVE_HISTORY);
+const { assetSymbol } = useAssetInfoRetrieval();
+const { tc } = useI18n();
+const symbol = asyncComputed(() => assetSymbol(get(loan).asset));
+</script>
+
 <template>
   <v-row>
     <v-col cols="12">
@@ -29,30 +56,3 @@
     </v-col>
   </v-row>
 </template>
-
-<script setup lang="ts">
-import { type PropType } from 'vue';
-import LoanDebt from '@/components/defi/loan/LoanDebt.vue';
-import LoanHeader from '@/components/defi/loan/LoanHeader.vue';
-import AaveCollateral from '@/components/defi/loan/loans/aave/AaveCollateral.vue';
-import PremiumCard from '@/components/display/PremiumCard.vue';
-
-import { AaveBorrowingDetails } from '@/premium/premium';
-import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
-import { type AaveLoan } from '@/store/defi/types';
-import { Section } from '@/types/status';
-
-const props = defineProps({
-  loan: {
-    required: true,
-    type: Object as PropType<AaveLoan>
-  }
-});
-
-const { loan } = toRefs(props);
-const premium = usePremium();
-const aaveHistoryLoading = isSectionLoading(Section.DEFI_AAVE_HISTORY);
-const { assetSymbol } = useAssetInfoRetrieval();
-const { tc } = useI18n();
-const symbol = asyncComputed(() => assetSymbol(get(loan).asset));
-</script>

@@ -1,3 +1,15 @@
+<script setup lang="ts">
+defineProps({
+  canNavigateBack: { required: true, type: Boolean, default: false }
+});
+
+const router = useRouter();
+const goBack = () => {
+  router.go(-1);
+};
+
+const { t } = useI18n();
+</script>
 <template>
   <v-tooltip v-if="canNavigateBack" open-delay="400" top>
     <template #activator="{ on, attrs }">
@@ -15,18 +27,6 @@
   </v-tooltip>
   <div v-else class="back-button__placeholder" />
 </template>
-<script setup lang="ts">
-defineProps({
-  canNavigateBack: { required: true, type: Boolean, default: false }
-});
-
-const router = useRouter();
-const goBack = () => {
-  router.go(-1);
-};
-
-const { t } = useI18n();
-</script>
 <style scoped lang="scss">
 .back-button {
   &__button,

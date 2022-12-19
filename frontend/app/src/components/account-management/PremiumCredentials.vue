@@ -1,37 +1,3 @@
-<template>
-  <div>
-    <div v-if="enabled">
-      <v-switch
-        :label="tc('premium_credentials.restore_synced_database')"
-        :value="syncDatabase"
-        @change="updateSyncDatabase"
-      />
-
-      <revealable-input
-        outlined
-        :value="apiKey"
-        :disabled="loading"
-        class="premium-settings__fields__api-key"
-        :error-messages="v$.apiKey.$errors.map(e => e.$message)"
-        :label="tc('premium_credentials.label_api_key')"
-        @input="updateApiKey"
-        @paste="onApiKeyPaste"
-      />
-      <revealable-input
-        outlined
-        :value="apiSecret"
-        :disabled="loading"
-        class="premium-settings__fields__api-secret"
-        prepend-icon="mdi-lock"
-        :label="tc('premium_credentials.label_api_secret')"
-        :error-messages="v$.apiSecret.$errors.map(e => e.$message)"
-        @input="updateApiSecret"
-        @paste="onApiSecretPaste"
-      />
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
@@ -121,3 +87,37 @@ watch(v$, ({ $invalid }) => {
   emit('update:valid', !$invalid);
 });
 </script>
+
+<template>
+  <div>
+    <div v-if="enabled">
+      <v-switch
+        :label="tc('premium_credentials.restore_synced_database')"
+        :value="syncDatabase"
+        @change="updateSyncDatabase"
+      />
+
+      <revealable-input
+        outlined
+        :value="apiKey"
+        :disabled="loading"
+        class="premium-settings__fields__api-key"
+        :error-messages="v$.apiKey.$errors.map(e => e.$message)"
+        :label="tc('premium_credentials.label_api_key')"
+        @input="updateApiKey"
+        @paste="onApiKeyPaste"
+      />
+      <revealable-input
+        outlined
+        :value="apiSecret"
+        :disabled="loading"
+        class="premium-settings__fields__api-secret"
+        prepend-icon="mdi-lock"
+        :label="tc('premium_credentials.label_api_secret')"
+        :error-messages="v$.apiSecret.$errors.map(e => e.$message)"
+        @input="updateApiSecret"
+        @paste="onApiSecretPaste"
+      />
+    </div>
+  </div>
+</template>

@@ -1,117 +1,3 @@
-<template>
-  <div>
-    <data-table
-      ref="tableRef"
-      class="table-inside-dialog"
-      :headers="tableHeaders"
-      :items="data"
-      :container="tableContainer"
-      :mobile-breakpoint="0"
-    >
-      <template #item.category="{ item }">
-        <div>
-          <span>{{ toSentenceCase(item.category) }}</span>
-          <span v-if="isNft(item.assetIdentifier)">
-            ({{ tc('dashboard.snapshot.edit.dialog.balances.nft') }})
-          </span>
-        </div>
-      </template>
-
-      <template #item.assetIdentifier="{ item }">
-        <asset-details
-          v-if="!isNft(item.assetIdentifier)"
-          :class="css.asset"
-          :asset-styled="{ padding: '2px 0.75rem' }"
-          :asset="item.assetIdentifier"
-          :opens-details="false"
-          :enable-association="false"
-        />
-        <div v-else>
-          <nft-details :identifier="item.assetIdentifier" :class="css.asset" />
-        </div>
-      </template>
-
-      <template #item.amount="{ item }">
-        <amount-display :value="item.amount" />
-      </template>
-
-      <template #item.usdValue="{ item }">
-        <amount-display :value="item.usdValue" fiat-currency="USD" />
-      </template>
-
-      <template #item.action="{ item }">
-        <row-actions
-          :edit-tooltip="tc('dashboard.snapshot.edit.dialog.actions.edit_item')"
-          :delete-tooltip="
-            tc('dashboard.snapshot.edit.dialog.actions.delete_item')
-          "
-          @edit-click="editClick(item)"
-          @delete-click="deleteClick(item)"
-        />
-      </template>
-    </data-table>
-    <v-sheet elevation="10" class="d-flex align-center px-4 py-2">
-      <div>
-        <div class="text-caption">{{ tc('common.total') }}:</div>
-        <div class="font-weight-bold text-h6 mt-n1">
-          <amount-display :value="total" fiat-currency="USD" />
-        </div>
-      </div>
-      <v-spacer />
-      <v-btn text color="primary" class="mr-4" @click="add">
-        <v-icon class="mr-2">mdi-plus</v-icon>
-        <span>
-          {{ tc('dashboard.snapshot.edit.dialog.actions.add_new_entry') }}
-        </span>
-      </v-btn>
-      <v-btn color="primary" @click="updateStep(2)">
-        {{ tc('common.actions.next') }}
-      </v-btn>
-    </v-sheet>
-
-    <big-dialog
-      :display="showForm"
-      :title="
-        indexToEdit !== null
-          ? tc('dashboard.snapshot.edit.dialog.balances.edit_title')
-          : tc('dashboard.snapshot.edit.dialog.balances.add_title')
-      "
-      :primary-action="tc('common.actions.save')"
-      :action-disabled="loading || !valid"
-      @confirm="save"
-      @cancel="clearEditDialog"
-    >
-      <edit-balances-snapshot-form
-        v-if="form"
-        v-model="valid"
-        :form="form"
-        :excluded-assets="excludedAssets"
-        :preview-location-balance="previewLocationBalance"
-        :locations="indexToEdit !== null ? existingLocations : []"
-        @update:form="updateForm"
-      />
-    </big-dialog>
-
-    <confirm-dialog
-      :display="showDeleteConfirmation"
-      :title="tc('dashboard.snapshot.edit.dialog.balances.delete_title')"
-      :message="
-        tc('dashboard.snapshot.edit.dialog.balances.delete_confirmation')
-      "
-      max-width="700"
-      @cancel="clearDeleteDialog"
-      @confirm="confirmDelete"
-    >
-      <div class="mt-4">
-        <edit-balances-snapshot-location-selector
-          v-model="locationToDelete"
-          :locations="existingLocations"
-          :preview-location-balance="previewDeleteLocationBalance"
-        />
-      </div>
-    </confirm-dialog>
-  </div>
-</template>
 <script setup lang="ts">
 import { type BigNumber } from '@rotki/common';
 import { type PropType } from 'vue';
@@ -469,6 +355,120 @@ const tableContainer = computed(() => {
   return get(tableRef)?.$el;
 });
 </script>
+<template>
+  <div>
+    <data-table
+      ref="tableRef"
+      class="table-inside-dialog"
+      :headers="tableHeaders"
+      :items="data"
+      :container="tableContainer"
+      :mobile-breakpoint="0"
+    >
+      <template #item.category="{ item }">
+        <div>
+          <span>{{ toSentenceCase(item.category) }}</span>
+          <span v-if="isNft(item.assetIdentifier)">
+            ({{ tc('dashboard.snapshot.edit.dialog.balances.nft') }})
+          </span>
+        </div>
+      </template>
+
+      <template #item.assetIdentifier="{ item }">
+        <asset-details
+          v-if="!isNft(item.assetIdentifier)"
+          :class="css.asset"
+          :asset-styled="{ padding: '2px 0.75rem' }"
+          :asset="item.assetIdentifier"
+          :opens-details="false"
+          :enable-association="false"
+        />
+        <div v-else>
+          <nft-details :identifier="item.assetIdentifier" :class="css.asset" />
+        </div>
+      </template>
+
+      <template #item.amount="{ item }">
+        <amount-display :value="item.amount" />
+      </template>
+
+      <template #item.usdValue="{ item }">
+        <amount-display :value="item.usdValue" fiat-currency="USD" />
+      </template>
+
+      <template #item.action="{ item }">
+        <row-actions
+          :edit-tooltip="tc('dashboard.snapshot.edit.dialog.actions.edit_item')"
+          :delete-tooltip="
+            tc('dashboard.snapshot.edit.dialog.actions.delete_item')
+          "
+          @edit-click="editClick(item)"
+          @delete-click="deleteClick(item)"
+        />
+      </template>
+    </data-table>
+    <v-sheet elevation="10" class="d-flex align-center px-4 py-2">
+      <div>
+        <div class="text-caption">{{ tc('common.total') }}:</div>
+        <div class="font-weight-bold text-h6 mt-n1">
+          <amount-display :value="total" fiat-currency="USD" />
+        </div>
+      </div>
+      <v-spacer />
+      <v-btn text color="primary" class="mr-4" @click="add">
+        <v-icon class="mr-2">mdi-plus</v-icon>
+        <span>
+          {{ tc('dashboard.snapshot.edit.dialog.actions.add_new_entry') }}
+        </span>
+      </v-btn>
+      <v-btn color="primary" @click="updateStep(2)">
+        {{ tc('common.actions.next') }}
+      </v-btn>
+    </v-sheet>
+
+    <big-dialog
+      :display="showForm"
+      :title="
+        indexToEdit !== null
+          ? tc('dashboard.snapshot.edit.dialog.balances.edit_title')
+          : tc('dashboard.snapshot.edit.dialog.balances.add_title')
+      "
+      :primary-action="tc('common.actions.save')"
+      :action-disabled="loading || !valid"
+      @confirm="save"
+      @cancel="clearEditDialog"
+    >
+      <edit-balances-snapshot-form
+        v-if="form"
+        v-model="valid"
+        :form="form"
+        :excluded-assets="excludedAssets"
+        :preview-location-balance="previewLocationBalance"
+        :locations="indexToEdit !== null ? existingLocations : []"
+        @update:form="updateForm"
+      />
+    </big-dialog>
+
+    <confirm-dialog
+      :display="showDeleteConfirmation"
+      :title="tc('dashboard.snapshot.edit.dialog.balances.delete_title')"
+      :message="
+        tc('dashboard.snapshot.edit.dialog.balances.delete_confirmation')
+      "
+      max-width="700"
+      @cancel="clearDeleteDialog"
+      @confirm="confirmDelete"
+    >
+      <div class="mt-4">
+        <edit-balances-snapshot-location-selector
+          v-model="locationToDelete"
+          :locations="existingLocations"
+          :preview-location-balance="previewDeleteLocationBalance"
+        />
+      </div>
+    </confirm-dialog>
+  </div>
+</template>
 <style module lang="scss">
 .asset {
   max-width: 640px;

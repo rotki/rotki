@@ -1,3 +1,18 @@
+<script setup lang="ts">
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useStatisticsStore } from '@/store/statistics';
+
+const includeNfts = ref<boolean>(true);
+const { fetchNetValue } = useStatisticsStore();
+const { nftsInNetValue: enabled } = storeToRefs(useFrontendSettingsStore());
+
+onMounted(() => {
+  set(includeNfts, get(enabled));
+});
+
+const { t } = useI18n();
+</script>
+
 <template>
   <settings-option
     #default="{ error, success, update }"
@@ -17,18 +32,3 @@
     />
   </settings-option>
 </template>
-
-<script setup lang="ts">
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useStatisticsStore } from '@/store/statistics';
-
-const includeNfts = ref<boolean>(true);
-const { fetchNetValue } = useStatisticsStore();
-const { nftsInNetValue: enabled } = storeToRefs(useFrontendSettingsStore());
-
-onMounted(() => {
-  set(includeNfts, get(enabled));
-});
-
-const { t } = useI18n();
-</script>

@@ -1,54 +1,3 @@
-<template>
-  <v-row no-gutters class="mt-2">
-    <v-col>
-      <v-row v-if="multi" no-gutters align="center">
-        <v-col cols="auto">
-          <v-checkbox
-            v-model="multiple"
-            :disabled="disabled"
-            :label="t('account_form.labels.multiple')"
-          />
-        </v-col>
-      </v-row>
-      <v-text-field
-        v-if="!multiple"
-        v-model="address"
-        data-cy="account-address-field"
-        outlined
-        class="account-form__address"
-        :label="t('common.account')"
-        :rules="rules"
-        :error-messages="errors"
-        autocomplete="off"
-        :disabled="disabled"
-        @paste="onPasteAddress"
-      />
-      <v-textarea
-        v-else
-        v-model="userAddresses"
-        outlined
-        :disabled="disabled"
-        :error-messages="errors"
-        :hint="t('account_form.labels.addresses_hint')"
-        :label="t('account_form.labels.addresses')"
-        @paste="onPasteMulti"
-      />
-      <v-row v-if="multiple" no-gutters>
-        <v-col>
-          <div
-            class="text-caption"
-            v-text="
-              tc('account_form.labels.addresses_entries', entries.length, {
-                count: entries.length
-              })
-            "
-          />
-        </v-col>
-      </v-row>
-    </v-col>
-  </v-row>
-</template>
-
 <script setup lang="ts">
 import { type PropType } from 'vue';
 import { trimOnPaste } from '@/utils/event';
@@ -145,3 +94,54 @@ const rules = [
   }
 ];
 </script>
+
+<template>
+  <v-row no-gutters class="mt-2">
+    <v-col>
+      <v-row v-if="multi" no-gutters align="center">
+        <v-col cols="auto">
+          <v-checkbox
+            v-model="multiple"
+            :disabled="disabled"
+            :label="t('account_form.labels.multiple')"
+          />
+        </v-col>
+      </v-row>
+      <v-text-field
+        v-if="!multiple"
+        v-model="address"
+        data-cy="account-address-field"
+        outlined
+        class="account-form__address"
+        :label="t('common.account')"
+        :rules="rules"
+        :error-messages="errors"
+        autocomplete="off"
+        :disabled="disabled"
+        @paste="onPasteAddress"
+      />
+      <v-textarea
+        v-else
+        v-model="userAddresses"
+        outlined
+        :disabled="disabled"
+        :error-messages="errors"
+        :hint="t('account_form.labels.addresses_hint')"
+        :label="t('account_form.labels.addresses')"
+        @paste="onPasteMulti"
+      />
+      <v-row v-if="multiple" no-gutters>
+        <v-col>
+          <div
+            class="text-caption"
+            v-text="
+              tc('account_form.labels.addresses_entries', entries.length, {
+                count: entries.length
+              })
+            "
+          />
+        </v-col>
+      </v-row>
+    </v-col>
+  </v-row>
+</template>

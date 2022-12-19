@@ -1,68 +1,3 @@
-<template>
-  <v-container>
-    <report-generator
-      v-show="!isRunning && !reportError.message"
-      @generate="generate"
-      @export-data="exportData"
-      @import-data="importDataDialog = true"
-    />
-    <error-screen
-      v-if="!isRunning && reportError.message"
-      class="mt-12"
-      :message="reportError.message"
-      :error="reportError.error"
-      :title="tc('profit_loss_report.error.title')"
-      :subtitle="tc('profit_loss_report.error.subtitle')"
-    >
-      <template #bottom>
-        <v-btn text class="mt-2" @click="clearError()">
-          {{ tc('common.actions.close') }}
-        </v-btn>
-      </template>
-    </error-screen>
-    <reports-table v-show="!isRunning && !reportError.message" class="mt-8" />
-    <progress-screen v-if="isRunning" :progress="progress">
-      <template #message>
-        <div v-if="processingState" class="medium text-h6 mb-4">
-          {{ processingState }}
-        </div>
-        {{ tc('profit_loss_report.loading_message') }}
-      </template>
-      {{ tc('profit_loss_report.loading_hint') }}
-    </progress-screen>
-    <v-dialog v-model="importDataDialog" max-width="600">
-      <card>
-        <template #title>
-          {{ tc('profit_loss_reports.debug.import_data_dialog.title') }}
-        </template>
-        <div>
-          <div class="py-2">
-            <file-upload
-              ref="reportDebugDataUploader"
-              source="json"
-              file-filter=".json"
-              @selected="reportDebugData = $event"
-            />
-          </div>
-          <div class="mt-2 d-flex justify-end">
-            <v-btn class="mr-4" @click="importDataDialog = false">
-              {{ tc('common.actions.cancel') }}
-            </v-btn>
-            <v-btn
-              color="primary"
-              :disabled="!reportDebugData"
-              :loading="importDataLoading"
-              @click="importData"
-            >
-              {{ tc('common.actions.import') }}
-            </v-btn>
-          </div>
-        </div>
-      </card>
-    </v-dialog>
-  </v-container>
-</template>
-
 <script setup lang="ts">
 import { type Message } from '@rotki/common/lib/messages';
 import ErrorScreen from '@/components/error/ErrorScreen.vue';
@@ -237,3 +172,68 @@ const importData = async () => {
 const processingState = computed(() => reportsStore.processingState);
 const progress = computed(() => reportsStore.progress);
 </script>
+
+<template>
+  <v-container>
+    <report-generator
+      v-show="!isRunning && !reportError.message"
+      @generate="generate"
+      @export-data="exportData"
+      @import-data="importDataDialog = true"
+    />
+    <error-screen
+      v-if="!isRunning && reportError.message"
+      class="mt-12"
+      :message="reportError.message"
+      :error="reportError.error"
+      :title="tc('profit_loss_report.error.title')"
+      :subtitle="tc('profit_loss_report.error.subtitle')"
+    >
+      <template #bottom>
+        <v-btn text class="mt-2" @click="clearError()">
+          {{ tc('common.actions.close') }}
+        </v-btn>
+      </template>
+    </error-screen>
+    <reports-table v-show="!isRunning && !reportError.message" class="mt-8" />
+    <progress-screen v-if="isRunning" :progress="progress">
+      <template #message>
+        <div v-if="processingState" class="medium text-h6 mb-4">
+          {{ processingState }}
+        </div>
+        {{ tc('profit_loss_report.loading_message') }}
+      </template>
+      {{ tc('profit_loss_report.loading_hint') }}
+    </progress-screen>
+    <v-dialog v-model="importDataDialog" max-width="600">
+      <card>
+        <template #title>
+          {{ tc('profit_loss_reports.debug.import_data_dialog.title') }}
+        </template>
+        <div>
+          <div class="py-2">
+            <file-upload
+              ref="reportDebugDataUploader"
+              source="json"
+              file-filter=".json"
+              @selected="reportDebugData = $event"
+            />
+          </div>
+          <div class="mt-2 d-flex justify-end">
+            <v-btn class="mr-4" @click="importDataDialog = false">
+              {{ tc('common.actions.cancel') }}
+            </v-btn>
+            <v-btn
+              color="primary"
+              :disabled="!reportDebugData"
+              :loading="importDataLoading"
+              @click="importData"
+            >
+              {{ tc('common.actions.import') }}
+            </v-btn>
+          </div>
+        </div>
+      </card>
+    </v-dialog>
+  </v-container>
+</template>

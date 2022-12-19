@@ -1,42 +1,3 @@
-<template>
-  <div class="py-4">
-    <div class="text-h6 mb-4">{{ title }}</div>
-    <v-sheet outlined rounded>
-      <data-table
-        :items="assets"
-        :headers="headers"
-        class="account-asset-balances__table"
-        sort-by="usdValue"
-      >
-        <template #item.asset="{ item }">
-          <asset-details opens-details :asset="item.asset" />
-        </template>
-        <template #item.price="{ item }">
-          <amount-display
-            v-if="assetPrice(item.asset).value"
-            tooltip
-            show-currency="symbol"
-            fiat-currency="USD"
-            :price-asset="item.asset"
-            :value="getPrice(item.asset)"
-          />
-          <div v-else>-</div>
-        </template>
-        <template #item.amount="{ item }">
-          <amount-display :value="item.amount" />
-        </template>
-        <template #item.usdValue="{ item }">
-          <amount-display
-            fiat-currency="USD"
-            :value="item.usdValue"
-            show-currency="symbol"
-          />
-        </template>
-      </data-table>
-    </v-sheet>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { type AssetBalance } from '@rotki/common';
 import { type PropType } from 'vue';
@@ -92,6 +53,45 @@ const getPrice = (asset: string) => {
   return get(assetPrice(asset)) ?? Zero;
 };
 </script>
+
+<template>
+  <div class="py-4">
+    <div class="text-h6 mb-4">{{ title }}</div>
+    <v-sheet outlined rounded>
+      <data-table
+        :items="assets"
+        :headers="headers"
+        class="account-asset-balances__table"
+        sort-by="usdValue"
+      >
+        <template #item.asset="{ item }">
+          <asset-details opens-details :asset="item.asset" />
+        </template>
+        <template #item.price="{ item }">
+          <amount-display
+            v-if="assetPrice(item.asset).value"
+            tooltip
+            show-currency="symbol"
+            fiat-currency="USD"
+            :price-asset="item.asset"
+            :value="getPrice(item.asset)"
+          />
+          <div v-else>-</div>
+        </template>
+        <template #item.amount="{ item }">
+          <amount-display :value="item.amount" />
+        </template>
+        <template #item.usdValue="{ item }">
+          <amount-display
+            fiat-currency="USD"
+            :value="item.usdValue"
+            show-currency="symbol"
+          />
+        </template>
+      </data-table>
+    </v-sheet>
+  </div>
+</template>
 
 <style scoped lang="scss">
 :deep() {

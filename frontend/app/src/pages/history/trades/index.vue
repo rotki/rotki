@@ -1,15 +1,3 @@
-<template>
-  <progress-screen v-if="loading">
-    <template #message>
-      {{ t('trade_history.loading') }}
-    </template>
-    {{ t('trade_history.loading_subtitle') }}
-  </progress-screen>
-  <div v-else class="mt-8">
-    <closed-trades @fetch="fetchTrades" />
-  </div>
-</template>
-
 <script setup lang="ts">
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import ClosedTrades from '@/components/history/ClosedTrades.vue';
@@ -47,3 +35,15 @@ const loading = shouldShowLoadingScreen(Section.TRADES);
 
 const { t } = useI18n();
 </script>
+
+<template>
+  <progress-screen v-if="loading">
+    <template #message>
+      {{ t('trade_history.loading') }}
+    </template>
+    {{ t('trade_history.loading_subtitle') }}
+  </progress-screen>
+  <div v-else class="mt-8">
+    <closed-trades @fetch="fetchTrades" />
+  </div>
+</template>

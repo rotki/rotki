@@ -1,52 +1,3 @@
-<template>
-  <v-menu
-    v-model="visible"
-    max-width="300px"
-    min-width="280px"
-    left
-    :close-on-content-click="false"
-  >
-    <template #activator="{ on }">
-      <menu-tooltip-button
-        :tooltip="tc('statistics_graph_settings.tooltip')"
-        class-name="graph-period"
-        :on-menu="on"
-      >
-        <v-icon>mdi-dots-vertical</v-icon>
-      </menu-tooltip-button>
-    </template>
-    <card>
-      <template #title>{{ tc('statistics_graph_settings.title') }}</template>
-      <template #subtitle>
-        {{ tc('statistics_graph_settings.subtitle') }}
-      </template>
-      <v-text-field
-        v-model="multiplier"
-        type="number"
-        outlined
-        :label="tc('statistics_graph_settings.label')"
-      />
-
-      <span v-if="period === 0">{{ tc('statistics_graph_settings.off') }}</span>
-      <span v-else>
-        {{ tc('statistics_graph_settings.on', 0, { period }) }}
-      </span>
-
-      <template #buttons>
-        <v-spacer />
-        <v-btn
-          depressed
-          color="primary"
-          :disabled="invalid"
-          @click="updateSetting"
-        >
-          {{ tc('common.actions.save') }}
-        </v-btn>
-      </template>
-    </card>
-  </v-menu>
-</template>
-
 <script setup lang="ts">
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import { useSettingsStore } from '@/store/settings';
@@ -98,3 +49,52 @@ onMounted(() => {
 
 watch(multiplierSetting, value => set(multiplier, value.toString()));
 </script>
+
+<template>
+  <v-menu
+    v-model="visible"
+    max-width="300px"
+    min-width="280px"
+    left
+    :close-on-content-click="false"
+  >
+    <template #activator="{ on }">
+      <menu-tooltip-button
+        :tooltip="tc('statistics_graph_settings.tooltip')"
+        class-name="graph-period"
+        :on-menu="on"
+      >
+        <v-icon>mdi-dots-vertical</v-icon>
+      </menu-tooltip-button>
+    </template>
+    <card>
+      <template #title>{{ tc('statistics_graph_settings.title') }}</template>
+      <template #subtitle>
+        {{ tc('statistics_graph_settings.subtitle') }}
+      </template>
+      <v-text-field
+        v-model="multiplier"
+        type="number"
+        outlined
+        :label="tc('statistics_graph_settings.label')"
+      />
+
+      <span v-if="period === 0">{{ tc('statistics_graph_settings.off') }}</span>
+      <span v-else>
+        {{ tc('statistics_graph_settings.on', 0, { period }) }}
+      </span>
+
+      <template #buttons>
+        <v-spacer />
+        <v-btn
+          depressed
+          color="primary"
+          :disabled="invalid"
+          @click="updateSetting"
+        >
+          {{ tc('common.actions.save') }}
+        </v-btn>
+      </template>
+    </card>
+  </v-menu>
+</template>

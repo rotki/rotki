@@ -1,3 +1,9 @@
+<script setup lang="ts">
+import ExternalLink from '@/components/helper/ExternalLink.vue';
+import ImportSource from '@/components/import/ImportSource.vue';
+
+const { t } = useI18n();
+</script>
 <template>
   <import-source source="cryptocom">
     <i18n tag="span" path="import_data.cryptocom.note">
@@ -27,9 +33,3 @@
     </ul>
   </import-source>
 </template>
-<script setup lang="ts">
-import ExternalLink from '@/components/helper/ExternalLink.vue';
-import ImportSource from '@/components/import/ImportSource.vue';
-
-const { t } = useI18n();
-</script>

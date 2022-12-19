@@ -1,3 +1,30 @@
+<script setup lang="ts">
+import { useListeners } from 'vue';
+import { displayDateFormatter } from '@/data/date_formatter';
+import { DateFormat } from '@/types/date-format';
+
+const rootAttrs = useAttrs();
+const rootListeners = useListeners();
+
+const selections = [
+  {
+    value: DateFormat.DateMonthYearHourMinuteSecond
+  },
+  {
+    value: DateFormat.MonthDateYearHourMinuteSecond
+  },
+  {
+    value: DateFormat.YearMonthDateHourMinuteSecond
+  }
+];
+
+const dateInputFormatExample = (format: DateFormat): string => {
+  return displayDateFormatter.format(new Date(), format);
+};
+
+const { t } = useI18n();
+</script>
+
 <template>
   <v-select
     v-bind="rootAttrs"
@@ -26,30 +53,3 @@
     </template>
   </v-select>
 </template>
-
-<script setup lang="ts">
-import { useListeners } from 'vue';
-import { displayDateFormatter } from '@/data/date_formatter';
-import { DateFormat } from '@/types/date-format';
-
-const rootAttrs = useAttrs();
-const rootListeners = useListeners();
-
-const selections = [
-  {
-    value: DateFormat.DateMonthYearHourMinuteSecond
-  },
-  {
-    value: DateFormat.MonthDateYearHourMinuteSecond
-  },
-  {
-    value: DateFormat.YearMonthDateHourMinuteSecond
-  }
-];
-
-const dateInputFormatExample = (format: DateFormat): string => {
-  return displayDateFormatter.format(new Date(), format);
-};
-
-const { t } = useI18n();
-</script>

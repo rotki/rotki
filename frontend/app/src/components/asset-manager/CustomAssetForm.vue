@@ -1,53 +1,3 @@
-<template>
-  <v-form :value="!v$.$invalid">
-    <v-row class="mt-2">
-      <v-col cols="12" md="6">
-        <v-text-field
-          data-cy="name"
-          :value="formData.name"
-          outlined
-          persistent-hint
-          clearable
-          :label="t('common.name')"
-          :error-messages="v$.name.$errors.map(e => e.$message)"
-          @input="input({ name: $event })"
-        />
-      </v-col>
-      <v-col cols="12" md="6">
-        <v-combobox
-          data-cy="type"
-          :items="types"
-          :value="formData.customAssetType"
-          outlined
-          persistent-hint
-          clearable
-          :label="t('common.type')"
-          :error-messages="v$.type.$errors.map(e => e.$message)"
-          :search-input.sync="search"
-          @input="input({ customAssetType: $event })"
-        />
-      </v-col>
-      <v-col cols="12">
-        <v-textarea
-          data-cy="notes"
-          :value="formData.notes"
-          outlined
-          persistent-hint
-          clearable
-          :label="t('asset_form.labels.notes')"
-          @input="input({ notes: $event })"
-        />
-      </v-col>
-    </v-row>
-
-    <div class="my-4">
-      <asset-icon-form
-        :ref="assetIconFormRef"
-        :identifier="formData.identifier"
-      />
-    </div>
-  </v-form>
-</template>
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
@@ -180,3 +130,53 @@ defineExpose({
   save
 });
 </script>
+<template>
+  <v-form :value="!v$.$invalid">
+    <v-row class="mt-2">
+      <v-col cols="12" md="6">
+        <v-text-field
+          data-cy="name"
+          :value="formData.name"
+          outlined
+          persistent-hint
+          clearable
+          :label="t('common.name')"
+          :error-messages="v$.name.$errors.map(e => e.$message)"
+          @input="input({ name: $event })"
+        />
+      </v-col>
+      <v-col cols="12" md="6">
+        <v-combobox
+          data-cy="type"
+          :items="types"
+          :value="formData.customAssetType"
+          outlined
+          persistent-hint
+          clearable
+          :label="t('common.type')"
+          :error-messages="v$.type.$errors.map(e => e.$message)"
+          :search-input.sync="search"
+          @input="input({ customAssetType: $event })"
+        />
+      </v-col>
+      <v-col cols="12">
+        <v-textarea
+          data-cy="notes"
+          :value="formData.notes"
+          outlined
+          persistent-hint
+          clearable
+          :label="t('asset_form.labels.notes')"
+          @input="input({ notes: $event })"
+        />
+      </v-col>
+    </v-row>
+
+    <div class="my-4">
+      <asset-icon-form
+        :ref="assetIconFormRef"
+        :identifier="formData.identifier"
+      />
+    </div>
+  </v-form>
+</template>

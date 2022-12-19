@@ -1,3 +1,10 @@
+<script setup lang="ts">
+import CreateAccountForm from '@/components/account-management/CreateAccountForm.vue';
+
+const { navigateToUserLogin } = useAppNavigation();
+const { createNewAccount, error, loading } = useAccountManagement();
+</script>
+
 <template>
   <create-account-form
     :loading="loading"
@@ -7,10 +14,3 @@
     @confirm="createNewAccount($event)"
   />
 </template>
-
-<script setup lang="ts">
-import CreateAccountForm from '@/components/account-management/CreateAccountForm.vue';
-
-const { navigateToUserLogin } = useAppNavigation();
-const { createNewAccount, error, loading } = useAccountManagement();
-</script>

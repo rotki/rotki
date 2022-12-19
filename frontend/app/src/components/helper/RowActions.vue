@@ -1,3 +1,21 @@
+<script setup lang="ts">
+defineProps({
+  disabled: { required: false, type: Boolean, default: false },
+  deleteDisabled: { required: false, type: Boolean, default: false },
+  editTooltip: { required: false, type: String, default: '' },
+  deleteTooltip: { required: false, type: String, default: '' },
+  noDelete: { required: false, type: Boolean, default: false }
+});
+
+const emit = defineEmits<{
+  (e: 'edit-click'): void;
+  (e: 'delete-click'): void;
+}>();
+
+const editClick = () => emit('edit-click');
+const deleteClick = () => emit('delete-click');
+</script>
+
 <template>
   <div :class="$style.actions">
     <v-tooltip top>
@@ -35,24 +53,6 @@
     <slot />
   </div>
 </template>
-
-<script setup lang="ts">
-defineProps({
-  disabled: { required: false, type: Boolean, default: false },
-  deleteDisabled: { required: false, type: Boolean, default: false },
-  editTooltip: { required: false, type: String, default: '' },
-  deleteTooltip: { required: false, type: String, default: '' },
-  noDelete: { required: false, type: Boolean, default: false }
-});
-
-const emit = defineEmits<{
-  (e: 'edit-click'): void;
-  (e: 'delete-click'): void;
-}>();
-
-const editClick = () => emit('edit-click');
-const deleteClick = () => emit('delete-click');
-</script>
 
 <style module lang="scss">
 .actions {

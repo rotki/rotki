@@ -1,3 +1,74 @@
+<script setup lang="ts">
+import { DefiProtocol } from '@rotki/common/lib/blockchain';
+import { type PropType } from 'vue';
+import FullSizeContent from '@/components/common/FullSizeContent.vue';
+import ActiveModules from '@/components/defi/ActiveModules.vue';
+import DefiSelectorItem from '@/components/defi/DefiSelectorItem.vue';
+import LoanInfo from '@/components/defi/loan/LoanInfo.vue';
+import AmountDisplay from '@/components/display/AmountDisplay.vue';
+import StatCardColumn from '@/components/display/StatCardColumn.vue';
+import StatCardWide from '@/components/display/StatCardWide.vue';
+import DefiProtocolSelector from '@/components/helper/DefiProtocolSelector.vue';
+import ProgressScreen from '@/components/helper/ProgressScreen.vue';
+import RefreshHeader from '@/components/helper/RefreshHeader.vue';
+import { useDefiSupportedProtocolsStore } from '@/store/defi/protocols';
+import { type Module } from '@/types/modules';
+import { Section } from '@/types/status';
+
+defineProps({
+  modules: { required: true, type: Array as PropType<Module[]> }
+});
+
+const selection = ref<string>();
+const protocol = ref<DefiProtocol | null>(null);
+const store = useDefiSupportedProtocolsStore();
+const route = useRoute();
+const { tc } = useI18n();
+
+const { shouldShowLoadingScreen, isSectionRefreshing } = useSectionLoading();
+
+const loading = shouldShowLoadingScreen(Section.DEFI_BORROWING);
+
+const selectedProtocols = computed(() => {
+  const selected = get(protocol);
+  return selected ? [selected] : [];
+});
+
+const loan = computed(() => get(store.loan(get(selection))));
+
+const loans = computed(() => {
+  const protocols = get(selectedProtocols);
+  return get(store.loans(protocols));
+});
+
+const summary = computed(() => {
+  const protocols = get(selectedProtocols);
+  return get(store.loanSummary(protocols));
+});
+
+const refreshing = computed(() => {
+  return (
+    get(isSectionRefreshing(Section.DEFI_BORROWING)) ||
+    get(isSectionRefreshing(Section.DEFI_BORROWING_HISTORY))
+  );
+});
+
+const refresh = async () => {
+  await store.fetchBorrowing(true);
+};
+
+onMounted(async () => {
+  const currentRoute = get(route);
+  const queryElement = currentRoute.query['protocol'];
+  const protocols = Object.values(DefiProtocol);
+  const protocolIndex = protocols.indexOf(queryElement as DefiProtocol);
+  if (protocolIndex >= 0) {
+    set(protocol, protocols[protocolIndex]);
+  }
+  await store.fetchBorrowing(false);
+});
+</script>
+
 <template>
   <progress-screen v-if="loading">
     <template #message>{{ tc('borrowing.loading') }}</template>
@@ -87,74 +158,3 @@
     </full-size-content>
   </div>
 </template>
-
-<script setup lang="ts">
-import { DefiProtocol } from '@rotki/common/lib/blockchain';
-import { type PropType } from 'vue';
-import FullSizeContent from '@/components/common/FullSizeContent.vue';
-import ActiveModules from '@/components/defi/ActiveModules.vue';
-import DefiSelectorItem from '@/components/defi/DefiSelectorItem.vue';
-import LoanInfo from '@/components/defi/loan/LoanInfo.vue';
-import AmountDisplay from '@/components/display/AmountDisplay.vue';
-import StatCardColumn from '@/components/display/StatCardColumn.vue';
-import StatCardWide from '@/components/display/StatCardWide.vue';
-import DefiProtocolSelector from '@/components/helper/DefiProtocolSelector.vue';
-import ProgressScreen from '@/components/helper/ProgressScreen.vue';
-import RefreshHeader from '@/components/helper/RefreshHeader.vue';
-import { useDefiSupportedProtocolsStore } from '@/store/defi/protocols';
-import { type Module } from '@/types/modules';
-import { Section } from '@/types/status';
-
-defineProps({
-  modules: { required: true, type: Array as PropType<Module[]> }
-});
-
-const selection = ref<string>();
-const protocol = ref<DefiProtocol | null>(null);
-const store = useDefiSupportedProtocolsStore();
-const route = useRoute();
-const { tc } = useI18n();
-
-const { shouldShowLoadingScreen, isSectionRefreshing } = useSectionLoading();
-
-const loading = shouldShowLoadingScreen(Section.DEFI_BORROWING);
-
-const selectedProtocols = computed(() => {
-  const selected = get(protocol);
-  return selected ? [selected] : [];
-});
-
-const loan = computed(() => get(store.loan(get(selection))));
-
-const loans = computed(() => {
-  const protocols = get(selectedProtocols);
-  return get(store.loans(protocols));
-});
-
-const summary = computed(() => {
-  const protocols = get(selectedProtocols);
-  return get(store.loanSummary(protocols));
-});
-
-const refreshing = computed(() => {
-  return (
-    get(isSectionRefreshing(Section.DEFI_BORROWING)) ||
-    get(isSectionRefreshing(Section.DEFI_BORROWING_HISTORY))
-  );
-});
-
-const refresh = async () => {
-  await store.fetchBorrowing(true);
-};
-
-onMounted(async () => {
-  const currentRoute = get(route);
-  const queryElement = currentRoute.query['protocol'];
-  const protocols = Object.values(DefiProtocol);
-  const protocolIndex = protocols.indexOf(queryElement as DefiProtocol);
-  if (protocolIndex >= 0) {
-    set(protocol, protocols[protocolIndex]);
-  }
-  await store.fetchBorrowing(false);
-});
-</script>

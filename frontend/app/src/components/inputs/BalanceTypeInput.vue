@@ -1,12 +1,3 @@
-<template>
-  <v-select
-    :value="value"
-    :items="balanceTypes"
-    v-bind="$attrs"
-    @input="input"
-  />
-</template>
-
 <script setup lang="ts">
 import { type PropType } from 'vue';
 import { BalanceType } from '@/services/balances/types';
@@ -36,3 +27,12 @@ const input = (value: BalanceType) => {
   emit('input', value);
 };
 </script>
+
+<template>
+  <v-select
+    :value="value"
+    :items="balanceTypes"
+    v-bind="$attrs"
+    @input="input"
+  />
+</template>

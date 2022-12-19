@@ -1,93 +1,3 @@
-<template>
-  <card outlined-body>
-    <template #title>
-      {{ tc('common.assets') }}
-    </template>
-    <template #subtitle>
-      {{ tc('asset_table.custom.subtitle') }}
-    </template>
-    <template #actions>
-      <v-row>
-        <v-col class="d-none d-md-block" />
-        <v-col cols="12" md="6" class="pb-md-8">
-          <table-filter
-            :matchers="matchers"
-            data-cy="asset_table_filter"
-            @update:matches="updateFilter"
-          />
-        </v-col>
-      </v-row>
-    </template>
-    <v-btn
-      absolute
-      fab
-      top
-      right
-      dark
-      color="primary"
-      data-cy="add-manual-asset"
-      @click="add"
-    >
-      <v-icon> mdi-plus </v-icon>
-    </v-btn>
-    <data-table
-      :items="assets"
-      :loading="loading"
-      :headers="tableHeaders"
-      single-expand
-      :expanded="expanded"
-      item-key="identifier"
-      sort-by="name"
-      class="custom-assets-table"
-      :sort-desc="false"
-      :server-items-length="serverItemLength"
-      @update:options="updatePaginationHandler($event)"
-    >
-      <template #item.name="{ item }">
-        <asset-details-base
-          :changeable="!loading"
-          opens-details
-          :asset="getAsset(item)"
-        />
-      </template>
-      <template #item.custom_asset_type="{ item }">
-        <badge-display>
-          {{ item.customAssetType }}
-        </badge-display>
-      </template>
-      <template #item.actions="{ item }">
-        <row-actions
-          :edit-tooltip="tc('asset_table.edit_tooltip')"
-          :delete-tooltip="tc('asset_table.delete_tooltip')"
-          @edit-click="edit(item)"
-          @delete-click="deleteAsset(item)"
-        >
-          <copy-button
-            class="mx-1"
-            :tooltip="tc('asset_table.copy_identifier.tooltip')"
-            :value="item.identifier"
-          />
-        </row-actions>
-      </template>
-      <template #expanded-item="{ item }">
-        <table-expand-container visible :colspan="tableHeaders.length">
-          <div class="font-weight-bold">{{ tc('asset_table.notes') }}:</div>
-          <div class="pt-2">
-            {{ item.notes }}
-          </div>
-        </table-expand-container>
-      </template>
-      <template #item.expand="{ item }">
-        <row-expander
-          v-if="item.notes"
-          :expanded="expanded.includes(item)"
-          @click="expanded = expanded.includes(item) ? [] : [item]"
-        />
-      </template>
-    </data-table>
-  </card>
-</template>
-
 <script setup lang="ts">
 import { type SupportedAsset } from '@rotki/common/lib/data';
 import { type PropType, type Ref } from 'vue';
@@ -189,3 +99,93 @@ watch([options, filters] as const, ([options, filters]) => {
   });
 });
 </script>
+
+<template>
+  <card outlined-body>
+    <template #title>
+      {{ tc('common.assets') }}
+    </template>
+    <template #subtitle>
+      {{ tc('asset_table.custom.subtitle') }}
+    </template>
+    <template #actions>
+      <v-row>
+        <v-col class="d-none d-md-block" />
+        <v-col cols="12" md="6" class="pb-md-8">
+          <table-filter
+            :matchers="matchers"
+            data-cy="asset_table_filter"
+            @update:matches="updateFilter"
+          />
+        </v-col>
+      </v-row>
+    </template>
+    <v-btn
+      absolute
+      fab
+      top
+      right
+      dark
+      color="primary"
+      data-cy="add-manual-asset"
+      @click="add"
+    >
+      <v-icon> mdi-plus </v-icon>
+    </v-btn>
+    <data-table
+      :items="assets"
+      :loading="loading"
+      :headers="tableHeaders"
+      single-expand
+      :expanded="expanded"
+      item-key="identifier"
+      sort-by="name"
+      class="custom-assets-table"
+      :sort-desc="false"
+      :server-items-length="serverItemLength"
+      @update:options="updatePaginationHandler($event)"
+    >
+      <template #item.name="{ item }">
+        <asset-details-base
+          :changeable="!loading"
+          opens-details
+          :asset="getAsset(item)"
+        />
+      </template>
+      <template #item.custom_asset_type="{ item }">
+        <badge-display>
+          {{ item.customAssetType }}
+        </badge-display>
+      </template>
+      <template #item.actions="{ item }">
+        <row-actions
+          :edit-tooltip="tc('asset_table.edit_tooltip')"
+          :delete-tooltip="tc('asset_table.delete_tooltip')"
+          @edit-click="edit(item)"
+          @delete-click="deleteAsset(item)"
+        >
+          <copy-button
+            class="mx-1"
+            :tooltip="tc('asset_table.copy_identifier.tooltip')"
+            :value="item.identifier"
+          />
+        </row-actions>
+      </template>
+      <template #expanded-item="{ item }">
+        <table-expand-container visible :colspan="tableHeaders.length">
+          <div class="font-weight-bold">{{ tc('asset_table.notes') }}:</div>
+          <div class="pt-2">
+            {{ item.notes }}
+          </div>
+        </table-expand-container>
+      </template>
+      <template #item.expand="{ item }">
+        <row-expander
+          v-if="item.notes"
+          :expanded="expanded.includes(item)"
+          @click="expanded = expanded.includes(item) ? [] : [item]"
+        />
+      </template>
+    </data-table>
+  </card>
+</template>

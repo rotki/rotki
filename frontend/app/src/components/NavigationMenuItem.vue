@@ -1,3 +1,22 @@
+<script setup lang="ts">
+import { type PropType, type VueConstructor } from 'vue';
+
+defineProps({
+  showTooltips: { required: false, type: Boolean, default: false },
+  icon: { required: false, type: String, default: '' },
+  text: { required: true, type: String },
+  image: { required: false, type: String, default: '' },
+  iconComponent: {
+    required: false,
+    type: Object as PropType<VueConstructor>,
+    default: null
+  },
+  active: { required: false, type: Boolean, default: false }
+});
+
+const { dark } = useTheme();
+</script>
+
 <template>
   <div class="d-flex flex-grow-1">
     <v-tooltip v-if="showTooltips" right>
@@ -48,25 +67,6 @@
     </v-list-item-content>
   </div>
 </template>
-
-<script setup lang="ts">
-import { type PropType, type VueConstructor } from 'vue';
-
-defineProps({
-  showTooltips: { required: false, type: Boolean, default: false },
-  icon: { required: false, type: String, default: '' },
-  text: { required: true, type: String },
-  image: { required: false, type: String, default: '' },
-  iconComponent: {
-    required: false,
-    type: Object as PropType<VueConstructor>,
-    default: null
-  },
-  active: { required: false, type: Boolean, default: false }
-});
-
-const { dark } = useTheme();
-</script>
 
 <style module lang="scss">
 .image {

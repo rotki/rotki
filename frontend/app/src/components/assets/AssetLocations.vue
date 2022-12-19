@@ -1,55 +1,3 @@
-<template>
-  <card>
-    <template #title>
-      {{ t('asset_locations.title') }}
-    </template>
-    <template #actions>
-      <v-row no-gutters justify="end">
-        <v-col cols="12" md="6" lg="4">
-          <tag-filter v-model="onlyTags" />
-        </v-col>
-      </v-row>
-    </template>
-    <data-table
-      :headers="tableHeaders"
-      :items="visibleAssetLocations"
-      sort-by="balance.amount"
-      :loading="detailsLoading"
-    >
-      <template #item.location="{ item }">
-        <location-display
-          :identifier="item.location"
-          :detail-path="item.detailPath"
-        />
-      </template>
-      <template #item.label="{ item }">
-        <div class="py-4">
-          <labeled-address-display
-            v-if="item.account"
-            :account="item.account"
-          />
-          <tag-display :tags="item.tags" />
-        </div>
-      </template>
-      <template #item.balance.amount="{ item }">
-        <amount-display :value="item.balance.amount" />
-      </template>
-      <template #item.balance.usdValue="{ item }">
-        <amount-display
-          show-currency="symbol"
-          :amount="item.balance.amount"
-          :price-asset="identifier"
-          fiat-currency="USD"
-          :value="item.balance.usdValue"
-        />
-      </template>
-      <template #item.percentage="{ item }">
-        <percentage-display :value="getPercentage(item.balance.usdValue)" />
-      </template>
-    </data-table>
-  </card>
-</template>
-
 <script setup lang="ts">
 import { type BigNumber } from '@rotki/common';
 import { type GeneralAccount } from '@rotki/common/lib/account';
@@ -185,6 +133,58 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
   ];
 });
 </script>
+
+<template>
+  <card>
+    <template #title>
+      {{ t('asset_locations.title') }}
+    </template>
+    <template #actions>
+      <v-row no-gutters justify="end">
+        <v-col cols="12" md="6" lg="4">
+          <tag-filter v-model="onlyTags" />
+        </v-col>
+      </v-row>
+    </template>
+    <data-table
+      :headers="tableHeaders"
+      :items="visibleAssetLocations"
+      sort-by="balance.amount"
+      :loading="detailsLoading"
+    >
+      <template #item.location="{ item }">
+        <location-display
+          :identifier="item.location"
+          :detail-path="item.detailPath"
+        />
+      </template>
+      <template #item.label="{ item }">
+        <div class="py-4">
+          <labeled-address-display
+            v-if="item.account"
+            :account="item.account"
+          />
+          <tag-display :tags="item.tags" />
+        </div>
+      </template>
+      <template #item.balance.amount="{ item }">
+        <amount-display :value="item.balance.amount" />
+      </template>
+      <template #item.balance.usdValue="{ item }">
+        <amount-display
+          show-currency="symbol"
+          :amount="item.balance.amount"
+          :price-asset="identifier"
+          fiat-currency="USD"
+          :value="item.balance.usdValue"
+        />
+      </template>
+      <template #item.percentage="{ item }">
+        <percentage-display :value="getPercentage(item.balance.usdValue)" />
+      </template>
+    </data-table>
+  </card>
+</template>
 
 <style scoped lang="scss">
 :deep() {

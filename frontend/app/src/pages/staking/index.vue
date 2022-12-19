@@ -1,3 +1,80 @@
+<script setup lang="ts">
+import { type PropType } from 'vue';
+import FullSizeContent from '@/components/common/FullSizeContent.vue';
+import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
+import Eth2Page from '@/components/staking/Eth2Page.vue';
+import KrakenPage from '@/components/staking/KrakenPage.vue';
+import LiquityPage from '@/components/staking/LiquityPage.vue';
+import { Routes } from '@/router/routes';
+
+interface StakingInfo {
+  id: string;
+  icon: string;
+  name: string;
+  img?: boolean;
+}
+
+const iconSize = '64px';
+
+const pages = {
+  eth2: Eth2Page,
+  liquity: LiquityPage,
+  kraken: KrakenPage
+};
+
+const props = defineProps({
+  location: {
+    required: false,
+    type: String as PropType<'eth2' | 'liquity' | 'kraken' | null>,
+    default: null
+  }
+});
+
+const { location } = toRefs(props);
+
+const { tc } = useI18n();
+
+const staking = computed<StakingInfo[]>(() => [
+  {
+    id: 'eth2',
+    icon: './assets/images/modules/eth.svg',
+    name: tc('staking.eth2')
+  },
+  {
+    id: 'liquity',
+    icon: './assets/images/defi/liquity.png',
+    name: tc('staking.liquity')
+  },
+  {
+    id: 'kraken',
+    icon: './assets/images/exchanges/kraken.svg',
+    name: tc('staking.kraken')
+  }
+]);
+
+const router = useRouter();
+
+const lastLocation = useLocalStorage('rotki.staking.last_location', '');
+
+const page = computed(() => {
+  const selectedLocation = get(location);
+  return selectedLocation ? pages[selectedLocation] : null;
+});
+
+const updateLocation = async (location: string) => {
+  if (location) {
+    set(lastLocation, location);
+  }
+  await router.push(Routes.STAKING.replace(':location*', location));
+};
+
+onBeforeMount(async () => {
+  if (get(lastLocation)) {
+    await updateLocation(get(lastLocation));
+  }
+});
+</script>
+
 <template>
   <v-container>
     <card>
@@ -102,83 +179,6 @@
     </div>
   </v-container>
 </template>
-
-<script setup lang="ts">
-import { type PropType } from 'vue';
-import FullSizeContent from '@/components/common/FullSizeContent.vue';
-import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
-import Eth2Page from '@/components/staking/Eth2Page.vue';
-import KrakenPage from '@/components/staking/KrakenPage.vue';
-import LiquityPage from '@/components/staking/LiquityPage.vue';
-import { Routes } from '@/router/routes';
-
-interface StakingInfo {
-  id: string;
-  icon: string;
-  name: string;
-  img?: boolean;
-}
-
-const iconSize = '64px';
-
-const pages = {
-  eth2: Eth2Page,
-  liquity: LiquityPage,
-  kraken: KrakenPage
-};
-
-const props = defineProps({
-  location: {
-    required: false,
-    type: String as PropType<'eth2' | 'liquity' | 'kraken' | null>,
-    default: null
-  }
-});
-
-const { location } = toRefs(props);
-
-const { tc } = useI18n();
-
-const staking = computed<StakingInfo[]>(() => [
-  {
-    id: 'eth2',
-    icon: './assets/images/modules/eth.svg',
-    name: tc('staking.eth2')
-  },
-  {
-    id: 'liquity',
-    icon: './assets/images/defi/liquity.png',
-    name: tc('staking.liquity')
-  },
-  {
-    id: 'kraken',
-    icon: './assets/images/exchanges/kraken.svg',
-    name: tc('staking.kraken')
-  }
-]);
-
-const router = useRouter();
-
-const lastLocation = useLocalStorage('rotki.staking.last_location', '');
-
-const page = computed(() => {
-  const selectedLocation = get(location);
-  return selectedLocation ? pages[selectedLocation] : null;
-});
-
-const updateLocation = async (location: string) => {
-  if (location) {
-    set(lastLocation, location);
-  }
-  await router.push(Routes.STAKING.replace(':location*', location));
-};
-
-onBeforeMount(async () => {
-  if (get(lastLocation)) {
-    await updateLocation(get(lastLocation));
-  }
-});
-</script>
 
 <style lang="scss" module>
 .content {

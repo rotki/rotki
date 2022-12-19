@@ -1,3 +1,10 @@
+<script setup lang="ts">
+import ErrorScreen from '@/components/error/ErrorScreen.vue';
+
+const { tc } = useI18n();
+const { closeApp } = useInterop();
+</script>
+
 <template>
   <error-screen
     class="macos-unsupported"
@@ -9,13 +16,6 @@
     </v-btn>
   </error-screen>
 </template>
-
-<script setup lang="ts">
-import ErrorScreen from '@/components/error/ErrorScreen.vue';
-
-const { tc } = useI18n();
-const { closeApp } = useInterop();
-</script>
 
 <style scoped lang="scss">
 .macos-unsupported {

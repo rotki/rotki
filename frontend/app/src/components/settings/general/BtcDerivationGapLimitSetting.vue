@@ -1,3 +1,21 @@
+<script setup lang="ts">
+import { useGeneralSettingsStore } from '@/store/settings/general';
+
+const btcDerivationGapLimit = ref<string>('20');
+
+const { btcDerivationGapLimit: limit } = storeToRefs(useGeneralSettingsStore());
+const { tc } = useI18n();
+
+const successMessage = (limit: string) =>
+  tc('general_settings.validation.btc_derivation_gap.success', 0, {
+    limit
+  });
+
+onMounted(() => {
+  set(btcDerivationGapLimit, get(limit).toString());
+});
+</script>
+
 <template>
   <settings-option
     #default="{ error, success, update }"
@@ -17,21 +35,3 @@
     />
   </settings-option>
 </template>
-
-<script setup lang="ts">
-import { useGeneralSettingsStore } from '@/store/settings/general';
-
-const btcDerivationGapLimit = ref<string>('20');
-
-const { btcDerivationGapLimit: limit } = storeToRefs(useGeneralSettingsStore());
-const { tc } = useI18n();
-
-const successMessage = (limit: string) =>
-  tc('general_settings.validation.btc_derivation_gap.success', 0, {
-    limit
-  });
-
-onMounted(() => {
-  set(btcDerivationGapLimit, get(limit).toString());
-});
-</script>

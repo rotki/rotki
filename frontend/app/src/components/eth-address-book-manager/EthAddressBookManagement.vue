@@ -1,101 +1,3 @@
-<template>
-  <v-container>
-    <v-row justify="space-between" align="center" no-gutters>
-      <v-col>
-        <card-title>{{ tc('eth_address_book.title') }}</card-title>
-      </v-col>
-    </v-row>
-    <card outlined-body class="mt-8">
-      <template #title>
-        {{ tc('eth_address_book.table.title') }}
-      </template>
-      <template #subtitle>
-        {{ tc('eth_address_book.table.subtitle') }}
-      </template>
-
-      <template #search>
-        <v-row justify="end" no-gutters>
-          <v-col cols="12" sm="4">
-            <v-text-field
-              :value="pendingSearch"
-              dense
-              prepend-inner-icon="mdi-magnify"
-              :label="tc('common.actions.filter')"
-              outlined
-              clearable
-              @input="onSearchTermChange($event)"
-            >
-              <template v-if="isTimeoutPending" #append>
-                <v-progress-circular
-                  indeterminate
-                  color="primary"
-                  width="2"
-                  size="24"
-                />
-              </template>
-            </v-text-field>
-          </v-col>
-        </v-row>
-      </template>
-
-      <v-row align="center">
-        <v-col cols="auto">
-          <v-tabs v-model="tab">
-            <v-tab v-for="loc in locations" :key="loc">
-              {{ loc }}
-            </v-tab>
-          </v-tabs>
-        </v-col>
-        <v-col class="pl-0">
-          <eth-names-hint with-header />
-        </v-col>
-        <v-col />
-        <v-col cols="auto">
-          <v-btn
-            class="mr-2"
-            small
-            depressed
-            fab
-            color="primary"
-            @click="openForm()"
-          >
-            <v-icon>mdi-plus</v-icon>
-          </v-btn>
-        </v-col>
-      </v-row>
-
-      <v-tabs-items v-model="tab">
-        <v-tab-item v-for="loc in locations" :key="loc">
-          <eth-address-book-table
-            :location="loc"
-            :search="search"
-            @edit="openForm($event)"
-          >
-            {{ loc }}
-          </eth-address-book-table>
-        </v-tab-item>
-      </v-tabs-items>
-    </card>
-
-    <big-dialog
-      :display="showForm"
-      :title="
-        editMode
-          ? tc('eth_address_book.dialog.edit_title')
-          : tc('eth_address_book.dialog.add_title')
-      "
-      :action-disabled="!valid"
-      @confirm="save"
-      @cancel="hideForm()"
-    >
-      <eth-address-book-form
-        v-model="form"
-        :edit="editMode"
-        @valid="valid = $event"
-      />
-    </big-dialog>
-  </v-container>
-</template>
 <script setup lang="ts">
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import EthAddressBookForm from '@/components/eth-address-book-manager/EthAddressBookForm.vue';
@@ -208,3 +110,101 @@ const save = async () => {
   }
 };
 </script>
+<template>
+  <v-container>
+    <v-row justify="space-between" align="center" no-gutters>
+      <v-col>
+        <card-title>{{ tc('eth_address_book.title') }}</card-title>
+      </v-col>
+    </v-row>
+    <card outlined-body class="mt-8">
+      <template #title>
+        {{ tc('eth_address_book.table.title') }}
+      </template>
+      <template #subtitle>
+        {{ tc('eth_address_book.table.subtitle') }}
+      </template>
+
+      <template #search>
+        <v-row justify="end" no-gutters>
+          <v-col cols="12" sm="4">
+            <v-text-field
+              :value="pendingSearch"
+              dense
+              prepend-inner-icon="mdi-magnify"
+              :label="tc('common.actions.filter')"
+              outlined
+              clearable
+              @input="onSearchTermChange($event)"
+            >
+              <template v-if="isTimeoutPending" #append>
+                <v-progress-circular
+                  indeterminate
+                  color="primary"
+                  width="2"
+                  size="24"
+                />
+              </template>
+            </v-text-field>
+          </v-col>
+        </v-row>
+      </template>
+
+      <v-row align="center">
+        <v-col cols="auto">
+          <v-tabs v-model="tab">
+            <v-tab v-for="loc in locations" :key="loc">
+              {{ loc }}
+            </v-tab>
+          </v-tabs>
+        </v-col>
+        <v-col class="pl-0">
+          <eth-names-hint with-header />
+        </v-col>
+        <v-col />
+        <v-col cols="auto">
+          <v-btn
+            class="mr-2"
+            small
+            depressed
+            fab
+            color="primary"
+            @click="openForm()"
+          >
+            <v-icon>mdi-plus</v-icon>
+          </v-btn>
+        </v-col>
+      </v-row>
+
+      <v-tabs-items v-model="tab">
+        <v-tab-item v-for="loc in locations" :key="loc">
+          <eth-address-book-table
+            :location="loc"
+            :search="search"
+            @edit="openForm($event)"
+          >
+            {{ loc }}
+          </eth-address-book-table>
+        </v-tab-item>
+      </v-tabs-items>
+    </card>
+
+    <big-dialog
+      :display="showForm"
+      :title="
+        editMode
+          ? tc('eth_address_book.dialog.edit_title')
+          : tc('eth_address_book.dialog.add_title')
+      "
+      :action-disabled="!valid"
+      @confirm="save"
+      @cancel="hideForm()"
+    >
+      <eth-address-book-form
+        v-model="form"
+        :edit="editMode"
+        @valid="valid = $event"
+      />
+    </big-dialog>
+  </v-container>
+</template>

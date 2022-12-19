@@ -1,3 +1,33 @@
+<script setup lang="ts">
+import ModuleQueriedAddress from '@/components/defi/wizard/ModuleQueriedAddress.vue';
+import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
+import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { SUPPORTED_MODULES } from '@/types/modules';
+
+const { inc: nextStep, dec: previousStep, count: step } = useCounter(-1);
+const { fetchQueriedAddresses } = useQueriedAddressesStore();
+const { activeModules } = storeToRefs(useGeneralSettingsStore());
+
+const { t } = useI18n();
+
+const supportedModules = SUPPORTED_MODULES;
+
+const modules = computed(() => {
+  const active = get(activeModules);
+  if (active.length === 0) {
+    return supportedModules;
+  }
+  return supportedModules.filter(module => active.includes(module.identifier));
+});
+
+const steps = computed(() => get(modules).length);
+
+onMounted(async () => {
+  await fetchQueriedAddresses();
+});
+</script>
+
 <template>
   <v-stepper v-model="step" class="module-address-selector">
     <v-sheet rounded outlined>
@@ -67,36 +97,6 @@
     </v-stepper-items>
   </v-stepper>
 </template>
-
-<script setup lang="ts">
-import ModuleQueriedAddress from '@/components/defi/wizard/ModuleQueriedAddress.vue';
-import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
-import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { SUPPORTED_MODULES } from '@/types/modules';
-
-const { inc: nextStep, dec: previousStep, count: step } = useCounter(-1);
-const { fetchQueriedAddresses } = useQueriedAddressesStore();
-const { activeModules } = storeToRefs(useGeneralSettingsStore());
-
-const { t } = useI18n();
-
-const supportedModules = SUPPORTED_MODULES;
-
-const modules = computed(() => {
-  const active = get(activeModules);
-  if (active.length === 0) {
-    return supportedModules;
-  }
-  return supportedModules.filter(module => active.includes(module.identifier));
-});
-
-const steps = computed(() => get(modules).length);
-
-onMounted(async () => {
-  await fetchQueriedAddresses();
-});
-</script>
 
 <!--suppress Stylelint -->
 <style scoped lang="scss">

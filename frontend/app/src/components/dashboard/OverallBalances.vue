@@ -1,83 +1,3 @@
-<template>
-  <v-card class="overall-balances">
-    <v-row no-gutters class="pa-5">
-      <v-col
-        cols="12"
-        md="6"
-        lg="5"
-        class="d-flex flex-column align-center justify-center"
-      >
-        <div
-          class="overall-balances__net-worth text-center font-weight-medium mb-2"
-        >
-          <div :style="`font-size: ${adjustedTotalNetWorthFontSize}em`">
-            <amount-display
-              class="ps-4"
-              show-currency="symbol"
-              :fiat-currency="currencySymbol"
-              :value="totalNetWorth"
-            />
-          </div>
-        </div>
-        <div class="overall-balances__net-worth-change py-2">
-          <span
-            :class="balanceClass"
-            class="pa-1 px-2 overall-balances__net-worth-change__pill"
-          >
-            <loading
-              v-if="isLoading"
-              class="overall-balances__net-worth__loading d-flex justify-center mt-n2"
-            />
-            <span v-else class="d-flex flex-row">
-              <span class="me-2">
-                <v-icon>{{ indicator }}</v-icon>
-              </span>
-              <amount-display
-                v-if="!isLoading"
-                show-currency="symbol"
-                :fiat-currency="currencySymbol"
-                :value="balanceDelta"
-              />
-              <percentage-display
-                v-if="!isLoading"
-                class="ms-2 px-1 text--secondary pe-2"
-                :value="percentage"
-              />
-            </span>
-          </span>
-        </div>
-        <timeframe-selector
-          :value="timeframe"
-          :visible-timeframes="visibleTimeframes"
-          @input="setTimeframe"
-        />
-      </v-col>
-      <v-col cols="12" md="6" lg="7" class="d-flex">
-        <div
-          class="d-flex justify-center align-center flex-grow-1 overall-balances__net-worth-chart"
-        >
-          <net-worth-chart
-            v-if="!isLoading"
-            :chart-data="timeframeData"
-            :timeframe="timeframe"
-            :timeframes="allTimeframes"
-          />
-          <div v-else class="overall-balances__net-worth-chart__loader">
-            <v-progress-circular
-              indeterminate
-              class="align-self-center"
-              color="primary"
-            />
-            <div class="pt-5 text-caption">
-              {{ t('overall_balances.loading') }}
-            </div>
-          </div>
-        </div>
-      </v-col>
-    </v-row>
-  </v-card>
-</template>
-
 <script setup lang="ts">
 import { TimeUnit } from '@rotki/common/lib/settings';
 import {
@@ -206,6 +126,86 @@ const chartSectionHeight = computed<string>(() => {
   return `${height}px`;
 });
 </script>
+
+<template>
+  <v-card class="overall-balances">
+    <v-row no-gutters class="pa-5">
+      <v-col
+        cols="12"
+        md="6"
+        lg="5"
+        class="d-flex flex-column align-center justify-center"
+      >
+        <div
+          class="overall-balances__net-worth text-center font-weight-medium mb-2"
+        >
+          <div :style="`font-size: ${adjustedTotalNetWorthFontSize}em`">
+            <amount-display
+              class="ps-4"
+              show-currency="symbol"
+              :fiat-currency="currencySymbol"
+              :value="totalNetWorth"
+            />
+          </div>
+        </div>
+        <div class="overall-balances__net-worth-change py-2">
+          <span
+            :class="balanceClass"
+            class="pa-1 px-2 overall-balances__net-worth-change__pill"
+          >
+            <loading
+              v-if="isLoading"
+              class="overall-balances__net-worth__loading d-flex justify-center mt-n2"
+            />
+            <span v-else class="d-flex flex-row">
+              <span class="me-2">
+                <v-icon>{{ indicator }}</v-icon>
+              </span>
+              <amount-display
+                v-if="!isLoading"
+                show-currency="symbol"
+                :fiat-currency="currencySymbol"
+                :value="balanceDelta"
+              />
+              <percentage-display
+                v-if="!isLoading"
+                class="ms-2 px-1 text--secondary pe-2"
+                :value="percentage"
+              />
+            </span>
+          </span>
+        </div>
+        <timeframe-selector
+          :value="timeframe"
+          :visible-timeframes="visibleTimeframes"
+          @input="setTimeframe"
+        />
+      </v-col>
+      <v-col cols="12" md="6" lg="7" class="d-flex">
+        <div
+          class="d-flex justify-center align-center flex-grow-1 overall-balances__net-worth-chart"
+        >
+          <net-worth-chart
+            v-if="!isLoading"
+            :chart-data="timeframeData"
+            :timeframe="timeframe"
+            :timeframes="allTimeframes"
+          />
+          <div v-else class="overall-balances__net-worth-chart__loader">
+            <v-progress-circular
+              indeterminate
+              class="align-self-center"
+              color="primary"
+            />
+            <div class="pt-5 text-caption">
+              {{ t('overall_balances.loading') }}
+            </div>
+          </div>
+        </div>
+      </v-col>
+    </v-row>
+  </v-card>
+</template>
 <style scoped lang="scss">
 .overall-balances {
   &__balance {

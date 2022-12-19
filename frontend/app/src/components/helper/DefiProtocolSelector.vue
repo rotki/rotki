@@ -1,42 +1,3 @@
-<template>
-  <v-card>
-    <div class="mx-4 pt-4">
-      <v-autocomplete
-        :value="value"
-        :search-input.sync="search"
-        :items="protocols"
-        hide-details
-        hide-selected
-        hide-no-data
-        clearable
-        chips
-        dense
-        outlined
-        :open-on-clear="false"
-        :label="tc('defi_protocol_selector.label')"
-        item-text="name"
-        item-value="identifier"
-        class="defi-protocol-selector"
-        @input="input"
-      >
-        <template #selection="{ attrs, item }">
-          <defi-protocol-details v-bind="attrs" :item="item" />
-        </template>
-        <template #item="{ attrs, item }">
-          <defi-protocol-details v-bind="attrs" :item="item" />
-        </template>
-      </v-autocomplete>
-    </div>
-    <v-card-text>
-      {{
-        value
-          ? tc('defi_protocol_selector.filter_specific')
-          : tc('defi_protocol_selector.filter_all')
-      }}
-    </v-card-text>
-  </v-card>
-</template>
-
 <script setup lang="ts">
 import { DefiProtocol } from '@rotki/common/lib/blockchain';
 import { type PropType } from 'vue';
@@ -121,3 +82,42 @@ const protocols = computed<Protocol[]>(() => {
   return [...dual, ...lending];
 });
 </script>
+
+<template>
+  <v-card>
+    <div class="mx-4 pt-4">
+      <v-autocomplete
+        :value="value"
+        :search-input.sync="search"
+        :items="protocols"
+        hide-details
+        hide-selected
+        hide-no-data
+        clearable
+        chips
+        dense
+        outlined
+        :open-on-clear="false"
+        :label="tc('defi_protocol_selector.label')"
+        item-text="name"
+        item-value="identifier"
+        class="defi-protocol-selector"
+        @input="input"
+      >
+        <template #selection="{ attrs, item }">
+          <defi-protocol-details v-bind="attrs" :item="item" />
+        </template>
+        <template #item="{ attrs, item }">
+          <defi-protocol-details v-bind="attrs" :item="item" />
+        </template>
+      </v-autocomplete>
+    </div>
+    <v-card-text>
+      {{
+        value
+          ? tc('defi_protocol_selector.filter_specific')
+          : tc('defi_protocol_selector.filter_all')
+      }}
+    </v-card-text>
+  </v-card>
+</template>

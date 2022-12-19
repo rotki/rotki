@@ -1,53 +1,3 @@
-<template>
-  <v-row>
-    <v-col class="grow">
-      <settings-option
-        #default="{ error, success, update }"
-        setting="versionUpdateCheckFrequency"
-        frontend-setting
-        :transform="frequencyTransform"
-        :error-message="
-          tc('general_settings.validation.version_update_check_frequency.error')
-        "
-        @finished="resetVersionUpdateCheckFrequency"
-      >
-        <v-text-field
-          v-model="versionUpdateCheckFrequency"
-          outlined
-          :disabled="!versionUpdateCheckEnabled"
-          type="number"
-          min="1"
-          :max="maxVersionUpdateCheckFrequency"
-          :label="tc('general_settings.labels.version_update_check')"
-          persistent-hint
-          :hint="tc('general_settings.version_update_check_hint')"
-          :success-messages="success"
-          :error-messages="
-            error || v$.versionUpdateCheckFrequency.$errors.map(e => e.$message)
-          "
-          @change="update"
-        />
-      </settings-option>
-    </v-col>
-    <v-col class="shrink">
-      <settings-option
-        #default="{ update }"
-        setting="versionUpdateCheckFrequency"
-        frontend-setting
-        :transform="switchTransform"
-        @finished="resetVersionUpdateCheckFrequency"
-      >
-        <v-switch
-          v-model="versionUpdateCheckEnabled"
-          class="mt-3"
-          :label="tc('general_settings.labels.version_update_check_enabled')"
-          @change="callIfValid($event, update)"
-        />
-      </settings-option>
-    </v-col>
-  </v-row>
-</template>
-
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { between, helpers, required } from '@vuelidate/validators';
@@ -111,3 +61,53 @@ onMounted(() => {
   resetVersionUpdateCheckFrequency();
 });
 </script>
+
+<template>
+  <v-row>
+    <v-col class="grow">
+      <settings-option
+        #default="{ error, success, update }"
+        setting="versionUpdateCheckFrequency"
+        frontend-setting
+        :transform="frequencyTransform"
+        :error-message="
+          tc('general_settings.validation.version_update_check_frequency.error')
+        "
+        @finished="resetVersionUpdateCheckFrequency"
+      >
+        <v-text-field
+          v-model="versionUpdateCheckFrequency"
+          outlined
+          :disabled="!versionUpdateCheckEnabled"
+          type="number"
+          min="1"
+          :max="maxVersionUpdateCheckFrequency"
+          :label="tc('general_settings.labels.version_update_check')"
+          persistent-hint
+          :hint="tc('general_settings.version_update_check_hint')"
+          :success-messages="success"
+          :error-messages="
+            error || v$.versionUpdateCheckFrequency.$errors.map(e => e.$message)
+          "
+          @change="update"
+        />
+      </settings-option>
+    </v-col>
+    <v-col class="shrink">
+      <settings-option
+        #default="{ update }"
+        setting="versionUpdateCheckFrequency"
+        frontend-setting
+        :transform="switchTransform"
+        @finished="resetVersionUpdateCheckFrequency"
+      >
+        <v-switch
+          v-model="versionUpdateCheckEnabled"
+          class="mt-3"
+          :label="tc('general_settings.labels.version_update_check_enabled')"
+          @change="callIfValid($event, update)"
+        />
+      </settings-option>
+    </v-col>
+  </v-row>
+</template>

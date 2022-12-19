@@ -1,71 +1,3 @@
-<template>
-  <div>
-    <v-row align="center" no-gutters class="mt-2">
-      <v-col cols="auto">
-        <v-select
-          v-model="xpubKeyPrefix"
-          outlined
-          class="account-form__xpub-key-type"
-          item-value="value"
-          item-text="label"
-          :disabled="disabled"
-          :items="keyTypeListData"
-        />
-      </v-col>
-      <v-col>
-        <v-text-field
-          v-model="xpubKey"
-          outlined
-          class="account-form__xpub ml-2"
-          :label="t('account_form.labels.btc.xpub')"
-          autocomplete="off"
-          :error-messages="errorMessages[fields.XPUB]"
-          :disabled="disabled"
-          :rules="rules"
-          @paste="onPasteXpub"
-        >
-          <template #append-outer>
-            <v-tooltip open-delay="400" top>
-              <template #activator="{ on, attrs }">
-                <div class="account-form__advanced">
-                  <v-btn
-                    icon
-                    class="mt-n2"
-                    v-bind="attrs"
-                    v-on="on"
-                    @click="advanced = !advanced"
-                  >
-                    <v-icon v-if="advanced">mdi-chevron-up</v-icon>
-                    <v-icon v-else>mdi-chevron-down</v-icon>
-                  </v-btn>
-                </div>
-              </template>
-              <span>
-                {{ tc('account_form.advanced_tooltip', advanced ? 0 : 1) }}
-              </span>
-            </v-tooltip>
-          </template>
-        </v-text-field>
-      </v-col>
-    </v-row>
-    <v-row v-if="advanced" no-gutters>
-      <v-col>
-        <v-text-field
-          v-model="derivationPath"
-          outlined
-          class="account-form__derivation-path"
-          :label="t('account_form.labels.btc.derivation_path')"
-          :error-messages="errorMessages[fields.DERIVATION_PATH]"
-          autocomplete="off"
-          :disabled="disabled"
-          persistent-hint
-          :hint="t('account_form.labels.btc.derivation_path_hint')"
-        />
-      </v-col>
-    </v-row>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type PropType } from 'vue';
@@ -189,3 +121,71 @@ const rules = [
   }
 ];
 </script>
+
+<template>
+  <div>
+    <v-row align="center" no-gutters class="mt-2">
+      <v-col cols="auto">
+        <v-select
+          v-model="xpubKeyPrefix"
+          outlined
+          class="account-form__xpub-key-type"
+          item-value="value"
+          item-text="label"
+          :disabled="disabled"
+          :items="keyTypeListData"
+        />
+      </v-col>
+      <v-col>
+        <v-text-field
+          v-model="xpubKey"
+          outlined
+          class="account-form__xpub ml-2"
+          :label="t('account_form.labels.btc.xpub')"
+          autocomplete="off"
+          :error-messages="errorMessages[fields.XPUB]"
+          :disabled="disabled"
+          :rules="rules"
+          @paste="onPasteXpub"
+        >
+          <template #append-outer>
+            <v-tooltip open-delay="400" top>
+              <template #activator="{ on, attrs }">
+                <div class="account-form__advanced">
+                  <v-btn
+                    icon
+                    class="mt-n2"
+                    v-bind="attrs"
+                    v-on="on"
+                    @click="advanced = !advanced"
+                  >
+                    <v-icon v-if="advanced">mdi-chevron-up</v-icon>
+                    <v-icon v-else>mdi-chevron-down</v-icon>
+                  </v-btn>
+                </div>
+              </template>
+              <span>
+                {{ tc('account_form.advanced_tooltip', advanced ? 0 : 1) }}
+              </span>
+            </v-tooltip>
+          </template>
+        </v-text-field>
+      </v-col>
+    </v-row>
+    <v-row v-if="advanced" no-gutters>
+      <v-col>
+        <v-text-field
+          v-model="derivationPath"
+          outlined
+          class="account-form__derivation-path"
+          :label="t('account_form.labels.btc.derivation_path')"
+          :error-messages="errorMessages[fields.DERIVATION_PATH]"
+          autocomplete="off"
+          :disabled="disabled"
+          persistent-hint
+          :hint="t('account_form.labels.btc.derivation_path_hint')"
+        />
+      </v-col>
+    </v-row>
+  </div>
+</template>

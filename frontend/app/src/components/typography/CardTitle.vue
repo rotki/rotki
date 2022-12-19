@@ -1,3 +1,7 @@
+<script setup lang="ts">
+const { dark } = useTheme();
+</script>
+
 <template>
   <div
     class="card-title"
@@ -9,10 +13,6 @@
     <slot />
   </div>
 </template>
-
-<script setup lang="ts">
-const { dark } = useTheme();
-</script>
 
 <style module lang="scss">
 .title {

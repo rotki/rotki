@@ -1,7 +1,3 @@
-<template>
-  <span />
-</template>
-
 <script setup lang="ts">
 import { loadLibrary } from '@/premium/premium';
 import { setupPremium } from '@/premium/setup-premium';
@@ -36,3 +32,7 @@ watch(premium, async premium => {
   }
 });
 </script>
+
+<template>
+  <span />
+</template>

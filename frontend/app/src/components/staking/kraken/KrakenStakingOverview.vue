@@ -1,3 +1,42 @@
+<script setup lang="ts">
+import { BigNumber } from '@rotki/common';
+import { type PropType } from 'vue';
+import ValueAccuracyHint from '@/components/helper/hint/ValueAccuracyHint.vue';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { type ReceivedAmount } from '@/types/staking';
+import { assert } from '@/utils/assertions';
+import { Zero } from '@/utils/bignumbers';
+
+const props = defineProps({
+  totalUsd: { required: true, type: BigNumber },
+  earned: { required: true, type: Array as PropType<ReceivedAmount[]> }
+});
+
+const { earned } = toRefs(props);
+const { prices } = storeToRefs(useBalancePricesStore());
+const pricesAreLoading = computed(() => {
+  const assetPrices = get(prices);
+  return Object.keys(assetPrices).length === 0;
+});
+const totalUsdCurrent = computed<BigNumber>(() => {
+  const earnedAssets = get(earned);
+  const assetPrices = get(prices);
+  if (Object.keys(assetPrices).length === 0) {
+    return Zero;
+  }
+
+  let sum = Zero;
+
+  for (const { asset, amount } of earnedAssets) {
+    const assetPrice = assetPrices[asset];
+    assert(assetPrice);
+    sum = sum.plus(assetPrice.value.times(amount));
+  }
+  return sum;
+});
+
+const { t } = useI18n();
+</script>
 <template>
   <card full-height>
     <template #title>{{ t('kraken_staking_overview.title') }}</template>
@@ -68,42 +107,3 @@
     </v-row>
   </card>
 </template>
-<script setup lang="ts">
-import { BigNumber } from '@rotki/common';
-import { type PropType } from 'vue';
-import ValueAccuracyHint from '@/components/helper/hint/ValueAccuracyHint.vue';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { type ReceivedAmount } from '@/types/staking';
-import { assert } from '@/utils/assertions';
-import { Zero } from '@/utils/bignumbers';
-
-const props = defineProps({
-  totalUsd: { required: true, type: BigNumber },
-  earned: { required: true, type: Array as PropType<ReceivedAmount[]> }
-});
-
-const { earned } = toRefs(props);
-const { prices } = storeToRefs(useBalancePricesStore());
-const pricesAreLoading = computed(() => {
-  const assetPrices = get(prices);
-  return Object.keys(assetPrices).length === 0;
-});
-const totalUsdCurrent = computed<BigNumber>(() => {
-  const earnedAssets = get(earned);
-  const assetPrices = get(prices);
-  if (Object.keys(assetPrices).length === 0) {
-    return Zero;
-  }
-
-  let sum = Zero;
-
-  for (const { asset, amount } of earnedAssets) {
-    const assetPrice = assetPrices[asset];
-    assert(assetPrice);
-    sum = sum.plus(assetPrice.value.times(amount));
-  }
-  return sum;
-});
-
-const { t } = useI18n();
-</script>

@@ -1,110 +1,3 @@
-<template>
-  <card outlined-body>
-    <template #title>
-      {{ tc('non_fungible_balances.title') }}
-      <v-icon v-if="loading" color="primary" class="ml-2">
-        mdi-spin mdi-loading
-      </v-icon>
-    </template>
-    <template #actions>
-      <non-fungible-balances-filter
-        :selected="selected"
-        :ignored-assets-handling="ignoredAssetsHandling"
-        @update:selected="selected = $event"
-        @update:ignored-assets-handling="ignoredAssetsHandling = $event"
-        @mass-ignore="massIgnore"
-      />
-    </template>
-    <template #details>
-      <active-modules :modules="modules" class="mr-2" />
-      <refresh-button
-        :loading="loading"
-        :tooltip="tc('non_fungible_balances.refresh')"
-        @refresh="fetch(true)"
-      />
-    </template>
-
-    <collection-handler :collection="balances">
-      <template #default="{ data, itemLength, totalUsdValue }">
-        <data-table
-          v-model="selected"
-          :headers="tableHeaders"
-          :items="data"
-          :options="options"
-          :server-items-length="itemLength"
-          :loading="loading"
-          show-select
-          multi-sort
-          :must-sort="false"
-          @update:options="updatePaginationHandler($event)"
-        >
-          <template #item.name="{ item }">
-            <nft-details :identifier="item.id" />
-          </template>
-          <template #item.ignored="{ item }">
-            <div class="d-flex justify-center">
-              <v-switch
-                :input-value="isIgnored(item.id)"
-                @change="toggleIgnoreAsset(item.id)"
-              />
-            </div>
-          </template>
-          <template #item.priceInAsset="{ item }">
-            <amount-display
-              v-if="item.priceAsset !== currencySymbol"
-              :value="item.priceInAsset"
-              :asset="item.priceAsset"
-            />
-            <span v-else>-</span>
-          </template>
-          <template #item.usdPrice="{ item }">
-            <amount-display
-              :price-asset="item.priceAsset"
-              :amount="item.priceInAsset"
-              :value="item.usdPrice"
-              show-currency="symbol"
-              fiat-currency="USD"
-            />
-          </template>
-          <template #item.actions="{ item }">
-            <row-action
-              :delete-tooltip="tc('non_fungible_balances.row.delete')"
-              :edit-tooltip="tc('non_fungible_balances.row.edit')"
-              :delete-disabled="!item.manuallyInput"
-              @delete-click="showDeleteConfirmation(item)"
-              @edit-click="edit = item"
-            />
-          </template>
-          <template #item.manuallyInput="{ item }">
-            <v-icon v-if="item.manuallyInput" color="green">mdi-check</v-icon>
-          </template>
-          <template #body.append="{ isMobile }">
-            <row-append
-              label-colspan="4"
-              :label="tc('common.total')"
-              :right-patch-colspan="1"
-              :is-mobile="isMobile"
-            >
-              <amount-display
-                :value="totalUsdValue"
-                show-currency="symbol"
-                fiat-currency="USD"
-              />
-            </row-append>
-          </template>
-        </data-table>
-      </template>
-    </collection-handler>
-
-    <non-fungible-balance-edit
-      v-if="!!edit"
-      :value="edit"
-      @close="edit = null"
-      @save="setPrice($event.price, $event.asset)"
-    />
-  </card>
-</template>
-
 <script setup lang="ts">
 import { dropRight } from 'lodash';
 import { type PropType, type Ref } from 'vue';
@@ -366,6 +259,113 @@ const showDeleteConfirmation = (item: NonFungibleBalance) => {
   );
 };
 </script>
+
+<template>
+  <card outlined-body>
+    <template #title>
+      {{ tc('non_fungible_balances.title') }}
+      <v-icon v-if="loading" color="primary" class="ml-2">
+        mdi-spin mdi-loading
+      </v-icon>
+    </template>
+    <template #actions>
+      <non-fungible-balances-filter
+        :selected="selected"
+        :ignored-assets-handling="ignoredAssetsHandling"
+        @update:selected="selected = $event"
+        @update:ignored-assets-handling="ignoredAssetsHandling = $event"
+        @mass-ignore="massIgnore"
+      />
+    </template>
+    <template #details>
+      <active-modules :modules="modules" class="mr-2" />
+      <refresh-button
+        :loading="loading"
+        :tooltip="tc('non_fungible_balances.refresh')"
+        @refresh="fetch(true)"
+      />
+    </template>
+
+    <collection-handler :collection="balances">
+      <template #default="{ data, itemLength, totalUsdValue }">
+        <data-table
+          v-model="selected"
+          :headers="tableHeaders"
+          :items="data"
+          :options="options"
+          :server-items-length="itemLength"
+          :loading="loading"
+          show-select
+          multi-sort
+          :must-sort="false"
+          @update:options="updatePaginationHandler($event)"
+        >
+          <template #item.name="{ item }">
+            <nft-details :identifier="item.id" />
+          </template>
+          <template #item.ignored="{ item }">
+            <div class="d-flex justify-center">
+              <v-switch
+                :input-value="isIgnored(item.id)"
+                @change="toggleIgnoreAsset(item.id)"
+              />
+            </div>
+          </template>
+          <template #item.priceInAsset="{ item }">
+            <amount-display
+              v-if="item.priceAsset !== currencySymbol"
+              :value="item.priceInAsset"
+              :asset="item.priceAsset"
+            />
+            <span v-else>-</span>
+          </template>
+          <template #item.usdPrice="{ item }">
+            <amount-display
+              :price-asset="item.priceAsset"
+              :amount="item.priceInAsset"
+              :value="item.usdPrice"
+              show-currency="symbol"
+              fiat-currency="USD"
+            />
+          </template>
+          <template #item.actions="{ item }">
+            <row-action
+              :delete-tooltip="tc('non_fungible_balances.row.delete')"
+              :edit-tooltip="tc('non_fungible_balances.row.edit')"
+              :delete-disabled="!item.manuallyInput"
+              @delete-click="showDeleteConfirmation(item)"
+              @edit-click="edit = item"
+            />
+          </template>
+          <template #item.manuallyInput="{ item }">
+            <v-icon v-if="item.manuallyInput" color="green">mdi-check</v-icon>
+          </template>
+          <template #body.append="{ isMobile }">
+            <row-append
+              label-colspan="4"
+              :label="tc('common.total')"
+              :right-patch-colspan="1"
+              :is-mobile="isMobile"
+            >
+              <amount-display
+                :value="totalUsdValue"
+                show-currency="symbol"
+                fiat-currency="USD"
+              />
+            </row-append>
+          </template>
+        </data-table>
+      </template>
+    </collection-handler>
+
+    <non-fungible-balance-edit
+      v-if="!!edit"
+      :value="edit"
+      @close="edit = null"
+      @save="setPrice($event.price, $event.asset)"
+    />
+  </card>
+</template>
 <style scoped lang="scss">
 .non-fungible-balances {
   &__item {

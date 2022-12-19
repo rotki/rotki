@@ -1,3 +1,17 @@
+<script setup lang="ts">
+import { BigNumber } from '@rotki/common';
+import { type PropType } from 'vue';
+import { type TradeLocation } from '@/types/history/trade-location';
+import { useTradeLocations } from '@/types/trades';
+
+defineProps({
+  location: { required: true, type: String as PropType<TradeLocation> },
+  amount: { required: true, type: BigNumber }
+});
+
+const { exchangeName } = useTradeLocations();
+</script>
+
 <template>
   <v-list-item
     :id="`${location}_box`"
@@ -24,20 +38,6 @@
     </v-list-item-content>
   </v-list-item>
 </template>
-
-<script setup lang="ts">
-import { BigNumber } from '@rotki/common';
-import { type PropType } from 'vue';
-import { type TradeLocation } from '@/types/history/trade-location';
-import { useTradeLocations } from '@/types/trades';
-
-defineProps({
-  location: { required: true, type: String as PropType<TradeLocation> },
-  amount: { required: true, type: BigNumber }
-});
-
-const { exchangeName } = useTradeLocations();
-</script>
 <style scoped lang="scss">
 .exchange-box {
   &__icon {

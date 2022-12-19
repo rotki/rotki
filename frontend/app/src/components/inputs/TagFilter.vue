@@ -1,3 +1,38 @@
+<script setup lang="ts">
+import { type PropType } from 'vue';
+import TagIcon from '@/components/tags/TagIcon.vue';
+import { useTagStore } from '@/store/session/tags';
+import { type Tag } from '@/types/user';
+
+const props = defineProps({
+  value: { required: true, type: Array as PropType<string[]> },
+  disabled: { required: false, default: false, type: Boolean },
+  hideDetails: { required: false, default: false, type: Boolean }
+});
+
+const emit = defineEmits(['input']);
+const { value } = toRefs(props);
+
+const { t } = useI18n();
+
+const { availableTags } = storeToRefs(useTagStore());
+
+const availableTagsList = computed<Tag[]>(() => {
+  const tags = get(availableTags);
+  return Object.values(tags);
+});
+
+const input = (tags: string[]) => {
+  emit('input', tags);
+};
+
+const remove = (tag: string) => {
+  const tags = get(value);
+  const index = tags.indexOf(tag);
+  input([...tags.slice(0, index), ...tags.slice(index + 1)]);
+};
+</script>
+
 <template>
   <v-autocomplete
     :value="value"
@@ -41,41 +76,6 @@
     </template>
   </v-autocomplete>
 </template>
-
-<script setup lang="ts">
-import { type PropType } from 'vue';
-import TagIcon from '@/components/tags/TagIcon.vue';
-import { useTagStore } from '@/store/session/tags';
-import { type Tag } from '@/types/user';
-
-const props = defineProps({
-  value: { required: true, type: Array as PropType<string[]> },
-  disabled: { required: false, default: false, type: Boolean },
-  hideDetails: { required: false, default: false, type: Boolean }
-});
-
-const emit = defineEmits(['input']);
-const { value } = toRefs(props);
-
-const { t } = useI18n();
-
-const { availableTags } = storeToRefs(useTagStore());
-
-const availableTagsList = computed<Tag[]>(() => {
-  const tags = get(availableTags);
-  return Object.values(tags);
-});
-
-const input = (tags: string[]) => {
-  emit('input', tags);
-};
-
-const remove = (tag: string) => {
-  const tags = get(value);
-  const index = tags.indexOf(tag);
-  input([...tags.slice(0, index), ...tags.slice(index + 1)]);
-};
-</script>
 
 <style scoped lang="scss">
 .tag-filter {

@@ -1,3 +1,24 @@
+<script setup lang="ts">
+import { type PropType } from 'vue';
+import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
+import { type TradeLocationData } from '@/types/trades';
+
+const props = defineProps({
+  item: {
+    required: true,
+    type: Object as PropType<TradeLocationData>
+  },
+  horizontal: { required: false, type: Boolean, default: false },
+  icon: { required: false, type: Boolean, default: false },
+  size: { required: false, type: String, default: '24px' },
+  noPadding: { required: false, type: Boolean, default: false }
+});
+
+const { size } = toRefs(props);
+const iconStyle = computed(() => ({
+  fontSize: get(size)
+}));
+</script>
 <template>
   <span
     class="d-flex align-center"
@@ -30,24 +51,3 @@
     </span>
   </span>
 </template>
-<script setup lang="ts">
-import { type PropType } from 'vue';
-import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
-import { type TradeLocationData } from '@/types/trades';
-
-const props = defineProps({
-  item: {
-    required: true,
-    type: Object as PropType<TradeLocationData>
-  },
-  horizontal: { required: false, type: Boolean, default: false },
-  icon: { required: false, type: Boolean, default: false },
-  size: { required: false, type: String, default: '24px' },
-  noPadding: { required: false, type: Boolean, default: false }
-});
-
-const { size } = toRefs(props);
-const iconStyle = computed(() => ({
-  fontSize: get(size)
-}));
-</script>

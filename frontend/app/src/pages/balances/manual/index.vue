@@ -1,76 +1,3 @@
-<template>
-  <fragment>
-    <v-row justify="end" class="mb-5">
-      <v-col cols="auto">
-        <price-refresh />
-      </v-col>
-    </v-row>
-    <v-btn
-      v-blur
-      fixed
-      bottom
-      right
-      :fab="!$vuetify.breakpoint.xl"
-      :rounded="$vuetify.breakpoint.xl"
-      :x-large="$vuetify.breakpoint.xl"
-      color="primary"
-      class="manual-balances__add-balance"
-      @click="add()"
-    >
-      <v-icon> mdi-plus </v-icon>
-      <div v-if="$vuetify.breakpoint.xl" class="ml-2">
-        {{ tc('manual_balances.add_manual_balance') }}
-      </div>
-    </v-btn>
-    <manual-balance-table
-      v-intersect="{
-        handler: observers.asset,
-        options: {
-          threshold
-        }
-      }"
-      data-cy="manual-balances"
-      :title="tc('manual_balances.balances')"
-      :balances="manualBalances"
-      :loading="loading"
-      @edit="edit($event)"
-      @refresh="refresh"
-    />
-    <manual-balance-table
-      v-intersect="{
-        handler: observers.liability,
-        options: {
-          threshold
-        }
-      }"
-      data-cy="manual-liabilities"
-      :title="tc('manual_balances.liabilities')"
-      class="mt-8"
-      :balances="manualLiabilities"
-      :loading="loading"
-      @edit="edit($event)"
-      @refresh="refresh"
-    />
-    <big-dialog
-      :display="openDialog"
-      :title="dialogTitle"
-      :subtitle="dialogSubtitle"
-      :action-disabled="dialogDisabled || !valid || dialogLoading"
-      :loading="dialogLoading"
-      primary-action="Save"
-      @confirm="save()"
-      @cancel="cancel()"
-    >
-      <manual-balances-form
-        ref="form"
-        v-model="valid"
-        :edit="balanceToEdit"
-        :context="context"
-      />
-    </big-dialog>
-  </fragment>
-</template>
-
 <script setup lang="ts">
 import { type Ref } from 'vue';
 import ManualBalancesForm from '@/components/accounts/manual-balances/ManualBalancesForm.vue';
@@ -177,3 +104,76 @@ const context = computed(() => {
 
 const threshold = [1];
 </script>
+
+<template>
+  <fragment>
+    <v-row justify="end" class="mb-5">
+      <v-col cols="auto">
+        <price-refresh />
+      </v-col>
+    </v-row>
+    <v-btn
+      v-blur
+      fixed
+      bottom
+      right
+      :fab="!$vuetify.breakpoint.xl"
+      :rounded="$vuetify.breakpoint.xl"
+      :x-large="$vuetify.breakpoint.xl"
+      color="primary"
+      class="manual-balances__add-balance"
+      @click="add()"
+    >
+      <v-icon> mdi-plus </v-icon>
+      <div v-if="$vuetify.breakpoint.xl" class="ml-2">
+        {{ tc('manual_balances.add_manual_balance') }}
+      </div>
+    </v-btn>
+    <manual-balance-table
+      v-intersect="{
+        handler: observers.asset,
+        options: {
+          threshold
+        }
+      }"
+      data-cy="manual-balances"
+      :title="tc('manual_balances.balances')"
+      :balances="manualBalances"
+      :loading="loading"
+      @edit="edit($event)"
+      @refresh="refresh"
+    />
+    <manual-balance-table
+      v-intersect="{
+        handler: observers.liability,
+        options: {
+          threshold
+        }
+      }"
+      data-cy="manual-liabilities"
+      :title="tc('manual_balances.liabilities')"
+      class="mt-8"
+      :balances="manualLiabilities"
+      :loading="loading"
+      @edit="edit($event)"
+      @refresh="refresh"
+    />
+    <big-dialog
+      :display="openDialog"
+      :title="dialogTitle"
+      :subtitle="dialogSubtitle"
+      :action-disabled="dialogDisabled || !valid || dialogLoading"
+      :loading="dialogLoading"
+      primary-action="Save"
+      @confirm="save()"
+      @cancel="cancel()"
+    >
+      <manual-balances-form
+        ref="form"
+        v-model="valid"
+        :edit="balanceToEdit"
+        :context="context"
+      />
+    </big-dialog>
+  </fragment>
+</template>

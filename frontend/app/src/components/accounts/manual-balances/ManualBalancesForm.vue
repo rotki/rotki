@@ -1,112 +1,3 @@
-<template>
-  <v-form
-    ref="form"
-    :value="!v$.$invalid"
-    :class="$style.form"
-    data-cy="manual-balance-form"
-  >
-    <v-text-field
-      v-model="label"
-      class="manual-balances-form__label"
-      outlined
-      :label="tc('manual_balances_form.fields.label')"
-      :error-messages="toMessages(v$.label.$errors)"
-      :disabled="pending"
-      @blur="v$.label.$touch()"
-    />
-
-    <balance-type-input
-      v-model="balanceType"
-      :disabled="pending"
-      :label="tc('manual_balances_form.fields.balance_type')"
-      outlined
-    />
-
-    <v-row>
-      <v-col>
-        <asset-select
-          v-model="asset"
-          :label="tc('common.asset')"
-          class="manual-balances-form__asset"
-          outlined
-          :error-messages="toMessages(v$.asset.$errors)"
-          :disabled="pending"
-          @blur="v$.asset.$touch()"
-        />
-      </v-col>
-      <v-col cols="auto">
-        <v-tooltip top>
-          <template #activator="{ on }">
-            <v-btn
-              text
-              color="primary"
-              class="mt-1 py-6"
-              v-on="on"
-              @click="openCustomAssetForm"
-            >
-              <div class="d-flex">
-                <v-icon large>mdi-pencil-circle-outline</v-icon>
-                <v-icon small class="mt-n4">mdi-plus</v-icon>
-              </div>
-            </v-btn>
-          </template>
-          <span>
-            {{ tc('manual_balances_form.fields.create_a_custom_asset') }}
-          </span>
-        </v-tooltip>
-      </v-col>
-    </v-row>
-
-    <manual-balances-price-form ref="priceForm" :pending="pending" />
-
-    <amount-input
-      v-model="amount"
-      :label="tc('common.amount')"
-      :error-messages="toMessages(v$.amount.$errors)"
-      class="manual-balances-form__amount"
-      outlined
-      autocomplete="off"
-      :disabled="pending"
-      @blur="v$.amount.$touch()"
-    />
-
-    <tag-input
-      v-model="tags"
-      :label="tc('manual_balances_form.fields.tags')"
-      :disabled="pending"
-      outlined
-      class="manual-balances-form__tags"
-    />
-
-    <location-selector
-      v-model="location"
-      class="manual-balances-form__location"
-      outlined
-      :error-messages="toMessages(v$.location.$errors)"
-      :disabled="pending"
-      :label="tc('common.location')"
-      @blur="v$.location.$touch()"
-    />
-
-    <big-dialog
-      :display="showCustomAssetForm"
-      :title="tc('asset_management.add_title')"
-      :action-disabled="!customAssetFormValid || customAssetFormSaving"
-      :primary-action="tc('common.actions.save')"
-      :loading="customAssetFormSaving"
-      @confirm="saveCustomAsset()"
-      @cancel="showCustomAssetForm = false"
-    >
-      <custom-asset-form
-        :ref="customAssetFormRef"
-        :types="customAssetTypes"
-        :edit="false"
-        @valid="customAssetFormValid = $event"
-      />
-    </big-dialog>
-  </v-form>
-</template>
-
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
@@ -364,6 +255,115 @@ defineExpose({
   save
 });
 </script>
+
+<template>
+  <v-form
+    ref="form"
+    :value="!v$.$invalid"
+    :class="$style.form"
+    data-cy="manual-balance-form"
+  >
+    <v-text-field
+      v-model="label"
+      class="manual-balances-form__label"
+      outlined
+      :label="tc('manual_balances_form.fields.label')"
+      :error-messages="toMessages(v$.label.$errors)"
+      :disabled="pending"
+      @blur="v$.label.$touch()"
+    />
+
+    <balance-type-input
+      v-model="balanceType"
+      :disabled="pending"
+      :label="tc('manual_balances_form.fields.balance_type')"
+      outlined
+    />
+
+    <v-row>
+      <v-col>
+        <asset-select
+          v-model="asset"
+          :label="tc('common.asset')"
+          class="manual-balances-form__asset"
+          outlined
+          :error-messages="toMessages(v$.asset.$errors)"
+          :disabled="pending"
+          @blur="v$.asset.$touch()"
+        />
+      </v-col>
+      <v-col cols="auto">
+        <v-tooltip top>
+          <template #activator="{ on }">
+            <v-btn
+              text
+              color="primary"
+              class="mt-1 py-6"
+              v-on="on"
+              @click="openCustomAssetForm"
+            >
+              <div class="d-flex">
+                <v-icon large>mdi-pencil-circle-outline</v-icon>
+                <v-icon small class="mt-n4">mdi-plus</v-icon>
+              </div>
+            </v-btn>
+          </template>
+          <span>
+            {{ tc('manual_balances_form.fields.create_a_custom_asset') }}
+          </span>
+        </v-tooltip>
+      </v-col>
+    </v-row>
+
+    <manual-balances-price-form ref="priceForm" :pending="pending" />
+
+    <amount-input
+      v-model="amount"
+      :label="tc('common.amount')"
+      :error-messages="toMessages(v$.amount.$errors)"
+      class="manual-balances-form__amount"
+      outlined
+      autocomplete="off"
+      :disabled="pending"
+      @blur="v$.amount.$touch()"
+    />
+
+    <tag-input
+      v-model="tags"
+      :label="tc('manual_balances_form.fields.tags')"
+      :disabled="pending"
+      outlined
+      class="manual-balances-form__tags"
+    />
+
+    <location-selector
+      v-model="location"
+      class="manual-balances-form__location"
+      outlined
+      :error-messages="toMessages(v$.location.$errors)"
+      :disabled="pending"
+      :label="tc('common.location')"
+      @blur="v$.location.$touch()"
+    />
+
+    <big-dialog
+      :display="showCustomAssetForm"
+      :title="tc('asset_management.add_title')"
+      :action-disabled="!customAssetFormValid || customAssetFormSaving"
+      :primary-action="tc('common.actions.save')"
+      :loading="customAssetFormSaving"
+      @confirm="saveCustomAsset()"
+      @cancel="showCustomAssetForm = false"
+    >
+      <custom-asset-form
+        :ref="customAssetFormRef"
+        :types="customAssetTypes"
+        :edit="false"
+        @valid="customAssetFormValid = $event"
+      />
+    </big-dialog>
+  </v-form>
+</template>
 
 <style module lang="scss">
 .form {

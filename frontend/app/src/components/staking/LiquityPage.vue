@@ -1,25 +1,3 @@
-<template>
-  <div>
-    <no-premium-placeholder
-      v-if="!premium"
-      :text="tc('liquity_page.no_premium')"
-    />
-    <module-not-active v-else-if="!moduleEnabled" :modules="modules" />
-    <progress-screen v-else-if="loading">
-      <template #message>
-        {{ tc('liquity_page.loading') }}
-      </template>
-    </progress-screen>
-    <div v-else>
-      <liquity-staking-details>
-        <template #modules>
-          <active-modules :modules="modules" />
-        </template>
-      </liquity-staking-details>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
 import ActiveModules from '@/components/defi/ActiveModules.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
@@ -53,3 +31,25 @@ watch(moduleEnabled, async enabled => {
 
 const { tc } = useI18n();
 </script>
+
+<template>
+  <div>
+    <no-premium-placeholder
+      v-if="!premium"
+      :text="tc('liquity_page.no_premium')"
+    />
+    <module-not-active v-else-if="!moduleEnabled" :modules="modules" />
+    <progress-screen v-else-if="loading">
+      <template #message>
+        {{ tc('liquity_page.loading') }}
+      </template>
+    </progress-screen>
+    <div v-else>
+      <liquity-staking-details>
+        <template #modules>
+          <active-modules :modules="modules" />
+        </template>
+      </liquity-staking-details>
+    </div>
+  </div>
+</template>

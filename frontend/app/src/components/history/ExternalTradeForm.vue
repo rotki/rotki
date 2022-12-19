@@ -1,266 +1,4 @@
-﻿<template>
-  <v-form :value="value" data-cy="trade-form" class="external-trade-form">
-    <v-row>
-      <v-col>
-        <v-row class="pt-1">
-          <v-col cols="12" sm="3">
-            <date-time-picker
-              v-model="datetime"
-              required
-              outlined
-              seconds
-              limit-now
-              data-cy="date"
-              :label="t('external_trade_form.date.label')"
-              persistent-hint
-              :hint="t('external_trade_form.date.hint')"
-              :error-messages="errorMessages['timestamp']"
-              @focus="delete errorMessages['timestamp']"
-            />
-            <div data-cy="type">
-              <v-radio-group
-                v-model="type"
-                required
-                :label="t('external_trade_form.trade_type.label')"
-              >
-                <v-radio
-                  :label="t('external_trade_form.trade_type.buy')"
-                  value="buy"
-                />
-                <v-radio
-                  :label="t('external_trade_form.trade_type.sell')"
-                  value="sell"
-                />
-              </v-radio-group>
-            </div>
-          </v-col>
-          <v-col cols="12" sm="9" class="d-flex flex-column">
-            <v-row>
-              <v-col cols="12" md="6" class="d-flex flex-row align-center">
-                <div class="text--secondary external-trade-form__action-hint">
-                  {{ baseHint }}
-                </div>
-                <asset-select
-                  v-model="base"
-                  outlined
-                  required
-                  data-cy="base-asset"
-                  :error-messages="v$.base.$errors.map(e => e.$message)"
-                  :hint="t('external_trade_form.base_asset.hint')"
-                  :label="t('external_trade_form.base_asset.label')"
-                  @focus="delete errorMessages['baseAsset']"
-                />
-              </v-col>
-              <v-col cols="12" md="6" class="d-flex flex-row align-center">
-                <div class="text--secondary external-trade-form__action-hint">
-                  {{ quoteHint }}
-                </div>
-                <asset-select
-                  v-model="quote"
-                  required
-                  outlined
-                  data-cy="quote-asset"
-                  :error-messages="v$.quote.$errors.map(e => e.$message)"
-                  :hint="t('external_trade_form.quote_asset.hint')"
-                  :label="t('external_trade_form.quote_asset.label')"
-                  @focus="delete errorMessages['quoteAsset']"
-                />
-              </v-col>
-            </v-row>
-            <div class="mt-4">
-              <amount-input
-                v-model="amount"
-                required
-                outlined
-                :error-messages="v$.amount.$errors.map(e => e.$message)"
-                data-cy="amount"
-                :label="t('common.amount')"
-                persistent-hint
-                :hint="t('external_trade_form.amount.hint')"
-                @focus="delete errorMessages['amount']"
-              />
-              <div
-                :class="`external-trade-form__grouped-amount-input d-flex ${
-                  selectedCalculationInput === 'quoteAmount'
-                    ? 'flex-column-reverse'
-                    : 'flex-column'
-                }`"
-              >
-                <amount-input
-                  ref="rateInput"
-                  v-model="rate"
-                  :disabled="selectedCalculationInput !== 'rate'"
-                  :label="t('external_trade_form.rate.label')"
-                  :loading="fetching"
-                  :error-messages="v$.rate.$errors.map(e => e.$message)"
-                  data-cy="rate"
-                  :hide-details="selectedCalculationInput !== 'rate'"
-                  :class="`${
-                    selectedCalculationInput === 'rate'
-                      ? 'v-input--is-enabled'
-                      : ''
-                  }`"
-                  filled
-                  persistent-hint
-                  @focus="delete errorMessages['rate']"
-                />
-                <amount-input
-                  ref="quoteAmountInput"
-                  v-model="quoteAmount"
-                  :disabled="selectedCalculationInput !== 'quoteAmount'"
-                  :error-messages="v$.quoteAmount.$errors.map(e => e.$message)"
-                  data-cy="quote-amount"
-                  :hide-details="selectedCalculationInput !== 'quoteAmount'"
-                  :class="`${
-                    selectedCalculationInput === 'quoteAmount'
-                      ? 'v-input--is-enabled'
-                      : ''
-                  }`"
-                  :label="t('external_trade_form.quote_amount.label')"
-                  filled
-                  @focus="delete errorMessages['quote_amount']"
-                />
-                <v-btn
-                  class="external-trade-form__grouped-amount-input__swap-button"
-                  fab
-                  small
-                  dark
-                  color="primary"
-                  data-cy="grouped-amount-input__swap-button"
-                  @click="swapAmountInput"
-                >
-                  <v-icon>mdi-swap-vertical</v-icon>
-                </v-btn>
-              </div>
-              <div
-                v-if="shouldRenderSummary"
-                class="text-caption green--text mt-n5"
-              >
-                <v-icon small class="mr-2 green--text">
-                  mdi-comment-quote
-                </v-icon>
-                <i18n
-                  v-if="type === 'buy'"
-                  path="external_trade_form.summary.buy"
-                >
-                  <template #label>
-                    <strong>
-                      {{ t('external_trade_form.summary.label') }}
-                    </strong>
-                  </template>
-                  <template #amount>
-                    <strong>
-                      <amount-display :value="numericAmount" :tooltip="false" />
-                    </strong>
-                  </template>
-                  <template #base>
-                    <strong>{{ baseSymbol }}</strong>
-                  </template>
-                  <template #quote>
-                    <strong>{{ quoteSymbol }}</strong>
-                  </template>
-                  <template #rate>
-                    <strong>
-                      <amount-display :value="numericRate" :tooltip="false" />
-                    </strong>
-                  </template>
-                </i18n>
-                <i18n
-                  v-if="type === 'sell'"
-                  tag="span"
-                  path="external_trade_form.summary.sell"
-                >
-                  <template #label>
-                    <strong>
-                      {{ t('external_trade_form.summary.label') }}
-                    </strong>
-                  </template>
-                  <template #amount>
-                    <strong>
-                      <amount-display :value="numericAmount" :tooltip="false" />
-                    </strong>
-                  </template>
-                  <template #base>
-                    <strong>{{ baseSymbol }}</strong>
-                  </template>
-                  <template #quote>
-                    <strong>{{ quoteSymbol }}</strong>
-                  </template>
-                  <template #rate>
-                    <strong>
-                      <amount-display :value="numericRate" :tooltip="false" />
-                    </strong>
-                  </template>
-                </i18n>
-              </div>
-            </div>
-          </v-col>
-        </v-row>
-
-        <v-divider class="mb-6 mt-2" />
-
-        <v-row class="mb-2">
-          <v-col cols="12" md="6">
-            <amount-input
-              ref="feeInput"
-              v-model="fee"
-              class="external-trade-form__fee"
-              persistent-hint
-              outlined
-              data-cy="fee"
-              :required="!!feeCurrency"
-              :label="t('external_trade_form.fee.label')"
-              :hint="t('external_trade_form.fee.hint')"
-              :error-messages="v$.fee.$errors.map(e => e.$message)"
-              @focus="delete errorMessages['fee']"
-              @input="triggerFeeValidator"
-            />
-          </v-col>
-          <v-col cols="12" md="6">
-            <asset-select
-              ref="feeCurrencyInput"
-              v-model="feeCurrency"
-              data-cy="fee-currency"
-              outlined
-              persistent-hint
-              :label="t('external_trade_form.fee_currency.label')"
-              :hint="t('external_trade_form.fee_currency.hint')"
-              :required="!!fee"
-              :error-messages="v$.feeCurrency.$errors.map(e => e.$message)"
-              @focus="delete errorMessages['feeCurrency']"
-              @input="triggerFeeValidator"
-            />
-          </v-col>
-        </v-row>
-        <v-text-field
-          v-model="link"
-          data-cy="link"
-          outlined
-          prepend-inner-icon="mdi-link"
-          :label="t('external_trade_form.link.label')"
-          persistent-hint
-          :hint="t('external_trade_form.link.hint')"
-          :error-messages="errorMessages['link']"
-          @focus="delete errorMessages['link']"
-        />
-        <v-textarea
-          v-model="notes"
-          prepend-inner-icon="mdi-text-box-outline"
-          outlined
-          data-cy="notes"
-          class="mt-4"
-          :label="t('external_trade_form.notes.label')"
-          persistent-hint
-          :hint="t('external_trade_form.notes.hint')"
-          :error-messages="errorMessages['notes']"
-          @focus="delete errorMessages['notes']"
-        />
-      </v-col>
-    </v-row>
-  </v-form>
-</template>
-
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { BigNumber } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
@@ -595,6 +333,268 @@ onMounted(() => {
   setEditMode();
 });
 </script>
+
+<template>
+  <v-form :value="value" data-cy="trade-form" class="external-trade-form">
+    <v-row>
+      <v-col>
+        <v-row class="pt-1">
+          <v-col cols="12" sm="3">
+            <date-time-picker
+              v-model="datetime"
+              required
+              outlined
+              seconds
+              limit-now
+              data-cy="date"
+              :label="t('external_trade_form.date.label')"
+              persistent-hint
+              :hint="t('external_trade_form.date.hint')"
+              :error-messages="errorMessages['timestamp']"
+              @focus="delete errorMessages['timestamp']"
+            />
+            <div data-cy="type">
+              <v-radio-group
+                v-model="type"
+                required
+                :label="t('external_trade_form.trade_type.label')"
+              >
+                <v-radio
+                  :label="t('external_trade_form.trade_type.buy')"
+                  value="buy"
+                />
+                <v-radio
+                  :label="t('external_trade_form.trade_type.sell')"
+                  value="sell"
+                />
+              </v-radio-group>
+            </div>
+          </v-col>
+          <v-col cols="12" sm="9" class="d-flex flex-column">
+            <v-row>
+              <v-col cols="12" md="6" class="d-flex flex-row align-center">
+                <div class="text--secondary external-trade-form__action-hint">
+                  {{ baseHint }}
+                </div>
+                <asset-select
+                  v-model="base"
+                  outlined
+                  required
+                  data-cy="base-asset"
+                  :error-messages="v$.base.$errors.map(e => e.$message)"
+                  :hint="t('external_trade_form.base_asset.hint')"
+                  :label="t('external_trade_form.base_asset.label')"
+                  @focus="delete errorMessages['baseAsset']"
+                />
+              </v-col>
+              <v-col cols="12" md="6" class="d-flex flex-row align-center">
+                <div class="text--secondary external-trade-form__action-hint">
+                  {{ quoteHint }}
+                </div>
+                <asset-select
+                  v-model="quote"
+                  required
+                  outlined
+                  data-cy="quote-asset"
+                  :error-messages="v$.quote.$errors.map(e => e.$message)"
+                  :hint="t('external_trade_form.quote_asset.hint')"
+                  :label="t('external_trade_form.quote_asset.label')"
+                  @focus="delete errorMessages['quoteAsset']"
+                />
+              </v-col>
+            </v-row>
+            <div class="mt-4">
+              <amount-input
+                v-model="amount"
+                required
+                outlined
+                :error-messages="v$.amount.$errors.map(e => e.$message)"
+                data-cy="amount"
+                :label="t('common.amount')"
+                persistent-hint
+                :hint="t('external_trade_form.amount.hint')"
+                @focus="delete errorMessages['amount']"
+              />
+              <div
+                :class="`external-trade-form__grouped-amount-input d-flex ${
+                  selectedCalculationInput === 'quoteAmount'
+                    ? 'flex-column-reverse'
+                    : 'flex-column'
+                }`"
+              >
+                <amount-input
+                  ref="rateInput"
+                  v-model="rate"
+                  :disabled="selectedCalculationInput !== 'rate'"
+                  :label="t('external_trade_form.rate.label')"
+                  :loading="fetching"
+                  :error-messages="v$.rate.$errors.map(e => e.$message)"
+                  data-cy="rate"
+                  :hide-details="selectedCalculationInput !== 'rate'"
+                  :class="`${
+                    selectedCalculationInput === 'rate'
+                      ? 'v-input--is-enabled'
+                      : ''
+                  }`"
+                  filled
+                  persistent-hint
+                  @focus="delete errorMessages['rate']"
+                />
+                <amount-input
+                  ref="quoteAmountInput"
+                  v-model="quoteAmount"
+                  :disabled="selectedCalculationInput !== 'quoteAmount'"
+                  :error-messages="v$.quoteAmount.$errors.map(e => e.$message)"
+                  data-cy="quote-amount"
+                  :hide-details="selectedCalculationInput !== 'quoteAmount'"
+                  :class="`${
+                    selectedCalculationInput === 'quoteAmount'
+                      ? 'v-input--is-enabled'
+                      : ''
+                  }`"
+                  :label="t('external_trade_form.quote_amount.label')"
+                  filled
+                  @focus="delete errorMessages['quote_amount']"
+                />
+                <v-btn
+                  class="external-trade-form__grouped-amount-input__swap-button"
+                  fab
+                  small
+                  dark
+                  color="primary"
+                  data-cy="grouped-amount-input__swap-button"
+                  @click="swapAmountInput"
+                >
+                  <v-icon>mdi-swap-vertical</v-icon>
+                </v-btn>
+              </div>
+              <div
+                v-if="shouldRenderSummary"
+                class="text-caption green--text mt-n5"
+              >
+                <v-icon small class="mr-2 green--text">
+                  mdi-comment-quote
+                </v-icon>
+                <i18n
+                  v-if="type === 'buy'"
+                  path="external_trade_form.summary.buy"
+                >
+                  <template #label>
+                    <strong>
+                      {{ t('external_trade_form.summary.label') }}
+                    </strong>
+                  </template>
+                  <template #amount>
+                    <strong>
+                      <amount-display :value="numericAmount" :tooltip="false" />
+                    </strong>
+                  </template>
+                  <template #base>
+                    <strong>{{ baseSymbol }}</strong>
+                  </template>
+                  <template #quote>
+                    <strong>{{ quoteSymbol }}</strong>
+                  </template>
+                  <template #rate>
+                    <strong>
+                      <amount-display :value="numericRate" :tooltip="false" />
+                    </strong>
+                  </template>
+                </i18n>
+                <i18n
+                  v-if="type === 'sell'"
+                  tag="span"
+                  path="external_trade_form.summary.sell"
+                >
+                  <template #label>
+                    <strong>
+                      {{ t('external_trade_form.summary.label') }}
+                    </strong>
+                  </template>
+                  <template #amount>
+                    <strong>
+                      <amount-display :value="numericAmount" :tooltip="false" />
+                    </strong>
+                  </template>
+                  <template #base>
+                    <strong>{{ baseSymbol }}</strong>
+                  </template>
+                  <template #quote>
+                    <strong>{{ quoteSymbol }}</strong>
+                  </template>
+                  <template #rate>
+                    <strong>
+                      <amount-display :value="numericRate" :tooltip="false" />
+                    </strong>
+                  </template>
+                </i18n>
+              </div>
+            </div>
+          </v-col>
+        </v-row>
+
+        <v-divider class="mb-6 mt-2" />
+
+        <v-row class="mb-2">
+          <v-col cols="12" md="6">
+            <amount-input
+              ref="feeInput"
+              v-model="fee"
+              class="external-trade-form__fee"
+              persistent-hint
+              outlined
+              data-cy="fee"
+              :required="!!feeCurrency"
+              :label="t('external_trade_form.fee.label')"
+              :hint="t('external_trade_form.fee.hint')"
+              :error-messages="v$.fee.$errors.map(e => e.$message)"
+              @focus="delete errorMessages['fee']"
+              @input="triggerFeeValidator"
+            />
+          </v-col>
+          <v-col cols="12" md="6">
+            <asset-select
+              ref="feeCurrencyInput"
+              v-model="feeCurrency"
+              data-cy="fee-currency"
+              outlined
+              persistent-hint
+              :label="t('external_trade_form.fee_currency.label')"
+              :hint="t('external_trade_form.fee_currency.hint')"
+              :required="!!fee"
+              :error-messages="v$.feeCurrency.$errors.map(e => e.$message)"
+              @focus="delete errorMessages['feeCurrency']"
+              @input="triggerFeeValidator"
+            />
+          </v-col>
+        </v-row>
+        <v-text-field
+          v-model="link"
+          data-cy="link"
+          outlined
+          prepend-inner-icon="mdi-link"
+          :label="t('external_trade_form.link.label')"
+          persistent-hint
+          :hint="t('external_trade_form.link.hint')"
+          :error-messages="errorMessages['link']"
+          @focus="delete errorMessages['link']"
+        />
+        <v-textarea
+          v-model="notes"
+          prepend-inner-icon="mdi-text-box-outline"
+          outlined
+          data-cy="notes"
+          class="mt-4"
+          :label="t('external_trade_form.notes.label')"
+          persistent-hint
+          :hint="t('external_trade_form.notes.hint')"
+          :error-messages="errorMessages['notes']"
+          @focus="delete errorMessages['notes']"
+        />
+      </v-col>
+    </v-row>
+  </v-form>
+</template>
 
 <style scoped lang="scss">
 /* stylelint-disable */

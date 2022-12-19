@@ -1,3 +1,15 @@
+<script setup lang="ts">
+import { useAttrs, useListeners } from 'vue';
+
+const rootAttrs = useAttrs();
+const rootListeners = useListeners();
+
+defineProps({
+  successMessage: { required: true, type: String },
+  errorMessage: { required: true, type: String },
+  tooltip: { required: false, type: String, default: '' }
+});
+</script>
 <template>
   <v-row align="center">
     <v-col cols="auto">
@@ -29,15 +41,3 @@
     </v-col>
   </v-row>
 </template>
-<script setup lang="ts">
-import { useAttrs, useListeners } from 'vue';
-
-const rootAttrs = useAttrs();
-const rootListeners = useListeners();
-
-defineProps({
-  successMessage: { required: true, type: String },
-  errorMessage: { required: true, type: String },
-  tooltip: { required: false, type: String, default: '' }
-});
-</script>

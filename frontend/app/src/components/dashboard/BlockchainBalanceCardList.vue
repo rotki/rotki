@@ -1,42 +1,3 @@
-<template>
-  <fragment>
-    <v-list-item
-      :id="`${name}_box`"
-      :data-cy="`blockchain-balance-box__item__${name}`"
-      class="blockchain-balance-box__item"
-      :to="`${balanceBlockchainRoute}#blockchain-balances-${total.chain}`"
-    >
-      <v-list-item-avatar tile class="blockchain-balance-box__icon">
-        <asset-icon size="24px" :identifier="chain" />
-      </v-list-item-avatar>
-      <v-list-item-content>
-        <div class="d-flex flex-row">
-          <span class="flex-grow-1 flex-shrink-1">
-            {{ toSentenceCase(name) }}
-          </span>
-          <span class="ml-2 text-end shrink">
-            <amount-display
-              show-currency="symbol"
-              fiat-currency="USD"
-              :value="amount"
-              :loading="loading"
-            />
-          </span>
-        </div>
-      </v-list-item-content>
-    </v-list-item>
-    <v-list v-if="total.children.length > 0" class="pa-0">
-      <template v-for="child in total.children">
-        <blockchain-balance-card-details
-          :key="child.protocol"
-          :child="child"
-          :details="childData(child.protocol)"
-        />
-      </template>
-    </v-list>
-  </fragment>
-</template>
-
 <script setup lang="ts">
 import { type BigNumber } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
@@ -99,6 +60,45 @@ const loading = computed<boolean>(() => {
 
 const balanceBlockchainRoute = Routes.ACCOUNTS_BALANCES_BLOCKCHAIN;
 </script>
+
+<template>
+  <fragment>
+    <v-list-item
+      :id="`${name}_box`"
+      :data-cy="`blockchain-balance-box__item__${name}`"
+      class="blockchain-balance-box__item"
+      :to="`${balanceBlockchainRoute}#blockchain-balances-${total.chain}`"
+    >
+      <v-list-item-avatar tile class="blockchain-balance-box__icon">
+        <asset-icon size="24px" :identifier="chain" />
+      </v-list-item-avatar>
+      <v-list-item-content>
+        <div class="d-flex flex-row">
+          <span class="flex-grow-1 flex-shrink-1">
+            {{ toSentenceCase(name) }}
+          </span>
+          <span class="ml-2 text-end shrink">
+            <amount-display
+              show-currency="symbol"
+              fiat-currency="USD"
+              :value="amount"
+              :loading="loading"
+            />
+          </span>
+        </div>
+      </v-list-item-content>
+    </v-list-item>
+    <v-list v-if="total.children.length > 0" class="pa-0">
+      <template v-for="child in total.children">
+        <blockchain-balance-card-details
+          :key="child.protocol"
+          :child="child"
+          :details="childData(child.protocol)"
+        />
+      </template>
+    </v-list>
+  </fragment>
+</template>
 <style scoped lang="scss">
 .blockchain-balance-box {
   &__icon {

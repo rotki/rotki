@@ -1,10 +1,3 @@
-<template>
-  <list-item :title="item.symbol" :subtitle="item.name">
-    <template #icon>
-      <asset-icon size="26px" :identifier="item.symbol" />
-    </template>
-  </list-item>
-</template>
 <script setup lang="ts">
 import { type Blockchain } from '@rotki/common/lib/blockchain';
 import { type PropType } from 'vue';
@@ -17,3 +10,10 @@ defineProps({
   }
 });
 </script>
+<template>
+  <list-item :title="item.symbol" :subtitle="item.name">
+    <template #icon>
+      <asset-icon size="26px" :identifier="item.symbol" />
+    </template>
+  </list-item>
+</template>

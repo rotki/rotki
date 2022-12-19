@@ -1,3 +1,23 @@
+<script setup lang="ts">
+import { BigNumber } from '@rotki/common';
+import { type PropType } from 'vue';
+import { type SupportedExchange } from '@/types/exchanges';
+import { useTradeLocations } from '@/types/trades';
+
+const props = defineProps({
+  balance: { required: true, type: BigNumber },
+  exchange: { required: true, type: String as PropType<SupportedExchange> }
+});
+
+const { exchange } = toRefs(props);
+const { exchangeName } = useTradeLocations();
+
+const name = computed<string>(() => {
+  if (!get(exchange)) return '';
+  return exchangeName(exchange);
+});
+</script>
+
 <template>
   <div class="d-flex flex-row">
     <div class="ml-2 mr-6">
@@ -22,23 +42,3 @@
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-import { BigNumber } from '@rotki/common';
-import { type PropType } from 'vue';
-import { type SupportedExchange } from '@/types/exchanges';
-import { useTradeLocations } from '@/types/trades';
-
-const props = defineProps({
-  balance: { required: true, type: BigNumber },
-  exchange: { required: true, type: String as PropType<SupportedExchange> }
-});
-
-const { exchange } = toRefs(props);
-const { exchangeName } = useTradeLocations();
-
-const name = computed<string>(() => {
-  if (!get(exchange)) return '';
-  return exchangeName(exchange);
-});
-</script>

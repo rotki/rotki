@@ -1,9 +1,3 @@
-<template>
-  <span class="date-display" :class="{ 'blur-content': !shouldShowAmount }">
-    {{ formattedDate }}
-  </span>
-</template>
-
 <script setup lang="ts">
 import { displayDateFormatter } from '@/data/date_formatter';
 import { useGeneralSettingsStore } from '@/store/settings/general';
@@ -48,6 +42,12 @@ const formattedDate = computed<string>(() => {
   );
 });
 </script>
+
+<template>
+  <span class="date-display" :class="{ 'blur-content': !shouldShowAmount }">
+    {{ formattedDate }}
+  </span>
+</template>
 
 <style scoped lang="scss">
 .blur-content {

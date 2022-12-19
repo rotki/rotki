@@ -1,3 +1,32 @@
+<script setup lang="ts">
+import { type BigNumber } from '@rotki/common';
+import { type PropType } from 'vue';
+import LocationSelector from '@/components/helper/LocationSelector.vue';
+
+defineProps({
+  value: {
+    required: false,
+    type: String,
+    default: ''
+  },
+  locations: {
+    required: false,
+    type: Array as PropType<string[]>,
+    default: () => []
+  },
+  previewLocationBalance: {
+    required: false,
+    type: Object as PropType<Record<string, BigNumber> | null>,
+    default: () => null
+  }
+});
+const emit = defineEmits(['input']);
+const input = (event: any) => {
+  emit('input', event);
+};
+
+const { t } = useI18n();
+</script>
 <template>
   <v-sheet outlined class="pa-4" rounded>
     <div class="text-subtitle-2 mb-3">
@@ -46,32 +75,3 @@
     </div>
   </v-sheet>
 </template>
-<script setup lang="ts">
-import { type BigNumber } from '@rotki/common';
-import { type PropType } from 'vue';
-import LocationSelector from '@/components/helper/LocationSelector.vue';
-
-defineProps({
-  value: {
-    required: false,
-    type: String,
-    default: ''
-  },
-  locations: {
-    required: false,
-    type: Array as PropType<string[]>,
-    default: () => []
-  },
-  previewLocationBalance: {
-    required: false,
-    type: Object as PropType<Record<string, BigNumber> | null>,
-    default: () => null
-  }
-});
-const emit = defineEmits(['input']);
-const input = (event: any) => {
-  emit('input', event);
-};
-
-const { t } = useI18n();
-</script>

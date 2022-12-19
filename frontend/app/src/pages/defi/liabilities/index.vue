@@ -1,8 +1,3 @@
-<template>
-  <module-not-active v-if="!anyModuleEnabled" :modules="modules" />
-  <borrowing v-else :modules="modules" />
-</template>
-
 <script setup lang="ts">
 import Borrowing from '@/components/defi/Borrowing.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
@@ -18,3 +13,8 @@ const modules: Module[] = [
 const { isAnyModuleEnabled } = useModules();
 const anyModuleEnabled = isAnyModuleEnabled(modules);
 </script>
+
+<template>
+  <module-not-active v-if="!anyModuleEnabled" :modules="modules" />
+  <borrowing v-else :modules="modules" />
+</template>

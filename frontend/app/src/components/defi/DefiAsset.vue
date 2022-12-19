@@ -1,3 +1,16 @@
+<script setup lang="ts">
+import { type PropType } from 'vue';
+import AmountDisplay from '@/components/display/AmountDisplay.vue';
+import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
+import { type DefiAsset } from '@/types/defi/overview';
+import { createEvmIdentifierFromAddress } from '@/utils/assets';
+
+defineProps({
+  asset: { required: true, type: Object as PropType<DefiAsset> }
+});
+
+const assetPadding = 1;
+</script>
 <template>
   <div class="defi-asset d-flex flex-row align-center">
     <asset-icon
@@ -20,16 +33,3 @@
     </div>
   </div>
 </template>
-<script setup lang="ts">
-import { type PropType } from 'vue';
-import AmountDisplay from '@/components/display/AmountDisplay.vue';
-import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
-import { type DefiAsset } from '@/types/defi/overview';
-import { createEvmIdentifierFromAddress } from '@/utils/assets';
-
-defineProps({
-  asset: { required: true, type: Object as PropType<DefiAsset> }
-});
-
-const assetPadding = 1;
-</script>

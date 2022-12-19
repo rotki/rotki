@@ -1,105 +1,4 @@
-﻿<template>
-  <v-bottom-sheet
-    v-bind="rootAttrs"
-    persistent
-    width="98%"
-    v-on="rootListeners"
-  >
-    <card outlined-body contained no-radius-bottom>
-      <template #title>{{ tc('conflict_dialog.title') }}</template>
-      <template #subtitle>{{ tc('conflict_dialog.subtitle') }}</template>
-      <template #actions>
-        <v-row no-gutters justify="end" align="center">
-          <v-col cols="auto">
-            <span class="pe-2">
-              {{ tc('conflict_dialog.all_buttons_description') }}
-            </span>
-          </v-col>
-          <v-col cols="auto">
-            <v-row no-gutters justify="end">
-              <v-btn text value="local" @click="setResolution('local')">
-                {{ tc('conflict_dialog.keep_local') }}
-              </v-btn>
-              <v-btn text value="remote" @click="setResolution('remote')">
-                {{ tc('conflict_dialog.keep_remote') }}
-              </v-btn>
-            </v-row>
-          </v-col>
-        </v-row>
-      </template>
-      <template #hint>
-        <i18n path="conflict_dialog.hint" tag="span">
-          <template #conflicts>
-            <span class="font-weight-medium"> {{ conflicts.length }} </span>
-          </template>
-          <template #remaining>
-            <span class="font-weight-medium"> {{ remaining }} </span>
-          </template>
-        </i18n>
-      </template>
-      <data-table
-        :class="{
-          [$style.mobile]: true
-        }"
-        :items="conflicts"
-        :headers="tableHeaders"
-      >
-        <template #item.local="{ item: conflict }">
-          <conflict-row
-            v-for="field in getConflictFields(conflict)"
-            :key="`local-${field}`"
-            :field="field"
-            :value="conflict.local[field]"
-            :diff="isDiff(conflict, field)"
-          />
-        </template>
-        <template #item.remote="{ item: conflict }">
-          <conflict-row
-            v-for="field in getConflictFields(conflict)"
-            :key="`remote-${field}`"
-            :field="field"
-            :value="conflict.remote[field]"
-            :diff="isDiff(conflict, field)"
-          />
-        </template>
-        <template #item.keep="{ item: conflict }">
-          <v-btn-toggle v-model="resolution[conflict.identifier]">
-            <v-btn class="conflict-dialog__action" value="local">
-              {{ tc('conflict_dialog.action.local') }}
-            </v-btn>
-            <v-btn class="conflict-dialog__action" value="remote">
-              {{ tc('conflict_dialog.action.remote') }}
-            </v-btn>
-          </v-btn-toggle>
-        </template>
-      </data-table>
-      <template #options>
-        <div class="conflict-dialog__pagination" />
-      </template>
-      <template #buttons>
-        <v-row no-gutters justify="end">
-          <v-col cols="auto">
-            <v-btn text @click="cancel">
-              {{ tc('common.actions.cancel') }}
-            </v-btn>
-          </v-col>
-          <v-col cols="auto">
-            <v-btn
-              text
-              color="primary"
-              :disabled="!valid"
-              @click="resolve(resolution)"
-            >
-              {{ tc('common.actions.confirm') }}
-            </v-btn>
-          </v-col>
-        </v-row>
-      </template>
-    </card>
-  </v-bottom-sheet>
-</template>
-
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { type SupportedAsset } from '@rotki/common/lib/data';
 import { type PropType, type Ref, useListeners } from 'vue';
 import { type DataTableHeader } from 'vuetify';
@@ -214,6 +113,107 @@ const cancel = () => {
   emit('cancel');
 };
 </script>
+
+<template>
+  <v-bottom-sheet
+    v-bind="rootAttrs"
+    persistent
+    width="98%"
+    v-on="rootListeners"
+  >
+    <card outlined-body contained no-radius-bottom>
+      <template #title>{{ tc('conflict_dialog.title') }}</template>
+      <template #subtitle>{{ tc('conflict_dialog.subtitle') }}</template>
+      <template #actions>
+        <v-row no-gutters justify="end" align="center">
+          <v-col cols="auto">
+            <span class="pe-2">
+              {{ tc('conflict_dialog.all_buttons_description') }}
+            </span>
+          </v-col>
+          <v-col cols="auto">
+            <v-row no-gutters justify="end">
+              <v-btn text value="local" @click="setResolution('local')">
+                {{ tc('conflict_dialog.keep_local') }}
+              </v-btn>
+              <v-btn text value="remote" @click="setResolution('remote')">
+                {{ tc('conflict_dialog.keep_remote') }}
+              </v-btn>
+            </v-row>
+          </v-col>
+        </v-row>
+      </template>
+      <template #hint>
+        <i18n path="conflict_dialog.hint" tag="span">
+          <template #conflicts>
+            <span class="font-weight-medium"> {{ conflicts.length }} </span>
+          </template>
+          <template #remaining>
+            <span class="font-weight-medium"> {{ remaining }} </span>
+          </template>
+        </i18n>
+      </template>
+      <data-table
+        :class="{
+          [$style.mobile]: true
+        }"
+        :items="conflicts"
+        :headers="tableHeaders"
+      >
+        <template #item.local="{ item: conflict }">
+          <conflict-row
+            v-for="field in getConflictFields(conflict)"
+            :key="`local-${field}`"
+            :field="field"
+            :value="conflict.local[field]"
+            :diff="isDiff(conflict, field)"
+          />
+        </template>
+        <template #item.remote="{ item: conflict }">
+          <conflict-row
+            v-for="field in getConflictFields(conflict)"
+            :key="`remote-${field}`"
+            :field="field"
+            :value="conflict.remote[field]"
+            :diff="isDiff(conflict, field)"
+          />
+        </template>
+        <template #item.keep="{ item: conflict }">
+          <v-btn-toggle v-model="resolution[conflict.identifier]">
+            <v-btn class="conflict-dialog__action" value="local">
+              {{ tc('conflict_dialog.action.local') }}
+            </v-btn>
+            <v-btn class="conflict-dialog__action" value="remote">
+              {{ tc('conflict_dialog.action.remote') }}
+            </v-btn>
+          </v-btn-toggle>
+        </template>
+      </data-table>
+      <template #options>
+        <div class="conflict-dialog__pagination" />
+      </template>
+      <template #buttons>
+        <v-row no-gutters justify="end">
+          <v-col cols="auto">
+            <v-btn text @click="cancel">
+              {{ tc('common.actions.cancel') }}
+            </v-btn>
+          </v-col>
+          <v-col cols="auto">
+            <v-btn
+              text
+              color="primary"
+              :disabled="!valid"
+              @click="resolve(resolution)"
+            >
+              {{ tc('common.actions.confirm') }}
+            </v-btn>
+          </v-col>
+        </v-row>
+      </template>
+    </card>
+  </v-bottom-sheet>
+</template>
 
 <style module lang="scss">
 .mobile {

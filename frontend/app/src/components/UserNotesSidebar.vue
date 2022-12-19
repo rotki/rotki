@@ -1,3 +1,50 @@
+<script setup lang="ts">
+import UserNotesList from '@/components/UserNotesList.vue';
+import { useAppRoutes } from '@/router/routes';
+
+const { t } = useI18n();
+
+defineProps({
+  visible: { required: true, type: Boolean }
+});
+
+const emit = defineEmits(['visible:update', 'about']);
+const tab = ref<number>(0);
+const visibleUpdate = (_visible: boolean) => {
+  emit('visible:update', _visible);
+};
+
+const route = useRoute();
+
+const location = computed<string>(() => {
+  const meta = get(route).meta;
+  if (meta && meta.noteLocation) return meta.noteLocation as string;
+
+  let noteLocation = '';
+  get(route).matched.forEach(matched => {
+    if (matched.meta.noteLocation) {
+      noteLocation = matched.meta.noteLocation as string;
+    }
+  });
+
+  return noteLocation;
+});
+
+const { appRoutes } = useAppRoutes();
+
+const locationName = computed<string>(() => {
+  const Routes = get(appRoutes);
+  // @ts-ignore
+  return Routes[get(location)]?.text ?? '';
+});
+
+watch(locationName, locationName => {
+  if (locationName === '') {
+    set(tab, 0);
+  }
+});
+</script>
+
 <template>
   <v-navigation-drawer
     width="400px"
@@ -56,53 +103,6 @@
     />
   </v-navigation-drawer>
 </template>
-
-<script setup lang="ts">
-import UserNotesList from '@/components/UserNotesList.vue';
-import { useAppRoutes } from '@/router/routes';
-
-const { t } = useI18n();
-
-defineProps({
-  visible: { required: true, type: Boolean }
-});
-
-const emit = defineEmits(['visible:update', 'about']);
-const tab = ref<number>(0);
-const visibleUpdate = (_visible: boolean) => {
-  emit('visible:update', _visible);
-};
-
-const route = useRoute();
-
-const location = computed<string>(() => {
-  const meta = get(route).meta;
-  if (meta && meta.noteLocation) return meta.noteLocation as string;
-
-  let noteLocation = '';
-  get(route).matched.forEach(matched => {
-    if (matched.meta.noteLocation) {
-      noteLocation = matched.meta.noteLocation as string;
-    }
-  });
-
-  return noteLocation;
-});
-
-const { appRoutes } = useAppRoutes();
-
-const locationName = computed<string>(() => {
-  const Routes = get(appRoutes);
-  // @ts-ignore
-  return Routes[get(location)]?.text ?? '';
-});
-
-watch(locationName, locationName => {
-  if (locationName === '') {
-    set(tab, 0);
-  }
-});
-</script>
 <style lang="scss" scoped>
 .user-notes-sidebar {
   top: 64px !important;

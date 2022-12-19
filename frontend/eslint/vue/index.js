@@ -125,6 +125,12 @@ module.exports = defineConfig({
       {
         allowBinding: false
       }
+    ],
+    'vue/component-tags-order': [
+      'error',
+      {
+        order: ['script', 'template', 'style']
+      }
     ]
   }
 });

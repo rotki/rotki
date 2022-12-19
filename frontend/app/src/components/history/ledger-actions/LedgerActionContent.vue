@@ -1,178 +1,3 @@
-<template>
-  <fragment>
-    <card outlined-body>
-      <v-btn
-        v-if="!locationOverview"
-        absolute
-        fab
-        top
-        right
-        dark
-        color="primary"
-        class="ledger-actions__add"
-        @click="newLedgerAction()"
-      >
-        <v-icon> mdi-plus </v-icon>
-      </v-btn>
-      <template #title>
-        <refresh-button
-          v-if="!locationOverview"
-          :loading="loading"
-          :tooltip="tc('ledger_actions.refresh_tooltip')"
-          @refresh="fetch(true)"
-        />
-        <navigator-link :to="{ path: pageRoute }" :enabled="!!locationOverview">
-          {{ tc('ledger_actions.title') }}
-        </navigator-link>
-      </template>
-      <template #actions>
-        <v-row v-if="!locationOverview">
-          <v-col cols="12" md="6">
-            <v-row>
-              <v-col cols="auto">
-                <ignore-buttons
-                  :disabled="selected.length === 0 || loading"
-                  @ignore="ignore"
-                />
-              </v-col>
-              <v-col>
-                <v-btn
-                  text
-                  outlined
-                  color="red"
-                  :disabled="selected.length === 0"
-                  @click="massDelete"
-                >
-                  <v-icon> mdi-delete-outline </v-icon>
-                </v-btn>
-              </v-col>
-            </v-row>
-            <div v-if="selected.length > 0" class="mt-2 ms-1">
-              {{ tc('ledger_actions.selected', 0, { count: selected.length }) }}
-              <v-btn small text @click="selected = []">
-                {{ tc('common.actions.clear_selection') }}
-              </v-btn>
-            </div>
-          </v-col>
-          <v-col cols="12" md="6">
-            <div class="pb-md-8">
-              <table-filter
-                :matchers="matchers"
-                @update:matches="updateFilter($event)"
-              />
-            </div>
-          </v-col>
-        </v-row>
-      </template>
-      <collection-handler :collection="ledgerActions">
-        <template #default="{ data, limit, total, showUpgradeRow, itemLength }">
-          <data-table
-            v-model="selected"
-            :expanded.sync="expanded"
-            :headers="tableHeaders"
-            :items="data"
-            :loading="loading"
-            :options="options"
-            :server-items-length="itemLength"
-            class="ledger_actions"
-            :single-select="false"
-            :show-select="!locationOverview"
-            item-key="identifier"
-            show-expand
-            single-expand
-            multi-sort
-            :must-sort="false"
-            :item-class="getClass"
-            @update:options="updatePaginationHandler($event)"
-          >
-            <template #item.ignoredInAccounting="{ item, isMobile }">
-              <div v-if="item.ignoredInAccounting">
-                <badge-display v-if="isMobile" color="grey">
-                  <v-icon small> mdi-eye-off </v-icon>
-                  <span class="ml-2">
-                    {{ tc('common.ignored_in_accounting') }}
-                  </span>
-                </badge-display>
-                <v-tooltip v-else bottom>
-                  <template #activator="{ on }">
-                    <badge-display color="grey" v-on="on">
-                      <v-icon small> mdi-eye-off </v-icon>
-                    </badge-display>
-                  </template>
-                  <span>
-                    {{ tc('common.ignored_in_accounting') }}
-                  </span>
-                </v-tooltip>
-              </div>
-            </template>
-            <template #item.type="{ item }">
-              <event-type-display
-                data-cy="ledger-action-type"
-                :event-type="item.actionType"
-              />
-            </template>
-            <template #item.location="{ item }">
-              <location-display
-                data-cy="ledger-action-location"
-                :identifier="item.location"
-              />
-            </template>
-            <template #item.asset="{ item }">
-              <asset-details
-                data-cy="ledger-action-asset"
-                opens-details
-                :asset="item.asset"
-              />
-            </template>
-            <template #item.amount="{ item }">
-              <amount-display :value="item.amount" />
-            </template>
-            <template #item.timestamp="{ item }">
-              <date-display :timestamp="item.timestamp" />
-            </template>
-            <template #item.actions="{ item }">
-              <row-actions
-                :disabled="loading"
-                :edit-tooltip="tc('ledger_actions.edit_tooltip')"
-                :delete-tooltip="tc('ledger_actions.delete_tooltip')"
-                @edit-click="editLedgerActionHandler(item)"
-                @delete-click="promptForDelete(item)"
-              />
-            </template>
-            <template #expanded-item="{ headers, item }">
-              <ledger-action-details :span="headers.length" :item="item" />
-            </template>
-            <template v-if="showUpgradeRow" #body.prepend="{ headers }">
-              <upgrade-row
-                :limit="limit"
-                :total="total"
-                :colspan="headers.length"
-                :label="tc('ledger_actions.label')"
-              />
-            </template>
-          </data-table>
-        </template>
-      </collection-handler>
-    </card>
-    <big-dialog
-      :display="openDialog"
-      :title="dialogTitle"
-      :subtitle="dialogSubtitle"
-      :primary-action="tc('common.actions.save')"
-      :action-disabled="loading || !valid"
-      @confirm="confirmSave()"
-      @cancel="clearDialog()"
-    >
-      <ledger-action-form
-        ref="form"
-        v-model="valid"
-        :edit="editableItem"
-        :save-data="saveData"
-      />
-    </big-dialog>
-  </fragment>
-</template>
-
 <script setup lang="ts">
 import { dropRight } from 'lodash';
 import { type PropType, type Ref } from 'vue';
@@ -481,3 +306,178 @@ const showDeleteConfirmation = () => {
   );
 };
 </script>
+
+<template>
+  <fragment>
+    <card outlined-body>
+      <v-btn
+        v-if="!locationOverview"
+        absolute
+        fab
+        top
+        right
+        dark
+        color="primary"
+        class="ledger-actions__add"
+        @click="newLedgerAction()"
+      >
+        <v-icon> mdi-plus </v-icon>
+      </v-btn>
+      <template #title>
+        <refresh-button
+          v-if="!locationOverview"
+          :loading="loading"
+          :tooltip="tc('ledger_actions.refresh_tooltip')"
+          @refresh="fetch(true)"
+        />
+        <navigator-link :to="{ path: pageRoute }" :enabled="!!locationOverview">
+          {{ tc('ledger_actions.title') }}
+        </navigator-link>
+      </template>
+      <template #actions>
+        <v-row v-if="!locationOverview">
+          <v-col cols="12" md="6">
+            <v-row>
+              <v-col cols="auto">
+                <ignore-buttons
+                  :disabled="selected.length === 0 || loading"
+                  @ignore="ignore"
+                />
+              </v-col>
+              <v-col>
+                <v-btn
+                  text
+                  outlined
+                  color="red"
+                  :disabled="selected.length === 0"
+                  @click="massDelete"
+                >
+                  <v-icon> mdi-delete-outline </v-icon>
+                </v-btn>
+              </v-col>
+            </v-row>
+            <div v-if="selected.length > 0" class="mt-2 ms-1">
+              {{ tc('ledger_actions.selected', 0, { count: selected.length }) }}
+              <v-btn small text @click="selected = []">
+                {{ tc('common.actions.clear_selection') }}
+              </v-btn>
+            </div>
+          </v-col>
+          <v-col cols="12" md="6">
+            <div class="pb-md-8">
+              <table-filter
+                :matchers="matchers"
+                @update:matches="updateFilter($event)"
+              />
+            </div>
+          </v-col>
+        </v-row>
+      </template>
+      <collection-handler :collection="ledgerActions">
+        <template #default="{ data, limit, total, showUpgradeRow, itemLength }">
+          <data-table
+            v-model="selected"
+            :expanded.sync="expanded"
+            :headers="tableHeaders"
+            :items="data"
+            :loading="loading"
+            :options="options"
+            :server-items-length="itemLength"
+            class="ledger_actions"
+            :single-select="false"
+            :show-select="!locationOverview"
+            item-key="identifier"
+            show-expand
+            single-expand
+            multi-sort
+            :must-sort="false"
+            :item-class="getClass"
+            @update:options="updatePaginationHandler($event)"
+          >
+            <template #item.ignoredInAccounting="{ item, isMobile }">
+              <div v-if="item.ignoredInAccounting">
+                <badge-display v-if="isMobile" color="grey">
+                  <v-icon small> mdi-eye-off </v-icon>
+                  <span class="ml-2">
+                    {{ tc('common.ignored_in_accounting') }}
+                  </span>
+                </badge-display>
+                <v-tooltip v-else bottom>
+                  <template #activator="{ on }">
+                    <badge-display color="grey" v-on="on">
+                      <v-icon small> mdi-eye-off </v-icon>
+                    </badge-display>
+                  </template>
+                  <span>
+                    {{ tc('common.ignored_in_accounting') }}
+                  </span>
+                </v-tooltip>
+              </div>
+            </template>
+            <template #item.type="{ item }">
+              <event-type-display
+                data-cy="ledger-action-type"
+                :event-type="item.actionType"
+              />
+            </template>
+            <template #item.location="{ item }">
+              <location-display
+                data-cy="ledger-action-location"
+                :identifier="item.location"
+              />
+            </template>
+            <template #item.asset="{ item }">
+              <asset-details
+                data-cy="ledger-action-asset"
+                opens-details
+                :asset="item.asset"
+              />
+            </template>
+            <template #item.amount="{ item }">
+              <amount-display :value="item.amount" />
+            </template>
+            <template #item.timestamp="{ item }">
+              <date-display :timestamp="item.timestamp" />
+            </template>
+            <template #item.actions="{ item }">
+              <row-actions
+                :disabled="loading"
+                :edit-tooltip="tc('ledger_actions.edit_tooltip')"
+                :delete-tooltip="tc('ledger_actions.delete_tooltip')"
+                @edit-click="editLedgerActionHandler(item)"
+                @delete-click="promptForDelete(item)"
+              />
+            </template>
+            <template #expanded-item="{ headers, item }">
+              <ledger-action-details :span="headers.length" :item="item" />
+            </template>
+            <template v-if="showUpgradeRow" #body.prepend="{ headers }">
+              <upgrade-row
+                :limit="limit"
+                :total="total"
+                :colspan="headers.length"
+                :label="tc('ledger_actions.label')"
+              />
+            </template>
+          </data-table>
+        </template>
+      </collection-handler>
+    </card>
+    <big-dialog
+      :display="openDialog"
+      :title="dialogTitle"
+      :subtitle="dialogSubtitle"
+      :primary-action="tc('common.actions.save')"
+      :action-disabled="loading || !valid"
+      @confirm="confirmSave()"
+      @cancel="clearDialog()"
+    >
+      <ledger-action-form
+        ref="form"
+        v-model="valid"
+        :edit="editableItem"
+        :save-data="saveData"
+      />
+    </big-dialog>
+  </fragment>
+</template>

@@ -1,3 +1,22 @@
+<script setup lang="ts">
+import { BigNumber } from '@rotki/common';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { toSentenceCase } from '@/utils/text';
+
+defineProps({
+  name: {
+    required: true,
+    type: String
+  },
+  amount: {
+    required: true,
+    type: BigNumber
+  }
+});
+
+const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+</script>
+
 <template>
   <v-list-item
     :id="`${name}_box`"
@@ -25,25 +44,6 @@
     </v-list-item-content>
   </v-list-item>
 </template>
-
-<script setup lang="ts">
-import { BigNumber } from '@rotki/common';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { toSentenceCase } from '@/utils/text';
-
-defineProps({
-  name: {
-    required: true,
-    type: String
-  },
-  amount: {
-    required: true,
-    type: BigNumber
-  }
-});
-
-const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-</script>
 <style scoped lang="scss">
 .manual-balance-box {
   &__icon {

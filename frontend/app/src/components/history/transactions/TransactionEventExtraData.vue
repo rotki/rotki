@@ -1,3 +1,17 @@
+<script setup lang="ts">
+import { type AssetBalance } from '@rotki/common';
+import { type PropType } from 'vue';
+
+defineProps({
+  staking: {
+    required: true,
+    type: Object as PropType<AssetBalance>
+  }
+});
+
+const css = useCssModule();
+const { tc } = useI18n();
+</script>
 <template>
   <div :class="css['total-staked-indicator']" class="pl-6">
     <div class="grey--text d-flex align-center py-2">
@@ -24,20 +38,6 @@
     </div>
   </div>
 </template>
-<script setup lang="ts">
-import { type AssetBalance } from '@rotki/common';
-import { type PropType } from 'vue';
-
-defineProps({
-  staking: {
-    required: true,
-    type: Object as PropType<AssetBalance>
-  }
-});
-
-const css = useCssModule();
-const { tc } = useI18n();
-</script>
 
 <style lang="scss" module>
 .total-staked-indicator {

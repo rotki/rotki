@@ -1,3 +1,45 @@
+<script setup lang="ts">
+import { type PropType } from 'vue';
+import { type IgnoredAssetsHandlingType } from '@/types/assets';
+import { type NonFungibleBalance } from '@/types/nfbalances';
+
+defineProps({
+  selected: {
+    required: true,
+    type: Array as PropType<NonFungibleBalance[]>
+  },
+  ignoredAssetsHandling: {
+    required: true,
+    type: String as PropType<IgnoredAssetsHandlingType>
+  }
+});
+
+const emit = defineEmits<{
+  (e: 'update:selected', selected: NonFungibleBalance[]): void;
+  (
+    e: 'update:ignored-assets-handling',
+    ignoredAssetsHandling: IgnoredAssetsHandlingType
+  ): void;
+  (e: 'mass-ignore', ignored: boolean): void;
+}>();
+
+const updateSelected = (selected: NonFungibleBalance[]) => {
+  emit('update:selected', selected);
+};
+
+const updateIgnoredAssetsHandling = (
+  ignoredAssetsHandling: IgnoredAssetsHandlingType
+) => {
+  emit('update:ignored-assets-handling', ignoredAssetsHandling);
+};
+
+const massIgnore = (ignored: boolean) => {
+  emit('mass-ignore', ignored);
+};
+
+const { tc } = useI18n();
+</script>
+
 <template>
   <v-row>
     <v-col cols="12" md="6">
@@ -46,45 +88,3 @@
     </v-col>
   </v-row>
 </template>
-
-<script setup lang="ts">
-import { type PropType } from 'vue';
-import { type IgnoredAssetsHandlingType } from '@/types/assets';
-import { type NonFungibleBalance } from '@/types/nfbalances';
-
-defineProps({
-  selected: {
-    required: true,
-    type: Array as PropType<NonFungibleBalance[]>
-  },
-  ignoredAssetsHandling: {
-    required: true,
-    type: String as PropType<IgnoredAssetsHandlingType>
-  }
-});
-
-const emit = defineEmits<{
-  (e: 'update:selected', selected: NonFungibleBalance[]): void;
-  (
-    e: 'update:ignored-assets-handling',
-    ignoredAssetsHandling: IgnoredAssetsHandlingType
-  ): void;
-  (e: 'mass-ignore', ignored: boolean): void;
-}>();
-
-const updateSelected = (selected: NonFungibleBalance[]) => {
-  emit('update:selected', selected);
-};
-
-const updateIgnoredAssetsHandling = (
-  ignoredAssetsHandling: IgnoredAssetsHandlingType
-) => {
-  emit('update:ignored-assets-handling', ignoredAssetsHandling);
-};
-
-const massIgnore = (ignored: boolean) => {
-  emit('mass-ignore', ignored);
-};
-
-const { tc } = useI18n();
-</script>

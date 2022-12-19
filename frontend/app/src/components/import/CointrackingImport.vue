@@ -1,3 +1,8 @@
+<script setup lang="ts">
+import ImportSource from '@/components/import/ImportSource.vue';
+
+const { t } = useI18n();
+</script>
 <template>
   <import-source source="cointracking">
     <template #hint>
@@ -17,8 +22,3 @@
     </ul>
   </import-source>
 </template>
-<script setup lang="ts">
-import ImportSource from '@/components/import/ImportSource.vue';
-
-const { t } = useI18n();
-</script>

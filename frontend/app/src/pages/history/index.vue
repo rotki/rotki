@@ -1,14 +1,3 @@
-<template>
-  <div
-    :class="{
-      [$style.history]: true,
-      [$style['history--dark']]: dark
-    }"
-  >
-    <tab-navigation :tab-contents="tabs" data-cy="history-tab" />
-  </div>
-</template>
-
 <script setup lang="ts">
 import { type ComputedRef } from 'vue';
 import TabNavigation from '@/components/helper/TabNavigation.vue';
@@ -29,6 +18,17 @@ const tabs: ComputedRef<TabContent[]> = computed(() => {
 
 const { dark } = useTheme();
 </script>
+
+<template>
+  <div
+    :class="{
+      [$style.history]: true,
+      [$style['history--dark']]: dark
+    }"
+  >
+    <tab-navigation :tab-contents="tabs" data-cy="history-tab" />
+  </div>
+</template>
 
 <style module lang="scss">
 .history {

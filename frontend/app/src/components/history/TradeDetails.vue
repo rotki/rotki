@@ -1,3 +1,28 @@
+<script setup lang="ts">
+import { type PropType } from 'vue';
+import NotesDisplay from '@/components/helper/table/NotesDisplay.vue';
+import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
+import { type TradeEntry } from '@/store/history/types';
+
+const props = defineProps({
+  span: {
+    type: Number,
+    required: false,
+    default: 1
+  },
+  item: {
+    required: true,
+    type: Object as PropType<TradeEntry>
+  }
+});
+
+const { item } = toRefs(props);
+const { dark } = useTheme();
+const { tc } = useI18n();
+
+const link = computed(() => get(item).link || '');
+const { href, hasLink, onLinkClick } = useLinks(link);
+</script>
 <template>
   <table-expand-container visible :colspan="span">
     <template #title>
@@ -52,31 +77,6 @@
     <notes-display :notes="item.notes" />
   </table-expand-container>
 </template>
-<script setup lang="ts">
-import { type PropType } from 'vue';
-import NotesDisplay from '@/components/helper/table/NotesDisplay.vue';
-import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
-import { type TradeEntry } from '@/store/history/types';
-
-const props = defineProps({
-  span: {
-    type: Number,
-    required: false,
-    default: 1
-  },
-  item: {
-    required: true,
-    type: Object as PropType<TradeEntry>
-  }
-});
-
-const { item } = toRefs(props);
-const { dark } = useTheme();
-const { tc } = useI18n();
-
-const link = computed(() => get(item).link || '');
-const { href, hasLink, onLinkClick } = useLinks(link);
-</script>
 <style scoped lang="scss">
 :deep() {
   th {

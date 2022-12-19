@@ -1,50 +1,3 @@
-<template>
-  <div>
-    <v-row>
-      <v-col cols="auto">
-        <v-sheet outlined rounded class="asset-form__icon">
-          <v-tooltip v-if="preview && refreshable" right>
-            <template #activator="{ on }">
-              <v-btn
-                fab
-                x-small
-                depressed
-                class="asset-form__icon__refresh"
-                color="primary"
-                :loading="refreshIconLoading"
-                v-on="on"
-                @click="refreshIcon"
-              >
-                <v-icon>mdi-refresh</v-icon>
-              </v-btn>
-            </template>
-            {{ t('asset_form.fetch_latest_icon.title') }}
-          </v-tooltip>
-
-          <asset-icon
-            v-if="preview"
-            :identifier="preview"
-            size="72px"
-            changeable
-            :timestamp="timestamp"
-          />
-        </v-sheet>
-      </v-col>
-      <v-col>
-        <file-upload
-          source="icon"
-          file-filter="image/*"
-          @selected="icon = $event"
-        />
-      </v-col>
-    </v-row>
-    <v-row v-if="icon">
-      <v-col class="text-caption">
-        {{ t('asset_form.replaced', { name: icon.name }) }}
-      </v-col>
-    </v-row>
-  </div>
-</template>
 <script setup lang="ts">
 import { useAssetIconApi } from '@/services/assets/icon-api';
 import { useMessageStore } from '@/store/message';
@@ -129,6 +82,53 @@ defineExpose({
   saveIcon
 });
 </script>
+<template>
+  <div>
+    <v-row>
+      <v-col cols="auto">
+        <v-sheet outlined rounded class="asset-form__icon">
+          <v-tooltip v-if="preview && refreshable" right>
+            <template #activator="{ on }">
+              <v-btn
+                fab
+                x-small
+                depressed
+                class="asset-form__icon__refresh"
+                color="primary"
+                :loading="refreshIconLoading"
+                v-on="on"
+                @click="refreshIcon"
+              >
+                <v-icon>mdi-refresh</v-icon>
+              </v-btn>
+            </template>
+            {{ t('asset_form.fetch_latest_icon.title') }}
+          </v-tooltip>
+
+          <asset-icon
+            v-if="preview"
+            :identifier="preview"
+            size="72px"
+            changeable
+            :timestamp="timestamp"
+          />
+        </v-sheet>
+      </v-col>
+      <v-col>
+        <file-upload
+          source="icon"
+          file-filter="image/*"
+          @selected="icon = $event"
+        />
+      </v-col>
+    </v-row>
+    <v-row v-if="icon">
+      <v-col class="text-caption">
+        {{ t('asset_form.replaced', { name: icon.name }) }}
+      </v-col>
+    </v-row>
+  </div>
+</template>
 
 <style scoped lang="scss">
 .asset-form {

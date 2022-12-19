@@ -1,9 +1,3 @@
-<template>
-  <span class="font-weight-medium">
-    {{ displayText }}
-  </span>
-</template>
-
 <script setup lang="ts">
 import { type PropType } from 'vue';
 import { type Suggestion } from '@/types/filtering';
@@ -36,3 +30,9 @@ const displayText = computed(() => {
   return `${get(suggestion).key}: ${get(displayValue)}`;
 });
 </script>
+
+<template>
+  <span class="font-weight-medium">
+    {{ displayText }}
+  </span>
+</template>

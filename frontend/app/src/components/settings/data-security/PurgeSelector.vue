@@ -1,42 +1,3 @@
-<template>
-  <div>
-    <v-row class="mb-0" align="center">
-      <v-col>
-        <v-autocomplete
-          outlined
-          :value="value"
-          :label="tc('purge_selector.label')"
-          :items="purgable"
-          item-text="text"
-          item-value="id"
-          :disabled="pending"
-          hide-details
-          @input="input"
-        />
-      </v-col>
-      <v-col cols="auto">
-        <v-tooltip open-delay="400" top>
-          <template #activator="{ on, attrs }">
-            <v-btn
-              v-bind="attrs"
-              icon
-              :disabled="!value || pending"
-              :loading="pending"
-              v-on="on"
-              @click="purge({ source: value, text: text(value) })"
-            >
-              <v-icon>mdi-delete</v-icon>
-            </v-btn>
-          </template>
-          <span> {{ tc('purge_selector.tooltip') }} </span>
-        </v-tooltip>
-      </v-col>
-    </v-row>
-
-    <action-status-indicator v-if="status" :status="status" />
-  </div>
-</template>
-
 <script setup lang="ts">
 import { type PropType } from 'vue';
 import ActionStatusIndicator from '@/components/error/ActionStatusIndicator.vue';
@@ -108,3 +69,42 @@ const purgable = PURGABLE.map(id => ({
   text: text(id)
 })).sort((a, b) => (a.text < b.text ? -1 : 1));
 </script>
+
+<template>
+  <div>
+    <v-row class="mb-0" align="center">
+      <v-col>
+        <v-autocomplete
+          outlined
+          :value="value"
+          :label="tc('purge_selector.label')"
+          :items="purgable"
+          item-text="text"
+          item-value="id"
+          :disabled="pending"
+          hide-details
+          @input="input"
+        />
+      </v-col>
+      <v-col cols="auto">
+        <v-tooltip open-delay="400" top>
+          <template #activator="{ on, attrs }">
+            <v-btn
+              v-bind="attrs"
+              icon
+              :disabled="!value || pending"
+              :loading="pending"
+              v-on="on"
+              @click="purge({ source: value, text: text(value) })"
+            >
+              <v-icon>mdi-delete</v-icon>
+            </v-btn>
+          </template>
+          <span> {{ tc('purge_selector.tooltip') }} </span>
+        </v-tooltip>
+      </v-col>
+    </v-row>
+
+    <action-status-indicator v-if="status" :status="status" />
+  </div>
+</template>

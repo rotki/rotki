@@ -1,3 +1,7 @@
+<script setup lang="ts">
+const { t } = useI18n();
+</script>
+
 <template>
   <v-card>
     <v-alert color="error" icon="mdi-alert" outlined prominent>
@@ -12,7 +16,3 @@
     </v-alert>
   </v-card>
 </template>
-
-<script setup lang="ts">
-const { t } = useI18n();
-</script>

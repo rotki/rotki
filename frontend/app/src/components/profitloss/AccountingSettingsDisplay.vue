@@ -1,3 +1,48 @@
+<script setup lang="ts">
+import { type PropType } from 'vue';
+import { useCostBasisMethod } from '@/store/reports/consts';
+import { type ActionDataEntry } from '@/store/types';
+import {
+  type BaseAccountingSettings,
+  type CostBasisMethod
+} from '@/types/user';
+
+const props = defineProps({
+  accountingSettings: {
+    required: true,
+    type: Object as PropType<BaseAccountingSettings>
+  }
+});
+
+const { accountingSettings } = toRefs(props);
+const { tc } = useI18n();
+const { costBasisMethodData } = useCostBasisMethod();
+const color = (enabled: boolean | null) => {
+  return enabled
+    ? 'accounting-settings-display--yes'
+    : 'accounting-settings-display--no';
+};
+
+const icon = (enabled: boolean | null) => {
+  return enabled ? 'mdi-check' : 'mdi-close';
+};
+
+const taxFreePeriod = (period: number) => {
+  const days = period / 86400;
+  return tc('account_settings_display.days', 0, { days });
+};
+
+const costBasisMethodItem = computed<ActionDataEntry<CostBasisMethod> | null>(
+  () => {
+    const method = get(accountingSettings).costBasisMethod;
+    if (!method) return null;
+    return (
+      get(costBasisMethodData).find(item => item.identifier === method) || null
+    );
+  }
+);
+</script>
+
 <template>
   <card>
     <template #title>{{ tc('account_settings_display.title') }}</template>
@@ -109,51 +154,6 @@
     </v-row>
   </card>
 </template>
-
-<script setup lang="ts">
-import { type PropType } from 'vue';
-import { useCostBasisMethod } from '@/store/reports/consts';
-import { type ActionDataEntry } from '@/store/types';
-import {
-  type BaseAccountingSettings,
-  type CostBasisMethod
-} from '@/types/user';
-
-const props = defineProps({
-  accountingSettings: {
-    required: true,
-    type: Object as PropType<BaseAccountingSettings>
-  }
-});
-
-const { accountingSettings } = toRefs(props);
-const { tc } = useI18n();
-const { costBasisMethodData } = useCostBasisMethod();
-const color = (enabled: boolean | null) => {
-  return enabled
-    ? 'accounting-settings-display--yes'
-    : 'accounting-settings-display--no';
-};
-
-const icon = (enabled: boolean | null) => {
-  return enabled ? 'mdi-check' : 'mdi-close';
-};
-
-const taxFreePeriod = (period: number) => {
-  const days = period / 86400;
-  return tc('account_settings_display.days', 0, { days });
-};
-
-const costBasisMethodItem = computed<ActionDataEntry<CostBasisMethod> | null>(
-  () => {
-    const method = get(accountingSettings).costBasisMethod;
-    if (!method) return null;
-    return (
-      get(costBasisMethodData).find(item => item.identifier === method) || null
-    );
-  }
-);
-</script>
 
 <style scoped lang="scss">
 .accounting-settings-display {

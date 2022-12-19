@@ -1,54 +1,3 @@
-<template>
-  <v-dialog :value="value" max-width="600" @input="updateVisibility">
-    <card>
-      <template #title>
-        {{ t('dashboard.snapshot.export_database_snapshot') }}
-      </template>
-      <template #subtitle>
-        {{ t('dashboard.snapshot.subtitle') }}
-      </template>
-      <div class="mb-n2">
-        <div>
-          <div>{{ t('common.datetime') }}:</div>
-          <div>
-            <date-display class="font-weight-bold" :timestamp="timestamp" />
-          </div>
-        </div>
-        <div class="pt-2">
-          <div>{{ t('common.balance') }}:</div>
-          <div>
-            <amount-display
-              :value="formattedSelectedBalance"
-              :fiat-currency="currencySymbol"
-              class="font-weight-bold"
-            />
-          </div>
-        </div>
-      </div>
-      <template #buttons>
-        <v-btn color="primary" @click="editMode = true">
-          <v-icon class="mr-2">mdi-pencil-outline</v-icon>
-          {{ t('common.actions.edit') }}
-        </v-btn>
-        <v-btn color="error" @click="showDeleteConfirmation">
-          <v-icon class="mr-2">mdi-delete-outline</v-icon>
-          {{ t('common.actions.delete') }}
-        </v-btn>
-        <v-spacer />
-        <v-btn color="primary" @click="exportSnapshot">
-          <v-icon class="mr-2">mdi-download</v-icon>
-          {{ t('common.actions.download') }}
-        </v-btn>
-      </template>
-    </card>
-    <edit-snapshot-dialog
-      v-if="editMode"
-      :timestamp="timestamp"
-      @close="editMode = false"
-      @finish="finish"
-    />
-  </v-dialog>
-</template>
 <script setup lang="ts">
 import { type BigNumber } from '@rotki/common';
 import { type Message } from '@rotki/common/lib/messages';
@@ -207,3 +156,54 @@ const showDeleteConfirmation = () => {
   );
 };
 </script>
+<template>
+  <v-dialog :value="value" max-width="600" @input="updateVisibility">
+    <card>
+      <template #title>
+        {{ t('dashboard.snapshot.export_database_snapshot') }}
+      </template>
+      <template #subtitle>
+        {{ t('dashboard.snapshot.subtitle') }}
+      </template>
+      <div class="mb-n2">
+        <div>
+          <div>{{ t('common.datetime') }}:</div>
+          <div>
+            <date-display class="font-weight-bold" :timestamp="timestamp" />
+          </div>
+        </div>
+        <div class="pt-2">
+          <div>{{ t('common.balance') }}:</div>
+          <div>
+            <amount-display
+              :value="formattedSelectedBalance"
+              :fiat-currency="currencySymbol"
+              class="font-weight-bold"
+            />
+          </div>
+        </div>
+      </div>
+      <template #buttons>
+        <v-btn color="primary" @click="editMode = true">
+          <v-icon class="mr-2">mdi-pencil-outline</v-icon>
+          {{ t('common.actions.edit') }}
+        </v-btn>
+        <v-btn color="error" @click="showDeleteConfirmation">
+          <v-icon class="mr-2">mdi-delete-outline</v-icon>
+          {{ t('common.actions.delete') }}
+        </v-btn>
+        <v-spacer />
+        <v-btn color="primary" @click="exportSnapshot">
+          <v-icon class="mr-2">mdi-download</v-icon>
+          {{ t('common.actions.download') }}
+        </v-btn>
+      </template>
+    </card>
+    <edit-snapshot-dialog
+      v-if="editMode"
+      :timestamp="timestamp"
+      @close="editMode = false"
+      @finish="finish"
+    />
+  </v-dialog>
+</template>

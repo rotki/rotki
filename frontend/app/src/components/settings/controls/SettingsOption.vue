@@ -1,9 +1,3 @@
-<template>
-  <div>
-    <slot :error="error" :success="success" :update="update" />
-  </div>
-</template>
-
 <script setup lang="ts">
 import { type MaybeRef } from '@vueuse/core';
 import { type PropType } from 'vue';
@@ -106,3 +100,9 @@ const update = async (newValue: any) => {
   emit('finished');
 };
 </script>
+
+<template>
+  <div>
+    <slot :error="error" :success="success" :update="update" />
+  </div>
+</template>

@@ -1,29 +1,3 @@
-<template>
-  <div>
-    <div
-      class="text-subtitle-1"
-      v-text="t('eth_address_book.hint.priority.title')"
-    />
-    <settings-option
-      #default="{ error, success, update }"
-      setting="addressNamePriority"
-      @finished="finishEditing"
-    >
-      <prioritized-list
-        :value="currentAddressNamePriorities"
-        :all-items="availableCurrentAddressNamePriorities()"
-        :item-data-name="
-          t('address_name_priority_setting.data_name').toString()
-        "
-        :disable-add="true"
-        :disable-delete="true"
-        :status="{ error, success }"
-        @input="update"
-      />
-    </settings-option>
-  </div>
-</template>
-
 <script setup lang="ts">
 import PrioritizedList from '@/components/helper/PrioritizedList.vue';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
@@ -75,3 +49,29 @@ onMounted(() => {
 });
 const { t } = useI18n();
 </script>
+
+<template>
+  <div>
+    <div
+      class="text-subtitle-1"
+      v-text="t('eth_address_book.hint.priority.title')"
+    />
+    <settings-option
+      #default="{ error, success, update }"
+      setting="addressNamePriority"
+      @finished="finishEditing"
+    >
+      <prioritized-list
+        :value="currentAddressNamePriorities"
+        :all-items="availableCurrentAddressNamePriorities()"
+        :item-data-name="
+          t('address_name_priority_setting.data_name').toString()
+        "
+        :disable-add="true"
+        :disable-delete="true"
+        :status="{ error, success }"
+        @input="update"
+      />
+    </settings-option>
+  </div>
+</template>

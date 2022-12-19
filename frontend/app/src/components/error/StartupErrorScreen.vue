@@ -1,3 +1,15 @@
+<script setup lang="ts">
+import ErrorScreen from '@/components/error/ErrorScreen.vue';
+
+defineProps({
+  message: { required: true, type: String }
+});
+
+const { tc } = useI18n();
+const css = useCssModule();
+const { closeApp } = useInterop();
+</script>
+
 <template>
   <error-screen
     :class="css.overlay"
@@ -11,18 +23,6 @@
     </v-btn>
   </error-screen>
 </template>
-
-<script setup lang="ts">
-import ErrorScreen from '@/components/error/ErrorScreen.vue';
-
-defineProps({
-  message: { required: true, type: String }
-});
-
-const { tc } = useI18n();
-const css = useCssModule();
-const { closeApp } = useInterop();
-</script>
 
 <style module lang="scss">
 .overlay {

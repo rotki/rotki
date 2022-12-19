@@ -1,29 +1,3 @@
-<template>
-  <div>
-    <template v-for="(note, index) in formatNotes(notes, amount, asset)">
-      <span
-        v-if="note.type === 'address' || note.type === 'tx'"
-        :key="index"
-        class="d-inline-flex"
-      >
-        <hash-link
-          :class="$style['address']"
-          :text="note.address"
-          :tx="note.type === 'tx'"
-        />
-      </span>
-      <span v-else-if="note.type === 'amount'" :key="index">
-        <amount-display :asset="note.asset" :value="note.amount" />
-      </span>
-      <span v-else-if="note.type === 'url' && note.url" :key="index">
-        <external-link :url="note.url">{{ note.word }}</external-link>
-      </span>
-      <span v-else :key="index">
-        {{ note.word }}
-      </span>
-    </template>
-  </div>
-</template>
 <script setup lang="ts">
 import { BigNumber } from '@rotki/common';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
@@ -146,6 +120,32 @@ const formatNotes = (
   return formats;
 };
 </script>
+<template>
+  <div>
+    <template v-for="(note, index) in formatNotes(notes, amount, asset)">
+      <span
+        v-if="note.type === 'address' || note.type === 'tx'"
+        :key="index"
+        class="d-inline-flex"
+      >
+        <hash-link
+          :class="$style['address']"
+          :text="note.address"
+          :tx="note.type === 'tx'"
+        />
+      </span>
+      <span v-else-if="note.type === 'amount'" :key="index">
+        <amount-display :asset="note.asset" :value="note.amount" />
+      </span>
+      <span v-else-if="note.type === 'url' && note.url" :key="index">
+        <external-link :url="note.url">{{ note.word }}</external-link>
+      </span>
+      <span v-else :key="index">
+        {{ note.word }}
+      </span>
+    </template>
+  </div>
+</template>
 <style lang="scss" module>
 .address {
   background: var(--v-rotki-light-grey-darken1);

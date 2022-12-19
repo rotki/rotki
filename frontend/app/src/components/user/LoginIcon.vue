@@ -1,3 +1,14 @@
+<script setup lang="ts">
+defineProps({
+  left: {
+    required: false,
+    type: Boolean,
+    default: false
+  }
+});
+const css = useCssModule();
+</script>
+
 <template>
   <div
     :class="{
@@ -9,17 +20,6 @@
     <slot />
   </div>
 </template>
-
-<script setup lang="ts">
-defineProps({
-  left: {
-    required: false,
-    type: Boolean,
-    default: false
-  }
-});
-const css = useCssModule();
-</script>
 
 <style module lang="scss">
 .icon {

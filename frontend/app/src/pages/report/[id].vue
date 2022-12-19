@@ -1,57 +1,3 @@
-<template>
-  <progress-screen v-if="loading">
-    {{ tc('profit_loss_report.loading') }}
-  </progress-screen>
-  <v-container v-else>
-    <report-header :period="report" />
-    <card v-if="showUpgradeMessage" class="mt-4 mb-8">
-      <i18n tag="div" path="profit_loss_report.upgrade" class="text-subtitle-1">
-        <template #processed>
-          <span class="font-weight-medium">{{ report.entriesFound }}</span>
-        </template>
-        <template #start>
-          <date-display
-            :timestamp="report.firstProcessedTimestamp"
-            class="font-weight-medium"
-            no-timezone
-          />
-        </template>
-      </i18n>
-      <i18n tag="div" path="profit_loss_report.upgrade2">
-        <template #link>
-          <base-external-link
-            :text="tc('upgrade_row.rotki_premium')"
-            :href="premiumURL"
-          />
-        </template>
-      </i18n>
-    </card>
-    <accounting-settings-display
-      :accounting-settings="settings"
-      class="mt-4 mb-8"
-    />
-    <div v-if="latest" class="d-flex">
-      <export-report-csv class="mr-4" />
-      <report-actionable
-        :report="selectedReport"
-        :initial-open="initialOpenReportActionable"
-      />
-    </div>
-    <profit-loss-overview
-      class="mt-8"
-      :report="selectedReport"
-      :symbol="settings.profitCurrency"
-      :loading="loading"
-    />
-    <profit-loss-events
-      class="mt-8"
-      :report="selectedReport"
-      :refreshing="refreshing"
-      @update:page="onPage"
-    />
-  </v-container>
-</template>
-
 <script setup lang="ts">
 import { type ComputedRef } from 'vue';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
@@ -137,3 +83,57 @@ const onPage = async ({
   set(refreshing, false);
 };
 </script>
+
+<template>
+  <progress-screen v-if="loading">
+    {{ tc('profit_loss_report.loading') }}
+  </progress-screen>
+  <v-container v-else>
+    <report-header :period="report" />
+    <card v-if="showUpgradeMessage" class="mt-4 mb-8">
+      <i18n tag="div" path="profit_loss_report.upgrade" class="text-subtitle-1">
+        <template #processed>
+          <span class="font-weight-medium">{{ report.entriesFound }}</span>
+        </template>
+        <template #start>
+          <date-display
+            :timestamp="report.firstProcessedTimestamp"
+            class="font-weight-medium"
+            no-timezone
+          />
+        </template>
+      </i18n>
+      <i18n tag="div" path="profit_loss_report.upgrade2">
+        <template #link>
+          <base-external-link
+            :text="tc('upgrade_row.rotki_premium')"
+            :href="premiumURL"
+          />
+        </template>
+      </i18n>
+    </card>
+    <accounting-settings-display
+      :accounting-settings="settings"
+      class="mt-4 mb-8"
+    />
+    <div v-if="latest" class="d-flex">
+      <export-report-csv class="mr-4" />
+      <report-actionable
+        :report="selectedReport"
+        :initial-open="initialOpenReportActionable"
+      />
+    </div>
+    <profit-loss-overview
+      class="mt-8"
+      :report="selectedReport"
+      :symbol="settings.profitCurrency"
+      :loading="loading"
+    />
+    <profit-loss-events
+      class="mt-8"
+      :report="selectedReport"
+      :refreshing="refreshing"
+      @update:page="onPage"
+    />
+  </v-container>
+</template>

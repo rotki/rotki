@@ -1,3 +1,39 @@
+<script setup lang="ts">
+import { type AssetBalance, type BigNumber } from '@rotki/common';
+import { type ComputedRef, type PropType } from 'vue';
+import LoanDebt from '@/components/defi/loan/LoanDebt.vue';
+import LoanHeader from '@/components/defi/loan/LoanHeader.vue';
+import LiquityCollateral from '@/components/defi/loan/loans/liquity/LiquityCollateral.vue';
+import LiquityLiquidation from '@/components/defi/loan/loans/liquity/LiquityLiquidation.vue';
+import PremiumCard from '@/components/display/PremiumCard.vue';
+
+import { LiquityTroveEvents } from '@/premium/premium';
+import { type LiquityLoan } from '@/store/defi/liquity/types';
+import { Section } from '@/types/status';
+
+const props = defineProps({
+  loan: {
+    required: true,
+    type: Object as PropType<LiquityLoan>
+  }
+});
+
+const { loan } = toRefs(props);
+const debt: ComputedRef<AssetBalance> = computed(() => get(loan).balance.debt);
+const collateral: ComputedRef<AssetBalance> = computed(
+  () => get(loan).balance.collateral
+);
+const ratio: ComputedRef<BigNumber | null> = computed(
+  () => get(loan).balance.collateralizationRatio
+);
+const liquidationPrice: ComputedRef<BigNumber | null> = computed(
+  () => get(loan).balance.liquidationPrice
+);
+const premium = usePremium();
+const loadingEvents = isSectionLoading(Section.DEFI_LIQUITY_EVENTS);
+const { tc } = useI18n();
+</script>
+
 <template>
   <v-row>
     <v-col cols="12">
@@ -47,39 +83,3 @@
     </v-col>
   </v-row>
 </template>
-
-<script setup lang="ts">
-import { type AssetBalance, type BigNumber } from '@rotki/common';
-import { type ComputedRef, type PropType } from 'vue';
-import LoanDebt from '@/components/defi/loan/LoanDebt.vue';
-import LoanHeader from '@/components/defi/loan/LoanHeader.vue';
-import LiquityCollateral from '@/components/defi/loan/loans/liquity/LiquityCollateral.vue';
-import LiquityLiquidation from '@/components/defi/loan/loans/liquity/LiquityLiquidation.vue';
-import PremiumCard from '@/components/display/PremiumCard.vue';
-
-import { LiquityTroveEvents } from '@/premium/premium';
-import { type LiquityLoan } from '@/store/defi/liquity/types';
-import { Section } from '@/types/status';
-
-const props = defineProps({
-  loan: {
-    required: true,
-    type: Object as PropType<LiquityLoan>
-  }
-});
-
-const { loan } = toRefs(props);
-const debt: ComputedRef<AssetBalance> = computed(() => get(loan).balance.debt);
-const collateral: ComputedRef<AssetBalance> = computed(
-  () => get(loan).balance.collateral
-);
-const ratio: ComputedRef<BigNumber | null> = computed(
-  () => get(loan).balance.collateralizationRatio
-);
-const liquidationPrice: ComputedRef<BigNumber | null> = computed(
-  () => get(loan).balance.liquidationPrice
-);
-const premium = usePremium();
-const loadingEvents = isSectionLoading(Section.DEFI_LIQUITY_EVENTS);
-const { tc } = useI18n();
-</script>

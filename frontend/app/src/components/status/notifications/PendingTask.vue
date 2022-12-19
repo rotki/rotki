@@ -1,3 +1,27 @@
+<script setup lang="ts">
+import dayjs from 'dayjs';
+import { type PropType } from 'vue';
+import { useReports } from '@/store/reports';
+import { type Task, type TaskMeta } from '@/types/task';
+import { TaskType } from '@/types/task-type';
+
+const props = defineProps({
+  task: {
+    required: true,
+    type: Object as PropType<Task<TaskMeta>>
+  }
+});
+
+const { task } = toRefs(props);
+const isHistory = computed(() => task.value.type === TaskType.TRADE_HISTORY);
+
+const { progress } = storeToRefs(useReports());
+
+const time = computed(() => {
+  return dayjs(task.value.time).format('LLL');
+});
+</script>
+
 <template>
   <card outlined :class="$style.task">
     <v-row align="center" no-gutters class="flex-nowrap">
@@ -34,30 +58,6 @@
     </v-row>
   </card>
 </template>
-
-<script setup lang="ts">
-import dayjs from 'dayjs';
-import { type PropType } from 'vue';
-import { useReports } from '@/store/reports';
-import { type Task, type TaskMeta } from '@/types/task';
-import { TaskType } from '@/types/task-type';
-
-const props = defineProps({
-  task: {
-    required: true,
-    type: Object as PropType<Task<TaskMeta>>
-  }
-});
-
-const { task } = toRefs(props);
-const isHistory = computed(() => task.value.type === TaskType.TRADE_HISTORY);
-
-const { progress } = storeToRefs(useReports());
-
-const time = computed(() => {
-  return dayjs(task.value.time).format('LLL');
-});
-</script>
 
 <style module lang="scss">
 .task {

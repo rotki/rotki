@@ -1,17 +1,3 @@
-<template>
-  <app-host>
-    <app-messages>
-      <theme-checker v-if="showComponents" @update:dark-mode="updateDarkMode" />
-      <app-update-popup />
-      <app-core />
-    </app-messages>
-    <v-dialog v-if="showAbout" v-model="showAbout" max-width="500">
-      <about />
-    </v-dialog>
-    <frontend-update-notifier v-if="!isPackaged" />
-  </app-host>
-</template>
-
 <script setup lang="ts">
 import About from '@/components/About.vue';
 import AppCore from '@/components/app/AppCore.vue';
@@ -31,3 +17,17 @@ const { load } = useDataLoader();
 
 onMounted(async () => await load());
 </script>
+
+<template>
+  <app-host>
+    <app-messages>
+      <theme-checker v-if="showComponents" @update:dark-mode="updateDarkMode" />
+      <app-update-popup />
+      <app-core />
+    </app-messages>
+    <v-dialog v-if="showAbout" v-model="showAbout" max-width="500">
+      <about />
+    </v-dialog>
+    <frontend-update-notifier v-if="!isPackaged" />
+  </app-host>
+</template>

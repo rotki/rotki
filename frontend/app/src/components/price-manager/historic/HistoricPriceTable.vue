@@ -1,49 +1,3 @@
-<template>
-  <card outlined-body>
-    <template #title>
-      <refresh-button
-        :loading="loading"
-        :tooltip="tc('price_table.refresh_tooltip')"
-        @refresh="refresh"
-      />
-      <div>
-        {{ tc('price_table.historic.title') }}
-      </div>
-    </template>
-    <slot />
-    <data-table
-      :items="prices"
-      :headers="headers"
-      :loading="loading"
-      sort-by="timestamp"
-    >
-      <template #item.fromAsset="{ item }">
-        <asset-details :asset="item.fromAsset" />
-      </template>
-      <template #item.toAsset="{ item }">
-        <asset-details :asset="item.toAsset" />
-      </template>
-      <template #item.timestamp="{ item }">
-        <date-display :timestamp="item.timestamp" />
-      </template>
-      <template #item.price="{ item }">
-        <amount-display :value="item.price" />
-      </template>
-      <template #item.wasWorth>{{ tc('price_table.was_worth') }}</template>
-      <template #item.on>{{ tc('price_table.on') }}</template>
-      <template #item.actions="{ item }">
-        <row-actions
-          :disabled="loading"
-          :delete-tooltip="tc('price_table.actions.delete.tooltip')"
-          :edit-tooltip="tc('price_table.actions.edit.tooltip')"
-          @delete-click="showDeleteConfirmation(item)"
-          @edit-click="$emit('edit', item)"
-        />
-      </template>
-    </data-table>
-  </card>
-</template>
-
 <script setup lang="ts">
 import { type NotificationPayload, Severity } from '@rotki/common/lib/messages';
 import { type PropType } from 'vue';
@@ -181,3 +135,49 @@ const showDeleteConfirmation = (item: HistoricalPrice) => {
   );
 };
 </script>
+
+<template>
+  <card outlined-body>
+    <template #title>
+      <refresh-button
+        :loading="loading"
+        :tooltip="tc('price_table.refresh_tooltip')"
+        @refresh="refresh"
+      />
+      <div>
+        {{ tc('price_table.historic.title') }}
+      </div>
+    </template>
+    <slot />
+    <data-table
+      :items="prices"
+      :headers="headers"
+      :loading="loading"
+      sort-by="timestamp"
+    >
+      <template #item.fromAsset="{ item }">
+        <asset-details :asset="item.fromAsset" />
+      </template>
+      <template #item.toAsset="{ item }">
+        <asset-details :asset="item.toAsset" />
+      </template>
+      <template #item.timestamp="{ item }">
+        <date-display :timestamp="item.timestamp" />
+      </template>
+      <template #item.price="{ item }">
+        <amount-display :value="item.price" />
+      </template>
+      <template #item.wasWorth>{{ tc('price_table.was_worth') }}</template>
+      <template #item.on>{{ tc('price_table.on') }}</template>
+      <template #item.actions="{ item }">
+        <row-actions
+          :disabled="loading"
+          :delete-tooltip="tc('price_table.actions.delete.tooltip')"
+          :edit-tooltip="tc('price_table.actions.edit.tooltip')"
+          @delete-click="showDeleteConfirmation(item)"
+          @edit-click="$emit('edit', item)"
+        />
+      </template>
+    </data-table>
+  </card>
+</template>

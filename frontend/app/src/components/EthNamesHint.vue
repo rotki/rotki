@@ -1,3 +1,6 @@
+<script setup lang="ts">
+const { t } = useI18n();
+</script>
 <template>
   <v-menu offset-x nudge-right="8" max-width="400">
     <template #activator="{ on, attrs }">
@@ -17,6 +20,3 @@
     </div>
   </v-menu>
 </template>
-<script setup lang="ts">
-const { t } = useI18n();
-</script>

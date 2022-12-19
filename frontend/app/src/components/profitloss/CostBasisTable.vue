@@ -1,3 +1,65 @@
+<script setup lang="ts">
+import { type PropType } from 'vue';
+import { type DataTableHeader } from 'vuetify';
+import DataTable from '@/components/helper/DataTable.vue';
+import { type CostBasis } from '@/types/reports';
+
+const props = defineProps({
+  costBasis: { required: true, type: Object as PropType<CostBasis> },
+  colspan: { required: true, type: Number },
+  currency: {
+    required: false,
+    type: String as PropType<string | null>,
+    default: null
+  },
+  showGroupLine: { required: false, type: Boolean, default: false }
+});
+
+const { costBasis, currency } = toRefs(props);
+
+const panel = ref<number[]>([]);
+const { tc } = useI18n();
+
+const css = useCssModule();
+
+const tableHeaders = computed<DataTableHeader[]>(() => [
+  {
+    text: tc('cost_basis_table.headers.amount'),
+    value: 'amount',
+    align: 'end'
+  },
+  {
+    text: tc('cost_basis_table.headers.full_amount'),
+    value: 'fullAmount',
+    align: 'end'
+  },
+  {
+    text: tc('cost_basis_table.headers.remaining_amount'),
+    value: 'remainingAmount',
+    align: 'end'
+  },
+  {
+    text: tc('cost_basis_table.headers.rate', 0, {
+      currency: get(currency)
+    }),
+    value: 'rate',
+    align: 'end'
+  },
+  {
+    text: tc('common.datetime'),
+    value: 'time'
+  },
+  {
+    text: tc('cost_basis_table.headers.taxable'),
+    value: 'taxable'
+  }
+]);
+
+const matchedAcquisitions = computed(() => {
+  return get(costBasis).matchedAcquisitions ?? [];
+});
+</script>
+
 <template>
   <table-expand-container
     visible
@@ -85,68 +147,6 @@
     </template>
   </table-expand-container>
 </template>
-
-<script setup lang="ts">
-import { type PropType } from 'vue';
-import { type DataTableHeader } from 'vuetify';
-import DataTable from '@/components/helper/DataTable.vue';
-import { type CostBasis } from '@/types/reports';
-
-const props = defineProps({
-  costBasis: { required: true, type: Object as PropType<CostBasis> },
-  colspan: { required: true, type: Number },
-  currency: {
-    required: false,
-    type: String as PropType<string | null>,
-    default: null
-  },
-  showGroupLine: { required: false, type: Boolean, default: false }
-});
-
-const { costBasis, currency } = toRefs(props);
-
-const panel = ref<number[]>([]);
-const { tc } = useI18n();
-
-const css = useCssModule();
-
-const tableHeaders = computed<DataTableHeader[]>(() => [
-  {
-    text: tc('cost_basis_table.headers.amount'),
-    value: 'amount',
-    align: 'end'
-  },
-  {
-    text: tc('cost_basis_table.headers.full_amount'),
-    value: 'fullAmount',
-    align: 'end'
-  },
-  {
-    text: tc('cost_basis_table.headers.remaining_amount'),
-    value: 'remainingAmount',
-    align: 'end'
-  },
-  {
-    text: tc('cost_basis_table.headers.rate', 0, {
-      currency: get(currency)
-    }),
-    value: 'rate',
-    align: 'end'
-  },
-  {
-    text: tc('common.datetime'),
-    value: 'time'
-  },
-  {
-    text: tc('cost_basis_table.headers.taxable'),
-    value: 'taxable'
-  }
-]);
-
-const matchedAcquisitions = computed(() => {
-  return get(costBasis).matchedAcquisitions ?? [];
-});
-</script>
 
 <style module lang="scss">
 .table {

@@ -1,3 +1,38 @@
+<script setup lang="ts">
+import { type Balance } from '@rotki/common';
+import { type PropType } from 'vue';
+import ValueAccuracyHint from '@/components/helper/hint/ValueAccuracyHint.vue';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { type ReceivedAmount } from '@/types/staking';
+import { Zero } from '@/utils/bignumbers';
+
+defineProps({
+  received: {
+    required: true,
+    type: Array as PropType<ReceivedAmount[]>
+  }
+});
+
+const { prices } = storeToRefs(useBalancePricesStore());
+const current = ref(true);
+const pricesAreLoading = computed(() => {
+  return Object.keys(get(prices)).length === 0;
+});
+const getBalance = ({ amount, asset, usdValue }: ReceivedAmount): Balance => {
+  const assetPrices = get(prices);
+
+  const currentPrice = assetPrices[asset]
+    ? assetPrices[asset].value.times(amount)
+    : Zero;
+  return {
+    amount,
+    usdValue: get(current) ? currentPrice : usdValue
+  };
+};
+
+const { t } = useI18n();
+</script>
+
 <template>
   <card full-height>
     <template #title>{{ t('kraken_staking_received.title') }}</template>
@@ -35,41 +70,6 @@
     </div>
   </card>
 </template>
-
-<script setup lang="ts">
-import { type Balance } from '@rotki/common';
-import { type PropType } from 'vue';
-import ValueAccuracyHint from '@/components/helper/hint/ValueAccuracyHint.vue';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { type ReceivedAmount } from '@/types/staking';
-import { Zero } from '@/utils/bignumbers';
-
-defineProps({
-  received: {
-    required: true,
-    type: Array as PropType<ReceivedAmount[]>
-  }
-});
-
-const { prices } = storeToRefs(useBalancePricesStore());
-const current = ref(true);
-const pricesAreLoading = computed(() => {
-  return Object.keys(get(prices)).length === 0;
-});
-const getBalance = ({ amount, asset, usdValue }: ReceivedAmount): Balance => {
-  const assetPrices = get(prices);
-
-  const currentPrice = assetPrices[asset]
-    ? assetPrices[asset].value.times(amount)
-    : Zero;
-  return {
-    amount,
-    usdValue: get(current) ? currentPrice : usdValue
-  };
-};
-
-const { t } = useI18n();
-</script>
 
 <style lang="scss" module>
 .received {

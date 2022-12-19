@@ -1,3 +1,12 @@
+<script setup lang="ts">
+const top = ref(0);
+const proxy = useProxy();
+onMounted(() => {
+  const { top: topBound } = proxy.$el.getBoundingClientRect();
+  set(top, topBound);
+});
+</script>
+
 <template>
   <div
     class="d-flex flex-column align-center"
@@ -10,15 +19,6 @@
     <slot />
   </div>
 </template>
-
-<script setup lang="ts">
-const top = ref(0);
-const proxy = useProxy();
-onMounted(() => {
-  const { top: topBound } = proxy.$el.getBoundingClientRect();
-  set(top, topBound);
-});
-</script>
 
 <style module lang="scss">
 .empty {

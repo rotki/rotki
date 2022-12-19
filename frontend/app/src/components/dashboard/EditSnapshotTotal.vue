@@ -1,72 +1,3 @@
-<template>
-  <div>
-    <div class="py-10 d-flex flex-column align-center">
-      <div :class="$style.wrapper">
-        <div class="text-h6 mb-4 text-center">
-          {{ tc('common.total') }}
-        </div>
-        <div class="mb-4">
-          <v-form :value="!v$.$invalid">
-            <amount-input
-              v-model="total"
-              outlined
-              :error-messages="v$.total.$errors.map(e => e.$message)"
-            />
-
-            <div class="text--secondary text-caption">
-              <i18n path="dashboard.snapshot.edit.dialog.total.warning">
-                <template #amount>
-                  <amount-display
-                    :value="nftsExcludedTotal"
-                    fiat-currency="USD"
-                  />
-                </template>
-              </i18n>
-            </div>
-          </v-form>
-        </div>
-        <div>
-          <div v-for="(number, key) in suggestions" :key="key">
-            <v-btn
-              block
-              color="primary"
-              class="mb-4"
-              :class="$style.button"
-              large
-              @click="setTotal(number)"
-            >
-              <div class="d-flex flex-column align-center">
-                <span>
-                  {{ suggestionsLabel[key] }}
-                </span>
-                <amount-display
-                  :class="$style['button__amount']"
-                  :value="number"
-                  fiat-currency="USD"
-                />
-              </div>
-            </v-btn>
-
-            <div v-if="key === 'location'" class="text--secondary text-caption">
-              {{ tc('dashboard.snapshot.edit.dialog.total.hint') }}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <v-sheet elevation="10" class="d-flex justify-end pa-4">
-      <v-spacer />
-      <v-btn class="mr-4" @click="updateStep(2)">
-        <v-icon>mdi-chevron-left</v-icon>
-        {{ tc('common.actions.back') }}
-      </v-btn>
-      <v-btn color="primary" :disabled="v$.$invalid" @click="save">
-        {{ tc('common.actions.finish') }}
-        <v-icon>mdi-chevron-right</v-icon>
-      </v-btn>
-    </v-sheet>
-  </div>
-</template>
 <script setup lang="ts">
 import { type BigNumber } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
@@ -245,6 +176,75 @@ const suggestionsLabel = computed(() => ({
   )
 }));
 </script>
+<template>
+  <div>
+    <div class="py-10 d-flex flex-column align-center">
+      <div :class="$style.wrapper">
+        <div class="text-h6 mb-4 text-center">
+          {{ tc('common.total') }}
+        </div>
+        <div class="mb-4">
+          <v-form :value="!v$.$invalid">
+            <amount-input
+              v-model="total"
+              outlined
+              :error-messages="v$.total.$errors.map(e => e.$message)"
+            />
+
+            <div class="text--secondary text-caption">
+              <i18n path="dashboard.snapshot.edit.dialog.total.warning">
+                <template #amount>
+                  <amount-display
+                    :value="nftsExcludedTotal"
+                    fiat-currency="USD"
+                  />
+                </template>
+              </i18n>
+            </div>
+          </v-form>
+        </div>
+        <div>
+          <div v-for="(number, key) in suggestions" :key="key">
+            <v-btn
+              block
+              color="primary"
+              class="mb-4"
+              :class="$style.button"
+              large
+              @click="setTotal(number)"
+            >
+              <div class="d-flex flex-column align-center">
+                <span>
+                  {{ suggestionsLabel[key] }}
+                </span>
+                <amount-display
+                  :class="$style['button__amount']"
+                  :value="number"
+                  fiat-currency="USD"
+                />
+              </div>
+            </v-btn>
+
+            <div v-if="key === 'location'" class="text--secondary text-caption">
+              {{ tc('dashboard.snapshot.edit.dialog.total.hint') }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <v-sheet elevation="10" class="d-flex justify-end pa-4">
+      <v-spacer />
+      <v-btn class="mr-4" @click="updateStep(2)">
+        <v-icon>mdi-chevron-left</v-icon>
+        {{ tc('common.actions.back') }}
+      </v-btn>
+      <v-btn color="primary" :disabled="v$.$invalid" @click="save">
+        {{ tc('common.actions.finish') }}
+        <v-icon>mdi-chevron-right</v-icon>
+      </v-btn>
+    </v-sheet>
+  </div>
+</template>
 <style module lang="scss">
 .wrapper {
   width: 350px;

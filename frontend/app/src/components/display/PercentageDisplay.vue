@@ -1,33 +1,3 @@
-<template>
-  <v-row
-    no-gutters
-    class="percentage-display flex-nowrap"
-    :justify="justify"
-    align="center"
-  >
-    <v-col
-      :cols="justify === 'end' ? null : 'auto'"
-      class="percentage-display__amount"
-      :class="{
-        'blur-content': !shouldShowPercentage,
-        'text-end': justify === 'end',
-        'text-start': justify !== 'start'
-      }"
-    >
-      {{ displayValue }}
-    </v-col>
-    <v-col
-      v-if="!!value"
-      :style="assetStyle"
-      :class="assetPadding ? 'mr-1' : null"
-      class="ml-1 percentage-display__symbol text--secondary"
-      :cols="justify === 'start' ? null : 'auto'"
-    >
-      {{ t('percentage_display.symbol') }}
-    </v-col>
-  </v-row>
-</template>
-
 <script setup lang="ts">
 import { type PropType } from 'vue';
 import { useSessionSettingsStore } from '@/store/settings/session';
@@ -86,6 +56,36 @@ const assetStyle = computed<Record<string, string | undefined>>(() => {
 
 const { t } = useI18n();
 </script>
+
+<template>
+  <v-row
+    no-gutters
+    class="percentage-display flex-nowrap"
+    :justify="justify"
+    align="center"
+  >
+    <v-col
+      :cols="justify === 'end' ? null : 'auto'"
+      class="percentage-display__amount"
+      :class="{
+        'blur-content': !shouldShowPercentage,
+        'text-end': justify === 'end',
+        'text-start': justify !== 'start'
+      }"
+    >
+      {{ displayValue }}
+    </v-col>
+    <v-col
+      v-if="!!value"
+      :style="assetStyle"
+      :class="assetPadding ? 'mr-1' : null"
+      class="ml-1 percentage-display__symbol text--secondary"
+      :cols="justify === 'start' ? null : 'auto'"
+    >
+      {{ t('percentage_display.symbol') }}
+    </v-col>
+  </v-row>
+</template>
 
 <style scoped lang="scss">
 .percentage-display {

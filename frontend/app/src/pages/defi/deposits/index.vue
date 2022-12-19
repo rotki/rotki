@@ -1,7 +1,3 @@
-<template>
-  <tab-navigation :tab-contents="tabs" class="decentralized-deposits" />
-</template>
-
 <script setup lang="ts">
 import { type ComputedRef } from 'vue';
 import TabNavigation from '@/components/helper/TabNavigation.vue';
@@ -15,3 +11,7 @@ const tabs: ComputedRef<TabContent[]> = computed(() => {
   return [Routes.DEFI_DEPOSITS_PROTOCOLS, Routes.DEFI_DEPOSITS_LIQUIDITY];
 });
 </script>
+
+<template>
+  <tab-navigation :tab-contents="tabs" class="decentralized-deposits" />
+</template>

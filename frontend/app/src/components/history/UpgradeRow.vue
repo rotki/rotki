@@ -1,3 +1,20 @@
+<script setup lang="ts">
+import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
+
+defineProps({
+  colspan: { required: true, type: Number },
+  label: { required: true, type: String },
+  total: { required: true, type: Number },
+  limit: { required: true, type: Number },
+  events: { required: false, type: Boolean, default: false },
+  timeStart: { required: false, type: Number, default: 0 },
+  timeEnd: { required: false, type: Number, default: 0 }
+});
+
+const { tc } = useI18n();
+const { premiumURL } = useInterop();
+const { currentBreakpoint } = useTheme();
+</script>
 <template>
   <tr class="tr">
     <td
@@ -59,23 +76,6 @@
     </td>
   </tr>
 </template>
-<script setup lang="ts">
-import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
-
-defineProps({
-  colspan: { required: true, type: Number },
-  label: { required: true, type: String },
-  total: { required: true, type: Number },
-  limit: { required: true, type: Number },
-  events: { required: false, type: Boolean, default: false },
-  timeStart: { required: false, type: Number, default: 0 },
-  timeEnd: { required: false, type: Number, default: 0 }
-});
-
-const { tc } = useI18n();
-const { premiumURL } = useInterop();
-const { currentBreakpoint } = useTheme();
-</script>
 
 <style>
 .tr {

@@ -1,3 +1,25 @@
+<script setup lang="ts">
+import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
+import { useAppRoutes } from '@/router/routes';
+
+const { appRoutes } = useAppRoutes();
+
+const providers = computed(() => {
+  const Routes = get(appRoutes);
+  return [
+    Routes.DEFI_DEPOSITS_LIQUIDITY_UNISWAP_V2,
+    Routes.DEFI_DEPOSITS_LIQUIDITY_UNISWAP_V3,
+    Routes.DEFI_DEPOSITS_LIQUIDITY_BALANCER,
+    Routes.DEFI_DEPOSITS_LIQUIDITY_SUSHISWAP
+  ];
+});
+const route = useRoute();
+const path = ref('');
+onMounted(() => {
+  set(path, get(route).path);
+});
+</script>
+
 <template>
   <div>
     <div
@@ -26,28 +48,6 @@
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
-import { useAppRoutes } from '@/router/routes';
-
-const { appRoutes } = useAppRoutes();
-
-const providers = computed(() => {
-  const Routes = get(appRoutes);
-  return [
-    Routes.DEFI_DEPOSITS_LIQUIDITY_UNISWAP_V2,
-    Routes.DEFI_DEPOSITS_LIQUIDITY_UNISWAP_V3,
-    Routes.DEFI_DEPOSITS_LIQUIDITY_BALANCER,
-    Routes.DEFI_DEPOSITS_LIQUIDITY_SUSHISWAP
-  ];
-});
-const route = useRoute();
-const path = ref('');
-onMounted(() => {
-  set(path, get(route).path);
-});
-</script>
 
 <style lang="scss" scoped>
 .liquidity {

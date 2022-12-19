@@ -1,16 +1,3 @@
-<template>
-  <v-btn
-    outlined
-    color="primary"
-    :loading="refreshing"
-    :disabled="disabled"
-    @click="refresh"
-  >
-    <v-icon left>mdi-refresh</v-icon>
-    {{ t('price_refresh.button') }}
-  </v-btn>
-</template>
-
 <script setup lang="ts">
 import { type ComputedRef, type PropType } from 'vue';
 import { useBalancesStore } from '@/store/balances';
@@ -56,3 +43,16 @@ const disabled: ComputedRef<boolean> = computed(() => {
   return get(refreshing) || get(loadingData);
 });
 </script>
+
+<template>
+  <v-btn
+    outlined
+    color="primary"
+    :loading="refreshing"
+    :disabled="disabled"
+    @click="refresh"
+  >
+    <v-icon left>mdi-refresh</v-icon>
+    {{ t('price_refresh.button') }}
+  </v-btn>
+</template>

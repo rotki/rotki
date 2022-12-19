@@ -1,81 +1,3 @@
-<template>
-  <card class="tag-manager">
-    <template #title>
-      {{ tc('tag_manager.title') }}
-    </template>
-    <template v-if="dialog" #details>
-      <v-btn class="tag-manager__close" icon text @click="close">
-        <v-icon>mdi-close</v-icon>
-      </v-btn>
-    </template>
-    <template #subtitle>
-      {{ tc('tag_manager.subtitle') }}
-    </template>
-    <tag-creator
-      :tag="tag"
-      :edit-mode="editMode"
-      @changed="onChange($event)"
-      @cancel="cancel"
-      @save="save"
-    />
-
-    <v-divider />
-
-    <div class="mx-n4">
-      <card outlined-body flat>
-        <template #title>
-          {{ tc('tag_manager.my_tags') }}
-        </template>
-        <template #search>
-          <v-row justify="end">
-            <v-col cols="12" sm="5">
-              <v-text-field
-                v-model="search"
-                outlined
-                dense
-                class="mb-4"
-                prepend-inner-icon="mdi-magnify"
-                :label="tc('common.actions.search')"
-                single-line
-                hide-details
-                clearable
-              />
-            </v-col>
-          </v-row>
-        </template>
-        <data-table
-          :items="tags"
-          item-key="name"
-          :headers="headers"
-          :search="search"
-        >
-          <template #item.name="{ item }">
-            <tag-icon :tag="item" />
-          </template>
-          <template #item.action="{ item }">
-            <v-row v-if="!item.readOnly" no-gutters>
-              <v-col>
-                <v-icon small class="mr-2" @click="editItem(item)">
-                  mdi-pencil
-                </v-icon>
-              </v-col>
-              <v-col>
-                <v-icon
-                  small
-                  class="mr-2"
-                  @click="showDeleteConfirmation(item)"
-                >
-                  mdi-delete
-                </v-icon>
-              </v-col>
-            </v-row>
-          </template>
-        </data-table>
-      </card>
-    </div>
-  </card>
-</template>
-
 <script setup lang="ts">
 import { type DataTableHeader } from 'vuetify';
 import DataTable from '@/components/helper/DataTable.vue';
@@ -160,6 +82,84 @@ const showDeleteConfirmation = (selectedTag: Tag) => {
   );
 };
 </script>
+
+<template>
+  <card class="tag-manager">
+    <template #title>
+      {{ tc('tag_manager.title') }}
+    </template>
+    <template v-if="dialog" #details>
+      <v-btn class="tag-manager__close" icon text @click="close">
+        <v-icon>mdi-close</v-icon>
+      </v-btn>
+    </template>
+    <template #subtitle>
+      {{ tc('tag_manager.subtitle') }}
+    </template>
+    <tag-creator
+      :tag="tag"
+      :edit-mode="editMode"
+      @changed="onChange($event)"
+      @cancel="cancel"
+      @save="save"
+    />
+
+    <v-divider />
+
+    <div class="mx-n4">
+      <card outlined-body flat>
+        <template #title>
+          {{ tc('tag_manager.my_tags') }}
+        </template>
+        <template #search>
+          <v-row justify="end">
+            <v-col cols="12" sm="5">
+              <v-text-field
+                v-model="search"
+                outlined
+                dense
+                class="mb-4"
+                prepend-inner-icon="mdi-magnify"
+                :label="tc('common.actions.search')"
+                single-line
+                hide-details
+                clearable
+              />
+            </v-col>
+          </v-row>
+        </template>
+        <data-table
+          :items="tags"
+          item-key="name"
+          :headers="headers"
+          :search="search"
+        >
+          <template #item.name="{ item }">
+            <tag-icon :tag="item" />
+          </template>
+          <template #item.action="{ item }">
+            <v-row v-if="!item.readOnly" no-gutters>
+              <v-col>
+                <v-icon small class="mr-2" @click="editItem(item)">
+                  mdi-pencil
+                </v-icon>
+              </v-col>
+              <v-col>
+                <v-icon
+                  small
+                  class="mr-2"
+                  @click="showDeleteConfirmation(item)"
+                >
+                  mdi-delete
+                </v-icon>
+              </v-col>
+            </v-row>
+          </template>
+        </data-table>
+      </card>
+    </div>
+  </card>
+</template>
 
 <style scoped lang="scss">
 .tag-manager {

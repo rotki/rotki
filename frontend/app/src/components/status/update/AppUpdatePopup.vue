@@ -1,3 +1,69 @@
+<script setup lang="ts">
+import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
+
+import { useSessionStore } from '@/store/session';
+
+const releaseNotesLink = 'https://github.com/rotki/rotki/releases';
+
+const downloadReady = ref(false);
+const downloading = ref(false);
+const restarting = ref(false);
+const percentage = ref(0);
+const error = ref('');
+
+const store = useSessionStore();
+const { showUpdatePopup } = storeToRefs(store);
+const { checkForUpdate } = store;
+const { downloadUpdate, isPackaged, installUpdate } = useInterop();
+
+const { tc } = useI18n();
+
+const dismiss = () => {
+  set(showUpdatePopup, false);
+  setTimeout(() => {
+    set(error, '');
+    set(downloading, false);
+    set(downloadReady, false);
+    set(percentage, 0);
+  }, 400);
+};
+
+const update = async () => {
+  set(downloading, true);
+  const downloaded = await downloadUpdate(progress => {
+    set(percentage, progress);
+  });
+  set(downloading, false);
+  if (downloaded) {
+    set(downloadReady, true);
+    set(showUpdatePopup, true);
+  } else {
+    set(error, tc('update_popup.download_failed.message'));
+  }
+};
+
+const install = async () => {
+  set(downloadReady, false);
+  set(restarting, true);
+
+  const result = await installUpdate();
+  if (typeof result !== 'boolean') {
+    set(
+      error,
+      tc('update_popup.install_failed.message', 0, {
+        message: result
+      })
+    );
+  }
+};
+
+onMounted(async () => {
+  if (isPackaged) {
+    await checkForUpdate();
+  }
+});
+</script>
+
 <template>
   <v-snackbar
     v-if="isPackaged"
@@ -95,72 +161,6 @@
     </template>
   </v-snackbar>
 </template>
-
-<script setup lang="ts">
-import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
-
-import { useSessionStore } from '@/store/session';
-
-const releaseNotesLink = 'https://github.com/rotki/rotki/releases';
-
-const downloadReady = ref(false);
-const downloading = ref(false);
-const restarting = ref(false);
-const percentage = ref(0);
-const error = ref('');
-
-const store = useSessionStore();
-const { showUpdatePopup } = storeToRefs(store);
-const { checkForUpdate } = store;
-const { downloadUpdate, isPackaged, installUpdate } = useInterop();
-
-const { tc } = useI18n();
-
-const dismiss = () => {
-  set(showUpdatePopup, false);
-  setTimeout(() => {
-    set(error, '');
-    set(downloading, false);
-    set(downloadReady, false);
-    set(percentage, 0);
-  }, 400);
-};
-
-const update = async () => {
-  set(downloading, true);
-  const downloaded = await downloadUpdate(progress => {
-    set(percentage, progress);
-  });
-  set(downloading, false);
-  if (downloaded) {
-    set(downloadReady, true);
-    set(showUpdatePopup, true);
-  } else {
-    set(error, tc('update_popup.download_failed.message'));
-  }
-};
-
-const install = async () => {
-  set(downloadReady, false);
-  set(restarting, true);
-
-  const result = await installUpdate();
-  if (typeof result !== 'boolean') {
-    set(
-      error,
-      tc('update_popup.install_failed.message', 0, {
-        message: result
-      })
-    );
-  }
-};
-
-onMounted(async () => {
-  if (isPackaged) {
-    await checkForUpdate();
-  }
-});
-</script>
 <style scoped lang="scss">
 .update-popup {
   :deep() {

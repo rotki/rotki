@@ -1,45 +1,3 @@
-<template>
-  <v-row>
-    <v-col cols="12">
-      <loan-header v-if="vault.owner" class="mt-8 mb-6" :owner="vault.owner">
-        {{ tc('maker_dao_vault_loan.header', 0, header) }}
-      </loan-header>
-      <v-row no-gutters>
-        <v-col cols="12" md="6" class="pe-md-4">
-          <maker-dao-vault-collateral :vault="vault" />
-        </v-col>
-        <v-col cols="12" md="6" class="ps-md-4 pt-8 pt-md-0">
-          <maker-dao-vault-liquidation :vault="vault" />
-        </v-col>
-        <v-col cols="12" class="pt-8 pt-md-8">
-          <loan-debt :debt="vault.debt" :asset="vault.collateral.asset">
-            <maker-dao-vault-debt-details
-              :total-interest-owed="totalInterestOwed"
-              :loading="!totalInterestOwed"
-              :stability-fee="vault.stabilityFee"
-            />
-          </loan-debt>
-        </v-col>
-      </v-row>
-      <v-row class="mt-8" no-gutters>
-        <v-col cols="12">
-          <premium-card
-            v-if="!premium"
-            :title="tc('maker_dao_vault_loan.borrowing_history')"
-          />
-          <vault-events-list
-            v-else
-            :asset="vault.collateral.asset"
-            :events="events"
-            :creation="creation"
-            @open-link="openLink($event)"
-          />
-        </v-col>
-      </v-row>
-    </v-col>
-  </v-row>
-</template>
-
 <script setup lang="ts">
 import { type BigNumber } from '@rotki/common';
 import { type ComputedRef, type PropType } from 'vue';
@@ -108,3 +66,45 @@ const header = computed(() => {
   };
 });
 </script>
+
+<template>
+  <v-row>
+    <v-col cols="12">
+      <loan-header v-if="vault.owner" class="mt-8 mb-6" :owner="vault.owner">
+        {{ tc('maker_dao_vault_loan.header', 0, header) }}
+      </loan-header>
+      <v-row no-gutters>
+        <v-col cols="12" md="6" class="pe-md-4">
+          <maker-dao-vault-collateral :vault="vault" />
+        </v-col>
+        <v-col cols="12" md="6" class="ps-md-4 pt-8 pt-md-0">
+          <maker-dao-vault-liquidation :vault="vault" />
+        </v-col>
+        <v-col cols="12" class="pt-8 pt-md-8">
+          <loan-debt :debt="vault.debt" :asset="vault.collateral.asset">
+            <maker-dao-vault-debt-details
+              :total-interest-owed="totalInterestOwed"
+              :loading="!totalInterestOwed"
+              :stability-fee="vault.stabilityFee"
+            />
+          </loan-debt>
+        </v-col>
+      </v-row>
+      <v-row class="mt-8" no-gutters>
+        <v-col cols="12">
+          <premium-card
+            v-if="!premium"
+            :title="tc('maker_dao_vault_loan.borrowing_history')"
+          />
+          <vault-events-list
+            v-else
+            :asset="vault.collateral.asset"
+            :events="events"
+            :creation="creation"
+            @open-link="openLink($event)"
+          />
+        </v-col>
+      </v-row>
+    </v-col>
+  </v-row>
+</template>

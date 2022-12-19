@@ -1,3 +1,31 @@
+<script setup lang="ts">
+import { BigNumber } from '@rotki/common';
+import StatCardColumn from '@/components/display/StatCardColumn.vue';
+import StatCardWide from '@/components/display/StatCardWide.vue';
+import PremiumLock from '@/components/premium/PremiumLock.vue';
+
+defineProps({
+  loading: {
+    required: true,
+    type: Boolean
+  },
+  totalUsdEarned: {
+    required: true,
+    type: BigNumber
+  },
+  effectiveInterestRate: {
+    required: true,
+    type: String
+  },
+  totalLendingDeposit: {
+    required: true,
+    type: BigNumber
+  }
+});
+const premium = usePremium();
+
+const { t } = useI18n();
+</script>
 <template>
   <v-row class="mt-8" no-gutters>
     <v-col cols="12">
@@ -52,31 +80,3 @@
     </v-col>
   </v-row>
 </template>
-<script setup lang="ts">
-import { BigNumber } from '@rotki/common';
-import StatCardColumn from '@/components/display/StatCardColumn.vue';
-import StatCardWide from '@/components/display/StatCardWide.vue';
-import PremiumLock from '@/components/premium/PremiumLock.vue';
-
-defineProps({
-  loading: {
-    required: true,
-    type: Boolean
-  },
-  totalUsdEarned: {
-    required: true,
-    type: BigNumber
-  },
-  effectiveInterestRate: {
-    required: true,
-    type: String
-  },
-  totalLendingDeposit: {
-    required: true,
-    type: BigNumber
-  }
-});
-const premium = usePremium();
-
-const { t } = useI18n();
-</script>

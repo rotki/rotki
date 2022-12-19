@@ -1,3 +1,21 @@
+<script setup lang="ts">
+defineProps({
+  tooltip: { required: false, type: String, default: '' },
+  loading: { required: false, type: Boolean, default: false },
+  disabled: { required: false, type: Boolean, default: false }
+});
+
+const emit = defineEmits(['reset']);
+const menu = ref<boolean>(false);
+
+const reset = () => {
+  set(menu, false);
+  emit('reset');
+};
+
+const { t } = useI18n();
+</script>
+
 <template>
   <v-menu
     v-model="menu"
@@ -42,21 +60,3 @@
     </v-card>
   </v-menu>
 </template>
-
-<script setup lang="ts">
-defineProps({
-  tooltip: { required: false, type: String, default: '' },
-  loading: { required: false, type: Boolean, default: false },
-  disabled: { required: false, type: Boolean, default: false }
-});
-
-const emit = defineEmits(['reset']);
-const menu = ref<boolean>(false);
-
-const reset = () => {
-  set(menu, false);
-  emit('reset');
-};
-
-const { t } = useI18n();
-</script>

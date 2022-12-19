@@ -1,3 +1,18 @@
+<script setup lang="ts">
+import { useGeneralSettingsStore } from '@/store/settings/general';
+
+const displayDateInLocaltime = ref<boolean>(true);
+const { displayDateInLocaltime: enabled } = storeToRefs(
+  useGeneralSettingsStore()
+);
+
+onMounted(() => {
+  set(displayDateInLocaltime, get(enabled));
+});
+
+const { tc } = useI18n();
+</script>
+
 <template>
   <settings-option
     #default="{ error, success, update }"
@@ -17,18 +32,3 @@
     />
   </settings-option>
 </template>
-
-<script setup lang="ts">
-import { useGeneralSettingsStore } from '@/store/settings/general';
-
-const displayDateInLocaltime = ref<boolean>(true);
-const { displayDateInLocaltime: enabled } = storeToRefs(
-  useGeneralSettingsStore()
-);
-
-onMounted(() => {
-  set(displayDateInLocaltime, get(enabled));
-});
-
-const { tc } = useI18n();
-</script>

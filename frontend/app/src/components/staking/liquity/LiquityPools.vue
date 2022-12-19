@@ -1,3 +1,18 @@
+<script setup lang="ts">
+import { type LiquityPoolDetail } from '@rotki/common/lib/liquity';
+import { type PropType } from 'vue';
+import StatCard from '@/components/display/StatCard.vue';
+
+defineProps({
+  pool: {
+    required: false,
+    type: Object as PropType<LiquityPoolDetail | null>,
+    default: null
+  }
+});
+
+const { tc } = useI18n();
+</script>
 <template>
   <stat-card :title="tc('liquity_pools.title')">
     <template v-if="pool">
@@ -34,18 +49,3 @@
     </div>
   </stat-card>
 </template>
-<script setup lang="ts">
-import { type LiquityPoolDetail } from '@rotki/common/lib/liquity';
-import { type PropType } from 'vue';
-import StatCard from '@/components/display/StatCard.vue';
-
-defineProps({
-  pool: {
-    required: false,
-    type: Object as PropType<LiquityPoolDetail | null>,
-    default: null
-  }
-});
-
-const { tc } = useI18n();
-</script>

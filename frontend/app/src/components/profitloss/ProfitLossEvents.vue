@@ -1,128 +1,3 @@
-<template>
-  <card outlined-body>
-    <template #title>{{ tc('common.events') }}</template>
-    <data-table
-      :headers="tableHeaders"
-      :items="items"
-      single-expand
-      :loading="loading || refreshing"
-      :expanded="items"
-      :server-items-length="itemLength"
-      :options.sync="options"
-      sort-by="time"
-    >
-      <template #item.group="{ item }">
-        <v-tooltip v-if="item.groupId" right>
-          <template #activator="{ on, attrs }">
-            <div v-bind="attrs" :class="$style['group']" v-on="on">
-              <div
-                v-if="item.groupLine.top"
-                :class="`${$style['group__line']} ${$style['group__line-top']}`"
-              />
-              <div :class="$style['group__dot']" />
-              <div
-                v-if="item.groupLine.bottom"
-                :class="`${$style['group__line']} ${$style['group__line-bottom']}`"
-              />
-            </div>
-          </template>
-          <span>{{ tc('profit_loss_events.same_action') }}</span>
-        </v-tooltip>
-      </template>
-      <template #item.type="{ item }">
-        <profit-loss-event-type :type="item.type" />
-      </template>
-      <template #item.location="{ item }">
-        <location-display :identifier="item.location" />
-      </template>
-      <template #item.time="{ item }">
-        <date-display :timestamp="item.timestamp" />
-      </template>
-      <template #item.free_amount="{ item }">
-        <v-row no-gutters align="center" class="flex-nowrap">
-          <v-col v-if="item.asset" cols="auto">
-            <asset-link icon :asset="item.asset" class="mr-2">
-              <asset-icon :identifier="item.asset" size="24px" />
-            </asset-link>
-          </v-col>
-          <v-col>
-            <div>
-              <amount-display
-                force-currency
-                :value="item.freeAmount"
-                :asset="item.asset ? item.asset : ''"
-              />
-            </div>
-          </v-col>
-        </v-row>
-      </template>
-      <template #item.taxable_amount="{ item }">
-        <amount-display
-          force-currency
-          :value="item.taxableAmount"
-          :asset="item.asset ? item.asset : ''"
-        />
-      </template>
-      <template #item.price="{ item }">
-        <amount-display
-          force-currency
-          :value="item.price"
-          :fiat-currency="report.settings.profitCurrency"
-        />
-      </template>
-      <template #item.pnl_taxable="{ item }">
-        <amount-display
-          pnl
-          force-currency
-          :value="item.pnlTaxable"
-          :fiat-currency="report.settings.profitCurrency"
-        />
-      </template>
-      <template #item.pnl_free="{ item }">
-        <amount-display
-          pnl
-          force-currency
-          :value="item.pnlFree"
-          :fiat-currency="report.settings.profitCurrency"
-        />
-      </template>
-      <template v-if="showUpgradeMessage" #body.prepend="{ headers }">
-        <upgrade-row
-          events
-          :total="report.totalActions"
-          :limit="report.processedActions"
-          :time-end="report.lastProcessedTimestamp"
-          :time-start="report.firstProcessedTimestamp"
-          :colspan="headers.length"
-          :label="tc('common.events')"
-        />
-      </template>
-      <template #item.notes="{ item }">
-        <div class="py-4">
-          <transaction-event-note
-            v-if="isTransactionEvent(item)"
-            :notes="item.notes"
-            :amount="
-              item.taxableAmount.isZero() ? item.freeAmount : item.taxableAmount
-            "
-            :asset="item.asset"
-          />
-          <template v-else>{{ item.notes }}</template>
-        </div>
-      </template>
-      <template #expanded-item="{ headers, item }">
-        <cost-basis-table
-          v-if="item.costBasis"
-          :show-group-line="item.groupLine.bottom"
-          :currency="report.settings.profitCurrency"
-          :colspan="headers.length"
-          :cost-basis="item.costBasis"
-        />
-      </template>
-    </data-table>
-  </card>
-</template>
-
 <script setup lang="ts">
 import { type PropType } from 'vue';
 import { type DataTableHeader } from 'vuetify';
@@ -300,6 +175,131 @@ const checkGroupLine = (entries: ProfitLossEvents, index: number) => {
   };
 };
 </script>
+
+<template>
+  <card outlined-body>
+    <template #title>{{ tc('common.events') }}</template>
+    <data-table
+      :headers="tableHeaders"
+      :items="items"
+      single-expand
+      :loading="loading || refreshing"
+      :expanded="items"
+      :server-items-length="itemLength"
+      :options.sync="options"
+      sort-by="time"
+    >
+      <template #item.group="{ item }">
+        <v-tooltip v-if="item.groupId" right>
+          <template #activator="{ on, attrs }">
+            <div v-bind="attrs" :class="$style['group']" v-on="on">
+              <div
+                v-if="item.groupLine.top"
+                :class="`${$style['group__line']} ${$style['group__line-top']}`"
+              />
+              <div :class="$style['group__dot']" />
+              <div
+                v-if="item.groupLine.bottom"
+                :class="`${$style['group__line']} ${$style['group__line-bottom']}`"
+              />
+            </div>
+          </template>
+          <span>{{ tc('profit_loss_events.same_action') }}</span>
+        </v-tooltip>
+      </template>
+      <template #item.type="{ item }">
+        <profit-loss-event-type :type="item.type" />
+      </template>
+      <template #item.location="{ item }">
+        <location-display :identifier="item.location" />
+      </template>
+      <template #item.time="{ item }">
+        <date-display :timestamp="item.timestamp" />
+      </template>
+      <template #item.free_amount="{ item }">
+        <v-row no-gutters align="center" class="flex-nowrap">
+          <v-col v-if="item.asset" cols="auto">
+            <asset-link icon :asset="item.asset" class="mr-2">
+              <asset-icon :identifier="item.asset" size="24px" />
+            </asset-link>
+          </v-col>
+          <v-col>
+            <div>
+              <amount-display
+                force-currency
+                :value="item.freeAmount"
+                :asset="item.asset ? item.asset : ''"
+              />
+            </div>
+          </v-col>
+        </v-row>
+      </template>
+      <template #item.taxable_amount="{ item }">
+        <amount-display
+          force-currency
+          :value="item.taxableAmount"
+          :asset="item.asset ? item.asset : ''"
+        />
+      </template>
+      <template #item.price="{ item }">
+        <amount-display
+          force-currency
+          :value="item.price"
+          :fiat-currency="report.settings.profitCurrency"
+        />
+      </template>
+      <template #item.pnl_taxable="{ item }">
+        <amount-display
+          pnl
+          force-currency
+          :value="item.pnlTaxable"
+          :fiat-currency="report.settings.profitCurrency"
+        />
+      </template>
+      <template #item.pnl_free="{ item }">
+        <amount-display
+          pnl
+          force-currency
+          :value="item.pnlFree"
+          :fiat-currency="report.settings.profitCurrency"
+        />
+      </template>
+      <template v-if="showUpgradeMessage" #body.prepend="{ headers }">
+        <upgrade-row
+          events
+          :total="report.totalActions"
+          :limit="report.processedActions"
+          :time-end="report.lastProcessedTimestamp"
+          :time-start="report.firstProcessedTimestamp"
+          :colspan="headers.length"
+          :label="tc('common.events')"
+        />
+      </template>
+      <template #item.notes="{ item }">
+        <div class="py-4">
+          <transaction-event-note
+            v-if="isTransactionEvent(item)"
+            :notes="item.notes"
+            :amount="
+              item.taxableAmount.isZero() ? item.freeAmount : item.taxableAmount
+            "
+            :asset="item.asset"
+          />
+          <template v-else>{{ item.notes }}</template>
+        </div>
+      </template>
+      <template #expanded-item="{ headers, item }">
+        <cost-basis-table
+          v-if="item.costBasis"
+          :show-group-line="item.groupLine.bottom"
+          :currency="report.settings.profitCurrency"
+          :colspan="headers.length"
+          :cost-basis="item.costBasis"
+        />
+      </template>
+    </data-table>
+  </card>
+</template>
 <style module lang="scss">
 .group {
   height: 100%;

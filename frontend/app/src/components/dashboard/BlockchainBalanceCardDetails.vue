@@ -1,3 +1,22 @@
+<script setup lang="ts">
+import { type PropType } from 'vue';
+import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
+import { type ActionDataEntry } from '@/store/types';
+import { type SubBlockchainTotal } from '@/types/blockchain';
+
+defineProps({
+  child: {
+    required: true,
+    type: Object as PropType<SubBlockchainTotal>
+  },
+  details: {
+    required: false,
+    type: Object as PropType<ActionDataEntry | null>,
+    default: null
+  }
+});
+</script>
+
 <template>
   <v-list-item
     v-if="details"
@@ -28,25 +47,6 @@
     </v-list-item-content>
   </v-list-item>
 </template>
-
-<script setup lang="ts">
-import { type PropType } from 'vue';
-import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
-import { type ActionDataEntry } from '@/store/types';
-import { type SubBlockchainTotal } from '@/types/blockchain';
-
-defineProps({
-  child: {
-    required: true,
-    type: Object as PropType<SubBlockchainTotal>
-  },
-  details: {
-    required: false,
-    type: Object as PropType<ActionDataEntry | null>,
-    default: null
-  }
-});
-</script>
 <style scoped lang="scss">
 .blockchain-balance-box {
   &__icon {

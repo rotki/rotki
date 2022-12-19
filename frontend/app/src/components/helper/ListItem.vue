@@ -1,38 +1,3 @@
-<template>
-  <span
-    v-bind="rootAttrs"
-    :class="{
-      [css.wrapper]: true,
-      [css.dense]: dense
-    }"
-    @click="click"
-  >
-    <slot name="icon" :class="css.icon" />
-    <span v-if="showDetails" :class="css.details">
-      <template v-if="loading">
-        <v-skeleton-loader width="30" height="21" type="text" class="pt-1" />
-        <v-skeleton-loader width="70" type="text" height="18" />
-      </template>
-
-      <template v-else>
-        <span :class="css.title" data-cy="details-symbol">
-          {{ title }}
-        </span>
-        <span v-if="subtitle" class="grey--text" :class="css.subtitle">
-          <v-tooltip open-delay="400" top :disabled="large">
-            <template #activator="{ on, attrs }">
-              <span v-bind="attrs" class="text-truncate" v-on="on">
-                {{ visibleSubtitle }}
-              </span>
-            </template>
-            <span> {{ subtitle }}</span>
-          </v-tooltip>
-        </span>
-      </template>
-    </span>
-  </span>
-</template>
-
 <script setup lang="ts">
 import { type PropType } from 'vue';
 
@@ -87,6 +52,41 @@ const visibleSubtitle = computed(() => {
 
 const click = () => emit('click');
 </script>
+
+<template>
+  <span
+    v-bind="rootAttrs"
+    :class="{
+      [css.wrapper]: true,
+      [css.dense]: dense
+    }"
+    @click="click"
+  >
+    <slot name="icon" :class="css.icon" />
+    <span v-if="showDetails" :class="css.details">
+      <template v-if="loading">
+        <v-skeleton-loader width="30" height="21" type="text" class="pt-1" />
+        <v-skeleton-loader width="70" type="text" height="18" />
+      </template>
+
+      <template v-else>
+        <span :class="css.title" data-cy="details-symbol">
+          {{ title }}
+        </span>
+        <span v-if="subtitle" class="grey--text" :class="css.subtitle">
+          <v-tooltip open-delay="400" top :disabled="large">
+            <template #activator="{ on, attrs }">
+              <span v-bind="attrs" class="text-truncate" v-on="on">
+                {{ visibleSubtitle }}
+              </span>
+            </template>
+            <span> {{ subtitle }}</span>
+          </v-tooltip>
+        </span>
+      </template>
+    </span>
+  </span>
+</template>
 
 <style module lang="scss">
 .wrapper {

@@ -1,176 +1,3 @@
-<template>
-  <v-form
-    :value="value"
-    data-cy="transaction-event-form"
-    class="transaction-event-form"
-  >
-    <location-selector
-      v-model="location"
-      class="pt-1"
-      required
-      outlined
-      data-cy="location"
-      :label="t('common.location')"
-      :error-messages="v$.location.$errors.map(e => e.$message)"
-      @blur="v$.location.$touch()"
-    />
-
-    <date-time-picker
-      v-model="datetime"
-      outlined
-      :label="t('transactions.events.form.datetime.label')"
-      persistent-hint
-      required
-      seconds
-      limit-now
-      data-cy="datetime"
-      :hint="t('transactions.events.form.datetime.hint')"
-      :error-messages="errorMessages['datetime']"
-      @focus="delete errorMessages['datetime']"
-    />
-
-    <v-row
-      align="center"
-      :class="
-        $vuetify.breakpoint.mdAndUp
-          ? 'transaction-event-form__amount-wrapper'
-          : null
-      "
-    >
-      <v-col cols="12" md="4">
-        <asset-select
-          v-model="asset"
-          outlined
-          required
-          data-cy="asset"
-          :error-messages="v$.asset.$errors.map(e => e.$message)"
-          @blur="v$.asset.$touch()"
-        />
-      </v-col>
-
-      <v-col cols="12" md="4">
-        <amount-input
-          v-model="amount"
-          outlined
-          required
-          data-cy="amount"
-          :label="t('common.amount')"
-          :error-messages="v$.amount.$errors.map(e => e.$message)"
-          @blur="v$.amount.$touch()"
-        />
-      </v-col>
-
-      <v-col cols="12" md="4">
-        <amount-input
-          v-model="fiatValue"
-          outlined
-          required
-          data-cy="fiatValue"
-          :loading="fetching"
-          :label="
-            t('common.value_in_symbol', {
-              symbol: currencySymbol
-            })
-          "
-          :error-messages="v$.usdValue.$errors.map(e => e.$message)"
-          @blur="v$.usdValue.$touch()"
-        >
-          <template #append>
-            <div class="pt-1">
-              <value-accuracy-hint />
-            </div>
-          </template>
-        </amount-input>
-      </v-col>
-    </v-row>
-
-    <v-divider class="mb-6 mt-2" />
-
-    <v-row>
-      <v-col cols="12" md="4">
-        <v-autocomplete
-          v-model="eventType"
-          outlined
-          required
-          :label="t('transactions.events.form.event_type.label')"
-          :items="historyEventTypeData"
-          item-value="identifier"
-          item-text="label"
-          data-cy="eventType"
-          :error-messages="v$.eventType.$errors.map(e => e.$message)"
-          @blur="v$.eventType.$touch()"
-        />
-      </v-col>
-      <v-col cols="12" md="4">
-        <v-autocomplete
-          v-model="eventSubtype"
-          outlined
-          required
-          :label="t('transactions.events.form.event_subtype.label')"
-          :items="historyEventSubTypeData"
-          item-value="identifier"
-          item-text="label"
-          data-cy="eventSubtype"
-          :error-messages="v$.eventSubtype.$errors.map(e => e.$message)"
-          @blur="v$.eventSubtype.$touch()"
-        />
-      </v-col>
-      <v-col cols="12" md="4">
-        <v-text-field
-          v-model="transactionEventType"
-          outlined
-          required
-          disabled
-          :label="t('transactions.events.form.transaction_event_type.label')"
-        />
-      </v-col>
-      <v-col cols="12" md="4">
-        <amount-input
-          v-model="sequenceIndex"
-          outlined
-          required
-          integer
-          data-cy="sequenceIndex"
-          :label="t('transactions.events.form.sequence_index.label')"
-          :error-messages="v$.sequenceIndex.$errors.map(e => e.$message)"
-          @blur="v$.sequenceIndex.$touch()"
-        />
-      </v-col>
-      <v-col cols="12" md="4">
-        <v-text-field
-          v-model="locationLabel"
-          outlined
-          data-cy="locationLabel"
-          :label="t('transactions.events.form.location_label.label')"
-          :error-messages="errorMessages['locationLabel']"
-          @focus="delete errorMessages['locationLabel']"
-        />
-      </v-col>
-      <v-col cols="12" md="4">
-        <v-text-field
-          v-model="counterparty"
-          outlined
-          data-cy="counterparty"
-          :label="t('transactions.events.form.counterparty.label')"
-          :error-messages="errorMessages['counterparty']"
-          @focus="delete errorMessages['counterparty']"
-        />
-      </v-col>
-    </v-row>
-
-    <v-textarea
-      v-model="notes"
-      prepend-inner-icon="mdi-text-box-outline"
-      persistent-hint
-      outlined
-      data-cy="notes"
-      :label="t('transactions.events.form.notes.label')"
-      :hint="t('transactions.events.form.notes.hint')"
-      :error-messages="errorMessages['notes']"
-      @focus="delete errorMessages['notes']"
-    />
-  </v-form>
-</template>
 <script setup lang="ts">
 import { BigNumber } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
@@ -515,3 +342,176 @@ defineExpose({
   reset
 });
 </script>
+<template>
+  <v-form
+    :value="value"
+    data-cy="transaction-event-form"
+    class="transaction-event-form"
+  >
+    <location-selector
+      v-model="location"
+      class="pt-1"
+      required
+      outlined
+      data-cy="location"
+      :label="t('common.location')"
+      :error-messages="v$.location.$errors.map(e => e.$message)"
+      @blur="v$.location.$touch()"
+    />
+
+    <date-time-picker
+      v-model="datetime"
+      outlined
+      :label="t('transactions.events.form.datetime.label')"
+      persistent-hint
+      required
+      seconds
+      limit-now
+      data-cy="datetime"
+      :hint="t('transactions.events.form.datetime.hint')"
+      :error-messages="errorMessages['datetime']"
+      @focus="delete errorMessages['datetime']"
+    />
+
+    <v-row
+      align="center"
+      :class="
+        $vuetify.breakpoint.mdAndUp
+          ? 'transaction-event-form__amount-wrapper'
+          : null
+      "
+    >
+      <v-col cols="12" md="4">
+        <asset-select
+          v-model="asset"
+          outlined
+          required
+          data-cy="asset"
+          :error-messages="v$.asset.$errors.map(e => e.$message)"
+          @blur="v$.asset.$touch()"
+        />
+      </v-col>
+
+      <v-col cols="12" md="4">
+        <amount-input
+          v-model="amount"
+          outlined
+          required
+          data-cy="amount"
+          :label="t('common.amount')"
+          :error-messages="v$.amount.$errors.map(e => e.$message)"
+          @blur="v$.amount.$touch()"
+        />
+      </v-col>
+
+      <v-col cols="12" md="4">
+        <amount-input
+          v-model="fiatValue"
+          outlined
+          required
+          data-cy="fiatValue"
+          :loading="fetching"
+          :label="
+            t('common.value_in_symbol', {
+              symbol: currencySymbol
+            })
+          "
+          :error-messages="v$.usdValue.$errors.map(e => e.$message)"
+          @blur="v$.usdValue.$touch()"
+        >
+          <template #append>
+            <div class="pt-1">
+              <value-accuracy-hint />
+            </div>
+          </template>
+        </amount-input>
+      </v-col>
+    </v-row>
+
+    <v-divider class="mb-6 mt-2" />
+
+    <v-row>
+      <v-col cols="12" md="4">
+        <v-autocomplete
+          v-model="eventType"
+          outlined
+          required
+          :label="t('transactions.events.form.event_type.label')"
+          :items="historyEventTypeData"
+          item-value="identifier"
+          item-text="label"
+          data-cy="eventType"
+          :error-messages="v$.eventType.$errors.map(e => e.$message)"
+          @blur="v$.eventType.$touch()"
+        />
+      </v-col>
+      <v-col cols="12" md="4">
+        <v-autocomplete
+          v-model="eventSubtype"
+          outlined
+          required
+          :label="t('transactions.events.form.event_subtype.label')"
+          :items="historyEventSubTypeData"
+          item-value="identifier"
+          item-text="label"
+          data-cy="eventSubtype"
+          :error-messages="v$.eventSubtype.$errors.map(e => e.$message)"
+          @blur="v$.eventSubtype.$touch()"
+        />
+      </v-col>
+      <v-col cols="12" md="4">
+        <v-text-field
+          v-model="transactionEventType"
+          outlined
+          required
+          disabled
+          :label="t('transactions.events.form.transaction_event_type.label')"
+        />
+      </v-col>
+      <v-col cols="12" md="4">
+        <amount-input
+          v-model="sequenceIndex"
+          outlined
+          required
+          integer
+          data-cy="sequenceIndex"
+          :label="t('transactions.events.form.sequence_index.label')"
+          :error-messages="v$.sequenceIndex.$errors.map(e => e.$message)"
+          @blur="v$.sequenceIndex.$touch()"
+        />
+      </v-col>
+      <v-col cols="12" md="4">
+        <v-text-field
+          v-model="locationLabel"
+          outlined
+          data-cy="locationLabel"
+          :label="t('transactions.events.form.location_label.label')"
+          :error-messages="errorMessages['locationLabel']"
+          @focus="delete errorMessages['locationLabel']"
+        />
+      </v-col>
+      <v-col cols="12" md="4">
+        <v-text-field
+          v-model="counterparty"
+          outlined
+          data-cy="counterparty"
+          :label="t('transactions.events.form.counterparty.label')"
+          :error-messages="errorMessages['counterparty']"
+          @focus="delete errorMessages['counterparty']"
+        />
+      </v-col>
+    </v-row>
+
+    <v-textarea
+      v-model="notes"
+      prepend-inner-icon="mdi-text-box-outline"
+      persistent-hint
+      outlined
+      data-cy="notes"
+      :label="t('transactions.events.form.notes.label')"
+      :hint="t('transactions.events.form.notes.hint')"
+      :error-messages="errorMessages['notes']"
+      @focus="delete errorMessages['notes']"
+    />
+  </v-form>
+</template>

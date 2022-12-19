@@ -1,3 +1,55 @@
+<script setup lang="ts">
+import { type PropType } from 'vue';
+import { type DIALOG_TYPES, TYPE_INFO, themes } from '@/types/dialogs';
+
+const props = defineProps({
+  title: { required: true, type: String },
+  subtitle: { required: false, type: String, default: '' },
+  display: { required: true, type: Boolean },
+  loading: { required: false, type: Boolean, default: false },
+  actionDisabled: { required: false, type: Boolean, default: false },
+  primaryAction: {
+    required: false,
+    type: String,
+    default: null
+  },
+  secondaryAction: {
+    required: false,
+    type: String,
+    default: null
+  },
+  confirmType: {
+    required: false,
+    type: String as PropType<typeof DIALOG_TYPES[number]>,
+    default: TYPE_INFO
+  }
+});
+
+const { tc } = useI18n();
+
+const { subtitle, primaryAction, secondaryAction } = toRefs(props);
+
+const primary = computed(
+  () => get(primaryAction) || tc('common.actions.confirm')
+);
+const secondary = computed(
+  () => get(secondaryAction) || tc('common.actions.cancel')
+);
+
+const emit = defineEmits<{
+  (event: 'confirm'): void;
+  (event: 'cancel'): void;
+}>();
+
+const confirm = () => emit('confirm');
+const cancel = () => emit('cancel');
+
+const contentStyle = computed(() => {
+  const height = 118 + (get(subtitle) ? 26 : 0);
+  return { height: `calc(90vh - ${height}px)` };
+});
+</script>
+
 <template>
   <v-bottom-sheet
     :value="display"
@@ -53,58 +105,6 @@
     </v-card>
   </v-bottom-sheet>
 </template>
-
-<script setup lang="ts">
-import { type PropType } from 'vue';
-import { type DIALOG_TYPES, TYPE_INFO, themes } from '@/types/dialogs';
-
-const props = defineProps({
-  title: { required: true, type: String },
-  subtitle: { required: false, type: String, default: '' },
-  display: { required: true, type: Boolean },
-  loading: { required: false, type: Boolean, default: false },
-  actionDisabled: { required: false, type: Boolean, default: false },
-  primaryAction: {
-    required: false,
-    type: String,
-    default: null
-  },
-  secondaryAction: {
-    required: false,
-    type: String,
-    default: null
-  },
-  confirmType: {
-    required: false,
-    type: String as PropType<typeof DIALOG_TYPES[number]>,
-    default: TYPE_INFO
-  }
-});
-
-const { tc } = useI18n();
-
-const { subtitle, primaryAction, secondaryAction } = toRefs(props);
-
-const primary = computed(
-  () => get(primaryAction) || tc('common.actions.confirm')
-);
-const secondary = computed(
-  () => get(secondaryAction) || tc('common.actions.cancel')
-);
-
-const emit = defineEmits<{
-  (event: 'confirm'): void;
-  (event: 'cancel'): void;
-}>();
-
-const confirm = () => emit('confirm');
-const cancel = () => emit('cancel');
-
-const contentStyle = computed(() => {
-  const height = 118 + (get(subtitle) ? 26 : 0);
-  return { height: `calc(90vh - ${height}px)` };
-});
-</script>
 
 <style scoped lang="scss">
 .big-dialog {

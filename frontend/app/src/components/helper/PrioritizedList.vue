@@ -1,3 +1,115 @@
+<script setup lang="ts">
+import { type ComputedRef, type PropType } from 'vue';
+import ActionStatusIndicator from '@/components/error/ActionStatusIndicator.vue';
+import PrioritizedListEntry from '@/components/helper/PrioritizedListEntry.vue';
+import { type Nullable } from '@/types';
+import { type BaseMessage } from '@/types/messages';
+import {
+  PrioritizedListData,
+  type PrioritizedListItemData
+} from '@/types/prioritized-list-data';
+import {
+  EmptyListId,
+  type PrioritizedListId
+} from '@/types/prioritized-list-id';
+import { assert } from '@/utils/assertions';
+import { pluralize } from '@/utils/text';
+
+const props = defineProps({
+  value: { required: true, type: Array as PropType<PrioritizedListId[]> },
+  allItems: {
+    required: true,
+    type: PrioritizedListData<PrioritizedListId>
+  },
+  itemDataName: { required: true, type: String },
+  disableAdd: { required: false, type: Boolean, default: false },
+  disableDelete: { required: false, type: Boolean, default: false },
+  status: {
+    required: false,
+    type: Object as PropType<BaseMessage>,
+    default: () => null
+  }
+});
+
+const emit = defineEmits(['input']);
+const { value, allItems, itemDataName } = toRefs(props);
+const slots = useSlots();
+const selection = ref<Nullable<PrioritizedListId>>(null);
+
+const input = (items: string[]) => emit('input', items);
+
+const itemNameTr = computed(() => {
+  const name = get(itemDataName);
+  return {
+    name,
+    namePluralized: pluralize(name, 2)
+  };
+});
+
+const missing = computed<string[]>(() => {
+  return get(allItems).itemIdsNotIn(get(value));
+});
+
+const noResults = computed<boolean>(() => {
+  return get(value).length === 0;
+});
+
+const isFirst = (item: string): boolean => {
+  return get(value)[0] === item;
+};
+
+const isLast = (item: string): boolean => {
+  const items = get(value);
+  return items[items.length - 1] === item;
+};
+
+const itemData = (
+  identifier: PrioritizedListId
+): PrioritizedListItemData<PrioritizedListId> => {
+  const data = get(allItems);
+  return data.itemDataForId(identifier) ?? { identifier: EmptyListId };
+};
+
+const addItem = () => {
+  assert(get(selection));
+  const items = [...get(value)];
+  items.push(get(selection)!);
+  input(items);
+  set(selection, null);
+};
+
+const move = (item: PrioritizedListId, down: boolean) => {
+  const items = [...get(value)];
+  const itemIndex = items.indexOf(item);
+  const nextIndex = itemIndex + (down ? 1 : -1);
+  const nextItem = items[nextIndex];
+  items[nextIndex] = item;
+  items[itemIndex] = nextItem;
+  input(items);
+};
+
+const remove = (item: PrioritizedListId) => {
+  const items = [...get(value)];
+  const itemIndex = items.indexOf(item);
+  items.splice(itemIndex, 1);
+  input(items);
+};
+
+const { t } = useI18n();
+const { tc } = useI18n();
+
+const autoCompleteHint: ComputedRef<string> = computed(() => {
+  const num = get(missing).length;
+  if (num) {
+    return tc('prioritized_list.disabled_items', 0, {
+      num,
+      namePluralized: get(itemNameTr).namePluralized
+    });
+  }
+  return tc('prioritized_list.all_added');
+});
+</script>
+
 <template>
   <div>
     <v-sheet outlined rounded>
@@ -125,118 +237,6 @@
     <action-status-indicator class="mt-4" :status="status" />
   </div>
 </template>
-
-<script setup lang="ts">
-import { type ComputedRef, type PropType } from 'vue';
-import ActionStatusIndicator from '@/components/error/ActionStatusIndicator.vue';
-import PrioritizedListEntry from '@/components/helper/PrioritizedListEntry.vue';
-import { type Nullable } from '@/types';
-import { type BaseMessage } from '@/types/messages';
-import {
-  PrioritizedListData,
-  type PrioritizedListItemData
-} from '@/types/prioritized-list-data';
-import {
-  EmptyListId,
-  type PrioritizedListId
-} from '@/types/prioritized-list-id';
-import { assert } from '@/utils/assertions';
-import { pluralize } from '@/utils/text';
-
-const props = defineProps({
-  value: { required: true, type: Array as PropType<PrioritizedListId[]> },
-  allItems: {
-    required: true,
-    type: PrioritizedListData<PrioritizedListId>
-  },
-  itemDataName: { required: true, type: String },
-  disableAdd: { required: false, type: Boolean, default: false },
-  disableDelete: { required: false, type: Boolean, default: false },
-  status: {
-    required: false,
-    type: Object as PropType<BaseMessage>,
-    default: () => null
-  }
-});
-
-const emit = defineEmits(['input']);
-const { value, allItems, itemDataName } = toRefs(props);
-const slots = useSlots();
-const selection = ref<Nullable<PrioritizedListId>>(null);
-
-const input = (items: string[]) => emit('input', items);
-
-const itemNameTr = computed(() => {
-  const name = get(itemDataName);
-  return {
-    name,
-    namePluralized: pluralize(name, 2)
-  };
-});
-
-const missing = computed<string[]>(() => {
-  return get(allItems).itemIdsNotIn(get(value));
-});
-
-const noResults = computed<boolean>(() => {
-  return get(value).length === 0;
-});
-
-const isFirst = (item: string): boolean => {
-  return get(value)[0] === item;
-};
-
-const isLast = (item: string): boolean => {
-  const items = get(value);
-  return items[items.length - 1] === item;
-};
-
-const itemData = (
-  identifier: PrioritizedListId
-): PrioritizedListItemData<PrioritizedListId> => {
-  const data = get(allItems);
-  return data.itemDataForId(identifier) ?? { identifier: EmptyListId };
-};
-
-const addItem = () => {
-  assert(get(selection));
-  const items = [...get(value)];
-  items.push(get(selection)!);
-  input(items);
-  set(selection, null);
-};
-
-const move = (item: PrioritizedListId, down: boolean) => {
-  const items = [...get(value)];
-  const itemIndex = items.indexOf(item);
-  const nextIndex = itemIndex + (down ? 1 : -1);
-  const nextItem = items[nextIndex];
-  items[nextIndex] = item;
-  items[itemIndex] = nextItem;
-  input(items);
-};
-
-const remove = (item: PrioritizedListId) => {
-  const items = [...get(value)];
-  const itemIndex = items.indexOf(item);
-  items.splice(itemIndex, 1);
-  input(items);
-};
-
-const { t } = useI18n();
-const { tc } = useI18n();
-
-const autoCompleteHint: ComputedRef<string> = computed(() => {
-  const num = get(missing).length;
-  if (num) {
-    return tc('prioritized_list.disabled_items', 0, {
-      num,
-      namePluralized: get(itemNameTr).namePluralized
-    });
-  }
-  return tc('prioritized_list.all_added');
-});
-</script>
 
 <style scoped lang="scss">
 .prioritized-list-selection {

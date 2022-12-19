@@ -1,23 +1,3 @@
-<template>
-  <tr class="font-weight-medium append-row" :class="formattedClassName">
-    <td v-if="leftPatchColspan >= 1 && !isMobile" :colspan="leftPatchColspan" />
-    <td :colspan="labelColspan" :class="{ 'd-flex align-center': isMobile }">
-      {{ label }}
-    </td>
-    <slot name="custom-columns" />
-    <td
-      v-if="slots.default"
-      class="text-end"
-      :class="{ 'd-flex align-center': isMobile }"
-    >
-      <slot />
-    </td>
-    <td
-      v-if="rightPatchColspan >= 1 && !isMobile"
-      :colspan="rightPatchColspan"
-    />
-  </tr>
-</template>
 <script setup lang="ts">
 import { type PropType } from 'vue';
 
@@ -52,6 +32,26 @@ const formattedClassName = computed(() => {
   };
 });
 </script>
+<template>
+  <tr class="font-weight-medium append-row" :class="formattedClassName">
+    <td v-if="leftPatchColspan >= 1 && !isMobile" :colspan="leftPatchColspan" />
+    <td :colspan="labelColspan" :class="{ 'd-flex align-center': isMobile }">
+      {{ label }}
+    </td>
+    <slot name="custom-columns" />
+    <td
+      v-if="slots.default"
+      class="text-end"
+      :class="{ 'd-flex align-center': isMobile }"
+    >
+      <slot />
+    </td>
+    <td
+      v-if="rightPatchColspan >= 1 && !isMobile"
+      :colspan="rightPatchColspan"
+    />
+  </tr>
+</template>
 <style scoped lang="scss">
 .append {
   &-row {

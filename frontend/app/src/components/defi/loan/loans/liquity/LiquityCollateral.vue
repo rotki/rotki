@@ -1,17 +1,3 @@
-<template>
-  <stat-card :title="tc('loan_collateral.title')">
-    <loan-row medium :title="tc('loan_collateral.locked_collateral')">
-      <balance-display :asset="collateral.asset" :value="collateral" />
-    </loan-row>
-
-    <v-divider v-if="ratio" class="my-4" />
-
-    <loan-row v-if="ratio" :title="tc('loan_collateral.ratio')">
-      <percentage-display v-if="ratio" :value="ratio.toFormat(2)" />
-    </loan-row>
-  </stat-card>
-</template>
-
 <script setup lang="ts">
 import { type AssetBalance, BigNumber } from '@rotki/common';
 import { type PropType } from 'vue';
@@ -33,3 +19,17 @@ defineProps({
 
 const { tc } = useI18n();
 </script>
+
+<template>
+  <stat-card :title="tc('loan_collateral.title')">
+    <loan-row medium :title="tc('loan_collateral.locked_collateral')">
+      <balance-display :asset="collateral.asset" :value="collateral" />
+    </loan-row>
+
+    <v-divider v-if="ratio" class="my-4" />
+
+    <loan-row v-if="ratio" :title="tc('loan_collateral.ratio')">
+      <percentage-display v-if="ratio" :value="ratio.toFormat(2)" />
+    </loan-row>
+  </stat-card>
+</template>

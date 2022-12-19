@@ -1,9 +1,3 @@
-<template>
-  <card v-if="loadingData || locationBreakdown.length > 0" outlined-body>
-    <template #title> {{ t('common.assets') }} </template>
-    <asset-balances :loading="loadingData" :balances="locationBreakdown" />
-  </card>
-</template>
 <script setup lang="ts">
 import { type AssetBalanceWithPrice } from '@rotki/common';
 import { type ComputedRef } from 'vue';
@@ -34,3 +28,9 @@ const loadingData = computed<boolean>(() => {
   );
 });
 </script>
+<template>
+  <card v-if="loadingData || locationBreakdown.length > 0" outlined-body>
+    <template #title> {{ t('common.assets') }} </template>
+    <asset-balances :loading="loadingData" :balances="locationBreakdown" />
+  </card>
+</template>

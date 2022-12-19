@@ -1,3 +1,34 @@
+<script setup lang="ts">
+import { type PropType } from 'vue';
+
+const props = defineProps({
+  sortBy: {
+    required: true,
+    type: String
+  },
+  sortDesc: {
+    required: true,
+    type: Boolean
+  },
+  sortProperties: {
+    required: true,
+    type: Array as PropType<{ text: string; value: string }[]>
+  }
+});
+
+const emit = defineEmits(['update:sort-by', 'update:sort-desc']);
+const { sortDesc } = toRefs(props);
+const updateSortBy = (value: string) => {
+  emit('update:sort-by', value);
+};
+const updateSortDesc = () => {
+  emit('update:sort-desc', !get(sortDesc));
+};
+const { dark } = useTheme();
+
+const { t } = useI18n();
+</script>
+
 <template>
   <div :class="$style.container">
     <div>
@@ -39,37 +70,6 @@
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-import { type PropType } from 'vue';
-
-const props = defineProps({
-  sortBy: {
-    required: true,
-    type: String
-  },
-  sortDesc: {
-    required: true,
-    type: Boolean
-  },
-  sortProperties: {
-    required: true,
-    type: Array as PropType<{ text: string; value: string }[]>
-  }
-});
-
-const emit = defineEmits(['update:sort-by', 'update:sort-desc']);
-const { sortDesc } = toRefs(props);
-const updateSortBy = (value: string) => {
-  emit('update:sort-by', value);
-};
-const updateSortDesc = () => {
-  emit('update:sort-desc', !get(sortDesc));
-};
-const { dark } = useTheme();
-
-const { t } = useI18n();
-</script>
 
 <style module lang="scss">
 .container {

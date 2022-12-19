@@ -1,69 +1,3 @@
-<template>
-  <card outlined-body>
-    <template #title>
-      <refresh-button
-        :loading="loading"
-        :tooltip="tc('kraken_staking_events.refresh_tooltip')"
-        @refresh="refresh"
-      />
-      {{ t('kraken_staking_events.titles') }}
-      <v-icon v-if="loading" color="primary" class="ml-2">
-        mdi-spin mdi-loading
-      </v-icon>
-    </template>
-    <template #actions>
-      <v-row>
-        <v-col cols="12" offset-md="6" md="6">
-          <table-filter :matchers="matchers" @update:matches="updateFilter" />
-        </v-col>
-      </v-row>
-    </template>
-    <data-table
-      :items="events.events"
-      :headers="tableHeaders"
-      :options.sync="options"
-      :server-items-length="events.entriesFound"
-      sort-by="timestamp"
-      multi-sort
-      :must-sort="false"
-    >
-      <template v-if="showUpgradeRow" #body.prepend="{ headers }">
-        <upgrade-row
-          :limit="events.entriesLimit"
-          :total="events.entriesTotal"
-          :colspan="headers.length"
-          :label="tc('kraken_staking_events.upgrade.label')"
-        />
-      </template>
-      <template #header.usdValue>
-        {{
-          t('common.value_in_symbol', {
-            symbol: currencySymbol
-          })
-        }}
-        <value-accuracy-hint />
-      </template>
-      <template #item.type="{ item }">
-        <badge-display color="grey">
-          {{ getEventTypeLabel(item.eventType) }}
-        </badge-display>
-      </template>
-      <template #item.asset="{ item }">
-        <asset-details :asset="item.asset" />
-      </template>
-      <template #item.amount="{ item }">
-        <amount-display :value="item.amount" />
-      </template>
-      <template #item.usdValue="{ item }">
-        <amount-display :value="item.usdValue" fiat-currency="USD" />
-      </template>
-      <template #item.timestamp="{ item }">
-        <date-display :timestamp="item.timestamp" />
-      </template>
-    </data-table>
-  </card>
-</template>
-
 <script setup lang="ts">
 import { type PropType } from 'vue';
 import { type DataTableHeader } from 'vuetify';
@@ -180,3 +114,69 @@ watch(filters, () => {
 
 watch(options, options => updatePagination(options));
 </script>
+
+<template>
+  <card outlined-body>
+    <template #title>
+      <refresh-button
+        :loading="loading"
+        :tooltip="tc('kraken_staking_events.refresh_tooltip')"
+        @refresh="refresh"
+      />
+      {{ t('kraken_staking_events.titles') }}
+      <v-icon v-if="loading" color="primary" class="ml-2">
+        mdi-spin mdi-loading
+      </v-icon>
+    </template>
+    <template #actions>
+      <v-row>
+        <v-col cols="12" offset-md="6" md="6">
+          <table-filter :matchers="matchers" @update:matches="updateFilter" />
+        </v-col>
+      </v-row>
+    </template>
+    <data-table
+      :items="events.events"
+      :headers="tableHeaders"
+      :options.sync="options"
+      :server-items-length="events.entriesFound"
+      sort-by="timestamp"
+      multi-sort
+      :must-sort="false"
+    >
+      <template v-if="showUpgradeRow" #body.prepend="{ headers }">
+        <upgrade-row
+          :limit="events.entriesLimit"
+          :total="events.entriesTotal"
+          :colspan="headers.length"
+          :label="tc('kraken_staking_events.upgrade.label')"
+        />
+      </template>
+      <template #header.usdValue>
+        {{
+          t('common.value_in_symbol', {
+            symbol: currencySymbol
+          })
+        }}
+        <value-accuracy-hint />
+      </template>
+      <template #item.type="{ item }">
+        <badge-display color="grey">
+          {{ getEventTypeLabel(item.eventType) }}
+        </badge-display>
+      </template>
+      <template #item.asset="{ item }">
+        <asset-details :asset="item.asset" />
+      </template>
+      <template #item.amount="{ item }">
+        <amount-display :value="item.amount" />
+      </template>
+      <template #item.usdValue="{ item }">
+        <amount-display :value="item.usdValue" fiat-currency="USD" />
+      </template>
+      <template #item.timestamp="{ item }">
+        <date-display :timestamp="item.timestamp" />
+      </template>
+    </data-table>
+  </card>
+</template>

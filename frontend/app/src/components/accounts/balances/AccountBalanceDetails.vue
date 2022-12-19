@@ -1,21 +1,3 @@
-<template>
-  <div>
-    <template v-if="!loopring">
-      <account-asset-balances :title="tc('common.assets')" :assets="assets" />
-      <account-asset-balances
-        v-if="liabilities.length > 0"
-        :title="tc('account_balance_table.liabilities')"
-        :assets="liabilities"
-      />
-    </template>
-    <account-asset-balances
-      v-if="loopringBalances.length > 0"
-      :title="loopring ? '' : tc('account_balance_table.loopring')"
-      :assets="loopringBalances"
-    />
-  </div>
-</template>
-
 <script setup lang="ts">
 import { type AssetBalance } from '@rotki/common';
 import { type PropType } from 'vue';
@@ -43,3 +25,21 @@ defineProps({
 
 const { tc } = useI18n();
 </script>
+
+<template>
+  <div>
+    <template v-if="!loopring">
+      <account-asset-balances :title="tc('common.assets')" :assets="assets" />
+      <account-asset-balances
+        v-if="liabilities.length > 0"
+        :title="tc('account_balance_table.liabilities')"
+        :assets="liabilities"
+      />
+    </template>
+    <account-asset-balances
+      v-if="loopringBalances.length > 0"
+      :title="loopring ? '' : tc('account_balance_table.loopring')"
+      :assets="loopringBalances"
+    />
+  </div>
+</template>

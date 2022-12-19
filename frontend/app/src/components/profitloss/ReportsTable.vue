@@ -1,3 +1,95 @@
+<script setup lang="ts">
+import { type ComputedRef, type Ref } from 'vue';
+import { type DataTableHeader } from 'vuetify';
+import DateDisplay from '@/components/display/DateDisplay.vue';
+import DataTable from '@/components/helper/DataTable.vue';
+import RowExpander from '@/components/helper/RowExpander.vue';
+import UpgradeRow from '@/components/history/UpgradeRow.vue';
+import ExportReportCsv from '@/components/profitloss/ExportReportCsv.vue';
+import ProfitLossOverview from '@/components/profitloss/ProfitLossOverview.vue';
+import { Routes } from '@/router/routes';
+import { useReports } from '@/store/reports';
+import { type Report } from '@/types/reports';
+import { size } from '@/utils/data';
+import { calculateTotalProfitLoss } from '@/utils/report';
+
+const expanded: Ref<Report[]> = ref([]);
+const reportStore = useReports();
+const { fetchReports, deleteReport, isLatestReport } = reportStore;
+const { reports } = storeToRefs(reportStore);
+const { tc } = useI18n();
+
+const items = computed(() =>
+  get(reports).entries.map((value, index) => ({
+    ...value,
+    id: index
+  }))
+);
+
+const limits = computed(() => ({
+  total: get(reports).entriesFound,
+  limit: get(reports).entriesLimit
+}));
+
+const tableHeaders: ComputedRef<DataTableHeader[]> = computed(() => [
+  {
+    text: tc('profit_loss_reports.columns.start'),
+    value: 'startTs'
+  },
+  {
+    text: tc('profit_loss_reports.columns.end'),
+    value: 'endTs'
+  },
+  {
+    text: tc('profit_loss_reports.columns.taxfree_profit_loss'),
+    value: 'free',
+    align: 'end'
+  },
+  {
+    text: tc('profit_loss_reports.columns.taxable_profit_loss'),
+    value: 'taxable',
+    align: 'end'
+  },
+  {
+    text: tc('profit_loss_reports.columns.size'),
+    value: 'sizeOnDisk',
+    align: 'end'
+  },
+  {
+    text: tc('profit_loss_reports.columns.created'),
+    value: 'timestamp',
+    align: 'end'
+  },
+  {
+    text: tc('profit_loss_reports.columns.actions'),
+    value: 'actions',
+    align: 'end',
+    width: 140,
+    sortable: false
+  },
+  { text: '', value: 'expand', align: 'end', sortable: false }
+]);
+
+onBeforeMount(async () => await fetchReports());
+
+const showUpgradeMessage = computed(
+  () =>
+    get(reports).entriesLimit > 0 &&
+    get(reports).entriesLimit < get(reports).entriesFound
+);
+
+const getReportUrl = (identifier: number) => {
+  const url = Routes.PROFIT_LOSS_REPORT;
+  return url.replace(':id', identifier.toString());
+};
+
+const latestReport = (reportId: number) => get(isLatestReport(reportId));
+
+const expand = (item: Report) => {
+  set(expanded, get(expanded).includes(item) ? [] : [item]);
+};
+</script>
+
 <template>
   <card outlined-body>
     <template #title>
@@ -96,95 +188,3 @@
     </data-table>
   </card>
 </template>
-
-<script setup lang="ts">
-import { type ComputedRef, type Ref } from 'vue';
-import { type DataTableHeader } from 'vuetify';
-import DateDisplay from '@/components/display/DateDisplay.vue';
-import DataTable from '@/components/helper/DataTable.vue';
-import RowExpander from '@/components/helper/RowExpander.vue';
-import UpgradeRow from '@/components/history/UpgradeRow.vue';
-import ExportReportCsv from '@/components/profitloss/ExportReportCsv.vue';
-import ProfitLossOverview from '@/components/profitloss/ProfitLossOverview.vue';
-import { Routes } from '@/router/routes';
-import { useReports } from '@/store/reports';
-import { type Report } from '@/types/reports';
-import { size } from '@/utils/data';
-import { calculateTotalProfitLoss } from '@/utils/report';
-
-const expanded: Ref<Report[]> = ref([]);
-const reportStore = useReports();
-const { fetchReports, deleteReport, isLatestReport } = reportStore;
-const { reports } = storeToRefs(reportStore);
-const { tc } = useI18n();
-
-const items = computed(() =>
-  get(reports).entries.map((value, index) => ({
-    ...value,
-    id: index
-  }))
-);
-
-const limits = computed(() => ({
-  total: get(reports).entriesFound,
-  limit: get(reports).entriesLimit
-}));
-
-const tableHeaders: ComputedRef<DataTableHeader[]> = computed(() => [
-  {
-    text: tc('profit_loss_reports.columns.start'),
-    value: 'startTs'
-  },
-  {
-    text: tc('profit_loss_reports.columns.end'),
-    value: 'endTs'
-  },
-  {
-    text: tc('profit_loss_reports.columns.taxfree_profit_loss'),
-    value: 'free',
-    align: 'end'
-  },
-  {
-    text: tc('profit_loss_reports.columns.taxable_profit_loss'),
-    value: 'taxable',
-    align: 'end'
-  },
-  {
-    text: tc('profit_loss_reports.columns.size'),
-    value: 'sizeOnDisk',
-    align: 'end'
-  },
-  {
-    text: tc('profit_loss_reports.columns.created'),
-    value: 'timestamp',
-    align: 'end'
-  },
-  {
-    text: tc('profit_loss_reports.columns.actions'),
-    value: 'actions',
-    align: 'end',
-    width: 140,
-    sortable: false
-  },
-  { text: '', value: 'expand', align: 'end', sortable: false }
-]);
-
-onBeforeMount(async () => await fetchReports());
-
-const showUpgradeMessage = computed(
-  () =>
-    get(reports).entriesLimit > 0 &&
-    get(reports).entriesLimit < get(reports).entriesFound
-);
-
-const getReportUrl = (identifier: number) => {
-  const url = Routes.PROFIT_LOSS_REPORT;
-  return url.replace(':id', identifier.toString());
-};
-
-const latestReport = (reportId: number) => get(isLatestReport(reportId));
-
-const expand = (item: Report) => {
-  set(expanded, get(expanded).includes(item) ? [] : [item]);
-};
-</script>
