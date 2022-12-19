@@ -12,6 +12,7 @@ from typing import (
     Optional,
     TypeVar,
     cast,
+    get_args,
     overload,
 )
 
@@ -1292,3 +1293,35 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         """Returns blockchain manager"""
         attr = blockchain.name.lower()
         return getattr(self, attr)
+
+    def add_accounts_to_all_evm(
+            self,
+            accounts: list[ChecksumEvmAddress],
+    ) -> list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]]:
+        """Adds each account for all evm addresses
+
+        Counting ethereum mainnet as the main chain we check if the account is a contract
+        in mainnet. If not we add it for all other chains.
+        If it's already added in a chain we just ignore that chain.
+
+        Returns a list of tuples of the address and the chain it was added in
+        """
+        added_accounts = []
+        for account in accounts:
+            if self.ethereum.node_inquirer.get_code(account) != '0x':
+                log.debug(f'Not adding {account} to all evm chains as it is a mainnet contract')
+                continue
+
+            for chain in get_args(SUPPORTED_EVM_CHAINS):
+                try:
+                    self.modify_blockchain_accounts(
+                        blockchain=chain,
+                        accounts=[account],
+                        append_or_remove='append',
+                    )
+                except InputError:
+                    log.debug(f'Not adding {account} to {chain} since it already exists')
+                    continue
+                added_accounts.append((chain, account))
+
+        return added_accounts

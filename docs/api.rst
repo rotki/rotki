@@ -5836,7 +5836,7 @@ Getting blockchain account data
 .. http:get:: /api/(version)/blockchains/(name)/accounts
 
    .. note::
-      Supported blockchains: ``"BTC", "BCH", "ETH", "KSM", "DOT", "AVAX"``
+      Supported blockchains: ``"BTC", "BCH", "ETH", "KSM", "DOT", "AVAX", "OPTIMISM"``
 
    Doing a GET on the blockchains endpoint with a specific blockchain queries account data information for that blockchain.
 
@@ -9089,13 +9089,67 @@ Remove an address to query per protocol
    :statuscode 409: No user is logged in. The address is not in the addresses to query for that protocol.
    :statuscode 500: Internal rotki error
 
+
+Adding EVM accounts to all EVM chains
+=======================================
+
+.. http:put:: /api/(version)/blockchains/evm/accounts
+
+   Doing a PUT on the EVM accounts endpoint functions just like the add blockchain accounts endpoint but adds the addresses for all evm chains.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/blockchains/evm/accounts HTTP/1.1
+      Host: localhost:5042
+
+      {
+          "accounts": [{
+                  "address": "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B",
+                  "label": "my new metamask",
+                  "tags": ["public", "metamask"]
+              }, {
+                  "address": "0x19b0AD50E768D2376C6BA7de32F426ecE4e03e0b"
+              }]
+      }
+
+      For request details check `here <blockchain_account_addition_section_>`__
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": {
+            "ETH": [
+                "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B",
+                "0x19b0AD50E768D2376C6BA7de32F426ecE4e03e0b"
+            ],
+            "AVAX": ["0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B"],
+            "OPTIMISM": ["0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B"]
+        },
+        "message": ""
+      }
+
+   :resjson list result: A mapping containing the evm chain keys and which addresses were added for each chain.
+   :statuscode 200: Accounts successfully added
+   :statuscode 400: Provided JSON or data is in some way malformed. The accounts to add contained invalid addresses or were an empty list.
+   :statuscode 409: User is not logged in. Provided tags do not exist. Check message for details.
+   :statuscode 500: Internal rotki error
+   :statuscode 502: Remote error occured when attempted to connect to an Avalanche or Polkadot node and only if it's the first account added. Check message for details.
+
 Adding blockchain accounts
 ===========================
 
 .. http:put:: /api/(version)/blockchains/(name)/accounts
 
    .. note::
-      Supported blockchains: ``"BTC", "BCH", "ETH", "KSM", "DOT", "AVAX"``
+      Supported blockchains: ``"BTC", "BCH", "ETH", "KSM", "DOT", "AVAX", "OPTIMISM"``
 
       Supported blockchains with ENS domains: ``"BTC", "BCH", "ETH", "KSM", "DOT"``
 
@@ -9104,6 +9158,7 @@ Adding blockchain accounts
    Doing a PUT on the blockchains endpoint with a specific blockchain URL and a list of account data in the json data will add these accounts to the tracked accounts for the given blockchain and the current user. A list of accounts' addresses that were added during a request is returned. This data is returned so that if you add an ens name, you get its name's resolved address for the further usage.
    If one of the given accounts to add is invalid the entire request will fail.
 
+.. _blockchain_account_addition_section:
 
    **Example Request**:
 
@@ -9111,7 +9166,6 @@ Adding blockchain accounts
 
       PUT /api/1/blockchains/ETH/accounts HTTP/1.1
       Host: localhost:5042
-      Content-Type: application/json;charset=UTF-8
 
       {
           "accounts": [{
@@ -9444,10 +9498,10 @@ Deleting BTC/BCH xpubs
 Editing blockchain account data
 =================================
 
-.. http:patch:: /api/(version)/blockchains/(name)/
+.. http:patch:: /api/(version)/blockchains/(name)/accounts
 
    .. note::
-      Supported blockchains: ``"BTC", "BCH", "ETH", "KSM", "DOT", "AVAX"``
+      Supported blockchains: ``"BTC", "BCH", "ETH", "KSM", "DOT", "AVAX", "OPTIMISM"``
 
       Supported blockchains with ENS domains: ``"BTC", "BCH", "ETH", "KSM", "DOT"``
 
@@ -9518,7 +9572,7 @@ Removing blockchain accounts
 .. http:delete:: /api/(version)/blockchains/(name)/accounts
 
    .. note::
-      Supported blockchains: ``"BTC", "BCH", "ETH", "KSM", "DOT", "AVAX"``
+      Supported blockchains: ``"BTC", "BCH", "ETH", "KSM", "DOT", "AVAX", "OPTIMISM"``
 
       Supported blockchains with ENS domains: ``"BTC", "BCH", "ETH", "KSM", "DOT"``
 
