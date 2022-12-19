@@ -24,12 +24,11 @@ POLKADOT_NODES_TO_CONNECT_AT_START = (
 SUBSTRATE_NODE_CONNECTION_TIMEOUT = 10
 
 
-def is_valid_kusama_address(value: str) -> bool:
-    return is_valid_ss58_address(value=value, valid_ss58_format=2)
-
-
-def is_valid_polkadot_address(value: str) -> bool:
-    return is_valid_ss58_address(value=value, valid_ss58_format=0)
+def is_valid_substrate_address(chain: SUPPORTED_SUBSTRATE_CHAINS, value: str) -> bool:
+    return is_valid_ss58_address(
+        value=value,
+        valid_ss58_format=2 if chain == SupportedBlockchain.KUSAMA else 0,
+    )
 
 
 def get_substrate_address_from_public_key(

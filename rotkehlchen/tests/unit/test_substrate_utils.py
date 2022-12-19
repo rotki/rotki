@@ -2,7 +2,7 @@ import pytest
 
 from rotkehlchen.chain.substrate.utils import (
     get_substrate_address_from_public_key,
-    is_valid_kusama_address,
+    is_valid_substrate_address,
 )
 from rotkehlchen.tests.utils.substrate import (
     SUBSTRATE_ACC1_DOT_ADDR,
@@ -23,8 +23,8 @@ from rotkehlchen.types import SupportedBlockchain
     (SUBSTRATE_ACC1_DOT_ADDR, False),
     (SUBSTRATE_ACC2_DOT_ADDR, False),
 ])
-def test_is_valid_kusama_address(value, is_valid):
-    result = is_valid_kusama_address(value)
+def test_is_valid_substrate_address(value, is_valid):
+    result = is_valid_substrate_address(SupportedBlockchain.KUSAMA, value)
     assert result is is_valid
 
 
