@@ -554,11 +554,16 @@ class Rotkehlchen():
             added_accounts = self.chains_aggregator.add_accounts_to_all_evm(
                 accounts=[ChecksumEvmAddress(entry.address) for entry in account_data],  # type: ignore[arg-type]  # noqa: E501 # we know it's evm address
             )
-            for added_account in added_accounts:
+            for chain, address in added_accounts:
+                account_data_entry = account_data_map[address]
+                if chain != SupportedBlockchain.ETHEREUM:
+                    # for now add tags only to mainnet address
+                    # TODO: Need to make this generic so that tag mapping is blockchain+address
+                    account_data_entry = account_data_entry._replace(tags=None)
                 self.data.db.add_blockchain_accounts(
                     cursor,
-                    blockchain=added_account[0],
-                    account_data=[account_data_map[added_account[1]]],
+                    blockchain=chain,
+                    account_data=[account_data_entry],
                 )
 
         return added_accounts

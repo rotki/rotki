@@ -1301,18 +1301,21 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         """Adds each account for all evm addresses
 
         Counting ethereum mainnet as the main chain we check if the account is a contract
-        in mainnet. If not we add it for all other chains.
+        in mainnet. If not we add it for all other chains. If yes we just keep mainnet.
         If it's already added in a chain we just ignore that chain.
 
         Returns a list of tuples of the address and the chain it was added in
         """
         added_accounts = []
         for account in accounts:
+            chains: list[SUPPORTED_EVM_CHAINS]
             if self.ethereum.node_inquirer.get_code(account) != '0x':
                 log.debug(f'Not adding {account} to all evm chains as it is a mainnet contract')
-                continue
+                chains = [SupportedBlockchain.ETHEREUM]
+            else:  # weird that mypy does not regognize the get_args here properly
+                chains = get_args(SUPPORTED_EVM_CHAINS)  # type: ignore[assignment]
 
-            for chain in get_args(SUPPORTED_EVM_CHAINS):
+            for chain in chains:
                 try:
                     self.modify_blockchain_accounts(
                         blockchain=chain,

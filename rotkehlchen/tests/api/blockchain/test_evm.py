@@ -188,3 +188,84 @@ def test_adding_editing_ens_account_works(rotkehlchen_api_server):
         status_code=HTTPStatus.BAD_REQUEST,
         contained_in_msg='Given ENS address ishouldnotexistforrealz.eth could not be resolved',
     )
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_add_multievm_accounts(rotkehlchen_api_server):
+    """Test that adding accounts to multiple evm chains works fine
+
+    TODO: Needs mocking with the data at the time of test writing
+    """
+    common_account = '0x9531C059098e3d194fF87FebB587aB07B30B1306'
+    contract_account = '0x9008D19f58AAbD9eD0D60971565AA8510560ab41'
+
+    # Add a tag
+    tag1 = {
+        'name': 'metamask',
+        'description': 'Metamask stuff',
+        'background_color': 'ffffff',
+        'foreground_color': '000000',
+    }
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'tagsresource',
+        ), json=tag1,
+    )
+    assert_proper_response(response)
+    # add two addresses for all evm chains, one with tag
+    label = 'rotki account'
+    request_data = {
+        'accounts': [{
+            'address': common_account,
+            'label': label,
+            'tags': ['metamask'],
+        }, {
+            'address': contract_account,
+        }]}
+    response = requests.put(api_url_for(
+        rotkehlchen_api_server,
+        'evmaccountsresource',
+    ), json=request_data)
+    result = assert_proper_response_with_result(response)
+    assert result == {
+        'ETH': [common_account, contract_account],
+        'AVAX': [common_account],
+        'OPTIMISM': [common_account],
+    }
+
+    # Now get accounts to make sure they are all input correctly
+    # TODO: As per the note in tags we may need to change this when tags
+    # go per address/chain. We need to achieve a functionality where a
+    # tag can either go to all accounts or a single chain/account. Right now
+    # it only maps to an address so it mirrors to all.
+    # Also perhaps we should have an all blockchains
+    # version of this endpoint
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        'blockchainsaccountsresource',
+        blockchain='ETH',
+    ))
+    result = assert_proper_response_with_result(response)
+    assert result == [
+        {'address': contract_account, 'label': None, 'tags': None},
+        {'address': common_account, 'label': label, 'tags': ['metamask']},
+    ]
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        'blockchainsaccountsresource',
+        blockchain='AVAX',
+    ))
+    result = assert_proper_response_with_result(response)
+    assert result == [
+        {'address': common_account, 'label': label, 'tags': ['metamask']},
+    ]
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        'blockchainsaccountsresource',
+        blockchain='OPTIMISM',
+    ))
+    result = assert_proper_response_with_result(response)
+    assert result == [
+        {'address': common_account, 'label': label, 'tags': ['metamask']},
+    ]

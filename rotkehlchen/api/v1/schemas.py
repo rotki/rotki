@@ -1547,6 +1547,7 @@ class EvmAccountsPutSchema(AsyncQueryArgumentSchema):
             **_kwargs: Any,
     ) -> Any:
         _transform_evm_addresses(data=data, ethereum_inquirer=self.ethereum_inquirer)
+        return data
 
 
 class BlockchainAccountsPatchSchema(Schema):
