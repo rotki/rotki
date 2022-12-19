@@ -10,8 +10,9 @@ import {
   validWithParamsSessionAndExternalService,
   validWithSessionAndExternalService
 } from '@/services/utils';
-import { EthDetectedTokensRecord } from '@/services/balances/types';
+import { EvmTokensRecord } from '@/services/balances/types';
 import { type Module } from '@/types/modules';
+import { type TokenChains } from '@/types/blockchain/chains';
 
 export const useBlockchainBalanceApi = () => {
   const queryLoopringBalances = async (): Promise<PendingTask> => {
@@ -44,11 +45,12 @@ export const useBlockchainBalanceApi = () => {
   };
 
   const internalDetectedTokens = async <T>(
+    chain: TokenChains,
     addresses: string[] | null,
     asyncQuery: boolean
   ): Promise<T> => {
     const response = await api.instance.post<ActionResult<T>>(
-      '/blockchains/ETH/tokens/detect',
+      `/blockchains/${chain}/tokens/detect`,
       axiosSnakeCaseTransformer({
         asyncQuery,
         onlyCache: !asyncQuery,
@@ -63,20 +65,23 @@ export const useBlockchainBalanceApi = () => {
   };
 
   const fetchDetectedTokensTask = async (
+    chain: TokenChains,
     addresses: string[]
   ): Promise<PendingTask> => {
-    return internalDetectedTokens<PendingTask>(addresses, true);
+    return internalDetectedTokens<PendingTask>(chain, addresses, true);
   };
 
   const fetchDetectedTokens = async (
+    chain: TokenChains,
     addresses: string[] | null
-  ): Promise<EthDetectedTokensRecord> => {
-    const response = await internalDetectedTokens<EthDetectedTokensRecord>(
+  ): Promise<EvmTokensRecord> => {
+    const response = await internalDetectedTokens<EvmTokensRecord>(
+      chain,
       addresses,
       false
     );
 
-    return EthDetectedTokensRecord.parse(response);
+    return EvmTokensRecord.parse(response);
   };
 
   const deleteModuleData = async (

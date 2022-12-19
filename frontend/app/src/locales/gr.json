@@ -1116,7 +1116,8 @@
     "dot": "Polkadot",
     "eth": "Ethereum",
     "eth2": "Eth2",
-    "ksm": "Kusama"
+    "ksm": "Kusama",
+    "optimism": "Optimism"
   },
   "borrowing": {
     "header": "Collateralized Loans",

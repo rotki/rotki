@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { type PropType } from 'vue';
+import { type Blockchain } from '@rotki/common/lib/blockchain';
+
 const props = defineProps({
   address: {
     required: true,
@@ -7,13 +10,17 @@ const props = defineProps({
   loading: {
     required: true,
     type: Boolean
+  },
+  blockchain: {
+    required: true,
+    type: String as PropType<Blockchain>
   }
 });
 
-const { address } = toRefs(props);
+const { address, blockchain } = toRefs(props);
 
 const { detectingTokens, detectedTokens, detectTokensAndQueryBalances } =
-  useTokenDetection(address);
+  useTokenDetection(blockchain, address);
 const { tc } = useI18n();
 </script>
 

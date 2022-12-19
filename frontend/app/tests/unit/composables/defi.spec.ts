@@ -1,6 +1,3 @@
-import { get } from '@vueuse/core';
-import { createPinia, setActivePinia } from 'pinia';
-import { useLiquidityPosition } from '@/composables/defi';
 import { bigNumberify } from '@/utils/bignumbers';
 import { setBalancerBalances } from '../store/defi/balancer.spec';
 import { setSushiswapBalances } from '../store/defi/sushiswap.spec';

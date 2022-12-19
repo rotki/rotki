@@ -18,6 +18,7 @@ import { useConfirmStore } from '@/store/confirm';
 import { useTasks } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 import { startPromise } from '@/utils';
+import { isTokenChain } from '@/types/blockchain/chains';
 
 const props = defineProps({
   balances: { required: true, type: Array as PropType<AccountWithBalance[]> },
@@ -39,7 +40,7 @@ const balanceTable = ref<any>(null);
 
 const { isTaskRunning } = useTasks();
 const { refreshBlockchainBalances } = useRefresh(blockchain);
-const { detectingTokens } = useTokenDetection();
+const { detectingTokens } = useTokenDetection(blockchain);
 const { show } = useConfirmStore();
 
 const redetectAllTokens = () => {
@@ -52,9 +53,9 @@ const isEth2 = computed<boolean>(() => {
   return get(blockchain) === Blockchain.ETH2;
 });
 
-const isEth = computed<boolean>(() => {
-  return get(blockchain) === Blockchain.ETH;
-});
+const hasTokenDetection = computed<boolean>(() =>
+  isTokenChain(get(blockchain))
+);
 
 const isQueryingBlockchain = isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
 
@@ -172,7 +173,7 @@ const showConfirmation = (payload: XpubPayload | string[]) => {
             </template>
             <span>{{ tc('account_balances.delete_tooltip') }}</span>
           </v-tooltip>
-          <v-tooltip v-if="isEth" top>
+          <v-tooltip v-if="hasTokenDetection" top>
             <template #activator="{ on }">
               <v-btn
                 class="ml-2"

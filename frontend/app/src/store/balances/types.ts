@@ -57,7 +57,9 @@ export interface FetchPricePayload {
   readonly selectedAssets: string[];
 }
 
-export interface AccountWithBalance extends GeneralAccount, HasBalance {}
+export interface AccountWithBalance extends GeneralAccount, HasBalance {
+  nativeAsset?: string;
+}
 
 interface XpubAccount extends GeneralAccount, XpubPayload {}
 

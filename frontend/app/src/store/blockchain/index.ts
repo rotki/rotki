@@ -19,6 +19,7 @@ import { useTasks } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 import { startPromise } from '@/utils';
 import { logger } from '@/utils/logging';
+import { isTokenChain } from '@/types/blockchain/chains';
 
 export const useBlockchainStore = defineStore('blockchain', () => {
   const { addAccount, fetch } = useBlockchainAccountsStore();
@@ -163,28 +164,29 @@ export const useBlockchainStore = defineStore('blockchain', () => {
     }
 
     if (registeredAddresses.length > 0) {
-      try {
-        await fetchAccounts(blockchain);
+      const refresh = async () => {
         if (blockchain === Blockchain.ETH && modules) {
-          startPromise(
-            enableModule({
-              enable: modules,
-              addresses: registeredAddresses
-            })
-          );
+          await enableModule({
+            enable: modules,
+            addresses: registeredAddresses
+          });
         }
         resetDefi();
         resetDefiStatus();
-        startPromise(
-          (async () => {
-            if (blockchain === Blockchain.ETH) {
-              await fetchDetected(registeredAddresses);
-            }
-            await refreshAccounts(blockchain);
-          })()
-        );
-
-        startPromise(fetchNonFungibleBalances(true));
+        const detectAndRefresh = async () => {
+          if (isTokenChain(blockchain)) {
+            await fetchDetected(blockchain, registeredAddresses);
+          }
+          await refreshAccounts(blockchain);
+        };
+        await Promise.allSettled([
+          detectAndRefresh(),
+          fetchNonFungibleBalances(true)
+        ]);
+      };
+      try {
+        await fetchAccounts(blockchain);
+        startPromise(refresh());
       } catch (e: any) {
         logger.error(e);
         const description = tc(

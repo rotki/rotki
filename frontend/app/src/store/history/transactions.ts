@@ -1,6 +1,5 @@
 import isEqual from 'lodash/isEqual';
 import { type Ref } from 'vue';
-import { useStatusUpdater } from '@/composables/status';
 import { useHistoryApi } from '@/services/history';
 import { useTransactionsApi } from '@/services/history/transactions';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';

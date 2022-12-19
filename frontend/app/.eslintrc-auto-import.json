@@ -122,6 +122,7 @@
     "unref": true,
     "unrefElement": true,
     "until": true,
+    "useAccountDetails": true,
     "useAccountManagement": true,
     "useActiveElement": true,
     "useAnimation": true,

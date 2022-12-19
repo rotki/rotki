@@ -81,7 +81,7 @@ const toggleSync = async (exchange: Exchange) => {
     nonSyncingExchanges: data
   });
 
-  if ('message' in status) {
+  if (!status.success) {
     const { notify } = useNotificationsStore();
     notify({
       title: tc('exchange_settings.sync.messages.title'),

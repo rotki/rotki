@@ -31,6 +31,7 @@ const name = computed<string>(() => {
       [Blockchain.ETH2]: t('blockchains.eth2').toString(),
       [Blockchain.BTC]: t('blockchains.btc').toString(),
       [Blockchain.BCH]: t('blockchains.bch').toString(),
+      [Blockchain.OPTIMISM]: t('blockchains.optimism').toString(),
       [Blockchain.KSM]: t('blockchains.ksm').toString(),
       [Blockchain.DOT]: t('blockchains.dot').toString(),
       [Blockchain.AVAX]: t('blockchains.avax').toString()

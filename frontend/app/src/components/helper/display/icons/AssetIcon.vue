@@ -87,6 +87,8 @@ const url = computed<string>(() => {
   const id = get(identifier);
   if (get(symbol) === 'WETH') {
     return `./assets/images/defi/weth.svg`;
+  } else if (id === Blockchain.OPTIMISM) {
+    return `./assets/images/chains/optimism.svg`;
   }
   const currentTimestamp = get(timestamp) || Date.now();
 

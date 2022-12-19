@@ -45,7 +45,8 @@ const ExplorersSettings = z.object({
   [Blockchain.BCH]: ExplorerEndpoints.optional(),
   [Blockchain.KSM]: ExplorerEndpoints.optional(),
   [Blockchain.DOT]: ExplorerEndpoints.optional(),
-  [Blockchain.AVAX]: ExplorerEndpoints.optional()
+  [Blockchain.AVAX]: ExplorerEndpoints.optional(),
+  [Blockchain.OPTIMISM]: ExplorerEndpoints.optional()
 });
 
 export type ExplorersSettings = z.infer<typeof ExplorersSettings>;

@@ -1,29 +1,30 @@
 <script setup lang="ts">
-import { type AssetBalance } from '@rotki/common';
 import { type PropType } from 'vue';
+import { type Blockchain } from '@rotki/common/lib/blockchain';
 import AccountAssetBalances from '@/components/accounts/balances/AccountAssetBalances.vue';
 
-defineProps({
+const props = defineProps({
+  blockchain: {
+    required: true,
+    type: String as PropType<Blockchain>
+  },
+  address: {
+    required: true,
+    type: String
+  },
   loopring: {
     required: false,
     type: Boolean,
     default: false
-  },
-  assets: {
-    required: true,
-    type: Array as PropType<AssetBalance[]>
-  },
-  liabilities: {
-    required: true,
-    type: Array as PropType<AssetBalance[]>
-  },
-  loopringBalances: {
-    required: true,
-    type: Array as PropType<AssetBalance[]>
   }
 });
 
 const { tc } = useI18n();
+const { blockchain, address } = toRefs(props);
+const { liabilities, assets, loopringBalances } = useAccountDetails(
+  blockchain,
+  address
+);
 </script>
 
 <template>

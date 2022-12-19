@@ -1106,7 +1106,8 @@
       "eth": "Ethereum balances",
       "eth2": "Eth2 balances",
       "ksm": "Kusama balances",
-      "loopring": "Loopring balances"
+      "loopring": "Loopring balances",
+      "optimism": "Optimism"
     },
     "form_dialog": {
       "add_title": "Add blockchain account",
@@ -1131,7 +1132,8 @@
     "dot": "Polkadot",
     "eth": "Ethereum",
     "eth2": "Eth2",
-    "ksm": "Kusama"
+    "ksm": "Kusama",
+    "optimism": "Optimism"
   },
   "borrowing": {
     "header": "Collateralized Loans",

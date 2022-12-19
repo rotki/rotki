@@ -3,7 +3,7 @@ import { type Balance } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import isEqual from 'lodash/isEqual';
 import sortBy from 'lodash/sortBy';
-import { type PropType, useListeners } from 'vue';
+import { type ComputedRef, type PropType, useListeners } from 'vue';
 import { type DataTableHeader } from 'vuetify';
 import AccountGroupHeader from '@/components/accounts/AccountGroupHeader.vue';
 import AccountBalanceDetails from '@/components/accounts/balances/AccountBalanceDetails.vue';
@@ -20,7 +20,6 @@ import {
   type XpubAccountWithBalance,
   type XpubPayload
 } from '@/store/balances/types';
-import { useEthBalancesStore } from '@/store/blockchain/balances/eth';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTasks } from '@/store/tasks';
 import { type Properties } from '@/types';
@@ -29,6 +28,7 @@ import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { assert } from '@/utils/assertions';
 import { Zero, zeroBalance } from '@/utils/bignumbers';
+import { isTokenChain } from '@/types/blockchain/chains';
 
 const props = defineProps({
   balances: {
@@ -56,17 +56,12 @@ const { isTaskRunning } = useTasks();
 const { currencySymbol, treatEth2AsEth } = storeToRefs(
   useGeneralSettingsStore()
 );
-const {
-  accountHasDetails,
-  accountAssets,
-  accountLiabilities,
-  getLoopringBalances
-} = useEthBalancesStore();
+const { hasDetails, getLoopringBalances } = useAccountDetails(blockchain);
 const {
   getEthDetectedTokensInfo,
   detectingTokens,
   detectTokensAndQueryBalances
-} = useTokenDetection();
+} = useTokenDetection(blockchain);
 
 const { tc } = useI18n();
 
@@ -110,6 +105,10 @@ const isEth = computed<boolean>(() => get(blockchain) === Blockchain.ETH);
 const isEth2 = computed<boolean>(() => get(blockchain) === Blockchain.ETH2);
 const isBtcNetwork = computed<boolean>(() =>
   [Blockchain.BTC, Blockchain.BCH].includes(get(blockchain))
+);
+
+const hasTokenDetection: ComputedRef<boolean> = computed(() =>
+  isTokenChain(get(blockchain))
 );
 
 const withL2 = (
@@ -187,9 +186,10 @@ const nonExpandedBalances = computed<BlockchainAccountWithBalance[]>(() => {
 const visibleBalances = computed<BlockchainAccountWithBalance[]>(() => {
   const balances = get(nonExpandedBalances).map(item => {
     if (!get(isEth) || get(loopring)) return item;
+    const detected = get(getEthDetectedTokensInfo(blockchain, item.address));
     return {
       ...item,
-      numOfDetectedTokens: get(getEthDetectedTokensInfo(item.address)).total
+      numOfDetectedTokens: detected.total
     };
   });
   const selectedTags = get(visibleTags);
@@ -313,6 +313,17 @@ const groupBy = (
   }));
 };
 
+const asset: ComputedRef<string> = computed(() => {
+  const chain = get(blockchain);
+  if (chain === Blockchain.ETH2 && get(treatEth2AsEth)) {
+    return 'ETH';
+  } else if (chain === Blockchain.OPTIMISM) {
+    return 'OP';
+  }
+
+  return chain;
+});
+
 const tableHeaders = computed<DataTableHeader[]>(() => {
   const currency = { symbol: get(currencySymbol) };
 
@@ -328,7 +339,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
     { text: '', value: 'accountSelection', width: '34px', sortable: false },
     { text: accountHeader, value: 'label' },
     {
-      text: get(isEth2) && get(treatEth2AsEth) ? 'ETH' : get(blockchain),
+      text: get(asset),
       value: 'balance.amount',
       align: 'end'
     },
@@ -348,7 +359,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
     });
   }
 
-  if (get(isEth) && !get(loopring)) {
+  if (get(hasTokenDetection) && !get(loopring)) {
     headers.push({
       text: tc('account_balances.headers.num_of_detected_tokens'),
       value: 'numOfDetectedTokens',
@@ -395,16 +406,6 @@ const accountOperation = computed<boolean>(() => {
     get(isTaskRunning(TaskType.REMOVE_ACCOUNT))
   );
 });
-
-const assets = (address: string) => {
-  return get(accountAssets(address));
-};
-
-const liabilities = (address: string) => {
-  return get(accountLiabilities(address));
-};
-
-const loopringBalances = (address: string) => get(getLoopringBalances(address));
 
 const removeCollapsed = ({ derivationPath, xpub }: XpubPayload) => {
   const index = get(collapsedXpubs).findIndex(
@@ -485,8 +486,15 @@ defineExpose({
       <template v-if="isEth2" #item.ownershipPercentage="{ item }">
         <percentage-display :value="item.ownershipPercentage" />
       </template>
-      <template v-if="isEth && !loopring" #item.numOfDetectedTokens="{ item }">
-        <token-detection :address="item.address" :loading="loading" />
+      <template
+        v-if="hasTokenDetection && !loopring"
+        #item.numOfDetectedTokens="{ item }"
+      >
+        <token-detection
+          :address="item.address"
+          :loading="loading"
+          :blockchain="blockchain"
+        />
       </template>
       <template v-if="!loopring" #item.actions="{ item }">
         <row-actions
@@ -526,16 +534,15 @@ defineExpose({
       <template #expanded-item="{ headers, item }">
         <table-expand-container visible :colspan="headers.length">
           <account-balance-details
+            :blockchain="blockchain"
             :loopring="loopring"
-            :assets="assets(item.address)"
-            :liabilities="liabilities(item.address)"
-            :loopring-balances="loopringBalances(item.address)"
+            :address="item.address"
           />
         </table-expand-container>
       </template>
       <template #item.expand="{ item }">
         <row-expander
-          v-if="isEth && (accountHasDetails(item.address) || loopring)"
+          v-if="hasTokenDetection && (hasDetails(item.address) || loopring)"
           :expanded="expanded.includes(item)"
           @click="expanded = expanded.includes(item) ? [] : [item]"
         />

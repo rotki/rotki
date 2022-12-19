@@ -160,11 +160,6 @@ export const useEthAccountsStore = defineStore(
             entries: remainingValidators
           };
           set(eth2Validators, data);
-          // const balances = { ...get(eth2BalancesState) };
-          // for (const validator of validators) {
-          //   delete balances[validator];
-          // }
-          // set(eth2BalancesState, balances);
         }
         return success;
       } catch (e: any) {
