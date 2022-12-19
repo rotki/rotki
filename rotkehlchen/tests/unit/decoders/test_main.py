@@ -144,7 +144,7 @@ def test_no_logs_and_zero_eth(
 def test_simple_erc20_transfer(
         database,
         ethereum_accounts,
-        evm_transaction_decoder,
+        ethereum_transaction_decoder,
 ):
     """
     Data taken from
@@ -156,6 +156,7 @@ def test_simple_erc20_transfer(
     tether_address = string_to_evm_address('0xdAC17F958D2ee523a2206206994597C13D831ec7')
     transaction = EvmTransaction(
         tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
         timestamp=0,
         block_number=0,
         from_address=from_address,
@@ -190,7 +191,7 @@ def test_simple_erc20_transfer(
     dbevmtx = DBEvmTx(database)
     with database.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
-        events = evm_transaction_decoder.decode_transaction(
+        events = ethereum_transaction_decoder.decode_transaction(
             write_cursor=cursor,
             transaction=transaction,
             tx_receipt=receipt,
