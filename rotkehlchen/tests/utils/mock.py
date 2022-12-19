@@ -1,6 +1,7 @@
 import json
 import re
 from collections import namedtuple
+from pathlib import Path
 from typing import Any, Optional
 from unittest.mock import patch
 
@@ -160,4 +161,58 @@ def patch_etherscan_request(etherscan, mock_data):
         etherscan.session,
         'get',
         wraps=mock_etherscan_query,
+    )
+
+
+BEACONCHAIN_ETH1_CALL_RE = re.compile('https://beaconcha.in/api/v1/validator/eth1/(.*)')
+BEACONCHAIN_OTHER_CALL_RE = re.compile('https://beaconcha.in/api/v1/validator/(.*)/(.*)')
+
+
+def patch_eth2_requests(eth2, mock_data):
+    """Patches all requests going to the passed Eth2 object"""
+
+    def mock_beaconchain_query(url, **kwargs):  # pylint: disable=unused-argument
+        response_data = {'data': [], 'status': 'OK'}
+        eth1_match = BEACONCHAIN_ETH1_CALL_RE.search(url)
+        if eth1_match is not None:
+            eth1_address = eth1_match.group(1)
+            eth1_data = mock_data.get('eth1')
+            if eth1_data is None:
+                raise AssertionError(f'No eth1 mock data for beaconchain call: {url}')
+            validator_data = eth1_data.get(eth1_address)
+            if validator_data is None:
+                raise AssertionError(f'No eth1 address in mock data for address: {eth1_address}')
+
+            response_validators = []
+            for entry in validator_data:
+                response_validators.append({
+                    'publickey': entry[0],
+                    'valid_signature': entry[1],
+                    'validatorindex': entry[2],
+                })
+            response_data['data'] = response_validators
+
+        elif (other_match := BEACONCHAIN_OTHER_CALL_RE.search(url)) is not None:
+            endpoint = other_match.group(2)
+            encoded_args = other_match.group(1)
+            if endpoint == 'deposits':
+                deposit_data = mock_data.get('deposits')
+                if deposit_data is None:
+                    raise AssertionError(f'No mock deposit data for beacon chain call: {url}')
+                # for now let's just compare length of arguments to choose mock response
+                arg_len = len(encoded_args.split(','))
+                file_result = deposit_data.get(arg_len)
+                if file_result is None:
+                    raise AssertionError(f'Deposit data for {arg_len} addresses not found in mock data')  # noqa: E501
+                fullpath = Path(__file__).resolve().parent.parent / 'data' / 'mocks' / 'test_eth2' / 'deposits' / file_result  # noqa: E501
+                with open(fullpath) as f:
+                    response_data = json.load(f)
+            else:
+                raise AssertionError(f'Unknown endpoint for beacon chain call: {url}')
+
+        return MockResponse(200, json.dumps(response_data, separators=(',', ':')))
+    return patch.object(
+        eth2.beaconchain.session,
+        'get',
+        wraps=mock_beaconchain_query,
     )

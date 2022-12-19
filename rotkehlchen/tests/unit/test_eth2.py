@@ -1,5 +1,7 @@
+import re
 from contextlib import ExitStack
 from datetime import datetime
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -21,6 +23,7 @@ from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.serialize import process_result_list
 from rotkehlchen.tests.utils.factories import make_evm_address
+from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Timestamp, deserialize_evm_tx_hash
 from rotkehlchen.utils.misc import ts_now
 
@@ -196,8 +199,58 @@ EXPECTED_DEPOSITS = [
 ]
 
 
+ADDR1_VALIDATOR_RESPONSE = [
+    ('0xb016e31f633a21fbe42a015152399361184f1e2c0803d89823c224994af74a561c4ad8cfc94b18781d589d03e952cd5b', True, 9),  # noqa: E501
+    ('0x95502842e458b73046a5d9cda10211814c63e859f4519a8ecb289c5ad3e1519663b614bb784c08e8b7373fdcf0bdc077', True, 480926),  # noqa: E501
+    ('0x915290d8b3674cbd061ad50ddae59f4674b03fe8b8b8d68bbb5570718de09dfc464608e0db91fcd0b80479aa68d37aa9', True, 481101),  # noqa: E501
+    ('0xaa9c8a2653f08b3045fdb63547bfe1ad2a66225f7402717bde9897cc163840ee190ed31c78819db372253332bba3c570', True, 482198),  # noqa: E501
+]
+
+
 @pytest.mark.freeze_time(datetime(2020, 11, 10, 21, 42, 57))
 @pytest.mark.parametrize('default_mock_price_value', [FVal(2)])
+@pytest.mark.parametrize('eth2_mock_data', [{
+    'eth1': {
+        '0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397': ADDR1_VALIDATOR_RESPONSE,
+        '0x00F8a0D8EE1c21151BCcB416bCa1C152f9952D19': [
+            ('0xa8ff5fc88412d080a297683c25a791ef77eb52d75b265fabab1f2c2591bb927c35818ac6289bc6680ab252787d0ebab3', True, 1646),  # noqa: E501
+            ('0xb80777b022a115579f22674883996d0a904e51afaf0ddef4e577c7bc72ec4e14fc7714b8c58fb77ceb7b5162809d1475', True, 1647),  # noqa: E501
+            ('0xa4918ed06ecb0434dfd33f24359a6b5a44fb4ff9349aa457e6b4f2719e144ec0d422c19186c0b5a5c69a03390f438578', True, 1650),  # noqa: E501
+            ('0xa10f75fd8c2259c0127693f47d98c7230a05c8898401a1dfdad079d090d47148fc0df08ed93283ea64e49430d4861c62', True, 1652),  # noqa: E501
+            ('0x845d0685badf5dd6584ca45e112349f9a5764bec838319154f3fa7589284d6b553a24d8fcddca5ecb1c8b5809d44d560', True, 1653),  # noqa: E501
+            ('0x8e9cbfc8c2cd9e1a296f5e66b7b4c7ba9cee3827622b7ff3711393e9b3db4ccc64c9134b3fee730ce61d924579a98575', True, 1756),  # noqa: E501
+            ('0xac3d4d453d58c6e6fd5186d8f231eb00ff5a753da3669c208157419055c7c562b7e317654d8c67783c656a956927209d', True, 1757),  # noqa: E501
+            ('0xa8283f7f5f41ff131e21681eac5c34cb0f2fbe70c420e7f5a052676c82a3cab6f82c288c39247765c562b21127f6009a', True, 1758),  # noqa: E501
+            ('0x930f9209433e6d49087799905a741d19d435c1f9d64ddeeb70235c50b591217f0dfb14626d5a04e1e260726c74e429c7', True, 1759),  # noqa: E501
+            ('0x8c4186ba72f9b0657bfd5f2428809fcab6247a52b4a15eaac9a553ea5bbf98a64c43c9e1793ba9bc296a93af1b02e28b', True, 1762),  # noqa: E501
+            ('0xad0ebf2d6ae9e9003d27d075a90f017d88c1a1d239ece43674e736f9106946adaf81ba774117cf6cf188bd8117a2deff', True, 1763),  # noqa: E501
+            ('0x8209a3cd141f3ccc9e60df64a76334c1306f857b471ef4ad50eca889f2e4f8e03ae24f5c48a07b53266d373c8929fc37', True, 1764),  # noqa: E501
+            ('0xb0e6c52bc96ea0574edfb9f1c5350a85d28113d418af6accc53c0bb14407be68ecc426a5208a882859068758643a2e8c', True, 1765),  # noqa: E501
+            ('0xa96f99e00213be6b0c9c7491589177e7406f811d7b687e14ed68bc51c713859fd44d35360b9c84cb4479f538b94b83d6', True, 1766),  # noqa: E501
+            ('0x8baf860d88a3c3bb2d5228680782242294b50378ded9988698b98c478f45e895047e6399a953e918bb47821e8debe031', True, 1767),  # noqa: E501
+        ],
+        '0x3266F3546a1e5Dc6A15588f3324741A0E20a3B6c': [
+            ('0x90b2f65cb43d9cdb2279af9f76010d667b9d8d72e908f2515497a7102820ce6bb15302fe2b8dc082fce9718569344ad8', True, 993),  # noqa: E501
+            ('0xb4610a24815f1874a12eba7ea9b77126ca16c0aa29a127ba14ba4ee179834f4feb0aa4497baaa50985ad748d15a286cf', True, 994),  # noqa: E501
+            ('0xa96352b921bcc4b1a90a7aeb68739b6a5508079a63158ca84786241da247142173f9b38d553de899c1778de4f83e6c6c', True, 995),  # noqa: E501
+            ('0x911cba78efe677a502a3995060e2389e2d16d03f989c87f1a0fdf82345a77dfd3b9476720825ea5f5a374bd386301b60', True, 996),  # noqa: E501
+            ('0x946ec21927a99d0c86cd63a0fd37cc378f869aae83098fac68d41e3fb58326ce2e9f81f1d116d14d1c0bd50cb61f0e35', True, 997),  # noqa: E501
+            ('0x89da8cb17b203eefacc8346e1ee718a305b622028dc77913d3b26f2034f92693d305a630f45c76b781ef68cd4640253e', True, 998),  # noqa: E501
+            ('0x930a90c7f0b00ce4c7d7994652f1e301753c084d5499de31abadb2e3913cba2eb4026de8d49ea35294db10119b83b2e1', True, 999),  # noqa: E501
+            ('0xb18e1737e1a1a76b8dff905ba7a4cb1ff5c526a4b7b0788188aade0488274c91e9c797e75f0f8452384ff53d44fad3df', True, 1000),  # noqa: E501
+            ('0x976c5c76f3cbc10d22ac50c27f816b82d91192f6b6177857a89a0349fcecaa8301469ab1d303e381e630c591456e0e54', True, 1040),  # noqa: E501
+            ('0x85a82370ef68f52209d3a07f5cca32b0bbe4d2d39574f39beab746d54e696831a02a95f3dcea25f1fba766bdb5048a09', True, 1041),  # noqa: E501
+            ('0xb347f7421cec107e1cdf3ae9b6308c577fc6c1c254fa44552be97db3eccdac667dc6d6e5409f8e546c9dcbcef47c83f3', True, 1042),  # noqa: E501
+            ('0x965f40c2a6f004d4457a89e7b49ea5d101367cd31c86836d6551ea504e55ee3e32aed8b2615ee1c13212db46fb411a7a', True, 1043),  # noqa: E501
+            ('0x90d4b57b88eb613737c1bb2e79f8ed8f2abd1c5e31cea9aa741f16cb777716d2fc1cabf9e15d3c15edf8091533916eb5', True, 1044),  # noqa: E501
+            ('0x92a5d445d10ce8d413c506a012ef92719ca230ab0fd4066e2968df8adb52bb112ee080a3267f282f09db94dc59a3ec77', True, 1045),  # noqa: E501
+            ('0xb44383a9ce75b90cc8248bdd46d02a2a309117bbfdbe9fd05743def6d483549072c3285ae4953f48b1d17c9787697764', True, 1046),  # noqa: E501
+        ],
+    },
+    'deposits': {
+        34: Path('test_get_eth2_staking_deposits.json'),
+    },
+}])
 def test_get_eth2_staking_deposits(  # pylint: disable=unused-argument
         price_historian,
         eth2,
@@ -227,6 +280,14 @@ def test_get_eth2_staking_deposits(  # pylint: disable=unused-argument
 
 
 @pytest.mark.parametrize('default_mock_price_value', [FVal(2)])
+@pytest.mark.parametrize('eth2_mock_data', [{
+    'eth1': {
+        '0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397': ADDR1_VALIDATOR_RESPONSE,
+    },
+    'deposits': {
+        4: Path('test_get_eth2_staking_deposits_fetch_from_db.json'),
+    },
+}])
 def test_get_eth2_staking_deposits_fetch_from_db(  # pylint: disable=unused-argument
         price_historian,
         freezer,
@@ -407,14 +468,41 @@ def test_get_validators_to_query_for_stats(database):
     assert db.get_validators_to_query_for_stats(1617512800 + DAY_IN_SECONDS * 2 + 2) == [(2, 0), (3, 1617512800)]  # noqa: E501
 
 
-@pytest.mark.parametrize('default_mock_price_value', [FVal(1.55)])
-def test_validator_daily_stats(price_historian, function_scope_messages_aggregator):  # pylint: disable=unused-argument  # noqa: E501
-    validator_index = 33710
-    stats = scrape_validator_daily_stats(
-        validator_index=validator_index,
-        last_known_timestamp=0,
-        msg_aggregator=function_scope_messages_aggregator,
+DAILY_STATS_RE = re.compile(r'https://beaconcha.in/validator/(\d+)/stats')
+
+
+def mock_scrape_validator_daily_stats(network_mocking: bool):
+
+    def mock_scrape(url, **kwargs):  # pylint: disable=unused-argument
+        match = DAILY_STATS_RE.search(url)
+        if match is None:
+            raise AssertionError(f'Unexpected validator stats query in test: {url}')
+
+        validator_index = int(match.group(1))
+        root_path = Path(__file__).resolve().parent.parent.parent
+        file_path = root_path / 'tests' / 'data' / 'mocks' / 'test_eth2' / 'validator_daily_stats' / f'{validator_index}.html'  # noqa: E501
+
+        with open(file_path) as f:
+            data = f.read()
+
+        return MockResponse(200, data)
+
+    return patch(
+        'rotkehlchen.chain.ethereum.modules.eth2.utils.requests.get',
+        side_effect=mock_scrape if network_mocking else requests.get,
     )
+
+
+@pytest.mark.parametrize('default_mock_price_value', [FVal(1.55)])
+def test_validator_daily_stats(network_mocking, price_historian, function_scope_messages_aggregator):  # pylint: disable=unused-argument  # noqa: E501
+    validator_index = 33710
+
+    with mock_scrape_validator_daily_stats(network_mocking):
+        stats = scrape_validator_daily_stats(
+            validator_index=validator_index,
+            last_known_timestamp=0,
+            msg_aggregator=function_scope_messages_aggregator,
+        )
 
     assert len(stats) >= 81
     expected_stats = [ValidatorDailyStats(
@@ -599,15 +687,17 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
 
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1.55)])
 def test_validator_daily_stats_with_last_known_timestamp(  # pylint: disable=unused-argument  # noqa: E501
+        network_mocking,
         price_historian,
         function_scope_messages_aggregator,
 ):
     validator_index = 33710
-    stats = scrape_validator_daily_stats(
-        validator_index=validator_index,
-        last_known_timestamp=1613520000,
-        msg_aggregator=function_scope_messages_aggregator,
-    )
+    with mock_scrape_validator_daily_stats(network_mocking):
+        stats = scrape_validator_daily_stats(
+            validator_index=validator_index,
+            last_known_timestamp=1613520000,
+            msg_aggregator=function_scope_messages_aggregator,
+        )
 
     assert len(stats) >= 6
     expected_stats = [ValidatorDailyStats(
@@ -676,12 +766,8 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
         database,
         function_scope_messages_aggregator,
         eth2,
+        network_mocking,
 ):
-    stats_call_patch = patch(
-        'requests.get',
-        wraps=requests.get,
-    )
-
     validator_index = 33710
     public_key = '0x9882b4c33c0d5394205b12d62952c50fe03c6c9fe08faa36425f70afb7caac0689dcd981af35d0d03defb8286d50911d'  # noqa: E501
     with database.user_write() as cursor:
@@ -693,7 +779,7 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
                 ownership_proportion=ONE,
             ),
         ])
-        with stats_call_patch as stats_call:
+        with mock_scrape_validator_daily_stats(network_mocking) as stats_call:
             filter_query = Eth2DailyStatsFilterQuery.make(
                 validators=[validator_index],
                 from_ts=1613606300,
