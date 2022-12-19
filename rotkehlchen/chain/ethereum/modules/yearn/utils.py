@@ -61,8 +61,7 @@ def query_yearn_vaults(db: 'DBHandler') -> None:
             f'it is identical to what we have.',
         )
         with GlobalDBHandler().conn.write_ctx() as write_cursor:
-            # since primary key is key/value and those are the same we are updating the last
-            # queried timestamp
+            # update the timestamp of the last time this vaults were queried
             GlobalDBHandler().set_general_cache_values(
                 write_cursor=write_cursor,
                 key_parts=[GeneralCacheType.YEARN_VAULTS],
