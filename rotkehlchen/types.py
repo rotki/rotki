@@ -55,7 +55,7 @@ DEFAULT_OFF_MODULES = {'makerdao_dsr', 'yearn_vaults'}
 UNISWAP_PROTOCOL = 'UNI-V2'
 # this variable is used in the decoders and maps to the protocol field used in the database
 # for yearn vaults v1
-YEARN_VAULTS_V1_PROTOCOL = 'yearn-v1'
+YEARN_VAULTS_V1_PROTOCOL = 'yearn_vaults_v1'
 YEARN_VAULTS_V2_PROTOCOL = 'yearn_vaults_v2'
 CURVE_POOL_PROTOCOL = 'curve_pool'
 PICKLE_JAR_PROTOCOL = 'pickle_jar'

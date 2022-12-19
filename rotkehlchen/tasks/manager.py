@@ -558,15 +558,15 @@ class TaskManager():
             tx_decoder=ethereum.transactions_decoder,
         )]
 
-    def _maybe_update_yearn_vaults(self) -> Optional[gevent.Greenlet]:
+    def _maybe_update_yearn_vaults(self) -> Optional[list[gevent.Greenlet]]:
         if should_update_protocol_cache(GeneralCacheType.YEARN_VAULTS) is True:
-            return self.greenlet_manager.spawn_and_track(
+            return [self.greenlet_manager.spawn_and_track(
                 after_seconds=None,
                 task_name='Update yearn vaults',
                 exception_is_error=True,
                 method=self.query_yearn_vaults,
                 db=self.database,
-            )
+            )]
 
         return None
 
