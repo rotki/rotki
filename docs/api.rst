@@ -5833,7 +5833,7 @@ Querying periodic data
 
 Getting blockchain account data
 ===============================
-.. http:get:: /api/(version)/blockchains/(name)/
+.. http:get:: /api/(version)/blockchains/(name)/accounts
 
    .. note::
       Supported blockchains: ``"BTC", "BCH", "ETH", "KSM", "DOT", "AVAX"``
@@ -5844,7 +5844,7 @@ Getting blockchain account data
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/blockchains/ETH/ HTTP/1.1
+      GET /api/1/blockchains/ETH/accounts HTTP/1.1
       Host: localhost:5042
 
    .. _blockchain_accounts_result:
@@ -5887,7 +5887,7 @@ Getting blockchain account data
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/blockchains/BTC/ HTTP/1.1
+      GET /api/1/blockchains/BTC/accounts HTTP/1.1
       Host: localhost:5042
 
    **Example Response**:
@@ -9092,7 +9092,7 @@ Remove an address to query per protocol
 Adding blockchain accounts
 ===========================
 
-.. http:put:: /api/(version)/blockchains/(name)/
+.. http:put:: /api/(version)/blockchains/(name)/accounts
 
    .. note::
       Supported blockchains: ``"BTC", "BCH", "ETH", "KSM", "DOT", "AVAX"``
@@ -9109,7 +9109,7 @@ Adding blockchain accounts
 
    .. http:example:: curl wget httpie python-requests
 
-      PUT /api/1/blockchains/ETH/ HTTP/1.1
+      PUT /api/1/blockchains/ETH/accounts HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
@@ -9458,7 +9458,7 @@ Editing blockchain account data
 
    .. http:example:: curl wget httpie python-requests
 
-      PATCH /api/1/blockchains/ETH/ HTTP/1.1
+      PATCH /api/1/blockchains/ETH/accounts HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
@@ -9515,7 +9515,7 @@ Editing blockchain account data
 Removing blockchain accounts
 ==============================
 
-.. http:delete:: /api/(version)/blockchains/(name)/
+.. http:delete:: /api/(version)/blockchains/(name)/accounts
 
    .. note::
       Supported blockchains: ``"BTC", "BCH", "ETH", "KSM", "DOT", "AVAX"``
@@ -9532,7 +9532,7 @@ Removing blockchain accounts
 
    .. http:example:: curl wget httpie python-requests
 
-      DELETE /api/1/blockchains/ETH HTTP/1.1
+      DELETE /api/1/blockchains/ETH/accounts HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
