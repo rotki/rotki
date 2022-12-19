@@ -260,7 +260,7 @@ URLS_V1: URLS = [
     ('/blockchains/ETH/modules/liquity/pool', LiquityStabilityPoolResource),
     ('/blockchains/ETH/modules/pickle/dill', PickleDillResource),
     ('/blockchains/ETH/modules/loopring/balances', LoopringBalancesResource),
-    ('/blockchains/<string:blockchain>', BlockchainsAccountsResource),
+    ('/blockchains/<string:blockchain>/accounts', BlockchainsAccountsResource),
     ('/blockchains/<string:blockchain>/nodes', RpcNodesResource),
     ('/blockchains/<string:blockchain>/tokens/detect', DetectTokensResource),
     ('/blockchains/<string:blockchain>/xpub', BTCXpubResource),
