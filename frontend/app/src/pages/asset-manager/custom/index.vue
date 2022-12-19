@@ -43,7 +43,6 @@ import CustomAssetTable from '@/components/asset-manager/CustomAssetTable.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import { Routes } from '@/router/routes';
 import { useAssetManagementApi } from '@/services/assets/management-api';
-import { api } from '@/services/rotkehlchen-api';
 import { useMessageStore } from '@/store/message';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { type Nullable } from '@/types';
@@ -77,6 +76,8 @@ const pagination: Ref<CustomAssetPagination> = ref(
 const editMode = ref<boolean>(false);
 
 const { tc } = useI18n();
+const { deleteCustomAsset, queryAllCustomAssets, getCustomAssetTypes } =
+  useAssetManagementApi();
 
 const dialogTitle = computed<string>(() => {
   return get(editMode)
@@ -84,7 +85,6 @@ const dialogTitle = computed<string>(() => {
     : tc('asset_management.add_title');
 });
 
-const { queryAllCustomAssets } = useAssetManagementApi();
 const assetForm: Ref<InstanceType<typeof CustomAssetForm> | null> = ref(null);
 
 const add = () => {
@@ -119,7 +119,7 @@ const save = async () => {
 
 const deleteAsset = async (identifier: string) => {
   try {
-    const success = await api.assets.deleteCustomAsset(identifier);
+    const success = await deleteCustomAsset(identifier);
     if (success) {
       await refresh();
     }
@@ -144,7 +144,7 @@ const refresh = async () => {
   const supportedAssets = await queryAllCustomAssets(get(pagination));
   set(assets, supportedAssets.entries);
   set(totalEntries, supportedAssets.entriesFound);
-  set(types, await api.assets.getCustomAssetTypes());
+  set(types, await getCustomAssetTypes());
   set(loading, false);
 };
 

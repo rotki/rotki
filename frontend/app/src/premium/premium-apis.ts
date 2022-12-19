@@ -19,7 +19,6 @@ import {
 import { type MaybeRef } from '@vueuse/core';
 import { type ComputedRef } from 'vue';
 import { truncateAddress } from '@/filters';
-import { api } from '@/services/rotkehlchen-api';
 import { useStatisticsApi } from '@/services/statistics/statistics-api';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
@@ -35,6 +34,7 @@ import { useSessionSettingsStore } from '@/store/settings/session';
 import { useStatisticsStore } from '@/store/statistics';
 import { One } from '@/utils/bignumbers';
 import { isNft } from '@/utils/nft';
+import { useAssetManagementApi } from '@/services/assets/management-api';
 
 export const assetsApi = (): AssetsApi => {
   const { assetInfo, assetSymbol, assetName, tokenAddress } =
@@ -56,16 +56,22 @@ export const assetsApi = (): AssetsApi => {
 export const statisticsApi = (): StatisticsApi => {
   const { isAssetIgnored } = useIgnoredAssetsStore();
   const { fetchNetValue, getNetValue } = useStatisticsStore();
-  const statsApi = useStatisticsApi();
+  const {
+    queryLatestAssetValueDistribution,
+    queryLatestLocationValueDistribution,
+    queryTimedBalancesData
+  } = useStatisticsApi();
+  const { queryOwnedAssets } = useAssetManagementApi();
+
   return {
     async assetValueDistribution(): Promise<TimedAssetBalances> {
-      return statsApi.queryLatestAssetValueDistribution();
+      return queryLatestAssetValueDistribution();
     },
     async locationValueDistribution(): Promise<LocationData> {
-      return statsApi.queryLatestLocationValueDistribution();
+      return queryLatestLocationValueDistribution();
     },
     async ownedAssets(): Promise<OwnedAssets> {
-      const owned = await api.assets.queryOwnedAssets();
+      const owned = await queryOwnedAssets();
       return owned.filter(asset => !get(isAssetIgnored(asset)));
     },
     async timedBalances(
@@ -73,7 +79,7 @@ export const statisticsApi = (): StatisticsApi => {
       start: number,
       end: number
     ): Promise<TimedBalances> {
-      return statsApi.queryTimedBalancesData(asset, start, end);
+      return queryTimedBalancesData(asset, start, end);
     },
     async fetchNetValue(): Promise<void> {
       await fetchNetValue();

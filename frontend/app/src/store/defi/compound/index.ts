@@ -1,5 +1,4 @@
 import { type Ref } from 'vue';
-import { api } from '@/services/rotkehlchen-api';
 import { toProfitLossModel } from '@/store/defi/utils';
 import { useNotificationsStore } from '@/store/notifications';
 import { getStatus, setStatus } from '@/store/status';
@@ -11,6 +10,7 @@ import { Section, Status } from '@/types/status';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { logger } from '@/utils/logging';
+import { useCompoundApi } from '@/services/defi/compound';
 
 export const defaultCompoundHistory = (): CompoundHistory => ({
   events: [],
@@ -32,6 +32,7 @@ export const useCompoundStore = defineStore('defi/compound', () => {
   const { activeModules } = useModules();
   const premium = usePremium();
   const { tc } = useI18n();
+  const { fetchCompoundBalances, fetchCompoundHistory } = useCompoundApi();
 
   const rewards = computed(() => toProfitLossModel(get(history).rewards));
   const interestProfit = computed(() =>
@@ -62,7 +63,7 @@ export const useCompoundStore = defineStore('defi/compound', () => {
 
     try {
       const taskType = TaskType.DEFI_COMPOUND_BALANCES;
-      const { taskId } = await api.defi.fetchCompoundBalances();
+      const { taskId } = await fetchCompoundBalances();
       const { result } = await awaitTask<CompoundBalances, TaskMeta>(
         taskId,
         taskType,
@@ -103,7 +104,7 @@ export const useCompoundStore = defineStore('defi/compound', () => {
 
     try {
       const taskType = TaskType.DEFI_COMPOUND_HISTORY;
-      const { taskId } = await api.defi.fetchCompoundHistory();
+      const { taskId } = await fetchCompoundHistory();
       const { result } = await awaitTask<CompoundHistory, TaskMeta>(
         taskId,
         taskType,

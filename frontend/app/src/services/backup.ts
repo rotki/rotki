@@ -8,7 +8,7 @@ import {
 } from '@/types/backup';
 
 export const useBackupApi = () => {
-  async function info(): Promise<DatabaseInfo> {
+  const info = async (): Promise<DatabaseInfo> => {
     const response = await api.instance.get<DatabaseInfoResponse>(
       '/database/info',
       {
@@ -19,9 +19,9 @@ export const useBackupApi = () => {
     return handleResponse(response, response =>
       DatabaseInfoResponse.parse(response.data)
     );
-  }
+  };
 
-  async function createBackup(): Promise<string> {
+  const createBackup = async (): Promise<string> => {
     const response = await api.instance.put<CreateDatabaseResponse>(
       '/database/backups',
       {
@@ -32,9 +32,9 @@ export const useBackupApi = () => {
     return handleResponse(response, response =>
       CreateDatabaseResponse.parse(response.data)
     );
-  }
+  };
 
-  async function deleteBackup(files: string[]): Promise<boolean> {
+  const deleteBackup = async (files: string[]): Promise<boolean> => {
     const response = await api.instance.delete<DeleteDatabaseResponse>(
       '/database/backups',
       {
@@ -48,7 +48,7 @@ export const useBackupApi = () => {
     return handleResponse(response, response =>
       DeleteDatabaseResponse.parse(response.data)
     );
-  }
+  };
 
   function fileUrl(file: string): string {
     return `${api.instance.defaults.baseURL}/database/backups?file=${file}`;

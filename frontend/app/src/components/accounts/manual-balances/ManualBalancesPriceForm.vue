@@ -35,9 +35,9 @@
 </template>
 
 <script setup lang="ts">
-import { api } from '@/services/rotkehlchen-api';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useAssetPricesApi } from '@/services/assets/prices';
 
 defineProps({
   pending: {
@@ -59,6 +59,7 @@ const {
   assetPrice,
   isAssetPriceInCurrentCurrency
 } = useBalancePricesStore();
+const { addLatestPrice } = useAssetPricesApi();
 
 const searchAssetPrice = async (asset: string) => {
   if (!asset) {
@@ -105,7 +106,7 @@ const searchAssetPrice = async (asset: string) => {
 
 const savePrice = async (asset: string) => {
   if (get(isCustomPrice) && get(price) && get(priceAsset)) {
-    await api.assets.addLatestPrice({
+    await addLatestPrice({
       fromAsset: asset,
       toAsset: get(priceAsset),
       price: get(price)

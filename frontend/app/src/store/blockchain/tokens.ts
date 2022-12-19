@@ -5,20 +5,24 @@ import {
   type EthDetectedTokensInfo,
   type EthDetectedTokensRecord
 } from '@/services/balances/types';
-import { api } from '@/services/rotkehlchen-api';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useEthBalancesStore } from '@/store/blockchain/balances/eth';
+import { useEthAccountsStore } from '@/store/blockchain/accounts/eth';
 import { useTasks } from '@/store/tasks';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { logger } from '@/utils/logging';
+import { useBlockchainBalanceApi } from '@/services/balances/blockchain';
 
 export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
   const ethTokens: Ref<EthDetectedTokensRecord> = ref({});
 
   const { isAssetIgnored } = useIgnoredAssetsStore();
   const { tc } = useI18n();
-  const { ethAddresses } = storeToRefs(useEthBalancesStore());
+  const { ethAddresses } = storeToRefs(useEthAccountsStore());
+  const {
+    fetchDetectedTokensTask,
+    fetchDetectedTokens: fetchDetectedTokensCaller
+  } = useBlockchainBalanceApi();
 
   const fetchDetected = async (addresses: string[]): Promise<void> => {
     await Promise.allSettled(
@@ -32,9 +36,7 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
         const { awaitTask } = useTasks();
         const taskType = TaskType.FETCH_DETECTED_TOKENS;
 
-        const { taskId } = await api.balances.fetchDetectedTokensTask([
-          address
-        ]);
+        const { taskId } = await fetchDetectedTokensTask([address]);
 
         const taskMeta = {
           title: tc('actions.balances.detect_tokens.task.title'),
@@ -57,10 +59,7 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
 
         await fetchDetectedTokens();
       } else {
-        set(
-          ethTokens,
-          await api.balances.fetchDetectedTokens(get(ethAddresses))
-        );
+        set(ethTokens, await fetchDetectedTokensCaller(null));
       }
     } catch (e) {
       logger.error(e);

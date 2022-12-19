@@ -25,7 +25,6 @@
 import PurgeSelector from '@/components/settings/data-security/PurgeSelector.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
 import { EXTERNAL_EXCHANGES } from '@/data/defaults';
-import { api } from '@/services/rotkehlchen-api';
 import {
   ALL_CENTRALIZED_EXCHANGES,
   ALL_DECENTRALIZED_EXCHANGES,
@@ -39,6 +38,9 @@ import { SUPPORTED_EXCHANGES, type SupportedExchange } from '@/types/exchanges';
 import { type BaseMessage } from '@/types/messages';
 import { Module } from '@/types/modules';
 import { type PurgeParams } from '@/types/purge';
+import { useExchangeApi } from '@/services/balances/exchanges';
+import { useTransactionsApi } from '@/services/history/transactions';
+import { useBlockchainBalanceApi } from '@/services/balances/blockchain';
 
 const source = ref<Purgeable>(ALL_TRANSACTIONS);
 const status = ref<BaseMessage | null>(null);
@@ -61,25 +63,29 @@ const showConfirmation = (source: PurgeParams) => {
   set(confirm, true);
 };
 
+const { deleteModuleData } = useBlockchainBalanceApi();
+const { deleteEthTransactions } = useTransactionsApi();
+const { deleteExchangeData } = useExchangeApi();
+
 const purgeSource = async (source: Purgeable) => {
   if (source === ALL_TRANSACTIONS) {
-    await api.balances.deleteEthereumTransactions();
+    await deleteEthTransactions();
   } else if (source === ALL_MODULES) {
-    await api.balances.deleteModuleData();
+    await deleteModuleData();
   } else if (source === ALL_CENTRALIZED_EXCHANGES) {
-    await api.balances.deleteExchangeData();
+    await deleteExchangeData();
   } else if (source === ALL_DECENTRALIZED_EXCHANGES) {
     await Promise.all([
-      api.balances.deleteModuleData(Module.UNISWAP),
-      api.balances.deleteModuleData(Module.BALANCER)
+      deleteModuleData(Module.UNISWAP),
+      deleteModuleData(Module.BALANCER)
     ]);
   } else if (
     SUPPORTED_EXCHANGES.includes(source as any) ||
     EXTERNAL_EXCHANGES.includes(source as any)
   ) {
-    await api.balances.deleteExchangeData(source as SupportedExchange);
+    await deleteExchangeData(source as SupportedExchange);
   } else if (Object.values(Module).includes(source as any)) {
-    await api.balances.deleteModuleData(source as Module);
+    await deleteModuleData(source as Module);
   }
   await purgeCache(source);
 };

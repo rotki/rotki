@@ -11,7 +11,8 @@ import {
 import {
   type Exchange,
   type ExchangePayload,
-  Exchanges
+  Exchanges,
+  type SupportedExchange
 } from '@/types/exchanges';
 import { nonNullProperties } from '@/utils/data';
 
@@ -56,10 +57,10 @@ export const useExchangeApi = () => {
     payload: ExchangePayload,
     edit: Boolean
   ): Promise<boolean> => {
-    let request: Promise<AxiosResponse<ActionResult<boolean>>>;
+    let response: AxiosResponse<ActionResult<boolean>>;
 
     if (!edit) {
-      request = api.instance.put<ActionResult<boolean>>(
+      response = await api.instance.put<ActionResult<boolean>>(
         '/exchanges',
         axiosSnakeCaseTransformer(nonNullProperties(payload)),
         {
@@ -67,7 +68,7 @@ export const useExchangeApi = () => {
         }
       );
     } else {
-      request = api.instance.patch<ActionResult<boolean>>(
+      response = await api.instance.patch<ActionResult<boolean>>(
         '/exchanges',
         axiosSnakeCaseTransformer(nonNullProperties(payload)),
         {
@@ -76,7 +77,7 @@ export const useExchangeApi = () => {
       );
     }
 
-    return request.then(handleResponse);
+    return handleResponse(response);
   };
 
   const getExchanges = async (): Promise<Exchanges> => {
@@ -120,12 +121,26 @@ export const useExchangeApi = () => {
     return handleResponse(response);
   };
 
+  const deleteExchangeData = async (
+    name: SupportedExchange | '' = ''
+  ): Promise<boolean> => {
+    const response = await api.instance.delete<ActionResult<boolean>>(
+      `/exchanges/data/${name}`,
+      {
+        validateStatus: validStatus
+      }
+    );
+
+    return handleResponse(response);
+  };
+
   return {
     queryRemoveExchange,
     queryExchangeBalances,
     querySetupExchange,
     getExchanges,
     queryBinanceMarkets,
-    queryBinanceUserMarkets
+    queryBinanceUserMarkets,
+    deleteExchangeData
   };
 };

@@ -1,5 +1,4 @@
 import { type AssetUpdatePayload } from '@/services/assets/types';
-import { api } from '@/services/rotkehlchen-api';
 import { useNotificationsStore } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
 import { type ActionStatus } from '@/store/types';
@@ -12,16 +11,24 @@ import {
 } from '@/types/assets';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
+import { useAssetsApi } from '@/services/assets';
 
 export const useAssets = defineStore('assets', () => {
   const { awaitTask } = useTasks();
   const { t } = useI18n();
   const { appSession, openDirectory } = useInterop();
+  const {
+    checkForAssetUpdate,
+    performUpdate,
+    mergeAssets: mergeAssetsCaller,
+    importCustom,
+    exportCustom
+  } = useAssetsApi();
 
   const checkForUpdate = async (): Promise<AssetUpdateCheckResult> => {
     try {
       const taskType = TaskType.ASSET_UPDATE;
-      const { taskId } = await api.assets.checkForAssetUpdate();
+      const { taskId } = await checkForAssetUpdate();
       const { result } = await awaitTask<AssetDBVersion, TaskMeta>(
         taskId,
         taskType,
@@ -56,7 +63,7 @@ export const useAssets = defineStore('assets', () => {
     resolution
   }: AssetUpdatePayload): Promise<ApplyUpdateResult> => {
     try {
-      const { taskId } = await api.assets.performUpdate(version, resolution);
+      const { taskId } = await performUpdate(version, resolution);
       const { result } = await awaitTask<AssetUpdateResult, TaskMeta>(
         taskId,
         TaskType.ASSET_UPDATE_PERFORM,
@@ -96,7 +103,7 @@ export const useAssets = defineStore('assets', () => {
     targetIdentifier
   }: AssetMergePayload): Promise<ActionStatus> => {
     try {
-      const success = await api.assets.mergeAssets(
+      const success = await mergeAssetsCaller(
         sourceIdentifier,
         targetIdentifier
       );
@@ -113,7 +120,7 @@ export const useAssets = defineStore('assets', () => {
 
   const importCustomAssets = async (file: File): Promise<ActionStatus> => {
     try {
-      await api.assets.importCustom(file, !appSession);
+      await importCustom(file, !appSession);
       return {
         success: true
       };
@@ -140,7 +147,7 @@ export const useAssets = defineStore('assets', () => {
         }
         file = directory;
       }
-      return await api.assets.exportCustom(file);
+      return await exportCustom(file);
     } catch (e: any) {
       return {
         success: false,

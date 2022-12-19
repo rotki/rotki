@@ -1,8 +1,6 @@
 import { type ProfitLossModel } from '@rotki/common/lib/defi';
 import { AaveBalances, AaveHistory } from '@rotki/common/lib/defi/aave';
 import { type Ref } from 'vue';
-
-import { api } from '@/services/rotkehlchen-api';
 import { useNotificationsStore } from '@/store/notifications';
 import { getStatus, setStatus } from '@/store/status';
 import { useTasks } from '@/store/tasks';
@@ -13,6 +11,7 @@ import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { balanceSum } from '@/utils/calculation';
 import { logger } from '@/utils/logging';
+import { useAaveApi } from '@/services/defi/aave';
 
 export const useAaveStore = defineStore('defi/aave', () => {
   const balances: Ref<AaveBalances> = ref({});
@@ -23,6 +22,8 @@ export const useAaveStore = defineStore('defi/aave', () => {
   const { activeModules } = useModules();
   const premium = usePremium();
   const { tc } = useI18n();
+
+  const { fetchAaveBalances, fetchAaveHistory } = useAaveApi();
 
   const aaveTotalEarned = (addresses: string[]) =>
     computed(() => {
@@ -72,7 +73,7 @@ export const useAaveStore = defineStore('defi/aave', () => {
 
     try {
       const taskType = TaskType.AAVE_BALANCES;
-      const { taskId } = await api.defi.fetchAaveBalances();
+      const { taskId } = await fetchAaveBalances();
       const { result } = await awaitTask<AaveBalances, TaskMeta>(
         taskId,
         taskType,
@@ -124,7 +125,7 @@ export const useAaveStore = defineStore('defi/aave', () => {
 
     try {
       const taskType = TaskType.AAVE_HISTORY;
-      const { taskId } = await api.defi.fetchAaveHistory(reset);
+      const { taskId } = await fetchAaveHistory(reset);
       const { result } = await awaitTask<AaveHistory, TaskMeta>(
         taskId,
         taskType,

@@ -1,14 +1,9 @@
 import { type ActionResult } from '@rotki/common/lib/data';
 import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios';
-import { AssetApi } from '@/services/assets/asset-api';
 import {
   axiosSnakeCaseTransformer,
   basicAxiosTransformer
 } from '@/services/axios-tranformers';
-import { BalancesApi } from '@/services/balances/balances-api';
-import { DefiApi } from '@/services/defi/defi-api';
-import { HistoryApi } from '@/services/history/history-api';
-import { ReportsApi } from '@/services/reports/reports-api';
 import {
   BackendInfo,
   type PendingTask,
@@ -30,11 +25,6 @@ import { type TaskResultResponse } from '@/types/task';
 
 export class RotkehlchenApi {
   private axios: AxiosInstance;
-  private _defi: DefiApi;
-  private _balances: BalancesApi;
-  private _history: HistoryApi;
-  private _reports: ReportsApi;
-  private _assets: AssetApi;
   private _serverUrl: string;
   private signal = axios.CancelToken.source();
   private readonly pathname: string;
@@ -69,14 +59,6 @@ export class RotkehlchenApi {
     this.signal = axios.CancelToken.source();
   }
 
-  private setupApis = (axios: AxiosInstance) => ({
-    defi: new DefiApi(axios),
-    balances: new BalancesApi(axios),
-    history: new HistoryApi(axios),
-    reports: new ReportsApi(axios),
-    assets: new AssetApi(axios)
-  });
-
   constructor() {
     this.pathname = window.location.pathname;
     this._serverUrl = this.defaultServerUrl;
@@ -86,33 +68,6 @@ export class RotkehlchenApi {
       transformResponse: basicAxiosTransformer
     });
     this.setupCancellation();
-    ({
-      defi: this._defi,
-      balances: this._balances,
-      history: this._history,
-      reports: this._reports,
-      assets: this._assets
-    } = this.setupApis(this.axios));
-  }
-
-  get defi(): DefiApi {
-    return this._defi;
-  }
-
-  get balances(): BalancesApi {
-    return this._balances;
-  }
-
-  get history(): HistoryApi {
-    return this._history;
-  }
-
-  get reports(): ReportsApi {
-    return this._reports;
-  }
-
-  get assets(): AssetApi {
-    return this._assets;
   }
 
   setup(serverUrl: string) {
@@ -123,13 +78,6 @@ export class RotkehlchenApi {
       transformResponse: basicAxiosTransformer
     });
     this.setupCancellation();
-    ({
-      defi: this._defi,
-      balances: this._balances,
-      history: this._history,
-      reports: this._reports,
-      assets: this._assets
-    } = this.setupApis(this.axios));
   }
 
   private setupCancellation() {

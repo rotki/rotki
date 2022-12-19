@@ -53,10 +53,10 @@ import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import { omit } from 'lodash';
 import { type PropType, type Ref } from 'vue';
-import { api } from '@/services/rotkehlchen-api';
 import { useMessageStore } from '@/store/message';
 import { type CustomAsset } from '@/types/assets';
 import AssetIconForm from '@/components/asset-manager/AssetIconForm.vue';
+import { useAssetManagementApi } from '@/services/assets/management-api';
 
 const props = defineProps({
   edit: {
@@ -144,6 +144,7 @@ const saveIcon = (identifier: string) => {
 };
 
 const { setMessage } = useMessageStore();
+const { editCustomAsset, addCustomAsset } = useAssetManagementApi();
 const save = async () => {
   const data = get(formData);
   let success = false;
@@ -152,9 +153,9 @@ const save = async () => {
 
   try {
     if (editMode) {
-      success = await api.assets.editCustomAsset(data);
+      success = await editCustomAsset(data);
     } else {
-      identifier = await api.assets.addCustomAsset(omit(data, 'identifier'));
+      identifier = await addCustomAsset(omit(data, 'identifier'));
       success = !!identifier;
     }
 

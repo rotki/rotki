@@ -6,7 +6,6 @@ import {
   type XswapPoolProfit
 } from '@rotki/common/lib/defi/xswap';
 import { type ComputedRef, type Ref } from 'vue';
-import { api } from '@/services/rotkehlchen-api';
 import {
   getBalances,
   getEventDetails,
@@ -21,6 +20,7 @@ import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { uniqueStrings } from '@/utils/data';
 import { fetchDataAsync } from '@/utils/fetch-async';
+import { useUniswapApi } from '@/services/defi/uniswap';
 
 export const useUniswapStore = defineStore('defi/uniswap', () => {
   const v2Balances = ref<XswapBalances>({}) as Ref<XswapBalances>;
@@ -30,6 +30,9 @@ export const useUniswapStore = defineStore('defi/uniswap', () => {
   const { activeModules } = storeToRefs(useGeneralSettingsStore());
   const isPremium = usePremium();
   const { t, tc } = useI18n();
+
+  const { fetchUniswapV2Balances, fetchUniswapV3Balances, fetchUniswapEvents } =
+    useUniswapApi();
 
   const uniswapV2Balances = (
     addresses: string[]
@@ -106,7 +109,7 @@ export const useUniswapStore = defineStore('defi/uniswap', () => {
           type: TaskType.DEFI_UNISWAP_V2_BALANCES,
           section: Section.DEFI_UNISWAP_V2_BALANCES,
           meta,
-          query: async () => await api.defi.fetchUniswapV2Balances(),
+          query: async () => await fetchUniswapV2Balances(),
           parser: data => XswapBalances.parse(data),
           onError
         },
@@ -145,7 +148,7 @@ export const useUniswapStore = defineStore('defi/uniswap', () => {
           type: TaskType.DEFI_UNISWAP_V3_BALANCES,
           section: Section.DEFI_UNISWAP_V3_BALANCES,
           meta,
-          query: async () => await api.defi.fetchUniswapV3Balances(),
+          query: async () => await fetchUniswapV3Balances(),
           parser: data => XswapBalances.parse(data),
           onError,
           checkLoading: { premium: get(isPremium) }
@@ -183,7 +186,7 @@ export const useUniswapStore = defineStore('defi/uniswap', () => {
           type: TaskType.DEFI_UNISWAP_EVENTS,
           section: Section.DEFI_UNISWAP_EVENTS,
           meta,
-          query: async () => await api.defi.fetchUniswapEvents(),
+          query: async () => await fetchUniswapEvents(),
           parser: XswapEvents.parse,
           onError
         },

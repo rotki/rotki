@@ -11,31 +11,44 @@ import {
 } from '@/services/utils';
 
 export const useQueriedAddressApi = () => {
-  const queriedAddresses = async (): Promise<QueriedAddresses> =>
-    api.instance
-      .get<ActionResult<QueriedAddresses>>('/queried_addresses', {
+  const queriedAddresses = async (): Promise<QueriedAddresses> => {
+    const response = await api.instance.get<ActionResult<QueriedAddresses>>(
+      '/queried_addresses',
+      {
         validateStatus: validWithSessionStatus
-      })
-      .then(handleResponse);
+      }
+    );
+
+    return handleResponse(response);
+  };
 
   const addQueriedAddress = async (
     payload: QueriedAddressPayload
-  ): Promise<QueriedAddresses> =>
-    api.instance
-      .put<ActionResult<QueriedAddresses>>('/queried_addresses', payload, {
+  ): Promise<QueriedAddresses> => {
+    const response = await api.instance.put<ActionResult<QueriedAddresses>>(
+      '/queried_addresses',
+      payload,
+      {
         validateStatus: validStatus
-      })
-      .then(handleResponse);
+      }
+    );
+
+    return handleResponse(response);
+  };
 
   const deleteQueriedAddress = async (
     payload: QueriedAddressPayload
-  ): Promise<QueriedAddresses> =>
-    api.instance
-      .delete<ActionResult<QueriedAddresses>>('/queried_addresses', {
+  ): Promise<QueriedAddresses> => {
+    const response = await api.instance.delete<ActionResult<QueriedAddresses>>(
+      '/queried_addresses',
+      {
         data: payload,
         validateStatus: validStatus
-      })
-      .then(handleResponse);
+      }
+    );
+
+    return handleResponse(response);
+  };
 
   return {
     queriedAddresses,

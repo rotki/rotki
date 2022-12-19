@@ -15,20 +15,20 @@ import {
 } from '@/types/nfbalances';
 
 export const useNftBalanceApi = () => {
-  const internalNfBalances = <T>(
+  const internalNfBalances = async <T>(
     payload: NonFungibleBalancesRequestPayload,
     asyncQuery: boolean
   ): Promise<T> => {
-    return api.instance
-      .get<ActionResult<T>>('/nfts/balances', {
-        params: axiosSnakeCaseTransformer({
-          asyncQuery,
-          ...payload
-        }),
-        paramsSerializer,
-        validateStatus: validWithParamsSessionAndExternalService
-      })
-      .then(handleResponse);
+    const response = await api.instance.get<ActionResult<T>>('/nfts/balances', {
+      params: axiosSnakeCaseTransformer({
+        asyncQuery,
+        ...payload
+      }),
+      paramsSerializer,
+      validateStatus: validWithParamsSessionAndExternalService
+    });
+
+    return handleResponse(response);
   };
 
   const fetchNfBalancesTask = async (

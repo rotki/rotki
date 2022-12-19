@@ -6,7 +6,6 @@ import {
   type XswapPoolProfit
 } from '@rotki/common/lib/defi/xswap';
 import { type ComputedRef, type Ref } from 'vue';
-import { api } from '@/services/rotkehlchen-api';
 import {
   getBalances,
   getEventDetails,
@@ -20,6 +19,7 @@ import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { uniqueStrings } from '@/utils/data';
 import { fetchDataAsync } from '@/utils/fetch-async';
+import { useSushiswapApi } from '@/services/defi/sushiswap';
 
 export const useSushiswapStore = defineStore('defi/sushiswap', () => {
   const balances = ref<XswapBalances>({}) as Ref<XswapBalances>;
@@ -28,6 +28,7 @@ export const useSushiswapStore = defineStore('defi/sushiswap', () => {
   const isPremium = usePremium();
   const { activeModules } = useModules();
   const { t } = useI18n();
+  const { fetchSushiswapBalances, fetchSushiswapEvents } = useSushiswapApi();
 
   const balanceList = (addresses: string[]): ComputedRef<XswapBalance[]> =>
     computed(() => getBalances(get(balances), addresses));
@@ -63,7 +64,7 @@ export const useSushiswapStore = defineStore('defi/sushiswap', () => {
           type: TaskType.SUSHISWAP_BALANCES,
           section: Section.DEFI_SUSHISWAP_BALANCES,
           meta,
-          query: async () => await api.defi.fetchSushiswapBalances(),
+          query: async () => await fetchSushiswapBalances(),
           parser: XswapBalances.parse,
           onError
         },
@@ -100,7 +101,7 @@ export const useSushiswapStore = defineStore('defi/sushiswap', () => {
           type: TaskType.SUSHISWAP_EVENTS,
           section: Section.DEFI_SUSHISWAP_EVENTS,
           meta,
-          query: async () => await api.defi.fetchSushiswapEvents(),
+          query: async () => await fetchSushiswapEvents(),
           parser: XswapEvents.parse,
           onError
         },

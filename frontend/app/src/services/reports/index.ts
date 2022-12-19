@@ -1,9 +1,4 @@
 import { type ActionResult } from '@rotki/common/lib/data';
-import { type AxiosInstance } from 'axios';
-import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
-import { type PendingTask } from '@/services/types-api';
-import { handleResponse, validStatus, validTaskStatus } from '@/services/utils';
-import { type ActionStatus } from '@/store/types';
 import {
   type ProfitLossOverview,
   type ProfitLossReportDebugPayload,
@@ -13,20 +8,19 @@ import {
   ReportActionableItem,
   Reports
 } from '@/types/reports';
+import { type PendingTask } from '@/services/types-api';
+import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
+import { handleResponse, validStatus, validTaskStatus } from '@/services/utils';
+import { type ActionStatus } from '@/store/types';
 import { downloadFileByUrl } from '@/utils/download';
+import { api } from '@/services/rotkehlchen-api';
 
-export class ReportsApi {
-  private readonly axios: AxiosInstance;
-
-  constructor(axios: AxiosInstance) {
-    this.axios = axios;
-  }
-
-  async generateReport({
+export const useReportsApi = () => {
+  const generateReport = async ({
     end,
     start
-  }: ProfitLossReportPeriod): Promise<PendingTask> {
-    const response = await this.axios.get<ActionResult<PendingTask>>(
+  }: ProfitLossReportPeriod): Promise<PendingTask> => {
+    const response = await api.instance.get<ActionResult<PendingTask>>(
       '/history',
       {
         params: axiosSnakeCaseTransformer({
@@ -38,10 +32,10 @@ export class ReportsApi {
       }
     );
     return handleResponse(response);
-  }
+  };
 
-  async exportReportCSV(directory: string): Promise<boolean> {
-    const response = await this.axios.get<ActionResult<boolean>>(
+  const exportReportCSV = async (directory: string): Promise<boolean> => {
+    const response = await api.instance.get<ActionResult<boolean>>(
       '/history/export',
       {
         params: {
@@ -52,11 +46,11 @@ export class ReportsApi {
     );
 
     return handleResponse(response);
-  }
+  };
 
-  async downloadReportCSV(): Promise<ActionStatus> {
+  const downloadReportCSV = async (): Promise<ActionStatus> => {
     try {
-      const response = await this.axios.get('/history/download', {
+      const response = await api.instance.get('/history/download', {
         responseType: 'blob',
         validateStatus: validTaskStatus
       });
@@ -74,12 +68,12 @@ export class ReportsApi {
     } catch (e: any) {
       return { success: false, message: e.message };
     }
-  }
+  };
 
-  async exportReportData(
+  const exportReportData = async (
     payload: ProfitLossReportDebugPayload
-  ): Promise<PendingTask> {
-    const response = await this.axios.post<ActionResult<PendingTask>>(
+  ): Promise<PendingTask> => {
+    const response = await api.instance.post<ActionResult<PendingTask>>(
       '/history/debug',
       axiosSnakeCaseTransformer({
         asyncQuery: true,
@@ -90,10 +84,10 @@ export class ReportsApi {
       }
     );
     return handleResponse(response);
-  }
+  };
 
-  async importReportData(filepath: string): Promise<PendingTask> {
-    const response = await this.axios.put<ActionResult<PendingTask>>(
+  const importReportData = async (filepath: string): Promise<PendingTask> => {
+    const response = await api.instance.put<ActionResult<PendingTask>>(
       '/history/debug',
       axiosSnakeCaseTransformer({
         filepath,
@@ -104,12 +98,12 @@ export class ReportsApi {
       }
     );
     return handleResponse(response);
-  }
+  };
 
-  async uploadReportData(filepath: File): Promise<PendingTask> {
+  const uploadReportData = async (filepath: File): Promise<PendingTask> => {
     const data = new FormData();
     data.append('filepath', filepath);
-    const response = await this.axios.post<ActionResult<PendingTask>>(
+    const response = await api.instance.post<ActionResult<PendingTask>>(
       '/history/debug?async_query=true',
       data,
       {
@@ -120,10 +114,10 @@ export class ReportsApi {
     );
 
     return handleResponse(response);
-  }
+  };
 
-  async fetchActionableItems(): Promise<ReportActionableItem> {
-    const response = await this.axios.get<ActionResult<ReportActionableItem>>(
+  const fetchActionableItems = async (): Promise<ReportActionableItem> => {
+    const response = await api.instance.get<ActionResult<ReportActionableItem>>(
       '/history/actionable_items',
       {
         validateStatus: validStatus
@@ -132,18 +126,18 @@ export class ReportsApi {
 
     const data = handleResponse(response);
     return ReportActionableItem.parse(data);
-  }
+  };
 
-  async fetchReports(): Promise<Reports> {
-    const response = await this.axios.get<ActionResult<Reports>>('/reports', {
+  const fetchReports = async (): Promise<Reports> => {
+    const response = await api.instance.get<ActionResult<Reports>>('/reports', {
       validateStatus: validStatus
     });
     const data = handleResponse(response);
     return Reports.parse(data);
-  }
+  };
 
-  async fetchReport(reportId: number): Promise<ProfitLossOverview> {
-    const response = await this.axios.get<
+  const fetchReport = async (reportId: number): Promise<ProfitLossOverview> => {
+    const response = await api.instance.get<
       ActionResult<ProfitLossReportOverview>
     >(`/reports/${reportId}`, {
       validateStatus: validStatus
@@ -151,26 +145,43 @@ export class ReportsApi {
     const data = handleResponse(response);
     const overview = ProfitLossReportOverview.parse(data);
     return overview.entries[0];
-  }
+  };
 
-  async fetchReportEvents(
+  const fetchReportEvents = async (
     reportId: number,
     page: { limit: number; offset: number }
-  ): Promise<ProfitLossReportEvents> {
-    const response = await this.axios.post<
+  ): Promise<ProfitLossReportEvents> => {
+    const response = await api.instance.post<
       ActionResult<ProfitLossReportEvents>
     >(`/reports/${reportId}/data`, page, {
       validateStatus: validStatus
     });
     const data = handleResponse(response);
     return ProfitLossReportEvents.parse(data);
-  }
+  };
 
-  deleteReport(reportId: number): Promise<boolean> {
-    return this.axios
-      .delete<ActionResult<boolean>>(`/reports/${reportId}`, {
+  const deleteReport = async (reportId: number): Promise<boolean> => {
+    const response = await api.instance.delete<ActionResult<boolean>>(
+      `/reports/${reportId}`,
+      {
         validateStatus: validStatus
-      })
-      .then(handleResponse);
-  }
-}
+      }
+    );
+
+    return handleResponse(response);
+  };
+
+  return {
+    generateReport,
+    exportReportCSV,
+    downloadReportCSV,
+    importReportData,
+    exportReportData,
+    uploadReportData,
+    fetchActionableItems,
+    fetchReports,
+    fetchReport,
+    fetchReportEvents,
+    deleteReport
+  };
+};

@@ -71,7 +71,6 @@ import FileUpload from '@/components/import/FileUpload.vue';
 import ReportGenerator from '@/components/profitloss/ReportGenerator.vue';
 import ReportsTable from '@/components/profitloss/ReportsTable.vue';
 import { Routes } from '@/router/routes';
-import { api } from '@/services/rotkehlchen-api';
 import { useMessageStore } from '@/store/message';
 import { useReports } from '@/store/reports';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
@@ -83,6 +82,7 @@ import {
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { downloadFileByUrl } from '@/utils/download';
+import { useReportsApi } from '@/services/reports';
 
 const { isTaskRunning } = useTasks();
 const reportsStore = useReports();
@@ -188,6 +188,8 @@ const exportData = async ({ start, end }: ProfitLossReportPeriod) => {
   }
 };
 
+const { importReportData, uploadReportData } = useReportsApi();
+
 const importData = async () => {
   if (!get(reportDebugData)) return;
   set(importDataLoading, true);
@@ -200,8 +202,8 @@ const importData = async () => {
 
   try {
     const { taskId } = appSession
-      ? await api.reports.importReportData(get(reportDebugData)!.path)
-      : await api.reports.uploadReportData(get(reportDebugData)!);
+      ? await importReportData(get(reportDebugData)!.path)
+      : await uploadReportData(get(reportDebugData)!);
 
     const { result } = await awaitTask<boolean, TaskMeta>(taskId, taskType, {
       title: tc('profit_loss_reports.debug.import_message.title')

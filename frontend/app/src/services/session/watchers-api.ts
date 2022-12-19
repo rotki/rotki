@@ -8,48 +8,58 @@ import {
 } from '@/services/utils';
 
 export const useWatchersApi = () => {
-  const watchers = async <T extends WatcherTypes>(): Promise<Watcher<T>[]> =>
-    api.instance
-      .get<ActionResult<Watcher<T>[]>>('/watchers', {
+  const watchers = async <T extends WatcherTypes>(): Promise<Watcher<T>[]> => {
+    const response = await api.instance.get<ActionResult<Watcher<T>[]>>(
+      '/watchers',
+      {
         validateStatus: validWithSessionAndExternalService
-      })
-      .then(handleResponse);
+      }
+    );
+
+    return handleResponse(response);
+  };
 
   const addWatcher = async <T extends WatcherTypes>(
     watchers: Omit<Watcher<T>, 'identifier'>[]
-  ): Promise<Watcher<T>[]> =>
-    api.instance
-      .put<ActionResult<Watcher<T>[]>>(
-        '/watchers',
-        { watchers },
-        {
-          validateStatus: validWithParamsSessionAndExternalService
-        }
-      )
-      .then(handleResponse);
+  ): Promise<Watcher<T>[]> => {
+    const response = await api.instance.put<ActionResult<Watcher<T>[]>>(
+      '/watchers',
+      { watchers },
+      {
+        validateStatus: validWithParamsSessionAndExternalService
+      }
+    );
+
+    return handleResponse(response);
+  };
 
   const editWatcher = async <T extends WatcherTypes>(
     watchers: Watcher<T>[]
-  ): Promise<Watcher<T>[]> =>
-    api.instance
-      .patch<ActionResult<Watcher<T>[]>>(
-        '/watchers',
-        { watchers },
-        {
-          validateStatus: validWithParamsSessionAndExternalService
-        }
-      )
-      .then(handleResponse);
+  ): Promise<Watcher<T>[]> => {
+    const response = await api.instance.patch<ActionResult<Watcher<T>[]>>(
+      '/watchers',
+      { watchers },
+      {
+        validateStatus: validWithParamsSessionAndExternalService
+      }
+    );
+
+    return handleResponse(response);
+  };
 
   const deleteWatcher = async <T extends WatcherTypes>(
     identifiers: string[]
-  ): Promise<Watcher<T>[]> =>
-    api.instance
-      .delete<ActionResult<Watcher<T>[]>>('/watchers', {
+  ): Promise<Watcher<T>[]> => {
+    const response = await api.instance.delete<ActionResult<Watcher<T>[]>>(
+      '/watchers',
+      {
         data: { watchers: identifiers },
         validateStatus: validWithParamsSessionAndExternalService
-      })
-      .then(handleResponse);
+      }
+    );
+
+    return handleResponse(response);
+  };
 
   return {
     watchers,

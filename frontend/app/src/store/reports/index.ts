@@ -1,6 +1,5 @@
 import { type Message } from '@rotki/common/lib/messages';
 import { type ComputedRef, type Ref } from 'vue';
-import { api } from '@/services/rotkehlchen-api';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
 import { filterAddressesFromWords } from '@/store/history/utils';
 import { useMessageStore } from '@/store/message';
@@ -22,6 +21,8 @@ import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { type AccountingSettings } from '@/types/user';
 import { logger } from '@/utils/logging';
+import { useReportsApi } from '@/services/reports';
+import { useHistoryApi } from '@/services/history';
 
 const notify = (info: {
   title: string;
@@ -99,10 +100,22 @@ export const useReports = defineStore('reports', () => {
   const { itemsPerPage } = storeToRefs(useFrontendSettingsStore());
   const { t } = useI18n();
 
+  const {
+    exportReportCSV,
+    deleteReport: deleteReportCaller,
+    fetchReportEvents,
+    fetchActionableItems,
+    fetchReports: fetchReportsCaller,
+    generateReport: generateReportCaller,
+    exportReportData: exportReportDataCaller
+  } = useReportsApi();
+
+  const { getProgress } = useHistoryApi();
+
   const createCsv = async (path: string): Promise<void> => {
     let message: Message;
     try {
-      const success = await api.reports.exportReportCSV(path);
+      const success = await exportReportCSV(path);
       message = {
         title: t('actions.reports.csv_export.title').toString(),
         description: success
@@ -122,7 +135,7 @@ export const useReports = defineStore('reports', () => {
 
   const deleteReport = async (reportId: number): Promise<void> => {
     try {
-      await api.reports.deleteReport(reportId);
+      await deleteReportCaller(reportId);
       await fetchReports();
     } catch (e: any) {
       notify({
@@ -149,10 +162,7 @@ export const useReports = defineStore('reports', () => {
       if (!selectedReport) {
         return false;
       }
-      const reportEntries = await api.reports.fetchReportEvents(
-        reportId,
-        currentPage
-      );
+      const reportEntries = await fetchReportEvents(reportId, currentPage);
       set(report, {
         ...reportEntries,
         overview: selectedReport.overview,
@@ -166,7 +176,7 @@ export const useReports = defineStore('reports', () => {
       });
 
       if (isLatestReport(reportId)) {
-        const actionable = await api.reports.fetchActionableItems();
+        const actionable = await fetchActionableItems();
         set(actionableItems, actionable);
       }
       set(loaded, false);
@@ -198,7 +208,7 @@ export const useReports = defineStore('reports', () => {
 
   const fetchReports = async (): Promise<void> => {
     try {
-      set(reports, await api.reports.fetchReports());
+      set(reports, await fetchReportsCaller());
     } catch (e: any) {
       notify({
         title: t('actions.reports.fetch.error.title').toString(),
@@ -219,12 +229,12 @@ export const useReports = defineStore('reports', () => {
     set(reportError, emptyError());
 
     const interval = setInterval(async () => {
-      set(reportProgress, await api.history.getProgress());
+      set(reportProgress, await getProgress());
     }, 2000);
 
     const { awaitTask } = useTasks();
     try {
-      const { taskId } = await api.reports.generateReport(period);
+      const { taskId } = await generateReportCaller(period);
       const { result } = await awaitTask<number, TaskMeta>(
         taskId,
         TaskType.TRADE_HISTORY,
@@ -271,12 +281,12 @@ export const useReports = defineStore('reports', () => {
     set(reportError, emptyError());
 
     const interval = setInterval(async () => {
-      set(reportProgress, await api.history.getProgress());
+      set(reportProgress, await getProgress());
     }, 2000);
 
     const { awaitTask } = useTasks();
     try {
-      const { taskId } = await api.reports.exportReportData(payload);
+      const { taskId } = await exportReportDataCaller(payload);
       const { result } = await awaitTask<number, TaskMeta>(
         taskId,
         TaskType.TRADE_HISTORY,

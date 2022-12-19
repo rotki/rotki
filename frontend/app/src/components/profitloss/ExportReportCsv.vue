@@ -42,6 +42,7 @@
 import { api } from '@/services/rotkehlchen-api';
 import { useMessageStore } from '@/store/message';
 import { useReports } from '@/store/reports';
+import { useReportsApi } from '@/services/reports';
 
 defineProps({
   icon: {
@@ -56,6 +57,8 @@ const { setMessage } = useMessageStore();
 
 const { t } = useI18n();
 const { isPackaged, openDirectory } = useInterop();
+
+const { downloadReportCSV } = useReportsApi();
 
 const showMessage = (description: string) => {
   setMessage({
@@ -76,7 +79,7 @@ const exportCSV = async () => {
       }
       await createCsv(directory);
     } else {
-      const result = await api.reports.downloadReportCSV();
+      const result = await downloadReportCSV();
       if (!result.success) {
         showMessage(
           result.message ?? t('profit_loss_report.download_failed').toString()

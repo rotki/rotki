@@ -1,6 +1,5 @@
 import { type ComputedRef, type Ref } from 'vue';
 import { ProtocolVersion } from '@/services/defi/consts';
-import { api } from '@/services/rotkehlchen-api';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useNotificationsStore } from '@/store/notifications';
 import { getStatus, setStatus } from '@/store/status';
@@ -21,6 +20,7 @@ import { TaskType } from '@/types/task-type';
 import { isEvmIdentifier } from '@/utils/assets';
 import { zeroBalance } from '@/utils/bignumbers';
 import { balanceSum } from '@/utils/calculation';
+import { useYearnApi } from '@/services/defi/yearn';
 
 export const useYearnStore = defineStore('defi/yearn', () => {
   const vaultsBalances: Ref<YearnVaultsBalances> = ref({});
@@ -34,6 +34,7 @@ export const useYearnStore = defineStore('defi/yearn', () => {
   const { assetSymbol } = useAssetInfoRetrieval();
   const premium = usePremium();
   const { t } = useI18n();
+  const { fetchYearnVaultsBalances, fetchYearnVaultsHistory } = useYearnApi();
 
   const yearnVaultsProfit = (
     addresses: string[],
@@ -186,7 +187,7 @@ export const useYearnStore = defineStore('defi/yearn', () => {
       const taskType = isV1
         ? TaskType.DEFI_YEARN_VAULT_BALANCES
         : TaskType.DEFI_YEARN_VAULT_V2_BALANCES;
-      const { taskId } = await api.defi.fetchYearnVaultsBalances(version);
+      const { taskId } = await fetchYearnVaultsBalances(version);
       const { result } = await awaitTask<YearnVaultsBalances, TaskMeta>(
         taskId,
         taskType,
@@ -256,10 +257,7 @@ export const useYearnStore = defineStore('defi/yearn', () => {
       const taskType = isV1
         ? TaskType.DEFI_YEARN_VAULT_HISTORY
         : TaskType.DEFI_YEARN_VAULT_V2_HISTORY;
-      const { taskId } = await api.defi.fetchYearnVaultsHistory(
-        payload.version,
-        reset
-      );
+      const { taskId } = await fetchYearnVaultsHistory(payload.version, reset);
       const { result } = await awaitTask<YearnVaultsHistory, TaskMeta>(
         taskId,
         taskType,

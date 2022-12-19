@@ -118,7 +118,6 @@ import RowAction from '@/components/helper/RowActions.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
 
 import { type ManualPriceFormPayload } from '@/services/assets/types';
-import { api } from '@/services/rotkehlchen-api';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useNonFungibleBalancesStore } from '@/store/balances/non-fungible';
 import { useMessageStore } from '@/store/message';
@@ -134,6 +133,7 @@ import {
 import { Section } from '@/types/status';
 import { assert } from '@/utils/assertions';
 import { uniqueStrings } from '@/utils/data';
+import { useAssetPricesApi } from '@/services/assets/prices';
 import { useConfirmStore } from '@/store/confirm';
 
 interface PaginationOptions {
@@ -158,6 +158,7 @@ const options: Ref<PaginationOptions | null> = ref(null);
 
 const { tc } = useI18n();
 const { notify } = useNotificationsStore();
+const { addLatestPrice, deleteLatestPrice } = useAssetPricesApi();
 
 const edit: Ref<NonFungibleBalance | null> = ref(null);
 
@@ -217,7 +218,7 @@ const setPrice = async (price: string, toAsset: string) => {
       toAsset,
       price
     };
-    await api.assets.addLatestPrice(payload);
+    await addLatestPrice(payload);
     await fetch();
   } catch (e: any) {
     notify({
@@ -230,7 +231,7 @@ const setPrice = async (price: string, toAsset: string) => {
 
 const deletePrice = async (toDeletePrice: NonFungibleBalance) => {
   try {
-    await api.assets.deleteLatestPrice(toDeletePrice.id);
+    await deleteLatestPrice(toDeletePrice.id);
     await fetch();
   } catch {
     notify({

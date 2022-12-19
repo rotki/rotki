@@ -58,9 +58,9 @@ import {
   type ManualPrice,
   type ManualPriceFormPayload
 } from '@/services/assets/types';
-import { api } from '@/services/rotkehlchen-api';
 import { useMessageStore } from '@/store/message';
 import { type Nullable } from '@/types';
+import { useAssetPricesApi } from '@/services/assets/prices';
 
 const emptyPrice: () => ManualPriceFormPayload = () => ({
   fromAsset: '',
@@ -103,9 +103,11 @@ const hideForm = function () {
   set(formData, emptyPrice());
 };
 
+const { addLatestPrice } = useAssetPricesApi();
+
 const managePrice = async (price: ManualPriceFormPayload, edit: boolean) => {
   try {
-    await api.assets.addLatestPrice(omit(price, 'usdPrice'));
+    await addLatestPrice(omit(price, 'usdPrice'));
     set(showForm, false);
     if (!get(refreshing)) {
       set(refreshing, true);
