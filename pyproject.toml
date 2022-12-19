@@ -90,6 +90,7 @@ ignore = [
     "RET506",  # https://github.com/charliermarsh/ruff/issues/1035
     "RET507",  # https://github.com/charliermarsh/ruff/issues/1035
     "RET508",  # https://github.com/charliermarsh/ruff/issues/1035
+    "PGH003",  # we do use blanket type: ignore. Perhaps can fix in the future
 ]
 # Exclude a variety of commonly ignored directories.
 exclude = [
