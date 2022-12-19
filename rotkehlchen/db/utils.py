@@ -20,7 +20,7 @@ from typing_extensions import Concatenate, ParamSpec
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.chain.accounts import BlockchainAccountData
-from rotkehlchen.chain.substrate.utils import is_valid_kusama_address, is_valid_polkadot_address
+from rotkehlchen.chain.substrate.utils import is_valid_substrate_address
 from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import HexColorCode, Location, Price, SupportedBlockchain, Timestamp
@@ -289,10 +289,8 @@ def is_valid_db_blockchain_account(
         return True
     if blockchain.is_evm():
         return is_checksum_address(account)
-    if blockchain == SupportedBlockchain.KUSAMA:
-        return is_valid_kusama_address(account)
-    if blockchain == SupportedBlockchain.POLKADOT:
-        return is_valid_polkadot_address(account)
+    if blockchain.is_substrate():  # mypy does not understand the type narrowing here
+        return is_valid_substrate_address(blockchain, account)  # type: ignore[arg-type]
 
     raise AssertionError(f'Should not store blockchain: {blockchain} addresses in the DB')
 

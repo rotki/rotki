@@ -38,8 +38,7 @@ from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.substrate.types import SubstrateAddress, SubstratePublicKey
 from rotkehlchen.chain.substrate.utils import (
     get_substrate_address_from_public_key,
-    is_valid_kusama_address,
-    is_valid_polkadot_address,
+    is_valid_substrate_address,
 )
 from rotkehlchen.constants.assets import A_ETH, A_ETH2
 from rotkehlchen.constants.misc import ONE, ZERO
@@ -1320,8 +1319,9 @@ def _validate_blockchain_account_schemas(
     """Validates schema input for the PUT/PATCH/DELETE on blockchain account data"""
     # Make sure no duplicates addresses are given
     given_addresses = set()
+    chain = data['blockchain']
     # Make sure EVM based addresses are checksummed
-    if data['blockchain'] in (SupportedBlockchain.ETHEREUM, SupportedBlockchain.AVALANCHE):
+    if chain.is_evm():
         for account_data in data['accounts']:
             address_string = address_getter(account_data)
             if not address_string.endswith('.eth'):
@@ -1330,7 +1330,7 @@ def _validate_blockchain_account_schemas(
                     address = to_checksum_address(address_string)
                 except (ValueError, TypeError) as e:
                     raise ValidationError(
-                        f'Given value {address_string} is not an ethereum address',
+                        f'Given value {address_string} is not an evm address',
                         field_name='address',
                     ) from e
             else:
@@ -1345,7 +1345,7 @@ def _validate_blockchain_account_schemas(
             given_addresses.add(address)
 
     # Make sure bitcoin addresses are valid
-    elif data['blockchain'] == SupportedBlockchain.BITCOIN:
+    elif chain == SupportedBlockchain.BITCOIN:
         for account_data in data['accounts']:
             address = address_getter(account_data)
             # ENS domain will be checked in the transformation step
@@ -1362,37 +1362,20 @@ def _validate_blockchain_account_schemas(
             given_addresses.add(address)
 
     # Make sure bitcoin cash addresses are valid
-    elif data['blockchain'] == SupportedBlockchain.BITCOIN_CASH:
+    elif chain == SupportedBlockchain.BITCOIN_CASH:
         for account_data in data['accounts']:
             address = address_getter(account_data)
             validate_bch_address_input(address, given_addresses)
             given_addresses.add(address)
 
-    # Make sure kusama addresses are valid (either ss58 format or ENS domain)
-    elif data['blockchain'] == SupportedBlockchain.KUSAMA:
+    # Make sure substrate addresses are valid (either ss58 format or ENS domain)
+    elif chain.is_substrate():
         for account_data in data['accounts']:
             address = address_getter(account_data)
             # ENS domain will be checked in the transformation step
-            if not address.endswith('.eth') and not is_valid_kusama_address(address):
+            if not address.endswith('.eth') and not is_valid_substrate_address(chain, address):
                 raise ValidationError(
-                    f'Given value {address} is not a valid kusama address',
-                    field_name='address',
-                )
-            if address in given_addresses:
-                raise ValidationError(
-                    f'Address {address} appears multiple times in the request data',
-                    field_name='address',
-                )
-            given_addresses.add(address)
-
-    # Make sure polkadot addresses are valid (either ss58 format or ENS domain)
-    elif data['blockchain'] == SupportedBlockchain.POLKADOT:
-        for account_data in data['accounts']:
-            address = address_getter(account_data)
-            # ENS domain will be checked in the transformation step
-            if not address.endswith('.eth') and not is_valid_polkadot_address(address):
-                raise ValidationError(
-                    f'Given value {address} is not a valid polkadot address',
+                    f'Given value {address} is not a valid {chain} address',
                     field_name='address',
                 )
             if address in given_addresses:
