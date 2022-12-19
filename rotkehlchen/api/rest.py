@@ -1967,6 +1967,47 @@ class RestAPI():
 
         return api_response(process_result(_wrap_in_result(data, '')), status_code=HTTPStatus.OK)
 
+    def _add_evm_accounts(
+            self,
+            account_data: list[BlockchainAccountData],
+    ) -> dict[str, Any]:
+        try:
+            self.rotkehlchen.add_evm_accounts(account_data=account_data)
+        except EthSyncError as e:
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
+        except TagConstraintError as e:
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
+        except RemoteError as e:
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
+
+        # we can be sure that all addresses from account_data were added since the addition
+        # would have failed otherwise
+        added_addresses = [x.address for x in account_data]
+        return _wrap_in_ok_result(added_addresses)
+
+    def add_evm_accounts(
+            self,
+            account_data: list[BlockchainAccountData],
+            async_query: bool,
+    ) -> Response:
+        if async_query is True:
+            return self._query_async(
+                command=self._add_evm_accounts,
+                account_data=account_data,
+            )
+
+        response = self._add_evm_accounts(account_data=account_data)
+        result = response['result']
+        msg = response['message']
+        status_code = _get_status_code_from_async_response(response)
+
+        if result is None:
+            return api_response(wrap_in_fail_result(msg), status_code=status_code)
+
+        # success
+        result_dict = _wrap_in_result(result, msg)
+        return api_response(process_result(result_dict), status_code=status_code)
+
     def get_blockchain_accounts(self, blockchain: SupportedBlockchain) -> Response:
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             data = self.rotkehlchen.get_blockchain_account_data(cursor, blockchain)

@@ -1430,7 +1430,7 @@ def _transform_btc_or_bch_address(
     return address
 
 
-def _transform_eth_address(
+def _transform_evm_address(
         ethereum_inquirer: EthereumInquirer,
         given_address: str,
 ) -> ChecksumEvmAddress:
@@ -1515,6 +1515,40 @@ def _transform_substrate_address(
         ) from e
 
 
+def _transform_evm_addresses(data: dict[str, Any], ethereum_inquirer: 'EthereumInquirer') -> None:
+    for idx, account in enumerate(data['accounts']):
+        data['accounts'][idx]['address'] = _transform_evm_address(
+            ethereum_inquirer=ethereum_inquirer,
+            given_address=account['address'],
+        )
+
+
+class EvmAccountsPutSchema(AsyncQueryArgumentSchema):
+    accounts = fields.List(fields.Nested(BlockchainAccountDataSchema), required=True)
+
+    def __init__(self, ethereum_inquirer: EthereumInquirer):
+        super().__init__()
+        self.ethereum_inquirer = ethereum_inquirer
+
+    @validates_schema
+    def validate_schema(  # pylint: disable=no-self-use
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        data['blockchain'] = SupportedBlockchain.ETHEREUM  # any evm chain
+        _validate_blockchain_account_schemas(data, lambda x: x['address'])
+        data.pop('blockchain')
+
+    @post_load
+    def transform_data(  # pylint: disable=no-self-use
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> Any:
+        _transform_evm_addresses(data=data, ethereum_inquirer=self.ethereum_inquirer)
+
+
 class BlockchainAccountsPatchSchema(Schema):
     blockchain = BlockchainField(required=True, exclude_types=(SupportedBlockchain.ETHEREUM_BEACONCHAIN,))  # noqa: E501
     accounts = fields.List(fields.Nested(BlockchainAccountDataSchema), required=True)
@@ -1544,13 +1578,9 @@ class BlockchainAccountsPatchSchema(Schema):
                     given_address=account['address'],
                     blockchain=data['blockchain'],
                 )
-        if data['blockchain'].is_evm():
-            for idx, account in enumerate(data['accounts']):
-                data['accounts'][idx]['address'] = _transform_eth_address(
-                    ethereum_inquirer=self.ethereum_inquirer,
-                    given_address=account['address'],
-                )
-        if data['blockchain'].is_substrate():
+        elif data['blockchain'].is_evm():
+            _transform_evm_addresses(data=data, ethereum_inquirer=self.ethereum_inquirer)
+        elif data['blockchain'].is_substrate():
             for idx, account in enumerate(data['accounts']):
                 data['accounts'][idx]['address'] = _transform_substrate_address(
                     ethereum_inquirer=self.ethereum_inquirer,
@@ -1594,7 +1624,7 @@ class BlockchainAccountsDeleteSchema(AsyncQueryArgumentSchema):
             ]
         if data['blockchain'].is_evm():
             data['accounts'] = [
-                _transform_eth_address(self.ethereum_inquirer, x) for x in data['accounts']
+                _transform_evm_address(self.ethereum_inquirer, x) for x in data['accounts']
             ]
         if data['blockchain'].is_substrate():
             data['accounts'] = [

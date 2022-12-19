@@ -65,6 +65,7 @@ from rotkehlchen.api.v1.schemas import (
     Eth2ValidatorPutSchema,
     EthereumTransactionDecodingSchema,
     EthereumTransactionQuerySchema,
+    EvmAccountsPutSchema,
     ExchangeBalanceQuerySchema,
     ExchangeRatesSchema,
     ExchangesDataResourceSchema,
@@ -1394,6 +1395,33 @@ class PeriodicDataResource(BaseMethodView):
     @require_loggedin_user()
     def get(self) -> Response:
         return self.rest_api.query_periodic_data()
+
+
+class EvmAccountsResource(BaseMethodView):
+
+    def make_put_schema(self) -> EvmAccountsPutSchema:
+        return EvmAccountsPutSchema(
+            self.rest_api.rotkehlchen.chains_aggregator.ethereum.node_inquirer,
+        )
+
+    @require_loggedin_user()
+    @resource_parser.use_kwargs(make_put_schema, location='json_and_view_args')
+    def put(
+            self,
+            accounts: list[dict[str, Any]],
+            async_query: bool,
+    ) -> Response:
+        account_data = [
+            BlockchainAccountData(
+                address=entry['address'],
+                label=entry['label'],
+                tags=entry['tags'],
+            ) for entry in accounts
+        ]
+        return self.rest_api.add_evm_accounts(
+            account_data=account_data,
+            async_query=async_query,
+        )
 
 
 class BlockchainsAccountsResource(BaseMethodView):

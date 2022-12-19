@@ -66,6 +66,7 @@ from rotkehlchen.premium.premium import Premium, PremiumCredentials, premium_cre
 from rotkehlchen.premium.sync import PremiumSyncManager
 from rotkehlchen.tasks.manager import DEFAULT_MAX_TASKS_NUM, TaskManager
 from rotkehlchen.types import (
+    SUPPORTED_EVM_CHAINS,
     ApiKey,
     ApiSecret,
     ChainID,
@@ -524,6 +525,43 @@ class Rotkehlchen():
                 data['standalone'].append(account)
 
         return data
+
+    def add_evm_accounts(
+            self,
+            account_data: list[BlockchainAccountData],
+    ) -> list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]]:
+        """Adds each account for all evm addresses
+
+        Counting ethereum mainnet as the main chain we check if the account is a contract
+        in mainnet. If not we add it for all other chains.
+        If it's already added in a chain we just ignore that chain.
+
+        Returns a list of tuples of the address and the chain it was added in
+
+        May raise:
+        - TagConstraintError if any of the given account data contain unknown tags.
+        - RemoteError if an external service such as Etherscan is queried and
+          there is a problem with its query.
+        """
+        account_data_map: dict[ChecksumEvmAddress, BlockchainAccountData] = {x.address: x for x in account_data}  # type: ignore[misc]  # noqa: E501 # we know it's evm addresses here
+        with self.data.db.user_write() as cursor:
+            self.data.db.ensure_tags_exist(
+                cursor,
+                given_data=account_data,
+                action='adding',
+                data_type='blockchain accounts',
+            )
+            added_accounts = self.chains_aggregator.add_accounts_to_all_evm(
+                accounts=[ChecksumEvmAddress(entry.address) for entry in account_data],  # type: ignore[arg-type]  # noqa: E501 # we know it's evm address
+            )
+            for added_account in added_accounts:
+                self.data.db.add_blockchain_accounts(
+                    cursor,
+                    blockchain=added_account[0],
+                    account_data=[account_data_map[added_account[1]]],
+                )
+
+        return added_accounts
 
     def add_blockchain_accounts(
             self,
