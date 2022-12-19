@@ -26,8 +26,8 @@
     "local-pkg": "0.4.2"
   },
   "devDependencies": {
-    "eslint": "8.29.0",
+    "eslint": "8.30.0",
     "vue": "2.7.14",
-    "vuetify": "2.6.12"
+    "vuetify": "2.6.13"
   }
 }
