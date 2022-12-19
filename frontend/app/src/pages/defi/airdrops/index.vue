@@ -1,100 +1,3 @@
-<template>
-  <div>
-    <v-row class="mt-8">
-      <v-col>
-        <refresh-header
-          :loading="refreshing"
-          :title="t('airdrops.title')"
-          @refresh="refresh()"
-        />
-      </v-col>
-    </v-row>
-    <progress-screen v-if="loading">
-      <template #message>{{ t('airdrops.loading') }}</template>
-    </progress-screen>
-    <div v-else>
-      <blockchain-account-selector
-        v-model="selectedAccounts"
-        multiple
-        class="pt-2 mt-4"
-        hint
-        dense
-        outlined
-        :chains="[ETH]"
-        :usable-addresses="airdropAddresses"
-      >
-        <div class="text-caption mt-4" v-text="t('airdrops.description')" />
-      </blockchain-account-selector>
-      <v-card class="mt-8">
-        <v-card-text>
-          <v-sheet outlined rounded>
-            <data-table
-              :class="css.table"
-              :items="entries"
-              :headers="tableHeaders"
-              single-expand
-              :expanded.sync="expanded"
-              item-key="index"
-            >
-              <template #item.address="{ item }">
-                <hash-link :text="item.address" />
-              </template>
-              <template #item.amount="{ item }">
-                <amount-display
-                  v-if="!hasDetails(item.source)"
-                  :value="item.amount"
-                  :asset="item.asset"
-                />
-                <span v-else>{{ item.details.length }}</span>
-              </template>
-              <template #item.source="{ item }">
-                <div class="d-flex flex-row align-center">
-                  <adaptive-wrapper>
-                    <v-img
-                      width="24px"
-                      height="24px"
-                      contain
-                      position="left"
-                      max-height="32px"
-                      max-width="32px"
-                      :src="getIcon(item.source)"
-                    />
-                  </adaptive-wrapper>
-                  <span class="ml-4" v-text="getLabel(item.source)" />
-                </div>
-              </template>
-              <template #item.link="{ item }">
-                <v-btn
-                  v-if="!hasDetails(item.source)"
-                  icon
-                  color="primary"
-                  :target="isPackaged ? undefined : '_blank'"
-                  :href="isPackaged ? undefined : item.link"
-                  @click="isPackaged ? navigate(item.link) : undefined"
-                >
-                  <v-icon>mdi-link</v-icon>
-                </v-btn>
-                <row-expander
-                  v-else
-                  :expanded="expanded.includes(item)"
-                  @click="expand(item)"
-                />
-              </template>
-              <template #expanded-item="{ headers, item }">
-                <poap-delivery-airdrops
-                  :items="item.details"
-                  :colspan="headers.length"
-                  :visible="hasDetails(item.source)"
-                />
-              </template>
-            </data-table>
-          </v-sheet>
-        </v-card-text>
-      </v-card>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { type GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
@@ -269,6 +172,103 @@ onMounted(async () => {
   await defiStore.fetchAirdrops();
 });
 </script>
+
+<template>
+  <div>
+    <v-row class="mt-8">
+      <v-col>
+        <refresh-header
+          :loading="refreshing"
+          :title="t('airdrops.title')"
+          @refresh="refresh()"
+        />
+      </v-col>
+    </v-row>
+    <progress-screen v-if="loading">
+      <template #message>{{ t('airdrops.loading') }}</template>
+    </progress-screen>
+    <div v-else>
+      <blockchain-account-selector
+        v-model="selectedAccounts"
+        multiple
+        class="pt-2 mt-4"
+        hint
+        dense
+        outlined
+        :chains="[ETH]"
+        :usable-addresses="airdropAddresses"
+      >
+        <div class="text-caption mt-4" v-text="t('airdrops.description')" />
+      </blockchain-account-selector>
+      <v-card class="mt-8">
+        <v-card-text>
+          <v-sheet outlined rounded>
+            <data-table
+              :class="css.table"
+              :items="entries"
+              :headers="tableHeaders"
+              single-expand
+              :expanded.sync="expanded"
+              item-key="index"
+            >
+              <template #item.address="{ item }">
+                <hash-link :text="item.address" />
+              </template>
+              <template #item.amount="{ item }">
+                <amount-display
+                  v-if="!hasDetails(item.source)"
+                  :value="item.amount"
+                  :asset="item.asset"
+                />
+                <span v-else>{{ item.details.length }}</span>
+              </template>
+              <template #item.source="{ item }">
+                <div class="d-flex flex-row align-center">
+                  <adaptive-wrapper>
+                    <v-img
+                      width="24px"
+                      height="24px"
+                      contain
+                      position="left"
+                      max-height="32px"
+                      max-width="32px"
+                      :src="getIcon(item.source)"
+                    />
+                  </adaptive-wrapper>
+                  <span class="ml-4" v-text="getLabel(item.source)" />
+                </div>
+              </template>
+              <template #item.link="{ item }">
+                <v-btn
+                  v-if="!hasDetails(item.source)"
+                  icon
+                  color="primary"
+                  :target="isPackaged ? undefined : '_blank'"
+                  :href="isPackaged ? undefined : item.link"
+                  @click="isPackaged ? navigate(item.link) : undefined"
+                >
+                  <v-icon>mdi-link</v-icon>
+                </v-btn>
+                <row-expander
+                  v-else
+                  :expanded="expanded.includes(item)"
+                  @click="expand(item)"
+                />
+              </template>
+              <template #expanded-item="{ headers, item }">
+                <poap-delivery-airdrops
+                  :items="item.details"
+                  :colspan="headers.length"
+                  :visible="hasDetails(item.source)"
+                />
+              </template>
+            </data-table>
+          </v-sheet>
+        </v-card-text>
+      </v-card>
+    </div>
+  </div>
+</template>
 
 <style module lang="scss">
 .table {

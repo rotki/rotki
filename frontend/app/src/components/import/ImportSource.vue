@@ -1,78 +1,3 @@
-<template>
-  <div>
-    <div>
-      <div class="mb-2">
-        <slot name="upload-title" />
-      </div>
-      <v-form ref="form" :value="!v$.$invalid">
-        <file-upload
-          :loading="loading"
-          :uploaded="uploaded"
-          :source="source"
-          :error-message="errorMessage"
-          @selected="upload($event)"
-          @update:uploaded="uploaded = $event"
-        />
-        <v-switch
-          v-if="!isRotkiCustomImport"
-          :value="dateInputFormat !== null"
-          @change="changeShouldCustomDateFormat"
-        >
-          <template #label>
-            {{ t('file_upload.date_input_format.switch_label') }}
-          </template>
-        </v-switch>
-        <v-text-field
-          v-if="dateInputFormat !== null"
-          v-model="dateInputFormat"
-          class="mt-2"
-          outlined
-          :error-messages="v$.dateInputFormat.$errors.map(e => e.$message)"
-          :placeholder="t('file_upload.date_input_format.placeholder')"
-          :hint="
-            t('file_upload.date_input_format.hint', {
-              format: dateInputFormatExample
-            })
-          "
-          persistent-hint
-        >
-          <template #append>
-            <v-btn small icon @click="formatHelp = true">
-              <v-icon small> mdi-information </v-icon>
-            </v-btn>
-          </template>
-        </v-text-field>
-
-        <div class="mt-4">
-          <v-row>
-            <v-col cols="12">
-              <slot />
-            </v-col>
-          </v-row>
-          <v-row v-if="$slots.hint">
-            <v-col cols="12">
-              <slot name="hint" />
-            </v-col>
-          </v-row>
-        </div>
-        <div class="mt-6">
-          <v-btn
-            color="primary"
-            depressed
-            block
-            data-cy="button-import"
-            :disabled="v$.$invalid || !file || loading"
-            @click="uploadFile"
-          >
-            {{ t('common.actions.import') }}
-          </v-btn>
-        </div>
-      </v-form>
-    </div>
-    <date-format-help v-model="formatHelp" />
-  </div>
-</template>
-
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
@@ -219,6 +144,81 @@ const isRotkiCustomImport = computed(() => {
   return get(source).startsWith('rotki_');
 });
 </script>
+
+<template>
+  <div>
+    <div>
+      <div class="mb-2">
+        <slot name="upload-title" />
+      </div>
+      <v-form ref="form" :value="!v$.$invalid">
+        <file-upload
+          :loading="loading"
+          :uploaded="uploaded"
+          :source="source"
+          :error-message="errorMessage"
+          @selected="upload($event)"
+          @update:uploaded="uploaded = $event"
+        />
+        <v-switch
+          v-if="!isRotkiCustomImport"
+          :value="dateInputFormat !== null"
+          @change="changeShouldCustomDateFormat"
+        >
+          <template #label>
+            {{ t('file_upload.date_input_format.switch_label') }}
+          </template>
+        </v-switch>
+        <v-text-field
+          v-if="dateInputFormat !== null"
+          v-model="dateInputFormat"
+          class="mt-2"
+          outlined
+          :error-messages="v$.dateInputFormat.$errors.map(e => e.$message)"
+          :placeholder="t('file_upload.date_input_format.placeholder')"
+          :hint="
+            t('file_upload.date_input_format.hint', {
+              format: dateInputFormatExample
+            })
+          "
+          persistent-hint
+        >
+          <template #append>
+            <v-btn small icon @click="formatHelp = true">
+              <v-icon small> mdi-information </v-icon>
+            </v-btn>
+          </template>
+        </v-text-field>
+
+        <div class="mt-4">
+          <v-row>
+            <v-col cols="12">
+              <slot />
+            </v-col>
+          </v-row>
+          <v-row v-if="$slots.hint">
+            <v-col cols="12">
+              <slot name="hint" />
+            </v-col>
+          </v-row>
+        </div>
+        <div class="mt-6">
+          <v-btn
+            color="primary"
+            depressed
+            block
+            data-cy="button-import"
+            :disabled="v$.$invalid || !file || loading"
+            @click="uploadFile"
+          >
+            {{ t('common.actions.import') }}
+          </v-btn>
+        </div>
+      </v-form>
+    </div>
+    <date-format-help v-model="formatHelp" />
+  </div>
+</template>
 
 <style module lang="scss">
 .image {

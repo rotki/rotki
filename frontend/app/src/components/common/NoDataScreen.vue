@@ -1,3 +1,17 @@
+<script setup lang="ts">
+import FullSizeContent from '@/components/common/FullSizeContent.vue';
+
+defineProps({
+  full: { required: false, type: Boolean, default: true }
+});
+
+const slots = useSlots();
+const css = useCssModule();
+const { isMobile } = useTheme();
+const remoteEmptyScreenLogo =
+  'https://raw.githubusercontent.com/rotki/data/main/assets/icons/empty_screen_logo.png';
+</script>
+
 <template>
   <component :is="full ? FullSizeContent : 'div'">
     <v-row align="center" justify="center" :class="{ 'mb-10': !full }">
@@ -20,20 +34,6 @@
     </v-row>
   </component>
 </template>
-
-<script setup lang="ts">
-import FullSizeContent from '@/components/common/FullSizeContent.vue';
-
-defineProps({
-  full: { required: false, type: Boolean, default: true }
-});
-
-const slots = useSlots();
-const css = useCssModule();
-const { isMobile } = useTheme();
-const remoteEmptyScreenLogo =
-  'https://raw.githubusercontent.com/rotki/data/main/assets/icons/empty_screen_logo.png';
-</script>
 
 <style module lang="scss">
 .logo {

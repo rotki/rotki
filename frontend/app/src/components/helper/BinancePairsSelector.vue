@@ -1,55 +1,3 @@
-<template>
-  <v-autocomplete
-    v-bind="$attrs"
-    :items="allMarkets"
-    :filter="filter"
-    :search-input.sync="search"
-    multiple
-    :loading="loading"
-    :disabled="loading"
-    hide-details
-    hide-selected
-    hide-no-data
-    return-object
-    chips
-    clearable
-    :outlined="outlined"
-    :open-on-clear="false"
-    :label="label ? label : t('binance_market_selector.default_label')"
-    :class="outlined ? 'binance-market-selector--outlined' : null"
-    item-text="address"
-    item-value="address"
-    class="binance-market-selector"
-    :value="selection"
-    @input="handleInput($event)"
-    @change="search = ''"
-  >
-    <template #selection="data">
-      <v-chip
-        v-bind="data.attrs"
-        :input-value="data.selected"
-        :click="data.select"
-        filter
-        close
-        @click:close="data.parent.selectItem(data.item)"
-      >
-        {{ data.item }}
-      </v-chip>
-    </template>
-    <template #item="data">
-      <div
-        class="binance-market-selector__list__item d-flex justify-space-between flex-grow-1"
-      >
-        <div class="binance-market-selector__list__item__address-label">
-          <v-chip :color="dark ? null : 'grey lighten-3'" filter>
-            {{ data.item }}
-          </v-chip>
-        </div>
-      </div>
-    </template>
-  </v-autocomplete>
-</template>
-
 <script setup lang="ts">
 import { Severity } from '@rotki/common/lib/messages';
 import { useExchangeApi } from '@/services/balances/exchanges';
@@ -147,6 +95,58 @@ watch(search, search => {
   }
 });
 </script>
+
+<template>
+  <v-autocomplete
+    v-bind="$attrs"
+    :items="allMarkets"
+    :filter="filter"
+    :search-input.sync="search"
+    multiple
+    :loading="loading"
+    :disabled="loading"
+    hide-details
+    hide-selected
+    hide-no-data
+    return-object
+    chips
+    clearable
+    :outlined="outlined"
+    :open-on-clear="false"
+    :label="label ? label : t('binance_market_selector.default_label')"
+    :class="outlined ? 'binance-market-selector--outlined' : null"
+    item-text="address"
+    item-value="address"
+    class="binance-market-selector"
+    :value="selection"
+    @input="handleInput($event)"
+    @change="search = ''"
+  >
+    <template #selection="data">
+      <v-chip
+        v-bind="data.attrs"
+        :input-value="data.selected"
+        :click="data.select"
+        filter
+        close
+        @click:close="data.parent.selectItem(data.item)"
+      >
+        {{ data.item }}
+      </v-chip>
+    </template>
+    <template #item="data">
+      <div
+        class="binance-market-selector__list__item d-flex justify-space-between flex-grow-1"
+      >
+        <div class="binance-market-selector__list__item__address-label">
+          <v-chip :color="dark ? null : 'grey lighten-3'" filter>
+            {{ data.item }}
+          </v-chip>
+        </div>
+      </div>
+    </template>
+  </v-autocomplete>
+</template>
 
 <style scoped lang="scss">
 .binance-market-selector {

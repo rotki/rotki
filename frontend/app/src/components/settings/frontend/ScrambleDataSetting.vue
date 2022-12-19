@@ -1,3 +1,16 @@
+<script setup lang="ts">
+import { useSessionSettingsStore } from '@/store/settings/session';
+
+const { scrambleData: enabled } = useSessionSettingsStore();
+
+const scrambleData = ref<boolean>(false);
+onMounted(() => {
+  set(scrambleData, get(enabled));
+});
+
+const { t, tc } = useI18n();
+</script>
+
 <template>
   <settings-option
     #default="{ error, success, update }"
@@ -15,16 +28,3 @@
     />
   </settings-option>
 </template>
-
-<script setup lang="ts">
-import { useSessionSettingsStore } from '@/store/settings/session';
-
-const { scrambleData: enabled } = useSessionSettingsStore();
-
-const scrambleData = ref<boolean>(false);
-onMounted(() => {
-  set(scrambleData, get(enabled));
-});
-
-const { t, tc } = useI18n();
-</script>

@@ -1,3 +1,12 @@
+<script setup lang="ts">
+const isTest = !!import.meta.env.VITE_TEST;
+const css = useCssModule();
+const { currentBreakpoint } = useTheme();
+const { animationEnabled } = useAnimation();
+
+const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
+</script>
+
 <template>
   <v-overlay :dark="false" opacity="1" color="grey lighten-4">
     <div
@@ -11,15 +20,6 @@
     <slot />
   </v-overlay>
 </template>
-
-<script setup lang="ts">
-const isTest = !!import.meta.env.VITE_TEST;
-const css = useCssModule();
-const { currentBreakpoint } = useTheme();
-const { animationEnabled } = useAnimation();
-
-const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
-</script>
 
 <style module lang="scss">
 @keyframes scrollLarge {

@@ -1,13 +1,3 @@
-<template>
-  <menu-tooltip-button
-    :tooltip="tc('notes_menu.tooltip')"
-    class-name="secondary--text text--lighten-4"
-    @click="toggleVisibility"
-  >
-    <v-icon :class="visible ? 'help--visible' : null"> mdi-note-text </v-icon>
-  </menu-tooltip-button>
-</template>
-
 <script setup lang="ts">
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 
@@ -24,6 +14,16 @@ const toggleVisibility = () => {
   emit('visible:update', !get(visible));
 };
 </script>
+
+<template>
+  <menu-tooltip-button
+    :tooltip="tc('notes_menu.tooltip')"
+    class-name="secondary--text text--lighten-4"
+    @click="toggleVisibility"
+  >
+    <v-icon :class="visible ? 'help--visible' : null"> mdi-note-text </v-icon>
+  </menu-tooltip-button>
+</template>
 
 <style scoped lang="scss">
 .help {

@@ -1,26 +1,3 @@
-<template>
-  <setting-category>
-    <template #title>
-      {{ tc('data_management.title') }}
-    </template>
-    <template #subtitle>
-      {{ tc('data_management.subtitle') }}
-    </template>
-
-    <v-form ref="form">
-      <v-row>
-        <v-col>
-          <purge-selector
-            v-model="source"
-            :status="status"
-            :pending="pending"
-            @purge="showConfirmation($event)"
-          />
-        </v-col>
-      </v-row>
-    </v-form>
-  </setting-category>
-</template>
 <script setup lang="ts">
 import PurgeSelector from '@/components/settings/data-security/PurgeSelector.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
@@ -114,3 +91,26 @@ const purge = async (source: PurgeParams) => {
   }
 };
 </script>
+<template>
+  <setting-category>
+    <template #title>
+      {{ tc('data_management.title') }}
+    </template>
+    <template #subtitle>
+      {{ tc('data_management.subtitle') }}
+    </template>
+
+    <v-form ref="form">
+      <v-row>
+        <v-col>
+          <purge-selector
+            v-model="source"
+            :status="status"
+            :pending="pending"
+            @purge="showConfirmation($event)"
+          />
+        </v-col>
+      </v-row>
+    </v-form>
+  </setting-category>
+</template>

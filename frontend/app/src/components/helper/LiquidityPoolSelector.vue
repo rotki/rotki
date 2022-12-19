@@ -1,3 +1,39 @@
+<script setup lang="ts">
+import { type LpType } from '@rotki/common/lib/defi';
+import { type XswapPool } from '@rotki/common/lib/defi/xswap';
+import { type PropType } from 'vue';
+
+const props = defineProps({
+  pools: { required: true, type: Array as PropType<XswapPool[]> },
+  value: { required: true, type: Array as PropType<string[]> },
+  outlined: { required: false, type: Boolean, default: false },
+  dense: { required: false, type: Boolean, default: false },
+  noPadding: { required: false, type: Boolean, default: false },
+  type: { required: true, type: String as PropType<LpType> }
+});
+
+const emit = defineEmits(['input']);
+const { value, type } = toRefs(props);
+const input = (_value: string[]) => emit('input', _value);
+
+const { getPoolName } = useLiquidityPosition();
+
+const filter = (item: XswapPool, queryText: string) => {
+  const searchString = queryText.toLocaleLowerCase();
+  const name = getPoolName(get(type), item.assets).toLowerCase();
+  return name.includes(searchString);
+};
+
+const remove = (asset: XswapPool) => {
+  const addresses = [...get(value)];
+  const index = addresses.indexOf(asset.address);
+  addresses.splice(index, 1);
+  input(addresses);
+};
+
+const { t } = useI18n();
+</script>
+
 <template>
   <v-card v-bind="$attrs">
     <div
@@ -52,39 +88,3 @@
     </div>
   </v-card>
 </template>
-
-<script setup lang="ts">
-import { type LpType } from '@rotki/common/lib/defi';
-import { type XswapPool } from '@rotki/common/lib/defi/xswap';
-import { type PropType } from 'vue';
-
-const props = defineProps({
-  pools: { required: true, type: Array as PropType<XswapPool[]> },
-  value: { required: true, type: Array as PropType<string[]> },
-  outlined: { required: false, type: Boolean, default: false },
-  dense: { required: false, type: Boolean, default: false },
-  noPadding: { required: false, type: Boolean, default: false },
-  type: { required: true, type: String as PropType<LpType> }
-});
-
-const emit = defineEmits(['input']);
-const { value, type } = toRefs(props);
-const input = (_value: string[]) => emit('input', _value);
-
-const { getPoolName } = useLiquidityPosition();
-
-const filter = (item: XswapPool, queryText: string) => {
-  const searchString = queryText.toLocaleLowerCase();
-  const name = getPoolName(get(type), item.assets).toLowerCase();
-  return name.includes(searchString);
-};
-
-const remove = (asset: XswapPool) => {
-  const addresses = [...get(value)];
-  const index = addresses.indexOf(asset.address);
-  addresses.splice(index, 1);
-  input(addresses);
-};
-
-const { t } = useI18n();
-</script>

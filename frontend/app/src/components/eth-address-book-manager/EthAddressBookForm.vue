@@ -1,47 +1,3 @@
-<template>
-  <v-form :value="!v$.$invalid">
-    <div class="mt-2">
-      <div>
-        <v-select
-          :value="value.location"
-          outlined
-          :label="t('common.location')"
-          :items="locations"
-          :disabled="edit"
-          @input="input({ location: $event })"
-        >
-          <template #item="{ item }"> {{ toSentenceCase(item) }} </template>
-          <template #selection="{ item }">
-            {{ toSentenceCase(item) }}
-          </template>
-        </v-select>
-      </div>
-      <div>
-        <v-combobox
-          :value="value.address"
-          outlined
-          :label="t('eth_address_book.form.labels.address')"
-          :items="addressSuggestions"
-          :no-data-text="t('eth_address_book.form.no_suggestions_available')"
-          :disabled="edit"
-          :error-messages="v$.address.$errors.map(e => e.$message)"
-          :search-input.sync="search"
-          @input="input({ address: $event })"
-        />
-      </div>
-      <div>
-        <v-text-field
-          :value="value.name"
-          outlined
-          :label="t('common.name')"
-          :error-messages="v$.name.$errors.map(e => e.$message)"
-          @input="input({ name: $event })"
-        />
-      </div>
-    </div>
-  </v-form>
-</template>
-
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
@@ -138,3 +94,47 @@ watch(v$, ({ $invalid }) => {
   emit('valid', !$invalid);
 });
 </script>
+
+<template>
+  <v-form :value="!v$.$invalid">
+    <div class="mt-2">
+      <div>
+        <v-select
+          :value="value.location"
+          outlined
+          :label="t('common.location')"
+          :items="locations"
+          :disabled="edit"
+          @input="input({ location: $event })"
+        >
+          <template #item="{ item }"> {{ toSentenceCase(item) }} </template>
+          <template #selection="{ item }">
+            {{ toSentenceCase(item) }}
+          </template>
+        </v-select>
+      </div>
+      <div>
+        <v-combobox
+          :value="value.address"
+          outlined
+          :label="t('eth_address_book.form.labels.address')"
+          :items="addressSuggestions"
+          :no-data-text="t('eth_address_book.form.no_suggestions_available')"
+          :disabled="edit"
+          :error-messages="v$.address.$errors.map(e => e.$message)"
+          :search-input.sync="search"
+          @input="input({ address: $event })"
+        />
+      </div>
+      <div>
+        <v-text-field
+          :value="value.name"
+          outlined
+          :label="t('common.name')"
+          :error-messages="v$.name.$errors.map(e => e.$message)"
+          @input="input({ name: $event })"
+        />
+      </div>
+    </div>
+  </v-form>
+</template>

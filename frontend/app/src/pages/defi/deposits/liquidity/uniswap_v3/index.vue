@@ -1,3 +1,83 @@
+<script setup lang="ts">
+import { type GeneralAccount } from '@rotki/common/lib/account';
+import { Blockchain } from '@rotki/common/lib/blockchain';
+import { LpType } from '@rotki/common/lib/defi';
+import { type XswapAsset } from '@rotki/common/lib/defi/xswap';
+import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
+import PaginatedCards from '@/components/common/PaginatedCards.vue';
+import ActiveModules from '@/components/defi/ActiveModules.vue';
+import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
+import UniswapPoolDetails from '@/components/defi/uniswap/UniswapPoolDetails.vue';
+import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
+import NftDetails from '@/components/helper/NftDetails.vue';
+import ProgressScreen from '@/components/helper/ProgressScreen.vue';
+
+import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
+import { useUniswapStore } from '@/store/defi/uniswap';
+import { Module } from '@/types/modules';
+import { Section } from '@/types/status';
+
+const uniswap = Module.UNISWAP;
+const chains = [Blockchain.ETH];
+const modules = [uniswap];
+
+const selectedAccount = ref<GeneralAccount | null>(null);
+const selectedPools = ref<string[]>([]);
+
+const store = useUniswapStore();
+
+const { fetchV3Balances: fetchBalances, uniswapV3Balances: uniswapBalances } =
+  store;
+
+const { uniswapV3Addresses: addresses, uniswapV3PoolAssets: poolAssets } =
+  storeToRefs(store);
+const { isModuleEnabled } = useModules();
+const { tokenAddress } = useAssetInfoRetrieval();
+const { isSectionRefreshing, shouldShowLoadingScreen } = useSectionLoading();
+const { tc } = useI18n();
+
+const { premiumURL } = useInterop();
+
+const enabled = isModuleEnabled(uniswap);
+const loading = shouldShowLoadingScreen(Section.DEFI_UNISWAP_V3_BALANCES);
+const primaryRefreshing = isSectionRefreshing(Section.DEFI_UNISWAP_V3_BALANCES);
+const secondaryRefreshing = isSectionRefreshing(Section.DEFI_UNISWAP_EVENTS);
+
+const selectedAddresses = computed(() => {
+  const account = get(selectedAccount);
+  return account ? [account.address] : [];
+});
+
+const balances = computed(() => {
+  const addresses = get(selectedAddresses);
+  const pools = get(selectedPools);
+  const balances = get(uniswapBalances(addresses));
+
+  return pools.length === 0
+    ? balances
+    : balances.filter(({ address }) => pools.includes(address));
+});
+
+const premium = usePremium();
+
+const { dark } = useTheme();
+
+const refresh = async () => {
+  await fetchBalances(true);
+};
+
+const getAssets = (assets: XswapAsset[]) => {
+  return assets.map(({ asset }) => asset);
+};
+
+onMounted(async () => {
+  await fetchBalances(false);
+});
+
+const { getPoolName } = useLiquidityPosition();
+const lpType = LpType.UNISWAP_V3;
+</script>
+
 <template>
   <module-not-active v-if="!enabled" :modules="modules" />
   <progress-screen v-else-if="loading">
@@ -153,86 +233,6 @@
     </paginated-cards>
   </div>
 </template>
-
-<script setup lang="ts">
-import { type GeneralAccount } from '@rotki/common/lib/account';
-import { Blockchain } from '@rotki/common/lib/blockchain';
-import { LpType } from '@rotki/common/lib/defi';
-import { type XswapAsset } from '@rotki/common/lib/defi/xswap';
-import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
-import PaginatedCards from '@/components/common/PaginatedCards.vue';
-import ActiveModules from '@/components/defi/ActiveModules.vue';
-import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
-import UniswapPoolDetails from '@/components/defi/uniswap/UniswapPoolDetails.vue';
-import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
-import NftDetails from '@/components/helper/NftDetails.vue';
-import ProgressScreen from '@/components/helper/ProgressScreen.vue';
-
-import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
-import { useUniswapStore } from '@/store/defi/uniswap';
-import { Module } from '@/types/modules';
-import { Section } from '@/types/status';
-
-const uniswap = Module.UNISWAP;
-const chains = [Blockchain.ETH];
-const modules = [uniswap];
-
-const selectedAccount = ref<GeneralAccount | null>(null);
-const selectedPools = ref<string[]>([]);
-
-const store = useUniswapStore();
-
-const { fetchV3Balances: fetchBalances, uniswapV3Balances: uniswapBalances } =
-  store;
-
-const { uniswapV3Addresses: addresses, uniswapV3PoolAssets: poolAssets } =
-  storeToRefs(store);
-const { isModuleEnabled } = useModules();
-const { tokenAddress } = useAssetInfoRetrieval();
-const { isSectionRefreshing, shouldShowLoadingScreen } = useSectionLoading();
-const { tc } = useI18n();
-
-const { premiumURL } = useInterop();
-
-const enabled = isModuleEnabled(uniswap);
-const loading = shouldShowLoadingScreen(Section.DEFI_UNISWAP_V3_BALANCES);
-const primaryRefreshing = isSectionRefreshing(Section.DEFI_UNISWAP_V3_BALANCES);
-const secondaryRefreshing = isSectionRefreshing(Section.DEFI_UNISWAP_EVENTS);
-
-const selectedAddresses = computed(() => {
-  const account = get(selectedAccount);
-  return account ? [account.address] : [];
-});
-
-const balances = computed(() => {
-  const addresses = get(selectedAddresses);
-  const pools = get(selectedPools);
-  const balances = get(uniswapBalances(addresses));
-
-  return pools.length === 0
-    ? balances
-    : balances.filter(({ address }) => pools.includes(address));
-});
-
-const premium = usePremium();
-
-const { dark } = useTheme();
-
-const refresh = async () => {
-  await fetchBalances(true);
-};
-
-const getAssets = (assets: XswapAsset[]) => {
-  return assets.map(({ asset }) => asset);
-};
-
-onMounted(async () => {
-  await fetchBalances(false);
-});
-
-const { getPoolName } = useLiquidityPosition();
-const lpType = LpType.UNISWAP_V3;
-</script>
 
 <style module lang="scss">
 .price-range {

@@ -1,23 +1,3 @@
-<template>
-  <settings-option
-    #default="{ error, success, update }"
-    setting="dateInputFormat"
-    frontend-setting
-    :error-message="tc('general_settings.validation.date_input_format.error')"
-    :success-message="successMessage"
-    @finished="resetDateInputFormat"
-  >
-    <date-input-format-selector
-      v-model="dateInputFormat"
-      :label="tc('general_settings.labels.date_input_format')"
-      class="pt-4 general-settings__fields__date-input-format"
-      :success-messages="success"
-      :error-messages="error || v$.dateInputFormat.$errors.map(e => e.$message)"
-      @change="callIfValid($event, update)"
-    />
-  </settings-option>
-</template>
-
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
@@ -64,3 +44,23 @@ onMounted(() => {
   resetDateInputFormat();
 });
 </script>
+
+<template>
+  <settings-option
+    #default="{ error, success, update }"
+    setting="dateInputFormat"
+    frontend-setting
+    :error-message="tc('general_settings.validation.date_input_format.error')"
+    :success-message="successMessage"
+    @finished="resetDateInputFormat"
+  >
+    <date-input-format-selector
+      v-model="dateInputFormat"
+      :label="tc('general_settings.labels.date_input_format')"
+      class="pt-4 general-settings__fields__date-input-format"
+      :success-messages="success"
+      :error-messages="error || v$.dateInputFormat.$errors.map(e => e.$message)"
+      @change="callIfValid($event, update)"
+    />
+  </settings-option>
+</template>

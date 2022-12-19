@@ -1,8 +1,3 @@
-<template>
-  <module-not-active v-if="!enabled" :modules="modules" />
-  <deposits v-else />
-</template>
-
 <script setup lang="ts">
 import Deposits from '@/components/defi/Deposits.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
@@ -20,3 +15,8 @@ const modules: Module[] = [
 const { isAnyModuleEnabled } = useModules();
 const enabled = isAnyModuleEnabled(modules);
 </script>
+
+<template>
+  <module-not-active v-if="!enabled" :modules="modules" />
+  <deposits v-else />
+</template>

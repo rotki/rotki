@@ -1,117 +1,3 @@
-<template>
-  <v-dialog
-    v-model="open"
-    max-width="800"
-    open-delay="100"
-    height="400"
-    :content-class="$style.dialog"
-    transition="slide-y-transition"
-  >
-    <template #activator="{ on }">
-      <menu-tooltip-button
-        class-name="secondary--text text--lighten-4"
-        :tooltip="
-          t('global_search.menu_tooltip', {
-            modifier,
-            key
-          }).toString()
-        "
-        :on-menu="on"
-      >
-        <v-icon>mdi-magnify</v-icon>
-      </menu-tooltip-button>
-    </template>
-    <div :class="$style.wrapper">
-      <v-autocomplete
-        ref="input"
-        v-model="selected"
-        no-filter
-        filled
-        :no-data-text="tc('global_search.no_actions')"
-        :search-input.sync="search"
-        :background-color="dark ? 'black' : 'white'"
-        hide-details
-        :items="visibleItems"
-        auto-select-first
-        prepend-inner-icon="mdi-magnify"
-        append-icon=""
-        :placeholder="tc('global_search.search_placeholder')"
-        @input="change"
-      >
-        <template #item="{ item }">
-          <div class="d-flex align-center text-body-2 fill-width">
-            <asset-icon
-              v-if="item.asset"
-              size="30px"
-              :identifier="item.asset"
-            />
-            <adaptive-wrapper v-else component="span">
-              <location-icon
-                v-if="item.location"
-                icon
-                no-padding
-                size="26px"
-                :item="item.location"
-              />
-              <v-img
-                v-else-if="item.image"
-                width="30"
-                max-height="30"
-                contain
-                position="left"
-                :src="item.image"
-              />
-              <v-icon v-else size="30" color="grey">
-                {{ item.icon }}
-              </v-icon>
-            </adaptive-wrapper>
-            <span class="ml-3">
-              <template v-if="item.texts">
-                <span v-for="(text, index) in item.texts" :key="text + index">
-                  <span v-if="index === item.texts.length - 1">{{ text }}</span>
-                  <span v-else class="grey--text">
-                    {{ text }}<v-icon small> mdi-chevron-right </v-icon>
-                  </span>
-                </span>
-              </template>
-              <template v-else>
-                {{ item.text }}
-              </template>
-            </span>
-            <v-spacer />
-            <div v-if="item.price" class="text-right">
-              <div class="text-caption">{{ tc('common.price') }}:</div>
-              <amount-display
-                class="font-weight-bold"
-                :fiat-currency="currencySymbol"
-                :value="item.price"
-              />
-            </div>
-            <div v-if="item.total" class="text-right">
-              <div class="text-caption">{{ tc('common.total') }}:</div>
-              <amount-display
-                class="font-weight-bold"
-                :fiat-currency="currencySymbol"
-                :value="item.total"
-              />
-            </div>
-          </div>
-        </template>
-        <template #append>
-          <div v-if="loading" class="mt-n1 fill-height d-flex items-center">
-            <v-progress-circular
-              class="asset-select__loading"
-              color="primary"
-              indeterminate
-              width="3"
-              size="30"
-            />
-          </div>
-        </template>
-      </v-autocomplete>
-    </div>
-  </v-dialog>
-</template>
 <script setup lang="ts">
 import { type AssetBalanceWithPrice, type BigNumber } from '@rotki/common';
 import { type Ref } from 'vue';
@@ -552,6 +438,120 @@ onBeforeMount(async () => {
   });
 });
 </script>
+<template>
+  <v-dialog
+    v-model="open"
+    max-width="800"
+    open-delay="100"
+    height="400"
+    :content-class="$style.dialog"
+    transition="slide-y-transition"
+  >
+    <template #activator="{ on }">
+      <menu-tooltip-button
+        class-name="secondary--text text--lighten-4"
+        :tooltip="
+          t('global_search.menu_tooltip', {
+            modifier,
+            key
+          }).toString()
+        "
+        :on-menu="on"
+      >
+        <v-icon>mdi-magnify</v-icon>
+      </menu-tooltip-button>
+    </template>
+    <div :class="$style.wrapper">
+      <v-autocomplete
+        ref="input"
+        v-model="selected"
+        no-filter
+        filled
+        :no-data-text="tc('global_search.no_actions')"
+        :search-input.sync="search"
+        :background-color="dark ? 'black' : 'white'"
+        hide-details
+        :items="visibleItems"
+        auto-select-first
+        prepend-inner-icon="mdi-magnify"
+        append-icon=""
+        :placeholder="tc('global_search.search_placeholder')"
+        @input="change"
+      >
+        <template #item="{ item }">
+          <div class="d-flex align-center text-body-2 fill-width">
+            <asset-icon
+              v-if="item.asset"
+              size="30px"
+              :identifier="item.asset"
+            />
+            <adaptive-wrapper v-else component="span">
+              <location-icon
+                v-if="item.location"
+                icon
+                no-padding
+                size="26px"
+                :item="item.location"
+              />
+              <v-img
+                v-else-if="item.image"
+                width="30"
+                max-height="30"
+                contain
+                position="left"
+                :src="item.image"
+              />
+              <v-icon v-else size="30" color="grey">
+                {{ item.icon }}
+              </v-icon>
+            </adaptive-wrapper>
+            <span class="ml-3">
+              <template v-if="item.texts">
+                <span v-for="(text, index) in item.texts" :key="text + index">
+                  <span v-if="index === item.texts.length - 1">{{ text }}</span>
+                  <span v-else class="grey--text">
+                    {{ text }}<v-icon small> mdi-chevron-right </v-icon>
+                  </span>
+                </span>
+              </template>
+              <template v-else>
+                {{ item.text }}
+              </template>
+            </span>
+            <v-spacer />
+            <div v-if="item.price" class="text-right">
+              <div class="text-caption">{{ tc('common.price') }}:</div>
+              <amount-display
+                class="font-weight-bold"
+                :fiat-currency="currencySymbol"
+                :value="item.price"
+              />
+            </div>
+            <div v-if="item.total" class="text-right">
+              <div class="text-caption">{{ tc('common.total') }}:</div>
+              <amount-display
+                class="font-weight-bold"
+                :fiat-currency="currencySymbol"
+                :value="item.total"
+              />
+            </div>
+          </div>
+        </template>
+        <template #append>
+          <div v-if="loading" class="mt-n1 fill-height d-flex items-center">
+            <v-progress-circular
+              class="asset-select__loading"
+              color="primary"
+              indeterminate
+              width="3"
+              size="30"
+            />
+          </div>
+        </template>
+      </v-autocomplete>
+    </div>
+  </v-dialog>
+</template>
 <style module lang="scss">
 .dialog {
   margin-top: 200px;

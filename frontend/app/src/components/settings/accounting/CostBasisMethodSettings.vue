@@ -1,3 +1,12 @@
+<script setup lang="ts">
+import { useAttrs, useListeners } from 'vue';
+import { useCostBasisMethod } from '@/store/reports/consts';
+
+const rootAttrs = useAttrs();
+const rootListeners = useListeners();
+const { costBasisMethodData } = useCostBasisMethod();
+</script>
+
 <template>
   <v-select
     v-bind="rootAttrs"
@@ -25,15 +34,6 @@
     </template>
   </v-select>
 </template>
-
-<script setup lang="ts">
-import { useAttrs, useListeners } from 'vue';
-import { useCostBasisMethod } from '@/store/reports/consts';
-
-const rootAttrs = useAttrs();
-const rootListeners = useListeners();
-const { costBasisMethodData } = useCostBasisMethod();
-</script>
 <style module lang="scss">
 .title {
   text-transform: uppercase;

@@ -1,3 +1,17 @@
+<script setup lang="ts">
+import { type TooltipDisplayOption } from '@rotki/common/lib/settings/graphs';
+import { type PropType } from 'vue';
+
+defineProps({
+  tooltipOption: {
+    required: false,
+    type: Object as PropType<TooltipDisplayOption>,
+    default: null
+  }
+});
+
+const { dark } = useTheme();
+</script>
 <template>
   <div
     v-if="tooltipOption"
@@ -17,20 +31,6 @@
     <slot name="content" />
   </div>
 </template>
-<script setup lang="ts">
-import { type TooltipDisplayOption } from '@rotki/common/lib/settings/graphs';
-import { type PropType } from 'vue';
-
-defineProps({
-  tooltipOption: {
-    required: false,
-    type: Object as PropType<TooltipDisplayOption>,
-    default: null
-  }
-});
-
-const { dark } = useTheme();
-</script>
 <style module lang="scss">
 .tooltip {
   position: absolute;

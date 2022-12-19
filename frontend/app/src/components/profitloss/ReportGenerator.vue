@@ -1,3 +1,44 @@
+<script setup lang="ts">
+import RangeSelector from '@/components/helper/date/RangeSelector.vue';
+import { convertToTimestamp } from '@/utils/date';
+import { checkIfDevelopment } from '@/utils/env-utils';
+
+const emit = defineEmits(['generate', 'export-data', 'import-data']);
+
+const { t } = useI18n();
+
+const range = ref({ start: '', end: '' });
+const valid = ref<boolean>(false);
+
+const startTimestamp = computed<number>(() => {
+  return convertToTimestamp(get(range).start);
+});
+
+const endTimestamp = computed<number>(() => {
+  return convertToTimestamp(get(range).end);
+});
+
+const generate = () => {
+  emit('generate', {
+    start: get(startTimestamp),
+    end: get(endTimestamp)
+  });
+};
+
+const exportReportData = () => {
+  emit('export-data', {
+    start: get(startTimestamp),
+    end: get(endTimestamp)
+  });
+};
+
+const importReportData = () => {
+  emit('import-data');
+};
+
+const isDevelopment = checkIfDevelopment();
+</script>
+
 <template>
   <v-form :value="valid">
     <card>
@@ -92,44 +133,3 @@
     </card>
   </v-form>
 </template>
-
-<script setup lang="ts">
-import RangeSelector from '@/components/helper/date/RangeSelector.vue';
-import { convertToTimestamp } from '@/utils/date';
-import { checkIfDevelopment } from '@/utils/env-utils';
-
-const emit = defineEmits(['generate', 'export-data', 'import-data']);
-
-const { t } = useI18n();
-
-const range = ref({ start: '', end: '' });
-const valid = ref<boolean>(false);
-
-const startTimestamp = computed<number>(() => {
-  return convertToTimestamp(get(range).start);
-});
-
-const endTimestamp = computed<number>(() => {
-  return convertToTimestamp(get(range).end);
-});
-
-const generate = () => {
-  emit('generate', {
-    start: get(startTimestamp),
-    end: get(endTimestamp)
-  });
-};
-
-const exportReportData = () => {
-  emit('export-data', {
-    start: get(startTimestamp),
-    end: get(endTimestamp)
-  });
-};
-
-const importReportData = () => {
-  emit('import-data');
-};
-
-const isDevelopment = checkIfDevelopment();
-</script>

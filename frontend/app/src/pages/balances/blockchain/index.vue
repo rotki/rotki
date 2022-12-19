@@ -1,212 +1,3 @@
-<template>
-  <div>
-    <v-row justify="end">
-      <v-col cols="auto">
-        <price-refresh />
-      </v-col>
-    </v-row>
-    <card class="blockchain-balances mt-8" outlined-body>
-      <template #title>
-        {{ t('blockchain_balances.title') }}
-      </template>
-      <v-btn
-        v-blur
-        data-cy="add-blockchain-balance"
-        fixed
-        bottom
-        right
-        :fab="!$vuetify.breakpoint.xl"
-        :rounded="$vuetify.breakpoint.xl"
-        :x-large="$vuetify.breakpoint.xl"
-        color="primary"
-        @click="createAccount()"
-      >
-        <v-icon> mdi-plus </v-icon>
-        <div v-if="$vuetify.breakpoint.xl" class="ml-2">
-          {{ tc('blockchain_balances.add_account') }}
-        </div>
-      </v-btn>
-      <big-dialog
-        :display="openDialog"
-        :title="dialogTitle"
-        :subtitle="dialogSubtitle"
-        :primary-action="tc('common.actions.save')"
-        :secondary-action="tc('common.actions.cancel')"
-        :action-disabled="!valid"
-        :loading="loading"
-        @confirm="saveAccount()"
-        @cancel="clearDialog()"
-      >
-        <account-form
-          ref="form"
-          v-model="valid"
-          :pending="pending"
-          :edit="accountToEdit"
-          :context="context"
-          @update:pending="pending = $event"
-        />
-      </big-dialog>
-      <asset-balances
-        data-cy="blockchain-asset-balances"
-        :loading="isBlockchainLoading"
-        :title="tc('blockchain_balances.per_asset.title')"
-        :balances="blockchainAssets"
-      />
-    </card>
-
-    <account-balances
-      v-if="
-        ethAccounts.length > 0 ||
-        isAccountOperationRunning(Blockchain.ETH).value
-      "
-      id="blockchain-balances-ETH"
-      v-intersect="{
-        handler: observers.ETH,
-        options: {
-          threshold
-        }
-      }"
-      class="mt-8"
-      :title="tc('blockchain_balances.balances.eth')"
-      :blockchain="Blockchain.ETH"
-      :balances="ethAccounts"
-      data-cy="blockchain-balances-ETH"
-      @edit-account="editAccount($event)"
-    />
-
-    <account-balances
-      v-if="
-        eth2Accounts.length > 0 ||
-        isAccountOperationRunning(Blockchain.ETH2).value
-      "
-      id="blockchain-balances-ETH2"
-      v-intersect="{
-        handler: observers.ETH2,
-        options: {
-          threshold
-        }
-      }"
-      class="mt-8"
-      :title="tc('blockchain_balances.balances.eth2')"
-      :blockchain="Blockchain.ETH2"
-      :balances="eth2Accounts"
-      data-cy="blockchain-balances-ETH2"
-      @edit-account="editAccount($event)"
-    />
-
-    <account-balances
-      v-if="
-        btcAccounts.length > 0 ||
-        isAccountOperationRunning(Blockchain.BTC).value
-      "
-      id="blockchain-balances-BTC"
-      v-intersect="{
-        handler: observers.BTC,
-        options: {
-          threshold
-        }
-      }"
-      class="mt-8"
-      :title="tc('blockchain_balances.balances.btc')"
-      :blockchain="Blockchain.BTC"
-      :balances="btcAccounts"
-      data-cy="blockchain-balances-BTC"
-      @edit-account="editAccount($event)"
-    />
-
-    <account-balances
-      v-if="
-        bchAccounts.length > 0 ||
-        isAccountOperationRunning(Blockchain.BCH).value
-      "
-      id="blockchain-balances-BCH"
-      v-intersect="{
-        handler: observers.BCH,
-        options: {
-          threshold
-        }
-      }"
-      class="mt-8"
-      :title="tc('blockchain_balances.balances.bch')"
-      :blockchain="Blockchain.BCH"
-      :balances="bchAccounts"
-      data-cy="blockchain-balances-BCH"
-      @edit-account="editAccount($event)"
-    />
-
-    <account-balances
-      v-if="
-        ksmAccounts.length > 0 ||
-        isAccountOperationRunning(Blockchain.KSM).value
-      "
-      id="blockchain-balances-KSM"
-      v-intersect="{
-        handler: observers.KSM,
-        options: {
-          threshold
-        }
-      }"
-      class="mt-8"
-      :title="tc('blockchain_balances.balances.ksm')"
-      :blockchain="Blockchain.KSM"
-      :balances="ksmAccounts"
-      data-cy="blockchain-balances-KSM"
-      @edit-account="editAccount($event)"
-    />
-
-    <account-balances
-      v-if="
-        dotAccounts.length > 0 ||
-        isAccountOperationRunning(Blockchain.DOT).value
-      "
-      id="blockchain-balances-DOT"
-      v-intersect="{
-        handler: observers.DOT,
-        options: {
-          threshold
-        }
-      }"
-      class="mt-8"
-      :title="tc('blockchain_balances.balances.dot')"
-      :blockchain="Blockchain.DOT"
-      :balances="dotAccounts"
-      data-cy="blockchain-balances-DOT"
-      @edit-account="editAccount($event)"
-    />
-
-    <account-balances
-      v-if="
-        avaxAccounts.length > 0 ||
-        isAccountOperationRunning(Blockchain.AVAX).value
-      "
-      id="blockchain-balances-AVAX"
-      v-intersect="{
-        handler: observers.AVAX,
-        options: {
-          threshold
-        }
-      }"
-      class="mt-8"
-      :title="tc('blockchain_balances.balances.avax')"
-      :blockchain="Blockchain.AVAX"
-      :balances="avaxAccounts"
-      data-cy="blockchain-balances-AVAX"
-      @edit-account="editAccount($event)"
-    />
-
-    <account-balances
-      v-if="loopringAccounts.length > 0"
-      id="blockchain-balances-LRC"
-      loopring
-      class="mt-8"
-      :title="tc('blockchain_balances.balances.loopring')"
-      :blockchain="Blockchain.ETH"
-      :balances="loopringAccounts"
-      data-cy="blockchain-balances-LRC"
-    />
-  </div>
-</template>
-
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type ComputedRef, type Ref } from 'vue';
@@ -420,3 +211,212 @@ const isAccountOperationRunning = (
 
 const threshold = [0];
 </script>
+
+<template>
+  <div>
+    <v-row justify="end">
+      <v-col cols="auto">
+        <price-refresh />
+      </v-col>
+    </v-row>
+    <card class="blockchain-balances mt-8" outlined-body>
+      <template #title>
+        {{ t('blockchain_balances.title') }}
+      </template>
+      <v-btn
+        v-blur
+        data-cy="add-blockchain-balance"
+        fixed
+        bottom
+        right
+        :fab="!$vuetify.breakpoint.xl"
+        :rounded="$vuetify.breakpoint.xl"
+        :x-large="$vuetify.breakpoint.xl"
+        color="primary"
+        @click="createAccount()"
+      >
+        <v-icon> mdi-plus </v-icon>
+        <div v-if="$vuetify.breakpoint.xl" class="ml-2">
+          {{ tc('blockchain_balances.add_account') }}
+        </div>
+      </v-btn>
+      <big-dialog
+        :display="openDialog"
+        :title="dialogTitle"
+        :subtitle="dialogSubtitle"
+        :primary-action="tc('common.actions.save')"
+        :secondary-action="tc('common.actions.cancel')"
+        :action-disabled="!valid"
+        :loading="loading"
+        @confirm="saveAccount()"
+        @cancel="clearDialog()"
+      >
+        <account-form
+          ref="form"
+          v-model="valid"
+          :pending="pending"
+          :edit="accountToEdit"
+          :context="context"
+          @update:pending="pending = $event"
+        />
+      </big-dialog>
+      <asset-balances
+        data-cy="blockchain-asset-balances"
+        :loading="isBlockchainLoading"
+        :title="tc('blockchain_balances.per_asset.title')"
+        :balances="blockchainAssets"
+      />
+    </card>
+
+    <account-balances
+      v-if="
+        ethAccounts.length > 0 ||
+        isAccountOperationRunning(Blockchain.ETH).value
+      "
+      id="blockchain-balances-ETH"
+      v-intersect="{
+        handler: observers.ETH,
+        options: {
+          threshold
+        }
+      }"
+      class="mt-8"
+      :title="tc('blockchain_balances.balances.eth')"
+      :blockchain="Blockchain.ETH"
+      :balances="ethAccounts"
+      data-cy="blockchain-balances-ETH"
+      @edit-account="editAccount($event)"
+    />
+
+    <account-balances
+      v-if="
+        eth2Accounts.length > 0 ||
+        isAccountOperationRunning(Blockchain.ETH2).value
+      "
+      id="blockchain-balances-ETH2"
+      v-intersect="{
+        handler: observers.ETH2,
+        options: {
+          threshold
+        }
+      }"
+      class="mt-8"
+      :title="tc('blockchain_balances.balances.eth2')"
+      :blockchain="Blockchain.ETH2"
+      :balances="eth2Accounts"
+      data-cy="blockchain-balances-ETH2"
+      @edit-account="editAccount($event)"
+    />
+
+    <account-balances
+      v-if="
+        btcAccounts.length > 0 ||
+        isAccountOperationRunning(Blockchain.BTC).value
+      "
+      id="blockchain-balances-BTC"
+      v-intersect="{
+        handler: observers.BTC,
+        options: {
+          threshold
+        }
+      }"
+      class="mt-8"
+      :title="tc('blockchain_balances.balances.btc')"
+      :blockchain="Blockchain.BTC"
+      :balances="btcAccounts"
+      data-cy="blockchain-balances-BTC"
+      @edit-account="editAccount($event)"
+    />
+
+    <account-balances
+      v-if="
+        bchAccounts.length > 0 ||
+        isAccountOperationRunning(Blockchain.BCH).value
+      "
+      id="blockchain-balances-BCH"
+      v-intersect="{
+        handler: observers.BCH,
+        options: {
+          threshold
+        }
+      }"
+      class="mt-8"
+      :title="tc('blockchain_balances.balances.bch')"
+      :blockchain="Blockchain.BCH"
+      :balances="bchAccounts"
+      data-cy="blockchain-balances-BCH"
+      @edit-account="editAccount($event)"
+    />
+
+    <account-balances
+      v-if="
+        ksmAccounts.length > 0 ||
+        isAccountOperationRunning(Blockchain.KSM).value
+      "
+      id="blockchain-balances-KSM"
+      v-intersect="{
+        handler: observers.KSM,
+        options: {
+          threshold
+        }
+      }"
+      class="mt-8"
+      :title="tc('blockchain_balances.balances.ksm')"
+      :blockchain="Blockchain.KSM"
+      :balances="ksmAccounts"
+      data-cy="blockchain-balances-KSM"
+      @edit-account="editAccount($event)"
+    />
+
+    <account-balances
+      v-if="
+        dotAccounts.length > 0 ||
+        isAccountOperationRunning(Blockchain.DOT).value
+      "
+      id="blockchain-balances-DOT"
+      v-intersect="{
+        handler: observers.DOT,
+        options: {
+          threshold
+        }
+      }"
+      class="mt-8"
+      :title="tc('blockchain_balances.balances.dot')"
+      :blockchain="Blockchain.DOT"
+      :balances="dotAccounts"
+      data-cy="blockchain-balances-DOT"
+      @edit-account="editAccount($event)"
+    />
+
+    <account-balances
+      v-if="
+        avaxAccounts.length > 0 ||
+        isAccountOperationRunning(Blockchain.AVAX).value
+      "
+      id="blockchain-balances-AVAX"
+      v-intersect="{
+        handler: observers.AVAX,
+        options: {
+          threshold
+        }
+      }"
+      class="mt-8"
+      :title="tc('blockchain_balances.balances.avax')"
+      :blockchain="Blockchain.AVAX"
+      :balances="avaxAccounts"
+      data-cy="blockchain-balances-AVAX"
+      @edit-account="editAccount($event)"
+    />
+
+    <account-balances
+      v-if="loopringAccounts.length > 0"
+      id="blockchain-balances-LRC"
+      loopring
+      class="mt-8"
+      :title="tc('blockchain_balances.balances.loopring')"
+      :blockchain="Blockchain.ETH"
+      :balances="loopringAccounts"
+      data-cy="blockchain-balances-LRC"
+    />
+  </div>
+</template>

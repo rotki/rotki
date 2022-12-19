@@ -1,3 +1,33 @@
+<script setup lang="ts">
+import { type PropType } from 'vue';
+
+interface UserDbInfo {
+  version: string;
+  size: string;
+}
+
+interface GlobalDbInfo {
+  schema: string;
+  assets: string;
+}
+
+defineProps({
+  directory: {
+    required: true,
+    type: String
+  },
+  globalDb: {
+    required: true,
+    type: Object as PropType<GlobalDbInfo>
+  },
+  userDb: {
+    required: true,
+    type: Object as PropType<UserDbInfo>
+  }
+});
+
+const { t } = useI18n();
+</script>
 <template>
   <card>
     <template #title>{{ t('database_info_display.title') }}</template>
@@ -50,36 +80,6 @@
     </v-row>
   </card>
 </template>
-<script setup lang="ts">
-import { type PropType } from 'vue';
-
-interface UserDbInfo {
-  version: string;
-  size: string;
-}
-
-interface GlobalDbInfo {
-  schema: string;
-  assets: string;
-}
-
-defineProps({
-  directory: {
-    required: true,
-    type: String
-  },
-  globalDb: {
-    required: true,
-    type: Object as PropType<GlobalDbInfo>
-  },
-  userDb: {
-    required: true,
-    type: Object as PropType<UserDbInfo>
-  }
-});
-
-const { t } = useI18n();
-</script>
 <style module lang="scss">
 .label {
   font-weight: 600;

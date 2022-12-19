@@ -1,12 +1,3 @@
-<template>
-  <div class="d-flex flex-row align-center shrink">
-    <adaptive-wrapper>
-      <v-img width="24px" height="24px" contain :src="icon" />
-    </adaptive-wrapper>
-    <div class="ml-2" v-text="name" />
-  </div>
-</template>
-
 <script setup lang="ts">
 import { type PropType } from 'vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
@@ -35,3 +26,12 @@ const icon = computed<string>(() => {
   return get(location)?.icon ?? '';
 });
 </script>
+
+<template>
+  <div class="d-flex flex-row align-center shrink">
+    <adaptive-wrapper>
+      <v-img width="24px" height="24px" contain :src="icon" />
+    </adaptive-wrapper>
+    <div class="ml-2" v-text="name" />
+  </div>
+</template>

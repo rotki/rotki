@@ -1,3 +1,25 @@
+<script setup lang="ts">
+const { navigateToPremium, premiumURL, isPackaged } = useInterop();
+const { navigateToDashboard } = useAppNavigation();
+
+const keyHandler = async (event: KeyboardEvent) => {
+  const keys = ['Escape', 'Esc'];
+  if (!keys.includes(event.key)) {
+    return;
+  }
+  await navigateToDashboard();
+};
+
+onBeforeMount(() => {
+  document.addEventListener('keydown', keyHandler);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener('keydown', keyHandler);
+});
+
+const { t } = useI18n();
+</script>
 <template>
   <v-card light max-width="500" class="mx-auto premium-reminder">
     <v-card-title class="premium-reminder__title">
@@ -35,25 +57,3 @@
     </v-card-actions>
   </v-card>
 </template>
-<script setup lang="ts">
-const { navigateToPremium, premiumURL, isPackaged } = useInterop();
-const { navigateToDashboard } = useAppNavigation();
-
-const keyHandler = async (event: KeyboardEvent) => {
-  const keys = ['Escape', 'Esc'];
-  if (!keys.includes(event.key)) {
-    return;
-  }
-  await navigateToDashboard();
-};
-
-onBeforeMount(() => {
-  document.addEventListener('keydown', keyHandler);
-});
-
-onBeforeUnmount(() => {
-  document.removeEventListener('keydown', keyHandler);
-});
-
-const { t } = useI18n();
-</script>

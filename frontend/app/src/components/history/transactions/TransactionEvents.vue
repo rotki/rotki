@@ -1,78 +1,3 @@
-<template>
-  <table-expand-container
-    :colspan="colspan - 1"
-    :offset="1"
-    :padded="false"
-    visible
-  >
-    <template #append>
-      <v-expansion-panels
-        v-model="panel"
-        :class="css['expansions-panels']"
-        multiple
-      >
-        <v-expansion-panel>
-          <v-expansion-panel-header
-            v-if="transaction.ignoredInAccounting && events.length > 0"
-          >
-            <template #default="{ open }">
-              <div class="primary--text font-weight-bold">
-                {{
-                  open
-                    ? tc('transactions.events.view.hide')
-                    : tc('transactions.events.view.show', 0, {
-                        length: events.length
-                      })
-                }}
-              </div>
-            </template>
-          </v-expansion-panel-header>
-          <v-expansion-panel-content>
-            <div
-              class="my-n4"
-              :class="{
-                'pt-4': transaction.ignoredInAccounting && events.length > 0
-              }"
-            >
-              <data-table
-                :class="css.table"
-                :headers="headers"
-                :items="events"
-                :no-data-text="tc('transactions.events.loading')"
-                class="transparent"
-                hide-default-footer
-                :hide-default-header="$vuetify.breakpoint.mdAndUp"
-              >
-                <template #item.type="{ item }">
-                  <transaction-event-type :event="item" />
-                </template>
-                <template #item.asset="{ item }">
-                  <transaction-event-asset :event="item" />
-                </template>
-                <template #item.description="{ item }">
-                  <transaction-event-note
-                    :notes="item.notes"
-                    :amount="item.balance.amount"
-                    :asset="item.asset"
-                  />
-                </template>
-                <template #item.actions="{ item }">
-                  <row-actions
-                    :delete-tooltip="tc('transactions.events.actions.delete')"
-                    :edit-tooltip="tc('transactions.events.actions.edit')"
-                    @edit-click="editEvent(item)"
-                    @delete-click="deleteEvent(item)"
-                  />
-                </template>
-              </data-table>
-            </div>
-          </v-expansion-panel-content>
-        </v-expansion-panel>
-      </v-expansion-panels>
-    </template>
-  </table-expand-container>
-</template>
-
 <script setup lang="ts">
 import { type PropType } from 'vue';
 import { type DataTableHeader } from 'vuetify';
@@ -172,6 +97,81 @@ watch(transaction, (current, old) => {
   }
 });
 </script>
+
+<template>
+  <table-expand-container
+    :colspan="colspan - 1"
+    :offset="1"
+    :padded="false"
+    visible
+  >
+    <template #append>
+      <v-expansion-panels
+        v-model="panel"
+        :class="css['expansions-panels']"
+        multiple
+      >
+        <v-expansion-panel>
+          <v-expansion-panel-header
+            v-if="transaction.ignoredInAccounting && events.length > 0"
+          >
+            <template #default="{ open }">
+              <div class="primary--text font-weight-bold">
+                {{
+                  open
+                    ? tc('transactions.events.view.hide')
+                    : tc('transactions.events.view.show', 0, {
+                        length: events.length
+                      })
+                }}
+              </div>
+            </template>
+          </v-expansion-panel-header>
+          <v-expansion-panel-content>
+            <div
+              class="my-n4"
+              :class="{
+                'pt-4': transaction.ignoredInAccounting && events.length > 0
+              }"
+            >
+              <data-table
+                :class="css.table"
+                :headers="headers"
+                :items="events"
+                :no-data-text="tc('transactions.events.loading')"
+                class="transparent"
+                hide-default-footer
+                :hide-default-header="$vuetify.breakpoint.mdAndUp"
+              >
+                <template #item.type="{ item }">
+                  <transaction-event-type :event="item" />
+                </template>
+                <template #item.asset="{ item }">
+                  <transaction-event-asset :event="item" />
+                </template>
+                <template #item.description="{ item }">
+                  <transaction-event-note
+                    :notes="item.notes"
+                    :amount="item.balance.amount"
+                    :asset="item.asset"
+                  />
+                </template>
+                <template #item.actions="{ item }">
+                  <row-actions
+                    :delete-tooltip="tc('transactions.events.actions.delete')"
+                    :edit-tooltip="tc('transactions.events.actions.edit')"
+                    @edit-click="editEvent(item)"
+                    @delete-click="deleteEvent(item)"
+                  />
+                </template>
+              </data-table>
+            </div>
+          </v-expansion-panel-content>
+        </v-expansion-panel>
+      </v-expansion-panels>
+    </template>
+  </table-expand-container>
+</template>
 
 <style lang="scss" module>
 .table {

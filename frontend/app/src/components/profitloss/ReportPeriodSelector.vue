@@ -1,58 +1,3 @@
-<template>
-  <v-row>
-    <v-col cols="12">
-      <span class="text-h6">{{ t('generate.period') }}</span>
-      <v-chip-group
-        :value="year"
-        mandatory
-        column
-        class="mx-n2"
-        @change="onChange({ year: $event })"
-      >
-        <v-chip
-          v-for="period in periods"
-          :key="period"
-          :color="year === period ? 'primary' : null"
-          class="ma-2 px-4"
-          :value="period"
-          label
-        >
-          {{ period }}
-        </v-chip>
-        <v-chip
-          value="custom"
-          class="ma-2 px-4"
-          label
-          :color="isCustom ? 'primary' : null"
-        >
-          {{ t('generate.custom_selection') }}
-        </v-chip>
-      </v-chip-group>
-    </v-col>
-    <v-col v-if="year !== 'custom'" cols="12">
-      <span class="text-h6">{{ t('generate.sub_period_label') }}</span>
-      <v-chip-group
-        :value="quarter"
-        mandatory
-        class="mx-n2"
-        @change="onChange({ quarter: $event })"
-      >
-        <v-chip
-          v-for="subPeriod in subPeriods"
-          :key="subPeriod.id"
-          :color="quarter === subPeriod.id ? 'primary' : null"
-          :value="subPeriod.id"
-          :disabled="isStartAfterNow(subPeriod.id)"
-          label
-          class="ma-2 px-4"
-        >
-          {{ subPeriod.name }}
-        </v-chip>
-      </v-chip-group>
-    </v-col>
-  </v-row>
-</template>
-
 <script setup lang="ts">
 import dayjs from 'dayjs';
 import { type PropType } from 'vue';
@@ -180,3 +125,58 @@ const subPeriods = [
   }
 ];
 </script>
+
+<template>
+  <v-row>
+    <v-col cols="12">
+      <span class="text-h6">{{ t('generate.period') }}</span>
+      <v-chip-group
+        :value="year"
+        mandatory
+        column
+        class="mx-n2"
+        @change="onChange({ year: $event })"
+      >
+        <v-chip
+          v-for="period in periods"
+          :key="period"
+          :color="year === period ? 'primary' : null"
+          class="ma-2 px-4"
+          :value="period"
+          label
+        >
+          {{ period }}
+        </v-chip>
+        <v-chip
+          value="custom"
+          class="ma-2 px-4"
+          label
+          :color="isCustom ? 'primary' : null"
+        >
+          {{ t('generate.custom_selection') }}
+        </v-chip>
+      </v-chip-group>
+    </v-col>
+    <v-col v-if="year !== 'custom'" cols="12">
+      <span class="text-h6">{{ t('generate.sub_period_label') }}</span>
+      <v-chip-group
+        :value="quarter"
+        mandatory
+        class="mx-n2"
+        @change="onChange({ quarter: $event })"
+      >
+        <v-chip
+          v-for="subPeriod in subPeriods"
+          :key="subPeriod.id"
+          :color="quarter === subPeriod.id ? 'primary' : null"
+          :value="subPeriod.id"
+          :disabled="isStartAfterNow(subPeriod.id)"
+          label
+          class="ma-2 px-4"
+        >
+          {{ subPeriod.name }}
+        </v-chip>
+      </v-chip-group>
+    </v-col>
+  </v-row>
+</template>

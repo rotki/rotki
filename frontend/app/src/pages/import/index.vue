@@ -1,3 +1,10 @@
+<script setup lang="ts">
+import ExternalLink from '@/components/helper/ExternalLink.vue';
+import GroupedImport from '@/components/import/GroupedImport.vue';
+
+const { t } = useI18n();
+</script>
+
 <template>
   <v-container>
     <card-title class="mt-2">{{ t('import_data.title') }}</card-title>
@@ -26,10 +33,3 @@
     <grouped-import class="mt-4" />
   </v-container>
 </template>
-
-<script setup lang="ts">
-import ExternalLink from '@/components/helper/ExternalLink.vue';
-import GroupedImport from '@/components/import/GroupedImport.vue';
-
-const { t } = useI18n();
-</script>

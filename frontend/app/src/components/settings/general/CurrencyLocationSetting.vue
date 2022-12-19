@@ -1,3 +1,22 @@
+<script setup lang="ts">
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { CurrencyLocation } from '@/types/currency-location';
+
+const currencyLocation = ref<CurrencyLocation>(CurrencyLocation.AFTER);
+const { currencyLocation: location } = storeToRefs(useFrontendSettingsStore());
+
+const { tc } = useI18n();
+
+const successMessage = (currencyLocation: CurrencyLocation) =>
+  tc('general_settings.validation.currency_location.success', 0, {
+    currencyLocation
+  });
+
+onMounted(() => {
+  set(currencyLocation, get(location));
+});
+</script>
+
 <template>
   <settings-option
     #default="{ error, success, update }"
@@ -26,22 +45,3 @@
     </v-radio-group>
   </settings-option>
 </template>
-
-<script setup lang="ts">
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { CurrencyLocation } from '@/types/currency-location';
-
-const currencyLocation = ref<CurrencyLocation>(CurrencyLocation.AFTER);
-const { currencyLocation: location } = storeToRefs(useFrontendSettingsStore());
-
-const { tc } = useI18n();
-
-const successMessage = (currencyLocation: CurrencyLocation) =>
-  tc('general_settings.validation.currency_location.success', 0, {
-    currencyLocation
-  });
-
-onMounted(() => {
-  set(currencyLocation, get(location));
-});
-</script>

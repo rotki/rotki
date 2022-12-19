@@ -1,3 +1,15 @@
+<script setup lang="ts">
+defineProps({
+  loading: { required: true, type: Boolean },
+  tooltip: { required: true, type: String }
+});
+
+const emit = defineEmits(['refresh']);
+
+const refresh = () => {
+  emit('refresh');
+};
+</script>
 <template>
   <v-tooltip top>
     <template #activator="{ on, attrs }">
@@ -25,15 +37,3 @@
     <span>{{ tooltip }}</span>
   </v-tooltip>
 </template>
-<script setup lang="ts">
-defineProps({
-  loading: { required: true, type: Boolean },
-  tooltip: { required: true, type: String }
-});
-
-const emit = defineEmits(['refresh']);
-
-const refresh = () => {
-  emit('refresh');
-};
-</script>

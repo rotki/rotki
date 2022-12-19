@@ -1,3 +1,15 @@
+<script setup lang="ts">
+import PremiumLock from '@/components/premium/PremiumLock.vue';
+
+defineProps({
+  title: { required: false, type: String, default: '' },
+  locked: { required: false, type: Boolean, default: false },
+  loading: { required: false, type: Boolean, default: false },
+  protocolIcon: { required: false, type: String, default: '' },
+  bordered: { required: false, type: Boolean, default: false }
+});
+</script>
+
 <template>
   <v-card class="stat-card d-flex flex-columns pa-0 fill-height">
     <div v-if="bordered" class="stat-card__border">
@@ -37,18 +49,6 @@
     </div>
   </v-card>
 </template>
-
-<script setup lang="ts">
-import PremiumLock from '@/components/premium/PremiumLock.vue';
-
-defineProps({
-  title: { required: false, type: String, default: '' },
-  locked: { required: false, type: Boolean, default: false },
-  loading: { required: false, type: Boolean, default: false },
-  protocolIcon: { required: false, type: String, default: '' },
-  bordered: { required: false, type: Boolean, default: false }
-});
-</script>
 
 <style scoped lang="scss">
 .stat-card {

@@ -1,53 +1,3 @@
-<template>
-  <div>
-    <settings-option
-      #default="{ error, success, update }"
-      setting="thousandSeparator"
-      frontend-setting
-      :error-message="
-        tc('general_settings.validation.thousand_separator.error')
-      "
-      :success-message="thousandsSuccessMessage"
-    >
-      <v-text-field
-        v-model="thousandSeparator"
-        outlined
-        maxlength="1"
-        class="general-settings__fields__thousand-separator"
-        :label="tc('general_settings.amount.label.thousand_separator')"
-        type="text"
-        :success-messages="success"
-        :error-messages="
-          error || v$.thousandSeparator.$errors.map(e => e.$message)
-        "
-        @change="callIfThousandsValid($event, update)"
-      />
-    </settings-option>
-
-    <settings-option
-      #default="{ error, success, update }"
-      setting="decimalSeparator"
-      frontend-setting
-      :error-message="tc('general_settings.validation.decimal_separator.error')"
-      :success-message="decimalsSuccessMessage"
-    >
-      <v-text-field
-        v-model="decimalSeparator"
-        outlined
-        maxlength="1"
-        class="general-settings__fields__decimal-separator"
-        :label="tc('general_settings.amount.label.decimal_separator')"
-        type="text"
-        :success-messages="success"
-        :error-messages="
-          error || v$.decimalSeparator.$errors.map(e => e.$message)
-        "
-        @change="callIfDecimalsValid($event, update)"
-      />
-    </settings-option>
-  </div>
-</template>
-
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, not, numeric, required, sameAs } from '@vuelidate/validators';
@@ -136,3 +86,53 @@ onMounted(() => {
   set(decimalSeparator, get(decimals));
 });
 </script>
+
+<template>
+  <div>
+    <settings-option
+      #default="{ error, success, update }"
+      setting="thousandSeparator"
+      frontend-setting
+      :error-message="
+        tc('general_settings.validation.thousand_separator.error')
+      "
+      :success-message="thousandsSuccessMessage"
+    >
+      <v-text-field
+        v-model="thousandSeparator"
+        outlined
+        maxlength="1"
+        class="general-settings__fields__thousand-separator"
+        :label="tc('general_settings.amount.label.thousand_separator')"
+        type="text"
+        :success-messages="success"
+        :error-messages="
+          error || v$.thousandSeparator.$errors.map(e => e.$message)
+        "
+        @change="callIfThousandsValid($event, update)"
+      />
+    </settings-option>
+
+    <settings-option
+      #default="{ error, success, update }"
+      setting="decimalSeparator"
+      frontend-setting
+      :error-message="tc('general_settings.validation.decimal_separator.error')"
+      :success-message="decimalsSuccessMessage"
+    >
+      <v-text-field
+        v-model="decimalSeparator"
+        outlined
+        maxlength="1"
+        class="general-settings__fields__decimal-separator"
+        :label="tc('general_settings.amount.label.decimal_separator')"
+        type="text"
+        :success-messages="success"
+        :error-messages="
+          error || v$.decimalSeparator.$errors.map(e => e.$message)
+        "
+        @change="callIfDecimalsValid($event, update)"
+      />
+    </settings-option>
+  </div>
+</template>

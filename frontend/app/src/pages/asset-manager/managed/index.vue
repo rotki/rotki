@@ -1,68 +1,3 @@
-<template>
-  <v-container>
-    <refresh-header
-      :title="tc('asset_management.managed.title')"
-      :loading="loading"
-      @refresh="refresh"
-    />
-
-    <v-row class="mt-2" justify="space-between">
-      <v-col cols="auto">
-        <ignore-scam-assets-button @refresh="refresh" />
-        <v-tooltip open-delay="400" top>
-          <template #activator="{ on, attrs }">
-            <v-btn
-              outlined
-              color="primary"
-              v-bind="attrs"
-              v-on="on"
-              @click="mergeTool = true"
-            >
-              <v-icon class="mr-2">mdi-merge</v-icon>
-              <span>{{ tc('asset_management.merge_assets') }}</span>
-            </v-btn>
-          </template>
-          <span>{{ tc('asset_management.merge_assets_tooltip') }}</span>
-        </v-tooltip>
-      </v-col>
-      <v-col cols="auto">
-        <restore-asset-db-button dropdown />
-      </v-col>
-    </v-row>
-
-    <merge-dialog v-model="mergeTool" />
-
-    <managed-asset-table
-      class="mt-12"
-      :tokens="assets"
-      :loading="loading"
-      :change="!loading"
-      :server-item-length="totalEntries"
-      @add="add()"
-      @edit="edit($event)"
-      @delete-asset="showDeleteConfirmation($event)"
-      @update:pagination="pagination = $event"
-    />
-    <big-dialog
-      :display="showForm"
-      :title="dialogTitle"
-      subtitle=""
-      :action-disabled="!validForm || saving"
-      :primary-action="tc('common.actions.save')"
-      :loading="saving"
-      @confirm="save()"
-      @cancel="closeDialog()"
-    >
-      <managed-asset-form
-        ref="form"
-        v-model="validForm"
-        :edit="asset"
-        :saving="saving"
-      />
-    </big-dialog>
-  </v-container>
-</template>
-
 <script setup lang="ts">
 import { type SupportedAsset } from '@rotki/common/lib/data';
 import { type Ref } from 'vue';
@@ -235,3 +170,68 @@ const showDeleteConfirmation = (item: SupportedAsset) => {
   );
 };
 </script>
+
+<template>
+  <v-container>
+    <refresh-header
+      :title="tc('asset_management.managed.title')"
+      :loading="loading"
+      @refresh="refresh"
+    />
+
+    <v-row class="mt-2" justify="space-between">
+      <v-col cols="auto">
+        <ignore-scam-assets-button @refresh="refresh" />
+        <v-tooltip open-delay="400" top>
+          <template #activator="{ on, attrs }">
+            <v-btn
+              outlined
+              color="primary"
+              v-bind="attrs"
+              v-on="on"
+              @click="mergeTool = true"
+            >
+              <v-icon class="mr-2">mdi-merge</v-icon>
+              <span>{{ tc('asset_management.merge_assets') }}</span>
+            </v-btn>
+          </template>
+          <span>{{ tc('asset_management.merge_assets_tooltip') }}</span>
+        </v-tooltip>
+      </v-col>
+      <v-col cols="auto">
+        <restore-asset-db-button dropdown />
+      </v-col>
+    </v-row>
+
+    <merge-dialog v-model="mergeTool" />
+
+    <managed-asset-table
+      class="mt-12"
+      :tokens="assets"
+      :loading="loading"
+      :change="!loading"
+      :server-item-length="totalEntries"
+      @add="add()"
+      @edit="edit($event)"
+      @delete-asset="showDeleteConfirmation($event)"
+      @update:pagination="pagination = $event"
+    />
+    <big-dialog
+      :display="showForm"
+      :title="dialogTitle"
+      subtitle=""
+      :action-disabled="!validForm || saving"
+      :primary-action="tc('common.actions.save')"
+      :loading="saving"
+      @confirm="save()"
+      @cancel="closeDialog()"
+    >
+      <managed-asset-form
+        ref="form"
+        v-model="validForm"
+        :edit="asset"
+        :saving="saving"
+      />
+    </big-dialog>
+  </v-container>
+</template>

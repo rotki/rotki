@@ -1,71 +1,3 @@
-<template>
-  <div :class="css.placeholder" :style="placeholderStyle">
-    <adaptive-wrapper :circle="circle" :padding="padding">
-      <v-tooltip top open-delay="400" :disabled="noTooltip">
-        <template #activator="{ on, attrs }">
-          <div>
-            <div
-              v-if="chainIcon"
-              :class="{
-                [css.circle]: true,
-                [css.chain]: true
-              }"
-            >
-              <v-img
-                :src="chainIcon"
-                :width="chainIconSize"
-                :max-width="chainIconSize"
-                :height="chainIconSize"
-                :max-height="chainIconSize"
-                contain
-              />
-            </div>
-
-            <div
-              v-bind="attrs"
-              :style="styled"
-              class="d-flex"
-              :class="{ [css.circle]: circle }"
-              v-on="on"
-            >
-              <div :class="css.wrapper">
-                <div v-if="pending" class="black--text">
-                  <token-placeholder :size="size" />
-                </div>
-                <generated-icon
-                  v-if="currency || error"
-                  :custom-asset="isCustomAsset"
-                  :asset="displayAsset"
-                  :currency="!!currency"
-                  :size="size"
-                />
-                <v-img
-                  v-else
-                  :src="url"
-                  :max-height="size"
-                  :min-height="size"
-                  :max-width="size"
-                  :min-width="size"
-                  contain
-                  @loadstart="pending = true"
-                  @load="pending = false"
-                  @error="
-                    error = true;
-                    pending = false;
-                  "
-                />
-              </div>
-            </div>
-          </div>
-        </template>
-        <span>
-          {{ t('asset_icon.tooltip', tooltip) }}
-        </span>
-      </v-tooltip>
-    </adaptive-wrapper>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import TokenPlaceholder from '@/components/svgs/TokenPlaceholder.vue';
@@ -193,6 +125,74 @@ watch([symbol, changeable, identifier], (curr, prev) => {
   }
 });
 </script>
+
+<template>
+  <div :class="css.placeholder" :style="placeholderStyle">
+    <adaptive-wrapper :circle="circle" :padding="padding">
+      <v-tooltip top open-delay="400" :disabled="noTooltip">
+        <template #activator="{ on, attrs }">
+          <div>
+            <div
+              v-if="chainIcon"
+              :class="{
+                [css.circle]: true,
+                [css.chain]: true
+              }"
+            >
+              <v-img
+                :src="chainIcon"
+                :width="chainIconSize"
+                :max-width="chainIconSize"
+                :height="chainIconSize"
+                :max-height="chainIconSize"
+                contain
+              />
+            </div>
+
+            <div
+              v-bind="attrs"
+              :style="styled"
+              class="d-flex"
+              :class="{ [css.circle]: circle }"
+              v-on="on"
+            >
+              <div :class="css.wrapper">
+                <div v-if="pending" class="black--text">
+                  <token-placeholder :size="size" />
+                </div>
+                <generated-icon
+                  v-if="currency || error"
+                  :custom-asset="isCustomAsset"
+                  :asset="displayAsset"
+                  :currency="!!currency"
+                  :size="size"
+                />
+                <v-img
+                  v-else
+                  :src="url"
+                  :max-height="size"
+                  :min-height="size"
+                  :max-width="size"
+                  :min-width="size"
+                  contain
+                  @loadstart="pending = true"
+                  @load="pending = false"
+                  @error="
+                    error = true;
+                    pending = false;
+                  "
+                />
+              </div>
+            </div>
+          </div>
+        </template>
+        <span>
+          {{ t('asset_icon.tooltip', tooltip) }}
+        </span>
+      </v-tooltip>
+    </adaptive-wrapper>
+  </div>
+</template>
 <style module lang="scss">
 .circle {
   border-radius: 50%;

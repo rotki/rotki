@@ -1,3 +1,18 @@
+<script setup lang="ts">
+import { type AssetBalance } from '@rotki/common';
+import { type PropType } from 'vue';
+import StatCard from '@/components/display/StatCard.vue';
+
+defineProps({
+  stakings: {
+    required: true,
+    type: Array as PropType<AssetBalance[]>
+  }
+});
+
+const { tc } = useI18n();
+</script>
+
 <template>
   <stat-card :title="tc('loan_stake.title')">
     <div v-if="stakings.length > 0" class="d-flex justify-space-between">
@@ -13,18 +28,3 @@
     </div>
   </stat-card>
 </template>
-
-<script setup lang="ts">
-import { type AssetBalance } from '@rotki/common';
-import { type PropType } from 'vue';
-import StatCard from '@/components/display/StatCard.vue';
-
-defineProps({
-  stakings: {
-    required: true,
-    type: Array as PropType<AssetBalance[]>
-  }
-});
-
-const { tc } = useI18n();
-</script>

@@ -1,151 +1,3 @@
-<template>
-  <v-dialog
-    :value="display"
-    persistent
-    max-width="650"
-    class="watcher-dialog"
-    @keydown.esc.stop="cancel()"
-  >
-    <card>
-      <template #title> {{ title }} </template>
-      <v-row align="center" class="watcher-dialog__body">
-        <v-col cols="12">
-          {{ message }}
-        </v-col>
-        <v-col v-if="!preselectWatcherType" cols="12">
-          <v-select
-            v-model="watcherType"
-            :items="watcherTypes"
-            :label="tc('watcher_dialog.labels.type')"
-            dense
-            outlined
-            required
-          />
-        </v-col>
-        <v-col v-if="loadedWatchers.length > 0" cols="12">
-          <v-row>
-            <v-col cols="5">
-              <v-divider />
-            </v-col>
-            <v-col class="pa-0 text-center" cols="2">
-              {{ tc('watcher_dialog.edit') }}
-            </v-col>
-            <v-col cols="5">
-              <v-divider />
-            </v-col>
-          </v-row>
-          <v-row
-            v-for="(watcher, key) in loadedWatchers"
-            :key="key"
-            align="center"
-          >
-            <v-col cols="6">
-              <v-select
-                :filled="!existingWatchersEdit[watcher.identifier]"
-                :items="operations"
-                :label="tc('watcher_dialog.labels.operation')"
-                :readonly="!existingWatchersEdit[watcher.identifier]"
-                :value="loadedWatchers[key].args.op"
-                dense
-                hide-details
-                outlined
-                required
-                @input="loadedWatchers[key].args.op = $event"
-              />
-            </v-col>
-            <v-col cols="4">
-              <v-text-field
-                :filled="!existingWatchersEdit[watcher.identifier]"
-                :label="watcherValueLabel"
-                :readonly="!existingWatchersEdit[watcher.identifier]"
-                :value="loadedWatchers[key].args.ratio"
-                dense
-                hide-details
-                outlined
-                suffix="%"
-                @input="loadedWatchers[key].args.ratio = $event"
-              />
-            </v-col>
-            <v-col class="d-flex align-center justify-space-between" cols="2">
-              <v-btn icon @click="editWatcher(loadedWatchers[key])">
-                <v-icon small>
-                  {{ existingWatchersIcon(watcher.identifier) }}
-                </v-icon>
-              </v-btn>
-              <v-btn icon @click="deleteWatcher(watcher.identifier)">
-                <v-icon small> mdi-delete </v-icon>
-              </v-btn>
-            </v-col>
-          </v-row>
-        </v-col>
-        <v-col cols="12">
-          <v-row>
-            <v-col cols="5">
-              <v-divider />
-            </v-col>
-            <v-col class="pa-0 text-center justify-center" cols="2">
-              {{ tc('watcher_dialog.add_watcher') }}
-            </v-col>
-            <v-col cols="5">
-              <v-divider />
-            </v-col>
-          </v-row>
-          <v-row align="center">
-            <v-col cols="6">
-              <v-select
-                v-model="watcherOperation"
-                :disabled="!watcherType"
-                :items="operations"
-                :label="tc('watcher_dialog.labels.operation')"
-                dense
-                hide-details
-                outlined
-                required
-              />
-            </v-col>
-            <v-col cols="5">
-              <v-text-field
-                v-model="watcherValue"
-                :label="watcherValueLabel"
-                dense
-                hide-details
-                outlined
-                suffix="%"
-              />
-            </v-col>
-            <v-col class="d-flex align-center justify-center" cols="1">
-              <v-btn
-                :disabled="watcherOperation === null || watcherValue === null"
-                icon
-                @click="addWatcher()"
-              >
-                <v-icon> mdi-plus </v-icon>
-              </v-btn>
-            </v-col>
-          </v-row>
-        </v-col>
-      </v-row>
-      <template #buttons>
-        <div class="watcher-dialog__actions">
-          <div
-            :class="`text-caption flex-1 watcher-dialog__actions__messages watcher-dialog__actions__messages--${validationStatus} py-2 px-4 mb-4`"
-          >
-            {{ validationMessage }}
-          </div>
-          <v-btn
-            depressed
-            color="primary"
-            class="watcher-dialog__buttons__close"
-            @click="cancel()"
-          >
-            {{ tc('common.actions.close') }}
-          </v-btn>
-        </div>
-      </template>
-    </card>
-  </v-dialog>
-</template>
-
 <script setup lang="ts">
 import { type PropType, type Ref } from 'vue';
 import {
@@ -388,6 +240,154 @@ const cancel = () => {
   clear();
 };
 </script>
+
+<template>
+  <v-dialog
+    :value="display"
+    persistent
+    max-width="650"
+    class="watcher-dialog"
+    @keydown.esc.stop="cancel()"
+  >
+    <card>
+      <template #title> {{ title }} </template>
+      <v-row align="center" class="watcher-dialog__body">
+        <v-col cols="12">
+          {{ message }}
+        </v-col>
+        <v-col v-if="!preselectWatcherType" cols="12">
+          <v-select
+            v-model="watcherType"
+            :items="watcherTypes"
+            :label="tc('watcher_dialog.labels.type')"
+            dense
+            outlined
+            required
+          />
+        </v-col>
+        <v-col v-if="loadedWatchers.length > 0" cols="12">
+          <v-row>
+            <v-col cols="5">
+              <v-divider />
+            </v-col>
+            <v-col class="pa-0 text-center" cols="2">
+              {{ tc('watcher_dialog.edit') }}
+            </v-col>
+            <v-col cols="5">
+              <v-divider />
+            </v-col>
+          </v-row>
+          <v-row
+            v-for="(watcher, key) in loadedWatchers"
+            :key="key"
+            align="center"
+          >
+            <v-col cols="6">
+              <v-select
+                :filled="!existingWatchersEdit[watcher.identifier]"
+                :items="operations"
+                :label="tc('watcher_dialog.labels.operation')"
+                :readonly="!existingWatchersEdit[watcher.identifier]"
+                :value="loadedWatchers[key].args.op"
+                dense
+                hide-details
+                outlined
+                required
+                @input="loadedWatchers[key].args.op = $event"
+              />
+            </v-col>
+            <v-col cols="4">
+              <v-text-field
+                :filled="!existingWatchersEdit[watcher.identifier]"
+                :label="watcherValueLabel"
+                :readonly="!existingWatchersEdit[watcher.identifier]"
+                :value="loadedWatchers[key].args.ratio"
+                dense
+                hide-details
+                outlined
+                suffix="%"
+                @input="loadedWatchers[key].args.ratio = $event"
+              />
+            </v-col>
+            <v-col class="d-flex align-center justify-space-between" cols="2">
+              <v-btn icon @click="editWatcher(loadedWatchers[key])">
+                <v-icon small>
+                  {{ existingWatchersIcon(watcher.identifier) }}
+                </v-icon>
+              </v-btn>
+              <v-btn icon @click="deleteWatcher(watcher.identifier)">
+                <v-icon small> mdi-delete </v-icon>
+              </v-btn>
+            </v-col>
+          </v-row>
+        </v-col>
+        <v-col cols="12">
+          <v-row>
+            <v-col cols="5">
+              <v-divider />
+            </v-col>
+            <v-col class="pa-0 text-center justify-center" cols="2">
+              {{ tc('watcher_dialog.add_watcher') }}
+            </v-col>
+            <v-col cols="5">
+              <v-divider />
+            </v-col>
+          </v-row>
+          <v-row align="center">
+            <v-col cols="6">
+              <v-select
+                v-model="watcherOperation"
+                :disabled="!watcherType"
+                :items="operations"
+                :label="tc('watcher_dialog.labels.operation')"
+                dense
+                hide-details
+                outlined
+                required
+              />
+            </v-col>
+            <v-col cols="5">
+              <v-text-field
+                v-model="watcherValue"
+                :label="watcherValueLabel"
+                dense
+                hide-details
+                outlined
+                suffix="%"
+              />
+            </v-col>
+            <v-col class="d-flex align-center justify-center" cols="1">
+              <v-btn
+                :disabled="watcherOperation === null || watcherValue === null"
+                icon
+                @click="addWatcher()"
+              >
+                <v-icon> mdi-plus </v-icon>
+              </v-btn>
+            </v-col>
+          </v-row>
+        </v-col>
+      </v-row>
+      <template #buttons>
+        <div class="watcher-dialog__actions">
+          <div
+            :class="`text-caption flex-1 watcher-dialog__actions__messages watcher-dialog__actions__messages--${validationStatus} py-2 px-4 mb-4`"
+          >
+            {{ validationMessage }}
+          </div>
+          <v-btn
+            depressed
+            color="primary"
+            class="watcher-dialog__buttons__close"
+            @click="cancel()"
+          >
+            {{ tc('common.actions.close') }}
+          </v-btn>
+        </div>
+      </template>
+    </card>
+  </v-dialog>
+</template>
 
 <style lang="scss" scoped>
 .watcher-dialog {

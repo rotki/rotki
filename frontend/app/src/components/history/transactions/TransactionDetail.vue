@@ -1,3 +1,36 @@
+<script setup lang="ts">
+import { type BigNumber } from '@rotki/common';
+import { type PropType } from 'vue';
+import { type EthTransactionEntry } from '@/store/history/types';
+import { Unit, toUnit } from '@/utils/calculation';
+
+const props = defineProps({
+  transaction: {
+    required: true,
+    type: Object as PropType<EthTransactionEntry>
+  }
+});
+
+const emit = defineEmits(['close']);
+
+const { t } = useI18n();
+const { transaction } = toRefs(props);
+
+const toGwei = (value: BigNumber) => {
+  return toUnit(value, Unit.GWEI);
+};
+
+const gwei = 'Gwei';
+
+const gasFee = computed<BigNumber>(() => {
+  const tx = get(transaction);
+  return toUnit(tx.gasPrice.multipliedBy(tx.gasUsed), Unit.ETH);
+});
+
+const close = () => {
+  emit('close');
+};
+</script>
 <template>
   <card>
     <template #title>
@@ -73,39 +106,6 @@
     </template>
   </card>
 </template>
-<script setup lang="ts">
-import { type BigNumber } from '@rotki/common';
-import { type PropType } from 'vue';
-import { type EthTransactionEntry } from '@/store/history/types';
-import { Unit, toUnit } from '@/utils/calculation';
-
-const props = defineProps({
-  transaction: {
-    required: true,
-    type: Object as PropType<EthTransactionEntry>
-  }
-});
-
-const emit = defineEmits(['close']);
-
-const { t } = useI18n();
-const { transaction } = toRefs(props);
-
-const toGwei = (value: BigNumber) => {
-  return toUnit(value, Unit.GWEI);
-};
-
-const gwei = 'Gwei';
-
-const gasFee = computed<BigNumber>(() => {
-  const tx = get(transaction);
-  return toUnit(tx.gasPrice.multipliedBy(tx.gasUsed), Unit.ETH);
-});
-
-const close = () => {
-  emit('close');
-};
-</script>
 <style module lang="scss">
 .input-data {
   background-color: var(--v-rotki-light-grey-lighten1);

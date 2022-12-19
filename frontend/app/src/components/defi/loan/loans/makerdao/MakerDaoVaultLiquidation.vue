@@ -1,3 +1,55 @@
+<script setup lang="ts">
+import { assetSymbolToIdentifierMap } from '@rotki/common/lib/data';
+import { type PropType } from 'vue';
+import LoanRow from '@/components/defi/loan/LoanRow.vue';
+import AmountDisplay from '@/components/display/AmountDisplay.vue';
+import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
+import StatCard from '@/components/display/StatCard.vue';
+import PremiumLock from '@/components/premium/PremiumLock.vue';
+
+import { type MakerDAOVaultModel } from '@/types/defi/maker';
+import { Zero } from '@/utils/bignumbers';
+
+const assetPadding = 3;
+
+const props = defineProps({
+  vault: {
+    required: true,
+    type: Object as PropType<MakerDAOVaultModel>
+  }
+});
+
+const { vault } = toRefs(props);
+const premium = usePremium();
+const { fontStyle } = useTheme();
+const { tc } = useI18n();
+
+const valueLost = computed(() => {
+  const makerVault = get(vault);
+  if (!('totalInterestOwed' in makerVault)) {
+    return Zero;
+  }
+  const { totalInterestOwed, totalLiquidated } = makerVault;
+  return totalLiquidated.usdValue.plus(totalInterestOwed);
+});
+
+const liquidated = computed(() => {
+  const makerVault = get(vault);
+  if (!('totalLiquidated' in makerVault)) {
+    return undefined;
+  }
+  return makerVault.totalLiquidated;
+});
+
+const totalInterestOwed = computed(() => {
+  const makerVault = get(vault);
+  if (!('totalInterestOwed' in makerVault)) {
+    return Zero;
+  }
+  return makerVault.totalInterestOwed;
+});
+const dai: string = assetSymbolToIdentifierMap.DAI;
+</script>
 <template>
   <stat-card :title="tc('loan_liquidation.title')" :class="$style.liquidation">
     <div class="pb-5" :class="$style.upper">
@@ -61,58 +113,6 @@
     </div>
   </stat-card>
 </template>
-<script setup lang="ts">
-import { assetSymbolToIdentifierMap } from '@rotki/common/lib/data';
-import { type PropType } from 'vue';
-import LoanRow from '@/components/defi/loan/LoanRow.vue';
-import AmountDisplay from '@/components/display/AmountDisplay.vue';
-import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
-import StatCard from '@/components/display/StatCard.vue';
-import PremiumLock from '@/components/premium/PremiumLock.vue';
-
-import { type MakerDAOVaultModel } from '@/types/defi/maker';
-import { Zero } from '@/utils/bignumbers';
-
-const assetPadding = 3;
-
-const props = defineProps({
-  vault: {
-    required: true,
-    type: Object as PropType<MakerDAOVaultModel>
-  }
-});
-
-const { vault } = toRefs(props);
-const premium = usePremium();
-const { fontStyle } = useTheme();
-const { tc } = useI18n();
-
-const valueLost = computed(() => {
-  const makerVault = get(vault);
-  if (!('totalInterestOwed' in makerVault)) {
-    return Zero;
-  }
-  const { totalInterestOwed, totalLiquidated } = makerVault;
-  return totalLiquidated.usdValue.plus(totalInterestOwed);
-});
-
-const liquidated = computed(() => {
-  const makerVault = get(vault);
-  if (!('totalLiquidated' in makerVault)) {
-    return undefined;
-  }
-  return makerVault.totalLiquidated;
-});
-
-const totalInterestOwed = computed(() => {
-  const makerVault = get(vault);
-  if (!('totalInterestOwed' in makerVault)) {
-    return Zero;
-  }
-  return makerVault.totalInterestOwed;
-});
-const dai: string = assetSymbolToIdentifierMap.DAI;
-</script>
 
 <style lang="scss" module>
 .header {

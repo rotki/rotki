@@ -1,23 +1,3 @@
-<template>
-  <navigator-link :enabled="opensDetails" :to="route" component="div">
-    <list-item
-      v-bind="$attrs"
-      class="my-0 text-center"
-      :show-details="false"
-      :title="location.name"
-    >
-      <template #icon>
-        <location-icon
-          class="location-display"
-          :item="location"
-          :icon="icon"
-          :size="size"
-        />
-      </template>
-    </list-item>
-  </navigator-link>
-</template>
-
 <script setup lang="ts">
 import { type ComputedRef, type PropType } from 'vue';
 import ListItem from '@/components/helper/ListItem.vue';
@@ -54,6 +34,26 @@ const route = computed<{ path: string }>(() => {
   };
 });
 </script>
+
+<template>
+  <navigator-link :enabled="opensDetails" :to="route" component="div">
+    <list-item
+      v-bind="$attrs"
+      class="my-0 text-center"
+      :show-details="false"
+      :title="location.name"
+    >
+      <template #icon>
+        <location-icon
+          class="location-display"
+          :item="location"
+          :icon="icon"
+          :size="size"
+        />
+      </template>
+    </list-item>
+  </navigator-link>
+</template>
 
 <style scoped lang="scss">
 .location-display {

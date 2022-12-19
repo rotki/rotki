@@ -1,3 +1,20 @@
+<script setup lang="ts">
+import CardTitle from '@/components/typography/CardTitle.vue';
+import { useAggregatedBalancesStore } from '@/store/balances/aggregated';
+import { type AssetPriceInfo } from '@/types/prices';
+
+const props = defineProps({
+  identifier: { required: true, type: String }
+});
+const { identifier } = toRefs(props);
+const { assetPriceInfo } = useAggregatedBalancesStore();
+
+const info = computed<AssetPriceInfo>(() => {
+  return get(assetPriceInfo(identifier));
+});
+
+const { t } = useI18n();
+</script>
 <template>
   <v-row>
     <v-col>
@@ -49,20 +66,3 @@
     </v-col>
   </v-row>
 </template>
-<script setup lang="ts">
-import CardTitle from '@/components/typography/CardTitle.vue';
-import { useAggregatedBalancesStore } from '@/store/balances/aggregated';
-import { type AssetPriceInfo } from '@/types/prices';
-
-const props = defineProps({
-  identifier: { required: true, type: String }
-});
-const { identifier } = toRefs(props);
-const { assetPriceInfo } = useAggregatedBalancesStore();
-
-const info = computed<AssetPriceInfo>(() => {
-  return get(assetPriceInfo(identifier));
-});
-
-const { t } = useI18n();
-</script>

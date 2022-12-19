@@ -1,3 +1,15 @@
+<script setup lang="ts">
+defineProps({
+  disabled: { required: false, type: Boolean, default: false }
+});
+
+const emit = defineEmits(['ignore']);
+
+const ignore = (ignore: boolean) => emit('ignore', ignore);
+
+const { t } = useI18n();
+</script>
+
 <template>
   <v-row no-gutters>
     <v-col cols="auto">
@@ -37,15 +49,3 @@
     </v-col>
   </v-row>
 </template>
-
-<script setup lang="ts">
-defineProps({
-  disabled: { required: false, type: Boolean, default: false }
-});
-
-const emit = defineEmits(['ignore']);
-
-const ignore = (ignore: boolean) => emit('ignore', ignore);
-
-const { t } = useI18n();
-</script>

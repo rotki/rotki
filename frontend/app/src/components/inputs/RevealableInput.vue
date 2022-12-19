@@ -1,31 +1,3 @@
-<template>
-  <v-text-field
-    v-bind="rootAttrs"
-    :value="value"
-    :prepend-icon="outlined ? null : prependIcon"
-    :prepend-inner-icon="outlined ? prependIcon : null"
-    :type="revealed ? 'text' : 'password'"
-    :label="label"
-    :hint="hint"
-    :disabled="disabled"
-    :persistent-hint="!!hint"
-    :error-messages="errorMessages"
-    :outlined="outlined"
-    single-line
-    v-on="rootListeners"
-    @input="input"
-  >
-    <template #append>
-      <v-icon v-if="revealed" tabindex="-1" @click="revealed = !revealed">
-        mdi-eye
-      </v-icon>
-      <v-icon v-else tabindex="-1" @click="revealed = !revealed">
-        mdi-eye-off
-      </v-icon>
-    </template>
-  </v-text-field>
-</template>
-
 <script setup lang="ts">
 import { type PropType, ref, useAttrs, useListeners } from 'vue';
 
@@ -82,3 +54,31 @@ const input = (value: string | null) => {
   emit('input', value);
 };
 </script>
+
+<template>
+  <v-text-field
+    v-bind="rootAttrs"
+    :value="value"
+    :prepend-icon="outlined ? null : prependIcon"
+    :prepend-inner-icon="outlined ? prependIcon : null"
+    :type="revealed ? 'text' : 'password'"
+    :label="label"
+    :hint="hint"
+    :disabled="disabled"
+    :persistent-hint="!!hint"
+    :error-messages="errorMessages"
+    :outlined="outlined"
+    single-line
+    v-on="rootListeners"
+    @input="input"
+  >
+    <template #append>
+      <v-icon v-if="revealed" tabindex="-1" @click="revealed = !revealed">
+        mdi-eye
+      </v-icon>
+      <v-icon v-else tabindex="-1" @click="revealed = !revealed">
+        mdi-eye-off
+      </v-icon>
+    </template>
+  </v-text-field>
+</template>

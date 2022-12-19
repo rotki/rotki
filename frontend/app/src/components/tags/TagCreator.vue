@@ -1,3 +1,70 @@
+<script setup lang="ts">
+import useVuelidate from '@vuelidate/core';
+import { helpers, required } from '@vuelidate/validators';
+import { type PropType, type Ref } from 'vue';
+import TagIcon from '@/components/tags/TagIcon.vue';
+import { type TagEvent } from '@/types/tags';
+import { type Tag } from '@/types/user';
+import { invertColor, randomColor } from '@/utils/color';
+
+const props = defineProps({
+  tag: { required: true, type: Object as PropType<Tag> },
+  editMode: { required: true, type: Boolean }
+});
+
+const emit = defineEmits(['changed', 'save', 'cancel']);
+const { t } = useI18n();
+
+const { tag } = toRefs(props);
+
+const form: Ref<any> = ref(null);
+
+const rules = {
+  name: {
+    required: helpers.withMessage(
+      t('tag_creator.validation.empty_name').toString(),
+      required
+    )
+  }
+};
+
+const v$ = useVuelidate(
+  rules,
+  {
+    name: computed(() => get(tag).name)
+  },
+  { $autoDirty: true }
+);
+
+const changed = (event: TagEvent) => {
+  emit('changed', {
+    ...get(tag),
+    ...event
+  });
+};
+
+const save = () => {
+  get(form)?.reset();
+  nextTick(() => {
+    get(v$).$reset();
+  });
+  emit('save', get(tag));
+};
+
+const cancel = () => {
+  get(form)?.reset();
+  emit('cancel');
+};
+
+const randomize = () => {
+  const backgroundColor = randomColor();
+  changed({
+    backgroundColor,
+    foregroundColor: invertColor(backgroundColor)
+  });
+};
+</script>
+
 <template>
   <v-form ref="form" :value="!v$.$invalid">
     <v-row>
@@ -112,73 +179,6 @@
     </v-row>
   </v-form>
 </template>
-
-<script setup lang="ts">
-import useVuelidate from '@vuelidate/core';
-import { helpers, required } from '@vuelidate/validators';
-import { type PropType, type Ref } from 'vue';
-import TagIcon from '@/components/tags/TagIcon.vue';
-import { type TagEvent } from '@/types/tags';
-import { type Tag } from '@/types/user';
-import { invertColor, randomColor } from '@/utils/color';
-
-const props = defineProps({
-  tag: { required: true, type: Object as PropType<Tag> },
-  editMode: { required: true, type: Boolean }
-});
-
-const emit = defineEmits(['changed', 'save', 'cancel']);
-const { t } = useI18n();
-
-const { tag } = toRefs(props);
-
-const form: Ref<any> = ref(null);
-
-const rules = {
-  name: {
-    required: helpers.withMessage(
-      t('tag_creator.validation.empty_name').toString(),
-      required
-    )
-  }
-};
-
-const v$ = useVuelidate(
-  rules,
-  {
-    name: computed(() => get(tag).name)
-  },
-  { $autoDirty: true }
-);
-
-const changed = (event: TagEvent) => {
-  emit('changed', {
-    ...get(tag),
-    ...event
-  });
-};
-
-const save = () => {
-  get(form)?.reset();
-  nextTick(() => {
-    get(v$).$reset();
-  });
-  emit('save', get(tag));
-};
-
-const cancel = () => {
-  get(form)?.reset();
-  emit('cancel');
-};
-
-const randomize = () => {
-  const backgroundColor = randomColor();
-  changed({
-    backgroundColor,
-    foregroundColor: invertColor(backgroundColor)
-  });
-};
-</script>
 
 <style scoped lang="scss">
 .tag-creator {

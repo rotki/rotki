@@ -1,3 +1,13 @@
+<script setup lang="ts">
+import LoginForm from '@/components/account-management/LoginForm.vue';
+import { useSessionAuthStore } from '@/store/session/auth';
+
+const { navigateToUserCreation } = useAppNavigation();
+const { syncConflict, loginStatus } = storeToRefs(useSessionAuthStore());
+const { backendChanged } = useBackendManagement();
+const { userLogin, errors, loading } = useAccountManagement();
+</script>
+
 <template>
   <login-form
     :loading="loading"
@@ -10,13 +20,3 @@
     @new-account="navigateToUserCreation()"
   />
 </template>
-
-<script setup lang="ts">
-import LoginForm from '@/components/account-management/LoginForm.vue';
-import { useSessionAuthStore } from '@/store/session/auth';
-
-const { navigateToUserCreation } = useAppNavigation();
-const { syncConflict, loginStatus } = storeToRefs(useSessionAuthStore());
-const { backendChanged } = useBackendManagement();
-const { userLogin, errors, loading } = useAccountManagement();
-</script>

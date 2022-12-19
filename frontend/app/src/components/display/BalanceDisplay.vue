@@ -1,3 +1,32 @@
+<script setup lang="ts">
+import { type Balance } from '@rotki/common';
+import { type PropType } from 'vue';
+import AssetLink from '@/components/assets/AssetLink.vue';
+
+const props = defineProps({
+  asset: { required: true, type: String },
+  value: {
+    required: false,
+    type: Object as PropType<Balance>,
+    default: null
+  },
+  noIcon: { required: false, type: Boolean, default: false },
+  noJustify: { required: false, type: Boolean, default: false },
+  align: { required: false, type: String, default: 'end' },
+  mode: {
+    required: false,
+    type: String as PropType<'gain' | 'loss' | ''>,
+    default: ''
+  },
+  assetPadding: { required: false, type: Number, default: 0 },
+  ticker: { required: false, type: Boolean, default: true },
+  priceLoading: { required: false, type: Boolean, default: false },
+  iconSize: { required: false, type: String, default: '24px' }
+});
+
+const { asset } = toRefs(props);
+</script>
+
 <template>
   <div
     class="d-flex flex-row balance-display shrink pt-1 pb-1 align-center"
@@ -29,35 +58,6 @@
     </asset-link>
   </div>
 </template>
-
-<script setup lang="ts">
-import { type Balance } from '@rotki/common';
-import { type PropType } from 'vue';
-import AssetLink from '@/components/assets/AssetLink.vue';
-
-const props = defineProps({
-  asset: { required: true, type: String },
-  value: {
-    required: false,
-    type: Object as PropType<Balance>,
-    default: null
-  },
-  noIcon: { required: false, type: Boolean, default: false },
-  noJustify: { required: false, type: Boolean, default: false },
-  align: { required: false, type: String, default: 'end' },
-  mode: {
-    required: false,
-    type: String as PropType<'gain' | 'loss' | ''>,
-    default: ''
-  },
-  assetPadding: { required: false, type: Number, default: 0 },
-  ticker: { required: false, type: Boolean, default: true },
-  priceLoading: { required: false, type: Boolean, default: false },
-  iconSize: { required: false, type: String, default: '24px' }
-});
-
-const { asset } = toRefs(props);
-</script>
 
 <style module lang="scss">
 .balance-display {

@@ -1,3 +1,17 @@
+<script setup lang="ts">
+import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
+import { useAccountingSettingsStore } from '@/store/settings/accounting';
+
+const crypto2CryptoTrades = ref(false);
+const { includeCrypto2crypto } = storeToRefs(useAccountingSettingsStore());
+
+onMounted(() => {
+  set(crypto2CryptoTrades, get(includeCrypto2crypto));
+});
+
+const { tc } = useI18n();
+</script>
+
 <template>
   <settings-option
     #default="{ error, success, update }"
@@ -15,17 +29,3 @@
     />
   </settings-option>
 </template>
-
-<script setup lang="ts">
-import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
-import { useAccountingSettingsStore } from '@/store/settings/accounting';
-
-const crypto2CryptoTrades = ref(false);
-const { includeCrypto2crypto } = storeToRefs(useAccountingSettingsStore());
-
-onMounted(() => {
-  set(crypto2CryptoTrades, get(includeCrypto2crypto));
-});
-
-const { tc } = useI18n();
-</script>

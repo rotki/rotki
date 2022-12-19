@@ -1,57 +1,3 @@
-<template>
-  <v-row justify="end">
-    <v-col cols="auto">
-      <v-sheet outlined :style="style">
-        <v-row align="center" justify="center" no-gutters>
-          <v-col
-            v-for="module in moduleStatus"
-            :key="module.identifier"
-            cols="auto"
-          >
-            <v-tooltip open-delay="400" top>
-              <template #activator="{ on, attrs }">
-                <v-btn
-                  v-bind="attrs"
-                  icon
-                  :class="module.enabled ? null : 'active-modules__disabled'"
-                  v-on="on"
-                  @click="onModulePress(module)"
-                >
-                  <v-img
-                    width="24px"
-                    height="24px"
-                    contain
-                    :src="icon(module.identifier)"
-                  />
-                </v-btn>
-              </template>
-              <span v-if="module.enabled">
-                {{
-                  tc(
-                    'active_modules.view_addresses',
-                    0,
-                    getName(module.identifier)
-                  )
-                }}
-              </span>
-              <span v-else>
-                {{
-                  tc('active_modules.activate', 0, getName(module.identifier))
-                }}
-              </span>
-            </v-tooltip>
-          </v-col>
-        </v-row>
-      </v-sheet>
-      <queried-address-dialog
-        v-if="manageModule"
-        :module="manageModule"
-        @close="manageModule = null"
-      />
-    </v-col>
-  </v-row>
-</template>
-
 <script setup lang="ts">
 import { type PropType, type Ref } from 'vue';
 import QueriedAddressDialog from '@/components/defi/QueriedAddressDialog.vue';
@@ -152,6 +98,60 @@ const showConfirmation = () => {
   );
 };
 </script>
+
+<template>
+  <v-row justify="end">
+    <v-col cols="auto">
+      <v-sheet outlined :style="style">
+        <v-row align="center" justify="center" no-gutters>
+          <v-col
+            v-for="module in moduleStatus"
+            :key="module.identifier"
+            cols="auto"
+          >
+            <v-tooltip open-delay="400" top>
+              <template #activator="{ on, attrs }">
+                <v-btn
+                  v-bind="attrs"
+                  icon
+                  :class="module.enabled ? null : 'active-modules__disabled'"
+                  v-on="on"
+                  @click="onModulePress(module)"
+                >
+                  <v-img
+                    width="24px"
+                    height="24px"
+                    contain
+                    :src="icon(module.identifier)"
+                  />
+                </v-btn>
+              </template>
+              <span v-if="module.enabled">
+                {{
+                  tc(
+                    'active_modules.view_addresses',
+                    0,
+                    getName(module.identifier)
+                  )
+                }}
+              </span>
+              <span v-else>
+                {{
+                  tc('active_modules.activate', 0, getName(module.identifier))
+                }}
+              </span>
+            </v-tooltip>
+          </v-col>
+        </v-row>
+      </v-sheet>
+      <queried-address-dialog
+        v-if="manageModule"
+        :module="manageModule"
+        @close="manageModule = null"
+      />
+    </v-col>
+  </v-row>
+</template>
 
 <style scoped lang="scss">
 .active-modules {

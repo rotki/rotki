@@ -1,41 +1,3 @@
-<template>
-  <v-container>
-    <refresh-header
-      :title="tc('asset_management.custom.title')"
-      :loading="loading"
-      @refresh="refresh"
-    />
-    <custom-asset-table
-      class="mt-12"
-      :assets="assets"
-      :loading="loading"
-      :server-item-length="totalEntries"
-      :types="types"
-      @add="add()"
-      @edit="edit($event)"
-      @delete-asset="showDeleteConfirmation($event)"
-      @update:pagination="pagination = $event"
-    />
-    <big-dialog
-      :display="showForm"
-      :title="dialogTitle"
-      subtitle=""
-      :action-disabled="!valid || saving"
-      :primary-action="tc('common.actions.save')"
-      :loading="saving"
-      @confirm="save()"
-      @cancel="closeDialog()"
-    >
-      <custom-asset-form
-        ref="assetForm"
-        :types="types"
-        :edit="editMode"
-        @valid="valid = $event"
-      />
-    </big-dialog>
-  </v-container>
-</template>
-
 <script setup lang="ts">
 import { type Ref } from 'vue';
 import CustomAssetForm from '@/components/asset-manager/CustomAssetForm.vue';
@@ -194,3 +156,41 @@ const showDeleteConfirmation = (item: CustomAsset) => {
   );
 };
 </script>
+
+<template>
+  <v-container>
+    <refresh-header
+      :title="tc('asset_management.custom.title')"
+      :loading="loading"
+      @refresh="refresh"
+    />
+    <custom-asset-table
+      class="mt-12"
+      :assets="assets"
+      :loading="loading"
+      :server-item-length="totalEntries"
+      :types="types"
+      @add="add()"
+      @edit="edit($event)"
+      @delete-asset="showDeleteConfirmation($event)"
+      @update:pagination="pagination = $event"
+    />
+    <big-dialog
+      :display="showForm"
+      :title="dialogTitle"
+      subtitle=""
+      :action-disabled="!valid || saving"
+      :primary-action="tc('common.actions.save')"
+      :loading="saving"
+      @confirm="save()"
+      @cancel="closeDialog()"
+    >
+      <custom-asset-form
+        ref="assetForm"
+        :types="types"
+        :edit="editMode"
+        @valid="valid = $event"
+      />
+    </big-dialog>
+  </v-container>
+</template>

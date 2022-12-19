@@ -1,3 +1,6 @@
+<script setup lang="ts">
+const { t } = useI18n();
+</script>
 <template>
   <card outlined :class="$style.card">
     <v-row no-gutters align="center">
@@ -12,9 +15,6 @@
     </v-row>
   </card>
 </template>
-<script setup lang="ts">
-const { t } = useI18n();
-</script>
 <style module lang="scss">
 .card {
   font-size: 16px;

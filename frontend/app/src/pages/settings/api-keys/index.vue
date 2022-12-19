@@ -1,7 +1,3 @@
-<template>
-  <tab-navigation class="api-keys" :tab-contents="tabs" />
-</template>
-
 <script setup lang="ts">
 import { type ComputedRef } from 'vue';
 import TabNavigation from '@/components/helper/TabNavigation.vue';
@@ -19,3 +15,7 @@ const tabs: ComputedRef<TabContent[]> = computed(() => {
   ];
 });
 </script>
+
+<template>
+  <tab-navigation class="api-keys" :tab-contents="tabs" />
+</template>

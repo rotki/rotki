@@ -1,3 +1,122 @@
+<script setup lang="ts">
+import ExternalLink from '@/components/helper/ExternalLink.vue';
+import ApiKeyBox from '@/components/settings/api-keys/ApiKeyBox.vue';
+import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
+import { useExternalServicesApi } from '@/services/settings/external-services-api';
+import { useEthBalancesStore } from '@/store/blockchain/balances/eth';
+import { useConfirmStore } from '@/store/confirm';
+import { useMessageStore } from '@/store/message';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { Module } from '@/types/modules';
+import {
+  type ExternalServiceKey,
+  type ExternalServiceKeys,
+  type ExternalServiceName
+} from '@/types/user';
+
+const etherscanKey = ref('');
+const cryptocompareKey = ref('');
+const covalentKey = ref('');
+const beaconchainKey = ref('');
+const loopringKey = ref('');
+const openseaKey = ref('');
+
+const loading = ref(false);
+
+const { activeModules } = storeToRefs(useGeneralSettingsStore());
+const { setMessage } = useMessageStore();
+const { fetchLoopringBalances } = useEthBalancesStore();
+
+const { tc } = useI18n();
+const api = useExternalServicesApi();
+
+const isLoopringActive = computed(() => {
+  return get(activeModules).includes(Module.LOOPRING);
+});
+
+const updateKeys = ({
+  cryptocompare,
+  covalent,
+  etherscan,
+  beaconchain,
+  loopring,
+  opensea
+}: ExternalServiceKeys) => {
+  set(cryptocompareKey, cryptocompare?.apiKey || '');
+  set(covalentKey, covalent?.apiKey || '');
+  set(etherscanKey, etherscan?.apiKey || '');
+  set(beaconchainKey, beaconchain?.apiKey || '');
+  set(loopringKey, loopring?.apiKey || '');
+  set(openseaKey, opensea?.apiKey || '');
+};
+
+const save = async (serviceName: ExternalServiceName, key: string) => {
+  const keys: ExternalServiceKey[] = [
+    { name: serviceName, apiKey: key.trim() }
+  ];
+
+  try {
+    set(loading, true);
+    updateKeys(await api.setExternalServices(keys));
+    setMessage({
+      title: tc('external_services.set.success.title'),
+      description: tc('external_services.set.success.message', 0, {
+        serviceName
+      }),
+      success: true
+    });
+    if (serviceName === 'loopring') {
+      await fetchLoopringBalances(true);
+    }
+  } catch (e: any) {
+    setMessage({
+      title: tc('external_services.set.error.title'),
+      description: tc('external_services.set.error.message', 0, {
+        error: e.message
+      }),
+      success: false
+    });
+  }
+  set(loading, false);
+};
+
+const { show } = useConfirmStore();
+
+const showConfirmation = (service: ExternalServiceName) => {
+  show(
+    {
+      title: tc('external_services.confirmation.title'),
+      message: tc('external_services.confirmation.message'),
+      type: 'info'
+    },
+    async () => await confirm(service)
+  );
+};
+
+const confirm = async (service: ExternalServiceName) => {
+  set(loading, true);
+  try {
+    updateKeys(await api.deleteExternalServices(service));
+  } catch (e: any) {
+    setMessage({
+      title: tc('external_services.delete_error.title'),
+      description: tc('external_services.delete_error.description', 0, {
+        message: e.message
+      }),
+      success: false
+    });
+  }
+
+  set(loading, false);
+};
+
+onMounted(async () => {
+  set(loading, true);
+  updateKeys(await api.queryExternalServices());
+  set(loading, false);
+});
+</script>
+
 <template>
   <card>
     <template #title>
@@ -127,122 +246,3 @@
     </api-key-box>
   </card>
 </template>
-
-<script setup lang="ts">
-import ExternalLink from '@/components/helper/ExternalLink.vue';
-import ApiKeyBox from '@/components/settings/api-keys/ApiKeyBox.vue';
-import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
-import { useExternalServicesApi } from '@/services/settings/external-services-api';
-import { useEthBalancesStore } from '@/store/blockchain/balances/eth';
-import { useConfirmStore } from '@/store/confirm';
-import { useMessageStore } from '@/store/message';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { Module } from '@/types/modules';
-import {
-  type ExternalServiceKey,
-  type ExternalServiceKeys,
-  type ExternalServiceName
-} from '@/types/user';
-
-const etherscanKey = ref('');
-const cryptocompareKey = ref('');
-const covalentKey = ref('');
-const beaconchainKey = ref('');
-const loopringKey = ref('');
-const openseaKey = ref('');
-
-const loading = ref(false);
-
-const { activeModules } = storeToRefs(useGeneralSettingsStore());
-const { setMessage } = useMessageStore();
-const { fetchLoopringBalances } = useEthBalancesStore();
-
-const { tc } = useI18n();
-const api = useExternalServicesApi();
-
-const isLoopringActive = computed(() => {
-  return get(activeModules).includes(Module.LOOPRING);
-});
-
-const updateKeys = ({
-  cryptocompare,
-  covalent,
-  etherscan,
-  beaconchain,
-  loopring,
-  opensea
-}: ExternalServiceKeys) => {
-  set(cryptocompareKey, cryptocompare?.apiKey || '');
-  set(covalentKey, covalent?.apiKey || '');
-  set(etherscanKey, etherscan?.apiKey || '');
-  set(beaconchainKey, beaconchain?.apiKey || '');
-  set(loopringKey, loopring?.apiKey || '');
-  set(openseaKey, opensea?.apiKey || '');
-};
-
-const save = async (serviceName: ExternalServiceName, key: string) => {
-  const keys: ExternalServiceKey[] = [
-    { name: serviceName, apiKey: key.trim() }
-  ];
-
-  try {
-    set(loading, true);
-    updateKeys(await api.setExternalServices(keys));
-    setMessage({
-      title: tc('external_services.set.success.title'),
-      description: tc('external_services.set.success.message', 0, {
-        serviceName
-      }),
-      success: true
-    });
-    if (serviceName === 'loopring') {
-      await fetchLoopringBalances(true);
-    }
-  } catch (e: any) {
-    setMessage({
-      title: tc('external_services.set.error.title'),
-      description: tc('external_services.set.error.message', 0, {
-        error: e.message
-      }),
-      success: false
-    });
-  }
-  set(loading, false);
-};
-
-const { show } = useConfirmStore();
-
-const showConfirmation = (service: ExternalServiceName) => {
-  show(
-    {
-      title: tc('external_services.confirmation.title'),
-      message: tc('external_services.confirmation.message'),
-      type: 'info'
-    },
-    async () => await confirm(service)
-  );
-};
-
-const confirm = async (service: ExternalServiceName) => {
-  set(loading, true);
-  try {
-    updateKeys(await api.deleteExternalServices(service));
-  } catch (e: any) {
-    setMessage({
-      title: tc('external_services.delete_error.title'),
-      description: tc('external_services.delete_error.description', 0, {
-        message: e.message
-      }),
-      success: false
-    });
-  }
-
-  set(loading, false);
-};
-
-onMounted(async () => {
-  set(loading, true);
-  updateKeys(await api.queryExternalServices());
-  set(loading, false);
-});
-</script>

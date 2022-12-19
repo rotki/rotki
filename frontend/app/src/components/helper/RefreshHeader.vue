@@ -1,3 +1,25 @@
+<script setup lang="ts">
+import RefreshButton from '@/components/helper/RefreshButton.vue';
+
+const props = defineProps({
+  title: { required: true, type: String },
+  loading: { required: true, type: Boolean }
+});
+
+const emit = defineEmits(['refresh']);
+
+const { title } = toRefs(props);
+const { tc } = useI18n();
+
+const tooltip = computed(() => ({
+  title: get(title).toLocaleLowerCase()
+}));
+
+const refresh = () => {
+  emit('refresh');
+};
+</script>
+
 <template>
   <v-row justify="space-between" align="center" no-gutters>
     <v-col>
@@ -22,25 +44,3 @@
     </v-col>
   </v-row>
 </template>
-
-<script setup lang="ts">
-import RefreshButton from '@/components/helper/RefreshButton.vue';
-
-const props = defineProps({
-  title: { required: true, type: String },
-  loading: { required: true, type: Boolean }
-});
-
-const emit = defineEmits(['refresh']);
-
-const { title } = toRefs(props);
-const { tc } = useI18n();
-
-const tooltip = computed(() => ({
-  title: get(title).toLocaleLowerCase()
-}));
-
-const refresh = () => {
-  emit('refresh');
-};
-</script>

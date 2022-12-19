@@ -1,22 +1,3 @@
-<template>
-  <v-img
-    v-if="error"
-    :width="width"
-    :height="height"
-    contain
-    src="./assets/images/rotkehlchen_no_text.png"
-  />
-  <v-img
-    v-else
-    :width="width"
-    :height="height"
-    contain
-    :src="url"
-    @loadstart="error = false"
-    @load="error = false"
-    @error="error = true"
-  />
-</template>
 <script setup lang="ts">
 import { type Ref } from 'vue';
 
@@ -40,3 +21,22 @@ defineProps({
 
 const error: Ref<boolean> = ref(false);
 </script>
+<template>
+  <v-img
+    v-if="error"
+    :width="width"
+    :height="height"
+    contain
+    src="./assets/images/rotkehlchen_no_text.png"
+  />
+  <v-img
+    v-else
+    :width="width"
+    :height="height"
+    contain
+    :src="url"
+    @loadstart="error = false"
+    @load="error = false"
+    @error="error = true"
+  />
+</template>

@@ -1,3 +1,24 @@
+<script setup lang="ts">
+import { toRefs } from 'vue';
+
+const props = defineProps({
+  text: {
+    type: String,
+    required: false,
+    default: ''
+  },
+  url: {
+    type: String,
+    required: true
+  }
+});
+
+const { url } = toRefs(props);
+const { dark } = useTheme();
+
+const { href, onLinkClick } = useLinks(url);
+</script>
+
 <template>
   <v-tooltip top open-delay="600">
     <template #activator="{ on, attrs }">
@@ -21,24 +42,3 @@
     <span>{{ url }}</span>
   </v-tooltip>
 </template>
-
-<script setup lang="ts">
-import { toRefs } from 'vue';
-
-const props = defineProps({
-  text: {
-    type: String,
-    required: false,
-    default: ''
-  },
-  url: {
-    type: String,
-    required: true
-  }
-});
-
-const { url } = toRefs(props);
-const { dark } = useTheme();
-
-const { href, onLinkClick } = useLinks(url);
-</script>

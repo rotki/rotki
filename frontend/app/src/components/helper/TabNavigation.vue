@@ -1,3 +1,31 @@
+<script setup lang="ts">
+import { type PropType } from 'vue';
+import { type TabContent, getClass } from '@/types/tabs';
+import { checkIfDevelopment } from '@/utils/env-utils';
+
+const props = defineProps({
+  tabContents: { required: true, type: Array as PropType<TabContent[]> },
+  noContentMargin: { required: false, type: Boolean, default: false }
+});
+
+const { tabContents } = toRefs(props);
+const selectedTab = ref('');
+
+const route = useRoute();
+const { currentBreakpoint } = useTheme();
+const isDev = checkIfDevelopment();
+
+const visibleTabs = computed(() => {
+  return get(tabContents).filter(({ hidden }) => !hidden);
+});
+
+const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
+
+const isRouterVisible = (route: string, tab: TabContent) => {
+  return route.includes(tab.route) && tab.route === get(selectedTab);
+};
+</script>
+
 <template>
   <v-container>
     <v-tabs
@@ -42,34 +70,6 @@
     </v-tabs>
   </v-container>
 </template>
-
-<script setup lang="ts">
-import { type PropType } from 'vue';
-import { type TabContent, getClass } from '@/types/tabs';
-import { checkIfDevelopment } from '@/utils/env-utils';
-
-const props = defineProps({
-  tabContents: { required: true, type: Array as PropType<TabContent[]> },
-  noContentMargin: { required: false, type: Boolean, default: false }
-});
-
-const { tabContents } = toRefs(props);
-const selectedTab = ref('');
-
-const route = useRoute();
-const { currentBreakpoint } = useTheme();
-const isDev = checkIfDevelopment();
-
-const visibleTabs = computed(() => {
-  return get(tabContents).filter(({ hidden }) => !hidden);
-});
-
-const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
-
-const isRouterVisible = (route: string, tab: TabContent) => {
-  return route.includes(tab.route) && tab.route === get(selectedTab);
-};
-</script>
 
 <style scoped lang="scss">
 @mixin start() {

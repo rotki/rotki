@@ -1,3 +1,9 @@
+<script setup lang="ts">
+defineProps({
+  lock: { required: false, type: Boolean, default: false }
+});
+</script>
+
 <template>
   <dl>
     <dt
@@ -11,9 +17,3 @@
     </dd>
   </dl>
 </template>
-
-<script setup lang="ts">
-defineProps({
-  lock: { required: false, type: Boolean, default: false }
-});
-</script>

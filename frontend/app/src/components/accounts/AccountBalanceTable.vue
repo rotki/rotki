@@ -1,133 +1,3 @@
-<template>
-  <v-sheet rounded outlined>
-    <data-table
-      v-bind="rootAttrs"
-      :headers="tableHeaders"
-      :items="visibleBalances"
-      :loading="accountOperation || loading || detectingTokens"
-      :loading-text="tc('account_balances.data_table.loading')"
-      single-expand
-      item-key="index"
-      :expanded.sync="expanded"
-      sort-by="balance.usdValue"
-      :custom-group="groupBy"
-      class="account-balances-list"
-      :group-by="isBtcNetwork ? ['xpub', 'derivationPath'] : undefined"
-      v-on="rootListeners"
-    >
-      <template #header.accountSelection>
-        <v-simple-checkbox
-          :disabled="nonExpandedBalances.length === 0"
-          :ripple="false"
-          :value="allSelected"
-          color="primary"
-          @input="setSelected($event)"
-        />
-      </template>
-      <template #item.accountSelection="{ item }">
-        <v-simple-checkbox
-          :ripple="false"
-          data-cy="account-balances-item-checkbox"
-          color="primary"
-          :value="selected.includes(item.address)"
-          @input="selectionChanged(item.address, $event)"
-        />
-      </template>
-      <template #item.label="{ item }">
-        <v-row class="pt-3 pb-2">
-          <v-col cols="12" class="account-balance-table__account">
-            <labeled-address-display :account="item" />
-            <tag-display :tags="item.tags" />
-          </v-col>
-        </v-row>
-      </template>
-      <template #item.balance.amount="{ item }">
-        <amount-display :value="item.balance.amount" :loading="loading" />
-      </template>
-      <template #item.balance.usdValue="{ item }">
-        <amount-display
-          fiat-currency="USD"
-          :value="item.balance.usdValue"
-          show-currency="symbol"
-          :loading="loading"
-        />
-      </template>
-      <template v-if="isEth2" #item.ownershipPercentage="{ item }">
-        <percentage-display :value="item.ownershipPercentage" />
-      </template>
-      <template v-if="isEth && !loopring" #item.numOfDetectedTokens="{ item }">
-        <token-detection :address="item.address" :loading="loading" />
-      </template>
-      <template v-if="!loopring" #item.actions="{ item }">
-        <row-actions
-          class="account-balance-table__actions"
-          :no-delete="true"
-          :edit-tooltip="tc('account_balances.edit_tooltip')"
-          :disabled="accountOperation || loading"
-          @edit-click="editClick(item)"
-        />
-      </template>
-      <template v-if="balances.length > 0" #body.append="{ isMobile }">
-        <row-append
-          :label="tc('common.total')"
-          :class-name="{ 'flex-column': isMobile }"
-          :left-patch-colspan="1"
-          :is-mobile="isMobile"
-        >
-          <template #custom-columns>
-            <td class="text-end" :class="mobileClass">
-              <amount-display
-                :loading="loading"
-                :value="total.amount"
-                :asset="$vuetify.breakpoint.xsOnly ? blockchain : null"
-              />
-            </td>
-            <td class="text-end" :class="mobileClass">
-              <amount-display
-                :loading="loading"
-                fiat-currency="USD"
-                show-currency="symbol"
-                :value="total.usdValue"
-              />
-            </td>
-          </template>
-        </row-append>
-      </template>
-      <template #expanded-item="{ headers, item }">
-        <table-expand-container visible :colspan="headers.length">
-          <account-balance-details
-            :loopring="loopring"
-            :assets="assets(item.address)"
-            :liabilities="liabilities(item.address)"
-            :loopring-balances="loopringBalances(item.address)"
-          />
-        </table-expand-container>
-      </template>
-      <template #item.expand="{ item }">
-        <row-expander
-          v-if="isEth && (accountHasDetails(item.address) || loopring)"
-          :expanded="expanded.includes(item)"
-          @click="expanded = expanded.includes(item) ? [] : [item]"
-        />
-      </template>
-      <template #group.header="{ group, isOpen, toggle }">
-        <account-group-header
-          :group="group ? group : ''"
-          :items="getItems(group.split(':')[0], group.split(':')[1])"
-          :expanded="isOpen"
-          :loading="loading"
-          @expand-clicked="expandXpub(isOpen, toggle, $event)"
-          @delete-clicked="deleteXpub($event)"
-          @edit-clicked="editClick($event)"
-        />
-      </template>
-      <template v-if="isEth2" #body.prepend="{ headers }">
-        <eth2-validator-limit-row :colspan="headers.length" />
-      </template>
-    </data-table>
-  </v-sheet>
-</template>
-
 <script setup lang="ts">
 import { type Balance } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
@@ -557,6 +427,136 @@ defineExpose({
   fetchAllDetectedTokensAndQueryBalance
 });
 </script>
+
+<template>
+  <v-sheet rounded outlined>
+    <data-table
+      v-bind="rootAttrs"
+      :headers="tableHeaders"
+      :items="visibleBalances"
+      :loading="accountOperation || loading || detectingTokens"
+      :loading-text="tc('account_balances.data_table.loading')"
+      single-expand
+      item-key="index"
+      :expanded.sync="expanded"
+      sort-by="balance.usdValue"
+      :custom-group="groupBy"
+      class="account-balances-list"
+      :group-by="isBtcNetwork ? ['xpub', 'derivationPath'] : undefined"
+      v-on="rootListeners"
+    >
+      <template #header.accountSelection>
+        <v-simple-checkbox
+          :disabled="nonExpandedBalances.length === 0"
+          :ripple="false"
+          :value="allSelected"
+          color="primary"
+          @input="setSelected($event)"
+        />
+      </template>
+      <template #item.accountSelection="{ item }">
+        <v-simple-checkbox
+          :ripple="false"
+          data-cy="account-balances-item-checkbox"
+          color="primary"
+          :value="selected.includes(item.address)"
+          @input="selectionChanged(item.address, $event)"
+        />
+      </template>
+      <template #item.label="{ item }">
+        <v-row class="pt-3 pb-2">
+          <v-col cols="12" class="account-balance-table__account">
+            <labeled-address-display :account="item" />
+            <tag-display :tags="item.tags" />
+          </v-col>
+        </v-row>
+      </template>
+      <template #item.balance.amount="{ item }">
+        <amount-display :value="item.balance.amount" :loading="loading" />
+      </template>
+      <template #item.balance.usdValue="{ item }">
+        <amount-display
+          fiat-currency="USD"
+          :value="item.balance.usdValue"
+          show-currency="symbol"
+          :loading="loading"
+        />
+      </template>
+      <template v-if="isEth2" #item.ownershipPercentage="{ item }">
+        <percentage-display :value="item.ownershipPercentage" />
+      </template>
+      <template v-if="isEth && !loopring" #item.numOfDetectedTokens="{ item }">
+        <token-detection :address="item.address" :loading="loading" />
+      </template>
+      <template v-if="!loopring" #item.actions="{ item }">
+        <row-actions
+          class="account-balance-table__actions"
+          :no-delete="true"
+          :edit-tooltip="tc('account_balances.edit_tooltip')"
+          :disabled="accountOperation || loading"
+          @edit-click="editClick(item)"
+        />
+      </template>
+      <template v-if="balances.length > 0" #body.append="{ isMobile }">
+        <row-append
+          :label="tc('common.total')"
+          :class-name="{ 'flex-column': isMobile }"
+          :left-patch-colspan="1"
+          :is-mobile="isMobile"
+        >
+          <template #custom-columns>
+            <td class="text-end" :class="mobileClass">
+              <amount-display
+                :loading="loading"
+                :value="total.amount"
+                :asset="$vuetify.breakpoint.xsOnly ? blockchain : null"
+              />
+            </td>
+            <td class="text-end" :class="mobileClass">
+              <amount-display
+                :loading="loading"
+                fiat-currency="USD"
+                show-currency="symbol"
+                :value="total.usdValue"
+              />
+            </td>
+          </template>
+        </row-append>
+      </template>
+      <template #expanded-item="{ headers, item }">
+        <table-expand-container visible :colspan="headers.length">
+          <account-balance-details
+            :loopring="loopring"
+            :assets="assets(item.address)"
+            :liabilities="liabilities(item.address)"
+            :loopring-balances="loopringBalances(item.address)"
+          />
+        </table-expand-container>
+      </template>
+      <template #item.expand="{ item }">
+        <row-expander
+          v-if="isEth && (accountHasDetails(item.address) || loopring)"
+          :expanded="expanded.includes(item)"
+          @click="expanded = expanded.includes(item) ? [] : [item]"
+        />
+      </template>
+      <template #group.header="{ group, isOpen, toggle }">
+        <account-group-header
+          :group="group ? group : ''"
+          :items="getItems(group.split(':')[0], group.split(':')[1])"
+          :expanded="isOpen"
+          :loading="loading"
+          @expand-clicked="expandXpub(isOpen, toggle, $event)"
+          @delete-clicked="deleteXpub($event)"
+          @edit-clicked="editClick($event)"
+        />
+      </template>
+      <template v-if="isEth2" #body.prepend="{ headers }">
+        <eth2-validator-limit-row :colspan="headers.length" />
+      </template>
+    </data-table>
+  </v-sheet>
+</template>
 
 <style scoped lang="scss">
 .account-balance-table {

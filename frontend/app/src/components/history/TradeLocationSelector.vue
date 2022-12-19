@@ -1,3 +1,43 @@
+<script setup lang="ts">
+import { type PropType } from 'vue';
+import LocationIcon from '@/components/history/LocationIcon.vue';
+import { type TradeLocation } from '@/types/history/trade-location';
+import { type TradeLocationData, useTradeLocations } from '@/types/trades';
+
+const { t } = useI18n();
+
+const props = defineProps({
+  value: { required: true, type: Object as PropType<TradeLocation> },
+  availableLocations: {
+    required: false,
+    type: Array as PropType<string[]>,
+    default: () => []
+  },
+  outlined: { required: false, type: Boolean, default: false }
+});
+
+const emit = defineEmits(['input']);
+const { availableLocations, value } = toRefs(props);
+const { tradeLocations } = useTradeLocations();
+
+const locations = computed<TradeLocationData[]>(() => {
+  return get(tradeLocations).filter(location =>
+    get(availableLocations).includes(location.identifier)
+  );
+});
+
+const name = computed<string>(() => {
+  return (
+    get(tradeLocations).find(location => location.identifier === get(value))
+      ?.name ?? ''
+  );
+});
+
+const input = (value: TradeLocation) => {
+  emit('input', value);
+};
+</script>
+
 <template>
   <v-row>
     <v-col cols="12">
@@ -39,46 +79,6 @@
     </v-col>
   </v-row>
 </template>
-
-<script setup lang="ts">
-import { type PropType } from 'vue';
-import LocationIcon from '@/components/history/LocationIcon.vue';
-import { type TradeLocation } from '@/types/history/trade-location';
-import { type TradeLocationData, useTradeLocations } from '@/types/trades';
-
-const { t } = useI18n();
-
-const props = defineProps({
-  value: { required: true, type: Object as PropType<TradeLocation> },
-  availableLocations: {
-    required: false,
-    type: Array as PropType<string[]>,
-    default: () => []
-  },
-  outlined: { required: false, type: Boolean, default: false }
-});
-
-const emit = defineEmits(['input']);
-const { availableLocations, value } = toRefs(props);
-const { tradeLocations } = useTradeLocations();
-
-const locations = computed<TradeLocationData[]>(() => {
-  return get(tradeLocations).filter(location =>
-    get(availableLocations).includes(location.identifier)
-  );
-});
-
-const name = computed<string>(() => {
-  return (
-    get(tradeLocations).find(location => location.identifier === get(value))
-      ?.name ?? ''
-  );
-});
-
-const input = (value: TradeLocation) => {
-  emit('input', value);
-};
-</script>
 
 <style scoped lang="scss">
 .trade-location-selector {

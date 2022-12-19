@@ -1,16 +1,3 @@
-<template>
-  <div class="d-flex flex-row align-center">
-    <v-img
-      aspect-ratio="1"
-      contain
-      position="left"
-      width="26px"
-      max-height="24px"
-      :src="`./assets/images/defi/${getIcon(item)}.svg`"
-    />
-    <span class="ml-2">{{ identifier }}</span>
-  </div>
-</template>
 <script setup lang="ts">
 import { type DefiProtocol } from '@rotki/common/lib/blockchain';
 import { type PropType } from 'vue';
@@ -45,3 +32,16 @@ const identifier = computed<string>(() => {
   return identifier;
 });
 </script>
+<template>
+  <div class="d-flex flex-row align-center">
+    <v-img
+      aspect-ratio="1"
+      contain
+      position="left"
+      width="26px"
+      max-height="24px"
+      :src="`./assets/images/defi/${getIcon(item)}.svg`"
+    />
+    <span class="ml-2">{{ identifier }}</span>
+  </div>
+</template>

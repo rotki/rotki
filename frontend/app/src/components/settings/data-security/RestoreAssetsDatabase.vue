@@ -1,3 +1,9 @@
+<script setup lang="ts">
+import RestoreAssetDbButton from '@/components/asset-manager/RestoreAssetDbButton.vue';
+import Fragment from '@/components/helper/Fragment';
+const { t } = useI18n();
+</script>
+
 <template>
   <fragment>
     <card class="mt-8">
@@ -7,9 +13,3 @@
     </card>
   </fragment>
 </template>
-
-<script setup lang="ts">
-import RestoreAssetDbButton from '@/components/asset-manager/RestoreAssetDbButton.vue';
-import Fragment from '@/components/helper/Fragment';
-const { t } = useI18n();
-</script>

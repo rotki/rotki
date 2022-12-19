@@ -1,3 +1,18 @@
+<script setup lang="ts">
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+
+const showGraphRangeSelector = ref<boolean>(true);
+const { showGraphRangeSelector: enabled } = storeToRefs(
+  useFrontendSettingsStore()
+);
+
+onMounted(() => {
+  set(showGraphRangeSelector, get(enabled));
+});
+
+const { t } = useI18n();
+</script>
+
 <template>
   <settings-option
     #default="{ error, success, update }"
@@ -14,18 +29,3 @@
     />
   </settings-option>
 </template>
-
-<script setup lang="ts">
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-
-const showGraphRangeSelector = ref<boolean>(true);
-const { showGraphRangeSelector: enabled } = storeToRefs(
-  useFrontendSettingsStore()
-);
-
-onMounted(() => {
-  set(showGraphRangeSelector, get(enabled));
-});
-
-const { t } = useI18n();
-</script>

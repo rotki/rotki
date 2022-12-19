@@ -1,3 +1,22 @@
+<script setup lang="ts">
+import { type PropType } from 'vue';
+import { type SearchMatcher } from '@/types/filtering';
+
+defineProps({
+  matcher: {
+    required: true,
+    type: Object as PropType<SearchMatcher<any>>
+  }
+});
+
+const emit = defineEmits<{ (e: 'click', key: string): void }>();
+const css = useCssModule();
+
+const click = (key: string) => {
+  emit('click', key);
+};
+</script>
+
 <template>
   <div>
     <v-btn
@@ -19,25 +38,6 @@
     </v-btn>
   </div>
 </template>
-
-<script setup lang="ts">
-import { type PropType } from 'vue';
-import { type SearchMatcher } from '@/types/filtering';
-
-defineProps({
-  matcher: {
-    required: true,
-    type: Object as PropType<SearchMatcher<any>>
-  }
-});
-
-const emit = defineEmits<{ (e: 'click', key: string): void }>();
-const css = useCssModule();
-
-const click = (key: string) => {
-  emit('click', key);
-};
-</script>
 
 <style module>
 .button {

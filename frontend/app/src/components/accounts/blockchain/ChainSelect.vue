@@ -1,24 +1,3 @@
-<template>
-  <v-select
-    :value="blockchain"
-    data-cy="account-blockchain-field"
-    outlined
-    class="account-form__chain pt-2"
-    :items="items"
-    :label="t('account_form.labels.blockchain')"
-    :disabled="disabled"
-    item-value="symbol"
-    @change="updateBlockchain"
-  >
-    <template #selection="{ item }">
-      <chain-display :item="item" />
-    </template>
-    <template #item="{ item }">
-      <chain-display :item="item" />
-    </template>
-  </v-select>
-</template>
-
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type PropType } from 'vue';
@@ -92,3 +71,24 @@ const items = computed(() => {
 
 const { t } = useI18n();
 </script>
+
+<template>
+  <v-select
+    :value="blockchain"
+    data-cy="account-blockchain-field"
+    outlined
+    class="account-form__chain pt-2"
+    :items="items"
+    :label="t('account_form.labels.blockchain')"
+    :disabled="disabled"
+    item-value="symbol"
+    @change="updateBlockchain"
+  >
+    <template #selection="{ item }">
+      <chain-display :item="item" />
+    </template>
+    <template #item="{ item }">
+      <chain-display :item="item" />
+    </template>
+  </v-select>
+</template>

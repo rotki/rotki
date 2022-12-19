@@ -1,64 +1,3 @@
-<template>
-  <v-autocomplete
-    ref="autocomplete"
-    :value="selectedModules"
-    :search-input.sync="search"
-    :items="supportedModules"
-    hide-details
-    hide-selected
-    hide-no-data
-    clearables
-    multiple
-    outlined
-    chips
-    :disabled="loading"
-    :loading="loading"
-    :open-on-clear="false"
-    :label="t('module_selector.label')"
-    item-text="name"
-    item-value="identifier"
-    class="module-selector"
-    @input="update"
-  >
-    <template #selection="data">
-      <v-chip
-        :id="`defi-module-${data.item.identifier}`"
-        close
-        pill
-        @click:close="unselect(data.item.identifier)"
-      >
-        <v-avatar left class="d-flex">
-          <adaptive-wrapper
-            class="d-flex align-center"
-            width="100%"
-            height="100%"
-          >
-            <v-img
-              width="26px"
-              contain
-              max-height="24px"
-              :src="data.item.icon"
-            />
-          </adaptive-wrapper>
-        </v-avatar>
-        <span> {{ data.item.name }}</span>
-      </v-chip>
-    </template>
-    <template #item="data">
-      <span v-bind="data.attrs" class="d-flex flex-row align-center">
-        <v-img
-          width="26px"
-          contain
-          position="left"
-          max-height="24px"
-          :src="data.item.icon"
-        />
-        <span class="ml-2"> {{ data.item.name }}</span>
-      </span>
-    </template>
-  </v-autocomplete>
-</template>
-
 <script setup lang="ts">
 import { type Ref } from 'vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
@@ -146,3 +85,64 @@ onMounted(() => {
 
 const { t } = useI18n();
 </script>
+
+<template>
+  <v-autocomplete
+    ref="autocomplete"
+    :value="selectedModules"
+    :search-input.sync="search"
+    :items="supportedModules"
+    hide-details
+    hide-selected
+    hide-no-data
+    clearables
+    multiple
+    outlined
+    chips
+    :disabled="loading"
+    :loading="loading"
+    :open-on-clear="false"
+    :label="t('module_selector.label')"
+    item-text="name"
+    item-value="identifier"
+    class="module-selector"
+    @input="update"
+  >
+    <template #selection="data">
+      <v-chip
+        :id="`defi-module-${data.item.identifier}`"
+        close
+        pill
+        @click:close="unselect(data.item.identifier)"
+      >
+        <v-avatar left class="d-flex">
+          <adaptive-wrapper
+            class="d-flex align-center"
+            width="100%"
+            height="100%"
+          >
+            <v-img
+              width="26px"
+              contain
+              max-height="24px"
+              :src="data.item.icon"
+            />
+          </adaptive-wrapper>
+        </v-avatar>
+        <span> {{ data.item.name }}</span>
+      </v-chip>
+    </template>
+    <template #item="data">
+      <span v-bind="data.attrs" class="d-flex flex-row align-center">
+        <v-img
+          width="26px"
+          contain
+          position="left"
+          max-height="24px"
+          :src="data.item.icon"
+        />
+        <span class="ml-2"> {{ data.item.name }}</span>
+      </span>
+    </template>
+  </v-autocomplete>
+</template>

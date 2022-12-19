@@ -1,3 +1,26 @@
+<script setup lang="ts">
+import CopyButton from '@/components/helper/CopyButton.vue';
+
+const props = defineProps({
+  header: { required: false, type: String, default: '' },
+  title: { required: false, type: String, default: '' },
+  subtitle: { required: false, type: String, default: '' },
+  message: { required: false, type: String, default: '' },
+  error: { required: false, type: String, default: '' },
+  alternative: { required: false, type: String, default: '' }
+});
+
+const { error, message } = toRefs(props);
+
+const { tc } = useI18n();
+
+const errorText = computed(() => {
+  const errorText = get(error);
+  const errorMessage = get(message);
+  return !errorText ? errorMessage : `${errorMessage}\n\n${errorText}`;
+});
+</script>
+
 <template>
   <div class="error-screen">
     <div>
@@ -42,29 +65,6 @@
     <slot name="bottom" />
   </div>
 </template>
-
-<script setup lang="ts">
-import CopyButton from '@/components/helper/CopyButton.vue';
-
-const props = defineProps({
-  header: { required: false, type: String, default: '' },
-  title: { required: false, type: String, default: '' },
-  subtitle: { required: false, type: String, default: '' },
-  message: { required: false, type: String, default: '' },
-  error: { required: false, type: String, default: '' },
-  alternative: { required: false, type: String, default: '' }
-});
-
-const { error, message } = toRefs(props);
-
-const { tc } = useI18n();
-
-const errorText = computed(() => {
-  const errorText = get(error);
-  const errorMessage = get(message);
-  return !errorText ? errorMessage : `${errorMessage}\n\n${errorText}`;
-});
-</script>
 
 <style scoped lang="scss">
 .error-screen {

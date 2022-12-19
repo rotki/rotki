@@ -1,3 +1,13 @@
+<script setup lang="ts">
+import { useAttrs, useListeners } from 'vue';
+
+const rootAttrs = useAttrs();
+const rootListeners = useListeners();
+
+defineProps({
+  color: { required: false, type: String, default: 'grey-darken' }
+});
+</script>
 <template>
   <v-chip
     small
@@ -10,13 +20,3 @@
     <slot />
   </v-chip>
 </template>
-<script setup lang="ts">
-import { useAttrs, useListeners } from 'vue';
-
-const rootAttrs = useAttrs();
-const rootListeners = useListeners();
-
-defineProps({
-  color: { required: false, type: String, default: 'grey-darken' }
-});
-</script>

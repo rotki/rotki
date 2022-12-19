@@ -1,34 +1,3 @@
-<template>
-  <list-item
-    v-bind="rootAttrs"
-    :class="opensDetails ? 'asset-details-base--link' : null"
-    :dense="dense"
-    :loading="loading"
-    :title="asset.isCustomAsset ? name : symbol"
-    :subtitle="asset.isCustomAsset ? asset.customAssetType : name"
-    @click="navigate"
-  >
-    <template #icon>
-      <v-img
-        v-if="asset.imageUrl"
-        contain
-        height="26px"
-        width="26px"
-        max-width="26px"
-        :src="asset.imageUrl"
-      />
-      <asset-icon
-        v-else
-        :changeable="changeable"
-        size="26px"
-        :styled="assetStyled"
-        :identifier="asset.identifier"
-        :enable-association="enableAssociation"
-      />
-    </template>
-  </list-item>
-</template>
-
 <script setup lang="ts">
 import { type ComputedRef, type PropType } from 'vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
@@ -72,6 +41,37 @@ const loading: ComputedRef<boolean> = computed(() =>
   get(isPending(get(asset).identifier))
 );
 </script>
+
+<template>
+  <list-item
+    v-bind="rootAttrs"
+    :class="opensDetails ? 'asset-details-base--link' : null"
+    :dense="dense"
+    :loading="loading"
+    :title="asset.isCustomAsset ? name : symbol"
+    :subtitle="asset.isCustomAsset ? asset.customAssetType : name"
+    @click="navigate"
+  >
+    <template #icon>
+      <v-img
+        v-if="asset.imageUrl"
+        contain
+        height="26px"
+        width="26px"
+        max-width="26px"
+        :src="asset.imageUrl"
+      />
+      <asset-icon
+        v-else
+        :changeable="changeable"
+        size="26px"
+        :styled="assetStyled"
+        :identifier="asset.identifier"
+        :enable-association="enableAssociation"
+      />
+    </template>
+  </list-item>
+</template>
 
 <style scoped lang="scss">
 .asset-details-base {

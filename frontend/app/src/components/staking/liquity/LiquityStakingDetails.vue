@@ -1,52 +1,3 @@
-<template>
-  <div>
-    <v-row align="center" no-gutters class="pt-2">
-      <v-col cols="6">
-        <blockchain-account-selector
-          v-model="selectedAccount"
-          :label="tc('liquity_staking_details.select_account')"
-          :chains="chains"
-          dense
-          outlined
-          no-padding
-          flat
-          :usable-addresses="availableAddresses"
-        />
-      </v-col>
-      <v-col />
-      <v-col v-if="$slots.modules" cols="auto">
-        <slot name="modules" />
-      </v-col>
-      <v-col cols="auto" class="pl-2">
-        <refresh-button
-          :tooltip="tc('liquity_staking_details.refresh_tooltip')"
-          :loading="loading"
-          @refresh="refresh"
-        />
-      </v-col>
-    </v-row>
-
-    <v-row>
-      <v-col md="6" cols="12">
-        <liquity-pools :pool="stakingPoolsList" />
-      </v-col>
-
-      <v-col md="6" cols="12">
-        <liquity-stake :stakings="stakingList" />
-      </v-col>
-    </v-row>
-
-    <transaction-content
-      :section-title="tc('liquity_staking_events.title')"
-      :protocol="TransactionEventProtocol.LIQUITY"
-      :event-type="HistoryEventType.STAKING"
-      :use-external-account-filter="true"
-      :external-account-filter="selectedAccount"
-      @fetch="fetchTransactions"
-    />
-  </div>
-</template>
-
 <script setup lang="ts">
 import { type AssetBalance } from '@rotki/common';
 import { type GeneralAccount } from '@rotki/common/lib/account';
@@ -152,3 +103,52 @@ const refresh = async () => {
 
 const { fetchTransactions } = useTransactions();
 </script>
+
+<template>
+  <div>
+    <v-row align="center" no-gutters class="pt-2">
+      <v-col cols="6">
+        <blockchain-account-selector
+          v-model="selectedAccount"
+          :label="tc('liquity_staking_details.select_account')"
+          :chains="chains"
+          dense
+          outlined
+          no-padding
+          flat
+          :usable-addresses="availableAddresses"
+        />
+      </v-col>
+      <v-col />
+      <v-col v-if="$slots.modules" cols="auto">
+        <slot name="modules" />
+      </v-col>
+      <v-col cols="auto" class="pl-2">
+        <refresh-button
+          :tooltip="tc('liquity_staking_details.refresh_tooltip')"
+          :loading="loading"
+          @refresh="refresh"
+        />
+      </v-col>
+    </v-row>
+
+    <v-row>
+      <v-col md="6" cols="12">
+        <liquity-pools :pool="stakingPoolsList" />
+      </v-col>
+
+      <v-col md="6" cols="12">
+        <liquity-stake :stakings="stakingList" />
+      </v-col>
+    </v-row>
+
+    <transaction-content
+      :section-title="tc('liquity_staking_events.title')"
+      :protocol="TransactionEventProtocol.LIQUITY"
+      :event-type="HistoryEventType.STAKING"
+      :use-external-account-filter="true"
+      :external-account-filter="selectedAccount"
+      @fetch="fetchTransactions"
+    />
+  </div>
+</template>

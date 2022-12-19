@@ -1,23 +1,3 @@
-<template>
-  <v-navigation-drawer
-    class="pinned-sidebar"
-    clipped
-    width="520px"
-    :value="visible"
-    right
-    temporary
-    hide-overlay
-    @input="visibleUpdate($event)"
-  >
-    <div>
-      <component
-        :is="component"
-        v-if="pinned && component"
-        v-bind="pinned.props"
-      />
-    </div>
-  </v-navigation-drawer>
-</template>
 <script setup lang="ts">
 import { type ComputedRef } from 'vue';
 import ReportActionableCard from '@/components/profitloss/ReportActionableCard.vue';
@@ -42,6 +22,26 @@ const component: ComputedRef<any> = computed(() => {
   return null;
 });
 </script>
+<template>
+  <v-navigation-drawer
+    class="pinned-sidebar"
+    clipped
+    width="520px"
+    :value="visible"
+    right
+    temporary
+    hide-overlay
+    @input="visibleUpdate($event)"
+  >
+    <div>
+      <component
+        :is="component"
+        v-if="pinned && component"
+        v-bind="pinned.props"
+      />
+    </div>
+  </v-navigation-drawer>
+</template>
 
 <style scoped lang="scss">
 .pinned-sidebar {

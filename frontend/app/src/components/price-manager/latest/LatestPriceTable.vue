@@ -1,62 +1,3 @@
-<template>
-  <div>
-    <v-row justify="end" class="mb-10">
-      <v-col cols="auto">
-        <price-refresh :additional-assets="latestAssets" />
-      </v-col>
-    </v-row>
-    <card outlined-body>
-      <template #title>
-        <refresh-button
-          :loading="loading"
-          :tooltip="tc('price_table.refresh_tooltip')"
-          @refresh="refresh"
-        />
-        <div>
-          {{ tc('price_table.latest.title') }}
-        </div>
-      </template>
-      <slot />
-      <data-table :items="filteredPrices" :headers="headers" :loading="loading">
-        <template #item.fromAsset="{ item }">
-          <asset-details :asset="item.fromAsset" />
-        </template>
-        <template #item.toAsset="{ item }">
-          <asset-details :asset="item.toAsset" />
-        </template>
-        <template #item.price="{ item }">
-          <amount-display :value="item.price" />
-        </template>
-        <template #item.isWorth>
-          {{ tc('price_table.is_worth') }}
-        </template>
-        <template #item.usdPrice="{ item }">
-          <amount-display
-            v-if="item.usdPrice && item.usdPrice.gte(0)"
-            show-currency="symbol"
-            :price-asset="item.fromAsset"
-            :price-of-asset="item.usdPrice"
-            fiat-currency="USD"
-            :value="item.usdPrice"
-          />
-          <div v-else class="d-flex justify-end">
-            <v-skeleton-loader width="70" type="text" />
-          </div>
-        </template>
-        <template #item.actions="{ item }">
-          <row-actions
-            :disabled="loading"
-            :delete-tooltip="tc('price_table.actions.delete.tooltip')"
-            :edit-tooltip="tc('price_table.actions.edit.tooltip')"
-            @delete-click="showDeleteConfirmation(item)"
-            @edit-click="$emit('edit', item)"
-          />
-        </template>
-      </data-table>
-    </card>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { type NotificationPayload, Severity } from '@rotki/common/lib/messages';
 import { type ComputedRef, type PropType } from 'vue';
@@ -217,3 +158,62 @@ const showDeleteConfirmation = (item: ManualPrice) => {
   );
 };
 </script>
+
+<template>
+  <div>
+    <v-row justify="end" class="mb-10">
+      <v-col cols="auto">
+        <price-refresh :additional-assets="latestAssets" />
+      </v-col>
+    </v-row>
+    <card outlined-body>
+      <template #title>
+        <refresh-button
+          :loading="loading"
+          :tooltip="tc('price_table.refresh_tooltip')"
+          @refresh="refresh"
+        />
+        <div>
+          {{ tc('price_table.latest.title') }}
+        </div>
+      </template>
+      <slot />
+      <data-table :items="filteredPrices" :headers="headers" :loading="loading">
+        <template #item.fromAsset="{ item }">
+          <asset-details :asset="item.fromAsset" />
+        </template>
+        <template #item.toAsset="{ item }">
+          <asset-details :asset="item.toAsset" />
+        </template>
+        <template #item.price="{ item }">
+          <amount-display :value="item.price" />
+        </template>
+        <template #item.isWorth>
+          {{ tc('price_table.is_worth') }}
+        </template>
+        <template #item.usdPrice="{ item }">
+          <amount-display
+            v-if="item.usdPrice && item.usdPrice.gte(0)"
+            show-currency="symbol"
+            :price-asset="item.fromAsset"
+            :price-of-asset="item.usdPrice"
+            fiat-currency="USD"
+            :value="item.usdPrice"
+          />
+          <div v-else class="d-flex justify-end">
+            <v-skeleton-loader width="70" type="text" />
+          </div>
+        </template>
+        <template #item.actions="{ item }">
+          <row-actions
+            :disabled="loading"
+            :delete-tooltip="tc('price_table.actions.delete.tooltip')"
+            :edit-tooltip="tc('price_table.actions.edit.tooltip')"
+            @delete-click="showDeleteConfirmation(item)"
+            @edit-click="$emit('edit', item)"
+          />
+        </template>
+      </data-table>
+    </card>
+  </div>
+</template>

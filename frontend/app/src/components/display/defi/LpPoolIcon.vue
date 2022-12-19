@@ -1,37 +1,3 @@
-<template>
-  <div class="d-flex">
-    <div class="d-flex align-center">
-      <asset-icon
-        circle
-        :identifier="assets[0]"
-        size="32px"
-        padding="0"
-        :show-chain="false"
-      />
-      <asset-icon
-        v-if="!multiple"
-        circle
-        :class="css['second-icon']"
-        :identifier="assets[1]"
-        size="32px"
-        padding="0"
-        :show-chain="false"
-      />
-      <div v-else :class="[css['second-icon'], css['more-assets']]">
-        +{{ assets.length - 1 }}
-      </div>
-    </div>
-    <div :class="css['lp-type-icon']">
-      <v-avatar
-        :size="20"
-        color="grey lighten-4"
-        :class="css['lp-type-icon-avatar']"
-      >
-        <v-img :width="16" :height="16" :src="icon" />
-      </v-avatar>
-    </div>
-  </div>
-</template>
 <script setup lang="ts">
 import { LpType } from '@rotki/common/lib/defi';
 import { type PropType } from 'vue';
@@ -81,6 +47,40 @@ const multiple = computed<boolean>(() => get(assets).length > 2);
 
 const css = useCssModule();
 </script>
+<template>
+  <div class="d-flex">
+    <div class="d-flex align-center">
+      <asset-icon
+        circle
+        :identifier="assets[0]"
+        size="32px"
+        padding="0"
+        :show-chain="false"
+      />
+      <asset-icon
+        v-if="!multiple"
+        circle
+        :class="css['second-icon']"
+        :identifier="assets[1]"
+        size="32px"
+        padding="0"
+        :show-chain="false"
+      />
+      <div v-else :class="[css['second-icon'], css['more-assets']]">
+        +{{ assets.length - 1 }}
+      </div>
+    </div>
+    <div :class="css['lp-type-icon']">
+      <v-avatar
+        :size="20"
+        color="grey lighten-4"
+        :class="css['lp-type-icon-avatar']"
+      >
+        <v-img :width="16" :height="16" :src="icon" />
+      </v-avatar>
+    </div>
+  </div>
+</template>
 
 <style module lang="scss">
 .second-icon {

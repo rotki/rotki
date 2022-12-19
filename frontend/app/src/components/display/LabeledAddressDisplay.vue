@@ -1,50 +1,3 @@
-<template>
-  <div class="d-flex flex-row labeled-address-display align-center">
-    <v-tooltip top open-delay="400" :disabled="!truncated && !ethName">
-      <template #activator="{ on }">
-        <span
-          data-cy="labeled-address-display"
-          class="labeled-address-display__address"
-          :class="xsOnly ? 'labeled-address-display__address--mobile' : null"
-          v-on="on"
-        >
-          <v-chip label outlined class="labeled-address-display__chip">
-            <v-avatar size="24" class="mr-2">
-              <v-img :src="makeBlockie(address)" />
-            </v-avatar>
-            <template v-if="!!label && !ethName">
-              <span class="text-truncate">
-                {{
-                  t('labeled_address_display.label', {
-                    label: label
-                  })
-                }}
-              </span>
-              <span v-if="displayAddress && !smAndDown" class="px-1">
-                {{ t('labeled_address_display.divider') }}
-              </span>
-            </template>
-            <span
-              v-if="!smAndDown || !label"
-              :class="{ 'blur-content': !shouldShowAmount }"
-            >
-              {{ displayAddress }}
-            </span>
-          </v-chip>
-        </span>
-      </template>
-      <div>
-        <span v-if="!!label"> {{ account.label }}</span>
-        <span v-if="smAndDown && ethName"> ({{ ethName }})</span>
-      </div>
-      <div>{{ address }}</div>
-    </v-tooltip>
-    <div class="labeled-address-display__actions">
-      <hash-link :text="account.address" buttons small :chain="account.chain" />
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { type GeneralAccount } from '@rotki/common/lib/account';
 import makeBlockie from 'ethereum-blockies-base64';
@@ -133,6 +86,53 @@ const label = computed<string>(() => {
   return label;
 });
 </script>
+
+<template>
+  <div class="d-flex flex-row labeled-address-display align-center">
+    <v-tooltip top open-delay="400" :disabled="!truncated && !ethName">
+      <template #activator="{ on }">
+        <span
+          data-cy="labeled-address-display"
+          class="labeled-address-display__address"
+          :class="xsOnly ? 'labeled-address-display__address--mobile' : null"
+          v-on="on"
+        >
+          <v-chip label outlined class="labeled-address-display__chip">
+            <v-avatar size="24" class="mr-2">
+              <v-img :src="makeBlockie(address)" />
+            </v-avatar>
+            <template v-if="!!label && !ethName">
+              <span class="text-truncate">
+                {{
+                  t('labeled_address_display.label', {
+                    label: label
+                  })
+                }}
+              </span>
+              <span v-if="displayAddress && !smAndDown" class="px-1">
+                {{ t('labeled_address_display.divider') }}
+              </span>
+            </template>
+            <span
+              v-if="!smAndDown || !label"
+              :class="{ 'blur-content': !shouldShowAmount }"
+            >
+              {{ displayAddress }}
+            </span>
+          </v-chip>
+        </span>
+      </template>
+      <div>
+        <span v-if="!!label"> {{ account.label }}</span>
+        <span v-if="smAndDown && ethName"> ({{ ethName }})</span>
+      </div>
+      <div>{{ address }}</div>
+    </v-tooltip>
+    <div class="labeled-address-display__actions">
+      <hash-link :text="account.address" buttons small :chain="account.chain" />
+    </div>
+  </div>
+</template>
 
 <style scoped lang="scss">
 .labeled-address-display {

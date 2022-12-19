@@ -1,40 +1,3 @@
-<template>
-  <div class="range-selector">
-    <report-period-selector
-      :year="year"
-      :quarter="quarter"
-      @update:period="onPeriodChange"
-      @update:selection="onChanged"
-    />
-    <v-row v-if="custom">
-      <v-col cols="12" md="6">
-        <date-time-picker
-          :value="value.start"
-          outlined
-          label="Start Date"
-          limit-now
-          allow-empty
-          :error-messages="v$.start.$errors.map(e => e.$message)"
-          @input="$emit('input', { start: $event, end: value.end })"
-        />
-      </v-col>
-      <v-col cols="12" md="6">
-        <date-time-picker
-          :value="value.end"
-          outlined
-          label="End Date"
-          limit-now
-          :error-messages="v$.end.$errors.map(e => e.$message)"
-          @input="$emit('input', { start: value.start, end: $event })"
-        />
-      </v-col>
-    </v-row>
-    <v-alert v-model="invalidRange" type="error" dense>
-      {{ t('generate.validation.end_after_start') }}
-    </v-alert>
-  </div>
-</template>
-
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, requiredIf } from '@vuelidate/validators';
@@ -138,3 +101,40 @@ watch(v$, ({ $invalid }) => {
   updateValid(!$invalid);
 });
 </script>
+
+<template>
+  <div class="range-selector">
+    <report-period-selector
+      :year="year"
+      :quarter="quarter"
+      @update:period="onPeriodChange"
+      @update:selection="onChanged"
+    />
+    <v-row v-if="custom">
+      <v-col cols="12" md="6">
+        <date-time-picker
+          :value="value.start"
+          outlined
+          label="Start Date"
+          limit-now
+          allow-empty
+          :error-messages="v$.start.$errors.map(e => e.$message)"
+          @input="$emit('input', { start: $event, end: value.end })"
+        />
+      </v-col>
+      <v-col cols="12" md="6">
+        <date-time-picker
+          :value="value.end"
+          outlined
+          label="End Date"
+          limit-now
+          :error-messages="v$.end.$errors.map(e => e.$message)"
+          @input="$emit('input', { start: value.start, end: $event })"
+        />
+      </v-col>
+    </v-row>
+    <v-alert v-model="invalidRange" type="error" dense>
+      {{ t('generate.validation.end_after_start') }}
+    </v-alert>
+  </div>
+</template>

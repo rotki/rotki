@@ -1,20 +1,3 @@
-<template>
-  <a
-    v-if="href"
-    :href="isPackaged ? undefined : href"
-    target="_blank"
-    class="text-no-wrap"
-    @click="isPackaged ? openLink() : undefined"
-  >
-    <slot>
-      {{ displayText }}
-    </slot>
-  </a>
-  <div v-else>
-    <slot />
-  </div>
-</template>
-
 <script setup lang="ts">
 import { type PropType } from 'vue';
 import { truncateAddress } from '@/filters';
@@ -42,3 +25,20 @@ const displayText = computed(() =>
   get(truncate) ? truncateAddress(get(text)) : get(text)
 );
 </script>
+
+<template>
+  <a
+    v-if="href"
+    :href="isPackaged ? undefined : href"
+    target="_blank"
+    class="text-no-wrap"
+    @click="isPackaged ? openLink() : undefined"
+  >
+    <slot>
+      {{ displayText }}
+    </slot>
+  </a>
+  <div v-else>
+    <slot />
+  </div>
+</template>

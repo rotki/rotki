@@ -1,3 +1,98 @@
+<script setup lang="ts">
+import { type GeneralAccount } from '@rotki/common/lib/account';
+import { Blockchain } from '@rotki/common/lib/blockchain';
+import { type PropType, type Ref } from 'vue';
+import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
+import TagDisplay from '@/components/tags/TagDisplay.vue';
+import { useAccountBalancesStore } from '@/store/blockchain/accountbalances';
+import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
+import { type Nullable } from '@/types';
+import { type Module, SUPPORTED_MODULES } from '@/types/modules';
+import { assert } from '@/utils/assertions';
+
+const props = defineProps({
+  module: {
+    required: false,
+    type: String as PropType<Module>,
+    default: null
+  }
+});
+
+const emit = defineEmits(['close']);
+
+const { module } = toRefs(props);
+
+const account: Ref<Nullable<GeneralAccount>> = ref(null);
+const ETH = Blockchain.ETH;
+
+const store = useQueriedAddressesStore();
+const { addQueriedAddress, deleteQueriedAddress } = store;
+const { queriedAddresses } = storeToRefs(useQueriedAddressesStore());
+const { accounts } = storeToRefs(useAccountBalancesStore());
+
+const { tc } = useI18n();
+
+const moduleName = computed(() => {
+  const currentModule = get(module);
+  if (!currentModule) {
+    return '';
+  }
+  const defiModule = SUPPORTED_MODULES.find(
+    ({ identifier }) => identifier === currentModule
+  );
+  return defiModule?.name ?? currentModule;
+});
+
+const addresses = computed(() => {
+  const currentModule = get(module);
+  if (!currentModule) {
+    return [];
+  }
+  const addresses = get(queriedAddresses);
+  return addresses[currentModule] ?? [];
+});
+
+const usableAddresses = computed(() => {
+  const currentModule = get(module);
+  const accountList = get(accounts);
+  const moduleAddresses = get(addresses);
+  if (!currentModule || moduleAddresses.length === 0) {
+    return accountList
+      .filter(({ chain }) => chain === ETH)
+      .map(({ address }) => address);
+  }
+
+  return accountList
+    .filter(
+      ({ chain, address }) =>
+        chain === ETH && !moduleAddresses.includes(address)
+    )
+    .map(({ address }) => address);
+});
+
+const addAddress = async function () {
+  const currentModule = get(module);
+  const currentAccount = get(account);
+  assert(currentModule && currentAccount);
+  await addQueriedAddress({
+    module: currentModule,
+    address: currentAccount.address
+  });
+  set(account, null);
+};
+
+const getAccount = (address: string): GeneralAccount => {
+  const account = get(accounts).find(value => value.address === address);
+  assert(account);
+  return account;
+};
+
+const close = () => {
+  set(account, null);
+  emit('close');
+};
+</script>
+
 <template>
   <v-dialog
     :value="true"
@@ -94,101 +189,6 @@
     </card>
   </v-dialog>
 </template>
-
-<script setup lang="ts">
-import { type GeneralAccount } from '@rotki/common/lib/account';
-import { Blockchain } from '@rotki/common/lib/blockchain';
-import { type PropType, type Ref } from 'vue';
-import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
-import TagDisplay from '@/components/tags/TagDisplay.vue';
-import { useAccountBalancesStore } from '@/store/blockchain/accountbalances';
-import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
-import { type Nullable } from '@/types';
-import { type Module, SUPPORTED_MODULES } from '@/types/modules';
-import { assert } from '@/utils/assertions';
-
-const props = defineProps({
-  module: {
-    required: false,
-    type: String as PropType<Module>,
-    default: null
-  }
-});
-
-const emit = defineEmits(['close']);
-
-const { module } = toRefs(props);
-
-const account: Ref<Nullable<GeneralAccount>> = ref(null);
-const ETH = Blockchain.ETH;
-
-const store = useQueriedAddressesStore();
-const { addQueriedAddress, deleteQueriedAddress } = store;
-const { queriedAddresses } = storeToRefs(useQueriedAddressesStore());
-const { accounts } = storeToRefs(useAccountBalancesStore());
-
-const { tc } = useI18n();
-
-const moduleName = computed(() => {
-  const currentModule = get(module);
-  if (!currentModule) {
-    return '';
-  }
-  const defiModule = SUPPORTED_MODULES.find(
-    ({ identifier }) => identifier === currentModule
-  );
-  return defiModule?.name ?? currentModule;
-});
-
-const addresses = computed(() => {
-  const currentModule = get(module);
-  if (!currentModule) {
-    return [];
-  }
-  const addresses = get(queriedAddresses);
-  return addresses[currentModule] ?? [];
-});
-
-const usableAddresses = computed(() => {
-  const currentModule = get(module);
-  const accountList = get(accounts);
-  const moduleAddresses = get(addresses);
-  if (!currentModule || moduleAddresses.length === 0) {
-    return accountList
-      .filter(({ chain }) => chain === ETH)
-      .map(({ address }) => address);
-  }
-
-  return accountList
-    .filter(
-      ({ chain, address }) =>
-        chain === ETH && !moduleAddresses.includes(address)
-    )
-    .map(({ address }) => address);
-});
-
-const addAddress = async function () {
-  const currentModule = get(module);
-  const currentAccount = get(account);
-  assert(currentModule && currentAccount);
-  await addQueriedAddress({
-    module: currentModule,
-    address: currentAccount.address
-  });
-  set(account, null);
-};
-
-const getAccount = (address: string): GeneralAccount => {
-  const account = get(accounts).find(value => value.address === address);
-  assert(account);
-  return account;
-};
-
-const close = () => {
-  set(account, null);
-  emit('close');
-};
-</script>
 
 <style scoped lang="scss">
 .queried-address-dialog {

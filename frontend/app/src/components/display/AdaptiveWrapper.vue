@@ -1,14 +1,3 @@
-<template>
-  <component
-    :is="component"
-    class="wrapper"
-    :class="{ 'wrapper--inverted': dark }"
-    v-bind="$attrs"
-    :style="{ width, height }"
-  >
-    <slot />
-  </component>
-</template>
 <script setup lang="ts">
 const props = defineProps({
   component: { required: false, type: String, default: 'div' },
@@ -24,6 +13,17 @@ const { circle, padding } = toRefs(props);
 
 const radius = computed(() => (get(circle) ? '50%' : '4px'));
 </script>
+<template>
+  <component
+    :is="component"
+    class="wrapper"
+    :class="{ 'wrapper--inverted': dark }"
+    v-bind="$attrs"
+    :style="{ width, height }"
+  >
+    <slot />
+  </component>
+</template>
 <style scoped lang="scss">
 .wrapper {
   padding: v-bind(padding);

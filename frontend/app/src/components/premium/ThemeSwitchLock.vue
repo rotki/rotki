@@ -1,3 +1,7 @@
+<script setup lang="ts">
+const { href, onLinkClick } = useLinks();
+const { t } = useI18n();
+</script>
 <template>
   <v-tooltip bottom>
     <template #activator="{ on }">
@@ -23,7 +27,3 @@
     </span>
   </v-tooltip>
 </template>
-<script setup lang="ts">
-const { href, onLinkClick } = useLinks();
-const { t } = useI18n();
-</script>

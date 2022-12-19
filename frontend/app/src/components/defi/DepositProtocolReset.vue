@@ -1,3 +1,28 @@
+<script setup lang="ts">
+import { DefiProtocol } from '@rotki/common/lib/blockchain';
+import ConfirmableReset from '@/components/helper/ConfirmableReset.vue';
+
+defineProps({
+  loading: {
+    required: true,
+    type: Boolean
+  }
+});
+
+const emit = defineEmits(['reset']);
+
+const resetSelection = ref<DefiProtocol[]>([]);
+const premium = usePremium();
+const AAVE = DefiProtocol.AAVE;
+const YEARN_VAULTS = DefiProtocol.YEARN_VAULTS;
+const YEARN_VAULTS_V2 = DefiProtocol.YEARN_VAULTS_V2;
+
+const { tc } = useI18n();
+
+const reset = () => {
+  emit('reset', get(resetSelection));
+};
+</script>
 <template>
   <confirmable-reset
     v-if="premium"
@@ -30,28 +55,3 @@
     </v-row>
   </confirmable-reset>
 </template>
-<script setup lang="ts">
-import { DefiProtocol } from '@rotki/common/lib/blockchain';
-import ConfirmableReset from '@/components/helper/ConfirmableReset.vue';
-
-defineProps({
-  loading: {
-    required: true,
-    type: Boolean
-  }
-});
-
-const emit = defineEmits(['reset']);
-
-const resetSelection = ref<DefiProtocol[]>([]);
-const premium = usePremium();
-const AAVE = DefiProtocol.AAVE;
-const YEARN_VAULTS = DefiProtocol.YEARN_VAULTS;
-const YEARN_VAULTS_V2 = DefiProtocol.YEARN_VAULTS_V2;
-
-const { tc } = useI18n();
-
-const reset = () => {
-  emit('reset', get(resetSelection));
-};
-</script>

@@ -1,16 +1,3 @@
-<template>
-  <div>
-    <asset-details-base
-      :hide-name="hideName"
-      :asset="currentAsset"
-      :opens-details="opensDetails"
-      :dense="dense"
-      :asset-styled="assetStyled"
-      :enable-association="enableAssociation"
-    />
-  </div>
-</template>
-
 <script setup lang="ts">
 import { type ComputedRef } from 'vue';
 import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
@@ -44,3 +31,16 @@ const currentAsset: ComputedRef<AssetInfoWithId> = computed(() => {
   };
 });
 </script>
+
+<template>
+  <div>
+    <asset-details-base
+      :hide-name="hideName"
+      :asset="currentAsset"
+      :opens-details="opensDetails"
+      :dense="dense"
+      :asset-styled="assetStyled"
+      :enable-association="enableAssociation"
+    />
+  </div>
+</template>

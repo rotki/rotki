@@ -1,3 +1,8 @@
+<script setup lang="ts">
+import ImportSource from '@/components/import/ImportSource.vue';
+
+const { t } = useI18n();
+</script>
 <template>
   <div>
     <v-row>
@@ -22,8 +27,3 @@
     </v-row>
   </div>
 </template>
-<script setup lang="ts">
-import ImportSource from '@/components/import/ImportSource.vue';
-
-const { t } = useI18n();
-</script>

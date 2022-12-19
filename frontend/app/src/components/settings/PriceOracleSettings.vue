@@ -1,61 +1,3 @@
-<template>
-  <setting-category>
-    <template #title>
-      {{ t('price_oracle_settings.title') }}
-    </template>
-    <template #subtitle>
-      {{ t('price_oracle_settings.subtitle') }}
-    </template>
-
-    <v-row>
-      <v-col cols="12" md="6">
-        <settings-option
-          #default="{ error, success, update }"
-          setting="currentPriceOracles"
-          @finished="resetCurrentPriceOracles"
-        >
-          <prioritized-list
-            :value="currentOracles"
-            :all-items="availableCurrentOracles()"
-            :status="{ error, success }"
-            :item-data-name="t('price_oracle_settings.data_name').toString()"
-            @input="update"
-          >
-            <template #title>
-              {{ t('price_oracle_settings.latest_prices') }}
-            </template>
-          </prioritized-list>
-        </settings-option>
-      </v-col>
-
-      <v-col cols="12" md="6">
-        <settings-option
-          #default="{ error, success, update }"
-          setting="historicalPriceOracles"
-          @finished="resetHistoricalPriceOracles"
-        >
-          <prioritized-list
-            :value="historicOracles"
-            :all-items="availableHistoricOracles()"
-            :status="{ error, success }"
-            :item-data-name="'price oracle'"
-            @input="update"
-          >
-            <template #title>
-              {{ t('price_oracle_settings.historic_prices') }}
-            </template>
-          </prioritized-list>
-        </settings-option>
-      </v-col>
-    </v-row>
-    <v-row>
-      <v-col class="text-caption">
-        {{ t('price_oracle_selection.hint') }}
-      </v-col>
-    </v-row>
-  </setting-category>
-</template>
-
 <script setup lang="ts">
 import PrioritizedList from '@/components/helper/PrioritizedList.vue';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
@@ -128,3 +70,61 @@ onMounted(() => {
 
 const { t } = useI18n();
 </script>
+
+<template>
+  <setting-category>
+    <template #title>
+      {{ t('price_oracle_settings.title') }}
+    </template>
+    <template #subtitle>
+      {{ t('price_oracle_settings.subtitle') }}
+    </template>
+
+    <v-row>
+      <v-col cols="12" md="6">
+        <settings-option
+          #default="{ error, success, update }"
+          setting="currentPriceOracles"
+          @finished="resetCurrentPriceOracles"
+        >
+          <prioritized-list
+            :value="currentOracles"
+            :all-items="availableCurrentOracles()"
+            :status="{ error, success }"
+            :item-data-name="t('price_oracle_settings.data_name').toString()"
+            @input="update"
+          >
+            <template #title>
+              {{ t('price_oracle_settings.latest_prices') }}
+            </template>
+          </prioritized-list>
+        </settings-option>
+      </v-col>
+
+      <v-col cols="12" md="6">
+        <settings-option
+          #default="{ error, success, update }"
+          setting="historicalPriceOracles"
+          @finished="resetHistoricalPriceOracles"
+        >
+          <prioritized-list
+            :value="historicOracles"
+            :all-items="availableHistoricOracles()"
+            :status="{ error, success }"
+            :item-data-name="'price oracle'"
+            @input="update"
+          >
+            <template #title>
+              {{ t('price_oracle_settings.historic_prices') }}
+            </template>
+          </prioritized-list>
+        </settings-option>
+      </v-col>
+    </v-row>
+    <v-row>
+      <v-col class="text-caption">
+        {{ t('price_oracle_selection.hint') }}
+      </v-col>
+    </v-row>
+  </setting-category>
+</template>

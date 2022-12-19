@@ -1,13 +1,3 @@
-<template>
-  <component
-    :is="component"
-    :class="{ [$style.link]: enabled }"
-    v-bind="$attrs"
-    @click="navigate"
-  >
-    <slot />
-  </component>
-</template>
 <script setup lang="ts">
 import { type PropType } from 'vue';
 import { type RawLocation } from 'vue-router';
@@ -27,6 +17,16 @@ const navigate = async () => {
   }
 };
 </script>
+<template>
+  <component
+    :is="component"
+    :class="{ [$style.link]: enabled }"
+    v-bind="$attrs"
+    @click="navigate"
+  >
+    <slot />
+  </component>
+</template>
 <style module lang="scss">
 .link {
   cursor: pointer;

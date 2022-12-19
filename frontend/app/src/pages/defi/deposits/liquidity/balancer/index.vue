@@ -1,20 +1,3 @@
-<template>
-  <no-premium-placeholder v-if="!premium" :text="tc('balancer.premium')" />
-  <module-not-active v-else-if="!isEnabled" :modules="modules" />
-  <progress-screen v-else-if="loading">
-    <template #message>
-      {{ tc('balancer.loading') }}
-    </template>
-  </progress-screen>
-  <div v-else>
-    <balancer-balances class="mt-4" :refreshing="refreshing">
-      <template #modules>
-        <active-modules :modules="modules" />
-      </template>
-    </balancer-balances>
-  </div>
-</template>
-
 <script setup lang="ts">
 import ActiveModules from '@/components/defi/ActiveModules.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
@@ -49,3 +32,20 @@ onMounted(async () => {
   await Promise.allSettled([fetchBalances(false), fetchEvents(false)]);
 });
 </script>
+
+<template>
+  <no-premium-placeholder v-if="!premium" :text="tc('balancer.premium')" />
+  <module-not-active v-else-if="!isEnabled" :modules="modules" />
+  <progress-screen v-else-if="loading">
+    <template #message>
+      {{ tc('balancer.loading') }}
+    </template>
+  </progress-screen>
+  <div v-else>
+    <balancer-balances class="mt-4" :refreshing="refreshing">
+      <template #modules>
+        <active-modules :modules="modules" />
+      </template>
+    </balancer-balances>
+  </div>
+</template>

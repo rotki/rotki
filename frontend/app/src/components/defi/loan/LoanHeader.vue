@@ -1,3 +1,15 @@
+<script setup lang="ts">
+import HashLink from '@/components/helper/HashLink.vue';
+
+defineProps({
+  owner: {
+    required: true,
+    type: String
+  }
+});
+
+const { t } = useI18n();
+</script>
 <template>
   <v-row>
     <v-col>
@@ -11,18 +23,6 @@
     </v-col>
   </v-row>
 </template>
-<script setup lang="ts">
-import HashLink from '@/components/helper/HashLink.vue';
-
-defineProps({
-  owner: {
-    required: true,
-    type: String
-  }
-});
-
-const { t } = useI18n();
-</script>
 
 <style lang="scss" module>
 .identifier {

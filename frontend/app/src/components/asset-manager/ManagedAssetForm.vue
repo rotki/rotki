@@ -1,252 +1,3 @@
-<template>
-  <fragment>
-    <v-row
-      v-if="!!edit"
-      class="text-caption text--secondary py-2"
-      align="center"
-    >
-      <v-col cols="auto" class="font-weight-medium">
-        {{ t('asset_form.identifier') }}
-      </v-col>
-      <v-col>
-        {{ edit.identifier }}
-        <copy-button
-          :value="edit.identifier"
-          :tooltip="tc('asset_form.identifier_copy')"
-        />
-      </v-col>
-    </v-row>
-    <v-form :value="value" class="pt-2" @input="input">
-      <v-row>
-        <v-col cols="12">
-          <v-select
-            v-model="assetType"
-            outlined
-            :label="t('asset_form.labels.asset_type')"
-            :disabled="types.length === 1 || !!edit"
-            :items="types"
-          >
-            <template #item="{ item }">{{ toSentenceCase(item) }}</template>
-            <template #selection="{ item }">
-              {{ toSentenceCase(item) }}
-            </template>
-          </v-select>
-        </v-col>
-        <v-col md="6">
-          <v-select
-            v-model="evmChain"
-            outlined
-            :label="t('asset_form.labels.chain')"
-            :disabled="!isEvmToken || !!edit"
-            :items="evmChainsData"
-            item-text="label"
-            item-value="identifier"
-            :error-messages="errors['evm_chain']"
-            @focus="delete errors['evm_chain']"
-          />
-        </v-col>
-        <v-col md="6">
-          <v-select
-            v-model="tokenKind"
-            outlined
-            :label="t('asset_form.labels.token_kind')"
-            :disabled="!isEvmToken || !!edit"
-            :items="evmTokenKindsData"
-            item-text="label"
-            item-value="identifier"
-            :error-messages="errors['token_kind']"
-            @focus="delete errors['token_kind']"
-          />
-        </v-col>
-      </v-row>
-      <v-row v-if="isEvmToken">
-        <v-col>
-          <v-text-field
-            v-model="address"
-            outlined
-            :loading="fetching"
-            :error-messages="errors['address']"
-            :label="t('common.address')"
-            :disabled="saving || fetching || !!edit"
-            @keydown.space.prevent
-            @focus="delete errors['address']"
-          />
-        </v-col>
-      </v-row>
-
-      <v-row>
-        <v-col cols="12" md="6">
-          <v-text-field
-            v-model="name"
-            outlined
-            :error-messages="errors['name']"
-            :label="t('common.name')"
-            :disabled="saving || fetching"
-            @focus="delete errors['name']"
-          />
-        </v-col>
-        <v-col cols="12" :md="isEvmToken ? 3 : 6">
-          <v-text-field
-            v-model="symbol"
-            outlined
-            :error-messages="errors['symbol']"
-            :label="t('asset_form.labels.symbol')"
-            :disabled="saving || fetching"
-            @focus="delete errors['symbol']"
-          />
-        </v-col>
-        <v-col v-if="isEvmToken" cols="12" md="3">
-          <v-text-field
-            v-model="decimals"
-            type="number"
-            outlined
-            min="0"
-            max="18"
-            :label="t('asset_form.labels.decimals')"
-            :error-messages="errors['decimals']"
-            :disabled="saving || fetching"
-            @focus="delete errors['decimals']"
-          />
-        </v-col>
-      </v-row>
-      <v-row>
-        <v-col cols="12" md="6" class="d-flex flex-row">
-          <v-text-field
-            v-model="coingecko"
-            outlined
-            clearable
-            persistent-hint
-            :hint="t('asset_form.labels.coingecko_hint')"
-            :label="t('asset_form.labels.coingecko')"
-            :error-messages="errors['coingecko']"
-            :disabled="saving || !coingeckoEnabled"
-            @focus="delete errors['coingecko']"
-          >
-            <template #append>
-              <help-link
-                small
-                :url="coingeckoContributeUrl"
-                :tooltip="tc('asset_form.help_coingecko')"
-              />
-            </template>
-          </v-text-field>
-          <v-tooltip open-delay="400" top max-width="320">
-            <template #activator="{ attrs, on }">
-              <span v-bind="attrs" v-on="on">
-                <v-checkbox v-model="coingeckoEnabled" class="ms-4 me-2" />
-              </span>
-            </template>
-            <span> {{ t('asset_form.oracle_disable') }}</span>
-          </v-tooltip>
-        </v-col>
-        <v-col cols="12" md="6" class="d-flex flex-row">
-          <v-text-field
-            v-model="cryptocompare"
-            outlined
-            persistent-hint
-            clearable
-            :label="t('asset_form.labels.cryptocompare')"
-            :hint="t('asset_form.labels.cryptocompare_hint')"
-            :error-messages="errors['cryptocompare']"
-            :disabled="saving || !cryptocompareEnabled"
-            @focus="delete errors['cryptocompare']"
-          >
-            <template #append>
-              <help-link
-                small
-                :url="cryptocompareContributeUrl"
-                :tooltip="tc('asset_form.help_cryptocompare')"
-              />
-            </template>
-          </v-text-field>
-          <v-tooltip open-delay="400" top max-width="320">
-            <template #activator="{ attrs, on }">
-              <span v-bind="attrs" v-on="on">
-                <v-checkbox v-model="cryptocompareEnabled" class="ms-4 me-2" />
-              </span>
-            </template>
-            <span> {{ t('asset_form.oracle_disable') }}</span>
-          </v-tooltip>
-        </v-col>
-      </v-row>
-    </v-form>
-
-    <v-sheet outlined rounded class="mt-2">
-      <v-expansion-panels flat tile>
-        <v-expansion-panel>
-          <v-expansion-panel-header>
-            {{ t('asset_form.optional') }}
-          </v-expansion-panel-header>
-          <v-expansion-panel-content>
-            <date-time-picker
-              v-model="started"
-              seconds
-              outlined
-              :label="tc('asset_form.labels.started')"
-              :error-messages="errors['started']"
-              :disabled="saving"
-              @focus="delete errors['started']"
-            />
-            <v-row>
-              <v-col v-if="isEvmToken" cols="12" md="6">
-                <v-text-field
-                  v-model="protocol"
-                  outlined
-                  persistent-hint
-                  clearable
-                  clear-icon="mdi-close"
-                  class="asset-form__protocol"
-                  :label="t('common.protocol')"
-                  :error-messages="errors['protocol']"
-                  :disabled="saving"
-                  @focus="delete errors['protocol']"
-                />
-              </v-col>
-              <v-col cols="12" md="6">
-                <asset-select
-                  v-model="swappedFor"
-                  outlined
-                  persistent-hint
-                  clearable
-                  :label="tc('asset_form.labels.swapped_for')"
-                  :error-messages="errors['swapped_for']"
-                  :disabled="saving"
-                  @focus="delete errors['swapped_for']"
-                />
-              </v-col>
-              <v-col v-if="!isEvmToken" cols="12" md="6">
-                <asset-select
-                  v-if="assetType"
-                  v-model="forked"
-                  outlined
-                  persistent-hint
-                  clearable
-                  :label="tc('asset_form.labels.forked')"
-                  :error-messages="errors['forked']"
-                  :disabled="saving"
-                  @focus="delete errors['forked']"
-                />
-              </v-col>
-            </v-row>
-            <underlying-token-manager
-              v-if="isEvmToken"
-              v-model="underlyingTokens"
-            />
-          </v-expansion-panel-content>
-        </v-expansion-panel>
-      </v-expansion-panels>
-    </v-sheet>
-
-    <div class="my-4">
-      <asset-icon-form
-        :ref="assetIconFormRef"
-        :identifier="identifier"
-        refreshable
-      />
-    </div>
-  </fragment>
-</template>
-
 <script setup lang="ts">
 import { onlyIfTruthy } from '@rotki/common';
 import {
@@ -524,3 +275,252 @@ defineExpose({
 
 const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
 </script>
+
+<template>
+  <fragment>
+    <v-row
+      v-if="!!edit"
+      class="text-caption text--secondary py-2"
+      align="center"
+    >
+      <v-col cols="auto" class="font-weight-medium">
+        {{ t('asset_form.identifier') }}
+      </v-col>
+      <v-col>
+        {{ edit.identifier }}
+        <copy-button
+          :value="edit.identifier"
+          :tooltip="tc('asset_form.identifier_copy')"
+        />
+      </v-col>
+    </v-row>
+    <v-form :value="value" class="pt-2" @input="input">
+      <v-row>
+        <v-col cols="12">
+          <v-select
+            v-model="assetType"
+            outlined
+            :label="t('asset_form.labels.asset_type')"
+            :disabled="types.length === 1 || !!edit"
+            :items="types"
+          >
+            <template #item="{ item }">{{ toSentenceCase(item) }}</template>
+            <template #selection="{ item }">
+              {{ toSentenceCase(item) }}
+            </template>
+          </v-select>
+        </v-col>
+        <v-col md="6">
+          <v-select
+            v-model="evmChain"
+            outlined
+            :label="t('asset_form.labels.chain')"
+            :disabled="!isEvmToken || !!edit"
+            :items="evmChainsData"
+            item-text="label"
+            item-value="identifier"
+            :error-messages="errors['evm_chain']"
+            @focus="delete errors['evm_chain']"
+          />
+        </v-col>
+        <v-col md="6">
+          <v-select
+            v-model="tokenKind"
+            outlined
+            :label="t('asset_form.labels.token_kind')"
+            :disabled="!isEvmToken || !!edit"
+            :items="evmTokenKindsData"
+            item-text="label"
+            item-value="identifier"
+            :error-messages="errors['token_kind']"
+            @focus="delete errors['token_kind']"
+          />
+        </v-col>
+      </v-row>
+      <v-row v-if="isEvmToken">
+        <v-col>
+          <v-text-field
+            v-model="address"
+            outlined
+            :loading="fetching"
+            :error-messages="errors['address']"
+            :label="t('common.address')"
+            :disabled="saving || fetching || !!edit"
+            @keydown.space.prevent
+            @focus="delete errors['address']"
+          />
+        </v-col>
+      </v-row>
+
+      <v-row>
+        <v-col cols="12" md="6">
+          <v-text-field
+            v-model="name"
+            outlined
+            :error-messages="errors['name']"
+            :label="t('common.name')"
+            :disabled="saving || fetching"
+            @focus="delete errors['name']"
+          />
+        </v-col>
+        <v-col cols="12" :md="isEvmToken ? 3 : 6">
+          <v-text-field
+            v-model="symbol"
+            outlined
+            :error-messages="errors['symbol']"
+            :label="t('asset_form.labels.symbol')"
+            :disabled="saving || fetching"
+            @focus="delete errors['symbol']"
+          />
+        </v-col>
+        <v-col v-if="isEvmToken" cols="12" md="3">
+          <v-text-field
+            v-model="decimals"
+            type="number"
+            outlined
+            min="0"
+            max="18"
+            :label="t('asset_form.labels.decimals')"
+            :error-messages="errors['decimals']"
+            :disabled="saving || fetching"
+            @focus="delete errors['decimals']"
+          />
+        </v-col>
+      </v-row>
+      <v-row>
+        <v-col cols="12" md="6" class="d-flex flex-row">
+          <v-text-field
+            v-model="coingecko"
+            outlined
+            clearable
+            persistent-hint
+            :hint="t('asset_form.labels.coingecko_hint')"
+            :label="t('asset_form.labels.coingecko')"
+            :error-messages="errors['coingecko']"
+            :disabled="saving || !coingeckoEnabled"
+            @focus="delete errors['coingecko']"
+          >
+            <template #append>
+              <help-link
+                small
+                :url="coingeckoContributeUrl"
+                :tooltip="tc('asset_form.help_coingecko')"
+              />
+            </template>
+          </v-text-field>
+          <v-tooltip open-delay="400" top max-width="320">
+            <template #activator="{ attrs, on }">
+              <span v-bind="attrs" v-on="on">
+                <v-checkbox v-model="coingeckoEnabled" class="ms-4 me-2" />
+              </span>
+            </template>
+            <span> {{ t('asset_form.oracle_disable') }}</span>
+          </v-tooltip>
+        </v-col>
+        <v-col cols="12" md="6" class="d-flex flex-row">
+          <v-text-field
+            v-model="cryptocompare"
+            outlined
+            persistent-hint
+            clearable
+            :label="t('asset_form.labels.cryptocompare')"
+            :hint="t('asset_form.labels.cryptocompare_hint')"
+            :error-messages="errors['cryptocompare']"
+            :disabled="saving || !cryptocompareEnabled"
+            @focus="delete errors['cryptocompare']"
+          >
+            <template #append>
+              <help-link
+                small
+                :url="cryptocompareContributeUrl"
+                :tooltip="tc('asset_form.help_cryptocompare')"
+              />
+            </template>
+          </v-text-field>
+          <v-tooltip open-delay="400" top max-width="320">
+            <template #activator="{ attrs, on }">
+              <span v-bind="attrs" v-on="on">
+                <v-checkbox v-model="cryptocompareEnabled" class="ms-4 me-2" />
+              </span>
+            </template>
+            <span> {{ t('asset_form.oracle_disable') }}</span>
+          </v-tooltip>
+        </v-col>
+      </v-row>
+    </v-form>
+
+    <v-sheet outlined rounded class="mt-2">
+      <v-expansion-panels flat tile>
+        <v-expansion-panel>
+          <v-expansion-panel-header>
+            {{ t('asset_form.optional') }}
+          </v-expansion-panel-header>
+          <v-expansion-panel-content>
+            <date-time-picker
+              v-model="started"
+              seconds
+              outlined
+              :label="tc('asset_form.labels.started')"
+              :error-messages="errors['started']"
+              :disabled="saving"
+              @focus="delete errors['started']"
+            />
+            <v-row>
+              <v-col v-if="isEvmToken" cols="12" md="6">
+                <v-text-field
+                  v-model="protocol"
+                  outlined
+                  persistent-hint
+                  clearable
+                  clear-icon="mdi-close"
+                  class="asset-form__protocol"
+                  :label="t('common.protocol')"
+                  :error-messages="errors['protocol']"
+                  :disabled="saving"
+                  @focus="delete errors['protocol']"
+                />
+              </v-col>
+              <v-col cols="12" md="6">
+                <asset-select
+                  v-model="swappedFor"
+                  outlined
+                  persistent-hint
+                  clearable
+                  :label="tc('asset_form.labels.swapped_for')"
+                  :error-messages="errors['swapped_for']"
+                  :disabled="saving"
+                  @focus="delete errors['swapped_for']"
+                />
+              </v-col>
+              <v-col v-if="!isEvmToken" cols="12" md="6">
+                <asset-select
+                  v-if="assetType"
+                  v-model="forked"
+                  outlined
+                  persistent-hint
+                  clearable
+                  :label="tc('asset_form.labels.forked')"
+                  :error-messages="errors['forked']"
+                  :disabled="saving"
+                  @focus="delete errors['forked']"
+                />
+              </v-col>
+            </v-row>
+            <underlying-token-manager
+              v-if="isEvmToken"
+              v-model="underlyingTokens"
+            />
+          </v-expansion-panel-content>
+        </v-expansion-panel>
+      </v-expansion-panels>
+    </v-sheet>
+
+    <div class="my-4">
+      <asset-icon-form
+        :ref="assetIconFormRef"
+        :identifier="identifier"
+        refreshable
+      />
+    </div>
+  </fragment>
+</template>

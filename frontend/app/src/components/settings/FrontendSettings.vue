@@ -1,3 +1,25 @@
+<script setup lang="ts">
+import ThemeManagerLock from '@/components/premium/ThemeManagerLock.vue';
+import Explorers from '@/components/settings/explorers/Explorers.vue';
+import AddressNamePrioritySetting from '@/components/settings/frontend/AddressNamePrioritySetting.vue';
+import AnimationsEnabledSetting from '@/components/settings/frontend/AnimationsEnabledSetting.vue';
+import EnableEnsNamesSetting from '@/components/settings/frontend/EnableEnsNamesSetting.vue';
+import NftsInNetValueSetting from '@/components/settings/frontend/NftsInNetValueSetting.vue';
+import ScrambleDataSetting from '@/components/settings/frontend/ScrambleDataSetting.vue';
+import ShowGraphRangeSelectorSetting from '@/components/settings/frontend/ShowGraphRangeSelectorSetting.vue';
+import TimeFrameSetting from '@/components/settings/frontend/TimeFrameSetting.vue';
+import ZeroBasedGraphSetting from '@/components/settings/frontend/ZeroBasedGraphSetting.vue';
+import QueryPeriodSetting from '@/components/settings/general/QueryPeriodSetting.vue';
+import RefreshSetting from '@/components/settings/general/RefreshSetting.vue';
+import SettingCategory from '@/components/settings/SettingCategory.vue';
+import { ThemeManager } from '@/premium/premium';
+import { usePremiumStore } from '@/store/session/premium';
+
+const { premium } = storeToRefs(usePremiumStore());
+
+const { t } = useI18n();
+</script>
+
 <template>
   <setting-category>
     <template #title>
@@ -47,25 +69,3 @@
     <theme-manager-lock v-else class="mt-12" />
   </setting-category>
 </template>
-
-<script setup lang="ts">
-import ThemeManagerLock from '@/components/premium/ThemeManagerLock.vue';
-import Explorers from '@/components/settings/explorers/Explorers.vue';
-import AddressNamePrioritySetting from '@/components/settings/frontend/AddressNamePrioritySetting.vue';
-import AnimationsEnabledSetting from '@/components/settings/frontend/AnimationsEnabledSetting.vue';
-import EnableEnsNamesSetting from '@/components/settings/frontend/EnableEnsNamesSetting.vue';
-import NftsInNetValueSetting from '@/components/settings/frontend/NftsInNetValueSetting.vue';
-import ScrambleDataSetting from '@/components/settings/frontend/ScrambleDataSetting.vue';
-import ShowGraphRangeSelectorSetting from '@/components/settings/frontend/ShowGraphRangeSelectorSetting.vue';
-import TimeFrameSetting from '@/components/settings/frontend/TimeFrameSetting.vue';
-import ZeroBasedGraphSetting from '@/components/settings/frontend/ZeroBasedGraphSetting.vue';
-import QueryPeriodSetting from '@/components/settings/general/QueryPeriodSetting.vue';
-import RefreshSetting from '@/components/settings/general/RefreshSetting.vue';
-import SettingCategory from '@/components/settings/SettingCategory.vue';
-import { ThemeManager } from '@/premium/premium';
-import { usePremiumStore } from '@/store/session/premium';
-
-const { premium } = storeToRefs(usePremiumStore());
-
-const { t } = useI18n();
-</script>

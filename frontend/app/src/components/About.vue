@@ -1,3 +1,98 @@
+<script setup lang="ts">
+import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
+import RotkiLogo from '@/components/common/RotkiLogo.vue';
+import AppUpdateIndicator from '@/components/status/AppUpdateIndicator.vue';
+import { type SystemVersion } from '@/electron-main/ipc';
+import { useMainStore } from '@/store/main';
+import { type WebVersion } from '@/types';
+
+const css = useCssModule();
+
+const store = useMainStore();
+const { version: getVersion, isPackaged, openPath } = useInterop();
+const { tc } = useI18n();
+
+const { version, dataDirectory } = toRefs(store);
+const versionInfo = asyncComputed<SystemVersion | WebVersion>(() =>
+  getVersion()
+);
+
+const premium = usePremium();
+const componentsVersion = computed(() => {
+  if (!get(premium)) {
+    return null;
+  }
+
+  // @ts-ignore
+  const cmp = window.PremiumComponents;
+  if (!cmp) {
+    return null;
+  }
+  return {
+    version: cmp.version as string,
+    build: cmp.build as number
+  };
+});
+
+const webVersion = computed<WebVersion | null>(() => {
+  const info = get(versionInfo);
+  if (!info || !('userAgent' in info)) {
+    return null;
+  }
+  return info;
+});
+
+const electronVersion = computed<SystemVersion | null>(() => {
+  const info = get(versionInfo);
+  if (!info || 'userAgent' in info) {
+    return null;
+  }
+  return info;
+});
+
+// eslint-disable-next-line no-undef
+const frontendVersion = __APP_VERSION__;
+
+const versionText = computed(() => {
+  const appVersion = tc('about.app_version');
+  const frontendVersion = tc('about.frontend_version');
+  let versionText = '';
+  versionText += `${appVersion} ${get(version).version}\r\n`;
+  versionText += `${frontendVersion} ${frontendVersion}\r\n`;
+
+  const web = get(webVersion);
+  const app = get(electronVersion);
+
+  const platform = tc('about.platform');
+
+  if (web) {
+    const userAgent = tc('about.user_agent');
+    versionText += `${platform} ${web.platform}\r\n`;
+    versionText += `${userAgent} ${web.userAgent}\r\n`;
+  } else if (app) {
+    const electron = tc('about.electron');
+    versionText += `${platform} ${app.os} ${app.arch} ${app.osVersion}\r\n`;
+    versionText += `${electron} ${app.electron}\r\n`;
+  }
+
+  if (get(premium)) {
+    const cmp = get(componentsVersion);
+    if (cmp) {
+      const cmpVersion = tc('about.components.version');
+      const cmpBuild = tc('about.components.build');
+
+      versionText += `${cmpVersion} ${cmp.version}\r\n`;
+      versionText += `${cmpBuild} ${cmp.build}\r\n`;
+    }
+  }
+
+  return versionText;
+});
+
+const remoteAboutLogo =
+  'https://raw.githubusercontent.com/rotki/data/main/assets/icons/about_logo.png';
+</script>
+
 <template>
   <v-card class="pb-6" width="500px" light :class="css.about">
     <div class="pt-6 pb-3 text-h2 font-weight-black white--text primary">
@@ -144,101 +239,6 @@
     </v-card-text>
   </v-card>
 </template>
-
-<script setup lang="ts">
-import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
-import RotkiLogo from '@/components/common/RotkiLogo.vue';
-import AppUpdateIndicator from '@/components/status/AppUpdateIndicator.vue';
-import { type SystemVersion } from '@/electron-main/ipc';
-import { useMainStore } from '@/store/main';
-import { type WebVersion } from '@/types';
-
-const css = useCssModule();
-
-const store = useMainStore();
-const { version: getVersion, isPackaged, openPath } = useInterop();
-const { tc } = useI18n();
-
-const { version, dataDirectory } = toRefs(store);
-const versionInfo = asyncComputed<SystemVersion | WebVersion>(() =>
-  getVersion()
-);
-
-const premium = usePremium();
-const componentsVersion = computed(() => {
-  if (!get(premium)) {
-    return null;
-  }
-
-  // @ts-ignore
-  const cmp = window.PremiumComponents;
-  if (!cmp) {
-    return null;
-  }
-  return {
-    version: cmp.version as string,
-    build: cmp.build as number
-  };
-});
-
-const webVersion = computed<WebVersion | null>(() => {
-  const info = get(versionInfo);
-  if (!info || !('userAgent' in info)) {
-    return null;
-  }
-  return info;
-});
-
-const electronVersion = computed<SystemVersion | null>(() => {
-  const info = get(versionInfo);
-  if (!info || 'userAgent' in info) {
-    return null;
-  }
-  return info;
-});
-
-// eslint-disable-next-line no-undef
-const frontendVersion = __APP_VERSION__;
-
-const versionText = computed(() => {
-  const appVersion = tc('about.app_version');
-  const frontendVersion = tc('about.frontend_version');
-  let versionText = '';
-  versionText += `${appVersion} ${get(version).version}\r\n`;
-  versionText += `${frontendVersion} ${frontendVersion}\r\n`;
-
-  const web = get(webVersion);
-  const app = get(electronVersion);
-
-  const platform = tc('about.platform');
-
-  if (web) {
-    const userAgent = tc('about.user_agent');
-    versionText += `${platform} ${web.platform}\r\n`;
-    versionText += `${userAgent} ${web.userAgent}\r\n`;
-  } else if (app) {
-    const electron = tc('about.electron');
-    versionText += `${platform} ${app.os} ${app.arch} ${app.osVersion}\r\n`;
-    versionText += `${electron} ${app.electron}\r\n`;
-  }
-
-  if (get(premium)) {
-    const cmp = get(componentsVersion);
-    if (cmp) {
-      const cmpVersion = tc('about.components.version');
-      const cmpBuild = tc('about.components.build');
-
-      versionText += `${cmpVersion} ${cmp.version}\r\n`;
-      versionText += `${cmpBuild} ${cmp.build}\r\n`;
-    }
-  }
-
-  return versionText;
-});
-
-const remoteAboutLogo =
-  'https://raw.githubusercontent.com/rotki/data/main/assets/icons/about_logo.png';
-</script>
 
 <style module lang="scss">
 .version {

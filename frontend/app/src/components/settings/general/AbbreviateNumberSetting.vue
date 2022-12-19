@@ -1,3 +1,17 @@
+<script setup lang="ts">
+import { type Ref } from 'vue';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+
+const abbreviate: Ref<boolean> = ref(false);
+const { abbreviateNumber } = storeToRefs(useFrontendSettingsStore());
+
+onMounted(() => {
+  set(abbreviate, get(abbreviateNumber));
+});
+
+const { tc } = useI18n();
+</script>
+
 <template>
   <settings-option
     #default="{ error, success, update }"
@@ -17,17 +31,3 @@
     />
   </settings-option>
 </template>
-
-<script setup lang="ts">
-import { type Ref } from 'vue';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-
-const abbreviate: Ref<boolean> = ref(false);
-const { abbreviateNumber } = storeToRefs(useFrontendSettingsStore());
-
-onMounted(() => {
-  set(abbreviate, get(abbreviateNumber));
-});
-
-const { tc } = useI18n();
-</script>

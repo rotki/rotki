@@ -1,3 +1,44 @@
+<script setup lang="ts">
+import { type PropType } from 'vue';
+import AmountDisplay from '@/components/display/AmountDisplay.vue';
+import {
+  type ProfitLossOverviewItem,
+  type SelectedReport
+} from '@/types/reports';
+import { calculateTotalProfitLoss } from '@/utils/report';
+import { pluralizeLastWord, toCapitalCase } from '@/utils/text';
+
+const props = defineProps({
+  report: {
+    required: true,
+    type: Object as PropType<SelectedReport>
+  },
+  symbol: {
+    required: false,
+    type: String as PropType<string | null>,
+    default: null
+  },
+  flat: {
+    required: false,
+    type: Boolean,
+    default: false
+  },
+  loading: {
+    required: false,
+    type: Boolean,
+    default: false
+  }
+});
+
+const { report } = toRefs(props);
+
+const total = computed<ProfitLossOverviewItem>(() => {
+  return calculateTotalProfitLoss(get(report));
+});
+
+const { tc } = useI18n();
+</script>
+
 <template>
   <card outlined-body :flat="flat">
     <template #title>
@@ -69,44 +110,3 @@
     </v-simple-table>
   </card>
 </template>
-
-<script setup lang="ts">
-import { type PropType } from 'vue';
-import AmountDisplay from '@/components/display/AmountDisplay.vue';
-import {
-  type ProfitLossOverviewItem,
-  type SelectedReport
-} from '@/types/reports';
-import { calculateTotalProfitLoss } from '@/utils/report';
-import { pluralizeLastWord, toCapitalCase } from '@/utils/text';
-
-const props = defineProps({
-  report: {
-    required: true,
-    type: Object as PropType<SelectedReport>
-  },
-  symbol: {
-    required: false,
-    type: String as PropType<string | null>,
-    default: null
-  },
-  flat: {
-    required: false,
-    type: Boolean,
-    default: false
-  },
-  loading: {
-    required: false,
-    type: Boolean,
-    default: false
-  }
-});
-
-const { report } = toRefs(props);
-
-const total = computed<ProfitLossOverviewItem>(() => {
-  return calculateTotalProfitLoss(get(report));
-});
-
-const { tc } = useI18n();
-</script>

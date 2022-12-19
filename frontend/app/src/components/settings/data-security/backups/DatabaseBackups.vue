@@ -1,67 +1,3 @@
-<template>
-  <fragment>
-    <data-table
-      :value="selected"
-      :items="itemsWithIndex"
-      sort-by="time"
-      show-select
-      item-key="index"
-      :single-select="false"
-      :headers="tableHeaders"
-      :loading="loading"
-      @input="onSelectedChange"
-    >
-      <template #item.time="{ item }">
-        <date-display :timestamp="item.time" />
-      </template>
-      <template #item.size="{ item }">
-        {{ size(item.size) }}
-      </template>
-      <template #item.actions="{ item }">
-        <v-tooltip top>
-          <template #activator="{ on, attrs }">
-            <v-btn
-              v-bind="attrs"
-              icon
-              class="mx-1"
-              v-on="on"
-              @click="showDeleteConfirmation(item)"
-            >
-              <v-icon small> mdi-delete-outline </v-icon>
-            </v-btn>
-          </template>
-          <span>{{ tc('database_backups.action.delete') }}</span>
-        </v-tooltip>
-        <v-tooltip top>
-          <template #activator="{ on, attrs }">
-            <v-btn
-              icon
-              :href="getLink(item)"
-              v-bind="attrs"
-              class="mx-1"
-              download
-              v-on="on"
-            >
-              <v-icon small> mdi-download </v-icon>
-            </v-btn>
-          </template>
-          <span>{{ tc('database_backups.action.download') }}</span>
-        </v-tooltip>
-      </template>
-      <template #body.append="{ isMobile }">
-        <row-append
-          label-colspan="3"
-          :label="tc('common.total')"
-          :right-patch-colspan="1"
-          :is-mobile="isMobile"
-        >
-          {{ totalSize }}
-        </row-append>
-      </template>
-    </data-table>
-  </fragment>
-</template>
-
 <script setup lang="ts">
 import { type ComputedRef, type PropType } from 'vue';
 import { type DataTableHeader } from 'vuetify';
@@ -162,3 +98,67 @@ const showDeleteConfirmation = (item: UserDbBackup & { index: number }) => {
   );
 };
 </script>
+
+<template>
+  <fragment>
+    <data-table
+      :value="selected"
+      :items="itemsWithIndex"
+      sort-by="time"
+      show-select
+      item-key="index"
+      :single-select="false"
+      :headers="tableHeaders"
+      :loading="loading"
+      @input="onSelectedChange"
+    >
+      <template #item.time="{ item }">
+        <date-display :timestamp="item.time" />
+      </template>
+      <template #item.size="{ item }">
+        {{ size(item.size) }}
+      </template>
+      <template #item.actions="{ item }">
+        <v-tooltip top>
+          <template #activator="{ on, attrs }">
+            <v-btn
+              v-bind="attrs"
+              icon
+              class="mx-1"
+              v-on="on"
+              @click="showDeleteConfirmation(item)"
+            >
+              <v-icon small> mdi-delete-outline </v-icon>
+            </v-btn>
+          </template>
+          <span>{{ tc('database_backups.action.delete') }}</span>
+        </v-tooltip>
+        <v-tooltip top>
+          <template #activator="{ on, attrs }">
+            <v-btn
+              icon
+              :href="getLink(item)"
+              v-bind="attrs"
+              class="mx-1"
+              download
+              v-on="on"
+            >
+              <v-icon small> mdi-download </v-icon>
+            </v-btn>
+          </template>
+          <span>{{ tc('database_backups.action.download') }}</span>
+        </v-tooltip>
+      </template>
+      <template #body.append="{ isMobile }">
+        <row-append
+          label-colspan="3"
+          :label="tc('common.total')"
+          :right-patch-colspan="1"
+          :is-mobile="isMobile"
+        >
+          {{ totalSize }}
+        </row-append>
+      </template>
+    </data-table>
+  </fragment>
+</template>

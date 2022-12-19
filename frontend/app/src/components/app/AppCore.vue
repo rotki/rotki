@@ -1,38 +1,3 @@
-<template>
-  <div class="app__content rotki-light-grey">
-    <asset-update auto />
-    <notification-popup />
-    <app-drawer />
-
-    <v-app-bar
-      app
-      fixed
-      clipped-left
-      flat
-      :color="appBarColor"
-      class="app__app-bar"
-    >
-      <v-app-bar-nav-icon
-        class="secondary--text text--lighten-4"
-        @click="toggleDrawer()"
-      />
-      <app-indicators />
-    </v-app-bar>
-    <app-sidebars />
-    <div
-      class="app-main"
-      :class="{
-        small,
-        expanded
-      }"
-    >
-      <v-main>
-        <router-view />
-      </v-main>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { Chart, registerables } from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
@@ -72,6 +37,41 @@ onBeforeMount(() => {
   Chart.register(zoomPlugin);
 });
 </script>
+
+<template>
+  <div class="app__content rotki-light-grey">
+    <asset-update auto />
+    <notification-popup />
+    <app-drawer />
+
+    <v-app-bar
+      app
+      fixed
+      clipped-left
+      flat
+      :color="appBarColor"
+      class="app__app-bar"
+    >
+      <v-app-bar-nav-icon
+        class="secondary--text text--lighten-4"
+        @click="toggleDrawer()"
+      />
+      <app-indicators />
+    </v-app-bar>
+    <app-sidebars />
+    <div
+      class="app-main"
+      :class="{
+        small,
+        expanded
+      }"
+    >
+      <v-main>
+        <router-view />
+      </v-main>
+    </div>
+  </div>
+</template>
 
 <style scoped lang="scss">
 :deep() {

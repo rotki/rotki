@@ -1,3 +1,20 @@
+<script setup lang="ts">
+import { ref } from 'vue';
+
+import ModuleAddressSelector from '@/components/defi/wizard/ModuleAddressSelector.vue';
+import ModuleSelector from '@/components/defi/wizard/ModuleSelector.vue';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+
+const { updateSetting } = useFrontendSettingsStore();
+
+const step = ref<number>(1);
+const done = async () => {
+  await updateSetting({ defiSetupDone: true });
+};
+
+const { t } = useI18n();
+</script>
+
 <template>
   <v-container>
     <v-card>
@@ -93,23 +110,6 @@
     </v-card>
   </v-container>
 </template>
-
-<script setup lang="ts">
-import { ref } from 'vue';
-
-import ModuleAddressSelector from '@/components/defi/wizard/ModuleAddressSelector.vue';
-import ModuleSelector from '@/components/defi/wizard/ModuleSelector.vue';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-
-const { updateSetting } = useFrontendSettingsStore();
-
-const step = ref<number>(1);
-const done = async () => {
-  await updateSetting({ defiSetupDone: true });
-};
-
-const { t } = useI18n();
-</script>
 
 <style scoped lang="scss">
 .defi-wizard {

@@ -1,3 +1,58 @@
+<script setup lang="ts">
+import ActiveModules from '@/components/defi/ActiveModules.vue';
+import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
+import Eth2ValidatorFilter from '@/components/helper/filter/Eth2ValidatorFilter.vue';
+import ProgressScreen from '@/components/helper/ProgressScreen.vue';
+import NoPremiumPlaceholder from '@/components/premium/NoPremiumPlaceholder.vue';
+import { Eth2Staking } from '@/premium/premium';
+import { useEthAccountsStore } from '@/store/blockchain/accounts/eth';
+import { useEth2StakingStore } from '@/store/staking/eth2';
+import { Module } from '@/types/modules';
+import { Section } from '@/types/status';
+
+const selection = ref<string[]>([]);
+const filterType = ref<'address' | 'key'>('key');
+const { isModuleEnabled } = useModules();
+
+const enabled = isModuleEnabled(Module.ETH2);
+
+const store = useEth2StakingStore();
+const { details, deposits, stats } = storeToRefs(store);
+const { load, updatePagination } = store;
+
+onMounted(async () => {
+  if (get(enabled)) {
+    await refresh();
+  }
+});
+const { isSectionRefreshing, shouldShowLoadingScreen } = useSectionLoading();
+
+const loading = shouldShowLoadingScreen(Section.STAKING_ETH2);
+const primaryRefreshing = isSectionRefreshing(Section.STAKING_ETH2);
+const secondaryRefreshing = isSectionRefreshing(Section.STAKING_ETH2_DEPOSITS);
+const eth2StatsLoading = isSectionLoading(Section.STAKING_ETH2_STATS);
+
+const { eth2Validators } = storeToRefs(useEthAccountsStore());
+watch(filterType, () => set(selection, []));
+
+const refresh = async () => await load(true);
+
+const ownership = computed(() => {
+  const ownership: Record<string, string> = {};
+  for (const { validatorIndex, ownershipPercentage } of get(eth2Validators)
+    .entries) {
+    ownership[validatorIndex] = ownershipPercentage;
+  }
+  return ownership;
+});
+
+const premium = usePremium();
+
+const module = [Module.ETH2];
+
+const { t, tc } = useI18n();
+</script>
+
 <template>
   <div>
     <no-premium-placeholder
@@ -57,58 +112,3 @@
     </eth2-staking>
   </div>
 </template>
-
-<script setup lang="ts">
-import ActiveModules from '@/components/defi/ActiveModules.vue';
-import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
-import Eth2ValidatorFilter from '@/components/helper/filter/Eth2ValidatorFilter.vue';
-import ProgressScreen from '@/components/helper/ProgressScreen.vue';
-import NoPremiumPlaceholder from '@/components/premium/NoPremiumPlaceholder.vue';
-import { Eth2Staking } from '@/premium/premium';
-import { useEthAccountsStore } from '@/store/blockchain/accounts/eth';
-import { useEth2StakingStore } from '@/store/staking/eth2';
-import { Module } from '@/types/modules';
-import { Section } from '@/types/status';
-
-const selection = ref<string[]>([]);
-const filterType = ref<'address' | 'key'>('key');
-const { isModuleEnabled } = useModules();
-
-const enabled = isModuleEnabled(Module.ETH2);
-
-const store = useEth2StakingStore();
-const { details, deposits, stats } = storeToRefs(store);
-const { load, updatePagination } = store;
-
-onMounted(async () => {
-  if (get(enabled)) {
-    await refresh();
-  }
-});
-const { isSectionRefreshing, shouldShowLoadingScreen } = useSectionLoading();
-
-const loading = shouldShowLoadingScreen(Section.STAKING_ETH2);
-const primaryRefreshing = isSectionRefreshing(Section.STAKING_ETH2);
-const secondaryRefreshing = isSectionRefreshing(Section.STAKING_ETH2_DEPOSITS);
-const eth2StatsLoading = isSectionLoading(Section.STAKING_ETH2_STATS);
-
-const { eth2Validators } = storeToRefs(useEthAccountsStore());
-watch(filterType, () => set(selection, []));
-
-const refresh = async () => await load(true);
-
-const ownership = computed(() => {
-  const ownership: Record<string, string> = {};
-  for (const { validatorIndex, ownershipPercentage } of get(eth2Validators)
-    .entries) {
-    ownership[validatorIndex] = ownershipPercentage;
-  }
-  return ownership;
-});
-
-const premium = usePremium();
-
-const module = [Module.ETH2];
-
-const { t, tc } = useI18n();
-</script>

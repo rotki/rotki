@@ -1,14 +1,3 @@
-<template>
-  <span class="d-flex align-center" :class="'flex-column'">
-    <span>
-      <v-icon color="accent"> {{ icon }} </v-icon>
-    </span>
-    <span class="mt-2 text-no-wrap">
-      {{ name }}
-    </span>
-  </span>
-</template>
-
 <script setup lang="ts">
 import { type PropType } from 'vue';
 import { ProfitLossEventTypeEnum } from '@/types/reports';
@@ -66,3 +55,14 @@ const { type } = toRefs(props);
 const icon = computed(() => icons[get(type)] ?? 'mdi-help');
 const name = computed(() => names[get(type)] ?? toCapitalCase(get(type)));
 </script>
+
+<template>
+  <span class="d-flex align-center" :class="'flex-column'">
+    <span>
+      <v-icon color="accent"> {{ icon }} </v-icon>
+    </span>
+    <span class="mt-2 text-no-wrap">
+      {{ name }}
+    </span>
+  </span>
+</template>

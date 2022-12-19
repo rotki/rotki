@@ -1,3 +1,32 @@
+<script setup lang="ts">
+import { type PropType } from 'vue';
+
+import { type EthTransactionEventEntry } from '@/store/history/types';
+import { type ActionDataEntry } from '@/store/types';
+import { getEventCounterpartyData, useEventTypeData } from '@/utils/history';
+
+const props = defineProps({
+  event: {
+    required: true,
+    type: Object as PropType<EthTransactionEventEntry>
+  }
+});
+
+const { event } = toRefs(props);
+
+const { dark } = useTheme();
+const { getEventTypeData } = useEventTypeData();
+
+const attrs = computed<ActionDataEntry>(() => {
+  return getEventTypeData(get(event));
+});
+
+const counterparty = computed<ActionDataEntry | null>(() => {
+  return getEventCounterpartyData(get(event));
+});
+
+const { t } = useI18n();
+</script>
 <template>
   <div class="d-flex align-center text-left">
     <v-badge v-if="counterparty" avatar overlap color="white">
@@ -52,32 +81,3 @@
     </div>
   </div>
 </template>
-<script setup lang="ts">
-import { type PropType } from 'vue';
-
-import { type EthTransactionEventEntry } from '@/store/history/types';
-import { type ActionDataEntry } from '@/store/types';
-import { getEventCounterpartyData, useEventTypeData } from '@/utils/history';
-
-const props = defineProps({
-  event: {
-    required: true,
-    type: Object as PropType<EthTransactionEventEntry>
-  }
-});
-
-const { event } = toRefs(props);
-
-const { dark } = useTheme();
-const { getEventTypeData } = useEventTypeData();
-
-const attrs = computed<ActionDataEntry>(() => {
-  return getEventTypeData(get(event));
-});
-
-const counterparty = computed<ActionDataEntry | null>(() => {
-  return getEventCounterpartyData(get(event));
-});
-
-const { t } = useI18n();
-</script>

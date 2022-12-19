@@ -1,66 +1,3 @@
-<template>
-  <div>
-    <v-menu
-      ref="menu"
-      v-model="showMenu"
-      :close-on-content-click="false"
-      transition="scale-transition"
-      offset-y
-      max-width="580px"
-      class="date-time-picker"
-    >
-      <template #activator="{ on }">
-        <v-text-field
-          ref="inputField"
-          :value="inputtedDate"
-          :label="label"
-          :hint="hint"
-          :disabled="disabled"
-          prepend-inner-icon="mdi-calendar"
-          :persistent-hint="persistentHint"
-          :rules="allRules"
-          :outlined="outlined"
-          append-icon="mdi-clock-outline"
-          :error-messages="errorMessages"
-          @change="emitIfValid($event)"
-          @click:append="setNow()"
-          v-on="on"
-        />
-      </template>
-
-      <div :class="$style.menu">
-        <div>
-          <v-date-picker
-            elevation="0"
-            class="rounded-0"
-            :value="dateModel"
-            :max="maxDate"
-            @change="onDateChange($event)"
-          />
-          <v-time-picker
-            elevation="0"
-            class="rounded-0"
-            :value="timeModel"
-            :max="maxTime"
-            format="24hr"
-            :use-seconds="seconds"
-            @change="onTimeChange($event)"
-          />
-        </div>
-        <v-autocomplete
-          v-model="selectedTimezone"
-          class="pa-4 pb-0"
-          outlined
-          persistent-hint
-          menu-pros="auto"
-          :items="timezones"
-          :rules="timezoneRule"
-        />
-      </div>
-    </v-menu>
-  </div>
-</template>
-
 <script setup lang="ts">
 import dayjs from 'dayjs';
 import { type PropType, type Ref } from 'vue';
@@ -328,6 +265,69 @@ defineExpose({
   reset
 });
 </script>
+
+<template>
+  <div>
+    <v-menu
+      ref="menu"
+      v-model="showMenu"
+      :close-on-content-click="false"
+      transition="scale-transition"
+      offset-y
+      max-width="580px"
+      class="date-time-picker"
+    >
+      <template #activator="{ on }">
+        <v-text-field
+          ref="inputField"
+          :value="inputtedDate"
+          :label="label"
+          :hint="hint"
+          :disabled="disabled"
+          prepend-inner-icon="mdi-calendar"
+          :persistent-hint="persistentHint"
+          :rules="allRules"
+          :outlined="outlined"
+          append-icon="mdi-clock-outline"
+          :error-messages="errorMessages"
+          @change="emitIfValid($event)"
+          @click:append="setNow()"
+          v-on="on"
+        />
+      </template>
+
+      <div :class="$style.menu">
+        <div>
+          <v-date-picker
+            elevation="0"
+            class="rounded-0"
+            :value="dateModel"
+            :max="maxDate"
+            @change="onDateChange($event)"
+          />
+          <v-time-picker
+            elevation="0"
+            class="rounded-0"
+            :value="timeModel"
+            :max="maxTime"
+            format="24hr"
+            :use-seconds="seconds"
+            @change="onTimeChange($event)"
+          />
+        </div>
+        <v-autocomplete
+          v-model="selectedTimezone"
+          class="pa-4 pb-0"
+          outlined
+          persistent-hint
+          menu-pros="auto"
+          :items="timezones"
+          :rules="timezoneRule"
+        />
+      </div>
+    </v-menu>
+  </div>
+</template>
 
 <style module lang="scss">
 .menu {

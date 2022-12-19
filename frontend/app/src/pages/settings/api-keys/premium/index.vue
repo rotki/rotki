@@ -1,97 +1,3 @@
-<template>
-  <v-row class="premium-settings">
-    <v-col>
-      <card>
-        <template #title>
-          {{ t('premium_settings.title') }}
-        </template>
-        <template #subtitle>
-          <i18n tag="div" path="premium_settings.subtitle">
-            <base-external-link
-              :text="tc('premium_settings.rotki_premium')"
-              :href="premiumURL"
-            />
-          </i18n>
-        </template>
-
-        <revealable-input
-          v-model="apiKey"
-          outlined
-          class="premium-settings__fields__api-key"
-          :disabled="premium && !edit"
-          :error-messages="errorMessages"
-          :label="tc('premium_settings.fields.api_key')"
-          @paste="onApiKeyPaste"
-        />
-        <revealable-input
-          v-model="apiSecret"
-          outlined
-          class="premium-settings__fields__api-secret"
-          prepend-icon="mdi-lock"
-          :disabled="premium && !edit"
-          :label="tc('premium_settings.fields.api_secret')"
-          @paste="onApiSecretPaste"
-        />
-        <div v-if="premium" class="premium-settings__premium-active">
-          <v-icon color="success">mdi-check-circle</v-icon>
-          <div>{{ t('premium_settings.premium_active') }}</div>
-        </div>
-
-        <template #buttons>
-          <v-row align="center">
-            <v-col cols="auto">
-              <v-btn
-                class="premium-settings__button__setup"
-                depressed
-                color="primary"
-                type="submit"
-                @click="setupPremium()"
-              >
-                {{
-                  premium && !edit
-                    ? t('premium_settings.actions.replace')
-                    : t('premium_settings.actions.setup')
-                }}
-              </v-btn>
-            </v-col>
-            <v-col v-if="premium && !edit" cols="auto">
-              <v-btn
-                class="premium-settings__button__delete"
-                depressed
-                outlined
-                color="primary"
-                type="submit"
-                @click="showDeleteConfirmation"
-              >
-                {{ t('premium_settings.actions.delete') }}
-              </v-btn>
-            </v-col>
-            <v-col v-if="edit && premium" cols="auto">
-              <v-btn
-                id="premium-edit-cancel-button"
-                depressed
-                color="primary"
-                @click="cancelEdit()"
-              >
-                {{ t('common.actions.cancel') }}
-              </v-btn>
-            </v-col>
-            <v-col v-if="premium && !edit" cols="auto">
-              <v-switch
-                v-model="sync"
-                class="premium-settings__sync"
-                hide-details
-                :label="t('premium_settings.actions.sync')"
-                @change="onSyncChange()"
-              />
-            </v-col>
-          </v-row>
-        </template>
-      </card>
-    </v-col>
-  </v-row>
-</template>
-
 <script setup lang="ts">
 import { type Ref } from 'vue';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
@@ -215,6 +121,100 @@ const showDeleteConfirmation = () => {
   );
 };
 </script>
+
+<template>
+  <v-row class="premium-settings">
+    <v-col>
+      <card>
+        <template #title>
+          {{ t('premium_settings.title') }}
+        </template>
+        <template #subtitle>
+          <i18n tag="div" path="premium_settings.subtitle">
+            <base-external-link
+              :text="tc('premium_settings.rotki_premium')"
+              :href="premiumURL"
+            />
+          </i18n>
+        </template>
+
+        <revealable-input
+          v-model="apiKey"
+          outlined
+          class="premium-settings__fields__api-key"
+          :disabled="premium && !edit"
+          :error-messages="errorMessages"
+          :label="tc('premium_settings.fields.api_key')"
+          @paste="onApiKeyPaste"
+        />
+        <revealable-input
+          v-model="apiSecret"
+          outlined
+          class="premium-settings__fields__api-secret"
+          prepend-icon="mdi-lock"
+          :disabled="premium && !edit"
+          :label="tc('premium_settings.fields.api_secret')"
+          @paste="onApiSecretPaste"
+        />
+        <div v-if="premium" class="premium-settings__premium-active">
+          <v-icon color="success">mdi-check-circle</v-icon>
+          <div>{{ t('premium_settings.premium_active') }}</div>
+        </div>
+
+        <template #buttons>
+          <v-row align="center">
+            <v-col cols="auto">
+              <v-btn
+                class="premium-settings__button__setup"
+                depressed
+                color="primary"
+                type="submit"
+                @click="setupPremium()"
+              >
+                {{
+                  premium && !edit
+                    ? t('premium_settings.actions.replace')
+                    : t('premium_settings.actions.setup')
+                }}
+              </v-btn>
+            </v-col>
+            <v-col v-if="premium && !edit" cols="auto">
+              <v-btn
+                class="premium-settings__button__delete"
+                depressed
+                outlined
+                color="primary"
+                type="submit"
+                @click="showDeleteConfirmation"
+              >
+                {{ t('premium_settings.actions.delete') }}
+              </v-btn>
+            </v-col>
+            <v-col v-if="edit && premium" cols="auto">
+              <v-btn
+                id="premium-edit-cancel-button"
+                depressed
+                color="primary"
+                @click="cancelEdit()"
+              >
+                {{ t('common.actions.cancel') }}
+              </v-btn>
+            </v-col>
+            <v-col v-if="premium && !edit" cols="auto">
+              <v-switch
+                v-model="sync"
+                class="premium-settings__sync"
+                hide-details
+                :label="t('premium_settings.actions.sync')"
+                @change="onSyncChange()"
+              />
+            </v-col>
+          </v-row>
+        </template>
+      </card>
+    </v-col>
+  </v-row>
+</template>
 
 <style scoped lang="scss">
 .premium-settings {

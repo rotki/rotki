@@ -1,22 +1,3 @@
-<template>
-  <div>
-    <data-table
-      :items="filteredData"
-      :headers="tableHeaders"
-      :loading="loading"
-    >
-      <template #item.actions="{ item }">
-        <row-actions
-          :disabled="loading"
-          :delete-tooltip="tc('eth_address_book.actions.delete.tooltip')"
-          :edit-tooltip="tc('eth_address_book.actions.edit.tooltip')"
-          @delete-click="showDeleteConfirmation(item)"
-          @edit-click="edit(item)"
-        />
-      </template>
-    </data-table>
-  </div>
-</template>
 <script setup lang="ts">
 import { type NotificationPayload, Severity } from '@rotki/common/lib/messages';
 import { type PropType, type Ref } from 'vue';
@@ -131,3 +112,22 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
 
 const { showDeleteConfirmation } = addressBookDeletion(location);
 </script>
+<template>
+  <div>
+    <data-table
+      :items="filteredData"
+      :headers="tableHeaders"
+      :loading="loading"
+    >
+      <template #item.actions="{ item }">
+        <row-actions
+          :disabled="loading"
+          :delete-tooltip="tc('eth_address_book.actions.delete.tooltip')"
+          :edit-tooltip="tc('eth_address_book.actions.edit.tooltip')"
+          @delete-click="showDeleteConfirmation(item)"
+          @edit-click="edit(item)"
+        />
+      </template>
+    </data-table>
+  </div>
+</template>

@@ -1,3 +1,160 @@
+<script setup lang="ts">
+import { type Nullable } from '@rotki/common';
+import { type PropType } from 'vue';
+import ReportMissingAcquisitions from '@/components/profitloss/ReportMissingAcquisitions.vue';
+import ReportMissingPrices from '@/components/profitloss/ReportMissingPrices.vue';
+import { Routes } from '@/router/routes';
+import { useReports } from '@/store/reports';
+import { type Pinned } from '@/store/session/types';
+import { useAreaVisibilityStore } from '@/store/session/visibility';
+import { type EditableMissingPrice } from '@/types/prices';
+import { type SelectedReport } from '@/types/reports';
+import { toSentenceCase } from '@/utils/text';
+
+const props = defineProps({
+  report: {
+    required: true,
+    type: Object as PropType<SelectedReport>
+  },
+  isPinned: { required: false, type: Boolean, default: false }
+});
+
+const emit = defineEmits<{ (e: 'set-dialog', value: boolean): void }>();
+const { t, tc } = useI18n();
+const { report, isPinned } = toRefs(props);
+const router = useRouter();
+const { pinned } = storeToRefs(useAreaVisibilityStore());
+
+const setDialog = (dialog: boolean) => {
+  emit('set-dialog', dialog);
+};
+
+const reportsStore = useReports();
+const { actionableItems } = toRefs(reportsStore);
+
+const actionableItemsLength = computed(() => {
+  let missingAcquisitionsLength = 0;
+  let missingPricesLength = 0;
+  let total = 0;
+
+  const items = get(actionableItems);
+
+  if (items) {
+    missingAcquisitionsLength = items.missingAcquisitions.length;
+    missingPricesLength = items.missingPrices.length;
+    total = missingAcquisitionsLength + missingPricesLength;
+  }
+
+  if (!missingAcquisitionsLength || !missingPricesLength) {
+    set(step, 1);
+  }
+
+  return {
+    missingAcquisitionsLength,
+    missingPricesLength,
+    total
+  };
+});
+
+const setPinned = (pin: Nullable<Pinned>) => {
+  set(pinned, pin);
+};
+
+const pinSection = () => {
+  const pinned: Pinned = {
+    name: 'report-actionable-card',
+    props: {
+      report: get(report),
+      isPinned: true
+    }
+  };
+
+  setPinned(pinned);
+  setDialog(false);
+};
+
+const step = ref<number>(1);
+
+const stepperContents = computed(() => {
+  const contents = [];
+
+  const missingAcquisitionsLength = get(
+    actionableItemsLength
+  ).missingAcquisitionsLength;
+  if (missingAcquisitionsLength > 0) {
+    contents.push({
+      key: 'missingAcquisitions',
+      title: t('profit_loss_report.actionable.missing_acquisitions.title', {
+        total: missingAcquisitionsLength
+      }).toString(),
+      hint: t(
+        'profit_loss_report.actionable.missing_acquisitions.hint'
+      ).toString(),
+      selector: ReportMissingAcquisitions,
+      items: get(actionableItems).missingAcquisitions
+    });
+  }
+
+  const missingPricesLength = get(actionableItemsLength).missingPricesLength;
+  if (missingPricesLength > 0) {
+    contents.push({
+      key: 'missingPrices',
+      title: t('profit_loss_report.actionable.missing_prices.title', {
+        total: missingPricesLength
+      }).toString(),
+      hint: t('profit_loss_report.actionable.missing_prices.hint').toString(),
+      selector: ReportMissingPrices,
+      items: get(actionableItems).missingPrices
+    });
+  }
+
+  return contents;
+});
+
+const totalMissingPrices = ref<number>(0);
+const filledMissingPrices = ref<number>(0);
+const skippedMissingPrices = ref<number>(0);
+const confirmationDialogOpen = ref<boolean>(false);
+
+const submitActionableItems = (missingPrices: EditableMissingPrice[]) => {
+  const total = missingPrices.length;
+  const filled = missingPrices.filter((missingPrice: EditableMissingPrice) => {
+    return !!missingPrice.price;
+  }).length;
+  set(totalMissingPrices, total);
+  set(filledMissingPrices, filled);
+  set(skippedMissingPrices, total - filled);
+
+  set(confirmationDialogOpen, true);
+};
+
+const ignoreIssues = () => {
+  if (get(isPinned)) {
+    setPinned(null);
+  }
+  set(confirmationDialogOpen, false);
+  setDialog(false);
+};
+
+const regenerateReport = async () => {
+  await router.push({
+    path: Routes.PROFIT_LOSS_REPORTS,
+    query: {
+      regenerate: 'true',
+      start: get(report).start.toString(),
+      end: get(report).end.toString()
+    }
+  });
+};
+
+const close = () => {
+  if (get(isPinned)) {
+    setPinned(null);
+  } else {
+    setDialog(false);
+  }
+};
+</script>
 <template>
   <div>
     <v-card elevation="0">
@@ -237,163 +394,6 @@
     </v-dialog>
   </div>
 </template>
-<script setup lang="ts">
-import { type Nullable } from '@rotki/common';
-import { type PropType } from 'vue';
-import ReportMissingAcquisitions from '@/components/profitloss/ReportMissingAcquisitions.vue';
-import ReportMissingPrices from '@/components/profitloss/ReportMissingPrices.vue';
-import { Routes } from '@/router/routes';
-import { useReports } from '@/store/reports';
-import { type Pinned } from '@/store/session/types';
-import { useAreaVisibilityStore } from '@/store/session/visibility';
-import { type EditableMissingPrice } from '@/types/prices';
-import { type SelectedReport } from '@/types/reports';
-import { toSentenceCase } from '@/utils/text';
-
-const props = defineProps({
-  report: {
-    required: true,
-    type: Object as PropType<SelectedReport>
-  },
-  isPinned: { required: false, type: Boolean, default: false }
-});
-
-const emit = defineEmits<{ (e: 'set-dialog', value: boolean): void }>();
-const { t, tc } = useI18n();
-const { report, isPinned } = toRefs(props);
-const router = useRouter();
-const { pinned } = storeToRefs(useAreaVisibilityStore());
-
-const setDialog = (dialog: boolean) => {
-  emit('set-dialog', dialog);
-};
-
-const reportsStore = useReports();
-const { actionableItems } = toRefs(reportsStore);
-
-const actionableItemsLength = computed(() => {
-  let missingAcquisitionsLength = 0;
-  let missingPricesLength = 0;
-  let total = 0;
-
-  const items = get(actionableItems);
-
-  if (items) {
-    missingAcquisitionsLength = items.missingAcquisitions.length;
-    missingPricesLength = items.missingPrices.length;
-    total = missingAcquisitionsLength + missingPricesLength;
-  }
-
-  if (!missingAcquisitionsLength || !missingPricesLength) {
-    set(step, 1);
-  }
-
-  return {
-    missingAcquisitionsLength,
-    missingPricesLength,
-    total
-  };
-});
-
-const setPinned = (pin: Nullable<Pinned>) => {
-  set(pinned, pin);
-};
-
-const pinSection = () => {
-  const pinned: Pinned = {
-    name: 'report-actionable-card',
-    props: {
-      report: get(report),
-      isPinned: true
-    }
-  };
-
-  setPinned(pinned);
-  setDialog(false);
-};
-
-const step = ref<number>(1);
-
-const stepperContents = computed(() => {
-  const contents = [];
-
-  const missingAcquisitionsLength = get(
-    actionableItemsLength
-  ).missingAcquisitionsLength;
-  if (missingAcquisitionsLength > 0) {
-    contents.push({
-      key: 'missingAcquisitions',
-      title: t('profit_loss_report.actionable.missing_acquisitions.title', {
-        total: missingAcquisitionsLength
-      }).toString(),
-      hint: t(
-        'profit_loss_report.actionable.missing_acquisitions.hint'
-      ).toString(),
-      selector: ReportMissingAcquisitions,
-      items: get(actionableItems).missingAcquisitions
-    });
-  }
-
-  const missingPricesLength = get(actionableItemsLength).missingPricesLength;
-  if (missingPricesLength > 0) {
-    contents.push({
-      key: 'missingPrices',
-      title: t('profit_loss_report.actionable.missing_prices.title', {
-        total: missingPricesLength
-      }).toString(),
-      hint: t('profit_loss_report.actionable.missing_prices.hint').toString(),
-      selector: ReportMissingPrices,
-      items: get(actionableItems).missingPrices
-    });
-  }
-
-  return contents;
-});
-
-const totalMissingPrices = ref<number>(0);
-const filledMissingPrices = ref<number>(0);
-const skippedMissingPrices = ref<number>(0);
-const confirmationDialogOpen = ref<boolean>(false);
-
-const submitActionableItems = (missingPrices: EditableMissingPrice[]) => {
-  const total = missingPrices.length;
-  const filled = missingPrices.filter((missingPrice: EditableMissingPrice) => {
-    return !!missingPrice.price;
-  }).length;
-  set(totalMissingPrices, total);
-  set(filledMissingPrices, filled);
-  set(skippedMissingPrices, total - filled);
-
-  set(confirmationDialogOpen, true);
-};
-
-const ignoreIssues = () => {
-  if (get(isPinned)) {
-    setPinned(null);
-  }
-  set(confirmationDialogOpen, false);
-  setDialog(false);
-};
-
-const regenerateReport = async () => {
-  await router.push({
-    path: Routes.PROFIT_LOSS_REPORTS,
-    query: {
-      regenerate: 'true',
-      start: get(report).start.toString(),
-      end: get(report).end.toString()
-    }
-  });
-};
-
-const close = () => {
-  if (get(isPinned)) {
-    setPinned(null);
-  } else {
-    setDialog(false);
-  }
-};
-</script>
 <style module lang="scss">
 .pinned {
   &__toolbar {

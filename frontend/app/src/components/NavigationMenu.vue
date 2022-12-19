@@ -1,77 +1,3 @@
-<template>
-  <div>
-    <v-list
-      nav
-      class="navigation-menu"
-      :class="{ 'navigation-menu--mini': isMini }"
-    >
-      <v-list-item-group>
-        <template v-for="(navItem, i) in navItems">
-          <v-list-item
-            v-if="navItem.type === 'item'"
-            :key="i"
-            :class="`navigation__${navItem.class}`"
-            active-class="navigation-menu__item--active"
-            :to="navItem.route"
-          >
-            <navigation-menu-item
-              :show-tooltips="isMini"
-              :text="navItem.text"
-              :icon="navItem.icon"
-              :image="navItem.image"
-              :icon-component="navItem.component"
-            />
-          </v-list-item>
-          <v-list-group
-            v-else-if="navItem.type === 'group'"
-            :key="i"
-            class="mb-2"
-          >
-            <template #activator>
-              <navigation-menu-item
-                :show-tooltips="isMini"
-                :text="navItem.text"
-                :icon="navItem.icon"
-                :icon-component="navItem.component"
-                :image="navItem.image"
-                :class="`navigation__${navItem.class}`"
-              />
-            </template>
-            <div
-              class="navigation-submenu"
-              :class="{ 'navigation-submenu--mini': isMini }"
-            >
-              <v-list-item
-                v-for="(subNavItem, si) in navItem.items"
-                :key="si"
-                :class="`navigation__${subNavItem.class}`"
-                active-class="navigation-menu__item--active"
-                :to="subNavItem.route"
-              >
-                <template #default="{ active }">
-                  <navigation-menu-item
-                    :show-tooltips="isMini"
-                    :text="subNavItem.text"
-                    :icon="subNavItem.icon"
-                    :image="subNavItem.image"
-                    :icon-component="subNavItem.component"
-                    :active="active"
-                  />
-                </template>
-              </v-list-item>
-            </div>
-          </v-list-group>
-          <v-divider
-            v-else-if="navItem.type === 'divider'"
-            :key="i"
-            class="mb-2"
-          />
-        </template>
-      </v-list-item-group>
-    </v-list>
-  </div>
-</template>
-
 <script setup lang="ts">
 import NavigationMenuItem from '@/components/NavigationMenuItem.vue';
 import { useAppRoutes } from '@/router/routes';
@@ -224,6 +150,80 @@ const navItems: MenuItem[] = [
   }
 ];
 </script>
+
+<template>
+  <div>
+    <v-list
+      nav
+      class="navigation-menu"
+      :class="{ 'navigation-menu--mini': isMini }"
+    >
+      <v-list-item-group>
+        <template v-for="(navItem, i) in navItems">
+          <v-list-item
+            v-if="navItem.type === 'item'"
+            :key="i"
+            :class="`navigation__${navItem.class}`"
+            active-class="navigation-menu__item--active"
+            :to="navItem.route"
+          >
+            <navigation-menu-item
+              :show-tooltips="isMini"
+              :text="navItem.text"
+              :icon="navItem.icon"
+              :image="navItem.image"
+              :icon-component="navItem.component"
+            />
+          </v-list-item>
+          <v-list-group
+            v-else-if="navItem.type === 'group'"
+            :key="i"
+            class="mb-2"
+          >
+            <template #activator>
+              <navigation-menu-item
+                :show-tooltips="isMini"
+                :text="navItem.text"
+                :icon="navItem.icon"
+                :icon-component="navItem.component"
+                :image="navItem.image"
+                :class="`navigation__${navItem.class}`"
+              />
+            </template>
+            <div
+              class="navigation-submenu"
+              :class="{ 'navigation-submenu--mini': isMini }"
+            >
+              <v-list-item
+                v-for="(subNavItem, si) in navItem.items"
+                :key="si"
+                :class="`navigation__${subNavItem.class}`"
+                active-class="navigation-menu__item--active"
+                :to="subNavItem.route"
+              >
+                <template #default="{ active }">
+                  <navigation-menu-item
+                    :show-tooltips="isMini"
+                    :text="subNavItem.text"
+                    :icon="subNavItem.icon"
+                    :image="subNavItem.image"
+                    :icon-component="subNavItem.component"
+                    :active="active"
+                  />
+                </template>
+              </v-list-item>
+            </div>
+          </v-list-group>
+          <v-divider
+            v-else-if="navItem.type === 'divider'"
+            :key="i"
+            class="mb-2"
+          />
+        </template>
+      </v-list-item-group>
+    </v-list>
+  </div>
+</template>
 
 <style scoped lang="scss">
 :deep() {

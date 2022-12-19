@@ -1,3 +1,23 @@
+<script setup lang="ts">
+import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
+import { useTasks } from '@/store/tasks';
+import { useNotificationsStore } from '@/store/notifications';
+
+defineProps({
+  visible: { required: true, type: Boolean }
+});
+
+const emit = defineEmits(['click']);
+const { count } = storeToRefs(useNotificationsStore());
+const click = () => {
+  emit('click');
+};
+
+const { hasRunningTasks } = storeToRefs(useTasks());
+
+const { tc } = useI18n();
+</script>
+
 <template>
   <v-badge
     :value="count"
@@ -26,26 +46,6 @@
     </menu-tooltip-button>
   </v-badge>
 </template>
-
-<script setup lang="ts">
-import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
-import { useTasks } from '@/store/tasks';
-import { useNotificationsStore } from '@/store/notifications';
-
-defineProps({
-  visible: { required: true, type: Boolean }
-});
-
-const emit = defineEmits(['click']);
-const { count } = storeToRefs(useNotificationsStore());
-const click = () => {
-  emit('click');
-};
-
-const { hasRunningTasks } = storeToRefs(useTasks());
-
-const { tc } = useI18n();
-</script>
 
 <style module lang="scss">
 .indicator {

@@ -1,3 +1,76 @@
+<script setup lang="ts">
+import { type AssetBalanceWithPrice, type BigNumber } from '@rotki/common';
+import { type PropType } from 'vue';
+import ExchangeAmountRow from '@/components/accounts/exchanges/ExchangeAmountRow.vue';
+import AssetBalances from '@/components/AssetBalances.vue';
+import AmountDisplay from '@/components/display/AmountDisplay.vue';
+import { Routes } from '@/router/routes';
+import { useExchangeBalancesStore } from '@/store/balances/exchanges';
+import { useTasks } from '@/store/tasks';
+import { type SupportedExchange } from '@/types/exchanges';
+import { TaskType } from '@/types/task-type';
+import { Zero } from '@/utils/bignumbers';
+import { uniqueStrings } from '@/utils/data';
+
+const props = defineProps({
+  exchange: {
+    required: false,
+    type: String as PropType<SupportedExchange>,
+    default: ''
+  }
+});
+
+const { exchange } = toRefs(props);
+const { isTaskRunning } = useTasks();
+const store = useExchangeBalancesStore();
+const { connectedExchanges } = storeToRefs(store);
+
+const selectedExchange = ref<string>('');
+const usedExchanges = computed<SupportedExchange[]>(() => {
+  return get(connectedExchanges)
+    .map(({ location }) => location)
+    .filter(uniqueStrings);
+});
+
+const isExchangeLoading = isTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES);
+
+const router = useRouter();
+const route = useRoute();
+
+const setSelectedExchange = () => {
+  set(selectedExchange, get(route).params.exchange);
+};
+
+onMounted(() => {
+  setSelectedExchange();
+});
+
+watch(route, () => {
+  setSelectedExchange();
+});
+
+const exchangeBalance = (exchange: SupportedExchange): BigNumber => {
+  const balances = get(store.getBalances(exchange));
+  return balances.reduce(
+    (sum, asset: AssetBalanceWithPrice) => sum.plus(asset.usdValue),
+    Zero
+  );
+};
+
+const openExchangeDetails = async () => {
+  await router.push({
+    path: `${Routes.ACCOUNTS_BALANCES_EXCHANGE}/${get(selectedExchange)}`
+  });
+};
+
+const balances = computed(() => {
+  const currentExchange = get(exchange);
+  return get(store.getBalances(currentExchange));
+});
+
+const { t, tc } = useI18n();
+</script>
+
 <template>
   <card class="exchange-balances mt-8" outlined-body>
     <template #title>
@@ -101,79 +174,6 @@
     </v-row>
   </card>
 </template>
-
-<script setup lang="ts">
-import { type AssetBalanceWithPrice, type BigNumber } from '@rotki/common';
-import { type PropType } from 'vue';
-import ExchangeAmountRow from '@/components/accounts/exchanges/ExchangeAmountRow.vue';
-import AssetBalances from '@/components/AssetBalances.vue';
-import AmountDisplay from '@/components/display/AmountDisplay.vue';
-import { Routes } from '@/router/routes';
-import { useExchangeBalancesStore } from '@/store/balances/exchanges';
-import { useTasks } from '@/store/tasks';
-import { type SupportedExchange } from '@/types/exchanges';
-import { TaskType } from '@/types/task-type';
-import { Zero } from '@/utils/bignumbers';
-import { uniqueStrings } from '@/utils/data';
-
-const props = defineProps({
-  exchange: {
-    required: false,
-    type: String as PropType<SupportedExchange>,
-    default: ''
-  }
-});
-
-const { exchange } = toRefs(props);
-const { isTaskRunning } = useTasks();
-const store = useExchangeBalancesStore();
-const { connectedExchanges } = storeToRefs(store);
-
-const selectedExchange = ref<string>('');
-const usedExchanges = computed<SupportedExchange[]>(() => {
-  return get(connectedExchanges)
-    .map(({ location }) => location)
-    .filter(uniqueStrings);
-});
-
-const isExchangeLoading = isTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES);
-
-const router = useRouter();
-const route = useRoute();
-
-const setSelectedExchange = () => {
-  set(selectedExchange, get(route).params.exchange);
-};
-
-onMounted(() => {
-  setSelectedExchange();
-});
-
-watch(route, () => {
-  setSelectedExchange();
-});
-
-const exchangeBalance = (exchange: SupportedExchange): BigNumber => {
-  const balances = get(store.getBalances(exchange));
-  return balances.reduce(
-    (sum, asset: AssetBalanceWithPrice) => sum.plus(asset.usdValue),
-    Zero
-  );
-};
-
-const openExchangeDetails = async () => {
-  await router.push({
-    path: `${Routes.ACCOUNTS_BALANCES_EXCHANGE}/${get(selectedExchange)}`
-  });
-};
-
-const balances = computed(() => {
-  const currentExchange = get(exchange);
-  return get(store.getBalances(currentExchange));
-});
-
-const { t, tc } = useI18n();
-</script>
 
 <style scoped lang="scss">
 :deep() {

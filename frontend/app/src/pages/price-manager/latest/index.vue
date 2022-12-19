@@ -1,54 +1,3 @@
-<template>
-  <v-container>
-    <v-row justify="space-between" align="center" no-gutters>
-      <v-col>
-        <card-title>{{ tc('price_management.latest.title') }}</card-title>
-      </v-col>
-    </v-row>
-    <card class="mt-8">
-      <template #title>{{ tc('price_management.filter_title') }}</template>
-      <v-row>
-        <v-col>
-          <asset-select
-            v-model="assetFilter"
-            outlined
-            :label="tc('price_management.from_asset')"
-            clearable
-            hide-details
-          />
-        </v-col>
-      </v-row>
-    </card>
-    <latest-price-table
-      class="mt-12"
-      :asset-filter="assetFilter"
-      :refreshing="refreshing"
-      @edit="openForm($event)"
-      @refreshed="refreshing = false"
-    >
-      <v-btn absolute fab top right color="primary" @click="openForm()">
-        <v-icon> mdi-plus </v-icon>
-      </v-btn>
-    </latest-price-table>
-    <big-dialog
-      :display="showForm"
-      :title="
-        editMode
-          ? tc('price_management.dialog.edit_title')
-          : tc('price_management.dialog.add_title')
-      "
-      :action-disabled="!valid"
-      @confirm="managePrice(formData, editMode)"
-      @cancel="hideForm()"
-    >
-      <latest-price-form
-        v-model="formData"
-        :edit="editMode"
-        @valid="valid = $event"
-      />
-    </big-dialog>
-  </v-container>
-</template>
 <script setup lang="ts">
 import { omit } from 'lodash';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
@@ -137,3 +86,54 @@ onMounted(async () => {
   }
 });
 </script>
+<template>
+  <v-container>
+    <v-row justify="space-between" align="center" no-gutters>
+      <v-col>
+        <card-title>{{ tc('price_management.latest.title') }}</card-title>
+      </v-col>
+    </v-row>
+    <card class="mt-8">
+      <template #title>{{ tc('price_management.filter_title') }}</template>
+      <v-row>
+        <v-col>
+          <asset-select
+            v-model="assetFilter"
+            outlined
+            :label="tc('price_management.from_asset')"
+            clearable
+            hide-details
+          />
+        </v-col>
+      </v-row>
+    </card>
+    <latest-price-table
+      class="mt-12"
+      :asset-filter="assetFilter"
+      :refreshing="refreshing"
+      @edit="openForm($event)"
+      @refreshed="refreshing = false"
+    >
+      <v-btn absolute fab top right color="primary" @click="openForm()">
+        <v-icon> mdi-plus </v-icon>
+      </v-btn>
+    </latest-price-table>
+    <big-dialog
+      :display="showForm"
+      :title="
+        editMode
+          ? tc('price_management.dialog.edit_title')
+          : tc('price_management.dialog.add_title')
+      "
+      :action-disabled="!valid"
+      @confirm="managePrice(formData, editMode)"
+      @cancel="hideForm()"
+    >
+      <latest-price-form
+        v-model="formData"
+        :edit="editMode"
+        @valid="valid = $event"
+      />
+    </big-dialog>
+  </v-container>
+</template>

@@ -1,32 +1,3 @@
-<template>
-  <div class="timeframe-selector text-center">
-    <v-tooltip v-if="!premium" top>
-      <template #activator="{ on, attrs }">
-        <v-icon
-          class="timeframe-selector__premium"
-          small
-          v-bind="attrs"
-          v-on="on"
-        >
-          mdi-lock
-        </v-icon>
-      </template>
-      <span v-text="t('overall_balances.premium_hint')" />
-    </v-tooltip>
-    <v-chip
-      v-for="(timeframe, i) in visibleTimeframes"
-      :key="i"
-      :class="activeClass(timeframe)"
-      class="ma-2"
-      :disabled="(!premium && !worksWithoutPremium(timeframe)) || disabled"
-      small
-      @click="input(timeframe)"
-    >
-      {{ timeframe }}
-    </v-chip>
-  </div>
-</template>
-
 <script setup lang="ts">
 import {
   TimeFramePersist,
@@ -63,6 +34,35 @@ const activeClass = (timeframePeriod: TimeFrameSetting): string => {
 
 const { t } = useI18n();
 </script>
+
+<template>
+  <div class="timeframe-selector text-center">
+    <v-tooltip v-if="!premium" top>
+      <template #activator="{ on, attrs }">
+        <v-icon
+          class="timeframe-selector__premium"
+          small
+          v-bind="attrs"
+          v-on="on"
+        >
+          mdi-lock
+        </v-icon>
+      </template>
+      <span v-text="t('overall_balances.premium_hint')" />
+    </v-tooltip>
+    <v-chip
+      v-for="(timeframe, i) in visibleTimeframes"
+      :key="i"
+      :class="activeClass(timeframe)"
+      class="ma-2"
+      :disabled="(!premium && !worksWithoutPremium(timeframe)) || disabled"
+      small
+      @click="input(timeframe)"
+    >
+      {{ timeframe }}
+    </v-chip>
+  </div>
+</template>
 
 <style scoped lang="scss">
 .timeframe-selector {

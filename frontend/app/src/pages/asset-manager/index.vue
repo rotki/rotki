@@ -1,7 +1,3 @@
-<template>
-  <tab-navigation :tab-contents="tabs" data-cy="manage-assets-tab" />
-</template>
-
 <script setup lang="ts">
 import { type ComputedRef } from 'vue';
 import TabNavigation from '@/components/helper/TabNavigation.vue';
@@ -15,3 +11,7 @@ const tabs: ComputedRef<TabContent[]> = computed(() => {
   return [Routes.ASSET_MANAGER_MANAGED, Routes.ASSET_MANAGER_CUSTOM];
 });
 </script>
+
+<template>
+  <tab-navigation :tab-contents="tabs" data-cy="manage-assets-tab" />
+</template>

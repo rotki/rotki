@@ -1,3 +1,31 @@
+<script setup lang="ts">
+import NoDataScreen from '@/components/common/NoDataScreen.vue';
+import Overview from '@/components/defi/Overview.vue';
+import ProgressScreen from '@/components/helper/ProgressScreen.vue';
+import RefreshHeader from '@/components/helper/RefreshHeader.vue';
+import { useDefiStore } from '@/store/defi';
+import { Section } from '@/types/status';
+
+const store = useDefiStore();
+const { overview: currentOverview } = storeToRefs(store);
+const section = Section.DEFI_OVERVIEW;
+
+const { tc } = useI18n();
+
+const refresh = async () => {
+  await store.fetchAllDefi(true);
+};
+
+onMounted(async () => {
+  await store.fetchAllDefi(false);
+});
+
+const { shouldShowLoadingScreen, isSectionRefreshing } = useSectionLoading();
+
+const loading = shouldShowLoadingScreen(section);
+const refreshing = isSectionRefreshing(section);
+</script>
+
 <template>
   <div>
     <v-row class="mt-6">
@@ -36,31 +64,3 @@
     </v-row>
   </div>
 </template>
-
-<script setup lang="ts">
-import NoDataScreen from '@/components/common/NoDataScreen.vue';
-import Overview from '@/components/defi/Overview.vue';
-import ProgressScreen from '@/components/helper/ProgressScreen.vue';
-import RefreshHeader from '@/components/helper/RefreshHeader.vue';
-import { useDefiStore } from '@/store/defi';
-import { Section } from '@/types/status';
-
-const store = useDefiStore();
-const { overview: currentOverview } = storeToRefs(store);
-const section = Section.DEFI_OVERVIEW;
-
-const { tc } = useI18n();
-
-const refresh = async () => {
-  await store.fetchAllDefi(true);
-};
-
-onMounted(async () => {
-  await store.fetchAllDefi(false);
-});
-
-const { shouldShowLoadingScreen, isSectionRefreshing } = useSectionLoading();
-
-const loading = shouldShowLoadingScreen(section);
-const refreshing = isSectionRefreshing(section);
-</script>

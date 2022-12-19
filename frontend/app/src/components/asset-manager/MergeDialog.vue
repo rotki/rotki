@@ -1,59 +1,3 @@
-<template>
-  <v-dialog :value="value" max-width="500" persistent @input="input">
-    <card>
-      <template #title>{{ t('merge_dialog.title') }}</template>
-      <template #subtitle>{{ t('merge_dialog.subtitle') }}</template>
-      <template v-if="!done" #hint>{{ t('merge_dialog.hint') }}</template>
-      <template #buttons>
-        <v-spacer />
-        <v-btn depressed @click="input(false)">
-          <span v-if="done">{{ t('common.actions.close') }}</span>
-          <span v-else>
-            {{ t('common.actions.cancel') }}
-          </span>
-        </v-btn>
-        <v-btn
-          v-if="!done"
-          depressed
-          color="primary"
-          :disabled="v$.$invalid || pending"
-          :loading="pending"
-          @click="merge()"
-        >
-          {{ t('merge_dialog.merge') }}
-        </v-btn>
-      </template>
-
-      <div v-if="done">{{ t('merge_dialog.done') }}</div>
-
-      <v-form v-else :value="!v$.$invalid">
-        <v-text-field
-          v-model="source"
-          :label="t('merge_dialog.source.label')"
-          :error-messages="v$.source.$errors.map(e => e.$message)"
-          outlined
-          :disabled="pending"
-          persistent-hint
-          :hint="t('merge_dialog.source_hint')"
-          @focus="clearErrors()"
-        />
-        <v-row align="center" justify="center" class="my-4">
-          <v-col cols="auto">
-            <v-icon>mdi-arrow-down</v-icon>
-          </v-col>
-        </v-row>
-        <asset-select
-          v-model="target"
-          outlined
-          :error-messages="v$.target.$errors.map(e => e.$message)"
-          :label="tc('merge_dialog.target.label')"
-          :disabled="pending"
-        />
-      </v-form>
-    </card>
-  </v-dialog>
-</template>
-
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, requiredUnless } from '@vuelidate/validators';
@@ -139,3 +83,59 @@ const v$ = useVuelidate(
   }
 );
 </script>
+
+<template>
+  <v-dialog :value="value" max-width="500" persistent @input="input">
+    <card>
+      <template #title>{{ t('merge_dialog.title') }}</template>
+      <template #subtitle>{{ t('merge_dialog.subtitle') }}</template>
+      <template v-if="!done" #hint>{{ t('merge_dialog.hint') }}</template>
+      <template #buttons>
+        <v-spacer />
+        <v-btn depressed @click="input(false)">
+          <span v-if="done">{{ t('common.actions.close') }}</span>
+          <span v-else>
+            {{ t('common.actions.cancel') }}
+          </span>
+        </v-btn>
+        <v-btn
+          v-if="!done"
+          depressed
+          color="primary"
+          :disabled="v$.$invalid || pending"
+          :loading="pending"
+          @click="merge()"
+        >
+          {{ t('merge_dialog.merge') }}
+        </v-btn>
+      </template>
+
+      <div v-if="done">{{ t('merge_dialog.done') }}</div>
+
+      <v-form v-else :value="!v$.$invalid">
+        <v-text-field
+          v-model="source"
+          :label="t('merge_dialog.source.label')"
+          :error-messages="v$.source.$errors.map(e => e.$message)"
+          outlined
+          :disabled="pending"
+          persistent-hint
+          :hint="t('merge_dialog.source_hint')"
+          @focus="clearErrors()"
+        />
+        <v-row align="center" justify="center" class="my-4">
+          <v-col cols="auto">
+            <v-icon>mdi-arrow-down</v-icon>
+          </v-col>
+        </v-row>
+        <asset-select
+          v-model="target"
+          outlined
+          :error-messages="v$.target.$errors.map(e => e.$message)"
+          :label="tc('merge_dialog.target.label')"
+          :disabled="pending"
+        />
+      </v-form>
+    </card>
+  </v-dialog>
+</template>

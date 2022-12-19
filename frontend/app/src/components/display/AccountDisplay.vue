@@ -1,29 +1,3 @@
-<template>
-  <v-tooltip top open-delay="400">
-    <template #activator="{ on }">
-      <v-row align="center" no-gutters class="flex-nowrap" v-on="on">
-        <v-col cols="auto">
-          <v-avatar left size="28px">
-            <asset-icon size="24px" :identifier="account.chain" />
-          </v-avatar>
-        </v-col>
-
-        <v-col
-          cols="auto"
-          :class="{ 'blur-content': !shouldShowAmount }"
-          class="text-no-wrap"
-        >
-          <div v-if="ensName">{{ ensName }}</div>
-          <div v-else>({{ truncateAddress(address, 6) }})</div>
-        </v-col>
-      </v-row>
-    </template>
-    <div>
-      {{ account.address }}
-    </div>
-  </v-tooltip>
-</template>
-
 <script setup lang="ts">
 import { type GeneralAccount } from '@rotki/common/lib/account';
 import { type PropType } from 'vue';
@@ -62,6 +36,32 @@ const ensName = computed<string | null>(() => {
   return null;
 });
 </script>
+
+<template>
+  <v-tooltip top open-delay="400">
+    <template #activator="{ on }">
+      <v-row align="center" no-gutters class="flex-nowrap" v-on="on">
+        <v-col cols="auto">
+          <v-avatar left size="28px">
+            <asset-icon size="24px" :identifier="account.chain" />
+          </v-avatar>
+        </v-col>
+
+        <v-col
+          cols="auto"
+          :class="{ 'blur-content': !shouldShowAmount }"
+          class="text-no-wrap"
+        >
+          <div v-if="ensName">{{ ensName }}</div>
+          <div v-else>({{ truncateAddress(address, 6) }})</div>
+        </v-col>
+      </v-row>
+    </template>
+    <div>
+      {{ account.address }}
+    </div>
+  </v-tooltip>
+</template>
 
 <style scoped lang="scss">
 .blur-content {

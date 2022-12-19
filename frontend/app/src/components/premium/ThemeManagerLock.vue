@@ -1,3 +1,9 @@
+<script setup lang="ts">
+import PremiumLock from '@/components/premium/PremiumLock.vue';
+
+const { t } = useI18n();
+</script>
+
 <template>
   <div class="theme-manager">
     <div class="text-h6 mt-4">{{ t('theme_manager_lock.title') }}</div>
@@ -12,9 +18,3 @@
     </v-sheet>
   </div>
 </template>
-
-<script setup lang="ts">
-import PremiumLock from '@/components/premium/PremiumLock.vue';
-
-const { t } = useI18n();
-</script>

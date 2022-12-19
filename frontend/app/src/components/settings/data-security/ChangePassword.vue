@@ -1,55 +1,3 @@
-<template>
-  <card>
-    <template #title>{{ tc('change_password.title') }}</template>
-
-    <v-form ref="form">
-      <v-alert
-        v-if="premiumSync"
-        data-cy="premium-warning"
-        type="warning"
-        prominent
-        outlined
-      >
-        {{ tc('change_password.sync_warning') }}
-      </v-alert>
-      <revealable-input
-        v-model="currentPassword"
-        class="user-security-settings__fields__current-password"
-        :label="tc('change_password.labels.password')"
-        :error-messages="v$.currentPassword.$errors.map(e => e.$message)"
-        outlined
-      />
-      <revealable-input
-        v-model="newPassword"
-        class="user-security-settings__fields__new-password"
-        :label="tc('change_password.labels.new_password')"
-        :error-messages="v$.newPassword.$errors.map(e => e.$message)"
-        outlined
-      />
-      <revealable-input
-        v-model="newPasswordConfirm"
-        class="user-security-settings__fields__new-password-confirm"
-        :label="tc('change_password.labels.confirm_password')"
-        prepend-icon="mdi-repeat"
-        :error-messages="v$.newPasswordConfirm.$errors.map(e => e.$message)"
-        outlined
-      />
-    </v-form>
-
-    <template #buttons>
-      <v-btn
-        depressed
-        class="user-security-settings__buttons__change-password"
-        color="primary"
-        :loading="loading"
-        :disabled="v$.$invalid || loading"
-        @click="change()"
-      >
-        {{ tc('change_password.button') }}
-      </v-btn>
-    </template>
-  </card>
-</template>
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, required, sameAs } from '@vuelidate/validators';
@@ -122,3 +70,55 @@ const change = async () => {
   }
 };
 </script>
+<template>
+  <card>
+    <template #title>{{ tc('change_password.title') }}</template>
+
+    <v-form ref="form">
+      <v-alert
+        v-if="premiumSync"
+        data-cy="premium-warning"
+        type="warning"
+        prominent
+        outlined
+      >
+        {{ tc('change_password.sync_warning') }}
+      </v-alert>
+      <revealable-input
+        v-model="currentPassword"
+        class="user-security-settings__fields__current-password"
+        :label="tc('change_password.labels.password')"
+        :error-messages="v$.currentPassword.$errors.map(e => e.$message)"
+        outlined
+      />
+      <revealable-input
+        v-model="newPassword"
+        class="user-security-settings__fields__new-password"
+        :label="tc('change_password.labels.new_password')"
+        :error-messages="v$.newPassword.$errors.map(e => e.$message)"
+        outlined
+      />
+      <revealable-input
+        v-model="newPasswordConfirm"
+        class="user-security-settings__fields__new-password-confirm"
+        :label="tc('change_password.labels.confirm_password')"
+        prepend-icon="mdi-repeat"
+        :error-messages="v$.newPasswordConfirm.$errors.map(e => e.$message)"
+        outlined
+      />
+    </v-form>
+
+    <template #buttons>
+      <v-btn
+        depressed
+        class="user-security-settings__buttons__change-password"
+        color="primary"
+        :loading="loading"
+        :disabled="v$.$invalid || loading"
+        @click="change()"
+      >
+        {{ tc('change_password.button') }}
+      </v-btn>
+    </template>
+  </card>
+</template>

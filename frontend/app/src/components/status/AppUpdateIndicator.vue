@@ -1,14 +1,3 @@
-<template>
-  <v-tooltip v-if="updateNeeded" bottom>
-    <template #activator="{ on }">
-      <v-btn text icon @click="update()">
-        <v-icon color="error" dark v-on="on"> mdi-arrow-up-bold-circle </v-icon>
-      </v-btn>
-    </template>
-    <span v-text="t('update_indicator.version', { appVersion })" />
-  </v-tooltip>
-</template>
-
 <script setup lang="ts">
 import { useMainStore } from '@/store/main';
 import { useSessionStore } from '@/store/session';
@@ -62,3 +51,14 @@ watch(versionUpdateCheckFrequency, () => setVersionUpdateCheckInterval());
 
 const { t } = useI18n();
 </script>
+
+<template>
+  <v-tooltip v-if="updateNeeded" bottom>
+    <template #activator="{ on }">
+      <v-btn text icon @click="update()">
+        <v-icon color="error" dark v-on="on"> mdi-arrow-up-bold-circle </v-icon>
+      </v-btn>
+    </template>
+    <span v-text="t('update_indicator.version', { appVersion })" />
+  </v-tooltip>
+</template>

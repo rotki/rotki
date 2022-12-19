@@ -1,21 +1,3 @@
-<template>
-  <div>
-    <v-pagination v-if="pages > 1" v-model="page" :length="pages" />
-    <v-row class="mt-2">
-      <v-col
-        v-for="item in visible"
-        :key="identifier(item)"
-        cols="12"
-        md="6"
-        lg="6"
-        xl="4"
-      >
-        <slot name="item" :item="item" />
-      </v-col>
-    </v-row>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { type PropType } from 'vue';
 
@@ -55,3 +37,21 @@ const visible = computed(() => {
 
 watch(items, () => set(page, 1));
 </script>
+
+<template>
+  <div>
+    <v-pagination v-if="pages > 1" v-model="page" :length="pages" />
+    <v-row class="mt-2">
+      <v-col
+        v-for="item in visible"
+        :key="identifier(item)"
+        cols="12"
+        md="6"
+        lg="6"
+        xl="4"
+      >
+        <slot name="item" :item="item" />
+      </v-col>
+    </v-row>
+  </div>
+</template>

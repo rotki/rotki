@@ -1,40 +1,3 @@
-<template>
-  <fragment>
-    <v-btn
-      small
-      rounded
-      block
-      depressed
-      :color="dark ? null : 'grey lighten-3 grey--text text--darken-2'"
-      class="text-decoration-none"
-      @click="openWatcherDialog"
-    >
-      <v-icon x-small left>mdi-bell-outline</v-icon>
-      <span v-if="watchers.length > 0" class="text-caption">
-        {{
-          tc('loan_collateral.watchers.edit', watchers.length, {
-            n: watchers.length
-          })
-        }}
-      </span>
-      <span v-else class="text-caption">
-        {{ tc('loan_collateral.watchers.add') }}
-      </span>
-      <premium-lock v-if="!premium" x-small />
-    </v-btn>
-    <watcher-dialog
-      :display="showWatcherDialog"
-      :title="tc('loan_collateral.watchers.dialog.title')"
-      :message="watcherMessage"
-      :watcher-content-id="vault.identifier"
-      :existing-watchers="watchers"
-      preselect-watcher-type="makervault_collateralization_ratio"
-      :watcher-value-label="tc('loan_collateral.watchers.dialog.label')"
-      @cancel="showWatcherDialog = false"
-    />
-  </fragment>
-</template>
-
 <script setup lang="ts">
 import { type PropType } from 'vue';
 import WatcherDialog from '@/components/dialogs/WatcherDialog.vue';
@@ -82,3 +45,40 @@ const openWatcherDialog = () => {
 
 const { dark } = useTheme();
 </script>
+
+<template>
+  <fragment>
+    <v-btn
+      small
+      rounded
+      block
+      depressed
+      :color="dark ? null : 'grey lighten-3 grey--text text--darken-2'"
+      class="text-decoration-none"
+      @click="openWatcherDialog"
+    >
+      <v-icon x-small left>mdi-bell-outline</v-icon>
+      <span v-if="watchers.length > 0" class="text-caption">
+        {{
+          tc('loan_collateral.watchers.edit', watchers.length, {
+            n: watchers.length
+          })
+        }}
+      </span>
+      <span v-else class="text-caption">
+        {{ tc('loan_collateral.watchers.add') }}
+      </span>
+      <premium-lock v-if="!premium" x-small />
+    </v-btn>
+    <watcher-dialog
+      :display="showWatcherDialog"
+      :title="tc('loan_collateral.watchers.dialog.title')"
+      :message="watcherMessage"
+      :watcher-content-id="vault.identifier"
+      :existing-watchers="watchers"
+      preselect-watcher-type="makervault_collateralization_ratio"
+      :watcher-value-label="tc('loan_collateral.watchers.dialog.label')"
+      @cancel="showWatcherDialog = false"
+    />
+  </fragment>
+</template>

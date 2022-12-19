@@ -1,3 +1,24 @@
+<script setup lang="ts">
+import ConnectionFailureMessage from '@/components/account-management/ConnectionFailureMessage.vue';
+import ConnectionLoading from '@/components/account-management/ConnectionLoading.vue';
+import PremiumReminder from '@/components/account-management/PremiumReminder.vue';
+import BackendSettingsButton from '@/components/helper/OnboardingSettingsButton.vue';
+import PrivacyNotice from '@/components/PrivacyNotice.vue';
+import AboutButton from '@/components/user/AboutButton.vue';
+import AnimationsButton from '@/components/user/AnimationsButton.vue';
+import LoginHeader from '@/components/user/LoginHeader.vue';
+import LoginIcon from '@/components/user/LoginIcon.vue';
+import LoginOverlay from '@/components/user/LoginOverlay.vue';
+import { useMainStore } from '@/store/main';
+
+const css = useCssModule();
+
+const { autolog } = useAutoLogin();
+const { isPackaged } = useInterop();
+const { isPremiumDialogVisible } = usePremiumReminder();
+const { connectionFailure, connected } = storeToRefs(useMainStore());
+</script>
+
 <template>
   <login-overlay>
     <div v-if="!isPremiumDialogVisible" :class="css.wrapper">
@@ -37,27 +58,6 @@
     <premium-reminder v-else />
   </login-overlay>
 </template>
-
-<script setup lang="ts">
-import ConnectionFailureMessage from '@/components/account-management/ConnectionFailureMessage.vue';
-import ConnectionLoading from '@/components/account-management/ConnectionLoading.vue';
-import PremiumReminder from '@/components/account-management/PremiumReminder.vue';
-import BackendSettingsButton from '@/components/helper/OnboardingSettingsButton.vue';
-import PrivacyNotice from '@/components/PrivacyNotice.vue';
-import AboutButton from '@/components/user/AboutButton.vue';
-import AnimationsButton from '@/components/user/AnimationsButton.vue';
-import LoginHeader from '@/components/user/LoginHeader.vue';
-import LoginIcon from '@/components/user/LoginIcon.vue';
-import LoginOverlay from '@/components/user/LoginOverlay.vue';
-import { useMainStore } from '@/store/main';
-
-const css = useCssModule();
-
-const { autolog } = useAutoLogin();
-const { isPackaged } = useInterop();
-const { isPremiumDialogVisible } = usePremiumReminder();
-const { connectionFailure, connected } = storeToRefs(useMainStore());
-</script>
 
 <style module lang="scss">
 .container {

@@ -1,17 +1,3 @@
-<template>
-  <v-app
-    v-if="!isPlayground"
-    id="rotki"
-    :key="adaptiveLanguage"
-    class="app"
-    :class="{ ['app--animations-disabled']: !animationsEnabled }"
-  >
-    <slot />
-    <app-premium-manager />
-  </v-app>
-  <dev-app v-else />
-</template>
-
 <script setup lang="ts">
 import AppPremiumManager from '@/components/app/AppPremiumManager.vue';
 import { useSessionStore } from '@/store/session';
@@ -46,6 +32,20 @@ watch(adaptiveLanguage, language => {
   setLanguage(language);
 });
 </script>
+
+<template>
+  <v-app
+    v-if="!isPlayground"
+    id="rotki"
+    :key="adaptiveLanguage"
+    class="app"
+    :class="{ ['app--animations-disabled']: !animationsEnabled }"
+  >
+    <slot />
+    <app-premium-manager />
+  </v-app>
+  <dev-app v-else />
+</template>
 
 <style scoped lang="scss">
 .app {

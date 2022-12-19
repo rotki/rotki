@@ -1,15 +1,3 @@
-<template>
-  <progress-screen v-if="loading">
-    <template #message>
-      {{ t('transactions.loading') }}
-    </template>
-    {{ t('transactions.loading_subtitle') }}
-  </progress-screen>
-  <div v-else>
-    <transaction-content @fetch="fetchTransactions" />
-  </div>
-</template>
-
 <script setup lang="ts">
 import { useTransactions } from '@/store/history/transactions';
 import { Section } from '@/types/status';
@@ -31,3 +19,15 @@ onBeforeMount(async () => {
   await fetchTransactions();
 });
 </script>
+
+<template>
+  <progress-screen v-if="loading">
+    <template #message>
+      {{ t('transactions.loading') }}
+    </template>
+    {{ t('transactions.loading_subtitle') }}
+  </progress-screen>
+  <div v-else>
+    <transaction-content @fetch="fetchTransactions" />
+  </div>
+</template>

@@ -1,47 +1,3 @@
-<template>
-  <card>
-    <div class="pa-1 pt-2">
-      <v-select
-        v-model="selectedSource"
-        :label="tc('import_data.select_source.title')"
-        outlined
-        :items="sources"
-        item-value="identifier"
-        item-text="name"
-        :hide-details="true"
-      >
-        <template v-for="slotName in ['item', 'selection']" #[slotName]="data">
-          <div v-if="data.item" :key="slotName" class="d-flex align-center">
-            <adaptive-wrapper>
-              <v-img
-                v-if="data.item.logo"
-                :src="data.item.logo"
-                :width="30"
-                :height="30"
-                max-height="30px"
-                max-width="30px"
-                position="center left"
-                contain
-              />
-              <v-icon
-                v-else-if="data.item.icon"
-                color="grey darken-2"
-                size="30"
-              >
-                {{ data.item.icon }}
-              </v-icon>
-            </adaptive-wrapper>
-            <div class="pl-3">{{ data.item.name }}</div>
-          </div>
-        </template>
-      </v-select>
-
-      <div v-if="form" class="mt-8">
-        <component :is="form" />
-      </div>
-    </div>
-  </card>
-</template>
 <script setup lang="ts">
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import BinanceImport from '@/components/import/BinanceImport.vue';
@@ -119,3 +75,47 @@ const form = computed(() => {
     ?.form;
 });
 </script>
+<template>
+  <card>
+    <div class="pa-1 pt-2">
+      <v-select
+        v-model="selectedSource"
+        :label="tc('import_data.select_source.title')"
+        outlined
+        :items="sources"
+        item-value="identifier"
+        item-text="name"
+        :hide-details="true"
+      >
+        <template v-for="slotName in ['item', 'selection']" #[slotName]="data">
+          <div v-if="data.item" :key="slotName" class="d-flex align-center">
+            <adaptive-wrapper>
+              <v-img
+                v-if="data.item.logo"
+                :src="data.item.logo"
+                :width="30"
+                :height="30"
+                max-height="30px"
+                max-width="30px"
+                position="center left"
+                contain
+              />
+              <v-icon
+                v-else-if="data.item.icon"
+                color="grey darken-2"
+                size="30"
+              >
+                {{ data.item.icon }}
+              </v-icon>
+            </adaptive-wrapper>
+            <div class="pl-3">{{ data.item.name }}</div>
+          </div>
+        </template>
+      </v-select>
+
+      <div v-if="form" class="mt-8">
+        <component :is="form" />
+      </div>
+    </div>
+  </card>
+</template>

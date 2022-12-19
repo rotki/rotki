@@ -1,86 +1,3 @@
-<template>
-  <v-card :class="`${blockchain.toLocaleLowerCase()}-account-balances`">
-    <v-card-title>
-      <v-row align="center" no-gutters>
-        <v-col cols="auto">
-          <refresh-button
-            class="account-balances__refresh"
-            :loading="isLoading"
-            :tooltip="tc('account_balances.refresh_tooltip', 0, { blockchain })"
-            @refresh="refreshBlockchainBalances"
-          />
-        </v-col>
-        <v-col class="ps-2">
-          <card-title>{{ title }}</card-title>
-        </v-col>
-      </v-row>
-    </v-card-title>
-    <v-card-text>
-      <v-row class="mb-2">
-        <v-col cols="12" sm="6">
-          <v-tooltip top>
-            <template #activator="{ on, attrs }">
-              <span v-bind="attrs" v-on="on">
-                <v-btn
-                  data-cy="account-balances__delete-button"
-                  color="red"
-                  text
-                  outlined
-                  :disabled="
-                    isLoading ||
-                    operationRunning ||
-                    selectedAddresses.length === 0
-                  "
-                  @click="showConfirmation(selectedAddresses)"
-                >
-                  <v-icon> mdi-delete-outline </v-icon>
-                  <span>{{ tc('common.actions.delete') }}</span>
-                </v-btn>
-              </span>
-            </template>
-            <span>{{ tc('account_balances.delete_tooltip') }}</span>
-          </v-tooltip>
-          <v-tooltip v-if="isEth" top>
-            <template #activator="{ on }">
-              <v-btn
-                class="ml-2"
-                text
-                outlined
-                :loading="detectingTokens"
-                :disabled="detectingTokens || isLoading"
-                v-on="on"
-                @click="redetectAllTokens"
-              >
-                <v-icon class="mr-2">mdi-refresh</v-icon>
-                {{ tc('account_balances.detect_tokens.tooltip.redetect') }}
-              </v-btn>
-            </template>
-            <span>
-              {{ tc('account_balances.detect_tokens.tooltip.redetect_all') }}
-            </span>
-          </v-tooltip>
-        </v-col>
-        <v-col v-if="!isEth2" cols="12" sm="6">
-          <tag-filter v-model="visibleTags" hide-details />
-        </v-col>
-      </v-row>
-
-      <account-balance-table
-        ref="balanceTable"
-        data-cy="blockchain-balances"
-        :loopring="loopring"
-        :blockchain="blockchain"
-        :balances="balances"
-        :visible-tags="visibleTags"
-        :selected="selectedAddresses"
-        @edit-click="editAccount($event)"
-        @delete-xpub="showConfirmation($event)"
-        @addresses-selected="selectedAddresses = $event"
-      />
-    </v-card-text>
-  </v-card>
-</template>
-
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type PropType } from 'vue';
@@ -212,3 +129,86 @@ const showConfirmation = (payload: XpubPayload | string[]) => {
   );
 };
 </script>
+
+<template>
+  <v-card :class="`${blockchain.toLocaleLowerCase()}-account-balances`">
+    <v-card-title>
+      <v-row align="center" no-gutters>
+        <v-col cols="auto">
+          <refresh-button
+            class="account-balances__refresh"
+            :loading="isLoading"
+            :tooltip="tc('account_balances.refresh_tooltip', 0, { blockchain })"
+            @refresh="refreshBlockchainBalances"
+          />
+        </v-col>
+        <v-col class="ps-2">
+          <card-title>{{ title }}</card-title>
+        </v-col>
+      </v-row>
+    </v-card-title>
+    <v-card-text>
+      <v-row class="mb-2">
+        <v-col cols="12" sm="6">
+          <v-tooltip top>
+            <template #activator="{ on, attrs }">
+              <span v-bind="attrs" v-on="on">
+                <v-btn
+                  data-cy="account-balances__delete-button"
+                  color="red"
+                  text
+                  outlined
+                  :disabled="
+                    isLoading ||
+                    operationRunning ||
+                    selectedAddresses.length === 0
+                  "
+                  @click="showConfirmation(selectedAddresses)"
+                >
+                  <v-icon> mdi-delete-outline </v-icon>
+                  <span>{{ tc('common.actions.delete') }}</span>
+                </v-btn>
+              </span>
+            </template>
+            <span>{{ tc('account_balances.delete_tooltip') }}</span>
+          </v-tooltip>
+          <v-tooltip v-if="isEth" top>
+            <template #activator="{ on }">
+              <v-btn
+                class="ml-2"
+                text
+                outlined
+                :loading="detectingTokens"
+                :disabled="detectingTokens || isLoading"
+                v-on="on"
+                @click="redetectAllTokens"
+              >
+                <v-icon class="mr-2">mdi-refresh</v-icon>
+                {{ tc('account_balances.detect_tokens.tooltip.redetect') }}
+              </v-btn>
+            </template>
+            <span>
+              {{ tc('account_balances.detect_tokens.tooltip.redetect_all') }}
+            </span>
+          </v-tooltip>
+        </v-col>
+        <v-col v-if="!isEth2" cols="12" sm="6">
+          <tag-filter v-model="visibleTags" hide-details />
+        </v-col>
+      </v-row>
+
+      <account-balance-table
+        ref="balanceTable"
+        data-cy="blockchain-balances"
+        :loopring="loopring"
+        :blockchain="blockchain"
+        :balances="balances"
+        :visible-tags="visibleTags"
+        :selected="selectedAddresses"
+        @edit-click="editAccount($event)"
+        @delete-xpub="showConfirmation($event)"
+        @addresses-selected="selectedAddresses = $event"
+      />
+    </v-card-text>
+  </v-card>
+</template>

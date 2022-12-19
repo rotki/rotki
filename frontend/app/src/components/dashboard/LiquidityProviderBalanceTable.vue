@@ -1,102 +1,3 @@
-<template>
-  <dashboard-expandable-table v-if="balances.length > 0 || loading">
-    <template #title>
-      <refresh-button
-        :loading="loading"
-        :tooltip="tc('dashboard.liquidity_position.refresh_tooltip')"
-        @refresh="fetch(true)"
-      />
-      {{ tc('dashboard.liquidity_position.title') }}
-      <v-btn :to="route" icon class="ml-2">
-        <v-icon>mdi-chevron-right</v-icon>
-      </v-btn>
-    </template>
-    <template #details>
-      <v-menu
-        id="nft_balance_table__column-filter"
-        transition="slide-y-transition"
-        max-width="250px"
-        offset-y
-      >
-        <template #activator="{ on }">
-          <menu-tooltip-button
-            :tooltip="tc('dashboard_asset_table.select_visible_columns')"
-            class-name="ml-4 nft_balance_table__column-filter__button"
-            :on-menu="on"
-          >
-            <v-icon>mdi-dots-vertical</v-icon>
-          </menu-tooltip-button>
-        </template>
-        <visible-columns-selector
-          :group="LIQUIDITY_POSITION"
-          :group-label="tc('dashboard.liquidity_position.title')"
-        />
-      </v-menu>
-    </template>
-    <template #shortDetails>
-      <amount-display
-        :value="totalInUsd"
-        show-currency="symbol"
-        fiat-currency="USD"
-      />
-    </template>
-    <data-table
-      :headers="tableHeaders"
-      :items="balances"
-      sort-by="userBalance.usdValue"
-      :loading="loading"
-      item-key="id"
-      show-expand
-      :expanded="expanded"
-    >
-      <template #item.name="{ item }">
-        <div v-if="item.type === 'nft'">
-          <nft-details
-            :identifier="item.asset"
-            :styled="{ margin: '1px 4px' }"
-          />
-        </div>
-
-        <div v-else class="d-flex align-center py-4">
-          <lp-pool-icon :type="item.lpType" :assets="getAssets(item.assets)" />
-          <div class="pl-4 font-weight-medium">
-            {{ getPoolName(item.lpType, getAssets(item.assets)) }}
-          </div>
-        </div>
-      </template>
-      <template #item.usdValue="{ item }">
-        <amount-display :value="item.usdValue" fiat-currency="USD" />
-      </template>
-      <template #item.percentageOfTotalNetValue="{ item }">
-        <percentage-display :value="percentageOfTotalNetValue(item.usdValue)" />
-      </template>
-      <template #item.percentageOfTotalCurrentGroup="{ item }">
-        <percentage-display :value="percentageOfCurrentGroup(item.usdValue)" />
-      </template>
-      <template #expanded-item="{ headers, item }">
-        <liquidity-provider-balance-details
-          :span="headers.length"
-          :assets="item.assets"
-          :premium-only="item.premiumOnly"
-        />
-      </template>
-      <template #body.append="{ isMobile }">
-        <row-append
-          label-colspan="1"
-          :label="tc('common.total')"
-          :right-patch-colspan="tableHeaders.length - 2"
-          :is-mobile="isMobile"
-        >
-          <amount-display
-            :value="totalInUsd"
-            show-currency="symbol"
-            fiat-currency="USD"
-          />
-        </row-append>
-      </template>
-    </data-table>
-  </dashboard-expandable-table>
-</template>
 <script setup lang="ts">
 import { type BigNumber } from '@rotki/common';
 import {
@@ -288,3 +189,102 @@ const getAssets = (assets: XswapAsset[]) => {
   return assets.map(({ asset }) => asset);
 };
 </script>
+<template>
+  <dashboard-expandable-table v-if="balances.length > 0 || loading">
+    <template #title>
+      <refresh-button
+        :loading="loading"
+        :tooltip="tc('dashboard.liquidity_position.refresh_tooltip')"
+        @refresh="fetch(true)"
+      />
+      {{ tc('dashboard.liquidity_position.title') }}
+      <v-btn :to="route" icon class="ml-2">
+        <v-icon>mdi-chevron-right</v-icon>
+      </v-btn>
+    </template>
+    <template #details>
+      <v-menu
+        id="nft_balance_table__column-filter"
+        transition="slide-y-transition"
+        max-width="250px"
+        offset-y
+      >
+        <template #activator="{ on }">
+          <menu-tooltip-button
+            :tooltip="tc('dashboard_asset_table.select_visible_columns')"
+            class-name="ml-4 nft_balance_table__column-filter__button"
+            :on-menu="on"
+          >
+            <v-icon>mdi-dots-vertical</v-icon>
+          </menu-tooltip-button>
+        </template>
+        <visible-columns-selector
+          :group="LIQUIDITY_POSITION"
+          :group-label="tc('dashboard.liquidity_position.title')"
+        />
+      </v-menu>
+    </template>
+    <template #shortDetails>
+      <amount-display
+        :value="totalInUsd"
+        show-currency="symbol"
+        fiat-currency="USD"
+      />
+    </template>
+    <data-table
+      :headers="tableHeaders"
+      :items="balances"
+      sort-by="userBalance.usdValue"
+      :loading="loading"
+      item-key="id"
+      show-expand
+      :expanded="expanded"
+    >
+      <template #item.name="{ item }">
+        <div v-if="item.type === 'nft'">
+          <nft-details
+            :identifier="item.asset"
+            :styled="{ margin: '1px 4px' }"
+          />
+        </div>
+
+        <div v-else class="d-flex align-center py-4">
+          <lp-pool-icon :type="item.lpType" :assets="getAssets(item.assets)" />
+          <div class="pl-4 font-weight-medium">
+            {{ getPoolName(item.lpType, getAssets(item.assets)) }}
+          </div>
+        </div>
+      </template>
+      <template #item.usdValue="{ item }">
+        <amount-display :value="item.usdValue" fiat-currency="USD" />
+      </template>
+      <template #item.percentageOfTotalNetValue="{ item }">
+        <percentage-display :value="percentageOfTotalNetValue(item.usdValue)" />
+      </template>
+      <template #item.percentageOfTotalCurrentGroup="{ item }">
+        <percentage-display :value="percentageOfCurrentGroup(item.usdValue)" />
+      </template>
+      <template #expanded-item="{ headers, item }">
+        <liquidity-provider-balance-details
+          :span="headers.length"
+          :assets="item.assets"
+          :premium-only="item.premiumOnly"
+        />
+      </template>
+      <template #body.append="{ isMobile }">
+        <row-append
+          label-colspan="1"
+          :label="tc('common.total')"
+          :right-patch-colspan="tableHeaders.length - 2"
+          :is-mobile="isMobile"
+        >
+          <amount-display
+            :value="totalInUsd"
+            show-currency="symbol"
+            fiat-currency="USD"
+          />
+        </row-append>
+      </template>
+    </data-table>
+  </dashboard-expandable-table>
+</template>

@@ -1,101 +1,3 @@
-<template>
-  <fragment>
-    <card v-if="!auto" class="mt-8">
-      <template #title>{{ tc('asset_update.manual.title') }}</template>
-      <template #subtitle>{{ tc('asset_update.manual.subtitle') }}</template>
-      <div v-if="skipped && skipped !== 'undefined'" class="text-body-1">
-        <i18n path="asset_update.manual.skipped">
-          <template #skipped>
-            <badge-display class="ml-2">{{ skipped }}</badge-display>
-          </template>
-        </i18n>
-      </div>
-      <template #buttons>
-        <v-btn depressed color="primary" :loading="checking" @click="check">
-          {{ tc('asset_update.manual.check') }}
-        </v-btn>
-      </template>
-    </card>
-    <v-dialog
-      v-if="showUpdateDialog"
-      v-model="showUpdateDialog"
-      max-width="500"
-      persistent
-    >
-      <card>
-        <template #title>{{ tc('asset_update.title') }}</template>
-        <i18n class="text-body-1" tag="div" path="asset_update.description">
-          <template #remote>
-            <span class="font-weight-medium">{{ remoteVersion }}</span>
-          </template>
-          <template #local>
-            <span class="font-weight-medium">{{ localVersion }}</span>
-          </template>
-        </i18n>
-        <div class="text-body-1 mt-4">
-          {{ tc('asset_update.total_changes', 0, { changes }) }}
-        </div>
-
-        <div v-if="multiple" class="font-weight-medium text-body-1 mt-4">
-          {{ tc('asset_update.advanced') }}
-        </div>
-        <v-row v-if="multiple">
-          <v-col>
-            <v-checkbox
-              v-model="partial"
-              class="asset-update__partial"
-              dense
-              :label="tc('asset_update.partially_update')"
-            />
-          </v-col>
-          <v-col cols="6">
-            <v-text-field
-              v-if="partial"
-              v-model="upToVersion"
-              outlined
-              type="number"
-              dense
-              :min="localVersion"
-              :max="remoteVersion"
-              :label="tc('asset_update.up_to_version')"
-              @change="onChange"
-            />
-          </v-col>
-        </v-row>
-        <template #options>
-          <v-checkbox
-            v-if="auto"
-            v-model="skipUpdate"
-            dense
-            :label="tc('asset_update.skip_notification')"
-          />
-        </template>
-        <template #buttons>
-          <v-row justify="end" no-gutters>
-            <v-col cols="auto">
-              <v-btn text @click="skip">
-                {{ tc('common.actions.skip') }}
-              </v-btn>
-            </v-col>
-            <v-col cols="auto">
-              <v-btn text color="primary" @click="updateAssets()">
-                {{ tc('common.actions.update') }}
-              </v-btn>
-            </v-col>
-          </v-row>
-        </template>
-      </card>
-    </v-dialog>
-    <conflict-dialog
-      v-if="showConflictDialog"
-      v-model="showConflictDialog"
-      :conflicts="conflicts"
-      @cancel="showConflictDialog = false"
-      @resolve="updateAssets($event)"
-    />
-  </fragment>
-</template>
-
 <script setup lang="ts">
 import { type Ref } from 'vue';
 import Fragment from '@/components/helper/Fragment';
@@ -239,6 +141,104 @@ const showDoneConfirmation = () => {
   );
 };
 </script>
+
+<template>
+  <fragment>
+    <card v-if="!auto" class="mt-8">
+      <template #title>{{ tc('asset_update.manual.title') }}</template>
+      <template #subtitle>{{ tc('asset_update.manual.subtitle') }}</template>
+      <div v-if="skipped && skipped !== 'undefined'" class="text-body-1">
+        <i18n path="asset_update.manual.skipped">
+          <template #skipped>
+            <badge-display class="ml-2">{{ skipped }}</badge-display>
+          </template>
+        </i18n>
+      </div>
+      <template #buttons>
+        <v-btn depressed color="primary" :loading="checking" @click="check">
+          {{ tc('asset_update.manual.check') }}
+        </v-btn>
+      </template>
+    </card>
+    <v-dialog
+      v-if="showUpdateDialog"
+      v-model="showUpdateDialog"
+      max-width="500"
+      persistent
+    >
+      <card>
+        <template #title>{{ tc('asset_update.title') }}</template>
+        <i18n class="text-body-1" tag="div" path="asset_update.description">
+          <template #remote>
+            <span class="font-weight-medium">{{ remoteVersion }}</span>
+          </template>
+          <template #local>
+            <span class="font-weight-medium">{{ localVersion }}</span>
+          </template>
+        </i18n>
+        <div class="text-body-1 mt-4">
+          {{ tc('asset_update.total_changes', 0, { changes }) }}
+        </div>
+
+        <div v-if="multiple" class="font-weight-medium text-body-1 mt-4">
+          {{ tc('asset_update.advanced') }}
+        </div>
+        <v-row v-if="multiple">
+          <v-col>
+            <v-checkbox
+              v-model="partial"
+              class="asset-update__partial"
+              dense
+              :label="tc('asset_update.partially_update')"
+            />
+          </v-col>
+          <v-col cols="6">
+            <v-text-field
+              v-if="partial"
+              v-model="upToVersion"
+              outlined
+              type="number"
+              dense
+              :min="localVersion"
+              :max="remoteVersion"
+              :label="tc('asset_update.up_to_version')"
+              @change="onChange"
+            />
+          </v-col>
+        </v-row>
+        <template #options>
+          <v-checkbox
+            v-if="auto"
+            v-model="skipUpdate"
+            dense
+            :label="tc('asset_update.skip_notification')"
+          />
+        </template>
+        <template #buttons>
+          <v-row justify="end" no-gutters>
+            <v-col cols="auto">
+              <v-btn text @click="skip">
+                {{ tc('common.actions.skip') }}
+              </v-btn>
+            </v-col>
+            <v-col cols="auto">
+              <v-btn text color="primary" @click="updateAssets()">
+                {{ tc('common.actions.update') }}
+              </v-btn>
+            </v-col>
+          </v-row>
+        </template>
+      </card>
+    </v-dialog>
+    <conflict-dialog
+      v-if="showConflictDialog"
+      v-model="showConflictDialog"
+      :conflicts="conflicts"
+      @cancel="showConflictDialog = false"
+      @resolve="updateAssets($event)"
+    />
+  </fragment>
+</template>
 
 <style scoped lang="scss">
 .asset-update {

@@ -1,3 +1,21 @@
+<script setup lang="ts">
+import { useAccountingSettingsStore } from '@/store/settings/accounting';
+
+const calculatePastCostBasis = ref(false);
+const { calculatePastCostBasis: enabled } = storeToRefs(
+  useAccountingSettingsStore()
+);
+const { tc } = useI18n();
+const switchSuccessMessage = (enabled: boolean) =>
+  enabled
+    ? tc('account_settings.messages.cost_basis.enabled')
+    : tc('account_settings.messages.cost_basis.disabled');
+
+onMounted(() => {
+  set(calculatePastCostBasis, get(enabled));
+});
+</script>
+
 <template>
   <settings-option
     #default="{ error, success, update }"
@@ -16,21 +34,3 @@
     />
   </settings-option>
 </template>
-
-<script setup lang="ts">
-import { useAccountingSettingsStore } from '@/store/settings/accounting';
-
-const calculatePastCostBasis = ref(false);
-const { calculatePastCostBasis: enabled } = storeToRefs(
-  useAccountingSettingsStore()
-);
-const { tc } = useI18n();
-const switchSuccessMessage = (enabled: boolean) =>
-  enabled
-    ? tc('account_settings.messages.cost_basis.enabled')
-    : tc('account_settings.messages.cost_basis.disabled');
-
-onMounted(() => {
-  set(calculatePastCostBasis, get(enabled));
-});
-</script>

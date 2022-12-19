@@ -1,95 +1,3 @@
-<template>
-  <div :class="$style.wrapper">
-    <div :class="$style.canvas">
-      <canvas
-        :id="chartId"
-        @mousedown="canvasMouseDown"
-        @mouseup="canvasMouseUp"
-        @dblclick.stop="resetZoom"
-      />
-      <graph-tooltip-wrapper :tooltip-option="tooltipDisplayOption">
-        <template #content>
-          <div>
-            <div class="font-weight-bold text-center">
-              <amount-display
-                force-currency
-                show-currency="symbol"
-                :value="tooltipContent.value"
-                :fiat-currency="currencySymbol"
-              />
-            </div>
-            <div class="rotki-grey--text text-center">
-              {{ tooltipContent.time }}
-            </div>
-          </div>
-        </template>
-      </graph-tooltip-wrapper>
-    </div>
-
-    <div
-      v-if="showGraphRangeSelector"
-      ref="rangeRef"
-      :class="$style.range"
-      @mousemove="rangeButtonMouseMove($event)"
-      @dblclick="resetZoom"
-    >
-      <canvas :id="rangeId" />
-
-      <div
-        :class="{
-          [$style['range__marker']]: true,
-          [$style['range__marker--dark']]: dark
-        }"
-        :style="rangeMarkerStyle"
-        @mousedown="rangeButtonMouseDown('both', $event)"
-      >
-        <div
-          :class="{
-            [$style['range__marker__limit']]: true,
-            [$style['range__marker__limit--start']]: true
-          }"
-        >
-          <v-btn
-            :color="dark ? 'black' : 'white'"
-            :ripple="false"
-            :class="$style['range__marker__limit__button']"
-            elevation="1"
-            @mousedown.stop="rangeButtonMouseDown('start', $event)"
-          >
-            <v-icon :class="$style['range__marker__limit__button__icon']">
-              mdi-equal
-            </v-icon>
-          </v-btn>
-        </div>
-        <div
-          :class="{
-            [$style['range__marker__limit']]: true,
-            [$style['range__marker__limit--end']]: true
-          }"
-        >
-          <v-btn
-            :color="dark ? 'black' : 'white'"
-            :ripple="false"
-            :class="$style['range__marker__limit__button']"
-            elevation="1"
-            @mousedown.stop="rangeButtonMouseDown('end', $event)"
-          >
-            <v-icon :class="$style['range__marker__limit__button__icon']">
-              mdi-equal
-            </v-icon>
-          </v-btn>
-        </div>
-      </div>
-    </div>
-
-    <export-snapshot-dialog
-      v-model="showExportSnapshotDialog"
-      :timestamp="selectedTimestamp"
-      :balance="selectedBalance"
-    />
-  </div>
-</template>
-
 <script setup lang="ts">
 import {
   TimeFramePeriod,
@@ -724,6 +632,98 @@ onBeforeUnmount(() => {
   window.removeEventListener('mouseup', mouseup);
 });
 </script>
+
+<template>
+  <div :class="$style.wrapper">
+    <div :class="$style.canvas">
+      <canvas
+        :id="chartId"
+        @mousedown="canvasMouseDown"
+        @mouseup="canvasMouseUp"
+        @dblclick.stop="resetZoom"
+      />
+      <graph-tooltip-wrapper :tooltip-option="tooltipDisplayOption">
+        <template #content>
+          <div>
+            <div class="font-weight-bold text-center">
+              <amount-display
+                force-currency
+                show-currency="symbol"
+                :value="tooltipContent.value"
+                :fiat-currency="currencySymbol"
+              />
+            </div>
+            <div class="rotki-grey--text text-center">
+              {{ tooltipContent.time }}
+            </div>
+          </div>
+        </template>
+      </graph-tooltip-wrapper>
+    </div>
+
+    <div
+      v-if="showGraphRangeSelector"
+      ref="rangeRef"
+      :class="$style.range"
+      @mousemove="rangeButtonMouseMove($event)"
+      @dblclick="resetZoom"
+    >
+      <canvas :id="rangeId" />
+
+      <div
+        :class="{
+          [$style['range__marker']]: true,
+          [$style['range__marker--dark']]: dark
+        }"
+        :style="rangeMarkerStyle"
+        @mousedown="rangeButtonMouseDown('both', $event)"
+      >
+        <div
+          :class="{
+            [$style['range__marker__limit']]: true,
+            [$style['range__marker__limit--start']]: true
+          }"
+        >
+          <v-btn
+            :color="dark ? 'black' : 'white'"
+            :ripple="false"
+            :class="$style['range__marker__limit__button']"
+            elevation="1"
+            @mousedown.stop="rangeButtonMouseDown('start', $event)"
+          >
+            <v-icon :class="$style['range__marker__limit__button__icon']">
+              mdi-equal
+            </v-icon>
+          </v-btn>
+        </div>
+        <div
+          :class="{
+            [$style['range__marker__limit']]: true,
+            [$style['range__marker__limit--end']]: true
+          }"
+        >
+          <v-btn
+            :color="dark ? 'black' : 'white'"
+            :ripple="false"
+            :class="$style['range__marker__limit__button']"
+            elevation="1"
+            @mousedown.stop="rangeButtonMouseDown('end', $event)"
+          >
+            <v-icon :class="$style['range__marker__limit__button__icon']">
+              mdi-equal
+            </v-icon>
+          </v-btn>
+        </div>
+      </div>
+    </div>
+
+    <export-snapshot-dialog
+      v-model="showExportSnapshotDialog"
+      :timestamp="selectedTimestamp"
+      :balance="selectedBalance"
+    />
+  </div>
+</template>
 
 <style module lang="scss">
 .wrapper {

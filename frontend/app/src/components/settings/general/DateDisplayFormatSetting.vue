@@ -1,3 +1,58 @@
+<script setup lang="ts">
+import useVuelidate from '@vuelidate/core';
+import { helpers, required } from '@vuelidate/validators';
+import DateFormatHelp from '@/components/settings/controls/DateFormatHelp.vue';
+
+import { displayDateFormatter } from '@/data/date_formatter';
+import { Defaults } from '@/data/defaults';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+
+const dateDisplayFormat = ref<string>('');
+const formatHelp = ref<boolean>(false);
+const now = new Date();
+const defaultDateDisplayFormat = Defaults.DEFAULT_DATE_DISPLAY_FORMAT;
+
+const containsValidDirectives = (v: string) =>
+  displayDateFormatter.containsValidDirectives(v);
+
+const { tc } = useI18n();
+
+const rules = {
+  dateDisplayFormat: {
+    required: helpers.withMessage(
+      tc('general_settings.date_display.validation.empty'),
+      required
+    ),
+    containsValidDirectives: helpers.withMessage(
+      tc('general_settings.date_display.validation.invalid'),
+      containsValidDirectives
+    )
+  }
+};
+
+const v$ = useVuelidate(rules, { dateDisplayFormat }, { $autoDirty: true });
+const { callIfValid } = useValidation(v$);
+
+const { dateDisplayFormat: format } = storeToRefs(useGeneralSettingsStore());
+
+const dateDisplayFormatExample = computed<string>(() => {
+  return displayDateFormatter.format(now, get(dateDisplayFormat));
+});
+
+const resetDateDisplayFormat = () => {
+  set(dateDisplayFormat, get(format));
+};
+
+const successMessage = (dateFormat: string) =>
+  tc('general_settings.validation.date_display_format.success', 0, {
+    dateFormat
+  });
+
+onMounted(() => {
+  resetDateDisplayFormat();
+});
+</script>
+
 <template>
   <div>
     <date-format-help v-model="formatHelp" />
@@ -53,58 +108,3 @@
     </settings-option>
   </div>
 </template>
-
-<script setup lang="ts">
-import useVuelidate from '@vuelidate/core';
-import { helpers, required } from '@vuelidate/validators';
-import DateFormatHelp from '@/components/settings/controls/DateFormatHelp.vue';
-
-import { displayDateFormatter } from '@/data/date_formatter';
-import { Defaults } from '@/data/defaults';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-
-const dateDisplayFormat = ref<string>('');
-const formatHelp = ref<boolean>(false);
-const now = new Date();
-const defaultDateDisplayFormat = Defaults.DEFAULT_DATE_DISPLAY_FORMAT;
-
-const containsValidDirectives = (v: string) =>
-  displayDateFormatter.containsValidDirectives(v);
-
-const { tc } = useI18n();
-
-const rules = {
-  dateDisplayFormat: {
-    required: helpers.withMessage(
-      tc('general_settings.date_display.validation.empty'),
-      required
-    ),
-    containsValidDirectives: helpers.withMessage(
-      tc('general_settings.date_display.validation.invalid'),
-      containsValidDirectives
-    )
-  }
-};
-
-const v$ = useVuelidate(rules, { dateDisplayFormat }, { $autoDirty: true });
-const { callIfValid } = useValidation(v$);
-
-const { dateDisplayFormat: format } = storeToRefs(useGeneralSettingsStore());
-
-const dateDisplayFormatExample = computed<string>(() => {
-  return displayDateFormatter.format(now, get(dateDisplayFormat));
-});
-
-const resetDateDisplayFormat = () => {
-  set(dateDisplayFormat, get(format));
-};
-
-const successMessage = (dateFormat: string) =>
-  tc('general_settings.validation.date_display_format.success', 0, {
-    dateFormat
-  });
-
-onMounted(() => {
-  resetDateDisplayFormat();
-});
-</script>

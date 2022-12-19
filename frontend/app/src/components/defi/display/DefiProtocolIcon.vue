@@ -1,37 +1,3 @@
-<template>
-  <div
-    class="d-flex flex-row align-center"
-    :class="mode === 'icon' ? 'justify-center' : null"
-  >
-    <v-tooltip top :disabled="mode !== 'icon'" open-delay="300ms">
-      <template #activator="{ on, attrs }">
-        <v-img
-          v-if="mode === 'icon' || mode === 'both'"
-          contain
-          v-bind="attrs"
-          max-width="32px"
-          max-height="32px"
-          :class="{
-            'mr-2': mode !== 'icon',
-            [$style.icon]: true
-          }"
-          :src="`./assets/images/defi/${icon}.svg`"
-          v-on="on"
-        />
-        <span
-          v-if="mode === 'label' || mode === 'both'"
-          class="text--secondary"
-          :class="$style.label"
-        >
-          {{ toSentenceCase(name) }}
-        </span>
-      </template>
-      <span>
-        {{ toSentenceCase(name) }}
-      </span>
-    </v-tooltip>
-  </div>
-</template>
 <script setup lang="ts">
 import { DefiProtocol } from '@rotki/common/lib/blockchain';
 import { type PropType } from 'vue';
@@ -72,6 +38,40 @@ const name = computed(({ protocol }) => {
   return protocol;
 });
 </script>
+<template>
+  <div
+    class="d-flex flex-row align-center"
+    :class="mode === 'icon' ? 'justify-center' : null"
+  >
+    <v-tooltip top :disabled="mode !== 'icon'" open-delay="300ms">
+      <template #activator="{ on, attrs }">
+        <v-img
+          v-if="mode === 'icon' || mode === 'both'"
+          contain
+          v-bind="attrs"
+          max-width="32px"
+          max-height="32px"
+          :class="{
+            'mr-2': mode !== 'icon',
+            [$style.icon]: true
+          }"
+          :src="`./assets/images/defi/${icon}.svg`"
+          v-on="on"
+        />
+        <span
+          v-if="mode === 'label' || mode === 'both'"
+          class="text--secondary"
+          :class="$style.label"
+        >
+          {{ toSentenceCase(name) }}
+        </span>
+      </template>
+      <span>
+        {{ toSentenceCase(name) }}
+      </span>
+    </v-tooltip>
+  </div>
+</template>
 
 <style lang="scss" module>
 .icon {

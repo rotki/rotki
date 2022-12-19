@@ -1,3 +1,17 @@
+<script setup lang="ts">
+import { api } from '@/services/rotkehlchen-api';
+import { useMainStore } from '@/store/main';
+
+const { connect } = useMainStore();
+const interop = useInterop();
+
+const defaultBackend = api.defaultBackend;
+const retry = () => connect(api.serverUrl);
+const toDefault = () => connect();
+const terminate = () => interop.closeApp();
+
+const { t } = useI18n();
+</script>
 <template>
   <div class="pa-4">
     <div class="text-h6">{{ t('connection_failure.title') }}</div>
@@ -18,17 +32,3 @@
     </div>
   </div>
 </template>
-<script setup lang="ts">
-import { api } from '@/services/rotkehlchen-api';
-import { useMainStore } from '@/store/main';
-
-const { connect } = useMainStore();
-const interop = useInterop();
-
-const defaultBackend = api.defaultBackend;
-const retry = () => connect(api.serverUrl);
-const toDefault = () => connect();
-const terminate = () => interop.closeApp();
-
-const { t } = useI18n();
-</script>

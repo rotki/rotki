@@ -1,3 +1,16 @@
+<script setup lang="ts">
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+
+const zeroBased = ref<boolean>(false);
+const { graphZeroBased: enabled } = storeToRefs(useFrontendSettingsStore());
+
+onMounted(() => {
+  set(zeroBased, get(enabled));
+});
+
+const { t } = useI18n();
+</script>
+
 <template>
   <settings-option
     #default="{ error, success, update }"
@@ -16,16 +29,3 @@
     />
   </settings-option>
 </template>
-
-<script setup lang="ts">
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-
-const zeroBased = ref<boolean>(false);
-const { graphZeroBased: enabled } = storeToRefs(useFrontendSettingsStore());
-
-onMounted(() => {
-  set(zeroBased, get(enabled));
-});
-
-const { t } = useI18n();
-</script>

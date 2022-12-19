@@ -1,21 +1,3 @@
-<template>
-  <v-icon v-if="customAsset" :size="size" color="grey">
-    mdi-pencil-circle-outline
-  </v-icon>
-  <span
-    v-else
-    :style="wrapperStyle"
-    class="d-flex align-center justify-center generated-icon"
-    :class="currency ? ' font-weight-medium' : 'font-weight-bold'"
-  >
-    <span class="d-flex align-center justify-center" :style="circle">
-      <span :style="textStyle">
-        {{ text }}
-      </span>
-    </span>
-  </span>
-</template>
-
 <script setup lang="ts">
 import { invertColor } from '@/utils/color';
 
@@ -85,6 +67,24 @@ const textColor = computed<string>(() => {
   return `#${invertColor(get(backgroundColor), true)}`;
 });
 </script>
+
+<template>
+  <v-icon v-if="customAsset" :size="size" color="grey">
+    mdi-pencil-circle-outline
+  </v-icon>
+  <span
+    v-else
+    :style="wrapperStyle"
+    class="d-flex align-center justify-center generated-icon"
+    :class="currency ? ' font-weight-medium' : 'font-weight-bold'"
+  >
+    <span class="d-flex align-center justify-center" :style="circle">
+      <span :style="textStyle">
+        {{ text }}
+      </span>
+    </span>
+  </span>
+</template>
 <style scoped lang="scss">
 .generated-icon {
   border: 1px solid black;

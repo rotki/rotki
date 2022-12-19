@@ -1,127 +1,3 @@
-<template>
-  <card outlined-body class="mt-8">
-    <template #title> {{ tc('ethereum_rpc_node_manager.title') }} </template>
-    <v-list max-height="300px" :class="$style.list" three-line class="py-0">
-      <template v-for="(item, index) in nodes">
-        <v-divider v-if="index !== 0" :key="index" />
-        <v-list-item :key="item.name" data-cy="ethereum-node" class="px-2">
-          <div class="mr-2 pa-4 text-center d-flex flex-column align-center">
-            <div>
-              <v-tooltip v-if="!item.owned" top open-delay="400">
-                <template #activator="{ on, attrs }">
-                  <v-icon v-bind="attrs" v-on="on"> mdi-earth </v-icon>
-                </template>
-                <span>{{ tc('ethereum_rpc_node_manager.public_node') }}</span>
-              </v-tooltip>
-              <v-tooltip v-else>
-                <template #activator="{ on, attrs }">
-                  <v-icon v-bind="attrs" v-on="on">mdi-account-network</v-icon>
-                </template>
-                <span>{{ tc('ethereum_rpc_node_manager.private_node') }}</span>
-              </v-tooltip>
-            </div>
-
-            <div class="mt-2">
-              <v-tooltip v-if="isNodeConnected(item)" top open-delay="400">
-                <template #activator="{ on, attrs }">
-                  <v-icon v-bind="attrs" small color="green" v-on="on">
-                    mdi-wifi
-                  </v-icon>
-                </template>
-                <span>
-                  {{ tc('ethereum_rpc_node_manager.connected.true') }}
-                </span>
-              </v-tooltip>
-              <v-tooltip v-else top open-delay="400">
-                <template #activator="{ on, attrs }">
-                  <v-icon v-bind="attrs" small color="red" v-on="on">
-                    mdi-wifi-off
-                  </v-icon>
-                </template>
-                <span>
-                  {{ tc('ethereum_rpc_node_manager.connected.false') }}
-                </span>
-              </v-tooltip>
-            </div>
-          </div>
-
-          <v-list-item-content>
-            <v-list-item-title class="font-weight-medium">
-              {{ item.name }}
-            </v-list-item-title>
-            <v-list-item-subtitle>
-              <div v-if="!isEtherscan(item)">
-                {{ item.endpoint }}
-              </div>
-              <div v-else>{{ tc('ethereum_rpc_node_manager.etherscan') }}</div>
-              <div class="mt-1" :class="$style.weight">
-                <span v-if="!item.owned">
-                  {{
-                    tc('ethereum_rpc_node_manager.weight', 0, {
-                      weight: item.weight
-                    })
-                  }}
-                </span>
-                <span v-else>
-                  {{ tc('ethereum_rpc_node_manager.private_node_hint') }}
-                </span>
-              </div>
-            </v-list-item-subtitle>
-          </v-list-item-content>
-          <v-switch
-            value=""
-            :input-value="item.active"
-            :disabled="isEtherscan(item)"
-            @change="onActiveChange($event, item)"
-          />
-          <v-list-item-action :class="$style.centered">
-            <v-row align="center" justify="center">
-              <v-col>
-                <row-action
-                  :delete-tooltip="
-                    tc('ethereum_rpc_node_manager.delete_tooltip')
-                  "
-                  :delete-disabled="isEtherscan(item)"
-                  :edit-tooltip="tc('ethereum_rpc_node_manager.edit_tooltip')"
-                  @edit-click="edit(item)"
-                  @delete-click="showDeleteConfirmation(item)"
-                />
-              </v-col>
-            </v-row>
-          </v-list-item-action>
-        </v-list-item>
-      </template>
-    </v-list>
-    <template #buttons>
-      <v-btn
-        depressed
-        color="primary"
-        data-cy="add-node"
-        @click="showForm = true"
-      >
-        {{ tc('ethereum_rpc_node_manager.add_button') }}
-      </v-btn>
-    </template>
-    <big-dialog
-      :display="showForm"
-      :title="tc('ethereum_rpc_node_manager.add_dialog.title')"
-      :primary-action="tc('common.actions.save')"
-      :secondary-action="tc('common.actions.cancel')"
-      :action-disabled="!valid || loading"
-      :loading="loading"
-      @confirm="save()"
-      @cancel="clear()"
-    >
-      <rpc-node-form
-        v-model="selectedNode"
-        :is-etherscan="isEdit && isEtherscan(selectedNode)"
-        :error-messages="errors"
-        @update:valid="updateValid($event)"
-      />
-    </big-dialog>
-  </card>
-</template>
-
 <script setup lang="ts">
 import { omit } from 'lodash';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
@@ -281,6 +157,130 @@ const showDeleteConfirmation = (item: EthereumRpcNode) => {
   );
 };
 </script>
+
+<template>
+  <card outlined-body class="mt-8">
+    <template #title> {{ tc('ethereum_rpc_node_manager.title') }} </template>
+    <v-list max-height="300px" :class="$style.list" three-line class="py-0">
+      <template v-for="(item, index) in nodes">
+        <v-divider v-if="index !== 0" :key="index" />
+        <v-list-item :key="item.name" data-cy="ethereum-node" class="px-2">
+          <div class="mr-2 pa-4 text-center d-flex flex-column align-center">
+            <div>
+              <v-tooltip v-if="!item.owned" top open-delay="400">
+                <template #activator="{ on, attrs }">
+                  <v-icon v-bind="attrs" v-on="on"> mdi-earth </v-icon>
+                </template>
+                <span>{{ tc('ethereum_rpc_node_manager.public_node') }}</span>
+              </v-tooltip>
+              <v-tooltip v-else>
+                <template #activator="{ on, attrs }">
+                  <v-icon v-bind="attrs" v-on="on">mdi-account-network</v-icon>
+                </template>
+                <span>{{ tc('ethereum_rpc_node_manager.private_node') }}</span>
+              </v-tooltip>
+            </div>
+
+            <div class="mt-2">
+              <v-tooltip v-if="isNodeConnected(item)" top open-delay="400">
+                <template #activator="{ on, attrs }">
+                  <v-icon v-bind="attrs" small color="green" v-on="on">
+                    mdi-wifi
+                  </v-icon>
+                </template>
+                <span>
+                  {{ tc('ethereum_rpc_node_manager.connected.true') }}
+                </span>
+              </v-tooltip>
+              <v-tooltip v-else top open-delay="400">
+                <template #activator="{ on, attrs }">
+                  <v-icon v-bind="attrs" small color="red" v-on="on">
+                    mdi-wifi-off
+                  </v-icon>
+                </template>
+                <span>
+                  {{ tc('ethereum_rpc_node_manager.connected.false') }}
+                </span>
+              </v-tooltip>
+            </div>
+          </div>
+
+          <v-list-item-content>
+            <v-list-item-title class="font-weight-medium">
+              {{ item.name }}
+            </v-list-item-title>
+            <v-list-item-subtitle>
+              <div v-if="!isEtherscan(item)">
+                {{ item.endpoint }}
+              </div>
+              <div v-else>{{ tc('ethereum_rpc_node_manager.etherscan') }}</div>
+              <div class="mt-1" :class="$style.weight">
+                <span v-if="!item.owned">
+                  {{
+                    tc('ethereum_rpc_node_manager.weight', 0, {
+                      weight: item.weight
+                    })
+                  }}
+                </span>
+                <span v-else>
+                  {{ tc('ethereum_rpc_node_manager.private_node_hint') }}
+                </span>
+              </div>
+            </v-list-item-subtitle>
+          </v-list-item-content>
+          <v-switch
+            value=""
+            :input-value="item.active"
+            :disabled="isEtherscan(item)"
+            @change="onActiveChange($event, item)"
+          />
+          <v-list-item-action :class="$style.centered">
+            <v-row align="center" justify="center">
+              <v-col>
+                <row-action
+                  :delete-tooltip="
+                    tc('ethereum_rpc_node_manager.delete_tooltip')
+                  "
+                  :delete-disabled="isEtherscan(item)"
+                  :edit-tooltip="tc('ethereum_rpc_node_manager.edit_tooltip')"
+                  @edit-click="edit(item)"
+                  @delete-click="showDeleteConfirmation(item)"
+                />
+              </v-col>
+            </v-row>
+          </v-list-item-action>
+        </v-list-item>
+      </template>
+    </v-list>
+    <template #buttons>
+      <v-btn
+        depressed
+        color="primary"
+        data-cy="add-node"
+        @click="showForm = true"
+      >
+        {{ tc('ethereum_rpc_node_manager.add_button') }}
+      </v-btn>
+    </template>
+    <big-dialog
+      :display="showForm"
+      :title="tc('ethereum_rpc_node_manager.add_dialog.title')"
+      :primary-action="tc('common.actions.save')"
+      :secondary-action="tc('common.actions.cancel')"
+      :action-disabled="!valid || loading"
+      :loading="loading"
+      @confirm="save()"
+      @cancel="clear()"
+    >
+      <rpc-node-form
+        v-model="selectedNode"
+        :is-etherscan="isEdit && isEtherscan(selectedNode)"
+        :error-messages="errors"
+        @update:valid="updateValid($event)"
+      />
+    </big-dialog>
+  </card>
+</template>
 
 <style module lang="scss">
 .list {

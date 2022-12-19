@@ -1,23 +1,3 @@
-<template>
-  <div
-    :class="{
-      [$style.wrapper]: true,
-      [$style.horizontal]: horizontal
-    }"
-  >
-    <div class="font-weight-medium text-truncate">
-      {{ truncateAddress(validator.publicKey, length) }}
-    </div>
-    <div>
-      <span v-if="horizontal" :class="$style.divider"> - </span>
-      <span v-else class="text-caption">
-        {{ t('validator_display.validator_index') }}
-      </span>
-      {{ validator.validatorIndex }}
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { type Eth2ValidatorEntry } from '@rotki/common/lib/staking/eth2';
 import { type PropType } from 'vue';
@@ -40,6 +20,26 @@ const length = computed(() => (get(horizontal) ? 4 : 10));
 
 const { t } = useI18n();
 </script>
+
+<template>
+  <div
+    :class="{
+      [$style.wrapper]: true,
+      [$style.horizontal]: horizontal
+    }"
+  >
+    <div class="font-weight-medium text-truncate">
+      {{ truncateAddress(validator.publicKey, length) }}
+    </div>
+    <div>
+      <span v-if="horizontal" :class="$style.divider"> - </span>
+      <span v-else class="text-caption">
+        {{ t('validator_display.validator_index') }}
+      </span>
+      {{ validator.validatorIndex }}
+    </div>
+  </div>
+</template>
 
 <style lang="scss" module>
 .wrapper {

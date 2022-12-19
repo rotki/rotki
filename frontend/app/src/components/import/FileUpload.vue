@@ -1,100 +1,3 @@
-<template>
-  <v-row>
-    <v-col>
-      <div
-        class="file-upload__drop"
-        :class="active ? 'file-upload__drop--active' : null"
-        @dragover.prevent
-        @drop="onDrop"
-        @dragenter="onEnter"
-        @dragleave="onLeave"
-      >
-        <div
-          v-if="error"
-          class="d-flex flex-column align-center justify-center"
-        >
-          <v-btn icon small class="align-self-end" @click="error = ''">
-            <v-icon>mdi-close</v-icon>
-          </v-btn>
-          <v-icon x-large color="error">mdi-alert-circle</v-icon>
-          <span class="error--text mt-2">{{ error }}</span>
-        </div>
-        <div
-          v-else-if="loading"
-          class="d-flex flex-column align-center justify-center py-2"
-        >
-          <v-progress-circular indeterminate color="primary" />
-
-          <div class="pt-4">
-            {{ tc('file_upload.loading') }}
-          </div>
-        </div>
-        <div
-          v-else-if="!uploaded"
-          class="d-flex flex-column align-center justify-center"
-        >
-          <v-icon x-large color="primary">mdi-upload</v-icon>
-          <input
-            ref="select"
-            type="file"
-            :accept="fileFilter"
-            hidden
-            @change="onSelect"
-          />
-          <div class="mt-2 text-center">
-            <div v-if="file">
-              <i18n
-                path="file_upload.selected_file"
-                class="text-caption text--secondary"
-                tag="div"
-              >
-                <template #name>
-                  <div class="font-weight-bold text-truncate">
-                    {{ file.name }}
-                  </div>
-                </template>
-              </i18n>
-              <div>
-                <v-btn
-                  class="mt-2"
-                  color="primary"
-                  small
-                  text
-                  outlined
-                  @click="clickSelect"
-                >
-                  {{ tc('file_upload.change_file') }}
-                </v-btn>
-              </div>
-            </div>
-            <div v-else>
-              <div class="text-caption text--secondary">
-                {{ tc('file_upload.drop_area') }}
-              </div>
-              <div>
-                <v-btn
-                  class="mt-2"
-                  color="primary"
-                  small
-                  text
-                  outlined
-                  @click="clickSelect"
-                >
-                  {{ tc('file_upload.select_file') }}
-                </v-btn>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div v-else class="d-flex flex-column align-center justify-center">
-          <v-icon x-large color="primary">mdi-check-circle</v-icon>
-          <div class="mt-2" v-text="tc('file_upload.import_complete')" />
-        </div>
-      </div>
-    </v-col>
-  </v-row>
-</template>
-
 <script setup lang="ts">
 import { type PropType } from 'vue';
 import { type ImportSourceType, SOURCES } from '@/types/upload-types';
@@ -231,6 +134,103 @@ watch(errorMessage, message => onError(message));
 
 defineExpose({ removeFile });
 </script>
+
+<template>
+  <v-row>
+    <v-col>
+      <div
+        class="file-upload__drop"
+        :class="active ? 'file-upload__drop--active' : null"
+        @dragover.prevent
+        @drop="onDrop"
+        @dragenter="onEnter"
+        @dragleave="onLeave"
+      >
+        <div
+          v-if="error"
+          class="d-flex flex-column align-center justify-center"
+        >
+          <v-btn icon small class="align-self-end" @click="error = ''">
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+          <v-icon x-large color="error">mdi-alert-circle</v-icon>
+          <span class="error--text mt-2">{{ error }}</span>
+        </div>
+        <div
+          v-else-if="loading"
+          class="d-flex flex-column align-center justify-center py-2"
+        >
+          <v-progress-circular indeterminate color="primary" />
+
+          <div class="pt-4">
+            {{ tc('file_upload.loading') }}
+          </div>
+        </div>
+        <div
+          v-else-if="!uploaded"
+          class="d-flex flex-column align-center justify-center"
+        >
+          <v-icon x-large color="primary">mdi-upload</v-icon>
+          <input
+            ref="select"
+            type="file"
+            :accept="fileFilter"
+            hidden
+            @change="onSelect"
+          />
+          <div class="mt-2 text-center">
+            <div v-if="file">
+              <i18n
+                path="file_upload.selected_file"
+                class="text-caption text--secondary"
+                tag="div"
+              >
+                <template #name>
+                  <div class="font-weight-bold text-truncate">
+                    {{ file.name }}
+                  </div>
+                </template>
+              </i18n>
+              <div>
+                <v-btn
+                  class="mt-2"
+                  color="primary"
+                  small
+                  text
+                  outlined
+                  @click="clickSelect"
+                >
+                  {{ tc('file_upload.change_file') }}
+                </v-btn>
+              </div>
+            </div>
+            <div v-else>
+              <div class="text-caption text--secondary">
+                {{ tc('file_upload.drop_area') }}
+              </div>
+              <div>
+                <v-btn
+                  class="mt-2"
+                  color="primary"
+                  small
+                  text
+                  outlined
+                  @click="clickSelect"
+                >
+                  {{ tc('file_upload.select_file') }}
+                </v-btn>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div v-else class="d-flex flex-column align-center justify-center">
+          <v-icon x-large color="primary">mdi-check-circle</v-icon>
+          <div class="mt-2" v-text="tc('file_upload.import_complete')" />
+        </div>
+      </div>
+    </v-col>
+  </v-row>
+</template>
 
 <style scoped lang="scss">
 .file-upload {

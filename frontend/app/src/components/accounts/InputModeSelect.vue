@@ -1,3 +1,51 @@
+<script setup lang="ts">
+import { Blockchain } from '@rotki/common/lib/blockchain';
+import { type PropType } from 'vue';
+import {
+  type AccountInput,
+  MANUAL_ADD,
+  METAMASK_IMPORT,
+  XPUB_ADD
+} from '@/types/account-input';
+import { isMetaMaskSupported } from '@/utils/metamask';
+
+const props = defineProps({
+  blockchain: {
+    required: true,
+    type: String as PropType<Blockchain>,
+    validator: (value: any) => Object.values(Blockchain).includes(value)
+  },
+  value: { required: true, type: String as PropType<AccountInput> }
+});
+
+const emit = defineEmits(['input']);
+const { blockchain, value } = toRefs(props);
+
+const input = (value: AccountInput) => emit('input', value);
+
+const isEth = computed(() => get(blockchain) === Blockchain.ETH);
+const isBtc = computed(() => get(blockchain) === Blockchain.BTC);
+const isBch = computed(() => get(blockchain) === Blockchain.BCH);
+const isMetaMask = computed(() => get(value) === METAMASK_IMPORT);
+
+const metamaskDownloadLink = 'https://metamask.io/download/';
+
+const copyPageUrl = async () => {
+  const params = new URLSearchParams(window.location.search);
+  params.set('add', 'true');
+  params.set('test', 'false');
+
+  const { origin, pathname } = window.location;
+
+  const pageUrl = `${origin}${pathname}?${params}`;
+  const { copy } = useClipboard({ source: pageUrl });
+  await copy();
+};
+
+const { t } = useI18n();
+const { isPackaged } = useInterop();
+</script>
+
 <template>
   <div class="mb-5">
     <v-btn-toggle
@@ -114,54 +162,6 @@
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-import { Blockchain } from '@rotki/common/lib/blockchain';
-import { type PropType } from 'vue';
-import {
-  type AccountInput,
-  MANUAL_ADD,
-  METAMASK_IMPORT,
-  XPUB_ADD
-} from '@/types/account-input';
-import { isMetaMaskSupported } from '@/utils/metamask';
-
-const props = defineProps({
-  blockchain: {
-    required: true,
-    type: String as PropType<Blockchain>,
-    validator: (value: any) => Object.values(Blockchain).includes(value)
-  },
-  value: { required: true, type: String as PropType<AccountInput> }
-});
-
-const emit = defineEmits(['input']);
-const { blockchain, value } = toRefs(props);
-
-const input = (value: AccountInput) => emit('input', value);
-
-const isEth = computed(() => get(blockchain) === Blockchain.ETH);
-const isBtc = computed(() => get(blockchain) === Blockchain.BTC);
-const isBch = computed(() => get(blockchain) === Blockchain.BCH);
-const isMetaMask = computed(() => get(value) === METAMASK_IMPORT);
-
-const metamaskDownloadLink = 'https://metamask.io/download/';
-
-const copyPageUrl = async () => {
-  const params = new URLSearchParams(window.location.search);
-  params.set('add', 'true');
-  params.set('test', 'false');
-
-  const { origin, pathname } = window.location;
-
-  const pageUrl = `${origin}${pathname}?${params}`;
-  const { copy } = useClipboard({ source: pageUrl });
-  await copy();
-};
-
-const { t } = useI18n();
-const { isPackaged } = useInterop();
-</script>
 <style lang="css" module>
 .link {
   font-weight: bold;

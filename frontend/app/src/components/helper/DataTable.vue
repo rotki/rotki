@@ -1,3 +1,81 @@
+<script setup lang="ts">
+import { type PropType, useListeners } from 'vue';
+import { type DataTableHeader } from 'vuetify';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+
+const props = defineProps({
+  sortDesc: { required: false, type: Boolean, default: true },
+  mustSort: { required: false, type: Boolean, default: true },
+  items: { required: true, type: Array },
+  headers: { required: true, type: Array as PropType<DataTableHeader[]> },
+  expanded: { required: false, type: Array, default: () => [] },
+  itemClass: { required: false, type: [String, Function], default: () => '' },
+  hideDefaultFooter: { required: false, type: Boolean, default: false },
+  container: { required: false, type: HTMLDivElement, default: () => null },
+  loading: { required: false, type: Boolean, default: false },
+  loadingText: { required: false, type: String, default: '' }
+});
+
+const rootAttrs = useAttrs();
+const rootListeners = useListeners();
+const frontendSettingsStore = useFrontendSettingsStore();
+const { itemsPerPage } = storeToRefs(frontendSettingsStore);
+const { container } = toRefs(props);
+
+const tableRef = ref<any>(null);
+const currentPage = ref<number>(1);
+const { footerProps } = useFooterProps();
+
+const onItemsPerPageChange = async (newValue: number) => {
+  if (get(itemsPerPage) === newValue) return;
+
+  await frontendSettingsStore.updateSetting({
+    itemsPerPage: newValue
+  });
+};
+
+const scrollToTop = () => {
+  const { top } = useElementBounding(tableRef);
+  const { top: containerTop } = useElementBounding(container);
+
+  const tableContainer = get(container);
+  const wrapper = tableContainer ?? document.body;
+  const table = get(tableRef);
+
+  if (!table || !wrapper) return;
+
+  const tableTop = get(top);
+  if (get(container)) {
+    wrapper.scrollTop =
+      tableTop + wrapper.scrollTop - get(containerTop) - table.$el.scrollTop;
+  } else {
+    wrapper.scrollTop = tableTop + wrapper.scrollTop - 64;
+  }
+};
+
+const pageSelectorData = (props: {
+  pageStart: number;
+  pageStop: number;
+  itemsLength: number;
+}) => {
+  const itemsLength = props.itemsLength;
+  const perPage = get(itemsPerPage);
+  const totalPage = Math.ceil(itemsLength / perPage);
+
+  return new Array(totalPage).fill(0).map((item, index) => {
+    return {
+      value: index + 1,
+      text: `${index * perPage + 1} - ${Math.min(
+        (index + 1) * perPage,
+        itemsLength
+      )}`
+    };
+  });
+};
+
+const { tc } = useI18n();
+</script>
+
 <template>
   <v-data-table
     ref="tableRef"
@@ -92,84 +170,6 @@
     </template>
   </v-data-table>
 </template>
-
-<script setup lang="ts">
-import { type PropType, useListeners } from 'vue';
-import { type DataTableHeader } from 'vuetify';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-
-const props = defineProps({
-  sortDesc: { required: false, type: Boolean, default: true },
-  mustSort: { required: false, type: Boolean, default: true },
-  items: { required: true, type: Array },
-  headers: { required: true, type: Array as PropType<DataTableHeader[]> },
-  expanded: { required: false, type: Array, default: () => [] },
-  itemClass: { required: false, type: [String, Function], default: () => '' },
-  hideDefaultFooter: { required: false, type: Boolean, default: false },
-  container: { required: false, type: HTMLDivElement, default: () => null },
-  loading: { required: false, type: Boolean, default: false },
-  loadingText: { required: false, type: String, default: '' }
-});
-
-const rootAttrs = useAttrs();
-const rootListeners = useListeners();
-const frontendSettingsStore = useFrontendSettingsStore();
-const { itemsPerPage } = storeToRefs(frontendSettingsStore);
-const { container } = toRefs(props);
-
-const tableRef = ref<any>(null);
-const currentPage = ref<number>(1);
-const { footerProps } = useFooterProps();
-
-const onItemsPerPageChange = async (newValue: number) => {
-  if (get(itemsPerPage) === newValue) return;
-
-  await frontendSettingsStore.updateSetting({
-    itemsPerPage: newValue
-  });
-};
-
-const scrollToTop = () => {
-  const { top } = useElementBounding(tableRef);
-  const { top: containerTop } = useElementBounding(container);
-
-  const tableContainer = get(container);
-  const wrapper = tableContainer ?? document.body;
-  const table = get(tableRef);
-
-  if (!table || !wrapper) return;
-
-  const tableTop = get(top);
-  if (get(container)) {
-    wrapper.scrollTop =
-      tableTop + wrapper.scrollTop - get(containerTop) - table.$el.scrollTop;
-  } else {
-    wrapper.scrollTop = tableTop + wrapper.scrollTop - 64;
-  }
-};
-
-const pageSelectorData = (props: {
-  pageStart: number;
-  pageStop: number;
-  itemsLength: number;
-}) => {
-  const itemsLength = props.itemsLength;
-  const perPage = get(itemsPerPage);
-  const totalPage = Math.ceil(itemsLength / perPage);
-
-  return new Array(totalPage).fill(0).map((item, index) => {
-    return {
-      value: index + 1,
-      text: `${index * perPage + 1} - ${Math.min(
-        (index + 1) * perPage,
-        itemsLength
-      )}`
-    };
-  });
-};
-
-const { tc } = useI18n();
-</script>
 
 <style scoped lang="scss">
 /* stylelint-disable selector-class-pattern,selector-nested-pattern,no-descending-specificity */

@@ -1,3 +1,77 @@
+<script setup lang="ts">
+import { useAggregatedBalancesStore } from '@/store/balances/aggregated';
+import { useExchangeBalancesStore } from '@/store/balances/exchanges';
+import { useManualBalancesStore } from '@/store/balances/manual';
+import { useAccountBalancesStore } from '@/store/blockchain/accountbalances';
+import { useTasks } from '@/store/tasks';
+import { TaskType } from '@/types/task-type';
+
+const PriceRefresh = defineAsyncComponent(
+  () => import('@/components/helper/PriceRefresh.vue')
+);
+const DashboardAssetTable = defineAsyncComponent(
+  () => import('@/components/dashboard/DashboardAssetTable.vue')
+);
+const OverallBalances = defineAsyncComponent(
+  () => import('@/components/dashboard/OverallBalances.vue')
+);
+const SummaryCard = defineAsyncComponent(
+  () => import('@/components/dashboard/SummaryCard.vue')
+);
+const ExchangeBox = defineAsyncComponent(
+  () => import('@/components/dashboard/ExchangeBox.vue')
+);
+const ManualBalanceCardList = defineAsyncComponent(
+  () => import('@/components/dashboard/ManualBalanceCardList.vue')
+);
+const BlockchainBalanceCardList = defineAsyncComponent(
+  () => import('@/components/dashboard/BlockchainBalanceCardList.vue')
+);
+const NftBalanceTable = defineAsyncComponent(
+  () => import('@/components/dashboard/NftBalanceTable.vue')
+);
+const LiquidityProviderBalanceTable = defineAsyncComponent(
+  () => import('@/components/dashboard/LiquidityProviderBalanceTable.vue')
+);
+
+const { t, tc } = useI18n();
+const { isTaskRunning } = useTasks();
+
+const { balances, liabilities } = useAggregatedBalancesStore();
+const { blockchainTotals } = storeToRefs(useAccountBalancesStore());
+const aggregatedBalances = balances();
+const aggregatedLiabilities = liabilities();
+
+const manualBalancesStore = useManualBalancesStore();
+const { fetchManualBalances } = manualBalancesStore;
+const { manualBalanceByLocation } = storeToRefs(manualBalancesStore);
+
+const exchangeStore = useExchangeBalancesStore();
+const { exchanges } = storeToRefs(exchangeStore);
+
+const isQueryingBlockchain = isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
+const isLoopringLoading = isTaskRunning(TaskType.L2_LOOPRING);
+const isBlockchainLoading = computed<boolean>(() => {
+  return get(isQueryingBlockchain) || get(isLoopringLoading);
+});
+
+const isExchangeLoading = isTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES);
+
+const isAllBalancesLoading = isTaskRunning(TaskType.QUERY_BALANCES);
+
+const isManualBalancesLoading = isTaskRunning(TaskType.MANUAL_BALANCES);
+
+const isAnyLoading = computed<boolean>(() => {
+  return (
+    get(isBlockchainLoading) ||
+    get(isExchangeLoading) ||
+    get(isAllBalancesLoading)
+  );
+});
+
+const { refreshBalance } = useRefresh();
+</script>
+
 <template>
   <div class="pb-6">
     <v-container>
@@ -147,77 +221,3 @@
     </v-container>
   </div>
 </template>
-
-<script setup lang="ts">
-import { useAggregatedBalancesStore } from '@/store/balances/aggregated';
-import { useExchangeBalancesStore } from '@/store/balances/exchanges';
-import { useManualBalancesStore } from '@/store/balances/manual';
-import { useAccountBalancesStore } from '@/store/blockchain/accountbalances';
-import { useTasks } from '@/store/tasks';
-import { TaskType } from '@/types/task-type';
-
-const PriceRefresh = defineAsyncComponent(
-  () => import('@/components/helper/PriceRefresh.vue')
-);
-const DashboardAssetTable = defineAsyncComponent(
-  () => import('@/components/dashboard/DashboardAssetTable.vue')
-);
-const OverallBalances = defineAsyncComponent(
-  () => import('@/components/dashboard/OverallBalances.vue')
-);
-const SummaryCard = defineAsyncComponent(
-  () => import('@/components/dashboard/SummaryCard.vue')
-);
-const ExchangeBox = defineAsyncComponent(
-  () => import('@/components/dashboard/ExchangeBox.vue')
-);
-const ManualBalanceCardList = defineAsyncComponent(
-  () => import('@/components/dashboard/ManualBalanceCardList.vue')
-);
-const BlockchainBalanceCardList = defineAsyncComponent(
-  () => import('@/components/dashboard/BlockchainBalanceCardList.vue')
-);
-const NftBalanceTable = defineAsyncComponent(
-  () => import('@/components/dashboard/NftBalanceTable.vue')
-);
-const LiquidityProviderBalanceTable = defineAsyncComponent(
-  () => import('@/components/dashboard/LiquidityProviderBalanceTable.vue')
-);
-
-const { t, tc } = useI18n();
-const { isTaskRunning } = useTasks();
-
-const { balances, liabilities } = useAggregatedBalancesStore();
-const { blockchainTotals } = storeToRefs(useAccountBalancesStore());
-const aggregatedBalances = balances();
-const aggregatedLiabilities = liabilities();
-
-const manualBalancesStore = useManualBalancesStore();
-const { fetchManualBalances } = manualBalancesStore;
-const { manualBalanceByLocation } = storeToRefs(manualBalancesStore);
-
-const exchangeStore = useExchangeBalancesStore();
-const { exchanges } = storeToRefs(exchangeStore);
-
-const isQueryingBlockchain = isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
-const isLoopringLoading = isTaskRunning(TaskType.L2_LOOPRING);
-const isBlockchainLoading = computed<boolean>(() => {
-  return get(isQueryingBlockchain) || get(isLoopringLoading);
-});
-
-const isExchangeLoading = isTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES);
-
-const isAllBalancesLoading = isTaskRunning(TaskType.QUERY_BALANCES);
-
-const isManualBalancesLoading = isTaskRunning(TaskType.MANUAL_BALANCES);
-
-const isAnyLoading = computed<boolean>(() => {
-  return (
-    get(isBlockchainLoading) ||
-    get(isExchangeLoading) ||
-    get(isAllBalancesLoading)
-  );
-});
-
-const { refreshBalance } = useRefresh();
-</script>

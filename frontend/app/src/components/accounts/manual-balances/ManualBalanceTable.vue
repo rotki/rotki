@@ -1,111 +1,3 @@
-<template>
-  <card class="manual-balances" outlined-body :class="$style.table">
-    <template #title>
-      <refresh-button
-        :loading="loading"
-        :tooltip="tc('manual_balances_table.refresh.tooltip')"
-        @refresh="refresh()"
-      />
-      <span>
-        {{ title }}
-      </span>
-    </template>
-    <template #actions>
-      <v-row no-gutters justify="end">
-        <v-col cols="12" md="6" lg="4">
-          <tag-filter v-model="onlyTags" />
-        </v-col>
-      </v-row>
-    </template>
-    <data-table
-      :loading="loading"
-      :headers="headers"
-      :items="visibleBalances"
-      :item-class="getRowClass"
-      class="manual-balances-list"
-      sort-by="usdValue"
-    >
-      <template #item.label="{ item }">
-        <div
-          class="font-weight-medium"
-          data-cy="label"
-          :class="{
-            'pt-0': !item.tags,
-            [$style.label]: true
-          }"
-        >
-          {{ item.label }}
-        </div>
-        <div>
-          <tag-display :tags="item.tags" :small="true" />
-        </div>
-      </template>
-      <template #item.asset="{ item }">
-        <asset-details opens-details :asset="item.asset" />
-      </template>
-      <template #item.usdPrice="{ item }">
-        <amount-display
-          v-if="item.usdPrice && item.usdPrice.gte(0)"
-          show-currency="symbol"
-          :price-asset="item.asset"
-          :price-of-asset="item.usdPrice"
-          fiat-currency="USD"
-          :value="item.usdPrice"
-        />
-        <div v-else class="d-flex justify-end">
-          <v-skeleton-loader width="70" type="text" />
-        </div>
-      </template>
-      <template #item.amount="{ item }">
-        <amount-display
-          class="manual-balances-list__amount"
-          :value="item.amount"
-        />
-      </template>
-      <template #item.usdValue="{ item }">
-        <amount-display
-          show-currency="symbol"
-          :amount="item.amount"
-          :price-asset="item.asset"
-          :price-of-asset="item.usdPrice"
-          fiat-currency="USD"
-          :value="item.usdValue"
-        />
-      </template>
-      <template #item.location="{ item }">
-        <location-display
-          class="manual-balances-list__location"
-          :identifier="item.location"
-          :data-cy="`manual-balances__location__${item.location}`"
-        />
-      </template>
-      <template #item.actions="{ item }">
-        <row-actions
-          :edit-tooltip="tc('manual_balances_table.edit_tooltip')"
-          :delete-tooltip="tc('manual_balances_table.delete_tooltip')"
-          @edit-click="edit(item)"
-          @delete-click="showDeleteConfirmation(item.id)"
-        />
-      </template>
-      <template v-if="visibleBalances.length > 0" #body.append="{ isMobile }">
-        <row-append
-          label-colspan="5"
-          :label="tc('common.total')"
-          :is-mobile="isMobile"
-          :right-patch-colspan="1"
-        >
-          <amount-display
-            show-currency="symbol"
-            class="manual-balances-list__amount"
-            :fiat-currency="currencySymbol"
-            :value="total"
-          />
-        </row-append>
-      </template>
-    </data-table>
-  </card>
-</template>
-
 <script setup lang="ts">
 import { type PropType } from 'vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
@@ -234,6 +126,114 @@ const showDeleteConfirmation = (id: number) => {
   );
 };
 </script>
+
+<template>
+  <card class="manual-balances" outlined-body :class="$style.table">
+    <template #title>
+      <refresh-button
+        :loading="loading"
+        :tooltip="tc('manual_balances_table.refresh.tooltip')"
+        @refresh="refresh()"
+      />
+      <span>
+        {{ title }}
+      </span>
+    </template>
+    <template #actions>
+      <v-row no-gutters justify="end">
+        <v-col cols="12" md="6" lg="4">
+          <tag-filter v-model="onlyTags" />
+        </v-col>
+      </v-row>
+    </template>
+    <data-table
+      :loading="loading"
+      :headers="headers"
+      :items="visibleBalances"
+      :item-class="getRowClass"
+      class="manual-balances-list"
+      sort-by="usdValue"
+    >
+      <template #item.label="{ item }">
+        <div
+          class="font-weight-medium"
+          data-cy="label"
+          :class="{
+            'pt-0': !item.tags,
+            [$style.label]: true
+          }"
+        >
+          {{ item.label }}
+        </div>
+        <div>
+          <tag-display :tags="item.tags" :small="true" />
+        </div>
+      </template>
+      <template #item.asset="{ item }">
+        <asset-details opens-details :asset="item.asset" />
+      </template>
+      <template #item.usdPrice="{ item }">
+        <amount-display
+          v-if="item.usdPrice && item.usdPrice.gte(0)"
+          show-currency="symbol"
+          :price-asset="item.asset"
+          :price-of-asset="item.usdPrice"
+          fiat-currency="USD"
+          :value="item.usdPrice"
+        />
+        <div v-else class="d-flex justify-end">
+          <v-skeleton-loader width="70" type="text" />
+        </div>
+      </template>
+      <template #item.amount="{ item }">
+        <amount-display
+          class="manual-balances-list__amount"
+          :value="item.amount"
+        />
+      </template>
+      <template #item.usdValue="{ item }">
+        <amount-display
+          show-currency="symbol"
+          :amount="item.amount"
+          :price-asset="item.asset"
+          :price-of-asset="item.usdPrice"
+          fiat-currency="USD"
+          :value="item.usdValue"
+        />
+      </template>
+      <template #item.location="{ item }">
+        <location-display
+          class="manual-balances-list__location"
+          :identifier="item.location"
+          :data-cy="`manual-balances__location__${item.location}`"
+        />
+      </template>
+      <template #item.actions="{ item }">
+        <row-actions
+          :edit-tooltip="tc('manual_balances_table.edit_tooltip')"
+          :delete-tooltip="tc('manual_balances_table.delete_tooltip')"
+          @edit-click="edit(item)"
+          @delete-click="showDeleteConfirmation(item.id)"
+        />
+      </template>
+      <template v-if="visibleBalances.length > 0" #body.append="{ isMobile }">
+        <row-append
+          label-colspan="5"
+          :label="tc('common.total')"
+          :is-mobile="isMobile"
+          :right-patch-colspan="1"
+        >
+          <amount-display
+            show-currency="symbol"
+            class="manual-balances-list__amount"
+            :fiat-currency="currencySymbol"
+            :value="total"
+          />
+        </row-append>
+      </template>
+    </data-table>
+  </card>
+</template>
 
 <style module lang="scss">
 .label {

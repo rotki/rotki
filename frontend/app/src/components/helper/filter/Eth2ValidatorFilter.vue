@@ -1,24 +1,3 @@
-<template>
-  <blockchain-account-selector
-    v-if="filterType === 'address'"
-    v-model="account"
-    no-padding
-    flat
-    dense
-    outlined
-    :chains="chains"
-    :usable-addresses="usableAddresses"
-    :label="tc('eth2_validator_filter.label')"
-    multiple
-  />
-  <validator-filter-input
-    v-else
-    :value="value"
-    :items="eth2Validators.entries"
-    @input="input"
-  />
-</template>
-
 <script setup lang="ts">
 import { type GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
@@ -60,3 +39,24 @@ watch(account, account => {
   input(account.length === 0 ? [] : [account[0].address]);
 });
 </script>
+
+<template>
+  <blockchain-account-selector
+    v-if="filterType === 'address'"
+    v-model="account"
+    no-padding
+    flat
+    dense
+    outlined
+    :chains="chains"
+    :usable-addresses="usableAddresses"
+    :label="tc('eth2_validator_filter.label')"
+    multiple
+  />
+  <validator-filter-input
+    v-else
+    :value="value"
+    :items="eth2Validators.entries"
+    @input="input"
+  />
+</template>

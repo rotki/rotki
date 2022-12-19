@@ -1,48 +1,3 @@
-<template>
-  <v-card flat>
-    <v-autocomplete
-      :class="$style.filter"
-      :filter="filter"
-      :value="value"
-      :items="items"
-      :search-input.sync="search"
-      :loading="loading"
-      :disabled="loading"
-      hide-details
-      hide-selected
-      hide-no-data
-      return-object
-      chips
-      clearable
-      multiple
-      dense
-      outlined
-      item-value="publicKey"
-      :label="t('validator_filter_input.label')"
-      :open-on-clear="false"
-      item-text="publicKey"
-      @input="input($event)"
-    >
-      <template #item="{ item }">
-        <validator-display :validator="item" />
-      </template>
-      <template #selection="{ item }">
-        <v-chip
-          small
-          :color="dark ? null : 'grey lighten-3'"
-          filter
-          class="text-truncate"
-          :class="$style.chip"
-          close
-          @click:close="removeValidator(item.publicKey)"
-        >
-          <validator-display :validator="item" horizontal />
-        </v-chip>
-      </template>
-    </v-autocomplete>
-  </v-card>
-</template>
-
 <script setup lang="ts">
 import { type Eth2ValidatorEntry } from '@rotki/common/lib/staking/eth2';
 import { type PropType } from 'vue';
@@ -96,6 +51,51 @@ const { dark } = useTheme();
 
 const { t } = useI18n();
 </script>
+
+<template>
+  <v-card flat>
+    <v-autocomplete
+      :class="$style.filter"
+      :filter="filter"
+      :value="value"
+      :items="items"
+      :search-input.sync="search"
+      :loading="loading"
+      :disabled="loading"
+      hide-details
+      hide-selected
+      hide-no-data
+      return-object
+      chips
+      clearable
+      multiple
+      dense
+      outlined
+      item-value="publicKey"
+      :label="t('validator_filter_input.label')"
+      :open-on-clear="false"
+      item-text="publicKey"
+      @input="input($event)"
+    >
+      <template #item="{ item }">
+        <validator-display :validator="item" />
+      </template>
+      <template #selection="{ item }">
+        <v-chip
+          small
+          :color="dark ? null : 'grey lighten-3'"
+          filter
+          class="text-truncate"
+          :class="$style.chip"
+          close
+          @click:close="removeValidator(item.publicKey)"
+        >
+          <validator-display :validator="item" horizontal />
+        </v-chip>
+      </template>
+    </v-autocomplete>
+  </v-card>
+</template>
 
 <style module lang="scss">
 .filter {

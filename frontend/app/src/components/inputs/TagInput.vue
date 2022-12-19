@@ -1,89 +1,3 @@
-<template>
-  <div>
-    <v-combobox
-      :value="values"
-      :disabled="disabled"
-      :items="tags"
-      class="tag-input"
-      small-chips
-      :hide-no-data="!search"
-      hide-selected
-      :label="label"
-      :outlined="outlined"
-      :search-input.sync="search"
-      item-text="name"
-      :menu-props="{ closeOnContentClick: true }"
-      item-value="name"
-      multiple
-      @input="input"
-    >
-      <template #no-data>
-        <v-list-item>
-          <span class="subheading">{{ t('common.actions.create') }}</span>
-          <v-chip
-            class="ml-2"
-            :color="newTagBackground"
-            :text-color="newTagForeground"
-            label
-            small
-          >
-            {{ search }}
-          </v-chip>
-        </v-list-item>
-      </template>
-      <template #selection="{ item, selected, select }">
-        <v-chip
-          label
-          class="font-weight-medium"
-          :input-value="selected"
-          :color="`#${item.backgroundColor}`"
-          :text-color="`#${item.foregroundColor}`"
-          close
-          @click:close="remove(item.name)"
-          @click="select"
-        >
-          {{ item.name }}
-        </v-chip>
-      </template>
-      <template #item="{ item }">
-        <template v-if="typeof item !== 'object'">
-          <v-list-item-content>
-            {{ item }}
-          </v-list-item-content>
-        </template>
-        <template v-else>
-          <div>
-            <tag-icon :tag="item" />
-            <span class="tag-input__tag__description">
-              {{ item.description }}
-            </span>
-          </div>
-        </template>
-      </template>
-      <template #append-outer>
-        <v-btn
-          class="tag-input__manage-tags"
-          icon
-          text
-          color="primary"
-          :disabled="disabled"
-          @click="manageTags = true"
-        >
-          <v-icon>mdi-pencil</v-icon>
-        </v-btn>
-      </template>
-    </v-combobox>
-    <v-dialog
-      :value="!!manageTags"
-      max-width="800"
-      class="tag-input__tag-manager"
-      @input="manageTags = false"
-    >
-      <tag-manager v-if="!!manageTags" dialog @close="manageTags = false" />
-    </v-dialog>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { type PropType } from 'vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
@@ -204,6 +118,92 @@ const values = computed<Tag[]>(() => {
   return get(tags).filter(({ name }) => get(value).includes(name));
 });
 </script>
+
+<template>
+  <div>
+    <v-combobox
+      :value="values"
+      :disabled="disabled"
+      :items="tags"
+      class="tag-input"
+      small-chips
+      :hide-no-data="!search"
+      hide-selected
+      :label="label"
+      :outlined="outlined"
+      :search-input.sync="search"
+      item-text="name"
+      :menu-props="{ closeOnContentClick: true }"
+      item-value="name"
+      multiple
+      @input="input"
+    >
+      <template #no-data>
+        <v-list-item>
+          <span class="subheading">{{ t('common.actions.create') }}</span>
+          <v-chip
+            class="ml-2"
+            :color="newTagBackground"
+            :text-color="newTagForeground"
+            label
+            small
+          >
+            {{ search }}
+          </v-chip>
+        </v-list-item>
+      </template>
+      <template #selection="{ item, selected, select }">
+        <v-chip
+          label
+          class="font-weight-medium"
+          :input-value="selected"
+          :color="`#${item.backgroundColor}`"
+          :text-color="`#${item.foregroundColor}`"
+          close
+          @click:close="remove(item.name)"
+          @click="select"
+        >
+          {{ item.name }}
+        </v-chip>
+      </template>
+      <template #item="{ item }">
+        <template v-if="typeof item !== 'object'">
+          <v-list-item-content>
+            {{ item }}
+          </v-list-item-content>
+        </template>
+        <template v-else>
+          <div>
+            <tag-icon :tag="item" />
+            <span class="tag-input__tag__description">
+              {{ item.description }}
+            </span>
+          </div>
+        </template>
+      </template>
+      <template #append-outer>
+        <v-btn
+          class="tag-input__manage-tags"
+          icon
+          text
+          color="primary"
+          :disabled="disabled"
+          @click="manageTags = true"
+        >
+          <v-icon>mdi-pencil</v-icon>
+        </v-btn>
+      </template>
+    </v-combobox>
+    <v-dialog
+      :value="!!manageTags"
+      max-width="800"
+      class="tag-input__tag-manager"
+      @input="manageTags = false"
+    >
+      <tag-manager v-if="!!manageTags" dialog @close="manageTags = false" />
+    </v-dialog>
+  </div>
+</template>
 
 <style scoped lang="scss">
 :deep() {

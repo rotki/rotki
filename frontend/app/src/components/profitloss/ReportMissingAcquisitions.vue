@@ -1,66 +1,3 @@
-<template>
-  <div>
-    <data-table
-      ref="tableRef"
-      class="table-inside-dialog"
-      :class="{
-        [$style['table--pinned']]: isPinned
-      }"
-      :headers="headers"
-      :items="groupedMissingAcquisitions"
-      item-key="asset"
-      single-expand
-      :expanded.sync="expanded"
-      :container="tableContainer"
-      :dense="isPinned"
-      multi-sort
-      :must-sort="false"
-    >
-      <template #item.asset="{ item }">
-        <asset-details :asset="item.asset" />
-      </template>
-      <template #item.startDate="{ item }">
-        <date-display :timestamp="item.startDate" />
-        <template v-if="item.startDate !== item.endDate">
-          <span>
-            {{ t('profit_loss_report.actionable.missing_acquisitions.to') }}
-            <br />
-          </span>
-          <date-display :timestamp="item.endDate" />
-        </template>
-      </template>
-      <template #item.total_missing_acquisition="{ item }">
-        {{ item.acquisitions.length }}
-      </template>
-      <template #item.expand="{ item }">
-        <row-expander
-          :expanded="expanded.includes(item)"
-          @click="expanded = expanded.includes(item) ? [] : [item]"
-        />
-      </template>
-      <template #expanded-item="{ item }">
-        <table-expand-container visible :colspan="headers.length">
-          <data-table
-            :headers="childHeaders"
-            :items="item.acquisitions"
-            :container="tableContainer"
-          >
-            <template #item.time="{ item: childItem }">
-              <date-display :timestamp="childItem.time" />
-            </template>
-            <template #item.foundAmount="{ item: childItem }">
-              <amount-display pnl :value="childItem.foundAmount" />
-            </template>
-            <template #item.missingAmount="{ item: childItem }">
-              <amount-display pnl :value="childItem.missingAmount" />
-            </template>
-          </data-table>
-        </table-expand-container>
-      </template>
-    </data-table>
-    <slot name="actions" />
-  </div>
-</template>
 <script setup lang="ts">
 import { type PropType } from 'vue';
 import { type DataTableHeader } from 'vuetify';
@@ -179,6 +116,69 @@ const childHeaders = computed<DataTableHeader[]>(() => {
   ];
 });
 </script>
+<template>
+  <div>
+    <data-table
+      ref="tableRef"
+      class="table-inside-dialog"
+      :class="{
+        [$style['table--pinned']]: isPinned
+      }"
+      :headers="headers"
+      :items="groupedMissingAcquisitions"
+      item-key="asset"
+      single-expand
+      :expanded.sync="expanded"
+      :container="tableContainer"
+      :dense="isPinned"
+      multi-sort
+      :must-sort="false"
+    >
+      <template #item.asset="{ item }">
+        <asset-details :asset="item.asset" />
+      </template>
+      <template #item.startDate="{ item }">
+        <date-display :timestamp="item.startDate" />
+        <template v-if="item.startDate !== item.endDate">
+          <span>
+            {{ t('profit_loss_report.actionable.missing_acquisitions.to') }}
+            <br />
+          </span>
+          <date-display :timestamp="item.endDate" />
+        </template>
+      </template>
+      <template #item.total_missing_acquisition="{ item }">
+        {{ item.acquisitions.length }}
+      </template>
+      <template #item.expand="{ item }">
+        <row-expander
+          :expanded="expanded.includes(item)"
+          @click="expanded = expanded.includes(item) ? [] : [item]"
+        />
+      </template>
+      <template #expanded-item="{ item }">
+        <table-expand-container visible :colspan="headers.length">
+          <data-table
+            :headers="childHeaders"
+            :items="item.acquisitions"
+            :container="tableContainer"
+          >
+            <template #item.time="{ item: childItem }">
+              <date-display :timestamp="childItem.time" />
+            </template>
+            <template #item.foundAmount="{ item: childItem }">
+              <amount-display pnl :value="childItem.foundAmount" />
+            </template>
+            <template #item.missingAmount="{ item: childItem }">
+              <amount-display pnl :value="childItem.missingAmount" />
+            </template>
+          </data-table>
+        </table-expand-container>
+      </template>
+    </data-table>
+    <slot name="actions" />
+  </div>
+</template>
 
 <style module lang="scss">
 .table {

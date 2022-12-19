@@ -1,51 +1,3 @@
-<template>
-  <fragment>
-    <database-info-display
-      class="mt-8"
-      :directory="directory"
-      :global-db="globalDb"
-      :user-db="userDb"
-    />
-    <card outlined-body class="mt-8">
-      <template #title>{{ t('backup_manager.title') }}</template>
-      <template #details>
-        <refresh-button
-          :loading="loading"
-          :tooltip="tc('database_manager.refresh_tooltip')"
-          @refresh="loadInfo"
-        />
-      </template>
-      <database-backups
-        :loading="loading"
-        :items="backups"
-        :directory="directory"
-        :selected="selected"
-        @change="onSelectedChange"
-        @remove="remove"
-      />
-      <template #buttons>
-        <v-btn
-          depressed
-          color="primary"
-          :disabled="saving"
-          :loading="saving"
-          @click="backup"
-        >
-          {{ t('backup_manager.backup_button') }}
-        </v-btn>
-        <v-btn
-          v-if="selected.length > 0"
-          depressed
-          color="error"
-          @click="showMassDeleteConfirmation"
-        >
-          {{ t('backup_manager.delete_selected') }}
-        </v-btn>
-      </template>
-    </card>
-  </fragment>
-</template>
-
 <script setup lang="ts">
 import { Severity } from '@rotki/common/lib/messages';
 import { type Ref } from 'vue';
@@ -278,3 +230,51 @@ const showMassDeleteConfirmation = () => {
   );
 };
 </script>
+
+<template>
+  <fragment>
+    <database-info-display
+      class="mt-8"
+      :directory="directory"
+      :global-db="globalDb"
+      :user-db="userDb"
+    />
+    <card outlined-body class="mt-8">
+      <template #title>{{ t('backup_manager.title') }}</template>
+      <template #details>
+        <refresh-button
+          :loading="loading"
+          :tooltip="tc('database_manager.refresh_tooltip')"
+          @refresh="loadInfo"
+        />
+      </template>
+      <database-backups
+        :loading="loading"
+        :items="backups"
+        :directory="directory"
+        :selected="selected"
+        @change="onSelectedChange"
+        @remove="remove"
+      />
+      <template #buttons>
+        <v-btn
+          depressed
+          color="primary"
+          :disabled="saving"
+          :loading="saving"
+          @click="backup"
+        >
+          {{ t('backup_manager.backup_button') }}
+        </v-btn>
+        <v-btn
+          v-if="selected.length > 0"
+          depressed
+          color="error"
+          @click="showMassDeleteConfirmation"
+        >
+          {{ t('backup_manager.delete_selected') }}
+        </v-btn>
+      </template>
+    </card>
+  </fragment>
+</template>

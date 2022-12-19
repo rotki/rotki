@@ -1,3 +1,27 @@
+<script setup lang="ts">
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { type Currency, useCurrencies } from '@/types/currencies';
+
+const { currencies } = useCurrencies();
+const selectedCurrency = ref<Currency>(get(currencies)[0]);
+const { currency } = storeToRefs(useGeneralSettingsStore());
+const { tc } = useI18n();
+
+const successMessage = (symbol: string) =>
+  tc('general_settings.validation.currency.success', 0, {
+    symbol
+  });
+
+onMounted(() => {
+  set(selectedCurrency, get(currency));
+});
+
+const calculateFontSize = (symbol: string) => {
+  const length = symbol.length;
+  return `${2.4 - length * 0.4}em`;
+};
+</script>
+
 <template>
   <settings-option
     #default="{ error, success, update }"
@@ -42,27 +66,3 @@
     </v-select>
   </settings-option>
 </template>
-
-<script setup lang="ts">
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { type Currency, useCurrencies } from '@/types/currencies';
-
-const { currencies } = useCurrencies();
-const selectedCurrency = ref<Currency>(get(currencies)[0]);
-const { currency } = storeToRefs(useGeneralSettingsStore());
-const { tc } = useI18n();
-
-const successMessage = (symbol: string) =>
-  tc('general_settings.validation.currency.success', 0, {
-    symbol
-  });
-
-onMounted(() => {
-  set(selectedCurrency, get(currency));
-});
-
-const calculateFontSize = (symbol: string) => {
-  const length = symbol.length;
-  return `${2.4 - length * 0.4}em`;
-};
-</script>

@@ -1,3 +1,46 @@
+<script setup lang="ts">
+import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
+import ThemeControl from '@/components/premium/ThemeControl.vue';
+import { useConfirmStore } from '@/store/confirm';
+import { useSessionStore } from '@/store/session';
+import { useSessionAuthStore } from '@/store/session/auth';
+
+const { t, tc } = useI18n();
+
+const KEY_REMEMBER_PASSWORD = 'rotki.remember_password';
+
+const { logout } = useSessionStore();
+const { username } = storeToRefs(useSessionAuthStore());
+const { isPackaged, clearPassword } = useInterop();
+const { privacyModeIcon, togglePrivacyMode } = usePrivacyMode();
+const { currentBreakpoint } = useTheme();
+const { navigateToUserLogin } = useAppNavigation();
+const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
+
+const savedRememberPassword = useLocalStorage(KEY_REMEMBER_PASSWORD, null);
+
+const { show } = useConfirmStore();
+
+const showConfirmation = () =>
+  show(
+    {
+      title: tc('user_dropdown.confirmation.title'),
+      message: tc('user_dropdown.confirmation.message'),
+      type: 'info'
+    },
+    async () => {
+      if (isPackaged && get(savedRememberPassword)) {
+        await clearPassword();
+      }
+
+      await logout();
+      await navigateToUserLogin();
+    }
+  );
+
+const { darkModeEnabled } = useDarkMode();
+</script>
+
 <template>
   <div>
     <v-menu
@@ -71,46 +114,3 @@
     </v-menu>
   </div>
 </template>
-
-<script setup lang="ts">
-import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
-import ThemeControl from '@/components/premium/ThemeControl.vue';
-import { useConfirmStore } from '@/store/confirm';
-import { useSessionStore } from '@/store/session';
-import { useSessionAuthStore } from '@/store/session/auth';
-
-const { t, tc } = useI18n();
-
-const KEY_REMEMBER_PASSWORD = 'rotki.remember_password';
-
-const { logout } = useSessionStore();
-const { username } = storeToRefs(useSessionAuthStore());
-const { isPackaged, clearPassword } = useInterop();
-const { privacyModeIcon, togglePrivacyMode } = usePrivacyMode();
-const { currentBreakpoint } = useTheme();
-const { navigateToUserLogin } = useAppNavigation();
-const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
-
-const savedRememberPassword = useLocalStorage(KEY_REMEMBER_PASSWORD, null);
-
-const { show } = useConfirmStore();
-
-const showConfirmation = () =>
-  show(
-    {
-      title: tc('user_dropdown.confirmation.title'),
-      message: tc('user_dropdown.confirmation.message'),
-      type: 'info'
-    },
-    async () => {
-      if (isPackaged && get(savedRememberPassword)) {
-        await clearPassword();
-      }
-
-      await logout();
-      await navigateToUserLogin();
-    }
-  );
-
-const { darkModeEnabled } = useDarkMode();
-</script>

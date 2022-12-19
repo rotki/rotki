@@ -1,3 +1,17 @@
+<script setup lang="ts">
+import { useSessionSettingsStore } from '@/store/settings/session';
+
+const animationsEnabled = ref<boolean>(true);
+const { tc } = useI18n();
+
+const { animationsEnabled: enabled } = storeToRefs(useSessionSettingsStore());
+const transform = (value: boolean) => !value;
+
+onMounted(() => {
+  set(animationsEnabled, get(enabled));
+});
+</script>
+
 <template>
   <settings-option
     #default="{ error, success, update }"
@@ -16,17 +30,3 @@
     />
   </settings-option>
 </template>
-
-<script setup lang="ts">
-import { useSessionSettingsStore } from '@/store/settings/session';
-
-const animationsEnabled = ref<boolean>(true);
-const { tc } = useI18n();
-
-const { animationsEnabled: enabled } = storeToRefs(useSessionSettingsStore());
-const transform = (value: boolean) => !value;
-
-onMounted(() => {
-  set(animationsEnabled, get(enabled));
-});
-</script>

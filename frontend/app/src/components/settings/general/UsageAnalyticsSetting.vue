@@ -1,3 +1,16 @@
+<script setup lang="ts">
+import { useGeneralSettingsStore } from '@/store/settings/general';
+
+const anonymousUsageAnalytics = ref<boolean>(false);
+const { submitUsageAnalytics } = storeToRefs(useGeneralSettingsStore());
+
+onMounted(() => {
+  set(anonymousUsageAnalytics, get(submitUsageAnalytics));
+});
+
+const { tc } = useI18n();
+</script>
+
 <template>
   <settings-option
     #default="{ error, success, update }"
@@ -15,16 +28,3 @@
     />
   </settings-option>
 </template>
-
-<script setup lang="ts">
-import { useGeneralSettingsStore } from '@/store/settings/general';
-
-const anonymousUsageAnalytics = ref<boolean>(false);
-const { submitUsageAnalytics } = storeToRefs(useGeneralSettingsStore());
-
-onMounted(() => {
-  set(anonymousUsageAnalytics, get(submitUsageAnalytics));
-});
-
-const { tc } = useI18n();
-</script>

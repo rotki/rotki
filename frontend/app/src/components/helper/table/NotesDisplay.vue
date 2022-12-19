@@ -1,3 +1,19 @@
+<script setup lang="ts">
+import { type PropType } from 'vue';
+
+import Fragment from '@/components/helper/Fragment';
+
+defineProps({
+  notes: {
+    required: false,
+    type: String as PropType<string | null>,
+    default: null
+  }
+});
+
+const { tc } = useI18n();
+</script>
+
 <template>
   <fragment>
     <v-row>
@@ -14,19 +30,3 @@
     </v-row>
   </fragment>
 </template>
-
-<script setup lang="ts">
-import { type PropType } from 'vue';
-
-import Fragment from '@/components/helper/Fragment';
-
-defineProps({
-  notes: {
-    required: false,
-    type: String as PropType<string | null>,
-    default: null
-  }
-});
-
-const { tc } = useI18n();
-</script>

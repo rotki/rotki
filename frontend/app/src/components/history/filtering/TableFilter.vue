@@ -1,55 +1,3 @@
-<template>
-  <v-combobox
-    ref="input"
-    :value="selection"
-    outlined
-    dense
-    chips
-    small-chips
-    deletable-chips
-    multiple
-    clearable
-    hide-details
-    prepend-inner-icon="mdi-filter-variant"
-    :search-input.sync="search"
-    @input="onSelectionUpdate($event)"
-    @keydown.enter="applySuggestion"
-    @keydown.up.prevent
-    @keydown.up="moveSuggestion(true)"
-    @keydown.down.prevent
-    @keydown.down="moveSuggestion(false)"
-  >
-    <template #selection="{ item, selected }">
-      <v-chip
-        label
-        small
-        class="font-weight-medium"
-        :input-value="selected"
-        close
-        @click:close="removeSelection(item)"
-        @click="
-          removeSelection(item);
-          selectItem(item);
-        "
-      >
-        <suggested-item :suggestion="item" />
-      </v-chip>
-    </template>
-    <template #no-data>
-      <no-filter-available
-        :matchers="matchers"
-        :used="usedKeys"
-        :keyword="search"
-        :suggestion="searchSuggestion"
-        :selected-suggestion="selectedSuggestion"
-        @apply:filter="applyFilter($event)"
-        @suggest="suggestedFilter = $event"
-        @click="appendToSearch($event)"
-      />
-    </template>
-  </v-combobox>
-</template>
-
 <script setup lang="ts">
 import { type AssetInfo } from '@rotki/common/lib/data';
 import { type PropType } from 'vue';
@@ -279,3 +227,55 @@ const selectItem = (suggestion: Suggestion) => {
   });
 };
 </script>
+
+<template>
+  <v-combobox
+    ref="input"
+    :value="selection"
+    outlined
+    dense
+    chips
+    small-chips
+    deletable-chips
+    multiple
+    clearable
+    hide-details
+    prepend-inner-icon="mdi-filter-variant"
+    :search-input.sync="search"
+    @input="onSelectionUpdate($event)"
+    @keydown.enter="applySuggestion"
+    @keydown.up.prevent
+    @keydown.up="moveSuggestion(true)"
+    @keydown.down.prevent
+    @keydown.down="moveSuggestion(false)"
+  >
+    <template #selection="{ item, selected }">
+      <v-chip
+        label
+        small
+        class="font-weight-medium"
+        :input-value="selected"
+        close
+        @click:close="removeSelection(item)"
+        @click="
+          removeSelection(item);
+          selectItem(item);
+        "
+      >
+        <suggested-item :suggestion="item" />
+      </v-chip>
+    </template>
+    <template #no-data>
+      <no-filter-available
+        :matchers="matchers"
+        :used="usedKeys"
+        :keyword="search"
+        :suggestion="searchSuggestion"
+        :selected-suggestion="selectedSuggestion"
+        @apply:filter="applyFilter($event)"
+        @suggest="suggestedFilter = $event"
+        @click="appendToSearch($event)"
+      />
+    </template>
+  </v-combobox>
+</template>

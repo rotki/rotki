@@ -1,3 +1,8 @@
+<script setup lang="ts">
+import ImportSource from '@/components/import/ImportSource.vue';
+
+const { t } = useI18n();
+</script>
 <template>
   <import-source source="binance">
     <i18n tag="span" path="import_data.binance.note">
@@ -9,8 +14,3 @@
     </ul>
   </import-source>
 </template>
-<script setup lang="ts">
-import ImportSource from '@/components/import/ImportSource.vue';
-
-const { t } = useI18n();
-</script>

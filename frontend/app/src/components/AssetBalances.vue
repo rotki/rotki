@@ -1,57 +1,3 @@
-<template>
-  <data-table
-    :headers="tableHeaders"
-    :items="balances"
-    :loading="loading"
-    :loading-text="tc('asset_balances.loading')"
-    :custom-sort="sortItems"
-    sort-by="usdValue"
-  >
-    <template #item.asset="{ item }">
-      <asset-details opens-details :asset="item.asset" />
-    </template>
-    <template #item.usdPrice="{ item }">
-      <amount-display
-        v-if="item.usdPrice && item.usdPrice.gte(0)"
-        show-currency="symbol"
-        :price-asset="item.asset"
-        :price-of-asset="item.usdPrice"
-        fiat-currency="USD"
-        :value="item.usdPrice"
-      />
-      <div v-else class="d-flex justify-end">
-        <v-skeleton-loader width="70" type="text" />
-      </div>
-    </template>
-    <template #item.amount="{ item }">
-      <amount-display :value="item.amount" />
-    </template>
-    <template #item.usdValue="{ item }">
-      <amount-display
-        show-currency="symbol"
-        :amount="item.amount"
-        :price-asset="item.asset"
-        :price-of-asset="item.usdPrice"
-        fiat-currency="USD"
-        :value="item.usdValue"
-      />
-    </template>
-    <template v-if="balances.length > 0" #body.append="{ isMobile }">
-      <row-append
-        label-colspan="3"
-        :label="tc('common.total')"
-        :is-mobile="isMobile"
-      >
-        <amount-display
-          fiat-currency="USD"
-          show-currency="symbol"
-          :value="total"
-        />
-      </row-append>
-    </template>
-  </data-table>
-</template>
-
 <script setup lang="ts">
 import { type AssetBalanceWithPrice } from '@rotki/common';
 import { type PropType } from 'vue';
@@ -120,3 +66,57 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
 
 const sortItems = getSortItems(asset => get(assetInfo(asset)));
 </script>
+
+<template>
+  <data-table
+    :headers="tableHeaders"
+    :items="balances"
+    :loading="loading"
+    :loading-text="tc('asset_balances.loading')"
+    :custom-sort="sortItems"
+    sort-by="usdValue"
+  >
+    <template #item.asset="{ item }">
+      <asset-details opens-details :asset="item.asset" />
+    </template>
+    <template #item.usdPrice="{ item }">
+      <amount-display
+        v-if="item.usdPrice && item.usdPrice.gte(0)"
+        show-currency="symbol"
+        :price-asset="item.asset"
+        :price-of-asset="item.usdPrice"
+        fiat-currency="USD"
+        :value="item.usdPrice"
+      />
+      <div v-else class="d-flex justify-end">
+        <v-skeleton-loader width="70" type="text" />
+      </div>
+    </template>
+    <template #item.amount="{ item }">
+      <amount-display :value="item.amount" />
+    </template>
+    <template #item.usdValue="{ item }">
+      <amount-display
+        show-currency="symbol"
+        :amount="item.amount"
+        :price-asset="item.asset"
+        :price-of-asset="item.usdPrice"
+        fiat-currency="USD"
+        :value="item.usdValue"
+      />
+    </template>
+    <template v-if="balances.length > 0" #body.append="{ isMobile }">
+      <row-append
+        label-colspan="3"
+        :label="tc('common.total')"
+        :is-mobile="isMobile"
+      >
+        <amount-display
+          fiat-currency="USD"
+          show-currency="symbol"
+          :value="total"
+        />
+      </row-append>
+    </template>
+  </data-table>
+</template>

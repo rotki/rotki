@@ -1,3 +1,23 @@
+<script setup lang="ts">
+import FullSizeContent from '@/components/common/FullSizeContent.vue';
+
+const props = defineProps({
+  progress: { required: false, default: '', type: String }
+});
+
+const { progress } = toRefs(props);
+const percentage = computed(() => {
+  const currentProgress = get(progress);
+  try {
+    const number = Number.parseFloat(currentProgress);
+    return number.toFixed(2);
+  } catch {
+    return currentProgress;
+  }
+});
+
+const { t } = useI18n();
+</script>
 <template>
   <full-size-content>
     <div :class="$style.content">
@@ -50,26 +70,6 @@
     </div>
   </full-size-content>
 </template>
-<script setup lang="ts">
-import FullSizeContent from '@/components/common/FullSizeContent.vue';
-
-const props = defineProps({
-  progress: { required: false, default: '', type: String }
-});
-
-const { progress } = toRefs(props);
-const percentage = computed(() => {
-  const currentProgress = get(progress);
-  try {
-    const number = Number.parseFloat(currentProgress);
-    return number.toFixed(2);
-  } catch {
-    return currentProgress;
-  }
-});
-
-const { t } = useI18n();
-</script>
 <style module lang="scss">
 .indeterminate {
   display: flex;

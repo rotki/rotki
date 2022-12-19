@@ -1,86 +1,3 @@
-<template>
-  <v-dialog persistent :value="true" :max-width="1400">
-    <v-card elevation="0">
-      <v-toolbar dark color="primary">
-        <v-btn icon dark @click="close">
-          <v-icon>mdi-close</v-icon>
-        </v-btn>
-
-        <v-toolbar-title class="pl-2">
-          <i18n path="dashboard.snapshot.edit.dialog.title">
-            <template #date>
-              <date-display :timestamp="timestamp" />
-            </template>
-          </i18n>
-        </v-toolbar-title>
-      </v-toolbar>
-      <div v-if="snapshotData">
-        <v-stepper v-model="step" elevation="0">
-          <v-stepper-header :class="$style.raise">
-            <v-stepper-step :step="1">
-              {{ tc('dashboard.snapshot.edit.dialog.balances.title') }}
-            </v-stepper-step>
-            <v-stepper-step :step="2">
-              {{ tc('dashboard.snapshot.edit.dialog.location_data.title') }}
-            </v-stepper-step>
-            <v-stepper-step :step="3">
-              {{ tc('common.total') }}
-            </v-stepper-step>
-          </v-stepper-header>
-          <v-stepper-items>
-            <v-stepper-content :step="1" class="pa-0">
-              <edit-balances-snapshot-table
-                v-model="snapshotData"
-                :timestamp="timestamp"
-                @update:step="step = $event"
-                @input="save"
-              />
-            </v-stepper-content>
-            <v-stepper-content :step="2" class="pa-0">
-              <edit-location-data-snapshot-table
-                :value="locationDataSnapshot"
-                :timestamp="timestamp"
-                @update:step="step = $event"
-                @input="
-                  event => {
-                    updateLocationDataSnapshot(event);
-                    save();
-                  }
-                "
-              />
-            </v-stepper-content>
-            <v-stepper-content :step="3" class="pa-0">
-              <edit-snapshot-total
-                v-if="step === 3"
-                :value="locationDataSnapshot"
-                :balances-snapshot="balancesSnapshot"
-                :timestamp="timestamp"
-                @update:step="step = $event"
-                @input="
-                  event => {
-                    updateLocationDataSnapshot(event);
-                    finish();
-                  }
-                "
-              />
-            </v-stepper-content>
-          </v-stepper-items>
-        </v-stepper>
-      </div>
-      <div v-else class="d-flex flex-column justify-center align-center py-6">
-        <v-progress-circular
-          size="50"
-          color="primary"
-          width="2"
-          indeterminate
-        />
-        <div class="pt-6">
-          {{ tc('dashboard.snapshot.edit.dialog.fetch.loading') }}
-        </div>
-      </div>
-    </v-card>
-  </v-dialog>
-</template>
 <script setup lang="ts">
 import { type ComputedRef, type Ref } from 'vue';
 import EditBalancesSnapshotTable from '@/components/dashboard/EditBalancesSnapshotTable.vue';
@@ -227,6 +144,89 @@ const finish = async () => {
   }
 };
 </script>
+<template>
+  <v-dialog persistent :value="true" :max-width="1400">
+    <v-card elevation="0">
+      <v-toolbar dark color="primary">
+        <v-btn icon dark @click="close">
+          <v-icon>mdi-close</v-icon>
+        </v-btn>
+
+        <v-toolbar-title class="pl-2">
+          <i18n path="dashboard.snapshot.edit.dialog.title">
+            <template #date>
+              <date-display :timestamp="timestamp" />
+            </template>
+          </i18n>
+        </v-toolbar-title>
+      </v-toolbar>
+      <div v-if="snapshotData">
+        <v-stepper v-model="step" elevation="0">
+          <v-stepper-header :class="$style.raise">
+            <v-stepper-step :step="1">
+              {{ tc('dashboard.snapshot.edit.dialog.balances.title') }}
+            </v-stepper-step>
+            <v-stepper-step :step="2">
+              {{ tc('dashboard.snapshot.edit.dialog.location_data.title') }}
+            </v-stepper-step>
+            <v-stepper-step :step="3">
+              {{ tc('common.total') }}
+            </v-stepper-step>
+          </v-stepper-header>
+          <v-stepper-items>
+            <v-stepper-content :step="1" class="pa-0">
+              <edit-balances-snapshot-table
+                v-model="snapshotData"
+                :timestamp="timestamp"
+                @update:step="step = $event"
+                @input="save"
+              />
+            </v-stepper-content>
+            <v-stepper-content :step="2" class="pa-0">
+              <edit-location-data-snapshot-table
+                :value="locationDataSnapshot"
+                :timestamp="timestamp"
+                @update:step="step = $event"
+                @input="
+                  event => {
+                    updateLocationDataSnapshot(event);
+                    save();
+                  }
+                "
+              />
+            </v-stepper-content>
+            <v-stepper-content :step="3" class="pa-0">
+              <edit-snapshot-total
+                v-if="step === 3"
+                :value="locationDataSnapshot"
+                :balances-snapshot="balancesSnapshot"
+                :timestamp="timestamp"
+                @update:step="step = $event"
+                @input="
+                  event => {
+                    updateLocationDataSnapshot(event);
+                    finish();
+                  }
+                "
+              />
+            </v-stepper-content>
+          </v-stepper-items>
+        </v-stepper>
+      </div>
+      <div v-else class="d-flex flex-column justify-center align-center py-6">
+        <v-progress-circular
+          size="50"
+          color="primary"
+          width="2"
+          indeterminate
+        />
+        <div class="pt-6">
+          {{ tc('dashboard.snapshot.edit.dialog.fetch.loading') }}
+        </div>
+      </div>
+    </v-card>
+  </v-dialog>
+</template>
 <style module lang="scss">
 .asset-select {
   max-width: 640px;

@@ -1,76 +1,3 @@
-<template>
-  <div>
-    <data-table
-      class="table-inside-dialog"
-      :headers="tableHeaders"
-      :items="data"
-      :mobile-breakpoint="0"
-    >
-      <template #item.location="{ item }">
-        <location-display :opens-details="false" :identifier="item.location" />
-      </template>
-
-      <template #item.usdValue="{ item }">
-        <amount-display :value="item.usdValue" fiat-currency="USD" />
-      </template>
-
-      <template #item.action="{ item }">
-        <row-actions
-          :edit-tooltip="tc('dashboard.snapshot.edit.dialog.actions.edit_item')"
-          :delete-tooltip="
-            tc('dashboard.snapshot.edit.dialog.actions.delete_item')
-          "
-          @edit-click="editClick(item)"
-          @delete-click="showDeleteConfirmation(item)"
-        />
-      </template>
-    </data-table>
-    <v-sheet elevation="10" class="d-flex align-center px-4 py-2">
-      <div>
-        <div class="text-caption">{{ tc('common.total') }}:</div>
-        <div class="font-weight-bold text-h6 mt-n1">
-          <amount-display :value="total" fiat-currency="USD" />
-        </div>
-      </div>
-      <v-spacer />
-      <v-btn text color="primary" class="mr-4" @click="add">
-        <v-icon class="mr-2">mdi-plus</v-icon>
-        <span>
-          {{ tc('dashboard.snapshot.edit.dialog.actions.add_new_entry') }}
-        </span>
-      </v-btn>
-      <v-btn class="mr-4" @click="updateStep(1)">
-        <v-icon>mdi-chevron-left</v-icon>
-        {{ tc('common.actions.back') }}
-      </v-btn>
-      <v-btn color="primary" @click="updateStep(3)">
-        {{ tc('common.actions.next') }}
-        <v-icon>mdi-chevron-right</v-icon>
-      </v-btn>
-    </v-sheet>
-
-    <big-dialog
-      :display="showForm"
-      :title="
-        editedIndex !== null
-          ? tc('dashboard.snapshot.edit.dialog.location_data.edit_title')
-          : tc('dashboard.snapshot.edit.dialog.location_data.add_title')
-      "
-      :primary-action="tc('common.actions.save')"
-      :action-disabled="loading || !valid"
-      @confirm="save"
-      @cancel="clearEditDialog"
-    >
-      <edit-location-data-snapshot-form
-        v-if="form"
-        v-model="valid"
-        :form="form"
-        :excluded-locations="excludedLocations"
-        @update:form="updateForm"
-      />
-    </big-dialog>
-  </div>
-</template>
 <script setup lang="ts">
 import { type BigNumber } from '@rotki/common';
 import { type PropType } from 'vue';
@@ -269,6 +196,79 @@ const showDeleteConfirmation = (item: IndexedLocationDataSnapshot) => {
   );
 };
 </script>
+<template>
+  <div>
+    <data-table
+      class="table-inside-dialog"
+      :headers="tableHeaders"
+      :items="data"
+      :mobile-breakpoint="0"
+    >
+      <template #item.location="{ item }">
+        <location-display :opens-details="false" :identifier="item.location" />
+      </template>
+
+      <template #item.usdValue="{ item }">
+        <amount-display :value="item.usdValue" fiat-currency="USD" />
+      </template>
+
+      <template #item.action="{ item }">
+        <row-actions
+          :edit-tooltip="tc('dashboard.snapshot.edit.dialog.actions.edit_item')"
+          :delete-tooltip="
+            tc('dashboard.snapshot.edit.dialog.actions.delete_item')
+          "
+          @edit-click="editClick(item)"
+          @delete-click="showDeleteConfirmation(item)"
+        />
+      </template>
+    </data-table>
+    <v-sheet elevation="10" class="d-flex align-center px-4 py-2">
+      <div>
+        <div class="text-caption">{{ tc('common.total') }}:</div>
+        <div class="font-weight-bold text-h6 mt-n1">
+          <amount-display :value="total" fiat-currency="USD" />
+        </div>
+      </div>
+      <v-spacer />
+      <v-btn text color="primary" class="mr-4" @click="add">
+        <v-icon class="mr-2">mdi-plus</v-icon>
+        <span>
+          {{ tc('dashboard.snapshot.edit.dialog.actions.add_new_entry') }}
+        </span>
+      </v-btn>
+      <v-btn class="mr-4" @click="updateStep(1)">
+        <v-icon>mdi-chevron-left</v-icon>
+        {{ tc('common.actions.back') }}
+      </v-btn>
+      <v-btn color="primary" @click="updateStep(3)">
+        {{ tc('common.actions.next') }}
+        <v-icon>mdi-chevron-right</v-icon>
+      </v-btn>
+    </v-sheet>
+
+    <big-dialog
+      :display="showForm"
+      :title="
+        editedIndex !== null
+          ? tc('dashboard.snapshot.edit.dialog.location_data.edit_title')
+          : tc('dashboard.snapshot.edit.dialog.location_data.add_title')
+      "
+      :primary-action="tc('common.actions.save')"
+      :action-disabled="loading || !valid"
+      @confirm="save"
+      @cancel="clearEditDialog"
+    >
+      <edit-location-data-snapshot-form
+        v-if="form"
+        v-model="valid"
+        :form="form"
+        :excluded-locations="excludedLocations"
+        @update:form="updateForm"
+      />
+    </big-dialog>
+  </div>
+</template>
 <style module lang="scss">
 .asset {
   max-width: 640px;

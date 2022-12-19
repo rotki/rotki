@@ -1,3 +1,21 @@
+<script setup lang="ts">
+import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
+import FullSizeContent from '@/components/common/FullSizeContent.vue';
+
+defineProps({
+  text: {
+    type: String,
+    required: true
+  }
+});
+
+const { t } = useI18n();
+const { premiumURL } = useInterop();
+const { currentBreakpoint } = useTheme();
+const remoteEmptyScreenLogo =
+  'https://raw.githubusercontent.com/rotki/data/main/assets/icons/empty_screen_logo.png';
+</script>
+
 <template>
   <full-size-content>
     <v-row align="center" justify="center">
@@ -38,24 +56,6 @@
     </v-row>
   </full-size-content>
 </template>
-
-<script setup lang="ts">
-import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
-import FullSizeContent from '@/components/common/FullSizeContent.vue';
-
-defineProps({
-  text: {
-    type: String,
-    required: true
-  }
-});
-
-const { t } = useI18n();
-const { premiumURL } = useInterop();
-const { currentBreakpoint } = useTheme();
-const remoteEmptyScreenLogo =
-  'https://raw.githubusercontent.com/rotki/data/main/assets/icons/empty_screen_logo.png';
-</script>
 
 <style module lang="scss">
 .logo {

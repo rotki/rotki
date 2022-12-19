@@ -1,81 +1,3 @@
-<template>
-  <v-card v-bind="$attrs">
-    <div :class="noPadding ? null : 'mx-4 pt-2'">
-      <v-autocomplete
-        :value="value"
-        :items="displayedAccounts"
-        :filter="filter"
-        auto-select-first
-        :search-input.sync="search"
-        :multiple="multiple"
-        :loading="loading"
-        :disabled="loading"
-        hide-details
-        hide-selected
-        :hide-no-data="!hideOnEmptyUsable"
-        return-object
-        chips
-        single-line
-        clearable
-        :dense="dense"
-        :outlined="outlined"
-        :open-on-clear="false"
-        :label="label ? label : t('blockchain_account_selector.default_label')"
-        :class="outlined ? 'blockchain-account-selector--outlined' : null"
-        item-text="address"
-        item-value="address"
-        class="blockchain-account-selector"
-        @input="input($event)"
-      >
-        <template #no-data>
-          <span class="text-caption px-2">
-            {{ t('blockchain_account_selector.no_data') }}
-          </span>
-        </template>
-        <template #selection="data">
-          <v-chip
-            v-if="multiple"
-            :key="data.item.chain + data.item.address"
-            v-bind="data.attrs"
-            :input-value="data.selected"
-            :click="data.select"
-            filter
-            close
-            close-label="overflow-x-hidden"
-            @click:close="data.parent.selectItem(data.item)"
-          >
-            <account-display :account="data.item" />
-          </v-chip>
-          <div v-else class="overflow-x-hidden">
-            <account-display :account="data.item" class="pr-2" />
-          </div>
-        </template>
-        <template #item="data">
-          <div
-            class="blockchain-account-selector__list__item d-flex align-center justify-space-between flex-grow-1"
-          >
-            <div class="blockchain-account-selector__list__item__address-label">
-              <v-chip
-                small
-                :color="dark ? null : 'grey lighten-3'"
-                filter
-                class="text-truncate"
-              >
-                <account-display :account="data.item" />
-              </v-chip>
-            </div>
-            <tag-display class="mb-1" :tags="data.item.tags" :small="true" />
-          </div>
-        </template>
-      </v-autocomplete>
-    </div>
-    <v-card-text v-if="hint">
-      {{ t('blockchain_account_selector.hint', { hintText }) }}
-      <slot />
-    </v-card-text>
-  </v-card>
-</template>
-
 <script setup lang="ts">
 import { type GeneralAccount } from '@rotki/common/lib/account';
 import { type Blockchain } from '@rotki/common/lib/blockchain';
@@ -169,6 +91,84 @@ const input = (value: string | null) => emit('input', value);
 
 const { dark } = useTheme();
 </script>
+
+<template>
+  <v-card v-bind="$attrs">
+    <div :class="noPadding ? null : 'mx-4 pt-2'">
+      <v-autocomplete
+        :value="value"
+        :items="displayedAccounts"
+        :filter="filter"
+        auto-select-first
+        :search-input.sync="search"
+        :multiple="multiple"
+        :loading="loading"
+        :disabled="loading"
+        hide-details
+        hide-selected
+        :hide-no-data="!hideOnEmptyUsable"
+        return-object
+        chips
+        single-line
+        clearable
+        :dense="dense"
+        :outlined="outlined"
+        :open-on-clear="false"
+        :label="label ? label : t('blockchain_account_selector.default_label')"
+        :class="outlined ? 'blockchain-account-selector--outlined' : null"
+        item-text="address"
+        item-value="address"
+        class="blockchain-account-selector"
+        @input="input($event)"
+      >
+        <template #no-data>
+          <span class="text-caption px-2">
+            {{ t('blockchain_account_selector.no_data') }}
+          </span>
+        </template>
+        <template #selection="data">
+          <v-chip
+            v-if="multiple"
+            :key="data.item.chain + data.item.address"
+            v-bind="data.attrs"
+            :input-value="data.selected"
+            :click="data.select"
+            filter
+            close
+            close-label="overflow-x-hidden"
+            @click:close="data.parent.selectItem(data.item)"
+          >
+            <account-display :account="data.item" />
+          </v-chip>
+          <div v-else class="overflow-x-hidden">
+            <account-display :account="data.item" class="pr-2" />
+          </div>
+        </template>
+        <template #item="data">
+          <div
+            class="blockchain-account-selector__list__item d-flex align-center justify-space-between flex-grow-1"
+          >
+            <div class="blockchain-account-selector__list__item__address-label">
+              <v-chip
+                small
+                :color="dark ? null : 'grey lighten-3'"
+                filter
+                class="text-truncate"
+              >
+                <account-display :account="data.item" />
+              </v-chip>
+            </div>
+            <tag-display class="mb-1" :tags="data.item.tags" :small="true" />
+          </div>
+        </template>
+      </v-autocomplete>
+    </div>
+    <v-card-text v-if="hint">
+      {{ t('blockchain_account_selector.hint', { hintText }) }}
+      <slot />
+    </v-card-text>
+  </v-card>
+</template>
 
 <style scoped lang="scss">
 .blockchain-account-selector {

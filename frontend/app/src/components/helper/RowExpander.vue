@@ -1,3 +1,12 @@
+<script setup lang="ts">
+defineProps({
+  expanded: { required: true, type: Boolean }
+});
+
+const emit = defineEmits(['click']);
+const click = () => emit('click');
+</script>
+
 <template>
   <span>
     <v-btn icon @click="click">
@@ -7,15 +16,6 @@
     </v-btn>
   </span>
 </template>
-
-<script setup lang="ts">
-defineProps({
-  expanded: { required: true, type: Boolean }
-});
-
-const emit = defineEmits(['click']);
-const click = () => emit('click');
-</script>
 
 <style scoped lang="scss">
 .icon {

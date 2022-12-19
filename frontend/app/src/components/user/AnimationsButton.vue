@@ -1,3 +1,8 @@
+<script setup lang="ts">
+const { t } = useI18n();
+const { animationEnabled, toggleAnimation } = useAnimation();
+</script>
+
 <template>
   <v-tooltip open-delay="400" top>
     <template #activator="{ on, attrs }">
@@ -22,8 +27,3 @@
     <span v-else>{{ t('frontend_settings.animations.enable') }}</span>
   </v-tooltip>
 </template>
-
-<script setup lang="ts">
-const { t } = useI18n();
-const { animationEnabled, toggleAnimation } = useAnimation();
-</script>

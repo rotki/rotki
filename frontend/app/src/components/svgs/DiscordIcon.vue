@@ -1,3 +1,13 @@
+<script setup lang="ts">
+defineProps({
+  size: {
+    required: false,
+    type: String,
+    default: '24px'
+  }
+});
+</script>
+
 <template>
   <svg
     role="img"
@@ -12,16 +22,6 @@
     />
   </svg>
 </template>
-
-<script setup lang="ts">
-defineProps({
-  size: {
-    required: false,
-    type: String,
-    default: '24px'
-  }
-});
-</script>
 
 <style scoped lang="scss">
 svg {

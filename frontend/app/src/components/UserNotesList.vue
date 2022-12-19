@@ -1,150 +1,3 @@
-<template>
-  <fragment>
-    <div class="pa-4 pb-0">
-      <div class="mb-4 d-flex items-center">
-        <v-btn
-          rounded
-          color="primary"
-          fab
-          small
-          depressed
-          :disabled="showUpgradeRow"
-          @click="addNote"
-        >
-          <v-icon>mdi-plus</v-icon>
-        </v-btn>
-
-        <v-text-field
-          v-model="search"
-          outlined
-          dense
-          class="ml-4"
-          prepend-inner-icon="mdi-magnify"
-          :label="tc('notes_menu.search')"
-          clearable
-          hide-details
-        />
-      </div>
-    </div>
-
-    <div v-if="loading" class="d-flex justify-center pt-2">
-      <v-progress-circular color="primary" indeterminate width="2" size="50" />
-    </div>
-
-    <div v-else ref="wrapper" class="px-4 note__wrapper">
-      <v-alert
-        v-if="showUpgradeRow"
-        type="warning"
-        text
-        class="pa-2 text-subtitle-2"
-      >
-        <i18n path="notes_menu.limit_warning">
-          <template #limit>{{ itemsPerPage }}</template>
-          <template #link>
-            <base-external-link
-              :text="tc('upgrade_row.rotki_premium')"
-              :href="premiumURL"
-            />
-          </template>
-        </i18n>
-      </v-alert>
-
-      <div v-if="notes.data.length > 0">
-        <div>
-          <template v-for="note in notes.data">
-            <v-sheet
-              :key="note.identifier"
-              outlined
-              rounded
-              class="note__item pa-3 pt-2 mb-4"
-              :class="{
-                'note__item--deleting':
-                  animateDelete && idToDelete === note.identifier
-              }"
-            >
-              <div class="d-flex justify-space-between align-center">
-                <div class="font-weight-bold note__title">
-                  {{ note.title }}
-                </div>
-                <v-btn icon @click="togglePin(note)">
-                  <v-icon v-if="note.isPinned" color="primary">mdi-pin</v-icon>
-                  <v-icon v-else color="gray">mdi-pin-outline</v-icon>
-                </v-btn>
-              </div>
-
-              <div class="text--secondary note__content">
-                {{ note.content }}
-              </div>
-
-              <div
-                v-if="showDeleteConfirmation && idToDelete === note.identifier"
-                class="d-flex justify-space-between align-center pt-2"
-              >
-                <div class="note__content font-italic">
-                  {{ tc('notes_menu.delete_confirmation') }}
-                </div>
-                <div>
-                  <v-btn icon small @click="clearDeleteDialog">
-                    <v-icon small color="red">mdi-close</v-icon>
-                  </v-btn>
-
-                  <v-btn icon small @click="confirmDelete">
-                    <v-icon small color="green">mdi-check</v-icon>
-                  </v-btn>
-                </div>
-              </div>
-              <div
-                v-else
-                class="d-flex justify-space-between align-center pt-2"
-              >
-                <div class="note__datetime text--secondary font-italic">
-                  <i18n path="notes_menu.last_updated">
-                    <template #datetime>
-                      <date-display :timestamp="note.lastUpdateTimestamp" />
-                    </template>
-                  </i18n>
-                </div>
-                <div>
-                  <v-btn icon small @click="editNote(note)">
-                    <v-icon small>mdi-pencil-outline</v-icon>
-                  </v-btn>
-
-                  <v-btn icon small @click="deleteNote(note.identifier)">
-                    <v-icon small>mdi-delete-outline</v-icon>
-                  </v-btn>
-                </div>
-              </div>
-            </v-sheet>
-          </template>
-
-          <div v-if="totalPage > 1" class="mb-4">
-            <v-pagination
-              :value="page"
-              :length="totalPage"
-              @input="changePage"
-            />
-          </div>
-        </div>
-      </div>
-
-      <div v-else class="note__empty">{{ tc('notes_menu.empty_notes') }}</div>
-    </div>
-
-    <big-dialog
-      :display="showForm"
-      :title="
-        editMode
-          ? tc('notes_menu.dialog.edit_title')
-          : tc('notes_menu.dialog.add_title')
-      "
-      :action-disabled="!valid"
-      @confirm="save"
-      @cancel="resetForm"
-    >
-      <user-note-form v-model="form" @valid="valid = $event" />
-    </big-dialog>
-  </fragment>
-</template>
 <script setup lang="ts">
 import { type Ref } from 'vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
@@ -342,6 +195,153 @@ onMounted(async () => {
   await fetchNotes(true);
 });
 </script>
+<template>
+  <fragment>
+    <div class="pa-4 pb-0">
+      <div class="mb-4 d-flex items-center">
+        <v-btn
+          rounded
+          color="primary"
+          fab
+          small
+          depressed
+          :disabled="showUpgradeRow"
+          @click="addNote"
+        >
+          <v-icon>mdi-plus</v-icon>
+        </v-btn>
+
+        <v-text-field
+          v-model="search"
+          outlined
+          dense
+          class="ml-4"
+          prepend-inner-icon="mdi-magnify"
+          :label="tc('notes_menu.search')"
+          clearable
+          hide-details
+        />
+      </div>
+    </div>
+
+    <div v-if="loading" class="d-flex justify-center pt-2">
+      <v-progress-circular color="primary" indeterminate width="2" size="50" />
+    </div>
+
+    <div v-else ref="wrapper" class="px-4 note__wrapper">
+      <v-alert
+        v-if="showUpgradeRow"
+        type="warning"
+        text
+        class="pa-2 text-subtitle-2"
+      >
+        <i18n path="notes_menu.limit_warning">
+          <template #limit>{{ itemsPerPage }}</template>
+          <template #link>
+            <base-external-link
+              :text="tc('upgrade_row.rotki_premium')"
+              :href="premiumURL"
+            />
+          </template>
+        </i18n>
+      </v-alert>
+
+      <div v-if="notes.data.length > 0">
+        <div>
+          <template v-for="note in notes.data">
+            <v-sheet
+              :key="note.identifier"
+              outlined
+              rounded
+              class="note__item pa-3 pt-2 mb-4"
+              :class="{
+                'note__item--deleting':
+                  animateDelete && idToDelete === note.identifier
+              }"
+            >
+              <div class="d-flex justify-space-between align-center">
+                <div class="font-weight-bold note__title">
+                  {{ note.title }}
+                </div>
+                <v-btn icon @click="togglePin(note)">
+                  <v-icon v-if="note.isPinned" color="primary">mdi-pin</v-icon>
+                  <v-icon v-else color="gray">mdi-pin-outline</v-icon>
+                </v-btn>
+              </div>
+
+              <div class="text--secondary note__content">
+                {{ note.content }}
+              </div>
+
+              <div
+                v-if="showDeleteConfirmation && idToDelete === note.identifier"
+                class="d-flex justify-space-between align-center pt-2"
+              >
+                <div class="note__content font-italic">
+                  {{ tc('notes_menu.delete_confirmation') }}
+                </div>
+                <div>
+                  <v-btn icon small @click="clearDeleteDialog">
+                    <v-icon small color="red">mdi-close</v-icon>
+                  </v-btn>
+
+                  <v-btn icon small @click="confirmDelete">
+                    <v-icon small color="green">mdi-check</v-icon>
+                  </v-btn>
+                </div>
+              </div>
+              <div
+                v-else
+                class="d-flex justify-space-between align-center pt-2"
+              >
+                <div class="note__datetime text--secondary font-italic">
+                  <i18n path="notes_menu.last_updated">
+                    <template #datetime>
+                      <date-display :timestamp="note.lastUpdateTimestamp" />
+                    </template>
+                  </i18n>
+                </div>
+                <div>
+                  <v-btn icon small @click="editNote(note)">
+                    <v-icon small>mdi-pencil-outline</v-icon>
+                  </v-btn>
+
+                  <v-btn icon small @click="deleteNote(note.identifier)">
+                    <v-icon small>mdi-delete-outline</v-icon>
+                  </v-btn>
+                </div>
+              </div>
+            </v-sheet>
+          </template>
+
+          <div v-if="totalPage > 1" class="mb-4">
+            <v-pagination
+              :value="page"
+              :length="totalPage"
+              @input="changePage"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div v-else class="note__empty">{{ tc('notes_menu.empty_notes') }}</div>
+    </div>
+
+    <big-dialog
+      :display="showForm"
+      :title="
+        editMode
+          ? tc('notes_menu.dialog.edit_title')
+          : tc('notes_menu.dialog.add_title')
+      "
+      :action-disabled="!valid"
+      @confirm="save"
+      @cancel="resetForm"
+    >
+      <user-note-form v-model="form" @valid="valid = $event" />
+    </big-dialog>
+  </fragment>
+</template>
 <style lang="scss" scoped>
 .note {
   &__wrapper {

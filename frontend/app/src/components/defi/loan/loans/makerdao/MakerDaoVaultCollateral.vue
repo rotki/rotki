@@ -1,27 +1,3 @@
-<template>
-  <stat-card :title="tc('loan_collateral.title')">
-    <loan-row :title="tc('loan_collateral.locked_collateral')">
-      <amount-display
-        :asset-padding="assetPadding"
-        :value="vault.collateral.amount"
-        :asset="vault.collateral.asset"
-      />
-    </loan-row>
-    <loan-row>
-      <amount-display
-        :asset-padding="assetPadding"
-        :value="vault.collateral.usdValue"
-        fiat-currency="USD"
-      />
-    </loan-row>
-    <v-divider class="my-4" />
-    <loan-row :title="tc('loan_collateral.current_ratio')" class="mb-2">
-      <percentage-display :value="ratio" />
-    </loan-row>
-    <manage-watchers :vault="vault" />
-  </stat-card>
-</template>
-
 <script setup lang="ts">
 import { type PropType } from 'vue';
 import LoanRow from '@/components/defi/loan/LoanRow.vue';
@@ -45,3 +21,27 @@ const ratio = computed(() => {
 
 const assetPadding = 5;
 </script>
+
+<template>
+  <stat-card :title="tc('loan_collateral.title')">
+    <loan-row :title="tc('loan_collateral.locked_collateral')">
+      <amount-display
+        :asset-padding="assetPadding"
+        :value="vault.collateral.amount"
+        :asset="vault.collateral.asset"
+      />
+    </loan-row>
+    <loan-row>
+      <amount-display
+        :asset-padding="assetPadding"
+        :value="vault.collateral.usdValue"
+        fiat-currency="USD"
+      />
+    </loan-row>
+    <v-divider class="my-4" />
+    <loan-row :title="tc('loan_collateral.current_ratio')" class="mb-2">
+      <percentage-display :value="ratio" />
+    </loan-row>
+    <manage-watchers :vault="vault" />
+  </stat-card>
+</template>

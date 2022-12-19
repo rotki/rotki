@@ -1,9 +1,3 @@
-<template>
-  <v-btn :icon="icon" :text="text" @click="navigateToDetails">
-    <slot />
-  </v-btn>
-</template>
-
 <script setup lang="ts">
 import { Routes } from '@/router/routes';
 
@@ -23,3 +17,9 @@ const navigateToDetails = async () => {
   });
 };
 </script>
+
+<template>
+  <v-btn :icon="icon" :text="text" @click="navigateToDetails">
+    <slot />
+  </v-btn>
+</template>

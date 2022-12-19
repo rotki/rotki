@@ -1,158 +1,3 @@
-<template>
-  <card outlined-body>
-    <template #title>
-      {{ tc('common.assets') }}
-    </template>
-    <template #subtitle>
-      {{ tc('asset_table.managed.subtitle') }}
-    </template>
-    <template #actions>
-      <v-row>
-        <v-col cols="12" md="4">
-          <ignore-buttons
-            :disabled="selected.length === 0"
-            @ignore="massIgnore"
-          />
-          <div v-if="selected.length > 0" class="mt-2 ms-1">
-            {{ tc('asset_table.selected', 0, { count: selected.length }) }}
-            <v-btn small text @click="selected = []">
-              {{ tc('common.actions.clear_selection') }}
-            </v-btn>
-          </div>
-        </v-col>
-        <v-col />
-        <v-col cols="12" md="auto">
-          <v-menu offset-y :close-on-content-click="false">
-            <template #activator="{ on }">
-              <v-btn
-                outlined
-                text
-                height="40px"
-                data-cy="asset-filter"
-                v-on="on"
-              >
-                {{ tc('common.actions.filter') }}
-                <v-icon class="ml-2">mdi-chevron-down</v-icon>
-              </v-btn>
-            </template>
-            <v-list>
-              <v-list-item link @click="onlyShowOwned = !onlyShowOwned">
-                <v-checkbox
-                  data-cy="asset-filter-only-show-owned"
-                  :input-value="onlyShowOwned"
-                  class="mt-0 py-2"
-                  :label="tc('asset_table.only_show_owned')"
-                  hide-details
-                />
-              </v-list-item>
-              <v-list-item
-                :class="css['filter-heading']"
-                class="font-weight-bold text-uppercase py-2"
-              >
-                {{ tc('asset_table.filter_by_ignored_status') }}
-              </v-list-item>
-              <v-list-item>
-                <v-radio-group
-                  v-model="ignoredAssetsHandling"
-                  class="mt-0"
-                  data-cy="asset-filter-ignored"
-                >
-                  <v-radio value="none" :label="tc('asset_table.show_all')" />
-                  <v-radio
-                    value="exclude"
-                    :label="tc('asset_table.only_show_unignored')"
-                  />
-                  <v-radio
-                    value="show_only"
-                    :label="tc('asset_table.only_show_ignored')"
-                  />
-                </v-radio-group>
-              </v-list-item>
-            </v-list>
-          </v-menu>
-        </v-col>
-        <v-col cols="12" md="4" class="pb-md-8">
-          <table-filter
-            :matchers="matchers"
-            data-cy="asset_table_filter"
-            @update:matches="updateFilter"
-          />
-        </v-col>
-      </v-row>
-    </template>
-    <v-btn absolute fab top right dark color="primary" @click="add">
-      <v-icon> mdi-plus </v-icon>
-    </v-btn>
-    <data-table
-      v-model="selected"
-      :items="tokens"
-      :loading="loading"
-      :headers="tableHeaders"
-      single-expand
-      :expanded="expanded"
-      item-key="identifier"
-      sort-by="symbol"
-      :sort-desc="false"
-      :server-items-length="serverItemLength"
-      :single-select="false"
-      show-select
-      :options="options"
-      @update:options="updatePaginationHandler($event)"
-    >
-      <template #item.symbol="{ item }">
-        <asset-details-base
-          :changeable="!loading"
-          opens-details
-          :asset="getAsset(item)"
-        />
-      </template>
-      <template #item.address="{ item }">
-        <hash-link v-if="item.address" :text="item.address" />
-      </template>
-      <template #item.started="{ item }">
-        <date-display v-if="item.started" :timestamp="item.started" />
-        <span v-else>-</span>
-      </template>
-      <template #item.type="{ item }">
-        {{ formatType(item.type) }}
-      </template>
-      <template #item.ignored="{ item }">
-        <div class="d-flex justify-center">
-          <v-switch
-            :input-value="isIgnored(item.identifier)"
-            @change="toggleIgnoreAsset(item.identifier)"
-          />
-        </div>
-      </template>
-      <template #item.actions="{ item }">
-        <row-actions
-          v-if="item.type !== CUSTOM_ASSET"
-          :edit-tooltip="tc('asset_table.edit_tooltip')"
-          :delete-tooltip="tc('asset_table.delete_tooltip')"
-          @edit-click="edit(item)"
-          @delete-click="deleteAsset(item)"
-        >
-          <copy-button
-            class="mx-1"
-            :tooltip="tc('asset_table.copy_identifier.tooltip')"
-            :value="item.identifier"
-          />
-        </row-actions>
-      </template>
-      <template #expanded-item="{ item, headers }">
-        <asset-underlying-tokens :cols="headers.length" :asset="item" />
-      </template>
-      <template #item.expand="{ item }">
-        <row-expander
-          v-if="item.underlyingTokens && item.underlyingTokens.length > 0"
-          :expanded="expanded.includes(item)"
-          @click="expanded = expanded.includes(item) ? [] : [item]"
-        />
-      </template>
-    </data-table>
-  </card>
-</template>
-
 <script setup lang="ts">
 import { type SupportedAsset } from '@rotki/common/lib/data';
 import { type PropType, type Ref } from 'vue';
@@ -357,6 +202,161 @@ watch([filters, onlyShowOwned, ignoredAssetsHandling], () => {
 
 const css = useCssModule();
 </script>
+
+<template>
+  <card outlined-body>
+    <template #title>
+      {{ tc('common.assets') }}
+    </template>
+    <template #subtitle>
+      {{ tc('asset_table.managed.subtitle') }}
+    </template>
+    <template #actions>
+      <v-row>
+        <v-col cols="12" md="4">
+          <ignore-buttons
+            :disabled="selected.length === 0"
+            @ignore="massIgnore"
+          />
+          <div v-if="selected.length > 0" class="mt-2 ms-1">
+            {{ tc('asset_table.selected', 0, { count: selected.length }) }}
+            <v-btn small text @click="selected = []">
+              {{ tc('common.actions.clear_selection') }}
+            </v-btn>
+          </div>
+        </v-col>
+        <v-col />
+        <v-col cols="12" md="auto">
+          <v-menu offset-y :close-on-content-click="false">
+            <template #activator="{ on }">
+              <v-btn
+                outlined
+                text
+                height="40px"
+                data-cy="asset-filter"
+                v-on="on"
+              >
+                {{ tc('common.actions.filter') }}
+                <v-icon class="ml-2">mdi-chevron-down</v-icon>
+              </v-btn>
+            </template>
+            <v-list>
+              <v-list-item link @click="onlyShowOwned = !onlyShowOwned">
+                <v-checkbox
+                  data-cy="asset-filter-only-show-owned"
+                  :input-value="onlyShowOwned"
+                  class="mt-0 py-2"
+                  :label="tc('asset_table.only_show_owned')"
+                  hide-details
+                />
+              </v-list-item>
+              <v-list-item
+                :class="css['filter-heading']"
+                class="font-weight-bold text-uppercase py-2"
+              >
+                {{ tc('asset_table.filter_by_ignored_status') }}
+              </v-list-item>
+              <v-list-item>
+                <v-radio-group
+                  v-model="ignoredAssetsHandling"
+                  class="mt-0"
+                  data-cy="asset-filter-ignored"
+                >
+                  <v-radio value="none" :label="tc('asset_table.show_all')" />
+                  <v-radio
+                    value="exclude"
+                    :label="tc('asset_table.only_show_unignored')"
+                  />
+                  <v-radio
+                    value="show_only"
+                    :label="tc('asset_table.only_show_ignored')"
+                  />
+                </v-radio-group>
+              </v-list-item>
+            </v-list>
+          </v-menu>
+        </v-col>
+        <v-col cols="12" md="4" class="pb-md-8">
+          <table-filter
+            :matchers="matchers"
+            data-cy="asset_table_filter"
+            @update:matches="updateFilter"
+          />
+        </v-col>
+      </v-row>
+    </template>
+    <v-btn absolute fab top right dark color="primary" @click="add">
+      <v-icon> mdi-plus </v-icon>
+    </v-btn>
+    <data-table
+      v-model="selected"
+      :items="tokens"
+      :loading="loading"
+      :headers="tableHeaders"
+      single-expand
+      :expanded="expanded"
+      item-key="identifier"
+      sort-by="symbol"
+      :sort-desc="false"
+      :server-items-length="serverItemLength"
+      :single-select="false"
+      show-select
+      :options="options"
+      @update:options="updatePaginationHandler($event)"
+    >
+      <template #item.symbol="{ item }">
+        <asset-details-base
+          :changeable="!loading"
+          opens-details
+          :asset="getAsset(item)"
+        />
+      </template>
+      <template #item.address="{ item }">
+        <hash-link v-if="item.address" :text="item.address" />
+      </template>
+      <template #item.started="{ item }">
+        <date-display v-if="item.started" :timestamp="item.started" />
+        <span v-else>-</span>
+      </template>
+      <template #item.type="{ item }">
+        {{ formatType(item.type) }}
+      </template>
+      <template #item.ignored="{ item }">
+        <div class="d-flex justify-center">
+          <v-switch
+            :input-value="isIgnored(item.identifier)"
+            @change="toggleIgnoreAsset(item.identifier)"
+          />
+        </div>
+      </template>
+      <template #item.actions="{ item }">
+        <row-actions
+          v-if="item.type !== CUSTOM_ASSET"
+          :edit-tooltip="tc('asset_table.edit_tooltip')"
+          :delete-tooltip="tc('asset_table.delete_tooltip')"
+          @edit-click="edit(item)"
+          @delete-click="deleteAsset(item)"
+        >
+          <copy-button
+            class="mx-1"
+            :tooltip="tc('asset_table.copy_identifier.tooltip')"
+            :value="item.identifier"
+          />
+        </row-actions>
+      </template>
+      <template #expanded-item="{ item, headers }">
+        <asset-underlying-tokens :cols="headers.length" :asset="item" />
+      </template>
+      <template #item.expand="{ item }">
+        <row-expander
+          v-if="item.underlyingTokens && item.underlyingTokens.length > 0"
+          :expanded="expanded.includes(item)"
+          @click="expanded = expanded.includes(item) ? [] : [item]"
+        />
+      </template>
+    </data-table>
+  </card>
+</template>
 
 <style module lang="scss">
 .filter-heading {

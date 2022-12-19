@@ -1,104 +1,4 @@
-﻿<template>
-  <v-autocomplete
-    ref="autoCompleteInput"
-    :value="value"
-    :disabled="disabled"
-    :items="visibleAssets"
-    class="asset-select"
-    :hint="hint"
-    :label="label"
-    :clearable="clearable"
-    :persistent-hint="persistentHint"
-    :required="required"
-    :success-messages="successMessages"
-    :error-messages="errors"
-    item-value="identifier"
-    :search-input.sync="search"
-    :item-text="assetText"
-    :hide-details="hideDetails"
-    :hide-no-data="loading || !search"
-    auto-select-first
-    :loading="loading"
-    :menu-props="{ closeOnContentClick: true }"
-    :outlined="outlined"
-    no-filter
-    :class="outlined ? 'asset-select--outlined' : null"
-    @input="input"
-    @blur="blur"
-  >
-    <template #selection="{ item }">
-      <template v-if="item && item.identifier">
-        <nft-details
-          v-if="item.assetType === 'nft'"
-          :identifier="item.identifier"
-          size="40px"
-        />
-        <asset-details-base
-          v-else
-          class="asset-select__details ml-2"
-          :asset="item"
-        />
-      </template>
-    </template>
-    <template #item="{ item }">
-      <nft-details
-        v-if="item.assetType === 'nft'"
-        :identifier="item.identifier"
-        size="40px"
-      />
-      <template v-else>
-        <div class="pr-4">
-          <v-img
-            v-if="item.imageUrl"
-            width="40px"
-            height="40px"
-            contain
-            :src="item.imageUrl"
-          />
-          <asset-icon v-else size="40px" :identifier="item.identifier" />
-        </div>
-        <v-list-item-content
-          :id="`asset-${getValidSelectorFromEvmAddress(
-            item.identifier.toLocaleLowerCase()
-          )}`"
-        >
-          <template v-if="!item.isCustomAsset">
-            <v-list-item-title class="font-weight-medium">
-              {{ item.symbol }}
-            </v-list-item-title>
-            <v-list-item-subtitle>{{ item.name }}</v-list-item-subtitle>
-          </template>
-          <template v-else>
-            <v-list-item-title class="font-weight-medium">
-              {{ item.name }}
-            </v-list-item-title>
-            <v-list-item-subtitle>
-              {{ item.customAssetType }}
-            </v-list-item-subtitle>
-          </template>
-        </v-list-item-content>
-      </template>
-    </template>
-    <template #no-data>
-      <div data-cy="no_assets" class="px-4 py-2">
-        {{ tc('asset_select.no_results') }}
-      </div>
-    </template>
-    <template #append>
-      <div v-if="loading" class="fill-height d-flex items-center">
-        <v-progress-circular
-          class="asset-select__loading"
-          color="primary"
-          indeterminate
-          width="3"
-          size="30"
-        />
-      </div>
-    </template>
-  </v-autocomplete>
-</template>
-
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { type PropType, type Ref } from 'vue';
 import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
@@ -266,6 +166,106 @@ watch(value, async () => {
   await checkValue();
 });
 </script>
+
+<template>
+  <v-autocomplete
+    ref="autoCompleteInput"
+    :value="value"
+    :disabled="disabled"
+    :items="visibleAssets"
+    class="asset-select"
+    :hint="hint"
+    :label="label"
+    :clearable="clearable"
+    :persistent-hint="persistentHint"
+    :required="required"
+    :success-messages="successMessages"
+    :error-messages="errors"
+    item-value="identifier"
+    :search-input.sync="search"
+    :item-text="assetText"
+    :hide-details="hideDetails"
+    :hide-no-data="loading || !search"
+    auto-select-first
+    :loading="loading"
+    :menu-props="{ closeOnContentClick: true }"
+    :outlined="outlined"
+    no-filter
+    :class="outlined ? 'asset-select--outlined' : null"
+    @input="input"
+    @blur="blur"
+  >
+    <template #selection="{ item }">
+      <template v-if="item && item.identifier">
+        <nft-details
+          v-if="item.assetType === 'nft'"
+          :identifier="item.identifier"
+          size="40px"
+        />
+        <asset-details-base
+          v-else
+          class="asset-select__details ml-2"
+          :asset="item"
+        />
+      </template>
+    </template>
+    <template #item="{ item }">
+      <nft-details
+        v-if="item.assetType === 'nft'"
+        :identifier="item.identifier"
+        size="40px"
+      />
+      <template v-else>
+        <div class="pr-4">
+          <v-img
+            v-if="item.imageUrl"
+            width="40px"
+            height="40px"
+            contain
+            :src="item.imageUrl"
+          />
+          <asset-icon v-else size="40px" :identifier="item.identifier" />
+        </div>
+        <v-list-item-content
+          :id="`asset-${getValidSelectorFromEvmAddress(
+            item.identifier.toLocaleLowerCase()
+          )}`"
+        >
+          <template v-if="!item.isCustomAsset">
+            <v-list-item-title class="font-weight-medium">
+              {{ item.symbol }}
+            </v-list-item-title>
+            <v-list-item-subtitle>{{ item.name }}</v-list-item-subtitle>
+          </template>
+          <template v-else>
+            <v-list-item-title class="font-weight-medium">
+              {{ item.name }}
+            </v-list-item-title>
+            <v-list-item-subtitle>
+              {{ item.customAssetType }}
+            </v-list-item-subtitle>
+          </template>
+        </v-list-item-content>
+      </template>
+    </template>
+    <template #no-data>
+      <div data-cy="no_assets" class="px-4 py-2">
+        {{ tc('asset_select.no_results') }}
+      </div>
+    </template>
+    <template #append>
+      <div v-if="loading" class="fill-height d-flex items-center">
+        <v-progress-circular
+          class="asset-select__loading"
+          color="primary"
+          indeterminate
+          width="3"
+          size="30"
+        />
+      </div>
+    </template>
+  </v-autocomplete>
+</template>
 
 <style scoped lang="scss">
 :deep() {

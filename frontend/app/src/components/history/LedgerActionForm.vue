@@ -1,140 +1,3 @@
-<template>
-  <v-form
-    :value="value"
-    data-cy="ledger-action-form"
-    class="ledger-action-form"
-  >
-    <location-selector
-      v-model="location"
-      class="pt-1"
-      required
-      outlined
-      data-cy="location"
-      :error-messages="v$.location.$errors.map(e => e.$message)"
-      :label="tc('common.location')"
-      @focus="delete errorMessages['location']"
-    />
-
-    <date-time-picker
-      v-model="datetime"
-      outlined
-      :label="tc('ledger_action_form.date.label')"
-      persistent-hint
-      required
-      seconds
-      limit-now
-      data-cy="datetime"
-      :hint="tc('ledger_action_form.date.hint')"
-      :error-messages="errorMessages['timestamp']"
-      @focus="delete errorMessages['timestamp']"
-    />
-
-    <v-row
-      align="center"
-      :class="
-        $vuetify.breakpoint.mdAndUp
-          ? 'ledger-action-form__amount-wrapper'
-          : null
-      "
-    >
-      <v-col cols="12" md="4">
-        <asset-select
-          v-model="asset"
-          outlined
-          required
-          data-cy="asset"
-          :error-messages="v$.asset.$errors.map(e => e.$message)"
-          @focus="delete errorMessages['asset']"
-        />
-      </v-col>
-
-      <v-col cols="12" md="4">
-        <amount-input
-          v-model="amount"
-          outlined
-          :error-messages="v$.amount.$errors.map(e => e.$message)"
-          required
-          data-cy="amount"
-          :label="tc('common.amount')"
-          @focus="delete errorMessages['amount']"
-        />
-      </v-col>
-
-      <v-col cols="12" md="4">
-        <v-select
-          v-model="actionType"
-          outlined
-          :label="tc('common.type')"
-          :items="ledgerActionsData"
-          item-value="identifier"
-          item-text="label"
-          required
-          data-cy="action-type"
-          :error-messages="errorMessages['actionType']"
-          @focus="delete errorMessages['actionType']"
-        />
-      </v-col>
-    </v-row>
-
-    <v-divider class="mb-6 mt-2" />
-
-    <v-row
-      :class="
-        $vuetify.breakpoint.mdAndUp ? 'ledger-action-form__rate-wrapper' : null
-      "
-    >
-      <v-col cols="12" md="8">
-        <amount-input
-          v-model="rate"
-          outlined
-          persistent-hint
-          data-cy="rate"
-          :hint="tc('ledger_action_form.rate.hint')"
-          :label="tc('ledger_action_form.rate.label')"
-          :error-messages="errorMessages['rate']"
-          @focus="delete errorMessages['rate']"
-        />
-      </v-col>
-      <v-col cols="12" md="4">
-        <asset-select
-          v-model="rateAsset"
-          outlined
-          :label="tc('ledger_action_form.rate_asset.label')"
-          :hint="tc('ledger_action_form.rate_asset.hint')"
-          persistent-hint
-          data-cy="rate-asset"
-          :error-messages="errorMessages['rateAsset']"
-          @focus="delete errorMessages['rateAsset']"
-        />
-      </v-col>
-    </v-row>
-
-    <v-text-field
-      v-model="link"
-      outlined
-      prepend-inner-icon="mdi-link"
-      persistent-hint
-      data-cy="link"
-      :label="tc('ledger_action_form.link.label')"
-      :hint="tc('ledger_action_form.link.hint')"
-      :error-messages="errorMessages['link']"
-      @focus="delete errorMessages['link']"
-    />
-
-    <v-textarea
-      v-model="notes"
-      prepend-inner-icon="mdi-text-box-outline"
-      persistent-hint
-      outlined
-      data-cy="notes"
-      :label="tc('ledger_action_form.notes.label')"
-      :hint="tc('ledger_action_form.notes.hint')"
-      :error-messages="errorMessages['notes']"
-      @focus="delete errorMessages['notes']"
-    />
-  </v-form>
-</template>
-
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
@@ -324,3 +187,140 @@ defineExpose({
   save
 });
 </script>
+
+<template>
+  <v-form
+    :value="value"
+    data-cy="ledger-action-form"
+    class="ledger-action-form"
+  >
+    <location-selector
+      v-model="location"
+      class="pt-1"
+      required
+      outlined
+      data-cy="location"
+      :error-messages="v$.location.$errors.map(e => e.$message)"
+      :label="tc('common.location')"
+      @focus="delete errorMessages['location']"
+    />
+
+    <date-time-picker
+      v-model="datetime"
+      outlined
+      :label="tc('ledger_action_form.date.label')"
+      persistent-hint
+      required
+      seconds
+      limit-now
+      data-cy="datetime"
+      :hint="tc('ledger_action_form.date.hint')"
+      :error-messages="errorMessages['timestamp']"
+      @focus="delete errorMessages['timestamp']"
+    />
+
+    <v-row
+      align="center"
+      :class="
+        $vuetify.breakpoint.mdAndUp
+          ? 'ledger-action-form__amount-wrapper'
+          : null
+      "
+    >
+      <v-col cols="12" md="4">
+        <asset-select
+          v-model="asset"
+          outlined
+          required
+          data-cy="asset"
+          :error-messages="v$.asset.$errors.map(e => e.$message)"
+          @focus="delete errorMessages['asset']"
+        />
+      </v-col>
+
+      <v-col cols="12" md="4">
+        <amount-input
+          v-model="amount"
+          outlined
+          :error-messages="v$.amount.$errors.map(e => e.$message)"
+          required
+          data-cy="amount"
+          :label="tc('common.amount')"
+          @focus="delete errorMessages['amount']"
+        />
+      </v-col>
+
+      <v-col cols="12" md="4">
+        <v-select
+          v-model="actionType"
+          outlined
+          :label="tc('common.type')"
+          :items="ledgerActionsData"
+          item-value="identifier"
+          item-text="label"
+          required
+          data-cy="action-type"
+          :error-messages="errorMessages['actionType']"
+          @focus="delete errorMessages['actionType']"
+        />
+      </v-col>
+    </v-row>
+
+    <v-divider class="mb-6 mt-2" />
+
+    <v-row
+      :class="
+        $vuetify.breakpoint.mdAndUp ? 'ledger-action-form__rate-wrapper' : null
+      "
+    >
+      <v-col cols="12" md="8">
+        <amount-input
+          v-model="rate"
+          outlined
+          persistent-hint
+          data-cy="rate"
+          :hint="tc('ledger_action_form.rate.hint')"
+          :label="tc('ledger_action_form.rate.label')"
+          :error-messages="errorMessages['rate']"
+          @focus="delete errorMessages['rate']"
+        />
+      </v-col>
+      <v-col cols="12" md="4">
+        <asset-select
+          v-model="rateAsset"
+          outlined
+          :label="tc('ledger_action_form.rate_asset.label')"
+          :hint="tc('ledger_action_form.rate_asset.hint')"
+          persistent-hint
+          data-cy="rate-asset"
+          :error-messages="errorMessages['rateAsset']"
+          @focus="delete errorMessages['rateAsset']"
+        />
+      </v-col>
+    </v-row>
+
+    <v-text-field
+      v-model="link"
+      outlined
+      prepend-inner-icon="mdi-link"
+      persistent-hint
+      data-cy="link"
+      :label="tc('ledger_action_form.link.label')"
+      :hint="tc('ledger_action_form.link.hint')"
+      :error-messages="errorMessages['link']"
+      @focus="delete errorMessages['link']"
+    />
+
+    <v-textarea
+      v-model="notes"
+      prepend-inner-icon="mdi-text-box-outline"
+      persistent-hint
+      outlined
+      data-cy="notes"
+      :label="tc('ledger_action_form.notes.label')"
+      :hint="tc('ledger_action_form.notes.hint')"
+      :error-messages="errorMessages['notes']"
+      @focus="delete errorMessages['notes']"
+    />
+  </v-form>
+</template>

@@ -1,3 +1,30 @@
+<script setup lang="ts">
+import {
+  SYNC_DOWNLOAD,
+  SYNC_UPLOAD,
+  type SyncAction
+} from '@/services/types-api';
+import { usePremiumStore } from '@/store/session/premium';
+
+defineProps({
+  pending: { required: true, type: Boolean }
+});
+
+const emit = defineEmits<{
+  (event: 'action', action: SyncAction): void;
+}>();
+
+const { tc } = useI18n();
+
+const { premium } = storeToRefs(usePremiumStore());
+const UPLOAD: SyncAction = SYNC_UPLOAD;
+const DOWNLOAD: SyncAction = SYNC_DOWNLOAD;
+
+const action = (action: SyncAction) => {
+  emit('action', action);
+};
+</script>
+
 <template>
   <div class="d-flex flex-wrap mx-n1">
     <v-tooltip top open-delay="400">
@@ -39,30 +66,3 @@
     </v-tooltip>
   </div>
 </template>
-
-<script setup lang="ts">
-import {
-  SYNC_DOWNLOAD,
-  SYNC_UPLOAD,
-  type SyncAction
-} from '@/services/types-api';
-import { usePremiumStore } from '@/store/session/premium';
-
-defineProps({
-  pending: { required: true, type: Boolean }
-});
-
-const emit = defineEmits<{
-  (event: 'action', action: SyncAction): void;
-}>();
-
-const { tc } = useI18n();
-
-const { premium } = storeToRefs(usePremiumStore());
-const UPLOAD: SyncAction = SYNC_UPLOAD;
-const DOWNLOAD: SyncAction = SYNC_DOWNLOAD;
-
-const action = (action: SyncAction) => {
-  emit('action', action);
-};
-</script>

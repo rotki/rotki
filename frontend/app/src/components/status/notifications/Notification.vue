@@ -1,51 +1,3 @@
-<template>
-  <v-card :class="$style.notification" :outlined="!popup" :elevation="0">
-    <v-list-item :class="$style.body">
-      <v-list-item-avatar>
-        <v-icon size="32px" :color="color">
-          {{ icon }}
-        </v-icon>
-      </v-list-item-avatar>
-      <v-list-item-content>
-        <v-list-item-title class="mt-2">
-          {{ notification.title }}
-        </v-list-item-title>
-        <span class="mt-1" :style="fontStyle" :class="$style.message">
-          {{ notification.message }}
-        </span>
-        <span class="text-caption text--secondary">
-          {{ date }}
-        </span>
-        <slot />
-      </v-list-item-content>
-      <div class="d-flex flex-column" :class="$style.actions">
-        <v-tooltip bottom open-delay="400">
-          <template #activator="{ on }">
-            <v-btn
-              text
-              icon
-              :class="$style.dismiss"
-              v-on="on"
-              @click="dismiss(notification.id)"
-            >
-              <v-icon>mdi-close</v-icon>
-            </v-btn>
-          </template>
-          <span>{{ t('notification.dismiss_tooltip') }}</span>
-        </v-tooltip>
-        <v-tooltip bottom open-delay="400">
-          <template #activator="{ on }">
-            <v-btn :class="$style.copy" text icon v-on="on" @click="copy()">
-              <v-icon>mdi-content-copy</v-icon>
-            </v-btn>
-          </template>
-          <span> {{ t('notification.copy_tooltip') }}</span>
-        </v-tooltip>
-      </div>
-    </v-list-item>
-  </v-card>
-</template>
-
 <script setup lang="ts">
 import { type NotificationData, Severity } from '@rotki/common/lib/messages';
 import dayjs from 'dayjs';
@@ -102,6 +54,54 @@ const copy = async () => {
 
 const { fontStyle } = useTheme();
 </script>
+
+<template>
+  <v-card :class="$style.notification" :outlined="!popup" :elevation="0">
+    <v-list-item :class="$style.body">
+      <v-list-item-avatar>
+        <v-icon size="32px" :color="color">
+          {{ icon }}
+        </v-icon>
+      </v-list-item-avatar>
+      <v-list-item-content>
+        <v-list-item-title class="mt-2">
+          {{ notification.title }}
+        </v-list-item-title>
+        <span class="mt-1" :style="fontStyle" :class="$style.message">
+          {{ notification.message }}
+        </span>
+        <span class="text-caption text--secondary">
+          {{ date }}
+        </span>
+        <slot />
+      </v-list-item-content>
+      <div class="d-flex flex-column" :class="$style.actions">
+        <v-tooltip bottom open-delay="400">
+          <template #activator="{ on }">
+            <v-btn
+              text
+              icon
+              :class="$style.dismiss"
+              v-on="on"
+              @click="dismiss(notification.id)"
+            >
+              <v-icon>mdi-close</v-icon>
+            </v-btn>
+          </template>
+          <span>{{ t('notification.dismiss_tooltip') }}</span>
+        </v-tooltip>
+        <v-tooltip bottom open-delay="400">
+          <template #activator="{ on }">
+            <v-btn :class="$style.copy" text icon v-on="on" @click="copy()">
+              <v-icon>mdi-content-copy</v-icon>
+            </v-btn>
+          </template>
+          <span> {{ t('notification.copy_tooltip') }}</span>
+        </v-tooltip>
+      </div>
+    </v-list-item>
+  </v-card>
+</template>
 
 <style module lang="scss">
 .notification {

@@ -1,25 +1,3 @@
-<template>
-  <v-row align="center">
-    <v-col v-if="data.icon" cols="auto">
-      <adaptive-wrapper>
-        <v-img
-          :width="size"
-          contain
-          position="left"
-          :max-height="size"
-          :src="data.icon"
-        />
-      </adaptive-wrapper>
-    </v-col>
-    <v-col v-if="labels[data.identifier]" cols="auto">
-      {{ labels[data.identifier] }}
-    </v-col>
-    <v-col v-else cols="auto">
-      {{ toSentenceCase(data.identifier) }}
-    </v-col>
-  </v-row>
-</template>
-
 <script setup lang="ts">
 import { type PropType } from 'vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
@@ -80,3 +58,25 @@ const labels: { [keys in PrioritizedListId]: string } = {
   empty_list_id: ''
 };
 </script>
+
+<template>
+  <v-row align="center">
+    <v-col v-if="data.icon" cols="auto">
+      <adaptive-wrapper>
+        <v-img
+          :width="size"
+          contain
+          position="left"
+          :max-height="size"
+          :src="data.icon"
+        />
+      </adaptive-wrapper>
+    </v-col>
+    <v-col v-if="labels[data.identifier]" cols="auto">
+      {{ labels[data.identifier] }}
+    </v-col>
+    <v-col v-else cols="auto">
+      {{ toSentenceCase(data.identifier) }}
+    </v-col>
+  </v-row>
+</template>

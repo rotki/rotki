@@ -1,10 +1,3 @@
-<template>
-  <maker-dao-vault-loan v-if="vault" :vault="vault" />
-  <aave-lending v-else-if="aaveLoan" :loan="aaveLoan" />
-  <compound-lending v-else-if="compoundLoan" :loan="compoundLoan" />
-  <liquity-lending v-else-if="liquityLoan" :loan="liquityLoan" />
-</template>
-
 <script setup lang="ts">
 import { DefiProtocol } from '@rotki/common/lib/blockchain';
 import { type PropType } from 'vue';
@@ -42,3 +35,10 @@ const aaveLoan = create<AaveLoan>(DefiProtocol.AAVE);
 const compoundLoan = create<CompoundLoan>(DefiProtocol.COMPOUND);
 const liquityLoan = create<LiquityLoan>(DefiProtocol.LIQUITY);
 </script>
+
+<template>
+  <maker-dao-vault-loan v-if="vault" :vault="vault" />
+  <aave-lending v-else-if="aaveLoan" :loan="aaveLoan" />
+  <compound-lending v-else-if="compoundLoan" :loan="compoundLoan" />
+  <liquity-lending v-else-if="liquityLoan" :loan="liquityLoan" />
+</template>

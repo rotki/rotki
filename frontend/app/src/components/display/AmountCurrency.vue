@@ -1,31 +1,3 @@
-<template>
-  <v-tooltip
-    v-if="!!asset"
-    top
-    :disabled="asset.length <= assetPadding"
-    open-delay="400"
-    tag="div"
-  >
-    <template #activator="{ on, attrs }">
-      <span
-        data-cy="display-currency"
-        v-bind="attrs"
-        :style="assetStyle"
-        v-on="on"
-      >
-        {{ asset }}
-      </span>
-    </template>
-    <span data-cy="display-currency">
-      {{ asset }}
-    </span>
-  </v-tooltip>
-
-  <span v-else :style="assetStyle" data-cy="display-currency">
-    {{ displayAsset }}
-  </span>
-</template>
-
 <script setup lang="ts">
 import { type PropType } from 'vue';
 import { type Currency } from '@/types/currencies';
@@ -74,3 +46,31 @@ const displayAsset = computed(() => {
   return '';
 });
 </script>
+
+<template>
+  <v-tooltip
+    v-if="!!asset"
+    top
+    :disabled="asset.length <= assetPadding"
+    open-delay="400"
+    tag="div"
+  >
+    <template #activator="{ on, attrs }">
+      <span
+        data-cy="display-currency"
+        v-bind="attrs"
+        :style="assetStyle"
+        v-on="on"
+      >
+        {{ asset }}
+      </span>
+    </template>
+    <span data-cy="display-currency">
+      {{ asset }}
+    </span>
+  </v-tooltip>
+
+  <span v-else :style="assetStyle" data-cy="display-currency">
+    {{ displayAsset }}
+  </span>
+</template>

@@ -1,31 +1,3 @@
-<template>
-  <settings-option
-    #default="{ error, success, update: updateTimeframeSetting }"
-    class="mt-4"
-    setting="timeframeSetting"
-    frontend-setting
-    :success-message="successMessage"
-    :error-message="tc('frontend_settings.validation.timeframe.error')"
-    @finished="resetTimeframeSetting"
-  >
-    <settings-option
-      #default="{ update: updateVisibleTimeframes }"
-      setting="visibleTimeframes"
-      frontend-setting
-      @finished="resetVisibleTimeframes"
-    >
-      <time-frame-settings
-        :message="{ error, success }"
-        :value="defaultGraphTimeframe"
-        :visible-timeframes="visibleTimeframes"
-        :current-session-timeframe="currentSessionTimeframe"
-        @timeframe-change="updateTimeframeSetting"
-        @visible-timeframes-change="updateVisibleTimeframes"
-      />
-    </settings-option>
-  </settings-option>
-</template>
-
 <script setup lang="ts">
 import {
   TimeFramePeriod,
@@ -64,3 +36,31 @@ onMounted(() => {
   resetVisibleTimeframes();
 });
 </script>
+
+<template>
+  <settings-option
+    #default="{ error, success, update: updateTimeframeSetting }"
+    class="mt-4"
+    setting="timeframeSetting"
+    frontend-setting
+    :success-message="successMessage"
+    :error-message="tc('frontend_settings.validation.timeframe.error')"
+    @finished="resetTimeframeSetting"
+  >
+    <settings-option
+      #default="{ update: updateVisibleTimeframes }"
+      setting="visibleTimeframes"
+      frontend-setting
+      @finished="resetVisibleTimeframes"
+    >
+      <time-frame-settings
+        :message="{ error, success }"
+        :value="defaultGraphTimeframe"
+        :visible-timeframes="visibleTimeframes"
+        :current-session-timeframe="currentSessionTimeframe"
+        @timeframe-change="updateTimeframeSetting"
+        @visible-timeframes-change="updateVisibleTimeframes"
+      />
+    </settings-option>
+  </settings-option>
+</template>

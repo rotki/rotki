@@ -1,35 +1,3 @@
-<template>
-  <div class="mt-8">
-    <div class="text-h6">
-      {{ tc('frontend_settings.subtitle.query') }}
-    </div>
-    <settings-option
-      #default="{ error, success, update }"
-      class="mt-1"
-      setting="queryPeriod"
-      frontend-setting
-      :transform="transform"
-      :error-message="tc('frontend_settings.validation.periodic_query.error')"
-      @updated="restart"
-      @finished="resetQueryPeriod"
-    >
-      <v-text-field
-        v-model="queryPeriod"
-        outlined
-        class="general-settings__fields__periodic-client-query-period"
-        :label="tc('frontend_settings.label.query_period')"
-        :hint="tc('frontend_settings.label.query_period_hint')"
-        type="number"
-        :min="minQueryPeriod"
-        :max="maxQueryPeriod"
-        :success-messages="success"
-        :error-messages="error || v$.queryPeriod.$errors.map(e => e.$message)"
-        @change="callIfValid($event, update)"
-      />
-    </settings-option>
-  </div>
-</template>
-
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { between, helpers, required } from '@vuelidate/validators';
@@ -76,3 +44,35 @@ onMounted(() => {
   resetQueryPeriod();
 });
 </script>
+
+<template>
+  <div class="mt-8">
+    <div class="text-h6">
+      {{ tc('frontend_settings.subtitle.query') }}
+    </div>
+    <settings-option
+      #default="{ error, success, update }"
+      class="mt-1"
+      setting="queryPeriod"
+      frontend-setting
+      :transform="transform"
+      :error-message="tc('frontend_settings.validation.periodic_query.error')"
+      @updated="restart"
+      @finished="resetQueryPeriod"
+    >
+      <v-text-field
+        v-model="queryPeriod"
+        outlined
+        class="general-settings__fields__periodic-client-query-period"
+        :label="tc('frontend_settings.label.query_period')"
+        :hint="tc('frontend_settings.label.query_period_hint')"
+        type="number"
+        :min="minQueryPeriod"
+        :max="maxQueryPeriod"
+        :success-messages="success"
+        :error-messages="error || v$.queryPeriod.$errors.map(e => e.$message)"
+        @change="callIfValid($event, update)"
+      />
+    </settings-option>
+  </div>
+</template>

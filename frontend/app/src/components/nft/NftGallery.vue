@@ -1,115 +1,3 @@
-<template>
-  <progress-screen v-if="loading && visibleNfts.length === 0">
-    {{ tc('nft_gallery.loading') }}
-  </progress-screen>
-  <no-data-screen v-else-if="noData">
-    <template #title>
-      {{
-        error ? tc('nft_gallery.error_title') : tc('nft_gallery.empty_title')
-      }}
-    </template>
-    <span class="text-subtitle-2 text--secondary">
-      {{ error ? error : tc('nft_gallery.empty_subtitle') }}
-    </span>
-  </no-data-screen>
-  <div v-else class="py-4">
-    <v-row justify="space-between">
-      <v-col>
-        <v-row align="center">
-          <v-col :cols="isMobile ? '12' : '6'">
-            <blockchain-account-selector
-              v-model="selectedAccount"
-              :label="tc('nft_gallery.select_account')"
-              :chains="chains"
-              dense
-              outlined
-              no-padding
-              flat
-              :usable-addresses="availableAddresses"
-            />
-          </v-col>
-          <v-col :cols="isMobile ? '12' : '6'">
-            <v-card flat>
-              <div>
-                <v-autocomplete
-                  v-model="selectedCollection"
-                  :label="tc('nft_gallery.select_collection')"
-                  single-line
-                  clearable
-                  hide-details
-                  hide-selected
-                  :items="collections"
-                  outlined
-                  background-color=""
-                  dense
-                />
-              </div>
-            </v-card>
-          </v-col>
-          <v-col :cols="isMobile ? '12' : '6'">
-            <sorting-selector
-              :sort-by="sortBy"
-              :sort-properties="sortProperties"
-              :sort-desc="sortDesc"
-              @update:sort-by="sortBy = $event"
-              @update:sort-desc="sortDesc = $event"
-            />
-          </v-col>
-          <v-col :cols="isMobile ? '12' : '6'">
-            <pagination v-if="pages > 0" v-model="page" :length="pages" />
-          </v-col>
-        </v-row>
-      </v-col>
-      <v-col cols="auto">
-        <active-modules :modules="modules" />
-      </v-col>
-      <v-col cols="auto">
-        <refresh-button
-          :loading="loading"
-          :tooltip="tc('nft_gallery.refresh_tooltip')"
-          @refresh="fetchNfts(true)"
-        />
-      </v-col>
-    </v-row>
-    <v-row v-if="!premium && visibleNfts.length > 0" justify="center">
-      <v-col cols="auto">
-        <i18n path="nft_gallery.upgrade">
-          <template #limit> {{ limit }}</template>
-          <template #link>
-            <base-external-link
-              :text="tc('upgrade_row.rotki_premium')"
-              :href="premiumURL"
-            />
-          </template>
-        </i18n>
-      </v-col>
-    </v-row>
-    <v-row
-      v-if="visibleNfts.length === 0"
-      align="center"
-      justify="center"
-      :class="css.empty"
-    >
-      <v-col cols="auto" class="text--secondary text-h6">
-        {{ tc('nft_gallery.empty_filter') }}
-      </v-col>
-    </v-row>
-    <v-row v-else>
-      <v-col
-        v-for="item in visibleNfts"
-        :key="item.tokenIdentifier"
-        cols="12"
-        sm="6"
-        md="6"
-        lg="3"
-        :class="css.xl"
-      >
-        <nft-gallery-item :item="item" />
-      </v-col>
-    </v-row>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { BigNumber } from '@rotki/common';
 import { type GeneralAccount } from '@rotki/common/lib/account';
@@ -332,6 +220,118 @@ const sortNfts = (
   return 0;
 };
 </script>
+
+<template>
+  <progress-screen v-if="loading && visibleNfts.length === 0">
+    {{ tc('nft_gallery.loading') }}
+  </progress-screen>
+  <no-data-screen v-else-if="noData">
+    <template #title>
+      {{
+        error ? tc('nft_gallery.error_title') : tc('nft_gallery.empty_title')
+      }}
+    </template>
+    <span class="text-subtitle-2 text--secondary">
+      {{ error ? error : tc('nft_gallery.empty_subtitle') }}
+    </span>
+  </no-data-screen>
+  <div v-else class="py-4">
+    <v-row justify="space-between">
+      <v-col>
+        <v-row align="center">
+          <v-col :cols="isMobile ? '12' : '6'">
+            <blockchain-account-selector
+              v-model="selectedAccount"
+              :label="tc('nft_gallery.select_account')"
+              :chains="chains"
+              dense
+              outlined
+              no-padding
+              flat
+              :usable-addresses="availableAddresses"
+            />
+          </v-col>
+          <v-col :cols="isMobile ? '12' : '6'">
+            <v-card flat>
+              <div>
+                <v-autocomplete
+                  v-model="selectedCollection"
+                  :label="tc('nft_gallery.select_collection')"
+                  single-line
+                  clearable
+                  hide-details
+                  hide-selected
+                  :items="collections"
+                  outlined
+                  background-color=""
+                  dense
+                />
+              </div>
+            </v-card>
+          </v-col>
+          <v-col :cols="isMobile ? '12' : '6'">
+            <sorting-selector
+              :sort-by="sortBy"
+              :sort-properties="sortProperties"
+              :sort-desc="sortDesc"
+              @update:sort-by="sortBy = $event"
+              @update:sort-desc="sortDesc = $event"
+            />
+          </v-col>
+          <v-col :cols="isMobile ? '12' : '6'">
+            <pagination v-if="pages > 0" v-model="page" :length="pages" />
+          </v-col>
+        </v-row>
+      </v-col>
+      <v-col cols="auto">
+        <active-modules :modules="modules" />
+      </v-col>
+      <v-col cols="auto">
+        <refresh-button
+          :loading="loading"
+          :tooltip="tc('nft_gallery.refresh_tooltip')"
+          @refresh="fetchNfts(true)"
+        />
+      </v-col>
+    </v-row>
+    <v-row v-if="!premium && visibleNfts.length > 0" justify="center">
+      <v-col cols="auto">
+        <i18n path="nft_gallery.upgrade">
+          <template #limit> {{ limit }}</template>
+          <template #link>
+            <base-external-link
+              :text="tc('upgrade_row.rotki_premium')"
+              :href="premiumURL"
+            />
+          </template>
+        </i18n>
+      </v-col>
+    </v-row>
+    <v-row
+      v-if="visibleNfts.length === 0"
+      align="center"
+      justify="center"
+      :class="css.empty"
+    >
+      <v-col cols="auto" class="text--secondary text-h6">
+        {{ tc('nft_gallery.empty_filter') }}
+      </v-col>
+    </v-row>
+    <v-row v-else>
+      <v-col
+        v-for="item in visibleNfts"
+        :key="item.tokenIdentifier"
+        cols="12"
+        sm="6"
+        md="6"
+        lg="3"
+        :class="css.xl"
+      >
+        <nft-gallery-item :item="item" />
+      </v-col>
+    </v-row>
+  </div>
+</template>
 
 <style module lang="scss">
 .empty {

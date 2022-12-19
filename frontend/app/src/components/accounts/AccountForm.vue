@@ -1,74 +1,3 @@
-<template>
-  <v-form
-    ref="form"
-    :value="value"
-    data-cy="blockchain-balance-form"
-    @input="input"
-  >
-    <chain-select
-      :disabled="loading || !!edit"
-      :blockchain="blockchain"
-      @update:blockchain="blockchain = $event"
-    />
-
-    <input-mode-select
-      v-if="!edit"
-      v-model="inputMode"
-      :blockchain="blockchain"
-    />
-
-    <xpub-input
-      v-if="
-        isXpub &&
-        (blockchain === Blockchain.BTC || blockchain === Blockchain.BCH)
-      "
-      :disabled="loading || !!edit"
-      :error-messages="errorMessages"
-      :xpub="xpub"
-      :blockchain="blockchain"
-      @update:xpub="xpub = $event"
-    />
-
-    <module-activator
-      v-if="isEth"
-      @update:selection="selectedModules = $event"
-    />
-
-    <address-input
-      v-if="!(isXpub || isMetamask || isEth2)"
-      :addresses="addresses"
-      :error-messages="errorMessages"
-      :disabled="loading || !!edit"
-      :multi="!edit && !isXpub"
-      @update:addresses="addresses = $event"
-    />
-
-    <eth2-input
-      v-if="isEth2"
-      :validator="validator"
-      :disabled="loading || !!edit"
-      @update:validator="validator = $event"
-    />
-
-    <div v-else>
-      <v-text-field
-        v-model="label"
-        data-cy="account-label-field"
-        outlined
-        class="account-form__label"
-        :label="t('common.name')"
-        :disabled="loading"
-      />
-
-      <tag-input
-        v-model="tags"
-        data-cy="account-tag-field"
-        outlined
-        :disabled="loading"
-      />
-    </div>
-  </v-form>
-</template>
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Severity } from '@rotki/common/lib/messages';
@@ -419,6 +348,77 @@ defineExpose({
   reset
 });
 </script>
+<template>
+  <v-form
+    ref="form"
+    :value="value"
+    data-cy="blockchain-balance-form"
+    @input="input"
+  >
+    <chain-select
+      :disabled="loading || !!edit"
+      :blockchain="blockchain"
+      @update:blockchain="blockchain = $event"
+    />
+
+    <input-mode-select
+      v-if="!edit"
+      v-model="inputMode"
+      :blockchain="blockchain"
+    />
+
+    <xpub-input
+      v-if="
+        isXpub &&
+        (blockchain === Blockchain.BTC || blockchain === Blockchain.BCH)
+      "
+      :disabled="loading || !!edit"
+      :error-messages="errorMessages"
+      :xpub="xpub"
+      :blockchain="blockchain"
+      @update:xpub="xpub = $event"
+    />
+
+    <module-activator
+      v-if="isEth"
+      @update:selection="selectedModules = $event"
+    />
+
+    <address-input
+      v-if="!(isXpub || isMetamask || isEth2)"
+      :addresses="addresses"
+      :error-messages="errorMessages"
+      :disabled="loading || !!edit"
+      :multi="!edit && !isXpub"
+      @update:addresses="addresses = $event"
+    />
+
+    <eth2-input
+      v-if="isEth2"
+      :validator="validator"
+      :disabled="loading || !!edit"
+      @update:validator="validator = $event"
+    />
+
+    <div v-else>
+      <v-text-field
+        v-model="label"
+        data-cy="account-label-field"
+        outlined
+        class="account-form__label"
+        :label="t('common.name')"
+        :disabled="loading"
+      />
+
+      <tag-input
+        v-model="tags"
+        data-cy="account-tag-field"
+        outlined
+        :disabled="loading"
+      />
+    </div>
+  </v-form>
+</template>
 <style scoped lang="scss">
 .account-form {
   &__xpub-key-type {

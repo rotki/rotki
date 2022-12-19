@@ -1,3 +1,10 @@
+<script setup lang="ts">
+defineProps({
+  connected: { required: true, type: Boolean }
+});
+
+const { t } = useI18n();
+</script>
 <template>
   <v-row
     v-if="!connected"
@@ -14,13 +21,6 @@
     </v-col>
   </v-row>
 </template>
-<script setup lang="ts">
-defineProps({
-  connected: { required: true, type: Boolean }
-});
-
-const { t } = useI18n();
-</script>
 <style scoped lang="scss">
 .connection-loading {
   &__content {

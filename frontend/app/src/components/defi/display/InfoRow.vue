@@ -1,19 +1,3 @@
-<template>
-  <div class="d-flex justify-space-between">
-    <div>
-      {{ title }}
-    </div>
-    <slot>
-      <amount-display
-        :fiat-currency="fiat ? 'USD' : undefined"
-        :value="value"
-        :loading="loading"
-        :show-currency="fiat ? 'none' : 'ticker'"
-      />
-    </slot>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { BigNumber } from '@rotki/common';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
@@ -30,3 +14,19 @@ defineProps({
   fiat: { required: false, type: Boolean }
 });
 </script>
+
+<template>
+  <div class="d-flex justify-space-between">
+    <div>
+      {{ title }}
+    </div>
+    <slot>
+      <amount-display
+        :fiat-currency="fiat ? 'USD' : undefined"
+        :value="value"
+        :loading="loading"
+        :show-currency="fiat ? 'none' : 'ticker'"
+      />
+    </slot>
+  </div>
+</template>

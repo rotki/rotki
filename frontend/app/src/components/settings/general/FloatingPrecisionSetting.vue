@@ -1,29 +1,3 @@
-<template>
-  <settings-option
-    #default="{ error, success, update }"
-    setting="uiFloatingPrecision"
-    :transform="transform"
-    :error-message="errorMessage"
-    :success-message="successMessage"
-    @finished="resetFloatingPrecision"
-  >
-    <v-text-field
-      v-model="floatingPrecision"
-      outlined
-      min="1"
-      :max="maxFloatingPrecision"
-      class="general-settings__fields__floating-precision"
-      :label="tc('general_settings.amount.labels.floating_precision')"
-      type="number"
-      :success-messages="success"
-      :error-messages="
-        error || v$.floatingPrecision.$errors.map(e => e.$message)
-      "
-      @change="callIfValid($event, update)"
-    />
-  </settings-option>
-</template>
-
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
@@ -64,3 +38,29 @@ onMounted(() => {
   resetFloatingPrecision();
 });
 </script>
+
+<template>
+  <settings-option
+    #default="{ error, success, update }"
+    setting="uiFloatingPrecision"
+    :transform="transform"
+    :error-message="errorMessage"
+    :success-message="successMessage"
+    @finished="resetFloatingPrecision"
+  >
+    <v-text-field
+      v-model="floatingPrecision"
+      outlined
+      min="1"
+      :max="maxFloatingPrecision"
+      class="general-settings__fields__floating-precision"
+      :label="tc('general_settings.amount.labels.floating_precision')"
+      type="number"
+      :success-messages="success"
+      :error-messages="
+        error || v$.floatingPrecision.$errors.map(e => e.$message)
+      "
+      @change="callIfValid($event, update)"
+    />
+  </settings-option>
+</template>

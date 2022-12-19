@@ -1,3 +1,14 @@
+<script setup lang="ts">
+import { type PropType } from 'vue';
+import { type ProfitLossReportPeriod } from '@/types/reports';
+
+defineProps({
+  period: {
+    required: true,
+    type: Object as PropType<ProfitLossReportPeriod>
+  }
+});
+</script>
 <template>
   <v-row>
     <v-col>
@@ -24,14 +35,3 @@
     </v-col>
   </v-row>
 </template>
-<script setup lang="ts">
-import { type PropType } from 'vue';
-import { type ProfitLossReportPeriod } from '@/types/reports';
-
-defineProps({
-  period: {
-    required: true,
-    type: Object as PropType<ProfitLossReportPeriod>
-  }
-});
-</script>
