@@ -27,6 +27,7 @@ interface BlockchainData {
   avaxAccounts: Ref<BlockchainAccountWithBalance[]>;
   ksmAccounts: Ref<BlockchainAccountWithBalance[]>;
   loopringAccounts: Ref<BlockchainAccountWithBalance[]>;
+  optimismAccounts: Ref<BlockchainAccountWithBalance[]>;
 }
 
 const { t, tc } = useI18n();
@@ -99,6 +100,7 @@ const intersections = ref<Intersections>({
   [Blockchain.ETH2]: false,
   [Blockchain.BTC]: false,
   [Blockchain.BCH]: false,
+  [Blockchain.OPTIMISM]: false,
   [Blockchain.KSM]: false,
   [Blockchain.DOT]: false,
   [Blockchain.AVAX]: false
@@ -117,9 +119,8 @@ const updateWhenRatio = (
 const { ethAccounts, eth2Accounts, loopringAccounts } = storeToRefs(
   useEthAccountBalancesStore()
 );
-const { ksmAccounts, dotAccounts, avaxAccounts } = storeToRefs(
-  useChainAccountBalancesStore()
-);
+const { ksmAccounts, dotAccounts, avaxAccounts, optimismAccounts } =
+  storeToRefs(useChainAccountBalancesStore());
 const { btcAccounts, bchAccounts } = storeToRefs(useBtcAccountBalancesStore());
 
 const blockchainData: BlockchainData = {
@@ -130,7 +131,8 @@ const blockchainData: BlockchainData = {
   eth2Accounts,
   avaxAccounts,
   ksmAccounts,
-  loopringAccounts
+  loopringAccounts,
+  optimismAccounts
 };
 
 const { blockchainAssets } = storeToRefs(
@@ -417,6 +419,17 @@ const threshold = [0];
       :blockchain="Blockchain.ETH"
       :balances="loopringAccounts"
       data-cy="blockchain-balances-LRC"
+    />
+
+    <account-balances
+      v-if="optimismAccounts.length > 0"
+      id="blockchain-balances-OPTIMISM"
+      class="mt-8"
+      :title="tc('blockchain_balances.balances.optimism')"
+      :blockchain="Blockchain.OPTIMISM"
+      :balances="optimismAccounts"
+      data-cy="blockchain-balances-OPTIMISM"
+      @edit-account="editAccount($event)"
     />
   </div>
 </template>

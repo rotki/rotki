@@ -15,14 +15,14 @@ export interface OracleCacheMeta {
   readonly toTimestamp: string;
 }
 
-export const EthDetectedTokens = z.object({
+export const EvmTokens = z.object({
   tokens: z.array(z.string()).nullish(),
   lastUpdateTimestamp: z.number().nullish()
 });
 
-export const EthDetectedTokensRecord = z.record(EthDetectedTokens);
+export const EvmTokensRecord = z.record(EvmTokens);
 
-export type EthDetectedTokensRecord = z.infer<typeof EthDetectedTokensRecord>;
+export type EvmTokensRecord = z.infer<typeof EvmTokensRecord>;
 
 export interface EthDetectedTokensInfo {
   tokens: string[];

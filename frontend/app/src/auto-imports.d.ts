@@ -123,6 +123,7 @@ declare global {
   const unref: typeof import('vue')['unref']
   const unrefElement: typeof import('@vueuse/core')['unrefElement']
   const until: typeof import('@vueuse/core')['until']
+  const useAccountDetails: typeof import('./composables/balances/account-details')['useAccountDetails']
   const useAccountManagement: typeof import('./composables/user/account')['useAccountManagement']
   const useActiveElement: typeof import('@vueuse/core')['useActiveElement']
   const useAnimation: typeof import('./composables/user/animations')['useAnimation']
@@ -455,6 +456,7 @@ declare module 'vue' {
     readonly unref: UnwrapRef<typeof import('vue')['unref']>
     readonly unrefElement: UnwrapRef<typeof import('@vueuse/core')['unrefElement']>
     readonly until: UnwrapRef<typeof import('@vueuse/core')['until']>
+    readonly useAccountDetails: UnwrapRef<typeof import('./composables/balances/account-details')['useAccountDetails']>
     readonly useAccountManagement: UnwrapRef<typeof import('./composables/user/account')['useAccountManagement']>
     readonly useActiveElement: UnwrapRef<typeof import('@vueuse/core')['useActiveElement']>
     readonly useAnimation: UnwrapRef<typeof import('./composables/user/animations')['useAnimation']>

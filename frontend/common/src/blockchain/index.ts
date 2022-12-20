@@ -5,7 +5,8 @@ export enum Blockchain {
   BCH = 'BCH',
   KSM = 'KSM',
   DOT = 'DOT',
-  AVAX = 'AVAX'
+  AVAX = 'AVAX',
+  OPTIMISM = 'OPTIMISM'
 }
 
 export enum DefiProtocol {

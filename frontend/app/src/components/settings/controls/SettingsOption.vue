@@ -1,11 +1,6 @@
 <script setup lang="ts">
 import { type MaybeRef } from '@vueuse/core';
 import { type PropType } from 'vue';
-import {
-  SettingLocation,
-  useClearableMessages,
-  useSettings
-} from '@/composables/settings';
 import { type SessionSettings } from '@/store/settings/session';
 import { type FrontendSettingsPayload } from '@/types/frontend-settings';
 import { type SettingsUpdate } from '@/types/user';

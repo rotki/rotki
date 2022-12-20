@@ -47,5 +47,9 @@ export const explorerUrls: AssetExplorerUrls = {
   DOT: {
     address: 'https://polkascan.io/polkadot/account/',
     transaction: 'https://polkascan.io/polkadot/transaction/'
+  },
+  OPTIMISM: {
+    address: 'https://optimistic.etherscan.io/address/',
+    transaction: 'https://optimistic.etherscan.io/tx/'
   }
 };

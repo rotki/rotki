@@ -20,13 +20,15 @@ type Balances = Record<RestChains, BlockchainAssetBalances>;
 const defaultTotals = (): Totals => ({
   KSM: {},
   DOT: {},
-  AVAX: {}
+  AVAX: {},
+  OPTIMISM: {}
 });
 
 const defaultBalances = (): Balances => ({
   KSM: {},
   DOT: {},
-  AVAX: {}
+  AVAX: {},
+  OPTIMISM: {}
 });
 
 export const useChainBalancesStore = defineStore('balances/chain', () => {

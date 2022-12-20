@@ -20,8 +20,13 @@ export const useAccountBalancesStore = defineStore(
     const chainStore = useChainAccountBalancesStore();
     const { ethAccounts, eth2Accounts, ethTotals } = storeToRefs(ethStore);
     const { btcAccounts, bchAccounts, bitcoinTotals } = storeToRefs(btcStore);
-    const { ksmAccounts, dotAccounts, avaxAccounts, chainTotals } =
-      storeToRefs(chainStore);
+    const {
+      ksmAccounts,
+      dotAccounts,
+      avaxAccounts,
+      optimismAccounts,
+      chainTotals
+    } = storeToRefs(chainStore);
 
     const accounts: ComputedRef<GeneralAccount[]> = computed(() => {
       return get(ethAccounts)
@@ -30,6 +35,7 @@ export const useAccountBalancesStore = defineStore(
         .concat(get(ksmAccounts))
         .concat(get(dotAccounts))
         .concat(get(avaxAccounts))
+        .concat(get(optimismAccounts))
         .filter((account: BlockchainAccountWithBalance) => !!account.address)
         .map((account: BlockchainAccountWithBalance) => ({
           chain: account.chain,
@@ -54,7 +60,8 @@ export const useAccountBalancesStore = defineStore(
         [Blockchain.BCH]: bchAccounts,
         [Blockchain.KSM]: ksmAccounts,
         [Blockchain.DOT]: dotAccounts,
-        [Blockchain.AVAX]: avaxAccounts
+        [Blockchain.AVAX]: avaxAccounts,
+        [Blockchain.OPTIMISM]: optimismAccounts
       };
 
       const accounts = get(mapping[blockchain]);

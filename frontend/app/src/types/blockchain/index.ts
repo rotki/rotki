@@ -16,7 +16,8 @@ export const chainSection: ChainSections = {
   ETH2: Section.BLOCKCHAIN_ETH2,
   KSM: Section.BLOCKCHAIN_KSM,
   DOT: Section.BLOCKCHAIN_DOT,
-  AVAX: Section.BLOCKCHAIN_AVAX
+  AVAX: Section.BLOCKCHAIN_AVAX,
+  OPTIMISM: Section.BLOCKCHAIN_OPTIMISM
 };
 
 export const samePriceAssets: Record<string, string[]> = {

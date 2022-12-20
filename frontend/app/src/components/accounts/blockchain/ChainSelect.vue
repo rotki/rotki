@@ -2,12 +2,12 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type PropType } from 'vue';
 import ChainDisplay from '@/components/accounts/blockchain/ChainDisplay.vue';
-
 import { Module } from '@/types/modules';
 
 interface SupportedChain {
   symbol: Blockchain;
   name: string;
+  icon?: string;
 }
 
 const chains: SupportedChain[] = [
@@ -26,6 +26,11 @@ const chains: SupportedChain[] = [
   {
     symbol: Blockchain.BCH,
     name: 'Bitcoin Cash'
+  },
+  {
+    symbol: Blockchain.OPTIMISM,
+    name: 'Optimism',
+    icon: './assets/images/chains/optimism.svg'
   },
   {
     symbol: Blockchain.KSM,

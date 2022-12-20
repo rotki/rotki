@@ -18,7 +18,7 @@ import {
 export const useChainAccountBalancesStore = defineStore(
   'blockchain/accountbalances/chain',
   () => {
-    const { ksm, dot, avax } = storeToRefs(useChainsAccountsStore());
+    const { ksm, dot, avax, optimism } = storeToRefs(useChainsAccountsStore());
     const { balances } = storeToRefs(useChainBalancesStore());
 
     const ksmAccounts: ComputedRef<AccountWithBalance[]> = computed(() => {
@@ -34,6 +34,14 @@ export const useChainAccountBalancesStore = defineStore(
         get(avax),
         get(balances).AVAX,
         Blockchain.AVAX
+      );
+    });
+
+    const optimismAccounts: ComputedRef<AccountWithBalance[]> = computed(() => {
+      return accountsWithBalances(
+        get(optimism),
+        get(balances).OPTIMISM,
+        Blockchain.OPTIMISM
       );
     });
 
@@ -57,6 +65,12 @@ export const useChainAccountBalancesStore = defineStore(
           children: [],
           usdValue: sum(get(avaxAccounts)),
           loading: get(shouldShowLoadingScreen(Section.BLOCKCHAIN_AVAX))
+        },
+        {
+          chain: Blockchain.OPTIMISM,
+          children: [],
+          usdValue: sum(get(optimismAccounts)),
+          loading: get(shouldShowLoadingScreen(Section.BLOCKCHAIN_OPTIMISM))
         }
       ];
     });
@@ -80,6 +94,12 @@ export const useChainAccountBalancesStore = defineStore(
           get(balances).AVAX,
           get(dotAccounts),
           asset
+        ),
+        ...getBlockchainBreakdown(
+          Blockchain.OPTIMISM,
+          get(balances).OPTIMISM,
+          get(optimismAccounts),
+          asset
         )
       ]);
 
@@ -87,6 +107,7 @@ export const useChainAccountBalancesStore = defineStore(
       ksmAccounts,
       dotAccounts,
       avaxAccounts,
+      optimismAccounts,
       chainTotals,
       getBreakdown
     };

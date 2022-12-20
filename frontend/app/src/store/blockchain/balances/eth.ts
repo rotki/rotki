@@ -1,10 +1,7 @@
-import { type AssetBalance } from '@rotki/common';
-import { Blockchain } from '@rotki/common/lib/blockchain';
+import { type Blockchain } from '@rotki/common/lib/blockchain';
 import { type MaybeRef } from '@vueuse/core';
-import isEmpty from 'lodash/isEmpty';
 import { type ComputedRef, type Ref } from 'vue';
 import { useBlockchainBalanceApi } from '@/services/balances/blockchain';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useNotificationsStore } from '@/store/notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
@@ -20,7 +17,7 @@ import { type AssetPrices } from '@/types/prices';
 import { Section, Status } from '@/types/status';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { removeZeroAssets, toSortedAssetBalanceArray } from '@/utils/balances';
+import { removeZeroAssets } from '@/utils/balances';
 import { balanceSum } from '@/utils/calculation';
 import {
   updateAssetBalances,
@@ -52,7 +49,6 @@ export const useEthBalancesStore = defineStore('balances/eth', () => {
   const { awaitTask } = useTasks();
   const { notify } = useNotificationsStore();
   const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
-  const { isAssetIgnored } = useIgnoredAssetsStore();
   const { queryLoopringBalances } = useBlockchainBalanceApi();
   const { tc } = useI18n();
 
@@ -82,69 +78,6 @@ export const useEthBalancesStore = defineStore('balances/eth', () => {
       }
       return ownedAssets;
     });
-
-  const getLoopringBalances = (address: MaybeRef<string>) =>
-    computed<AssetBalance[]>(() => {
-      const ownedAssets = getLoopringAssetBalances(address);
-      return toSortedAssetBalanceArray(get(ownedAssets), asset =>
-        get(isAssetIgnored(asset))
-      );
-    });
-
-  const accountAssets = (address: MaybeRef<string>) =>
-    computed<AssetBalance[]>(() => {
-      const accountAddress = get(address);
-      const ethAccount = get(balances)[Blockchain.ETH][accountAddress];
-      if (!ethAccount || isEmpty(ethAccount)) {
-        return [];
-      }
-
-      return Object.entries(ethAccount.assets)
-        .filter(([asset]) => !get(isAssetIgnored(asset)))
-        .map(
-          ([asset, { amount, usdValue }]) =>
-            ({
-              asset,
-              amount,
-              usdValue
-            } as AssetBalance)
-        );
-    });
-
-  const accountLiabilities = (address: MaybeRef<string>) =>
-    computed<AssetBalance[]>(() => {
-      const accountAddress = get(address);
-      const ethAccount = get(balances)[Blockchain.ETH][accountAddress];
-      if (!ethAccount || isEmpty(ethAccount)) {
-        return [];
-      }
-
-      return Object.entries(ethAccount.liabilities)
-        .filter(([asset]) => !get(isAssetIgnored(asset)))
-        .map(
-          ([asset, { amount, usdValue }]) =>
-            ({
-              asset,
-              amount,
-              usdValue
-            } as AssetBalance)
-        );
-    });
-
-  const accountHasDetails = (address: MaybeRef<string>) => {
-    const accountAddress = get(address);
-    const ethAccount = get(balances)[Blockchain.ETH][accountAddress];
-    const loopringBalance = get(loopring)[accountAddress] || {};
-    if (!ethAccount || isEmpty(ethAccount)) {
-      return false;
-    }
-
-    const assetsCount = Object.entries(ethAccount.assets).length;
-    const liabilitiesCount = Object.entries(ethAccount.liabilities).length;
-    const loopringsCount = Object.entries(loopringBalance).length;
-
-    return assetsCount + liabilitiesCount + loopringsCount > 1;
-  };
 
   const fetchLoopringBalances = async (refresh: boolean) => {
     if (!get(activeModules).includes(Module.LOOPRING)) {
@@ -226,10 +159,6 @@ export const useEthBalancesStore = defineStore('balances/eth', () => {
     liabilities,
     update,
     updatePrices,
-    accountAssets,
-    accountLiabilities,
-    accountHasDetails,
-    getLoopringBalances,
     getLoopringAssetBalances,
     fetchLoopringBalances
   };
