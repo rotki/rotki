@@ -40,4 +40,4 @@ class PenalizablePriceOracleMixin:
         if self.penalty_info.query_failures_count == ORACLE_PENALTY_THRESHOLD_COUNT:
             self.penalty_info.note_failure_or_penalize()
 
-        return ts_now() - self.penalty_info.last_penalized_ts <= ORACLE_PENALTY_THRESHOLD_COUNT
+        return ts_now() - self.penalty_info.last_penalized_ts <= ORACLE_PENALTY_TS
