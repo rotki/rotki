@@ -891,6 +891,22 @@ Here the non obvious fields are:
 - ``Location Label``: This is the address related to the event, for example if you are receiving one asset in a transfer or calling a contract will match with your address.
 - ``Counterparty``: This is the other part of the transaction, the address you are interacting with. Can be a protocol identifier if the transaction is decoded as part of a protocol.
 
+If any event was not decoded the way you expected it to be, you can always customize events using the settings described above or file a bug report on our github repository / in our discord server. The customizations that you make also affect how events are processed in accounting.
+Examples of customization. You can set:
+- ``Event Type`` to ``Transfer`` if you are sending money to a friend / (another account you own) and don't want the event to be taxable.
+- ``Event Type`` to ``Deposit`` / ``Withdrawal`` and ``Event Subtype`` to ``Deposit Asset`` / ``Remove Asset`` if you are depositing or withdrawing assets from an exchange or a protocol. Then this event won't be considered taxable in P&L reports. Currently rotki doesn't detect deposits / withdrawals automatically for all exchanges and protocols.
+- ``Event Type`` to ``Transfer`` and ``Event Subtype`` to ``Bridge`` if you are bridging assets from one chain to another.
+- ``Event Type`` to ``Trade`` and ``Event Subtype`` to ``Spend`` / ``Receive`` if this event is a part of a trade / swap of assets.
+- ``Event Type`` to ``Spend`` / ``Receive`` and ``Event Subtype`` to ``None`` if it is a plain expenditure / receipt.
+- ``Event Type`` to ``Receive`` and ``Event Subtype`` to ``Reward`` if you got a reward for something.
+- ``Event Type`` to ``Receive`` and ``Event Subtype`` to ``Airdrop`` if you received an airdrop.
+- ``Event Type`` to ``Receive`` / ``Spend`` and ``Event Subtype`` to ``Recieve Wrapped`` / ``Return Wrapped`` accordingly if you interacted with a protocol (e.g. Curve, Yearn, Aave, etc.) and received wrapped / returned some wrapped tokens.
+- ``Event Type`` to ``Spend`` and ``Event Subtype`` to ``Fee`` if you are paying a fee for some of your actions.
+- ``Event Type`` to ``Migration`` if it is a migration of assets from one protocol to another and you don't lose / gain anything from this event. For example when migrating from SAI to DAI.
+- ``Event Type`` to ``Staking`` and ``Event Subtype`` to ``Deposit Asset`` if it is a staking event. For example staking in eth2 or in liquity.
+- ``Event Type`` to ``Renew`` if it is a renewal of any subscription or service that you are paying for.
+- ``Event Type`` to ``Informational`` if the event contains some useful information but it shouldn't be considered in accounting at all.
+
 Events that have been modified will appear marked in the UI.
 
 .. image:: images/customized_events.png
