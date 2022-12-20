@@ -466,7 +466,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 query_method = f'query_{chain.get_key()}_balances'
                 getattr(self, query_method)(ignore_cache=ignore_cache)
                 if ignore_cache is True and chain.is_bitcoin():
-                    xpub_manager.check_for_new_xpub_addresses(blockchain=blockchain)  # type: ignore # is checked in the if  # noqa: E501
+                    xpub_manager.check_for_new_xpub_addresses(blockchain=chain)  # type: ignore # is checked in the if  # noqa: E501
 
         self.totals = self.balances.recalculate_totals()
         return self.get_balances_update(blockchain)
