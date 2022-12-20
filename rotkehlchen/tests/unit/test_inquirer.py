@@ -521,7 +521,10 @@ def test_punishing_of_oracles_works(inquirer):
                 assert coingecko_mock.called is True
                 assert defillama_mock.called is True
 
+        # move the current time forward and check that coingecko is still penalized
+        with freeze_time(datetime.utcfromtimestamp(ts_now() + ORACLE_PENALTY_TS / 2)):
+            assert inquirer._coingecko.is_penalized() is True
+
         # move the current time forward and check that coingecko is no longer penalized
-        with freeze_time(datetime.fromtimestamp(ts_now() + ORACLE_PENALTY_TS + 1)):
+        with freeze_time(datetime.utcfromtimestamp(ts_now() + ORACLE_PENALTY_TS + 1)):
             assert inquirer._coingecko.is_penalized() is False
-            assert inquirer.find_usd_price(A_BTC, ignore_cache=True) > Price(ZERO)
