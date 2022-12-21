@@ -59,10 +59,6 @@ TX_DECODING_LIMIT = 500
 PREMIUM_CHECK_RETRY_LIMIT = 3
 
 
-def noop_exchange_success_cb(trades, margin, asset_movements, exchange_specific_data) -> None:  # type: ignore # noqa: E501
-    pass
-
-
 def exchange_fail_cb(error: str) -> None:
     log.error(error)
 
@@ -346,7 +342,6 @@ class TaskManager():
             method=exchange.query_history_with_callbacks,
             start_ts=0,
             end_ts=now,
-            success_callback=noop_exchange_success_cb,
             fail_callback=exchange_fail_cb,
         )
 
