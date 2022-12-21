@@ -1036,3 +1036,38 @@ def test_packaged_db_check_for_constant_assets(globaldb):
         assert AssetType.deserialize_from_db(cursor.fetchone()[0]) == AssetType.FIAT
         cursor.execute('SELECT type FROM assets WHERE identifier=?;', (A_LUSD.identifier,))  # noqa: E501
         assert AssetType.deserialize_from_db(cursor.fetchone()[0]) == AssetType.EVM_TOKEN
+
+
+def test_get_assets_missing_information_by_symbol(globaldb):
+    """
+    Verify that querying assets by symbol doesn't raise error if any of the
+    assets have missing information
+    """
+    token_address = string_to_evm_address('0x3031745E732dcE8fECccc94AcA13D5fa18F1012d')
+    token = EvmToken.initialize(
+        address=token_address,
+        chain=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC20,
+        decimals=18,
+        name=None,
+        symbol='BPTTT',
+    )
+    globaldb.add_asset(
+        asset_id=token.identifier,
+        asset_type=AssetType.EVM_TOKEN,
+        data=token,
+    )
+
+    assets = globaldb.get_assets_with_symbol('BPTTT')
+    assert len(assets) == 0
+    token = EvmToken.initialize(
+        address=token_address,
+        chain=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC20,
+        decimals=18,
+        name='Test token',
+        symbol='BPTTT',
+    )
+    globaldb.edit_evm_token(token)
+    assets = globaldb.get_assets_with_symbol('BPTTT')
+    assert len(assets) == 1

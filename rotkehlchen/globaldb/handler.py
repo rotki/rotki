@@ -33,7 +33,7 @@ from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_ETH2
 from rotkehlchen.constants.misc import DEFAULT_SQL_VM_INSTRUCTIONS_CB, NFT_DIRECTIVE
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType, DBCursor
-from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.deserialization import deserialize_price
@@ -1152,12 +1152,20 @@ class GlobalDBHandler():
                         cursor=cursor,
                         parent_token_identifier=entry[0],
                     )
-                asset = deserialize_asset_with_oracles_from_db(
-                    asset_type=asset_type,
-                    asset_data=entry,
-                    underlying_tokens=underlying_tokens,
-                    form_with_incomplete_data=False,
-                )
+                try:
+                    asset = deserialize_asset_with_oracles_from_db(
+                        asset_type=asset_type,
+                        asset_data=entry,
+                        underlying_tokens=underlying_tokens,
+                        form_with_incomplete_data=False,
+                    )
+                except UnknownAsset as e:
+                    log.error(f'Asset with identifier {entry[0]} is missing either name, symbol or decimals. {str(e)}')  # noqa: E501
+                    continue
+                except (DeserializationError, WrongAssetType) as e:
+                    log.error(f'Asset with identifier {entry[0]} has wrong asset type. {str(e)}')
+                    continue
+
                 assets.append(asset)
 
         return assets
