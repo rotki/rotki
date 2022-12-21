@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, List, Tuple
+from typing import TYPE_CHECKING, List, Tuple
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.constants.misc import ZERO
@@ -14,11 +14,11 @@ from rotkehlchen.db.filtering import (
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
+from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES, ExchangeManager
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import EXTERNAL_LOCATION, Location, Timestamp
+from rotkehlchen.types import Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import timestamp_to_date
 
@@ -37,12 +37,12 @@ log = RotkehlchenLogsAdapter(logger)
 # eth transactions
 # eth receipts
 # eth tx decoding
+# reading from the db trades, asset movements, margin positions
 # ledger actions
-# external location trades -> len(EXTERNAL_LOCATION)
 # eth2
 # base history entries
 # Please, update this number each time a history query step is either added or removed
-NUM_HISTORY_QUERY_STEPS_EXCL_EXCHANGES = 6 + len(EXTERNAL_LOCATION)
+NUM_HISTORY_QUERY_STEPS_EXCL_EXCHANGES = 7
 
 
 class EventsHistorian:
@@ -290,7 +290,10 @@ class EventsHistorian:
         """
         self._reset_variables()
         step = 0
-        total_steps = len(self.exchange_manager.connected_exchanges) + NUM_HISTORY_QUERY_STEPS_EXCL_EXCHANGES  # noqa: E501
+        total_steps = (
+            len(self.exchange_manager.connected_exchanges) * 4 +  # 4 substeps in each exchange
+            NUM_HISTORY_QUERY_STEPS_EXCL_EXCHANGES
+        )
         log.info(
             'Get/create trade history',
             start_ts=start_ts,
@@ -300,27 +303,16 @@ class EventsHistorian:
         history: List['AccountingEventMixin'] = []
         empty_or_error = ''
 
-        def populate_history_cb(
-                trades_history: List[Trade],
-                margin_history: List[MarginPosition],
-                result_asset_movements: List[AssetMovement],
-                exchange_specific_data: Any,
-        ) -> None:
-            """This callback will run for succesfull exchange history query
-
-            We don't include ledger actions here since we simply gather all of them at the end
-            """
-            history.extend(trades_history)
-            history.extend(margin_history)
-            history.extend(result_asset_movements)
-
-            if exchange_specific_data:
-                pass  # this used to be only for polo loans -- removed now. TODO: Think if needed
-
         def fail_history_cb(error_msg: str) -> None:
             """This callback will run for failure in exchange history query"""
             nonlocal empty_or_error
             empty_or_error += '\n' + error_msg
+
+        def new_step_cb(state_name: str) -> None:
+            """This callback will run for each new step in exchange history query"""
+            nonlocal step
+            step = self._increase_progress(step, total_steps)
+            self.processing_state_name = state_name
 
         for exchange in self.exchange_manager.iterate_exchanges():
             self.processing_state_name = f'Querying {exchange.name} exchange history'
@@ -328,10 +320,36 @@ class EventsHistorian:
                 # We need to have history of exchanges since before the range
                 start_ts=Timestamp(0),
                 end_ts=end_ts,
-                success_callback=populate_history_cb,
                 fail_callback=fail_history_cb,
+                new_step_data=(new_step_cb, exchange.name),
             )
             step = self._increase_progress(step, total_steps)
+
+        # Query all trades, asset movements and margin positions from the DB for all
+        # possible locations.
+        self.processing_state_name = 'Reading trades, asset movements and margin positions from the DB'  # noqa: E501
+        with self.db.conn.read_ctx() as cursor:
+            # Include all trades
+            trades = self.db.get_trades(
+                cursor,
+                filter_query=TradesFilterQuery.make(),
+                has_premium=True,  # we need all trades for accounting -- limit happens later
+            )
+            history.extend(trades)
+
+            # Include all asset movements
+            asset_movements = self.db.get_asset_movements(
+                cursor,
+                filter_query=AssetMovementsFilterQuery.make(),
+                has_premium=True,  # we need all trades for accounting -- limit happens later
+            )
+            history.extend(asset_movements)
+
+            # Include all margin positions
+            margin_positions = self.db.get_margin_positions(cursor)
+            history.extend(margin_positions)
+
+        step = self._increase_progress(step, total_steps)
 
         self.processing_state_name = 'Querying ethereum transactions history'
         tx_filter_query = ETHTransactionsFilterQuery.make(
@@ -364,18 +382,6 @@ class EventsHistorian:
         self.processing_state_name = 'Decoding raw transactions'
         self.eth_tx_decoder.get_and_decode_undecoded_transactions(limit=None)
         step = self._increase_progress(step, total_steps)
-
-        # Include all external trades and trades from external exchanges
-        for location in EXTERNAL_LOCATION:
-            self.processing_state_name = f'Querying {location} trades history'
-            with self.db.conn.read_ctx() as cursor:
-                external_trades = self.db.get_trades(
-                    cursor,
-                    filter_query=TradesFilterQuery.make(location=location),
-                    has_premium=True,  # we need all trades for accounting -- limit happens later
-                )
-            history.extend(external_trades)
-            step = self._increase_progress(step, total_steps)
 
         # include all ledger actions
         self.processing_state_name = 'Querying ledger actions history'
