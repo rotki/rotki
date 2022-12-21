@@ -9,6 +9,7 @@ Changelog
 * :feature:`1793` The PnL report can now be generated with the average cost basis accounting method.
 * :bug:`-` Transfers between tracked accounts will now have a correct label in the UI.
 * :bug:`5038` Premium users with big databases should no longer see the error: "Upload data to server died with exception: database plaintext is locked"
+* :bug:`4332` Price oracles are now temporarily penalized after repeated failures.
 
 * :release:`1.26.2 <2022-12-09>`
 * :bug:`5187` Fix issue where the blockchain balances were refreshed, when only changing the label or the tags of an account.
