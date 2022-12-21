@@ -26,7 +26,10 @@ POLKADOT_NODES_TO_CONNECT_AT_START = (
     PolkadotNodeName.ONFINALITY,
 )
 
-SUBSTRATE_NODE_CONNECTION_TIMEOUT = 10
+# This is a timeout in gevent, so should be generous as it's not only for
+# the single connection, but for all other greenlets that can be context
+# switched in the meantime
+SUBSTRATE_NODE_CONNECTION_TIMEOUT = 60
 
 
 def is_valid_kusama_address(value: str) -> bool:
