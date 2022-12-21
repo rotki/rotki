@@ -185,7 +185,9 @@ const observers = {
   [Blockchain.DOT]: (entries: IntersectionObserverEntry[]) =>
     updateWhenRatio(entries, Blockchain.DOT),
   [Blockchain.AVAX]: (entries: IntersectionObserverEntry[]) =>
-    updateWhenRatio(entries, Blockchain.AVAX)
+    updateWhenRatio(entries, Blockchain.AVAX),
+  [Blockchain.OPTIMISM]: (entries: IntersectionObserverEntry[]) =>
+    updateWhenRatio(entries, Blockchain.OPTIMISM)
 };
 
 const { isTaskRunning } = useTasks();
@@ -424,6 +426,12 @@ const threshold = [0];
     <account-balances
       v-if="optimismAccounts.length > 0"
       id="blockchain-balances-OPTIMISM"
+      v-intersect="{
+        handler: observers.OPTIMISM,
+        options: {
+          threshold
+        }
+      }"
       class="mt-8"
       :title="tc('blockchain_balances.balances.optimism')"
       :blockchain="Blockchain.OPTIMISM"
