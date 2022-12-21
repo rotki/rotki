@@ -1973,9 +1973,7 @@ class RestAPI():
     ) -> dict[str, Any]:
         try:
             added_accounts = self.rotkehlchen.add_evm_accounts(account_data=account_data)
-        except EthSyncError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
-        except TagConstraintError as e:
+        except (EthSyncError, TagConstraintError) as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
         except RemoteError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
@@ -2027,12 +2025,10 @@ class RestAPI():
                 blockchain=blockchain,
                 account_data=account_data,
             )
-        except EthSyncError as e:
+        except (EthSyncError, TagConstraintError) as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
         except InputError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_REQUEST}
-        except TagConstraintError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
         except RemoteError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
 
