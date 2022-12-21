@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Connecting to substrate nodes will no longer timeout prematurely for systems with slow connections.
 * :bug:`-` Transfers between tracked accounts will now have a correct label in the UI.
 * :bug:`5038` Premium users with big databases should no longer see the error: "Upload data to server died with exception: database plaintext is locked"
 
