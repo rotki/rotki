@@ -67,7 +67,7 @@ export const useBlockchainAccountsApi = () => {
   }: BlockchainAccountPayload): Promise<PendingTask> => {
     const url = xpub
       ? `/blockchains/${blockchain}/xpub`
-      : `/blockchains/${blockchain}`;
+      : `/blockchains/${blockchain}/accounts`;
 
     const basePayload = {
       label: label || null,
@@ -97,7 +97,7 @@ export const useBlockchainAccountsApi = () => {
     accounts: string[]
   ): Promise<PendingTask> => {
     const response = await api.instance.delete<ActionResult<PendingTask>>(
-      `/blockchains/${blockchain}`,
+      `/blockchains/${blockchain}/accounts`,
       {
         data: axiosSnakeCaseTransformer({
           asyncQuery: true,
@@ -113,7 +113,7 @@ export const useBlockchainAccountsApi = () => {
   const editBtcAccount = async (
     payload: BlockchainAccountPayload
   ): Promise<BtcAccountData> => {
-    let url = `/blockchains/${payload.blockchain}`;
+    let url = `/blockchains/${payload.blockchain}/accounts`;
     const { label, tags } = payload;
 
     let data: {};
@@ -151,7 +151,7 @@ export const useBlockchainAccountsApi = () => {
     );
     const response = await api.instance.patch<
       ActionResult<GeneralAccountData[]>
-    >(`/blockchains/${blockchain}`, payloadToData(payload), {
+    >(`/blockchains/${blockchain}/accounts`, payloadToData(payload), {
       validateStatus: validWithParamsSessionAndExternalService
     });
 
@@ -162,7 +162,7 @@ export const useBlockchainAccountsApi = () => {
     blockchain: Exclude<Blockchain, BtcChains>
   ): Promise<GeneralAccountData[]> => {
     const response = await api.instance.get<ActionResult<GeneralAccountData[]>>(
-      `/blockchains/${blockchain}`,
+      `/blockchains/${blockchain}/accounts`,
       {
         validateStatus: validWithSessionStatus
       }
@@ -174,7 +174,7 @@ export const useBlockchainAccountsApi = () => {
     blockchain: BtcChains
   ): Promise<BtcAccountData> => {
     const response = await api.instance.get<ActionResult<BtcAccountData>>(
-      `/blockchains/${blockchain}`,
+      `/blockchains/${blockchain}/accounts`,
       {
         validateStatus: validWithSessionStatus
       }
