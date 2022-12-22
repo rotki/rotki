@@ -1,6 +1,5 @@
 import { NumericString } from '@rotki/common';
 import { SupportedAsset } from '@rotki/common/lib/data';
-import { type AxiosInstance } from 'axios';
 import { z } from 'zod';
 import { ActiveLogLevel } from '@/electron-main/ipc';
 
@@ -69,11 +68,6 @@ export interface TaskStatus {
   readonly pending: number[];
   readonly completed: number[];
 }
-
-export interface ApiImplementation {
-  readonly axios: AxiosInstance;
-}
-
 const NumericBackendArgument = z.object({
   value: z.number().nonnegative(),
   isDefault: z.boolean()

@@ -2,6 +2,7 @@ import { type ActionResult } from '@rotki/common/lib/data';
 import { type AxiosInstance, type AxiosResponse } from 'axios';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
 import { type PendingTask } from '@/services/types-api';
+import { ApiValidationError } from '@/types/api/errors';
 
 type Parser<T> = (response: AxiosResponse<ActionResult<T>>) => ActionResult<T>;
 
@@ -12,6 +13,10 @@ export const handleResponse = <T>(
   const { result, message } = parse(response);
   if (result) {
     return result;
+  }
+
+  if (response.status === 400) {
+    throw new ApiValidationError(message);
   }
   throw new Error(message);
 };

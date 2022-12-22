@@ -4,6 +4,7 @@ import {
   type Eth2ValidatorEntry,
   Eth2Validators
 } from '@rotki/common/lib/staking/eth2';
+import { onlyIfTruthy } from '@rotki/common';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
@@ -13,6 +14,7 @@ import {
 } from '@/services/types-api';
 import {
   handleResponse,
+  validAuthorizedStatus,
   validWithParamsSessionAndExternalService,
   validWithSessionAndExternalService,
   validWithSessionStatus
@@ -113,16 +115,17 @@ export const useBlockchainAccountsApi = () => {
   const editBtcAccount = async (
     payload: BlockchainAccountPayload
   ): Promise<BtcAccountData> => {
-    let url = `/blockchains/${payload.blockchain}/accounts`;
+    const url = payload.xpub
+      ? `/blockchains/${payload.blockchain}/xpub`
+      : `/blockchains/${payload.blockchain}/accounts`;
     const { label, tags } = payload;
 
     let data: {};
-    if (payload.xpub && !payload.address) {
-      url += '/xpub';
+    if (payload.xpub) {
       const { derivationPath, xpub } = payload.xpub;
       data = {
         xpub,
-        derivationPath: derivationPath ? derivationPath : undefined,
+        derivationPath: onlyIfTruthy(derivationPath),
         label: label || null,
         tags
       };
@@ -219,7 +222,10 @@ export const useBlockchainAccountsApi = () => {
   ): Promise<PendingTask> => {
     const response = await api.instance.put<ActionResult<PendingTask>>(
       '/blockchains/ETH2/validators',
-      axiosSnakeCaseTransformer({ ...payload, asyncQuery: true })
+      axiosSnakeCaseTransformer({ ...payload, asyncQuery: true }),
+      {
+        validateStatus: validAuthorizedStatus
+      }
     );
 
     return handleResponse(response);

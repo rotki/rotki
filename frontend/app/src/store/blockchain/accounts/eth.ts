@@ -1,5 +1,4 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { type Message } from '@rotki/common/lib/messages';
 import {
   type Eth2ValidatorEntry,
   type Eth2Validators
@@ -18,6 +17,8 @@ import { TaskType } from '@/types/task-type';
 import { logger } from '@/utils/logging';
 import { removeTags } from '@/utils/tags';
 import { useBlockchainAccountsApi } from '@/services/accounts';
+import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
+import { type ActionStatus } from '@/store/types';
 
 const defaultValidators = (): Eth2Validators => ({
   entries: [],
@@ -66,10 +67,13 @@ export const useEthAccountsStore = defineStore(
 
     const addEth2Validator = async (
       payload: Eth2Validator
-    ): Promise<boolean> => {
+    ): Promise<ActionStatus<ValidationErrors | string>> => {
       const { activeModules } = useGeneralSettingsStore();
       if (!get(activeModules).includes(Module.ETH2)) {
-        return false;
+        return {
+          success: false,
+          message: ''
+        };
       }
       const id = payload.publicKey || payload.validatorIndex;
       try {
@@ -92,30 +96,39 @@ export const useEthAccountsStore = defineStore(
           resetStatus(Section.STAKING_ETH2_STATS);
         }
 
-        return result;
+        return {
+          success: result,
+          message: ''
+        };
       } catch (e: any) {
         logger.error(e);
-        setMessage({
-          description: t('actions.add_eth2_validator.error.description', {
-            id,
-            message: e.message
-          }).toString(),
-          title: t('actions.add_eth2_validator.error.title').toString(),
-          success: false
-        });
-        return false;
+        let message = e.message;
+        if (e instanceof ApiValidationError) {
+          const errors = e.getValidationErrors(payload);
+          if (typeof errors !== 'string') {
+            return {
+              success: false,
+              message: errors
+            };
+          }
+          message = errors;
+        }
+
+        return {
+          success: false,
+          message
+        };
       }
     };
 
     const editEth2Validator = async (
       payload: Eth2Validator
-    ): Promise<boolean> => {
+    ): Promise<ActionStatus<ValidationErrors | string>> => {
       const { activeModules } = useGeneralSettingsStore();
       if (!get(activeModules).includes(Module.ETH2)) {
-        return false;
+        return { success: false, message: '' };
       }
 
-      const id = payload.validatorIndex;
       try {
         const success = await editEth2ValidatorCaller(payload);
 
@@ -126,19 +139,25 @@ export const useEthAccountsStore = defineStore(
           resetStatus(Section.STAKING_ETH2_STATS);
         }
 
-        return success;
+        return { success, message: '' };
       } catch (e: any) {
         logger.error(e);
-        const message: Message = {
-          description: t('actions.edit_eth2_validator.error.description', {
-            id,
-            message: e.message
-          }).toString(),
-          title: t('actions.edit_eth2_validator.error.title').toString(),
-          success: false
+        let message = e.message;
+        if (e instanceof ApiValidationError) {
+          const errors = e.getValidationErrors(payload);
+          if (typeof errors !== 'string') {
+            return {
+              success: false,
+              message: errors
+            };
+          }
+          message = errors;
+        }
+
+        return {
+          success: false,
+          message
         };
-        await setMessage(message);
-        return false;
       }
     };
 

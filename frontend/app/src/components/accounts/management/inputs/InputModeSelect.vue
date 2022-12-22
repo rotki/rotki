@@ -1,32 +1,24 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { type PropType } from 'vue';
-import {
-  type AccountInput,
-  MANUAL_ADD,
-  METAMASK_IMPORT,
-  XPUB_ADD
-} from '@/types/account-input';
+import { InputMode } from '@/types/input-mode';
 import { isMetaMaskSupported } from '@/utils/metamask';
 
-const props = defineProps({
-  blockchain: {
-    required: true,
-    type: String as PropType<Blockchain>,
-    validator: (value: any) => Object.values(Blockchain).includes(value)
-  },
-  value: { required: true, type: String as PropType<AccountInput> }
-});
+const props = defineProps<{
+  blockchain: Blockchain;
+  inputMode: InputMode;
+}>();
 
-const emit = defineEmits(['input']);
-const { blockchain, value } = toRefs(props);
+const emit = defineEmits<{
+  (e: 'update:input-mode', mode: InputMode): void;
+}>();
+const { blockchain, inputMode } = toRefs(props);
 
-const input = (value: AccountInput) => emit('input', value);
+const update = (value: InputMode) => emit('update:input-mode', value);
 
 const isEth = computed(() => get(blockchain) === Blockchain.ETH);
 const isBtc = computed(() => get(blockchain) === Blockchain.BTC);
 const isBch = computed(() => get(blockchain) === Blockchain.BCH);
-const isMetaMask = computed(() => get(value) === METAMASK_IMPORT);
+const isMetaMask = computed(() => get(inputMode) === InputMode.METAMASK_IMPORT);
 
 const metamaskDownloadLink = 'https://metamask.io/download/';
 
@@ -49,12 +41,12 @@ const { isPackaged } = useInterop();
 <template>
   <div class="mb-5">
     <v-btn-toggle
-      :value="value"
+      :value="inputMode"
       class="input-mode-select"
       mandatory
-      @change="input($event)"
+      @change="update($event)"
     >
-      <v-btn :value="MANUAL_ADD" data-cy="input-mode-manual">
+      <v-btn :value="InputMode.MANUAL_ADD" data-cy="input-mode-manual">
         <v-icon>mdi-pencil-plus</v-icon>
         <span class="hidden-sm-and-down ml-1">
           {{ t('input_mode_select.manual_add.label') }}
@@ -62,7 +54,7 @@ const { isPackaged } = useInterop();
       </v-btn>
       <v-btn
         v-if="isEth"
-        :value="METAMASK_IMPORT"
+        :value="InputMode.METAMASK_IMPORT"
         :disabled="!isMetaMaskSupported()"
       >
         <v-img
@@ -74,7 +66,7 @@ const { isPackaged } = useInterop();
           {{ t('input_mode_select.metamask_import.label') }}
         </span>
       </v-btn>
-      <v-btn v-if="isBtc || isBch" :value="XPUB_ADD">
+      <v-btn v-if="isBtc || isBch" :value="InputMode.XPUB_ADD">
         <v-icon>mdi-key-plus</v-icon>
         <span class="hidden-sm-and-down ml-1">
           {{ t('input_mode_select.xpub_add.label') }}

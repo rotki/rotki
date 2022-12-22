@@ -75,6 +75,7 @@ export default defineConfig({
         'vue',
         'vue/macros',
         '@vueuse/core',
+        '@vueuse/math',
         'pinia',
         { 'vue-i18n-composable': ['useI18n'] },
         { '@vueuse/shared': ['get', 'set'] },

@@ -1,7 +1,7 @@
 import { type Section, type Status } from '@/types/status';
 
-interface ActionFailure {
-  readonly message: string;
+interface ActionFailure<T = string> {
+  readonly message: T;
   readonly success: false;
 }
 
@@ -9,7 +9,7 @@ interface ActionSuccess {
   readonly success: true;
 }
 
-export type ActionStatus = ActionFailure | ActionSuccess;
+export type ActionStatus<T = string> = ActionFailure<T> | ActionSuccess;
 
 export interface StatusPayload {
   readonly status: Status;

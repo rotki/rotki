@@ -1,46 +1,73 @@
 <script setup lang="ts">
 import { onlyIfTruthy } from '@rotki/common';
-import { type PropType } from 'vue';
+import useVuelidate from '@vuelidate/core';
+import {
+  and,
+  helpers,
+  maxValue,
+  minValue,
+  requiredUnless
+} from '@vuelidate/validators';
 import { type Eth2Validator } from '@/types/balances';
+import { type ValidationErrors } from '@/types/api/errors';
 
-const isValid = (percentage: string) => {
-  const perc = Number.parseFloat(percentage);
-  return isFinite(perc) && perc >= 0 && perc <= 100;
-};
+const props = defineProps<{
+  validator: Eth2Validator | null;
+  disabled: boolean;
+  errorMessages: ValidationErrors;
+}>();
 
-const props = defineProps({
-  validator: {
-    required: false,
-    type: Object as PropType<Eth2Validator | null>,
-    default: null
-  },
-  disabled: {
-    required: false,
-    type: Boolean,
-    default: false
-  }
-});
-
-const emit = defineEmits(['update:validator']);
-const { validator } = toRefs(props);
+const emit = defineEmits<{
+  (e: 'update:validator', validator: Eth2Validator | null): void;
+}>();
+const { validator, errorMessages } = toRefs(props);
 const validatorIndex = ref('');
 const publicKey = ref('');
-const percentage = ref<string>();
-
-const updateValidator = (validator: Eth2Validator | null) => {
-  emit('update:validator', validator);
-};
+const ownershipPercentage = ref<string>();
 
 const updateProperties = (validator: Eth2Validator | null) => {
   validatorIndex.value = validator?.validatorIndex ?? '';
   publicKey.value = validator?.publicKey ?? '';
-  percentage.value = validator?.ownershipPercentage ?? '';
+  ownershipPercentage.value = validator?.ownershipPercentage ?? '';
 };
+
+const { tc } = useI18n();
+
+const rules = {
+  validatorIndex: {
+    requiredUnlessKey: requiredUnless(logicAnd(publicKey))
+  },
+  publicKey: {
+    requiredUnlessIndex: requiredUnless(logicAnd(validatorIndex))
+  },
+  ownershipPercentage: {
+    percentage: helpers.withMessage(
+      tc('eth2_input.ownership.validation'),
+      and(minValue(0), maxValue(100))
+    )
+  }
+};
+
+const v$ = useVuelidate(
+  rules,
+  {
+    validatorIndex,
+    publicKey,
+    ownershipPercentage
+  },
+  {
+    $autoDirty: true,
+    $stopPropagation: true,
+    $externalResults: errorMessages
+  }
+);
+
 onMounted(() => updateProperties(validator.value));
+
 watch(validator, updateProperties);
 
 watch(
-  [validatorIndex, publicKey, percentage],
+  [validatorIndex, publicKey, ownershipPercentage],
   ([validatorIndex, publicKey, ownershipPercentage]) => {
     const validator: Eth2Validator | null =
       validatorIndex || publicKey
@@ -50,16 +77,9 @@ watch(
             ownershipPercentage: onlyIfTruthy(ownershipPercentage)?.trim()
           }
         : null;
-    updateValidator(validator);
+    emit('update:validator', validator);
   }
 );
-
-const { t } = useI18n();
-
-const percentageRules = computed(() => [
-  (v?: string) =>
-    !v || isValid(v) || t('eth2_input.ownership.validation').toString()
-]);
 </script>
 
 <template>
@@ -70,7 +90,9 @@ const percentageRules = computed(() => [
         outlined
         type="number"
         :disabled="disabled"
-        :label="t('eth2_input.validator_index')"
+        :label="tc('eth2_input.validator_index')"
+        :error-messages="v$.validatorIndex.$errors.map(e => e.$message)"
+        @blur="v$.validatorIndex.$touch()"
       />
     </v-col>
     <v-col cols="12" md="6" lg="8">
@@ -78,19 +100,22 @@ const percentageRules = computed(() => [
         v-model="publicKey"
         outlined
         :disabled="disabled"
-        :label="t('eth2_input.public_key')"
+        :label="tc('eth2_input.public_key')"
+        :error-messages="v$.publicKey.$errors.map(e => e.$message)"
+        @blur="v$.publicKey.$touch()"
       />
     </v-col>
     <v-col cols="12" md="2" lg="2">
       <v-text-field
-        v-model="percentage"
+        v-model="ownershipPercentage"
         outlined
-        :rules="percentageRules"
         placeholder="100"
-        :label="t('eth2_input.ownership_percentage')"
+        :label="tc('eth2_input.ownership_percentage')"
         persistent-hint
-        :hint="t('eth2_input.ownership.hint')"
+        :hint="tc('eth2_input.ownership.hint')"
         suffix="%"
+        :error-messages="v$.ownershipPercentage.$errors.map(e => e.$message)"
+        @blur="v$.ownershipPercentage.$touch()"
       />
     </v-col>
   </v-row>
