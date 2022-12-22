@@ -218,10 +218,7 @@ class BalancerEvent(NamedTuple):
             raise DeserializationError(f'Unexpected event type: {event_tuple_type}.') from e
 
         try:
-            pool_address_token = EvmToken(
-                event_tuple[5],
-                form_with_incomplete_data=True,  # since some may not have decimals input correctly
-            )
+            pool_address_token = EvmToken(event_tuple[5])
         except UnknownAsset as e:
             raise DeserializationError(
                 f'Balancer event pool token: {event_tuple[5]} not found in the DB.',

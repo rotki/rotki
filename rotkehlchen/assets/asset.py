@@ -98,7 +98,7 @@ class Asset:
     def is_evm_token(self) -> bool:
         return AssetResolver().get_asset_type(self.identifier) == AssetType.EVM_TOKEN
 
-    def resolve(self, form_with_incomplete_data: bool = False) -> 'Asset':
+    def resolve(self) -> 'Asset':
         """
         Returns the final representation for the current asset identifier. For example if we do
         dai = Asset('eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F').resolve()
@@ -114,57 +114,39 @@ class Asset:
                 chain_id=ChainID.ETHEREUM,
             )
 
-        return AssetResolver().resolve_asset(
-            identifier=self.identifier,
-            form_with_incomplete_data=form_with_incomplete_data,
-        )
+        return AssetResolver().resolve_asset(identifier=self.identifier)
 
-    def resolve_to_asset_with_name_and_type(
-            self,
-            form_with_incomplete_data: bool = False,
-    ) -> 'AssetWithNameAndType':
+    def resolve_to_asset_with_name_and_type(self) -> 'AssetWithNameAndType':
         return AssetResolver().resolve_asset_to_class(
             identifier=self.identifier,
             expected_type=AssetWithNameAndType,
-            form_with_incomplete_data=form_with_incomplete_data,
         )
 
-    def resolve_to_asset_with_symbol(
-            self,
-            form_with_incomplete_data: bool = False,
-    ) -> 'AssetWithSymbol':
+    def resolve_to_asset_with_symbol(self) -> 'AssetWithSymbol':
         return AssetResolver().resolve_asset_to_class(
             identifier=self.identifier,
             expected_type=AssetWithSymbol,
-            form_with_incomplete_data=form_with_incomplete_data,
         )
 
-    def resolve_to_crypto_asset(self, form_with_incomplete_data: bool = False) -> 'CryptoAsset':
+    def resolve_to_crypto_asset(self) -> 'CryptoAsset':
         return AssetResolver().resolve_asset_to_class(
             identifier=self.identifier,
             expected_type=CryptoAsset,
-            form_with_incomplete_data=form_with_incomplete_data,
         )
 
-    def resolve_to_evm_token(self, form_with_incomplete_data: bool = False) -> 'EvmToken':
+    def resolve_to_evm_token(self) -> 'EvmToken':
         return AssetResolver().resolve_asset_to_class(
             identifier=self.identifier,
             expected_type=EvmToken,
-            form_with_incomplete_data=form_with_incomplete_data,
         )
 
-    def resolve_to_asset_with_oracles(
-            self,
-            form_with_incomplete_data: bool = False,
-    ) -> 'AssetWithOracles':
+    def resolve_to_asset_with_oracles(self) -> 'AssetWithOracles':
         return AssetResolver().resolve_asset_to_class(
             identifier=self.identifier,
             expected_type=AssetWithOracles,
-            form_with_incomplete_data=form_with_incomplete_data,
         )
 
     def resolve_to_fiat_asset(self) -> 'FiatAsset':
-        # no `form_with_incomplete_data` here since EvmToken is not a subclass of FiatAsset
         return AssetResolver().resolve_asset_to_class(
             identifier=self.identifier,
             expected_type=FiatAsset,
@@ -335,7 +317,6 @@ class CryptoAsset(AssetWithOracles):
         resolved = AssetResolver().resolve_asset_to_class(
             identifier=self.identifier,
             expected_type=CryptoAsset,
-            form_with_incomplete_data=getattr(self, 'form_with_incomplete_data', False),
         )
         object.__setattr__(self, 'identifier', resolved.identifier)
         object.__setattr__(self, 'asset_type', resolved.asset_type)
@@ -460,7 +441,6 @@ EthereumTokenDBTuple = tuple[
 
 @dataclass(init=True, repr=False, eq=False, order=False, unsafe_hash=False, frozen=True)
 class EvmToken(CryptoAsset):
-    form_with_incomplete_data: bool = field(default=False)
     evm_address: ChecksumEvmAddress = field(init=False)
     chain_id: ChainID = field(init=False)
     token_kind: EvmTokenKind = field(init=False)
@@ -476,7 +456,6 @@ class EvmToken(CryptoAsset):
         resolved = AssetResolver().resolve_asset_to_class(
             identifier=self.identifier,
             expected_type=EvmToken,
-            form_with_incomplete_data=self.form_with_incomplete_data,
         )
         object.__setattr__(self, 'asset_type', AssetType.EVM_TOKEN)
         object.__setattr__(self, 'evm_address', resolved.evm_address)

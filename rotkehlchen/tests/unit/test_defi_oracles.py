@@ -83,7 +83,7 @@ def test_uniswap_no_decimals(inquirer_defi, socket_enabled):  # pylint: disable=
         """
         resolved_weth = A_WETH.resolve_to_evm_token()
 
-        def mocked_asset_getter(identifier, form_with_incomplete_data):  # pylint: disable=unused-argument  # noqa: E501
+        def mocked_asset_getter(identifier):
             if identifier == resolved_weth.identifier:
                 fake_weth = EvmToken.initialize(
                     address=resolved_weth.evm_address,

@@ -2,6 +2,7 @@ import logging
 from typing import TYPE_CHECKING, Optional
 
 from rotkehlchen.assets.asset import Asset, AssetWithOracles, EvmToken, UnderlyingToken
+from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.resolver import evm_address_to_identifier
@@ -33,7 +34,84 @@ def add_ethereum_token_to_db(token_data: EvmToken) -> EvmToken:
         data=token_data,
     )
     # This can, but should not raise UnknownAsset, DeserializationError
-    return EvmToken(token_data.identifier, form_with_incomplete_data=True)
+    return EvmToken(token_data.identifier)
+
+
+def _query_or_get_given_token_info(
+        evm_inquirer: 'EvmNodeInquirer',
+        evm_address: ChecksumEvmAddress,
+        name: Optional[str],
+        symbol: Optional[str],
+        decimals: Optional[int],
+        token_kind: EvmTokenKind,
+) -> tuple[Optional[str], Optional[str], Optional[int]]:
+    """
+    Query ethereum to retrieve basic contract information for the given address.
+    If the contract is missing any of the queried methods then the respective value
+    given as parameter to this function is used.
+    May raise:
+    - NotERC20Conformant
+    """
+    if token_kind == EvmTokenKind.ERC20:
+        info = evm_inquirer.get_erc20_contract_info(evm_address)
+        decimals = info['decimals'] if decimals is None else decimals
+        symbol = info['symbol'] if symbol is None else symbol
+        name = info['name'] if name is None else name
+        if None in (decimals, symbol, name):
+            raise NotERC20Conformant(f'Token {evm_address} is not ERC20 conformant')  # noqa: E501  # pylint: disable=raise-missing-from
+
+    elif token_kind == EvmTokenKind.ERC721:
+        info = evm_inquirer.get_erc721_contract_info(evm_address)
+        decimals = 0
+        if symbol is None:
+            symbol = info['symbol'] if info['symbol'] is not None else ''
+        if name is None:
+            name = info['name'] if info['name'] is not None else ''
+
+    else:
+        raise NotERC20Conformant(f'Token {evm_address} is of uknown type')  # pylint: disable=raise-missing-from  # noqa: E501
+
+    return name, symbol, decimals
+
+
+def _edit_token_and_clean_cache(
+        ethereum_token: EvmToken,
+        name: Optional[str],
+        decimals: Optional[int],
+        evm_inquirer: Optional['EvmNodeInquirer'],
+) -> None:
+    """
+    Update information regarding name and decimals for an ethereum token.
+    If name is missing in the database and is not provided then query the blockchain for it
+    """
+    updated_fields = False
+
+    if ethereum_token.name == ethereum_token.identifier:
+        if name is not None:
+            object.__setattr__(ethereum_token, 'name', name)
+            updated_fields = True
+        elif evm_inquirer is not None:
+            # query the chain for available information
+            on_chain_name, _, on_chain_decimals = _query_or_get_given_token_info(
+                evm_inquirer=evm_inquirer,
+                evm_address=ethereum_token.evm_address,
+                name=name,
+                symbol=ethereum_token.symbol,
+                decimals=decimals,
+                token_kind=ethereum_token.token_kind,
+            )
+            object.__setattr__(ethereum_token, 'name', on_chain_name)
+            object.__setattr__(ethereum_token, 'decimals', on_chain_decimals)
+            updated_fields = True
+
+    if decimals is not None and ethereum_token.decimals != decimals:
+        object.__setattr__(ethereum_token, 'decimals', decimals)
+        updated_fields = True
+
+    # clean the cache if we need to update the token
+    if updated_fields is True:
+        AssetResolver.clean_memory_cache(ethereum_token.identifier)
+        GlobalDBHandler().edit_evm_token(ethereum_token)
 
 
 def get_or_create_evm_token(
@@ -46,7 +124,6 @@ def get_or_create_evm_token(
         decimals: Optional[int] = None,
         protocol: Optional[str] = None,
         underlying_tokens: Optional[list[UnderlyingToken]] = None,
-        form_with_incomplete_data: bool = False,
         evm_inquirer: Optional['EvmNodeInquirer'] = None,
 ) -> EvmToken:
     """Given a token address return the <EvmToken>
@@ -74,10 +151,17 @@ def get_or_create_evm_token(
     )
     with userdb.get_or_create_evm_token_lock:
         try:
-            ethereum_token = EvmToken(
-                identifier=identifier,
-                form_with_incomplete_data=form_with_incomplete_data,
+            ethereum_token = EvmToken(identifier=identifier)
+            # It can happen that the asset is missing basic information but can be queried on
+            # is provided by the developer. In that case make sure that no information
+            # is cached and trigger the edit process.
+            _edit_token_and_clean_cache(
+                ethereum_token=ethereum_token,
+                name=name,
+                decimals=decimals,
+                evm_inquirer=evm_inquirer,
             )
+
         except (UnknownAsset, DeserializationError):
             # It can happen that the asset exists but is missing basic information.
             # Check if it exists and if that is the case we fetch information.
@@ -94,27 +178,20 @@ def get_or_create_evm_token(
             )
 
             if evm_inquirer is not None:
-                if token_kind == EvmTokenKind.ERC20:
-                    info = evm_inquirer.get_erc20_contract_info(evm_address)
-                    decimals = info['decimals'] if decimals is None else decimals
-                    symbol = info['symbol'] if symbol is None else symbol
-                    name = info['name'] if name is None else name
-                    if None in (decimals, symbol, name):
-                        raise NotERC20Conformant(f'Token {evm_address} is not ERC20 conformant')  # noqa: E501 B904  # pylint: disable=raise-missing-from
-
-                elif token_kind == EvmTokenKind.ERC721:
-                    info = evm_inquirer.get_erc721_contract_info(evm_address)
-                    decimals = 0
-                    if symbol is None:
-                        symbol = info['symbol'] if info['symbol'] is not None else ''
-                    if name is None:
-                        name = info['name'] if info['name'] is not None else ''
-
-                else:
-                    raise NotERC20Conformant(f'Token {evm_address} is of uknown type')  # pylint: disable=raise-missing-from  # noqa: E501
+                name, symbol, decimals = _query_or_get_given_token_info(
+                    evm_inquirer=evm_inquirer,
+                    evm_address=evm_address,
+                    name=name,
+                    symbol=symbol,
+                    decimals=decimals,
+                    token_kind=token_kind,
+                )
+            # make sure that basic information is always filled
+            name = identifier if name is None else name
+            decimals = 18 if decimals is None else decimals
 
             # Store the information in the database
-            token_data = EvmToken.initialize(
+            ethereum_token = EvmToken.initialize(
                 address=evm_address,
                 chain_id=chain_id,
                 token_kind=token_kind,
@@ -127,12 +204,10 @@ def get_or_create_evm_token(
             if asset_exists is True:
                 # This means that we need to update the information in the database with the
                 # newly queried data
-                GlobalDBHandler().edit_evm_token(token_data)
+                GlobalDBHandler().edit_evm_token(ethereum_token)
             else:
                 # This can but should not raise InputError since it should not already exist.
-                ethereum_token = add_ethereum_token_to_db(
-                    token_data=token_data,
-                )
+                add_ethereum_token_to_db(token_data=ethereum_token)
 
                 with userdb.user_write() as cursor:
                     userdb.add_asset_identifiers(cursor, [ethereum_token.identifier])
