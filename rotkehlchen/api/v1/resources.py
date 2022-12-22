@@ -24,7 +24,6 @@ from rotkehlchen.api.v1.schemas import (
     AddressbookAddressesSchema,
     AddressbookUpdateSchema,
     AllBalancesQuerySchema,
-    AllNamesSchema,
     AppInfoSchema,
     AssetIconUploadSchema,
     AssetMovementsQuerySchema,
@@ -106,6 +105,7 @@ from rotkehlchen.api.v1.schemas import (
     NewUserSchema,
     NFTFilterQuerySchema,
     NFTLpFilterSchema,
+    OptionalAddressesWithBlockchainsListSchema,
     OptionalEthereumAddressSchema,
     QueriedAddressesSchema,
     RequiredEthereumAddressSchema,
@@ -159,6 +159,7 @@ from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
 from rotkehlchen.data_import.manager import DataImportSource
+from rotkehlchen.db.addressbook import ADDRESSBOOK_DATA_OPTIONAL_BLOCKCHAIN
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
     AssetsFilterQuery,
@@ -179,7 +180,6 @@ from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.types import (
     SUPPORTED_CHAIN_IDS,
     SUPPORTED_EVM_CHAINS,
-    AddressbookEntry,
     AddressbookType,
     ApiKey,
     ApiSecret,
@@ -2653,7 +2653,7 @@ class AddressbookResource(BaseMethodView):
     def post(
         self,
         book_type: AddressbookType,
-        addresses: Optional[list[ChecksumEvmAddress]],
+        addresses: Optional[list[tuple[ChecksumEvmAddress, Optional[SupportedBlockchain]]]],
     ) -> Response:
         return self.rest_api.get_addressbook_entries(
             book_type=book_type,
@@ -2662,26 +2662,41 @@ class AddressbookResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(update_schema, location='json_and_view_args')
-    def put(self, book_type: AddressbookType, entries: list[AddressbookEntry]) -> Response:
+    def put(
+            self,
+            book_type: AddressbookType,
+            entries: list[ADDRESSBOOK_DATA_OPTIONAL_BLOCKCHAIN],
+    ) -> Response:
         return self.rest_api.add_addressbook_entries(book_type=book_type, entries=entries)
 
     @require_loggedin_user()
     @use_kwargs(update_schema, location='json_and_view_args')
-    def patch(self, book_type: AddressbookType, entries: list[AddressbookEntry]) -> Response:
+    def patch(
+            self,
+            book_type: AddressbookType,
+            entries: list[ADDRESSBOOK_DATA_OPTIONAL_BLOCKCHAIN],
+    ) -> Response:
         return self.rest_api.update_addressbook_entries(book_type=book_type, entries=entries)
 
     @require_loggedin_user()
     @use_kwargs(post_delete_schema, location='json_and_view_args')
-    def delete(self, book_type: AddressbookType, addresses: list[ChecksumEvmAddress]) -> Response:
+    def delete(
+            self,
+            book_type: AddressbookType,
+            addresses: list[tuple[ChecksumEvmAddress, Optional[SupportedBlockchain]]],
+    ) -> Response:
         return self.rest_api.delete_addressbook_entries(book_type=book_type, addresses=addresses)
 
 
 class AllNamesResource(BaseMethodView):
-    post_schema = AllNamesSchema()
+    post_schema = OptionalAddressesWithBlockchainsListSchema()
 
     @require_loggedin_user()
     @use_kwargs(post_schema, location='json')
-    def post(self, addresses: list[ChecksumEvmAddress]) -> Response:
+    def post(
+            self,
+            addresses: list[tuple[ChecksumEvmAddress, Optional[SupportedBlockchain]]],
+    ) -> Response:
         return self.rest_api.search_for_names_everywhere(addresses=addresses)
 
 

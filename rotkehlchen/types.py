@@ -624,16 +624,25 @@ class CostBasisMethod(SerializableEnumMixin):
 class AddressbookEntry(NamedTuple):
     address: ChecksumEvmAddress
     name: str
+    blockchain: SupportedBlockchain
 
-    def serialize(self) -> dict[str, Any]:
-        return {'address': self.address, 'name': self.name}
+    def serialize(self) -> dict[str, str]:
+        return {
+            'address': self.address,
+            'name': self.name,
+            'blockchain': self.blockchain.serialize(),
+        }
 
     @classmethod
     def deserialize(cls: type['AddressbookEntry'], data: dict[str, Any]) -> 'AddressbookEntry':
         """May raise:
         -KeyError if required keys are missing
         """
-        return cls(address=data['address'], name=data['name'])
+        return cls(
+            address=data['address'],
+            name=data['name'],
+            blockchain=SupportedBlockchain.deserialize(data['blockchain']),
+        )
 
 
 class AddressbookType(SerializableEnumMixin):
