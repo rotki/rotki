@@ -3359,6 +3359,11 @@ class RestAPI():
             evm_addresses: Optional[list[ChecksumEvmAddress]],
     ) -> dict[str, Any]:
         dbevmtx = DBEvmTx(self.rotkehlchen.data.db)
+        ethereum_manager = self.rotkehlchen.chains_aggregator.ethereum
+        # make sure that all the receipts are already queried
+        ethereum_manager.transactions.get_receipts_for_transactions_missing_them(
+            addresses=evm_addresses,
+        )
         amount_of_tx_to_decode = dbevmtx.count_hashes_not_decoded(
             addresses=evm_addresses,
             chain_id=ChainID.ETHEREUM,
@@ -3377,6 +3382,17 @@ class RestAPI():
             async_query: bool,
             evm_addresses: Optional[list[ChecksumEvmAddress]],
     ) -> Response:
+        """
+        This method should be called after querying ethereum transactions and does the following:
+        - Query missing receipts
+        - Decode ethereum transactions
+
+        It can be a slow process and this is why it is important to set the list of addresses
+        queried per module that need to be decoded.
+
+        This logic is executed by the frontend in pages where the set of transactions needs to be
+        up to date, for example, the liquity module.
+        """
         if async_query is True:
             return self._query_async(
                 command=self._decode_pending_ethereum_transactions,
