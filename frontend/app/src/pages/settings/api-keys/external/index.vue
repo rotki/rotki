@@ -15,6 +15,7 @@ import {
 } from '@/types/user';
 
 const etherscanKey = ref('');
+const optimismEtherscanKey = ref('');
 const cryptocompareKey = ref('');
 const covalentKey = ref('');
 const beaconchainKey = ref('');
@@ -40,7 +41,8 @@ const updateKeys = ({
   etherscan,
   beaconchain,
   loopring,
-  opensea
+  opensea,
+  optimismEtherscan
 }: ExternalServiceKeys) => {
   set(cryptocompareKey, cryptocompare?.apiKey || '');
   set(covalentKey, covalent?.apiKey || '');
@@ -48,6 +50,7 @@ const updateKeys = ({
   set(beaconchainKey, beaconchain?.apiKey || '');
   set(loopringKey, loopring?.apiKey || '');
   set(openseaKey, opensea?.apiKey || '');
+  set(optimismEtherscanKey, optimismEtherscan?.apiKey || '');
 };
 
 const save = async (serviceName: ExternalServiceName, key: string) => {
@@ -138,6 +141,21 @@ onMounted(async () => {
         :tooltip="tc('external_services.etherscan.delete_tooltip')"
         @save="save('etherscan', $event)"
         @delete-key="showConfirmation('etherscan')"
+      />
+    </api-key-box>
+
+    <api-key-box>
+      <service-key
+        v-model="optimismEtherscanKey"
+        class="external-services__optimism-etherscan-key"
+        :title="tc('external_services.optimism_etherscan.title')"
+        :description="tc('external_services.optimism_etherscan.description')"
+        :label="tc('external_services.optimism_etherscan.label')"
+        :hint="tc('external_services.optimism_etherscan.hint')"
+        :loading="loading"
+        :tooltip="tc('external_services.optimism_etherscan.delete_tooltip')"
+        @save="save('optimism_etherscan', $event)"
+        @delete-key="showConfirmation('optimism_etherscan')"
       />
     </api-key-box>
 

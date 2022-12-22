@@ -9,6 +9,7 @@ import { FrontendSettings } from '@/types/frontend-settings';
 import { LedgerActionEnum } from '@/types/ledger-actions';
 import { ModuleEnum } from '@/types/modules';
 import { PriceOracleEnum } from '@/types/price-oracle';
+import { type ToSnakeCase } from '@/types/common';
 
 const OtherSettings = z.object({
   krakenAccountType: KrakenAccountType.optional(),
@@ -181,6 +182,7 @@ const ApiKey = z.object({
 
 export const ExternalServiceKeys = z.object({
   etherscan: ApiKey.optional(),
+  optimismEtherscan: ApiKey.optional(),
   cryptocompare: ApiKey.optional(),
   covalent: ApiKey.optional(),
   beaconchain: ApiKey.optional(),
@@ -189,7 +191,7 @@ export const ExternalServiceKeys = z.object({
 });
 
 export type ExternalServiceKeys = z.infer<typeof ExternalServiceKeys>;
-export type ExternalServiceName = keyof ExternalServiceKeys;
+export type ExternalServiceName = ToSnakeCase<keyof ExternalServiceKeys>;
 
 export interface ExternalServiceKey {
   readonly name: ExternalServiceName;

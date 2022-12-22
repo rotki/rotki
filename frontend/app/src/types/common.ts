@@ -6,3 +6,15 @@ export interface PaginationRequestPayload<T> {
   readonly ignoreCache?: boolean;
   readonly onlyCache?: boolean;
 }
+
+export type ToSnakeCase<T> = T extends `${infer A}${infer B}${infer C}`
+  ? [A, B, C] extends [Lowercase<A>, Exclude<Uppercase<B>, '_'>, C]
+    ? `${A}_${Lowercase<B>}${ToSnakeCase<C>}`
+    : `${Lowercase<A>}${ToSnakeCase<`${B}${C}`>}`
+  : T extends string
+  ? Lowercase<T>
+  : T extends (infer A)[]
+  ? ToSnakeCase<A>[]
+  : T extends {}
+  ? { [K in keyof T as ToSnakeCase<K>]: ToSnakeCase<T[K]> }
+  : T;

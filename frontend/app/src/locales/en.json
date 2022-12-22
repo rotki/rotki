@@ -1949,6 +1949,13 @@
       "link": "You can apply for an API key {link}",
       "title": "Opensea"
     },
+    "optimism_etherscan": {
+      "delete_tooltip": "Deletes the Optimism Etherscan API key",
+      "description": "Recommended for any Optimism blockchain balances or transactions if you are not using your own node.",
+      "hint": "Enter your Optimism Etherscan API key",
+      "label": "API key",
+      "title": "Optimism Etherscan"
+    },
     "set": {
       "error": {
         "message": "Error while settings external service api keys: {error}",
