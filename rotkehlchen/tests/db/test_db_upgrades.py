@@ -1074,6 +1074,24 @@ def test_upgrade_db_35_to_36(user_data_dir):  # pylint: disable=unused-argument
         '    FOREIGN KEY (last_price_asset) REFERENCES assets(identifier) ON UPDATE CASCADE\n'
         ')'
     )
+    result = cursor.execute('SELECT * from blockchain_accounts')
+    assert result.fetchall() == [
+        ('ETH', '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', None),
+        ('BTC', '1PUrJgftNnHvvqVyEsm9DiCDQuZHCn47fQ', 'my bitcoin account'),
+        ('BCH', '1PUrJgftNnHvvqVyEsm9DiCDQuZHCn47fQ', 'my bitcoin cash account'),
+    ]
+    result = cursor.execute('SELECT * from tags')
+    assert result.fetchall() == [
+        ('hardware', 'hardware wallet', '0xfffff', '0x00000'),
+        ('hot', 'hot wallet', '0x0f0f0f', '0xffffff'),
+        ('blue', 'A tag to not touch in this upgrade', '0x0f0f0f', '0xffffff'),
+    ]
+    result = cursor.execute('SELECT * from tag_mappings')
+    assert result.fetchall() == [
+        ('1', 'blue'),
+        ('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', 'hardware'),
+        ('1PUrJgftNnHvvqVyEsm9DiCDQuZHCn47fQ', 'hot'),
+    ]
 
     db_v35.logout()
     # Execute upgrade
@@ -1214,6 +1232,27 @@ def test_upgrade_db_35_to_36(user_data_dir):  # pylint: disable=unused-argument
         '            FOREIGN KEY (last_price_asset) REFERENCES assets(identifier) ON UPDATE CASCADE\n'  # noqa: E501
         '        )'
     )
+
+    # Test that tags and related tables got upgraded correctly
+    result = cursor.execute('SELECT * from blockchain_accounts')
+    assert result.fetchall() == [
+        ('ETH', '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', None),
+        ('BTC', '1PUrJgftNnHvvqVyEsm9DiCDQuZHCn47fQ', 'my bitcoin account'),
+        ('BCH', '1PUrJgftNnHvvqVyEsm9DiCDQuZHCn47fQ', 'my bitcoin cash account'),
+    ]
+    result = cursor.execute('SELECT * from tags')
+    assert result.fetchall() == [
+        ('hardware', 'hardware wallet', '0xfffff', '0x00000'),
+        ('hot', 'hot wallet', '0x0f0f0f', '0xffffff'),
+        ('blue', 'A tag to not touch in this upgrade', '0x0f0f0f', '0xffffff'),
+    ]
+    result = cursor.execute('SELECT * from tag_mappings')
+    assert result.fetchall() == [
+        ('1', 'blue'),
+        ('BCH1PUrJgftNnHvvqVyEsm9DiCDQuZHCn47fQ', 'hot'),
+        ('BTC1PUrJgftNnHvvqVyEsm9DiCDQuZHCn47fQ', 'hot'),
+        ('ETH0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', 'hardware'),
+    ]
 
 
 def test_latest_upgrade_adds_remove_tables(user_data_dir):
