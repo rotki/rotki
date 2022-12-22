@@ -635,28 +635,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             append_or_remove='remove',
         )
 
-    def add_blockchain_accounts(
-            self,
-            blockchain: SupportedBlockchain,
-            accounts: ListOfBlockchainAddresses,
-    ) -> None:
-        """Adds new blockchain accounts.
-        The accounts are added in the blockchain object and not in the database.
-
-        May Raise:
-        - InputError if the given accounts list is empty, or if it contains invalid accounts,
-          or if any account already exists.
-        """
-        if len(accounts) == 0:
-            raise InputError('Empty list of blockchain accounts to add was given')
-
-        self.modify_blockchain_accounts(
-            blockchain=blockchain,
-            accounts=accounts,
-            append_or_remove='append',
-        )
-
-    def remove_blockchain_accounts(
+    def remove_single_blockchain_accounts(
             self,
             blockchain: SupportedBlockchain,
             accounts: ListOfBlockchainAddresses,

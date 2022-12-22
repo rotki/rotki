@@ -277,15 +277,13 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
     with data.db.user_write() as cursor:
         data.db.add_blockchain_accounts(
             cursor,
-            SupportedBlockchain.BITCOIN,
-            [BlockchainAccountData(address='1CB7Pbji3tquDtMRp8mBkerimkFzWRkovS')],
+            [BlockchainAccountData(chain=SupportedBlockchain.BITCOIN, address='1CB7Pbji3tquDtMRp8mBkerimkFzWRkovS')],  # noqa: E501
         )
         data.db.add_blockchain_accounts(
             cursor,
-            SupportedBlockchain.ETHEREUM,
             [
-                BlockchainAccountData(address='0xd36029d76af6fE4A356528e4Dc66B2C18123597D'),
-                BlockchainAccountData(address='0x80B369799104a47e98A553f3329812a44A7FaCDc'),
+                BlockchainAccountData(chain=SupportedBlockchain.ETHEREUM, address='0xd36029d76af6fE4A356528e4Dc66B2C18123597D'),  # noqa: E501
+                BlockchainAccountData(chain=SupportedBlockchain.ETHEREUM, address='0x80B369799104a47e98A553f3329812a44A7FaCDc'),  # noqa: E501
             ],
         )
         accounts = data.db.get_blockchain_accounts(cursor)
@@ -300,18 +298,17 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
         with pytest.raises(InputError):  # pylint: disable=no-member
             data.db.add_blockchain_accounts(
                 cursor,
-                SupportedBlockchain.ETHEREUM,
-                [BlockchainAccountData(address='0xd36029d76af6fE4A356528e4Dc66B2C18123597D')],
+                [BlockchainAccountData(chain=SupportedBlockchain.ETHEREUM, address='0xd36029d76af6fE4A356528e4Dc66B2C18123597D')],  # noqa: E501
             )
         # Remove non-existing account
         with pytest.raises(InputError):
-            data.db.remove_blockchain_accounts(
+            data.db.remove_single_blockchain_accounts(
                 cursor,
                 SupportedBlockchain.ETHEREUM,
                 ['0x136029d76af6fE4A356528e4Dc66B2C18123597D'],
             )
         # Remove existing account
-        data.db.remove_blockchain_accounts(
+        data.db.remove_single_blockchain_accounts(
             cursor,
             SupportedBlockchain.ETHEREUM,
             ['0xd36029d76af6fE4A356528e4Dc66B2C18123597D'],
@@ -1365,10 +1362,7 @@ def test_remove_queried_address_on_account_remove(data_dir, username, sql_vm_ins
     with data.db.user_write() as cursor:
         data.db.add_blockchain_accounts(
             cursor,
-            SupportedBlockchain.ETHEREUM,
-            [
-                BlockchainAccountData(address='0xd36029d76af6fE4A356528e4Dc66B2C18123597D'),
-            ],
+            [BlockchainAccountData(chain=SupportedBlockchain.ETHEREUM, address='0xd36029d76af6fE4A356528e4Dc66B2C18123597D')],  # noqa: E501
         )
 
         queried_addresses = QueriedAddresses(data.db)
@@ -1379,7 +1373,7 @@ def test_remove_queried_address_on_account_remove(data_dir, username, sql_vm_ins
         addresses = queried_addresses.get_queried_addresses_for_module(cursor, 'makerdao_vaults')
         assert '0xd36029d76af6fE4A356528e4Dc66B2C18123597D' in addresses
 
-        data.db.remove_blockchain_accounts(
+        data.db.remove_single_blockchain_accounts(
             cursor,
             SupportedBlockchain.ETHEREUM,
             ['0xd36029d76af6fE4A356528e4Dc66B2C18123597D'],

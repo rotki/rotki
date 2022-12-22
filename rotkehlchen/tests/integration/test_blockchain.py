@@ -23,7 +23,11 @@ def test_query_btc_balances(blockchain):
     assert 'BTC' not in blockchain.totals.assets
 
     account = '3BZU33iFcAiyVyu2M2GhEpLNuh81GymzJ7'
-    blockchain.add_blockchain_accounts(SupportedBlockchain.BITCOIN, accounts=[account])
+    blockchain.modify_blockchain_accounts(
+        blockchain=SupportedBlockchain.BITCOIN,
+        accounts=[account],
+        append_or_remove='append',
+    )
 
     blockchain.query_btc_balances()
     assert blockchain.totals.assets[A_BTC].usd_value is not None
@@ -102,9 +106,10 @@ def test_multiple_concurrent_ethereum_blockchain_queries(blockchain):
     )
 
     with etherscan_patch, evmtokens_max_chunks_patch:
-        blockchain.add_blockchain_accounts(
+        blockchain.modify_blockchain_accounts(
             blockchain=SupportedBlockchain.ETHEREUM,
             accounts=[addr1, addr2],
+            append_or_remove='append',
         )
         ethtokens = EthereumTokens(database=blockchain.database, ethereum_inquirer=blockchain.ethereum.node_inquirer)  # noqa: E501
         ethtokens.detect_tokens(

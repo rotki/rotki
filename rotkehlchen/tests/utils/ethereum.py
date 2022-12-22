@@ -163,10 +163,9 @@ def setup_ethereum_transactions_test(
     with database.user_write() as cursor:
         database.add_blockchain_accounts(
             cursor,
-            blockchain=SupportedBlockchain.ETHEREUM,
             account_data=[
-                BlockchainAccountData(address=TEST_ADDR1),
-                BlockchainAccountData(address=addr2),
+                BlockchainAccountData(chain=SupportedBlockchain.ETHEREUM, address=TEST_ADDR1),
+                BlockchainAccountData(chain=SupportedBlockchain.ETHEREUM, address=addr2),
             ],
         )
 
@@ -312,9 +311,8 @@ def extended_transactions_setup_test(
     with database.user_write() as cursor:
         database.add_blockchain_accounts(
             cursor,
-            blockchain=SupportedBlockchain.ETHEREUM,
             account_data=[
-                BlockchainAccountData(address=TEST_ADDR3),
+                BlockchainAccountData(chain=SupportedBlockchain.ETHEREUM, address=TEST_ADDR3),
             ],
         )
 

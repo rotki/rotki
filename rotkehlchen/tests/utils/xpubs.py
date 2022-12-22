@@ -41,16 +41,15 @@ def setup_db_for_xpub_tests_impl(data_dir, username, sql_vm_instructions_cb):
         addr4 = '16zNpyv8KxChtjXnE5nYcPqcXcrSQXX2JW'
         addr5 = '16zNpyv8KxChtjXnE5oYcPqcXcrSQXX2JJ'
         all_addresses = [addr1, addr2, addr3, addr4, addr5]
-        account_data = [BlockchainAccountData(x) for x in [addr1, addr2, addr3, addr4, addr5]]
+        account_data = [BlockchainAccountData(chain=xpub_data1.blockchain, address=x) for x in [addr1, addr2, addr3, addr4, addr5]]  # noqa: E501
         data.db.add_blockchain_accounts(
             cursor,
             account_data=account_data,
-            blockchain=xpub_data1.blockchain,
         )
         insert_tag_mappings(    # if we got tags add them to the existing addresses too
             write_cursor=cursor,
             data=account_data,
-            object_reference_keys=['address'],
+            object_reference_keys=['chain', 'address'],
         )
         data.db.ensure_xpub_mappings_exist(
             cursor,
@@ -78,8 +77,9 @@ def setup_db_for_xpub_tests_impl(data_dir, username, sql_vm_instructions_cb):
         all_addresses.extend([addr1, addr2, addr3, addr4, addr5])
         data.db.add_blockchain_accounts(
             cursor,
-            account_data=[BlockchainAccountData(x) for x in [addr1, addr2, addr3, addr4, addr5]],
-            blockchain=xpub_data2.blockchain,
+            account_data=[
+                BlockchainAccountData(chain=xpub_data2.blockchain, address=x)
+                for x in [addr1, addr2, addr3, addr4, addr5]],
         )
         data.db.ensure_xpub_mappings_exist(
             cursor,

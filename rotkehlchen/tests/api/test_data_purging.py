@@ -61,9 +61,8 @@ def test_purge_ethereum_transaction_data(rotkehlchen_api_server):
     with rotki.data.db.user_write() as cursor:
         rotki.data.db.add_blockchain_accounts(
             write_cursor=cursor,
-            blockchain=SupportedBlockchain.ETHEREUM,
             account_data=[
-                BlockchainAccountData(address=addr1),
+                BlockchainAccountData(chain=SupportedBlockchain.ETHEREUM, address=addr1),
             ],
         )
         db.add_evm_transactions(

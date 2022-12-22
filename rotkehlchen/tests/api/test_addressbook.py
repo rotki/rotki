@@ -274,11 +274,10 @@ def test_names_compilation(rotkehlchen_api_server):
     with db_handler.user_write() as cursor:
         db_handler.add_blockchain_accounts(
             cursor,
-            blockchain=SupportedBlockchain.ETHEREUM,
             account_data=[
-                BlockchainAccountData(address=address_tylor, label='Tylor'),
-                BlockchainAccountData(address=address_rotki, label='Rotki label'),
-                BlockchainAccountData(address=address_nonlabel),
+                BlockchainAccountData(chain=SupportedBlockchain.ETHEREUM, address=address_tylor, label='Tylor'),  # noqa: E501
+                BlockchainAccountData(chain=SupportedBlockchain.ETHEREUM, address=address_rotki, label='Rotki label'),  # noqa: E501
+                BlockchainAccountData(chain=SupportedBlockchain.ETHEREUM, address=address_nonlabel),  # noqa: E501
             ],
         )
     labels_addresses = [

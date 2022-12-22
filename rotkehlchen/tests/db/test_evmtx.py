@@ -33,11 +33,10 @@ def test_add_get_evm_transactions(data_dir, username, sql_vm_instructions_cb):
     with data.db.user_write() as cursor:
         data.db.add_blockchain_accounts(
             write_cursor=cursor,
-            blockchain=SupportedBlockchain.ETHEREUM,
             account_data=[
-                BlockchainAccountData(address=ETH_ADDRESS1),
-                BlockchainAccountData(address=ETH_ADDRESS2),
-                BlockchainAccountData(address=ETH_ADDRESS3),
+                BlockchainAccountData(chain=SupportedBlockchain.ETHEREUM, address=ETH_ADDRESS1),
+                BlockchainAccountData(chain=SupportedBlockchain.ETHEREUM, address=ETH_ADDRESS2),
+                BlockchainAccountData(chain=SupportedBlockchain.ETHEREUM, address=ETH_ADDRESS3),
             ],
         )
 
@@ -133,12 +132,11 @@ def test_query_also_internal_evm_transactions(data_dir, username, sql_vm_instruc
     with data.db.user_write() as cursor:
         data.db.add_blockchain_accounts(
             cursor,
-            blockchain=SupportedBlockchain.ETHEREUM,
             account_data=[
-                BlockchainAccountData(address=ETH_ADDRESS1),
-                BlockchainAccountData(address=ETH_ADDRESS2),
-                BlockchainAccountData(address=ETH_ADDRESS3),
-                BlockchainAccountData(address=address_4),
+                BlockchainAccountData(chain=SupportedBlockchain.ETHEREUM, address=ETH_ADDRESS1),
+                BlockchainAccountData(chain=SupportedBlockchain.ETHEREUM, address=ETH_ADDRESS2),
+                BlockchainAccountData(chain=SupportedBlockchain.ETHEREUM, address=ETH_ADDRESS3),
+                BlockchainAccountData(chain=SupportedBlockchain.ETHEREUM, address=address_4),
             ],
         )
 
