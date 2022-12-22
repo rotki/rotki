@@ -498,6 +498,27 @@ def _upgrade_rpc_nodes(write_cursor: 'DBCursor') -> None:
     log.debug('Exit _upgrade_rpc_nodes')
 
 
+def _upgrade_tags(write_cursor: 'DBCursor') -> None:
+    """All tags tied to addresses should now be tied to chain + address"""
+    log.debug('Enter _upgrade_tags')
+    write_cursor.execute(
+        'SELECT A.blockchain, A.account, B.tag_name from blockchain_accounts AS A '
+        'LEFT OUTER JOIN tag_mappings AS B on A.account = B.object_reference',
+    )
+    delete_tuples = []
+    insert_tuples = []
+    for entry in write_cursor:
+        delete_tuples.append((entry[1],))
+        insert_tuples.append((entry[0] + entry[1], entry[2]))
+
+    write_cursor.executemany('DELETE from tag_mappings WHERE object_reference=?', delete_tuples)
+    write_cursor.executemany(
+        'INSERT OR IGNORE INTO tag_mappings(object_reference, tag_name) VALUES(?, ?)',
+        insert_tuples,
+    )
+    log.debug('Exit _upgrade_tags')
+
+
 def upgrade_v35_to_v36(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v35 to v36
 
@@ -511,7 +532,7 @@ def upgrade_v35_to_v36(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - rename web3_nodes to rpc_nodes
     """
     log.debug('Entered userdb v35->v36 upgrade')
-    progress_handler.set_total_steps(7)
+    progress_handler.set_total_steps(8)
     with db.user_write() as write_cursor:
         _remove_adex(write_cursor)
         progress_handler.new_step()
@@ -526,6 +547,8 @@ def upgrade_v35_to_v36(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         _upgrade_nfts_table(write_cursor)
         progress_handler.new_step()
         _upgrade_rpc_nodes(write_cursor)
+        progress_handler.new_step()
+        _upgrade_tags(write_cursor)
         progress_handler.new_step()
 
     log.debug('Finished userdb v35->v36 upgrade')
