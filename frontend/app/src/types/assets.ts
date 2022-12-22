@@ -53,7 +53,10 @@ export const AssetsWithId = z.array(AssetInfoWithId);
 
 export type AssetsWithId = z.infer<typeof AssetsWithId>;
 
-export const AssetMap = z.record(AssetInfoWithTransformer);
+export const AssetMap = z.object({
+  assetCollections: z.record(AssetInfo),
+  assets: z.record(AssetInfoWithTransformer)
+});
 
 export type AssetMap = z.infer<typeof AssetMap>;
 

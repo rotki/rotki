@@ -4,7 +4,7 @@ import {
   type AssetBalanceWithPrice,
   type BigNumber
 } from '@rotki/common';
-import { type PropType } from 'vue';
+import { type PropType, type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
 import DashboardExpandableTable from '@/components/dashboard/DashboardExpandableTable.vue';
 import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
@@ -36,6 +36,8 @@ const props = defineProps({
 
 const { balances, title, tableType } = toRefs(props);
 const search = ref('');
+
+const expanded: Ref<AssetBalanceWithPrice[]> = ref([]);
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
@@ -148,6 +150,13 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
     });
   }
 
+  headers.push({
+    text: '',
+    width: '48px',
+    value: 'expand',
+    sortable: false
+  });
+
   return headers;
 });
 </script>
@@ -201,11 +210,18 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
       :search.sync="search"
       :loading="loading"
       sort-by="usdValue"
+      item-key="asset"
+      single-expand
+      :expanded="expanded"
       :custom-sort="sortItems"
       :custom-filter="assetFilter"
     >
       <template #item.asset="{ item }">
-        <asset-details opens-details :asset="item.asset" />
+        <asset-details
+          opens-details
+          :asset="item.asset"
+          :is-collection-parent="!!item.breakdown"
+        />
       </template>
       <template #item.usdPrice="{ item }">
         <amount-display
@@ -264,6 +280,18 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
             show-currency="symbol"
           />
         </row-append>
+      </template>
+      <template #expanded-item="{ item }">
+        <table-expand-container visible :colspan="tableHeaders.length">
+          <asset-balances v-bind="props" :balances="item.breakdown" />
+        </table-expand-container>
+      </template>
+      <template #item.expand="{ item }">
+        <row-expander
+          v-if="item.breakdown"
+          :expanded="expanded.includes(item)"
+          @click="expanded = expanded.includes(item) ? [] : [item]"
+        />
       </template>
     </data-table>
   </dashboard-expandable-table>

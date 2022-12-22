@@ -31,7 +31,7 @@ import {
   appendAssetBalance,
   mergeAssociatedAssets,
   sumAssetBalances,
-  toStoredAssetBalanceWithPrice
+  toSortedAssetBalanceWithPrice
 } from '@/utils/balances';
 import { sortDesc } from '@/utils/bignumbers';
 import { assetSum } from '@/utils/calculation';
@@ -141,7 +141,7 @@ export const useExchangeBalancesStore = defineStore(
         const balances = get(exchangeBalances);
 
         if (balances && balances[exchange]) {
-          return toStoredAssetBalanceWithPrice(
+          return toSortedAssetBalanceWithPrice(
             get(
               mergeAssociatedAssets(
                 balances[exchange],

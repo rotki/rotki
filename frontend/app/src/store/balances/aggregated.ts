@@ -10,7 +10,7 @@ import { samePriceAssets } from '@/types/blockchain';
 import { type AssetPriceInfo } from '@/types/prices';
 import {
   sumAssetBalances,
-  toStoredAssetBalanceWithPrice
+  toSortedAssetBalanceWithPrice
 } from '@/utils/balances';
 import { Zero } from '@/utils/bignumbers';
 import { uniqueStrings } from '@/utils/data';
@@ -38,7 +38,7 @@ export const useAggregatedBalancesStore = defineStore(
           getAssociatedAssetIdentifier
         );
 
-        return toStoredAssetBalanceWithPrice(
+        return toSortedAssetBalanceWithPrice(
           ownedAssets,
           asset => hideIgnored && get(isAssetIgnored(asset)),
           assetPrice
@@ -54,7 +54,7 @@ export const useAggregatedBalancesStore = defineStore(
           getAssociatedAssetIdentifier
         );
 
-        return toStoredAssetBalanceWithPrice(
+        return toSortedAssetBalanceWithPrice(
           liabilities,
           asset => hideIgnored && get(isAssetIgnored(asset)),
           assetPrice

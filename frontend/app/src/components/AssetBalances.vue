@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type AssetBalanceWithPrice } from '@rotki/common';
-import { type PropType } from 'vue';
+import { type PropType, type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
@@ -23,6 +23,7 @@ const props = defineProps({
 });
 
 const { balances } = toRefs(props);
+const expanded: Ref<AssetBalanceWithPrice[]> = ref([]);
 
 const { t, tc } = useI18n();
 const total = computed(() => {
@@ -60,6 +61,12 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
       value: 'usdValue',
       align: 'end',
       class: 'text-no-wrap'
+    },
+    {
+      text: '',
+      width: '48px',
+      value: 'expand',
+      sortable: false
     }
   ];
 });
@@ -72,12 +79,19 @@ const sortItems = getSortItems(asset => get(assetInfo(asset)));
     :headers="tableHeaders"
     :items="balances"
     :loading="loading"
+    single-expand
+    :expanded="expanded"
     :loading-text="tc('asset_balances.loading')"
     :custom-sort="sortItems"
     sort-by="usdValue"
+    item-key="asset"
   >
     <template #item.asset="{ item }">
-      <asset-details opens-details :asset="item.asset" />
+      <asset-details
+        opens-details
+        :asset="item.asset"
+        :is-collection-parent="!!item.breakdown"
+      />
     </template>
     <template #item.usdPrice="{ item }">
       <amount-display
@@ -117,6 +131,18 @@ const sortItems = getSortItems(asset => get(assetInfo(asset)));
           :value="total"
         />
       </row-append>
+    </template>
+    <template #expanded-item="{ item }">
+      <table-expand-container visible :colspan="tableHeaders.length">
+        <asset-balances v-bind="props" :balances="item.breakdown" />
+      </table-expand-container>
+    </template>
+    <template #item.expand="{ item }">
+      <row-expander
+        v-if="item.breakdown"
+        :expanded="expanded.includes(item)"
+        @click="expanded = expanded.includes(item) ? [] : [item]"
+      />
     </template>
   </data-table>
 </template>
