@@ -21,6 +21,7 @@ from rotkehlchen.types import (
     EvmTokenKind,
     EvmTransaction,
     Location,
+    SupportedBlockchain,
     Timestamp,
     TimestampMS,
     make_evm_tx_hash,
@@ -156,14 +157,17 @@ def make_addressbook_entries() -> list[AddressbookEntry]:
         AddressbookEntry(
             address=to_checksum_address('0x9d904063e7e120302a13c6820561940538a2ad57'),
             name='My dear friend Fred',
+            blockchain=SupportedBlockchain.ETHEREUM,
         ),
         AddressbookEntry(
             address=to_checksum_address('0x368B9ad9B6AAaeFCE33b8c21781cfF375e09be67'),
             name='Neighbour Thomas',
+            blockchain=SupportedBlockchain.ETHEREUM,
         ),
         AddressbookEntry(
             address=to_checksum_address('0x3D61AEBB1238062a21BE5CC79df308f030BF0c1B'),
             name='Secret agent Rose',
+            blockchain=SupportedBlockchain.OPTIMISM,
         ),
     ]
 

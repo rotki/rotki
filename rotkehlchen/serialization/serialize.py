@@ -67,6 +67,7 @@ from rotkehlchen.types import (
     EvmTransaction,
     ExchangeLocationID,
     Location,
+    SupportedBlockchain,
     TradeType,
 )
 from rotkehlchen.utils.version_check import VersionCheckResult
@@ -121,6 +122,7 @@ def _process_entry(entry: Any) -> Union[str, list[Any], dict[str, Any], Any]:
             NodeName,
             ChainID,
             SingleBlockchainAccountData,
+            SupportedBlockchain,
     )):
         return entry.serialize()
     if isinstance(entry, (

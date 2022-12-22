@@ -73,7 +73,6 @@ from rotkehlchen.types import (
     DEFAULT_ADDRESS_NAME_PRIORITY,
     NON_EVM_CHAINS,
     SUPPORTED_SUBSTRATE_CHAINS,
-    AddressbookEntry,
     AddressbookType,
     AssetMovementCategory,
     BTCAddress,
@@ -2467,13 +2466,30 @@ class OptionalAddressesListSchema(Schema):
     addresses = fields.List(EthereumAddressField(required=True), load_default=None)
 
 
+class AddressWithOptionalBlockchainSchema(Schema):
+    address = EthereumAddressField(required=True)
+    blockchain = BlockchainField(load_default=None)
+
+    @post_load()
+    def transform_data(  # pylint: disable=no-self-use
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> Any:
+        return (data['address'], data['blockchain'])
+
+
+class OptionalAddressesWithBlockchainsListSchema(Schema):
+    addresses = fields.List(fields.Nested(AddressWithOptionalBlockchainSchema), load_default=None)
+
+
 class BaseAddressbookSchema(Schema):
     book_type = SerializableEnumField(enum_class=AddressbookType, required=True)
 
 
 class AddressbookAddressesSchema(
     BaseAddressbookSchema,
-    OptionalAddressesListSchema,
+    OptionalAddressesWithBlockchainsListSchema,
 ):
     ...
 
@@ -2481,18 +2497,20 @@ class AddressbookAddressesSchema(
 class AddressbookEntrySchema(Schema):
     address = EthereumAddressField(required=True)
     name = fields.String(required=True)
+    # Need None option here in case the user wants to update all the entries for the address.
+    blockchain = BlockchainField(load_default=None)
 
     @post_load()
-    def make_addressbook_entry(self, data: dict[str, Any], **_kwargs: Any) -> AddressbookEntry:  # pylint: disable=no-self-use  # noqa: E501
-        return AddressbookEntry(address=data['address'], name=data['name'])
+    def transform_data(  # pylint: disable=no-self-use
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> Any:
+        return (data['address'], data['name'], data['blockchain'])
 
 
 class AddressbookUpdateSchema(BaseAddressbookSchema):
     entries = fields.List(fields.Nested(AddressbookEntrySchema), required=True)
-
-
-class AllNamesSchema(Schema):
-    addresses = fields.List(EthereumAddressField(required=True), required=True)
 
 
 class SnapshotImportingSchema(Schema):
