@@ -9,7 +9,7 @@ import pytest
 from rotkehlchen.assets.asset import Asset, CryptoAsset, CustomAsset, EvmToken, UnderlyingToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import AssetData, AssetType
-from rotkehlchen.assets.utils import symbol_to_asset_or_token
+from rotkehlchen.assets.utils import get_or_create_evm_token, symbol_to_asset_or_token
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_BAT, A_CRV, A_DAI, A_ETH, A_LUSD, A_PICKLE, A_USD
 from rotkehlchen.constants.misc import NFT_DIRECTIVE, ONE
@@ -1059,6 +1059,36 @@ def test_general_cache(globaldb):
             key_parts=[GeneralCacheType.CURVE_POOL_TOKENS, '123'],
         )
         assert values_8 == values_1
+
+
+def test_edit_token_with_missing_information(database):
+    """
+    Test that editing a token that already exists with missing information doesn't
+    raise any error and the information is updated
+    """
+    token_address = string_to_evm_address('0xf53AD2c6851052A81B42133467480961B2321C09')
+    peth = get_or_create_evm_token(
+        userdb=database,
+        symbol='PETH',
+        chain_id=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC20,
+        evm_address=token_address,
+    )
+    assert peth.name == peth.identifier
+    assert peth.decimals == 18
+
+    # Querying adding missing key information should update the asset
+    peth = get_or_create_evm_token(
+        userdb=database,
+        symbol='PETH',
+        name='Pooled Ether',
+        decimals=18,
+        chain_id=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC20,
+        evm_address=token_address,
+    )
+    assert peth.name == 'Pooled Ether'
+    assert peth.decimals == 18
 
 
 def test_packaged_db_check_for_constant_assets(globaldb):

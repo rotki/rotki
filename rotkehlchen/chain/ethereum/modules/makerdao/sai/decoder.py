@@ -61,6 +61,8 @@ class MakerdaosaiDecoder(DecoderInterface):
         self.peth = get_or_create_evm_token(
             userdb=self.base_tools.database,
             symbol='PETH',
+            name='Pooled Ether',
+            decimals=18,
             chain_id=ChainID.ETHEREUM,
             token_kind=EvmTokenKind.ERC20,
             evm_address=POOLED_ETHER_ADDRESS,

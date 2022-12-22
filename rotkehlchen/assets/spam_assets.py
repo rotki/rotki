@@ -827,7 +827,6 @@ def query_token_spam_list(db: 'DBHandler', make_remote_query: bool) -> set[EvmTo
                 evm_address=token_address,
                 chain_id=ChainID.ETHEREUM,
                 protocol=SPAM_PROTOCOL,
-                form_with_incomplete_data=True,
                 decimals=info.get('decimals', 18),
                 name=info.get('name', MISSING_NAME_SPAM_TOKEN),
                 symbol=info.get('symbol', MISSING_SYMBOL_SPAM_TOKEN),
