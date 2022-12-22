@@ -50,7 +50,7 @@ from rotkehlchen.balances.manual import (
     get_manually_tracked_balances,
     remove_manually_tracked_balances,
 )
-from rotkehlchen.chain.accounts import BlockchainAccountData
+from rotkehlchen.chain.accounts import SingleBlockchainAccountData
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.airdrops import check_airdrops
 from rotkehlchen.chain.ethereum.modules.eth2.constants import FREE_VALIDATORS_LIMIT
@@ -146,12 +146,15 @@ from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.serialization.serialize import process_result, process_result_list
 from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
+    SUPPORTED_BITCOIN_CHAINS,
     SUPPORTED_EVM_CHAINS,
+    SUPPORTED_SUBSTRATE_CHAINS,
     AddressbookEntry,
     AddressbookType,
     ApiKey,
     ApiSecret,
     AssetAmount,
+    BTCAddress,
     ChecksumEvmAddress,
     Eth2PubKey,
     EvmTokenKind,
@@ -164,6 +167,7 @@ from rotkehlchen.types import (
     Location,
     ModuleName,
     Price,
+    SubstrateAddress,
     SupportedBlockchain,
     Timestamp,
     TradeType,
@@ -1977,7 +1981,7 @@ class RestAPI():
 
     def _add_evm_accounts(
             self,
-            account_data: list[BlockchainAccountData],
+            account_data: list[SingleBlockchainAccountData[ChecksumEvmAddress]],
     ) -> dict[str, Any]:
         try:
             added_accounts = self.rotkehlchen.add_evm_accounts(account_data=account_data)
@@ -1993,7 +1997,7 @@ class RestAPI():
 
     def add_evm_accounts(
             self,
-            account_data: list[BlockchainAccountData],
+            account_data: list[SingleBlockchainAccountData[ChecksumEvmAddress]],
             async_query: bool,
     ) -> Response:
         if async_query is True:
@@ -2019,20 +2023,49 @@ class RestAPI():
             data = self.rotkehlchen.get_blockchain_account_data(cursor, blockchain)
         return api_response(process_result(_wrap_in_result(data, '')), status_code=HTTPStatus.OK)
 
-    def _add_blockchain_accounts(
+    @overload
+    def _add_single_blockchain_accounts(
             self,
-            blockchain: SupportedBlockchain,
-            account_data: list[BlockchainAccountData],
+            chain: SUPPORTED_EVM_CHAINS,
+            account_data: list[SingleBlockchainAccountData[ChecksumEvmAddress]],
+    ) -> dict[str, Any]:
+        ...
+
+    @overload
+    def _add_single_blockchain_accounts(
+            self,
+            chain: SUPPORTED_SUBSTRATE_CHAINS,
+            account_data: list[SingleBlockchainAccountData[SubstrateAddress]],
+    ) -> dict[str, Any]:
+        ...
+
+    @overload
+    def _add_single_blockchain_accounts(
+            self,
+            chain: SUPPORTED_BITCOIN_CHAINS,
+            account_data: list[SingleBlockchainAccountData[BTCAddress]],
+    ) -> dict[str, Any]:
+        ...
+
+    @overload
+    def _add_single_blockchain_accounts(
+            self,
+            chain: SupportedBlockchain,
+            account_data: list[SingleBlockchainAccountData],
+    ) -> dict[str, Any]:
+        ...
+
+    def _add_single_blockchain_accounts(
+            self,
+            chain: SupportedBlockchain,
+            account_data: list[SingleBlockchainAccountData],
     ) -> dict[str, Any]:
         """
         This returns the typical async response dict but with the
         extra status code argument for errors
         """
         try:
-            self.rotkehlchen.add_blockchain_accounts(
-                blockchain=blockchain,
-                account_data=account_data,
-            )
+            self.rotkehlchen.add_single_blockchain_accounts(chain=chain, account_data=account_data)
         except (EthSyncError, TagConstraintError) as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
         except InputError as e:
@@ -2045,22 +2078,58 @@ class RestAPI():
         added_addresses = [x.address for x in account_data]
         return _wrap_in_ok_result(added_addresses)
 
-    def add_blockchain_accounts(
+    @overload
+    def add_single_blockchain_accounts(
             self,
-            blockchain: SupportedBlockchain,
-            account_data: list[BlockchainAccountData],
+            chain: SUPPORTED_EVM_CHAINS,
+            account_data: list[SingleBlockchainAccountData[ChecksumEvmAddress]],
+            async_query: bool,
+    ) -> Response:
+        ...
+
+    @overload
+    def add_single_blockchain_accounts(
+            self,
+            chain: SUPPORTED_SUBSTRATE_CHAINS,
+            account_data: list[SingleBlockchainAccountData[SubstrateAddress]],
+            async_query: bool,
+    ) -> Response:
+        ...
+
+    @overload
+    def add_single_blockchain_accounts(
+            self,
+            chain: SUPPORTED_BITCOIN_CHAINS,
+            account_data: list[SingleBlockchainAccountData[BTCAddress]],
+            async_query: bool,
+    ) -> Response:
+        ...
+
+    @overload
+    def add_single_blockchain_accounts(
+            self,
+            chain: SupportedBlockchain,
+            account_data: list[SingleBlockchainAccountData],
+            async_query: bool,
+    ) -> Response:
+        ...
+
+    def add_single_blockchain_accounts(
+            self,
+            chain: SupportedBlockchain,
+            account_data: list[SingleBlockchainAccountData],
             async_query: bool,
     ) -> Response:
         if async_query is True:
             return self._query_async(
-                command=self._add_blockchain_accounts,
-                blockchain=blockchain,
+                command=self._add_single_blockchain_accounts,
+                chain=chain,
                 account_data=account_data,
             )
 
-        response = self._add_blockchain_accounts(blockchain=blockchain, account_data=account_data)
-        result = response['result']
-        msg = response['message']
+        response = self._add_single_blockchain_accounts(chain=chain, account_data=account_data)
+        result = response['result']  # pylint: disable=unsubscriptable-object
+        msg = response['message']  # pylint: disable=unsubscriptable-object
         status_code = _get_status_code_from_async_response(response)
 
         if result is None:
@@ -2070,14 +2139,14 @@ class RestAPI():
         result_dict = _wrap_in_result(result, msg)
         return api_response(process_result(result_dict), status_code=status_code)
 
-    def edit_blockchain_accounts(
+    def edit_single_blockchain_accounts(
             self,
             blockchain: SupportedBlockchain,
-            account_data: list[BlockchainAccountData],
+            account_data: list[SingleBlockchainAccountData],
     ) -> Response:
         try:
             with self.rotkehlchen.data.db.user_write() as cursor:
-                self.rotkehlchen.edit_blockchain_accounts(
+                self.rotkehlchen.edit_single_blockchain_accounts(
                     cursor,
                     blockchain=blockchain,
                     account_data=account_data,
@@ -2091,7 +2160,7 @@ class RestAPI():
 
         return api_response(process_result(_wrap_in_result(data, '')), status_code=HTTPStatus.OK)
 
-    def _remove_blockchain_accounts(
+    def _remove_single_blockchain_accounts(
             self,
             blockchain: SupportedBlockchain,
             accounts: ListOfBlockchainAddresses,
@@ -2101,7 +2170,7 @@ class RestAPI():
         extra status code argument for errors
         """
         try:
-            self.rotkehlchen.remove_blockchain_accounts(
+            self.rotkehlchen.remove_single_blockchain_accounts(
                 blockchain=blockchain,
                 accounts=accounts,
             )
@@ -2115,7 +2184,7 @@ class RestAPI():
 
         return _wrap_in_ok_result(balances_update.serialize())
 
-    def remove_blockchain_accounts(
+    def remove_single_blockchain_accounts(
             self,
             blockchain: SupportedBlockchain,
             accounts: ListOfBlockchainAddresses,
@@ -2123,12 +2192,12 @@ class RestAPI():
     ) -> Response:
         if async_query is True:
             return self._query_async(
-                command=self._remove_blockchain_accounts,
+                command=self._remove_single_blockchain_accounts,
                 blockchain=blockchain,
                 accounts=accounts,
             )
 
-        response = self._remove_blockchain_accounts(blockchain=blockchain, accounts=accounts)
+        response = self._remove_single_blockchain_accounts(blockchain=blockchain, accounts=accounts)  # noqa: E501
         result = response['result']
         msg = response['message']
         status_code = _get_status_code_from_async_response(response)

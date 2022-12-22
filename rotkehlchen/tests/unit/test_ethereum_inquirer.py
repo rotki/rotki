@@ -67,10 +67,9 @@ def test_get_transaction_receipt(
     with database.user_write() as cursor:
         database.add_blockchain_accounts(
             cursor,
-            blockchain=SupportedBlockchain.ETHEREUM,
             account_data=[
-                BlockchainAccountData(address=from_addy),
-                BlockchainAccountData(address=to_addy),
+                BlockchainAccountData(chain=SupportedBlockchain.ETHEREUM, address=from_addy),
+                BlockchainAccountData(chain=SupportedBlockchain.ETHEREUM, address=to_addy),
             ],
         )
         db.add_evm_transactions(

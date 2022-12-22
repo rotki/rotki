@@ -117,9 +117,8 @@ def test_etherscan_get_transactions_genesis_block(eth_transactions):
     with db.user_write() as cursor:
         db.add_blockchain_accounts(
             write_cursor=cursor,
-            blockchain=SupportedBlockchain.ETHEREUM,
             account_data=[
-                BlockchainAccountData(address=account),
+                BlockchainAccountData(chain=SupportedBlockchain.ETHEREUM, address=account),
             ],
         )
     eth_transactions.single_address_query_transactions(

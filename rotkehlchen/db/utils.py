@@ -256,7 +256,7 @@ def insert_tag_mappings(
         write_cursor: 'DBCursor',
         data: Union[list['ManuallyTrackedBalance'], list[BlockchainAccountData], list['XpubData']],
         object_reference_keys: list[
-            Literal['id', 'address', 'xpub.xpub', 'derivation_path'],
+            Literal['id', 'chain', 'address', 'xpub.xpub', 'derivation_path'],
         ],
 ) -> None:
     """

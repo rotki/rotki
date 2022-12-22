@@ -7,7 +7,7 @@ import os
 import time
 from collections import defaultdict
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, DefaultDict, Literal, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, DefaultDict, Literal, Optional, Union, cast, overload
 
 import gevent
 
@@ -20,7 +20,7 @@ from rotkehlchen.balances.manual import (
     account_for_manually_tracked_asset_balances,
     get_manually_tracked_balances,
 )
-from rotkehlchen.chain.accounts import BlockchainAccountData
+from rotkehlchen.chain.accounts import BlockchainAccountData, SingleBlockchainAccountData
 from rotkehlchen.chain.aggregator import ChainsAggregator
 from rotkehlchen.chain.avalanche.manager import AvalancheManager
 from rotkehlchen.chain.ethereum.accounting.aggregator import EVMAccountingAggregator
@@ -66,13 +66,17 @@ from rotkehlchen.premium.premium import Premium, PremiumCredentials, premium_cre
 from rotkehlchen.premium.sync import PremiumSyncManager
 from rotkehlchen.tasks.manager import DEFAULT_MAX_TASKS_NUM, TaskManager
 from rotkehlchen.types import (
+    SUPPORTED_BITCOIN_CHAINS,
     SUPPORTED_EVM_CHAINS,
+    SUPPORTED_SUBSTRATE_CHAINS,
     ApiKey,
     ApiSecret,
+    BTCAddress,
     ChainID,
     ChecksumEvmAddress,
     ListOfBlockchainAddresses,
     Location,
+    SubstrateAddress,
     SupportedBlockchain,
     Timestamp,
 )
@@ -528,7 +532,7 @@ class Rotkehlchen():
 
     def add_evm_accounts(
             self,
-            account_data: list[BlockchainAccountData],
+            account_data: list[SingleBlockchainAccountData[ChecksumEvmAddress]],
     ) -> list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]]:
         """Adds each account for all evm addresses
 
@@ -543,35 +547,62 @@ class Rotkehlchen():
         - RemoteError if an external service such as Etherscan is queried and
           there is a problem with its query.
         """
-        account_data_map: dict[ChecksumEvmAddress, BlockchainAccountData] = {x.address: x for x in account_data}  # type: ignore[misc]  # noqa: E501 # we know it's evm addresses here
+        account_data_map: dict[ChecksumEvmAddress, SingleBlockchainAccountData[ChecksumEvmAddress]] = {x.address: x for x in account_data}  # noqa: E501
         with self.data.db.user_write() as cursor:
             self.data.db.ensure_tags_exist(
-                cursor,
+                cursor=cursor,
                 given_data=account_data,
                 action='adding',
                 data_type='blockchain accounts',
             )
             added_accounts = self.chains_aggregator.add_accounts_to_all_evm(
-                accounts=[ChecksumEvmAddress(entry.address) for entry in account_data],  # type: ignore[arg-type]  # noqa: E501 # we know it's evm address
+                accounts=[entry.address for entry in account_data],
             )
             for chain, address in added_accounts:
                 account_data_entry = account_data_map[address]
-                if chain != SupportedBlockchain.ETHEREUM:
-                    # for now add tags only to mainnet address
-                    # TODO: Need to make this generic so that tag mapping is blockchain+address
-                    account_data_entry = account_data_entry._replace(tags=None)
                 self.data.db.add_blockchain_accounts(
                     cursor,
-                    blockchain=chain,
-                    account_data=[account_data_entry],
+                    account_data=[account_data_entry.to_blockchain_account_data(chain)],
                 )
 
         return added_accounts
 
-    def add_blockchain_accounts(
+    @overload
+    def add_single_blockchain_accounts(
             self,
-            blockchain: SupportedBlockchain,
-            account_data: list[BlockchainAccountData],
+            chain: SUPPORTED_EVM_CHAINS,
+            account_data: list[SingleBlockchainAccountData[ChecksumEvmAddress]],
+    ) -> None:
+        ...
+
+    @overload
+    def add_single_blockchain_accounts(
+            self,
+            chain: SUPPORTED_SUBSTRATE_CHAINS,
+            account_data: list[SingleBlockchainAccountData[SubstrateAddress]],
+    ) -> None:
+        ...
+
+    @overload
+    def add_single_blockchain_accounts(
+            self,
+            chain: SUPPORTED_BITCOIN_CHAINS,
+            account_data: list[SingleBlockchainAccountData[BTCAddress]],
+    ) -> None:
+        ...
+
+    @overload
+    def add_single_blockchain_accounts(
+            self,
+            chain: SupportedBlockchain,
+            account_data: list[SingleBlockchainAccountData],
+    ) -> None:
+        ...
+
+    def add_single_blockchain_accounts(
+            self,
+            chain: SupportedBlockchain,
+            account_data: list[SingleBlockchainAccountData],
     ) -> None:
         """Adds new blockchain accounts
 
@@ -584,6 +615,9 @@ class Rotkehlchen():
         - RemoteError if an external service such as Etherscan is queried and
           there is a problem with its query.
         """
+        if len(account_data) == 0:
+            raise InputError('Empty list of blockchain accounts to add was given')
+
         with self.data.db.user_write() as cursor:
             self.data.db.ensure_tags_exist(
                 cursor,
@@ -591,26 +625,23 @@ class Rotkehlchen():
                 action='adding',
                 data_type='blockchain accounts',
             )
-            address_type = blockchain.get_address_type()
-            self.chains_aggregator.add_blockchain_accounts(
-                blockchain=blockchain,
-                accounts=[address_type(entry.address) for entry in account_data],
+            self.chains_aggregator.modify_blockchain_accounts(
+                blockchain=chain,
+                accounts=[entry.address for entry in account_data],
+                append_or_remove='append',
             )
             self.data.db.add_blockchain_accounts(
-                cursor,
-                blockchain=blockchain,
-                account_data=account_data,
+                write_cursor=cursor,
+                account_data=[x.to_blockchain_account_data(chain) for x in account_data],
             )
 
-    def edit_blockchain_accounts(
+    def edit_single_blockchain_accounts(
             self,
             write_cursor: 'DBCursor',
             blockchain: SupportedBlockchain,
-            account_data: list[BlockchainAccountData],
+            account_data: list[SingleBlockchainAccountData],
     ) -> None:
-        """Edits blockchain accounts
-
-        Edits blockchain account data for the given accounts
+        """Edits blockchain accounts data for a single chain
 
         May raise:
         - InputError if the given accounts list is empty or if
@@ -629,19 +660,18 @@ class Rotkehlchen():
             )
 
         self.data.db.ensure_tags_exist(
-            write_cursor,
+            cursor=write_cursor,
             given_data=account_data,
             action='editing',
             data_type='blockchain accounts',
         )
         # Finally edit the accounts
         self.data.db.edit_blockchain_accounts(
-            write_cursor,
-            blockchain=blockchain,
-            account_data=account_data,
+            write_cursor=write_cursor,
+            account_data=[x.to_blockchain_account_data(blockchain) for x in account_data],
         )
 
-    def remove_blockchain_accounts(
+    def remove_single_blockchain_accounts(
             self,
             blockchain: SupportedBlockchain,
             accounts: ListOfBlockchainAddresses,
@@ -653,7 +683,7 @@ class Rotkehlchen():
         May raise:
         - InputError if a non-existing account was given to remove
         """
-        self.chains_aggregator.remove_blockchain_accounts(
+        self.chains_aggregator.remove_single_blockchain_accounts(
             blockchain=blockchain,
             accounts=accounts,
         )
@@ -665,7 +695,7 @@ class Rotkehlchen():
                 stack.enter_context(ethereum.transactions.wait_until_no_query_for(eth_addresses))
                 stack.enter_context(ethereum.transactions.missing_receipts_lock)
                 stack.enter_context(ethereum.transactions_decoder.undecoded_tx_query_lock)
-            self.data.db.remove_blockchain_accounts(cursor, blockchain, accounts)
+            self.data.db.remove_single_blockchain_accounts(cursor, blockchain, accounts)
 
     def get_history_query_status(self) -> dict[str, str]:
         if self.events_historian.progress < FVal('100'):

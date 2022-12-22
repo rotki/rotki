@@ -17,7 +17,11 @@ from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.assets.asset import Asset, AssetWithOracles, EvmToken
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
-from rotkehlchen.chain.accounts import BlockchainAccountData, BlockchainAccounts
+from rotkehlchen.chain.accounts import (
+    BlockchainAccountData,
+    BlockchainAccounts,
+    SingleBlockchainAccountData,
+)
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.xpub import (
     XpubData,
@@ -1124,12 +1128,11 @@ class DBHandler:
     def add_blockchain_accounts(
             self,
             write_cursor: 'DBCursor',
-            blockchain: SupportedBlockchain,
             account_data: list[BlockchainAccountData],
     ) -> None:
         # Insert the blockchain account addresses and labels to the DB
         tuples = [(
-            blockchain.value,
+            entry.chain.value,
             entry.address,
             entry.label,
         ) for entry in account_data]
@@ -1143,12 +1146,11 @@ class DBHandler:
                 f'Blockchain account/s {[x.address for x in account_data]} already exist',
             ) from e
 
-        insert_tag_mappings(write_cursor=write_cursor, data=account_data, object_reference_keys=['address'])  # noqa: E501
+        insert_tag_mappings(write_cursor=write_cursor, data=account_data, object_reference_keys=['chain', 'address'])  # noqa: E501
 
     def edit_blockchain_accounts(
             self,
             write_cursor: 'DBCursor',
-            blockchain: SupportedBlockchain,
             account_data: list[BlockchainAccountData],
     ) -> None:
         """Edit the given blockchain accounts
@@ -1160,14 +1162,14 @@ class DBHandler:
         # Delete the current tag mappings for all affected accounts
         write_cursor.executemany(
             'DELETE FROM tag_mappings WHERE '
-            'object_reference = ?;', [(x.address,) for x in account_data],
+            'object_reference = ?;', [(f'{x.chain}{x.address}',) for x in account_data],
         )
 
         # Update the blockchain account labels in the DB
         tuples = [(
             entry.label,
             entry.address,
-            blockchain.value,
+            entry.chain,
         ) for entry in account_data]
         write_cursor.executemany(
             'UPDATE blockchain_accounts SET label=? WHERE account=? AND blockchain=?;', tuples,
@@ -1180,9 +1182,13 @@ class DBHandler:
             log.error(msg)
             raise InputError(msg)
 
-        insert_tag_mappings(write_cursor=write_cursor, data=account_data, object_reference_keys=['address'])  # noqa: E501
+        insert_tag_mappings(
+            write_cursor=write_cursor,
+            data=account_data,
+            object_reference_keys=['chain', 'address'],
+        )
 
-    def remove_blockchain_accounts(
+    def remove_single_blockchain_accounts(
             self,
             write_cursor: 'DBCursor',
             blockchain: SupportedBlockchain,
@@ -1206,7 +1212,7 @@ class DBHandler:
             )
 
         tuples = [(blockchain.value, x) for x in accounts]
-        account_tuples = [(x,) for x in accounts]
+        chain_and_account_concat_tuples = [(f'{blockchain.value}{x}',) for x in accounts]
 
         # First remove all transaction related information for this address.
         # Needs to happen before the address is removed since removing the address
@@ -1218,7 +1224,7 @@ class DBHandler:
 
         write_cursor.executemany(
             'DELETE FROM tag_mappings WHERE '
-            'object_reference = ?;', account_tuples,
+            'object_reference = ?;', chain_and_account_concat_tuples,
         )
         write_cursor.executemany(
             'DELETE FROM blockchain_accounts WHERE '
@@ -1353,7 +1359,7 @@ class DBHandler:
         query = cursor.execute(
             'SELECT A.account, A.label, group_concat(B.tag_name,",") '
             'FROM blockchain_accounts AS A '
-            'LEFT OUTER JOIN tag_mappings AS B ON B.object_reference = A.account '
+            'LEFT OUTER JOIN tag_mappings AS B ON B.object_reference = A.BLOCKCHAIN || A.account '
             'WHERE A.blockchain=? GROUP BY account;',
             (blockchain.value,),
         )
@@ -1363,6 +1369,7 @@ class DBHandler:
             tags = deserialize_tags_from_db(entry[2])
             data.append(BlockchainAccountData(
                 address=entry[0],
+                chain=blockchain,
                 label=entry[1],
                 tags=tags,
             ))
@@ -2731,6 +2738,7 @@ class DBHandler:
             self,
             cursor: 'DBCursor',
             given_data: Union[
+                list[SingleBlockchainAccountData],
                 list[BlockchainAccountData],
                 list[ManuallyTrackedBalance],
                 list[XpubData],
@@ -2820,7 +2828,7 @@ class DBHandler:
         write_cursor.execute(
             'DELETE FROM tag_mappings WHERE '
             'object_reference IN ('
-            'SELECT address from xpub_mappings WHERE xpub=? AND derivation_path IS ? AND blockchain=?);',  # noqa: E501
+            'SELECT blockchain || address from xpub_mappings WHERE xpub=? AND derivation_path IS ? AND blockchain=?);',  # noqa: E501
             (
                 xpub_data.xpub.xpub,
                 xpub_data.serialize_derivation_path_for_db(),

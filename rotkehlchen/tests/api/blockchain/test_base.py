@@ -592,9 +592,7 @@ def test_add_blockchain_accounts(
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('btc_accounts', [[]])
-def test_add_blockchain_accounts_concurrent(
-        rotkehlchen_api_server,
-):
+def test_add_blockchain_accounts_concurrent(rotkehlchen_api_server):
     """Test that if we add blockchain accounts concurrently we won't get any duplicates"""
     ethereum_accounts = [make_evm_address(), make_evm_address(), make_evm_address()]
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen

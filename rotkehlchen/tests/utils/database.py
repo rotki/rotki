@@ -56,9 +56,11 @@ def add_blockchain_accounts_to_db(db: DBHandler, blockchain_accounts: Blockchain
         with db.user_write() as cursor:
             for name, value in asdict(blockchain_accounts).items():
                 db.add_blockchain_accounts(
-                    cursor,
-                    SupportedBlockchain(name.upper()),
-                    [BlockchainAccountData(address=x) for x in value],
+                    write_cursor=cursor,
+                    account_data=[BlockchainAccountData(
+                        chain=SupportedBlockchain(name.upper()),
+                        address=x,
+                    ) for x in value],
                 )
     except InputError as e:
         raise AssertionError(

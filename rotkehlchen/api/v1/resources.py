@@ -153,7 +153,7 @@ from rotkehlchen.assets.asset import (
 )
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
-from rotkehlchen.chain.accounts import BlockchainAccountData
+from rotkehlchen.chain.accounts import SingleBlockchainAccountData
 from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
@@ -1418,7 +1418,7 @@ class EvmAccountsResource(BaseMethodView):
             async_query: bool,
     ) -> Response:
         account_data = [
-            BlockchainAccountData(
+            SingleBlockchainAccountData[ChecksumEvmAddress](
                 address=entry['address'],
                 label=entry['label'],
                 tags=entry['tags'],
@@ -1463,14 +1463,14 @@ class BlockchainsAccountsResource(BaseMethodView):
             async_query: bool,
     ) -> Response:
         account_data = [
-            BlockchainAccountData(
+            SingleBlockchainAccountData(
                 address=entry['address'],
                 label=entry['label'],
                 tags=entry['tags'],
             ) for entry in accounts
         ]
-        return self.rest_api.add_blockchain_accounts(
-            blockchain=blockchain,
+        return self.rest_api.add_single_blockchain_accounts(
+            chain=blockchain,
             account_data=account_data,
             async_query=async_query,
         )
@@ -1483,13 +1483,13 @@ class BlockchainsAccountsResource(BaseMethodView):
             accounts: list[dict[str, Any]],
     ) -> Response:
         account_data = [
-            BlockchainAccountData(
+            SingleBlockchainAccountData(
                 address=entry['address'],
                 label=entry['label'],
                 tags=entry['tags'],
             ) for entry in accounts
         ]
-        return self.rest_api.edit_blockchain_accounts(
+        return self.rest_api.edit_single_blockchain_accounts(
             blockchain=blockchain,
             account_data=account_data,
         )
@@ -1502,7 +1502,7 @@ class BlockchainsAccountsResource(BaseMethodView):
             accounts: ListOfBlockchainAddresses,
             async_query: bool,
     ) -> Response:
-        return self.rest_api.remove_blockchain_accounts(
+        return self.rest_api.remove_single_blockchain_accounts(
             blockchain=blockchain,
             accounts=accounts,
             async_query=async_query,

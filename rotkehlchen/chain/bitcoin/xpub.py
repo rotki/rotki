@@ -206,6 +206,7 @@ class XpubManager():
             elif new_xpub:
                 existing_address_data.append(BlockchainAccountData(
                     address=entry.address,
+                    chain=xpub_data.blockchain,
                     label=None,
                     tags=xpub_data.tags,
                 ))
@@ -221,19 +222,20 @@ class XpubManager():
                 insert_tag_mappings(  # if we got tags add them to the existing addresses too
                     write_cursor=cursor,
                     data=existing_address_data,
-                    object_reference_keys=['address'],
+                    object_reference_keys=['chain', 'address'],
                 )
 
             if len(new_addresses) != 0:
-                self.chains_aggregator.add_blockchain_accounts(
+                self.chains_aggregator.modify_blockchain_accounts(
                     blockchain=xpub_data.blockchain,
                     accounts=new_addresses,
+                    append_or_remove='append',
                 )
                 self.db.add_blockchain_accounts(
                     write_cursor=cursor,
-                    blockchain=xpub_data.blockchain,
                     account_data=[BlockchainAccountData(
                         address=x,
+                        chain=xpub_data.blockchain,
                         label=None,
                         tags=xpub_data.tags,
                     ) for x in new_addresses],

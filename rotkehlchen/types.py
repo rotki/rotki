@@ -1,5 +1,5 @@
 from enum import Enum, auto
-from typing import Any, Callable, Literal, NamedTuple, NewType, Optional, Union, get_args
+from typing import Any, Callable, Literal, NamedTuple, NewType, Optional, TypeVar, Union, get_args
 
 from eth_typing import ChecksumAddress
 from hexbytes import HexBytes as Web3HexBytes
@@ -157,12 +157,16 @@ T_Eth2PubKey = str
 Eth2PubKey = NewType('Eth2PubKey', T_Eth2PubKey)
 
 BlockchainAddress = Union[
-    EvmAddress,
     BTCAddress,
     ChecksumEvmAddress,
     SubstrateAddress,
-    str,
 ]
+AnyBlockchainAddress = TypeVar(
+    'AnyBlockchainAddress',
+    BTCAddress,
+    ChecksumEvmAddress,
+    SubstrateAddress,
+)
 ListOfBlockchainAddresses = Union[
     list[BTCAddress],
     list[ChecksumEvmAddress],
