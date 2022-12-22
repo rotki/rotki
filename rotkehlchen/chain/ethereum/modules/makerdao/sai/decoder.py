@@ -451,6 +451,7 @@ class MakerdaosaiDecoder(DecoderInterface):
             transaction: EvmTransaction,  # pylint: disable=unused-argument
             event: HistoryBaseEntry,
             action_items: list[ActionItem],  # pylint: disable=unused-argument
+            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
     ) -> bool:
         """This method enriches relevant asset transfers to and from the SaiTub contract."""
         if (
