@@ -1,11 +1,15 @@
 ﻿<script setup lang="ts">
 import { type RawLocation } from 'vue-router';
+import { type ComputedRef } from 'vue';
+import { type AssetBalanceWithPrice } from '@rotki/common';
 import AssetLocations from '@/components/assets/AssetLocations.vue';
 import AssetValueRow from '@/components/assets/AssetValueRow.vue';
 import { AssetAmountAndValueOverTime } from '@/premium/premium';
 import { Routes } from '@/router/routes';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
+import { useAggregatedBalancesStore } from '@/store/balances/aggregated';
+import AssetBalances from '@/components/AssetBalances.vue';
 
 const props = defineProps({
   identifier: { required: true, type: String }
@@ -35,6 +39,15 @@ const isCustomAsset = computed(() => get(asset)?.isCustomAsset);
 
 const { t } = useI18n();
 
+const route = useRoute();
+
+const isCollectionParent: ComputedRef<boolean> = computed(() => {
+  const currentRoute = get(route);
+  const collectionParent = currentRoute.query['collectionParent'];
+
+  return !!collectionParent;
+});
+
 const editRoute = computed<RawLocation>(() => ({
   path: get(isCustomAsset)
     ? Routes.ASSET_MANAGER_CUSTOM
@@ -43,6 +56,18 @@ const editRoute = computed<RawLocation>(() => ({
     id: get(identifier)
   }
 }));
+
+const { balances } = useAggregatedBalancesStore();
+const collectionBalance: ComputedRef<AssetBalanceWithPrice[]> = computed(() => {
+  if (!get(isCollectionParent)) {
+    return [];
+  }
+
+  return (
+    get(balances()).find(data => data.asset === get(identifier))?.breakdown ||
+    []
+  );
+});
 </script>
 
 <template>
@@ -51,7 +76,11 @@ const editRoute = computed<RawLocation>(() => ({
       <v-col>
         <v-row align="center">
           <v-col cols="auto">
-            <asset-icon :identifier="identifier" size="48px" />
+            <asset-icon
+              :identifier="identifier"
+              size="48px"
+              :show-chain="!isCollectionParent"
+            />
           </v-col>
           <v-col v-if="!isCustomAsset" class="d-flex flex-column" cols="auto">
             <span class="text-h5 font-weight-medium">{{ symbol }}</span>
@@ -65,14 +94,14 @@ const editRoute = computed<RawLocation>(() => ({
               {{ asset?.customAssetType }}
             </span>
           </v-col>
-          <v-col cols="auto">
+          <v-col v-if="!isCollectionParent" cols="auto">
             <v-btn icon :to="editRoute">
               <v-icon>mdi-pencil</v-icon>
             </v-btn>
           </v-col>
         </v-row>
       </v-col>
-      <v-col cols="auto">
+      <v-col v-if="!isCollectionParent" cols="auto">
         <v-row align="center">
           <v-col cols="auto">
             <div class="text-subtitle-2">{{ t('assets.ignore') }}</div>
@@ -83,12 +112,24 @@ const editRoute = computed<RawLocation>(() => ({
         </v-row>
       </v-col>
     </v-row>
-    <asset-value-row class="mt-8" :identifier="identifier" />
+    <asset-value-row
+      :is-collection-parent="isCollectionParent"
+      class="mt-8"
+      :identifier="identifier"
+    />
     <asset-amount-and-value-over-time
-      v-if="premium"
+      v-if="premium && !isCollectionParent"
       class="mt-8"
       :asset="identifier"
     />
-    <asset-locations class="mt-8" :identifier="identifier" />
+    <asset-locations
+      v-if="!isCollectionParent"
+      class="mt-8"
+      :identifier="identifier"
+    />
+    <card v-else class="mt-8" outlined-body>
+      <template #title> {{ t('assets.multi_chain_assets') }} </template>
+      <asset-balances :balances="collectionBalance" />
+    </card>
   </v-container>
 </template>

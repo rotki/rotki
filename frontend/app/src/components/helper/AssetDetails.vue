@@ -43,6 +43,7 @@ const currentAsset: ComputedRef<AssetInfoWithId> = computed(() => {
       :asset-styled="assetStyled"
       :enable-association="enableAssociation"
       :show-chain="!isCollectionParent"
+      :is-collection-parent="isCollectionParent"
     />
   </div>
 </template>

@@ -1,4 +1,4 @@
-import { type AssetBalance, type AssetBalanceWithPrice } from '@rotki/common';
+import { type AssetBalanceWithPrice } from '@rotki/common';
 import { type MaybeRef } from '@vueuse/core';
 import { type ComputedRef } from 'vue';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
@@ -31,7 +31,10 @@ export const useAggregatedBalancesStore = defineStore(
 
     const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
 
-    const balances = (hideIgnored = true): ComputedRef<AssetBalance[]> =>
+    const balances = (
+      hideIgnored = true,
+      groupMultiChain = true
+    ): ComputedRef<AssetBalanceWithPrice[]> =>
       computed(() => {
         const ownedAssets = sumAssetBalances(
           [get(totals), get(exchangeBalances), get(manualBalances)],
@@ -41,7 +44,8 @@ export const useAggregatedBalancesStore = defineStore(
         return toSortedAssetBalanceWithPrice(
           ownedAssets,
           asset => hideIgnored && get(isAssetIgnored(asset)),
-          assetPrice
+          assetPrice,
+          groupMultiChain
         );
       });
 
@@ -88,13 +92,15 @@ export const useAggregatedBalancesStore = defineStore(
       });
 
     const assetPriceInfo = (
-      identifier: MaybeRef<string>
+      identifier: MaybeRef<string>,
+      groupMultiChain: MaybeRef<boolean> = ref(false)
     ): ComputedRef<AssetPriceInfo> => {
       return computed(() => {
         const id = get(identifier);
-        const assetValue = (get(balances()) as AssetBalanceWithPrice[]).find(
-          (value: AssetBalanceWithPrice) => value.asset === id
-        );
+        const assetValue = (
+          get(balances(true, get(groupMultiChain))) as AssetBalanceWithPrice[]
+        ).find((value: AssetBalanceWithPrice) => value.asset === id);
+
         return {
           usdPrice: assetValue?.usdPrice ?? Zero,
           amount: assetValue?.amount ?? Zero,

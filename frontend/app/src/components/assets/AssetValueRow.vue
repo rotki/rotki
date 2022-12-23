@@ -4,13 +4,15 @@ import { useAggregatedBalancesStore } from '@/store/balances/aggregated';
 import { type AssetPriceInfo } from '@/types/prices';
 
 const props = defineProps({
-  identifier: { required: true, type: String }
+  identifier: { required: true, type: String },
+  isCollectionParent: { required: false, type: Boolean, default: false }
 });
-const { identifier } = toRefs(props);
+
+const { identifier, isCollectionParent } = toRefs(props);
 const { assetPriceInfo } = useAggregatedBalancesStore();
 
 const info = computed<AssetPriceInfo>(() => {
-  return get(assetPriceInfo(identifier));
+  return get(assetPriceInfo(identifier, isCollectionParent));
 });
 
 const { t } = useI18n();
