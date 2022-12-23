@@ -144,8 +144,9 @@ class GlobalDBHandler():
             return GlobalDBHandler()._packaged_db_conn  # type: ignore
 
         packaged_db_path = Path(__file__).resolve().parent.parent / 'data' / 'global.db'
-        packaged_db_conn = initialize_globaldb(
-            dbpath=packaged_db_path,
+        packaged_db_conn = DBConnection(
+            path=packaged_db_path,
+            connection_type=DBConnectionType.GLOBAL,
             sql_vm_instructions_cb=DEFAULT_SQL_VM_INSTRUCTIONS_CB,
         )
         GlobalDBHandler()._packaged_db_conn = packaged_db_conn

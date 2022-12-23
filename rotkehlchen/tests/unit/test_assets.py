@@ -1,4 +1,9 @@
+import os
+import shutil
 import warnings as test_warnings
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from unittest.mock import PropertyMock, patch
 
 import pytest
 from eth_utils import is_checksum_address
@@ -633,3 +638,31 @@ def test_symbol_or_name(database):
     assert Asset('xyz').symbol_or_name() == 'custom name'
     with pytest.raises(UnknownAsset):
         Asset('i-dont-exist').symbol_or_name()
+
+
+def test_load_from_packaged_db(globaldb: GlobalDBHandler):
+    """Test that connecting to the packaged globaldb doesn't try to write into it."""
+    packaged_db_path = Path(__file__).resolve().parent.parent.parent / 'data' / 'global.db'
+    with TemporaryDirectory() as tmpdirname:
+        # Create a copy of the global db in a temp file
+        dest_file = Path(tmpdirname) / 'data' / 'global.db'
+        os.makedirs(dest_file.parent, exist_ok=True)
+        backup = shutil.copy(packaged_db_path, dest_file)
+
+        # mock Path parent attribute to return the destination file always
+        def parent():
+            return Path(tmpdirname)
+
+        # set the permissions for the copy of the globaldb to read only. This ensures
+        # that no write happen without raising an error
+        backup.chmod(0o444)
+        # mock the parent method from pathlib in the initialization of the globaldb
+        with patch('pathlib.Path.parent', new_callable=PropertyMock) as mock_path:
+            mock_path.side_effect = parent
+            # the execution of the function shouldn't raise any error
+            globaldb.packaged_db_conn()
+        
+        # check that we can read from the database
+        with globaldb._packaged_db_conn.cursor() as cursor:
+            cursor.execute('SELECT COUNT(*) FROM assets')
+            assert cursor.fetchone()[0] > 2000
