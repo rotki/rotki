@@ -645,6 +645,10 @@ class RestAPI():
 
         return api_response(_wrap_in_ok_result(process_result(balances)), HTTPStatus.OK)
 
+    def get_supported_chains(self) -> Response:
+        result = [{'name': entry.value, 'type': entry.get_chain_type()} for entry in SupportedBlockchain]  # noqa: E501
+        return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
+
     def _query_blockchain_balances(
             self,
             blockchain: Optional[SupportedBlockchain],

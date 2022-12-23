@@ -1997,7 +1997,49 @@ Getting all available counterparties
 
         {"result": ["gas", "gnosis-chain"], "message": ""}
 
-    :resjson object result: Contains all counterparties known to the app
+    :resjson object result: Contains all counterparties known to the app.
+    :statuscode 200: Success
+    :statuscode 500: Internal rotki error
+
+Getting all supported chains
+==============================
+
+.. http:get:: /api/(version)/blockchains/supported
+
+    Doing a GET on the supported chains will return all supported chains along with their type
+
+    **Example Request**
+
+    .. http:example:: curl wget httpie python-requests
+
+    GET /api/(version)/blockchains/supported HTTP/1.1
+    Host: localhost:5042
+    Content-Type: application/json;charset=UTF-8
+
+    {}
+
+    **Example Response**
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+            "result": [
+                {"name": "ETH", "type": "evm"},
+                {"name": "OPTIMISM", "type": "evm"},
+                {"name": "AVAX", "type": "evm"},
+                {"name": "ETH2", "type": "eth2"},
+                {"name": "DOT", "type": "substrate"},
+                {"name": "KSM", "type": "substrate"},
+                {"name": "BTC", "type": "bitcoin"},
+                {"name": "BCH", "type": "bitcoin"}
+            ]
+            "message": ""
+        }
+
+    :resjson object result: Contains all supported chains and their types.
     :statuscode 200: Success
     :statuscode 500: Internal rotki error
 
@@ -3262,7 +3304,7 @@ Search for assets(Levenshtein)
    :reqjson string[optional] name: Optional nfts name to filter by.
    :reqjson string[optional] collection_name: Optional nfts collection_name to filter by.
    :reqjson string[optional] ignored_assets_handling: A flag to specify how to handle ignored assets. Possible values are `'none'`, `'exclude'` and `'show_only'`. You can write 'none' in order to not handle them in any special way (meaning to show them too). This is the default. You can write 'exclude' if you want to exlude them from the result. And you can write 'show_only' if you want to only see the ignored assets in the result.
-   
+
    **Example Response**:
 
    .. sourcecode:: http

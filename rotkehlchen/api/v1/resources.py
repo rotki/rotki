@@ -841,6 +841,12 @@ class AssetUpdatesResource(BaseMethodView):
         return self.rest_api.rebuild_assets_information(reset, ignore_warnings)
 
 
+class SupportedChainsResource(BaseMethodView):
+
+    def get(self) -> Response:
+        return self.rest_api.get_supported_chains()
+
+
 class BlockchainBalancesResource(BaseMethodView):
 
     get_schema = BlockchainBalanceQuerySchema()
