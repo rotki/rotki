@@ -80,7 +80,7 @@ const { t } = useI18n();
           />
         </template>
       </div>
-      <div class="ml-5">
+      <div class="ml-5 overflow-hidden flex-fill">
         <template v-if="isNftDetailLoading">
           <v-skeleton-loader class="mt-1" width="120" type="text" />
           <v-skeleton-loader class="mt-1" width="80" type="text" />

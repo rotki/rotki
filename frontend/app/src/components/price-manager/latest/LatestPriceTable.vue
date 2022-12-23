@@ -11,9 +11,12 @@ import { useBalancePricesStore } from '@/store/balances/prices';
 import { useNotificationsStore } from '@/store/notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { CURRENCY_USD } from '@/types/currencies';
-import { isNft } from '@/utils/nft';
 import { useAssetPricesApi } from '@/services/assets/prices';
 import { useConfirmStore } from '@/store/confirm';
+import NftDetails from '@/components/helper/NftDetails.vue';
+import { isNft } from '@/utils/nft';
+import { useNonFungibleBalancesStore } from '@/store/balances/non-fungible';
+import { One } from '@/utils/bignumbers';
 
 const props = defineProps({
   assetFilter: {
@@ -111,10 +114,12 @@ const getLatestPrices = async () => {
 };
 
 const { assets } = useAggregatedBalancesStore();
+const { fetchNonFungibleBalances } = useNonFungibleBalancesStore();
 
 const refresh = async () => {
   await getLatestPrices();
   await refreshPrices(false, [...get(latestAssets), ...get(assets())]);
+  await fetchNonFungibleBalances();
 };
 
 const { assetPrice } = useBalancePricesStore();
@@ -128,11 +133,13 @@ const latestAssets: ComputedRef<string[]> = computed(() => {
 const filteredPrices = computed(() => {
   const filter = get(assetFilter);
   const data = get(latestPrices).filter(({ fromAsset }) => {
-    return !isNft(fromAsset) && (!filter || fromAsset === filter);
+    return !filter || fromAsset === filter;
   });
   return data.map(item => ({
     ...item,
-    usdPrice: get(assetPrice(item.fromAsset))
+    usdPrice: !isNft(item.fromAsset)
+      ? get(assetPrice(item.fromAsset))
+      : (get(assetPrice(item.toAsset)) ?? One).multipliedBy(item.price)
   }));
 });
 
@@ -180,7 +187,11 @@ const showDeleteConfirmation = (item: ManualPrice) => {
       <slot />
       <data-table :items="filteredPrices" :headers="headers" :loading="loading">
         <template #item.fromAsset="{ item }">
-          <asset-details :asset="item.fromAsset" />
+          <nft-details
+            v-if="isNft(item.fromAsset)"
+            :identifier="item.fromAsset"
+          />
+          <asset-details v-else :asset="item.fromAsset" />
         </template>
         <template #item.toAsset="{ item }">
           <asset-details :asset="item.toAsset" />

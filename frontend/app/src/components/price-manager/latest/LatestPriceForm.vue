@@ -90,6 +90,7 @@ watch(v$, ({ $invalid }) => {
           :value="value.fromAsset"
           :label="tc('price_form.from_asset')"
           outlined
+          include-nfts
           :disabled="edit"
           :error-messages="v$.fromAsset.$errors.map(e => e.$message)"
           @input="input({ fromAsset: $event })"

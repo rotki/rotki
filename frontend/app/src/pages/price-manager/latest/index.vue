@@ -54,21 +54,25 @@ const hideForm = function () {
 
 const { addLatestPrice } = useAssetPricesApi();
 
-const managePrice = async (price: ManualPriceFormPayload, edit: boolean) => {
+const managePrice = async () => {
+  const form = get(formData);
+  const isEdit = get(editMode);
+
   try {
-    await addLatestPrice(omit(price, 'usdPrice'));
+    await addLatestPrice(omit(form, 'usdPrice'));
     set(showForm, false);
     if (!get(refreshing)) {
       set(refreshing, true);
     }
   } catch (e: any) {
     const values = { message: e.message };
-    const title = edit
+    const title = isEdit
       ? tc('price_management.edit.error.title')
       : tc('price_management.add.error.title');
-    const description = edit
+    const description = isEdit
       ? tc('price_management.edit.error.description', 0, values)
       : tc('price_management.add.error.description', 0, values);
+
     setMessage({
       title,
       description,
@@ -100,6 +104,7 @@ onMounted(async () => {
           <asset-select
             v-model="assetFilter"
             outlined
+            include-nfts
             :label="tc('price_management.from_asset')"
             clearable
             hide-details
@@ -126,7 +131,7 @@ onMounted(async () => {
           : tc('price_management.dialog.add_title')
       "
       :action-disabled="!valid"
-      @confirm="managePrice(formData, editMode)"
+      @confirm="managePrice()"
       @cancel="hideForm()"
     >
       <latest-price-form
