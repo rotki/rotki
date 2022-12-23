@@ -204,7 +204,7 @@ def test_add_delete_xpub(rotkehlchen_api_server):
     # Also make sure that blockchain account data endpoint returns everything correctly
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
-        "blockchainsaccountsresource",
+        'blockchainsaccountsresource',
         blockchain='BTC',
     ))
     outcome = assert_proper_response_with_result(response)
