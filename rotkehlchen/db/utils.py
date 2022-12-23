@@ -269,8 +269,8 @@ def insert_tag_mappings(
             reference = ''
             for key in object_reference_keys:
                 value = rgetattr(entry, key)
-                if value is not None:
-                    reference += str(value)
+                if value is not None:  # value.value is for SupportedBlockchain
+                    reference += str(value) if key != 'chain' else value.value
             mapping_tuples.extend([(reference, tag) for tag in entry.tags])
 
     write_cursor.executemany(

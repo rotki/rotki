@@ -20,7 +20,7 @@ from rotkehlchen.balances.manual import (
     account_for_manually_tracked_asset_balances,
     get_manually_tracked_balances,
 )
-from rotkehlchen.chain.accounts import BlockchainAccountData, SingleBlockchainAccountData
+from rotkehlchen.chain.accounts import SingleBlockchainAccountData
 from rotkehlchen.chain.aggregator import ChainsAggregator
 from rotkehlchen.chain.avalanche.manager import AvalancheManager
 from rotkehlchen.chain.ethereum.accounting.aggregator import EVMAccountingAggregator
@@ -494,7 +494,7 @@ class Rotkehlchen():
             self,
             cursor: 'DBCursor',
             blockchain: SupportedBlockchain,
-    ) -> Union[list[BlockchainAccountData], dict[str, Any]]:
+    ) -> Union[list[SingleBlockchainAccountData], dict[str, Any]]:
         account_data = self.data.db.get_blockchain_account_data(cursor, blockchain)
         if blockchain not in (SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH):
             return account_data
@@ -507,10 +507,10 @@ class Rotkehlchen():
         address_to_xpub_mappings = self.data.db.get_addresses_to_xpub_mapping(
             cursor=cursor,
             blockchain=blockchain,  # type: ignore
-            addresses=list(addresses_to_account_data.keys()),  # type: ignore
+            addresses=list(addresses_to_account_data.keys()),
         )
 
-        xpub_mappings: dict['XpubData', list[BlockchainAccountData]] = {}
+        xpub_mappings: dict['XpubData', list[SingleBlockchainAccountData]] = {}
         for address, xpub_entry in address_to_xpub_mappings.items():
             if xpub_entry not in xpub_mappings:
                 xpub_mappings[xpub_entry] = []

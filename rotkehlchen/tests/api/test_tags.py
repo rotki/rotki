@@ -6,6 +6,7 @@ import requests
 from rotkehlchen.tests.utils.api import api_url_for, assert_error_response, assert_proper_response
 from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
+from rotkehlchen.types import SupportedBlockchain
 
 
 def test_add_and_query_tags(
@@ -651,7 +652,7 @@ def test_delete_utilized_tag(rotkehlchen_api_server):
     with setup.bitcoin_patch:
         response = requests.put(api_url_for(
             rotkehlchen_api_server,
-            "blockchainsaccountsresource",
+            'blockchainsaccountsresource',
             blockchain='BTC',
         ), json={'accounts': accounts_data})
     assert_proper_response(response)
@@ -675,5 +676,5 @@ def test_delete_utilized_tag(rotkehlchen_api_server):
     cursor = rotki.data.db.conn.cursor()
     query = cursor.execute('SELECT object_reference, tag_name FROM tag_mappings;').fetchall()
     assert len(query) == 1
-    assert query[0][0] == UNIT_BTC_ADDRESS1
+    assert query[0][0] == f'{SupportedBlockchain.BITCOIN.value}{UNIT_BTC_ADDRESS1}'
     assert query[0][1] == 'public'

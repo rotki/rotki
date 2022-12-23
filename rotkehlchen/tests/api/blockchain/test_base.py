@@ -9,7 +9,7 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.chain.accounts import BlockchainAccountData
+from rotkehlchen.chain.accounts import SingleBlockchainAccountData
 from rotkehlchen.chain.ethereum.defi.structures import (
     DefiBalance,
     DefiProtocol,
@@ -1017,7 +1017,7 @@ def test_edit_blockchain_accounts(
     }]}
     response = requests.patch(api_url_for(
         rotkehlchen_api_server,
-        "blockchainsaccountsresource",
+        'blockchainsaccountsresource',
         blockchain='ETH',
     ), json=request_data)
 
@@ -1603,7 +1603,7 @@ def test_remove_nonexisting_blockchain_account_along_with_existing(
     cursor = rotki.data.db.conn.cursor()
     query = cursor.execute('SELECT object_reference, tag_name FROM tag_mappings;').fetchall()
     assert len(query) == 1
-    assert query[0][0] == ethereum_accounts[0]
+    assert query[0][0] == f'{SupportedBlockchain.ETHEREUM.value}{ethereum_accounts[0]}'
     assert query[0][1] == 'public'
 
 
@@ -1658,12 +1658,12 @@ def test_remove_blockchain_account_with_tags_removes_mapping(rotkehlchen_api_ser
     ), json={'accounts': accounts_data})
     assert_proper_response(response)
     expected_accounts_data = [
-        BlockchainAccountData(
+        SingleBlockchainAccountData(
             address=new_btc_accounts[0],
             label='my btc miner',
             tags=['desktop', 'public'],
         ),
-        BlockchainAccountData(
+        SingleBlockchainAccountData(
             address=new_btc_accounts[1],
             label='other account',
             tags=['desktop'],
@@ -1690,5 +1690,5 @@ def test_remove_blockchain_account_with_tags_removes_mapping(rotkehlchen_api_ser
     cursor = rotki.data.db.conn.cursor()
     query = cursor.execute('SELECT object_reference, tag_name FROM tag_mappings;').fetchall()
     assert len(query) == 1
-    assert query[0][0] == UNIT_BTC_ADDRESS2
+    assert query[0][0] == f'{SupportedBlockchain.BITCOIN.value}{UNIT_BTC_ADDRESS2}'
     assert query[0][1] == 'desktop'

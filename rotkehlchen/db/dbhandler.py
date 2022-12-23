@@ -1169,7 +1169,7 @@ class DBHandler:
         tuples = [(
             entry.label,
             entry.address,
-            entry.chain,
+            entry.chain.value,
         ) for entry in account_data]
         write_cursor.executemany(
             'UPDATE blockchain_accounts SET label=? WHERE account=? AND blockchain=?;', tuples,
@@ -1351,7 +1351,7 @@ class DBHandler:
             self,
             cursor: 'DBCursor',
             blockchain: SupportedBlockchain,
-    ) -> list[BlockchainAccountData]:
+    ) -> list[SingleBlockchainAccountData]:
         """Returns account data for a particular blockchain.
 
         Each account entry contains address and potentially label and tags
@@ -1359,7 +1359,7 @@ class DBHandler:
         query = cursor.execute(
             'SELECT A.account, A.label, group_concat(B.tag_name,",") '
             'FROM blockchain_accounts AS A '
-            'LEFT OUTER JOIN tag_mappings AS B ON B.object_reference = A.BLOCKCHAIN || A.account '
+            'LEFT OUTER JOIN tag_mappings AS B ON B.object_reference = A.blockchain || A.account '
             'WHERE A.blockchain=? GROUP BY account;',
             (blockchain.value,),
         )
@@ -1367,9 +1367,8 @@ class DBHandler:
         data = []
         for entry in query:
             tags = deserialize_tags_from_db(entry[2])
-            data.append(BlockchainAccountData(
+            data.append(SingleBlockchainAccountData(
                 address=entry[0],
-                chain=blockchain,
                 label=entry[1],
                 tags=tags,
             ))
