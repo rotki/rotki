@@ -26,6 +26,9 @@ export const isRestChain = (chain: Blockchain): chain is RestChains =>
 export const isTokenChain = (chain: Blockchain): chain is TokenChains =>
   TokenChains.includes(chain as any);
 
+export const isBlockchain = (chain: string): chain is Blockchain =>
+  Object.values(Blockchain).includes(chain as any);
+
 const chainIcons: Record<EvmChain, string> = {
   [EvmChain.ETHEREUM]: './assets/images/modules/eth.svg',
   [EvmChain.ARBITRUM]: './assets/images/chains/arbitrum.svg',

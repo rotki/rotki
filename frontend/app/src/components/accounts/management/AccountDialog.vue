@@ -23,6 +23,6 @@ const { loading } = useAccountLoading();
     @confirm="save"
     @cancel="clearDialog()"
   >
-    <account-form :context="context" />
+    <account-form :context="context" data-cy="blockchain-balance-form" />
   </big-dialog>
 </template>

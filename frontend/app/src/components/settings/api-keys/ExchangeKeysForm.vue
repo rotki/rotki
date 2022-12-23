@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
-import { helpers, or, requiredIf, requiredUnless } from '@vuelidate/validators';
+import { helpers, requiredIf, requiredUnless } from '@vuelidate/validators';
 import { type PropType } from 'vue';
 import ExchangeDisplay from '@/components/display/ExchangeDisplay.vue';
 import BinancePairsSelector from '@/components/helper/BinancePairsSelector.vue';
@@ -148,7 +148,7 @@ const rules = {
   passphrase: {
     required: helpers.withMessage(
       tc('exchange_keys_form.passphrase.non_empty'),
-      or(requiredIf(sensitiveFieldEditable), requiredIf(requiresPassphrase))
+      requiredIf(logicAnd(sensitiveFieldEditable, requiresPassphrase))
     )
   }
 };

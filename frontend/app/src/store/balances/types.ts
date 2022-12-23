@@ -74,10 +74,13 @@ export type BlockchainAccountWithBalance =
   | XpubAccountWithBalance
   | AccountWithBalanceAndSharedOwnership;
 
-export interface AddAccountsPayload {
-  readonly blockchain: Blockchain;
+export interface BaseAddAccountsPayload {
   readonly payload: AccountPayload[];
   readonly modules?: Module[];
+}
+
+export interface AddAccountsPayload extends BaseAddAccountsPayload {
+  readonly blockchain: Blockchain;
 }
 
 export type ChainSections = {

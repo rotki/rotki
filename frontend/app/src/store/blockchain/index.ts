@@ -4,7 +4,8 @@ import { type MaybeRef } from '@vueuse/core';
 import { useNonFungibleBalancesStore } from '@/store/balances/non-fungible';
 import {
   type AccountPayload,
-  type AddAccountsPayload
+  type AddAccountsPayload,
+  type BaseAddAccountsPayload
 } from '@/store/balances/types';
 import { useAccountBalancesStore } from '@/store/blockchain/accountbalances';
 import { useBlockchainAccountsStore } from '@/store/blockchain/accounts';
@@ -19,7 +20,7 @@ import { useTasks } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 import { startPromise } from '@/utils';
 import { logger } from '@/utils/logging';
-import { isTokenChain } from '@/types/blockchain/chains';
+import { isBlockchain, isTokenChain } from '@/types/blockchain/chains';
 
 export const useBlockchainStore = defineStore('blockchain', () => {
   const { addAccount, fetch } = useBlockchainAccountsStore();
@@ -31,6 +32,7 @@ export const useBlockchainStore = defineStore('blockchain', () => {
   const { enableModule } = useSettingsStore();
   const { reset: resetDefi } = useDefiStore();
   const { resetDefiStatus } = useStatusStore();
+  const { addEvmAccount } = useBlockchainAccountsApi();
 
   const { isTaskRunning } = useTasks();
   const { notify } = useNotificationsStore();
@@ -84,6 +86,43 @@ export const useBlockchainStore = defineStore('blockchain', () => {
     }
 
     await Promise.allSettled(pending);
+  };
+
+  const addEvmAccounts = async (
+    payload: BaseAddAccountsPayload
+  ): Promise<void> => {
+    const finishAddition = async (chain: Blockchain, addresses: string[]) => {
+      const modules = payload.modules;
+      if (chain === Blockchain.ETH) {
+        if (modules) {
+          await enableModule({
+            enable: payload.modules,
+            addresses
+          });
+        }
+        resetDefi();
+        resetDefiStatus();
+        startPromise(fetchNonFungibleBalances(true));
+      }
+
+      if (isTokenChain(chain)) {
+        await fetchDetected(chain, addresses);
+      }
+      await refreshAccounts(chain);
+    };
+
+    await Promise.allSettled(
+      payload.payload.map(async p => {
+        const addresses = await addEvmAccount(p);
+        for (const chain in addresses) {
+          if (!isBlockchain(chain)) {
+            logger.error(`${chain} was not a valid blockchain`);
+            continue;
+          }
+          startPromise(finishAddition(chain, addresses[chain]));
+        }
+      })
+    );
   };
 
   const addAccounts = async ({
@@ -209,6 +248,7 @@ export const useBlockchainStore = defineStore('blockchain', () => {
 
   return {
     addAccounts,
+    addEvmAccounts,
     fetchAccounts,
     refreshAccounts
   };

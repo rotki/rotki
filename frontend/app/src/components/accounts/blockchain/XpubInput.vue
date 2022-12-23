@@ -1,3 +1,4 @@
+\
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import useVuelidate from '@vuelidate/core';
@@ -112,7 +113,7 @@ const rules = {
     )
   },
   derivationPath: {
-    basic: (v: string | null) => !v || v
+    basic: () => true
   }
 };
 

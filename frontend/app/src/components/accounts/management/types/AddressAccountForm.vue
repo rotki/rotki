@@ -20,15 +20,20 @@ const addresses = ref<string[]>([]);
 const label = ref('');
 const tags = ref<string[]>([]);
 const selectedModules = ref<Module[]>([]);
+
+const allEvmChains = ref(true);
 const errorMessages = ref<Record<string, string[]>>({});
 
-const { addAccounts, fetchAccounts } = useBlockchainStore();
+const { addAccounts, addEvmAccounts, fetchAccounts } = useBlockchainStore();
 const { editAccount } = useBlockchainAccountsStore();
 const { setMessage } = useMessageStore();
 const { fetchEnsNames } = useEthNamesStore();
+const { isEvm } = useSupportedChains();
 const { valid, setSave, pending, accountToEdit } = useAccountDialog();
 const { loading } = useAccountLoading();
 const { tc } = useI18n();
+
+const evmChain = isEvm(blockchain);
 
 const reset = () => {
   set(addresses, []);
@@ -63,11 +68,19 @@ const save = async () => {
         label: get(label),
         tags: get(tags)
       }));
-      await addAccounts({
-        blockchain: chain,
-        payload,
-        modules: isEth ? get(selectedModules) : undefined
-      });
+
+      if (get(logicAnd(allEvmChains, isEvm(chain)))) {
+        await addEvmAccounts({
+          payload,
+          modules: get(selectedModules)
+        });
+      } else {
+        await addAccounts({
+          blockchain: chain,
+          payload,
+          modules: isEth ? get(selectedModules) : undefined
+        });
+      }
     }
   } catch (e: any) {
     set(errorMessages, deserializeApiErrorMessage(e.message) || {});
@@ -117,6 +130,17 @@ onMounted(() => {
       v-if="blockchain === Blockchain.ETH && !accountToEdit"
       @update:selection="selectedModules = $event"
     />
+
+    <v-sheet v-if="evmChain && !accountToEdit" outlined rounded>
+      <v-checkbox
+        v-model="allEvmChains"
+        class="py-2 px-4"
+        :label="tc('address_account_form.label')"
+        persistent-hint
+        :hint="tc('address_account_form.hint')"
+      />
+    </v-sheet>
+
     <address-input
       :addresses="addresses"
       :error-messages="errorMessages"

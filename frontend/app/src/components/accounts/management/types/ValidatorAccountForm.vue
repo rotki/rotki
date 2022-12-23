@@ -72,14 +72,14 @@ const save = async () => {
   return result.success;
 };
 
-function setValidator(acc: BlockchainAccountWithBalance): void {
+const setValidator = (acc: BlockchainAccountWithBalance): void => {
   assert('ownershipPercentage' in acc);
   set(validator, {
     publicKey: acc.address,
     validatorIndex: acc.label,
     ownershipPercentage: acc.ownershipPercentage
   });
-}
+};
 
 watch(accountToEdit, edit => {
   if (!edit) {

@@ -154,6 +154,7 @@ declare global {
   const useBackendManagement: typeof import('./composables/backend')['useBackendManagement']
   const useBase64: typeof import('@vueuse/core')['useBase64']
   const useBattery: typeof import('@vueuse/core')['useBattery']
+  const useBlockchainAccountsApi: typeof import('./composables/api/accounts')['useBlockchainAccountsApi']
   const useBluetooth: typeof import('@vueuse/core')['useBluetooth']
   const useBreakpoints: typeof import('@vueuse/core')['useBreakpoints']
   const useBroadcastChannel: typeof import('@vueuse/core')['useBroadcastChannel']
@@ -296,6 +297,8 @@ declare global {
   const useStyleTag: typeof import('@vueuse/core')['useStyleTag']
   const useSum: typeof import('@vueuse/math')['useSum']
   const useSupported: typeof import('@vueuse/core')['useSupported']
+  const useSupportedChains: typeof import('./composables/info/chains')['useSupportedChains']
+  const useSupportedChainsApi: typeof import('./composables/api/info/chains')['useSupportedChainsApi']
   const useSwipe: typeof import('@vueuse/core')['useSwipe']
   const useTemplateRefsList: typeof import('@vueuse/core')['useTemplateRefsList']
   const useTextDirection: typeof import('@vueuse/core')['useTextDirection']
@@ -508,6 +511,7 @@ declare module 'vue' {
     readonly useBackendManagement: UnwrapRef<typeof import('./composables/backend')['useBackendManagement']>
     readonly useBase64: UnwrapRef<typeof import('@vueuse/core')['useBase64']>
     readonly useBattery: UnwrapRef<typeof import('@vueuse/core')['useBattery']>
+    readonly useBlockchainAccountsApi: UnwrapRef<typeof import('./composables/api/accounts')['useBlockchainAccountsApi']>
     readonly useBluetooth: UnwrapRef<typeof import('@vueuse/core')['useBluetooth']>
     readonly useBreakpoints: UnwrapRef<typeof import('@vueuse/core')['useBreakpoints']>
     readonly useBroadcastChannel: UnwrapRef<typeof import('@vueuse/core')['useBroadcastChannel']>
@@ -650,6 +654,8 @@ declare module 'vue' {
     readonly useStyleTag: UnwrapRef<typeof import('@vueuse/core')['useStyleTag']>
     readonly useSum: UnwrapRef<typeof import('@vueuse/math')['useSum']>
     readonly useSupported: UnwrapRef<typeof import('@vueuse/core')['useSupported']>
+    readonly useSupportedChains: UnwrapRef<typeof import('./composables/info/chains')['useSupportedChains']>
+    readonly useSupportedChainsApi: UnwrapRef<typeof import('./composables/api/info/chains')['useSupportedChainsApi']>
     readonly useSwipe: UnwrapRef<typeof import('@vueuse/core')['useSwipe']>
     readonly useTemplateRefsList: UnwrapRef<typeof import('@vueuse/core')['useTemplateRefsList']>
     readonly useTextDirection: UnwrapRef<typeof import('@vueuse/core')['useTextDirection']>

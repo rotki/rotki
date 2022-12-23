@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import Fragment from '@/components/helper/Fragment';
 import AccountSelector from '@/components/accounts/management/inputs/AccountSelector.vue';
 import { InputMode } from '@/types/input-mode';
 import MetamaskAccountForm from '@/components/accounts/management/types/MetamaskAccountForm.vue';
@@ -36,7 +35,7 @@ watch(context, ctx => {
 </script>
 
 <template>
-  <fragment>
+  <div>
     <account-selector
       :input-mode="inputMode"
       :blockchain="blockchain"
@@ -50,5 +49,5 @@ watch(context, ctx => {
       :blockchain="blockchain"
     />
     <address-account-form v-else :blockchain="blockchain" />
-  </fragment>
+  </div>
 </template>

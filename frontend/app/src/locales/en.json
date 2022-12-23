@@ -159,6 +159,11 @@
     },
     "title": "Trade Settings"
   },
+
+  "address_account_form": {
+    "label": "Add to all supported EVM chains",
+    "hint": "When checked this address will be tracked for all supported evm chains (Ethereum, Optimism etc)"
+  },
   "actions": {
     "add_eth2_validator": {
       "error": {

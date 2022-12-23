@@ -16,7 +16,6 @@ import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { logger } from '@/utils/logging';
 import { removeTags } from '@/utils/tags';
-import { useBlockchainAccountsApi } from '@/services/accounts';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { type ActionStatus } from '@/store/types';
 
