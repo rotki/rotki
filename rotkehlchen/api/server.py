@@ -120,6 +120,7 @@ from rotkehlchen.api.v1.resources import (
     StatisticsNetvalueResource,
     StatisticsRendererResource,
     StatisticsValueDistributionResource,
+    SupportedChainsResource,
     SushiswapBalancesResource,
     SushiswapEventsHistoryResource,
     TagsResource,
@@ -217,6 +218,7 @@ URLS_V1: URLS = [
         'per_report_data_resource',
     ),
     ('/queried_addresses', QueriedAddressesResource),
+    ('/blockchains/supported', SupportedChainsResource),
     ('/blockchains/ETH/transactions', EthereumTransactionsResource),
     ('/blockchains/ETH/transactions/decode', EthereumTransactionsDecodingResource),
     (

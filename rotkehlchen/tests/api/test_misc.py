@@ -357,3 +357,14 @@ def test_configuration(rotkehlchen_api_server):
     assert result['max_logfiles_num']['value'] == DEFAULT_MAX_LOG_BACKUP_FILES
     assert result['sqlite_instructions']['is_default'] is True
     assert result['sqlite_instructions']['value'] == DEFAULT_SQL_VM_INSTRUCTIONS_CB
+
+
+def test_query_supported_chains(rotkehlchen_api_server):
+    response = requests.get(api_url_for(rotkehlchen_api_server, 'supportedchainsresource'))
+    result = assert_proper_response_with_result(response)
+    for entry in SupportedBlockchain:
+        for result_entry in result:
+            if entry.value == result_entry['name'] and entry.get_chain_type() == result_entry['type']:  # noqa: E501
+                break  # found
+        else:  # internal for loop found nothing
+            raise AssertionError(f'Did not find {entry} in the supported chains result')

@@ -399,6 +399,17 @@ class SupportedBlockchain(SerializableEnumValueMixin2):
     def is_substrate(self) -> bool:
         return self in get_args(SUPPORTED_SUBSTRATE_CHAINS)
 
+    def get_chain_type(self) -> str:
+        """Chain type to return to the API supported chains endpoint"""
+        if self.is_evm():
+            return 'evm'
+        if self.is_substrate():
+            return 'substrate'
+        if self.is_bitcoin():
+            return 'bitcoin'
+        # else
+        return 'eth2'  # the outlier
+
     def ens_coin_type(self) -> int:
         """Return the CoinType number according to EIP-2304, multichain address
         resolution for ENS domains.
