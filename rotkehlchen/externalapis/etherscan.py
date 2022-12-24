@@ -407,7 +407,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
         # We need to convert some data from hex here
         # https://github.com/PyCQA/pylint/issues/4739
         block_data['timestamp'] = hex_or_bytes_to_int(block_data['timestamp'])  # pylint: disable=unsubscriptable-object  # noqa: E501
-        block_data['number'] = hex_or_bytes_to_int(block_data['number'])  # pylint: disable=unsubscriptable-object  # noqa: E501
+        block_data['number'] = hex_or_bytes_to_int(block_data['number'])
 
         return block_data
 

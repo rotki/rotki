@@ -36,7 +36,7 @@ class HopDecoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
+            decoded_events: list[HistoryBaseEntry],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: list[ActionItem],  # pylint: disable=unused-argument
     ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:

@@ -129,9 +129,9 @@ def assert_all_balances(
         else:
             expected_locations = {
                 Location.POLONIEX.serialize_for_db(),  # pylint: disable=no-member
-                Location.BINANCE.serialize_for_db(),  # pylint: disable=no-member
-                Location.TOTAL.serialize_for_db(),  # pylint: disable=no-member
-                Location.BLOCKCHAIN.serialize_for_db(),  # pylint: disable=no-member
+                Location.BINANCE.serialize_for_db(),
+                Location.TOTAL.serialize_for_db(),
+                Location.BLOCKCHAIN.serialize_for_db(),
             }
             if got_external:
                 expected_locations.add(Location.EXTERNAL.serialize_for_db())  # pylint: disable=no-member  # noqa: E501

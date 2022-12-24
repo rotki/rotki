@@ -37,7 +37,7 @@ class Oneinchv1Decoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
+            decoded_events: list[HistoryBaseEntry],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
     ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         sender = hex_or_bytes_to_address(tx_log.topics[1])
@@ -91,7 +91,7 @@ class Oneinchv1Decoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
+            decoded_events: list[HistoryBaseEntry],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
     ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         """We use the Swapped event to get the fee kept by 1inch"""
@@ -140,8 +140,8 @@ class Oneinchv1Decoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
-            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+            decoded_events: list[HistoryBaseEntry],
+            all_logs: list[EvmTxReceiptLog],
             action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
     ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         if tx_log.topics[0] == HISTORY:
