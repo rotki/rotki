@@ -97,7 +97,7 @@ def test_get_balancer_module_not_activated(
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_get_balances(
         rotkehlchen_api_server,
-        ethereum_accounts,  # pylint: disable=unused-argument
+        ethereum_accounts,
         rotki_premium_credentials,  # pylint: disable=unused-argument
         start_with_valid_premium,  # pylint: disable=unused-argument
 ):
@@ -330,7 +330,7 @@ TEST_ADDR3_MOCKED_PRICES = {
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 def test_get_events_history_1(
         rotkehlchen_api_server,
-        ethereum_accounts,  # pylint: disable=unused-argument
+        ethereum_accounts,
         rotki_premium_credentials,  # pylint: disable=unused-argument
         start_with_valid_premium,  # pylint: disable=unused-argument
 ):
@@ -384,7 +384,7 @@ def test_get_events_history_1(
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 def test_get_events_history_2(
         rotkehlchen_api_server,
-        ethereum_accounts,  # pylint: disable=unused-argument
+        ethereum_accounts,
         rotki_premium_credentials,  # pylint: disable=unused-argument
         start_with_valid_premium,  # pylint: disable=unused-argument
 ):

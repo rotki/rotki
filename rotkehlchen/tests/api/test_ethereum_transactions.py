@@ -1139,7 +1139,7 @@ def test_query_transactions_check_decoded_events(
             assert cursor.execute(f'SELECT COUNT(*) from {name}').fetchone()[0] == count
         customized_events = dbevents.get_history_events(cursor, HistoryEventFilterQuery.make(), True)  # noqa: E501
         assert customized_events[0].serialize() == tx4_events[0]['entry']  # pylint: disable=unsubscriptable-object  # noqa: E501
-        assert customized_events[1].serialize() == tx2_events[1]['entry']  # pylint: disable=unsubscriptable-object  # noqa: E501
+        assert customized_events[1].serialize() == tx2_events[1]['entry']
 
         # requery all transactions and events. Assert they are the same (different event id though)
         result = query_transactions(rotki)

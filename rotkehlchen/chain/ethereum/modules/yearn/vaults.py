@@ -726,7 +726,7 @@ class YearnVaults(EthereumModule):
             addresses: list[ChecksumEvmAddress],
             reset_db_data: bool,
             from_timestamp: Timestamp,  # pylint: disable=unused-argument
-            to_timestamp: Timestamp,  # pylint: disable=unused-argument
+            to_timestamp: Timestamp,
     ) -> dict[ChecksumEvmAddress, dict[str, YearnVaultHistory]]:
         with self.history_lock:
             with self.database.user_write() as cursor:

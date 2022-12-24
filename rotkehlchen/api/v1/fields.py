@@ -112,7 +112,7 @@ class TimestampField(fields.Field):
             self,
             value: str,
             attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],
             **_kwargs: Any,
     ) -> Timestamp:
         try:
@@ -145,7 +145,7 @@ class ColorField(fields.Field):
             self,
             value: str,
             attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],
             **_kwargs: Any,
     ) -> HexColorCode:
         try:
@@ -162,7 +162,7 @@ class TaxFreeAfterPeriodField(fields.Field):
             self,
             value: int,
             attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],
             **_kwargs: Any,
     ) -> int:
         try:
@@ -187,7 +187,7 @@ class AmountField(fields.Field):
     def _serialize(
             value: AssetAmount,
             attr: Optional[str],  # pylint: disable=unused-argument
-            obj: Any,  # pylint: disable=unused-argument
+            obj: Any,
             **_kwargs: Any,
     ) -> str:
         return str(value)
@@ -196,7 +196,7 @@ class AmountField(fields.Field):
             self,
             value: Union[str, int],
             attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],
             **_kwargs: Any,
     ) -> AssetAmount:
         try:
@@ -229,7 +229,7 @@ class PriceField(fields.Field):
     def _serialize(
             value: FVal,
             attr: Optional[str],  # pylint: disable=unused-argument
-            obj: Any,  # pylint: disable=unused-argument
+            obj: Any,
             **_kwargs: Any,
     ) -> str:
         return str(value)
@@ -238,7 +238,7 @@ class PriceField(fields.Field):
             self,
             value: str,
             attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],
             **_kwargs: Any,
     ) -> Price:
         try:
@@ -258,7 +258,7 @@ class FeeField(fields.Field):
     def _serialize(
             value: Fee,
             attr: Optional[str],  # pylint: disable=unused-argument
-            obj: Any,  # pylint: disable=unused-argument
+            obj: Any,
             **_kwargs: Any,
     ) -> Optional[str]:
         # Fee can be missing so we need to handle None when serializing from schema
@@ -268,7 +268,7 @@ class FeeField(fields.Field):
             self,
             value: str,
             attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],
             **_kwargs: Any,
     ) -> Fee:
         try:
@@ -285,7 +285,7 @@ class FloatingPercentageField(fields.Field):
     def _serialize(
             value: FVal,
             attr: Optional[str],  # pylint: disable=unused-argument
-            obj: Any,  # pylint: disable=unused-argument
+            obj: Any,
             **_kwargs: Any,
     ) -> str:
         return str(value)
@@ -294,7 +294,7 @@ class FloatingPercentageField(fields.Field):
             self,
             value: str,
             attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],
             **_kwargs: Any,
     ) -> FVal:
         try:
@@ -320,7 +320,7 @@ class BlockchainField(fields.Field):
             self,
             value: str,
             attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],
             **_kwargs: Any,
     ) -> SupportedBlockchain:
         try:
@@ -343,7 +343,7 @@ class SerializableEnumField(fields.Field):
     def _serialize(
             value: SerializableEnumMixin,
             attr: Optional[str],  # pylint: disable=unused-argument
-            obj: Any,  # pylint: disable=unused-argument
+            obj: Any,
             **_kwargs: Any,
     ) -> str:
         return value.serialize()
@@ -352,7 +352,7 @@ class SerializableEnumField(fields.Field):
             self,
             value: str,
             attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],
             **_kwargs: Any,
     ) -> Any:
         try:
@@ -372,7 +372,7 @@ class EvmChainNameField(fields.Field):
     def _serialize(
             value: ChainID,
             attr: Optional[str],  # pylint: disable=unused-argument
-            obj: Any,  # pylint: disable=unused-argument
+            obj: Any,
             **_kwargs: Any,
     ) -> Optional[str]:
         return value.to_name() if value else None
@@ -381,7 +381,7 @@ class EvmChainNameField(fields.Field):
             self,
             value: str,
             attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],
             **_kwargs: Any,
     ) -> ChainID:
         try:
@@ -415,7 +415,7 @@ class AssetField(fields.Field):
     def _serialize(
             value: Asset,
             attr: Optional[str],  # pylint: disable=unused-argument
-            obj: Any,  # pylint: disable=unused-argument
+            obj: Any,
             **_kwargs: Any,
     ) -> Optional[str]:
         # Asset can be missing so we need to handle None when serializing from schema
@@ -425,7 +425,7 @@ class AssetField(fields.Field):
             self,
             value: str,
             attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],
             **_kwargs: Any,
     ) -> Asset:
         if isinstance(value, str) is False:
@@ -470,7 +470,7 @@ class MaybeAssetField(fields.Field):
     def _serialize(
             value: Asset,
             attr: Optional[str],  # pylint: disable=unused-argument
-            obj: Any,  # pylint: disable=unused-argument
+            obj: Any,
             **_kwargs: Any,
     ) -> Optional[str]:
         # Asset can be missing so we need to handle None when serializing from schema
@@ -480,7 +480,7 @@ class MaybeAssetField(fields.Field):
             self,
             value: str,
             attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],
             **_kwargs: Any,
     ) -> Optional[Asset]:
         try:
@@ -500,7 +500,7 @@ class EthereumAddressField(fields.Field):
     def _serialize(
             value: ChecksumEvmAddress,
             attr: Optional[str],  # pylint: disable=unused-argument
-            obj: Any,  # pylint: disable=unused-argument
+            obj: Any,
             **_kwargs: Any,
     ) -> str:
         return str(value)
@@ -509,7 +509,7 @@ class EthereumAddressField(fields.Field):
             self,
             value: str,
             attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],
             **_kwargs: Any,
     ) -> ChecksumEvmAddress:
         # Make sure that given value is an ethereum address
@@ -530,7 +530,7 @@ class EVMTransactionHashField(fields.Field):
     def _serialize(
             value: EVMTxHash,
             attr: Optional[str],  # pylint: disable=unused-argument
-            obj: Any,  # pylint: disable=unused-argument
+            obj: Any,
             **_kwargs: Any,
     ) -> str:
         return value.hex()
@@ -539,7 +539,7 @@ class EVMTransactionHashField(fields.Field):
             self,
             value: str,
             attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],
             **_kwargs: Any,
     ) -> EVMTxHash:
         # Make sure that given value is a transaction hash
@@ -568,7 +568,7 @@ class AssetTypeField(fields.Field):
     def _serialize(
             value: AssetType,
             attr: Optional[str],  # pylint: disable=unused-argument
-            obj: Any,  # pylint: disable=unused-argument
+            obj: Any,
             **_kwargs: Any,
     ) -> str:
         return str(value)
@@ -577,7 +577,7 @@ class AssetTypeField(fields.Field):
             self,
             value: str,
             attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],
             **_kwargs: Any,
     ) -> AssetType:
         try:
@@ -601,7 +601,7 @@ class LocationField(fields.Field):
     def _serialize(
             value: Location,
             attr: Optional[str],  # pylint: disable=unused-argument
-            obj: Any,  # pylint: disable=unused-argument
+            obj: Any,
             **_kwargs: Any,
     ) -> str:
         return str(value)
@@ -610,7 +610,7 @@ class LocationField(fields.Field):
             self,
             value: str,
             attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],
             **_kwargs: Any,
     ) -> Location:
         try:
@@ -633,7 +633,7 @@ class ApiKeyField(fields.Field):
             self,
             value: str,
             attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],
             **_kwargs: Any,
     ) -> ApiKey:
         if not isinstance(value, str):
@@ -647,7 +647,7 @@ class ApiSecretField(fields.Field):
     def _serialize(
             value: ApiSecret,
             attr: Optional[str],  # pylint: disable=unused-argument
-            obj: Any,  # pylint: disable=unused-argument
+            obj: Any,
             **_kwargs: Any,
     ) -> str:
         return str(value.decode())
@@ -656,7 +656,7 @@ class ApiSecretField(fields.Field):
             self,
             value: str,
             attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],
             **_kwargs: Any,
     ) -> ApiSecret:
         if not isinstance(value, str):
@@ -670,7 +670,7 @@ class DirectoryField(fields.Field):
             self,
             value: str,
             attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],
             **_kwargs: Any,
     ) -> Path:
         path = Path(value)
@@ -689,7 +689,7 @@ class AssetConflictsField(fields.Field):
     def _serialize(
             value: dict[str, Any],
             attr: Optional[str],  # pylint: disable=unused-argument
-            obj: Any,  # pylint: disable=unused-argument
+            obj: Any,
             **_kwargs: Any,
     ) -> dict[str, Any]:
         # TODO: If this ever gets used we probably need to change
@@ -700,7 +700,7 @@ class AssetConflictsField(fields.Field):
             self,
             value: dict[str, str],
             attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],
             **_kwargs: Any,
     ) -> dict[Asset, Literal['remote', 'local']]:
         if not isinstance(value, dict):
@@ -737,7 +737,7 @@ class FileField(fields.Field):
             self,
             value: Union[str, FileStorage],
             attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],
             **_kwargs: Any,
     ) -> Union[Path, FileStorage]:
         if isinstance(value, FileStorage):
@@ -776,7 +776,7 @@ class XpubField(fields.Field):
             self,
             value: str,
             attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],
             **_kwargs: Any,
     ) -> HDKey:
         if not isinstance(value, str):
@@ -796,7 +796,7 @@ class DerivationPathField(fields.Field):
             self,
             value: str,
             attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],
             **_kwargs: Any,
     ) -> str:
         valid, msg = is_valid_derivation_path(value)
@@ -812,7 +812,7 @@ class CurrentPriceOracleField(fields.Field):
             self,
             value: str,
             attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],
             **_kwargs: Any,
     ) -> CurrentPriceOracle:
         try:
@@ -829,7 +829,7 @@ class HistoricalPriceOracleField(fields.Field):
             self,
             value: str,
             attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],
             **_kwargs: Any,
     ) -> HistoricalPriceOracle:
         try:

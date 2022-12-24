@@ -608,13 +608,13 @@ class Coinbasepro(ExchangeInterface):
     def query_online_margin_history(
             self,  # pylint: disable=no-self-use
             start_ts: Timestamp,  # pylint: disable=unused-argument
-            end_ts: Timestamp,  # pylint: disable=unused-argument
+            end_ts: Timestamp,
     ) -> list[MarginPosition]:
         return []  # noop for coinbasepro
 
     def query_online_income_loss_expense(
             self,  # pylint: disable=no-self-use
             start_ts: Timestamp,  # pylint: disable=unused-argument
-            end_ts: Timestamp,  # pylint: disable=unused-argument
+            end_ts: Timestamp,
     ) -> list[LedgerAction]:
         return []  # noop for coinbasepro

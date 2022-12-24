@@ -42,8 +42,8 @@ class CurveDecoder(DecoderInterface):
     def __init__(
             self,
             ethereum_inquirer: 'EthereumInquirer',  # pylint: disable=unused-argument
-            base_tools: 'BaseDecoderTools',  # pylint: disable=unused-argument
-            msg_aggregator: 'MessagesAggregator',  # pylint: disable=unused-argument
+            base_tools: 'BaseDecoderTools',
+            msg_aggregator: 'MessagesAggregator',
     ) -> None:
         super().__init__(
             evm_inquirer=ethereum_inquirer,
