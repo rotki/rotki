@@ -4,7 +4,7 @@ from hexbytes import HexBytes
 from web3.datastructures import AttributeDict
 
 from rotkehlchen.accounting.ledger_actions import LedgerActionType
-from rotkehlchen.accounting.structures.balance import Balance, BalanceType
+from rotkehlchen.accounting.structures.balance import AssetBalance, Balance, BalanceType
 from rotkehlchen.accounting.structures.base import StakingEvent
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalanceWithValue
@@ -31,14 +31,7 @@ from rotkehlchen.chain.ethereum.modules.balancer import (
 )
 from rotkehlchen.chain.ethereum.modules.compound.compound import CompoundBalance, CompoundEvent
 from rotkehlchen.chain.ethereum.modules.eth2.structures import Eth2Deposit
-from rotkehlchen.chain.ethereum.modules.liquity.trove import (
-    LiquityStakeEvent,
-    LiquityStakeEventType,
-    LiquityTroveEvent,
-    StakePosition,
-    Trove,
-    TroveOperation,
-)
+from rotkehlchen.chain.ethereum.modules.liquity.trove import Trove
 from rotkehlchen.chain.ethereum.modules.makerdao.dsr import DSRAccountReport, DSRCurrentBalances
 from rotkehlchen.chain.ethereum.modules.makerdao.vaults import (
     MakerdaoVault,
@@ -118,6 +111,7 @@ def _process_entry(entry: Any) -> Union[str, list[Any], dict[str, Any], Any]:
             'usd_value': str(entry.usd_value),
         }
     if isinstance(entry, (
+            AssetBalance,
             DefiProtocol,
             MakerdaoVault,
             XpubData,
@@ -149,11 +143,8 @@ def _process_entry(entry: Any) -> Union[str, list[Any], dict[str, Any], Any]:
             BalancerPoolEventsBalance,
             BalancerPoolBalance,
             BalancerPoolTokenBalance,
-            LiquityTroveEvent,
-            LiquityStakeEvent,
             ManuallyTrackedBalanceWithValue,
             Trove,
-            StakePosition,
             DillBalance,
             NFTResult,
             ExchangeLocationID,
@@ -190,10 +181,6 @@ def _process_entry(entry: Any) -> Union[str, list[Any], dict[str, Any], Any]:
             CurrentPriceOracle,
             HistoricalPriceOracle,
             LedgerActionType,
-            TroveOperation,
-            LiquityStakeEvent,
-            TroveOperation,
-            LiquityStakeEventType,
             BalanceType,
             CostBasisMethod,
             EvmTokenKind,

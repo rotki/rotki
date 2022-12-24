@@ -205,7 +205,7 @@ def test_upgrade_v3_v4(globaldb):
             'SELECT COUNT(*) FROM sqlite_master WHERE type="table" and name IN (?, ?)',
             ('contract_abi', 'contract_data'),
         )
-        expected_contracts_length = 93 - 1 + 1 + 2  # len(eth_contracts) + 1 in dxdao file -1 by removing multicall1 + 2 the new optimism contracts  # noqa: E501
+        expected_contracts_length = 93 - 1 + 1 + 2 + 1  # len(eth_contracts) + 1 in dxdao file -1 by removing multicall1 + 2 the new optimism contracts + by adding liquity staking  # noqa: E501
         assert cursor.fetchone()[0] == 2
         cursor.execute('SELECT COUNT(*) FROM contract_data')
         assert cursor.fetchone()[0] == expected_contracts_length

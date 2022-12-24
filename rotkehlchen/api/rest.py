@@ -3177,7 +3177,7 @@ class RestAPI():
         return self._api_query_for_eth_module(
             async_query=async_query,
             module_name='liquity',
-            method='get_stability_pool_positions',
+            method='get_stability_pool_balances',
             query_specific_balances_before=None,
             addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('liquity'),
         )
