@@ -1,151 +1,34 @@
 import logging
 from collections import defaultdict
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, DefaultDict, Literal, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, DefaultDict, NamedTuple, Optional
 
-from eth_utils import to_checksum_address
 from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.structures.balance import AssetBalance, Balance
 from rotkehlchen.chain.ethereum.defi.defisaver_proxy import HasDSProxy
-from rotkehlchen.chain.ethereum.graph import (
-    SUBGRAPH_REMOTE_ERROR_MSG,
-    Graph,
-    format_query_indentation,
-)
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
-from rotkehlchen.constants.assets import A_ETH, A_LQTY, A_LUSD, A_USD
-from rotkehlchen.errors.misc import BlockchainQueryError, ModuleInitializationFailure, RemoteError
-from rotkehlchen.errors.price import NoPriceForGivenTimestamp
+from rotkehlchen.constants.assets import A_ETH, A_LQTY, A_LUSD
+from rotkehlchen.errors.misc import BlockchainQueryError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.serialization.deserialize import (
-    deserialize_asset_amount,
-    deserialize_optional_to_fval,
-)
-from rotkehlchen.types import ChecksumEvmAddress, Timestamp
+from rotkehlchen.serialization.deserialize import deserialize_asset_amount
+from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 
-from .graph import QUERY_STAKE, QUERY_TROVE
 
 if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import Asset
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+    from rotkehlchen.chain.evm.contracts import EvmContract
     from rotkehlchen.db.dbhandler import DBHandler
 
 MIN_COLL_RATE = '1.1'
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
-
-class TroveOperation(SerializableEnumMixin):
-    OPENTROVE = 1
-    CLOSETROVE = 2
-    ADJUSTTROVE = 3
-    ACCRUEREWARDS = 4
-    LIQUIDATEINNORMALMODE = 5
-    LIQUIDATEINRECOVERYMODE = 6
-    REDEEMCOLLATERAL = 7
-
-    def __str__(self) -> str:
-        if self == TroveOperation.OPENTROVE:
-            return 'Open Trove'
-        if self == TroveOperation.CLOSETROVE:
-            return 'Close Trove'
-        if self == TroveOperation.ADJUSTTROVE:
-            return 'Adjust Trove'
-        if self == TroveOperation.ACCRUEREWARDS:
-            return 'Accrue Rewards'
-        if self == TroveOperation.LIQUIDATEINNORMALMODE:
-            return 'Liquidation In Normal Mode'
-        if self == TroveOperation.LIQUIDATEINRECOVERYMODE:
-            return 'Liquidation In Recovery Mode'
-        if self == TroveOperation.REDEEMCOLLATERAL:
-            return 'Redeem Collateral'
-        # else
-        raise AssertionError(f'Invalid value {self} for TroveOperation')
-
-
-class LiquityStakeEventType(SerializableEnumMixin):
-    STAKE_CREATED = 1
-    STAKE_INCREASED = 2
-    STAKE_DECREASED = 3
-    STAKE_REMOVED = 4
-    STAKE_WITHDRAWN = 5
-
-    @staticmethod
-    def deserialize(value: str) -> 'LiquityStakeEventType':
-        if value == 'stakeCreated':
-            return LiquityStakeEventType.STAKE_CREATED
-        if value == 'stakeIncreased':
-            return LiquityStakeEventType.STAKE_INCREASED
-        if value == 'stakeDecreased':
-            return LiquityStakeEventType.STAKE_DECREASED
-        if value == 'stakeRemoved':
-            return LiquityStakeEventType.STAKE_REMOVED
-        if value == 'gainsWithdrawn':
-            return LiquityStakeEventType.STAKE_WITHDRAWN
-        # else
-        raise DeserializationError(f'Encountered unknown LiquityStakeEventType value {value}')
-
-
-@dataclass(frozen=True)
-class LiquityEvent:
-    kind: Literal['stake', 'trove']
-    tx: str
-    address: str
-    timestamp: Timestamp
-    sequence_number: str
-
-    def serialize(self) -> dict[str, Any]:
-        return {
-            'kind': self.kind,
-            'tx': self.tx,
-            'sequence_number': self.sequence_number,
-            'address': self.address,
-            'timestamp': self.timestamp,
-        }
-
-
-@dataclass(frozen=True)
-class LiquityTroveEvent(LiquityEvent):
-    debt_after: AssetBalance
-    collateral_after: AssetBalance
-    debt_delta: AssetBalance
-    collateral_delta: AssetBalance
-    trove_operation: TroveOperation
-
-    def serialize(self) -> dict[str, Any]:
-        result = super().serialize()
-        result['debt_after'] = self.debt_after.serialize()
-        result['debt_delta'] = self.debt_delta.serialize()
-        result['collateral_after'] = self.collateral_after.serialize()
-        result['collateral_delta'] = self.collateral_delta.serialize()
-        result['trove_operation'] = str(self.trove_operation)
-        return result
-
-
-@dataclass(frozen=True)
-class LiquityStakeEvent(LiquityEvent):
-    stake_after: AssetBalance
-    stake_change: AssetBalance
-    issuance_gain: AssetBalance
-    redemption_gain: AssetBalance
-    stake_operation: LiquityStakeEventType
-
-    def serialize(self) -> dict[str, Any]:
-        result = super().serialize()
-        result['stake_after'] = self.stake_after.serialize()
-        result['stake_change'] = self.stake_change.serialize()
-        result['issuance_gain'] = self.issuance_gain.serialize()
-        result['redemption_gain'] = self.redemption_gain.serialize()
-        result['stake_operation'] = str(self.stake_operation)
-        return result
 
 
 class Trove(NamedTuple):
@@ -167,13 +50,6 @@ class Trove(NamedTuple):
         return result
 
 
-class StakePosition(NamedTuple):
-    staked: AssetBalance
-
-    def serialize(self) -> dict[str, Any]:
-        return self.staked.serialize()
-
-
 class Liquity(HasDSProxy):
 
     def __init__(
@@ -190,18 +66,9 @@ class Liquity(HasDSProxy):
             msg_aggregator=msg_aggregator,
         )
         self.history_lock = Semaphore()
-        try:
-            self.graph = Graph(
-                'https://api.thegraph.com/subgraphs/name/liquity/liquity',
-            )
-        except RemoteError as e:
-            self.msg_aggregator.add_error(
-                SUBGRAPH_REMOTE_ERROR_MSG.format(protocol='Liquity', error_msg=str(e)),
-            )
-            raise ModuleInitializationFailure('Liquity Subgraph remote error') from e
-
         self.trove_manager_contract = self.ethereum.contracts.contract('LIQUITY_TROVE_MANAGER')
         self.stability_pool_contract = self.ethereum.contracts.contract('LIQUITY_STABILITY_POOL')
+        self.staking_contract = self.ethereum.contracts.contract('LIQUITY_STAKING')
 
     def get_positions(
             self,
@@ -284,11 +151,24 @@ class Liquity(HasDSProxy):
                     )
         return data
 
-    def get_stability_pool_positions(
+    def _query_deposits_and_rewards(
             self,
+            contract: 'EvmContract',
             addresses: list[ChecksumEvmAddress],
-    ) -> dict[ChecksumEvmAddress, dict[str, FVal]]:
-        """Get current deposit in the stability pool and current ETH/LQTY gains"""
+            methods: tuple[str, str, str],
+            keys: tuple[str, str, str],
+            assets: tuple['Asset', 'Asset', 'Asset'],
+    ) -> dict[ChecksumEvmAddress, dict[str, AssetBalance]]:
+        """
+        For Liquity staking contracts there are always 1 asset that we stake and rewards in two
+        other assets. This method abstracts the logic of querying the staked amount and the
+        rewards for both the stability pool and the LQTY staking.
+
+        - addresses: The addresses that will be queried
+        - methods: the methods that need to be queried to get the staked amount and rewards
+        - keys: the keys used in the dict response to map each method
+        - assets: the asset associated with each method called
+        """
         # make a copy of the list to avoid modifications in the list that is passed as argument
         addresses = addresses.copy()
         proxied_addresses = self._get_accounts_having_proxy()
@@ -297,15 +177,10 @@ class Liquity(HasDSProxy):
         # Build the calls that need to be made in order to get the status in the SP
         calls = []
         for address in addresses:
-            calls.append(
-                (self.stability_pool_contract.address, self.stability_pool_contract.encode(method_name='getDepositorETHGain', arguments=[address])),  # noqa: E501
-            )
-            calls.append(
-                (self.stability_pool_contract.address, self.stability_pool_contract.encode(method_name='getDepositorLQTYGain', arguments=[address])),  # noqa: E501
-            )
-            calls.append(
-                (self.stability_pool_contract.address, self.stability_pool_contract.encode(method_name='getCompoundedLUSDDeposit', arguments=[address])),  # noqa: E501
-            )
+            for method in methods:
+                calls.append(
+                    (contract.address, contract.encode(method_name=method, arguments=[address])),
+                )
 
         try:
             outputs = self.ethereum.multicall_2(
@@ -318,300 +193,66 @@ class Liquity(HasDSProxy):
             )
             return {}
 
-        data: DefaultDict[ChecksumEvmAddress, dict[str, Any]] = defaultdict(dict)
+        # the structure of the queried data is:
+        # staked address 1, reward 1 of address 1, reward 2 of address 1, staked address 2, reward 1 of address 2, ...  # noqa: E501
+        data: DefaultDict[ChecksumEvmAddress, dict[str, AssetBalance]] = defaultdict(dict)
         for idx, output in enumerate(outputs):
+            # depending on the output index get the address we are tracking
             current_address = addresses[idx // 3]
             status, result = output
             if status is False:
                 continue
 
-            if idx % 3 == 0:
-                key = 'gains'
-                asset = A_ETH
-                gain_info = self.stability_pool_contract.decode(result, 'getDepositorETHGain', arguments=[current_address])  # noqa: E501
-            elif idx % 3 == 1:
-                key = 'rewards'
-                asset = A_LQTY
-                gain_info = self.stability_pool_contract.decode(result, 'getDepositorLQTYGain', arguments=[current_address])  # noqa: E501
-            else:
-                key = 'deposited'
-                asset = A_LUSD
-                gain_info = self.stability_pool_contract.decode(result, 'getCompoundedLUSDDeposit', arguments=[current_address])  # noqa: E501
+            # make sure that variables always have a value set. It is guaranteed that the response
+            # will have the desired format because we include and process failed queries.
+            key, asset, gain_info = keys[0], assets[0], 0
+            for method_idx, (method, _asset, _key) in enumerate(zip(methods, assets, keys)):
+                # get the asset, key used in the response and the amount based on the index
+                # for this address
+                if idx % 3 == method_idx:
+                    asset = _asset
+                    key = _key
+                    gain_info = contract.decode(result, method, arguments=[current_address])[0]    # pylint: disable=unsubscriptable-object  # noqa: E501
+                    break
 
+            # get price information for the asset and deserialize the amount
             asset_price = Inquirer().find_usd_price(asset)
             amount = deserialize_asset_amount(
-                token_normalized_value_decimals(gain_info[0], 18),
+                token_normalized_value_decimals(gain_info, 18),
             )
-            data[current_address][key] = {
-                'asset': asset.identifier,
-                'amount': amount,
-                'usd_value': asset_price * amount,
-            }
+            data[current_address][key] = AssetBalance(
+                asset=asset,
+                balance=Balance(
+                    amount=amount,
+                    usd_value=asset_price * amount,
+                ),
+            )
+
         return data
+
+    def get_stability_pool_balances(
+            self,
+            addresses: list[ChecksumEvmAddress],
+    ) -> dict[ChecksumEvmAddress, dict[str, AssetBalance]]:
+        return self._query_deposits_and_rewards(
+            contract=self.stability_pool_contract,
+            addresses=addresses,
+            methods=('getDepositorETHGain', 'getDepositorLQTYGain', 'getCompoundedLUSDDeposit'),
+            keys=('gains', 'rewards', 'deposited'),
+            assets=(A_ETH, A_LQTY, A_LUSD),
+        )
 
     def liquity_staking_balances(
             self,
             addresses: list[ChecksumEvmAddress],
-    ) -> dict[ChecksumEvmAddress, StakePosition]:
-        staked = self._get_raw_history(addresses, 'stake')
-        lqty_price = Inquirer().find_usd_price(A_LQTY)
-        data = {}
-        for stake in staked['lqtyStakes']:
-            try:
-                owner = to_checksum_address(stake['id'])
-                amount = deserialize_optional_to_fval(
-                    value=stake['amount'],
-                    name='amount',
-                    location='liquity',
-                )
-                position = AssetBalance(
-                    asset=A_LQTY,
-                    balance=Balance(
-                        amount=amount,
-                        usd_value=lqty_price * amount,
-                    ),
-                )
-                data[owner] = StakePosition(position)
-            except (DeserializationError, KeyError) as e:
-                msg = str(e)
-                if isinstance(e, KeyError):
-                    msg = f'Missing key entry for {msg}.'
-                self.msg_aggregator.add_warning(
-                    f'Ignoring Liquity staking information. '
-                    f'Failed to decode remote response. {msg}.',
-                )
-                continue
-        return data
-
-    def _get_raw_history(
-        self,
-        addresses: list[ChecksumEvmAddress],
-        query_for: Literal['stake', 'trove'],
-    ) -> dict[str, Any]:
-        param_types = {
-            '$addresses': '[Bytes!]',
-        }
-        param_values = {
-            'addresses': [addr.lower() for addr in addresses],
-        }
-        if query_for == 'trove':
-            querystr = format_query_indentation(QUERY_TROVE)
-        else:
-            querystr = format_query_indentation(QUERY_STAKE)
-        return self.graph.query(
-            querystr=querystr,
-            param_types=param_types,
-            param_values=param_values,
+    ) -> dict[ChecksumEvmAddress, dict[str, AssetBalance]]:
+        """
+        Query the ethereum chain to retrieve information about staked assets
+        """
+        return self._query_deposits_and_rewards(
+            contract=self.staking_contract,
+            addresses=addresses,
+            methods=('stakes', 'getPendingLUSDGain', 'getPendingETHGain'),
+            keys=('staked', 'lusd_rewards', 'eth_rewards'),
+            assets=(A_LQTY, A_LUSD, A_ETH),
         )
-
-    def get_trove_history(
-            self,
-            addresses: list[ChecksumEvmAddress],
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-    ) -> dict[ChecksumEvmAddress, list[LiquityEvent]]:
-        addresses_to_query = addresses.copy()
-        proxied_addresses = self._get_accounts_having_proxy()
-        proxies_to_address = {v: k for k, v in proxied_addresses.items()}
-        addresses_to_query += proxied_addresses.values()
-
-        try:
-            query = self._get_raw_history(addresses_to_query, 'trove')
-        except RemoteError as e:
-            log.error(f'Failed to query trove graph events for liquity. {str(e)}')
-            query = {}
-
-        result: dict[ChecksumEvmAddress, list[LiquityEvent]] = defaultdict(list)
-        for trove in query.get('troves', []):
-            owner = to_checksum_address(trove['owner']['id'])
-            if owner in proxies_to_address:
-                owner = proxies_to_address[owner]
-            for change in trove['changes']:
-                try:
-                    timestamp = change['transaction']['timestamp']
-                    if timestamp < from_timestamp:
-                        continue
-                    if timestamp > to_timestamp:
-                        break
-                    operation = TroveOperation.deserialize(change['troveOperation'])
-                    collateral_change = deserialize_optional_to_fval(
-                        value=change['collateralChange'],
-                        name='collateralChange',
-                        location='liquity',
-                    )
-                    debt_change = deserialize_optional_to_fval(
-                        value=change['debtChange'],
-                        name='debtChange',
-                        location='liquity',
-                    )
-                    lusd_price = PriceHistorian().query_historical_price(
-                        from_asset=A_LUSD,
-                        to_asset=A_USD,
-                        timestamp=timestamp,
-                    )
-                    eth_price = PriceHistorian().query_historical_price(
-                        from_asset=A_ETH,
-                        to_asset=A_USD,
-                        timestamp=timestamp,
-                    )
-                    debt_after_amount = deserialize_optional_to_fval(
-                        value=change['debtAfter'],
-                        name='debtAfter',
-                        location='liquity',
-                    )
-                    collateral_after_amount = deserialize_optional_to_fval(
-                        value=change['collateralAfter'],
-                        name='collateralAfter',
-                        location='liquity',
-                    )
-                    event = LiquityTroveEvent(
-                        kind='trove',
-                        tx=change['transaction']['id'],
-                        address=owner,
-                        timestamp=timestamp,
-                        debt_after=AssetBalance(
-                            asset=A_LUSD,
-                            balance=Balance(
-                                amount=debt_after_amount,
-                                usd_value=lusd_price * debt_after_amount,
-                            ),
-                        ),
-                        collateral_after=AssetBalance(
-                            asset=A_ETH,
-                            balance=Balance(
-                                amount=collateral_after_amount,
-                                usd_value=eth_price * collateral_after_amount,
-                            ),
-                        ),
-                        debt_delta=AssetBalance(
-                            asset=A_LUSD,
-                            balance=Balance(
-                                amount=debt_change,
-                                usd_value=lusd_price * debt_change,
-                            ),
-                        ),
-                        collateral_delta=AssetBalance(
-                            asset=A_ETH,
-                            balance=Balance(
-                                amount=collateral_change,
-                                usd_value=eth_price * collateral_change,
-                            ),
-                        ),
-                        trove_operation=operation,
-                        sequence_number=str(change['sequenceNumber']),
-                    )
-                    result[owner].append(event)
-                except (DeserializationError, KeyError, NoPriceForGivenTimestamp) as e:
-                    log.debug(f'Failed to deserialize Liquity trove event: {change}')
-                    msg = str(e)
-                    if isinstance(e, KeyError):
-                        msg = f'Missing key entry for {msg}.'
-                    self.msg_aggregator.add_warning(
-                        f'Ignoring Liquity Trove event in Liquity. '
-                        f'Failed to decode remote information. {msg}.',
-                    )
-                    continue
-
-        return result
-
-    def get_staking_history(
-            self,
-            addresses: list[ChecksumEvmAddress],
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-    ) -> dict[ChecksumEvmAddress, list[LiquityEvent]]:
-        try:
-            staked = self._get_raw_history(addresses, 'stake')
-        except RemoteError as e:
-            log.error(f'Failed to query stake graph events for liquity. {str(e)}')
-            staked = {}
-
-        result: dict[ChecksumEvmAddress, list[LiquityEvent]] = defaultdict(list)
-        for stake in staked.get('lqtyStakes', []):
-            owner = to_checksum_address(stake['id'])
-            for change in stake['changes']:
-                try:
-                    timestamp = change['transaction']['timestamp']
-                    if timestamp < from_timestamp:
-                        continue
-                    if timestamp > to_timestamp:
-                        break
-                    operation_stake = LiquityStakeEventType.deserialize(change['stakeOperation'])
-                    lqty_price = PriceHistorian().query_historical_price(
-                        from_asset=A_LQTY,
-                        to_asset=A_USD,
-                        timestamp=timestamp,
-                    )
-                    lusd_price = PriceHistorian().query_historical_price(
-                        from_asset=A_LUSD,
-                        to_asset=A_USD,
-                        timestamp=timestamp,
-                    )
-                    stake_after = deserialize_optional_to_fval(
-                        value=change['stakedAmountAfter'],
-                        name='stakedAmountAfter',
-                        location='liquity',
-                    )
-                    stake_change = deserialize_optional_to_fval(
-                        value=change['stakedAmountChange'],
-                        name='stakedAmountChange',
-                        location='liquity',
-                    )
-                    issuance_gain = deserialize_optional_to_fval(
-                        value=change['issuanceGain'],
-                        name='issuanceGain',
-                        location='liquity',
-                    )
-                    redemption_gain = deserialize_optional_to_fval(
-                        value=change['redemptionGain'],
-                        name='redemptionGain',
-                        location='liquity',
-                    )
-                    stake_event = LiquityStakeEvent(
-                        kind='stake',
-                        tx=change['transaction']['id'],
-                        address=owner,
-                        timestamp=timestamp,
-                        stake_after=AssetBalance(
-                            asset=A_LQTY,
-                            balance=Balance(
-                                amount=stake_after,
-                                usd_value=lqty_price * stake_after,
-                            ),
-                        ),
-                        stake_change=AssetBalance(
-                            asset=A_LQTY,
-                            balance=Balance(
-                                amount=stake_change,
-                                usd_value=lqty_price * stake_change,
-                            ),
-                        ),
-                        issuance_gain=AssetBalance(
-                            asset=A_LUSD,
-                            balance=Balance(
-                                amount=issuance_gain,
-                                usd_value=lusd_price * issuance_gain,
-                            ),
-                        ),
-                        redemption_gain=AssetBalance(
-                            asset=A_LUSD,
-                            balance=Balance(
-                                amount=redemption_gain,
-                                usd_value=lusd_price * redemption_gain,
-                            ),
-                        ),
-                        stake_operation=operation_stake,
-                        sequence_number=str(change['transaction']['sequenceNumber']),
-                    )
-                    result[owner].append(stake_event)
-                except (DeserializationError, KeyError) as e:
-                    msg = str(e)
-                    log.debug(f'Failed to deserialize Liquity entry: {change}')
-                    if isinstance(e, KeyError):
-                        msg = f'Missing key entry for {msg}.'
-                    self.msg_aggregator.add_warning(
-                        f'Ignoring Liquity Stake event in Liquity. '
-                        f'Failed to decode remote information. {msg}.',
-                    )
-                    continue
-        return result

@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 
 LQTY_ADDR = string_to_evm_address('0x063c26fF1592688B73d8e2A18BA4C23654e2792E')
-LQTY_STAKING = string_to_evm_address('0x73C91af57C657DfD05a31DAcA7Bff1aEb5754629')
+LQTY_STAKING = string_to_evm_address('0x00000029fF545c86524Ade7cAF132527707948C4')
 LQTY_PROXY = string_to_evm_address('0x9476832d4687c14b2c1a04E2ee4693162a7340B6')
 ADDR_WITHOUT_TROVE = string_to_evm_address('0xA0446D8804611944F1B527eCD37d7dcbE442caba')
 JUSTIN = string_to_evm_address('0x3DdfA8eC3052539b6C9549F12cEA2C295cfF5296')
@@ -79,6 +79,21 @@ def test_trove_position(rotkehlchen_api_server, inquirer):  # pylint: disable=un
     assert trove_data['active'] is True
 
 
+@pytest.mark.parametrize('should_mock_web3', [True])
+@pytest.mark.parametrize('web3_mock_data', [{
+    'eth_call': {
+        '0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696': {
+            '0x252dba420000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000004678f0a6958e4d2bc4f1baf7bc52e8f3564f3fe400000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000024c455279100000000000000000000000000000029ff545c86524ade7caf132527707948c400000000000000000000000000000000000000000000000000000000': {  # noqa: E501
+                # calling addr() on resolver for bruno.eth
+                'latest': '0x0000000000000000000000000000000000000000000000000000000000f8434600000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000',  # noqa: E501
+            },
+            '0xbce38bd70000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001a00000000000000000000000004f9fbb3f1e99b56e0fe2892e623ed36a76fc605d0000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000002416934fc400000000000000000000000000000029ff545c86524ade7caf132527707948c4000000000000000000000000000000000000000000000000000000000000000000000000000000004f9fbb3f1e99b56e0fe2892e623ed36a76fc605d000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000249beab5c000000000000000000000000000000029ff545c86524ade7caf132527707948c4000000000000000000000000000000000000000000000000000000000000000000000000000000004f9fbb3f1e99b56e0fe2892e623ed36a76fc605d000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000248b9345ad00000000000000000000000000000029ff545c86524ade7caf132527707948c400000000000000000000000000000000000000000000000000000000': {  # noqa: E501
+                # calling addr() on resolver for bruno.eth and coin type Bitcoin
+                'latest': '0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000003000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000e0000000000000000000000000000000000000000000000000000000000000016000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000161c26959c6f563b4000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000014ac11f9fee4cc7000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000055ca33d91',  # noqa: E501
+            },
+        },
+    },
+}])
 @pytest.mark.parametrize('ethereum_accounts', [[LQTY_STAKING]])
 @pytest.mark.parametrize('ethereum_modules', [['liquity']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
@@ -98,120 +113,23 @@ def test_trove_staking(rotkehlchen_api_server, inquirer):  # pylint: disable=unu
 
     assert LQTY_STAKING in result
     stake_data = result[LQTY_STAKING]
-    assert 'amount' in stake_data and stake_data['amount'].isnumeric()
-
-
-@flaky(max_runs=3, min_passes=1)  # etherscan may occasionally time out
-@pytest.mark.parametrize('ethereum_accounts', [[LQTY_ADDR, LQTY_PROXY]])
-@pytest.mark.parametrize('ethereum_modules', [['liquity']])
-@pytest.mark.parametrize('should_mock_current_price_queries', [False])
-@pytest.mark.parametrize('should_mock_price_queries', [True])
-@pytest.mark.parametrize('mocked_price_queries', [liquity_mocked_historical_prices])
-@pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_trove_events(rotkehlchen_api_server):
-    """Test that Trove events events are correctly queried"""
-    async_query = random.choice([True, False])
-    response = requests.get(
-        api_url_for(
-            rotkehlchen_api_server,
-            'liquitytroveshistoryresource',
-        ), json={
-            'async_query': async_query,
-            'from_timestamp': 0,
-            'to_timestamp': 1628026696,
-            'reset_db_data': False,
+    assert stake_data == {
+        'staked': {
+            'asset': A_LQTY.identifier,
+            'amount': '25.491052675181405108',
+            'usd_value': '38.2365790127721076620',
         },
-    )
-    if async_query:
-        task_id = assert_ok_async_response(response)
-        result = wait_for_async_task_with_result(rotkehlchen_api_server, task_id)
-    else:
-        result = assert_proper_response_with_result(response)
-
-    assert LQTY_ADDR in result
-    assert len(result[LQTY_ADDR]) == 2
-    trove_action = result[LQTY_ADDR][0]
-    tx_id = '0xc8ad6f6ec244a93e1d66e60d1eab2ff2cb9de1f3a1f45c7bb4e9d2f720254137'
-    assert trove_action['tx'] == tx_id
-    assert trove_action['timestamp'] == 1627818194
-    assert trove_action['kind'] == 'trove'
-    assert trove_action['debt_delta']['amount'] == trove_action['debt_after']['amount']
-    assert trove_action['debt_delta']['amount'] == '6029.001719188487125'
-    assert trove_action['trove_operation'] == 'Open Trove'
-    assert trove_action['collateral_after']['amount'] == trove_action['collateral_delta']['amount']
-    assert trove_action['collateral_delta']['amount'] == '3.5'
-    assert trove_action['sequence_number'] == '74148'
-
-    # Check for account with dsproxy
-    response = requests.get(
-        api_url_for(
-            rotkehlchen_api_server,
-            'liquitytroveshistoryresource',
-        ), json={
-            'async_query': async_query,
-            'from_timestamp': 1641529258,
-            'to_timestamp': 1641529258,
-            'reset_db_data': False,
+        'lusd_rewards': {
+            'asset': A_LUSD.identifier,
+            'amount': '0.093099083885857991',
+            'usd_value': '0.1396486258287869865',
         },
-    )
-    if async_query:
-        task_id = assert_ok_async_response(response)
-        result = wait_for_async_task_with_result(rotkehlchen_api_server, task_id)
-    else:
-        result = assert_proper_response_with_result(response)
-    assert len(result[LQTY_PROXY]) == 1
-    trove_action = result[LQTY_PROXY][0]
-    tx_id = '0xef24b51a09151cce6728de1f9c3a0e69ca40db1dcc82f287a1743e41c90ce95b'
-    assert trove_action['tx'] == tx_id
-    assert trove_action['timestamp'] == 1641529258
-    assert trove_action['kind'] == 'trove'
-    assert trove_action['debt_after']['amount'] == '0'
-    assert trove_action['debt_delta']['amount'] == '-27436.074977906493051'
-    assert trove_action['trove_operation'] == 'Liquidation In Normal Mode'
-    assert trove_action['collateral_after']['amount'] == '0'
-    assert trove_action['collateral_delta']['amount'] == '-9.420492116554037728'
-    assert trove_action['sequence_number'] == '105764'
-
-
-@pytest.mark.parametrize('ethereum_accounts', [[LQTY_ADDR]])
-@pytest.mark.parametrize('ethereum_modules', [['liquity']])
-@pytest.mark.parametrize('should_mock_current_price_queries', [False])
-@pytest.mark.parametrize('should_mock_price_queries', [True])
-@pytest.mark.parametrize('mocked_price_queries', [liquity_mocked_historical_prices])
-@pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_staking_events(rotkehlchen_api_server):
-    """Test that Trove events events are correctly queried"""
-    async_query = random.choice([True, False])
-    response = requests.get(
-        api_url_for(
-            rotkehlchen_api_server,
-            'liquitystakinghistoryresource',
-        ), json={
-            'async_query': async_query,
-            'from_timestamp': 0,
-            'to_timestamp': 1628026696,
-            'reset_db_data': False,
+        'eth_rewards': {
+            'asset': 'ETH',
+            'amount': '2.3029038481E-8',
+            'usd_value': '3.45435577215E-8',
         },
-    )
-    if async_query:
-        task_id = assert_ok_async_response(response)
-        result = wait_for_async_task_with_result(rotkehlchen_api_server, task_id)
-    else:
-        result = assert_proper_response_with_result(response)
-
-    assert LQTY_ADDR in result
-    assert len(result[LQTY_ADDR]) == 1
-    trove_stake = result[LQTY_ADDR][0]
-    tx_id = '0xe527749c76a3af56d86c97a8f8f8ce07e191721e9e16a0f62a228f8a8ef6d295'
-    assert trove_stake['tx'] == tx_id
-    assert trove_stake['timestamp'] == 1627827057
-    assert trove_stake['kind'] == 'stake'
-    assert trove_stake['stake_after']['amount'] == trove_stake['stake_change']['amount']
-    asset = trove_stake['stake_after']['asset']
-    assert asset == 'eip155:1/erc20:0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D'
-    assert trove_stake['stake_after']['amount'] == '177.02'
-    assert trove_stake['stake_operation'] == 'stake created'
-    assert trove_stake['sequence_number'] == '51676'
+    }
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[ADDR_WITHOUT_TROVE]])

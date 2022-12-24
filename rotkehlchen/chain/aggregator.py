@@ -1002,8 +1002,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 addresses=self.queried_addresses_for_module('liquity'),
             )
             for address, staked_info in liquity_staked.items():
-                deposited_lqty = staked_info.staked.balance
-                eth_balances[address].assets[A_LQTY] += deposited_lqty
+                eth_balances[address].assets[A_LQTY] += staked_info['staked'].amount
 
         # Finally count the balances detected in various protocols in defi balances
         self.add_defi_balances_to_account()
