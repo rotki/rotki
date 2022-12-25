@@ -989,6 +989,7 @@
     "backup": {
       "missing_directory": "Please select a directory"
     },
+    "multi_chain_assets": "Multi Chain Assets",
     "ignore": "Ignorar activo",
     "value": "Valor"
   },

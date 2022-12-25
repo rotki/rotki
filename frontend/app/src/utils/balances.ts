@@ -111,6 +111,7 @@ export const sumAssetBalances = (
 const toSortedAndGroupedArray = <T extends Balance>(
   ownedAssets: AssetBalances,
   isIgnored: (asset: string) => boolean,
+  groupMultiChain: boolean,
   map: (asset: string) => T & { asset: string }
 ): T[] => {
   const { assetInfo } = useAssetInfoRetrieval();
@@ -119,6 +120,9 @@ const toSortedAndGroupedArray = <T extends Balance>(
   const data = Object.keys(ownedAssets)
     .filter(asset => !isIgnored(asset))
     .map(map);
+
+  if (!groupMultiChain)
+    return data.sort((a, b) => sortDesc(a.usdValue, b.usdValue));
 
   const groupedBalances = groupBy(data, balance => {
     const info = get(assetInfo(balance.asset));
@@ -165,21 +169,28 @@ const toSortedAndGroupedArray = <T extends Balance>(
 export const toSortedAssetBalanceWithPrice = (
   ownedAssets: AssetBalances,
   isIgnored: (asset: string) => boolean,
-  getPrice: (asset: string) => ComputedRef<BigNumber | null | undefined>
+  getPrice: (asset: string) => ComputedRef<BigNumber | null | undefined>,
+  groupMultiChain = true
 ): AssetBalanceWithPrice[] => {
-  return toSortedAndGroupedArray(ownedAssets, isIgnored, asset => ({
-    asset,
-    amount: ownedAssets[asset].amount,
-    usdValue: ownedAssets[asset].usdValue,
-    usdPrice: get(getPrice(asset)) ?? NoPrice
-  }));
+  return toSortedAndGroupedArray(
+    ownedAssets,
+    isIgnored,
+    groupMultiChain,
+    asset => ({
+      asset,
+      amount: ownedAssets[asset].amount,
+      usdValue: ownedAssets[asset].usdValue,
+      usdPrice: get(getPrice(asset)) ?? NoPrice
+    })
+  );
 };
 
 export const toSortedAssetBalanceArray = (
   ownedAssets: AssetBalances,
-  isIgnored: (asset: string) => boolean
+  isIgnored: (asset: string) => boolean,
+  groupMultiChain = false
 ): AssetBalance[] =>
-  toSortedAndGroupedArray(ownedAssets, isIgnored, asset => ({
+  toSortedAndGroupedArray(ownedAssets, isIgnored, groupMultiChain, asset => ({
     asset,
     amount: ownedAssets[asset].amount,
     usdValue: ownedAssets[asset].usdValue

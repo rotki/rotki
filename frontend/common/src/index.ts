@@ -37,7 +37,11 @@ export const Percentage = z.string().refine(
 export type Percentage = z.infer<typeof Percentage>;
 
 const WithPrice = z.object({ usdPrice: NumericString });
-export const AssetBalanceWithPrice = AssetBalance.merge(WithPrice);
+export const AssetBalanceWithPriceBeforeBreakdown =
+  AssetBalance.merge(WithPrice);
+const AssetBalanceWithPrice = AssetBalanceWithPriceBeforeBreakdown.extend({
+  breakdown: z.array(AssetBalanceWithPriceBeforeBreakdown).optional()
+});
 export type AssetBalanceWithPrice = z.infer<typeof AssetBalanceWithPrice>;
 export type Diff<T, U> = T extends U ? never : T;
 

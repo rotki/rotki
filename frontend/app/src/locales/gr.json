@@ -995,6 +995,7 @@
       "type": "Filter by the type of the custom asset",
       "type_hint": "Search using the asset type"
     },
+    "multi_chain_assets": "Multi Chain Assets",
     "ignore": "Ignore Asset",
     "value": "Value"
   },

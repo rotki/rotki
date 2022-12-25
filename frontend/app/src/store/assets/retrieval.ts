@@ -50,7 +50,7 @@ export const useAssetInfoRetrieval = defineStore(
     const assetInfo = (
       identifier: MaybeRef<string | undefined>,
       enableAssociation: MaybeRef<boolean> = true,
-      isCollectionParent: MaybeRef<boolean> = false
+      isCollectionParent: MaybeRef<boolean> = true
     ): ComputedRef<AssetInfo | null> =>
       computed(() => {
         const id = get(identifier);

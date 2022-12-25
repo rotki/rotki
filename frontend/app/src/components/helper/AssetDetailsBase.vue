@@ -17,10 +17,11 @@ const props = defineProps({
   hideName: { required: false, type: Boolean, default: false },
   dense: { required: false, type: Boolean, default: false },
   enableAssociation: { required: false, type: Boolean, default: true },
-  showChain: { required: false, type: Boolean, default: true }
+  showChain: { required: false, type: Boolean, default: true },
+  isCollectionParent: { required: false, type: Boolean, default: false }
 });
 
-const { asset, opensDetails } = toRefs(props);
+const { asset, opensDetails, isCollectionParent } = toRefs(props);
 const rootAttrs = useAttrs();
 
 const symbol: ComputedRef<string> = computed(() => get(asset).symbol ?? '');
@@ -32,8 +33,15 @@ const navigate = async () => {
     return;
   }
   const id = encodeURIComponent(get(asset).identifier);
+  const collectionParent = get(isCollectionParent);
+
   await router.push({
-    path: Routes.ASSETS.replace(':identifier', id)
+    path: Routes.ASSETS.replace(':identifier', id),
+    query: !collectionParent
+      ? {}
+      : {
+          collectionParent: 'true'
+        }
   });
 };
 
