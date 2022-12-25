@@ -68,7 +68,7 @@ def test_purge_ethereum_transaction_data(rotkehlchen_api_server):
         db.add_evm_transactions(
             cursor,
             [EvmTransaction(
-                tx_hash=make_evm_tx_hash(bytes()),
+                tx_hash=make_evm_tx_hash(b''),
                 chain_id=ChainID.ETHEREUM,
                 timestamp=1,
                 block_number=1,
@@ -78,7 +78,7 @@ def test_purge_ethereum_transaction_data(rotkehlchen_api_server):
                 gas=ONE,
                 gas_price=ONE,
                 gas_used=ONE,
-                input_data=bytes(),
+                input_data=b'',
                 nonce=1,
             )],
             relevant_address=addr1,
