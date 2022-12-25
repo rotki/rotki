@@ -26,6 +26,7 @@ from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.mock import (
     MOCK_WEB3_LAST_BLOCK_INT,
+    patch_avalanche_request,
     patch_etherscan_request,
     patch_web3_request,
 )
@@ -369,13 +370,19 @@ def fixture_polkadot_manager(
 def fixture_avalanche_manager(
         messages_aggregator,
         covalent_avalanche,
+        network_mocking,
+        web3_mock_data,
 ):
     avalanche_manager = AvalancheManager(
         avaxrpc_endpoint='https://api.avax.network/ext/bc/C/rpc',
         covalent=covalent_avalanche,
         msg_aggregator=messages_aggregator,
     )
-    return avalanche_manager
+    if network_mocking:
+        with patch_avalanche_request(avalanche_manager, web3_mock_data):
+            yield avalanche_manager
+    else:
+        yield avalanche_manager
 
 
 @pytest.fixture(name='ethereum_modules')

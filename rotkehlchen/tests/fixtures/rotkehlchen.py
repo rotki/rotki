@@ -31,6 +31,7 @@ from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
 from rotkehlchen.tests.utils.factories import make_random_b64bytes
 from rotkehlchen.tests.utils.history import maybe_mock_historical_price_queries
 from rotkehlchen.tests.utils.inquirer import inquirer_inject_ethereum_set_order
+from rotkehlchen.tests.utils.mock import patch_avalanche_request
 from rotkehlchen.tests.utils.substrate import wait_until_all_substrate_nodes_connected
 from rotkehlchen.types import AVAILABLE_MODULES_MAP, Location
 
@@ -313,6 +314,8 @@ def fixture_rotkehlchen_api_server(
         perform_upgrades_at_unlock,
         perform_nodes_insertion,
         current_price_oracles_order,
+        network_mocking,
+        web3_mock_data,
 ):
     """A partially mocked rotkehlchen server instance"""
 
@@ -352,7 +355,15 @@ def fixture_rotkehlchen_api_server(
         perform_nodes_insertion=perform_nodes_insertion,
         current_price_oracles_order=current_price_oracles_order,
     )
-    yield api_server
+    if start_with_logged_in_user and network_mocking:
+        with patch_avalanche_request(
+                api_server.rest_api.rotkehlchen.chains_aggregator.avalanche,
+                web3_mock_data,
+        ):
+            yield api_server
+    else:
+        yield api_server
+
     api_server.stop()
 
 

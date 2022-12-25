@@ -1,6 +1,7 @@
 import random
 from http import HTTPStatus
 
+import pytest
 import requests
 
 from rotkehlchen.tests.utils.api import (
@@ -50,6 +51,7 @@ EXPECTED_8CB0_TXS = [{
 }]
 
 
+@pytest.mark.parametrize('web3_mock_data', [{'covalent_transactions': 'test_avalanche/covalent_query_transactions.json'}])  # noqa: E501
 def test_query_transactions(rotkehlchen_api_server):
     """Test that querying the avalanche transactions endpoint works as expected
 

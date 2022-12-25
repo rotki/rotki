@@ -7,8 +7,12 @@ from unittest.mock import patch
 
 from hexbytes import HexBytes
 
+from rotkehlchen.tests.utils.avalanche import AVALANCHE_ACC1_AVAX_ADDR, AVALANCHE_ACC2_AVAX_ADDR
+
 MOCK_WEB3_LAST_BLOCK_INT = 16210873
 MOCK_WEB3_LAST_BLOCK_HEX = '0xf75bb9'
+
+MOCK_ROOT = Path(__file__).resolve().parent.parent / 'data' / 'mocks'
 
 
 class MockResponse():
@@ -204,7 +208,7 @@ def patch_eth2_requests(eth2, mock_data):
                 file_result = deposit_data.get(arg_len)
                 if file_result is None:
                     raise AssertionError(f'Deposit data for {arg_len} addresses not found in mock data')  # noqa: E501
-                fullpath = Path(__file__).resolve().parent.parent / 'data' / 'mocks' / 'test_eth2' / 'deposits' / file_result  # noqa: E501
+                fullpath = MOCK_ROOT / 'test_eth2' / 'deposits' / file_result
                 with open(fullpath) as f:
                     response_data = json.load(f)
             else:
@@ -215,4 +219,56 @@ def patch_eth2_requests(eth2, mock_data):
         eth2.beaconchain.session,
         'get',
         wraps=mock_beaconchain_query,
+    )
+
+
+COVALENT_RE = re.compile(r'https://api.covalenthq.com/v1/(\d+)/(.*)/(.*)/(.*)/.*')
+
+
+def patch_avalanche_request(avalanche_manager, mock_data):
+
+    def mock_covalent_query(url, **kwargs):  # pylint: disable=unused-argument
+        match = COVALENT_RE.search(url)
+        if match is None:  # only for eth_call for now
+            raise AssertionError(f'Could not parse covalent query: {url}')
+
+        action = match.group(2)
+        address = match.group(3)
+        module = match.group(4)
+
+        if module == 'transactions_v2':
+            assert address == '0x350f13c2C46AcaC8e44711F4bD87321304572A7D'
+            if action != 'address':
+                raise AssertionError(f'Unknown covalent query {url}')
+
+            covalent_tx_path = mock_data.get('covalent_transactions')
+            if covalent_tx_path is None:
+                raise AssertionError('Test mock data should contain covalent transactions')
+
+            fullpath = MOCK_ROOT / covalent_tx_path
+            with open(fullpath) as f:
+                response_data = json.load(f)
+        elif module == 'balances_v2':
+            if action != 'address':
+                raise AssertionError(f'Unknown covalent query {url}')
+
+            if address in (AVALANCHE_ACC1_AVAX_ADDR, AVALANCHE_ACC2_AVAX_ADDR):
+                # Since the test doesnt really test for balance values, use same response for all
+                covalent_balances_path = mock_data.get('covalent_balances')
+                if covalent_balances_path is None:
+                    raise AssertionError('Test mock data should contain covalent balances')
+                fullpath = MOCK_ROOT / covalent_balances_path
+                with open(fullpath) as f:
+                    response_data = json.load(f)
+            else:
+                raise AssertionError(f'Covalent balance query for unknown address during tests: {url}')  # noqa: E501
+        else:
+            raise AssertionError(f'Covalent query for unknown module: {url}')
+
+        return MockResponse(200, json.dumps(response_data, separators=(',', ':')))
+
+    return patch.object(
+        avalanche_manager.covalent.session,
+        'get',
+        side_effect=mock_covalent_query,
     )

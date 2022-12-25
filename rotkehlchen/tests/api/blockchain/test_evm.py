@@ -19,6 +19,7 @@ from rotkehlchen.types import SupportedBlockchain
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
+@pytest.mark.parametrize('web3_mock_data', [{'covalent_balances': 'test_balances/covalent_query_balances.json'}])  # noqa: E501
 def test_add_same_evm_account_for_multiple_chains(rotkehlchen_api_server):
     """Test adding an Avalanche blockchain account when the same account is input
     in Ethereum works fine
