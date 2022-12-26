@@ -4777,7 +4777,7 @@ class RestAPI():
             addresses=addresses,
         )
         return api_response(_wrap_in_ok_result(process_result_list(
-            # Need to convert tuples to lsits before serializing into json
+            # Need to convert tuples to lists before serializing into json
             [[*named_address_tuple] for named_address_tuple in mappings],
         )))
 

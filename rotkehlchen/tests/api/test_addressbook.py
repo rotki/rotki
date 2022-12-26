@@ -47,7 +47,25 @@ def test_get_addressbook(rotkehlchen_api_server, book_type: AddressbookType) -> 
         },
     )
     result = assert_proper_response_with_result(response=response)
-    expected_entries = [generated_entries[0], generated_entries[1]]
+    expected_entries = generated_entries[0:3]
+    deserialized_entries = [AddressbookEntry.deserialize(data=raw_entry) for raw_entry in result]
+    assert set(deserialized_entries) == set(expected_entries)
+
+    # filter by chain also
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'addressbookresource',
+            book_type=book_type,
+        ),
+        json={
+            'addresses': [
+                {'address': generated_entries[1].address, 'blockchain': 'optimism'},
+            ],
+        },
+    )
+    result = assert_proper_response_with_result(response=response)
+    expected_entries = [generated_entries[1]]
     deserialized_entries = [AddressbookEntry.deserialize(data=raw_entry) for raw_entry in result]
     assert set(deserialized_entries) == set(expected_entries)
 
@@ -110,7 +128,7 @@ def test_insert_into_addressbook(rotkehlchen_api_server, book_type: AddressbookT
             contained_in_msg='entry with address "0x9531C059098e3d194fF87FebB587aB07B30B1306"',
             status_code=HTTPStatus.CONFLICT,
         )
-        assert db_addressbook.get_addressbook_entries(cursor) == entries_in_db_before_bad_put  # noqa: E501
+        assert db_addressbook.get_addressbook_entries(cursor) == entries_in_db_before_bad_put
 
 
 @pytest.mark.parametrize('book_type', [AddressbookType.GLOBAL, AddressbookType.PRIVATE])
@@ -127,7 +145,7 @@ def test_update_addressbook(rotkehlchen_api_server, book_type: AddressbookType) 
         AddressbookEntry(
             address=to_checksum_address('0x368B9ad9B6AAaeFCE33b8c21781cfF375e09be67'),
             name='LoL kek',
-            blockchain=SupportedBlockchain.ETHEREUM,
+            blockchain=SupportedBlockchain.OPTIMISM,
         ),
     ]
     response = requests.patch(
@@ -141,8 +159,9 @@ def test_update_addressbook(rotkehlchen_api_server, book_type: AddressbookType) 
         },
     )
     assert_proper_response(response=response)
-    expected_entries = entries_to_update + [generated_entries[2]]
+    expected_entries = entries_to_update + generated_entries[2:]
 
+    # test editing entries that don't exist in the database
     with db_addressbook.read_ctx(book_type) as cursor:
         assert db_addressbook.get_addressbook_entries(cursor) == expected_entries
 
@@ -174,7 +193,7 @@ def test_update_addressbook(rotkehlchen_api_server, book_type: AddressbookType) 
             response=response,
             contained_in_msg='entry with address "0x79B598976bD83a47CD8B428C824C8474311267b8"',
             status_code=HTTPStatus.CONFLICT)
-        assert db_addressbook.get_addressbook_entries(cursor) == entries_in_db_before_bad_patch  # noqa: E501
+        assert db_addressbook.get_addressbook_entries(cursor) == entries_in_db_before_bad_patch
 
 
 @pytest.mark.parametrize('book_type', [AddressbookType.GLOBAL, AddressbookType.PRIVATE])
@@ -199,7 +218,7 @@ def test_delete_addressbook(rotkehlchen_api_server, book_type: AddressbookType):
     assert_proper_response(response)
 
     with db_addressbook.read_ctx(book_type) as cursor:
-        assert db_addressbook.get_addressbook_entries(cursor) == [generated_entries[1]]
+        assert db_addressbook.get_addressbook_entries(cursor) == generated_entries[1:3]
 
         nonexistent_addresses = [
             to_checksum_address('0x368B9ad9B6AAaeFCE33b8c21781cfF375e09be67'),
@@ -223,6 +242,38 @@ def test_delete_addressbook(rotkehlchen_api_server, book_type: AddressbookType):
             status_code=HTTPStatus.CONFLICT,
         )
         assert db_addressbook.get_addressbook_entries(cursor) == data_before_bad_request
+
+    # try to delete by chain
+    response = requests.delete(
+        api_url_for(
+            rotkehlchen_api_server,
+            'addressbookresource',
+            book_type=book_type,
+        ),
+        json={
+            'addresses': [{'address': generated_entries[1].address, 'blockchain': 'btc'}],
+        },
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Addressbook entry with address "0x368B9ad9B6AAaeFCE33b8c21781cfF375e09be67" and blockchain BTC doesnt exist',  # noqa: E501
+        status_code=HTTPStatus.CONFLICT,
+    )
+
+    # try to delete it using the correct chain
+    response = requests.delete(
+        api_url_for(
+            rotkehlchen_api_server,
+            'addressbookresource',
+            book_type=book_type,
+        ),
+        json={
+            'addresses': [{'address': generated_entries[1].address, 'blockchain': 'optimism'}],
+        },
+    )
+    assert_proper_response(response)
+    with db_addressbook.read_ctx(book_type) as cursor:
+        assert len(db_addressbook.get_addressbook_entries(cursor)) == 1
 
 
 def test_names_compilation(rotkehlchen_api_server):

@@ -65,12 +65,14 @@ def find_ens_mappings(
 
 def search_for_addresses_names(
         database: DBHandler,
-        # For now works only for evm chains.
-        # TODO: support not only ChecksumEvmAddress, but other address formats too.
         addresses: list[tuple[ChecksumEvmAddress, Optional[SupportedBlockchain]]],
 ) -> list[tuple[ChecksumEvmAddress, SupportedBlockchain, Optional[str]]]:
-    """This method searches for all names of provided addresses known to rotki. We can show
+    """
+    This method searches for all names of provided addresses known to rotki. We can show
     only one name per address, and thus we prioritize known names. Priority is read from settings.
+
+    For now works only for evm chains.
+    TODO: support not only ChecksumEvmAddress, but other address formats too.
     """
     prepared_addresses = []
     for address, blockchain in addresses:
