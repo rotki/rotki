@@ -853,11 +853,12 @@ class ReportDataFilterQuery(DBFilterQuery, FilterWithTimestamp):
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBNullFilter(DBFilter):
     columns: list[str]
+    verb: Literal['IS', 'IS NOT'] = 'IS'
 
     def prepare(self) -> tuple[list[str], list[Any]]:
         null_columns = []
         for column in self.columns:
-            null_columns.append(f'{column} IS NULL')
+            null_columns.append(f'{column} {self.verb} NULL')
         return null_columns, []
 
 
@@ -1185,6 +1186,9 @@ class NFTFilterQuery(DBFilterQuery):
             ignored_assets_filter_params: Optional[tuple[Literal['IN', 'NOT IN'], list[str]]] = None,  # noqa: E501
             lps_handling: NftLpHandling = NftLpHandling.ALL_NFTS,
             nft_id: Optional[str] = None,
+            last_price_asset: Optional[Asset] = None,
+            only_with_manual_prices: bool = False,
+            with_price: bool = True,
     ) -> 'NFTFilterQuery':
         filter_query = cls.create(
             and_op=True,
@@ -1231,6 +1235,25 @@ class NFTFilterQuery(DBFilterQuery):
                 field='identifier',
                 search_string=nft_id,
             ))
+        if last_price_asset is not None:
+            filters.append(DBAssetFilter(
+                and_op=True,
+                asset=last_price_asset,
+                asset_key='last_price_asset',
+            ))
+        if only_with_manual_prices is True:
+            filters.append(DBEqualsFilter(
+                and_op=True,
+                column='manual_price',
+                value=1,
+            ))
+        if with_price is True:
+            filters.append(DBNullFilter(
+                and_op=True,
+                verb='IS NOT',
+                columns=['last_price'],
+            ))
+
         filter_query.filters = filters
         return filter_query
 

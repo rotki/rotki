@@ -1,5 +1,6 @@
 import random
 from http import HTTPStatus
+from typing import TYPE_CHECKING
 
 import pytest
 import requests
@@ -18,8 +19,11 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response_with_result,
     wait_for_async_task_with_result,
 )
-from rotkehlchen.types import Price
+from rotkehlchen.types import ChecksumEvmAddress, Price
 from rotkehlchen.utils.misc import timestamp_to_date
+
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
 
 
 @pytest.mark.parametrize('mocked_current_prices_with_oracles', [{
@@ -527,3 +531,78 @@ def test_prices_cache_invalidation_for_manual_prices(rotkehlchen_api_server):
     # # the max diff is to account for price changes between the requests interval
     assert FVal(avax_result['assets']['AVAX'][0]).is_close(FVal(eth_result['assets']['ETH'][0]), max_diff='10')  # noqa: E501
     assert result['target_asset'] == 'USD'
+
+
+@pytest.mark.parametrize('should_mock_current_price_queries', [True])
+@pytest.mark.parametrize('ethereum_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
+@pytest.mark.parametrize('ethereum_modules', [['nfts']])
+def test_get_manual_prices_with_nfts(
+        rotkehlchen_api_server: 'APIServer',
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """Test that the endpoint to fetch all manual input returns the correct prices results
+    when there are prices for normal assets and nfts
+    """
+    # Add prices to the database
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    GlobalDBHandler().add_manual_latest_price(
+        from_asset=A_BTC,
+        to_asset=A_ETH,
+        price=Price(FVal(10)),
+    )
+
+    with rotki.data.db.user_write() as cursor:
+        nft_id_1 = '_nft_custom'
+        nft_id_2 = '_nft_custom2'
+        cursor.executemany(
+            'INSERT OR IGNORE INTO assets(identifier) VALUES(?)',
+            [(nft_id_1,), (nft_id_2,)],
+        )
+        cursor.executemany(
+            'INSERT OR IGNORE INTO nfts('
+            'identifier, name, last_price, last_price_asset, manual_price, owner_address, is_lp, image_url, collection_name'  # noqa: E501
+            ') VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [
+                (nft_id_1, 'Custom NFT', '1', 'ETH', 1, ethereum_accounts[0], 0, '', 'custom'),  # noqa: E501
+                (nft_id_2, 'Custom NFT', '2', 'BTC', 1, ethereum_accounts[0], 0, '', 'custom'),  # noqa: E501
+            ],
+        )
+
+    # test a response with NFTs and non NFTs assets
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'alllatestassetspriceresource',
+        ),
+        json={'to_asset': 'ETH'},
+    )
+    result = assert_proper_response_with_result(response)
+    assert result == [
+        {
+            'from_asset': 'BTC',
+            'to_asset': 'ETH',
+            'price': '10',
+        },
+        {
+            'from_asset': '_nft_custom',
+            'to_asset': 'ETH',
+            'price': '1',
+        },
+    ]
+
+    # test a response with only NFTs
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'alllatestassetspriceresource',
+        ),
+        json={'to_asset': 'BTC'},
+    )
+    result = assert_proper_response_with_result(response)
+    assert result == [
+        {
+            'from_asset': '_nft_custom2',
+            'to_asset': 'BTC',
+            'price': '2',
+        },
+    ]

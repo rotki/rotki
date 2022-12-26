@@ -1168,7 +1168,7 @@ Get all manually input latest prices
 
 .. http:post:: /api/(version)/assets/prices/latest/all
 
-   Retrieve all the manually input latest prices stored in the database.
+   Retrieve all the manually input latest prices stored in the database, including prices for nfts.
 
    **Example Request**:
 
@@ -1202,8 +1202,13 @@ Get all manually input latest prices
               "from_asset": "USD",
               "to_asset": "EUR",
               "price": "25"
+            },
+            {
+              "from_asset": "_nft_custom",
+              "to_asset": "ETH",
+              "price_in_asset": "1"
             }
-          ]
+          ],
           "message": ""
       }
 

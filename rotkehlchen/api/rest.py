@@ -4106,6 +4106,22 @@ class RestAPI():
                 'to_asset': price_entry[1],
                 'price': price_entry[2],
             })
+
+        if (nft_module := self.rotkehlchen.chains_aggregator.get_module('nfts')) is not None:
+            # query also nfts manual prices
+            nft_price_data = nft_module.get_nfts_with_price(
+                from_asset=from_asset,
+                to_asset=to_asset,
+                only_with_manual_prices=True,
+            )
+
+            for nft_data in nft_price_data:
+                prices_information.append({
+                    'from_asset': nft_data['asset'],
+                    'to_asset': nft_data['price_asset'],
+                    'price': nft_data['price_in_asset'],
+                })
+
         return api_response(_wrap_in_ok_result(prices_information), status_code=HTTPStatus.OK)
 
     def get_nfts_with_price(self, lps_handling: NftLpHandling) -> Response:
