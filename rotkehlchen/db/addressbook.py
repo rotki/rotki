@@ -1,7 +1,8 @@
 import sqlite3
+from collections import defaultdict
 from collections.abc import Generator
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Union
 
 from pysqlcipher3 import dbapi2
 
@@ -69,20 +70,25 @@ class DBAddressbook:
                     blockchain=deserialized_blockchain,
                 ))
         else:
+            # group the addresses by blockchain to minimize the number of db queries
+            blockchain_to_address: defaultdict[Optional[SupportedBlockchain], list[ChecksumEvmAddress]] = defaultdict(list)  # noqa: E501
             for address, blockchain in addresses:
-                query = 'SELECT address, name, blockchain FROM address_book WHERE address = ?'
-                bindings = [address]
+                blockchain_to_address[blockchain].append(address)
+
+            for blockchain, address_list in blockchain_to_address.items():
+                bindings: list[Union[str, ChecksumEvmAddress]] = []
+                query = f'SELECT address, name, blockchain FROM address_book WHERE address IN ({",".join("?"*len(address_list))})'  # noqa: E501
+                bindings += address_list.copy()
                 if blockchain is not None:
                     query += ' AND blockchain = ?'
                     bindings.append(blockchain.value)
                 cursor.execute(query, bindings)
 
                 for address, name, blockchain_str in cursor:
-                    deserialized_blockchain = SupportedBlockchain(blockchain_str)
                     entries.append(AddressbookEntry(
                         address=ChecksumEvmAddress(address),
                         name=name,
-                        blockchain=deserialized_blockchain,
+                        blockchain=blockchain if blockchain is not None else SupportedBlockchain(blockchain_str),  # noqa: E501
                     ))
 
         return entries
@@ -145,10 +151,10 @@ class DBAddressbook:
                     bindings.append(blockchain.value)
                 write_cursor.execute(query, bindings)
                 if write_cursor.rowcount == 0:
+                    blockchain_msg = f' and blockchain {blockchain.value}' if blockchain is not None else ''  # noqa: E501
                     raise InputError(
-                        f'Addressbook entry with address "{address}" '
-                        f'{f"and blockchain {blockchain.value} " if blockchain is not None else ""}doesnt '  # noqa: E501
-                        f'exist in the address book. So it cannot be deleted.',
+                        f'Addressbook entry with address "{address}"{blockchain_msg} doesnt '
+                        f'exist in the address book so it cannot be deleted.',
                     )
 
     def get_addressbook_entry_name(
@@ -158,9 +164,8 @@ class DBAddressbook:
             blockchain: SupportedBlockchain,
     ) -> Optional[str]:
         """
-        Returns the name for the specified address and blockchain.
-        Returns None if either there is no name set or pair (address, blockchain)
-        doesn't exist in database.
+        Returns the name for the specified address and blockchain or None if either there is
+        no name set or pair (address, blockchain) doesn't exist in the database.
         """
         with self.read_ctx(book_type) as read_cursor:
             query = read_cursor.execute(

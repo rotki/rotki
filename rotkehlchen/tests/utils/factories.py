@@ -162,6 +162,11 @@ def make_addressbook_entries() -> list[AddressbookEntry]:
         AddressbookEntry(
             address=to_checksum_address('0x368B9ad9B6AAaeFCE33b8c21781cfF375e09be67'),
             name='Neighbour Thomas',
+            blockchain=SupportedBlockchain.OPTIMISM,
+        ),
+        AddressbookEntry(
+            address=to_checksum_address('0x368B9ad9B6AAaeFCE33b8c21781cfF375e09be67'),
+            name='Neighbour Thomas but in Ethereum',
             blockchain=SupportedBlockchain.ETHEREUM,
         ),
         AddressbookEntry(

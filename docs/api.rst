@@ -11542,7 +11542,10 @@ Get mappings from addressbook
         Content-Type: application/json;charset=UTF-8
 
         {
-          "addresses": ["0x9531c059098e3d194ff87febb587ab07b30b1306", "0x8A4973ABBCEd48596D6D79ac6B53Ceda65e342CD"]
+          "addresses": [
+            {"address": "0x9531c059098e3d194ff87febb587ab07b30b1306", "blockchain": "eth"},
+            {"address": "0x8A4973ABBCEd48596D6D79ac6B53Ceda65e342CD"}
+           ]
         }
 
     :reqjson object addresses: List of addresses that the backend should find names for
@@ -11556,8 +11559,8 @@ Get mappings from addressbook
 
         {
             "result": [
-                { "address": "0x9531c059098e3d194ff87febb587ab07b30b1306", "name": "My dear friend Tom" },
-                { "address": "0x8A4973ABBCEd48596D6D79ac6B53Ceda65e342CD", "name": "Neighbour Frank" }
+                { "address": "0x9531c059098e3d194ff87febb587ab07b30b1306", "name": "My dear friend Tom", "blockchain": "eth" },
+                { "address": "0x8A4973ABBCEd48596D6D79ac6B53Ceda65e342CD", "name": "Neighbour Frank", "blockchain": "eth" }
             ],
             "message": ""
         }
@@ -11587,7 +11590,7 @@ Insert mappings into addressbook
 
         {
           "entries": [
-            {"address": "0x9531c059098e3d194ff87febb587ab07b30b1306", "name": "Dude ABC"},
+            {"address": "0x9531c059098e3d194ff87febb587ab07b30b1306", "blockchain": "eth", "name": "Dude ABC"},
             {"address": "0x8A4973ABBCEd48596D6D79ac6B53Ceda65e342CD", "name": "Dude XYZ"}
           ]
         }
@@ -11636,7 +11639,10 @@ Update mappings in the addressbook
           ]
         }
 
-    :reqjson object entries: A list of entries to be updated in the addressbook
+    :reqjson object entries: A list of entries to be updated in the addressbook.
+    :reqjson str address: The address that will be tracked in the addressbook.
+    :reqjson str[optional] blockchain: Blockchain in whick to use the provided name.
+    :reqjson str name: Name to be used.
 
     **Example Response**
 
@@ -11674,10 +11680,15 @@ Delete mappings in the addressbook
         Content-Type: application/json;charset=UTF-8
 
         {
-          "addresses": ["0x9531c059098e3d194ff87febb587ab07b30b1306", "0x8A4973ABBCEd48596D6D79ac6B53Ceda65e342CD"]
+          "addresses": [
+            {"address": "0x9531c059098e3d194ff87febb587ab07b30b1306", "blockchain": "eth"},
+            {"address": "0x8A4973ABBCEd48596D6D79ac6B53Ceda65e342CD"}
+          ]
         }
 
     :reqjson object entries: A list of addresses to be deleted from the addressbook
+    :reqjson str address: The address that will be deleted in the addressbook.
+    :reqjson str[optional] blockchain: Blockchain to use as filter when deleting the names. If is not provided the names for all the chains will be deleted.
 
     **Example Response**
 
@@ -11715,10 +11726,15 @@ Search for all known names of an address
         Content-Type: application/json;charset=UTF-8
 
         {
-          "addresses": ["0x9531c059098e3d194ff87febb587ab07b30b1306", "0x8A4973ABBCEd48596D6D79ac6B53Ceda65e342CD"]
+          "addresses": [
+            {"address": "0x9531c059098e3d194ff87febb587ab07b30b1306", "blockchain": "eth"},
+            {"address": "0x8A4973ABBCEd48596D6D79ac6B53Ceda65e342CD"}
+          ]
         }
 
     :reqjson object addresses: List of addresses that the backend should find names for
+    :reqjson str address: The address that will be queried in the addressbook.
+    :reqjson str[optional] blockchain: Blockchain to use as filter when querying the names. If is not provided the names for all the chains are returned.
 
     **Example Response**
 
