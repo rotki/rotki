@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
@@ -8,6 +8,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.modules.uniswap.v3.types import AddressToUniswapV3LPBalances
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.db.filtering import NFTFilterQuery
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.externalapis.opensea import NFT, Opensea
@@ -27,7 +28,6 @@ from .structures import NftLpHandling, NFTResult
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.filtering import NFTFilterQuery
     from rotkehlchen.premium.premium import Premium
 
 logger = logging.getLogger(__name__)
@@ -265,46 +265,66 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):
             self,
             identifier: Optional[str] = None,
             lps_handling: NftLpHandling = NftLpHandling.ALL_NFTS,
+            from_asset: Optional[Asset] = None,
+            to_asset: Optional[Asset] = None,
+            only_with_manual_prices: bool = False,
     ) -> list[dict[str, Any]]:
         """
-        Given an identifier for an nft asset return information about its manual price and
-        price queried.
+        Queries database for prices of NFTs.
+        When only manual prices are returned the usd price of the reference asset is not queried.
+        If an identifier is provided returns the information related to that identifier only.
+
+        if only_with_manual_prices is set to True then the usd price is not queried for each nft
+        and the usd_price field is set to None.
         """
-        query_str = 'SELECT identifier, last_price, last_price_asset, manual_price from nfts WHERE last_price IS NOT NULL'  # noqa: E501
-        bindings: list[Union[str, bool]] = []
-        if identifier is not None:
-            query_str += ' AND identifier=?'
-            bindings.append(identifier)
+        filter_query = NFTFilterQuery.make(
+            lps_handling=lps_handling,
+            nft_id=from_asset.identifier if from_asset is not None else identifier,
+            last_price_asset=to_asset,
+            only_with_manual_prices=only_with_manual_prices,
+        )
+        query, bindings = filter_query.prepare()
+        query_str = 'SELECT identifier, last_price, last_price_asset, manual_price from nfts ' + query  # noqa: E501
 
-        if lps_handling != NftLpHandling.ALL_NFTS:
-            query_str += ' AND is_lp=?'
-            bindings.append(lps_handling == NftLpHandling.ONLY_LPS)
-
+        result = []
         with self.db.conn.read_ctx() as cursor:
-            query = cursor.execute(query_str, bindings)
-            result = []
-            for entry in query:
+            cursor.execute(query_str, bindings)
+            for entry in cursor:
                 to_asset_id = entry[2] if entry[2] is not None else A_USD.identifier
                 try:
-                    to_asset = Asset(to_asset_id).check_existence()
+                    target_asset = Asset(to_asset_id).check_existence()
                 except UnknownAsset:
                     log.error(
                         f'Unknown asset {to_asset_id} in custom nft price DB table. Ignoring.',
                     )
                     continue
 
-                if to_asset != A_USD:
+                entry_info = {
+                    'asset': entry[0],
+                    'manually_input': bool(entry[3]),
+                    'price_asset': to_asset_id,
+                    'price_in_asset': entry[1],
+                    'usd_price': None,
+                }
+
+                if only_with_manual_prices is True:
+                    # if we don't need the usd price don't query it
+                    result.append(entry_info)
+                    continue
+
+                # query the usd price and update it in entry_info
+                if target_asset != A_USD:
                     try:
-                        to_asset_usd_price = Inquirer().find_usd_price(to_asset)
+                        to_asset_usd_price = Inquirer().find_usd_price(target_asset)
                     except RemoteError as e:
                         log.error(
-                            f'Error querying current usd price of {to_asset} in custom nft price '
-                            f'api call due to {str(e)}. Ignoring.',
+                            f'Error querying current usd price of {target_asset} in custom nft '
+                            f'price api call due to {str(e)}. Ignoring.',
                         )
                         continue
                     if to_asset_usd_price == ZERO:
                         log.error(
-                            f'Could not find current usd price for {to_asset} in custom nft '
+                            f'Could not find current usd price for {target_asset} in custom nft '
                             f'price api call. Ignoring.',
                         )
                         continue
@@ -312,13 +332,8 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):
                 else:  # to_asset == USD
                     usd_price = entry[1]
 
-                result.append({
-                    'asset': entry[0],
-                    'manually_input': bool(entry[3]),
-                    'price_asset': to_asset_id,
-                    'price_in_asset': entry[1],
-                    'usd_price': str(usd_price),
-                })
+                entry_info['usd_price'] = str(usd_price)
+                result.append(entry_info)
 
         return result
 
