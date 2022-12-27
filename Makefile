@@ -6,8 +6,8 @@ ISORT_CHECK_PARAMS = --diff --check-only
 
 lint:
 	isort $(ISORT_PARAMS) $(ISORT_CHECK_PARAMS)
-	flake8 $(ALL_LINT_PATHS)
 	ruff $(ALL_LINT_PATHS)
+	flake8 $(ALL_LINT_PATHS)
 	mypy $(COMMON_LINT_PATHS) --install-types --non-interactive
 	pylint --rcfile .pylint.rc $(ALL_LINT_PATHS)
 
@@ -31,7 +31,6 @@ test-assets:
 	python pytestgeventwrapper.py rotkehlchen/tests/exchanges/test_bittrex.py::test_bittrex_assets_are_known
 	python pytestgeventwrapper.py rotkehlchen/tests/exchanges/test_bitstamp.py::test_bitstamp_exchange_assets_are_known
 	python pytestgeventwrapper.py rotkehlchen/tests/exchanges/test_coinbasepro.py::test_coverage_of_products
-	python pytestgeventwrapper.py rotkehlchen/tests/exchanges/test_ftx.py::test_ftx_exchange_assets_are_known
 	python pytestgeventwrapper.py rotkehlchen/tests/exchanges/test_kraken.py::test_coverage_of_kraken_balances
 	python pytestgeventwrapper.py rotkehlchen/tests/exchanges/test_iconomi.py::test_iconomi_assets_are_known
 	python pytestgeventwrapper.py rotkehlchen/tests/exchanges/test_kraken.py::test_kraken_to_world_pair
