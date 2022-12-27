@@ -303,6 +303,7 @@ def replace_tag_mappings(
     for entry in data:
         if entry.tags is not None:
             tag_tuples = _prepare_tag_mappings(entry, object_reference_keys)
+            # tag_tuples should never be empty, since here entry.tags is not None and not empty
             delete_tuples.append((tag_tuples[0][0],))
             insert_tuples.extend(tag_tuples)
 

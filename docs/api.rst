@@ -5929,7 +5929,7 @@ Getting blockchain account data
    :resjsonarr string address: The address, which is the unique identifier of each account. For BTC blockchain query and if the entry is an xpub then this attribute is missing.
    :resjsonarr string xpub: The extended public key. This attribute only exists for BTC blockchain query and if the entry is an xpub
    :resjsonarr string label: The label to describe the account. Can also be null.
-   :resjsonarr list tags: A list of tags associated with the account. Can also be null.
+   :resjsonarr list tags: A list of tags associated with the account. Can also be null. Should never by an empty list.
 
    :statuscode 200: Account data successfully queried.
    :statuscode 409: User is not logged in.
@@ -5989,7 +5989,7 @@ Getting blockchain account data
    :resjsonarr string xpub: The extended public key string
    :resjsonarr string derivation_path: [Optional] If existing this is the derivation path from which to start deriving accounts from the xpub.
    :resjsonarr string label: [Optional] The label to describe the xpub. Can also be null.
-   :resjsonarr list tags: [Optional] A list of tags associated with the account. Can also be null.
+   :resjsonarr list tags: [Optional] A list of tags associated with the account. Can also be null. Should never be an empty list.
    :resjsonarr list addresses: [Optional] A list of address objects  derived by the account. Can also be null. The attributes of each object are as seen in the previous response.
 
    :statuscode 200: Account data successfully queried.
@@ -9232,7 +9232,7 @@ Adding blockchain accounts
    :reqjson list[object] accounts: A list of account data to add for the given blockchain
    :reqjsonarr string address: The address of the account to add. Can either be a hexadecimal address or an ENS name.
    :reqjsonarr string[optional] label: An optional label to describe the new account. Cannot be empty string.
-   :reqjsonarr list[optional] tags: An optional list of tags to attach to the new account
+   :reqjsonarr list[optional] tags: An optional list of tags to attach to the new account. Can be null. Should never be an empty list.
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
 
    **Example Response**:
@@ -9292,7 +9292,7 @@ Adding BTC/BCH xpubs
    :reqjsonarr string derivation_path: The derivation path from which to start deriving addresses relative to the xpub.
    :reqjsonarr string[optional] xpub_type: An optional type to denote the type of the given xpub. If omitted the prefix xpub/ypub/zpub is used to determine the type. The valid xpub types are: ``"p2pkh"``, ``"p2sh_p2wpkh"``, ``"wpkh"`` and ``"p2tr"``.
    :reqjsonarr string[optional] label: An optional label to describe the new extended public key
-   :reqjsonarr list[optional] tags: An optional list of tags to attach to the xpub
+   :reqjsonarr list[optional] tags: An optional list of tags to attach to the xpub. Can be null. Should never be an empty list.
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
 
    **Example Response**:
@@ -9393,7 +9393,7 @@ Editing BTC/BCH xpubs
    :reqjson string xpub: The extended public key to edit
    :reqjsonarr string derivation_path: The derivation path from which to start deriving addresses relative to the xpub.
    :reqjsonarr string[optional] label: An optional label to describe the new extended public key
-   :reqjsonarr list[optional] tags: An optional list of tags to attach to the xpub
+   :reqjsonarr list[optional] tags: An optional list of tags to attach to the xpub. Can be null. Should never be an empty list.
 
    **Example Response**:
 
@@ -9589,7 +9589,7 @@ Editing blockchain account data
    :reqjson list[object] accounts: A list of account data to edit for the given blockchain
    :reqjsonarr string address: The address of the account to edit. Can either be a hexadecimal address or an ENS name.
    :reqjsonarr string[optional] label: An optional label to edit for the account. Cannot be empty string.
-   :reqjsonarr list[optional] tags: An optional list of tags to attach to the account
+   :reqjsonarr list[optional] tags: An optional list of tags to attach to the account. Can be null. Should never be an empty list.
 
    **Example Response**:
 
@@ -9799,7 +9799,7 @@ Adding manually tracked balances
    :reqjsonarr string asset: The asset that is being tracked
    :reqjsonarr string label: A label to describe where is this balance stored. Must be unique between all manually tracked balance labels.
    :reqjsonarr string amount: The amount of asset that is stored.
-   :reqjsonarr list[optional] tags: An optional list of tags to attach to the this manually tracked balance.
+   :reqjsonarr list[optional] tags: An optional list of tags to attach to the this manually tracked balance. Can be null. Should never be an empty list.
    :reqjsonarr string location: The location where the balance is saved. Can be one of: ["external", "kraken", "poloniex", "bittrex", "binance", "bitmex", "coinbase", "banks", "blockchain", "coinbasepro", "gemini", "ftx", "ftxus", "independentreserve"]
 
    **Example Response**:
