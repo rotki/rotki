@@ -252,6 +252,23 @@ def deserialize_tags_from_db(val: Optional[str]) -> Optional[list[str]]:
     return tags
 
 
+def _prepare_tag_mappings(
+        entry: Union['ManuallyTrackedBalance', BlockchainAccountData, 'XpubData'],
+        object_reference_keys: list[
+            Literal['id', 'chain', 'address', 'xpub.xpub', 'derivation_path'],
+        ],
+) -> list[tuple[str, str]]:
+    """Common function to prepare tag mappings. Caller has to make sure entry.tags is not None"""
+    reference = ''
+    mapping_tuples = []
+    for key in object_reference_keys:
+        value = rgetattr(entry, key)
+        if value is not None:  # value.value is for SupportedBlockchain
+            reference += str(value) if key != 'chain' else value.value
+    mapping_tuples.extend([(reference, tag) for tag in entry.tags])  # type: ignore[union-attr]
+    return mapping_tuples
+
+
 def insert_tag_mappings(
         write_cursor: 'DBCursor',
         data: Union[list['ManuallyTrackedBalance'], list[BlockchainAccountData], list['XpubData']],
@@ -266,15 +283,34 @@ def insert_tag_mappings(
     mapping_tuples = []
     for entry in data:
         if entry.tags is not None:
-            reference = ''
-            for key in object_reference_keys:
-                value = rgetattr(entry, key)
-                if value is not None:  # value.value is for SupportedBlockchain
-                    reference += str(value) if key != 'chain' else value.value
-            mapping_tuples.extend([(reference, tag) for tag in entry.tags])
+            mapping_tuples.extend(_prepare_tag_mappings(entry, object_reference_keys))
 
     write_cursor.executemany(
-        'INSERT INTO tag_mappings(object_reference, tag_name) VALUES (?, ?)', mapping_tuples,
+        'INSERT OR IGNORE INTO tag_mappings(object_reference, tag_name) VALUES (?, ?)', mapping_tuples,  # noqa: E501
+    )
+
+
+def replace_tag_mappings(
+        write_cursor: 'DBCursor',
+        data: Union[list['ManuallyTrackedBalance'], list[BlockchainAccountData], list['XpubData']],
+        object_reference_keys: list[
+            Literal['id', 'chain', 'address', 'xpub.xpub', 'derivation_path'],
+        ],
+) -> None:
+    """Just like insert_tag_mappings but first deletes all existing mappings"""
+    insert_tuples = []
+    delete_tuples = []
+    for entry in data:
+        if entry.tags is not None:
+            tag_tuples = _prepare_tag_mappings(entry, object_reference_keys)
+            delete_tuples.append((tag_tuples[0][0],))
+            insert_tuples.extend(tag_tuples)
+
+    write_cursor.executemany(
+        'DELETE FROM tag_mappings WHERE object_reference = ?;', delete_tuples,
+    )
+    write_cursor.executemany(
+        'INSERT OR IGNORE INTO tag_mappings(object_reference, tag_name) VALUES (?, ?)', insert_tuples,  # noqa: E501
     )
 
 
