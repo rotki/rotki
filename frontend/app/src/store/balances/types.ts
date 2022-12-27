@@ -33,7 +33,7 @@ export interface AccountPayload {
   readonly address: string;
   readonly label?: string;
   readonly xpub?: XpubPayload;
-  readonly tags: string[];
+  readonly tags: string[] | null;
 }
 
 export interface ExchangeBalancePayload {

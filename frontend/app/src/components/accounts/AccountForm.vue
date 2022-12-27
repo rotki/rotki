@@ -36,6 +36,7 @@ import { startPromise } from '@/utils';
 import { assert } from '@/utils/assertions';
 import { getMetamaskAddresses } from '@/utils/metamask';
 import { xpubToPayload } from '@/utils/xpub';
+import { emptyArrayToNull } from '@/utils/data';
 
 const FIELD_ADDRESS = 'address';
 const FIELD_XPUB = 'xpub';
@@ -183,7 +184,7 @@ const payload = computed<BlockchainAccountPayload>(() => {
     blockchain: get(blockchain),
     address: get(addresses)[0],
     label: get(label),
-    tags: get(tags),
+    tags: emptyArrayToNull(get(tags)),
     xpub: get(inputMode) === XPUB_ADD ? get(xpub) ?? undefined : undefined,
     modules: get(isEth) ? get(selectedModules) : undefined
   };
@@ -231,7 +232,7 @@ const metamaskImport = async (): Promise<boolean> => {
     const payload: AccountPayload[] = addresses.map(value => ({
       address: value,
       label: get(label),
-      tags: get(tags)
+      tags: emptyArrayToNull(get(tags))
     }));
 
     await addAccounts({
@@ -278,7 +279,7 @@ const manualAdd = async () => {
       const payload = entries.map(address => ({
         address,
         label: get(label),
-        tags: get(tags)
+        tags: emptyArrayToNull(get(tags))
       }));
       await addAccounts({
         blockchain: get(blockchain),

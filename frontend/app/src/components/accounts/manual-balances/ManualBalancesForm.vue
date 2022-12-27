@@ -20,6 +20,7 @@ import { bigNumberify } from '@/utils/bignumbers';
 import { toMessages } from '@/utils/validation-errors';
 import CustomAssetForm from '@/components/asset-manager/CustomAssetForm.vue';
 import { useAssetManagementApi } from '@/services/assets/management-api';
+import { emptyArrayToNull } from '@/utils/data';
 
 const props = defineProps({
   edit: {
@@ -102,7 +103,7 @@ const save = async () => {
   const balance: Omit<ManualBalance, 'id' | 'asset'> = {
     amount: bigNumberify(get(amount)),
     label: get(label),
-    tags: get(tags),
+    tags: emptyArrayToNull(get(tags)),
     location: get(location),
     balanceType: get(balanceType)
   };

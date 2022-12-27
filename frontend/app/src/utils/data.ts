@@ -51,3 +51,9 @@ export function randomHex(characters = 40): string {
   }
   return `0x${hex}ff`;
 }
+
+export function emptyArrayToNull<T>(data: T | null): T | null {
+  if (Array.isArray(data) && data.length === 0) return null;
+
+  return data;
+}
