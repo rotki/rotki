@@ -5,7 +5,13 @@ import pytest
 
 from rotkehlchen.chain.ethereum.names import FetcherFunc, NamePrioritizer
 from rotkehlchen.tests.utils.factories import make_evm_address
-from rotkehlchen.types import AddressNameSource, ChecksumEvmAddress, SupportedBlockchain
+from rotkehlchen.types import (
+    AddressbookEntry,
+    AddressNameSource,
+    ChecksumEvmAddress,
+    OptionalChainAddress,
+    SupportedBlockchain,
+)
 
 
 @pytest.fixture(name='evm_address')
@@ -27,8 +33,12 @@ def test_get_prioritized_name(evm_address: ChecksumEvmAddress) -> None:
         get_fetchers_with_names(fetchers),
     )
 
-    prioritizer_names = prioritizer.get_prioritized_names(list(fetchers.keys()), [(evm_address, SupportedBlockchain.ETHEREUM)])  # noqa: E501
-    assert prioritizer_names == [(evm_address, SupportedBlockchain.ETHEREUM, 'blockchain account label')]  # noqa: E501
+    prioritizer_names = prioritizer.get_prioritized_names(list(fetchers.keys()), [OptionalChainAddress(evm_address, SupportedBlockchain.ETHEREUM)])  # noqa: E501
+    assert prioritizer_names == [AddressbookEntry(
+        name='blockchain account label',
+        address=evm_address,
+        blockchain=SupportedBlockchain.ETHEREUM,
+    )]
 
 
 def test_get_name_of_lowest_prio_name_source(
@@ -48,9 +58,12 @@ def test_get_name_of_lowest_prio_name_source(
         get_fetchers_with_names(fetchers),
     )
 
-    prioritizer_names = prioritizer.get_prioritized_names(list(fetchers.keys()), [(evm_address, SupportedBlockchain.ETHEREUM)])  # noqa: E501
-
-    assert prioritizer_names == [(evm_address, SupportedBlockchain.ETHEREUM, 'global addressbook label')]  # noqa: E501
+    prioritizer_names = prioritizer.get_prioritized_names(list(fetchers.keys()), [OptionalChainAddress(evm_address, SupportedBlockchain.ETHEREUM)])  # noqa: E501
+    assert prioritizer_names == [AddressbookEntry(
+        name='global addressbook label',
+        address=evm_address,
+        blockchain=SupportedBlockchain.ETHEREUM,
+    )]
 
 
 def get_fetchers_with_names(
@@ -59,7 +72,7 @@ def get_fetchers_with_names(
     fetchers: dict[AddressNameSource, FetcherFunc] = {}
     for source_id, returned_name in fetchers_to_name.items():
         def make_fetcher(label: Optional[str]) -> FetcherFunc:
-            return lambda db, addr, blockchain: label
+            return lambda db, chain_address: label
 
         fetchers[source_id] = make_fetcher(returned_name)
 

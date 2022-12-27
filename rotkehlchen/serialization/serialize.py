@@ -60,6 +60,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.inquirer import CurrentPriceOracle
 from rotkehlchen.types import (
+    AddressbookEntry,
     AssetMovementCategory,
     ChainID,
     CostBasisMethod,
@@ -112,6 +113,7 @@ def _process_entry(entry: Any) -> Union[str, list[Any], dict[str, Any], Any]:
             'usd_value': str(entry.usd_value),
         }
     if isinstance(entry, (
+            AddressbookEntry,
             AssetBalance,
             DefiProtocol,
             MakerdaoVault,

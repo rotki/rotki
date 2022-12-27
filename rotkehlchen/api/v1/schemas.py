@@ -73,6 +73,7 @@ from rotkehlchen.types import (
     DEFAULT_ADDRESS_NAME_PRIORITY,
     NON_EVM_CHAINS,
     SUPPORTED_SUBSTRATE_CHAINS,
+    AddressbookEntry,
     AddressbookType,
     AssetMovementCategory,
     BTCAddress,
@@ -84,6 +85,7 @@ from rotkehlchen.types import (
     ExternalService,
     ExternalServiceApiCredentials,
     Location,
+    OptionalChainAddress,
     SupportedBlockchain,
     Timestamp,
     TradeType,
@@ -115,6 +117,7 @@ from .fields import (
     HistoricalPriceOracleField,
     LocationField,
     MaybeAssetField,
+    NonEmptyList,
     PositiveAmountField,
     PriceField,
     SerializableEnumField,
@@ -123,7 +126,7 @@ from .fields import (
     TimestampUntilNowField,
     XpubField,
 )
-from .types import EvmPendingTransactionDecodingApiData, EvmTransactionDecodingApiData
+from .types import EvmPendingTransactionDecodingApiData
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -316,20 +319,7 @@ class SingleEVMTransactionDecodingSchema(Schema):
 
 
 class EvmTransactionDecodingSchema(AsyncIgnoreCacheQueryArgumentSchema):
-    data = fields.List(fields.Nested(SingleEVMTransactionDecodingSchema), required=True)
-
-    @validates_schema
-    def validate_schema(  # pylint: disable=no-self-use
-            self,
-            data: list[EvmTransactionDecodingApiData],
-            **_kwargs: Any,
-    ) -> None:
-
-        if len(data) == 0:
-            raise ValidationError(
-                message='The list of data should not be empty',
-                field_name='data',
-            )
+    data = NonEmptyList(fields.Nested(SingleEVMTransactionDecodingSchema), required=True)
 
 
 class SingleEvmPendingTransactionDecodingSchema(Schema):
@@ -2476,7 +2466,10 @@ class AddressWithOptionalBlockchainSchema(Schema):
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> Any:
-        return (data['address'], data['blockchain'])
+        return OptionalChainAddress(
+            address=data['address'],
+            blockchain=data['blockchain'],
+        )
 
 
 class OptionalAddressesWithBlockchainsListSchema(Schema):
@@ -2506,11 +2499,15 @@ class AddressbookEntrySchema(Schema):
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> Any:
-        return (data['address'], data['name'], data['blockchain'])
+        return AddressbookEntry(
+            address=data['address'],
+            name=data['name'],
+            blockchain=data['blockchain'],
+        )
 
 
 class AddressbookUpdateSchema(BaseAddressbookSchema):
-    entries = fields.List(fields.Nested(AddressbookEntrySchema), required=True)
+    entries = NonEmptyList(fields.Nested(AddressbookEntrySchema), required=True)
 
 
 class SnapshotImportingSchema(Schema):

@@ -92,7 +92,7 @@ from rotkehlchen.constants.misc import (
 )
 from rotkehlchen.constants.resolver import ChainID, evm_address_to_identifier
 from rotkehlchen.data_import.manager import DataImportSource
-from rotkehlchen.db.addressbook import ADDRESSBOOK_DATA_OPTIONAL_BLOCKCHAIN, DBAddressbook
+from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.constants import (
     HISTORY_MAPPING_KEY_CHAINID,
     HISTORY_MAPPING_KEY_STATE,
@@ -180,6 +180,7 @@ from rotkehlchen.types import (
     ListOfBlockchainAddresses,
     Location,
     ModuleName,
+    OptionalChainAddress,
     Price,
     SubstrateAddress,
     SupportedBlockchain,
@@ -4703,13 +4704,13 @@ class RestAPI():
     def get_addressbook_entries(
             self,
             book_type: AddressbookType,
-            addresses: Optional[list[tuple[ChecksumEvmAddress, Optional[SupportedBlockchain]]]],
+            chain_addresses: Optional[list[OptionalChainAddress]],
     ) -> Response:
         db_addressbook = DBAddressbook(self.rotkehlchen.data.db)
         with db_addressbook.read_ctx(book_type) as cursor:
             entries = db_addressbook.get_addressbook_entries(
                 cursor=cursor,
-                addresses=addresses,
+                optional_chain_addresses=chain_addresses,
             )
         serialized = [entry.serialize() for entry in entries]
         return api_response(_wrap_in_ok_result(serialized))
@@ -4717,20 +4718,11 @@ class RestAPI():
     def add_addressbook_entries(
             self,
             book_type: AddressbookType,
-            entries: list[ADDRESSBOOK_DATA_OPTIONAL_BLOCKCHAIN],
+            entries: list[AddressbookEntry],
     ) -> Response:
         db_addressbook = DBAddressbook(self.rotkehlchen.data.db)
         try:
-            prepared_entries = []
-            for address, name, blockchain in entries:
-                if blockchain is None:
-                    blockchain = SupportedBlockchain.ETHEREUM
-                prepared_entries.append(AddressbookEntry(
-                    address=address,
-                    name=name,
-                    blockchain=blockchain,
-                ))
-            db_addressbook.add_addressbook_entries(book_type=book_type, entries=prepared_entries)
+            db_addressbook.add_addressbook_entries(book_type=book_type, entries=entries)
             return api_response(result=OK_RESULT)
         except InputError as e:
             return api_response(
@@ -4741,7 +4733,7 @@ class RestAPI():
     def update_addressbook_entries(
             self,
             book_type: AddressbookType,
-            entries: list[ADDRESSBOOK_DATA_OPTIONAL_BLOCKCHAIN],
+            entries: list[AddressbookEntry],
     ) -> Response:
         db_addressbook = DBAddressbook(self.rotkehlchen.data.db)
         try:
@@ -4756,11 +4748,14 @@ class RestAPI():
     def delete_addressbook_entries(
             self,
             book_type: AddressbookType,
-            addresses: list[tuple[ChecksumEvmAddress, Optional[SupportedBlockchain]]],
+            chain_addresses: list[OptionalChainAddress],
     ) -> Response:
         db_addressbook = DBAddressbook(self.rotkehlchen.data.db)
         try:
-            db_addressbook.delete_addressbook_entries(book_type=book_type, addresses=addresses)
+            db_addressbook.delete_addressbook_entries(
+                book_type=book_type,
+                chain_addresses=chain_addresses,
+            )
             return api_response(result=OK_RESULT)
         except InputError as e:
             return api_response(
@@ -4770,16 +4765,13 @@ class RestAPI():
 
     def search_for_names_everywhere(
             self,
-            addresses: list[tuple[ChecksumEvmAddress, Optional[SupportedBlockchain]]],
+            chain_addresses: list[OptionalChainAddress],
     ) -> Response:
         mappings = search_for_addresses_names(
             database=self.rotkehlchen.data.db,
-            addresses=addresses,
+            chain_addresses=chain_addresses,
         )
-        return api_response(_wrap_in_ok_result(process_result_list(
-            # Need to convert tuples to lists before serializing into json
-            [[*named_address_tuple] for named_address_tuple in mappings],
-        )))
+        return api_response(_wrap_in_ok_result(process_result_list(mappings)))
 
     def _detect_evm_tokens(
             self,

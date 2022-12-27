@@ -329,6 +329,23 @@ def _populate_multiasset_mappings(cursor: 'DBCursor', root_dir: Path) -> None:
     log.debug('Exit _populate_multiasset_mappings')
 
 
+def _upgrade_address_book_table(cursor: 'DBCursor') -> None:
+    """Upgrades the address book table by making the blockchain column optional"""
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS address_book_new (
+            address TEXT NOT NULL,
+            blockchain TEXT,
+            name TEXT NOT NULL,
+            PRIMARY KEY(address, blockchain)
+        );
+        """,
+    )
+    cursor.execute('INSERT INTO address_book_new SELECT address, blockchain, name FROM address_book')  # noqa: E501
+    cursor.execute('DROP TABLE address_book')
+    cursor.execute('ALTER TABLE address_book_new RENAME TO address_book;')
+
+
 def migrate_to_v4(connection: 'DBConnection') -> None:
     """Upgrades globalDB to v4 by creating and populating the contract data + abi tables.
 
@@ -348,4 +365,6 @@ def migrate_to_v4(connection: 'DBConnection') -> None:
         _add_optimism_contracts(cursor, eth_scan_abi_id, multicall_abi_id)
         _populate_asset_collections(cursor, root_dir)
         _populate_multiasset_mappings(cursor, root_dir)
+        _upgrade_address_book_table(cursor)
+
     log.debug('Finished globaldb v3->v4 upgrade')

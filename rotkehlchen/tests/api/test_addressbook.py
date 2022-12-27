@@ -1,4 +1,5 @@
 from http import HTTPStatus
+from typing import TYPE_CHECKING
 
 import pytest
 import requests
@@ -7,6 +8,7 @@ from eth_utils import to_checksum_address
 from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.ens import DBEns
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -14,11 +16,23 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response_with_result,
 )
 from rotkehlchen.tests.utils.factories import make_addressbook_entries
-from rotkehlchen.types import AddressbookEntry, AddressbookType, SupportedBlockchain, Timestamp
+from rotkehlchen.types import (
+    AddressbookEntry,
+    AddressbookType,
+    OptionalChainAddress,
+    SupportedBlockchain,
+    Timestamp,
+)
+
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
 
 
 @pytest.mark.parametrize('book_type', [AddressbookType.GLOBAL, AddressbookType.PRIVATE])
-def test_get_addressbook(rotkehlchen_api_server, book_type: AddressbookType) -> None:
+def test_get_addressbook(
+        rotkehlchen_api_server: 'APIServer',
+        book_type: AddressbookType,
+) -> None:
     generated_entries = make_addressbook_entries()
     db_addressbook = DBAddressbook(rotkehlchen_api_server.rest_api.rotkehlchen.data.db)
     db_addressbook.add_addressbook_entries(book_type=book_type, entries=generated_entries)
@@ -71,15 +85,18 @@ def test_get_addressbook(rotkehlchen_api_server, book_type: AddressbookType) -> 
 
 
 @pytest.mark.parametrize('book_type', [AddressbookType.GLOBAL, AddressbookType.PRIVATE])
-def test_insert_into_addressbook(rotkehlchen_api_server, book_type: AddressbookType) -> None:
+def test_insert_into_addressbook(
+        rotkehlchen_api_server: 'APIServer',
+        book_type: AddressbookType,
+) -> None:
     generated_entries = make_addressbook_entries()
     db_addressbook = DBAddressbook(rotkehlchen_api_server.rest_api.rotkehlchen.data.db)
     db_addressbook.add_addressbook_entries(book_type=book_type, entries=generated_entries)
     new_entries = [
         AddressbookEntry(
-            address=to_checksum_address('0x9531c059098e3d194ff87febb587ab07b30b1306'),
+            address=generated_entries[0].address,
             name='name 1',
-            blockchain=SupportedBlockchain.ETHEREUM,
+            blockchain=SupportedBlockchain.OPTIMISM,
         ),
         AddressbookEntry(
             address=to_checksum_address('0x8A4973ABBCEd48596D6D79ac6B53Ceda65e342CD'),
@@ -98,12 +115,13 @@ def test_insert_into_addressbook(rotkehlchen_api_server, book_type: AddressbookT
         },
     )
     assert_proper_response(response=response)
+
     with db_addressbook.read_ctx(book_type) as cursor:
         assert db_addressbook.get_addressbook_entries(cursor) == generated_entries + new_entries  # noqa: E501
 
         existing_entries = [
             AddressbookEntry(
-                address=to_checksum_address('0x9531c059098e3d194ff87febb587ab07b30b1306'),
+                address=generated_entries[0].address,
                 name='name 3',
                 blockchain=SupportedBlockchain.ETHEREUM,
             ), AddressbookEntry(
@@ -125,14 +143,70 @@ def test_insert_into_addressbook(rotkehlchen_api_server, book_type: AddressbookT
         )
         assert_error_response(
             response=response,
-            contained_in_msg='entry with address "0x9531C059098e3d194fF87FebB587aB07B30B1306"',
+            contained_in_msg='address "0x9D904063e7e120302a13C6820561940538a2Ad57" and blockchain ETH already exists in the address book.',  # noqa: E501
             status_code=HTTPStatus.CONFLICT,
         )
         assert db_addressbook.get_addressbook_entries(cursor) == entries_in_db_before_bad_put
 
+    # test to insert a name for an address that is recorded with two names in two different
+    # evm chains a new name but this time valid for all addresses
+    multichain_addr = to_checksum_address('0x368B9ad9B6AAaeFCE33b8c21781cfF375e09be67')
+    new_entry = AddressbookEntry(
+        address=multichain_addr,
+        name='multichain',
+        blockchain=None,
+    )
+
+    # first check that we have two names if chain is not set
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'addressbookresource',
+            book_type=book_type,
+        ),
+        json={
+            'addresses': [
+                {'address': multichain_addr},
+            ],
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result) == 2
+
+    # insert the new entry replacing all the previous values stored
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'addressbookresource',
+            book_type=book_type,
+        ),
+        json={
+            'entries': [new_entry.serialize()],
+        },
+    )
+
+    # quering by address should return the only one with blockchain None
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'addressbookresource',
+            book_type=book_type,
+        ),
+        json={
+            'addresses': [
+                {'address': multichain_addr},
+            ],
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    assert result == [new_entry.serialize()]
+
 
 @pytest.mark.parametrize('book_type', [AddressbookType.GLOBAL, AddressbookType.PRIVATE])
-def test_update_addressbook(rotkehlchen_api_server, book_type: AddressbookType) -> None:
+def test_update_addressbook(
+        rotkehlchen_api_server: 'APIServer',
+        book_type: AddressbookType,
+) -> None:
     generated_entries = make_addressbook_entries()
     db_addressbook = DBAddressbook(rotkehlchen_api_server.rest_api.rotkehlchen.data.db)
     db_addressbook.add_addressbook_entries(book_type=book_type, entries=generated_entries)
@@ -191,13 +265,16 @@ def test_update_addressbook(rotkehlchen_api_server, book_type: AddressbookType) 
         )
         assert_error_response(
             response=response,
-            contained_in_msg='entry with address "0x79B598976bD83a47CD8B428C824C8474311267b8"',
+            contained_in_msg='address "0x79B598976bD83a47CD8B428C824C8474311267b8" and blockchain ETH doesn\'t exist in the address book',  # noqa: E501
             status_code=HTTPStatus.CONFLICT)
         assert db_addressbook.get_addressbook_entries(cursor) == entries_in_db_before_bad_patch
 
 
 @pytest.mark.parametrize('book_type', [AddressbookType.GLOBAL, AddressbookType.PRIVATE])
-def test_delete_addressbook(rotkehlchen_api_server, book_type: AddressbookType):
+def test_delete_addressbook(
+        rotkehlchen_api_server: 'APIServer',
+        book_type: AddressbookType,
+) -> None:
     generated_entries = make_addressbook_entries()
     db_addressbook = DBAddressbook(rotkehlchen_api_server.rest_api.rotkehlchen.data.db)
     db_addressbook.add_addressbook_entries(book_type=book_type, entries=generated_entries)
@@ -219,7 +296,6 @@ def test_delete_addressbook(rotkehlchen_api_server, book_type: AddressbookType):
 
     with db_addressbook.read_ctx(book_type) as cursor:
         assert db_addressbook.get_addressbook_entries(cursor) == generated_entries[1:3]
-
         nonexistent_addresses = [
             to_checksum_address('0x368B9ad9B6AAaeFCE33b8c21781cfF375e09be67'),
             to_checksum_address('0x9d904063e7e120302a13c6820561940538a2ad57'),
@@ -238,7 +314,7 @@ def test_delete_addressbook(rotkehlchen_api_server, book_type: AddressbookType):
         )
         assert_error_response(
             response=response,
-            contained_in_msg='Addressbook entry with address "0x9D904063e7e120302a13C6820561940538a2Ad57" doesnt exist ',  # noqa: E501
+            contained_in_msg='are not present in the database',
             status_code=HTTPStatus.CONFLICT,
         )
         assert db_addressbook.get_addressbook_entries(cursor) == data_before_bad_request
@@ -256,7 +332,7 @@ def test_delete_addressbook(rotkehlchen_api_server, book_type: AddressbookType):
     )
     assert_error_response(
         response=response,
-        contained_in_msg='Addressbook entry with address "0x368B9ad9B6AAaeFCE33b8c21781cfF375e09be67" and blockchain BTC doesnt exist',  # noqa: E501
+        contained_in_msg='One or more of the addresses with blockchains provided do not exist in the database',  # noqa: E501
         status_code=HTTPStatus.CONFLICT,
     )
 
@@ -276,15 +352,16 @@ def test_delete_addressbook(rotkehlchen_api_server, book_type: AddressbookType):
         assert len(db_addressbook.get_addressbook_entries(cursor)) == 1
 
 
-def test_names_compilation(rotkehlchen_api_server):
-    def names_request(addresses: list[str]):
+def test_names_compilation(rotkehlchen_api_server: 'APIServer'):
+    def names_request(chain_addresses: list[OptionalChainAddress]):
         return requests.post(
             api_url_for(
                 rotkehlchen_api_server,
                 'allnamesresource',
             ),
             json={
-                'addresses': [{'address': address} for address in addresses],
+                'addresses': [
+                    {'address': chain_address.address, 'blockchain': chain_address.blockchain.value if chain_address.blockchain is not None else None} for chain_address in chain_addresses],  # noqa: E501
             },
         )
     address_rotki = to_checksum_address('0x9531c059098e3d194ff87febb587ab07b30b1306')
@@ -308,22 +385,22 @@ def test_names_compilation(rotkehlchen_api_server):
             now=Timestamp(1),
         )
     publicly_known_addresses = [
-        address_rotki,
-        address_1world,
-        address_kraken10,
-        address_firstblood,
+        OptionalChainAddress(address_rotki, SupportedBlockchain.ETHEREUM),
+        OptionalChainAddress(address_1world, SupportedBlockchain.ETHEREUM),
+        OptionalChainAddress(address_kraken10, SupportedBlockchain.ETHEREUM),
+        OptionalChainAddress(address_firstblood, SupportedBlockchain.ETHEREUM),
         # Below is an address that we don't know anything about
-        to_checksum_address('0x42F47A289B1E17BCbbBc1630f112c036ed901f5d'),
+        OptionalChainAddress(to_checksum_address('0x42F47A289B1E17BCbbBc1630f112c036ed901f5d'), SupportedBlockchain.ETHEREUM),  # noqa: E501
     ]
     publicly_known_expected = {
-        (address_kraken10, 'eth', 'Kraken 10'),
-        (address_1world, 'eth', '1World'),
-        (address_rotki, 'eth', 'rotki.eth'),
-        (address_firstblood, 'eth', 'FirstBlood'),
+        AddressbookEntry(address=address_rotki, blockchain=SupportedBlockchain.ETHEREUM, name='rotki.eth'),  # noqa: E501
+        AddressbookEntry(address=address_1world, blockchain=SupportedBlockchain.ETHEREUM, name='1World'),  # noqa: E501
+        AddressbookEntry(address=address_kraken10, blockchain=SupportedBlockchain.ETHEREUM, name='Kraken 10'),  # noqa: E501
+        AddressbookEntry(address=address_firstblood, blockchain=SupportedBlockchain.ETHEREUM, name='FirstBlood'),  # noqa: E501
     }
     response = names_request(publicly_known_addresses)
     result = assert_proper_response_with_result(response)
-    assert {(*x,) for x in result} == publicly_known_expected
+    assert {AddressbookEntry.deserialize(x) for x in result} == publicly_known_expected
 
     db_addressbook.add_addressbook_entries(
         book_type=AddressbookType.GLOBAL,
@@ -340,16 +417,16 @@ def test_names_compilation(rotkehlchen_api_server):
         ],
     )
     global_addressbook_addresses = [
-        address_cody,
-        address_rotki,  # rotki.eth
+        OptionalChainAddress(address_cody, SupportedBlockchain.ETHEREUM),
+        OptionalChainAddress(address_rotki, SupportedBlockchain.ETHEREUM),
     ]
     global_addressbook_expected = {
-        (address_cody, 'eth', 'Cody'),
-        (address_rotki, 'eth', 'Rotki global db'),
+        AddressbookEntry(address=address_rotki, blockchain=SupportedBlockchain.ETHEREUM, name='Rotki global db'),  # noqa: E501
+        AddressbookEntry(address=address_cody, blockchain=SupportedBlockchain.ETHEREUM, name='Cody'),  # noqa: E501
     }
     response = names_request(global_addressbook_addresses)
     result = assert_proper_response_with_result(response)
-    assert {(*x,) for x in result} == global_addressbook_expected
+    assert {AddressbookEntry.deserialize(x) for x in result} == global_addressbook_expected
 
     with db_handler.user_write() as cursor:
         db_handler.add_blockchain_accounts(
@@ -361,20 +438,20 @@ def test_names_compilation(rotkehlchen_api_server):
             ],
         )
     labels_addresses = [
-        address_tylor,
-        address_nonlabel,  # address with None label
-        address_rose,  # private addressbook
-        address_cody,  # global addressbook
-        address_rotki,  # rotki.eth
+        OptionalChainAddress(address_tylor, SupportedBlockchain.ETHEREUM),
+        OptionalChainAddress(address_nonlabel, SupportedBlockchain.ETHEREUM),  # address with None label  # noqa: E501
+        OptionalChainAddress(address_rose, SupportedBlockchain.ETHEREUM),  # private addressbook
+        OptionalChainAddress(address_cody, SupportedBlockchain.ETHEREUM),  # global addressbook
+        OptionalChainAddress(address_rotki, SupportedBlockchain.ETHEREUM),  # rotki.eth
     ]
     labels_expected = {
-        (address_tylor, 'eth', 'Tylor'),
-        (address_cody, 'eth', 'Cody'),
-        (address_rotki, 'eth', 'Rotki label'),
+        AddressbookEntry(address=address_rotki, blockchain=SupportedBlockchain.ETHEREUM, name='Rotki label'),  # noqa: E501
+        AddressbookEntry(address=address_tylor, blockchain=SupportedBlockchain.ETHEREUM, name='Tylor'),  # noqa: E501
+        AddressbookEntry(address=address_cody, blockchain=SupportedBlockchain.ETHEREUM, name='Cody'),  # noqa: E501
     }
     response = names_request(labels_addresses)
     result = assert_proper_response_with_result(response)
-    assert {(*x,) for x in result} == labels_expected
+    assert {AddressbookEntry.deserialize(x) for x in result} == labels_expected
 
     db_addressbook.add_addressbook_entries(
         book_type=AddressbookType.PRIVATE,
@@ -391,17 +468,103 @@ def test_names_compilation(rotkehlchen_api_server):
         ],
     )
     private_addressbook_addresses = [
-        address_tylor,
-        address_rose,
-        address_cody,  # global addressbook
-        address_rotki,  # rotki.eth
+        OptionalChainAddress(address_tylor, SupportedBlockchain.ETHEREUM),
+        OptionalChainAddress(address_rose, SupportedBlockchain.ETHEREUM),
+        OptionalChainAddress(address_cody, SupportedBlockchain.ETHEREUM),  # global addressbook
+        OptionalChainAddress(address_rotki, SupportedBlockchain.ETHEREUM),  # rotki.eth
     ]
     private_addressbook_expected = {
-        (address_tylor, 'eth', 'Tylor'),
-        (address_rose, 'eth', 'Rose'),
-        (address_cody, 'eth', 'Cody'),
-        (address_rotki, 'eth', 'Rotki private db'),
+        AddressbookEntry(address=address_rotki, blockchain=SupportedBlockchain.ETHEREUM, name='Rotki private db'),  # noqa: E501
+        AddressbookEntry(address=address_tylor, blockchain=SupportedBlockchain.ETHEREUM, name='Tylor'),  # noqa: E501
+        AddressbookEntry(address=address_cody, blockchain=SupportedBlockchain.ETHEREUM, name='Cody'),  # noqa: E501
+        AddressbookEntry(address=address_rose, blockchain=SupportedBlockchain.ETHEREUM, name='Rose'),  # noqa: E501
     }
     response = names_request(private_addressbook_addresses)
     result = assert_proper_response_with_result(response)
-    assert {(*x,) for x in result} == private_addressbook_expected
+    assert {AddressbookEntry.deserialize(x) for x in result} == private_addressbook_expected
+
+
+@pytest.mark.parametrize('book_type', [AddressbookType.GLOBAL, AddressbookType.PRIVATE])
+def test_insert_into_addressbook_no_blockchain(
+        rotkehlchen_api_server: 'APIServer',
+        book_type: AddressbookType,
+) -> None:
+    """
+    Check that adding a name with no blockchain works as expected and it replaces any other
+    entry if it exists.
+    """
+    test_address = to_checksum_address('0x9531c059098e3d194ff87febb587ab07b30b1306')
+    database = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    # add a name for blockchain ethereum
+    custom_name = AddressbookEntry(
+        address=test_address,
+        name='my address',
+        blockchain=SupportedBlockchain.ETHEREUM,
+    )
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'addressbookresource',
+            book_type=book_type,
+        ),
+        json={
+            'entries': [custom_name.serialize()],
+        },
+    )
+    assert_proper_response_with_result(response)
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'addressbookresource',
+            book_type=book_type,
+        ),
+        json={
+            'addresses': [
+                {'address': test_address},
+            ],
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    assert result == [custom_name.serialize()]
+
+    # now add the same name for all blockchains and see the value replaced
+    custom_name = AddressbookEntry(
+        address=test_address,
+        name='my address',
+        blockchain=None,
+    )
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'addressbookresource',
+            book_type=book_type,
+        ),
+        json={
+            'entries': [custom_name.serialize()],
+        },
+    )
+    assert_proper_response_with_result(response)
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'addressbookresource',
+            book_type=book_type,
+        ),
+        json={
+            'addresses': [
+                {'address': test_address},
+            ],
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    assert result == [custom_name.serialize()]
+    if book_type == AddressbookType.PRIVATE:
+        with database.conn.read_ctx() as cursor:
+            cursor.execute('SELECT * FROM address_book')
+            result = cursor.fetchall()
+    else:
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            cursor.execute('SELECT * FROM address_book')
+            result = cursor.fetchall()
+
+    assert result == [(test_address, None, 'my address')]

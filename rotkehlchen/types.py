@@ -624,14 +624,18 @@ class CostBasisMethod(SerializableEnumMixin):
 class AddressbookEntry(NamedTuple):
     address: ChecksumEvmAddress
     name: str
-    blockchain: SupportedBlockchain
+    blockchain: Optional[SupportedBlockchain]
 
-    def serialize(self) -> dict[str, str]:
+    def serialize(self) -> dict[str, Optional[str]]:
         return {
             'address': self.address,
             'name': self.name,
-            'blockchain': self.blockchain.serialize(),
+            'blockchain': self.blockchain.serialize() if self.blockchain is not None else None,
         }
+
+    def serialize_for_db(self) -> tuple[str, str, Optional[str]]:
+        blockchain = self.blockchain.value if self.blockchain is not None else None
+        return (self.address, self.name, blockchain)
 
     @classmethod
     def deserialize(cls: type['AddressbookEntry'], data: dict[str, Any]) -> 'AddressbookEntry':
@@ -641,8 +645,20 @@ class AddressbookEntry(NamedTuple):
         return cls(
             address=data['address'],
             name=data['name'],
-            blockchain=SupportedBlockchain.deserialize(data['blockchain']),
+            blockchain=SupportedBlockchain.deserialize(data['blockchain']) if data['blockchain'] is not None else None,  # noqa: E501
         )
+
+    def __str__(self) -> str:
+        return f'Addressbook entry with name "{self.name}", address "{self.address}" and blockchain {self.blockchain.value if self.blockchain is not None else None}'  # noqa: E501
+
+
+class OptionalChainAddress(NamedTuple):
+    address: ChecksumAddress
+    blockchain: Optional[SupportedBlockchain]
+
+
+class ChainAddress(OptionalChainAddress):
+    blockchain: SupportedBlockchain
 
 
 class AddressbookType(SerializableEnumMixin):
