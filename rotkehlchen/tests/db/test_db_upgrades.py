@@ -1092,6 +1092,11 @@ def test_upgrade_db_35_to_36(user_data_dir):  # pylint: disable=unused-argument
         ('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', 'hardware'),
         ('1PUrJgftNnHvvqVyEsm9DiCDQuZHCn47fQ', 'hot'),
     ]
+    cursor.execute('SELECT * FROM address_book')
+    assert cursor.fetchall() == [
+        ('0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 'ETH', 'yabir secret account'),
+        ('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', 'ETH', 'lefteris GTC'),
+    ]
 
     db_v35.logout()
     # Execute upgrade
@@ -1252,6 +1257,17 @@ def test_upgrade_db_35_to_36(user_data_dir):  # pylint: disable=unused-argument
         ('BCH1PUrJgftNnHvvqVyEsm9DiCDQuZHCn47fQ', 'hot'),
         ('BTC1PUrJgftNnHvvqVyEsm9DiCDQuZHCn47fQ', 'hot'),
         ('ETH0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', 'hardware'),
+    ]
+
+    # test that the blockchain column is nullable
+    cursor.execute('INSERT INTO address_book(address, blockchain, name) VALUES ("0xc37b40ABdB939635068d3c5f13E7faF686F03B65", NULL, "yabir everywhere")')  # noqa: E501
+
+    # test that address book entries were kept
+    cursor.execute('SELECT * FROM address_book')
+    assert cursor.fetchall() == [
+        ('0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 'ETH', 'yabir secret account'),
+        ('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', 'ETH', 'lefteris GTC'),
+        ('0xc37b40ABdB939635068d3c5f13E7faF686F03B65', None, 'yabir everywhere'),
     ]
 
 

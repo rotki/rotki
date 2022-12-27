@@ -838,3 +838,19 @@ class HistoricalPriceOracleField(fields.Field):
             raise ValidationError(f'Invalid historical price oracle: {value}') from e
 
         return historical_price_oracle
+
+
+class NonEmptyList(fields.List):
+
+    def _deserialize(
+            self,
+            value: Any,
+            attr: Optional[str],
+            data: Optional[Mapping[str, Any]],
+            **kwargs: Any,
+    ) -> list[Any]:
+        result = super()._deserialize(value=value, attr=attr, data=data, **kwargs)
+        if len(result) == 0:
+            raise ValidationError('List cant be empty')
+
+        return result

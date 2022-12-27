@@ -258,6 +258,17 @@ def test_upgrade_v3_v4(globaldb):
         assert cursor.fetchone()[0] == _count_sql_file_sentences('populate_multiasset_mappings.sql')  # noqa: E501
         assert GlobalDBHandler().get_schema_version() == 4
 
+        # test that the blockchain column is nullable
+        cursor.execute('INSERT INTO address_book(address, blockchain, name) VALUES ("0xc37b40ABdB939635068d3c5f13E7faF686F03B65", NULL, "yabir everywhere")')  # noqa: E501
+
+        # test that address book entries were kept
+        cursor.execute('SELECT * FROM address_book')
+        assert cursor.fetchall() == [
+            ('0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 'ETH', 'yabir secret account'),
+            ('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', 'ETH', 'lefteris GTC'),
+            ('0xc37b40ABdB939635068d3c5f13E7faF686F03B65', None, 'yabir everywhere'),
+        ]
+
 
 @pytest.mark.parametrize('globaldb_version', [2])
 @pytest.mark.parametrize('target_globaldb_version', [2])

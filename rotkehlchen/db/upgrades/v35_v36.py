@@ -519,6 +519,23 @@ def _upgrade_tags(write_cursor: 'DBCursor') -> None:
     log.debug('Exit _upgrade_tags')
 
 
+def _upgrade_address_book_table(write_cursor: 'DBCursor') -> None:
+    """Upgrades the address book table by making the blockchain column optional"""
+    write_cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS address_book_new (
+            address TEXT NOT NULL,
+            blockchain TEXT,
+            name TEXT NOT NULL,
+            PRIMARY KEY(address, blockchain)
+        );
+        """,
+    )
+    write_cursor.execute('INSERT INTO address_book_new SELECT address, blockchain, name FROM address_book')  # noqa: E501
+    write_cursor.execute('DROP TABLE address_book')
+    write_cursor.execute('ALTER TABLE address_book_new RENAME TO address_book;')
+
+
 def upgrade_v35_to_v36(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v35 to v36
 
@@ -532,7 +549,7 @@ def upgrade_v35_to_v36(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - rename web3_nodes to rpc_nodes
     """
     log.debug('Entered userdb v35->v36 upgrade')
-    progress_handler.set_total_steps(8)
+    progress_handler.set_total_steps(9)
     with db.user_write() as write_cursor:
         _remove_adex(write_cursor)
         progress_handler.new_step()
@@ -549,6 +566,8 @@ def upgrade_v35_to_v36(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         _upgrade_rpc_nodes(write_cursor)
         progress_handler.new_step()
         _upgrade_tags(write_cursor)
+        progress_handler.new_step()
+        _upgrade_address_book_table(write_cursor)
         progress_handler.new_step()
 
     log.debug('Finished userdb v35->v36 upgrade')

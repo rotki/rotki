@@ -11548,7 +11548,7 @@ Get mappings from addressbook
            ]
         }
 
-    :reqjson object addresses: List of addresses that the backend should find names for
+    :reqjson object addresses: List of addresses that the backend should find names for. When the blockchain field is missing it will delete the other entries for the same address and the name will be used for all blockchains.
 
     **Example Response**
 
@@ -11641,7 +11641,7 @@ Update mappings in the addressbook
 
     :reqjson object entries: A list of entries to be updated in the addressbook.
     :reqjson str address: The address that will be tracked in the addressbook.
-    :reqjson str[optional] blockchain: Blockchain in whick to use the provided name.
+    :reqjson str[optional] blockchain: The chain in which to use the provided name.
     :reqjson str name: Name to be used.
 
     **Example Response**
@@ -11688,7 +11688,7 @@ Delete mappings in the addressbook
 
     :reqjson object entries: A list of addresses to be deleted from the addressbook
     :reqjson str address: The address that will be deleted in the addressbook.
-    :reqjson str[optional] blockchain: Blockchain to use as filter when deleting the names. If is not provided the names for all the chains will be deleted.
+    :reqjson str[optional] blockchain: The chain for which to delete the name mapping. If is not provided the names for all the chains will be deleted.
 
     **Example Response**
 
@@ -11734,7 +11734,7 @@ Search for all known names of an address
 
     :reqjson object addresses: List of addresses that the backend should find names for
     :reqjson str address: The address that will be queried in the addressbook.
-    :reqjson str[optional] blockchain: Blockchain to use as filter when querying the names. If is not provided the names for all the chains are returned.
+    :reqjson str[optional] blockchain: The chain for which to find names. If is not provided the names are searched for all chains.
 
     **Example Response**
 
