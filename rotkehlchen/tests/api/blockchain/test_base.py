@@ -920,14 +920,14 @@ def test_add_blockchain_accounts_with_tags_and_label_and_querying_them(rotkehlch
     # Now add 3 accounts. Some of them use these tags, some dont
     new_eth_accounts = [make_evm_address(), make_evm_address(), make_evm_address()]
     accounts_data = [{
-        "address": new_eth_accounts[0],
-        "label": 'my metamask',
+        'address': new_eth_accounts[0],
+        'label': 'my metamask',
         'tags': ['public', 'desktop'],
     }, {
-        "address": new_eth_accounts[1],
-        "label": 'geth account',
+        'address': new_eth_accounts[1],
+        'label': 'geth account',
     }, {
-        "address": new_eth_accounts[2],
+        'address': new_eth_accounts[2],
         'tags': ['public', 'hardware'],
     }]
     # Make sure that even adding accounts with label and tags, balance query works fine
@@ -944,11 +944,10 @@ def test_add_blockchain_accounts_with_tags_and_label_and_querying_them(rotkehlch
     # Now query the ethereum account data to see that tags and labels are added
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
-        "blockchainsaccountsresource",
+        'blockchainsaccountsresource',
         blockchain='ETH',
     ))
-    assert_proper_response(response)
-    response_data = response.json()['result']
+    response_data = assert_proper_response_with_result(response)
     assert len(response_data) == len(accounts_data)
     for entry in response_data:
         # find the corresponding account in accounts data
@@ -977,7 +976,7 @@ def test_edit_blockchain_accounts(
         ethereum_accounts,
 ):
     """Test that the endpoint editing blockchain accounts works properly"""
-    # Add two tags
+    # Add 3 tags
     tag1 = {
         'name': 'public',
         'description': 'My public accounts',
@@ -1004,6 +1003,19 @@ def test_edit_blockchain_accounts(
         ), json=tag2,
     )
     assert_proper_response(response)
+    tag3 = {
+        'name': 'hardware',
+        'description': 'hardware wallets',
+        'background_color': '000000',
+        'foreground_color': 'ffffff',
+    }
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'tagsresource',
+        ), json=tag3,
+    )
+    assert_proper_response(response)
 
     # Edit 2 out of the 3 accounts so that they have tags
     request_data = {'accounts': [{
@@ -1021,23 +1033,46 @@ def test_edit_blockchain_accounts(
         blockchain='ETH',
     ), json=request_data)
 
-    assert_proper_response(response)
-    json_data = response.json()
-    assert json_data['message'] == ''
+    result = assert_proper_response_with_result(response)
     expected_result = request_data['accounts'] + [
         {'address': ethereum_accounts[0]},
     ]
-    compare_account_data(json_data['result'], expected_result)
+    compare_account_data(result, expected_result)
 
     # Also make sure that when querying the endpoint we get the edited account data
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
-        "blockchainsaccountsresource",
+        'blockchainsaccountsresource',
         blockchain='ETH',
     ))
-    assert_proper_response(response)
-    json_data = response.json()
-    compare_account_data(json_data['result'], expected_result)
+    result = assert_proper_response_with_result(response)
+    compare_account_data(result, expected_result)
+
+    # Edit 1 account so that both a label is edited but also a tag is removed and a tag is edited
+    request_data = {'accounts': [{
+        'address': ethereum_accounts[2],
+        'label': 'Edited label',
+        'tags': ['hardware', 'desktop'],
+    }]}
+    response = requests.patch(api_url_for(
+        rotkehlchen_api_server,
+        'blockchainsaccountsresource',
+        blockchain='ETH',
+    ), json=request_data)
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        'blockchainsaccountsresource',
+        blockchain='ETH',
+    ))
+    result = assert_proper_response_with_result(response)
+    for result_entry in result:  # order of return is not guaranteed
+        if result_entry['address'] == ethereum_accounts[2]:
+            assert result_entry['address'] == request_data['accounts'][0]['address']
+            assert result_entry['label'] == request_data['accounts'][0]['label']
+            assert set(result_entry['tags']) == set(request_data['accounts'][0]['tags'])
+            break
+    else:  # did not find account in the for
+        raise AssertionError('Edited account not returned in the result')
 
     # Edit a BTC account
     request_data = {'accounts': [{
@@ -1047,7 +1082,7 @@ def test_edit_blockchain_accounts(
     }]}
     response = requests.patch(api_url_for(
         rotkehlchen_api_server,
-        "blockchainsaccountsresource",
+        'blockchainsaccountsresource',
         blockchain='BTC',
     ), json=request_data)
     result = assert_proper_response_with_result(response)

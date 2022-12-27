@@ -86,6 +86,7 @@ from rotkehlchen.db.utils import (
     insert_tag_mappings,
     is_valid_db_blockchain_account,
     need_writable_cursor,
+    replace_tag_mappings,
     str_to_bool,
 )
 from rotkehlchen.errors.api import AuthenticationError, IncorrectApiKeyFormat
@@ -1182,7 +1183,7 @@ class DBHandler:
             log.error(msg)
             raise InputError(msg)
 
-        insert_tag_mappings(
+        replace_tag_mappings(
             write_cursor=write_cursor,
             data=account_data,
             object_reference_keys=['chain', 'address'],
@@ -1473,7 +1474,7 @@ class DBHandler:
         if write_cursor.rowcount != len(data):
             msg = 'Tried to edit manually tracked balance entry that did not exist in the DB'
             raise InputError(msg)
-        insert_tag_mappings(write_cursor=write_cursor, data=data, object_reference_keys=['id'])
+        replace_tag_mappings(write_cursor=write_cursor, data=data, object_reference_keys=['id'])
 
     def remove_manually_tracked_balances(self, write_cursor: 'DBCursor', ids: list[int]) -> None:
         """
@@ -1485,8 +1486,7 @@ class DBHandler:
         """
         tuples = [(x,) for x in ids]
         write_cursor.executemany(
-            'DELETE FROM tag_mappings WHERE '
-            'object_reference = ?;', tuples,
+            'DELETE FROM tag_mappings WHERE object_reference = ?;', tuples,
         )
         write_cursor.executemany(
             'DELETE FROM manually_tracked_balances WHERE id = ?;', tuples,
@@ -2868,7 +2868,7 @@ class DBHandler:
             key = xpub_data.xpub.xpub + xpub_data.serialize_derivation_path_for_db()  # type: ignore # noqa: E501
             # Delete the tag mappings for the xpub itself (type ignore is for xpub is not None)
             write_cursor.execute('DELETE FROM tag_mappings WHERE object_reference=?', (key,))
-            insert_tag_mappings(
+            replace_tag_mappings(
                 # if we got tags add them to the xpub
                 write_cursor=write_cursor,
                 data=[xpub_data],

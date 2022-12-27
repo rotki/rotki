@@ -9,7 +9,7 @@ from rotkehlchen.chain.bitcoin import have_bitcoin_transactions
 from rotkehlchen.chain.bitcoin.bch import have_bch_transactions
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.constants.assets import A_BCH, A_BTC
-from rotkehlchen.db.utils import insert_tag_mappings
+from rotkehlchen.db.utils import replace_tag_mappings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
@@ -213,13 +213,13 @@ class XpubManager():
 
         with self.db.user_write() as cursor:
             if new_xpub and xpub_data.tags:
-                insert_tag_mappings(  # if we got tags add them to the xpub
+                replace_tag_mappings(  # if we got tags add them to the xpub
                     write_cursor=cursor,
                     data=[xpub_data],
                     object_reference_keys=['xpub.xpub', 'derivation_path'],
                 )
             if new_xpub and len(existing_address_data) != 0:
-                insert_tag_mappings(  # if we got tags add them to the existing addresses too
+                replace_tag_mappings(  # if we got tags add them to the existing addresses too
                     write_cursor=cursor,
                     data=existing_address_data,
                     object_reference_keys=['chain', 'address'],
