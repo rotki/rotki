@@ -39,5 +39,5 @@ bip-utils==2.7.0
 typing-extensions==4.4.0 # used for typing.ParamSpec and typing.Concatenate (in stdlib since python 3.10)
 
 #constraints
-setuptools==60.7.1  # constraint required by pyinstaller==5.1
+setuptools==65.5.1  # constraint required by pyinstaller==5.1
 pycparser<=2.17 # ugly -- to avoid https://github.com/eliben/pycparser/pull/198
