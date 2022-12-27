@@ -594,3 +594,20 @@ def test_xpub_addition_errors(rotkehlchen_api_server):
         contained_in_msg='"xpub": ["Failed to initialize an xpub due to Given XPUB foo is too small"',  # noqa: E501
         status_code=HTTPStatus.BAD_REQUEST,
     )
+
+    # tags empty list
+    xpub = 'xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk'  # noqa : E501
+    json_data = {
+        'xpub': xpub,
+        'tags': [],
+    }
+    response = requests.put(api_url_for(
+        rotkehlchen_api_server,
+        'btcxpubresource',
+        blockchain='BTC',
+    ), json=json_data)
+    assert_error_response(
+        response=response,
+        contained_in_msg='Provided empty list for tags. Use null',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )

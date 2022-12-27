@@ -35,7 +35,7 @@ def _populate_tags(api_server):
     response = requests.put(
         api_url_for(
             api_server,
-            "tagsresource",
+            'tagsresource',
         ), json=tag1,
     )
     assert_proper_response(response)
@@ -48,7 +48,7 @@ def _populate_tags(api_server):
     response = requests.put(
         api_url_for(
             api_server,
-            "tagsresource",
+            'tagsresource',
         ), json=tag2,
     )
     assert_proper_response(response)
@@ -61,7 +61,7 @@ def _populate_tags(api_server):
     response = requests.put(
         api_url_for(
             api_server,
-            "tagsresource",
+            'tagsresource',
         ), json=tag3,
     )
     assert_proper_response(response)
@@ -306,12 +306,13 @@ def test_edit_manually_tracked_balances(rotkehlchen_api_server):
     _populate_tags(rotkehlchen_api_server)
     balances = _populate_initial_balances(rotkehlchen_api_server)
 
-    balances_to_edit = balances[0:2]
+    balances_to_edit = balances[0:3]
     # Give only 2/3 balances for editing to make sure non-given balances are not touched
     balances_to_edit[0]['amount'] = '165.1'
     balances_to_edit[0]['location'] = 'kraken'
     balances_to_edit[0]['tags'] = None
     balances_to_edit[1]['tags'] = ['prIvaTe', 'mIneR']
+    balances_to_edit[2]['tags'] = ['mIneR', 'public']
     response = requests.patch(
         api_url_for(
             rotkehlchen_api_server,
@@ -325,7 +326,7 @@ def test_edit_manually_tracked_balances(rotkehlchen_api_server):
     else:
         result = assert_proper_response_with_result(response)
 
-    expected_balances = balances_to_edit + balances[2:]
+    expected_balances = balances_to_edit + balances[3:]
     assert_balances_match(
         expected_balances=expected_balances,
         returned_balances=result['balances'],
@@ -570,6 +571,24 @@ def test_add_edit_manually_tracked_balances_errors(
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
+    # empty list for tags
+    data = deepcopy(balances)
+    data['balances'][0]['tags'] = []
+    if verb == 'PATCH':
+        for idx, entry in enumerate(data['balances']):
+            entry['id'] = idx  # just to have a valid id in the request
+    response = requests.request(
+        verb,
+        api_url_for(
+            rotkehlchen_api_server,
+            'manuallytrackedbalancesresource',
+        ), json=data,
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Provided empty list for tags. Use null',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
     # wrong type for tags
     data = deepcopy(balances)
     data['balances'][0]['tags'] = 55

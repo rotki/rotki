@@ -1240,6 +1240,23 @@ def test_edit_blockchain_account_errors(
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
+    # Empty list for tags
+    request_data = {'accounts': [{
+        'address': ethereum_accounts[1],
+        'label': 'a label',
+        'tags': [],
+    }]}
+    response = requests.patch(api_url_for(
+        rotkehlchen_api_server,
+        'blockchainsaccountsresource',
+        blockchain='ETH',
+    ), json=request_data)
+    assert_error_response(
+        response=response,
+        contained_in_msg='Provided empty list for tags. Use null',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
     # Invalid type for tags
     request_data = {'accounts': [{
         'address': ethereum_accounts[1],

@@ -760,12 +760,27 @@ class StringIdentifierSchema(Schema):
     identifier = fields.String(required=True)
 
 
-class ManuallyTrackedBalanceAddSchema(Schema):
+class TagsSettingSchema(Schema):
+    tags = fields.List(fields.String(), load_default=None)
+
+    @validates_schema
+    def validate_tags(  # pylint: disable=no-self-use
+        self,
+        data: dict[str, Any],
+        **_kwargs: Any,
+    ) -> None:
+        if isinstance(data['tags'], list) and len(data['tags']) == 0:
+            raise ValidationError(
+                message='Provided empty list for tags. Use null.',
+                field_name='tags',
+            )
+
+
+class ManuallyTrackedBalanceAddSchema(TagsSettingSchema):
     asset = AssetField(expected_type=Asset, required=True)
     label = fields.String(required=True)
     amount = PositiveAmountField(required=True)
     location = LocationField(required=True)
-    tags = fields.List(fields.String(), load_default=None)
     balance_type = SerializableEnumField(enum_class=BalanceType, load_default=BalanceType.ASSET)
 
     @post_load
@@ -1241,10 +1256,9 @@ class HistoryExportingSchema(Schema):
     directory_path = DirectoryField(required=True)
 
 
-class BlockchainAccountDataSchema(Schema):
+class BlockchainAccountDataSchema(TagsSettingSchema):
     address = fields.String(required=True)
     label = fields.String(load_default=None)
-    tags = fields.List(fields.String(), load_default=None)
 
     @validates_schema
     def validate_blockchain_account_schema(  # pylint: disable=no-self-use
@@ -1266,7 +1280,7 @@ class BaseXpubSchema(AsyncQueryArgumentSchema):
     derivation_path = DerivationPathField(load_default=None)
 
 
-class XpubAddSchema(AsyncQueryArgumentSchema):
+class XpubAddSchema(AsyncQueryArgumentSchema, TagsSettingSchema):
     xpub = fields.String(required=True)
     derivation_path = DerivationPathField(load_default=None)
     label = fields.String(load_default=None)
@@ -1275,7 +1289,6 @@ class XpubAddSchema(AsyncQueryArgumentSchema):
         exclude_types=NON_BITCOIN_CHAINS,
     )
     xpub_type = SerializableEnumField(XpubType, load_default=None)
-    tags = fields.List(fields.String(), load_default=None)
 
     @post_load
     def transform_data(  # pylint: disable=no-self-use
@@ -1297,11 +1310,10 @@ class XpubAddSchema(AsyncQueryArgumentSchema):
         return data
 
 
-class XpubPatchSchema(Schema):
+class XpubPatchSchema(TagsSettingSchema):
     xpub = XpubField(required=True)
     derivation_path = DerivationPathField(load_default=None)
     label = fields.String(load_default=None)
-    tags = fields.List(fields.String(), load_default=None)
     blockchain = BlockchainField(
         required=True,
         exclude_types=NON_BITCOIN_CHAINS,
