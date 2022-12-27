@@ -398,6 +398,12 @@ We require this wrapper as a drop-in replacement of pytest due to quirks of geve
 For running the tests with a more specific usage and invocation, please refer to the `pytest <https://docs.pytest.org/en/stable/usage.html>`__ documentation.
 
 
+We run the test suite in the GitHub CI but only a subset of them since not all are needed and sometimes they suffer from rate limiting. We have some special settings to choose what tests are executed:
+
+- ``[skip py tests]`` will not run the python backend tests regardless of whether the backend code has been touched.
+- ``[run nft py tests]`` will run the base set of tests and the tests related to NFTs.
+- ``[run all py tests]`` will run the base set of tests, the tests related to NFTs and some others that perform a big number of requests and are slower.
+
 Linting
 --------
 
