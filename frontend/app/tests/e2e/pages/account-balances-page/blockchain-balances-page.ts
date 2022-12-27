@@ -74,6 +74,10 @@ export class BlockchainBalancesPage extends AccountBalancesPage {
       .find('div:nth-child(2)')
       .contains(balance.address);
 
+    for (const tag of balance.tags) {
+      cy.get('@row').find('.tag').contains(tag).should('be.visible');
+    }
+
     cy.get('@row')
       .find('[data-cy="labeled-address-display"]')
       .scrollIntoView()
