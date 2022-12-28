@@ -7,8 +7,8 @@ from gevent.lock import Semaphore
 from rotkehlchen.accounting.structures.balance import AssetBalance, Balance
 from rotkehlchen.accounting.structures.defi import DefiEvent, DefiEventType
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
+from rotkehlchen.chain.ethereum.constants import RAY
 from rotkehlchen.chain.ethereum.defi.structures import GIVEN_DEFI_BALANCES
-from rotkehlchen.chain.ethereum.modules.makerdao.constants import RAY
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
