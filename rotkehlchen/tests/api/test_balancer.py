@@ -50,6 +50,7 @@ BALANCER_TEST_ADDR2_POOL1 = EvmToken.initialize(
     address=string_to_evm_address('0x59A19D8c652FA0284f44113D0ff9aBa70bd46fB4'),
     chain=ChainID.ETHEREUM,
     token_kind=EvmTokenKind.ERC20,
+    name='Balancer Pool Token',
     symbol='BPT',
     protocol='balancer',
     underlying_tokens=[
@@ -61,6 +62,7 @@ BALANCER_TEST_ADDR2_POOL2 = EvmToken.initialize(
     address=string_to_evm_address('0x574FdB861a0247401B317a3E68a83aDEAF758cf6'),
     chain=ChainID.ETHEREUM,
     token_kind=EvmTokenKind.ERC20,
+    name='Balancer Pool Token',
     symbol='BPT',
     protocol='balancer',
     underlying_tokens=[
@@ -373,6 +375,12 @@ def test_get_events_history_1(
 
     assert len(pool_event_balances) == 1
     pool_events_balance = pool_event_balances[0]
+
+    # check that the tokens were correctly created
+    bpt_token = EvmToken(BALANCER_TEST_ADDR2_POOL1.identifier)
+    assert bpt_token.name == 'Balancer Pool Token'
+    assert bpt_token.symbol == 'BPT'
+    assert bpt_token.decimals == 18
 
     assert pool_events_balance == BALANCER_TEST_ADDR2_EXPECTED_HISTORY_POOL1.serialize()
 
