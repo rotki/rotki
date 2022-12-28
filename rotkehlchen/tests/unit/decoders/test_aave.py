@@ -759,7 +759,7 @@ def test_aave_v2_borrow(database, ethereum_inquirer, eth_transactions):
             asset=A_REN,
             balance=Balance(amount=FVal(100000)),
             location_label=user_address,
-            notes='Borrow 100000 REN from AAVE v2 with variable APY 0.8024003551450866705556542',
+            notes='Borrow 100000 REN from AAVE v2 with variable APY 0.80%',
             counterparty=CPT_AAVE_V2,
             identifier=None,
             extra_data=None,

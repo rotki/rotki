@@ -4,6 +4,7 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.chain.ethereum.constants import RAY
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
@@ -164,8 +165,8 @@ class Aavev2Decoder(DecoderInterface):
         rate_mode = hex_or_bytes_to_int(tx_log.data[64:96])
         # Aave uses ray math https://docs.aave.com/developers/v/1.0/developing-on-aave/important-considerations#ray-math  # noqa: E501
         # To get the rate we have to divide the value by 1e27. And then multiply by 100 to get the percentage.  # noqa: E501
-        rate = hex_or_bytes_to_int(tx_log.data[96:128]) / FVal(1e25)
-        notes = f'Borrow {amount} {token.symbol} from AAVE v2 with {"stable" if rate_mode == 1 else "variable"} APY {rate}%'  # noqa: E501
+        rate = hex_or_bytes_to_int(tx_log.data[96:128]) / FVal(RAY) * 100
+        notes = f'Borrow {amount} {token.symbol} from AAVE v2 with {"stable" if rate_mode == 1 else "variable"} APY {rate.num:.2f}%'  # noqa: E501
         if on_behalf_of != user:
             notes += f' on behalf of {on_behalf_of}'
         for event in decoded_events:

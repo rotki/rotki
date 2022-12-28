@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING, Any, NamedTuple, Optional
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import CryptoAsset
+from rotkehlchen.chain.ethereum.constants import RAY
 from rotkehlchen.chain.ethereum.graph import Graph
-from rotkehlchen.chain.ethereum.modules.makerdao.constants import RAY
 from rotkehlchen.chain.ethereum.utils import ethaddress_to_asset, token_normalized_value_decimals
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.serialization import DeserializationError
