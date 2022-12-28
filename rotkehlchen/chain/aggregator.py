@@ -56,6 +56,7 @@ from rotkehlchen.constants.assets import (
     A_ETH2,
     A_KSM,
     A_LQTY,
+    A_LUSD,
 )
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
@@ -997,12 +998,20 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             for address, deposits in liquity_balances.items():
                 collateral = deposits.collateral.balance
                 eth_balances[address].assets[A_ETH] += collateral
+
             # Get staked amounts
             liquity_staked = liquity_module.liquity_staking_balances(
                 addresses=self.queried_addresses_for_module('liquity'),
             )
             for address, staked_info in liquity_staked.items():
-                eth_balances[address].assets[A_LQTY] += staked_info['staked'].amount
+                eth_balances[address].assets[A_LQTY] += staked_info['staked'].balance
+
+            # Get stability pool balances
+            liquity_stability_pool = liquity_module.get_stability_pool_balances(
+                addresses=self.queried_addresses_for_module('liquity'),
+            )
+            for address, staked_info in liquity_stability_pool.items():
+                eth_balances[address].assets[A_LUSD] += staked_info['deposited'].balance
 
         # Finally count the balances detected in various protocols in defi balances
         self.add_defi_balances_to_account()
