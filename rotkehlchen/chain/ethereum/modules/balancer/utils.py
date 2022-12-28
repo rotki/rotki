@@ -103,6 +103,7 @@ def deserialize_bpt_event(
         userdb=userdb,
         evm_address=pool_address,
         chain=ChainID.ETHEREUM,
+        name='Balancer Pool Token',
         symbol='BPT',
         protocol='balancer',
         decimals=18,  # all BPT tokens have 18 decimals
@@ -236,6 +237,7 @@ def deserialize_pool_share(
     pool_token_balances.sort(key=lambda x: x.token.evm_address)
     balancer_pool_token = get_or_create_evm_token(
         userdb=userdb,
+        name='Balancer Pool Token',
         symbol='BPT',
         evm_address=pool_address,
         chain=ChainID.ETHEREUM,
