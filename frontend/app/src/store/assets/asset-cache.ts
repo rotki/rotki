@@ -1,5 +1,6 @@
 import { type AssetInfo } from '@rotki/common/lib/data';
 import { type ComputedRef, type Ref } from 'vue';
+import { type MaybeRef } from '@vueuse/core';
 import { useAssetInfoApi } from '@/services/assets/info';
 import { startPromise } from '@/utils';
 import { logger } from '@/utils/logging';
@@ -123,8 +124,8 @@ export const useAssetCacheStore = defineStore('assets/cache', () => {
     return computed(() => get(cache)[key] ?? null);
   };
 
-  const isPending = (identifier: string): ComputedRef<boolean> => {
-    return computed(() => get(pending)[identifier] ?? false);
+  const isPending = (identifier: MaybeRef<string>): ComputedRef<boolean> => {
+    return computed(() => get(pending)[get(identifier)] ?? false);
   };
 
   const reset = (): void => {
