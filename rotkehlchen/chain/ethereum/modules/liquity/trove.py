@@ -160,8 +160,8 @@ class Liquity(HasDSProxy):
             assets: tuple['Asset', 'Asset', 'Asset'],
     ) -> dict[ChecksumEvmAddress, dict[str, AssetBalance]]:
         """
-        For Liquity staking contracts there are always 1 asset that we stake and rewards in two
-        other assets. This method abstracts the logic of querying the staked amount and the
+        For Liquity staking contracts there is always one asset that we stake and two other assets
+        for rewards. This method abstracts the logic of querying the staked amount and the
         rewards for both the stability pool and the LQTY staking.
 
         - addresses: The addresses that will be queried
