@@ -1871,23 +1871,24 @@ Purging locally saved data for exchanges
    :statuscode 409: User is not logged in. Exchange is not registered or some other error. Check error message for details.
    :statuscode 500: Internal rotki error
 
-Purging locally saved ethereum transactions
+Purging locally saved evm transactions
 ===========================================
 
-.. http:delete:: /api/(version)/blockchains/ETH/transactions
+.. http:delete:: /api/(version)/blockchains/evm/transactions
 
-   Doing a DELETE on the transactions endpoint for ETH will purge all locally saved transaction data. Next time transactions are queried all of them will be queried again for all addresses and may take some time.
+   Doing a DELETE on the evm transactions endpoint will purge all locally saved transaction data. Optionally can specify the evm chain to only purge transactions of that chain. Next time transactions are queried all of them will be queried again for all addresses and may take some time.
 
    **Example Request**:
 
    .. http:example:: curl wget httpie python-requests
 
-      DELETE /api/1/blockchains/ETH/transactions HTTP/1.1
+      DELETE /api/1/blockchains/evm/transactions HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {}
+      {"evm_chain": "optimism"}
 
+   :reqjson string evm_chain: Optional. The name of the evm chain for which to purge transaction. ``"ethereum"``, ``"optimism"`` etc. If not given all transactions for all chains are purged.
 
    **Example Response**:
 
@@ -2275,10 +2276,10 @@ Query supported ethereum modules
    :statuscode 409: User is not logged in or some other error. Check error message for details.
    :statuscode 500: Internal rotki error
 
-Querying ethereum transactions
+Querying evm transactions
 =================================
 
-.. http:get:: /api/(version)/blockchains/ETH/transactions/(address)
+.. http:get:: /api/(version)/blockchains/evm/transactions/(address)
 
    .. note::
       This endpoint also accepts parameters as query arguments.
@@ -2286,13 +2287,13 @@ Querying ethereum transactions
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
-   Doing a GET on the transactions endpoint for ETH will query all ethereum transactions for all the tracked user addresses. Caller can also specify an address to further filter the query as a from address. Also they can limit the queried transactions by timestamps and can filter transactions by related event's properties (asset, protocols and whether to exclude transactions with ignored assets). If the user is not premium and has more than the transaction limit then the returned transaction will be limited to that number. Any filtering will also be limited. Transactions are returned most recent first.
+   Doing a GET on the evm transactions endpoint will query all evm transactions for all the tracked user addresses. Caller can also specify a chain and/or an address to further filter the query. Also they can limit the queried transactions by timestamps and can filter transactions by related event's properties (asset, protocols and whether to exclude transactions with ignored assets). If the user is not premium and has more than the transaction limit then the returned transaction will be limited to that number. Any filtering will also be limited. Transactions are returned most recent first.
 
    **Example Request**:
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/blockchains/ETH/transactions/0xdAC17F958D2ee523a2206206994597C13D831ec7/ HTTP/1.1
+      GET /api/1/blockchains/evm/transactions/0xdAC17F958D2ee523a2206206994597C13D831ec7/ HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
@@ -2305,6 +2306,7 @@ Querying ethereum transactions
    :reqjson int from_timestamp: The timestamp after which to return transactions. If not given zero is considered as the start.
    :reqjson int to_timestamp: The timestamp until which to return transactions. If not given all transactions from ``from_timestamp`` until now are returned.
    :reqjson bool only_cache: If true then only the ethereum transactions in the DB are queried.
+   :reqjson string evm_chain: Optional. The name of the evm chain by which to filter transactions. ``"ethereum"``, ``"optimism"`` etc.
    :reqjson string asset: Optional. Serialized asset to filter by.
    :reqjson list protocols: Optional. Protocols (counterparties) to filter by. List of strings.
    :reqjson bool exclude_ignored_assets: Optional. Whether to exclude transactions with ignored assets. Default true.
@@ -2324,6 +2326,7 @@ Querying ethereum transactions
           "entries": [{
             "entry": {
               "tx_hash": "0x18807cd818b2b50a2284bda2dfc39c9f60607ccfa25b1a01143e934280675eb8",
+              "evm_chain":"ethereum",
               "timestamp": 1598006527,
               "block_number": 10703085,
               "from_address": "0x3CAdbeB58CB5162439908edA08df0A305b016dA8",
@@ -2356,6 +2359,7 @@ Querying ethereum transactions
             }, {
               "entry": {
                 "tx_hash": "0x867119d6c66cab26561ccc5775c9cd215389efb2e3832e54baed2a0a34498c4b",
+                "evm_chain": "optimism",
                 "timestamp": 1661993636,
                 "block_number": 15449856,
                 "from_address": "0xF2Eb18a344b2a9dC769b1914ad035Cbb614Fd238",
@@ -2457,6 +2461,7 @@ Querying ethereum transactions
           }, {
             "entry": {
               "tx_hash": "0x19807cd818b2b50a2284bda2dfc39c9f60607ccfa25b1a01143e934280635eb7",
+              "evm_chain": "ethereum",
               "timestamp": 1588006528,
               "block_number": 10700085,
               "from_address": "0x1CAdbe158CB5162439901edA08df0A305b016dA1",
@@ -2514,24 +2519,34 @@ Querying ethereum transactions
 Request transactions event decoding
 =======================================
 
-.. http:post:: /api/(version)/blockchains/ETH/transactions
+.. http:post:: /api/(version)/blockchains/evm/transactions
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
-   Doing a POST on the transactions endpoint for ETH will request a decoding of the given transactions and generation of decoded events. That basically entails querying the transaction receipts for each transaction hash and then decoding all events. If events are already queried and ignore_cache is true they will be deleted and requeried.
+   Doing a POST on the evm transactions endpoint will request a decoding of the given transactions and generation of decoded events. That basically entails querying the transaction receipts for each transaction hash and then decoding all events. If events are already queried and ignore_cache is true they will be deleted and requeried.
 
    **Example Request**:
 
    .. http:example:: curl wget httpie python-requests
 
-      POST /api/1/blockchains/ETH/transactions HTTP/1.1
+      POST /api/1/blockchains/evm/transactions HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"async_query": true, "tx_hashes": ["0xe33041d0ae336cd4c588a313b7f8649db07b79c5107424352b9e52a6ea7a9742", "0xed6e64021f960bb40f11f1c00ec1d5ca910471e75a080e42b347ba5af7e73516"], "ignore_cache": false}
+      {
+          "async_query": true,
+          "data": [{
+              "evm_chain": "ethereum",
+              "tx_hashes": ["0xe33041d0ae336cd4c588a313b7f8649db07b79c5107424352b9e52a6ea7a9742", "0xed6e64021f960bb40f11f1c00ec1d5ca910471e75a080e42b347ba5af7e73516"]
+          }, {
+              "evm_chain": "optimism",
+              "tx_hashes": ["0x13344150ae236c54c588c313b7f8600d007b79c5107424352b9e52a6ea712741"]
+          }],
+          "ignore_cache": false
+      }
 
-   :reqjson list tx_hashes[optional]: The list of transaction hashes to request decoding for. If the list of transaction hashes is not passed then all transactions are decoded. Passing an empty list is not allowed.
+   :reqjson list data[optional]: A list of data to decode. Each data entry consists of an ``"evm_chain"`` key specifying the evm chain for which to decode tx_hashes and a ``"tx_hashes"`` key which is an optional list of transaction hashes to request decoding for in that chain. If the list of transaction hashes is not passed then all transactions for that chain are decoded. Passing an empty list is not allowed.
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
    :reqjson bool ignore_cache: Boolean denoting whether to ignore the cache for this query or not. This is always false by default. If true is given then the decoded events will be deleted and requeried.
 

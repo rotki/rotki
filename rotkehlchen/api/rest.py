@@ -8,7 +8,17 @@ import traceback
 from collections import defaultdict
 from http import HTTPStatus
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, DefaultDict, Literal, Optional, Union, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    DefaultDict,
+    Literal,
+    Optional,
+    Union,
+    get_args,
+    overload,
+)
 from uuid import uuid4
 from zipfile import ZipFile
 
@@ -32,6 +42,7 @@ from rotkehlchen.accounting.structures.types import (
     HistoryEventType,
 )
 from rotkehlchen.api.v1.schemas import TradeSchema
+from rotkehlchen.api.v1.types import EvmTransactionDecodingApiData
 from rotkehlchen.assets.asset import (
     Asset,
     AssetWithNameAndType,
@@ -147,6 +158,7 @@ from rotkehlchen.serialization.serialize import process_result, process_result_l
 from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
     SUPPORTED_BITCOIN_CHAINS,
+    SUPPORTED_CHAIN_IDS,
     SUPPORTED_EVM_CHAINS,
     SUPPORTED_SUBSTRATE_CHAINS,
     AddressbookEntry,
@@ -158,7 +170,6 @@ from rotkehlchen.types import (
     ChecksumEvmAddress,
     Eth2PubKey,
     EvmTokenKind,
-    EVMTxHash,
     ExternalService,
     ExternalServiceApiCredentials,
     Fee,
@@ -3256,38 +3267,56 @@ class RestAPI():
 
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    def purge_ethereum_transaction_data(self) -> Response:
-        DBEvmTx(self.rotkehlchen.data.db).purge_evm_transaction_data(chain=SupportedBlockchain.ETHEREUM)  # noqa: E501
+    def purge_evm_transaction_data(self, chain_id: Optional[SUPPORTED_CHAIN_IDS]) -> Response:
+        chain = None if chain_id is None else chain_id.to_blockchain()
+        DBEvmTx(self.rotkehlchen.data.db).purge_evm_transaction_data(
+            chain=chain,  # type: ignore  # chain_id.to_blockchain() will only give supported chain
+        )
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    def _get_ethereum_transactions(
+    def _get_evm_transactions(
             self,
             only_cache: bool,
             filter_query: EvmTransactionsFilterQuery,
             event_params: dict[str, Any],
     ) -> dict[str, Any]:
-        try:
-            transactions, total_filter_count = self.rotkehlchen.chains_aggregator.ethereum.transactions.query(  # noqa: E501
-                only_cache=only_cache,
-                filter_query=filter_query,
+        chain_ids: tuple[SUPPORTED_CHAIN_IDS]
+        if filter_query.chain_id is None:  # type ignore below is due to get_args
+            chain_ids = get_args(SUPPORTED_CHAIN_IDS)  # type: ignore[assignment]
+        else:
+            chain_ids = (filter_query.chain_id,)
+
+        message = ''
+        status_code = HTTPStatus.OK
+        if only_cache is False:  # we query the chain
+            for chain_id in chain_ids:
+                evm_manager = self.rotkehlchen.chains_aggregator.get_evm_manager(chain_id)
+                try:
+                    evm_manager.transactions.query_chain(filter_query)
+                except RemoteError as e:
+                    transactions = None
+                    status_code = HTTPStatus.BAD_GATEWAY
+                    message = str(e)
+                    break
+                except sqlcipher.OperationalError as e:  # pylint: disable=no-member
+                    transactions = None
+                    status_code = HTTPStatus.BAD_REQUEST
+                    message = str(e)
+                    break
+
+            else:  # the for loop broke -- so we had an error
+                return {'result': None, 'message': message, 'status_code': status_code}
+
+        # if needed, chain will have been queried by now so let's get everything from DB
+        dbevmtx = DBEvmTx(self.rotkehlchen.data.db)
+        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+            transactions, total_filter_count = dbevmtx.get_evm_transactions_and_limit_info(
+                cursor=cursor,
+                filter_=filter_query,
                 has_premium=self.rotkehlchen.premium is not None,
             )
-            status_code = HTTPStatus.OK
-            message = ''
-        except RemoteError as e:
-            transactions = None
-            status_code = HTTPStatus.BAD_GATEWAY
-            message = str(e)
-        except sqlcipher.OperationalError as e:  # pylint: disable=no-member
-            transactions = None
-            status_code = HTTPStatus.BAD_REQUEST
-            message = str(e)
 
-        if status_code != HTTPStatus.OK:
-            return {'result': None, 'message': message, 'status_code': status_code}
-
-        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            if transactions is not None:
+            if len(transactions) != 0:
                 mapping = self.rotkehlchen.data.db.get_ignored_action_ids(cursor, ActionType.ETHEREUM_TRANSACTION)  # noqa: E501
                 ignored_ids = mapping.get(ActionType.ETHEREUM_TRANSACTION, [])
                 entries_result = []
@@ -3309,7 +3338,10 @@ class RestAPI():
                         has_premium=True,  # for this function we don't limit. We only limit txs.
                     )
 
-                    customized_event_ids = dbevents.get_customized_event_identifiers(cursor=cursor, chain_id=ChainID.ETHEREUM)  # noqa: E501
+                    customized_event_ids = dbevents.get_customized_event_identifiers(
+                        cursor=cursor,
+                        chain_id=filter_query.chain_id,
+                    )
                     entries_result.append({
                         'entry': entry.serialize(),
                         'decoded_events': [
@@ -3337,7 +3369,7 @@ class RestAPI():
 
         return {'result': result, 'message': message, 'status_code': status_code}
 
-    def get_ethereum_transactions(
+    def get_evm_transactions(
             self,
             async_query: bool,
             only_cache: bool,
@@ -3346,13 +3378,13 @@ class RestAPI():
     ) -> Response:
         if async_query is True:
             return self._query_async(
-                command=self._get_ethereum_transactions,
+                command=self._get_evm_transactions,
                 only_cache=only_cache,
                 filter_query=filter_query,
                 event_params=event_params,
             )
 
-        response = self._get_ethereum_transactions(
+        response = self._get_evm_transactions(
             only_cache=only_cache,
             filter_query=filter_query,
             event_params=event_params,
@@ -3368,54 +3400,63 @@ class RestAPI():
         result_dict = _wrap_in_result(result, msg)
         return api_response(process_result(result_dict), status_code=status_code)
 
-    def _decode_ethereum_transactions(
+    def _decode_evm_transactions(
             self,
             ignore_cache: bool,
-            tx_hashes: Optional[list[EVMTxHash]],
+            data: list[EvmTransactionDecodingApiData],
     ) -> dict[str, Any]:
         """
         Decode a set of transactions selected by their transaction hash. If the tx_hashes
-        value is None all the transactions in the database will be attempted to be decoded.
-        If the tx_hashes argument is provided then the USD price for their events will be queried.
+        value is None all the transactions for that chain  in the database will be
+        attempted to be decoded. If the tx_hashes argument is provided then the USD
+        price for their events will be queried.
         """
-        try:
-            decoded_events = self.rotkehlchen.chains_aggregator.ethereum.transactions_decoder.decode_transaction_hashes(  # noqa: E501
-                ignore_cache=ignore_cache,
-                tx_hashes=tx_hashes,
-            )
-            task_manager = self.rotkehlchen.task_manager
-            if tx_hashes is not None and task_manager is not None:
-                # Trigger the task to query the missing prices for the decoded events
-                events_filter = HistoryEventFilterQuery.make(
-                    event_identifiers=[event.event_identifier for event in decoded_events],
-                )
-                entries = task_manager.get_base_entries_missing_prices(events_filter)
-                task_manager.query_missing_prices_of_base_entries(
-                    entries_missing_prices=entries,
-                )
-            return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
-        except (RemoteError, DeserializationError) as e:
-            status_code = HTTPStatus.BAD_GATEWAY
-            message = f'Failed to request ethereum transaction decoding due to {str(e)}'
-        except InputError as e:
-            status_code = HTTPStatus.CONFLICT
-            message = f'Failed to request ethereum transaction decoding due to {str(e)}'
-        return {'result': None, 'message': message, 'status_code': status_code}
+        task_manager = self.rotkehlchen.task_manager
+        result = True
+        message = ''
+        status_code = HTTPStatus.OK
 
-    def decode_ethereum_transactions(
+        for entry in data:
+            chain_manager = self.rotkehlchen.chains_aggregator.get_evm_manager(entry['evm_chain'])
+            try:
+                decoded_events = chain_manager.transactions_decoder.decode_transaction_hashes(
+                    ignore_cache=ignore_cache,
+                    tx_hashes=entry['tx_hashes'],
+                )
+                if entry['tx_hashes'] is not None and task_manager is not None:
+                    # Trigger the task to query the missing prices for the decoded events
+                    events_filter = HistoryEventFilterQuery.make(
+                        event_identifiers=[event.event_identifier for event in decoded_events],
+                    )
+                    entries = task_manager.get_base_entries_missing_prices(events_filter)
+                    task_manager.query_missing_prices_of_base_entries(
+                        entries_missing_prices=entries,
+                    )
+            except (RemoteError, DeserializationError) as e:
+                status_code = HTTPStatus.BAD_GATEWAY
+                message = f'Failed to request evm transaction decoding due to {str(e)}'
+                break
+            except InputError as e:
+                status_code = HTTPStatus.CONFLICT
+                message = f'Failed to request evm transaction decoding due to {str(e)}'
+                break
+
+        return {'result': result, 'message': message, 'status_code': status_code}
+
+    def decode_evm_transactions(
             self,
             async_query: bool,
             ignore_cache: bool,
-            tx_hashes: Optional[list[EVMTxHash]],
+            data: list[EvmTransactionDecodingApiData],
     ) -> Response:
         if async_query is True:
             return self._query_async(
-                command=self._decode_ethereum_transactions,
+                command=self._decode_evm_transactions,
                 ignore_cache=ignore_cache,
-                tx_hashes=tx_hashes,
+                data=data,
             )
 
-        response = self._decode_ethereum_transactions(ignore_cache, tx_hashes)
+        response = self._decode_evm_transactions(ignore_cache=ignore_cache, data=data)
         result = response['result']
         msg = response['message']
         status_code = _get_status_code_from_async_response(response)

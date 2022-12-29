@@ -124,6 +124,7 @@ from .fields import (
     TimestampUntilNowField,
     XpubField,
 )
+from .types import EvmTransactionDecodingApiData
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -204,7 +205,11 @@ class DBOrderBySchema(Schema):
             )
 
 
-class EthereumTransactionQuerySchema(
+class EvmTransactionPurgingSchema(Schema):
+    evm_chain = EvmChainNameField(required=False, load_default=None)
+
+
+class EvmTransactionQuerySchema(
         AsyncQueryArgumentSchema,
         OnlyCacheQuerySchema,
         DBPaginationSchema,
@@ -216,6 +221,7 @@ class EthereumTransactionQuerySchema(
     protocols = DelimitedOrNormalList(fields.String(), load_default=None)
     asset = AssetField(expected_type=CryptoAsset, load_default=None)
     exclude_ignored_assets = fields.Boolean(load_default=True)
+    evm_chain = EvmChainNameField(required=False, load_default=None)
     event_types = fields.List(
         SerializableEnumField(enum_class=HistoryEventType),
         load_default=None,
@@ -226,7 +232,7 @@ class EthereumTransactionQuerySchema(
     )
 
     @validates_schema
-    def validate_ethtx_query_schema(  # pylint: disable=no-self-use
+    def validate_evmtx_query_schema(  # pylint: disable=no-self-use
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -252,7 +258,7 @@ class EthereumTransactionQuerySchema(
             )
 
     @post_load
-    def make_ethereum_transaction_query(  # pylint: disable=no-self-use
+    def make_evm_transaction_query(  # pylint: disable=no-self-use
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -269,6 +275,7 @@ class EthereumTransactionQuerySchema(
             addresses=[address] if address is not None else None,
             from_ts=data['from_timestamp'],
             to_ts=data['to_timestamp'],
+            chain_id=data['evm_chain'],
             protocols=protocols,
             asset=asset,
             exclude_ignored_assets=exclude_ignored_assets,
@@ -291,7 +298,8 @@ class EthereumTransactionQuerySchema(
         }
 
 
-class EthereumTransactionDecodingSchema(AsyncIgnoreCacheQueryArgumentSchema):
+class SingleEVMTransactionDecodingSchema(Schema):
+    evm_chain = EvmChainNameField(required=True)
     tx_hashes = fields.List(EVMTransactionHashField(), load_default=None)
 
     @validates_schema
@@ -302,7 +310,27 @@ class EthereumTransactionDecodingSchema(AsyncIgnoreCacheQueryArgumentSchema):
     ) -> None:
         tx_hashes = data.get('tx_hashes')
         if tx_hashes is not None and len(tx_hashes) == 0:
-            raise ValidationError('Empty list of hashes is a noop. Did you mean to omit the list?')
+            raise ValidationError(
+                message='Empty list of hashes is a noop. Did you mean to omit the list?',
+                field_name='tx_hashes',
+            )
+
+
+class EvmTransactionDecodingSchema(AsyncIgnoreCacheQueryArgumentSchema):
+    data = fields.List(fields.Nested(SingleEVMTransactionDecodingSchema), required=True)
+
+    @validates_schema
+    def validate_schema(  # pylint: disable=no-self-use
+            self,
+            data: list[EvmTransactionDecodingApiData],
+            **_kwargs: Any,
+    ) -> None:
+
+        if len(data) == 0:
+            raise ValidationError(
+                message='The list of data should not be empty',
+                field_name='data',
+            )
 
 
 class TradesQuerySchema(

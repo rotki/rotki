@@ -306,7 +306,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                         dbtx = DBEvmTx(self.db)  # type: ignore
                         tx = dbtx.get_or_create_genesis_transaction(
                             account=account,
-                            chain_id=chain_id,
+                            chain_id=chain_id,  # type: ignore[arg-type]  # is only supported chain
                         )
                         trace_id = dbtx.get_max_genesis_trace_id(chain_id)
                         entry['from'] = ZERO_ADDRESS

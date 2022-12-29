@@ -41,6 +41,7 @@ from rotkehlchen.serialization.deserialize import (
 )
 from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.types import (
+    SUPPORTED_CHAIN_IDS,
     SUPPORTED_EVM_CHAINS,
     ChecksumEvmAddress,
     EvmTokenKind,
@@ -183,7 +184,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         self.contracts = contracts
         self.web3_mapping: dict[NodeName, Web3] = {}
         self.rpc_timeout = rpc_timeout
-        self.chain_id = blockchain.to_chain_id()
+        self.chain_id: SUPPORTED_CHAIN_IDS = blockchain.to_chain_id()  # type: ignore[assignment]
         self.chain_name = self.blockchain.name.lower()
         # BalanceScanner from mycrypto: https://github.com/MyCryptoHQ/eth-scan
         self.contract_scan = self.contracts.contract('BALANCE_SCAN')

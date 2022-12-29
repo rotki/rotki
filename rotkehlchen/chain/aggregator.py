@@ -76,6 +76,7 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.types import (
+    SUPPORTED_CHAIN_IDS,
     SUPPORTED_EVM_CHAINS,
     SUPPORTED_SUBSTRATE_CHAINS,
     BlockchainAddress,
@@ -1280,6 +1281,12 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         """Returns blockchain manager"""
         attr = blockchain.name.lower()
         return getattr(self, attr)
+
+    def get_evm_manager(
+            self,
+            chain_id: SUPPORTED_CHAIN_IDS,
+    ) -> 'EvmManager':  # type ignore below due to inability to understand limitation
+        return self.get_chain_manager(chain_id.to_blockchain())  # type: ignore[arg-type]
 
     def add_accounts_to_all_evm(
             self,

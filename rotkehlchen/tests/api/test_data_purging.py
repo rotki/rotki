@@ -91,8 +91,9 @@ def test_purge_ethereum_transaction_data(rotkehlchen_api_server):
         response = requests.delete(
             api_url_for(
                 rotkehlchen_api_server,
-                'ethereumtransactionsresource',
+                'evmtransactionsresource',
             ),
+            json={'evm_chain': 'ethereum'},
         )
         assert_simple_ok_response(response)
         result, filter_count = db.get_evm_transactions_and_limit_info(cursor, filter_, True)

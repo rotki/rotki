@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Optional, get_args
 
 from rotkehlchen.chain.ethereum.constants import ETHEREUM_BEGIN, GENESIS_HASH
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
@@ -11,6 +11,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address, deserialize_timestamp
 from rotkehlchen.types import (
+    SUPPORTED_CHAIN_IDS,
     SUPPORTED_EVM_CHAINS,
     ChainID,
     ChecksumEvmAddress,
@@ -227,18 +228,30 @@ class DBEvmTx():
         total_found_result = cursor.execute(query, bindings)
         return txs, total_found_result.fetchone()[0]  # always returns result
 
-    def purge_evm_transaction_data(self, chain: SUPPORTED_EVM_CHAINS) -> None:
+    def purge_evm_transaction_data(self, chain: Optional[SUPPORTED_EVM_CHAINS]) -> None:
         """Deletes all evm transaction related data from the DB"""
+        query_ranges_tuples = []
+        delete_query = 'DELETE FROM evm_transactions'
+        delete_bindings = ()
+        if chain is not None:
+            chains = [chain]
+            delete_query += ' WHERE chain_id = ?'
+            delete_bindings = (chain.to_chain_id().serialize_for_db(),)    # type: ignore[assignment]  # noqa: E501
+        else:
+            chains = get_args(SUPPORTED_EVM_CHAINS)  # type: ignore[assignment]
+
+        for entry in chains:
+            query_ranges_tuples.extend([
+                (f'{entry.to_range_prefix("txs")}\\_%', '\\'),
+                (f'{entry.to_range_prefix("internaltxs")}\\_%', '\\'),
+                (f'{entry.to_range_prefix("tokentxs")}\\_%', '\\'),
+            ])
         with self.db.user_write() as cursor:
             cursor.executemany(
                 'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
-                [
-                    (f'{chain.to_range_prefix("txs")}\\_%', '\\'),
-                    (f'{chain.to_range_prefix("internaltxs")}\\_%', '\\'),
-                    (f'{chain.to_range_prefix("tokentxs")}\\_%', '\\'),
-                ],
+                query_ranges_tuples,
             )
-            cursor.execute('DELETE FROM evm_transactions;')
+            cursor.execute(delete_query, delete_bindings)
 
     def get_transaction_hashes_no_receipt(
             self,
@@ -515,7 +528,7 @@ class DBEvmTx():
     def get_or_create_genesis_transaction(
             self,
             account: ChecksumEvmAddress,
-            chain_id: ChainID,
+            chain_id: SUPPORTED_CHAIN_IDS,
     ) -> EvmTransaction:
         with self.db.conn.read_ctx() as cursor:
             tx_in_db = self.get_evm_transactions(
