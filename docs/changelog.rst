@@ -5,8 +5,8 @@ Changelog
 * :bug:`-` Connecting to substrate nodes will no longer timeout prematurely for systems with slow connections.
 * :bug:`-` Transfers between tracked accounts will now have a correct label in the UI.
 * :bug:`-` Users will be able to finish balance queries if they have assets with missing information.
-* :bug:`-` Visiting the trades page won't query now trades from exchanges that are ignored.
-* :bug:`5038` Premium users with big databases should no longer see the error: "Upload data to server died with exception: database plaintext is locked"
+* :bug:`5265` Visiting the trades page will no longer query trades from ignored exchanges.
+* :bug:`5038` Premium users with big databases should no longer see the error: "Upload data to server died with exception: database plaintext is locked".
 * :bug:`-` Tokens added by the Balancer module will now have the name field correctly set.
 * :bug:`-` If a user removes the API keys for an exchange, actions on that exchange will no longer be excluded from PnL reports.
 

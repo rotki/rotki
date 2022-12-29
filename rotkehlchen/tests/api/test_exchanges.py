@@ -641,18 +641,18 @@ def test_exchange_query_trades(rotkehlchen_api_server_with_exchanges: 'APIServer
     # and now query them in a specific time range excluding two of poloniex's trades
     data = {'from_timestamp': 1499865548, 'to_timestamp': 1539713118, 'async_query': async_query}
     with setup.binance_patch, setup.polo_patch:
-        response = requests.get(api_url_for(server, "tradesresource"), json=data)
+        response = requests.get(api_url_for(server, 'tradesresource'), json=data)
         assert_okay(response)
     # do the same but with query args. This serves as test of from/to timestamp with query args
     with setup.binance_patch, setup.polo_patch:
         response = requests.get(
-            api_url_for(server, "tradesresource") + '?' + urlencode(data))
+            api_url_for(server, 'tradesresource') + '?' + urlencode(data))
         assert_okay(response)
 
     # check that for poloniex we have information
     with setup.binance_patch, setup.polo_patch:
         response = requests.get(
-            url=api_url_for(server, "tradesresource"),
+            url=api_url_for(server, 'tradesresource'),
             json={'location': 'poloniex'},
         )
 
@@ -666,12 +666,14 @@ def test_exchange_query_trades(rotkehlchen_api_server_with_exchanges: 'APIServer
         db.set_settings(cursor, ModifiableDBSettings(
             non_syncing_exchanges=[poloniex_exchange.location_id()],
         ))
+        # delete poloniex information to verify that when querying the location no new
+        # trades are queried
         db.purge_exchange_data(cursor, Location.POLONIEX)
 
     # query the API and check that information is not queried again
     with setup.binance_patch, setup.polo_patch:
         response = requests.get(
-            url=api_url_for(server, "tradesresource"),
+            url=api_url_for(server, 'tradesresource'),
             json={'location': 'poloniex'},
         )
     result = assert_proper_response_with_result(response)
