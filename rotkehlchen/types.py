@@ -245,6 +245,9 @@ class ChainID(Enum):
         return CHAINID_TO_SUPPORTED_BLOCKCHAIN[self]
 
 
+SUPPORTED_CHAIN_IDS = Literal[ChainID.ETHEREUM, ChainID.OPTIMISM]
+
+
 class EvmTransaction(NamedTuple):
     """Represent an EVM transaction"""
     tx_hash: EVMTxHash

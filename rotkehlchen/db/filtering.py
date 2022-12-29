@@ -12,6 +12,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
+    SUPPORTED_CHAIN_IDS,
     AssetMovementCategory,
     ChainID,
     ChecksumEvmAddress,
@@ -129,7 +130,7 @@ class DBETHTransactionJoinsFilter(DBFilter):
     """
     addresses: Optional[list[ChecksumEvmAddress]]
     should_join_events: bool = False
-    chain_id: Optional[ChainID] = None
+    chain_id: Optional[SUPPORTED_CHAIN_IDS] = None
 
     def prepare(self) -> tuple[list[str], list[Any]]:
         query_filters: list[str] = []
@@ -207,7 +208,7 @@ class DBEvmTransactionHashFilter(DBFilter):
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBEvmChainIDFilter(DBFilter):
-    chain_id: Optional[ChainID] = None
+    chain_id: Optional[SUPPORTED_CHAIN_IDS] = None
 
     def prepare(self) -> tuple[list[str], list[Any]]:
         if self.chain_id is None:
@@ -397,7 +398,7 @@ class EvmTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
         return ethaddress_filter.addresses
 
     @property
-    def chain_id(self) -> Optional[ChainID]:
+    def chain_id(self) -> Optional[SUPPORTED_CHAIN_IDS]:
         if isinstance(self.filters[-1], DBEvmChainIDFilter):
             return self.filters[-1].chain_id
         return None
@@ -413,7 +414,7 @@ class EvmTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
             tx_hash: Optional[EVMTxHash] = None,
-            chain_id: Optional[ChainID] = None,
+            chain_id: Optional[SUPPORTED_CHAIN_IDS] = None,
             protocols: Optional[list[str]] = None,
             asset: Optional[EvmToken] = None,
             exclude_ignored_assets: bool = False,

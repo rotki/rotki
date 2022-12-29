@@ -14,13 +14,7 @@ from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import (
-    ChecksumEvmAddress,
-    EvmTransaction,
-    EVMTxHash,
-    Timestamp,
-    deserialize_evm_tx_hash,
-)
+from rotkehlchen.types import ChecksumEvmAddress, EVMTxHash, Timestamp, deserialize_evm_tx_hash
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -110,15 +104,12 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
             },
         )
 
-    def query(
-            self,
-            filter_query: EvmTransactionsFilterQuery,
-            has_premium: bool = False,
-            only_cache: bool = False,
-    ) -> tuple[list[EvmTransaction], int]:
-        """Queries for all transactions of an evm address or of all addresses.
+    def query_chain(self, filter_query: EvmTransactionsFilterQuery) -> None:
+        """Queries the chain (or a remote such as etherscan) for all transactions
+        of an evm address or of all addresses. Will query for only the time requested
+        in the filter and the part of that time that has not yet been queried.
 
-        Returns a list of all transactions filtered and sorted according to the parameters.
+        Saves the results in the database.
 
         May raise:
         - RemoteError if etherscan is used and there is a problem with reaching it or
@@ -127,29 +118,23 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
         invalid filtering arguments.
         """
         query_addresses = filter_query.addresses
-        with self.database.conn.read_ctx() as cursor:
-            if query_addresses is not None:
-                accounts = query_addresses
-            else:
-                accounts = self.database.get_blockchain_accounts(cursor).get(self.evm_inquirer.blockchain)  # noqa: E501
+        if query_addresses is not None:
+            accounts = query_addresses
+        else:
+            with self.database.conn.read_ctx() as cursor:
+                accounts = self.database.get_blockchain_accounts(cursor).get(
+                    blockchain=self.evm_inquirer.blockchain,
+                )
 
-            if only_cache is False:
-                f_from_ts = filter_query.from_ts
-                f_to_ts = filter_query.to_ts
-                from_ts = Timestamp(0) if f_from_ts is None else f_from_ts
-                to_ts = ts_now() if f_to_ts is None else f_to_ts
-                for address in accounts:
-                    self.single_address_query_transactions(
-                        address=address,
-                        start_ts=from_ts,
-                        end_ts=to_ts,
-                    )
-
-            dbevmtx = DBEvmTx(self.database)
-            return dbevmtx.get_evm_transactions_and_limit_info(
-                cursor=cursor,
-                filter_=filter_query,
-                has_premium=has_premium,
+        f_from_ts = filter_query.from_ts
+        f_to_ts = filter_query.to_ts
+        from_ts = Timestamp(0) if f_from_ts is None else f_from_ts
+        to_ts = ts_now() if f_to_ts is None else f_to_ts
+        for address in accounts:
+            self.single_address_query_transactions(
+                address=address,
+                start_ts=from_ts,
+                end_ts=to_ts,
             )
 
     def _get_transactions_for_range(
@@ -262,7 +247,10 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
                                 gevent.sleep(0)
                                 result = dbevmtx.get_evm_transactions(
                                     cursor,
-                                    EvmTransactionsFilterQuery.make(tx_hash=internal_tx.parent_tx_hash, chain_id=self.evm_inquirer.chain_id),  # noqa: E501
+                                    EvmTransactionsFilterQuery.make(
+                                        tx_hash=internal_tx.parent_tx_hash,
+                                        chain_id=self.evm_inquirer.chain_id,
+                                    ),
                                     has_premium=True,  # ignore limiting here
                                 )
                                 if len(result) == 0:  # parent transaction is not in the DB. Get it

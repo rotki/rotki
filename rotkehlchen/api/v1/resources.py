@@ -63,9 +63,10 @@ from rotkehlchen.api.v1.schemas import (
     Eth2ValidatorDeleteSchema,
     Eth2ValidatorPatchSchema,
     Eth2ValidatorPutSchema,
-    EthereumTransactionDecodingSchema,
-    EthereumTransactionQuerySchema,
     EvmAccountsPutSchema,
+    EvmTransactionDecodingSchema,
+    EvmTransactionPurgingSchema,
+    EvmTransactionQuerySchema,
     ExchangeBalanceQuerySchema,
     ExchangeRatesSchema,
     ExchangesDataResourceSchema,
@@ -176,6 +177,7 @@ from rotkehlchen.db.utils import DBAssetBalance, LocationData
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.types import (
+    SUPPORTED_CHAIN_IDS,
     SUPPORTED_EVM_CHAINS,
     AddressbookEntry,
     AddressbookType,
@@ -185,7 +187,6 @@ from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
     Eth2PubKey,
-    EVMTxHash,
     ExternalService,
     ExternalServiceApiCredentials,
     Fee,
@@ -199,6 +200,8 @@ from rotkehlchen.types import (
     TradeType,
     UserNote,
 )
+
+from .types import EvmTransactionDecodingApiData
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.bitcoin.hdkey import HDKey
@@ -465,9 +468,10 @@ class AssociatedLocations(BaseMethodView):
         return self.rest_api.get_associated_locations()
 
 
-class EthereumTransactionsResource(BaseMethodView):
-    get_schema = EthereumTransactionQuerySchema()
-    post_schema = EthereumTransactionDecodingSchema()
+class EvmTransactionsResource(BaseMethodView):
+    get_schema = EvmTransactionQuerySchema()
+    post_schema = EvmTransactionDecodingSchema()
+    delete_schema = EvmTransactionPurgingSchema()
 
     @require_loggedin_user()
     @ignore_kwarg_parser.use_kwargs(get_schema, location='json_and_query_and_view_args')
@@ -478,7 +482,7 @@ class EthereumTransactionsResource(BaseMethodView):
             filter_query: EvmTransactionsFilterQuery,
             event_params: dict[str, Any],
     ) -> Response:
-        return self.rest_api.get_ethereum_transactions(
+        return self.rest_api.get_evm_transactions(
             async_query=async_query,
             only_cache=only_cache,
             filter_query=filter_query,
@@ -491,17 +495,18 @@ class EthereumTransactionsResource(BaseMethodView):
             self,
             async_query: bool,
             ignore_cache: bool,
-            tx_hashes: Optional[list[EVMTxHash]],
+            data: list[EvmTransactionDecodingApiData],
     ) -> Response:
-        return self.rest_api.decode_ethereum_transactions(
+        return self.rest_api.decode_evm_transactions(
             async_query=async_query,
             ignore_cache=ignore_cache,
-            tx_hashes=tx_hashes,
+            data=data,
         )
 
     @require_loggedin_user()
-    def delete(self) -> Response:
-        return self.rest_api.purge_ethereum_transaction_data()
+    @use_kwargs(delete_schema, location='json')
+    def delete(self, evm_chain: Optional[SUPPORTED_CHAIN_IDS]) -> Response:
+        return self.rest_api.purge_evm_transaction_data(chain_id=evm_chain)
 
 
 class EthereumTransactionsDecodingResource(BaseMethodView):
