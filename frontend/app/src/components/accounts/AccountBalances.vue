@@ -126,7 +126,7 @@ const { isTaskRunning } = useTasks();
 const { refreshBlockchainBalances } = useRefresh(blockchain);
 
 const redetectAllTokens = () => {
-  get(balanceTable)?.fetchAllDetectedTokensAndQueryBalance();
+  get(balanceTable)?.fetchAllDetectedTokens();
 };
 
 const detectingAllTokens: ComputedRef<boolean> = computed(() => {
