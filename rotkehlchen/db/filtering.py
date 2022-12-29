@@ -209,12 +209,14 @@ class DBEvmTransactionHashFilter(DBFilter):
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBEvmChainIDFilter(DBFilter):
     chain_id: Optional[SUPPORTED_CHAIN_IDS] = None
+    table_name: Optional[str] = None
 
     def prepare(self) -> tuple[list[str], list[Any]]:
         if self.chain_id is None:
             return [], []
 
-        return ['chain_id=?'], [self.chain_id.serialize_for_db()]
+        prefix = f'{self.table_name}.' if self.table_name else ''
+        return [f'{prefix}chain_id=?'], [self.chain_id.serialize_for_db()]
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -480,6 +482,12 @@ class EvmTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
                 to_ts=to_ts,
             )
             filters.append(filter_query.timestamp_filter)
+            if chain_id is not None:  # keep it as last (see chain_id property of this filter)
+                filters.append(DBEvmChainIDFilter(
+                    and_op=True,
+                    table_name='evm_transactions',
+                    chain_id=chain_id,
+                ))
 
         filter_query.filters = filters
         return filter_query
