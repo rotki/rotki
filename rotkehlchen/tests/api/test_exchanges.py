@@ -1,6 +1,7 @@
 import os
 import random
 from http import HTTPStatus
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 from urllib.parse import urlencode
 
@@ -12,6 +13,7 @@ from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.constants.limits import FREE_ASSET_MOVEMENTS_LIMIT, FREE_TRADES_LIMIT
 from rotkehlchen.db.constants import KRAKEN_ACCOUNT_TYPE_KEY
 from rotkehlchen.db.filtering import AssetMovementsFilterQuery, TradesFilterQuery
+from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.exchanges.bitfinex import API_KEY_ERROR_MESSAGE as BITFINEX_API_KEY_ERROR_MESSAGE
 from rotkehlchen.exchanges.bitstamp import (
     API_KEY_ERROR_CODE_ACTION as BITSTAMP_API_KEY_ERROR_CODE_ACTION,
@@ -50,6 +52,10 @@ from rotkehlchen.tests.utils.history import (
 )
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import AssetMovementCategory, Location, Timestamp, TradeType
+
+if TYPE_CHECKING:
+    from requests import Response
+    from rotkehlchen.api.server import APIServer
 
 
 def mock_validate_api_key():
@@ -577,7 +583,7 @@ def test_exchange_query_balances_errors(rotkehlchen_api_server_with_exchanges):
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
-def test_exchange_query_trades(rotkehlchen_api_server_with_exchanges):
+def test_exchange_query_trades(rotkehlchen_api_server_with_exchanges: 'APIServer'):
     """Test that using the exchange trades query endpoint works fine"""
     async_query = random.choice([False, True])
     server = rotkehlchen_api_server_with_exchanges
@@ -617,7 +623,7 @@ def test_exchange_query_trades(rotkehlchen_api_server_with_exchanges):
     assert_binance_trades_result([x['entry'] for x in trades if x['entry']['location'] == 'binance'])  # noqa: E501
     assert_poloniex_trades_result([x['entry'] for x in trades if x['entry']['location'] == 'poloniex'])  # noqa: E501
 
-    def assert_okay(response):
+    def assert_okay(response: 'Response'):
         """Helper function for DRY checking below assertions"""
         if async_query:
             task_id = assert_ok_async_response(response)
@@ -642,6 +648,34 @@ def test_exchange_query_trades(rotkehlchen_api_server_with_exchanges):
         response = requests.get(
             api_url_for(server, "tradesresource") + '?' + urlencode(data))
         assert_okay(response)
+
+    # check that for poloniex we have information
+    with setup.binance_patch, setup.polo_patch:
+        response = requests.get(
+            url=api_url_for(server, "tradesresource"),
+            json={'location': 'poloniex'},
+        )
+
+    result = assert_proper_response_with_result(response)
+    assert len(result['entries']) != 0
+
+    # exclude poloniex as location and delete the trades from there
+    db = server.rest_api.rotkehlchen.data.db
+    poloniex_exchange = server.rest_api.rotkehlchen.exchange_manager.connected_exchanges[Location.POLONIEX][0]  # noqa: E501
+    with db.user_write() as cursor:
+        db.set_settings(cursor, ModifiableDBSettings(
+            non_syncing_exchanges=[poloniex_exchange.location_id()],
+        ))
+        db.purge_exchange_data(cursor, Location.POLONIEX)
+
+    # query the API and check that information is not queried again
+    with setup.binance_patch, setup.polo_patch:
+        response = requests.get(
+            url=api_url_for(server, "tradesresource"),
+            json={'location': 'poloniex'},
+        )
+    result = assert_proper_response_with_result(response)
+    assert len(result['entries']) == 0
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])

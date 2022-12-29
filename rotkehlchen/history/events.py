@@ -122,7 +122,13 @@ class EventsHistorian:
         from_ts = filter_query.from_ts
         to_ts = filter_query.to_ts
 
-        if location is not None:
+        with self.db.conn.read_ctx() as cursor:
+            excluded_locations = {exchange.location for exchange in self.db.get_settings(cursor).non_syncing_exchanges}  # noqa: E501
+
+        if (
+            location is not None and
+            location not in excluded_locations
+        ):
             self.query_location_latest_trades(location=location, from_ts=from_ts, to_ts=to_ts)
             return
 
