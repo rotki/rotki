@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { type AssetBalance } from '@rotki/common';
 import { type PropType } from 'vue';
+import { type LiquityStakingDetail } from '@rotki/common/lib/liquity';
 import StatCard from '@/components/display/StatCard.vue';
 
 defineProps({
-  stakings: {
-    required: true,
-    type: Array as PropType<AssetBalance[]>
+  stake: {
+    required: false,
+    type: Object as PropType<LiquityStakingDetail | null>,
+    default: null
   }
 });
 
@@ -15,14 +16,31 @@ const { tc } = useI18n();
 
 <template>
   <stat-card :title="tc('loan_stake.title')">
-    <div v-if="stakings.length > 0" class="d-flex justify-space-between">
-      <div class="grey--text">{{ tc('loan_stake.stake') }}</div>
-      <div>
-        <div v-for="stake in stakings" :key="stake.asset" class="mb-4">
-          <balance-display :asset="stake.asset" :value="stake" />
+    <template v-if="stake">
+      <div class="d-flex align-center py-4 justify-end">
+        <balance-display
+          :asset="stake.staked.asset"
+          :value="stake.staked"
+          icon-size="32px"
+        />
+      </div>
+      <v-divider />
+      <div class="pt-4">
+        <div class="d-flex align-center mb-1 justify-space-between">
+          <div class="grey--text">{{ tc('loan_stake.rewards') }}</div>
+          <div>
+            <balance-display
+              :asset="stake.lusdRewards.asset"
+              :value="stake.lusdRewards"
+            />
+            <balance-display
+              :asset="stake.ethRewards.asset"
+              :value="stake.ethRewards"
+            />
+          </div>
         </div>
       </div>
-    </div>
+    </template>
     <div v-else class="text-center grey--text pt-4">
       {{ tc('loan_stake.no_lqty_staked') }}
     </div>

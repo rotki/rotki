@@ -44,7 +44,7 @@ const loading = isLoading(Section.NON_FUNGIBLE_BALANCES);
 
 const { isPending } = useAssetCacheStore();
 const isNftDetailLoading: ComputedRef<boolean> = computed(
-  () => get(loading) || get(isPending(get(identifier)))
+  () => get(loading) || get(isPending(identifier))
 );
 
 const fallbackData = computed(() => {

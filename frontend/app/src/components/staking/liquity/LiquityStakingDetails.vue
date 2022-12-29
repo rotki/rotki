@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { type AssetBalance } from '@rotki/common';
 import { type GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import {
   type LiquityPoolDetail,
   type LiquityPoolDetails,
-  type LiquityStaking
+  type LiquityStakingDetail,
+  type LiquityStakingDetails
 } from '@rotki/common/lib/liquity';
 import { type ComputedRef } from 'vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
@@ -33,61 +33,69 @@ const chains = [Blockchain.ETH];
 
 const { tc } = useI18n();
 
-const stakingList: ComputedRef<AssetBalance[]> = computed(() => {
-  const staked: Record<string, AssetBalance> = {};
-  const stake = get(staking) as LiquityStaking;
+const aggregatedStake: ComputedRef<LiquityStakingDetail | null> = computed(
+  () => {
+    const allStakes = get(staking) as LiquityStakingDetails;
+    let stakes: LiquityStakingDetail | null = null;
 
-  for (const address in stake) {
-    const account = get(selectedAccount);
-    if (account && account.address !== address) {
-      continue;
+    for (const address in allStakes) {
+      const account = get(selectedAccount);
+      if (account && account.address !== address) {
+        continue;
+      }
+      const stake = allStakes[address];
+      if (stakes === null) {
+        stakes = { ...stake };
+      } else {
+        stakes.ethRewards = {
+          asset: stakes.ethRewards.asset,
+          ...balanceSum(stakes.ethRewards, stake.ethRewards)
+        };
+        stakes.lusdRewards = {
+          asset: stakes.lusdRewards.asset,
+          ...balanceSum(stakes.lusdRewards, stake.lusdRewards)
+        };
+        stakes.staked = {
+          asset: stakes.staked.asset,
+          ...balanceSum(stakes.staked, stake.staked)
+        };
+      }
     }
-    const addressStake = stake[address];
-    const asset = addressStake.asset;
-    const assetStake = staked[asset];
-
-    if (assetStake) {
-      staked[asset] = {
-        asset,
-        usdValue: assetStake.usdValue.plus(addressStake.usdValue),
-        amount: assetStake.amount.plus(addressStake.amount)
-      };
-    } else {
-      staked[asset] = addressStake;
-    }
+    return stakes;
   }
-  return Object.values(staked);
-});
+);
 
-const stakingPoolsList: ComputedRef<LiquityPoolDetail | null> = computed(() => {
-  const allPools = get(stakingPools) as LiquityPoolDetails;
-  let pools: LiquityPoolDetail | null = null;
+const aggregatedStakingPool: ComputedRef<LiquityPoolDetail | null> = computed(
+  () => {
+    const allPools = get(stakingPools) as LiquityPoolDetails;
+    let pools: LiquityPoolDetail | null = null;
 
-  for (const address in allPools) {
-    const account = get(selectedAccount);
-    if (account && account.address !== address) {
-      continue;
+    for (const address in allPools) {
+      const account = get(selectedAccount);
+      if (account && account.address !== address) {
+        continue;
+      }
+      const pool = allPools[address];
+      if (pools === null) {
+        pools = { ...pool };
+      } else {
+        pools.gains = {
+          asset: pools.gains.asset,
+          ...balanceSum(pools.gains, pool.gains)
+        };
+        pools.rewards = {
+          asset: pools.rewards.asset,
+          ...balanceSum(pools.rewards, pool.rewards)
+        };
+        pools.deposited = {
+          asset: pools.deposited.asset,
+          ...balanceSum(pools.deposited, pool.deposited)
+        };
+      }
     }
-    const pool = allPools[address];
-    if (pools === null) {
-      pools = { ...pool };
-    } else {
-      pools.gains = {
-        asset: pools.gains.asset,
-        ...balanceSum(pools.gains, pool.gains)
-      };
-      pools.rewards = {
-        asset: pools.rewards.asset,
-        ...balanceSum(pools.rewards, pool.rewards)
-      };
-      pools.deposited = {
-        asset: pools.deposited.asset,
-        ...balanceSum(pools.deposited, pool.deposited)
-      };
-    }
+    return pools;
   }
-  return pools;
-});
+);
 
 const availableAddresses = computed(() => {
   return [
@@ -134,11 +142,11 @@ const { fetchTransactions } = useTransactions();
 
     <v-row>
       <v-col md="6" cols="12">
-        <liquity-pools :pool="stakingPoolsList" />
+        <liquity-pools :pool="aggregatedStakingPool" />
       </v-col>
 
       <v-col md="6" cols="12">
-        <liquity-stake :stakings="stakingList" />
+        <liquity-stake :stake="aggregatedStake" />
       </v-col>
     </v-row>
 

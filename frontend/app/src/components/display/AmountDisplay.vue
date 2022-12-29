@@ -4,7 +4,6 @@ import { type MaybeRef } from '@vueuse/core';
 import { type ComputedRef, type PropType } from 'vue';
 import AmountCurrency from '@/components/display/AmountCurrency.vue';
 import { displayAmountFormatter } from '@/data/amount_formatter';
-import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
@@ -97,17 +96,7 @@ const { isManualAssetPrice, isAssetPriceInCurrentCurrency } =
 const isManualPrice = isManualAssetPrice(priceAsset);
 const isCurrentCurrency = isAssetPriceInCurrentCurrency(priceAsset);
 
-const { assetSymbol } = useAssetInfoRetrieval();
 const { findCurrency } = useCurrencies();
-
-const symbol = computed<string>(() => {
-  const identifier = get(asset);
-  if (!identifier) {
-    return '';
-  }
-
-  return get(assetSymbol(identifier));
-});
 
 const convertFiat = (
   value: MaybeRef<BigNumber>,
@@ -262,7 +251,7 @@ const shownCurrency = computed<ShownCurrency>(() => {
 });
 
 const shouldShowCurrency: ComputedRef<boolean> = computed(() => {
-  return !get(isNaN) && !!(get(shownCurrency) !== 'none' || get(symbol));
+  return !get(isNaN) && !!(get(shownCurrency) !== 'none' || get(asset));
 });
 
 // Copy
@@ -347,7 +336,7 @@ const copy = async () => {
               class="amount-display__currency"
               :show-currency="shownCurrency"
               :currency="currency"
-              :asset="symbol"
+              :asset="asset"
             />
           </div>
           <span>
@@ -398,7 +387,7 @@ const copy = async () => {
               class="amount-display__currency"
               :show-currency="shownCurrency"
               :currency="renderedCurrency"
-              :asset="symbol"
+              :asset="asset"
             />
           </div>
         </v-skeleton-loader>

@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
+import { type ComputedRef, type PropType } from 'vue';
 import { type Currency } from '@/types/currencies';
+import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
+import { useAssetCacheStore } from '@/store/assets/asset-cache';
 
 const props = defineProps({
   currency: { required: true, type: Object as PropType<Currency> },
@@ -21,7 +23,7 @@ const props = defineProps({
   }
 });
 
-const { assetPadding, showCurrency, currency } = toRefs(props);
+const { asset, assetPadding, showCurrency, currency } = toRefs(props);
 const assetStyle = computed(() => {
   if (!get(assetPadding)) {
     return {};
@@ -45,28 +47,43 @@ const displayAsset = computed(() => {
 
   return '';
 });
+
+const { assetSymbol } = useAssetInfoRetrieval();
+
+const symbol: ComputedRef<string> = computed(() => {
+  if (get(asset)) {
+    return get(assetSymbol(get(asset)));
+  }
+
+  return '';
+});
+
+const { isPending } = useAssetCacheStore();
+const loading = isPending(asset);
 </script>
 
 <template>
   <v-tooltip
-    v-if="!!asset"
+    v-if="asset && symbol"
     top
-    :disabled="asset.length <= assetPadding"
+    :disabled="loading || symbol.length <= assetPadding"
     open-delay="400"
     tag="div"
   >
     <template #activator="{ on, attrs }">
       <span
+        v-if="!loading"
         data-cy="display-currency"
         v-bind="attrs"
         :style="assetStyle"
         v-on="on"
       >
-        {{ asset }}
+        {{ symbol }}
       </span>
+      <v-skeleton-loader v-else width="30" type="text" height="12" />
     </template>
     <span data-cy="display-currency">
-      {{ asset }}
+      {{ symbol }}
     </span>
   </v-tooltip>
 

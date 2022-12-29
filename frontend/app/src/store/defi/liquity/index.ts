@@ -1,7 +1,7 @@
 import {
   LiquityBalances,
   LiquityPoolDetails,
-  LiquityStaking,
+  LiquityStakingDetails,
   TroveEvents
 } from '@rotki/common/lib/liquity';
 import { type Ref } from 'vue';
@@ -16,7 +16,7 @@ import { useLiquityApi } from '@/services/defi/liquity';
 export const useLiquityStore = defineStore('defi/liquity', () => {
   const balances = ref<LiquityBalances>({}) as Ref<LiquityBalances>;
   const events = ref<TroveEvents>({}) as Ref<TroveEvents>;
-  const staking = ref<LiquityStaking>({}) as Ref<LiquityStaking>;
+  const staking = ref<LiquityStakingDetails>({}) as Ref<LiquityStakingDetails>;
   const stakingPools = ref<LiquityPoolDetails>({}) as Ref<LiquityPoolDetails>;
 
   const isPremium = usePremium();
@@ -161,7 +161,7 @@ export const useLiquityStore = defineStore('defi/liquity', () => {
           section: Section.DEFI_LIQUITY_STAKING,
           meta,
           query: async () => await fetchLiquityStaking(),
-          parser: result => LiquityStaking.parse(result),
+          parser: result => LiquityStakingDetails.parse(result),
           onError
         },
         state: {
