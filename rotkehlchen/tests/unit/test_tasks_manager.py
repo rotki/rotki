@@ -1,4 +1,4 @@
-from typing import List
+from typing import TYPE_CHECKING, List
 from unittest.mock import MagicMock, patch
 
 import gevent
@@ -7,6 +7,7 @@ import pytest
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.db.ethtx import DBEthTx
+from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.premium.premium import Premium, PremiumCredentials, SubscriptionStatus
 from rotkehlchen.tasks.manager import PREMIUM_STATUS_CHECK, TaskManager
@@ -15,6 +16,10 @@ from rotkehlchen.tests.utils.premium import VALID_PREMIUM_KEY, VALID_PREMIUM_SEC
 from rotkehlchen.types import Location, SupportedBlockchain
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 from rotkehlchen.utils.misc import ts_now
+
+if TYPE_CHECKING:
+    from rotkehlchen.exchanges.exchange import ExchangeInterface
+    from rotkehlchen.exchanges.manager import ExchangeManager
 
 
 class MockPremiumSyncManager():
@@ -166,6 +171,21 @@ def test_maybe_schedule_exchange_query(task_manager, exchange_manager, poloniex)
 
     except gevent.Timeout as e:
         raise AssertionError(f'exchange query was not scheduled within {timeout} seconds') from e  # noqa: E501
+
+
+def test_maybe_schedule_exchange_query_ignore_exchanges(
+        task_manager: 'TaskManager',
+        exchange_manager: 'ExchangeManager',
+        poloniex: 'ExchangeInterface',
+) -> None:
+    """Verify that task manager respects the ignored exchanges when querying trades"""
+    exchange_manager.connected_exchanges[Location.POLONIEX] = [poloniex]
+    task_manager.exchange_manager = exchange_manager
+    with task_manager.database.user_write() as cursor:
+        task_manager.database.set_settings(cursor, ModifiableDBSettings(
+            non_syncing_exchanges=[poloniex.location_id()],
+        ))
+    assert task_manager._maybe_schedule_exchange_history_query() is None
 
 
 @pytest.mark.parametrize('one_receipt_in_db', [True, False])
