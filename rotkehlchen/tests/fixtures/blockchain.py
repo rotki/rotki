@@ -50,6 +50,11 @@ def fixture_ethereum_accounts(number_of_eth_accounts) -> list[ChecksumEvmAddress
     return [make_evm_address() for x in range(number_of_eth_accounts)]
 
 
+@pytest.fixture(name='optimism_accounts')
+def fixture_optimism_accounts() -> list[ChecksumEvmAddress]:
+    return []
+
+
 @pytest.fixture(name='btc_accounts')
 def fixture_btc_accounts() -> list[BTCAddress]:
     return []
@@ -88,19 +93,21 @@ def fixture_avax_accounts() -> list[ChecksumEvmAddress]:
 @pytest.fixture(name='blockchain_accounts')
 def fixture_blockchain_accounts(
         ethereum_accounts: list[ChecksumEvmAddress],
+        optimism_accounts: list[ChecksumEvmAddress],
+        avax_accounts: list[ChecksumEvmAddress],
         btc_accounts: list[BTCAddress],
         bch_accounts: list[BTCAddress],
         ksm_accounts: list[SubstrateAddress],
         dot_accounts: list[SubstrateAddress],
-        avax_accounts: list[ChecksumEvmAddress],
 ) -> BlockchainAccounts:
     return BlockchainAccounts(
         eth=ethereum_accounts,
+        optimism=optimism_accounts.copy(),
+        avax=avax_accounts.copy(),
         btc=btc_accounts.copy(),
         bch=bch_accounts.copy(),
         ksm=ksm_accounts.copy(),
         dot=dot_accounts.copy(),
-        avax=avax_accounts.copy(),
     )
 
 

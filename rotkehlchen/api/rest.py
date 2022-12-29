@@ -3304,7 +3304,7 @@ class RestAPI():
                     message = str(e)
                     break
 
-            else:  # the for loop broke -- so we had an error
+            if status_code != HTTPStatus.OK:
                 return {'result': None, 'message': message, 'status_code': status_code}
 
         # if needed, chain will have been queried by now so let's get everything from DB
