@@ -400,3 +400,32 @@ def test_migration_6_own_node(rotkehlchen_api_server):
     # defaults were replaced.
     expected_nodes = {*new_nodes, ('Owned node', 'http://localhost:8045', 1, 1, 'ETH')}
     assert set(nodes_in_db) == expected_nodes
+
+
+@pytest.mark.parametrize('data_migration_version', [None])
+@pytest.mark.parametrize('perform_migrations_at_unlock', [False])
+@pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('perform_nodes_insertion', [False])
+def test_migration_7_nodes(rotkehlchen_api_server):
+    """
+    Test that the seventh data migration works adding llamanode to the list of eth nodes.
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    database = rotki.data.db
+    migrate_mock = patch(
+        'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
+        new=MIGRATION_LIST[3:7],
+    )
+    with migrate_mock:
+        DataMigrationManager(rotki).maybe_migrate_data()
+
+    nodes = database.get_web3_nodes(blockchain=SupportedBlockchain.ETHEREUM)
+    # check that weight is correct for nodes
+    assert sum((node.weight for node in nodes)) == ONE
+    llama_node_in_db = False
+    for node in nodes:
+        if node.node_info.endpoint == 'https://eth.llamarpc.com':
+            llama_node_in_db = True
+            break
+    assert llama_node_in_db is True
