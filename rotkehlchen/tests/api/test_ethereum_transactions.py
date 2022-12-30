@@ -1216,10 +1216,10 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = rotki.data.db
-    tx1 = make_ethereum_transaction(tx_hash=b'1')
-    tx2 = make_ethereum_transaction(tx_hash=b'2')
-    tx3 = make_ethereum_transaction(tx_hash=b'3')
-    tx4 = make_ethereum_transaction(tx_hash=b'4')
+    tx1 = make_ethereum_transaction(tx_hash=b'1', timestamp=1)
+    tx2 = make_ethereum_transaction(tx_hash=b'2', timestamp=2)
+    tx3 = make_ethereum_transaction(tx_hash=b'3', timestamp=3)
+    tx4 = make_ethereum_transaction(tx_hash=b'4', timestamp=4)
     event1 = make_ethereum_event(tx_hash=b'1', index=1, asset=A_ETH)
     event2 = make_ethereum_event(tx_hash=b'1', index=2, asset=A_ETH, counterparty='EXAMPLE_PROTOCOL')  # noqa: E501
     event3 = make_ethereum_event(tx_hash=b'1', index=3, asset=A_WETH, counterparty='EXAMPLE_PROTOCOL')  # noqa: E501
@@ -1262,7 +1262,7 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
         },
     )
     result = assert_proper_response_with_result(response)
-    expected = generate_tx_entries_response([(tx1, [event3]), (tx2, [event4])])
+    expected = generate_tx_entries_response([(tx2, [event4]), (tx1, [event3])])
     assert result['entries'] == expected
 
     response = requests.get(
@@ -1284,7 +1284,7 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
         json={'asset': A_WETH.serialize(), 'evm_chain': 'ethereum'},
     )
     result = assert_proper_response_with_result(response)
-    expected = generate_tx_entries_response([(tx1, [event3]), (tx2, [event4])])
+    expected = generate_tx_entries_response([(tx2, [event4]), (tx1, [event3])])
     assert result['entries'] == expected
 
     response = requests.get(
@@ -1325,7 +1325,7 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
         },
     )
     result = assert_proper_response_with_result(response)
-    expected = generate_tx_entries_response([(tx3, []), (tx4, [event5, event6])])
+    expected = generate_tx_entries_response([(tx4, [event5, event6]), (tx3, [])])
     assert result['entries'] == expected
 
     # test that filtering by subtype works
@@ -1341,7 +1341,7 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
         },
     )
     result = assert_proper_response_with_result(response)
-    expected = generate_tx_entries_response([(tx3, []), (tx4, [event5])])
+    expected = generate_tx_entries_response([(tx4, [event5]), (tx3, [])])
     assert result['entries'] == expected
 
 
@@ -1448,23 +1448,28 @@ def test_extra_data_serialization(rotkehlchen_api_server, ethereum_accounts):
 @pytest.mark.parametrize('ethereum_accounts', [['0x59ABf3837Fa962d6853b4Cc0a19513AA031fd32b']])  # noqa: E501
 @patch.object(EthereumTransactions, '_get_internal_transactions_for_ranges', lambda *args, **kargs: None)  # noqa: E501
 @patch.object(EthereumTransactions, '_get_erc20_transfers_for_ranges', lambda *args, **kargs: None)
+@pytest.mark.parametrize('should_mock_price_queries', [True])
+@pytest.mark.parametrize('default_mock_price_value', [FVal(1.5)])
 def test_no_value_eth_transfer(rotkehlchen_api_server: 'APIServer'):
     """Test that eth transctions with no value are correctly decoded and returned in the API.
     In this case we don't need any erc20 or internal transaction, this is why they are omitted
     in this test.
     """
     tx_str = '0x6cbae2712ded4254cc0dbd3daa9528b049c27095b5216a4c52e2e3be3d6905a5'
-    # Make sure that the tranasctions get decoded
+    # Make sure that the transactions get decoded
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
             'evmtransactionsresource',
         ), json={
-            'evm_chain': 'ethereum',
             'async_query': False,
-            'tx_hashes': [tx_str],
+            'data': [{
+                'evm_chain': 'ethereum',
+                'tx_hashes': [tx_str],
+            }],
         },
     )
+    assert_simple_ok_response(response)
 
     # retrieve the transaction
     response = requests.get(api_url_for(

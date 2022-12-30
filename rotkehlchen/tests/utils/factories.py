@@ -69,13 +69,17 @@ def make_evm_address() -> ChecksumEvmAddress:
     return to_checksum_address('0x' + make_random_bytes(20).hex())
 
 
-def make_ethereum_transaction(tx_hash: Optional[bytes] = None) -> EvmTransaction:
+def make_ethereum_transaction(
+        tx_hash: Optional[bytes] = None,
+        timestamp: Optional[Timestamp] = None,
+) -> EvmTransaction:
     if tx_hash is None:
         tx_hash = make_random_bytes(42)
+    timestamp = timestamp if timestamp is not None else Timestamp(0)
     return EvmTransaction(
         tx_hash=make_evm_tx_hash(tx_hash),
         chain_id=ChainID.ETHEREUM,
-        timestamp=Timestamp(0),
+        timestamp=timestamp,
         block_number=0,
         from_address=make_evm_address(),
         to_address=make_evm_address(),

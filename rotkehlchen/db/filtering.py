@@ -433,6 +433,12 @@ class EvmTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
             order_by_rules=order_by_rules,
         )
         filter_query = cast('EvmTransactionsFilterQuery', filter_query)
+        # Create the timestamp filter so that from/to ts works. But add it only if needed
+        filter_query.timestamp_filter = DBTimestampFilter(
+            and_op=True,
+            from_ts=from_ts,
+            to_ts=to_ts,
+        )
         filters: list[DBFilter] = []
         if tx_hash is not None:  # tx_hash means single result so make it as single filter
             filters.append(DBEvmTransactionHashFilter(and_op=True, tx_hash=tx_hash))
@@ -476,11 +482,6 @@ class EvmTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
                     operator='IN',
                 ))
 
-            filter_query.timestamp_filter = DBTimestampFilter(
-                and_op=True,
-                from_ts=from_ts,
-                to_ts=to_ts,
-            )
             filters.append(filter_query.timestamp_filter)
             if chain_id is not None:  # keep it as last (see chain_id property of this filter)
                 filters.append(DBEvmChainIDFilter(
