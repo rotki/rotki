@@ -68,7 +68,7 @@
                   icon
                   :disabled="detectingTokens(item.address).value || loading"
                   v-on="on"
-                  @click="fetchDetectedTokensAndQueryBalance(item.address)"
+                  @click="fetchDetectedTokens(item.address)"
                 >
                   <v-progress-circular
                     v-if="detectingTokens(item.address).value"
@@ -199,7 +199,6 @@ import {
   XpubAccountWithBalance,
   XpubPayload
 } from '@/store/balances/types';
-import { useBlockchainBalancesStore } from '@/store/blockchain/balances';
 import { useEthBalancesStore } from '@/store/blockchain/balances/eth';
 import { useBlockchainTokensStore } from '@/store/blockchain/tokens';
 import { useGeneralSettingsStore } from '@/store/settings/general';
@@ -574,25 +573,16 @@ const accountOperation = computed<boolean>(() => {
 
 const { getEthDetectedTokensInfo, fetchDetectedTokens } =
   useBlockchainTokensStore();
-const { fetchBlockchainBalances } = useBlockchainBalancesStore();
 
 const detectingTokens = (address: string | null = null) =>
   isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, address ? { address } : {});
 
 const detectingAllTokens = detectingTokens();
 
-const fetchDetectedTokensAndQueryBalance = async (address: string) => {
-  await fetchDetectedTokens(address);
-  await fetchBlockchainBalances({
-    blockchain: Blockchain.ETH,
-    ignoreCache: true
-  });
-};
-
-const fetchAllDetectedTokensAndQueryBalance = async () => {
+const fetchAllDetectedTokens = async () => {
   const promises = get(visibleBalances).map(async balance => {
     const address = balance.address;
-    await fetchDetectedTokensAndQueryBalance(address);
+    await fetchDetectedTokens(address);
   });
 
   await Promise.allSettled(promises);
@@ -621,7 +611,7 @@ const removeCollapsed = ({ derivationPath, xpub }: XpubPayload) => {
 
 defineExpose({
   removeCollapsed,
-  fetchAllDetectedTokensAndQueryBalance,
+  fetchAllDetectedTokens,
   detectingAllTokens
 });
 </script>

@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`5315` Fix issue where balance is not fully refreshed after detect tokens button pressed.
 * :bug:`-` Connecting to substrate nodes will no longer timeout prematurely for systems with slow connections.
 * :bug:`-` Transfers between tracked accounts will now have a correct label in the UI.
 * :bug:`-` Users will be able to finish balance queries if they have assets with missing information.
