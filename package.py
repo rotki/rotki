@@ -17,7 +17,7 @@ import requests
 
 from packaging import version
 
-pyinstaller_version = os.environ.get('PYINSTALLER_VERSION', '5.2')
+pyinstaller_version = os.environ.get('PYINSTALLER_VERSION', '5.7.0')
 BACKEND_PREFIX = 'rotki-core'
 SUPPORTED_ARCHS = [
     'AMD64',  # Windows
@@ -936,7 +936,7 @@ class BackendBuilder:
             sys.exit(1)
 
         os.chdir(pyinstaller_directory)
-        install_ret_code = subprocess.call('python setup.py install', shell=True)
+        install_ret_code = subprocess.call('pip install .', shell=True)
         if install_ret_code != 0:
             logger.error('failed to install pyinstaller')
             sys.exit(1)
