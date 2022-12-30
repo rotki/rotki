@@ -20,7 +20,6 @@ import {
   type XpubAccountWithBalance,
   type XpubPayload
 } from '@/store/balances/types';
-import { useBlockchainTokensStore } from '@/store/blockchain/tokens';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTasks } from '@/store/tasks';
 import { type Properties } from '@/types';
@@ -405,23 +404,6 @@ const accountOperation = computed<boolean>(() => {
   );
 });
 
-const { getEthDetectedTokensInfo, fetchDetectedTokens } =
-  useBlockchainTokensStore();
-
-const detectingTokens = (address: string | null = null) =>
-  isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, address ? { address } : {});
-
-const detectingAllTokens = detectingTokens();
-
-const fetchAllDetectedTokens = async () => {
-  const promises = get(visibleBalances).map(async balance => {
-    const address = balance.address;
-    await fetchDetectedTokens(address);
-  });
-
-  await Promise.allSettled(promises);
-};
-
 const removeCollapsed = ({ derivationPath, xpub }: XpubPayload) => {
   const index = get(collapsedXpubs).findIndex(
     collapsed =>
@@ -434,9 +416,7 @@ const removeCollapsed = ({ derivationPath, xpub }: XpubPayload) => {
 };
 
 defineExpose({
-  removeCollapsed,
-  fetchAllDetectedTokens,
-  detectingAllTokens
+  removeCollapsed
 });
 </script>
 

@@ -3,8 +3,6 @@ import { type GeneralAccount } from '@rotki/common/lib/account';
 import { type ComputedRef, type PropType, type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
 import TransactionEventForm from '@/components/history/TransactionEventForm.vue';
-import { isSectionLoading } from '@/composables/common';
-import { useTransactionFilter } from '@/composables/filters/transactions';
 import { useTxQueryStatus } from '@/store/history/query-status';
 import { useTransactions } from '@/store/history/transactions';
 import {
