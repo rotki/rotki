@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.26.3 <2022-12-30>`
 * :bug:`5315` Fix issue where balance is not fully refreshed after detect tokens button pressed.
 * :bug:`-` Connecting to substrate nodes will no longer timeout prematurely for systems with slow connections.
 * :bug:`-` Transfers between tracked accounts will now have a correct label in the UI.
