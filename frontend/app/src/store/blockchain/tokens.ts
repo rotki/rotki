@@ -1,5 +1,5 @@
 import { type MaybeRef } from '@vueuse/core';
-import { Blockchain, Blockchain } from '@rotki/common/lib/blockchain';
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import isEqual from 'lodash/isEqual';
 import { type ComputedRef, type Ref } from 'vue';
 import {
