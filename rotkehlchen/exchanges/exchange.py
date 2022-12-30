@@ -43,6 +43,7 @@ ExchangeHistorySuccessCallback = Callable[
 ]
 
 ExchangeHistoryFailCallback = Callable[[str], None]
+ExchangeHistoryNewStepCallback = Callable[[str], None]
 
 
 class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
@@ -478,45 +479,48 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-            success_callback: ExchangeHistorySuccessCallback,
             fail_callback: ExchangeHistoryFailCallback,
+            new_step_data: Optional[tuple[ExchangeHistoryNewStepCallback, str]] = None,
     ) -> None:
         """Queries the historical event endpoints for this exchange and performs actions.
-
-        In case of success passes the result to success_callback.
+        The results are saved in the DB.
         In case of failure passes the error to failure_callback
+
+        `new_step_data` argument contains callback and exchange name to be used for steps.
         """
+        if new_step_data is not None:
+            new_step_callback, exchange_name = new_step_data
+            new_step_callback(f'Querying {exchange_name} trades history')
         try:
-            trades_history = self.query_trade_history(
+            self.query_trade_history(
                 start_ts=start_ts,
                 end_ts=end_ts,
                 only_cache=False,
             )
-            margin_history = self.query_margin_history(
+            if new_step_data is not None:
+                new_step_callback(f'Querying {exchange_name} margin history')
+            self.query_margin_history(
                 start_ts=start_ts,
                 end_ts=end_ts,
             )
-            asset_movements = self.query_deposits_withdrawals(
+            if new_step_data is not None:
+                new_step_callback(f'Querying {exchange_name} asset movements history')
+            self.query_deposits_withdrawals(
                 start_ts=start_ts,
                 end_ts=end_ts,
                 only_cache=False,
             )
-            # Query (and save in the DB) any ledger actions. They will be included in history l8er
+            if new_step_data is not None:
+                new_step_callback(f'Querying {exchange_name} ledger actions history')
             self.query_income_loss_expense(
                 start_ts=start_ts,
                 end_ts=end_ts,
                 only_cache=False,
             )
-            exchange_specific_data = self.query_exchange_specific_history(  # pylint: disable=assignment-from-none  # noqa: E501
+            # No new step for exchange_specific_history since it is not used in any exchange atm.
+            self.query_exchange_specific_history(
                 start_ts=start_ts,
                 end_ts=end_ts,
             )
-            success_callback(
-                trades_history,
-                margin_history,
-                asset_movements,
-                exchange_specific_data,
-            )
-
         except RemoteError as e:
             fail_callback(str(e))

@@ -1,13 +1,14 @@
 import { type MaybeRef } from '@vueuse/core';
+import { Blockchain, Blockchain } from '@rotki/common/lib/blockchain';
 import isEqual from 'lodash/isEqual';
 import { type ComputedRef, type Ref } from 'vue';
-import { Blockchain } from '@rotki/common/lib/blockchain';
 import {
   type EthDetectedTokensInfo,
   type EvmTokensRecord
 } from '@/services/balances/types';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useEthAccountsStore } from '@/store/blockchain/accounts/eth';
+import { useBlockchainBalancesStore } from '@/store/blockchain/balances';
 import { useTasks } from '@/store/tasks';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
@@ -128,6 +129,20 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
       return;
     }
     await fetchDetectedTokens(Blockchain.OPTIMISM);
+  });
+
+  const { isTaskRunning } = useTasks();
+  const isDetecting = isTaskRunning(TaskType.FETCH_DETECTED_TOKENS);
+
+  const { fetchBlockchainBalances } = useBlockchainBalancesStore();
+
+  watch(isDetecting, async (isDetecting, wasDetecting) => {
+    if (wasDetecting && !isDetecting) {
+      await fetchBlockchainBalances({
+        blockchain: Blockchain.ETH,
+        ignoreCache: true
+      });
+    }
   });
 
   return {

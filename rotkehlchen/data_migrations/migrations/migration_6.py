@@ -87,6 +87,7 @@ def data_migration_6(write_cursor: 'DBCursor', rotki: 'Rotkehlchen') -> None:
     nodes_to_connect = rotki.data.db.get_rpc_nodes(blockchain=SupportedBlockchain.ETHEREUM, only_active=True)  # noqa: E501
     # when we sync a remote database the migrations are executed but the chain_manager
     # has not been created yet
-    if hasattr(rotki, 'chain_manger') is True:
-        rotki.chains_aggregator.ethereum.node_inquirer.connect_to_multiple_nodes(nodes_to_connect)  # noqa: E501
+    if (chains_aggregator := getattr(rotki, 'chains_aggregator', None)) is not None:
+        chains_aggregator.ethereum.node_inquirer.connect_to_multiple_nodes(nodes_to_connect)
+
     log.debug('Exit data_migration_6')

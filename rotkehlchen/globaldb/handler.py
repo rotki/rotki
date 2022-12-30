@@ -19,7 +19,7 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_ETH2
 from rotkehlchen.constants.misc import DEFAULT_SQL_VM_INSTRUCTIONS_CB, NFT_DIRECTIVE
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType, DBCursor
-from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import DBUpgradeError, InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.deserialization import deserialize_price
@@ -235,10 +235,10 @@ class GlobalDBHandler():
             # mypy does not recognize the initialization as that of a singleton
             return GlobalDBHandler()._packaged_db_conn  # type: ignore
 
-        global_dir = Path(__file__).resolve().parent.parent / 'data'
-        packaged_db_conn, _ = initialize_globaldb(
-            global_dir=global_dir,
-            db_filename=GLOBAL_DB_FILENAME,
+        packaged_db_path = Path(__file__).resolve().parent.parent / 'data' / 'global.db'
+        packaged_db_conn = DBConnection(
+            path=packaged_db_path,
+            connection_type=DBConnectionType.GLOBAL,
             sql_vm_instructions_cb=DEFAULT_SQL_VM_INSTRUCTIONS_CB,
         )
         GlobalDBHandler()._packaged_db_conn = packaged_db_conn
@@ -1176,11 +1176,20 @@ class GlobalDBHandler():
                         cursor=cursor,
                         parent_token_identifier=entry[0],
                     )
-                asset = deserialize_asset_with_oracles_from_db(
-                    asset_type=asset_type,
-                    asset_data=entry,
-                    underlying_tokens=underlying_tokens,
-                )
+
+                try:
+                    asset = deserialize_asset_with_oracles_from_db(
+                        asset_type=asset_type,
+                        asset_data=entry,
+                        underlying_tokens=underlying_tokens,
+                    )
+                except UnknownAsset as e:
+                    log.error(f'Asset with identifier {entry[0]} is missing either name, symbol or decimals. {str(e)}')  # noqa: E501
+                    continue
+                except (DeserializationError, WrongAssetType) as e:
+                    log.error(f'Asset with identifier {entry[0]} has wrong asset type. {str(e)}')
+                    continue
+
                 assets.append(asset)
 
         return assets

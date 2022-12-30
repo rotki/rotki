@@ -17,6 +17,7 @@ from rotkehlchen.tests.utils.exchanges import check_saved_events_for_exchange
 from rotkehlchen.types import Location, SupportedBlockchain, TradeType
 
 if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.rotkehlchen import Rotkehlchen
 
@@ -221,18 +222,21 @@ def test_migration_4(rotkehlchen_api_server):
         nodes = json.loads(f.read())
         rpc_nodes = database.get_rpc_nodes(blockchain=SupportedBlockchain.ETHEREUM)
         rpc_nodes += database.get_rpc_nodes(blockchain=SupportedBlockchain.OPTIMISM)
-        assert len(rpc_nodes) == len(nodes) + 1
+        assert len(rpc_nodes) >= len(nodes) + 1
+        owned_index = -1
         for node in nodes:
-            for rpc_node in rpc_nodes:
+            for idx, rpc_node in enumerate(rpc_nodes):
                 if rpc_node.node_info.name == node['name']:
                     assert rpc_node.node_info.endpoint == node['endpoint']
                     assert rpc_node.active == node['active']
                     assert rpc_node.node_info.owned == node['owned']
-                    assert rpc_node.weight == FVal(node['weight'])
                     continue
+                if rpc_node.node_info.owned is True:
+                    owned_index = idx
+
         assert len(rpc_nodes) >= 5
-        assert rpc_nodes[4].node_info.owned is True
-        assert rpc_nodes[4].node_info.endpoint == 'https://localhost:5222'
+        assert rpc_nodes[owned_index].node_info.owned is True
+        assert rpc_nodes[owned_index].node_info.endpoint == 'https://localhost:5222'
 
 
 @pytest.mark.parametrize('data_migration_version', [None])
@@ -262,7 +266,7 @@ def test_migration_4_no_own_endpoint(rotkehlchen_api_server):
     rpc_nodes += database.get_rpc_nodes(blockchain=SupportedBlockchain.OPTIMISM)
     with open(dir_path / 'data' / 'nodes.json') as f:
         nodes = json.loads(f.read())
-        assert len(nodes) == len(rpc_nodes)
+        assert len(rpc_nodes) >= len(nodes)
 
 
 @pytest.mark.parametrize('data_migration_version', [None])
@@ -419,3 +423,38 @@ def test_migration_6_own_node(rotkehlchen_api_server):
     # defaults were replaced.
     expected_nodes = {*new_nodes, ('Owned node', 'http://localhost:8045', True, '1', 'ETH')}
     assert set(nodes_in_db) == expected_nodes
+
+
+@pytest.mark.parametrize('data_migration_version', [None])
+@pytest.mark.parametrize('perform_migrations_at_unlock', [False])
+@pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('perform_nodes_insertion', [False])
+def test_migration_7_nodes(rotkehlchen_api_server: 'APIServer'):
+    """
+    Test that the seventh data migration works adding llamanode to the list of eth nodes.
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    database = rotki.data.db
+    assert rotki.chains_aggregator is not None
+
+    migrate_mock = patch(
+        'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
+        new=MIGRATION_LIST[3:7],
+    )
+    with migrate_mock:
+        DataMigrationManager(rotki).maybe_migrate_data()
+
+    # check that the task to connect the ethereum node is spawned
+    expected_greenlet_name = 'Attempt connection to LlamaNodes ethereum node'
+    assert any((expected_greenlet_name in greenlet.task_name for greenlet in rotki.greenlet_manager.greenlets)) is True  # noqa: E501
+
+    nodes = database.get_rpc_nodes(blockchain=SupportedBlockchain.ETHEREUM)
+    # check that weight is correct for nodes
+    assert sum((node.weight for node in nodes)) == ONE
+    llama_node_in_db = False
+    for node in nodes:
+        if node.node_info.endpoint == 'https://eth.llamarpc.com':
+            llama_node_in_db = True
+            break
+    assert llama_node_in_db is True
