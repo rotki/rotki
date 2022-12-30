@@ -26,6 +26,7 @@ if TYPE_CHECKING:
 ]])
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1.5)])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_query_transactions(rotkehlchen_api_server: 'APIServer'):
     """Test that querying the evm transactions endpoint for an address with
     transactions in multiple chains works fine.
@@ -54,4 +55,11 @@ def test_query_transactions(rotkehlchen_api_server: 'APIServer'):
     with open(expected_file) as f:
         expected_data = json.load(f)
 
-    assert result == expected_data
+    # check all expected data exists. User has done more transactions since then if we don't
+    # mock network, so we need to test like this
+    for entry in expected_data['entries']:
+        assert entry in result['entries']
+
+    assert result['entries_found'] >= expected_data['entries_found']
+    assert result['entries_total'] >= expected_data['entries_total']
+    assert result['entries_limit'] == -1

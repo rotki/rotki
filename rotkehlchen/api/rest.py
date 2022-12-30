@@ -3412,7 +3412,7 @@ class RestAPI():
         price for their events will be queried.
         """
         task_manager = self.rotkehlchen.task_manager
-        result = True
+        result = None
         message = ''
         status_code = HTTPStatus.OK
 
@@ -3440,6 +3440,8 @@ class RestAPI():
                 status_code = HTTPStatus.CONFLICT
                 message = f'Failed to request evm transaction decoding due to {str(e)}'
                 break
+        else:  # no break in the for loop, success
+            result = True
 
         return {'result': result, 'message': message, 'status_code': status_code}
 

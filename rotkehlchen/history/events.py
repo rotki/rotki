@@ -366,11 +366,7 @@ class EventsHistorian:
             chain_id=ChainID.ETHEREUM,
         )
         try:
-            _, _ = ethereum.transactions.query(
-                filter_query=tx_filter_query,
-                has_premium=True,  # ignore limits here. Limit applied at processing
-                only_cache=False,
-            )
+            ethereum.transactions.query_chain(filter_query=tx_filter_query)
         except RemoteError as e:
             msg = str(e)
             self.msg_aggregator.add_error(
