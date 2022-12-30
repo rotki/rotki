@@ -18,7 +18,7 @@ describe('API keys', () => {
     app.fasterLogout();
   });
 
-  it('add exchange key', () => {
+  it.skip('add exchange key', () => {
     const apiKey = Cypress.env('BITTREX_API_KEY');
     const apiSecret = Cypress.env('BITTREX_API_SECRET');
     page.visit();
