@@ -99,7 +99,8 @@ def maybe_upgrade_globaldb(
             )
             write_cursor.execute(
                 'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
-                ('version', str(GLOBAL_DB_VERSION)),
+                ('version', str(to_version)),
             )
+            db_version = to_version
 
     return False  # not fresh DB

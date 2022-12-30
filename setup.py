@@ -36,6 +36,8 @@ setup(
             'data/globaldb_v2_v3_assets.sql',
             'data/nodes.json',
             'data/nodes_as_of_1-26-1.json',
+            'data/populate_asset_collections.sql',
+            'data/populate_multiasset_mappings.sql',
             'chain/ethereum/modules/dxdaomesa/data/contracts.json',
         ],
     },
