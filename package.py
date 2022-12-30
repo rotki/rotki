@@ -720,6 +720,10 @@ class MacPackaging:
         for wheel in sorted(wheel_directory.iterdir()):
             install(str(wheel))
 
+        # To avoid cytoolz RuntimeError on macOS
+        # "Cython required to build dev version of cytoolz."
+        install('cython')
+
     @log_group('certificates')
     def import_signing_certificates(self) -> bool:
         """
