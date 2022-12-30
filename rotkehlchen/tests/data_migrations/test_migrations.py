@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
@@ -15,6 +16,9 @@ from rotkehlchen.data_migrations.manager import (
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.exchanges import check_saved_events_for_exchange
 from rotkehlchen.types import Location, SupportedBlockchain, TradeType
+
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
 
 
 def _create_invalid_icon(icon_identifier: str, icons_dir: Path) -> Path:
@@ -413,18 +417,24 @@ def test_migration_6_own_node(rotkehlchen_api_server):
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('perform_nodes_insertion', [False])
-def test_migration_7_nodes(rotkehlchen_api_server):
+def test_migration_7_nodes(rotkehlchen_api_server: 'APIServer'):
     """
     Test that the seventh data migration works adding llamanode to the list of eth nodes.
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     database = rotki.data.db
+    assert rotki.chain_manager is not None
+
     migrate_mock = patch(
         'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
         new=MIGRATION_LIST[3:7],
     )
     with migrate_mock:
         DataMigrationManager(rotki).maybe_migrate_data()
+
+    # check that the task to connect the ethereum node is spawned
+    expected_greenlet_name = 'Attempt connection to LlamaNodes ethereum node'
+    assert any((expected_greenlet_name in greenlet.task_name for greenlet in rotki.greenlet_manager.greenlets)) is True  # noqa: E501
 
     nodes = database.get_web3_nodes(blockchain=SupportedBlockchain.ETHEREUM)
     # check that weight is correct for nodes
