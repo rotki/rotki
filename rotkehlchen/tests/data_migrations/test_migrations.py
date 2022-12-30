@@ -6,6 +6,7 @@ import pytest
 
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_ETH
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.data_migrations.manager import (
     MIGRATION_LIST,
     DataMigrationManager,
@@ -210,18 +211,23 @@ def test_migration_4(rotkehlchen_api_server):
     with open(dir_path / 'data' / 'nodes.json', 'r') as f:
         nodes = json.loads(f.read())
         web3_nodes = database.get_web3_nodes(blockchain=SupportedBlockchain.ETHEREUM)
-        assert len(web3_nodes) == len(nodes) + 1
+        # nodes + etherscan + any node added later
+        assert len(web3_nodes) >= len(nodes) + 1
+        found_owned_node = False
         for node in nodes:
             for web3_node in web3_nodes:
+                if web3_node.node_info.owned is True:
+                    found_owned_node = True
+                    assert web3_node.node_info.endpoint == 'https://localhost:5222'
+                    continue
                 if web3_node.node_info.name == node['name']:
                     assert web3_node.node_info.endpoint == node['endpoint']
                     assert web3_node.active == node['active']
                     assert web3_node.node_info.owned == node['owned']
-                    assert web3_node.weight == FVal(node['weight'])
+                    assert web3_node.weight > ZERO
                     continue
         assert len(web3_nodes) >= 5
-        assert web3_nodes[4].node_info.owned is True
-        assert web3_nodes[4].node_info.endpoint == 'https://localhost:5222'
+        assert found_owned_node is True
 
 
 @pytest.mark.parametrize('data_migration_version', [None])
@@ -250,7 +256,7 @@ def test_migration_4_no_own_endpoint(rotkehlchen_api_server):
     web3_nodes = database.get_web3_nodes(blockchain=SupportedBlockchain.ETHEREUM)
     with open(dir_path / 'data' / 'nodes.json', 'r') as f:
         nodes = json.loads(f.read())
-        assert len(nodes) == len(web3_nodes)
+        assert len(web3_nodes) >= len(nodes)
 
 
 @pytest.mark.parametrize('data_migration_version', [None])
