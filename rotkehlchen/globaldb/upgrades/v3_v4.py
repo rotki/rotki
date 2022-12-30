@@ -1,5 +1,7 @@
 import json
 import logging
+import re
+import sqlite3
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -256,19 +258,75 @@ def _add_optimism_contracts(cursor: 'DBCursor', eth_scan_abi_id: int, multicall_
     log.debug('Exit _add_optimism_contracts')
 
 
-def _add_assets_collections(cursor: 'DBCursor') -> None:
+def _copy_assets_from_packaged_db(
+        cursor: 'DBCursor',
+        assets_ids: list[str],
+        root_dir: Path,
+) -> None:
     """
-    Insert in the global db the assets collection properties for the assets we know and
-    create the collections.
+    Copy missing assets from the packaged globaldb to the globaldb
+    Since the upgrade happens when the connection to the globaldb hasn't been created yet we need
+    to manually copy the assets information as we don't have the GlobalDBHandler object.
+
+    We need to commit the changes here because otherwise the packaged globaldb is busy and we
+    can't detach it. At this point all the information in the upgrade should be fine.
+
+    TODO: This approach assumes that the schema in the packaged globaldb and the schema in v3 are
+    the same. When this doesn't hold anymore we will ask users to use an intermediate
+    version to upgrade.
     """
-    log.debug('Enter _add_assets_collections')
-    root_dir = Path(__file__).resolve().parent.parent.parent
-    with open(root_dir / 'data' / 'assets_collections.sql') as f:
-        raw_sql_sentences = f.read()
-        per_table_sentences = raw_sql_sentences.split('\n\n')
-        for sql_sentences in per_table_sentences:
-            cursor.execute(sql_sentences)
-        log.debug('Exit _add_assets_collections')
+    packaged_db_path = root_dir / 'data' / 'global.db'
+    identifiers_quotes = ','.join('?' * len(assets_ids))
+    cursor.execute(f'ATTACH DATABASE "{packaged_db_path}" AS packaged_db;')
+    cursor.execute(f'INSERT INTO assets SELECT * FROM packaged_db.assets WHERE identifier IN ({identifiers_quotes});', assets_ids)  # noqa: E501
+    cursor.execute(f'INSERT INTO evm_tokens SELECT * FROM packaged_db.evm_tokens WHERE identifier IN ({identifiers_quotes});', assets_ids)  # noqa: E501
+    cursor.execute(f'INSERT INTO common_asset_details SELECT * FROM packaged_db.common_asset_details WHERE identifier IN ({identifiers_quotes});', assets_ids)  # noqa: E501
+    cursor.execute('COMMIT;')
+    cursor.execute('DETACH DATABASE packaged_db;')
+
+
+def _populate_asset_collections(cursor: 'DBCursor', root_dir: Path) -> None:
+    """Insert into the collections table the information about known collections"""
+    log.debug('Enter _populate_asset_collection')
+    with open(root_dir / 'data' / 'populate_asset_collections.sql') as f:
+        cursor.execute(f.read())
+    log.debug('Exit _populate_asset_collection')
+
+
+def _populate_multiasset_mappings(cursor: 'DBCursor', root_dir: Path) -> None:
+    """
+    Insert into the assets_mappings table the information about each asset's collection
+    If any of the assets that needs to go in the collections is missing we copy it from the
+    packaged globaldb.
+    """
+    log.debug('Enter _populate_multiasset_mappings')
+    asset_regex = re.compile(r'eip155[a-zA-F0-9:\/]+')
+    with open(root_dir / 'data' / 'populate_multiasset_mappings.sql') as f:
+        sql_sentences = f.read()
+        # check if we are adding the assets
+        # in this case we need to ensure that the assets exist locally and
+        # if not copy them from the packaged db
+        mapping_assets_identifiers = asset_regex.findall(sql_sentences)
+        cursor.execute(
+            f'SELECT identifier FROM assets WHERE identifier IN ({",".join("?" * len(mapping_assets_identifiers))})',  # noqa: E501
+            mapping_assets_identifiers,
+        )
+        all_evm_assets = {entry[0] for entry in cursor}
+        assets_to_add = set(mapping_assets_identifiers) - all_evm_assets
+
+        if len(assets_to_add) != 0:
+            try:
+                _copy_assets_from_packaged_db(
+                    cursor=cursor,
+                    assets_ids=list(assets_to_add),
+                    root_dir=root_dir,
+                )
+            except sqlite3.OperationalError as e:
+                log.error(f'Failed to add missing assets for collections. Missing assets were {assets_to_add}. {str(e)}')  # noqa: E501
+                return
+
+        cursor.execute(sql_sentences)
+    log.debug('Exit _populate_multiasset_mappings')
 
 
 def migrate_to_v4(connection: 'DBConnection') -> None:
@@ -281,11 +339,13 @@ def migrate_to_v4(connection: 'DBConnection') -> None:
     eth_abi.json has no repeating ABIs
     """
     log.debug('Entered globaldb v3->v4 upgrade')
+    root_dir = Path(__file__).resolve().parent.parent.parent
+
     with connection.write_ctx() as cursor:
         _create_new_tables(cursor)
         _add_eth_abis_json(cursor)
         eth_scan_abi_id, multicall_abi_id = _add_eth_contracts_json(cursor)
         _add_optimism_contracts(cursor, eth_scan_abi_id, multicall_abi_id)
-        _add_assets_collections(cursor)
-
+        _populate_asset_collections(cursor, root_dir)
+        _populate_multiasset_mappings(cursor, root_dir)
     log.debug('Finished globaldb v3->v4 upgrade')

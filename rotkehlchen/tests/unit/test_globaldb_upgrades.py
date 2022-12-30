@@ -19,7 +19,7 @@ from rotkehlchen.globaldb.upgrades.v3_v4 import (
     YEARN_ABI_GROUP_3,
     YEARN_ABI_GROUP_4,
 )
-from rotkehlchen.globaldb.utils import GLOBAL_DB_FILENAME
+from rotkehlchen.globaldb.utils import GLOBAL_DB_FILENAME, GLOBAL_DB_VERSION
 from rotkehlchen.tests.fixtures.globaldb import create_globaldb
 from rotkehlchen.tests.utils.globaldb import patch_for_globaldb_upgrade_to
 from rotkehlchen.types import ChainID, EvmTokenKind
@@ -173,6 +173,7 @@ def test_upgrade_v2_v3(globaldb):
             ('BIFI', 'BIFI'),
         )
         assert cursor.fetchone()[0] == 0
+        assert GlobalDBHandler().get_schema_version() == 3
 
 
 @pytest.mark.parametrize('globaldb_upgrades', [[]])
@@ -252,9 +253,10 @@ def test_upgrade_v3_v4(globaldb):
         ).fetchone()[0] == 0
 
         cursor.execute('SELECT COUNT(*) FROM asset_collections')
-        assert cursor.fetchone()[0] == _count_sql_file_sentences('assets_collections.sql')
+        assert cursor.fetchone()[0] == _count_sql_file_sentences('populate_asset_collections.sql')
         cursor.execute('SELECT COUNT(*) FROM multiasset_mappings')
-        assert cursor.fetchone()[0] == _count_sql_file_sentences('assets_collections.sql', skip_statements=1)  # noqa: E501
+        assert cursor.fetchone()[0] == _count_sql_file_sentences('populate_multiasset_mappings.sql')  # noqa: E501
+        assert GlobalDBHandler().get_schema_version() == 4
 
 
 @pytest.mark.parametrize('globaldb_version', [2])
@@ -287,3 +289,25 @@ def test_unfinished_upgrades(globaldb: GlobalDBHandler):
     assert globaldb.get_setting_value('ongoing_upgrade_from_version', -1) == -1
     with globaldb.conn.read_ctx() as cursor:
         assert cursor.execute('SELECT value FROM settings WHERE name="is_backup"').fetchone()[0] == 'Yes'  # noqa: E501
+
+
+@pytest.mark.parametrize('globaldb_upgrades', [[]])
+@pytest.mark.parametrize('globaldb_version', [2])
+@pytest.mark.parametrize('target_globaldb_version', [2])
+@pytest.mark.parametrize('reload_user_assets', [False])
+def test_applying_all_upgrade(globaldb):
+    """Test globalDB upgrade from v2 to latest"""
+    # Check the state before upgrading
+    assert globaldb.get_setting_value('version', None) == 2
+    with globaldb.conn.cursor() as cursor:
+        assert cursor.execute('SELECT COUNT(*) from assets WHERE identifier="eip155:/erc20:0x32c6fcC9bC912C4A30cd53D2E606461e44B77AF2"')[0] == 0  # noqa: E501
+
+    maybe_upgrade_globaldb(
+        connection=globaldb.conn,
+        global_dir=globaldb._data_directory / 'global_data',
+        db_filename=GLOBAL_DB_FILENAME,
+    )
+
+    assert globaldb.get_setting_value('version', None) == GLOBAL_DB_VERSION
+    with globaldb.conn.cursor() as cursor:
+        assert cursor.execute('SELECT COUNT(*) from assets WHERE identifier="eip155:/erc20:0x32c6fcC9bC912C4A30cd53D2E606461e44B77AF2"')[0] == 1  # noqa: E501
