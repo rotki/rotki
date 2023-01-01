@@ -217,7 +217,7 @@ This is the symbol that will be separating the floating part of the number. For 
 Use abbreviations for large numbers.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If this setting is enabled, it will abbreviates large numbers. For example, ``1.234.567`` will be displayed as ``1.23 M``.
+If this setting is enabled, it will abbreviate large numbers. For example, ``1.234.567`` will be displayed as ``1.23 M``.
 
 Currency location
 ^^^^^^^^^^^^^^^^^^^^
@@ -705,7 +705,7 @@ Then in rotki you need to add the API key. Go to API Keys > External Services > 
    :alt: Add loopring key
    :align: center
 
-After following this steps your balances in the dashboard will be updated including the loopring information
+After following these steps your balances in the dashboard will be updated including the loopring information
 
 .. image:: images/loopring_balances.png
    :alt: Loopring balances in the UI
@@ -772,7 +772,7 @@ Supported Locations
 --------------------
 A list of supported locations in Rotki are ``"external"``, ``"kraken"``, ``"poloniex"``, ``"bittrex"``, ``"binance"``, ``"bitmex"``, ``"coinbase"``, ``"banks"``, ``"blockchain"``, ``"coinbasepro"``, ``"gemini"``, ``"equities"``, ``"realestate"``, ``"commodities"``, ``"cryptocom"``, ``"uniswap"``, ``"bitstamp"``, ``"binanceus"``, ``"bitfinex"``, ``"bitcoinde"``, ``"iconomi"``, ``"kucoin"``, ``"balancer"``, ``"loopring"``, ``"ftx"``, ``"nexo"``, ``"blockfi"``, ``"independentreserve"``, ``"gitcoin"``, ``"sushiswap"``, ``"shapeshift"``, ``"uphold"``, ``"bitpanda"``, ``"bisq"`` and ``"ftxus"``.
 
-**NOTE**: In the columns that an asset is expected you will need to use the identifier that such asset has in rotki otherwise the row won't be read.
+**NOTE**: In the columns where an asset is expected you will need to use the identifier that such asset has in rotki otherwise the row won't be read.
 **NOTE**: If at any point, you're confused as regards the csv format, feel free to send us a message on `Discord <https://discord.gg/aGCxHG7>`_.
 
 Moving data to another system

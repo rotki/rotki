@@ -17,7 +17,7 @@ Why should I use it?
 
 Unlike virtually every other service out there which offers you the ability to track crypto assets, get analytics, and generate tax reports, rotki is a local application. And its basic version is also free.
 
-A local application allows you to **own your data**. You don't need to give your API keys, or any of your financial history to a centralized third party. We strongly advice against using any such centralized services. Your data is not safe with them.
+A local application allows you to **own your data**. You don't need to give your API keys, or any of your financial history to a centralized third party. We strongly advise against using any such centralized services. Your data is not safe with them.
 
 What does it offer me?
 =======================
@@ -66,4 +66,4 @@ Miscellaneous Questions
 Where does the name come from?
 =================================
 
-rotki is an abbreviation for Rotkehlchen. That is the german word for the bird known in English as the `European Robin <https://en.wikipedia.org/wiki/European_robin>`__. For pronounciation check `here <https://upload.wikimedia.org/wikipedia/commons/4/42/De-Rotkehlchen2.ogg>`__.
+rotki is an abbreviation for Rotkehlchen. That is the german word for the bird known in English as the `European Robin <https://en.wikipedia.org/wiki/European_robin>`__. For pronunciation check `here <https://upload.wikimedia.org/wikipedia/commons/4/42/De-Rotkehlchen2.ogg>`__.
