@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Optional, Tuple
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.chain.ethereum.decoding.constants import NAUGHTY_ERC721
+from rotkehlchen.chain.ethereum.decoding.constants import NAUGHTY_ERC721, OUTGOING_EVENT_TYPES
 from rotkehlchen.constants import ONE
 from rotkehlchen.types import ChecksumEvmAddress
 
@@ -131,7 +131,7 @@ class BaseDecoderTools():
         amount_raw_or_token_id = hex_or_bytes_to_int(tx_log.data)
         if token.token_kind == EvmTokenKind.ERC20:
             amount = token_normalized_value(token_amount=amount_raw_or_token_id, token=token)
-            if event_type in {HistoryEventType.SPEND, HistoryEventType.TRANSFER}:
+            if event_type in OUTGOING_EVENT_TYPES:
                 notes = f'{verb} {amount} {token.symbol} from {location_label} to {counterparty}'
             else:
                 notes = f'{verb} {amount} {token.symbol} from {counterparty} to {location_label}'

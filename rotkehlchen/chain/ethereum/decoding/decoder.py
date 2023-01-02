@@ -57,6 +57,7 @@ from .constants import (
     GOVERNORALPHA_PROPOSE_ABI,
     GTC_CLAIM,
     ONEINCH_CLAIM,
+    OUTGOING_EVENT_TYPES,
 )
 from .structures import ActionItem
 from .utils import maybe_reshuffle_events
@@ -363,7 +364,7 @@ class EVMTransactionDecoder():
                 continue
 
             event_type, location_label, counterparty, verb = direction_result
-            preposition = 'to' if verb == 'Send' else 'from'
+            preposition = 'to' if event_type in OUTGOING_EVENT_TYPES else 'from'
             events.append(HistoryBaseEntry(
                 event_identifier=tx.tx_hash,
                 sequence_index=self.base.get_next_sequence_counter(),
@@ -387,7 +388,7 @@ class EVMTransactionDecoder():
             return None
         event_type, location_label, counterparty, verb = direction_result
         amount = ZERO if tx.value == 0 else from_wei(FVal(tx.value))
-        preposition = 'to' if verb == 'Send' else 'from'
+        preposition = 'to' if event_type in OUTGOING_EVENT_TYPES else 'from'
         return HistoryBaseEntry(
             event_identifier=tx.tx_hash,
             sequence_index=self.base.get_next_sequence_counter(),
@@ -415,7 +416,7 @@ class EVMTransactionDecoder():
         direction_result = self.base.decode_direction(tx.from_address, tx.to_address)
         if direction_result is not None:
             event_type, location_label, _, _ = direction_result
-            if event_type in (HistoryEventType.SPEND, HistoryEventType.TRANSFER):
+            if event_type in OUTGOING_EVENT_TYPES:
                 eth_burned_as_gas = from_wei(FVal(tx.gas_used * tx.gas_price))
                 events.append(HistoryBaseEntry(
                     event_identifier=tx.tx_hash,
