@@ -266,7 +266,7 @@ class EvmTransaction(NamedTuple):
     def serialize(self) -> dict[str, Any]:
         result = self._asdict()  # pylint: disable=no-member
         result['tx_hash'] = result['tx_hash'].hex()
-        result['chain_id'] = result['chain_id'].serialize()
+        result['evm_chain'] = result.pop('chain_id').to_name()
         result['input_data'] = '0x' + result['input_data'].hex()
 
         # Most integers are turned to string to be sent via the API
