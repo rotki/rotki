@@ -124,7 +124,7 @@ from .fields import (
     TimestampUntilNowField,
     XpubField,
 )
-from .types import EvmTransactionDecodingApiData
+from .types import EvmPendingTransactionDecodingApiData, EvmTransactionDecodingApiData
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -323,6 +323,41 @@ class EvmTransactionDecodingSchema(AsyncIgnoreCacheQueryArgumentSchema):
     def validate_schema(  # pylint: disable=no-self-use
             self,
             data: list[EvmTransactionDecodingApiData],
+            **_kwargs: Any,
+    ) -> None:
+
+        if len(data) == 0:
+            raise ValidationError(
+                message='The list of data should not be empty',
+                field_name='data',
+            )
+
+
+class SingleEvmPendingTransactionDecodingSchema(Schema):
+    evm_chain = EvmChainNameField(required=True)
+    addresses = fields.List(EthereumAddressField(), load_default=None)
+
+    @validates_schema
+    def validate_schema(  # pylint: disable=no-self-use
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        addresses = data.get('addresses')
+        if addresses is not None and len(addresses) == 0:
+            raise ValidationError(
+                message='Empty list of addresses is a noop. Did you mean to omit the list?',
+                field_name='addresses',
+            )
+
+
+class EvmPendingTransactionDecodingSchema(AsyncQueryArgumentSchema):
+    data = fields.List(fields.Nested(SingleEvmPendingTransactionDecodingSchema), required=True)
+
+    @validates_schema
+    def validate_schema(  # pylint: disable=no-self-use
+            self,
+            data: list[EvmPendingTransactionDecodingApiData],
             **_kwargs: Any,
     ) -> None:
 
@@ -2399,10 +2434,6 @@ class AssetsImportingSchema(Schema):
 
 class AssetsImportingFromFormSchema(Schema):
     file = FileField(allowed_extensions=['.zip', '.json'], required=True)
-
-
-class MultipleAddressAsyncSchema(AsyncQueryArgumentSchema):
-    evm_addresses = fields.List(EthereumAddressField(), load_default=None)
 
 
 class ReverseEnsSchema(AsyncIgnoreCacheQueryArgumentSchema):

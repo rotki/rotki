@@ -64,6 +64,7 @@ from rotkehlchen.api.v1.schemas import (
     Eth2ValidatorPatchSchema,
     Eth2ValidatorPutSchema,
     EvmAccountsPutSchema,
+    EvmPendingTransactionDecodingSchema,
     EvmTransactionDecodingSchema,
     EvmTransactionPurgingSchema,
     EvmTransactionQuerySchema,
@@ -97,7 +98,6 @@ from rotkehlchen.api.v1.schemas import (
     ManualPriceRegisteredSchema,
     ManualPriceSchema,
     ModifyEvmTokenSchema,
-    MultipleAddressAsyncSchema,
     NameDeleteSchema,
     NamedEthereumModuleDataSchema,
     NamedOracleCacheCreateSchema,
@@ -201,7 +201,7 @@ from rotkehlchen.types import (
     UserNote,
 )
 
-from .types import EvmTransactionDecodingApiData
+from .types import EvmPendingTransactionDecodingApiData, EvmTransactionDecodingApiData
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.bitcoin.hdkey import HDKey
@@ -509,19 +509,19 @@ class EvmTransactionsResource(BaseMethodView):
         return self.rest_api.purge_evm_transaction_data(chain_id=evm_chain)
 
 
-class EthereumTransactionsDecodingResource(BaseMethodView):
-    post_schema = MultipleAddressAsyncSchema()
+class EvmPendingTransactionsDecodingResource(BaseMethodView):
+    post_schema = EvmPendingTransactionDecodingSchema()
 
     @require_loggedin_user()
     @use_kwargs(post_schema, location='json_and_query')
     def post(
             self,
             async_query: bool,
-            evm_addresses: Optional[list[ChecksumEvmAddress]],
+            data: list[EvmPendingTransactionDecodingApiData],
     ) -> Response:
-        return self.rest_api.decode_pending_ethereum_transactions(
+        return self.rest_api.decode_pending_evm_transactions(
             async_query=async_query,
-            evm_addresses=evm_addresses,
+            data=data,
         )
 
 
