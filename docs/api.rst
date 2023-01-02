@@ -1908,9 +1908,9 @@ Purging locally saved evm transactions
 Decode transactions that haven't been decoded yet
 =================================================
 
-.. http:delete:: /api/(version)/blockchains/ETH/transactions/decode
+.. http:post:: /api/(version)/blockchains/evm/transactions/decode
 
-   Doing a POST on the transactions decoding endpoint will start the decoding process for all the transactions that haven't been decoded yet. Transactions already decoded won't be re-decoded.
+   Doing a POST on the transactions decoding endpoint will start the decoding process for all the transactions that haven't been decoded yet for the given chain and addresses combination. Transactions already decoded won't be re-decoded.
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
@@ -1919,13 +1919,21 @@ Decode transactions that haven't been decoded yet
 
    .. http:example:: curl wget httpie python-requests
 
-      POST /api/1/blockchains/ETH/transactions/decode HTTP/1.1
+      POST /api/1/blockchains/evm/transactions/decode HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"async_query": false, "addresses": ["0xc37b40ABdB939635068d3c5f13E7faF686F03B65"]}
+      {
+          "async_query": false,
+          "data": [{
+              "evm_chain": "ethereum",
+              "addresses": ["0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12", "0xed8Bdb5895B8B7f9Fdb3C087628FD8410E853D48"]
+          }, {
+              "evm_chain": "optimism"
+          }]
+      }
 
-   :reqjson list addresses: List of ethereum addresses used to filter when decoding pending transactions.
+   :reqjson list data: A list of data explaining what transactions to decode. Each data entry consists of an ``"evm_chain"`` key specifying the evm chain for which to decode tx_hashes and an ``"addresses"`` key which is an optional list of addresses for which to request decoding of pending transactions in that chain. If the list of addresses is not passed or is null then all transactions for that chain are decoded. Passing an empty list is not allowed.
 
    **Example Response**:
 
@@ -1934,9 +1942,9 @@ Decode transactions that haven't been decoded yet
       HTTP/1.1 200 OK
       Content-Type: application/json
 
-      { "result": {"decoded_tx_number": 4}, "message": "" }
+      { "result": {"decoded_tx_number": {"ethereum": 4, "optimism": 1}}, "message": "" }
 
-   :resjson integer decoded_tx_number: The amount of transactions that have been decoded.
+   :resjson object decoded_tx_number: A mapping of how many transactions were decoded per requested chain. If a chain was not requested no key will exist in the mapping.
    :statuscode 200: Transactions successfully decoded.
    :statuscode 409: User is not logged in or some other error. Check error message for details.
    :statuscode 500: Internal rotki error

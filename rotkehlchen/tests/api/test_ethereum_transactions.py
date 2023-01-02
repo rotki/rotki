@@ -1497,11 +1497,11 @@ def test_decoding_missing_transactions(rotkehlchen_api_server: 'APIServer') -> N
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
-            'ethereumtransactionsdecodingresource',
-        ), json={'async_query': False},
+            'evmpendingtransactionsdecodingresource',
+        ), json={'async_query': False, 'data': [{'evm_chain': 'ethereum'}]},
     )
     result = assert_proper_response_with_result(response)
-    assert result['decoded_tx_number'] == len(transactions)
+    assert result['decoded_tx_number']['ethereum'] == len(transactions)
 
     dbevents = DBHistoryEvents(rotki.data.db)
     with rotki.data.db.conn.read_ctx() as cursor:
@@ -1526,12 +1526,12 @@ def test_decoding_missing_transactions(rotkehlchen_api_server: 'APIServer') -> N
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
-            'ethereumtransactionsdecodingresource',
-        ), json={'async_query': True},
+            'evmpendingtransactionsdecodingresource',
+        ), json={'async_query': True, 'data': [{'evm_chain': 'ethereum'}]},
     )
     result = assert_proper_response_with_result(response)
     outcome = wait_for_async_task(rotkehlchen_api_server, result['task_id'])
-    assert outcome['result']['decoded_tx_number'] == 0
+    assert outcome['result']['decoded_tx_number'] == {}
 
 
 def test_decoding_missing_transactions_by_address(rotkehlchen_api_server: 'APIServer') -> None:
@@ -1547,8 +1547,8 @@ def test_decoding_missing_transactions_by_address(rotkehlchen_api_server: 'APISe
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
-            'ethereumtransactionsdecodingresource',
-        ), json={'async_query': False, 'evm_addresses': [TEST_ADDR1, TEST_ADDR3]},
+            'evmpendingtransactionsdecodingresource',
+        ), json={'async_query': False, 'data': [{'evm_chain': 'ethereum', 'addresses': [TEST_ADDR1, TEST_ADDR3]}]},  # noqa: E501
     )
     result = assert_proper_response_with_result(response)
 
@@ -1558,7 +1558,7 @@ def test_decoding_missing_transactions_by_address(rotkehlchen_api_server: 'APISe
         if TEST_ADDR1 in tx_addreses or TEST_ADDR3 in tx_addreses:
             transactions_filtered.append(transaction)
 
-    assert result['decoded_tx_number'] == len(transactions_filtered)
+    assert result['decoded_tx_number']['ethereum'] == len(transactions_filtered)
 
     dbevents = DBHistoryEvents(rotki.data.db)
     with rotki.data.db.conn.read_ctx() as cursor:

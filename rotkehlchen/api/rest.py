@@ -42,7 +42,10 @@ from rotkehlchen.accounting.structures.types import (
     HistoryEventType,
 )
 from rotkehlchen.api.v1.schemas import TradeSchema
-from rotkehlchen.api.v1.types import EvmTransactionDecodingApiData
+from rotkehlchen.api.v1.types import (
+    EvmPendingTransactionDecodingApiData,
+    EvmTransactionDecodingApiData,
+)
 from rotkehlchen.assets.asset import (
     Asset,
     AssetWithNameAndType,
@@ -3470,33 +3473,38 @@ class RestAPI():
         result_dict = _wrap_in_result(result, msg)
         return api_response(process_result(result_dict), status_code=status_code)
 
-    def _decode_pending_ethereum_transactions(
+    def _decode_pending_evm_transactions(
             self,
-            evm_addresses: Optional[list[ChecksumEvmAddress]],
+            data: list[EvmPendingTransactionDecodingApiData],
     ) -> dict[str, Any]:
         dbevmtx = DBEvmTx(self.rotkehlchen.data.db)
-        ethereum_manager = self.rotkehlchen.chains_aggregator.ethereum
-        # make sure that all the receipts are already queried
-        ethereum_manager.transactions.get_receipts_for_transactions_missing_them(
-            addresses=evm_addresses,
-        )
-        amount_of_tx_to_decode = dbevmtx.count_hashes_not_decoded(
-            addresses=evm_addresses,
-            chain_id=ChainID.ETHEREUM,
-        )
-        if amount_of_tx_to_decode > 0:
-            self.rotkehlchen.chains_aggregator.ethereum.transactions_decoder.get_and_decode_undecoded_transactions(addresses=evm_addresses)  # noqa: E501
+        result = {}
+        for entry in data:
+            chain_manager = self.rotkehlchen.chains_aggregator.get_evm_manager(entry['evm_chain'])
+            # make sure that all the receipts are already queried
+            chain_manager.transactions.get_receipts_for_transactions_missing_them(
+                addresses=entry['addresses'],
+            )
+            amount_of_tx_to_decode = dbevmtx.count_hashes_not_decoded(
+                addresses=entry['addresses'],
+                chain_id=entry['evm_chain'],
+            )
+            if amount_of_tx_to_decode > 0:
+                chain_manager.transactions_decoder.get_and_decode_undecoded_transactions(
+                    addresses=entry['addresses'],
+                )
+                result[entry['evm_chain'].to_name()] = amount_of_tx_to_decode
 
         return {
-            'result': {'decoded_tx_number': amount_of_tx_to_decode},
+            'result': {'decoded_tx_number': result},
             'message': '',
             'status_code': HTTPStatus.OK,
         }
 
-    def decode_pending_ethereum_transactions(
+    def decode_pending_evm_transactions(
             self,
             async_query: bool,
-            evm_addresses: Optional[list[ChecksumEvmAddress]],
+            data: list[EvmPendingTransactionDecodingApiData],
     ) -> Response:
         """
         This method should be called after querying ethereum transactions and does the following:
@@ -3511,11 +3519,11 @@ class RestAPI():
         """
         if async_query is True:
             return self._query_async(
-                command=self._decode_pending_ethereum_transactions,
-                evm_addresses=evm_addresses,
+                command=self._decode_pending_evm_transactions,
+                data=data,
             )
 
-        response = self._decode_pending_ethereum_transactions(evm_addresses=evm_addresses)
+        response = self._decode_pending_evm_transactions(data)
         status_code = _get_status_code_from_async_response(response)
         result_dict = _wrap_in_result(result=response['result'], message=response['message'])
 
