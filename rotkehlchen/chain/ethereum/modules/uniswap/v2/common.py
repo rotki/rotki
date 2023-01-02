@@ -40,7 +40,7 @@ def decode_uniswap_v2_like_swap(
     We need to make sure that the events related to the swap are consecutive and for that
     we make use of the maybe_reshuffle_events() function.
 
-    This method will identifiy the correct counterparty using the argument provided and a call to
+    This method will identify the correct counterparty using the argument provided and a call to
     get_or_create_evm_token. This call is needed to retrieve the symbol of the pool and determine
     if the pool is from the selected counterparty.
     """
@@ -127,7 +127,7 @@ def decode_uniswap_v2_like_swap(
             transaction.from_address == event.location_label and
             event.counterparty in (SUSHISWAP_ROUTER, UNISWAP_V2_ROUTER)
         ):
-            # this is to make sure its the amm issuing the refund and not an agreggator making a swap  # noqa: E501
+            # this is to make sure it's the amm issuing the refund and not an aggregator making a swap  # noqa: E501
             # Those are assets returned due to a change in the swap price
             event.event_type = HistoryEventType.TRANSFER
             event.event_subtype = HistoryEventSubType.NONE

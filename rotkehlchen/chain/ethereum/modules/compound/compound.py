@@ -6,6 +6,7 @@ from rotkehlchen.accounting.structures.balance import AssetBalance, Balance, Bal
 from rotkehlchen.accounting.structures.defi import DefiEvent, DefiEventType
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.assets.utils import symbol_to_asset_or_token, symbol_to_ethereum_token
+from rotkehlchen.chain.ethereum.constants import ETH_MANTISSA
 from rotkehlchen.chain.ethereum.defi.structures import GIVEN_DEFI_BALANCES
 from rotkehlchen.chain.ethereum.graph import Graph, get_common_params
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
@@ -34,7 +35,6 @@ if TYPE_CHECKING:
 ADDRESS_TO_ASSETS = dict[ChecksumEvmAddress, dict[CryptoAsset, Balance]]
 BLOCKS_PER_DAY = 4 * 60 * 24
 DAYS_PER_YEAR = 365
-ETH_MANTISSA = 10**18
 
 
 LEND_EVENTS_QUERY_PREFIX = """{graph_event_name}
