@@ -893,6 +893,7 @@ Here the non obvious fields are:
 
 If any event was not decoded the way you expected it to be, you can always customize events using the settings described above or file a bug report on our github repository / in our discord server. The customizations that you make also affect how events are processed in accounting.
 Examples of customization. You can set:
+
 - ``Event Type`` to ``Transfer`` if you are sending money to a friend / (another account you own) and don't want the event to be taxable.
 - ``Event Type`` to ``Deposit`` / ``Withdrawal`` and ``Event Subtype`` to ``Deposit Asset`` / ``Remove Asset`` if you are depositing or withdrawing assets from an exchange or a protocol. Then this event won't be considered taxable in P&L reports. Currently rotki doesn't detect deposits / withdrawals automatically for all exchanges and protocols.
 - ``Event Type`` to ``Transfer`` and ``Event Subtype`` to ``Bridge`` if you are bridging assets from one chain to another.
