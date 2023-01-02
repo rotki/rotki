@@ -1,3 +1,4 @@
+from rotkehlchen.accounting.structures.types import HistoryEventType
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
 
 # keccak of Transfer(address,address,uint256)
@@ -41,3 +42,9 @@ ETHADDRESS_TO_KNOWN_NAME = {
 
 CPT_GAS = 'gas'
 CPT_GNOSIS_CHAIN = 'gnosis-chain'
+
+OUTGOING_EVENT_TYPES = {
+    HistoryEventType.SPEND,
+    HistoryEventType.TRANSFER,
+    HistoryEventType.DEPOSIT,
+}
