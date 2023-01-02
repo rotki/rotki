@@ -16,8 +16,8 @@ const errorMessages = ref<ValidationErrors>({});
 const { addEth2Validator, editEth2Validator } = useEthAccountsStore();
 const { refreshAccounts } = useBlockchainStore();
 const { setMessage } = useMessageStore();
-const { valid, pending, setSave, accountToEdit } = useAccountDialog();
-const { loading } = useAccountLoading();
+const { valid, setSave, accountToEdit } = useAccountDialog();
+const { pending, loading } = useAccountLoading();
 const { tc } = useI18n();
 
 const showMessage = (message: string, id: string, edit: boolean) => {

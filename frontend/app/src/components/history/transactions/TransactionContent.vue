@@ -26,6 +26,9 @@ import {
 } from '@/types/transaction';
 import { getCollectionData } from '@/utils/collection';
 import { useConfirmStore } from '@/store/confirm';
+import EvmChainIcon from '@/components/helper/display/icons/EvmChainIcon.vue';
+import { useSupportedChains } from '@/composables/info/chains';
+import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 
 interface PaginationOptions {
   page: number;
@@ -127,25 +130,27 @@ const { data } = getCollectionData<EthTransactionEntry>(
   transactions as Ref<Collection<EthTransactionEntry>>
 );
 
-watch(data, async () => {
-  await checkEmptyEvents();
-});
+watchDebounced(
+  data,
+  async () => {
+    await checkEmptyEvents();
+  },
+  { debounce: 500, maxWait: 1000 }
+);
 
 const checkEmptyEvents = async () => {
   await fetchTransactionEvents(
-    get(data)
-      .filter(item => item.decodedEvents!.length === 0)
-      .map(item => item.txHash)
+    get(data).filter(item => item.decodedEvents!.length === 0)
   );
 };
 
 const redecodeEvents = async (all = false) => {
-  const txHashes = all ? null : get(data).map(item => item.txHash);
+  const txHashes = all ? null : get(data);
   await fetchTransactionEvents(txHashes, true);
 };
 
 const forceRedecodeEvents = async (transaction: EthTransactionEntry) => {
-  await fetchTransactionEvents([transaction.txHash], true);
+  await fetchTransactionEvents([transaction], true);
 };
 
 const dialogTitle: Ref<string> = ref('');
@@ -160,7 +165,7 @@ const confirmationPrimaryAction: Ref<string> = ref('');
 const valid: Ref<boolean> = ref(false);
 const form = ref<InstanceType<typeof TransactionEventForm> | null>(null);
 
-const getId = (item: EthTransactionEntry) => item.chainId + item.txHash;
+const getId = (item: EthTransactionEntry) => `1${item.txHash}`;
 
 const selected: Ref<EthTransactionEntry[]> = ref([]);
 
@@ -300,14 +305,15 @@ const updatePayloadHandler = async () => {
   const usedAccountVal = get(usedAccount);
   if (usedAccountVal) {
     filterAddress = {
-      address: usedAccountVal!.address
+      address: usedAccountVal!.address,
+      evmChain: get(getEvmChainName(usedAccountVal.chain))
     };
   }
 
   const payload: Writeable<Partial<TransactionRequestPayload>> = {
-    ...filterAddress,
     ...(get(filters) as Partial<TransactionRequestPayload>),
-    ...paginationOptions
+    ...paginationOptions,
+    ...filterAddress
   };
 
   const protocolVal = get(protocol);
@@ -404,6 +410,8 @@ const showDeleteConfirmation = () => {
     resetPendingDeletion
   );
 };
+
+const { evmChains, getEvmChainName } = useSupportedChains();
 </script>
 
 <template>
@@ -446,7 +454,7 @@ const showDeleteConfirmation = () => {
                 <div>
                   <blockchain-account-selector
                     v-model="account"
-                    :chains="['ETH']"
+                    :chains="evmChains"
                     dense
                     :label="tc('transactions.filter.account')"
                     outlined
@@ -503,21 +511,28 @@ const showDeleteConfirmation = () => {
               </div>
             </template>
             <template #item.txHash="{ item }">
-              <hash-link
-                :text="item.txHash"
-                :truncate-length="8"
-                :full-address="$vuetify.breakpoint.lgAndUp"
-                tx
-              />
-              <v-chip
-                v-if="item.gasPrice.lt(0)"
-                small
-                text-color="white"
-                color="accent"
-                class="mb-1 mt-1"
-              >
-                {{ tc('transactions.details.internal_transaction') }}
-              </v-chip>
+              <div class="d-flex">
+                <div class="mr-2">
+                  <adaptive-wrapper>
+                    <evm-chain-icon size="20" tooltip :chain="item.evmChain" />
+                  </adaptive-wrapper>
+                </div>
+                <hash-link
+                  :text="item.txHash"
+                  :truncate-length="8"
+                  :full-address="$vuetify.breakpoint.lgAndUp"
+                  tx
+                />
+                <v-chip
+                  v-if="item.gasPrice.lt(0)"
+                  small
+                  text-color="white"
+                  color="accent"
+                  class="mb-1 mt-1"
+                >
+                  {{ tc('transactions.details.internal_transaction') }}
+                </v-chip>
+              </div>
             </template>
             <template #item.timestamp="{ item }">
               <date-display :timestamp="item.timestamp" />

@@ -21,7 +21,11 @@ const load = async () => {
   await fetchPools();
 };
 
-onMounted(async () => await load());
+onMounted(async () => {
+  if (get(moduleEnabled)) {
+    await load();
+  }
+});
 
 watch(moduleEnabled, async enabled => {
   if (enabled) {

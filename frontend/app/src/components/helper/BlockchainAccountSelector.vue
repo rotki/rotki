@@ -40,12 +40,14 @@ const { t } = useI18n();
 const { chains, value, usableAddresses, hideOnEmptyUsable } = toRefs(props);
 const search = ref('');
 const { accounts } = storeToRefs(useAccountBalancesStore());
+
 const selectableAccounts = computed(() => {
   const filteredChains = get(chains);
   const blockchainAccounts = get(accounts);
   if (filteredChains.length === 0) {
     return blockchainAccounts;
   }
+
   return blockchainAccounts.filter(({ chain }) =>
     filteredChains.includes(chain)
   );
@@ -116,8 +118,6 @@ const { dark } = useTheme();
         :open-on-clear="false"
         :label="label ? label : t('blockchain_account_selector.default_label')"
         :class="outlined ? 'blockchain-account-selector--outlined' : null"
-        item-text="address"
-        item-value="address"
         class="blockchain-account-selector"
         @input="input($event)"
       >
@@ -150,7 +150,6 @@ const { dark } = useTheme();
           >
             <div class="blockchain-account-selector__list__item__address-label">
               <v-chip
-                small
                 :color="dark ? null : 'grey lighten-3'"
                 filter
                 class="text-truncate"

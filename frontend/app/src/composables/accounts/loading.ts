@@ -3,7 +3,7 @@ import { type Blockchain } from '@rotki/common/lib/blockchain';
 import { useTasks } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 
-export const useAccountLoading = () => {
+export const useAccountLoading = createSharedComposable(() => {
   const pending = ref<boolean>(false);
 
   const { isTaskRunning } = useTasks();
@@ -38,4 +38,4 @@ export const useAccountLoading = () => {
     isBlockchainLoading,
     isAccountOperationRunning
   };
-};
+});

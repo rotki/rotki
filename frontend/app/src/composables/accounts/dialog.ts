@@ -14,7 +14,6 @@ export const useAccountDialog = createSharedComposable(() => {
   const dialogText = ref<Title>(defaultTitle());
   const openDialog = ref(false);
   const valid = ref(false);
-  const pending = ref(false);
   const saveFunc = ref<Function>();
 
   const { tc } = useI18n();
@@ -65,7 +64,6 @@ export const useAccountDialog = createSharedComposable(() => {
     openDialog,
     accountToEdit,
     valid,
-    pending,
     setSave,
     save,
     createAccount,

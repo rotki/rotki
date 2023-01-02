@@ -3903,6 +3903,7 @@
     "filter": {
       "account": "Filter by account",
       "asset": "filter by the asset of the events",
+      "chain": "filter by evm chain",
       "date_hint": "format {format} HH:mm:ss (time/seconds are optional)",
       "end_date": "filter by the end date of the transaction period",
       "protocol": "filter by the protocol / counterparty of the events",

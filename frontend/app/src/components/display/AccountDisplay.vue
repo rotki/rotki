@@ -41,8 +41,8 @@ const ensName = computed<string | null>(() => {
   <v-tooltip top open-delay="400">
     <template #activator="{ on }">
       <v-row align="center" no-gutters class="flex-nowrap" v-on="on">
-        <v-col cols="auto">
-          <v-avatar left size="28px">
+        <v-col cols="auto" class="pr-2">
+          <v-avatar left size="28px" class="mr-0">
             <asset-icon size="24px" :identifier="account.chain" />
           </v-avatar>
         </v-col>

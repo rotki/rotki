@@ -57,7 +57,7 @@ export const useLiquityStore = defineStore('defi/liquity', () => {
           activeModules
         },
         requires: {
-          premium: false,
+          premium: true,
           module: Module.LIQUITY
         },
         refresh
