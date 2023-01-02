@@ -1355,9 +1355,9 @@ def test_ignored_assets(rotkehlchen_api_server, ethereum_accounts):
     db.add_to_ignored_assets(A_DAI)
     dbevmtx = DBEvmTx(db)
     dbevents = DBHistoryEvents(db)
-    tx1 = make_ethereum_transaction()
-    tx2 = make_ethereum_transaction()
-    tx3 = make_ethereum_transaction()
+    tx1 = make_ethereum_transaction(timestamp=1)
+    tx2 = make_ethereum_transaction(timestamp=2)
+    tx3 = make_ethereum_transaction(timestamp=3)
     event1 = make_ethereum_event(tx_hash=tx1.tx_hash, index=1, asset=A_ETH)
     event2 = make_ethereum_event(tx_hash=tx1.tx_hash, index=2, asset=A_BTC)
     event3 = make_ethereum_event(tx_hash=tx1.tx_hash, index=3, asset=A_MKR)
@@ -1379,9 +1379,9 @@ def test_ignored_assets(rotkehlchen_api_server, ethereum_accounts):
     )
     result = assert_proper_response_with_result(response)
     expected = generate_tx_entries_response(data=[
-        (tx1, [event1, event2, event3]),
-        (tx2, [event4]),
         (tx3, []),
+        (tx2, [event4]),
+        (tx1, [event1, event2, event3]),
     ])
     assert result['entries'] == expected
     assert result['entries_found'] == 3
@@ -1397,7 +1397,7 @@ def test_ignored_assets(rotkehlchen_api_server, ethereum_accounts):
         json={'only_cache': True, 'evm_chain': 'ethereum'},
     )
     result = assert_proper_response_with_result(response)
-    expected = generate_tx_entries_response([(tx1, [event1, event3]), (tx3, [])])
+    expected = generate_tx_entries_response([(tx3, []), (tx1, [event1, event3])])
     assert result['entries'] == expected
     assert result['entries_found'] == 2
     assert result['entries_total'] == 3
