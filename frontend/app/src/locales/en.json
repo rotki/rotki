@@ -38,7 +38,7 @@
       "tooltip": {
         "last_detected": "Last detected: {time}",
         "redetect": "Re-detect tokens",
-        "redetect_all": "Re-detect tokens for all addreses"
+        "redetect_all": "Re-detect tokens for all addresses"
       }
     },
     "edit_tooltip": "Edit account",
@@ -453,7 +453,7 @@
       },
       "liquity_staking": {
         "error": {
-          "description": "Failed to retreive liquity staking: {message}",
+          "description": "Failed to retrieve liquity staking: {message}",
           "title": "Liquity staking"
         },
         "task": {
@@ -1811,7 +1811,7 @@
       "title": "Editing Ethereum RPC Node"
     },
     "edit_tooltip": "Edit the selected RPC Node",
-    "etherscan": "Etherescan API used by rotki",
+    "etherscan": "Etherscan API used by rotki",
     "loading_error": {
       "title": "Loading Ethereum RPC Nodes"
     },
@@ -2069,7 +2069,7 @@
       "abbreviate_number": "Use abbreviations for large numbers.",
       "animations": "Reduce animations effect. This setting will improve app performance. NOTE: You will see animations that are not smooth, which aims to reduce the use of system resources.",
       "enable_eth_names": "Show alias name for ETH addresses.",
-      "include_nfts": "Include NFTs in the graphs and total networth",
+      "include_nfts": "Include NFTs in the graphs and total net worth",
       "include_nfts_hint": "By default graphs and dashboard include the value of all the NFTs",
       "query_period": "Query period in seconds",
       "query_period_hint": "How often (in seconds) the backend will be checked for messages,",
@@ -2367,7 +2367,7 @@
     "cryptocom": {
       "line_four": "Only transactions are imported here (for tax report), if you want the assets be displayed in your rotki balances, you have to add them manually as manual balances: {0}",
       "line_four_link": "Manual Accounts/Balances",
-      "line_one": "[Early stage] This import script may miss some transactions types, like withdrawals. Since we can't have an exhaustive list of every type, we develop it using what we know at the time. If you think that import script can be improved and you can help providing more data types, {0}.",
+      "line_one": "[Early stage] This import script may miss some transaction types, like withdrawals. Since we can't have an exhaustive list of every type, we develop it using what we know at the time. If you think that import script can be improved and you can help providing more data types, {0}.",
       "line_one_link": "please let us know",
       "line_three": "Trades/deposits/withdrawals from crypto.com do not include fees details. They are waived at the moment (August 2020) or they are handled in the traded amount.",
       "line_two": "{0} If you want to connect your Crypto.com Exchange account, please wait until we support it and then connect to it as an exchange.",
@@ -2429,7 +2429,7 @@
         "here": "here",
         "metamask_is_not_enabled": "The MetaMask is not enabled yet. You can enable it in menu Extension / Add Ons, depends on your browser.",
         "metamask_is_not_installed": "This browser doesn't have MetaMask installed. You can download MetaMask {link}.",
-        "metamask_is_not_supported_by_browser": "Make sure you open this page with supported browser listed {link}. If not, please {copy} and open it manually on supported browser.",
+        "metamask_is_not_supported_by_browser": "Make sure you open this page with a supported browser listed {link}. If not, please {copy} and open it manually on supported browser.",
         "title": "Here are the common cause:"
       }
     },
@@ -2543,7 +2543,7 @@
       "loss": "Loss"
     },
     "delete": {
-      "message": "Are you sure wou want to delete this ledger action?",
+      "message": "Are you sure you want to delete this ledger action?",
       "multiple_message": "Are you sure you want to delete these {length} ledger actions?",
       "title": "Delete Ledger Action"
     },
@@ -2958,7 +2958,7 @@
         "message": "Could not delete the latest price for {asset}",
         "title": "Deleting custom latest price"
       },
-      "message": "Are you sure wou want to delete the custom price for {asset}?",
+      "message": "Are you sure you want to delete the custom price for {asset}?",
       "title": "Delete custom price"
     },
     "edit": {
