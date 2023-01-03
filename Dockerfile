@@ -33,7 +33,7 @@ RUN if [ "$TARGETARCH" != "amd64" ]; then \
       git clone https://github.com/pyinstaller/pyinstaller.git && \
       cd pyinstaller && git checkout ${PYINSTALLER_VERSION} && \
       cd bootloader && ./waf all && cd .. && \
-      python setup.py install; \
+      pip install .; \
     else \
       pip install pyinstaller==${PYINSTALLER_VERSION}; \
     fi
