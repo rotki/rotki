@@ -27,6 +27,7 @@ from rotkehlchen.exchanges.iconomi import Iconomi
 from rotkehlchen.exchanges.independentreserve import Independentreserve
 from rotkehlchen.exchanges.kucoin import Kucoin
 from rotkehlchen.exchanges.manager import ExchangeManager
+from rotkehlchen.exchanges.okx import Okx
 from rotkehlchen.exchanges.poloniex import Poloniex
 from rotkehlchen.exchanges.utils import create_binance_symbols_to_pair
 from rotkehlchen.fval import FVal
@@ -820,6 +821,23 @@ def create_test_bitpanda(
         name='bitpanda',
         api_key=api_key,
         secret=secret,
+        database=database,
+        msg_aggregator=msg_aggregator,
+    )
+
+
+def create_test_okx(
+        database: DBHandler,
+        msg_aggregator: MessagesAggregator,
+        api_key: ApiKey,
+        secret: ApiSecret,
+        passphrase: str,
+) -> Okx:
+    return Okx(
+        name='okx',
+        api_key=api_key,
+        secret=secret,
+        passphrase=passphrase,
         database=database,
         msg_aggregator=msg_aggregator,
     )

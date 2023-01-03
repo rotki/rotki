@@ -37,6 +37,7 @@ test-assets:
 	python pytestgeventwrapper.py rotkehlchen/tests/exchanges/test_kucoin.py::test_kucoin_exchange_assets_are_known
 	python pytestgeventwrapper.py rotkehlchen/tests/exchanges/test_poloniex.py::test_poloniex_assets_are_known
 	python pytestgeventwrapper.py rotkehlchen/tests/exchanges/test_gemini.py::test_gemini_all_symbols_are_known
+	python pytestgeventwrapper.py rotkehlchen/tests/exchanges/test_okx.py::test_assets_are_known
 	python pytestgeventwrapper.py rotkehlchen/tests/unit/test_assets.py::test_coingecko_identifiers_are_reachable
 	python pytestgeventwrapper.py rotkehlchen/tests/unit/test_assets.py::test_cryptocompare_asset_support
 	python pytestgeventwrapper.py rotkehlchen/tests/unit/test_aave.py::test_atoken_to_asset

@@ -13,7 +13,7 @@ Changelog
 * :bug:`-` Fixed an edge case where users would be swamped with "This socket is already used by another greenlet" errors during websocket communication between backend and frontend.
 * :bug:`-` Transfers of ether between tracked accounts will now have a correct label in the UI.
 * :bug:`-` Trades involving delisted bitfinex pairs will now be properly read by rotki.
-
+* :feature:`784` Add support for OKX exchange
 
 * :release:`1.26.3 <2022-12-30>`
 * :bug:`5315` Fix issue where balance is not fully refreshed after detect tokens button pressed.
