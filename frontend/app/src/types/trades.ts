@@ -197,6 +197,13 @@ export const useTradeLocations = createSharedComposable(() => {
       exchange: true
     },
     {
+      identifier: SupportedExchange.OKX,
+      name: 'OKX',
+      icon: './assets/images/exchanges/okx.svg',
+      imageIcon: true,
+      exchange: true
+    },
+    {
       identifier: EXCHANGE_SHAPESHIFT,
       name: 'ShapeShift',
       icon: './assets/images/shapeshift.svg',

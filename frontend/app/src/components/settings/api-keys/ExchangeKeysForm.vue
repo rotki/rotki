@@ -34,7 +34,8 @@ const requiresPassphrase = computed(() => {
   const { location } = get(exchange);
   return (
     location === SupportedExchange.COINBASEPRO ||
-    location === SupportedExchange.KUCOIN
+    location === SupportedExchange.KUCOIN ||
+    location === SupportedExchange.OKX
   );
 });
 

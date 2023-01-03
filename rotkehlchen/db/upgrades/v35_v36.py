@@ -536,6 +536,12 @@ def _upgrade_address_book_table(write_cursor: 'DBCursor') -> None:
     write_cursor.execute('ALTER TABLE address_book_new RENAME TO address_book;')
 
 
+def _add_okx(write_cursor: 'DBCursor') -> None:
+    log.debug('Enter _add_okx')
+    write_cursor.execute('INSERT OR IGNORE INTO location(location, seq) VALUES ("e", 37);')
+    log.debug('Exit _add_okx')
+
+
 def upgrade_v35_to_v36(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v35 to v36
 
@@ -549,7 +555,7 @@ def upgrade_v35_to_v36(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - rename web3_nodes to rpc_nodes
     """
     log.debug('Entered userdb v35->v36 upgrade')
-    progress_handler.set_total_steps(9)
+    progress_handler.set_total_steps(10)
     with db.user_write() as write_cursor:
         _remove_adex(write_cursor)
         progress_handler.new_step()
@@ -568,6 +574,8 @@ def upgrade_v35_to_v36(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         _upgrade_tags(write_cursor)
         progress_handler.new_step()
         _upgrade_address_book_table(write_cursor)
+        progress_handler.new_step()
+        _add_okx(write_cursor)
         progress_handler.new_step()
 
     log.debug('Finished userdb v35->v36 upgrade')

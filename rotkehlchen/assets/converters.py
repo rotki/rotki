@@ -16,6 +16,7 @@ from rotkehlchen.assets.exchanges_mappings.iconomi import WORLD_TO_ICONOMI
 from rotkehlchen.assets.exchanges_mappings.kraken import WORLD_TO_KRAKEN
 from rotkehlchen.assets.exchanges_mappings.kucoin import WORLD_TO_KUCOIN
 from rotkehlchen.assets.exchanges_mappings.nexo import WORLD_TO_NEXO
+from rotkehlchen.assets.exchanges_mappings.okx import WORLD_TO_OKX
 from rotkehlchen.assets.exchanges_mappings.poloniex import WORLD_TO_POLONIEX
 from rotkehlchen.assets.exchanges_mappings.uphold import WORLD_TO_UPHOLD
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
@@ -792,6 +793,7 @@ NEXO_TO_WORLD = {v: k for k, v in WORLD_TO_NEXO.items()}
 BITPANDA_TO_WORLD = {v: k for k, v in WORLD_TO_BITPANDA.items()}
 CRYPTOCOM_TO_WORLD = {v: k for k, v in WORLD_TO_CRYPTOCOM.items()}
 BLOCKFI_TO_WORLD = {v: k for k, v in WORLD_TO_BLOCKFI.items()}
+OKX_TO_WORLD = {v: k for k, v in WORLD_TO_OKX.items()}
 
 RENAMED_BINANCE_ASSETS = {
     # The old BCC in binance forked into BCHABC and BCHSV
@@ -1103,6 +1105,18 @@ def asset_from_cryptocom(cryptocom_name: str) -> AssetWithOracles:
     return symbol_to_asset_or_token(symbol)
 
 
+def asset_from_okx(okx_name: str) -> AssetWithOracles:
+    """May raise:
+    - DeserializationError
+    - UnsupportedAsset
+    - UnknownAsset
+    """
+    if not isinstance(okx_name, str):
+        raise DeserializationError(f'Got non-string type {type(okx_name)} for okx asset')
+    name = OKX_TO_WORLD.get(okx_name, okx_name)
+    return symbol_to_asset_or_token(name)
+
+
 LOCATION_TO_ASSET_MAPPING: dict[Location, Callable[[str], AssetWithOracles]] = {
     Location.BINANCE: asset_from_binance,
     Location.CRYPTOCOM: asset_from_cryptocom,
@@ -1115,4 +1129,5 @@ LOCATION_TO_ASSET_MAPPING: dict[Location, Callable[[str], AssetWithOracles]] = {
     Location.POLONIEX: asset_from_poloniex,
     Location.NEXO: asset_from_nexo,
     Location.KUCOIN: asset_from_kucoin,
+    Location.OKX: asset_from_okx,
 }
