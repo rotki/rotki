@@ -10345,44 +10345,6 @@ Dealing with ignored assets
 Dealing with ignored actions
 ==============================
 
-.. http:get:: /api/(version)/actions/ignored
-
-   Doing a GET on the ignored actions endpoint will return a mapping of lists of all action identifiers that the user has set to have ignored during accounting. User can also specify a specific action type to get only that type's mapping.
-
-
-   **Example Request**:
-
-   .. http:example:: curl wget httpie python-requests
-
-      GET /api/1/actions/ignored HTTP/1.1
-      Host: localhost:5042
-      Content-Type: application/json;charset=UTF-8
-
-      {"action_type": "trade"}
-
-   :reqjson str action_type: A type of actions whose ignored ids to return. If it is not specified a mapping of all action types is returned. Valid action types are: ``trade``, ``asset movement``, ``ethereum_transaction`` and ``ledger action``.
-
-   **Example Response**:
-
-   .. sourcecode:: http
-
-      HTTP/1.1 200 OK
-      Content-Type: application/json
-
-      {
-          "result": {
-              "trade": ["X124-JYI", "2325"],
-              "ethereum_transaction": ["0xfoo", "0xboo"]
-          },
-          "message": ""
-      }
-
-   :resjson list result: A mapping to a list of action identifiers that will be ignored during accounting for each type of action.
-   :statuscode 200: Actions successfully queried
-   :statuscode 400: Provided JSON or data is in some way malformed.
-   :statuscode 409: User is not logged in.
-   :statuscode 500: Internal rotki error
-
 .. http:put:: /api/(version)/actions/ignored
 
    Doing a PUT on the ignored actions endpoint will add action identifiers for ignoring of a given action type during accounting. Returns the list of all ignored action identifiers of the given type after the addition.

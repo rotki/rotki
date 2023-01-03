@@ -1715,10 +1715,6 @@ class IgnoredAssetsSchema(Schema):
     assets = fields.List(AssetField(expected_type=Asset), required=True)
 
 
-class IgnoredActionsGetSchema(Schema):
-    action_type = SerializableEnumField(enum_class=ActionType, load_default=None)
-
-
 class IgnoredActionsModifySchema(Schema):
     action_type = SerializableEnumField(enum_class=ActionType, required=True)
     action_ids = fields.List(fields.String(required=True), required=True)

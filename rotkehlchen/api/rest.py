@@ -2344,13 +2344,6 @@ class RestAPI():
         result_dict = _wrap_in_result(process_result_list(result), msg)
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
-    def get_ignored_action_ids(self, action_type: Optional[ActionType]) -> Response:
-        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            mapping = self.rotkehlchen.data.db.get_ignored_action_ids(cursor, action_type)
-        result_dict = _wrap_in_ok_result({k.serialize(): v for k, v in mapping.items()})
-
-        return api_response(result_dict, status_code=HTTPStatus.OK)
-
     def add_ignored_action_ids(self, action_type: ActionType, action_ids: list[str]) -> Response:
         try:
             with self.rotkehlchen.data.db.user_write() as cursor:

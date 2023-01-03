@@ -26,7 +26,7 @@ def _populate_ignored_actions(rotkehlchen_api_server) -> list[tuple[str, list[st
         response = requests.put(
             api_url_for(
                 rotkehlchen_api_server,
-                "ignoredactionsresource",
+                'ignoredactionsresource',
             ), json={'action_type': action_type, 'action_ids': action_ids},
         )
         result = assert_proper_response_with_result(response)
@@ -36,82 +36,39 @@ def _populate_ignored_actions(rotkehlchen_api_server) -> list[tuple[str, list[st
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_add_get_ignored_actions(rotkehlchen_api_server):
+def test_add_ignored_actions(rotkehlchen_api_server):
     data = _populate_ignored_actions(rotkehlchen_api_server)
-
-    # get only one type via json args
-    response = requests.get(
-        api_url_for(
-            rotkehlchen_api_server,
-            "ignoredactionsresource",
-        ), json={'action_type': data[1][0]},
-    )
-    result = assert_proper_response_with_result(response)
-    assert result == {data[1][0]: data[1][1]}
-
-    # get only one type via query args
-    response = requests.get(
-        api_url_for(
-            rotkehlchen_api_server,
-            "ignoredactionsresource",
-        ) + f'?action_type={data[2][0]}',
-    )
-    result = assert_proper_response_with_result(response)
-    assert result == {data[2][0]: data[2][1]}
-
-    # get all entries
-    response = requests.get(
-        api_url_for(
-            rotkehlchen_api_server,
-            "ignoredactionsresource",
-        ),
-    )
-    result = assert_proper_response_with_result(response)
-    assert result == {entry[0]: entry[1] for entry in data}
 
     # try to add at least one already existing id
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            "ignoredactionsresource",
+            'ignoredactionsresource',
         ), json={'action_type': 'trade', 'action_ids': ['1', '9', '11']},
     )
-    result = assert_error_response(
+    assert_error_response(
         response=response,
         status_code=HTTPStatus.CONFLICT,
         contained_in_msg='One of the given action ids already exists in the dataase',
     )
 
-    # get all entries again and make sure nothing new slipped in
-    response = requests.get(
-        api_url_for(
-            rotkehlchen_api_server,
-            "ignoredactionsresource",
-        ),
-    )
-    result = assert_proper_response_with_result(response)
-    assert result == {entry[0]: entry[1] for entry in data}
+    # get all entries and make sure nothing new slipped in
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    with rotki.data.db.conn.read_ctx() as cursor:
+        result = rotki.data.db.get_ignored_action_ids(cursor, None)
+    serialized_result = {k.serialize(): v for k, v in result.items()}
+    assert serialized_result == {entry[0]: entry[1] for entry in data}
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_remove_ignored_actions(rotkehlchen_api_server):
     data = _populate_ignored_actions(rotkehlchen_api_server)
 
-    # get all entries and make sure they are there
-    response = requests.get(
-        api_url_for(
-            rotkehlchen_api_server,
-            "ignoredactionsresource",
-        ),
-    )
-    result = assert_proper_response_with_result(response)
-    assert result == {entry[0]: entry[1] for entry in data}
-
     # remove a few entries of one type
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
-            "ignoredactionsresource",
+            'ignoredactionsresource',
         ), json={'action_type': 'asset_movement', 'action_ids': ['1', '7']},
     )
     result = assert_proper_response_with_result(response)
@@ -121,7 +78,7 @@ def test_remove_ignored_actions(rotkehlchen_api_server):
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
-            "ignoredactionsresource",
+            'ignoredactionsresource',
         ), json={'action_type': 'ethereum_transaction', 'action_ids': data[2][1]},
     )
     result = assert_proper_response_with_result(response)
@@ -131,7 +88,7 @@ def test_remove_ignored_actions(rotkehlchen_api_server):
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
-            "ignoredactionsresource",
+            'ignoredactionsresource',
         ), json={'action_type': 'ledger_action', 'action_ids': ['1', '5', '2']},
     )
     assert_error_response(
@@ -141,14 +98,11 @@ def test_remove_ignored_actions(rotkehlchen_api_server):
     )
 
     # get all entries again and make sure deleted ones do not appear
-    response = requests.get(
-        api_url_for(
-            rotkehlchen_api_server,
-            "ignoredactionsresource",
-        ),
-    )
-    result = assert_proper_response_with_result(response)
-    assert result == {
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    with rotki.data.db.conn.read_ctx() as cursor:
+        result = rotki.data.db.get_ignored_action_ids(cursor, None)
+    serialized_result = {k.serialize(): v for k, v in result.items()}
+    assert serialized_result == {
         'asset_movement': ['4', '5'],
         'ledger_action': ['1', '2', '3'],
         'trade': ['1', '2', '3'],

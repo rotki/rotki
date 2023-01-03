@@ -84,7 +84,6 @@ from rotkehlchen.api.v1.schemas import (
     HistoryProcessingExportSchema,
     HistoryProcessingSchema,
     IdentifiersListSchema,
-    IgnoredActionsGetSchema,
     IgnoredActionsModifySchema,
     IgnoredAssetsSchema,
     IntegerIdentifierListSchema,
@@ -1609,13 +1608,7 @@ class IgnoredAssetsResource(BaseMethodView):
 
 class IgnoredActionsResource(BaseMethodView):
 
-    get_schema = IgnoredActionsGetSchema()
     modify_schema = IgnoredActionsModifySchema()
-
-    @require_loggedin_user()
-    @use_kwargs(get_schema, location='json_and_query')
-    def get(self, action_type: Optional[ActionType]) -> Response:
-        return self.rest_api.get_ignored_action_ids(action_type=action_type)
 
     @require_loggedin_user()
     @use_kwargs(modify_schema, location='json')
