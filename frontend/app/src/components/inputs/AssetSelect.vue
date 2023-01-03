@@ -8,6 +8,7 @@ import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { type NftAsset } from '@/store/assets/nft';
 import { type AssetInfoWithId } from '@/types/assets';
 import { getValidSelectorFromEvmAddress } from '@/utils/assets';
+import { getUpdatedKey } from '@/services/axios-tranformers';
 
 const props = defineProps({
   items: {
@@ -153,7 +154,7 @@ const checkValue = async () => {
     ...get(assets),
     {
       identifier: val,
-      ...mapping.assets[val]
+      ...mapping.assets[getUpdatedKey(val, true)]
     }
   ]);
 };
@@ -197,11 +198,9 @@ watch(value, async () => {
   >
     <template #selection="{ item }">
       <template v-if="item && item.identifier">
-        <nft-details
-          v-if="item.assetType === 'nft'"
-          :identifier="item.identifier"
-          size="40px"
-        />
+        <div v-if="item.assetType === 'nft'" class="overflow-hidden">
+          <nft-details :identifier="item.identifier" size="40px" />
+        </div>
         <asset-details-base
           v-else
           class="asset-select__details ml-2"

@@ -1221,7 +1221,7 @@ Get all manually input latest prices
 Add manual current price for an asset
 =============================================
 
-.. http:put:: /api/(version)/assets/prices/current
+.. http:put:: /api/(version)/assets/prices/latest
 
    Giving a unique asset identifier and a price via this endpoint stores the current price for an asset. If given, this overrides all other current prices. At the moment this will only work for non fungible assets.
 
@@ -1230,7 +1230,7 @@ Add manual current price for an asset
 
    .. http:example:: curl wget httpie python-requests
 
-      PUT /api/1/assets/prices/current HTTP/1.1
+      PUT /api/1/assets/prices/latest HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
@@ -1266,7 +1266,7 @@ Add manual current price for an asset
 Delete an asset that has manual price set
 =============================================
 
-.. http:delete:: /api/(version)/assets/prices/current
+.. http:delete:: /api/(version)/assets/prices/latest
 
    Deletes an asset that has as manual price set. IF the asset is not found or a manual price is not set a 409 is returned. At the moment this only works for nfts.
 
@@ -1275,7 +1275,7 @@ Delete an asset that has manual price set
 
    .. http:example:: curl wget httpie python-requests
 
-      DELETE /api/1/assets/prices/current HTTP/1.1
+      DELETE /api/1/assets/prices/latest HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
