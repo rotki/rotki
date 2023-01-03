@@ -61,8 +61,6 @@ def test_all_action_types_writtable_in_db(database, function_scope_messages_aggr
 def test_ledger_action_can_be_removed(database, function_scope_messages_aggregator):
     db = DBLedgerActions(database, function_scope_messages_aggregator)
     with database.user_write() as cursor:
-        query = 'SELECT COUNT(*) FROM ledger_actions WHERE identifier=?'
-
         # Add the entry that we want to delete
         action = LedgerAction(
             identifier=0,  # whatever
@@ -76,14 +74,32 @@ def test_ledger_action_can_be_removed(database, function_scope_messages_aggregat
             link=None,
             notes=None,
         )
-        identifier = db.add_ledger_action(cursor, action)
+        identifier1 = db.add_ledger_action(cursor, action)
 
-        # Delete ledger action
-        assert db.remove_ledger_actions(cursor, [identifier]) is None
+        # Add the entry that we want to delete
+        action = LedgerAction(
+            identifier=0,  # whatever
+            timestamp=2,
+            action_type=LedgerActionType.INCOME,
+            location=Location.EXTERNAL,
+            amount=FVal(2),
+            asset=A_ETH,
+            rate=None,
+            rate_asset=None,
+            link=None,
+            notes=None,
+        )
+        identifier2 = db.add_ledger_action(cursor, action)
+
+        # Delete ledger actions
+        assert db.remove_ledger_actions(cursor, [identifier1, identifier2]) is None
 
     with database.conn.read_ctx() as cursor:
         # Check that the change has been committed
-        cursor.execute(query, (identifier,))
+        cursor.execute(
+            'SELECT COUNT(*) FROM ledger_actions WHERE identifier IN (?, ?)',
+            (identifier1, identifier2),
+        )
         assert cursor.fetchone() == (0,)
         assert len(db.get_ledger_actions(
             cursor,
