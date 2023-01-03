@@ -9,16 +9,28 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
-    assert_proper_response_with_result,
+    assert_simple_ok_response,
 )
 from rotkehlchen.types import Location
 
 
-def _populate_ignored_actions(rotkehlchen_api_server) -> list[tuple[str, list[str]]]:
+def _populate_ignored_actions(rotkehlchen_api_server) -> dict[str, list[str]]:
     data = [
         ('trade', ['1', '2', '3']),
         ('asset_movement', ['1', '4', '5', '7']),
-        ('ethereum_transaction', ['5a', 'aa', 'ba']),
+        (
+            'evm_transaction',
+            [{
+                'evm_chain': 'ethereum',
+                'tx_hash': '0x9c7096c0a2a5e1b8bcf444a6929881af55d83fb0b713ad3f7f0028006ff9ec53',
+            }, {
+                'evm_chain': 'ethereum',
+                'tx_hash': '0x6328a70f18534d60f6fc085c22a1273fd4a7c7f2e6cdc3bb49168c2846af4b53',
+            }, {
+                'evm_chain': 'optimism',
+                'tx_hash': '0x6328a70f18534d60f6fc085c22a1273fd4a7c7f2e6cdc3bb49168c2846af4b53',
+            }],
+        ),
         ('ledger_action', ['1', '2', '3']),
     ]
 
@@ -27,12 +39,26 @@ def _populate_ignored_actions(rotkehlchen_api_server) -> list[tuple[str, list[st
             api_url_for(
                 rotkehlchen_api_server,
                 'ignoredactionsresource',
-            ), json={'action_type': action_type, 'action_ids': action_ids},
+            ), json={'action_type': action_type, 'data': action_ids},
         )
-        result = assert_proper_response_with_result(response)
-        assert result == {action_type: action_ids}
+        assert_simple_ok_response(response)
 
-    return data
+    # get all entries and make sure nothing new slipped in
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    with rotki.data.db.conn.read_ctx() as cursor:
+        result = rotki.data.db.get_ignored_action_ids(cursor, None)
+    serialized_result = {k.serialize(): v for k, v in result.items()}
+    assert serialized_result == {
+        'trade': ['1', '2', '3'],
+        'asset_movement': ['1', '4', '5', '7'],
+        'evm_transaction': [
+            '10x9c7096c0a2a5e1b8bcf444a6929881af55d83fb0b713ad3f7f0028006ff9ec53',
+            '10x6328a70f18534d60f6fc085c22a1273fd4a7c7f2e6cdc3bb49168c2846af4b53',
+            '100x6328a70f18534d60f6fc085c22a1273fd4a7c7f2e6cdc3bb49168c2846af4b53',
+        ],
+        'ledger_action': ['1', '2', '3'],
+    }
+    return serialized_result
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
@@ -44,7 +70,7 @@ def test_add_ignored_actions(rotkehlchen_api_server):
         api_url_for(
             rotkehlchen_api_server,
             'ignoredactionsresource',
-        ), json={'action_type': 'trade', 'action_ids': ['1', '9', '11']},
+        ), json={'action_type': 'trade', 'data': ['1', '9', '11']},
     )
     assert_error_response(
         response=response,
@@ -57,39 +83,51 @@ def test_add_ignored_actions(rotkehlchen_api_server):
     with rotki.data.db.conn.read_ctx() as cursor:
         result = rotki.data.db.get_ignored_action_ids(cursor, None)
     serialized_result = {k.serialize(): v for k, v in result.items()}
-    assert serialized_result == {entry[0]: entry[1] for entry in data}
+    assert serialized_result == data
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_remove_ignored_actions(rotkehlchen_api_server):
-    data = _populate_ignored_actions(rotkehlchen_api_server)
-
+    _populate_ignored_actions(rotkehlchen_api_server)
     # remove a few entries of one type
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
             'ignoredactionsresource',
-        ), json={'action_type': 'asset_movement', 'action_ids': ['1', '7']},
+        ), json={'action_type': 'asset_movement', 'data': ['1', '7']},
     )
-    result = assert_proper_response_with_result(response)
-    assert result == {'asset_movement': ['4', '5']}
+    assert_simple_ok_response(response)
+
+    # remove an evm transaction
+    response = requests.delete(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ignoredactionsresource',
+        ), json={
+            'action_type': 'evm_transaction',
+            'data': [{
+                'evm_chain': 'ethereum',
+                'tx_hash': '0x6328a70f18534d60f6fc085c22a1273fd4a7c7f2e6cdc3bb49168c2846af4b53',
+            }],
+        },
+    )
+    assert_simple_ok_response(response)
 
     # remove all entries of one type
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
             'ignoredactionsresource',
-        ), json={'action_type': 'ethereum_transaction', 'action_ids': data[2][1]},
+        ), json={'action_type': 'trade', 'data': ['1', '2', '3']},
     )
-    result = assert_proper_response_with_result(response)
-    assert result == {}
+    assert_simple_ok_response(response)
 
     # try to remove non existing entries
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
             'ignoredactionsresource',
-        ), json={'action_type': 'ledger_action', 'action_ids': ['1', '5', '2']},
+        ), json={'action_type': 'ledger_action', 'data': ['1', '5', '2']},
     )
     assert_error_response(
         response=response,
@@ -105,7 +143,10 @@ def test_remove_ignored_actions(rotkehlchen_api_server):
     assert serialized_result == {
         'asset_movement': ['4', '5'],
         'ledger_action': ['1', '2', '3'],
-        'trade': ['1', '2', '3'],
+        'evm_transaction': [
+            '10x9c7096c0a2a5e1b8bcf444a6929881af55d83fb0b713ad3f7f0028006ff9ec53',
+            '100x6328a70f18534d60f6fc085c22a1273fd4a7c7f2e6cdc3bb49168c2846af4b53',
+        ],
     }
 
 
@@ -144,10 +185,9 @@ def test_ignore_ledger_actions_in_accountant(rotkehlchen_api_server):
         api_url_for(
             rotkehlchen_api_server,
             'ignoredactionsresource',
-        ), json={'action_type': 'ledger_action', 'action_ids': ['2']},
+        ), json={'action_type': 'ledger_action', 'data': ['2']},
     )
-    result = assert_proper_response_with_result(response)
-    assert result == {'ledger_action': ['2']}
+    assert_simple_ok_response(response)
 
     # Retrieve ignored actions mapping. Should contain 2
     with accountant.db.conn.read_ctx() as cursor:

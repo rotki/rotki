@@ -39,7 +39,7 @@ def test_querying_settings(rotkehlchen_api_server, username):
     # Logout of the active user
     data = {'action': 'logout'}
     response = requests.patch(
-        api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
+        api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
         json=data,
     )
     assert_simple_ok_response(response)

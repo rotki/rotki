@@ -2355,14 +2355,7 @@ class RestAPI():
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
-        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            mapping = self.rotkehlchen.data.db.get_ignored_action_ids(
-                cursor=cursor,
-                action_type=action_type,
-            )
-        result_dict = _wrap_in_ok_result({k.serialize(): v for k, v in mapping.items()})
-
-        return api_response(result_dict, status_code=HTTPStatus.OK)
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     def remove_ignored_action_ids(
             self,
@@ -2379,14 +2372,7 @@ class RestAPI():
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
-        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            mapping = self.rotkehlchen.data.db.get_ignored_action_ids(
-                cursor=cursor,
-                action_type=action_type,
-            )
-        result_dict = _wrap_in_ok_result({k.serialize(): v for k, v in mapping.items()})
-
-        return api_response(result_dict, status_code=HTTPStatus.OK)
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     def get_queried_addresses_per_module(self) -> Response:
         result = QueriedAddresses(self.rotkehlchen.data.db).get_queried_addresses_per_module()
@@ -3313,8 +3299,8 @@ class RestAPI():
             )
 
             if len(transactions) != 0:
-                mapping = self.rotkehlchen.data.db.get_ignored_action_ids(cursor, ActionType.ETHEREUM_TRANSACTION)  # noqa: E501
-                ignored_ids = mapping.get(ActionType.ETHEREUM_TRANSACTION, [])
+                mapping = self.rotkehlchen.data.db.get_ignored_action_ids(cursor, ActionType.EVM_TRANSACTION)  # noqa: E501
+                ignored_ids = mapping.get(ActionType.EVM_TRANSACTION, [])
                 entries_result = []
                 dbevents = DBHistoryEvents(self.rotkehlchen.data.db)
                 asset = None

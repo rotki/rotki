@@ -8,7 +8,8 @@ from marshmallow import EXCLUDE, ValidationError
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
-from rotkehlchen.api.v1.schemas import IgnoredActionsModifySchema, ModifiableSettingsSchema
+from rotkehlchen.accounting.structures.types import ActionType
+from rotkehlchen.api.v1.schemas import ModifiableSettingsSchema
 from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorDailyStats
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors.asset import UnknownAsset
@@ -82,18 +83,18 @@ class DebugHistoryImporter:
 
         log.debug('Trying to add ignored actions identifiers')
         try:
-            for action_type, action_ids in debug_data['ignored_events_ids'].items():
+            for raw_action_type, action_ids in debug_data['ignored_events_ids'].items():
                 try:
-                    ignored_event_id = IgnoredActionsModifySchema().load(
-                        {'action_type': action_type, 'action_ids': action_ids},
-                    )
+                    action_type = ActionType.deserialize(raw_action_type)
+                    if not isinstance(action_ids, list) and all(isinstance(x, str) for x in action_ids):  # noqa: E501
+                        raise DeserializationError('Ignored event ids are not a list of strings')
                     with self.db.user_write() as cursor:
                         self.db.add_to_ignored_action_ids(
                             write_cursor=cursor,
-                            action_type=ignored_event_id['action_type'],
-                            identifiers=ignored_event_id['action_ids'],
+                            action_type=action_type,
+                            identifiers=action_ids,
                         )
-                except (ValidationError, InputError) as e:
+                except (DeserializationError, InputError) as e:
                     error_msg = f'Error while adding ignored action identifiers due to: {str(e)}'
                     log.error(error_msg)
                     return False, error_msg, {}

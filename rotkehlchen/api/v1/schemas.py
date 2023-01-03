@@ -1717,7 +1717,34 @@ class IgnoredAssetsSchema(Schema):
 
 class IgnoredActionsModifySchema(Schema):
     action_type = SerializableEnumField(enum_class=ActionType, required=True)
-    action_ids = fields.List(fields.String(required=True), required=True)
+    data = fields.List(fields.Raw(), required=True)
+
+    @post_load
+    def transform_data(  # pylint: disable=no-self-use
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> Any:
+        given_data = data['data']
+        new_data = []
+        action_type = data['action_type']
+        if action_type == ActionType.EVM_TRANSACTION:
+            for entry in given_data:
+                try:
+                    chain_id = EvmChainNameField()._deserialize(entry['evm_chain'], None, None)
+                    tx_hash = EVMTransactionHashField()._deserialize(entry['tx_hash'], None, None)
+                except KeyError as e:
+                    raise ValidationError(f'Did not find {str(e)} at the given data') from e
+                new_data.append(f'{chain_id.value}{tx_hash.hex()}')  # pylint: disable=no-member
+        else:
+            if not all([isinstance(x, str) for x in given_data]):
+                raise ValidationError(
+                    f'The ignored action data for {action_type.serialize()} need to be a list of strings',  # noqa: E501
+                )
+            new_data = given_data
+
+        data['data'] = new_data
+        return data
 
 
 class OptionalEthereumAddressSchema(Schema):

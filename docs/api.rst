@@ -10358,10 +10358,10 @@ Dealing with ignored actions
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"action_type": "ledger action", "action_ids": ["Z231-XH23K"]}
+      {"action_type": "ledger action", "data": ["Z231-XH23K"]}
 
-   :reqjson str action_type: A type of actions whose ignored ids to add. Defined above.
-   :reqjson list action_ids: A list of action identifiers to add to the ignored actions for accounting
+   :reqjson str action_type: A type of actions whose ignored ids to add. Defined above. Depending on the type, the data field is different.
+   :reqjson list data: The data to ignore. For type "evm_transaction" it's an object with the following keys: ``"evm_chain"`` with the name of the evm chain the transaction happened in and ``"tx_hash"`` the string of the transaction hash to ignore. For all other types it's a list of strings representing the identifier of the action to ignore.
 
    **Example Response**:
 
@@ -10371,11 +10371,11 @@ Dealing with ignored actions
       Content-Type: application/json
 
       {
-          "result": {"ledger_action": ["Z231-XH23K", "X124-JYI", "2325"]},
+          "result": true,
           "message": ""
       }
 
-   :resjson list result: A mapping to a list of action identifiers that are ignored during accounting for the given action type.
+   :resjson bool result: The result field in this response is a simple boolean value indicating success or failure.
    :statuscode 200: Action ids successfully added
    :statuscode 400: Provided JSON or data is in some way malformed.
    :statuscode 409: User is not logged in. One of the action ids provided is already on the list.
@@ -10394,10 +10394,19 @@ Dealing with ignored actions
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"action_type": "asset movement", "action_ids": ["2325"]}
+      {
+          "action_type": "evm transaction",
+          "data": [{
+              "evm_chain": "ethereum",
+              "tx_hash": "0x34d9887286d8c427e5bf18004c464d150190780e83e89a47906cc63a07267780"
+          }, {
+              "evm_chain": "optimism",
+              "tx_hash": "0x14d9887286d3c427e5bf18004c464d150190780e83e89a47906cc63a07267780"
+          }]
+      }
 
-   :reqjson str action_type: A type of actions whose ignored ids to remove. Defined above.
-   :reqjson list action_ids: A list of action identifiers to remove from the ignored action ids list for the action type.
+   :reqjson str action_type: As defined in ``PUT`` above.
+   :reqjson list data: As defined in ``PUT`` above.
 
    **Example Response**:
 
@@ -10407,11 +10416,11 @@ Dealing with ignored actions
       Content-Type: application/json
 
       {
-          "result": {"asset movement": ["Z231-XH23K", "X124-JYI"]},
+          "result": true,
           "message": ""
       }
 
-   :resjson list result: A list of action identifiers that are currently ignored during accounting.
+   :resjson bool result: The result field in this response is a simple boolean value indicating success or failure.
    :statuscode 200: Action ids successfully removed
    :statuscode 400: Provided JSON or data is in some way malformed.
    :statuscode 409: User is not logged in. One of the action ids provided is not on the list.

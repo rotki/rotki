@@ -267,7 +267,7 @@ class HistoryBaseEntry(AccountingEventMixin):
         if not self.serialized_event_identifier.startswith('0x'):
             return False
 
-        ignored_ids = ignored_ids_mapping.get(ActionType.ETHEREUM_TRANSACTION, [])
+        ignored_ids = ignored_ids_mapping.get(ActionType.EVM_TRANSACTION, [])
         return self.serialized_event_identifier in ignored_ids
 
     def get_identifier(self) -> str:
