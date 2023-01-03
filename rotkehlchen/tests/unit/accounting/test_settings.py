@@ -141,7 +141,7 @@ def test_ignored_transactions(accountant, google_service):
     with accountant.db.user_write() as cursor:
         accountant.db.add_to_ignored_action_ids(
             write_cursor=cursor,
-            action_type=ActionType.ETHEREUM_TRANSACTION,
+            action_type=ActionType.EVM_TRANSACTION,
             identifiers=[ignored_tx_hash],
         )
     history = [

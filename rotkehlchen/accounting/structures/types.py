@@ -9,7 +9,7 @@ from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 class ActionType(DBEnumMixIn):
     TRADE = 1
     ASSET_MOVEMENT = 2
-    ETHEREUM_TRANSACTION = 3
+    EVM_TRANSACTION = 3
     LEDGER_ACTION = 4
 
     def serialize(self) -> str:

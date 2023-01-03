@@ -4,6 +4,7 @@ from typing import Any
 import pytest
 import requests
 
+from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.api.v1.schemas import TradeSchema
 from rotkehlchen.constants.assets import A_AAVE, A_BTC, A_DAI, A_EUR, A_WETH
 from rotkehlchen.constants.limits import FREE_TRADES_LIMIT
@@ -15,6 +16,7 @@ from rotkehlchen.tests.utils.api import (
     assert_error_response,
     assert_proper_response,
     assert_proper_response_with_result,
+    assert_simple_ok_response,
 )
 from rotkehlchen.tests.utils.history import (
     assert_binance_trades_result,
@@ -58,10 +60,13 @@ def test_query_trades(rotkehlchen_api_server_with_exchanges, start_with_valid_pr
         api_url_for(
             rotkehlchen_api_server_with_exchanges,
             'ignoredactionsresource',
-        ), json={'action_type': 'trade', 'action_ids': binance_ids},
+        ), json={'action_type': 'trade', 'data': binance_ids},
     )
-    result = assert_proper_response_with_result(response)
-    assert set(result['trade']) == set(binance_ids)
+    assert_simple_ok_response(response)
+    rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
+    with rotki.data.db.conn.read_ctx() as cursor:
+        result = rotki.data.db.get_ignored_action_ids(cursor, None)
+    assert set(result[ActionType.TRADE]) == set(binance_ids)
 
     def assert_okay(response):
         """Helper function to run next query and its assertion twice"""

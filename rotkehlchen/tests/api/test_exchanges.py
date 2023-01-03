@@ -8,6 +8,7 @@ from urllib.parse import urlencode
 import pytest
 import requests
 
+from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.constants.limits import FREE_ASSET_MOVEMENTS_LIMIT, FREE_TRADES_LIMIT
@@ -56,6 +57,7 @@ from rotkehlchen.types import AssetMovementCategory, Location, Timestamp, TradeT
 
 if TYPE_CHECKING:
     from requests import Response
+
     from rotkehlchen.api.server import APIServer
 
 
@@ -729,10 +731,13 @@ def test_query_asset_movements(rotkehlchen_api_server_with_exchanges, start_with
         api_url_for(
             rotkehlchen_api_server_with_exchanges,
             'ignoredactionsresource',
-        ), json={'action_type': 'asset_movement', 'action_ids': poloniex_ids},
+        ), json={'action_type': 'asset_movement', 'data': poloniex_ids},
     )
-    result = assert_proper_response_with_result(response)
-    assert set(result['asset_movement']) == set(poloniex_ids)
+    assert_simple_ok_response(response)
+    rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
+    with rotki.data.db.conn.read_ctx() as cursor:
+        result = rotki.data.db.get_ignored_action_ids(cursor, None)
+    assert set(result[ActionType.ASSET_MOVEMENT]) == set(poloniex_ids)
 
     # query asset movements of all exchanges
     with setup.polo_patch:

@@ -3,6 +3,7 @@ from http import HTTPStatus
 import pytest
 import requests
 
+from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.constants.limits import FREE_LEDGER_ACTIONS_LIMIT
@@ -12,6 +13,7 @@ from rotkehlchen.tests.utils.api import (
     assert_error_response,
     assert_proper_response,
     assert_proper_response_with_result,
+    assert_simple_ok_response,
 )
 from rotkehlchen.types import Timestamp
 from rotkehlchen.utils.misc import ts_now
@@ -97,10 +99,13 @@ def test_add_and_query_ledger_actions(rotkehlchen_api_server, start_with_valid_p
         api_url_for(
             rotkehlchen_api_server,
             'ignoredactionsresource',
-        ), json={'action_type': 'ledger_action', 'action_ids': ['3', '4']},  # external ones
+        ), json={'action_type': 'ledger_action', 'data': ['3', '4']},  # external ones
     )
-    result = assert_proper_response_with_result(response)
-    assert result == {'ledger_action': [str(a['identifier']) for a in actions[0:2][::-1]]}
+    assert_simple_ok_response(response)
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    with rotki.data.db.conn.read_ctx() as cursor:
+        result = rotki.data.db.get_ignored_action_ids(cursor, None)
+    assert result == {ActionType.LEDGER_ACTION: [str(a['identifier']) for a in actions[0:2][::-1]]}
 
     # Now filter by location with json body
     response = requests.get(

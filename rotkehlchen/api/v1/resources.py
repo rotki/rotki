@@ -1612,15 +1612,15 @@ class IgnoredActionsResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(modify_schema, location='json')
-    def put(self, action_type: ActionType, action_ids: list[str]) -> Response:
-        return self.rest_api.add_ignored_action_ids(action_type=action_type, action_ids=action_ids)
+    def put(self, action_type: ActionType, data: list[str]) -> Response:
+        return self.rest_api.add_ignored_action_ids(action_type=action_type, action_ids=data)
 
     @require_loggedin_user()
     @use_kwargs(modify_schema, location='json')
-    def delete(self, action_type: ActionType, action_ids: list[str]) -> Response:
+    def delete(self, action_type: ActionType, data: list[str]) -> Response:
         return self.rest_api.remove_ignored_action_ids(
             action_type=action_type,
-            action_ids=action_ids,
+            action_ids=data,
         )
 
 
