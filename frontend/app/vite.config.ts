@@ -75,6 +75,7 @@ export default defineConfig({
         'vue',
         'vue/macros',
         '@vueuse/core',
+        '@vueuse/math',
         'pinia',
         { 'vue-i18n-composable': ['useI18n'] },
         { '@vueuse/shared': ['get', 'set'] },
@@ -90,7 +91,7 @@ export default defineConfig({
       ],
       dts: 'src/auto-imports.d.ts',
       //todo: cleanup export before enabling
-      dirs: ['src/composables/**' /*, 'src/store'*/],
+      dirs: ['src/composables/**', 'src/api/**' /*, 'src/store'*/],
       vueTemplate: true,
       eslintrc: {
         enabled: true

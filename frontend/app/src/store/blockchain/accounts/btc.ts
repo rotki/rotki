@@ -1,6 +1,5 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type Ref } from 'vue';
-import { useBlockchainAccountsApi } from '@/services/accounts';
 import { type BtcAccountData } from '@/services/types-api';
 import { type XpubPayload } from '@/store/balances/types';
 import { useNotificationsStore } from '@/store/notifications';

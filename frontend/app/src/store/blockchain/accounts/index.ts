@@ -1,5 +1,4 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { useBlockchainAccountsApi } from '@/services/accounts';
 import {
   type BtcAccountData,
   type GeneralAccountData

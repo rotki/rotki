@@ -16,18 +16,38 @@ export const uniqueStrings = function <T = string>(
   return array.indexOf(value) === index;
 };
 
-export function nonNullProperties<T extends object>(object: T): Partial<T> {
+/**
+ * Takes an object and returns the same object without any null values
+ * or empty array properties.
+ * @param object any object
+ */
+export const nonNullProperties = <T extends object>(object: T): Partial<T> => {
   const partial: Partial<T> = {};
   const keys = Object.keys(object);
   for (const obKey of keys) {
     const key = obKey as keyof T;
-    if (object[key] === null) {
+    const val = object[key];
+    if (val === null) {
       continue;
     }
-    partial[key] = object[key];
+    if (Array.isArray(val)) {
+      if (val.length === 0) {
+        continue;
+      }
+      partial[key] = val.map(v => {
+        if (typeof v === 'object') {
+          return nonNullProperties(v);
+        }
+        return v;
+      }) as T[keyof T];
+    } else if (typeof val === 'object') {
+      partial[key] = nonNullProperties(val) as T[keyof T];
+    } else {
+      partial[key] = val;
+    }
   }
   return partial;
-}
+};
 
 export const size = (bytes: number): string => {
   let i = 0;

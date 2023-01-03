@@ -1,21 +1,11 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
 import { type Blockchain } from '@rotki/common/lib/blockchain';
 
-const props = defineProps({
-  address: {
-    required: true,
-    type: String
-  },
-  loading: {
-    required: true,
-    type: Boolean
-  },
-  blockchain: {
-    required: true,
-    type: String as PropType<Blockchain>
-  }
-});
+const props = defineProps<{
+  address: string;
+  loading: boolean;
+  blockchain: Blockchain;
+}>();
 
 const { address, blockchain } = toRefs(props);
 

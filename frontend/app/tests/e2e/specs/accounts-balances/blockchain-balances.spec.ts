@@ -53,7 +53,7 @@ describe('blockchain balances', () => {
     cy.get('[data-cy="add-blockchain-balance"]').should('be.visible');
     cy.get('[data-cy="add-blockchain-balance"]').click();
     tagManager.addTag(
-      '[data-cy="blockchain-balance-form"]',
+      '[data-cy="account-tag-field"]',
       'public',
       'Public Accounts',
       '#EF703C',

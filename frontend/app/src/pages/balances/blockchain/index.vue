@@ -2,20 +2,25 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type ComputedRef, type Ref } from 'vue';
 import AccountBalances from '@/components/accounts/AccountBalances.vue';
-import AccountForm from '@/components/accounts/AccountForm.vue';
 import AssetBalances from '@/components/AssetBalances.vue';
-import BigDialog from '@/components/dialogs/BigDialog.vue';
 import PriceRefresh from '@/components/helper/PriceRefresh.vue';
 import { type BlockchainAccountWithBalance } from '@/store/balances/types';
 import { useBtcAccountBalancesStore } from '@/store/blockchain/accountbalances/btc';
 import { useChainAccountBalancesStore } from '@/store/blockchain/accountbalances/chain';
 import { useEthAccountBalancesStore } from '@/store/blockchain/accountbalances/eth';
 import { useAggregatedBlockchainBalancesStore } from '@/store/blockchain/balances/aggregated';
-import { useTasks } from '@/store/tasks';
-import { TaskType } from '@/types/task-type';
+import AccountDialog from '@/components/accounts/management/AccountDialog.vue';
 
 type Intersections = {
   [key in Blockchain]: boolean;
+};
+
+type Observers = {
+  [key in Blockchain]: (entries: IntersectionObserverEntry[]) => void;
+};
+
+type Busy = {
+  [key in Blockchain]: ComputedRef<boolean>;
 };
 
 interface BlockchainData {
@@ -31,57 +36,6 @@ interface BlockchainData {
 }
 
 const { t, tc } = useI18n();
-const accountToEdit: Ref<BlockchainAccountWithBalance | null> = ref(null);
-const dialogTitle = ref('');
-const dialogSubtitle = ref('');
-const valid = ref(false);
-const openDialog = ref(false);
-const form = ref<InstanceType<typeof AccountForm> | null>(null);
-const pending = ref<boolean>(false);
-
-const loading: ComputedRef<boolean> = computed(
-  () =>
-    get(isAccountOperationRunning()) ||
-    get(pending) ||
-    get(isQueryingBlockchain)
-);
-
-const createAccount = (): void => {
-  set(accountToEdit, null);
-  set(dialogTitle, t('blockchain_balances.form_dialog.add_title').toString());
-  set(dialogSubtitle, '');
-  set(openDialog, true);
-};
-
-const editAccount = (account: BlockchainAccountWithBalance): void => {
-  set(accountToEdit, account);
-  set(dialogTitle, t('blockchain_balances.form_dialog.edit_title').toString());
-  set(
-    dialogSubtitle,
-    t('blockchain_balances.form_dialog.edit_subtitle').toString()
-  );
-  set(openDialog, true);
-};
-
-const clearDialog = async (): Promise<void> => {
-  set(openDialog, false);
-  setTimeout(async () => {
-    if (get(form)) {
-      await get(form)!.reset();
-    }
-    set(accountToEdit, null);
-  }, 300);
-};
-
-const saveAccount = async (): Promise<void> => {
-  if (!get(form)) {
-    return;
-  }
-  const success = await get(form)!.save();
-  if (success) {
-    await clearDialog();
-  }
-};
 
 const router = useRouter();
 const route = useRoute();
@@ -154,6 +108,8 @@ const getFirstContext = (data: BlockchainData) => {
     return Blockchain.DOT;
   } else if (hasData(data.avaxAccounts)) {
     return Blockchain.AVAX;
+  } else if (hasData(data.optimismAccounts)) {
+    return Blockchain.OPTIMISM;
   }
 
   return Blockchain.ETH;
@@ -171,7 +127,7 @@ const context: ComputedRef<Blockchain> = computed(() => {
   return currentContext;
 });
 
-const observers = {
+const observers: Observers = {
   [Blockchain.ETH]: (entries: IntersectionObserverEntry[]) =>
     updateWhenRatio(entries, Blockchain.ETH),
   [Blockchain.ETH2]: (entries: IntersectionObserverEntry[]) =>
@@ -190,30 +146,22 @@ const observers = {
     updateWhenRatio(entries, Blockchain.OPTIMISM)
 };
 
-const { isTaskRunning } = useTasks();
+const { isBlockchainLoading, isAccountOperationRunning } = useAccountLoading();
 
-const isQueryingBlockchain = isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
-const isLoopringLoading = isTaskRunning(TaskType.L2_LOOPRING);
-
-const isBlockchainLoading: ComputedRef<boolean> = computed(() => {
-  return get(isQueryingBlockchain) || get(isLoopringLoading);
-});
-
-const isAccountOperationRunning = (
-  blockchain?: Blockchain
-): ComputedRef<boolean> =>
-  computed(() => {
-    return (
-      get(
-        isTaskRunning(TaskType.ADD_ACCOUNT, blockchain ? { blockchain } : {})
-      ) ||
-      get(
-        isTaskRunning(TaskType.REMOVE_ACCOUNT, blockchain ? { blockchain } : {})
-      )
-    );
-  });
+const busy: Busy = {
+  [Blockchain.ETH]: isAccountOperationRunning(Blockchain.ETH),
+  [Blockchain.ETH2]: isAccountOperationRunning(Blockchain.ETH2),
+  [Blockchain.BTC]: isAccountOperationRunning(Blockchain.BTC),
+  [Blockchain.BCH]: isAccountOperationRunning(Blockchain.BCH),
+  [Blockchain.KSM]: isAccountOperationRunning(Blockchain.KSM),
+  [Blockchain.DOT]: isAccountOperationRunning(Blockchain.DOT),
+  [Blockchain.AVAX]: isAccountOperationRunning(Blockchain.AVAX),
+  [Blockchain.OPTIMISM]: isAccountOperationRunning(Blockchain.OPTIMISM)
+};
 
 const threshold = [0];
+
+const { createAccount, editAccount } = useAccountDialog();
 </script>
 
 <template>
@@ -244,26 +192,7 @@ const threshold = [0];
           {{ tc('blockchain_balances.add_account') }}
         </div>
       </v-btn>
-      <big-dialog
-        :display="openDialog"
-        :title="dialogTitle"
-        :subtitle="dialogSubtitle"
-        :primary-action="tc('common.actions.save')"
-        :secondary-action="tc('common.actions.cancel')"
-        :action-disabled="!valid"
-        :loading="loading"
-        @confirm="saveAccount()"
-        @cancel="clearDialog()"
-      >
-        <account-form
-          ref="form"
-          v-model="valid"
-          :pending="pending"
-          :edit="accountToEdit"
-          :context="context"
-          @update:pending="pending = $event"
-        />
-      </big-dialog>
+      <account-dialog :context="context" />
       <asset-balances
         data-cy="blockchain-asset-balances"
         :loading="isBlockchainLoading"
@@ -273,10 +202,7 @@ const threshold = [0];
     </card>
 
     <account-balances
-      v-if="
-        ethAccounts.length > 0 ||
-        isAccountOperationRunning(Blockchain.ETH).value
-      "
+      v-if="ethAccounts.length > 0 || busy.ETH.value"
       id="blockchain-balances-ETH"
       v-intersect="{
         handler: observers.ETH,
@@ -293,10 +219,7 @@ const threshold = [0];
     />
 
     <account-balances
-      v-if="
-        eth2Accounts.length > 0 ||
-        isAccountOperationRunning(Blockchain.ETH2).value
-      "
+      v-if="eth2Accounts.length > 0 || busy.ETH2.value"
       id="blockchain-balances-ETH2"
       v-intersect="{
         handler: observers.ETH2,
@@ -313,10 +236,7 @@ const threshold = [0];
     />
 
     <account-balances
-      v-if="
-        btcAccounts.length > 0 ||
-        isAccountOperationRunning(Blockchain.BTC).value
-      "
+      v-if="btcAccounts.length > 0 || busy.BTC.value"
       id="blockchain-balances-BTC"
       v-intersect="{
         handler: observers.BTC,
@@ -333,10 +253,7 @@ const threshold = [0];
     />
 
     <account-balances
-      v-if="
-        bchAccounts.length > 0 ||
-        isAccountOperationRunning(Blockchain.BCH).value
-      "
+      v-if="bchAccounts.length > 0 || busy.BCH.value"
       id="blockchain-balances-BCH"
       v-intersect="{
         handler: observers.BCH,
@@ -353,10 +270,7 @@ const threshold = [0];
     />
 
     <account-balances
-      v-if="
-        ksmAccounts.length > 0 ||
-        isAccountOperationRunning(Blockchain.KSM).value
-      "
+      v-if="ksmAccounts.length > 0 || busy.KSM.value"
       id="blockchain-balances-KSM"
       v-intersect="{
         handler: observers.KSM,
@@ -373,10 +287,7 @@ const threshold = [0];
     />
 
     <account-balances
-      v-if="
-        dotAccounts.length > 0 ||
-        isAccountOperationRunning(Blockchain.DOT).value
-      "
+      v-if="dotAccounts.length > 0 || busy.DOT.value"
       id="blockchain-balances-DOT"
       v-intersect="{
         handler: observers.DOT,
@@ -393,10 +304,7 @@ const threshold = [0];
     />
 
     <account-balances
-      v-if="
-        avaxAccounts.length > 0 ||
-        isAccountOperationRunning(Blockchain.AVAX).value
-      "
+      v-if="avaxAccounts.length > 0 || busy.AVAX.value"
       id="blockchain-balances-AVAX"
       v-intersect="{
         handler: observers.AVAX,
@@ -424,7 +332,7 @@ const threshold = [0];
     />
 
     <account-balances
-      v-if="optimismAccounts.length > 0"
+      v-if="optimismAccounts.length > 0 || busy.OPTIMISM.value"
       id="blockchain-balances-OPTIMISM"
       v-intersect="{
         handler: observers.OPTIMISM,

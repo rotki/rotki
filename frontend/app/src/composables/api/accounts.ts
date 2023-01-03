@@ -4,6 +4,7 @@ import {
   type Eth2ValidatorEntry,
   Eth2Validators
 } from '@rotki/common/lib/staking/eth2';
+import { onlyIfTruthy } from '@rotki/common';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
@@ -13,6 +14,7 @@ import {
 } from '@/services/types-api';
 import {
   handleResponse,
+  validAuthorizedStatus,
   validWithParamsSessionAndExternalService,
   validWithSessionAndExternalService,
   validWithSessionStatus
@@ -24,6 +26,8 @@ import {
 import { type BtcChains } from '@/types/blockchain/chains';
 import { assert } from '@/utils/assertions';
 import { type Eth2Validator } from '@/types/balances';
+import { EvmAccountsResult } from '@/types/api/accounts';
+import { nonNullProperties } from '@/utils/data';
 
 const performAsyncQuery = async (
   url: string,
@@ -47,7 +51,9 @@ const payloadToData = ({
   address,
   label,
   tags
-}: BlockchainAccountPayload): { accounts: GeneralAccountData[] } => ({
+}: Omit<BlockchainAccountPayload, 'blockchain'>): {
+  accounts: GeneralAccountData[];
+} => ({
   accounts: [
     {
       address,
@@ -77,8 +83,8 @@ export const useBlockchainAccountsApi = () => {
     const payload = xpub
       ? {
           xpub: xpub.xpub,
-          derivationPath: xpub.derivationPath ? xpub.derivationPath : undefined,
-          xpubType: xpub.xpubType ? xpub.xpubType : undefined,
+          derivationPath: onlyIfTruthy(xpub.derivationPath),
+          xpubType: onlyIfTruthy(xpub.xpubType),
           ...basePayload
         }
       : {
@@ -89,7 +95,7 @@ export const useBlockchainAccountsApi = () => {
             }
           ]
         };
-    return performAsyncQuery(url, payload);
+    return performAsyncQuery(url, nonNullProperties(payload));
   };
 
   const removeBlockchainAccount = async (
@@ -113,16 +119,17 @@ export const useBlockchainAccountsApi = () => {
   const editBtcAccount = async (
     payload: BlockchainAccountPayload
   ): Promise<BtcAccountData> => {
-    let url = `/blockchains/${payload.blockchain}/accounts`;
+    const url = payload.xpub
+      ? `/blockchains/${payload.blockchain}/xpub`
+      : `/blockchains/${payload.blockchain}/accounts`;
     const { label, tags } = payload;
 
     let data: {};
-    if (payload.xpub && !payload.address) {
-      url += '/xpub';
+    if (payload.xpub) {
       const { derivationPath, xpub } = payload.xpub;
       data = {
         xpub,
-        derivationPath: derivationPath ? derivationPath : undefined,
+        derivationPath: onlyIfTruthy(derivationPath),
         label: label || null,
         tags
       };
@@ -219,7 +226,10 @@ export const useBlockchainAccountsApi = () => {
   ): Promise<PendingTask> => {
     const response = await api.instance.put<ActionResult<PendingTask>>(
       '/blockchains/ETH2/validators',
-      axiosSnakeCaseTransformer({ ...payload, asyncQuery: true })
+      axiosSnakeCaseTransformer({ ...payload, asyncQuery: true }),
+      {
+        validateStatus: validAuthorizedStatus
+      }
     );
 
     return handleResponse(response);
@@ -255,8 +265,22 @@ export const useBlockchainAccountsApi = () => {
     return handleResponse(response);
   };
 
+  const addEvmAccount = async (
+    payload: Omit<BlockchainAccountPayload, 'blockchain'>
+  ): Promise<EvmAccountsResult> => {
+    const response = await api.instance.put<ActionResult<EvmAccountsResult>>(
+      '/blockchains/evm/accounts',
+      nonNullProperties(payloadToData(payload)),
+      {
+        validateStatus: validWithSessionAndExternalService
+      }
+    );
+    return EvmAccountsResult.parse(handleResponse(response));
+  };
+
   return {
     addBlockchainAccount,
+    addEvmAccount,
     removeBlockchainAccount,
     editBlockchainAccount,
     editBtcAccount,

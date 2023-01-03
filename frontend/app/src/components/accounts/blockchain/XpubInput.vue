@@ -1,6 +1,8 @@
+\
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { type PropType } from 'vue';
+import useVuelidate from '@vuelidate/core';
+import { helpers, required } from '@vuelidate/validators';
 import { type XpubPayload } from '@/store/balances/types';
 import { trimOnPaste } from '@/utils/event';
 import {
@@ -10,30 +12,22 @@ import {
   getPrefix,
   keyType
 } from '@/utils/xpub';
+import { type ValidationErrors } from '@/types/api/errors';
+import { type BtcChains } from '@/types/blockchain/chains';
 
-const FIELD_XPUB = 'xpub';
-const FIELD_DERIVATION_PATH = 'derivation_path';
-
-const props = defineProps({
-  disabled: { required: true, type: Boolean },
-  errorMessages: {
-    required: true,
-    type: Object as PropType<Record<string, string[]>>
-  },
-  xpub: {
-    required: false,
-    default: null,
-    type: Object as PropType<XpubPayload | null>
-  },
-  blockchain: {
-    required: true,
-    type: String as PropType<Blockchain.BTC | Blockchain.BCH>
-  }
-});
+const props = defineProps<{
+  disabled: boolean;
+  errorMessages: ValidationErrors;
+  xpub: XpubPayload | null;
+  blockchain: BtcChains;
+}>();
 
 const emit = defineEmits(['update:xpub']);
+
 const { t, tc } = useI18n();
-const { xpub, disabled, blockchain } = toRefs(props);
+
+const { xpub, disabled, blockchain, errorMessages } = toRefs(props);
+
 const xpubKey = ref('');
 const derivationPath = ref('');
 const xpubKeyPrefix = ref<XpubPrefix>(XpubPrefix.XPUB);
@@ -41,10 +35,6 @@ const advanced = ref(false);
 
 const updateXpub = (event: XpubPayload | null) => {
   emit('update:xpub', event);
-};
-const fields = {
-  XPUB: FIELD_XPUB,
-  DERIVATION_PATH: FIELD_DERIVATION_PATH
 };
 
 const isPrefixed = (value: string) => value.match(/([x-z]pub)(.*)/);
@@ -115,11 +105,30 @@ const keyTypeListData = computed<XpubType[]>(() => {
   );
 });
 
-const rules = [
-  (v: string) => {
-    return !!v || t('account_form.validation.xpub_non_empty').toString();
+const rules = {
+  xpub: {
+    required: helpers.withMessage(
+      tc('account_form.validation.xpub_non_empty'),
+      required
+    )
+  },
+  derivationPath: {
+    basic: () => true
   }
-];
+};
+
+const v$ = useVuelidate(
+  rules,
+  {
+    xpub,
+    derivationPath
+  },
+  {
+    $autoDirty: true,
+    $stopPropagation: true,
+    $externalResults: errorMessages
+  }
+);
 </script>
 
 <template>
@@ -143,9 +152,9 @@ const rules = [
           class="account-form__xpub ml-2"
           :label="t('account_form.labels.btc.xpub')"
           autocomplete="off"
-          :error-messages="errorMessages[fields.XPUB]"
+          :error-messages="v$.xpub.$errors.map(e => e.$message)"
           :disabled="disabled"
-          :rules="rules"
+          @blur="v$.xpub.$touch()"
           @paste="onPasteXpub"
         >
           <template #append-outer>
@@ -179,11 +188,12 @@ const rules = [
           outlined
           class="account-form__derivation-path"
           :label="t('account_form.labels.btc.derivation_path')"
-          :error-messages="errorMessages[fields.DERIVATION_PATH]"
+          :error-messages="v$.derivationPath.$errors.map(e => e.$message)"
           autocomplete="off"
           :disabled="disabled"
           persistent-hint
           :hint="t('account_form.labels.btc.derivation_path_hint')"
+          @blur="v$.derivationPath.$touch()"
         />
       </v-col>
     </v-row>
