@@ -28,7 +28,7 @@ export const waitForAsyncQuery = (
 ) => {
   cy.intercept(url).as('asyncQuery');
 
-  cy.wait('@asyncQuery', { timeout: 30000 })
+  cy.wait('@asyncQuery', { timeout })
     .its('response.body')
     .then(body => {
       cy.intercept({

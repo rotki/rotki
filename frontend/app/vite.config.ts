@@ -43,7 +43,7 @@ export default defineConfig({
     }
   },
   optimizeDeps: {
-    include: ['cleave.js', 'lodash/orderBy', 'lodash/isEmpty']
+    include: ['cleave.js', 'lodash/orderBy', 'lodash/isEmpty', '@vueuse/math']
   },
   // @ts-ignore
   test: {

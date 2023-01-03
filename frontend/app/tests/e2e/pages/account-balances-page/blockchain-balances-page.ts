@@ -1,5 +1,6 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Zero, bigNumberify } from '@/utils/bignumbers';
+import { waitForAsyncQuery } from '../../support/utils';
 import { AccountBalancesPage } from './index';
 
 export interface FixtureBlockchainBalance {
@@ -36,6 +37,14 @@ export class BlockchainBalancesPage extends AccountBalancesPage {
     }
 
     cy.get('.big-dialog__buttons__confirm').click();
+
+    if (balance.blockchain === 'ETH') {
+      waitForAsyncQuery({
+        method: 'POST',
+        url: '/api/1/assets/prices/latest'
+      });
+    }
+
     cy.get('.big-dialog', { timeout: 120000 }).should('not.be.visible');
   }
 
