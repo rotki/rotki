@@ -7,12 +7,13 @@ import {
   validWithSessionAndExternalService
 } from '@/services/utils';
 import {
-  type EthAddressBookLocation,
-  EthNames,
-  EthNamesEntries
+  AddressBookEntries,
+  type AddressBookLocation,
+  type AddressBookSimplePayload,
+  EthNames
 } from '@/types/eth-names';
 
-export const useEthNamesApi = () => {
+export const useAddressesNamesApi = () => {
   const internalEnsNames = async <T>(
     ethereumAddresses: string[],
     asyncQuery = false
@@ -44,10 +45,10 @@ export const useEthNamesApi = () => {
     return EthNames.parse(response);
   };
 
-  const getEthAddressBook = async (
-    location: EthAddressBookLocation,
+  const getAddressBook = async (
+    location: AddressBookLocation,
     addresses?: string[]
-  ): Promise<EthNamesEntries> => {
+  ): Promise<AddressBookEntries> => {
     const response = await api.instance.post<ActionResult<EthNames>>(
       `/names/addressbook/${location}`,
       addresses ? { addresses } : null,
@@ -56,12 +57,12 @@ export const useEthNamesApi = () => {
       }
     );
 
-    return EthNamesEntries.parse(handleResponse(response));
+    return AddressBookEntries.parse(handleResponse(response));
   };
 
-  const addEthAddressBook = async (
-    location: EthAddressBookLocation,
-    entries: EthNamesEntries
+  const addAddressBook = async (
+    location: AddressBookLocation,
+    entries: AddressBookEntries
   ): Promise<boolean> => {
     const response = await api.instance.put<ActionResult<boolean>>(
       `/names/addressbook/${location}`,
@@ -74,9 +75,9 @@ export const useEthNamesApi = () => {
     return handleResponse(response);
   };
 
-  const updateEthAddressBook = async (
-    location: EthAddressBookLocation,
-    entries: EthNamesEntries
+  const updateAddressBook = async (
+    location: AddressBookLocation,
+    entries: AddressBookEntries
   ): Promise<boolean> => {
     const response = await api.instance.patch<ActionResult<boolean>>(
       `/names/addressbook/${location}`,
@@ -89,9 +90,9 @@ export const useEthNamesApi = () => {
     return handleResponse(response);
   };
 
-  const deleteEthAddressBook = async (
-    location: EthAddressBookLocation,
-    addresses: string[]
+  const deleteAddressBook = async (
+    location: AddressBookLocation,
+    addresses: AddressBookSimplePayload[]
   ): Promise<boolean> => {
     const response = await api.instance.delete<ActionResult<boolean>>(
       `/names/addressbook/${location}`,
@@ -104,8 +105,10 @@ export const useEthNamesApi = () => {
     return handleResponse(response);
   };
 
-  const getEthNames = async (addresses: string[]): Promise<EthNames> => {
-    const response = await api.instance.post<ActionResult<EthNames>>(
+  const getAddressesNames = async (
+    addresses: AddressBookSimplePayload[]
+  ): Promise<AddressBookEntries> => {
+    const response = await api.instance.post<ActionResult<AddressBookEntries>>(
       '/names',
       { addresses },
       {
@@ -119,10 +122,10 @@ export const useEthNamesApi = () => {
   return {
     getEnsNamesTask,
     getEnsNames,
-    getEthAddressBook,
-    addEthAddressBook,
-    updateEthAddressBook,
-    deleteEthAddressBook,
-    getEthNames
+    getAddressBook,
+    addAddressBook,
+    updateAddressBook,
+    deleteAddressBook,
+    getAddressesNames
   };
 };

@@ -198,7 +198,7 @@ const getRoutes = (keyword: string): SearchItemWithoutValue[] => {
       ...Routes.PRICE_MANAGER_HISTORIC,
       texts: [Routes.PRICE_MANAGER.text, Routes.PRICE_MANAGER_HISTORIC.text]
     },
-    { ...Routes.ETH_ADDRESS_BOOK_MANAGER },
+    { ...Routes.ADDRESS_BOOK_MANAGER },
     {
       ...Routes.API_KEYS_ROTKI_PREMIUM,
       texts: [Routes.API_KEYS.text, Routes.API_KEYS_ROTKI_PREMIUM.text]

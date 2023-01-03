@@ -36,7 +36,7 @@ enum RouteNames {
   PRICE_MANAGER = 'PRICE_MANAGER',
   PRICE_MANAGER_LATEST = 'PRICE_MANAGER_LATEST',
   PRICE_MANAGER_HISTORIC = 'PRICE_MANAGER_HISTORIC',
-  ETH_ADDRESS_BOOK_MANAGER = 'ETH_ADDRESS_BOOK_MANAGER',
+  ADDRESS_BOOK_MANAGER = 'ADDRESS_BOOK_MANAGER',
   API_KEYS = 'API_KEYS',
   API_KEYS_ROTKI_PREMIUM = 'API_KEYS_ROTKI_PREMIUM',
   API_KEYS_EXCHANGES = 'API_KEYS_EXCHANGES',
@@ -93,7 +93,7 @@ export const Routes: AppRouteMap<string> = {
   PRICE_MANAGER: '/price-manager',
   PRICE_MANAGER_LATEST: '/price-manager/latest',
   PRICE_MANAGER_HISTORIC: '/price-manager/historic',
-  ETH_ADDRESS_BOOK_MANAGER: '/eth-address-book-manager',
+  ADDRESS_BOOK_MANAGER: '/address-book-manager',
   API_KEYS: '/settings/api-keys',
   API_KEYS_ROTKI_PREMIUM: '/settings/api-keys/rotki-premium',
   API_KEYS_EXCHANGES: '/settings/api-keys/exchanges',
@@ -276,10 +276,10 @@ export const useAppRoutes = createSharedComposable(() => {
       icon: 'mdi-chart-line',
       text: tc('navigation_menu.manage_prices_sub.historic_prices')
     },
-    ETH_ADDRESS_BOOK_MANAGER: {
-      route: Routes.ETH_ADDRESS_BOOK_MANAGER,
+    ADDRESS_BOOK_MANAGER: {
+      route: Routes.ADDRESS_BOOK_MANAGER,
       icon: 'mdi-book-open',
-      text: tc('navigation_menu.manage_eth_address_book')
+      text: tc('navigation_menu.manage_address_book')
     },
     API_KEYS: {
       route: Routes.API_KEYS,

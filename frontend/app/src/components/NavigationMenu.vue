@@ -26,9 +26,14 @@ interface DividerItem {
 
 type MenuItem = NavItem | NavGroupItem | DividerItem;
 
-defineProps({
-  isMini: { required: false, type: Boolean, default: false }
-});
+withDefaults(
+  defineProps<{
+    isMini?: boolean;
+  }>(),
+  {
+    isMini: false
+  }
+);
 
 const { appRoutes } = useAppRoutes();
 const Routes = get(appRoutes);
@@ -133,8 +138,8 @@ const navItems: MenuItem[] = [
   },
   {
     type: 'item',
-    class: 'eth-address-book-manager',
-    ...Routes.ETH_ADDRESS_BOOK_MANAGER
+    class: 'address-book-manager',
+    ...Routes.ADDRESS_BOOK_MANAGER
   },
   {
     type: 'divider'

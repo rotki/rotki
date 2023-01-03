@@ -23,6 +23,8 @@ import { type BlockchainMetadata } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { assert } from '@/utils/assertions';
 import { logger } from '@/utils/logging';
+import { startPromise } from '@/utils';
+import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 
 export const useBlockchainAccountsStore = defineStore(
   'blockchain/accounts',
@@ -141,6 +143,8 @@ export const useBlockchainAccountsStore = defineStore(
       }
     };
 
+    const { fetchEnsNames, fetchAddressesNames } = useAddressesNamesStore();
+
     const fetchBlockchainAccounts = async (
       blockchain: Exclude<
         Blockchain,
@@ -151,8 +155,15 @@ export const useBlockchainAccountsStore = defineStore(
         const accounts = await queryAccounts(blockchain);
         if (blockchain === Blockchain.ETH) {
           updateEth(accounts);
+          startPromise(fetchEnsNames(accounts.map(({ address }) => address)));
         } else if (isRestChain(blockchain)) {
           updateChain(blockchain, accounts);
+          startPromise(
+            fetchAddressesNames(
+              accounts.map(({ address }) => address),
+              blockchain
+            )
+          );
         }
         return accounts.map(account => account.address);
       } catch (e: any) {
@@ -171,7 +182,17 @@ export const useBlockchainAccountsStore = defineStore(
 
     const fetchBtcAccounts = async (chains: BtcChains): Promise<boolean> => {
       try {
-        updateBtc(chains, await queryBtcAccounts(chains));
+        const accounts = await queryBtcAccounts(chains);
+        updateBtc(chains, accounts);
+
+        // TODO: enable alias name for BTC when backend support enabled
+        // const addresses = [
+        //   ...accounts.standalone.map(({ address }) => address),
+        //   ...accounts.xpubs
+        //     .flatMap(({ addresses }) => addresses)
+        //     .map(item => item?.address || '')
+        // ];
+        // startPromise(fetchAddressesNames(addresses, chains));
         return true;
       } catch (e: any) {
         logger.error(e);

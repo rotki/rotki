@@ -97,8 +97,8 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
   const versionUpdateCheckFrequency: ComputedRef<number> = computed(
     () => settings.versionUpdateCheckFrequency
   );
-  const enableEthNames: ComputedRef<boolean> = computed(
-    () => settings.enableEthNames
+  const enableAliasNames: ComputedRef<boolean> = computed(
+    () => settings.enableAliasNames
   );
 
   const api = useSettingsApi();
@@ -184,7 +184,7 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
     dashboardTablesVisibleColumns,
     dateInputFormat,
     versionUpdateCheckFrequency,
-    enableEthNames,
+    enableAliasNames,
     updateSetting,
     update
   };

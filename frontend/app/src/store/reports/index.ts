@@ -1,6 +1,6 @@
 import { type Message } from '@rotki/common/lib/messages';
 import { type ComputedRef, type Ref } from 'vue';
-import { useEthNamesStore } from '@/store/balances/ethereum-names';
+import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useMessageStore } from '@/store/message';
 import { useNotificationsStore } from '@/store/notifications';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
@@ -192,8 +192,8 @@ export const useReports = defineStore('reports', () => {
 
       const addresses = filterAddressesFromWords(words);
 
-      const { fetchEnsNames } = useEthNamesStore();
-      await fetchEnsNames(addresses, false);
+      const { fetchEnsNames } = useAddressesNamesStore();
+      await fetchEnsNames(addresses);
     } catch (e: any) {
       notify({
         title: t('actions.reports.fetch.error.title').toString(),

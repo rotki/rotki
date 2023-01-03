@@ -59,7 +59,7 @@ describe('settings:utils', () => {
       graphZeroBased: false,
       showGraphRangeSelector: true,
       nftsInNetValue: true,
-      enableEthNames: true
+      enableAliasNames: true
     });
   });
 });

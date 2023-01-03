@@ -167,8 +167,10 @@ export const useBlockchainStore = defineStore('blockchain', () => {
       throw promiseResult[0].reason;
     }
 
+    const isXpub = payload.length === 1 && payload[0].xpub;
+
     promiseResult.forEach((res, index) => {
-      if (res.status === 'fulfilled' && res.value !== '') {
+      if (res.status === 'fulfilled' && (res.value !== '' || isXpub)) {
         registeredAddresses.push(res.value);
       } else {
         if (res.status === 'rejected') {

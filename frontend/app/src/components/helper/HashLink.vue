@@ -1,9 +1,7 @@
 ﻿<script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import makeBlockie from 'ethereum-blockies-base64';
-import { type PropType } from 'vue';
 import { truncateAddress } from '@/filters';
-import { useEthNamesStore } from '@/store/balances/ethereum-names';
+import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import {
@@ -13,23 +11,34 @@ import {
 } from '@/types/asset-urls';
 import { randomHex } from '@/utils/data';
 
-const props = defineProps({
-  showIcon: { required: false, type: Boolean, default: false },
-  text: { required: false, type: String, default: '' },
-  fullAddress: { required: false, type: Boolean, default: false },
-  linkOnly: { required: false, type: Boolean, default: false },
-  noLink: { required: false, type: Boolean, default: false },
-  baseUrl: { required: false, type: String, default: '' },
-  chain: {
-    required: false,
-    type: String as PropType<Chains>,
-    default: Blockchain.ETH
-  },
-  tx: { required: false, type: Boolean, default: false },
-  buttons: { required: false, type: Boolean, default: false },
-  small: { required: false, type: Boolean, default: false },
-  truncateLength: { required: false, type: Number, default: 4 }
-});
+const props = withDefaults(
+  defineProps<{
+    showIcon?: boolean;
+    text?: string;
+    fullAddress?: boolean;
+    linkOnly?: boolean;
+    noLink?: boolean;
+    baseUrl?: string;
+    chain?: Chains;
+    tx?: boolean;
+    buttons?: boolean;
+    small?: boolean;
+    truncateLength?: number;
+  }>(),
+  {
+    showIcon: true,
+    text: '',
+    fullAddress: false,
+    linkOnly: false,
+    noLink: false,
+    baseUrl: '',
+    chain: Blockchain.ETH,
+    tx: false,
+    buttons: false,
+    small: false,
+    truncateLength: 4
+  }
+);
 
 const { text, baseUrl, chain, tx } = toRefs(props);
 
@@ -39,11 +48,11 @@ const { scrambleData, shouldShowAmount } = storeToRefs(
 const { explorers } = storeToRefs(useFrontendSettingsStore());
 const { dark } = useTheme();
 
-const { ethNameSelector } = useEthNamesStore();
+const { addressNameSelector } = useAddressesNamesStore();
 
 const ethName = computed<string | null>(() => {
   if (!get(scrambleData) || get(tx)) {
-    return get(ethNameSelector(get(text)));
+    return get(addressNameSelector(get(text)));
   }
 
   return null;
@@ -105,9 +114,12 @@ const { href, onLinkClick } = useLinks(url);
 
 <template>
   <div class="d-flex flex-row shrink align-center">
-    <v-avatar v-if="showIcon" size="24" class="mr-2">
-      <v-img :src="makeBlockie(displayText)" />
-    </v-avatar>
+    <!--    TODO: move makeBlockie to local, and make the size adjustable-->
+    <!--    <span>-->
+    <!--      <v-avatar v-if="showIcon && !tx" size="24" class="ml-n2 mr-2">-->
+    <!--        <v-img :src="makeBlockie(displayText)" />-->
+    <!--      </v-avatar>-->
+    <!--    </span>-->
     <span v-if="!linkOnly && !buttons">
       <span v-if="fullAddress" :class="{ 'blur-content': !shouldShowAmount }">
         {{ displayText }}

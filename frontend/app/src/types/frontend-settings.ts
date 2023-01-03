@@ -176,7 +176,7 @@ export const FrontendSettings = z.object({
       Defaults.DEFAULT_VERSION_UPDATE_CHECK_FREQUENCY
     )
   ),
-  enableEthNames: z.boolean().default(true)
+  enableAliasNames: z.boolean().default(true)
 });
 
 export type FrontendSettings = z.infer<typeof FrontendSettings>;
