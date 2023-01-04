@@ -85,7 +85,7 @@
     "c8": "7.12.0",
     "cross-env": "7.0.3",
     "csv": "6.2.5",
-    "cypress": "12.1.0",
+    "cypress": "12.2.0",
     "dmg-license": "1.0.11",
     "dotenv": "14.3.2",
     "dotenv-cli": "5.1.0",

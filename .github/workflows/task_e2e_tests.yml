@@ -53,14 +53,12 @@ jobs:
           pip install -e .
       - name: Restore dependencies
         working-directory: ./frontend
-        run: pnpm install --frozen-lockfile
+        run: pnpm install
       - name: Run e2e tests
         env:
           ARGS: "--browser chrome"
           CYPRESS_ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
-        run: |
-          pnpx cypress install
-          pnpm run --filter rotki test:integration-ci
+        run: pnpm run --filter rotki test:integration-ci
         working-directory: ./frontend
       - name: Upload coverage
         uses: codecov/codecov-action@v3

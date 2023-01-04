@@ -1,3 +1,5 @@
+import { mockRequest } from '../support/utils';
+
 export class ApiKeysPage {
   visit() {
     cy.get('.v-app-bar__nav-icon').click();
@@ -23,7 +25,29 @@ export class ApiKeysPage {
     cy.get('@keys').find('[data-cy="name"]').type(name);
     cy.get('@keys').find('[data-cy="api-key"] input').type(apiKey);
     cy.get('@keys').find('[data-cy="api-secret"] input').type(apiSecret);
+
+    cy.intercept(
+      {
+        url: '/api/1/exchanges',
+        method: 'PUT'
+      },
+      {
+        statusCode: 200,
+        body: {
+          result: true
+        }
+      }
+    ).as('exchangeAdd');
+
+    const waitForBalances = mockRequest({
+      url: `/api/1/exchanges/balances/${exchange}?async_query=true`,
+      method: 'GET'
+    });
+
     cy.get('[data-cy="bottom-dialog"]').find('[data-cy="confirm"]').click();
+    waitForBalances();
+    cy.wait('@exchangeAdd', { timeout: 30000 });
+
     cy.get('[data-cy="bottom-dialog"]', { timeout: 45000 }).should(
       'not.be.visible'
     );
