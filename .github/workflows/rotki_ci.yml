@@ -80,21 +80,29 @@ jobs:
         uses: rotki/action-env@v1
         with:
           env_file: .github/.env.ci
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: ${{ env.PNPM_VERSION }}
       - name: Setup node
         uses: actions/setup-node@v3
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
-          cache-dependency-path: 'frontend/pnpm-lock.yaml'
-      - name: Cache cypress
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+      - name: Setup pnpm cache
         uses: actions/cache@v3
         with:
-          path: ~/.cache/Cypress
-          key: ${{ runner.os }}-node--ci-${{ hashFiles('frontend/pnpm-lock.yaml') }}
+          path: |
+            ~/.cache/Cypress
+            ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+            frontend/app/components.d.ts
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
       - name: Store eslint cache
         uses: actions/cache@v3
         with:
@@ -131,21 +139,29 @@ jobs:
         uses: rotki/action-env@v1
         with:
           env_file: .github/.env.ci
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: ${{ env.PNPM_VERSION }}
       - name: Setup node
         uses: actions/setup-node@v3
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
-          cache-dependency-path: 'frontend/pnpm-lock.yaml'
-      - name: Cache cypress
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+      - name: Setup pnpm cache
         uses: actions/cache@v3
         with:
-          path: ~/.cache/Cypress
-          key: ${{ runner.os }}-node--ci-${{ hashFiles('frontend/pnpm-lock.yaml') }}
+          path: |
+            ~/.cache/Cypress
+            ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+            frontend/app/components.d.ts
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
       - name: Install dependencies
         working-directory: ./frontend
         run: pnpm install --frozen-lockfile
