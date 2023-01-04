@@ -3,6 +3,7 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.chain.ethereum.constants import CPT_KRAKEN
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_USDT
@@ -216,7 +217,7 @@ def test_simple_erc20_transfer(
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
             balance=Balance(),
-            location_label='0x4bBa290826C253BD854121346c370a9886d1bC26',
+            location_label=from_address,
             notes='Burned 0 ETH for gas',
             counterparty='gas',
             identifier=None,
@@ -233,6 +234,240 @@ def test_simple_erc20_transfer(
             location_label=from_address,
             notes=f'Transfer 38.002229 USDT from {from_address} to {to_address}',
             counterparty=to_address,
+            identifier=None,
+            extra_data=None,
+        ),
+    ]
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[
+    '0x4bBa290826C253BD854121346c370a9886d1bC26',
+    '0x38C3f1Ab36BdCa29133d8AF7A19811D10B6CA3FC',
+]])
+def test_eth_transfer(
+        database,
+        ethereum_accounts,
+        ethereum_transaction_decoder,
+):
+    """
+    Data taken from
+    https://etherscan.io/tx/0x8caa7df2ebebfceb98207605e64691202b9e7498c3cccdbccb41c1600cf16e65
+    """
+    evmhash = deserialize_evm_tx_hash('0x8caa7df2ebebfceb98207605e64691202b9e7498c3cccdbccb41c1600cf16e65')  # noqa: E501
+    from_address = ethereum_accounts[0]
+    to_address = ethereum_accounts[1]
+    transaction = EvmTransaction(
+        tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
+        timestamp=0,
+        block_number=0,
+        from_address=from_address,
+        to_address=to_address,
+        value=500000000000000000,
+        gas=2e5,
+        gas_price=10 * 1e9,  # 10 gwei
+        gas_used=1e5,
+        input_data=b'',
+        nonce=0,
+    )
+    receipt = EvmTxReceipt(
+        tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
+        contract_address=None,
+        status=True,
+        type=0,
+        logs=[],
+    )
+    dbevmtx = DBEvmTx(database)
+    with database.user_write() as cursor:
+        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        events = ethereum_transaction_decoder.decode_transaction(
+            write_cursor=cursor,
+            transaction=transaction,
+            tx_receipt=receipt,
+        )
+    assert events == [
+        HistoryBaseEntry(
+            event_identifier=evmhash,
+            sequence_index=0,
+            timestamp=Timestamp(0),
+            location=Location.BLOCKCHAIN,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(0.001)),
+            location_label=from_address,
+            notes='Burned 0.001 ETH for gas',
+            counterparty='gas',
+            identifier=None,
+            extra_data=None,
+        ),
+        HistoryBaseEntry(
+            event_identifier=evmhash,
+            sequence_index=1,
+            timestamp=0,
+            location=Location.BLOCKCHAIN,
+            event_type=HistoryEventType.TRANSFER,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(0.5)),
+            location_label=from_address,
+            notes=f'Transfer 0.5 ETH to {to_address}',
+            counterparty=to_address,
+            identifier=None,
+            extra_data=None,
+        ),
+    ]
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0x4bBa290826C253BD854121346c370a9886d1bC26']])
+def test_eth_spend(
+        database,
+        ethereum_accounts,
+        ethereum_transaction_decoder,
+):
+    """
+    Data taken from
+    https://etherscan.io/tx/0x8caa7df2ebebfceb98207605e64691202b9e7498c3cccdbccb41c1600cf16e65
+    """
+    evmhash = deserialize_evm_tx_hash('0x8caa7df2ebebfceb98207605e64691202b9e7498c3cccdbccb41c1600cf16e65')  # noqa: E501
+    from_address = ethereum_accounts[0]
+    to_address = string_to_evm_address('0x38C3f1Ab36BdCa29133d8AF7A19811D10B6CA3FC')
+    transaction = EvmTransaction(
+        tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
+        timestamp=0,
+        block_number=0,
+        from_address=from_address,
+        to_address=to_address,
+        value=500000000000000000,
+        gas=2e5,
+        gas_price=10 * 1e9,  # 10 gwei
+        gas_used=1e5,
+        input_data=b'',
+        nonce=0,
+    )
+    receipt = EvmTxReceipt(
+        tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
+        contract_address=None,
+        status=True,
+        type=0,
+        logs=[],
+    )
+    dbevmtx = DBEvmTx(database)
+    with database.user_write() as cursor:
+        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        events = ethereum_transaction_decoder.decode_transaction(
+            write_cursor=cursor,
+            transaction=transaction,
+            tx_receipt=receipt,
+        )
+    assert events == [
+        HistoryBaseEntry(
+            event_identifier=evmhash,
+            sequence_index=0,
+            timestamp=Timestamp(0),
+            location=Location.BLOCKCHAIN,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(0.001)),
+            location_label=from_address,
+            notes='Burned 0.001 ETH for gas',
+            counterparty='gas',
+            identifier=None,
+            extra_data=None,
+        ),
+        HistoryBaseEntry(
+            event_identifier=evmhash,
+            sequence_index=1,
+            timestamp=0,
+            location=Location.BLOCKCHAIN,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(0.5)),
+            location_label=from_address,
+            notes=f'Send 0.5 ETH to {to_address}',
+            counterparty=to_address,
+            identifier=None,
+            extra_data=None,
+        ),
+    ]
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0xa4A6A282A7fC7F939e01D62D884355d79f5046C1']])
+def test_eth_deposit(
+        database,
+        ethereum_accounts,
+        ethereum_transaction_decoder,
+):
+    """
+    Data taken from
+    https://etherscan.io/tx/0x8f91a9b98a856282cdad74d9b8a683504c13e3c9d810e4e22bd0ca2eb9d71800
+    """
+    evmhash = deserialize_evm_tx_hash('0x8f91a9b98a856282cdad74d9b8a683504c13e3c9d810e4e22bd0ca2eb9d71800')  # noqa: E501
+    from_address = ethereum_accounts[0]
+    to_address = '0xAe2D4617c862309A3d75A0fFB358c7a5009c673F'  # Kraken 10
+    transaction = EvmTransaction(
+        tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
+        timestamp=0,
+        block_number=0,
+        from_address=from_address,
+        to_address=to_address,
+        value=100000000000000000000,
+        gas=2e5,
+        gas_price=10 * 1e9,  # 10 gwei
+        gas_used=1e5,
+        input_data=b'',
+        nonce=0,
+    )
+    receipt = EvmTxReceipt(
+        tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
+        contract_address=None,
+        status=True,
+        type=0,
+        logs=[],
+    )
+    dbevmtx = DBEvmTx(database)
+    with database.user_write() as cursor:
+        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        events = ethereum_transaction_decoder.decode_transaction(
+            write_cursor=cursor,
+            transaction=transaction,
+            tx_receipt=receipt,
+        )
+    assert events == [
+        HistoryBaseEntry(
+            event_identifier=evmhash,
+            sequence_index=0,
+            timestamp=Timestamp(0),
+            location=Location.BLOCKCHAIN,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(0.001)),
+            location_label=from_address,
+            notes='Burned 0.001 ETH for gas',
+            counterparty='gas',
+            identifier=None,
+            extra_data=None,
+        ),
+        HistoryBaseEntry(
+            event_identifier=evmhash,
+            sequence_index=1,
+            timestamp=0,
+            location=Location.BLOCKCHAIN,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(100)),
+            location_label=from_address,
+            notes='Deposit 100 ETH to kraken',
+            counterparty=CPT_KRAKEN,
             identifier=None,
             extra_data=None,
         ),

@@ -8,8 +8,8 @@ Changelog
 * :feature:`4487` Users can now customize the order of how addresses are resolved to human readable names.
 * :feature:`5001` The PnL report can now be generated with the Highest-In First Out (HIFO) accounting method.
 * :feature:`1793` The PnL report can now be generated with the average cost basis accounting method.
-* :bug:`-` Transfers between tracked accounts will now have a correct label in the UI.
 * :bug:`4332` Price oracles are now temporarily penalized after repeated failures.
+* :bug:`-` Transfers of ether between tracked accounts will now have a correct label in the UI.
 
 * :release:`1.26.3 <2022-12-30>`
 * :bug:`5315` Fix issue where balance is not fully refreshed after detect tokens button pressed.
