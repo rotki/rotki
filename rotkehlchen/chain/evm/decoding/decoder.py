@@ -1,6 +1,7 @@
 import importlib
 import logging
 import pkgutil
+from abc import ABCMeta, abstractmethod
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Callable, Optional, Protocol, Union
 
@@ -10,6 +11,8 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import AssetWithOracles, EvmToken
+from rotkehlchen.assets.utils import get_or_create_evm_token
+from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.constants import ZERO
 from rotkehlchen.db.constants import HISTORY_MAPPING_STATE_DECODED
@@ -17,18 +20,32 @@ from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery, HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
-from rotkehlchen.errors.misc import InputError, ModuleLoadingError, RemoteError
+from rotkehlchen.errors.misc import InputError, ModuleLoadingError, NotERC20Conformant, RemoteError
 from rotkehlchen.errors.serialization import ConversionError, DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction, EVMTxHash, Location, TimestampMS
-from rotkehlchen.utils.misc import from_wei, ts_sec_to_ms
+from rotkehlchen.types import (
+    ChainID,
+    ChecksumEvmAddress,
+    EvmTokenKind,
+    EvmTransaction,
+    EVMTxHash,
+    Location,
+    TimestampMS,
+)
+from rotkehlchen.utils.misc import (
+    from_wei,
+    hex_or_bytes_to_address,
+    hex_or_bytes_to_int,
+    ts_sec_to_ms,
+)
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
 from .base import BaseDecoderTools
-from .constants import CPT_GAS, OUTGOING_EVENT_TYPES
+from .constants import CPT_GAS, ERC20_APPROVE, ERC20_OR_ERC721_TRANSFER, OUTGOING_EVENT_TYPES
 from .structures import ActionItem
+from .utils import maybe_reshuffle_events
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
@@ -56,7 +73,7 @@ class EventDecoderFunction(Protocol):
         ...
 
 
-class EVMTransactionDecoder():
+class EVMTransactionDecoder(metaclass=ABCMeta):
 
     def __init__(
             self,
@@ -66,7 +83,6 @@ class EVMTransactionDecoder():
             value_asset: AssetWithOracles,
             event_rules: list[EventDecoderFunction],
             misc_counterparties: list[str],
-            address_is_exchange_fn: Callable[[ChecksumEvmAddress], Optional[str]],
     ):
         """
         Initialize an evm chain transaction decoder module for a particular chain.
@@ -79,9 +95,6 @@ class EVMTransactionDecoder():
 
         `misc_counterparties` is a list of counterparties not associated with any specific
         decoder that should be included for this decoder modules.
-
-        `address_is_exchange_fn` a function that takes an address and returns if it's
-        an exchange in the given chain and the counterparty to use if it is.
         """
         self.database = database
         self.misc_counterparties = [CPT_GAS] + misc_counterparties
@@ -95,9 +108,14 @@ class EVMTransactionDecoder():
         self.dbevents = DBHistoryEvents(self.database)
         self.base = BaseDecoderTools(
             database=database,
-            address_is_exchange_fn=address_is_exchange_fn,
+            is_non_conformant_erc721_fn=self._is_non_conformant_erc721,
+            address_is_exchange_fn=self._address_is_exchange,
         )
-        self.event_rules = event_rules
+        self.event_rules = [
+            self._maybe_decode_erc20_approve,
+            self._maybe_decode_erc20_721_transfer,
+        ]
+        self.event_rules.extend(event_rules)
         self.token_enricher_rules: list[Callable] = []  # enrichers to run for token transfers
         self.value_asset = value_asset
         self.initialize_all_decoders()
@@ -449,6 +467,53 @@ class EVMTransactionDecoder():
             counterparty=counterparty,
         )
 
+    def _maybe_decode_erc20_approve(
+            self,
+            token: Optional[EvmToken],
+            tx_log: EvmTxReceiptLog,
+            transaction: EvmTransaction,
+            decoded_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
+            action_items: list[ActionItem],  # pylint: disable=unused-argument
+            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+    ) -> Optional[HistoryBaseEntry]:
+        if tx_log.topics[0] != ERC20_APPROVE or token is None:
+            return None
+
+        if len(tx_log.topics) == 3:
+            owner_address = hex_or_bytes_to_address(tx_log.topics[1])
+            spender_address = hex_or_bytes_to_address(tx_log.topics[2])
+            amount_raw = hex_or_bytes_to_int(tx_log.data)
+        elif len(tx_log.topics) == 1 and len(tx_log.data) == 96:  # malformed erc20 approve (finance.vote)  # noqa: E501
+            owner_address = hex_or_bytes_to_address(tx_log.data[:32])
+            spender_address = hex_or_bytes_to_address(tx_log.data[32:64])
+            amount_raw = hex_or_bytes_to_int(tx_log.data[64:])
+        else:
+            log.debug(
+                f'Got an ERC20 approve event with unknown structure '
+                f'in transaction {transaction.tx_hash.hex()}',
+            )
+            return None
+
+        if not any(self.base.is_tracked(x) for x in (owner_address, spender_address)):
+            return None
+
+        amount = token_normalized_value(token_amount=amount_raw, token=token)
+        prefix = f'Revoke {token.symbol} approval' if amount == ZERO else f'Approve {amount} {token.symbol}'  # noqa: E501
+        notes = f'{prefix} of {owner_address} for spending by {spender_address}'
+        return HistoryBaseEntry(
+            event_identifier=transaction.tx_hash,
+            sequence_index=self.base.get_sequence_index(tx_log),
+            timestamp=ts_sec_to_ms(transaction.timestamp),
+            location=Location.BLOCKCHAIN,
+            location_label=owner_address,
+            asset=token,
+            balance=Balance(amount=amount),
+            notes=notes,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            counterparty=spender_address,
+        )
+
     def _maybe_decode_simple_transactions(
             self,
             tx: EvmTransaction,
@@ -518,3 +583,127 @@ class EVMTransactionDecoder():
         if (eth_event := self._get_eth_transfer_event(tx)) is not None:
             events.append(eth_event)
         return events
+
+    def _maybe_decode_erc20_721_transfer(
+            self,
+            token: Optional[EvmToken],
+            tx_log: EvmTxReceiptLog,
+            transaction: EvmTransaction,
+            decoded_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
+            action_items: list[ActionItem],
+            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+    ) -> Optional[HistoryBaseEntry]:
+        if tx_log.topics[0] != ERC20_OR_ERC721_TRANSFER:
+            return None
+
+        if self._is_non_conformant_erc721(tx_log.address) or len(tx_log.topics) == 4:  # typical ERC721 has 3 indexed args  # noqa: E501
+            token_kind = EvmTokenKind.ERC721
+        elif len(tx_log.topics) == 3:  # typical ERC20 has 2 indexed args
+            token_kind = EvmTokenKind.ERC20
+        else:
+            log.debug(f'Failed to decode token with address {tx_log.address} due to inability to match token type')  # noqa: E501
+            return None
+
+        if token is None:
+            try:
+                found_token = get_or_create_evm_token(
+                    userdb=self.database,
+                    evm_address=tx_log.address,
+                    chain_id=ChainID.ETHEREUM,
+                    token_kind=token_kind,
+                    evm_inquirer=self.evm_inquirer,
+                )
+            except NotERC20Conformant:
+                return None  # ignore non-ERC20 transfers for now
+        else:
+            found_token = token
+
+        transfer = self.base.decode_erc20_721_transfer(
+            token=found_token,
+            tx_log=tx_log,
+            transaction=transaction,
+        )
+        if transfer is None:
+            return None
+
+        for idx, action_item in enumerate(action_items):
+            if action_item.asset == found_token and action_item.amount == transfer.balance.amount and action_item.from_event_type == transfer.event_type and action_item.from_event_subtype == transfer.event_subtype:  # noqa: E501
+                if action_item.action == 'skip':
+                    action_items.pop(idx)
+                    return None
+                if action_item.action == 'skip & keep':
+                    # the action item is skipped but kept in the list of action items. Is used
+                    # to propagate information between event decoders and enrichers
+                    continue
+
+                # else atm only transform
+                if action_item.to_event_type is not None:
+                    transfer.event_type = action_item.to_event_type
+                if action_item.to_event_subtype is not None:
+                    transfer.event_subtype = action_item.to_event_subtype
+                if action_item.to_notes is not None:
+                    transfer.notes = action_item.to_notes
+                if action_item.to_counterparty is not None:
+                    transfer.counterparty = action_item.to_counterparty
+                if action_item.extra_data is not None:
+                    transfer.extra_data = action_item.extra_data
+
+                if action_item.paired_event_data is not None:
+                    # If there is a paired event to this, take care of the order
+                    out_event = transfer
+                    in_event = action_item.paired_event_data[0]
+                    if action_item.paired_event_data[1] is True:
+                        out_event = action_item.paired_event_data[0]
+                        in_event = transfer
+                    maybe_reshuffle_events(
+                        out_event=out_event,
+                        in_event=in_event,
+                        events_list=decoded_events + [transfer],
+                    )
+
+                action_items.pop(idx)
+                break  # found an action item and acted on it
+
+        # Add additional information to transfers for different protocols
+        self._enrich_protocol_tranfers(
+            token=found_token,
+            tx_log=tx_log,
+            transaction=transaction,
+            event=transfer,
+            action_items=action_items,
+            all_logs=all_logs,
+        )
+        return transfer
+
+    # -- methods to be implemented by child classes --
+
+    @abstractmethod
+    def _enrich_protocol_tranfers(  # pylint: disable=no-self-use
+            self,
+            token: EvmToken,
+            tx_log: EvmTxReceiptLog,
+            transaction: EvmTransaction,
+            event: HistoryBaseEntry,
+            action_items: list[ActionItem],
+            all_logs: list[EvmTxReceiptLog],
+    ) -> None:
+        """
+        Decode special transfers made by contract execution for example at the moment
+        of depositing assets or withdrawing.
+        It assumes that the event being decoded has been already filtered and is a
+        transfer.
+        """
+        ...
+
+    @staticmethod
+    @abstractmethod
+    def _is_non_conformant_erc721(address: ChecksumEvmAddress) -> bool:
+        """Determine whether the address is a non-conformant erc721 for the chain"""
+        ...
+
+    @staticmethod
+    @abstractmethod
+    def _address_is_exchange(address: ChecksumEvmAddress) -> Optional[str]:
+        """Takes an address and returns if it's an exchange in the given chain
+        and the counterparty to use if it is."""
+        ...

@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Optional
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.chain.ethereum.decoding.constants import NAUGHTY_ERC721
 from rotkehlchen.chain.evm.decoding.constants import OUTGOING_EVENT_TYPES
 from rotkehlchen.constants import ONE
 from rotkehlchen.types import ChecksumEvmAddress
@@ -30,10 +29,12 @@ class BaseDecoderTools():
     def __init__(
             self,
             database: 'DBHandler',
+            is_non_conformant_erc721_fn: Callable[[ChecksumEvmAddress], bool],
             address_is_exchange_fn: Callable[[ChecksumEvmAddress], Optional[str]],
     ) -> None:
         self.database = database
         self.address_is_exchange = address_is_exchange_fn
+        self.is_non_conformant_erc721 = is_non_conformant_erc721_fn
         with self.database.conn.read_ctx() as cursor:
             self.tracked_accounts = self.database.get_blockchain_accounts(cursor)
         self.sequence_counter = 0
@@ -141,7 +142,7 @@ class BaseDecoderTools():
                 notes = f'{verb} {amount} {token.symbol} from {counterparty} to {location_label}'
         elif token.token_kind == EvmTokenKind.ERC721:
             try:
-                if token.evm_address in NAUGHTY_ERC721:  # id is in the data
+                if self.is_non_conformant_erc721(token.evm_address):  # id is in the data
                     token_id = hex_or_bytes_to_int(tx_log.data[0:32])
                 else:
                     token_id = hex_or_bytes_to_int(tx_log.topics[3])

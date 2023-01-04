@@ -152,10 +152,13 @@ def test_no_logs_and_zero_eth(
     '0x4bBa290826C253BD854121346c370a9886d1bC26',
     '0xED2f12B896d0C7BFf4050d3D8c4f95Bd61aAa12d',
 ]])
+@pytest.mark.parametrize('chain', [ChainID.ETHEREUM, ChainID.OPTIMISM])
 def test_simple_erc20_transfer(
         database,
         ethereum_accounts,
         ethereum_transaction_decoder,
+        optimism_transaction_decoder,
+        chain,
 ):
     """
     Data taken from
@@ -167,21 +170,21 @@ def test_simple_erc20_transfer(
     tether_address = string_to_evm_address('0xdAC17F958D2ee523a2206206994597C13D831ec7')
     transaction = EvmTransaction(
         tx_hash=evmhash,
-        chain_id=ChainID.ETHEREUM,
+        chain_id=chain,
         timestamp=0,
         block_number=0,
         from_address=from_address,
         to_address=tether_address,
         value=0,
-        gas=0,
-        gas_price=0,
-        gas_used=0,
+        gas=45000,
+        gas_price=10000000000,
+        gas_used=45000,
         input_data=b'',
         nonce=0,
     )
     receipt = EvmTxReceipt(
         tx_hash=evmhash,
-        chain_id=ChainID.ETHEREUM,
+        chain_id=chain,
         contract_address=None,
         status=True,
         type=0,
@@ -200,9 +203,10 @@ def test_simple_erc20_transfer(
         ],
     )
     dbevmtx = DBEvmTx(database)
+    tx_decoder = ethereum_transaction_decoder if chain is ChainID.ETHEREUM else optimism_transaction_decoder  # noqa: E501
     with database.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
-        events = ethereum_transaction_decoder.decode_transaction(
+        events = tx_decoder.decode_transaction(
             write_cursor=cursor,
             transaction=transaction,
             tx_receipt=receipt,
@@ -216,9 +220,9 @@ def test_simple_erc20_transfer(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(),
+            balance=Balance(amount=FVal('0.00045')),
             location_label=from_address,
-            notes='Burned 0 ETH for gas',
+            notes='Burned 0.00045 ETH for gas',
             counterparty='gas',
             identifier=None,
             extra_data=None,
@@ -244,10 +248,13 @@ def test_simple_erc20_transfer(
     '0x4bBa290826C253BD854121346c370a9886d1bC26',
     '0x38C3f1Ab36BdCa29133d8AF7A19811D10B6CA3FC',
 ]])
+@pytest.mark.parametrize('chain', [ChainID.ETHEREUM, ChainID.OPTIMISM])
 def test_eth_transfer(
         database,
         ethereum_accounts,
         ethereum_transaction_decoder,
+        optimism_transaction_decoder,
+        chain,
 ):
     """
     Data taken from
@@ -258,7 +265,7 @@ def test_eth_transfer(
     to_address = ethereum_accounts[1]
     transaction = EvmTransaction(
         tx_hash=evmhash,
-        chain_id=ChainID.ETHEREUM,
+        chain_id=chain,
         timestamp=0,
         block_number=0,
         from_address=from_address,
@@ -272,16 +279,17 @@ def test_eth_transfer(
     )
     receipt = EvmTxReceipt(
         tx_hash=evmhash,
-        chain_id=ChainID.ETHEREUM,
+        chain_id=chain,
         contract_address=None,
         status=True,
         type=0,
         logs=[],
     )
     dbevmtx = DBEvmTx(database)
+    tx_decoder = ethereum_transaction_decoder if chain is ChainID.ETHEREUM else optimism_transaction_decoder  # noqa: E501
     with database.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
-        events = ethereum_transaction_decoder.decode_transaction(
+        events = tx_decoder.decode_transaction(
             write_cursor=cursor,
             transaction=transaction,
             tx_receipt=receipt,
@@ -321,10 +329,13 @@ def test_eth_transfer(
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x4bBa290826C253BD854121346c370a9886d1bC26']])
+@pytest.mark.parametrize('chain', [ChainID.ETHEREUM, ChainID.OPTIMISM])
 def test_eth_spend(
         database,
         ethereum_accounts,
         ethereum_transaction_decoder,
+        optimism_transaction_decoder,
+        chain,
 ):
     """
     Data taken from
@@ -335,7 +346,7 @@ def test_eth_spend(
     to_address = string_to_evm_address('0x38C3f1Ab36BdCa29133d8AF7A19811D10B6CA3FC')
     transaction = EvmTransaction(
         tx_hash=evmhash,
-        chain_id=ChainID.ETHEREUM,
+        chain_id=chain,
         timestamp=0,
         block_number=0,
         from_address=from_address,
@@ -349,16 +360,17 @@ def test_eth_spend(
     )
     receipt = EvmTxReceipt(
         tx_hash=evmhash,
-        chain_id=ChainID.ETHEREUM,
+        chain_id=chain,
         contract_address=None,
         status=True,
         type=0,
         logs=[],
     )
     dbevmtx = DBEvmTx(database)
+    tx_decoder = ethereum_transaction_decoder if chain is ChainID.ETHEREUM else optimism_transaction_decoder  # noqa: E501
     with database.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
-        events = ethereum_transaction_decoder.decode_transaction(
+        events = tx_decoder.decode_transaction(
             write_cursor=cursor,
             transaction=transaction,
             tx_receipt=receipt,
