@@ -144,6 +144,7 @@ declare global {
   const useArrayMap: typeof import('@vueuse/core')['useArrayMap']
   const useArrayReduce: typeof import('@vueuse/core')['useArrayReduce']
   const useArraySome: typeof import('@vueuse/core')['useArraySome']
+  const useArrayUnique: typeof import('@vueuse/core')['useArrayUnique']
   const useAssetFilter: typeof import('./composables/filters/assets')['useAssetFilter']
   const useAssetMovementFilters: typeof import('./composables/filters/asset-movement')['useAssetMovementFilters']
   const useAsyncQueue: typeof import('@vueuse/core')['useAsyncQueue']
@@ -501,6 +502,7 @@ declare module 'vue' {
     readonly useArrayMap: UnwrapRef<typeof import('@vueuse/core')['useArrayMap']>
     readonly useArrayReduce: UnwrapRef<typeof import('@vueuse/core')['useArrayReduce']>
     readonly useArraySome: UnwrapRef<typeof import('@vueuse/core')['useArraySome']>
+    readonly useArrayUnique: UnwrapRef<typeof import('@vueuse/core')['useArrayUnique']>
     readonly useAssetFilter: UnwrapRef<typeof import('./composables/filters/assets')['useAssetFilter']>
     readonly useAssetMovementFilters: UnwrapRef<typeof import('./composables/filters/asset-movement')['useAssetMovementFilters']>
     readonly useAsyncQueue: UnwrapRef<typeof import('@vueuse/core')['useAsyncQueue']>
