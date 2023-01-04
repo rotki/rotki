@@ -3,10 +3,10 @@ import { type PropType } from 'vue';
 import { type DataTableHeader } from 'vuetify';
 import {
   type EthTransactionEntry,
-  type EthTransactionEventEntry
-} from '@/store/history/types';
-import { transformEntryWithMeta } from '@/store/history/utils';
-import { type EthTransactionEventWithMeta } from '@/types/history/tx';
+  type EthTransactionEventEntry,
+  type EthTransactionEventWithMeta
+} from '@/types/history/tx';
+import { transformEntryWithMeta } from '@/utils/history';
 
 const TransactionEventNote = defineAsyncComponent(
   () => import('@/components/history/transactions/TransactionEventNote.vue')

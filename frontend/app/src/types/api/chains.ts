@@ -1,10 +1,9 @@
 import { z } from 'zod';
-import { EvmChainEnum } from '@rotki/common/lib/data';
 
 export const ChainInfo = z.object({
   name: z.string(),
   type: z.string(),
-  evmChainName: EvmChainEnum.nullish()
+  evmChainName: z.string().nullish()
 });
 
 export type ChainInfo = z.infer<typeof ChainInfo>;

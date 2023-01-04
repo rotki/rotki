@@ -17,16 +17,14 @@ import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import { Routes } from '@/router/routes';
 import { useAssetMovements } from '@/store/history/asset-movements';
 import {
-  type AssetMovementEntry,
-  IgnoreActionType,
-  type TradeEntry
-} from '@/store/history/types';
-import {
   type AssetMovement,
+  type AssetMovementEntry,
   type AssetMovementRequestPayload
 } from '@/types/history/movements';
 import { type TradeLocation } from '@/types/history/trade-location';
 import { Section } from '@/types/status';
+import { type TradeEntry } from '@/types/history/trades';
+import { IgnoreActionType } from '@/types/history/ignored';
 
 interface PaginationOptions {
   page: number;
@@ -114,10 +112,12 @@ const { updateAssetMovementsPayload } = assetMovementStore;
 const fetch = (refresh = false) => emit('fetch', refresh);
 
 const { ignore } = useIgnore(
-  IgnoreActionType.MOVEMENTS,
+  {
+    actionType: IgnoreActionType.MOVEMENTS,
+    toData: (item: AssetMovementEntry) => item.identifier
+  },
   selected,
-  fetch,
-  (item: AssetMovementEntry) => item.identifier
+  fetch
 );
 const { filters, matchers, updateFilter } = useAssetMovementFilters();
 const loading = isSectionLoading(Section.ASSET_MOVEMENT);

@@ -1,7 +1,6 @@
 import { type Message } from '@rotki/common/lib/messages';
 import { type ComputedRef, type Ref } from 'vue';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
-import { filterAddressesFromWords } from '@/store/history/utils';
 import { useMessageStore } from '@/store/message';
 import { useNotificationsStore } from '@/store/notifications';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
@@ -23,6 +22,7 @@ import { type AccountingSettings } from '@/types/user';
 import { logger } from '@/utils/logging';
 import { useReportsApi } from '@/services/reports';
 import { useHistoryApi } from '@/services/history';
+import { filterAddressesFromWords } from '@/utils/history';
 
 const notify = (info: {
   title: string;

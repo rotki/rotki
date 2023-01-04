@@ -1,6 +1,5 @@
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useBalancesStore } from '@/store/balances';
-import { useHistory } from '@/store/history';
 import { useTransactions } from '@/store/history/transactions';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { useTagStore } from '@/store/session/tags';
@@ -14,7 +13,6 @@ export const useDataLoader = () => {
   const { shouldFetchData } = storeToRefs(useSessionAuthStore());
   const { fetchWatchers } = useWatchersStore();
   const { fetchTags } = useTagStore();
-  const { fetchIgnored } = useHistory();
   const { fetchIgnoredAssets } = useIgnoredAssetsStore();
   const { fetchNetValue } = useStatisticsStore();
   const { fetchCounterparties } = useTransactions();
@@ -24,7 +22,6 @@ export const useDataLoader = () => {
     logger.info('Refreshing data');
 
     await Promise.allSettled([
-      fetchIgnored(),
       fetchIgnoredAssets(),
       fetchWatchers(),
       fetch(),

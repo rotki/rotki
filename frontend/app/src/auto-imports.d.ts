@@ -212,6 +212,7 @@ declare global {
   const useGamepad: typeof import('@vueuse/core')['useGamepad']
   const useGeolocation: typeof import('@vueuse/core')['useGeolocation']
   const useGraph: typeof import('./composables/graphs')['useGraph']
+  const useHistoryIgnoringApi: typeof import('./composables/api/history/ignore')['useHistoryIgnoringApi']
   const useI18n: typeof import('vue-i18n-composable')['useI18n']
   const useIdle: typeof import('@vueuse/core')['useIdle']
   const useIgnore: typeof import('./composables/history')['useIgnore']
@@ -570,6 +571,7 @@ declare module 'vue' {
     readonly useGamepad: UnwrapRef<typeof import('@vueuse/core')['useGamepad']>
     readonly useGeolocation: UnwrapRef<typeof import('@vueuse/core')['useGeolocation']>
     readonly useGraph: UnwrapRef<typeof import('./composables/graphs')['useGraph']>
+    readonly useHistoryIgnoringApi: UnwrapRef<typeof import('./composables/api/history/ignore')['useHistoryIgnoringApi']>
     readonly useI18n: UnwrapRef<typeof import('vue-i18n-composable')['useI18n']>
     readonly useIdle: UnwrapRef<typeof import('@vueuse/core')['useIdle']>
     readonly useIgnore: UnwrapRef<typeof import('./composables/history')['useIgnore']>

@@ -8,13 +8,13 @@ import { convertKeys } from '@/services/axios-tranformers';
 import { deserializeApiErrorMessage } from '@/services/converters';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useBalancePricesStore } from '@/store/balances/prices';
-import { type TradeEntry } from '@/store/history/types';
 import { useTasks } from '@/store/tasks';
 import { type ActionStatus } from '@/store/types';
 import { type Writeable } from '@/types';
 import {
   type NewTrade,
   type Trade,
+  type TradeEntry,
   type TradeType
 } from '@/types/history/trades';
 import { TaskType } from '@/types/task-type';

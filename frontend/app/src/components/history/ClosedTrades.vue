@@ -19,16 +19,17 @@ import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import { Routes } from '@/router/routes';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useTrades } from '@/store/history/trades';
-import { IgnoreActionType, type TradeEntry } from '@/store/history/types';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { type TradeLocation } from '@/types/history/trade-location';
 import {
   type NewTrade,
   type Trade,
+  type TradeEntry,
   type TradeRequestPayload
 } from '@/types/history/trades';
 import { Section } from '@/types/status';
 import { useConfirmStore } from '@/store/confirm';
+import { IgnoreActionType } from '@/types/history/ignored';
 
 interface PaginationOptions {
   page: number;
@@ -312,10 +313,12 @@ watch(filters, async (filters, oldValue) => {
 const fetch = (refresh = false) => emit('fetch', refresh);
 
 const { ignore } = useIgnore(
-  IgnoreActionType.TRADES,
+  {
+    actionType: IgnoreActionType.TRADES,
+    toData: (item: TradeEntry) => item.tradeId
+  },
   selected,
-  fetch,
-  (item: TradeEntry) => item.tradeId
+  fetch
 );
 
 onMounted(async () => {

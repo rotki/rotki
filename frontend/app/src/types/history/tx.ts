@@ -1,6 +1,5 @@
 import { Balance, NumericString } from '@rotki/common';
 import { z } from 'zod';
-import { type EvmChain, EvmChainEnum } from '@rotki/common/lib/data';
 import { type PaginationRequestPayload } from '@/types/common';
 import { EntryMeta } from '@/types/history/meta';
 
@@ -40,7 +39,7 @@ export const EthTransaction = z.object({
   txHash: z.string(),
   timestamp: z.number(),
   blockNumber: z.number(),
-  evmChain: EvmChainEnum,
+  evmChain: z.string(),
   fromAddress: z.string(),
   toAddress: z.string().nullish(),
   value: NumericString,
@@ -65,12 +64,12 @@ export interface TransactionRequestPayload
 
 export interface TransactionHashAndEvmChainPayload {
   readonly txHashes?: string[] | null;
-  readonly evmChain: EvmChain;
+  readonly evmChain: string;
 }
 
 export interface AddressesAndEvmChainPayload {
   readonly addresses?: string[] | null;
-  readonly evmChain: EvmChain;
+  readonly evmChain: string;
 }
 
 export interface TransactionEventRequestPayload {
@@ -100,6 +99,8 @@ export const EthTransactionCollectionResponse = z.object({
   totalUsdValue: NumericString.nullish()
 });
 
-export const EthRedecodeMissingEventsResponse = z.object({
-  decodedTxNumber: z.number()
-});
+export interface EthTransactionEntry extends EthTransaction, TxEntryMeta {}
+
+export interface EthTransactionEventEntry
+  extends EthTransactionEvent,
+    EntryMeta {}

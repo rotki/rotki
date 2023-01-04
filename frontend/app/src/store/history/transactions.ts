@@ -1,18 +1,11 @@
 import isEqual from 'lodash/isEqual';
 import { type Ref } from 'vue';
-import { type EvmChain } from '@rotki/common/lib/data';
 import { groupBy } from 'lodash';
 import { useHistoryApi } from '@/services/history';
 import { useTransactionsApi } from '@/services/history/transactions';
 import { type PendingTask } from '@/services/types-api';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
 import { useTxQueryStatus } from '@/store/history/query-status';
-import { type EthTransactionEntry } from '@/store/history/types';
-import {
-  defaultHistoricPayloadState,
-  filterAddressesFromWords,
-  mapCollectionEntriesWithMeta
-} from '@/store/history/utils';
 import { useNotificationsStore } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
 import { type ActionStatus } from '@/store/types';
@@ -22,6 +15,7 @@ import { type TradeRequestPayload } from '@/types/history/trades';
 import {
   type EthTransaction,
   EthTransactionCollectionResponse,
+  type EthTransactionEntry,
   type NewEthTransactionEvent,
   type TransactionHashAndEvmChainPayload,
   type TransactionRequestPayload
@@ -36,6 +30,11 @@ import {
 import { logger } from '@/utils/logging';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useAccountBalancesStore } from '@/store/blockchain/accountbalances';
+import {
+  defaultHistoricPayloadState,
+  filterAddressesFromWords,
+  mapCollectionEntriesWithMeta
+} from '@/utils/history';
 
 export const useTransactions = defineStore('history/transactions', () => {
   const transactions = ref(
@@ -286,7 +285,7 @@ export const useTransactions = defineStore('history/transactions', () => {
 
       payload = Object.entries(groupBy(mapped, 'evmChain')).map(
         ([evmChain, item]) => ({
-          evmChain: evmChain as EvmChain,
+          evmChain,
           txHashes: item.map(({ txHash }) => txHash)
         })
       );

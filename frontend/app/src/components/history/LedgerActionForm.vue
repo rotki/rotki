@@ -8,11 +8,11 @@ import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import { convertKeys } from '@/services/axios-tranformers';
 import { deserializeApiErrorMessage } from '@/services/converters';
 import { useLedgerActionData } from '@/store/history/consts';
-import { type LedgerActionEntry } from '@/store/history/types';
 import { type ActionStatus } from '@/store/types';
 import { type Writeable } from '@/types';
 import {
   type LedgerAction,
+  type LedgerActionEntry,
   type NewLedgerAction
 } from '@/types/history/ledger-actions';
 import { LedgerActionType } from '@/types/ledger-actions';

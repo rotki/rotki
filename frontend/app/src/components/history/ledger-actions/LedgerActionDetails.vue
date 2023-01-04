@@ -3,7 +3,7 @@ import { type PropType } from 'vue';
 import NotesDisplay from '@/components/helper/table/NotesDisplay.vue';
 import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
 
-import { type LedgerActionEntry } from '@/store/history/types';
+import { type LedgerActionEntry } from '@/types/history/ledger-actions';
 
 const props = defineProps({
   span: {

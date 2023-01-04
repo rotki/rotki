@@ -3,11 +3,6 @@ import { type Ref } from 'vue';
 import { useAssetMovementsApi } from '@/services/history/asset-movements';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
 import { useAssociatedLocationsStore } from '@/store/history/associated-locations';
-import { type AssetMovementEntry } from '@/store/history/types';
-import {
-  defaultHistoricPayloadState,
-  mapCollectionEntriesWithMeta
-} from '@/store/history/utils';
 import { useNotificationsStore } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
 import { type Collection, type CollectionResponse } from '@/types/collection';
@@ -16,6 +11,7 @@ import { type EntryWithMeta } from '@/types/history/meta';
 import {
   type AssetMovement,
   AssetMovementCollectionResponse,
+  type AssetMovementEntry,
   type AssetMovementRequestPayload
 } from '@/types/history/movements';
 import { type TradeLocation } from '@/types/history/trade-location';
@@ -28,6 +24,10 @@ import {
   mapCollectionResponse
 } from '@/utils/collection';
 import { logger } from '@/utils/logging';
+import {
+  defaultHistoricPayloadState,
+  mapCollectionEntriesWithMeta
+} from '@/utils/history';
 
 export const useAssetMovements = defineStore('history/assetMovements', () => {
   const assetMovements = ref(

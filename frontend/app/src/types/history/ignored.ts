@@ -1,24 +1,23 @@
-import { z } from 'zod';
+export interface EvmTransaction {
+  evmChain: string;
+  txHash: string;
+}
 
-export const IgnoredActions = z
-  .object({
-    ledger_action: z.array(z.string()).optional(),
-    asset_movement: z.array(z.string()).optional(),
-    ethereum_transaction: z.array(z.string()).optional(),
-    trade: z.array(z.string()).optional()
-  })
-  .transform(arg => {
-    const ignoredActions: {
-      ledgerActions?: string[];
-      assetMovements?: string[];
-      ethereumTransactions?: string[];
-      trades?: string[];
-    } = {
-      ledgerActions: arg.ledger_action,
-      assetMovements: arg.asset_movement,
-      ethereumTransactions: arg.ethereum_transaction,
-      trades: arg.trade
-    };
-    return ignoredActions;
-  });
-export type IgnoredActions = z.infer<typeof IgnoredActions>;
+export enum IgnoreActionType {
+  TRADES = 'trade',
+  MOVEMENTS = 'asset_movement',
+  EVM_TRANSACTIONS = 'evm_transaction',
+  LEDGER_ACTIONS = 'ledger_action'
+}
+
+export interface CommonIgnorePayload {
+  actionType: Exclude<IgnoreActionType, IgnoreActionType.EVM_TRANSACTIONS>;
+  data: string[];
+}
+
+export interface EvmTxIgnorePayload {
+  actionType: IgnoreActionType.EVM_TRANSACTIONS;
+  data: EvmTransaction[];
+}
+
+export type IgnorePayload = CommonIgnorePayload | EvmTxIgnorePayload;

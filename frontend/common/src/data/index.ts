@@ -5,21 +5,6 @@ export interface ActionResult<T> {
   readonly message: string;
 }
 
-export enum EvmChain {
-  ETHEREUM = 'ethereum',
-  OPTIMISM = 'optimism',
-  BINANCE = 'binance',
-  GNOSIS = 'gnosis',
-  MATIC = 'matic',
-  FANTOM = 'fantom',
-  ARBITRUM = 'arbitrum',
-  AVALANCHE = 'avalanche',
-  CELO = 'celo'
-}
-
-export const EvmChainEnum = z.nativeEnum(EvmChain);
-export type EvmChainEnum = z.infer<typeof EvmChainEnum>;
-
 export enum EvmTokenKind {
   ERC20 = 'erc20',
   ERC721 = 'erc721'
@@ -44,7 +29,7 @@ export const BaseAsset = z.object({
   name: z.string().nullish(),
   symbol: z.string().nullish(),
   swappedFor: z.string().nullish(),
-  evmChain: EvmChainEnum.nullish(),
+  evmChain: z.string().nullish(),
   tokenKind: EvmTokenKindEnum.nullish()
 });
 
@@ -67,7 +52,7 @@ export type SupportedAsset = z.infer<typeof SupportedAsset>;
 export const AssetInfo = z.object({
   name: z.string().nullish(),
   symbol: z.string().nullish(),
-  evmChain: EvmChainEnum.nullish(),
+  evmChain: z.string().nullish(),
   assetType: z.string().nullish(),
   isCustomAsset: z.boolean().nullish(),
   customAssetType: z.string().nullish(),

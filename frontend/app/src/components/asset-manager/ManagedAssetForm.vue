@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { onlyIfTruthy } from '@rotki/common';
 import {
-  type EvmChain,
   type EvmTokenKind,
   type SupportedAsset,
   type UnderlyingToken
@@ -24,7 +23,7 @@ import {
 } from '@/utils/text';
 import AssetIconForm from '@/components/asset-manager/AssetIconForm.vue';
 import { useAssetManagementApi } from '@/services/assets/management-api';
-import { evmChainsData, evmTokenKindsData } from '@/types/blockchain/chains';
+import { evmTokenKindsData } from '@/types/blockchain/chains';
 
 function time(t: string): number | undefined {
   return t ? convertToTimestamp(t) : undefined;
@@ -80,6 +79,8 @@ const isEvmToken = computed<boolean>(() => {
   return get(assetType) === EVM_TOKEN;
 });
 
+const { evmChainNames } = useSupportedChains();
+
 const { setMessage } = useMessageStore();
 
 const {
@@ -130,7 +131,7 @@ const asset: ComputedRef<Omit<SupportedAsset, 'identifier' | 'type'>> =
       underlyingTokens: ut.length > 0 ? ut : undefined,
       swappedFor: onlyIfTruthy(get(swappedFor)),
       protocol: onlyIfTruthy(get(protocol)),
-      evmChain: (get(evmChain) as EvmChain) || null,
+      evmChain: get(evmChain) || null,
       tokenKind: (get(tokenKind) as EvmTokenKind) || null
     };
   });
@@ -312,9 +313,7 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
             outlined
             :label="t('asset_form.labels.chain')"
             :disabled="!isEvmToken || !!edit"
-            :items="evmChainsData"
-            item-text="label"
-            item-value="identifier"
+            :items="evmChainNames"
             :error-messages="errors['evm_chain']"
             @focus="delete errors['evm_chain']"
           />

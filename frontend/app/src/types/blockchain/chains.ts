@@ -1,7 +1,5 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { EvmChain, EvmTokenKind } from '@rotki/common/lib/data';
-import { type Nullable } from '@rotki/common';
-import { type ActionDataEntry } from '@/store/types';
+import { EvmTokenKind } from '@rotki/common/lib/data';
 
 const BtcChains = [Blockchain.BTC, Blockchain.BCH] as const;
 const EthChains = [Blockchain.ETH, Blockchain.ETH2] as const;
@@ -30,54 +28,6 @@ export const isTokenChain = (chain: Blockchain): chain is TokenChains =>
 export const isBlockchain = (chain: string): chain is Blockchain =>
   Object.values(Blockchain).includes(chain as any);
 
-export const evmChainsData: ActionDataEntry[] = [
-  {
-    identifier: EvmChain.ETHEREUM,
-    label: 'Ethereum',
-    image: './assets/images/modules/eth.svg'
-  },
-  {
-    identifier: EvmChain.OPTIMISM,
-    label: 'Optimism',
-    image: './assets/images/chains/optimism.svg'
-  },
-  {
-    identifier: EvmChain.BINANCE,
-    label: 'Binance',
-    image: './assets/images/chains/binance.svg'
-  },
-  {
-    identifier: EvmChain.GNOSIS,
-    label: 'Gnosis',
-    image: './assets/images/chains/gnosis.svg'
-  },
-  {
-    identifier: EvmChain.MATIC,
-    label: 'Matic',
-    image: './assets/images/chains/matic.svg'
-  },
-  {
-    identifier: EvmChain.FANTOM,
-    label: 'Fantom',
-    image: './assets/images/chains/fantom.svg'
-  },
-  {
-    identifier: EvmChain.ARBITRUM,
-    label: 'Arbitrum',
-    image: './assets/images/chains/arbitrum.svg'
-  },
-  {
-    identifier: EvmChain.AVALANCHE,
-    label: 'Avalanche',
-    image: './assets/images/chains/avalanche.svg'
-  },
-  {
-    identifier: EvmChain.CELO,
-    label: 'Celo',
-    image: './assets/images/chains/celo.svg'
-  }
-];
-
 export const evmTokenKindsData = [
   {
     identifier: EvmTokenKind.ERC20,
@@ -88,10 +38,3 @@ export const evmTokenKindsData = [
     label: 'ERC721'
   }
 ];
-
-export const getChainData = (
-  chain?: Nullable<EvmChain>
-): ActionDataEntry | null => {
-  if (!chain) return null;
-  return evmChainsData.find(({ identifier }) => identifier === chain) || null;
-};

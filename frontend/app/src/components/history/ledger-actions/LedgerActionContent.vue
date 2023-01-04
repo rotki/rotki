@@ -20,17 +20,15 @@ import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import { Routes } from '@/router/routes';
 import { useLedgerActions } from '@/store/history/ledger-actions';
 import {
-  IgnoreActionType,
-  type LedgerActionEntry
-} from '@/store/history/types';
-import {
   type LedgerAction,
+  type LedgerActionEntry,
   type LedgerActionRequestPayload,
   type NewLedgerAction
 } from '@/types/history/ledger-actions';
 import { type TradeLocation } from '@/types/history/trade-location';
 import { Section } from '@/types/status';
 import { useConfirmStore } from '@/store/confirm';
+import { IgnoreActionType } from '@/types/history/ignored';
 
 interface PaginationOptions {
   page: number;
@@ -215,7 +213,6 @@ watch(filters, async (filter, oldValue) => {
   await updatePaginationHandler(newOptions);
 });
 
-const getId = (item: LedgerActionEntry) => item.identifier.toString();
 const selected: Ref<LedgerActionEntry[]> = ref([]);
 
 const pageRoute = Routes.HISTORY_LEDGER_ACTIONS;
@@ -288,10 +285,12 @@ const getClass = (item: LedgerActionEntry) => {
 const loading = isSectionLoading(Section.LEDGER_ACTIONS);
 
 const { ignore } = useIgnore(
-  IgnoreActionType.LEDGER_ACTIONS,
+  {
+    actionType: IgnoreActionType.LEDGER_ACTIONS,
+    toData: (item: LedgerActionEntry) => item.identifier.toString()
+  },
   selected,
-  fetch,
-  getId
+  fetch
 );
 
 const { show } = useConfirmStore();

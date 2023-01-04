@@ -1,7 +1,6 @@
 import { type Blockchain } from '@rotki/common/lib/blockchain';
 import { type MaybeRef } from '@vueuse/core';
 import { type ComputedRef } from 'vue';
-import { type EvmChain } from '@rotki/common/lib/data';
 import { type ChainInfo } from '@/types/api/chains';
 
 export const useSupportedChains = createSharedComposable(() => {
@@ -21,7 +20,7 @@ export const useSupportedChains = createSharedComposable(() => {
     return get(evmChainsData).map(x => x.name!);
   });
 
-  const evmChainNames: ComputedRef<EvmChain[]> = computed(() => {
+  const evmChainNames: ComputedRef<string[]> = computed(() => {
     return get(evmChainsData).map(x => x.evmChainName!);
   });
 
@@ -33,7 +32,7 @@ export const useSupportedChains = createSharedComposable(() => {
 
   const getEvmChainName = (
     chain: MaybeRef<Blockchain>
-  ): ComputedRef<EvmChain | null> =>
+  ): ComputedRef<string | null> =>
     computed(() => {
       return (
         get(evmChainsData).find(x => x.name === chain)?.evmChainName || null
