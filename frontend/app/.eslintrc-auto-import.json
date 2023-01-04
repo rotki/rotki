@@ -143,6 +143,7 @@
     "useArrayMap": true,
     "useArrayReduce": true,
     "useArraySome": true,
+    "useArrayUnique": true,
     "useAssetFilter": true,
     "useAssetMovementFilters": true,
     "useAsyncQueue": true,
