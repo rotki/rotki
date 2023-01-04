@@ -897,7 +897,7 @@ Examples of customization. You can set:
 - ``Event Type`` to ``Transfer`` if you are sending money to a friend / (another account you own) and don't want the event to be taxable.
 - ``Event Type`` to ``Deposit`` / ``Withdrawal`` and ``Event Subtype`` to ``Deposit Asset`` / ``Remove Asset`` if you are depositing or withdrawing assets from an exchange or a protocol. Then this event won't be considered taxable in P&L reports. Currently rotki doesn't detect deposits / withdrawals automatically for all exchanges and protocols.
 - ``Event Type`` to ``Transfer`` and ``Event Subtype`` to ``Bridge`` if you are bridging assets from one chain to another.
-- ``Event Type`` to ``Trade`` and ``Event Subtype`` to ``Spend`` / ``Receive`` if this event is a part of a trade / swap of assets.
+- For a swap: The first event should be ``Event Type``: ``Trade`` and ``Event Subtype``: ``Spend``, while the second event should be ``Event Type``: ``Trade`` and ``Event Subtype``:  ``Receive``. But in swaps what's also important is the ``sequence_index``. They need to be subsequent and the send should come before the receive.
 - ``Event Type`` to ``Spend`` / ``Receive`` and ``Event Subtype`` to ``None`` if it is a plain expenditure / receipt.
 - ``Event Type`` to ``Receive`` and ``Event Subtype`` to ``Reward`` if you got a reward for something.
 - ``Event Type`` to ``Receive`` and ``Event Subtype`` to ``Airdrop`` if you received an airdrop.
