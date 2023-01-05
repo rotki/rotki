@@ -108,14 +108,18 @@ def generate_address_via_create2(
         address: str,
         salt: str,
         init_code: str,
+        is_init_code_hashed: bool = False,
 ) -> ChecksumEvmAddress:
-    """Python implementation of CREATE2 opcode.
+    """
+    Python implementation of CREATE2 opcode.
 
     Given an address (deployer), a salt and an init code (contract creation
     bytecode), returns the expected contract address once it is deployed.
 
+    If `is_init_code_hashed` is True, keccak hashing is not performed on `init_code`.
+
     Pseudocode:
-        keccak256( 0xff ++ address ++ salt ++ keccak256(init_code))[12:]
+        keccak256(0xff ++ address ++ salt ++ keccak256(init_code))[12:]
 
     EIP-1014:
     https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1014.md
@@ -123,11 +127,12 @@ def generate_address_via_create2(
     May raise:
     - DeserializationError
     """
+    computed_init_code = hexstring_to_bytes(init_code) if is_init_code_hashed is True else Web3.keccak(hexstring_to_bytes(init_code))  # noqa: E501
     contract_address = Web3.keccak(
         hexstring_to_bytes('0xff') +
         hexstring_to_bytes(address) +
         hexstring_to_bytes(salt) +
-        Web3.keccak(hexstring_to_bytes(init_code)),
+        computed_init_code,
     )[12:].hex()
     return to_checksum_address(contract_address)
 
