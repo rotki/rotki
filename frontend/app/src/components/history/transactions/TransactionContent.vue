@@ -5,16 +5,13 @@ import { type DataTableHeader } from 'vuetify';
 import TransactionEventForm from '@/components/history/TransactionEventForm.vue';
 import { useTxQueryStatus } from '@/store/history/query-status';
 import { useTransactions } from '@/store/history/transactions';
-import {
-  type EthTransactionEntry,
-  type EthTransactionEventEntry,
-  IgnoreActionType
-} from '@/store/history/types';
 import { useTasks } from '@/store/tasks';
 import { type Writeable } from '@/types';
 import { type Collection } from '@/types/collection';
 import {
   type EthTransaction,
+  type EthTransactionEntry,
+  type EthTransactionEventEntry,
   type NewEthTransactionEvent,
   type TransactionRequestPayload
 } from '@/types/history/tx';
@@ -26,6 +23,7 @@ import {
 } from '@/types/transaction';
 import { getCollectionData } from '@/utils/collection';
 import { useConfirmStore } from '@/store/confirm';
+import { IgnoreActionType } from '@/types/history/ignored';
 import EvmChainIcon from '@/components/helper/display/icons/EvmChainIcon.vue';
 import { useSupportedChains } from '@/composables/info/chains';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
@@ -165,8 +163,6 @@ const confirmationPrimaryAction: Ref<string> = ref('');
 const valid: Ref<boolean> = ref(false);
 const form = ref<InstanceType<typeof TransactionEventForm> | null>(null);
 
-const getId = (item: EthTransactionEntry) => `1${item.txHash}`;
-
 const selected: Ref<EthTransactionEntry[]> = ref([]);
 
 const { filters, matchers, updateFilter } = useTransactionFilter(
@@ -174,10 +170,15 @@ const { filters, matchers, updateFilter } = useTransactionFilter(
 );
 
 const { ignore } = useIgnore(
-  IgnoreActionType.ETH_TRANSACTIONS,
+  {
+    actionType: IgnoreActionType.EVM_TRANSACTIONS,
+    toData: (item: EthTransactionEntry) => ({
+      txHash: item.txHash,
+      evmChain: item.evmChain
+    })
+  },
   selected,
-  fetch,
-  getId
+  fetch
 );
 
 const toggleIgnore = async (item: EthTransactionEntry) => {

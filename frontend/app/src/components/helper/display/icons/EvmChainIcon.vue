@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { type EvmChain } from '@rotki/common/lib/data';
-import { getChainData } from '@/types/blockchain/chains';
+import { toCapitalCase } from '@/utils/text';
 
 interface Props {
   size?: string;
-  chain: EvmChain;
+  chain: string;
   tooltip?: boolean;
 }
 
@@ -14,8 +13,25 @@ const props = withDefaults(defineProps<Props>(), {
 
 const { chain } = toRefs(props);
 
+const { evmChainNames } = useSupportedChains();
+
+const getImageUrl = (evmChain: string): string => {
+  return `./assets/images/chains/${evmChain}.svg`;
+};
+
 const chainData = computed(() => {
-  return getChainData(get(chain));
+  const names = get(evmChainNames);
+  const chainProp = get(chain);
+  const evmChain = names.find(x => x === chainProp);
+
+  if (!evmChain) {
+    return null;
+  }
+
+  return {
+    label: toCapitalCase(evmChain),
+    image: getImageUrl(evmChain)
+  };
 });
 
 const css = useCssModule();

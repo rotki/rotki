@@ -11,7 +11,9 @@ export const TradeType = z.enum([
   'settlement buy',
   'settlement sell'
 ]);
+
 export type TradeType = z.infer<typeof TradeType>;
+
 export const Trade = z.object({
   tradeId: z.string(),
   timestamp: z.number(),
@@ -26,7 +28,9 @@ export const Trade = z.object({
   link: z.string().nullish(),
   notes: z.string().nullish()
 });
+
 export type Trade = z.infer<typeof Trade>;
+
 export const TradeCollectionResponse = z.object({
   entries: z.array(
     z
@@ -40,7 +44,9 @@ export const TradeCollectionResponse = z.object({
   entriesTotal: z.number(),
   totalUsdValue: NumericString.nullish()
 });
+
 export type NewTrade = Omit<Trade, 'tradeId' | 'ignoredInAccounting'>;
+
 export interface TradeRequestPayload extends PaginationRequestPayload<Trade> {
   readonly fromTimestamp?: string | number;
   readonly toTimestamp?: string | number;
@@ -49,3 +55,5 @@ export interface TradeRequestPayload extends PaginationRequestPayload<Trade> {
   readonly quoteAsset?: string;
   readonly tradeType?: string;
 }
+
+export interface TradeEntry extends Trade, EntryMeta {}

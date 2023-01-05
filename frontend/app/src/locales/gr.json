@@ -556,12 +556,6 @@
           "message": "Failed to retrieve the associated locations: {message}",
           "title": "Fetch associated locations"
         }
-      },
-      "fetch_ignored": {
-        "error": {
-          "message": "Failed to retrieve the ignored actions: {message}",
-          "title": "Querying ignored actions"
-        }
       }
     },
     "ignore": {

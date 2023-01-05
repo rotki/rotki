@@ -211,6 +211,7 @@
     "useGamepad": true,
     "useGeolocation": true,
     "useGraph": true,
+    "useHistoryIgnoringApi": true,
     "useI18n": true,
     "useIdle": true,
     "useIgnore": true,

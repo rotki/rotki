@@ -2,11 +2,6 @@ import isEqual from 'lodash/isEqual';
 import { type Ref } from 'vue';
 import { useTradesApi } from '@/services/history/trades';
 import { useAssociatedLocationsStore } from '@/store/history/associated-locations';
-import { type TradeEntry } from '@/store/history/types';
-import {
-  defaultHistoricPayloadState,
-  mapCollectionEntriesWithMeta
-} from '@/store/history/utils';
 import { useNotificationsStore } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
 import { type ActionStatus } from '@/store/types';
@@ -18,6 +13,7 @@ import {
   type NewTrade,
   type Trade,
   TradeCollectionResponse,
+  type TradeEntry,
   type TradeRequestPayload
 } from '@/types/history/trades';
 import { Section, Status } from '@/types/status';
@@ -29,6 +25,10 @@ import {
   mapCollectionResponse
 } from '@/utils/collection';
 import { logger } from '@/utils/logging';
+import {
+  defaultHistoricPayloadState,
+  mapCollectionEntriesWithMeta
+} from '@/utils/history';
 
 export const useTrades = defineStore('history/trades', () => {
   const trades = ref(defaultCollectionState<TradeEntry>()) as Ref<

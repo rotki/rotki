@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { type BigNumber } from '@rotki/common';
 import { type PropType } from 'vue';
-import { type EthTransactionEntry } from '@/store/history/types';
 import { Unit, toUnit } from '@/utils/calculation';
+import { type EthTransactionEntry } from '@/types/history/tx';
 
 const props = defineProps({
   transaction: {

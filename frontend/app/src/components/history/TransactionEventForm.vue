@@ -11,10 +11,6 @@ import { convertKeys } from '@/services/axios-tranformers';
 import { deserializeApiErrorMessage } from '@/services/converters';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useHistoryEventTypeData } from '@/store/history/consts';
-import {
-  type EthTransactionEntry,
-  type EthTransactionEventEntry
-} from '@/store/history/types';
 import { useMessageStore } from '@/store/message';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTasks } from '@/store/tasks';
@@ -22,7 +18,9 @@ import { type ActionStatus } from '@/store/types';
 import { type Writeable } from '@/types';
 import { CURRENCY_USD } from '@/types/currencies';
 import {
+  type EthTransactionEntry,
   type EthTransactionEvent,
+  type EthTransactionEventEntry,
   type NewEthTransactionEvent
 } from '@/types/history/tx';
 import { TaskType } from '@/types/task-type';

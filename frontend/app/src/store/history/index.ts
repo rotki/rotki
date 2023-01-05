@@ -1,45 +1,21 @@
-import { useHistoryIgnoringApi } from '@/services/history/history-ignoring-api';
-import { type IgnoreActionPayload } from '@/store/history/types';
 import { useMessageStore } from '@/store/message';
-import { useNotificationsStore } from '@/store/notifications';
 import { type ActionStatus } from '@/store/types';
-import { type IgnoredActions } from '@/types/history/ignored';
-import { logger } from '@/utils/logging';
+import { type IgnorePayload } from '@/types/history/ignored';
 
 export const useHistory = defineStore('history', () => {
-  const ignored = ref<IgnoredActions>({});
-
-  const { notify } = useNotificationsStore();
   const { setMessage } = useMessageStore();
   const { t } = useI18n();
 
   const api = useHistoryIgnoringApi();
 
-  const fetchIgnored = async (): Promise<void> => {
-    try {
-      set(ignored, await api.fetchIgnored());
-    } catch (e: any) {
-      logger.error(e);
-      const message = e?.message ?? e ?? '';
-      notify({
-        title: t('actions.history.fetch_ignored.error.title').toString(),
-        message: t('actions.history.fetch_ignored.error.message', {
-          message
-        }).toString(),
-        display: true
-      });
-    }
-  };
-
   const ignoreInAccounting = async (
-    { actionIds, type }: IgnoreActionPayload,
+    payload: IgnorePayload,
     ignore: boolean
   ): Promise<ActionStatus> => {
     try {
       ignore
-        ? await api.ignoreActions(actionIds, type)
-        : await api.unignoreActions(actionIds, type);
-      await fetchIgnored();
+        ? await api.ignoreActions(payload)
+        : await api.unignoreActions(payload);
     } catch (e: any) {
       let title: string;
       let description: string;
@@ -70,8 +46,6 @@ export const useHistory = defineStore('history', () => {
   };
 
   return {
-    ignored,
-    fetchIgnored,
     ignoreInAccounting
   };
 });

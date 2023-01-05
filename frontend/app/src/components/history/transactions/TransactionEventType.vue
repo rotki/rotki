@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
 
-import { type EthTransactionEventEntry } from '@/store/history/types';
 import { type ActionDataEntry } from '@/store/types';
 import { getEventCounterpartyData, useEventTypeData } from '@/utils/history';
+import { type EthTransactionEventEntry } from '@/types/history/tx';
 
 const props = defineProps({
   event: {

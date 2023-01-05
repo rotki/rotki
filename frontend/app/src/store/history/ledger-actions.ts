@@ -2,11 +2,6 @@ import isEqual from 'lodash/isEqual';
 import { type Ref } from 'vue';
 import { useLedgerActionsApi } from '@/services/history/ledger-actions';
 import { useAssociatedLocationsStore } from '@/store/history/associated-locations';
-import { type LedgerActionEntry } from '@/store/history/types';
-import {
-  defaultHistoricPayloadState,
-  mapCollectionEntriesWithMeta
-} from '@/store/history/utils';
 import { useNotificationsStore } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
 import { type ActionStatus } from '@/store/types';
@@ -15,6 +10,7 @@ import { type SupportedExchange } from '@/types/exchanges';
 import {
   type LedgerAction,
   LedgerActionCollectionResponse,
+  type LedgerActionEntry,
   type LedgerActionRequestPayload,
   type NewLedgerAction
 } from '@/types/history/ledger-actions';
@@ -29,6 +25,10 @@ import {
   mapCollectionResponse
 } from '@/utils/collection';
 import { logger } from '@/utils/logging';
+import {
+  defaultHistoricPayloadState,
+  mapCollectionEntriesWithMeta
+} from '@/utils/history';
 
 export const useLedgerActions = defineStore('history/ledgerActions', () => {
   const ledgerActions = ref(defaultCollectionState<LedgerActionEntry>()) as Ref<

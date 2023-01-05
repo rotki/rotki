@@ -42,3 +42,5 @@ export interface AssetMovementRequestPayload
   readonly asset?: string;
   readonly action?: string;
 }
+
+export interface AssetMovementEntry extends AssetMovement, EntryMeta {}

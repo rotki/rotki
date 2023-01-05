@@ -42,3 +42,5 @@ export interface LedgerActionRequestPayload
 }
 
 export type NewLedgerAction = Omit<LedgerAction, 'identifier'>;
+
+export interface LedgerActionEntry extends LedgerAction, EntryMeta {}

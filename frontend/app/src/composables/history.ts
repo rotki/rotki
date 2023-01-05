@@ -1,48 +1,70 @@
 import { type Ref } from 'vue';
 import { useHistory } from '@/store/history';
-import {
-  type IgnoreActionPayload,
-  type IgnoreActionType
-} from '@/store/history/types';
 import { useMessageStore } from '@/store/message';
 import { type ActionStatus } from '@/store/types';
 import { type EntryMeta } from '@/types/history/meta';
-import { uniqueStrings } from '@/utils/data';
+import {
+  type CommonIgnorePayload,
+  type EvmTransaction,
+  type EvmTxIgnorePayload,
+  IgnoreActionType,
+  type IgnorePayload
+} from '@/types/history/ignored';
+
+interface EvmTxIgnoreAction<T extends EntryMeta> {
+  actionType: IgnoreActionType.EVM_TRANSACTIONS;
+  toData: (t: T) => EvmTransaction;
+}
+
+interface CommonIgnoreAction<T extends EntryMeta> {
+  actionType: Exclude<IgnoreActionType, IgnoreActionType.EVM_TRANSACTIONS>;
+  toData: (t: T) => string;
+}
 
 export const useIgnore = <T extends EntryMeta>(
-  type: IgnoreActionType,
+  { actionType, toData }: EvmTxIgnoreAction<T> | CommonIgnoreAction<T>,
   selected: Ref<T[]>,
-  refresh: () => any,
-  getIdentifier: (item: T) => string
+  refresh: () => any
 ) => {
   const { setMessage } = useMessageStore();
   const { ignoreInAccounting } = useHistory();
   const { tc } = useI18n();
 
   const ignoreActions = async (
-    payload: IgnoreActionPayload
+    payload: IgnorePayload
   ): Promise<ActionStatus> => {
     return await ignoreInAccounting(payload, true);
   };
 
   const unignoreActions = async (
-    payload: IgnoreActionPayload
+    payload: IgnorePayload
   ): Promise<ActionStatus> => {
     return await ignoreInAccounting(payload, false);
   };
 
   const ignore = async (ignored: boolean) => {
-    const ids = get(selected)
-      .filter(item => {
-        const { ignoredInAccounting } = item;
-        return ignored ? !ignoredInAccounting : ignoredInAccounting;
-      })
-      .map(item => getIdentifier(item))
-      .filter(uniqueStrings);
+    let payload: IgnorePayload;
+
+    const data = get(selected).filter(item => {
+      const { ignoredInAccounting } = item;
+      return ignored ? !ignoredInAccounting : ignoredInAccounting;
+    });
+
+    if (actionType === IgnoreActionType.EVM_TRANSACTIONS) {
+      payload = {
+        data: data.map(toData),
+        actionType
+      } satisfies EvmTxIgnorePayload;
+    } else {
+      payload = {
+        data: data.map(toData),
+        actionType
+      } satisfies CommonIgnorePayload;
+    }
 
     let status: ActionStatus;
 
-    if (ids.length === 0) {
+    if (data.length === 0) {
       const choice = ignored ? 1 : 2;
       setMessage({
         success: false,
@@ -51,10 +73,7 @@ export const useIgnore = <T extends EntryMeta>(
       });
       return;
     }
-    const payload: IgnoreActionPayload = {
-      actionIds: ids,
-      type
-    };
+
     if (ignored) {
       status = await ignoreActions(payload);
     } else {

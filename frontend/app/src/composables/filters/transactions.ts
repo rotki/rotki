@@ -1,5 +1,4 @@
 import { type ComputedRef, type Ref } from 'vue';
-import { EvmChain } from '@rotki/common/lib/data';
 import { useAssetInfoApi } from '@/services/assets/info';
 import { useTransactions } from '@/store/history/transactions';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
@@ -32,6 +31,7 @@ export const useTransactionFilter = (disableProtocols: boolean) => {
 
   const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
   const { counterparties } = storeToRefs(useTransactions());
+  const { evmChainNames } = useSupportedChains();
   const { assetSearch } = useAssetInfoApi();
   const { tc } = useI18n();
 
@@ -99,7 +99,7 @@ export const useTransactionFilter = (disableProtocols: boolean) => {
           description: tc('transactions.filter.chain'),
           string: true,
           suggestions: () => {
-            const values = Object.values(EvmChain);
+            const values = get(evmChainNames);
             return values.slice(0, values.length / 2);
           },
           validate: (chain: string) => !!chain

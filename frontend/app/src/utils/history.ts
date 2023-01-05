@@ -4,7 +4,6 @@ import {
   transactionEventTypeMapping,
   useTransactionEventTypeData
 } from '@/store/history/consts';
-import { type EthTransactionEventEntry } from '@/store/history/types';
 import { type ActionDataEntry } from '@/store/types';
 import {
   HistoryEventSubType,
@@ -13,6 +12,12 @@ import {
   type TransactionEventType
 } from '@/types/transaction';
 import { isValidEthAddress } from '@/utils/text';
+import { type EthTransactionEventEntry } from '@/types/history/tx';
+import { uniqueStrings } from '@/utils/data';
+import { type PaginationRequestPayload } from '@/types/common';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { type EntryMeta, type EntryWithMeta } from '@/types/history/meta';
+import { type Collection } from '@/types/collection';
 
 export const getEventType = (event: {
   eventType?: string | null;
@@ -104,5 +109,45 @@ export const getEventCounterpartyData = (
     identifier: '',
     label: counterparty,
     image: makeBlockie(counterparty)
+  };
+};
+
+export function mapCollectionEntriesWithMeta<T>(
+  collection: Collection<EntryWithMeta<T>>
+): Collection<T & EntryMeta> {
+  const entries = collection.data.map(data => {
+    return transformEntryWithMeta<T>(data);
+  });
+  return {
+    ...collection,
+    data: entries
+  };
+}
+
+export function transformEntryWithMeta<T>(
+  data: EntryWithMeta<T>
+): T & EntryMeta {
+  const { entry, ...entriesMeta } = data;
+
+  return {
+    ...entry,
+    ...entriesMeta
+  };
+}
+
+export function filterAddressesFromWords(words: string[]): string[] {
+  return words.filter(uniqueStrings).filter(isValidEthAddress);
+}
+
+export const defaultHistoricPayloadState = <
+  T extends Object
+>(): PaginationRequestPayload<T> => {
+  const store = useFrontendSettingsStore();
+
+  return {
+    limit: store.itemsPerPage,
+    offset: 0,
+    orderByAttributes: ['timestamp' as keyof T],
+    ascending: [false]
   };
 };
