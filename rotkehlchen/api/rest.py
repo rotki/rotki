@@ -665,7 +665,13 @@ class RestAPI():
         return api_response(_wrap_in_ok_result(process_result(balances)), HTTPStatus.OK)
 
     def get_supported_chains(self) -> Response:
-        result = [{'name': entry.value, 'type': entry.get_chain_type()} for entry in SupportedBlockchain]  # noqa: E501
+        result = []
+        for blockchain in SupportedBlockchain:
+            data = {'name': blockchain.value, 'type': blockchain.get_chain_type()}
+            if blockchain.is_evm() is True:
+                data['evm_chain_name'] = blockchain.to_chain_id().to_name()
+            result.append(data)
+
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 
     def _query_blockchain_balances(

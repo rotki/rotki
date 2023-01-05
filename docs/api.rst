@@ -2020,7 +2020,7 @@ Getting all supported chains
 
 .. http:get:: /api/(version)/blockchains/supported
 
-    Doing a GET on the supported chains will return all supported chains along with their type
+    Doing a GET on the supported chains will return all supported chains along with their type. If it is an EVM chain it will also contain the name of the EVM chain.
 
     **Example Request**
 
@@ -2041,9 +2041,9 @@ Getting all supported chains
 
         {
             "result": [
-                {"name": "ETH", "type": "evm"},
-                {"name": "OPTIMISM", "type": "evm"},
-                {"name": "AVAX", "type": "evm"},
+                {"name": "ETH", "type": "evm", "evm_chain_name": "ethereum"},
+                {"name": "OPTIMISM", "type": "evm", "evm_chain_name": "optimism"},
+                {"name": "AVAX", "type": "evm", "evm_chain_name": "avalanche"},
                 {"name": "ETH2", "type": "eth2"},
                 {"name": "DOT", "type": "substrate"},
                 {"name": "KSM", "type": "substrate"},
@@ -2053,7 +2053,7 @@ Getting all supported chains
             "message": ""
         }
 
-    :resjson object result: Contains all supported chains and their types.
+    :resjson object result: Contains all supported chains, their types and if it is an EVM chain its EVM chain name.
     :statuscode 200: Success
     :statuscode 500: Internal rotki error
 
