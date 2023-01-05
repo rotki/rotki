@@ -370,7 +370,7 @@ class Uniswapv3Decoder(DecoderInterface):
         """
         This method decodes a Uniswap V3 LP liquidity increase or decrease.
 
-        An example of such transactions are:
+        Examples of such transactions are:
         https://etherscan.io/tx/0x6bf3588f669a784adf5def3c0db149b0cdbcca775e472bb35f00acedee263c4c (deposit)
         https://etherscan.io/tx/0x76c312fe1c8604de5175c37dcbbb99cc8699336f3e4840e9e29e3383970f6c6d (withdrawal)
         """  # noqa: E501
@@ -381,10 +381,12 @@ class Uniswapv3Decoder(DecoderInterface):
 
         if event_action_type == 'deposit':
             notes = 'Add {} {} of liquidity to Uniswap V3 LP position {}'
-            event_type = HistoryEventType.SPEND
+            from_event_type = (HistoryEventType.SPEND, HistoryEventSubType.NONE)
+            to_event_type = (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET)
         else:
             notes = 'Collect {} {} of liquidity from Uniswap V3 LP position {}'
-            event_type = HistoryEventType.RECEIVE
+            from_event_type = (HistoryEventType.SPEND, HistoryEventSubType.NONE)
+            to_event_type = (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET)
 
         liquidity_pool_position_info = self.ethereum_inquirer.contracts.contract('UNISWAP_V3_NFT_MANAGER').call(  # noqa: E501
             node_inquirer=self.ethereum_inquirer,
@@ -409,8 +411,8 @@ class Uniswapv3Decoder(DecoderInterface):
                 if (
                         event.asset == token_with_data and
                         event.balance.amount == normalized_amount and
-                        event.event_type == event_type and
-                        event.event_subtype == HistoryEventSubType.NONE
+                        event.event_type == from_event_type[0] and
+                        event.event_subtype == from_event_type[1]
                 ):
                     found_event = True
                     event.counterparty = CPT_UNISWAP_V3
@@ -422,12 +424,12 @@ class Uniswapv3Decoder(DecoderInterface):
                     ActionItem(
                         action='transform',
                         sequence_index=self.base_tools.get_next_sequence_counter(),
-                        from_event_type=event_type,
-                        from_event_subtype=HistoryEventSubType.NONE,
+                        from_event_type=from_event_type[0],
+                        from_event_subtype=from_event_type[1],
                         asset=token_with_data,
                         amount=normalized_amount,
-                        to_event_type=event_type,
-                        to_event_subtype=HistoryEventSubType.NONE,
+                        to_event_type=to_event_type[0],
+                        to_event_subtype=to_event_type[1],
                         to_notes=notes.format(normalized_amount, token_with_data.symbol, liquidity_pool_id),  # noqa: E501
                         to_counterparty=CPT_UNISWAP_V3,
                     ),
@@ -438,7 +440,7 @@ class Uniswapv3Decoder(DecoderInterface):
     def _maybe_enrich_liquidity_pool_creation(
             self,
             token: EvmToken,  # pylint: disable=unused-argument
-            tx_log: EvmTxReceiptLog,  # pylint: disable=unused-argument
+            tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
             event: HistoryBaseEntry,
             action_items: list[ActionItem],  # pylint: disable=unused-argument

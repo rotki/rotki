@@ -2,7 +2,6 @@ import logging
 from typing import TYPE_CHECKING, Any, Literal
 
 from eth_abi import encode_abi
-from eth_abi.packed import encode_abi_packed
 from eth_utils import to_checksum_address, to_normalized_address
 from web3 import Web3
 from web3.exceptions import BadFunctionCallOutput
@@ -20,6 +19,7 @@ from rotkehlchen.chain.ethereum.modules.uniswap.v3.types import (
     NFTLiquidityPool,
 )
 from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV3Oracle
+from rotkehlchen.chain.ethereum.utils import generate_address_via_create2
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants.assets import A_USDC
 from rotkehlchen.constants.misc import NFT_DIRECTIVE, ZERO
@@ -325,31 +325,25 @@ def _compute_pool_address(
         fee: int,
 ) -> ChecksumEvmAddress:
     """
-    Generate the pool address from the Uniswap Factory Address, pair of tokens
+    Generate the pool address from the Uniswap Factory Address, a pair of tokens
     and the fee using CREATE2 opcode.
+
+    May raise:
+    - DeserializationError
     """
     token_0 = to_checksum_address(token0_address_raw)
     token_1 = to_checksum_address(token1_address_raw)
-    parameters = []
     # Sort the addresses
     if int(token_0, 16) < int(token_1, 16):
         parameters = [token_0, token_1, fee]
     else:
         parameters = [token_1, token_0, fee]
-    abi_encoded_1 = encode_abi(
-        ['address', 'address', 'uint24'],
-        parameters,
+
+    return generate_address_via_create2(
+        address=uniswap_v3_factory_address,
+        salt=Web3.toHex(Web3.keccak(encode_abi(['address', 'address', 'uint24'], parameters))),
+        init_code=POOL_INIT_CODE_HASH,
     )
-    # pylint: disable=no-value-for-parameter
-    salt = Web3.solidityKeccak(abi_types=['bytes'], values=['0x' + abi_encoded_1.hex()])
-    abi_encoded_2 = encode_abi_packed(['address', 'bytes32'], (uniswap_v3_factory_address, salt))
-    # pylint: disable=no-value-for-parameter
-    raw_address_bytes = Web3.solidityKeccak(
-        abi_types=['bytes', 'bytes'],
-        values=['0xff' + abi_encoded_2.hex(), POOL_INIT_CODE_HASH],
-    )
-    address = to_checksum_address(raw_address_bytes[12:].hex())
-    return address
 
 
 def calculate_price_range(

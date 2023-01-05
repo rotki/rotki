@@ -272,68 +272,78 @@ def test_convert_to_int():
     assert convert_to_int(b'4', accept_only_exact=False) == 4
 
 
-@pytest.mark.parametrize('address, salt, init_code, expected_contract_address', [
+@pytest.mark.parametrize('address, salt, init_code, is_init_code_hashed, expected_contract_address', [  # noqa: E501
     (
         '0x0000000000000000000000000000000000000000',
         '0x0000000000000000000000000000000000000000000000000000000000000000',
         '0x00',
+        False,
         '0x4D1A2e2bB4F88F0250f26Ffff098B0b30B26BF38',
     ),
     (
         '0xdeadbeef00000000000000000000000000000000',
         '0x0000000000000000000000000000000000000000000000000000000000000000',
         '0x00',
+        False,
         '0xB928f69Bb1D91Cd65274e3c79d8986362984fDA3',
     ),
     (
         '0xdeadbeef00000000000000000000000000000000',
         '0x000000000000000000000000feed000000000000000000000000000000000000',
         '0x00',
+        False,
         '0xD04116cDd17beBE565EB2422F2497E06cC1C9833',
     ),
     (
         '0x0000000000000000000000000000000000000000',
         '0x0000000000000000000000000000000000000000000000000000000000000000',
         '0xdeadbeef',
+        False,
         '0x70f2b2914A2a4b783FaEFb75f459A580616Fcb5e',
     ),
     (
         '0x00000000000000000000000000000000deadbeef',
         '0x00000000000000000000000000000000000000000000000000000000cafebabe',
         '0xdeadbeef',
+        False,
         '0x60f3f640a8508fC6a86d45DF051962668E1e8AC7',
     ),
     (
         '0x00000000000000000000000000000000deadbeef',
         '0x00000000000000000000000000000000000000000000000000000000cafebabe',
         '0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef',  # noqa: E501
+        False,
         '0x1d8bfDC5D46DC4f61D6b6115972536eBE6A8854C',
     ),
     (
-        '0x00000000000000000000000000000000DeaDBeef',
-        '0x00000000000000000000000000000000000000000000000000000000cafebabe',
-        '0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef',  # noqa: E501
-        '0x1d8bfdc5d46dc4f61d6b6115972536ebe6a8854c',
+        '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f',  # Uniswap V2 Factory
+        '0xd257ccbe93e550a27236e8cc4971336f6cd2d53037ad567f10fbcc28df6a1eb1',
+        '0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f',  # Uniswap V2 Factory Init Code  # noqa: E501
+        True,
+        '0xAE461cA67B15dc8dc81CE7615e0320dA1A9aB8D5',  # DAI-USDC V2 pool
     ),
+
     (
-        '0x0000000000000000000000000000000000000000',
-        '0x0000000000000000000000000000000000000000000000000000000000000000',
-        '0x',
-        '0xE33C0C7F7df4809055C3ebA6c09CFe4BaF1BD9e0',
+        '0x1F98431c8aD98523631AE4a59f267346ea31F984',  # Uniswap V3 Factory
+        '0xb4dd6f5d729bba20de462c8f8999dc56e24bcda0735b09dd34f3939eaec37999',
+        '0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54',  # Uniswap V3 Factory Init Code  # noqa: E501
+        True,
+        '0xCBCdF9626bC03E24f779434178A73a0B4bad62eD',
     ),
 ])
 def test_generate_address_via_create2(
         address,
         salt,
         init_code,
+        is_init_code_hashed,
         expected_contract_address,
 ):
-    """Test the CREATE2 opcode Python implementation.
-    """
+    """Test the CREATE2 opcode Python implementation."""
     contract_address = generate_address_via_create2(
         address=HexAddress(address),
         salt=HexStr(salt),
         init_code=HexStr(init_code),
+        is_init_code_hashed=is_init_code_hashed,
     )
     assert contract_address == to_checksum_address(expected_contract_address)
 
