@@ -1,6 +1,6 @@
-import { Guid } from '../../common/guid';
-import { AssetsManagerPage } from '../pages/assets-manager-page';
-import { RotkiApp } from '../pages/rotki-app';
+import { Guid } from '../../../common/guid';
+import { AssetsManagerPage } from '../../pages/assets-manager-page';
+import { RotkiApp } from '../../pages/rotki-app';
 
 describe('assets', () => {
   let username: string;

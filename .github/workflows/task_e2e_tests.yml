@@ -3,11 +3,15 @@ on:
 
 jobs:
   e2e:
-    name: 'Frontend e2e tests'
+    name: 'Frontend e2e tests: ${{ matrix.group }}'
     env:
       CI: true
+      GROUP: ${{ matrix.group }}
     environment: test
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        group: [1, 2]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -71,6 +75,7 @@ jobs:
         with:
           flags: frontend_integration
           working-directory: ./frontend/app
+          env_vars: GROUP
       - name: Upload screenshots
         uses: actions/upload-artifact@v3
         if: failure()

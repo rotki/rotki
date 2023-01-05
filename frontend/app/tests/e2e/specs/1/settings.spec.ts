@@ -1,8 +1,8 @@
-import { Guid } from '../../common/guid';
-import { AccountingSettingsPage } from '../pages/accounting-settings-page';
-import { GeneralSettingsPage } from '../pages/general-settings-page';
-import { RotkiApp } from '../pages/rotki-app';
-import { UserSecuritySettingsPage } from '../pages/user-security-settings-page';
+import { Guid } from '../../../common/guid';
+import { AccountingSettingsPage } from '../../pages/accounting-settings-page';
+import { GeneralSettingsPage } from '../../pages/general-settings-page';
+import { RotkiApp } from '../../pages/rotki-app';
+import { UserSecuritySettingsPage } from '../../pages/user-security-settings-page';
 
 describe('settings', () => {
   let username: string;

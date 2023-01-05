@@ -1,8 +1,8 @@
-import { Guid } from '../../../common/guid';
-import { HistoryPage } from '../../pages/history-page';
-import { LedgerActionPage } from '../../pages/history-page/ledger-action-page';
-import { RotkiApp } from '../../pages/rotki-app';
-import { type ExternalLedgerAction } from '../../support/types';
+import { Guid } from '../../../../common/guid';
+import { HistoryPage } from '../../../pages/history-page';
+import { LedgerActionPage } from '../../../pages/history-page/ledger-action-page';
+import { RotkiApp } from '../../../pages/rotki-app';
+import { type ExternalLedgerAction } from '../../../support/types';
 
 describe('ledger actions history', () => {
   let username: string;

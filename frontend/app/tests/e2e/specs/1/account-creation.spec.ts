@@ -1,5 +1,5 @@
-import { Guid } from '../../common/guid';
-import { RotkiApp } from '../pages/rotki-app';
+import { Guid } from '../../../common/guid';
+import { RotkiApp } from '../../pages/rotki-app';
 
 describe('accounts', () => {
   let username: string;
