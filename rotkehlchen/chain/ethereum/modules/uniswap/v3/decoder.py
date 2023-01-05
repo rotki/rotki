@@ -143,7 +143,30 @@ class Uniswapv3Decoder(DecoderInterface):
                     event.counterparty = CPT_UNISWAP_V3
                     event.notes = f'Refund of {event.balance.amount} {crypto_asset.symbol} in uniswap-v3 due to price change'  # noqa: E501
 
-        maybe_reshuffle_events(out_event=out_event, in_event=in_event)
+        # There is a chance that there is more than one swap event in a transaction.
+        # Because of this in_event and out_event may be decoded during different calls to
+        # _maybe_decode_v3_swap. If this happened, we find the already decoded event in order
+        # to complete the reshuffle and make sure in and out events are consecutive.
+        if in_event is not None and out_event is None:
+            for event in decoded_events:
+                if (
+                    event.counterparty == CPT_UNISWAP_V3 and
+                    event.event_type == HistoryEventType.TRADE and
+                    event.event_subtype == HistoryEventSubType.SPEND
+                ):
+                    out_event = event
+                    break
+        elif out_event is not None and in_event is None:
+            for event in decoded_events:
+                if (
+                    event.counterparty == CPT_UNISWAP_V3 and
+                    event.event_type == HistoryEventType.TRADE and
+                    event.event_subtype == HistoryEventSubType.RECEIVE
+                ):
+                    in_event = event
+                    break
+
+        maybe_reshuffle_events(out_event=out_event, in_event=in_event, events_list=decoded_events)
 
     # -- DecoderInterface methods
 
