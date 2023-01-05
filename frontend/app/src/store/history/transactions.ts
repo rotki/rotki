@@ -1,10 +1,11 @@
 import isEqual from 'lodash/isEqual';
 import { type Ref } from 'vue';
+import { type EvmChain } from '@rotki/common/lib/data';
+import { groupBy } from 'lodash';
 import { useHistoryApi } from '@/services/history';
 import { useTransactionsApi } from '@/services/history/transactions';
 import { type PendingTask } from '@/services/types-api';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
-import { useEthAccountsStore } from '@/store/blockchain/accounts/eth';
 import { useTxQueryStatus } from '@/store/history/query-status';
 import { type EthTransactionEntry } from '@/store/history/types';
 import {
@@ -22,6 +23,7 @@ import {
   type EthTransaction,
   EthTransactionCollectionResponse,
   type NewEthTransactionEvent,
+  type TransactionHashAndEvmChainPayload,
   type TransactionRequestPayload
 } from '@/types/history/tx';
 import { Section, Status } from '@/types/status';
@@ -32,24 +34,26 @@ import {
   mapCollectionResponse
 } from '@/utils/collection';
 import { logger } from '@/utils/logging';
+import { useSupportedChains } from '@/composables/info/chains';
+import { useAccountBalancesStore } from '@/store/blockchain/accountbalances';
 
 export const useTransactions = defineStore('history/transactions', () => {
   const transactions = ref(
     defaultCollectionState<EthTransactionEntry>()
   ) as Ref<Collection<EthTransactionEntry>>;
 
-  const fetchedTxHashesEvents: Ref<Record<string, boolean> | null> = ref({});
   const transactionsPayload: Ref<Partial<TransactionRequestPayload>> = ref(
     defaultHistoricPayloadState<EthTransaction>()
   );
-  const fetchedTxAddresses: Ref<string[]> = ref([]);
+  const fetchedTxAccounts: Ref<{ address: string; evmChain: string }[]> = ref(
+    []
+  );
 
   const counterparties = ref<string[]>([]);
 
   const { t } = useI18n();
   const { notify } = useNotificationsStore();
 
-  const { ethAddresses } = storeToRefs(useEthAccountsStore());
   const {
     fetchEthTransactions,
     fetchEthTransactionsTask,
@@ -61,6 +65,9 @@ export const useTransactions = defineStore('history/transactions', () => {
 
   const { fetchAvailableCounterparties } = useHistoryApi();
   const { resetQueryStatus } = useTxQueryStatus();
+
+  const { evmChainNames, getEvmChainName, isEvm } = useSupportedChains();
+  const { accounts } = storeToRefs(useAccountBalancesStore());
 
   const fetchTransactions = async (refresh = false): Promise<void> => {
     const { setStatus, loading, isFirstLoad, resetStatus } = useStatusUpdater(
@@ -128,9 +135,14 @@ export const useTransactions = defineStore('history/transactions', () => {
 
     try {
       const firstLoad = isFirstLoad();
-      const ethAddressesVal = get(ethAddresses);
-      const addressesChanged = get(fetchedTxAddresses) !== ethAddressesVal;
-      const onlyCache = firstLoad || addressesChanged ? false : !refresh;
+      const accountsList = get(accounts)
+        .filter(({ chain }) => get(isEvm(chain)))
+        .map(({ address, chain }) => ({
+          address,
+          evmChain: get(getEvmChainName(chain))!
+        }));
+      const accountsUpdated = !isEqual(accountsList, get(fetchedTxAccounts));
+      const onlyCache = firstLoad || accountsUpdated ? false : !refresh;
       if ((get(isTaskRunning(taskType)) || loading()) && !onlyCache) {
         return;
       }
@@ -146,16 +158,14 @@ export const useTransactions = defineStore('history/transactions', () => {
       if (!onlyCache) {
         setStatus(Status.REFRESHING);
         resetQueryStatus();
-        set(fetchedTxAddresses, ethAddressesVal);
-        const refreshAddressTxs = ethAddressesVal.map((address: string) =>
-          fetchTransactionsHandler(false, {
-            address
-          }).catch(error => {
+        set(fetchedTxAccounts, accountsList);
+        const refreshAddressTxs = accountsList.map(account =>
+          fetchTransactionsHandler(false, account).catch(error => {
             notify({
               title: t('actions.transactions.error.title').toString(),
               message: t('actions.transactions.error.description', {
                 error,
-                address
+                address: account.address
               }).toString(),
               display: true
             });
@@ -232,64 +242,59 @@ export const useTransactions = defineStore('history/transactions', () => {
     return { success, message };
   };
 
-  const checkFetchedTxHashesEvents = (txHashes: string[] | null): string[] => {
-    const fetched = get(fetchedTxHashesEvents);
-    if (fetched === null) return [];
-    if (txHashes === null) {
-      set(fetchedTxHashesEvents, null);
-      return [];
-    }
-
-    const txHashesToFetch = txHashes.filter((txHash: string) => {
-      return !fetched[txHash];
-    });
-
-    if (txHashesToFetch.length > 0) {
-      const txHashesToFetchObj: Record<string, boolean> = {};
-      txHashesToFetch.forEach((txHash: string) => {
-        txHashesToFetchObj[txHash] = true;
-      });
-
-      set(fetchedTxHashesEvents, {
-        ...fetched,
-        ...txHashesToFetchObj
-      });
-    }
-
-    return txHashesToFetch;
-  };
-
   const checkTransactionsMissingEvents = async () => {
-    const taskType = TaskType.TX_EVENTS;
-    const { taskId } = await reDecodeMissingTransactionEvents<PendingTask>();
+    try {
+      const taskType = TaskType.TX_EVENTS;
+      const { taskId } = await reDecodeMissingTransactionEvents<PendingTask>(
+        get(evmChainNames).map(evmChain => ({ evmChain }))
+      );
 
-    const taskMeta = {
-      title: t('actions.transactions_events.task.title').toString(),
-      description: t('actions.transactions_events.task.description').toString(),
-      numericKeys: []
-    };
+      const taskMeta = {
+        title: t('actions.transactions_events.task.title').toString(),
+        description: t(
+          'actions.transactions_events.task.description'
+        ).toString(),
+        numericKeys: []
+      };
 
-    const { result } = await awaitTask(taskId, taskType, taskMeta, true);
+      const { result } = await awaitTask(taskId, taskType, taskMeta, true);
 
-    if (result) {
-      await fetchTransactions();
+      if (result) {
+        await fetchTransactions();
+      }
+    } catch (e) {
+      logger.error(e);
     }
   };
 
   const fetchTransactionEvents = async (
-    txHashes: string[] | null,
+    transactions: EthTransactionEntry[] | null,
     ignoreCache = false
   ): Promise<void> => {
-    const isFetchAll = txHashes === null;
+    const isFetchAll = transactions === null;
 
-    const checked = checkFetchedTxHashesEvents(txHashes);
-    const txHashesToFetch = ignoreCache ? txHashes || null : checked;
+    let payload: TransactionHashAndEvmChainPayload[] = [];
 
-    if (!isFetchAll && txHashesToFetch && txHashesToFetch.length === 0) return;
+    if (isFetchAll) {
+      payload = get(evmChainNames).map(evmChain => ({ evmChain }));
+    } else {
+      if (transactions.length === 0) return;
+      const mapped = transactions.map(({ evmChain, txHash }) => ({
+        evmChain,
+        txHash
+      }));
+
+      payload = Object.entries(groupBy(mapped, 'evmChain')).map(
+        ([evmChain, item]) => ({
+          evmChain: evmChain as EvmChain,
+          txHashes: item.map(({ txHash }) => txHash)
+        })
+      );
+    }
 
     const taskType = TaskType.TX_EVENTS;
     const { taskId } = await fetchEthTransactionEvents({
-      txHashes: txHashesToFetch,
+      data: payload,
       ignoreCache
     });
     const taskMeta = {
@@ -301,16 +306,6 @@ export const useTransactions = defineStore('history/transactions', () => {
 
     if (result) {
       await fetchTransactions();
-    }
-
-    const fetched = get(fetchedTxHashesEvents);
-    if (isFetchAll) {
-      set(fetchedTxHashesEvents, {});
-    } else if (fetched && txHashesToFetch) {
-      txHashesToFetch.forEach((txHash: string) => {
-        delete fetched[txHash];
-      });
-      set(fetchedTxHashesEvents, fetched);
     }
   };
 

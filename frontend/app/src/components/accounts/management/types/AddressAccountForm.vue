@@ -29,8 +29,8 @@ const { editAccount } = useBlockchainAccountsStore();
 const { setMessage } = useMessageStore();
 const { fetchEnsNames } = useEthNamesStore();
 const { isEvm } = useSupportedChains();
-const { valid, setSave, pending, accountToEdit } = useAccountDialog();
-const { loading } = useAccountLoading();
+const { valid, setSave, accountToEdit } = useAccountDialog();
+const { pending, loading } = useAccountLoading();
 const { tc } = useI18n();
 
 const evmChain = isEvm(blockchain);
@@ -48,6 +48,7 @@ const save = async () => {
   const isEth = chain === Blockchain.ETH;
 
   try {
+    set(pending, true);
     const entries = get(addresses);
     if (edit) {
       const address = entries[0];
@@ -134,7 +135,7 @@ onMounted(() => {
     <v-sheet v-if="evmChain && !accountToEdit" outlined rounded>
       <v-checkbox
         v-model="allEvmChains"
-        class="py-2 px-4"
+        class="py-4 px-4 my-0"
         :label="tc('address_account_form.label')"
         persistent-hint
         :hint="tc('address_account_form.hint')"

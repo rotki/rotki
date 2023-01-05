@@ -12,12 +12,7 @@ import UnderlyingTokenManager from '@/components/asset-manager/UnderlyingTokenMa
 import CopyButton from '@/components/helper/CopyButton.vue';
 import Fragment from '@/components/helper/Fragment';
 import HelpLink from '@/components/helper/HelpLink.vue';
-import {
-  CUSTOM_ASSET,
-  EVM_TOKEN,
-  evmChainsData,
-  evmTokenKindsData
-} from '@/services/assets/consts';
+import { CUSTOM_ASSET, EVM_TOKEN } from '@/services/assets/consts';
 import { deserializeApiErrorMessage } from '@/services/converters';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useMessageStore } from '@/store/message';
@@ -29,6 +24,7 @@ import {
 } from '@/utils/text';
 import AssetIconForm from '@/components/asset-manager/AssetIconForm.vue';
 import { useAssetManagementApi } from '@/services/assets/management-api';
+import { evmChainsData, evmTokenKindsData } from '@/types/blockchain/chains';
 
 function time(t: string): number | undefined {
   return t ? convertToTimestamp(t) : undefined;

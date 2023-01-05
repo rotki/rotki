@@ -14,6 +14,7 @@ import {
 import { type CollectionResponse } from '@/types/collection';
 import { type EntryWithMeta } from '@/types/history/meta';
 import {
+  type AddressesAndEvmChainPayload,
   type EthTransaction,
   EthTransactionCollectionResponse,
   type NewEthTransactionEvent,
@@ -26,7 +27,7 @@ export const useTransactionsApi = () => {
     payload: TransactionRequestPayload,
     asyncQuery: boolean
   ): Promise<T> => {
-    let url = `/blockchains/ETH/transactions`;
+    let url = `/blockchains/evm/transactions`;
     const { address, ...data } = payload;
     if (address) {
       url += `/${address}`;
@@ -64,7 +65,7 @@ export const useTransactionsApi = () => {
 
   const deleteEthTransactions = async (): Promise<boolean> => {
     const response = await api.instance.delete<ActionResult<boolean>>(
-      `/blockchains/ETH/transactions`,
+      `/blockchains/evm/transactions`,
       {
         validateStatus: validStatus
       }
@@ -77,7 +78,7 @@ export const useTransactionsApi = () => {
     payload: TransactionEventRequestPayload
   ): Promise<PendingTask> => {
     const response = await api.instance.post<ActionResult<PendingTask>>(
-      'blockchains/ETH/transactions',
+      'blockchains/evm/transactions',
       axiosSnakeCaseTransformer({
         asyncQuery: true,
         ...payload
@@ -88,11 +89,15 @@ export const useTransactionsApi = () => {
   };
 
   const reDecodeMissingTransactionEvents = async <T>(
+    data: AddressesAndEvmChainPayload[],
     asyncQuery = true
   ): Promise<T> => {
     const response = await api.instance.post<ActionResult<T>>(
-      '/blockchains/ETH/transactions/decode',
-      axiosSnakeCaseTransformer({ asyncQuery }),
+      '/blockchains/evm/transactions/decode',
+      axiosSnakeCaseTransformer({
+        asyncQuery,
+        data
+      }),
       { validateStatus: validStatus }
     );
 

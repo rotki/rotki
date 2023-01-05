@@ -1,4 +1,5 @@
 import { type ComputedRef, type Ref } from 'vue';
+import { EvmChain } from '@rotki/common/lib/data';
 import { useAssetInfoApi } from '@/services/assets/info';
 import { useTransactions } from '@/store/history/transactions';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
@@ -10,7 +11,8 @@ enum TransactionFilterKeys {
   END = 'end',
   ASSET = 'asset',
   PROTOCOL = 'protocol',
-  EVENT_TYPE = 'event_type'
+  EVENT_TYPE = 'event_type',
+  EVM_CHAIN = 'chain'
 }
 
 enum TransactionFilterValueKeys {
@@ -18,7 +20,8 @@ enum TransactionFilterValueKeys {
   END = 'toTimestamp',
   ASSET = 'asset',
   PROTOCOL = 'protocols',
-  EVENT_TYPE = 'eventTypes'
+  EVENT_TYPE = 'eventTypes',
+  EVM_CHAIN = 'evmChain'
 }
 
 type Filters = MatchedKeyword<TransactionFilterValueKeys>;
@@ -80,15 +83,28 @@ export const useTransactionFilter = (disableProtocols: boolean) => {
     ];
 
     if (!disableProtocols) {
-      data.push({
-        key: TransactionFilterKeys.PROTOCOL,
-        keyValue: TransactionFilterValueKeys.PROTOCOL,
-        description: tc('transactions.filter.protocol'),
-        multiple: true,
-        string: true,
-        suggestions: () => get(counterparties),
-        validate: (protocol: string) => !!protocol
-      });
+      data.push(
+        {
+          key: TransactionFilterKeys.PROTOCOL,
+          keyValue: TransactionFilterValueKeys.PROTOCOL,
+          description: tc('transactions.filter.protocol'),
+          multiple: true,
+          string: true,
+          suggestions: () => get(counterparties),
+          validate: (protocol: string) => !!protocol
+        },
+        {
+          key: TransactionFilterKeys.EVM_CHAIN,
+          keyValue: TransactionFilterValueKeys.EVM_CHAIN,
+          description: tc('transactions.filter.chain'),
+          string: true,
+          suggestions: () => {
+            const values = Object.values(EvmChain);
+            return values.slice(0, values.length / 2);
+          },
+          validate: (chain: string) => !!chain
+        }
+      );
     }
 
     return data;

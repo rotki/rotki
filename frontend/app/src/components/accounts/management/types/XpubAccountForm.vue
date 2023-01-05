@@ -27,8 +27,8 @@ const errorMessages = ref<ValidationErrors>({});
 const { addAccounts, fetchAccounts } = useBlockchainStore();
 const { editAccount } = useBlockchainAccountsStore();
 const { setMessage } = useMessageStore();
-const { valid, setSave, pending, accountToEdit } = useAccountDialog();
-const { loading } = useAccountLoading();
+const { valid, setSave, accountToEdit } = useAccountDialog();
+const { pending, loading } = useAccountLoading();
 const { tc } = useI18n();
 
 const save = async () => {

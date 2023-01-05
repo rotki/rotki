@@ -3,8 +3,8 @@ import { Blockchain } from '@rotki/common/lib/blockchain';
 import TokenPlaceholder from '@/components/svgs/TokenPlaceholder.vue';
 import { useAssetIconApi } from '@/services/assets/icon-api';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
-import { getChainIcon } from '@/types/blockchain/chains';
 import { useCurrencies } from '@/types/currencies';
+import EvmChainIcon from '@/components/helper/display/icons/EvmChainIcon.vue';
 
 const AdaptiveWrapper = defineAsyncComponent(
   () => import('@/components/display/AdaptiveWrapper.vue')
@@ -116,10 +116,6 @@ const placeholderStyle = computed(() => {
   };
 });
 
-const chainIcon = computed(() =>
-  get(showChain) ? getChainIcon(get(chain)) : null
-);
-
 watch([symbol, changeable, identifier], (curr, prev) => {
   set(error, false);
   if (curr[1] !== prev[1]) {
@@ -135,20 +131,13 @@ watch([symbol, changeable, identifier], (curr, prev) => {
         <template #activator="{ on, attrs }">
           <div>
             <div
-              v-if="chainIcon"
+              v-if="showChain && chain"
               :class="{
                 [css.circle]: true,
                 [css.chain]: true
               }"
             >
-              <v-img
-                :src="chainIcon"
-                :width="chainIconSize"
-                :max-width="chainIconSize"
-                :height="chainIconSize"
-                :max-height="chainIconSize"
-                contain
-              />
+              <evm-chain-icon :chain="chain" :size="chainIconSize" />
             </div>
 
             <div
