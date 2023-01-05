@@ -1,6 +1,6 @@
-import { Guid } from '../../common/guid';
-import { DefiPage } from '../pages/defi-page';
-import { RotkiApp } from '../pages/rotki-app';
+import { Guid } from '../../../common/guid';
+import { DefiPage } from '../../pages/defi-page';
+import { RotkiApp } from '../../pages/rotki-app';
 
 describe('defi', () => {
   let username: string;
