@@ -489,7 +489,12 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
 
             with self.database.user_write() as cursor:
                 for entry in hash_results:
-                    tx_receipt_data = self.evm_inquirer.get_transaction_receipt(tx_hash=entry)
+                    try:
+                        tx_receipt_data = self.evm_inquirer.get_transaction_receipt(tx_hash=entry)
+                    except RemoteError as e:
+                        self.msg_aggregator.add_warning(f'Failed to query information for {self.evm_inquirer.chain_name} transaction {entry.hex()} due to {str(e)}. Skipping...')  # noqa: E501
+                        continue
+
                     try:
                         dbevmtx.add_receipt_data(
                             write_cursor=cursor,
@@ -498,4 +503,5 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
                         )
                     except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
                         if 'UNIQUE constraint failed: evmtx_receipts.tx_hash' not in str(e):
+                            log.error(f'Fialed to store transaction {entry.hex()} receipt due to {str(e)}')  # noqa: E501
                             raise  # if receipt is already added by other greenlet it's fine
