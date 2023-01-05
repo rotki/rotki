@@ -365,6 +365,9 @@ def test_query_supported_chains(rotkehlchen_api_server):
     for entry in SupportedBlockchain:
         for result_entry in result:
             if entry.value == result_entry['name'] and entry.get_chain_type() == result_entry['type']:  # noqa: E501
+                if entry.is_evm() is True:
+                    assert result_entry['evm_chain_name'] == entry.to_chain_id().to_name()
+
                 break  # found
         else:  # internal for loop found nothing
             raise AssertionError(f'Did not find {entry} in the supported chains result')
