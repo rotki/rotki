@@ -1,8 +1,8 @@
 <script setup lang="ts">
+import makeBlockie from 'ethereum-blockies-base64';
 import { type GeneralAccount } from '@rotki/common/lib/account';
-import { type PropType } from 'vue';
 import { truncateAddress } from '@/filters';
-import { useEthNamesStore } from '@/store/balances/ethereum-names';
+import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { randomHex } from '@/utils/data';
 
@@ -10,16 +10,24 @@ const AssetIcon = defineAsyncComponent(
   () => import('@/components/helper/display/icons/AssetIcon.vue')
 );
 
-const props = defineProps({
-  account: { required: true, type: Object as PropType<GeneralAccount> }
-});
+const props = withDefaults(
+  defineProps<{
+    account: GeneralAccount;
+    useAliasName?: boolean;
+    truncate?: boolean;
+  }>(),
+  {
+    useAliasName: true,
+    truncate: true
+  }
+);
 
-const { account } = toRefs(props);
+const { account, useAliasName } = toRefs(props);
 const { scrambleData, shouldShowAmount } = storeToRefs(
   useSessionSettingsStore()
 );
 
-const { ethNameSelector } = useEthNamesStore();
+const { addressNameSelector } = useAddressesNamesStore();
 
 const address = computed<string>(() => {
   if (!get(scrambleData)) {
@@ -28,32 +36,53 @@ const address = computed<string>(() => {
   return randomHex();
 });
 
-const ensName = computed<string | null>(() => {
-  if (!get(scrambleData)) {
-    return get(ethNameSelector(get(account).address));
+const aliasName = computed<string | null>(() => {
+  if (!get(scrambleData) && get(useAliasName)) {
+    const { address, chain } = get(account);
+    return get(addressNameSelector(address, chain));
   }
 
   return null;
 });
+
+const { tc } = useI18n();
 </script>
 
 <template>
-  <v-tooltip top open-delay="400">
+  <v-tooltip top open-delay="400" :disabled="!truncate">
     <template #activator="{ on }">
       <v-row align="center" no-gutters class="flex-nowrap" v-on="on">
         <v-col cols="auto" class="pr-2">
           <v-avatar left size="28px" class="mr-0">
-            <asset-icon size="24px" :identifier="account.chain" />
+            <asset-icon
+              v-if="account.chain"
+              size="24px"
+              :identifier="account.chain"
+            />
+            <v-tooltip v-else top>
+              <template #activator="{ childOn }">
+                <v-icon v-on="childOn"> mdi-link-variant </v-icon>
+              </template>
+              <span>{{ tc('common.multi_chain') }}</span>
+            </v-tooltip>
           </v-avatar>
         </v-col>
+
+        <div>
+          <v-avatar size="24" class="mr-2">
+            <v-img :src="makeBlockie(address)" />
+          </v-avatar>
+        </div>
 
         <v-col
           cols="auto"
           :class="{ 'blur-content': !shouldShowAmount }"
           class="text-no-wrap"
         >
-          <div v-if="ensName">{{ ensName }}</div>
-          <div v-else>({{ truncateAddress(address, 6) }})</div>
+          <div v-if="aliasName">{{ aliasName }}</div>
+          <div v-else>
+            {{ truncate ? truncateAddress(address, 6) : address }}
+          </div>
         </v-col>
       </v-row>
     </template>

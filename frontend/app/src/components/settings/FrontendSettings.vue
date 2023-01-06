@@ -32,7 +32,7 @@ const { t } = useI18n();
     <div class="mt-8">
       <div class="d-flex align-center">
         <div class="text-h6">
-          {{ t('frontend_settings.subtitle.eth_names') }}
+          {{ t('frontend_settings.subtitle.alias_names') }}
         </div>
       </div>
       <enable-ens-names-setting />

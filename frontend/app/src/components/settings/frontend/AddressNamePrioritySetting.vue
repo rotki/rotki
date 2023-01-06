@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import PrioritizedList from '@/components/helper/PrioritizedList.vue';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
-import { useEthNamesStore } from '@/store/balances/ethereum-names';
+import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import {
   PrioritizedListData,
@@ -19,11 +19,11 @@ import {
 
 const currentAddressNamePriorities = ref<PrioritizedListId[]>([]);
 const { addressNamePriority } = storeToRefs(useGeneralSettingsStore());
-const { fetchEthNames } = useEthNamesStore();
+const { fetchAddressesNames } = useAddressesNamesStore();
 
 const finishEditing = async () => {
   resetCurrentAddressNamePriorities();
-  await fetchEthNames();
+  await fetchAddressesNames();
 };
 
 const resetCurrentAddressNamePriorities = () => {
@@ -54,7 +54,7 @@ const { t } = useI18n();
   <div>
     <div
       class="text-subtitle-1"
-      v-text="t('eth_address_book.hint.priority.title')"
+      v-text="t('address_book.hint.priority.title')"
     />
     <settings-option
       #default="{ error, success, update }"

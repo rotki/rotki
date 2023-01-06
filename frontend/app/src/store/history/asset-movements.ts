@@ -1,7 +1,7 @@
 import isEqual from 'lodash/isEqual';
 import { type Ref } from 'vue';
 import { useAssetMovementsApi } from '@/services/history/asset-movements';
-import { useEthNamesStore } from '@/store/balances/ethereum-names';
+import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useAssociatedLocationsStore } from '@/store/history/associated-locations';
 import { useNotificationsStore } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
@@ -75,7 +75,7 @@ export const useAssetMovements = defineStore('history/assetMovements', () => {
         parameters ?? get(assetMovementsPayload)
       );
 
-      const { fetchEnsNames } = useEthNamesStore();
+      const { fetchEnsNames } = useAddressesNamesStore();
       if (onlyCache) {
         const result = await getAssetMovements(payload);
         const mapped = mapCollectionEntriesWithMeta<AssetMovement>(
@@ -89,7 +89,7 @@ export const useAssetMovements = defineStore('history/assetMovements', () => {
           }
         });
 
-        await fetchEnsNames(addresses, false);
+        await fetchEnsNames(addresses);
 
         return mapped;
       }
@@ -128,7 +128,7 @@ export const useAssetMovements = defineStore('history/assetMovements', () => {
         }
       });
 
-      await fetchEnsNames(addresses, false);
+      await fetchEnsNames(addresses);
 
       return mapped;
     };

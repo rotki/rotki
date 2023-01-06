@@ -8,12 +8,19 @@ export function chunkArray<T>(myArray: T[], size: number): T[][] {
   return results;
 }
 
-export const uniqueStrings = function <T = string>(
+export const uniqueStrings = <T = string>(
   value: T,
   index: number,
   array: T[]
-): boolean {
+): boolean => {
   return array.indexOf(value) === index;
+};
+
+export const uniqueObjects = <T>(
+  arr: T[],
+  getUniqueId: (item: T) => string
+) => {
+  return [...new Map(arr.map(item => [getUniqueId(item), item])).values()];
 };
 
 /**

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import { AddressNamePriority } from '@/types/address-name-priorities';
 import { PriceOracle } from '@/types/price-oracle';
@@ -7,12 +6,9 @@ import { type PrioritizedListItemData } from '@/types/prioritized-list-data';
 import { type PrioritizedListId } from '@/types/prioritized-list-id';
 import { toSentenceCase } from '@/utils/text';
 
-const props = defineProps({
-  data: {
-    required: true,
-    type: Object as PropType<PrioritizedListItemData<PrioritizedListId>>
-  }
-});
+const props = defineProps<{
+  data: PrioritizedListItemData<PrioritizedListId>;
+}>();
 
 const { data } = toRefs(props);
 
@@ -31,22 +27,22 @@ const labels: { [keys in PrioritizedListId]: string } = {
   [PriceOracle.UNISWAP3]: t('oracles.uniswap_v3').toString(),
   [PriceOracle.MANUALCURRENT]: t('oracles.manual_latest').toString(),
   [AddressNamePriority.BLOCKCHAIN_ACCOUNT]: t(
-    'eth_address_book.hint.priority.list.blockchain_account_labels'
+    'address_book.hint.priority.list.blockchain_account_labels'
   ).toString(),
   [AddressNamePriority.ENS_NAMES]: t(
-    'eth_address_book.hint.priority.list.ens_names'
+    'address_book.hint.priority.list.ens_names'
   ).toString(),
   [AddressNamePriority.ETHEREUM_TOKENS]: t(
-    'eth_address_book.hint.priority.list.ethereum_tokens'
+    'address_book.hint.priority.list.ethereum_tokens'
   ).toString(),
   [AddressNamePriority.GLOBAL_ADDRESSBOOK]: t(
-    'eth_address_book.hint.priority.list.global_address_book'
+    'address_book.hint.priority.list.global_address_book'
   ).toString(),
   [AddressNamePriority.HARDCODED_MAPPINGS]: t(
-    'eth_address_book.hint.priority.list.hardcoded_mappings'
+    'address_book.hint.priority.list.hardcoded_mappings'
   ).toString(),
   [AddressNamePriority.PRIVATE_ADDRESSBOOK]: t(
-    'eth_address_book.hint.priority.list.private_address_book'
+    'address_book.hint.priority.list.private_address_book'
   ).toString(),
   blockchain: '',
   coingecko: '',

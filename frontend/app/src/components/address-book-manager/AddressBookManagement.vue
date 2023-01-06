@@ -1,43 +1,49 @@
 <script setup lang="ts">
+import { Blockchain } from '@rotki/common/lib/blockchain';
+import { type Ref } from 'vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
-import EthAddressBookForm from '@/components/eth-address-book-manager/EthAddressBookForm.vue';
-import EthAddressBookTable from '@/components/eth-address-book-manager/EthAddressBookTable.vue';
+import AddressBookForm from '@/components/address-book-manager/AddressBookForm.vue';
+import AddressBookTable from '@/components/address-book-manager/AddressBookTable.vue';
 import EthNamesHint from '@/components/EthNamesHint.vue';
-import { useEthNamesStore } from '@/store/balances/ethereum-names';
+import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useMessageStore } from '@/store/message';
 import {
-  type EthAddressBookLocation,
-  type EthNamesEntry,
-  type EthNamesPayload
+  type AddressBookEntry,
+  type AddressBookLocation,
+  type AddressBookPayload
 } from '@/types/eth-names';
 
-const search = ref<string>('');
-const pendingSearch = ref<string>('');
+const search: Ref<string> = ref('');
+const pendingSearch: Ref<string> = ref('');
+const selectedChain: Ref<Blockchain> = ref(Blockchain.ETH);
+const enableForAllChains: Ref<boolean> = ref(false);
 
 const tab = ref<number>(0);
-const locations: EthAddressBookLocation[] = ['global', 'private'];
+const locations: AddressBookLocation[] = ['global', 'private'];
 const { tc } = useI18n();
 
-const location = computed<EthAddressBookLocation>(() => {
+const location = computed<AddressBookLocation>(() => {
   return locations[get(tab)];
 });
 
-const emptyForm: () => EthNamesPayload = () => ({
+const emptyForm: () => AddressBookPayload = () => ({
   location: get(location),
+  blockchain: get(selectedChain),
   address: '',
   name: ''
 });
 
-const openForm = (item: EthNamesEntry | null = null) => {
+const openForm = (item: AddressBookEntry | null = null) => {
   set(editMode, !!item);
   if (item) {
-    set(form, {
+    set(formPayload, {
       ...item,
       location: get(location)
     });
+    set(enableForAllChains, !item.blockchain);
   } else {
     const newForm = emptyForm();
-    set(form, {
+    set(formPayload, {
       ...newForm
     });
   }
@@ -46,13 +52,14 @@ const openForm = (item: EthNamesEntry | null = null) => {
 
 const hideForm = function () {
   set(showForm, false);
-  set(form, emptyForm());
+  set(formPayload, emptyForm());
+  set(enableForAllChains, false);
 };
 
 const valid = ref<boolean>(false);
 const showForm = ref(false);
 const editMode = ref<boolean>(false);
-const form = ref<EthNamesPayload>(emptyForm());
+const formPayload = ref<AddressBookPayload>(emptyForm());
 
 const {
   isPending: isTimeoutPending,
@@ -74,34 +81,36 @@ const onSearchTermChange = (term: string) => {
   start();
 };
 
-const { addEthAddressBook, updateEthAddressBook } = useEthNamesStore();
+const { addAddressBook, updateAddressBook } = useAddressesNamesStore();
 const { setMessage } = useMessageStore();
 
 const save = async () => {
   if (!get(valid)) return;
   try {
-    const formVal = get(form);
+    const formVal = get(formPayload);
     const payload = {
       address: formVal.address.trim(),
-      name: formVal.name
+      name: formVal.name,
+      blockchain: get(enableForAllChains) ? null : formVal.blockchain
     };
     const location = formVal.location;
     if (get(editMode)) {
-      await updateEthAddressBook(location, [payload]);
+      await updateAddressBook(location, [payload]);
     } else {
-      await addEthAddressBook(location, [payload]);
+      await addAddressBook(location, [payload]);
     }
 
     set(tab, location === 'global' ? 0 : 1);
+    set(selectedChain, formVal.blockchain);
     set(showForm, false);
   } catch (e: any) {
     const values = { message: e.message };
     const title = get(editMode)
-      ? tc('eth_address_book.actions.edit.error.title')
-      : tc('eth_address_book.actions.add.error.title');
+      ? tc('address_book.actions.edit.error.title')
+      : tc('address_book.actions.add.error.title');
     const description = get(editMode)
-      ? tc('eth_address_book.actions.edit.error.description', 0, values)
-      : tc('eth_address_book.actions.add.error.description', 0, values);
+      ? tc('address_book.actions.edit.error.description', 0, values)
+      : tc('address_book.actions.add.error.description', 0, values);
     setMessage({
       title,
       description,
@@ -109,28 +118,42 @@ const save = async () => {
     });
   }
 };
+
+const css = useCssModule();
 </script>
 <template>
   <v-container>
     <v-row justify="space-between" align="center" no-gutters>
       <v-col>
-        <card-title>{{ tc('eth_address_book.title') }}</card-title>
+        <card-title>{{ tc('address_book.title') }}</card-title>
       </v-col>
     </v-row>
     <card outlined-body class="mt-8">
       <template #title>
-        {{ tc('eth_address_book.table.title') }}
+        {{ tc('address_book.table.title') }}
       </template>
       <template #subtitle>
-        {{ tc('eth_address_book.table.subtitle') }}
+        {{ tc('address_book.table.subtitle') }}
       </template>
 
       <template #search>
-        <v-row justify="end" no-gutters>
-          <v-col cols="12" sm="4">
+        <v-row class="pt-2 pb-6">
+          <v-col cols="12" sm="4" md="3">
+            <chain-select
+              evm-only
+              :model-value="selectedChain"
+              dense
+              hide-details
+              @update:model-value="selectedChain = $event"
+            />
+          </v-col>
+          <v-col cols="12" sm="8" md="6" lg="4">
             <v-text-field
               :value="pendingSearch"
+              input-class=""
               dense
+              :class="css.filter"
+              hide-details
               prepend-inner-icon="mdi-magnify"
               :label="tc('common.actions.filter')"
               outlined
@@ -178,13 +201,14 @@ const save = async () => {
 
       <v-tabs-items v-model="tab">
         <v-tab-item v-for="loc in locations" :key="loc">
-          <eth-address-book-table
+          <address-book-table
             :location="loc"
+            :blockchain="selectedChain"
             :search="search"
             @edit="openForm($event)"
           >
             {{ loc }}
-          </eth-address-book-table>
+          </address-book-table>
         </v-tab-item>
       </v-tabs-items>
     </card>
@@ -193,18 +217,33 @@ const save = async () => {
       :display="showForm"
       :title="
         editMode
-          ? tc('eth_address_book.dialog.edit_title')
-          : tc('eth_address_book.dialog.add_title')
+          ? tc('address_book.dialog.edit_title')
+          : tc('address_book.dialog.add_title')
       "
       :action-disabled="!valid"
       @confirm="save"
       @cancel="hideForm()"
     >
-      <eth-address-book-form
-        v-model="form"
+      <address-book-form
+        v-model="formPayload"
         :edit="editMode"
+        :enable-for-all-chain="enableForAllChains"
         @valid="valid = $event"
+        @update:enable-for-all-chains="enableForAllChains = $event"
       />
     </big-dialog>
   </v-container>
 </template>
+
+<style lang="scss" module>
+.filter {
+  :global {
+    .v-input {
+      &__slot {
+        height: 46px !important;
+        padding-top: 2px !important;
+      }
+    }
+  }
+}
+</style>

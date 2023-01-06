@@ -311,11 +311,11 @@ const routes = setupLayouts([
     ]
   },
   {
-    path: Routes.ETH_ADDRESS_BOOK_MANAGER,
+    path: Routes.ADDRESS_BOOK_MANAGER,
     meta: {
-      noteLocation: NoteLocation.ETH_ADDRESS_BOOK_MANAGER
+      noteLocation: NoteLocation.ADDRESS_BOOK_MANAGER
     },
-    component: async () => import('../pages/eth-address-book-manager/index.vue')
+    component: async () => import('../pages/address-book-manager/index.vue')
   },
   {
     path: Routes.API_KEYS,

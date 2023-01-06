@@ -82,7 +82,7 @@ describe('settings:frontend', () => {
             dateInputFormat: DateFormat.DateMonthYearHourMinuteSecond,
             versionUpdateCheckFrequency:
               Defaults.DEFAULT_VERSION_UPDATE_CHECK_FREQUENCY,
-            enableEthNames: true
+            enableAliasNames: true
           })
         )
       })
@@ -156,7 +156,7 @@ describe('settings:frontend', () => {
       },
       dateInputFormat: DateFormat.DateMonthYearHourMinuteSecond,
       versionUpdateCheckFrequency: 24,
-      enableEthNames: true
+      enableAliasNames: true
     };
 
     store.update(state);
@@ -219,6 +219,6 @@ describe('settings:frontend', () => {
       DateFormat.DateMonthYearHourMinuteSecond
     );
     expect(store.versionUpdateCheckFrequency).toBe(24);
-    expect(store.enableEthNames).toBe(true);
+    expect(store.enableAliasNames).toBe(true);
   });
 });

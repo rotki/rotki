@@ -1,7 +1,7 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type MaybeRef } from '@vueuse/core';
 import { useBlockchainBalanceApi } from '@/services/balances/blockchain';
-import { useEthNamesStore } from '@/store/balances/ethereum-names';
+import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { type BlockchainBalancePayload } from '@/store/balances/types';
 import { useBtcBalancesStore } from '@/store/blockchain/balances/btc';
 import { useChainBalancesStore } from '@/store/blockchain/balances/chains';
@@ -28,7 +28,7 @@ export const useBlockchainBalancesStore = defineStore(
       useBtcBalancesStore();
     const { update: updateChains, updatePrices: updateChainPrices } =
       useChainBalancesStore();
-    const { fetchEnsNames } = useEthNamesStore();
+    const { fetchEnsNames } = useAddressesNamesStore();
     const { tc } = useI18n();
 
     const fetch = async (

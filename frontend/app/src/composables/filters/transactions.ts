@@ -98,10 +98,7 @@ export const useTransactionFilter = (disableProtocols: boolean) => {
           keyValue: TransactionFilterValueKeys.EVM_CHAIN,
           description: tc('transactions.filter.chain'),
           string: true,
-          suggestions: () => {
-            const values = get(evmChainNames);
-            return values.slice(0, values.length / 2);
-          },
+          suggestions: () => get(evmChainNames),
           validate: (chain: string) => !!chain
         }
       );

@@ -1,37 +1,39 @@
 <script setup lang="ts">
 import { type GeneralAccount } from '@rotki/common/lib/account';
 import { type Blockchain } from '@rotki/common/lib/blockchain';
-import { type PropType } from 'vue';
 import AccountDisplay from '@/components/display/AccountDisplay.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
-import { useEthNamesStore } from '@/store/balances/ethereum-names';
+import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useAccountBalancesStore } from '@/store/blockchain/accountbalances';
 
-const props = defineProps({
-  label: { required: false, type: String, default: '' },
-  hint: { required: false, type: Boolean, default: false },
-  loading: { required: false, type: Boolean, default: false },
-  usableAddresses: {
-    required: false,
-    type: Array as PropType<string[]>,
-    default: () => []
-  },
-  multiple: { required: false, type: Boolean, default: false },
-  value: {
-    required: false,
-    type: [Object, Array] as PropType<GeneralAccount[] | GeneralAccount | null>,
-    default: null
-  },
-  chains: {
-    required: false,
-    type: Array as PropType<Blockchain[]>,
-    default: () => []
-  },
-  outlined: { required: false, type: Boolean, default: false },
-  dense: { required: false, type: Boolean, default: false },
-  noPadding: { required: false, type: Boolean, default: false },
-  hideOnEmptyUsable: { required: false, type: Boolean, default: false }
-});
+const props = withDefaults(
+  defineProps<{
+    label?: string;
+    hint?: boolean;
+    loading?: boolean;
+    usableAddresses?: string[];
+    multiple?: boolean;
+    value?: GeneralAccount[] | GeneralAccount | null;
+    chains?: Blockchain[];
+    outlined?: boolean;
+    dense?: boolean;
+    noPadding?: boolean;
+    hideOnEmptyUsable?: boolean;
+  }>(),
+  {
+    label: '',
+    hint: false,
+    loading: false,
+    usableAddresses: () => [],
+    multiple: false,
+    value: null,
+    chains: () => [],
+    outlined: false,
+    dense: false,
+    noPadding: false,
+    hideOnEmptyUsable: false
+  }
+);
 
 const emit = defineEmits(['input']);
 
@@ -71,10 +73,10 @@ const displayedAccounts = computed(() => {
   return get(hideOnEmptyUsable) ? [] : accounts;
 });
 
-const { ethNameSelector } = useEthNamesStore();
+const { addressNameSelector } = useAddressesNamesStore();
 
 const filter = (item: GeneralAccount, queryText: string) => {
-  const text = (get(ethNameSelector(item.address)) ?? '').toLowerCase();
+  const text = (get(addressNameSelector(item.address)) ?? '').toLowerCase();
   const address = item.address.toLocaleLowerCase();
   const query = queryText.toLocaleLowerCase();
 

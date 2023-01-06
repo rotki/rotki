@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
-const enableEthNames = ref<boolean>(true);
-const { enableEthNames: enabled } = storeToRefs(useFrontendSettingsStore());
+const enableAliasNames = ref<boolean>(true);
+const { enableAliasNames: enabled } = storeToRefs(useFrontendSettingsStore());
 
 onMounted(() => {
-  set(enableEthNames, get(enabled));
+  set(enableAliasNames, get(enabled));
 });
 
 const { tc } = useI18n();
@@ -14,14 +14,14 @@ const { tc } = useI18n();
 <template>
   <settings-option
     #default="{ error, success, update }"
-    setting="enableEthNames"
+    setting="enableAliasNames"
     frontend-setting
-    :error-message="tc('frontend_settings.validation.enable_eth_names.error')"
+    :error-message="tc('frontend_settings.validation.enable_alias_names.error')"
   >
     <v-switch
-      v-model="enableEthNames"
-      class="general-settings__fields__enable_eth_names mb-4 mt-2"
-      :label="tc('frontend_settings.label.enable_eth_names')"
+      v-model="enableAliasNames"
+      class="general-settings__fields__enable_alias_names mb-4 mt-2"
+      :label="tc('frontend_settings.label.enable_alias_names')"
       :success-messages="success"
       :error-messages="error"
       @change="update"

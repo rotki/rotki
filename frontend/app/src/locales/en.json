@@ -835,6 +835,78 @@
     },
     "view_addresses": "View the queried addresses for {name}"
   },
+  "address_book": {
+    "actions": {
+      "add": {
+        "error": {
+          "description": "Adding to the address book was not successful: {message}",
+          "title": "Address book addition failed"
+        }
+      },
+      "delete": {
+        "dialog": {
+          "message": "Are you sure you want to delete address book entry for {address} ({chain})?",
+          "title": "Delete the address book entry"
+        },
+        "error": {
+          "description": "Deleting address book for {address} ({chain}) was not successful: {message}",
+          "title": "Address book deletion failed"
+        },
+        "tooltip": "Delete the address book"
+      },
+      "edit": {
+        "error": {
+          "description": "Editing address book was not successful: {message}",
+          "title": "Address book edit failed"
+        },
+        "tooltip": "Edit the address book"
+      },
+      "fetch": {
+        "error": {
+          "message": "Failed to retrieve the address book: {message}",
+          "title": "Querying address book"
+        }
+      }
+    },
+    "dialog": {
+      "add_title": "Add address book entry",
+      "edit_title": "Edit address book entry"
+    },
+    "form": {
+      "labels": {
+        "address": "Address",
+        "for_all_chain": "Save this name for all chains"
+      },
+      "no_suggestions_available": "No Suggestions Available",
+      "validation": {
+        "address": "The address field cannot be empty",
+        "name": "The name field cannot be empty",
+        "valid": "Please input valid ETH address"
+      }
+    },
+    "hint": {
+      "global": "Global",
+      "global_description": "address book is saved in global db (shared across all accounts in this device)",
+      "priority": {
+        "list": {
+          "blockchain_account_labels": "Blockchain account labels",
+          "ens_names": "ENS names",
+          "ethereum_tokens": "Ethereum tokens",
+          "global_address_book": "Global address book",
+          "hardcoded_mappings": "Hardcoded mappings",
+          "private_address_book": "Private address book"
+        },
+        "title": "The priority of the returned names adheres to the following order. From top to bottom, the first name found will be shown."
+      },
+      "private": "Private",
+      "private_description": "address book is saved only for this account."
+    },
+    "table": {
+      "subtitle": "Add, edit, remove alias name for addresses. Changes in the names will be reflected across the app.",
+      "title": "Address Book"
+    },
+    "title": "Address Book Management"
+  },
   "address_name_priority_setting": {
     "data_name": "priority"
   },
@@ -845,6 +917,12 @@
     },
     "loading": "Please wait while rotki queries the airdrops for your addresses...",
     "title": "Airdrops"
+  },
+  "alias_names": {
+    "error": {
+      "message": "Failed to retrieve the alias names: {message}",
+      "title": "Querying alias names"
+    }
   },
   "amount_display": {
     "click_to_copy": "Click to copy",
@@ -1256,6 +1334,7 @@
     "events": "Events",
     "ignored_in_accounting": "Ignored in Accounting",
     "location": "Location",
+    "multi_chain": "Multi Chain",
     "name": "Name",
     "no_premium": "No premium subscription detected. ",
     "of": "of",
@@ -1701,83 +1780,6 @@
   "eth2_validator_limit_row": {
     "label": "Beacon chain validators"
   },
-  "eth_address_book": {
-    "actions": {
-      "add": {
-        "error": {
-          "description": "Adding ETH address book was not successful: {message}",
-          "title": "ETH address book addition failed"
-        }
-      },
-      "delete": {
-        "dialog": {
-          "message": "Are you sure you want to delete this ETH address book entry?",
-          "title": "Delete the ETH address book"
-        },
-        "error": {
-          "description": "Deleting ETH address book was not successful: {message}",
-          "title": "ETH address book deletion failed"
-        },
-        "tooltip": "Delete the address book"
-      },
-      "edit": {
-        "error": {
-          "description": "Editing ETH address book was not successful: {message}",
-          "title": "ETH address book edit failed"
-        },
-        "tooltip": "Edit the address book"
-      },
-      "fetch": {
-        "error": {
-          "message": "Failed to retrieve the ETH address book: {message}",
-          "title": "Querying ETH address book"
-        }
-      }
-    },
-    "dialog": {
-      "add_title": "Add address book",
-      "edit_title": "Edit address book"
-    },
-    "form": {
-      "labels": {
-        "address": "ETH Address"
-      },
-      "no_suggestions_available": "No Suggestions Available",
-      "validation": {
-        "address": "The ETH address field cannot be empty",
-        "name": "The name field cannot be empty",
-        "valid": "Please input valid ETH address"
-      }
-    },
-    "hint": {
-      "global": "Global",
-      "global_description": "address book is saved in global db (shared across all accounts in this device)",
-      "priority": {
-        "list": {
-          "blockchain_account_labels": "Blockchain account labels",
-          "ens_names": "ENS names",
-          "ethereum_tokens": "Ethereum tokens",
-          "global_address_book": "Global address book",
-          "hardcoded_mappings": "Hardcoded mappings",
-          "private_address_book": "Private address book"
-        },
-        "title": "The priority of the returned names adheres to the following order. From top to bottom, the first name found will be shown."
-      },
-      "private": "Private",
-      "private_description": "address book is saved only for this account."
-    },
-    "table": {
-      "subtitle": "Add, edit, remove name for ETH addresses. Changes in the names will be reflected across the app.",
-      "title": "Address Book"
-    },
-    "title": "Eth Address Book Management"
-  },
-  "eth_names": {
-    "error": {
-      "message": "Failed to retrieve the ETH names: {message}",
-      "title": "Querying ETH names"
-    }
-  },
   "ethereum_rpc_node_manager": {
     "activate_error": {
       "title": "Activating/Deactivating node {node} failed"
@@ -2062,7 +2064,7 @@
     "label": {
       "abbreviate_number": "Use abbreviations for large numbers.",
       "animations": "Reduce animations effect. This setting will improve app performance. NOTE: You will see animations that are not smooth, which aims to reduce the use of system resources.",
-      "enable_eth_names": "Show alias name for ETH addresses.",
+      "enable_alias_names": "Show alias name for blockchain addresses.",
       "include_nfts": "Include NFTs in the graphs and total net worth",
       "include_nfts_hint": "By default graphs and dashboard include the value of all the NFTs",
       "query_period": "Query period in seconds",
@@ -2076,7 +2078,7 @@
     },
     "subtitle": {
       "abbreviate_number": "For example, 1.234.567 will appear as 1.23 M when this setting is enabled",
-      "eth_names": "Use ETH alias names",
+      "alias_names": "Alias name for addresses",
       "graph_basis": "Graph basis",
       "include_nfts": "Include NFTs in graphs and total amounts",
       "query": "Periodic status query",
@@ -2088,8 +2090,8 @@
       "animations": {
         "error": "Error setting animations state: {message}"
       },
-      "enable_eth_names": {
-        "error": "Failed to change ETH names visibility"
+      "enable_alias_names": {
+        "error": "Failed to change alias names visibility"
       },
       "periodic_query": {
         "error": "Error setting query period",
@@ -2881,7 +2883,7 @@
       "custom_assets": "Custom Assets",
       "managed_assets": "Managed Assets"
     },
-    "manage_eth_address_book": "Manage ETH Address Book",
+    "manage_address_book": "Manage Address Book",
     "manage_prices": "Manage Prices",
     "manage_prices_sub": {
       "historic_prices": "Historic Prices",

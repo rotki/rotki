@@ -9,12 +9,12 @@ const { t } = useI18n();
     <div class="pa-4">
       <div class="pb-4">
         <div>
-          <b>{{ t('eth_address_book.hint.global') }}</b>
-          {{ t('eth_address_book.hint.global_description') }}
+          <b>{{ t('address_book.hint.global') }}</b>
+          {{ t('address_book.hint.global_description') }}
         </div>
         <div>
-          <b>{{ t('eth_address_book.hint.private') }}</b>
-          {{ t('eth_address_book.hint.private_description') }}
+          <b>{{ t('address_book.hint.private') }}</b>
+          {{ t('address_book.hint.private_description') }}
         </div>
       </div>
     </div>

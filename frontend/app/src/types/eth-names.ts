@@ -1,19 +1,36 @@
 import { z } from 'zod';
+import { Blockchain } from '@rotki/common/lib/blockchain';
 
 export const EthNames = z.record(z.string().nullable());
 export type EthNames = z.infer<typeof EthNames>;
-export const EthNamesEntry = z.object({
+
+export const AddressBookSimplePayload = z.object({
   address: z.string(),
+  blockchain: z
+    .string()
+    .transform(blockchain => {
+      return blockchain?.toUpperCase() as Blockchain;
+    })
+    .nullable()
+});
+
+export type AddressBookSimplePayload = z.infer<typeof AddressBookSimplePayload>;
+
+export const AddressBookSimplePayloadArray = z.array(AddressBookSimplePayload);
+export type AddressBookSimplePayloadArray = z.infer<
+  typeof AddressBookSimplePayloadArray
+>;
+
+export const AddressBookEntry = AddressBookSimplePayload.extend({
   name: z.string()
 });
-export type EthNamesEntry = z.infer<typeof EthNamesEntry>;
-export const EthNamesEntries = z.array(EthNamesEntry);
-export type EthNamesEntries = z.infer<typeof EthNamesEntries>;
-export const EthAddressBookLocation = z.enum(['global', 'private']);
-export const EthNamesPayload = EthNamesEntry.merge(
-  z.object({
-    location: EthAddressBookLocation
-  })
-);
-export type EthNamesPayload = z.infer<typeof EthNamesPayload>;
-export type EthAddressBookLocation = z.infer<typeof EthAddressBookLocation>;
+export type AddressBookEntry = z.infer<typeof AddressBookEntry>;
+export const AddressBookEntries = z.array(AddressBookEntry);
+export type AddressBookEntries = z.infer<typeof AddressBookEntries>;
+export const AddressBookLocation = z.enum(['global', 'private']);
+export const AddressBookPayload = AddressBookEntry.extend({
+  location: AddressBookLocation,
+  blockchain: z.nativeEnum(Blockchain).nullable()
+});
+export type AddressBookPayload = z.infer<typeof AddressBookPayload>;
+export type AddressBookLocation = z.infer<typeof AddressBookLocation>;
