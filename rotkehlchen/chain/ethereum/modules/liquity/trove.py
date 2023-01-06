@@ -77,7 +77,7 @@ class Liquity(HasDSProxy):
         """Query liquity contract to detect open troves"""
         # make a copy of the list to avoid modifications in the list that is passed as argument
         addresses = addresses_list.copy()
-        proxied_addresses = self._get_accounts_having_proxy()
+        proxied_addresses = self.ethereum.proxies_inquirer.get_accounts_having_proxy()
         proxies_to_address = {v: k for k, v in proxied_addresses.items()}
         addresses += proxied_addresses.values()
 
@@ -171,7 +171,7 @@ class Liquity(HasDSProxy):
         """
         # make a copy of the list to avoid modifications in the list that is passed as argument
         addresses = addresses.copy()
-        proxied_addresses = self._get_accounts_having_proxy()
+        proxied_addresses = self.ethereum.proxies_inquirer.get_accounts_having_proxy()
         addresses += proxied_addresses.values()
 
         # Build the calls that need to be made in order to get the status in the SP

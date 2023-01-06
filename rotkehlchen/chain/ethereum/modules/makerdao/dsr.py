@@ -126,7 +126,7 @@ class MakerdaoDsr(HasDSProxy):
 
     def reset_last_query_ts(self) -> None:
         """Reset the last query timestamps, effectively cleaning the caches"""
-        super().reset_last_query_ts()
+        self.ethereum.proxies_inquirer.reset_last_query_ts()
         self.last_historical_dsr_query_ts = 0
 
     def get_current_dsr(self) -> DSRCurrentBalances:
@@ -140,7 +140,7 @@ class MakerdaoDsr(HasDSProxy):
         queries fail for some reason
         """
         with self.lock:
-            proxy_mappings = self._get_accounts_having_proxy()
+            proxy_mappings = self.ethereum.proxies_inquirer.get_accounts_having_proxy()
             balances = {}
             try:
                 current_dai_price = Inquirer().find_usd_price(A_DAI)
@@ -405,7 +405,7 @@ class MakerdaoDsr(HasDSProxy):
             return self.historical_dsr_reports
 
         with self.lock:
-            proxy_mappings = self._get_accounts_having_proxy()
+            proxy_mappings = self.ethereum.proxies_inquirer.get_accounts_having_proxy()
             reports = {}
             for account, proxy in proxy_mappings.items():
                 report = self._historical_dsr_for_account(account, proxy)

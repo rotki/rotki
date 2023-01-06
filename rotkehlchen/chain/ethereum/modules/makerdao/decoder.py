@@ -97,8 +97,8 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
             return address
 
         # not directly from our account. Proxy?
-        self._get_accounts_having_proxy()
-        proxy_owner = self.proxy_to_address.get(address)
+        self.ethereum.proxies_inquirer.get_accounts_having_proxy()
+        proxy_owner = self.ethereum.proxies_inquirer.proxy_to_address.get(address)
         if proxy_owner is not None and self.base.is_tracked(proxy_owner):
             return proxy_owner
 

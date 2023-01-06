@@ -143,10 +143,10 @@ def _add_eth_abis_json(cursor: 'DBCursor') -> None:
     log.debug('Exit _add_eth_abis_json')
 
 
-def _add_eth_contracts_json(cursor: 'DBCursor') -> tuple[int, int]:
+def _add_eth_contracts_json(cursor: 'DBCursor') -> tuple[int, int, int]:
     log.debug('Enter _add_eth_contracts_json')
 
-    eth_scan_abi_id, multicall_abi_id = None, None
+    eth_scan_abi_id, multicall_abi_id, ds_registry_abi_id = None, None, None
     root_dir = Path(__file__).resolve().parent.parent.parent
     with open(root_dir / 'data' / 'eth_contracts.json') as f:
         contract_entries = json.loads(f.read())
@@ -218,6 +218,8 @@ def _add_eth_contracts_json(cursor: 'DBCursor') -> tuple[int, int]:
             eth_scan_abi_id = abi_id
         elif contract_key == 'MULTICALL2':
             multicall_abi_id = abi_id
+        elif contract_key == 'DS_PROXY_REGISTRY':
+            ds_registry_abi_id = abi_id
 
         cursor.execute(
             'INSERT INTO contract_data(address, chain_id, name, abi, deployed_block) '
@@ -225,16 +227,22 @@ def _add_eth_contracts_json(cursor: 'DBCursor') -> tuple[int, int]:
             (items['address'], 1, contract_key, abi_id, items['deployed_block']),
         )
 
-    if eth_scan_abi_id is None or multicall_abi_id is None:
+    if eth_scan_abi_id is None or multicall_abi_id is None or ds_registry_abi_id is None:
         raise DBUpgradeError(
-            'Failed to find either eth_scan or multicall abi id during v3->v4 global DB upgrade',
+            'Failed to find either eth_scan or multicall or ds registry abi id during '
+            'v3->v4 global DB upgrade',
         )
 
     log.debug('Exit _add_eth_contracts_json')
-    return eth_scan_abi_id, multicall_abi_id
+    return eth_scan_abi_id, multicall_abi_id, ds_registry_abi_id
 
 
-def _add_optimism_contracts(cursor: 'DBCursor', eth_scan_abi_id: int, multicall_abi_id: int) -> None:  # noqa: E501
+def _add_optimism_contracts(
+        cursor: 'DBCursor',
+        eth_scan_abi_id: int,
+        multicall_abi_id: int,
+        ds_registry_abi_id: int,
+) -> None:
     log.debug('Enter _add_optimism_contracts')
 
     cursor.executemany(
@@ -252,6 +260,12 @@ def _add_optimism_contracts(cursor: 'DBCursor', eth_scan_abi_id: int, multicall_
             'MULTICALL2',
             multicall_abi_id,
             722566,
+        ), (
+            '0x283Cc5C26e53D66ed2Ea252D986F094B37E6e895',
+            10,
+            'DS_PROXY_REGISTRY',
+            ds_registry_abi_id,
+            2944824,
         )],
     )
 
@@ -361,8 +375,8 @@ def migrate_to_v4(connection: 'DBConnection') -> None:
     with connection.write_ctx() as cursor:
         _create_new_tables(cursor)
         _add_eth_abis_json(cursor)
-        eth_scan_abi_id, multicall_abi_id = _add_eth_contracts_json(cursor)
-        _add_optimism_contracts(cursor, eth_scan_abi_id, multicall_abi_id)
+        eth_scan_abi_id, multicall_abi_id, ds_registry_abi_id = _add_eth_contracts_json(cursor)
+        _add_optimism_contracts(cursor, eth_scan_abi_id, multicall_abi_id, ds_registry_abi_id)
         _populate_asset_collections(cursor, root_dir)
         _populate_multiasset_mappings(cursor, root_dir)
         _upgrade_address_book_table(cursor)

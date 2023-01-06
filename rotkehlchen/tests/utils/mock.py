@@ -272,3 +272,10 @@ def patch_avalanche_request(avalanche_manager, mock_data):
         'get',
         side_effect=mock_covalent_query,
     )
+
+
+def mock_proxies(mocked_proxies):
+    return patch(
+        'rotkehlchen.chain.evm.proxies_inquirer.EvmProxiesInquirer.get_accounts_having_proxy',
+        return_value=mocked_proxies,
+    )

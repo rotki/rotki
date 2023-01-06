@@ -248,7 +248,7 @@ class MakerdaoVaults(HasDSProxy):
 
     def reset_last_query_ts(self) -> None:
         """Reset the last query timestamps, effectively cleaning the caches"""
-        super().reset_last_query_ts()
+        self.ethereum.proxies_inquirer.reset_last_query_ts()
         self.last_vault_mapping_query_ts = 0
         self.last_vault_details_query_ts = 0
 
@@ -658,7 +658,7 @@ class MakerdaoVaults(HasDSProxy):
 
         with self.lock:
             self.vault_mappings = defaultdict(list)
-            proxy_mappings = self._get_accounts_having_proxy()
+            proxy_mappings = self.ethereum.proxies_inquirer.get_accounts_having_proxy()
             vaults = []
             for user_address, proxy in proxy_mappings.items():
                 vaults.extend(
@@ -689,7 +689,7 @@ class MakerdaoVaults(HasDSProxy):
             return self.vault_details
 
         self.vault_details = []
-        proxy_mappings = self._get_accounts_having_proxy()
+        proxy_mappings = self.ethereum.proxies_inquirer.get_accounts_having_proxy()
         # Make sure that before querying vault details there has been a recent vaults call
         vaults = self.get_vaults()
         for vault in vaults:
@@ -789,7 +789,7 @@ class MakerdaoVaults(HasDSProxy):
     def on_account_addition(self, address: ChecksumEvmAddress) -> None:  # pylint: disable=useless-return  # noqa: E501
         super().on_account_addition(address)
         # Check if it has been added to the mapping
-        proxy_address = self.address_to_proxy.get(address)
+        proxy_address = self.ethereum.proxies_inquirer.address_to_proxy.get(address)
         if proxy_address:
             # get any vaults the proxy owns
             self._get_vaults_of_address(user_address=address, proxy_address=proxy_address)
