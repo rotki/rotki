@@ -51,7 +51,7 @@ class DBAddressbook:
             optional_chain_addresses: Optional[list[OptionalChainAddress]] = None,
     ) -> list[AddressbookEntry]:
         """
-        Returns addressbook entries for the given pairs (address, blockhain).
+        Returns addressbook entries for the given pairs (address, blockchain).
         If blockchain is None for a given pair, returns all entries for the pair's address.
         """
         entries = []
@@ -148,7 +148,7 @@ class DBAddressbook:
         addressbook
         """
         # fist check that all addresses exist locally. Since each address can have multiple
-        # blockchains entry we need to count them before trying to delete
+        # blockchains entries we need to count them before trying to delete
         addresses = {chain_address.address for chain_address in chain_addresses}
         with self.read_ctx(book_type) as read_cursor:
             read_cursor.execute(

@@ -9,11 +9,13 @@ from rotkehlchen.accounting.structures.base import (
     HistoryEventType,
 )
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_SAI
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import ChainID, Location, deserialize_evm_tx_hash
+from rotkehlchen.types import ChainID, EvmTransaction, Location, Timestamp, deserialize_evm_tx_hash
+from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
 
 def assert_events_equal(e1: HistoryBaseEntry, e2: HistoryBaseEntry) -> None:
@@ -86,3 +88,70 @@ def test_tx_decode(ethereum_transaction_decoder, database):
                 assert receipt is not None, 'all receipts should be queried in the test DB'
                 events = decoder.get_or_decode_transaction_events(cursor, tx, receipt, ignore_cache=False)  # noqa: E501
         assert decode_mock.call_count == len(transactions)
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306', '0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])  # noqa: E501
+@pytest.mark.parametrize('optimism_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
+def test_decode_pending_transactions_different_chains(
+        database,
+        eth_transactions,
+        optimism_transactions,
+        ethereum_accounts,
+):
+    """Test that the different evm transactions modules only query receipts for their chain"""
+    evmhash_opt = deserialize_evm_tx_hash('0x063d45910f29e0954a52aee39febba9be784d49af7588a590dc2fd7d156b4665')  # noqa: E501
+    evmhash_eth = deserialize_evm_tx_hash('0x3f313e90ed07044fdbb1016ff7986fd26adaeb05e8e9d3252ae0a8318cb8100d')  # noqa: E501
+    evmhash_eth_yabir = deserialize_evm_tx_hash('0x91016e7fb9f524449dd1a0b4faef9bc630e9c01c31b6d3383c94975269335afe')  # noqa: E501
+    transaction_opt = EvmTransaction(
+        tx_hash=evmhash_opt,
+        chain_id=ChainID.OPTIMISM,
+        timestamp=Timestamp(1646375440),
+        block_number=14318825,
+        from_address=ethereum_accounts[0],
+        to_address=string_to_evm_address('0x7F5c764cBc14f9669B88837ca1490cCa17c31607'),
+        value=0,
+        gas=171249,
+        gas_price=22990000000,
+        gas_used=171249,
+        input_data=hexstring_to_bytes('0xa9059cbb000000000000000000000000106b62fdd27b748cf2da3bacab91a2cabaee6dca0000000000000000000000000000000000000000000000000000000086959530'),  # noqa: E501
+        nonce=507,
+    )
+    transaction_eth = EvmTransaction(
+        tx_hash=evmhash_eth,
+        chain_id=ChainID.ETHEREUM,
+        timestamp=Timestamp(1646375440),
+        block_number=14318825,
+        from_address=ethereum_accounts[0],
+        to_address=string_to_evm_address('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
+        value=0,
+        gas=171249,
+        gas_price=22990000000,
+        gas_used=171249,
+        input_data=hexstring_to_bytes('0xa9059cbb000000000000000000000000c5d494aa0cbabd7871af0ef122fb410fa25c3379000000000000000000000000000000000000000000000000000000257a9974a0'),  # noqa: E501
+        nonce=507,
+    )
+    transaction_eth_yabir = EvmTransaction(
+        tx_hash=evmhash_eth_yabir,
+        chain_id=ChainID.ETHEREUM,
+        timestamp=Timestamp(1646375440),
+        block_number=14318825,
+        from_address=ethereum_accounts[1],
+        to_address=string_to_evm_address('0x6B175474E89094C44Da98b954EedeAC495271d0F'),
+        value=0,
+        gas=171249,
+        gas_price=22990000000,
+        gas_used=171249,
+        input_data=hexstring_to_bytes('0xa9059cbb000000000000000000000000d9e40f3e33f62029172f6f8b691cf09d476bda3c000000000000000000000000000000000000000000000001a055690d9db80000'),  # noqa: E501
+        nonce=507,
+    )
+
+    dbevmtx = DBEvmTx(database)
+    with database.user_write() as cursor:
+        dbevmtx.add_evm_transactions(cursor, [transaction_opt, transaction_eth], relevant_address=ethereum_accounts[0])  # noqa: E501
+        dbevmtx.add_evm_transactions(cursor, [transaction_eth_yabir], relevant_address=ethereum_accounts[1])  # noqa: E501
+
+    assert len(dbevmtx.get_transaction_hashes_no_receipt(tx_filter_query=None, limit=None)) == 3
+    eth_transactions.get_receipts_for_transactions_missing_them(addresses=[ethereum_accounts[0]])
+    assert dbevmtx.get_transaction_hashes_no_receipt(tx_filter_query=None, limit=None) == [evmhash_opt, evmhash_eth_yabir]  # noqa: E501
+    optimism_transactions.get_receipts_for_transactions_missing_them()
+    assert dbevmtx.get_transaction_hashes_no_receipt(tx_filter_query=None, limit=None) == [evmhash_eth_yabir]  # noqa: E501
