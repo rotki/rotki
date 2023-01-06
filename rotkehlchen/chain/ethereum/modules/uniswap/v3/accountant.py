@@ -24,4 +24,25 @@ class Uniswapv3Accountant(ModuleAccountantInterface):
                 take=2,
                 multitake_treatment=TxMultitakeTreatment.SWAP,
             ),
+            get_tx_event_type_identifier(HistoryEventType.RECEIVE, HistoryEventSubType.NFT, CPT_UNISWAP_V3): TxEventSettings(  # noqa: E501
+                taxable=False,
+                count_entire_amount_spend=False,
+                count_cost_basis_pnl=False,
+                method='acquisition',
+                take=1,
+            ),
+            get_tx_event_type_identifier(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET, CPT_UNISWAP_V3): TxEventSettings(  # noqa: E501
+                taxable=False,
+                count_entire_amount_spend=False,
+                count_cost_basis_pnl=False,
+                method='spend',
+                take=1,
+            ),
+            get_tx_event_type_identifier(HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET, CPT_UNISWAP_V3): TxEventSettings(  # noqa: E501
+                taxable=False,
+                count_entire_amount_spend=False,
+                count_cost_basis_pnl=False,
+                method='acquisition',
+                take=1,
+            ),
         }

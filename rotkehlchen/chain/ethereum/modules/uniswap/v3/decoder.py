@@ -456,6 +456,7 @@ class Uniswapv3Decoder(DecoderInterface):
             event.event_type == HistoryEventType.RECEIVE and
             event.event_subtype == HistoryEventSubType.NONE
         ):
+            event.event_subtype = HistoryEventSubType.NFT
             event.notes = f'Create Uniswap V3 LP position with id {hex_or_bytes_to_int(tx_log.topics[3])}'  # noqa: E501
             event.counterparty = CPT_UNISWAP_V3
             return True
