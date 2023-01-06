@@ -473,10 +473,13 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
             dbevmtx = DBEvmTx(self.database)
             with self.database.conn.read_ctx() as cursor:
                 if addresses is None:
-                    tx_filter_query = None
+                    tx_filter_query = EvmTransactionsFilterQuery.make(
+                        chain_id=self.evm_inquirer.chain_id,
+                    )
                 else:
                     tx_filter_query = EvmTransactionsFilterQuery.make(
                         addresses=addresses,
+                        chain_id=self.evm_inquirer.chain_id,
                     )
 
                 hash_results = dbevmtx.get_transaction_hashes_no_receipt(
@@ -503,5 +506,5 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
                         )
                     except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
                         if 'UNIQUE constraint failed: evmtx_receipts.tx_hash' not in str(e):
-                            log.error(f'Fialed to store transaction {entry.hex()} receipt due to {str(e)}')  # noqa: E501
+                            log.error(f'Failed to store transaction {entry.hex()} receipt due to {str(e)}')  # noqa: E501
                             raise  # if receipt is already added by other greenlet it's fine
