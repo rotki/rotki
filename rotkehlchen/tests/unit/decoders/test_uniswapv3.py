@@ -706,7 +706,7 @@ def test_swap_tokens_to_tokens_multiple_receipts(database, ethereum_inquirer, et
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY_4]])
-def test_uniswap_v3_withdrawal(database, ethereum_inquirer, eth_transactions):
+def test_uniswap_v3_remove_liquidity(database, ethereum_inquirer, eth_transactions):
     """
     This checks that removing liquidity from Uniswap V3 LP is decoded properly.
 
@@ -883,9 +883,9 @@ def test_uniswap_v3_withdrawal(database, ethereum_inquirer, eth_transactions):
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY_5]])
-def test_uniswap_v3_deposit(database, ethereum_inquirer, eth_transactions):
+def test_uniswap_v3_add_liquidity(database, ethereum_inquirer, eth_transactions):
     """
-    This checks that removing liquidity from Uniswap V3 LP is decoded properly.
+    This checks that adding liquidity from Uniswap V3 LP is decoded properly.
 
     Data is taken from:
     https://etherscan.io/tx/0x6bf3588f669a784adf5def3c0db149b0cdbcca775e472bb35f00acedee263c4c

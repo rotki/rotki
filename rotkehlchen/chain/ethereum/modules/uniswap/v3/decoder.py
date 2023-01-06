@@ -146,7 +146,7 @@ class Uniswapv3Decoder(DecoderInterface):
                 decoded_events=decoded_events,
                 all_logs=all_logs,
                 action_items=action_items,
-                event_action_type='deposit',
+                event_action_type='addition',
             )
         if tx_log.topics[0] == COLLECT_LIQUIDITY_SIGNATURE:
             return self._maybe_decode_v3_deposit_or_withdrawal(
@@ -155,7 +155,7 @@ class Uniswapv3Decoder(DecoderInterface):
                 decoded_events=decoded_events,
                 all_logs=all_logs,
                 action_items=action_items,
-                event_action_type='withdrawal',
+                event_action_type='removal',
             )
 
         return None, []
@@ -365,7 +365,7 @@ class Uniswapv3Decoder(DecoderInterface):
             decoded_events: list[HistoryBaseEntry],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-            event_action_type: Literal['deposit', 'withdrawal'],
+            event_action_type: Literal['addition', 'removal'],
     ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         """
         This method decodes a Uniswap V3 LP liquidity increase or decrease.
@@ -379,14 +379,14 @@ class Uniswapv3Decoder(DecoderInterface):
         amount0_raw = hex_or_bytes_to_int(tx_log.data[32:64])
         amount1_raw = hex_or_bytes_to_int(tx_log.data[64:96])
 
-        if event_action_type == 'deposit':
+        if event_action_type == 'addition':
             notes = 'Add {} {} of liquidity to Uniswap V3 LP position {}'
             from_event_type = (HistoryEventType.SPEND, HistoryEventSubType.NONE)
             to_event_type = (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET)
         else:
             notes = 'Collect {} {} of liquidity from Uniswap V3 LP position {}'
-            from_event_type = (HistoryEventType.SPEND, HistoryEventSubType.NONE)
-            to_event_type = (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET)
+            from_event_type = (HistoryEventType.RECEIVE, HistoryEventSubType.NONE)
+            to_event_type = (HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET)
 
         liquidity_pool_position_info = self.ethereum_inquirer.contracts.contract('UNISWAP_V3_NFT_MANAGER').call(  # noqa: E501
             node_inquirer=self.ethereum_inquirer,
@@ -415,6 +415,8 @@ class Uniswapv3Decoder(DecoderInterface):
                         event.event_subtype == from_event_type[1]
                 ):
                     found_event = True
+                    event.event_type = to_event_type[0]
+                    event.event_subtype = to_event_type[1]
                     event.counterparty = CPT_UNISWAP_V3
                     event.notes = notes.format(normalized_amount, token_with_data.symbol, liquidity_pool_id)  # noqa: E501
                     break
