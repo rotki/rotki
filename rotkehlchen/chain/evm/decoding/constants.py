@@ -1,7 +1,7 @@
 from rotkehlchen.accounting.structures.types import HistoryEventType
 
 CPT_GAS = 'gas'
-
+CPT_HOP = 'hop-protocol'
 
 OUTGOING_EVENT_TYPES = {
     HistoryEventType.SPEND,
