@@ -499,6 +499,22 @@ def test_request_transaction_decoding_errors(rotkehlchen_api_server):
         status_code=HTTPStatus.CONFLICT,
     )
 
+    # trying to get transactions for a chaind that doesn't support yet them
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'evmtransactionsresource',
+        ), json={
+            'async_query': False,
+            'evm_chain': 'avalanche',
+        },
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='rotki does not support evm transactions for avalanche',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
 
 @pytest.mark.skipif(
     'CI' in os.environ,

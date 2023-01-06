@@ -1,6 +1,6 @@
 import logging
 from enum import auto
-from typing import TYPE_CHECKING, Any, Callable, Literal, Optional
+from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, get_args
 from uuid import uuid4
 
 import webargs
@@ -72,6 +72,7 @@ from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
     DEFAULT_ADDRESS_NAME_PRIORITY,
     NON_EVM_CHAINS,
+    SUPPORTED_CHAIN_IDS,
     SUPPORTED_SUBSTRATE_CHAINS,
     AddressbookEntry,
     AddressbookType,
@@ -257,6 +258,15 @@ class EvmTransactionQuerySchema(
             raise ValidationError(
                 message='protocols have to be either not passed or contain at least one item',
                 field_name='protocols',
+            )
+
+        if (
+            data['evm_chain'] is not None and
+            data['evm_chain'] not in get_args(SUPPORTED_CHAIN_IDS)
+        ):
+            raise ValidationError(
+                message=f'rotki does not support evm transactions for {data["evm_chain"]}',
+                field_name='evm_chain',
             )
 
     @post_load
