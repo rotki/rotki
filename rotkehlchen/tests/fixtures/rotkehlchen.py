@@ -31,7 +31,11 @@ from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
 from rotkehlchen.tests.utils.factories import make_random_b64bytes
 from rotkehlchen.tests.utils.history import maybe_mock_historical_price_queries
 from rotkehlchen.tests.utils.inquirer import inquirer_inject_ethereum_set_order
-from rotkehlchen.tests.utils.mock import patch_avalanche_request, patch_etherscan_request
+from rotkehlchen.tests.utils.mock import (
+    mock_proxies,
+    patch_avalanche_request,
+    patch_etherscan_request,
+)
 from rotkehlchen.tests.utils.substrate import wait_until_all_substrate_nodes_connected
 from rotkehlchen.types import AVAILABLE_MODULES_MAP, Location
 
@@ -282,6 +286,11 @@ def fixture_uninitialized_rotkehlchen(cli_args, inquirer, asset_resolver, global
     return rotki
 
 
+@pytest.fixture(name='mocked_proxies')
+def fixture_mocked_proxies():
+    return None
+
+
 @pytest.fixture(name='rotkehlchen_api_server')
 def fixture_rotkehlchen_api_server(
         uninitialized_rotkehlchen,
@@ -317,6 +326,7 @@ def fixture_rotkehlchen_api_server(
         network_mocking,
         mock_other_web3,
         web3_mock_data,
+        mocked_proxies,
 ):
     """A partially mocked rotkehlchen server instance"""
 
@@ -356,24 +366,26 @@ def fixture_rotkehlchen_api_server(
         perform_nodes_insertion=perform_nodes_insertion,
         current_price_oracles_order=current_price_oracles_order,
     )
-    if start_with_logged_in_user and network_mocking:
-        patch_avalanche = patch_avalanche_request(
-            api_server.rest_api.rotkehlchen.chains_aggregator.avalanche,
-            web3_mock_data,
-        )
-
-        with ExitStack() as stack:
-            stack.enter_context(patch_avalanche)
-            if mock_other_web3 is True:
-                ethereum_inquirer = api_server.rest_api.rotkehlchen.chains_aggregator.ethereum.node_inquirer  # noqa: E501
-                eth_etherscan_patch = patch_etherscan_request(
-                    etherscan=ethereum_inquirer.etherscan,
-                    mock_data=web3_mock_data,
+    with ExitStack() as stack:
+        if start_with_logged_in_user is True:
+            if network_mocking is True:
+                patch_avalanche = patch_avalanche_request(
+                    api_server.rest_api.rotkehlchen.chains_aggregator.avalanche,
+                    web3_mock_data,
                 )
-                stack.enter_context(eth_etherscan_patch)
 
-            yield api_server
-    else:
+                stack.enter_context(patch_avalanche)
+                if mock_other_web3 is True:
+                    ethereum_inquirer = api_server.rest_api.rotkehlchen.chains_aggregator.ethereum.node_inquirer  # noqa: E501
+                    eth_etherscan_patch = patch_etherscan_request(
+                        etherscan=ethereum_inquirer.etherscan,
+                        mock_data=web3_mock_data,
+                    )
+                    stack.enter_context(eth_etherscan_patch)
+
+            if mocked_proxies is not None:
+                stack.enter_context(mock_proxies(mocked_proxies))
+
         yield api_server
 
     api_server.stop()

@@ -942,7 +942,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 else:
                     eth_balances[address] += entry
 
-            proxy_mappings = vaults_module._get_accounts_having_proxy()
+            proxy_mappings = self.ethereum.node_inquirer.proxies_inquirer.get_accounts_having_proxy()  # noqa: E501
             proxy_to_address = {}
             proxy_addresses = []
             for user_address, proxy_address in proxy_mappings.items():

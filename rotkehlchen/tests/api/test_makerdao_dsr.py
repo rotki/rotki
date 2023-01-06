@@ -25,7 +25,6 @@ from rotkehlchen.tests.utils.api import (
 )
 from rotkehlchen.tests.utils.checks import assert_serialized_lists_equal
 from rotkehlchen.tests.utils.factories import make_evm_address
-from rotkehlchen.tests.utils.makerdao import mock_proxies_for
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import ChecksumEvmAddress
 
@@ -57,6 +56,8 @@ mocked_prices = {
 
 TEST_LATEST_BLOCKNUMBER = 9540749
 TEST_LATEST_BLOCKNUMBER_HEX = hex(TEST_LATEST_BLOCKNUMBER)
+
+TEST_ADDRESS_1 = '0x9343efFF92BF74D5aFd3d0079D24cA65234bE4CD'
 
 
 def int_to_32byteshexstr(value: int) -> str:
@@ -571,11 +572,14 @@ def test_query_historical_dsr(
     assert_dsr_history_result_is_correct(outcome, setup)
 
 
-@pytest.mark.parametrize('number_of_eth_accounts', [1])
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDRESS_1]])
 @pytest.mark.parametrize('ethereum_modules', [['makerdao_dsr']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
 @pytest.mark.parametrize('mocked_current_prices', [{A_DAI: ONE}])
+@pytest.mark.parametrize('mocked_proxies', [
+    {TEST_ADDRESS_1: '0xAe9996b76bdAa003ace6D66328A6942565f5768d'},
+])
 def test_query_historical_dsr_with_a_zero_withdrawal(
         rotkehlchen_api_server,
         ethereum_accounts,
@@ -590,11 +594,6 @@ def test_query_historical_dsr_with_a_zero_withdrawal(
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     original_get_logs = rotki.chains_aggregator.ethereum.node_inquirer.get_logs
-    proxies_mapping = {
-        # proxy for 0x714696C5a872611F76655Bc163D0131cBAc60a70
-        ethereum_accounts[0]: '0xAe9996b76bdAa003ace6D66328A6942565f5768d',
-    }
-    mock_proxies_for(rotki, proxies_mapping, 'makerdao_dsr')
 
     # Query only until a block we know DSR is 0 and we know the number
     # of DSR events

@@ -10,7 +10,6 @@ from rotkehlchen.chain.ethereum.modules.makerdao.vaults import MakerdaoVault
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.factories import ZERO_ETH_ADDRESS
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.interfaces import EthereumModule
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -141,23 +140,3 @@ def create_web3_mock(web3: Web3, ethereum: 'EthereumInquirer', test_data: VaultT
         'contract',
         side_effect=mock_contract,
     )
-
-
-def mock_proxies(
-        module: EthereumModule,
-        mapping: dict[ChecksumEvmAddress, ChecksumEvmAddress],
-) -> None:
-    def mock_get_proxies() -> dict[ChecksumEvmAddress, ChecksumEvmAddress]:
-        return mapping
-
-    module._get_accounts_having_proxy = mock_get_proxies  # type: ignore
-
-
-def mock_proxies_for(
-        rotki,
-        mapping: dict[ChecksumEvmAddress, ChecksumEvmAddress],
-        given_module: str,
-) -> None:
-    module = rotki.chains_aggregator.get_module(given_module)
-    assert module, f'module {module} not found in chain manager'
-    mock_proxies(module, mapping)

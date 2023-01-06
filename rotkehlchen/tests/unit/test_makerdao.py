@@ -17,7 +17,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.tests.utils.blockchain import get_web3_from_inquirer, set_web3_in_inquirer
 from rotkehlchen.tests.utils.factories import make_evm_address
-from rotkehlchen.tests.utils.makerdao import VaultTestData, create_web3_mock, mock_proxies
+from rotkehlchen.tests.utils.makerdao import VaultTestData, create_web3_mock
 
 
 def assert_vaults_equal(a: MakerdaoVault, b: MakerdaoVault) -> None:
@@ -113,10 +113,10 @@ def fixture_makerdao_vaults(
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
+@pytest.mark.parametrize('mocked_proxies', [{}])
 def test_get_vaults(makerdao_vaults, makerdao_test_data, ethereum_inquirer):
     web3_instance = get_web3_from_inquirer(makerdao_vaults.ethereum)
     web3_patch = create_web3_mock(web3=web3_instance, ethereum=ethereum_inquirer, test_data=makerdao_test_data)  # noqa: E501
-    mock_proxies(makerdao_vaults, {})
     with web3_patch:
         vaults = makerdao_vaults.get_vaults()
 

@@ -26,6 +26,7 @@ from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
 from rotkehlchen.chain.ethereum.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.ethereum.utils import MULTICALL_CHUNKS
 from rotkehlchen.chain.evm.contracts import EvmContract, EvmContracts
+from rotkehlchen.chain.evm.proxies_inquirer import EvmProxiesInquirer
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
 from rotkehlchen.constants import ONE
 from rotkehlchen.errors.misc import BlockchainQueryError, NotERC721Conformant, RemoteError
@@ -182,6 +183,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         self.etherscan_node = etherscan_node
         self.etherscan_node_name = etherscan_node_name
         self.contracts = contracts
+        self.proxies_inquirer = EvmProxiesInquirer(node_inquirer=self)
         self.web3_mapping: dict[NodeName, Web3] = {}
         self.rpc_timeout = rpc_timeout
         self.chain_id: SUPPORTED_CHAIN_IDS = blockchain.to_chain_id()  # type: ignore[assignment]

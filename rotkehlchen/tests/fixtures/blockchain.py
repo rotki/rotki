@@ -28,6 +28,7 @@ from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.mock import (
     MOCK_WEB3_LAST_BLOCK_INT,
+    mock_proxies,
     patch_avalanche_request,
     patch_etherscan_request,
     patch_web3_request,
@@ -181,6 +182,7 @@ def fixture_ethereum_inquirer(
         web3_mocking,  # pylint: disable=unused-argument
         mock_other_web3,
         web3_mock_data,
+        mocked_proxies,
 ):
     ethereum_inquirer = EthereumInquirer(
         greenlet_manager=greenlet_manager,
@@ -191,10 +193,11 @@ def fixture_ethereum_inquirer(
         connect_at_start=ethereum_manager_connect_at_start,
         evm_inquirer=ethereum_inquirer,
     )
-    if mock_other_web3 is True:
-        with patch_etherscan_request(etherscan=ethereum_inquirer.etherscan, mock_data=web3_mock_data):  # noqa: E501
-            yield ethereum_inquirer
-    else:
+    with ExitStack() as stack:
+        if mock_other_web3 is True:
+            stack.enter_context(patch_etherscan_request(etherscan=ethereum_inquirer.etherscan, mock_data=web3_mock_data))  # noqa: E501
+        if mocked_proxies is not None:
+            stack.enter_context(mock_proxies(mocked_proxies))
         yield ethereum_inquirer
 
 
