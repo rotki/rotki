@@ -10432,7 +10432,7 @@ Querying general information
 
 .. http:get:: /api/(version)/info
 
-   Doing a GET on the info endpoint will return general information about rotki. Under the version key we get info on the current version of rotki. When ``check_for_updates`` is ``true`` if there is a newer version then ``"download_url"`` will be populated. If not then only ``"our_version"`` and ``"latest_version"`` will be. There is a possibility that latest version may not be populated due to github not being reachable. Also we return the data directory
+   Doing a GET on the info endpoint will return general information about rotki. Under the version key we get info on the current version of rotki. When ``check_for_updates`` is ``true`` if there is a newer version then ``"download_url"`` will be populated. If not then only ``"our_version"`` and ``"latest_version"`` will be. There is a possibility that latest version may not be populated due to github not being reachable. Also we return the data directory and other information.
 
    .. note::
       This endpoint also accepts parameters as query arguments.
@@ -10465,6 +10465,7 @@ Querying general information
               },
               "data_directory": "/home/username/.local/share/rotki/data"
               "log_level": "DEBUG",
+	      "accept_docker_risk: false
           },
           "message": ""
       }
@@ -10474,6 +10475,7 @@ Querying general information
    :resjson str download_url: URL link to download the latest version
    :resjson str data_directory: The rotki data directory
    :resjson str log_level: The log level used in the backend. Can be ``DEBUG``, ``INFO``, ``WARN``, ``ERROR`` or ``CRITICAL``.
+   :resjson bool accept_docker_risk: A boolean indicating if the user has passed an environment variable to the backend process acknowledging the security issues with the docker setup: https://github.com/rotki/rotki/issues/5176
 
    :statuscode 200: Information queried successfully
    :statuscode 500: Internal rotki error

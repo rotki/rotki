@@ -1,3 +1,4 @@
+import os
 from http import HTTPStatus
 from typing import Any
 from unittest.mock import patch
@@ -54,6 +55,7 @@ def test_query_info_version_when_up_to_date(rotkehlchen_api_server):
         },
         'data_directory': str(rotki.data_dir),
         'log_level': 'DEBUG',
+        'accept_docker_risk': False,
     }
 
     with version_patch, release_patch:
@@ -76,6 +78,27 @@ def test_query_info_version_when_up_to_date(rotkehlchen_api_server):
         },
         'data_directory': str(rotki.data_dir),
         'log_level': 'DEBUG',
+        'accept_docker_risk': False,
+    }
+
+    with version_patch, release_patch, patch.dict(os.environ, {'ROTKI_ACCEPT_DOCKER_RISK': 'whatever'}):  # noqa: E501
+        response = requests.get(
+            url=api_url_for(
+                rotkehlchen_api_server,
+                'inforesource',
+            ),
+        )
+
+    result = assert_proper_response_with_result(response)
+    assert result == {
+        'version': {
+            'our_version': expected_version,
+            'latest_version': None,
+            'download_url': None,
+        },
+        'data_directory': str(rotki.data_dir),
+        'log_level': 'DEBUG',
+        'accept_docker_risk': True,
     }
 
 
@@ -128,6 +151,7 @@ def test_query_version_when_update_required(rotkehlchen_api_server):
         },
         'data_directory': str(rotki.data_dir),
         'log_level': 'DEBUG',
+        'accept_docker_risk': False,
     }
 
 

@@ -2,6 +2,7 @@ import datetime
 import hashlib
 import json
 import logging
+import os
 import sys
 import tempfile
 import traceback
@@ -2415,6 +2416,7 @@ class RestAPI():
             'version': process_result(version),
             'data_directory': str(self.rotkehlchen.data_dir),
             'log_level': logging.getLevelName(logging.getLogger().getEffectiveLevel()),
+            'accept_docker_risk': 'ROTKI_ACCEPT_DOCKER_RISK' in os.environ,
         }
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 

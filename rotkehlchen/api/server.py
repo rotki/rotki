@@ -288,6 +288,8 @@ URLS_V1: URLS = [
     ('/assets/ignored', IgnoredAssetsResource),
     ('/assets/updates', AssetUpdatesResource),
     ('/assets/user', UserAssetsResource),
+    ('/assets/custom', CustomAssetsResource),
+    ('/assets/custom/types', CustomAssetsTypesResource),
     ('/actions/ignored', IgnoredActionsResource),
     ('/info', InfoResource),
     ('/ping', PingResource),
@@ -309,8 +311,6 @@ URLS_V1: URLS = [
         'per_timestamp_db_snapshots_resource',
     ),
     ('/notes', UserNotesResource),
-    ('/assets/custom', CustomAssetsResource),
-    ('/assets/custom/types', CustomAssetsTypesResource),
 ]
 
 logger = logging.getLogger(__name__)
