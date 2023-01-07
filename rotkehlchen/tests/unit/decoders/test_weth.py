@@ -4,6 +4,7 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.utils import get_or_create_evm_token
+from rotkehlchen.chain.ethereum.modules.uniswap.constants import CPT_UNISWAP_V3
 from rotkehlchen.chain.ethereum.modules.weth.constants import CPT_WETH
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.constants.assets import A_ETH, A_USDC, A_WETH
@@ -189,25 +190,25 @@ def test_weth_interaction_with_protocols_deposit(database, ethereum_inquirer):
             sequence_index=1,
             timestamp=1666595591000,
             location=Location.BLOCKCHAIN,
-            event_type=HistoryEventType.SPEND,
-            event_subtype=HistoryEventSubType.NONE,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=A_ETH,
             balance=Balance(amount=FVal('0.999999999949533767')),
             location_label='0xC4DdFf531132d32b47eC938AcfA28E354769A806',
-            notes='Send 0.999999999949533767 ETH to 0xC36442b4a4522E871399CD717aBDD847Ab11FE88',  # noqa: E501
-            counterparty='0xC36442b4a4522E871399CD717aBDD847Ab11FE88',
+            notes='Add 0.999999999949533767 ETH of liquidity to Uniswap V3 LP position 343053',  # noqa: E501
+            counterparty=CPT_UNISWAP_V3,
         ), HistoryBaseEntry(
             event_identifier=tx_hash,
             sequence_index=187,
             timestamp=1666595591000,
             location=Location.BLOCKCHAIN,
-            event_type=HistoryEventType.SPEND,
-            event_subtype=HistoryEventSubType.NONE,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=A_USDC,
             balance=Balance(amount=FVal('294.145955')),
             location_label='0xC4DdFf531132d32b47eC938AcfA28E354769A806',
-            notes='Send 294.145955 USDC from 0xC4DdFf531132d32b47eC938AcfA28E354769A806 to 0x8ad599c3A0ff1De082011EFDDc58f1908eb6e6D8',  # noqa: E501
-            counterparty='0x8ad599c3A0ff1De082011EFDDc58f1908eb6e6D8',
+            notes='Add 294.145955 USDC of liquidity to Uniswap V3 LP position 343053',  # noqa: E501
+            counterparty=CPT_UNISWAP_V3,
         ),
     ]
     assert events[:-1] == expected_events
@@ -224,12 +225,12 @@ def test_weth_interaction_with_protocols_deposit(database, ethereum_inquirer):
         timestamp=1666595591000,
         location=Location.BLOCKCHAIN,
         event_type=HistoryEventType.RECEIVE,
-        event_subtype=HistoryEventSubType.NONE,
+        event_subtype=HistoryEventSubType.NFT,
         asset=expected_erc721,
         balance=Balance(amount=ONE),
         location_label='0xC4DdFf531132d32b47eC938AcfA28E354769A806',
-        notes='Receive Uniswap V3 Positions NFT-V1 with id 343053 from 0x0000000000000000000000000000000000000000 to 0xC4DdFf531132d32b47eC938AcfA28E354769A806',  # noqa: E501
-        counterparty='0x0000000000000000000000000000000000000000',
+        notes='Create Uniswap V3 LP position with id 343053',
+        counterparty=CPT_UNISWAP_V3,
         extra_data={'token_id': 343053, 'token_name': 'Uniswap V3 Positions NFT-V1'},
     )
 
@@ -271,27 +272,27 @@ def test_weth_interaction_with_protocols_withdrawal(database, ethereum_inquirer)
             sequence_index=1,
             timestamp=1666284551000,
             location=Location.BLOCKCHAIN,
-            event_type=HistoryEventType.RECEIVE,
-            event_subtype=HistoryEventSubType.NONE,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
             asset=A_ETH,
             balance=Balance(amount=FVal('0.764522981784947382')),
             location_label='0xDea6866A866C60d68fFDFc6178C12fCFdb9d0D47',
-            notes='Receive 0.764522981784947382 ETH from 0xC36442b4a4522E871399CD717aBDD847Ab11FE88',  # noqa: E501
-            counterparty='0xC36442b4a4522E871399CD717aBDD847Ab11FE88',
+            notes='Collect 0.764522981784947382 ETH of liquidity from Uniswap V3 LP position 337559',  # noqa: E501
+            counterparty=CPT_UNISWAP_V3,
         ), HistoryBaseEntry(
             event_identifier=HistoryBaseEntry.deserialize_event_identifier(
                 '0x4a811e8cfa58cb5bd57d92d62e1f01c8578859705243fe69c6bd9e59f3dcd167',
             ),
-            sequence_index=243,
+            sequence_index=244,
             timestamp=1666284551000,
             location=Location.BLOCKCHAIN,
-            event_type=HistoryEventType.RECEIVE,
-            event_subtype=HistoryEventSubType.NONE,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
             asset=A_USDC,
             balance=Balance(amount=FVal('1028.82092')),
             location_label='0xDea6866A866C60d68fFDFc6178C12fCFdb9d0D47',
-            notes='Receive 1028.82092 USDC from 0xC36442b4a4522E871399CD717aBDD847Ab11FE88 to 0xDea6866A866C60d68fFDFc6178C12fCFdb9d0D47',  # noqa: E501
-            counterparty='0xC36442b4a4522E871399CD717aBDD847Ab11FE88',
+            notes='Collect 1028.82092 USDC of liquidity from Uniswap V3 LP position 337559',  # noqa: E501
+            counterparty=CPT_UNISWAP_V3,
         ),
     ]
     assert events == expected_events
