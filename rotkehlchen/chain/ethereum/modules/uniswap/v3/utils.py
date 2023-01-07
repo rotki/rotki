@@ -343,6 +343,7 @@ def _compute_pool_address(
         address=uniswap_v3_factory_address,
         salt=Web3.toHex(Web3.keccak(encode_abi(['address', 'address', 'uint24'], parameters))),
         init_code=POOL_INIT_CODE_HASH,
+        is_init_code_hashed=True,
     )
 
 
