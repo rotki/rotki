@@ -6,6 +6,7 @@ import requests
 from eth_utils import to_checksum_address
 
 from rotkehlchen.chain.accounts import BlockchainAccountData
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.ens import DBEns
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -28,14 +29,23 @@ if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
 
 
+KELSOS_ADDR = string_to_evm_address('0x7277F7849966426d345D8F6B9AFD1d3d89183083')
+KELSOS_BOOK_ENTRY = AddressbookEntry(
+    name='new kelsos',
+    address=KELSOS_ADDR,
+    blockchain=None,
+)
+
+
 @pytest.mark.parametrize('book_type', [AddressbookType.GLOBAL, AddressbookType.PRIVATE])
 def test_get_addressbook(
         rotkehlchen_api_server: 'APIServer',
         book_type: AddressbookType,
 ) -> None:
     generated_entries = make_addressbook_entries()
+    entries_set = generated_entries + [KELSOS_BOOK_ENTRY]
     db_addressbook = DBAddressbook(rotkehlchen_api_server.rest_api.rotkehlchen.data.db)
-    db_addressbook.add_addressbook_entries(book_type=book_type, entries=generated_entries)
+    db_addressbook.add_addressbook_entries(book_type=book_type, entries=generated_entries + [KELSOS_BOOK_ENTRY])  # noqa: E501
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
@@ -45,7 +55,7 @@ def test_get_addressbook(
     )
     result = assert_proper_response_with_result(response)
     deserialized_entries = [AddressbookEntry.deserialize(data=raw_entry) for raw_entry in result]
-    assert deserialized_entries == generated_entries
+    assert deserialized_entries == entries_set
 
     response = requests.post(
         api_url_for(
@@ -82,6 +92,18 @@ def test_get_addressbook(
     expected_entries = [generated_entries[1]]
     deserialized_entries = [AddressbookEntry.deserialize(data=raw_entry) for raw_entry in result]
     assert set(deserialized_entries) == set(expected_entries)
+
+    # try to get entry without result
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'addressbookresource',
+            book_type=book_type,
+        ),
+        json={'addresses': [{'address': KELSOS_ADDR}]},
+    )
+    result = assert_proper_response_with_result(response=response)
+    assert AddressbookEntry.deserialize(data=result[0]) == KELSOS_BOOK_ENTRY
 
 
 @pytest.mark.parametrize('book_type', [AddressbookType.GLOBAL, AddressbookType.PRIVATE])
@@ -265,9 +287,34 @@ def test_update_addressbook(
         )
         assert_error_response(
             response=response,
-            contained_in_msg='address "0x79B598976bD83a47CD8B428C824C8474311267b8" and blockchain ETH doesn\'t exist in the address book',  # noqa: E501
+            contained_in_msg='address "0x79B598976bD83a47CD8B428C824C8474311267b8" and blockchain ethereum doesn\'t exist in the address book',  # noqa: E501
             status_code=HTTPStatus.CONFLICT)
         assert db_addressbook.get_addressbook_entries(cursor) == entries_in_db_before_bad_patch
+
+    # add a new entry with no blockchain assigned
+    new_entry_addr = to_checksum_address('0x9d904063e7e120302a13c6820561940538a2ad57')
+    new_entry = AddressbookEntry(
+        address=new_entry_addr,
+        name='super name',
+        blockchain=None,
+    )
+    db_addressbook.add_addressbook_entries(book_type=book_type, entries=[new_entry])
+
+    # edit it without the blockchain argument
+    response = requests.patch(
+        api_url_for(
+            rotkehlchen_api_server,
+            'addressbookresource',
+            book_type=book_type,
+        ),
+        json={
+            'entries': [{'address': new_entry_addr, 'name': 'super name ray'}],
+        },
+    )
+    assert_proper_response(response)
+    with db_addressbook.read_ctx(book_type) as cursor:
+        names = db_addressbook.get_addressbook_entries(cursor, optional_chain_addresses=[OptionalChainAddress(new_entry_addr, None)])  # noqa: E501
+        assert names[0].name == 'super name ray'
 
 
 @pytest.mark.parametrize('book_type', [AddressbookType.GLOBAL, AddressbookType.PRIVATE])
@@ -350,6 +397,34 @@ def test_delete_addressbook(
     assert_proper_response(response)
     with db_addressbook.read_ctx(book_type) as cursor:
         assert len(db_addressbook.get_addressbook_entries(cursor)) == 1
+
+    # add entry with no blockchain to check that it can be deleted
+    db_addressbook.add_addressbook_entries(
+        book_type=book_type,
+        entries=[KELSOS_BOOK_ENTRY],
+    )
+    with db_addressbook.read_ctx(book_type) as cursor:
+        assert db_addressbook.get_addressbook_entries(
+            cursor=cursor,
+            optional_chain_addresses=[OptionalChainAddress(address=KELSOS_ADDR, blockchain=None)],
+        ) == [KELSOS_BOOK_ENTRY]
+
+    response = requests.delete(
+        api_url_for(
+            rotkehlchen_api_server,
+            'addressbookresource',
+            book_type=book_type,
+        ),
+        json={
+            'addresses': [{'address': KELSOS_ADDR}],
+        },
+    )
+    assert_proper_response(response)
+    with db_addressbook.read_ctx(book_type) as cursor:
+        assert len(db_addressbook.get_addressbook_entries(
+            cursor=cursor,
+            optional_chain_addresses=[OptionalChainAddress(address=KELSOS_ADDR, blockchain=None)]),
+        ) == 0
 
 
 def test_names_compilation(rotkehlchen_api_server: 'APIServer'):

@@ -129,12 +129,13 @@ class DBAddressbook:
         """Updates names of addressbook entries."""
         with self.write_ctx(book_type) as write_cursor:
             for entry in entries:
-                query = 'UPDATE address_book SET name = ? WHERE address = ? AND blockchain = ?'
+                query = 'UPDATE address_book SET name = ? WHERE address = ? AND blockchain IS ?'
                 bindings = (entry.name, entry.address, entry.blockchain.value if entry.blockchain else None)  # noqa: E501
                 write_cursor.execute(query, bindings)
                 if write_cursor.rowcount == 0:
                     raise InputError(
-                        f'{entry} doesn\'t exist in the address book. So it cannot be modified.',
+                        f'Entry with address "{entry.address}" and blockchain {entry.blockchain} '
+                        f'doesn\'t exist in the address book. So it cannot be modified.',
                     )
 
     def delete_addressbook_entries(
@@ -160,7 +161,7 @@ class DBAddressbook:
                 raise InputError(f'Addresses {addresses} are not present in the database')
 
         delete_without_blockchain = 'DELETE FROM address_book WHERE address = ?'
-        delete_with_blockchain = delete_without_blockchain + ' AND blockchain = ?'
+        delete_with_blockchain = delete_without_blockchain + ' AND blockchain IS ?'
         bindings_without_blockchain = []
         binding_with_blockchain = []
         for address, blockchain in chain_addresses:
@@ -190,7 +191,7 @@ class DBAddressbook:
         """
         with self.read_ctx(book_type) as read_cursor:
             query = read_cursor.execute(
-                'SELECT name FROM address_book WHERE address=? AND blockchain=?',
+                'SELECT name FROM address_book WHERE address=? AND blockchain IS ?',
                 (chain_address.address, chain_address.blockchain.value if chain_address.blockchain is not None else None),  # noqa: E501
             )
             result = query.fetchone()
