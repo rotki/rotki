@@ -1,6 +1,7 @@
 import os
 from http import HTTPStatus
-from typing import Any
+from pathlib import Path
+from typing import Any, Optional
 from unittest.mock import patch
 
 import pytest
@@ -17,6 +18,31 @@ from rotkehlchen.tests.utils.api import (
 )
 from rotkehlchen.types import SupportedBlockchain
 from rotkehlchen.utils.misc import get_system_spec
+
+
+def generate_expected_info(
+        expected_version: str,
+        data_dir: Path,
+        latest_version: Optional[str] = None,
+        accept_docker_risk: bool = False,
+        download_url: Optional[str] = None,
+):
+    result = {
+        'version': {
+            'our_version': expected_version,
+            'latest_version': latest_version,
+            'download_url': download_url,
+        },
+        'data_directory': str(data_dir),
+        'log_level': 'DEBUG',
+        'accept_docker_risk': accept_docker_risk,
+        'backend_default_arguments': {
+            'max-logfiles-num': 3,
+            'max-size-in-mb-all-logs': 300,
+            'sqlite-instructions': 5000,
+        },
+    }
+    return result
 
 
 def test_query_info_version_when_up_to_date(rotkehlchen_api_server):
@@ -47,16 +73,7 @@ def test_query_info_version_when_up_to_date(rotkehlchen_api_server):
         )
 
     result = assert_proper_response_with_result(response)
-    assert result == {
-        'version': {
-            'our_version': expected_version,
-            'latest_version': None,
-            'download_url': None,
-        },
-        'data_directory': str(rotki.data_dir),
-        'log_level': 'DEBUG',
-        'accept_docker_risk': False,
-    }
+    assert result == generate_expected_info(expected_version, rotki.data_dir)
 
     with version_patch, release_patch:
         response = requests.get(
@@ -70,16 +87,7 @@ def test_query_info_version_when_up_to_date(rotkehlchen_api_server):
         )
 
     result = assert_proper_response_with_result(response)
-    assert result == {
-        'version': {
-            'our_version': expected_version,
-            'latest_version': expected_version,
-            'download_url': None,
-        },
-        'data_directory': str(rotki.data_dir),
-        'log_level': 'DEBUG',
-        'accept_docker_risk': False,
-    }
+    assert result == generate_expected_info(expected_version, rotki.data_dir, latest_version=expected_version)  # noqa: E501
 
     with version_patch, release_patch, patch.dict(os.environ, {'ROTKI_ACCEPT_DOCKER_RISK': 'whatever'}):  # noqa: E501
         response = requests.get(
@@ -90,16 +98,11 @@ def test_query_info_version_when_up_to_date(rotkehlchen_api_server):
         )
 
     result = assert_proper_response_with_result(response)
-    assert result == {
-        'version': {
-            'our_version': expected_version,
-            'latest_version': None,
-            'download_url': None,
-        },
-        'data_directory': str(rotki.data_dir),
-        'log_level': 'DEBUG',
-        'accept_docker_risk': True,
-    }
+    assert result == generate_expected_info(
+        expected_version=expected_version,
+        data_dir=rotki.data_dir,
+        accept_docker_risk=True,
+    )
 
 
 def test_query_ping(rotkehlchen_api_server):
@@ -143,16 +146,12 @@ def test_query_version_when_update_required(rotkehlchen_api_server):
 
     result = assert_proper_response_with_result(response)
     our_version = get_system_spec()['rotkehlchen']
-    assert result == {
-        'version': {
-            'our_version': our_version,
-            'latest_version': 'v99.99.99',
-            'download_url': 'https://github.com/rotki/rotki/releases/tag/v99.99.99',
-        },
-        'data_directory': str(rotki.data_dir),
-        'log_level': 'DEBUG',
-        'accept_docker_risk': False,
-    }
+    assert result == generate_expected_info(
+        expected_version=our_version,
+        data_dir=rotki.data_dir,
+        latest_version='v99.99.99',
+        download_url='https://github.com/rotki/rotki/releases/tag/v99.99.99',
+    )
 
 
 def test_manage_ethereum_nodes(rotkehlchen_api_server):

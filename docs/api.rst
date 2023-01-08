@@ -10465,7 +10465,12 @@ Querying general information
               },
               "data_directory": "/home/username/.local/share/rotki/data"
               "log_level": "DEBUG",
-	      "accept_docker_risk: false
+	      "accept_docker_risk: false,
+	      "backend_default_arguments": {
+	          "max-logfiles-num": 3,
+	          "max-size-in-mb-all-logs": 300,
+	          "sqlite-instructions": 5000,
+	      },
           },
           "message": ""
       }
@@ -10476,6 +10481,7 @@ Querying general information
    :resjson str data_directory: The rotki data directory
    :resjson str log_level: The log level used in the backend. Can be ``DEBUG``, ``INFO``, ``WARN``, ``ERROR`` or ``CRITICAL``.
    :resjson bool accept_docker_risk: A boolean indicating if the user has passed an environment variable to the backend process acknowledging the security issues with the docker setup: https://github.com/rotki/rotki/issues/5176
+   :resjson object backend_default_arguments: A mapping of backend arguments to their default values so that the frontend can know about them.
 
    :statuscode 200: Information queried successfully
    :statuscode 500: Internal rotki error

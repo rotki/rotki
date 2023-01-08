@@ -2417,6 +2417,11 @@ class RestAPI():
             'data_directory': str(self.rotkehlchen.data_dir),
             'log_level': logging.getLevelName(logging.getLogger().getEffectiveLevel()),
             'accept_docker_risk': 'ROTKI_ACCEPT_DOCKER_RISK' in os.environ,
+            'backend_default_arguments': {
+                'max-logfiles-num': DEFAULT_MAX_LOG_BACKUP_FILES,
+                'max-size-in-mb-all-logs': DEFAULT_MAX_LOG_SIZE_IN_MB,
+                'sqlite-instructions': DEFAULT_SQL_VM_INSTRUCTIONS_CB,
+            },
         }
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 
