@@ -328,7 +328,6 @@ export const transactionEventTypeMapping: Record<
     [HistoryEventSubType.PLACE_ORDER]: TransactionEventType.PLACE_ORDER
   },
   [HistoryEventType.TRANSFER]: {
-    [HistoryEventSubType.BRIDGE]: TransactionEventType.BRIDGE,
     [HistoryEventSubType.NONE]: TransactionEventType.TRANSFER
   },
   [HistoryEventType.TRADE]: {
@@ -338,12 +337,13 @@ export const transactionEventTypeMapping: Record<
   [HistoryEventType.WITHDRAWAL]: {
     [HistoryEventSubType.NONE]: TransactionEventType.WITHDRAW,
     [HistoryEventSubType.REMOVE_ASSET]: TransactionEventType.WITHDRAW,
-    [HistoryEventSubType.GENERATE_DEBT]: TransactionEventType.BORROW
+      [HistoryEventSubType.GENERATE_DEBT]: TransactionEventType.BORROW,
+      [HistoryEventSubType.BRIDGE]: TransactionEventType.BRIDGE
   },
   [HistoryEventType.DEPOSIT]: {
     [HistoryEventSubType.NONE]: TransactionEventType.DEPOSIT,
     [HistoryEventSubType.DEPOSIT_ASSET]: TransactionEventType.DEPOSIT,
-    [HistoryEventSubType.BRIDGE]: TransactionEventType.DEPOSIT
+    [HistoryEventSubType.BRIDGE]: TransactionEventType.BRIDGE
   },
   [HistoryEventType.MIGRATE]: {
     [HistoryEventSubType.SPEND]: TransactionEventType.SEND,

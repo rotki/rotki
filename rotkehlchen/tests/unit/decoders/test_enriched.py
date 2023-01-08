@@ -214,7 +214,7 @@ def test_gnosis_chain_bridge(database, ethereum_inquirer, eth_transactions):
             sequence_index=474,
             timestamp=1646375440000,
             location=Location.BLOCKCHAIN,
-            event_type=HistoryEventType.TRANSFER,
+            event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=EvmToken('eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
             balance=Balance(amount=FVal('159137.254963'), usd_value=ZERO),

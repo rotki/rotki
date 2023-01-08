@@ -72,7 +72,7 @@ class HopDecoder(DecoderInterface):
 
         for event in decoded_events:
             if event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE and recipient == event.location_label and event.asset == A_ETH:  # noqa: E501
-                event.event_type = HistoryEventType.TRANSFER
+                event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.BRIDGE
                 event.counterparty = CPT_HOP
                 event.notes = f'Bridge {event.balance.amount} ETH via hop protocol'

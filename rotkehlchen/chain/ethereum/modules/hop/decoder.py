@@ -55,7 +55,7 @@ class HopDecoder(DecoderInterface):
                     target_str = 'at the same address'
                 else:
                     target_str = f'at address {recipient}'
-                event.event_type = HistoryEventType.TRANSFER
+                event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.BRIDGE
                 event.counterparty = CPT_HOP
                 event.notes = f'Bridge {amount} ETH to {name} {target_str} via Hop protocol'
