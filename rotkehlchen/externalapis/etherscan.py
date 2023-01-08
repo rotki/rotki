@@ -328,6 +328,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                             dbtx.add_evm_internal_transactions(
                                 write_cursor=cursor,
                                 transactions=[internal_tx],
+                                relevant_address=None,  # can't know the address here
                             )
                 except DeserializationError as e:
                     self.msg_aggregator.add_warning(f'{str(e)}. Skipping transaction')

@@ -99,7 +99,7 @@ class DBEvmTx():
             self,
             write_cursor: 'DBCursor',
             transactions: list[EvmInternalTransaction],
-            relevant_address: ChecksumEvmAddress,
+            relevant_address: Optional[ChecksumEvmAddress],
     ) -> None:
         """Adds evm internal transactions to the database"""
         tx_tuples: list[tuple[Any, ...]] = []
