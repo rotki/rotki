@@ -299,7 +299,7 @@ def test_xpub_data_comparison():
     mapping = {xpubdata1: 1}
     # there is a reason for both queries (unneeded-not). In the first
     # implementation they did not both work correctly
-    assert not xpubdata1 == xpubdata2  # pylint: disable=unneeded-not
+    assert not xpubdata1 == xpubdata2  # pylint: disable=unneeded-not  # noqa: SIM201
     assert xpubdata1 != xpubdata2
     assert xpubdata1 in mapping
     assert xpubdata2 not in mapping
@@ -309,7 +309,7 @@ def test_xpub_data_comparison():
     mapping = {xpubdata1: 1}
     # there is a reason for both queries (unneeded-not). In the first
     # implementation they did not both work correctly
-    assert not xpubdata1 == xpubdata2  # pylint: disable=unneeded-not
+    assert not xpubdata1 == xpubdata2  # pylint: disable=unneeded-not  # noqa: SIM201
     assert xpubdata1 != xpubdata2
     assert xpubdata1 in mapping
     assert xpubdata2 not in mapping
@@ -317,12 +317,12 @@ def test_xpub_data_comparison():
     xpubdata1 = XpubData(xpub=hdkey1, blockchain=SupportedBlockchain.BITCOIN)
     xpubdata2 = XpubData(xpub=hdkey1, blockchain=SupportedBlockchain.BITCOIN)
     assert xpubdata1 == xpubdata2
-    assert not xpubdata1 != xpubdata2  # pylint: disable=unneeded-not
+    assert not xpubdata1 != xpubdata2  # pylint: disable=unneeded-not  # noqa: SIM202
 
     xpubdata1 = XpubData(xpub=hdkey1, derivation_path='m', blockchain=SupportedBlockchain.BITCOIN)
     xpubdata2 = XpubData(xpub=hdkey1, derivation_path='m/0/0', blockchain=SupportedBlockchain.BITCOIN)  # noqa: E501
     assert xpubdata1 != xpubdata2
-    assert not xpubdata1 == xpubdata2  # pylint: disable=unneeded-not
+    assert not xpubdata1 == xpubdata2  # pylint: disable=unneeded-not  # noqa: SIM201
 
 
 def test_is_valid_derivation_path():
@@ -533,6 +533,5 @@ def test_bitcoin_balance_api_resolver(network_mocking):
             check_balances(balances)
 
             # Third source fails - FATALITY!!!
-            with patch('rotkehlchen.chain.bitcoin._query_mempool_space', MagicMock(side_effect=RemoteError('Fatality'))):  # noqa: E501
-                with pytest.raises(RemoteError):
-                    get_bitcoin_addresses_balances(addresses)
+            with patch('rotkehlchen.chain.bitcoin._query_mempool_space', MagicMock(side_effect=RemoteError('Fatality'))), pytest.raises(RemoteError):  # noqa: E501
+                get_bitcoin_addresses_balances(addresses)

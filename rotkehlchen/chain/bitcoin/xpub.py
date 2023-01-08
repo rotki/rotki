@@ -273,18 +273,17 @@ class XpubManager():
         - RemoteError if an external service such as blockstream/haskoin is queried and
           there is a problem with its query.
         """
-        with self.lock:
-            with self.db.user_write() as cursor:
-                # First try to add the xpub, and if it already exists raise
-                self.db.add_bitcoin_xpub(cursor, xpub_data=xpub_data)
-                # Then add tags if not existing
-                self.db.ensure_tags_exist(
-                    cursor,
-                    given_data=[xpub_data],
-                    action='adding',
-                    data_type='bitcoin xpub' if xpub_data.blockchain == SupportedBlockchain.BITCOIN else 'bitcoin cash xpub',  # noqa: 501
-                )
-                self._derive_xpub_addresses(xpub_data, new_xpub=True)
+        with self.lock, self.db.user_write() as cursor:
+            # First try to add the xpub, and if it already exists raise
+            self.db.add_bitcoin_xpub(cursor, xpub_data=xpub_data)
+            # Then add tags if not existing
+            self.db.ensure_tags_exist(
+                cursor,
+                given_data=[xpub_data],
+                action='adding',
+                data_type='bitcoin xpub' if xpub_data.blockchain == SupportedBlockchain.BITCOIN else 'bitcoin cash xpub',  # noqa: 501
+            )
+            self._derive_xpub_addresses(xpub_data, new_xpub=True)
 
     def delete_bitcoin_xpub(
             self,

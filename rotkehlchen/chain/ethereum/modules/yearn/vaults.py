@@ -728,36 +728,35 @@ class YearnVaults(EthereumModule):
             from_timestamp: Timestamp,  # pylint: disable=unused-argument
             to_timestamp: Timestamp,
     ) -> dict[ChecksumEvmAddress, dict[str, YearnVaultHistory]]:
-        with self.history_lock:
-            with self.database.user_write() as cursor:
-                if reset_db_data is True:
-                    self.database.delete_yearn_vaults_data(write_cursor=cursor, version=1)
+        with self.history_lock, self.database.user_write() as cursor:
+            if reset_db_data is True:
+                self.database.delete_yearn_vaults_data(write_cursor=cursor, version=1)
 
-                if isinstance(given_defi_balances, dict):
-                    defi_balances = given_defi_balances
-                else:
-                    defi_balances = given_defi_balances()
+            if isinstance(given_defi_balances, dict):
+                defi_balances = given_defi_balances
+            else:
+                defi_balances = given_defi_balances()
 
-                from_block = self.ethereum.get_blocknumber_by_time(from_timestamp)
-                to_block = self.ethereum.get_blocknumber_by_time(to_timestamp)
-                history: dict[ChecksumEvmAddress, dict[str, YearnVaultHistory]] = {}
+            from_block = self.ethereum.get_blocknumber_by_time(from_timestamp)
+            to_block = self.ethereum.get_blocknumber_by_time(to_timestamp)
+            history: dict[ChecksumEvmAddress, dict[str, YearnVaultHistory]] = {}
 
-                for address in addresses:
-                    history[address] = {}
-                    for _, vault in self.yearn_vaults.items():
-                        vault_history = self.get_vault_history(
-                            write_cursor=cursor,
-                            defi_balances=defi_balances.get(address, []),
-                            vault=vault,
-                            address=address,
-                            from_block=from_block,
-                            to_block=to_block,
-                        )
-                        if vault_history:
-                            history[address][vault.name] = vault_history
+            for address in addresses:
+                history[address] = {}
+                for _, vault in self.yearn_vaults.items():
+                    vault_history = self.get_vault_history(
+                        write_cursor=cursor,
+                        defi_balances=defi_balances.get(address, []),
+                        vault=vault,
+                        address=address,
+                        from_block=from_block,
+                        to_block=to_block,
+                    )
+                    if vault_history:
+                        history[address][vault.name] = vault_history
 
-                    if len(history[address]) == 0:
-                        del history[address]
+                if len(history[address]) == 0:
+                    del history[address]
 
         return history
 

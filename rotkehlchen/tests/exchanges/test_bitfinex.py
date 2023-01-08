@@ -301,8 +301,7 @@ def test_api_query_paginated_retries_request(mock_bitfinex):
             f'{{"error":"{API_RATE_LIMITS_ERROR_MESSAGE}"}}',
             '["error", 10000, "unknown error"]',
         ]
-        for result_ in results:
-            yield result_
+        yield from results
 
     def mock_api_query_response(endpoint, options):  # pylint: disable=unused-argument
         return MockResponse(HTTPStatus.INTERNAL_SERVER_ERROR, next(get_response))
@@ -588,8 +587,7 @@ def test_query_online_trade_history_case_1(mock_bitfinex):
             f'[{trade_3},{trade_4}]',
             f'[{trade_5}]',
         ]
-        for result_ in results:
-            yield result_
+        yield from results
 
     def mock_api_query_response(endpoint, options):  # pylint: disable=unused-argument
         return MockResponse(HTTPStatus.OK, next(get_response))
@@ -767,8 +765,7 @@ def test_query_online_trade_history_case_2(mock_bitfinex):
             f'[{trade_2},{trade_3}]',  # contains repeated
             f'[{trade_4}]',
         ]
-        for result_ in results:
-            yield result_
+        yield from results
 
     def mock_api_query_response(endpoint, options):  # pylint: disable=unused-argument
         return MockResponse(HTTPStatus.OK, next(get_response))
@@ -1125,8 +1122,7 @@ def test_query_online_deposits_withdrawals_case_1(mock_bitfinex):
             f'[{movement_4},{movement_3}]',
             f'[{movement_5}]',
         ]
-        for result_ in results:
-            yield result_
+        yield from results
 
     def mock_api_query_response(endpoint, options):  # pylint: disable=unused-argument
         return MockResponse(HTTPStatus.OK, next(get_response))
@@ -1327,8 +1323,7 @@ def test_query_online_deposits_withdrawals_case_2(mock_bitfinex):
             f'[{movement_3},{movement_2}]',
             f'[{movement_4}]',
         ]
-        for result_ in results:
-            yield result_
+        yield from results
 
     def mock_api_query_response(endpoint, options):  # pylint: disable=unused-argument
         return MockResponse(HTTPStatus.OK, next(get_response))

@@ -3,6 +3,7 @@ import hmac
 import json
 import logging
 from collections import defaultdict
+from contextlib import suppress
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, DefaultDict, Literal, Optional, Union
 from urllib.parse import urlencode
@@ -345,13 +346,11 @@ class Binance(ExchangeInterface):
             if response.status_code not in (200, 418, 429):
                 code = 'no code found'
                 msg = 'no message found'
-                try:
+                with suppress(JSONDecodeError):
                     result = json.loads(response.text)
                     if isinstance(result, dict):
                         code = result.get('code', code)
                         msg = result.get('msg', msg)
-                except JSONDecodeError:
-                    pass
 
                 if 'Invalid symbol' in msg and method == 'myTrades':
                     assert options, 'We always provide options for myTrades call'

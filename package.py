@@ -252,10 +252,7 @@ class Environment:
             logger.info('NO GH_TOKEN SET')
         env = os.environ.copy()
         if self.is_mac() and not self.mac_electron_env_set() and not self.is_ci():
-            if self.is_x86_64():
-                arch = 'x64'
-            else:
-                arch = 'arm64'
+            arch = 'x64' if self.is_x86_64() else 'arm64'
 
             env.setdefault('MACOS_ELECTRON_ARCH', arch)
         return env
@@ -275,7 +272,7 @@ class Checksum:
         elif env.is_linux():
             cmd = f'sha512sum {path.name} > {checksum_filename}'
         elif env.is_windows():
-            cmd = f'powershell.exe -command "Get-FileHash {path.name} -Algorithm SHA512 | Select-Object Hash | foreach {{$_.Hash}} | Out-File -FilePath {checksum_filename}"'  # noqa E501
+            cmd = f'powershell.exe -command "Get-FileHash {path.name} -Algorithm SHA512 | Select-Object Hash | foreach {{$_.Hash}} | Out-File -FilePath {checksum_filename}"'  # noqa: E501
         else:
             logger.error('unsupported system')
             sys.exit(1)
@@ -528,9 +525,8 @@ class MacPackaging:
                 requirement = line.split('#')[0]
                 req = requirement.split(';')
                 requirement = req[0]
-                if len(req) > 1:
-                    if req[1].strip() == "sys_platform == 'win32'":
-                        continue
+                if len(req) > 1 and req[1].strip() == "sys_platform == 'win32'":
+                    continue
 
                 split_requirement = requirement.split('==')
                 package_name = split_requirement[0]
@@ -925,10 +921,7 @@ class BackendBuilder:
 
         bootloader_directory = pyinstaller_directory / 'bootloader'
         os.chdir(bootloader_directory)
-        if self.__env.target_arch != 'universal2':
-            flag = '--no-universal2'
-        else:
-            flag = '--universal2'
+        flag = '--no-universal2' if self.__env.target_arch != 'universal2' else '--universal2'
 
         build_ret_code = subprocess.call(f'./waf all {flag}', shell=True)
         if build_ret_code != 0:

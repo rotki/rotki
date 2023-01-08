@@ -1,4 +1,5 @@
 import logging
+from contextlib import suppress
 from typing import TYPE_CHECKING, Literal, Optional, Sequence, Union, cast, overload
 
 import requests
@@ -286,10 +287,8 @@ class EthereumInquirer(EvmNodeInquirer):
             -> queries blocks subgraph
         """
         if etherscan:
-            try:
+            with suppress(RemoteError):
                 return self.etherscan.get_blocknumber_by_time(ts)
-            except RemoteError:
-                pass
 
         return self._get_blocknumber_by_time_from_subgraph(ts)
 

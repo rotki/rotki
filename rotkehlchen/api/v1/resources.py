@@ -326,10 +326,9 @@ def require_premium_user(active_check: bool) -> Callable:
                 result_dict = wrap_in_fail_result(msg)
                 return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
 
-            if active_check:
-                if rest_api.rotkehlchen.premium.is_active() is False:
-                    result_dict = wrap_in_fail_result(msg)
-                    return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
+            if active_check and rest_api.rotkehlchen.premium.is_active() is False:
+                result_dict = wrap_in_fail_result(msg)
+                return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
 
             return f(*args, **kwargs)
 

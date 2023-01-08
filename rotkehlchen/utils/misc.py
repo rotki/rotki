@@ -211,9 +211,8 @@ def convert_to_int(
                 raise ConversionError(f'Could not convert {val!r} to an int') from e
     if isinstance(val, int):
         return val
-    if isinstance(val, float):
-        if val.is_integer() or accept_only_exact is False:
-            return int(val)
+    if isinstance(val, float) and (val.is_integer() or accept_only_exact is False):
+        return int(val)
     # else
     raise ConversionError(f'Can not convert {val} which is of type {type(val)} to int.')
 

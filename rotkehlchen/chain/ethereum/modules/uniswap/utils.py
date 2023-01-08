@@ -1,5 +1,6 @@
 import json
 import logging
+from contextlib import suppress
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
@@ -91,7 +92,7 @@ def get_latest_lp_addresses(data_directory: Path) -> list[ChecksumEvmAddress]:
     root_dir = Path(__file__).resolve().parent.parent.parent.parent.parent
     our_downloaded_meta = data_directory / 'assets' / 'uniswapv2_lp_tokens.meta'
     our_builtin_meta = root_dir / 'data' / 'uniswapv2_lp_tokens.meta'
-    try:
+    with suppress(requests.exceptions.RequestException, KeyError, json.decoder.JSONDecodeError):
         response = requests.get(
             url='https://raw.githubusercontent.com/rotki/rotki/develop/rotkehlchen/data/uniswapv2_lp_tokens.meta',  # noqa: E501,
             timeout=DEFAULT_TIMEOUT_TUPLE,
@@ -127,10 +128,7 @@ def get_latest_lp_addresses(data_directory: Path) -> list[ChecksumEvmAddress]:
             )
             return json.loads(remote_data)
 
-        # else, same as all error cases use the current one
-    except (requests.exceptions.RequestException, KeyError, json.decoder.JSONDecodeError):
-        pass
-
+    # else, in any error case use current one
     if our_downloaded_meta.is_file():
         assets_file = data_directory / 'assets' / 'uniswapv2_lp_tokens.json'
     else:

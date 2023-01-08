@@ -3,6 +3,7 @@ import logging
 import re
 import sqlite3
 import sys
+from contextlib import suppress
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, Literal, NamedTuple, Optional, Union
@@ -321,10 +322,8 @@ class AssetsUpdater():
                 continue
 
             local_asset: Optional[Asset] = None
-            try:
+            with suppress(UnknownAsset):
                 local_asset = Asset(remote_asset_data.identifier).check_existence()
-            except UnknownAsset:
-                pass
 
             try:
                 with connection.savepoint_ctx() as cursor:

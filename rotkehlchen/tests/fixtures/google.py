@@ -1,6 +1,7 @@
 import logging
 import os
 import warnings as test_warnings
+from contextlib import suppress
 from pathlib import Path
 from typing import Any, Generator, Optional
 
@@ -104,10 +105,8 @@ class GoogleService:
                 # https://developers.google.com/drive/api/v3/reference/permissions/create
                 'sendNotificationEmail': self.send_email,
             }
-            try:
+            with suppress(HttpError):  # suppress due to probable rate limit (50/day)
                 self.drive_service.permissions().create(fileId=sheet_id, body=permissions).execute()  # noqa: E501 # pylint: disable=no-member
-            except HttpError:
-                pass  # can't share due to an error. Probably rate limit (50/day).
 
         return sheet_id
 

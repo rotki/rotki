@@ -1,4 +1,5 @@
 import os
+from contextlib import suppress
 
 import pkg_resources
 
@@ -25,8 +26,6 @@ while required_packages:
         if req.project_name in processed:
             continue
         required_packages.append((req.project_name, list(req.extras)))
-    try:
+    with suppress(AssertionError):
         datas.extend(copy_metadata(req_name))
         processed.add(req_name)
-    except AssertionError:
-        pass

@@ -226,7 +226,7 @@ def test_binance_query_trade_history(function_scope_binance):
             assert match
             groups = match.groups()
             assert len(groups) == 2
-            from_ts, to_ts = [int(x) for x in groups]
+            from_ts, to_ts = (int(x) for x in groups)
             if 'transactionType=0' in url:
                 if from_ts < 1624529919000 < to_ts:
                     text = BINANCE_FIATBUY_RESPONSE
@@ -407,7 +407,7 @@ def test_binance_query_deposits_withdrawals(function_scope_binance):
         assert match
         groups = match.groups()
         assert len(groups) == 2
-        from_ts, to_ts = [int(x) for x in groups]
+        from_ts, to_ts = (int(x) for x in groups)
         if 'capital/deposit' in url:
             if from_ts >= 1508022000000 and to_ts <= 1515797999999:
                 response_str = BINANCE_DEPOSITS_HISTORY_RESPONSE
@@ -419,7 +419,7 @@ def test_binance_query_deposits_withdrawals(function_scope_binance):
             else:
                 response_str = '[]'
         elif 'fiat/orders' in url:
-            from_ts, to_ts = [int(x) for x in groups]
+            from_ts, to_ts = (int(x) for x in groups)
             if 'transactionType=0' in url:
                 if from_ts < 1626144956000 < to_ts:
                     response_str = BINANCE_FIATDEPOSITS_RESPONSE
@@ -637,26 +637,22 @@ def test_binance_query_deposits_withdrawals_gte_90_days(function_scope_binance):
             BINANCE_DEPOSITS_HISTORY_RESPONSE,
             '[]',
         ]
-        for result in results:
-            yield result
+        yield from results
 
     def get_time_delta_withdraw_result():
         results = [
             '[]',
             BINANCE_WITHDRAWALS_HISTORY_RESPONSE,
         ]
-        for result in results:
-            yield result
+        yield from results
 
     def get_fiat_deposit_result():
         results = ['[]']
-        for result in results:
-            yield result
+        yield from results
 
     def get_fiat_withdraw_result():
         results = ['[]']
-        for result in results:
-            yield result
+        yield from results
 
     def mock_get_deposit_withdrawal(url, **kwargs):  # pylint: disable=unused-argument
         if 'capital/deposit' in url:
@@ -749,16 +745,14 @@ def test_api_query_list_calls_with_time_delta(function_scope_binance):
             BINANCE_DEPOSITS_HISTORY_RESPONSE,
             '[]',
         ]
-        for result in results:
-            yield result
+        yield from results
 
     def get_time_delta_withdraw_result():
         results = [
             '[]',
             BINANCE_WITHDRAWALS_HISTORY_RESPONSE,
         ]
-        for result in results:
-            yield result
+        yield from results
 
     def mock_get_deposit_withdrawal(url, **kwargs):  # pylint: disable=unused-argument
         if 'deposit' in url:
@@ -771,14 +765,13 @@ def test_api_query_list_calls_with_time_delta(function_scope_binance):
     get_deposit_result = get_time_delta_deposit_result()
     get_withdraw_result = get_time_delta_withdraw_result()
 
-    with patch.object(binance.session, 'get', side_effect=mock_get_deposit_withdrawal):
-        with patch.object(binance, 'api_query_list') as mock_api_query_list:
-            binance.query_online_deposits_withdrawals(
-                start_ts=Timestamp(start_ts),
-                end_ts=Timestamp(end_ts),
-            )
-            # TODO: Fix this test to deal with fiat deposits too
-            assert mock_api_query_list.call_args_list[:4] == expected_calls
+    with patch.object(binance.session, 'get', side_effect=mock_get_deposit_withdrawal), patch.object(binance, 'api_query_list') as mock_api_query_list:  # noqa: E501
+        binance.query_online_deposits_withdrawals(
+            start_ts=Timestamp(start_ts),
+            end_ts=Timestamp(end_ts),
+        )
+        # TODO: Fix this test to deal with fiat deposits too
+        assert mock_api_query_list.call_args_list[:4] == expected_calls
 
 
 @pytest.mark.freeze_time(datetime(2020, 11, 24, 3, 14, 15))
@@ -822,8 +815,7 @@ def test_api_query_retry_on_status_code_429(function_scope_binance):
             MockResponse(418, '[]', headers={'retry-after': '5'}),
             MockResponse(418, '[]', headers={'retry-after': str(RETRY_AFTER_LIMIT + 1)}),
         ]
-        for response in responses:
-            yield response
+        yield from responses
 
     def mock_response(url, timeout):  # pylint: disable=unused-argument
         return next(get_response)

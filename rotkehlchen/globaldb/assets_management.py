@@ -109,9 +109,8 @@ def export_assets_from_file(
 
     globaldb = GlobalDBHandler()
 
-    with db_handler.user_write() as cursor:
-        with globaldb.conn.read_ctx() as gdb_cursor:
-            assets = globaldb.get_user_added_assets(gdb_cursor, cursor, user_db=db_handler)
+    with db_handler.user_write() as cursor, globaldb.conn.read_ctx() as gdb_cursor:
+        assets = globaldb.get_user_added_assets(gdb_cursor, cursor, user_db=db_handler)
     serialized = []
     for asset_identifier in assets:
         try:

@@ -276,8 +276,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 self.activate_module(name)
 
     def iterate_modules(self) -> Iterator[tuple[str, EthereumModule]]:
-        for name, module in self.eth_modules.items():
-            yield name, module
+        yield from self.eth_modules.items()
 
     def queried_addresses_for_module(self, module: ModuleName) -> list[ChecksumEvmAddress]:
         """Returns the addresses to query for the given module/protocol"""

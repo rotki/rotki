@@ -91,6 +91,7 @@ ignore = [
     "RET507",  # https://github.com/charliermarsh/ruff/issues/1035
     "RET508",  # https://github.com/charliermarsh/ruff/issues/1035
     "PGH003",  # we do use blanket type: ignore. Perhaps can fix in the future
+    "SIM108",  # we do use ternary operator when it makes sense. But forcing it everywhere makes the code unreadable.
 ]
 # Exclude a variety of commonly ignored directories.
 exclude = [

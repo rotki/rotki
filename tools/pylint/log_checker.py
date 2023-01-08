@@ -1,3 +1,5 @@
+from contextlib import suppress
+
 from astroid.exceptions import InferenceError
 from pylint.checkers import BaseChecker
 from pylint.interfaces import IAstroidChecker
@@ -39,10 +41,8 @@ class LogNokwargsChecker(BaseChecker):
         """Called on expressions of the form `expr()`, where `expr` is a simple
         name e.g. `f()` or a path e.g. `v.f()`.
         """
-        try:
+        with suppress(InferenceError):
             self._detect_normal_logs_with_kwargs(node)
-        except InferenceError:
-            pass
 
     def _detect_normal_logs_with_kwargs(self, node):
         """This stops usages of the form:
@@ -56,6 +56,5 @@ class LogNokwargsChecker(BaseChecker):
             >>> log.debug('foo', a=1)
         """
         for inferred_func in node.func.infer():
-            if is_normal_logging_call(inferred_func):
-                if node.keywords and len(node.keywords) != 0:
-                    self.add_message(LOGNOKWARGS_SYMBOL, node=node)
+            if is_normal_logging_call(inferred_func) and node.keywords and len(node.keywords) != 0:
+                self.add_message(LOGNOKWARGS_SYMBOL, node=node)

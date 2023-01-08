@@ -88,19 +88,18 @@ def test_maybe_query_ethereum_transactions(task_manager, ethereum_accounts):
     )
     timeout = 8
     try:
-        with gevent.Timeout(timeout):
-            with tx_query_patch as tx_mock:
-                # First two calls to schedule should handle the addresses
-                for i in range(2):
-                    task_manager.schedule()
-                    while True:
-                        if tx_mock.call_count == i + 1:
-                            break
-                        gevent.sleep(.2)
-
+        with gevent.Timeout(timeout), tx_query_patch as tx_mock:
+            # First two calls to schedule should handle the addresses
+            for i in range(2):
                 task_manager.schedule()
-                gevent.sleep(.5)
-                assert tx_mock.call_count == 2, '3rd schedule should do nothing'
+                while True:
+                    if tx_mock.call_count == i + 1:
+                        break
+                    gevent.sleep(.2)
+
+            task_manager.schedule()
+            gevent.sleep(.5)
+            assert tx_mock.call_count == 2, '3rd schedule should do nothing'
 
     except gevent.Timeout as e:
         raise AssertionError(f'The transaction query was not scheduled within {timeout} seconds') from e  # noqa: E501
@@ -130,13 +129,12 @@ def test_maybe_schedule_xpub_derivation(task_manager, database):
 
     timeout = 4
     try:
-        with gevent.Timeout(timeout):
-            with xpub_derive_patch as xpub_mock:
-                task_manager.schedule()
-                while True:
-                    if xpub_mock.call_count == 2:
-                        break
-                    gevent.sleep(.2)
+        with gevent.Timeout(timeout), xpub_derive_patch as xpub_mock:
+            task_manager.schedule()
+            while True:
+                if xpub_mock.call_count == 2:
+                    break
+                gevent.sleep(.2)
 
     except gevent.Timeout as e:
         raise AssertionError(f'xpub derivation query was not scheduled within {timeout} seconds') from e  # noqa: E501
@@ -156,17 +154,16 @@ def test_maybe_schedule_exchange_query(task_manager, exchange_manager, poloniex)
 
     timeout = 5
     try:
-        with gevent.Timeout(timeout):
-            with poloniex_patch as poloniex_mock:
-                task_manager.schedule()
-                while True:
-                    if poloniex_mock.call_count == 1:
-                        break
-                    gevent.sleep(.2)
+        with gevent.Timeout(timeout), poloniex_patch as poloniex_mock:
+            task_manager.schedule()
+            while True:
+                if poloniex_mock.call_count == 1:
+                    break
+                gevent.sleep(.2)
 
-                task_manager.schedule()
-                gevent.sleep(.5)
-                assert poloniex_mock.call_count == 1, '2nd schedule should do nothing'
+            task_manager.schedule()
+            gevent.sleep(.5)
+            assert poloniex_mock.call_count == 1, '2nd schedule should do nothing'
 
     except gevent.Timeout as e:
         raise AssertionError(f'exchange query was not scheduled within {timeout} seconds') from e  # noqa: E501
@@ -209,23 +206,22 @@ def test_maybe_schedule_ethereum_txreceipts(
     receipt_get_patch = patch.object(ethereum_manager.node_inquirer, 'get_transaction_receipt', wraps=ethereum_manager.node_inquirer.get_transaction_receipt)  # pylint: disable=protected-member  # noqa: E501
     queried_receipts = set()
     try:
-        with gevent.Timeout(timeout):
-            with receipt_get_patch as receipt_task_mock:
-                task_manager.schedule()
-                with database.conn.read_ctx() as cursor:
-                    while True:
-                        if len(queried_receipts) == 2:
-                            break
+        with gevent.Timeout(timeout), receipt_get_patch as receipt_task_mock:
+            task_manager.schedule()
+            with database.conn.read_ctx() as cursor:
+                while True:
+                    if len(queried_receipts) == 2:
+                        break
 
-                        for txhash in (tx_hash_1, tx_hash_2):
-                            if dbevmtx.get_receipt(cursor, txhash, ChainID.ETHEREUM) is not None:
-                                queried_receipts.add(txhash)
+                    for txhash in (tx_hash_1, tx_hash_2):
+                        if dbevmtx.get_receipt(cursor, txhash, ChainID.ETHEREUM) is not None:
+                            queried_receipts.add(txhash)
 
-                        gevent.sleep(.3)
+                    gevent.sleep(.3)
 
-                task_manager.schedule()
-                gevent.sleep(.5)
-                assert receipt_task_mock.call_count == 1 if one_receipt_in_db else 2, '2nd schedule should do nothing'  # noqa: E501
+            task_manager.schedule()
+            gevent.sleep(.5)
+            assert receipt_task_mock.call_count == 1 if one_receipt_in_db else 2, '2nd schedule should do nothing'  # noqa: E501
 
     except gevent.Timeout as e:
         raise AssertionError(f'receipts query was not completed within {timeout} seconds') from e  # noqa: E501
@@ -303,20 +299,19 @@ def test_update_snapshot_balances(task_manager):
     )
     timeout = 5
     try:
-        with gevent.Timeout(timeout):
-            with query_balances_patch as query_mock:
-                task_manager.schedule()
-                while True:
-                    if query_mock.call_count == 1:
-                        break
-                    gevent.sleep(.2)
+        with gevent.Timeout(timeout), query_balances_patch as query_mock:
+            task_manager.schedule()
+            while True:
+                if query_mock.call_count == 1:
+                    break
+                gevent.sleep(.2)
 
-                query_mock.assert_called_once_with(
-                    requested_save_data=True,
-                    save_despite_errors=False,
-                    timestamp=None,
-                    ignore_cache=True,
-                )
+            query_mock.assert_called_once_with(
+                requested_save_data=True,
+                save_despite_errors=False,
+                timestamp=None,
+                ignore_cache=True,
+            )
     except gevent.Timeout as e:
         raise AssertionError(f'Update snapshot balances was not completed within {timeout} seconds') from e  # noqa: E501
 
@@ -330,13 +325,12 @@ def test_update_curve_pools(task_manager):
     )
     timeout = 5
     try:
-        with gevent.Timeout(timeout):
-            with query_balances_patch as query_mock:
-                task_manager.schedule()
-                while True:
-                    if query_mock.call_count == 1:
-                        break
-                    gevent.sleep(.2)
+        with gevent.Timeout(timeout), query_balances_patch as query_mock:
+            task_manager.schedule()
+            while True:
+                if query_mock.call_count == 1:
+                    break
+                gevent.sleep(.2)
     except gevent.Timeout as e:
         raise AssertionError(f'Update curve pools was not completed within {timeout} seconds') from e  # noqa: E501
 

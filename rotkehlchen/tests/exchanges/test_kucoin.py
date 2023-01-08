@@ -79,8 +79,7 @@ def test_api_query_retries_request(mock_kucoin):
             """{"code":400007,"msg":"unknown error"}""",
             """{"code":400007,"msg":"unknown error"}""",
         ]
-        for result_ in results:
-            yield result_
+        yield from results
 
     def mock_api_query_response(url, **kwargs):  # pylint: disable=unused-argument
         return MockResponse(HTTPStatus.TOO_MANY_REQUESTS, next(get_response))
@@ -738,8 +737,7 @@ def test_query_asset_movements_sandbox(
             # the response below won't be processed
             f'{withdrawals_response_3}',
         ]
-        for result_ in results:
-            yield result_
+        yield from results
 
     def mock_api_query_response(case, options):  # pylint: disable=unused-argument
         return MockResponse(HTTPStatus.OK, next(get_response))

@@ -1,5 +1,6 @@
 import json
 import logging
+from contextlib import suppress
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
 from gevent.lock import Semaphore
@@ -59,11 +60,9 @@ class RotkiNotifier():
 
     def unsubscribe(self, websocket: WebSocket) -> None:
         self.locks.pop(websocket, None)
-        try:
+        with suppress(ValueError):
             self.subscribers.remove(websocket)
             log.info(f'Websocket with hash id {hash(websocket)} unsubscribed from rotki notifier')  # noqa: E501
-        except ValueError:
-            pass
 
     def broadcast(
             self,

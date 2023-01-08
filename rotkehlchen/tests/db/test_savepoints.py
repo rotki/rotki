@@ -39,9 +39,8 @@ def test_savepoint_errors():
         conn.release_savepoint()
 
     conn._enter_savepoint('point')
-    with pytest.raises(ContextError):
-        with conn._enter_savepoint('point'):
-            ...
+    with pytest.raises(ContextError), conn._enter_savepoint('point'):
+        ...
 
     with pytest.raises(ContextError):
         conn.rollback_savepoint('abc')

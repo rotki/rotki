@@ -741,12 +741,11 @@ class FileField(fields.Field):
             **_kwargs: Any,
     ) -> Union[Path, FileStorage]:
         if isinstance(value, FileStorage):
-            if self.allowed_extensions is not None and value.filename:
-                if not any(value.filename.endswith(x) for x in self.allowed_extensions):
-                    raise ValidationError(
-                        f'Given file {value.filename} does not end in any of '
-                        f'{",".join(self.allowed_extensions)}',
-                    )
+            if self.allowed_extensions is not None and value.filename and not any(value.filename.endswith(x) for x in self.allowed_extensions):  # noqa: E501
+                raise ValidationError(
+                    f'Given file {value.filename} does not end in any of '
+                    f'{",".join(self.allowed_extensions)}',
+                )
 
             return value
 
@@ -760,12 +759,11 @@ class FileField(fields.Field):
         if not path.is_file():
             raise ValidationError(f'Given path {value} is not a file')
 
-        if self.allowed_extensions is not None:
-            if not any(path.suffix == x for x in self.allowed_extensions):
-                raise ValidationError(
-                    f'Given file {path} does not end in any of '
-                    f'{",".join(self.allowed_extensions)}',
-                )
+        if self.allowed_extensions is not None and not any(path.suffix == x for x in self.allowed_extensions):  # noqa: E501
+            raise ValidationError(
+                f'Given file {path} does not end in any of '
+                f'{",".join(self.allowed_extensions)}',
+            )
 
         return path
 
