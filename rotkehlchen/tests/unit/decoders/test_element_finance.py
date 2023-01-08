@@ -21,7 +21,7 @@ def test_claim_aidrop(database, ethereum_inquirer):
     # TODO: For faster tests hard-code the transaction and the logs here so no remote query needed
     tx_hash = deserialize_evm_tx_hash('0x1e58aed1baf70b57e6e3e880e1890e7fe607fddc94d62986c38fe70e483e594b')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
-        ethereum_inquirer=ethereum_inquirer,
+        evm_inquirer=ethereum_inquirer,
         database=database,
         tx_hash=tx_hash,
     )
