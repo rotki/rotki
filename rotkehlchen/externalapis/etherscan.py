@@ -6,8 +6,7 @@ from typing import TYPE_CHECKING, Any, Iterator, Literal, Optional, Sequence, Un
 import gevent
 import requests
 
-from rotkehlchen.chain.ethereum.constants import GENESIS_HASH
-from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
+from rotkehlchen.chain.evm.constants import GENESIS_HASH, ZERO_ADDRESS
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.constants.timing import (
     DEFAULT_CONNECT_TIMEOUT,
