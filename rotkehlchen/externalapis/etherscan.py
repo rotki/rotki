@@ -8,6 +8,7 @@ import requests
 
 from rotkehlchen.chain.ethereum.constants import GENESIS_HASH
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
+from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.constants.timing import (
     DEFAULT_CONNECT_TIMEOUT,
     DEFAULT_READ_TIMEOUT,
@@ -246,42 +247,47 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
     @overload
     def get_transactions(
             self,
-            account: ChecksumEvmAddress,
+            account: Optional[ChecksumEvmAddress],
             action: Literal['txlistinternal'],
-            from_ts: Optional[Timestamp] = None,
-            to_ts: Optional[Timestamp] = None,
+            period: Optional[TimestampOrBlockRange] = None,
     ) -> Iterator[list[EvmInternalTransaction]]:
         ...
 
     @overload
     def get_transactions(
             self,
-            account: ChecksumEvmAddress,
+            account: Optional[ChecksumEvmAddress],
             action: Literal['txlist'],
-            from_ts: Optional[Timestamp] = None,
-            to_ts: Optional[Timestamp] = None,
+            period: Optional[TimestampOrBlockRange] = None,
     ) -> Iterator[list[EvmTransaction]]:
         ...
 
     def get_transactions(
             self,
-            account: ChecksumEvmAddress,
+            account: Optional[ChecksumEvmAddress],
             action: Literal['txlist', 'txlistinternal'],
-            from_ts: Optional[Timestamp] = None,
-            to_ts: Optional[Timestamp] = None,
+            period: Optional[TimestampOrBlockRange] = None,
     ) -> Union[Iterator[list[EvmTransaction]], Iterator[list[EvmInternalTransaction]]]:
-        """Gets a list of transactions (either normal or internal) for account.
+        """Gets a list of transactions (either normal or internal) for an account.
+
+        The account is optional if the txlistinternal endpoint is queried.
 
         May raise:
         - RemoteError due to self._query(). Also if the returned result
         is not in the expected format
         """
-        options = {'address': str(account), 'sort': 'asc'}
-        if from_ts is not None:
-            from_block = self.get_blocknumber_by_time(from_ts)
+        options = {'sort': 'asc'}
+        if account:
+            options['address'] = str(account)
+        if period is not None:
+            if period.range_type == 'blocks':
+                from_block = period.from_value
+                to_block = period.to_value
+            else:  # timestamps
+                from_block = self.get_blocknumber_by_time(period.from_value)  # type: ignore
+                to_block = self.get_blocknumber_by_time(period.to_value)  # type: ignore
+
             options['startBlock'] = str(from_block)
-        if to_ts is not None:
-            to_block = self.get_blocknumber_by_time(to_ts)
             options['endBlock'] = str(to_block)
 
         transactions: Union[Sequence[EvmTransaction], Sequence[EvmInternalTransaction]] = []  # noqa: E501
@@ -305,7 +311,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                         # Handling genesis transactions
                         dbtx = DBEvmTx(self.db)  # type: ignore
                         tx = dbtx.get_or_create_genesis_transaction(
-                            account=account,
+                            account=account,  # type: ignore[arg-type]  # always exists here
                             chain_id=chain_id,  # type: ignore[arg-type]  # is only supported chain
                         )
                         trace_id = dbtx.get_max_genesis_trace_id(chain_id)
@@ -322,7 +328,6 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                             dbtx.add_evm_internal_transactions(
                                 write_cursor=cursor,
                                 transactions=[internal_tx],
-                                relevant_address=account,
                             )
                 except DeserializationError as e:
                     self.msg_aggregator.add_warning(f'{str(e)}. Skipping transaction')

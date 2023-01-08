@@ -9,6 +9,7 @@ from gevent.lock import Semaphore
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.api.websockets.typedefs import TransactionStatusStep, WSMessageType
+from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
 from rotkehlchen.db.ranges import DBQueryRanges
@@ -39,6 +40,7 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
         super().__init__()
         self.evm_inquirer = evm_inquirer
         self.database = database
+        self.dbranges = DBQueryRanges(self.database)
         self.address_tx_locks: dict[ChecksumEvmAddress, Semaphore] = defaultdict(Semaphore)
         self.missing_receipts_lock = Semaphore()
         self.msg_aggregator = database.msg_aggregator
@@ -137,6 +139,48 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
                 end_ts=to_ts,
             )
 
+    def _query_and_save_transactions_for_range(
+            self,
+            address: ChecksumEvmAddress,
+            period: TimestampOrBlockRange,
+            location_string: Optional[str] = None,
+    ) -> None:
+        """Helper function to abstract tx querying functionality for different range types"""
+        dbevmtx = DBEvmTx(self.database)
+        for new_transactions in self.evm_inquirer.etherscan.get_transactions(
+                account=address,
+                action='txlist',
+                period=period,
+        ):
+            # add new transactions to the DB
+            if len(new_transactions) == 0:
+                continue
+
+            with self.database.user_write() as cursor:
+                dbevmtx.add_evm_transactions(
+                    write_cursor=cursor,
+                    evm_transactions=new_transactions,
+                    relevant_address=address,
+                )
+                if period.range_type == 'timestamps':
+                    assert location_string, 'should always be given for timestamps'
+                    # update last queried time for the address
+                    self.dbranges.update_used_query_range(
+                        write_cursor=cursor,
+                        location_string=location_string,
+                        queried_ranges=[(period.from_value, new_transactions[-1].timestamp)],  # type: ignore  # noqa: E501
+                    )
+
+                    self.msg_aggregator.add_message(
+                        message_type=WSMessageType.ETHEREUM_TRANSACTION_STATUS,
+                        data={
+                            'address': address,
+                            'blockchain': self.evm_inquirer.chain_name,
+                            'period': [period.from_value, new_transactions[-1].timestamp],
+                            'status': str(TransactionStatusStep.QUERYING_TRANSACTIONS),
+                        },
+                    )
+
     def _get_transactions_for_range(
             self,
             address: ChecksumEvmAddress,
@@ -148,49 +192,26 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
         If any transactions are found, they are added in the DB
         """
         location_string = f'{self.evm_inquirer.blockchain.to_range_prefix("txs")}_{address}'
-        ranges = DBQueryRanges(self.database)
         with self.database.conn.read_ctx() as cursor:
-            ranges_to_query = ranges.get_location_query_ranges(
+            ranges_to_query = self.dbranges.get_location_query_ranges(
                 cursor=cursor,
                 location_string=location_string,
                 start_ts=start_ts,
                 end_ts=end_ts,
             )
-        dbevmtx = DBEvmTx(self.database)
 
         for query_start_ts, query_end_ts in ranges_to_query:
             log.debug(f'Querying {self.evm_inquirer.chain_name} transactions for {address} -> {query_start_ts} - {query_end_ts}')  # noqa: E501
             try:
-                for new_transactions in self.evm_inquirer.etherscan.get_transactions(
-                    account=address,
-                    from_ts=query_start_ts,
-                    to_ts=query_end_ts,
-                    action='txlist',
-                ):
-                    # add new transactions to the DB
-                    if len(new_transactions) != 0:
-                        with self.database.user_write() as cursor:
-                            dbevmtx.add_evm_transactions(
-                                write_cursor=cursor,
-                                evm_transactions=new_transactions,
-                                relevant_address=address,
-                            )
-                            # update last queried time for the address
-                            ranges.update_used_query_range(
-                                write_cursor=cursor,
-                                location_string=location_string,
-                                queried_ranges=[(query_start_ts, new_transactions[-1].timestamp)],
-                            )
-
-                        self.msg_aggregator.add_message(
-                            message_type=WSMessageType.ETHEREUM_TRANSACTION_STATUS,
-                            data={
-                                'address': address,
-                                'blockchain': self.evm_inquirer.chain_name,
-                                'period': [query_start_ts, new_transactions[-1].timestamp],
-                                'status': str(TransactionStatusStep.QUERYING_TRANSACTIONS),
-                            },
-                        )
+                self._query_and_save_transactions_for_range(
+                    address=address,
+                    period=TimestampOrBlockRange(
+                        range_type='timestamps',
+                        from_value=query_start_ts,
+                        to_value=query_end_ts,
+                    ),
+                    location_string=location_string,
+                )
 
             except RemoteError as e:
                 self.msg_aggregator.add_error(
@@ -204,11 +225,81 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
 
         log.debug(f'{self.evm_inquirer.chain_name} transactions done for {address}. Update range {start_ts} - {end_ts}')  # noqa: E501
         with self.database.user_write() as cursor:
-            ranges.update_used_query_range(  # entire range is now considered queried
+            self.dbranges.update_used_query_range(  # entire range is now considered queried
                 write_cursor=cursor,
                 location_string=location_string,
                 queried_ranges=[(start_ts, end_ts)],
             )
+
+    def _query_and_save_internal_transactions_for_range(
+            self,
+            address: Optional[ChecksumEvmAddress],
+            period: TimestampOrBlockRange,
+            location_string: Optional[str] = None,
+    ) -> None:
+        """Helper function to abstract internal tx querying for different range types
+
+        If address is None, then etherscan query will return all internal transactions.
+        """
+        dbevmtx = DBEvmTx(self.database)
+        for new_internal_txs in self.evm_inquirer.etherscan.get_transactions(
+                account=address,
+                period=period,
+                action='txlistinternal',
+        ):
+            if len(new_internal_txs) == 0:
+                continue
+
+            with self.database.user_write() as cursor:
+                for internal_tx in new_internal_txs:
+                    if internal_tx.value == 0:
+                        continue  # Only reason we need internal is for ether transfer. Ignore 0
+                    # make sure internal transaction parent transactions are in the DB
+                    gevent.sleep(0)
+                    result = dbevmtx.get_evm_transactions(
+                        cursor,
+                        EvmTransactionsFilterQuery.make(
+                            tx_hash=internal_tx.parent_tx_hash,
+                            chain_id=self.evm_inquirer.chain_id,
+                        ),
+                        has_premium=True,  # ignore limiting here
+                    )
+                    if len(result) == 0:  # parent transaction is not in the DB. Get it
+                        transaction = self.evm_inquirer.get_transaction_by_hash(internal_tx.parent_tx_hash)  # noqa: E501
+                        gevent.sleep(0)
+                        dbevmtx.add_evm_transactions(
+                            write_cursor=cursor,
+                            evm_transactions=[transaction],
+                            relevant_address=address,
+                        )
+                        timestamp = transaction.timestamp
+                    else:
+                        timestamp = result[0].timestamp
+
+                    dbevmtx.add_evm_internal_transactions(
+                        write_cursor=cursor,
+                        transactions=[internal_tx],
+                    )
+
+                    if period.range_type == 'timestamps':
+                        assert location_string, 'should always be given for timestamps'
+                        log.debug(f'Internal {self.evm_inquirer.chain_name} transactions for {address} -> update range {period.from_value} - {timestamp}')  # noqa: E501
+                        # update last queried time for address
+                        self.dbranges.update_used_query_range(
+                            write_cursor=cursor,
+                            location_string=location_string,
+                            queried_ranges=[(period.from_value, timestamp)],  # type: ignore
+                        )
+
+                        self.msg_aggregator.add_message(
+                            message_type=WSMessageType.ETHEREUM_TRANSACTION_STATUS,
+                            data={
+                                'address': address,
+                                'blockchain': self.evm_inquirer.chain_name,
+                                'period': [period.from_value, timestamp],
+                                'status': str(TransactionStatusStep.QUERYING_INTERNAL_TRANSACTIONS),  # noqa: E501
+                            },
+                        )
 
     def _get_internal_transactions_for_ranges(
             self,
@@ -221,73 +312,25 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
         If any internal transactions are found, they are added in the DB
         """
         location_string = f'{self.evm_inquirer.blockchain.to_range_prefix("internaltxs")}_{address}'  # noqa: E501
-        ranges = DBQueryRanges(self.database)
-        dbevmtx = DBEvmTx(self.database)
         with self.database.conn.read_ctx() as cursor:
-            ranges_to_query = ranges.get_location_query_ranges(
+            ranges_to_query = self.dbranges.get_location_query_ranges(
                 cursor=cursor,
                 location_string=location_string,
                 start_ts=start_ts,
                 end_ts=end_ts,
             )
-        new_internal_txs = []
         for query_start_ts, query_end_ts in ranges_to_query:
             log.debug(f'Querying {self.evm_inquirer.chain_name} internal transactions for {address} -> {query_start_ts} - {query_end_ts}')  # noqa: E501
             try:
-                for new_internal_txs in self.evm_inquirer.etherscan.get_transactions(
-                    account=address,
-                    from_ts=query_start_ts,
-                    to_ts=query_end_ts,
-                    action='txlistinternal',
-                ):
-                    if len(new_internal_txs) != 0:
-                        with self.database.user_write() as cursor:
-                            for internal_tx in new_internal_txs:
-                                # make sure internal transaction parent transactions are in the DB
-                                gevent.sleep(0)
-                                result = dbevmtx.get_evm_transactions(
-                                    cursor,
-                                    EvmTransactionsFilterQuery.make(
-                                        tx_hash=internal_tx.parent_tx_hash,
-                                        chain_id=self.evm_inquirer.chain_id,
-                                    ),
-                                    has_premium=True,  # ignore limiting here
-                                )
-                                if len(result) == 0:  # parent transaction is not in the DB. Get it
-                                    transaction = self.evm_inquirer.get_transaction_by_hash(internal_tx.parent_tx_hash)  # noqa: E501
-                                    gevent.sleep(0)
-                                    dbevmtx.add_evm_transactions(
-                                        write_cursor=cursor,
-                                        evm_transactions=[transaction],
-                                        relevant_address=address,
-                                    )
-                                    timestamp = transaction.timestamp
-                                else:
-                                    timestamp = result[0].timestamp
-
-                                dbevmtx.add_evm_internal_transactions(
-                                    write_cursor=cursor,
-                                    transactions=[internal_tx],
-                                    relevant_address=address,
-                                )
-                                log.debug(f'Internal {self.evm_inquirer.chain_name} transactions for {address} -> update range {query_start_ts} - {timestamp}')  # noqa: E501
-                                # update last queried time for address
-                                ranges.update_used_query_range(
-                                    write_cursor=cursor,
-                                    location_string=location_string,
-                                    queried_ranges=[(query_start_ts, timestamp)],
-                                )
-
-                            self.msg_aggregator.add_message(
-                                message_type=WSMessageType.ETHEREUM_TRANSACTION_STATUS,
-                                data={
-                                    'address': address,
-                                    'blockchain': self.evm_inquirer.chain_name,
-                                    'period': [query_start_ts, timestamp],
-                                    'status': str(TransactionStatusStep.QUERYING_INTERNAL_TRANSACTIONS),  # noqa: E501
-                                },
-                            )
-
+                self._query_and_save_internal_transactions_for_range(
+                    address=address,
+                    period=TimestampOrBlockRange(
+                        range_type='timestamps',
+                        from_value=query_start_ts,
+                        to_value=query_end_ts,
+                    ),
+                    location_string=location_string,
+                )
             except RemoteError as e:
                 self.msg_aggregator.add_error(
                     f'Got error "{str(e)}" while querying internal {self.evm_inquirer.chain_name} '
@@ -300,7 +343,7 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
 
         log.debug(f'Internal {self.evm_inquirer.chain_name} transactions for address {address} done. Update range {start_ts} - {end_ts}')  # noqa: E501
         with self.database.user_write() as cursor:
-            ranges.update_used_query_range(  # entire range is now considered queried
+            self.dbranges.update_used_query_range(  # entire range is now considered queried
                 write_cursor=cursor,
                 location_string=location_string,
                 queried_ranges=[(start_ts, end_ts)],
@@ -318,9 +361,8 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
         """
         location_string = f'{self.evm_inquirer.blockchain.to_range_prefix("tokentxs")}_{address}'
         dbevmtx = DBEvmTx(self.database)
-        ranges = DBQueryRanges(self.database)
         with self.database.conn.read_ctx() as cursor:
-            ranges_to_query = ranges.get_location_query_ranges(
+            ranges_to_query = self.dbranges.get_location_query_ranges(
                 cursor=cursor,
                 location_string=location_string,
                 start_ts=start_ts,
@@ -357,7 +399,7 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
 
                             log.debug(f'{self.evm_inquirer.chain_name} ERC20 Transfers for {address} -> update range {query_start_ts} - {timestamp}')  # noqa: E501
                             # update last queried time for the address
-                            ranges.update_used_query_range(
+                            self.dbranges.update_used_query_range(
                                 write_cursor=cursor,
                                 location_string=location_string,
                                 queried_ranges=[(query_start_ts, timestamp)],
@@ -383,7 +425,7 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
 
         log.debug(f'{self.evm_inquirer.chain_name} ERC20 Transfers done for address {address}. Update range {start_ts} - {end_ts}')  # noqa: E501
         with self.database.user_write() as cursor:
-            ranges.update_used_query_range(  # entire range is now considered queried
+            self.dbranges.update_used_query_range(  # entire range is now considered queried
                 write_cursor=cursor,
                 location_string=location_string,
                 queried_ranges=[(start_ts, end_ts)],
@@ -416,16 +458,16 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
         if len(result) == 0:
             transaction = self.evm_inquirer.get_transaction_by_hash(tx_hash)
             dbevmtx.add_evm_transactions(write_cursor, [transaction], relevant_address=None)
-            self._get_internal_transactions_for_ranges(
-                address=transaction.from_address,
-                start_ts=transaction.timestamp,
-                end_ts=transaction.timestamp,
+            period = TimestampOrBlockRange(
+                range_type='blocks',
+                from_value=transaction.block_number,
+                to_value=transaction.block_number,
             )
-            self._get_erc20_transfers_for_ranges(
-                address=transaction.from_address,
-                start_ts=transaction.timestamp,
-                end_ts=transaction.timestamp,
-            )
+            if transaction.to_address is not None:  # internal transactions only through contracts
+                self._query_and_save_internal_transactions_for_range(
+                    address=None,  # get all internal transactions for the parent hash
+                    period=period,
+                )
 
         tx_receipt = dbevmtx.get_receipt(
             cursor=write_cursor,
