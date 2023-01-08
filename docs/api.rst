@@ -10457,22 +10457,22 @@ Querying general information
       Content-Type: application/json
 
       {
-          "result": {
-              "version": {
-                  "our_version": "1.0.3",
-                  "latest_version": "1.0.4",
-                  "download_url": "https://github.com/rotki/rotki/releases/tag/v1.0.4"
-              },
-              "data_directory": "/home/username/.local/share/rotki/data"
-              "log_level": "DEBUG",
-	      "accept_docker_risk: false,
-	      "backend_default_arguments": {
-	          "max-logfiles-num": 3,
-	          "max-size-in-mb-all-logs": 300,
-	          "sqlite-instructions": 5000,
-	      },
-          },
-          "message": ""
+      	"result": {
+      		"version": {
+      			"our_version": "1.0.3",
+      			"latest_version": "1.0.4",
+      			"download_url": "https://github.com/rotki/rotki/releases/tag/v1.0.4"
+      		},
+      		"data_directory": "/home/username/.local/share/rotki/data",
+      		"log_level": "DEBUG",
+      		"accept_docker_risk": false,
+      		"backend_default_arguments": {
+      			"max-logfiles-num": 3,
+      			"max-size-in-mb-all-logs": 300,
+      			"sqlite-instructions": 5000
+      		}
+      	},
+      	"message": ""
       }
 
    :resjson str our_version: The version of rotki present in the system
