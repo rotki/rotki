@@ -11,8 +11,12 @@ from rotkehlchen.chain.ethereum.constants import ETHEREUM_ETHERSCAN_NODE
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
+from rotkehlchen.chain.evm.decoding.decoder import EVMTransactionDecoder
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
+from rotkehlchen.chain.evm.transactions import EvmTransactions
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
+from rotkehlchen.chain.optimism.decoding.decoder import OptimismTransactionDecoder
+from rotkehlchen.chain.optimism.transactions import OptimismTransactions
 from rotkehlchen.constants import ONE
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.evmtx import DBEvmTx
@@ -365,20 +369,32 @@ def extended_transactions_setup_test(
 
 
 def get_decoded_events_of_transaction(
-        ethereum_inquirer: EthereumInquirer,
+        evm_inquirer: EthereumInquirer,
         database: DBHandler,
         tx_hash: EVMTxHash,
-) -> tuple[list[HistoryBaseEntry], EthereumTransactionDecoder]:
+) -> tuple[list[HistoryBaseEntry], EVMTransactionDecoder]:
     """A convenience function to ask get transaction, receipt and decoded event for a tx_hash
 
     Returns the list of decoded events and the EVMTransactionDecoder
     """
-    transactions = EthereumTransactions(ethereum_inquirer=ethereum_inquirer, database=database)
+    transactions: EvmTransactions
+    if evm_inquirer.chain_id == ChainID.ETHEREUM:
+        transactions = EthereumTransactions(ethereum_inquirer=evm_inquirer, database=database)
+        decoder = EthereumTransactionDecoder(
+            database=database,
+            ethereum_inquirer=evm_inquirer,
+            transactions=transactions,
+        )
+    elif evm_inquirer.chain_id == ChainID.OPTIMISM:
+        transactions = OptimismTransactions(optimism_inquirer=evm_inquirer, database=database)  # type: ignore # noqa: E501
+        decoder = OptimismTransactionDecoder(
+            database=database,
+            optimism_inquirer=evm_inquirer,  # type: ignore
+            transactions=transactions,
+        )
+    else:
+        raise AssertionError('Unsupported chainID at tests')
+
     with database.user_write() as cursor:
         transactions.get_or_query_transaction_receipt(cursor, tx_hash=tx_hash)
-    decoder = EthereumTransactionDecoder(
-        database=database,
-        ethereum_inquirer=ethereum_inquirer,
-        transactions=transactions,
-    )
     return decoder.decode_transaction_hashes(ignore_cache=True, tx_hashes=[tx_hash]), decoder

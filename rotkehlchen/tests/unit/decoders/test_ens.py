@@ -33,7 +33,7 @@ def test_mint_ens_name(database, ethereum_inquirer):
     # TODO: For faster tests hard-code the transaction and the logs here so no remote query needed
     tx_hash = deserialize_evm_tx_hash('0x74e72600c6cd5a1f0170a3ca38ecbf7d59edeb8ceb48adab2ed9b85d12cc2b99')  # noqa: E501
     events, decoder = get_decoded_events_of_transaction(
-        ethereum_inquirer=ethereum_inquirer,
+        evm_inquirer=ethereum_inquirer,
         database=database,
         tx_hash=tx_hash,
     )
