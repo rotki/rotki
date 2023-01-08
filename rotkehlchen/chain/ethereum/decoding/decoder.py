@@ -93,7 +93,7 @@ class EthereumTransactionDecoder(EVMTransactionDecoder):
                         continue
 
                     # user bridged from gnosis chain
-                    event.event_type = HistoryEventType.TRANSFER
+                    event.event_type = HistoryEventType.WITHDRAWAL
                     event.event_subtype = HistoryEventSubType.BRIDGE
                     event.counterparty = CPT_GNOSIS_CHAIN
                     event.notes = (
