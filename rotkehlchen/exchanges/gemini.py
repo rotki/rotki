@@ -275,9 +275,8 @@ class Gemini(ExchangeInterface):
             raise GeminiPermissionError(
                 f'API key does not have permission for {endpoint}',
             )
-        if response.status_code == HTTPStatus.BAD_REQUEST:
-            if 'InvalidSignature' in response.text or 'Invalid API key' in response.text:
-                raise GeminiPermissionError('Invalid API Key or API secret')
+        if response.status_code == HTTPStatus.BAD_REQUEST and ('InvalidSignature' in response.text or 'Invalid API key' in response.text):  # noqa: E501
+            raise GeminiPermissionError('Invalid API Key or API secret')
             # else let it be handled by the generic non-200 code error below
 
         if response.status_code != HTTPStatus.OK:

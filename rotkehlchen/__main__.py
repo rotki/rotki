@@ -28,7 +28,7 @@ def main() -> None:
             logging.critical(tb)
             print("Failed to start rotkehlchen backend:\n{}".format(tb))
             sys.exit(1)
-    except: # noqa  # pylint: disable=bare-except
+    except:  # noqa: B001, E722, RUF100  # pylint: disable=bare-except
         tb = traceback.format_exc()
         logging.critical(tb)
         print("Failed to start rotkehlchen backend:\n{}".format(tb))

@@ -1,6 +1,6 @@
-
 import logging
 import operator
+from contextlib import suppress
 from enum import auto
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Iterable, NamedTuple, Optional, Sequence, Union
@@ -654,23 +654,21 @@ class Inquirer():
             if cache is not None:
                 return cache.price, cache.oracle, cache.used_main_currency
 
-        try:
+        with suppress(UnknownAsset, RemoteError, WrongAssetType):
             asset = asset.resolve_to_fiat_asset()
             price, oracle = instance._query_fiat_pair(base=asset, quote=instance.usd)
             return price, oracle, False
-        except (UnknownAsset, RemoteError, WrongAssetType):
-            pass  # continue, asset is not fiat or a price can be found by one of the oracles (CC for example)  # noqa: E501
+
+        # continue, asset isnt fiat or a price can be found by one of the oracles (CC for example)
 
         # Try and check if it is an ethereum token with specified protocol or underlying tokens
         is_known_protocol = False
         underlying_tokens = None
-        try:
+        with suppress(UnknownAsset, WrongAssetType):
             token = asset.resolve_to_evm_token()
             if token.protocol is not None:
                 is_known_protocol = token.protocol in ProtocolsWithPriceLogic
             underlying_tokens = token.underlying_tokens
-        except (UnknownAsset, WrongAssetType):
-            pass
 
         # Check if it is a special token
         if asset.identifier in instance.special_tokens:
@@ -1000,7 +998,7 @@ class Inquirer():
 
         # Use the xratescom query and save all prices in the cache
         price = None
-        try:
+        with suppress(RemoteError):
             price_map = get_current_xratescom_exchange_rates(base)
             for quote_asset, quote_price in price_map.items():
                 if quote_asset == quote:
@@ -1017,10 +1015,8 @@ class Inquirer():
 
             if price:  # the quote asset may not be found
                 return price, CurrentPriceOracle.FIAT
-        except RemoteError:
-            pass  # price remains None
 
-        # query backup api
+        # else price remains None -- query backup api
         price = _query_currency_converterapi(base, quote)
         if price is not None:
             return price, CurrentPriceOracle.FIAT

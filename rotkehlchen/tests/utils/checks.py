@@ -1,3 +1,4 @@
+from contextlib import suppress
 from typing import Optional
 
 from rotkehlchen.fval import FVal
@@ -20,11 +21,9 @@ def assert_serialized_lists_equal(
         if max_length_to_check and idx + 1 > max_length_to_check:
             break
 
-        try:
+        with suppress(NotImplementedError):
             if a_entry == b[idx]:
                 continue
-        except NotImplementedError:
-            pass
 
         assert_serialized_dicts_equal(
             a=a_entry,

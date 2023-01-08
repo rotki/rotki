@@ -1,6 +1,7 @@
 import datetime
 import logging
 from collections import defaultdict
+from contextlib import suppress
 from operator import add, sub
 from typing import TYPE_CHECKING, DefaultDict, Literal, Optional
 
@@ -825,16 +826,14 @@ class Balancer(EthereumModule):
             )
         else:
             token_to_prices = {}
-            try:
+            with suppress(RemoteError):
+                # This suppression is exclusive to the Balancer module. The Uniswap
+                # module also calls tokenDayDatas and processes the results in the
+                # same way, so in case of an error we should know.
                 token_to_prices = self._get_unknown_token_to_prices_uniswap_graph(
                     unknown_token_addresses={token.evm_address},
                     timestamp=timestamp,
                 )
-            except RemoteError:
-                # This error hiding is exclusive to the Balancer module. The Uniswap
-                # module also calls tokenDayDatas and processes the results in the
-                # same way, so in case of an error we should know.
-                pass
 
             usd_price = token_to_prices.get(token.evm_address, Price(ZERO))
 
@@ -1098,17 +1097,16 @@ class Balancer(EthereumModule):
 
         May raise RemoteError
         """
-        with self.trades_lock:
-            with self.database.user_write() as cursor:
-                if reset_db_data is True:
-                    self.database.delete_balancer_events_data(cursor)
+        with self.trades_lock, self.database.user_write() as cursor:
+            if reset_db_data is True:
+                self.database.delete_balancer_events_data(cursor)
 
-                address_to_pool_events_balances = self._get_address_to_pool_events_balances(
-                    write_cursor=cursor,
-                    addresses=addresses,
-                    from_timestamp=from_timestamp,
-                    to_timestamp=to_timestamp,
-                )
+            address_to_pool_events_balances = self._get_address_to_pool_events_balances(
+                write_cursor=cursor,
+                addresses=addresses,
+                from_timestamp=from_timestamp,
+                to_timestamp=to_timestamp,
+            )
         return address_to_pool_events_balances
 
     # -- Methods following the EthereumModule interface -- #

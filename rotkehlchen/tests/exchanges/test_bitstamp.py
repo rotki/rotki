@@ -158,9 +158,8 @@ def test_query_balances_invalid_json(mock_bitstamp):
     def mock_api_query_response(endpoint):  # pylint: disable=unused-argument
         return MockResponse(HTTPStatus.OK, '{"key"}')
 
-    with patch.object(mock_bitstamp, '_api_query', side_effect=mock_api_query_response):
-        with pytest.raises(RemoteError):
-            mock_bitstamp.query_balances()
+    with patch.object(mock_bitstamp, '_api_query', side_effect=mock_api_query_response), pytest.raises(RemoteError):  # noqa: E501
+        mock_bitstamp.query_balances()
 
 
 @pytest.mark.parametrize('response, has_reason', (
@@ -217,9 +216,8 @@ def test_query_balances_skips_inquirer_error(mock_bitstamp):
     def mock_api_query_response(endpoint):  # pylint: disable=unused-argument
         return MockResponse(HTTPStatus.OK, '{"link_balance": "1.00000000"}')
 
-    with patch('rotkehlchen.exchanges.bitstamp.Inquirer', return_value=inquirer):
-        with patch.object(mock_bitstamp, '_api_query', side_effect=mock_api_query_response):
-            assert mock_bitstamp.query_balances() == ({}, '')
+    with patch('rotkehlchen.exchanges.bitstamp.Inquirer', return_value=inquirer), patch.object(mock_bitstamp, '_api_query', side_effect=mock_api_query_response):  # noqa: E501
+        assert mock_bitstamp.query_balances() == ({}, '')
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
@@ -555,22 +553,23 @@ def test_api_query_paginated_stops_timestamp_gt_end_ts(mock_bitstamp):
             f'[{{"type": "14", "datetime": "{gt_now_iso}"}}]',
         )
 
-    with patch(
+    limit_patch = patch(
         'rotkehlchen.exchanges.bitstamp.API_MAX_LIMIT',
         new_callable=MagicMock(return_value=api_limit),
-    ):
-        with patch.object(
-            mock_bitstamp,
-            '_api_query',
-            side_effect=mock_api_query_response,
-        ) as mock_api_query:
-            result = mock_bitstamp._api_query_paginated(
-                start_ts=Timestamp(0),
-                end_ts=Timestamp(now_ts),
-                options=options,
-                case='trades',
-            )
-            assert mock_api_query.call_args_list == expected_calls
+    )
+    api_query_patch = patch.object(
+        mock_bitstamp,
+        '_api_query',
+        side_effect=mock_api_query_response,
+    )
+    with limit_patch, api_query_patch as mock_api_query:
+        result = mock_bitstamp._api_query_paginated(
+            start_ts=Timestamp(0),
+            end_ts=Timestamp(now_ts),
+            options=options,
+            case='trades',
+        )
+        assert mock_api_query.call_args_list == expected_calls
     assert result == []
 
 
@@ -695,30 +694,30 @@ def test_api_query_paginated_trades_pagination(mock_bitstamp):
             f'[{user_transaction_3},{user_transaction_4}]',
             f'[{user_transaction_5},{user_transaction_6}]',
         ]
-        for result_ in results:
-            yield result_
+        yield from results
 
     def mock_api_query_response(endpoint, method, options):  # pylint: disable=unused-argument
         return MockResponse(HTTPStatus.OK, next(get_response))
 
     get_response = get_paginated_response()
 
-    with patch(
+    limit_patch = patch(
         'rotkehlchen.exchanges.bitstamp.API_MAX_LIMIT',
         new_callable=MagicMock(return_value=api_limit),
-    ):
-        with patch.object(
-            mock_bitstamp,
-            '_api_query',
-            side_effect=mock_api_query_response,
-        ) as mock_api_query:
-            result = mock_bitstamp._api_query_paginated(
-                start_ts=Timestamp(0),
-                end_ts=Timestamp(now_ts),
-                options=options,
-                case='trades',
-            )
-            assert mock_api_query.call_args_list == expected_calls
+    )
+    api_query_patch = patch.object(
+        mock_bitstamp,
+        '_api_query',
+        side_effect=mock_api_query_response,
+    )
+    with limit_patch, api_query_patch as mock_api_query:
+        result = mock_bitstamp._api_query_paginated(
+            start_ts=Timestamp(0),
+            end_ts=Timestamp(now_ts),
+            options=options,
+            case='trades',
+        )
+        assert mock_api_query.call_args_list == expected_calls
 
     expected_result = [
         Trade(

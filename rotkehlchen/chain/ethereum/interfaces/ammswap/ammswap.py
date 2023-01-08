@@ -421,17 +421,16 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
             to_timestamp: Timestamp,
     ) -> AddressEventsBalances:
         """Get the addresses' events history in the AMM"""
-        with self.trades_lock:
-            with self.database.user_write() as cursor:
-                if reset_db_data is True:
-                    self.delete_events_data(cursor)
+        with self.trades_lock, self.database.user_write() as cursor:
+            if reset_db_data is True:
+                self.delete_events_data(cursor)
 
-                address_events_balances = self._get_events_balances(
-                    write_cursor=cursor,
-                    addresses=addresses,
-                    from_timestamp=from_timestamp,
-                    to_timestamp=to_timestamp,
-                )
+            address_events_balances = self._get_events_balances(
+                write_cursor=cursor,
+                addresses=addresses,
+                from_timestamp=from_timestamp,
+                to_timestamp=to_timestamp,
+            )
 
         return address_events_balances
 

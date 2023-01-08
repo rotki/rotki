@@ -470,7 +470,7 @@ class GlobalDBHandler():
             treat_eth2_as_eth = db.get_settings(cursor).treat_eth2_as_eth
             found_eth = False
             for entry in global_db_cursor:
-                if treat_eth2_as_eth is True and entry[0] in (A_ETH.identifier, A_ETH2.identifier):  # noqa:E501
+                if treat_eth2_as_eth is True and entry[0] in (A_ETH.identifier, A_ETH2.identifier):  # noqa: E501
                     if found_eth is False:
                         search_result.append({
                             'identifier': resolved_eth.identifier,

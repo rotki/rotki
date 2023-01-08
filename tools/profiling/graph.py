@@ -33,6 +33,7 @@ import argparse
 #   zooming
 import collections
 import pickle
+from contextlib import suppress
 from datetime import datetime
 from itertools import chain
 from typing import Any, Optional
@@ -278,18 +279,14 @@ def objcount_data(filepath):
     # position
 
     data = []
-    try:
-        with open(filepath, "rb") as handler:
-            while True:  # while we dont hit EOFError
-                timestamp_string, object_count = pickle.load(handler)
-                timestamp = ts_to_dt(timestamp_string)
-                line = (timestamp, object_count)
+    with suppress(EOFError), open(filepath, 'rb') as handler:
+        while True:  # while we dont hit EOFError
+            timestamp_string, object_count = pickle.load(handler)
+            timestamp = ts_to_dt(timestamp_string)
+            line = (timestamp, object_count)
 
-                if line:
-                    data.append(line)
-    except EOFError:
-        # we loaded all the objects from the file
-        pass
+            if line:
+                data.append(line)
 
     return data
 

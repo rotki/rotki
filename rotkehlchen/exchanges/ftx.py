@@ -218,15 +218,14 @@ class Ftx(ExchangeInterface):
             except requests.exceptions.RequestException as e:
                 raise RemoteError(f'FTX API request {full_url} failed due to {str(e)}') from e
 
-            if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
-                if backoff < BACKOFF_LIMIT:
-                    log.debug(
-                        f'FTX rate limit exceeded on request {request_url}. Backing off',
-                        seconds=backoff,
-                    )
-                    gevent.sleep(backoff)
-                    backoff = backoff * 2
-                    continue
+            if response.status_code == HTTPStatus.TOO_MANY_REQUESTS and backoff < BACKOFF_LIMIT:
+                log.debug(
+                    f'FTX rate limit exceeded on request {request_url}. Backing off',
+                    seconds=backoff,
+                )
+                gevent.sleep(backoff)
+                backoff = backoff * 2
+                continue
             # We got a result here
             break
 

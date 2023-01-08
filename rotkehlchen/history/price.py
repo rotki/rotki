@@ -1,4 +1,5 @@
 import logging
+from contextlib import suppress
 from http import HTTPStatus
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
@@ -190,7 +191,7 @@ class PriceHistorian():
 
         # Querying historical forex data is attempted first via the external apis
         # and then via any price oracle that has fiat to fiat.
-        try:
+        with suppress(UnknownAsset, WrongAssetType):
             from_asset = from_asset.resolve_to_fiat_asset()
             to_asset = from_asset.resolve_to_fiat_asset()
             price = Inquirer().query_historical_fiat_exchange_rates(
@@ -200,9 +201,8 @@ class PriceHistorian():
             )
             if price is not None:
                 return price
-        except (UnknownAsset, WrongAssetType):
-            pass  # else cryptocompare also has historical fiat to fiat data
 
+        # else cryptocompare also has historical fiat to fiat data
         instance = PriceHistorian()
         oracles = instance._oracles
         oracle_instances = instance._oracle_instances

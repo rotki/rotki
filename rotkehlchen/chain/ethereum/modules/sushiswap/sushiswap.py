@@ -206,7 +206,7 @@ class Sushiswap(AMMSwapPlatform, EthereumModule):
         )
         unknown_asset_price: AssetToPrice = {}
         if self.premium:
-            unknown_asset_price = self._get_unknown_asset_price_graph(unknown_assets=unknown_assets)  # noqa:E501
+            unknown_asset_price = self._get_unknown_asset_price_graph(unknown_assets=unknown_assets)  # noqa: E501
 
         self._update_assets_prices_in_address_balances(
             address_balances=protocol_balance.address_balances,

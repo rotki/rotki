@@ -275,9 +275,8 @@ class Eth2(EthereumModule):
                 pubkey_to_index[v.public_key] = v.index
                 indices.append(v.index)
                 depositor = index_to_address.get(v.index)
-                if depositor is None:
-                    if v.public_key not in pubkey_to_deposit:
-                        validators_to_query_for_deposits.append(v.public_key)
+                if depositor is None and v.public_key not in pubkey_to_deposit:
+                    validators_to_query_for_deposits.append(v.public_key)
 
             # Get new deposits if needed, and populate index_to_address
             new_deposits = self._query_and_save_deposits(cursor, dbeth2, validators_to_query_for_deposits)  # noqa: E501

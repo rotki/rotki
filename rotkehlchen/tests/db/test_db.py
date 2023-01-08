@@ -1087,9 +1087,8 @@ def test_timed_balances_primary_key_works(user_data_dir, sql_vm_instructions_cb)
         ),
     ]
 
-    with pytest.raises(InputError) as exc_info:
-        with db.user_write() as cursor:
-            db.add_multiple_balances(cursor, balances)
+    with pytest.raises(InputError) as exc_info, db.user_write() as cursor:
+        db.add_multiple_balances(cursor, balances)
     assert exc_info.errisinstance(InputError)
     assert 'Adding timed_balance failed' in str(exc_info.value)
 
@@ -1248,9 +1247,8 @@ def test_multiple_location_data_and_balances_same_timestamp(user_data_dir, sql_v
         ),
     ]
 
-    with pytest.raises(InputError) as exc_info:
-        with db.user_write() as cursor:
-            db.add_multiple_balances(cursor, balances)
+    with pytest.raises(InputError) as exc_info, db.user_write() as cursor:
+        db.add_multiple_balances(cursor, balances)
     assert 'Adding timed_balance failed.' in str(exc_info.value)
     assert exc_info.errisinstance(InputError)
 
@@ -1269,9 +1267,8 @@ def test_multiple_location_data_and_balances_same_timestamp(user_data_dir, sql_v
             usd_value='56',
         ),
     ]
-    with pytest.raises(InputError) as exc_info:
-        with db.user_write() as cursor:
-            db.add_multiple_location_data(cursor, locations)
+    with pytest.raises(InputError) as exc_info, db.user_write() as cursor:
+        db.add_multiple_location_data(cursor, locations)
     assert 'Tried to add a timed_location_data for' in str(exc_info.value)
     assert exc_info.errisinstance(InputError)
 
@@ -1514,21 +1511,18 @@ def test_db_schema_sanity_check(database):
     connection = database.conn
     # by default should run without problems
     connection.schema_sanity_check()
-    with pytest.raises(DBSchemaError) as exception_info:
-        with database.user_write() as cursor:
-            cursor.execute('DROP TABLE rpc_nodes')
-            cursor.execute('CREATE TABLE rpc_nodes(column1 INTEGER)')
-            cursor.execute('DROP TABLE ens_mappings')
-            cursor.execute('CREATE TABLE ens_mappings(column2 TEXT)')
-            connection.schema_sanity_check()
+    with pytest.raises(DBSchemaError) as exception_info, database.user_write() as cursor:
+        cursor.execute('DROP TABLE rpc_nodes')
+        cursor.execute('CREATE TABLE rpc_nodes(column1 INTEGER)')
+        cursor.execute('DROP TABLE ens_mappings')
+        cursor.execute('CREATE TABLE ens_mappings(column2 TEXT)')
+        connection.schema_sanity_check()
     assert 'in your user database differ' in str(exception_info.value)
-    with pytest.raises(DBSchemaError) as exception_info:
-        with database.user_write() as cursor:
-            cursor.execute('CREATE TABLE new_table(some_column integer)')
-            connection.schema_sanity_check()
+    with pytest.raises(DBSchemaError) as exception_info, database.user_write() as cursor:
+        cursor.execute('CREATE TABLE new_table(some_column integer)')
+        connection.schema_sanity_check()
     assert 'unexpected tables: {\'new_table\'}' in str(exception_info.value)
-    with pytest.raises(DBSchemaError) as exception_info:
-        with database.user_write() as cursor:
-            cursor.execute('DROP TABLE user_notes;')
-            connection.schema_sanity_check()
+    with pytest.raises(DBSchemaError) as exception_info, database.user_write() as cursor:
+        cursor.execute('DROP TABLE user_notes;')
+        connection.schema_sanity_check()
     assert 'Tables {\'user_notes\'} are missing' in str(exception_info.value)

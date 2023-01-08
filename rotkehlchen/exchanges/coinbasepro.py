@@ -6,6 +6,7 @@ import logging
 import time
 from base64 import b64decode, b64encode
 from collections import defaultdict
+from contextlib import suppress
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, DefaultDict, Iterator, Literal, Optional, Union
@@ -444,18 +445,14 @@ class Coinbasepro(ExchangeInterface):
                 transaction_id = None
                 fee = Fee(ZERO)
                 if category == AssetMovementCategory.DEPOSIT:
-                    try:
+                    with suppress(KeyError):
                         address = entry['details']['crypto_address']
                         transaction_id = entry['details']['crypto_transaction_hash']
-                    except KeyError:
-                        pass
                 else:  # withdrawal
-                    try:
+                    with suppress(KeyError):
                         address = entry['details']['sent_to_address']
                         transaction_id = entry['details']['crypto_transaction_hash']
                         fee = deserialize_fee(entry['details']['fee'])
-                    except KeyError:
-                        pass
 
                 if transaction_id and (asset == A_ETH or asset.asset_type == AssetType.EVM_TOKEN):  # noqa: E501
                     transaction_id = '0x' + transaction_id

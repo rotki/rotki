@@ -620,7 +620,7 @@ class Bitstamp(ExchangeInterface):
         Can raise DeserializationError.
         """
         try:
-            pair = [key for key in raw_result.keys() if '_' in key and key != 'order_id'][0]
+            pair = [key for key in raw_result if '_' in key and key != 'order_id'][0]
         except IndexError as e:
             raise DeserializationError(
                 'Could not deserialize Bitstamp trade pair from user transaction. '

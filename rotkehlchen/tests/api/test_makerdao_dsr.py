@@ -231,9 +231,8 @@ def mock_etherscan_for_dsr(
 
                 elif topic0.startswith('0x7f8661a1'):  # exit
                     events = []
-                    if proxy1_contents in topic1:
-                        if from_block <= params.account1_exit1_blocknumber <= to_block:
-                            events.append(account1_exit1_event)
+                    if proxy1_contents in topic1 and from_block <= params.account1_exit1_blocknumber <= to_block:  # noqa: E501
+                        events.append(account1_exit1_event)
 
                     response = f'{{"status":"1","message":"OK","result":[{",".join(events)}]}}'
                 else:
@@ -250,10 +249,9 @@ def mock_etherscan_for_dsr(
                     elif proxy2_contents in topic1:  # deposit from acc2
                         if from_block <= params.account2_join1_blocknumber <= to_block:
                             events.append(account2_join1_move_event)
-                    elif proxy1_contents in topic2:  # withdrawal from acc1
+                    elif proxy1_contents in topic2 and from_block <= params.account1_exit1_blocknumber <= to_block:  # withdrawal from acc1  # noqa: E501
 
-                        if from_block <= params.account1_exit1_blocknumber <= to_block:
-                            events.append(account1_exit1_move_event)
+                        events.append(account1_exit1_move_event)
 
                     response = f'{{"status":"1","message":"OK","result":[{",".join(events)}]}}'
                 else:
@@ -266,9 +264,8 @@ def mock_etherscan_for_dsr(
                             events.append(account1_join1_move_event)
                         if from_block <= params.account1_join2_blocknumber <= to_block:
                             events.append(account1_join2_move_event)
-                    elif proxy2_contents in topic1:  # deposit from acc2
-                        if from_block <= params.account2_join1_blocknumber <= to_block:
-                            events.append(account2_join1_move_event)
+                    elif proxy2_contents in topic1 and from_block <= params.account2_join1_blocknumber <= to_block:  # deposit from acc2  # noqa: E501
+                        events.append(account2_join1_move_event)
                 elif topic0.startswith('0xef693bed'):  # exit
                     if from_block <= params.account1_exit1_blocknumber <= to_block:
                         events.append(account1_exit1_move_event)

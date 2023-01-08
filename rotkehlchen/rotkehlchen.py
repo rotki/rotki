@@ -1011,7 +1011,7 @@ class Rotkehlchen():
             with self.data.db.conn.read_ctx() as cursor:
                 result['last_balance_save'] = self.data.db.get_last_balance_save_time(cursor)
                 result['connected_eth_nodes'] = [node.name for node in self.chains_aggregator.ethereum.node_inquirer.get_connected_nodes()]  # noqa: E501
-                result['last_data_upload_ts'] = Timestamp(self.premium_sync_manager.last_data_upload_ts)  # noqa : E501
+                result['last_data_upload_ts'] = Timestamp(self.premium_sync_manager.last_data_upload_ts)  # noqa: E501
         return result
 
     def shutdown(self) -> None:
@@ -1037,11 +1037,9 @@ class Rotkehlchen():
         if oracle != HistoricalPriceOracle.CRYPTOCOMPARE:
             return  # only for cryptocompare for now
 
-        try:
+        with contextlib.suppress(UnknownAsset):  # if suppress -> assets are not crypto or fiat, so we can't query cryptocompare  # noqa: E501
             self.cryptocompare.create_cache(
                 from_asset=from_asset,
                 to_asset=to_asset,
                 purge_old=purge_old,
             )
-        except UnknownAsset:
-            pass  # means that assets are not crypto or fiat, so we can't query cryptocompare

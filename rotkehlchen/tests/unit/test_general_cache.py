@@ -1,4 +1,5 @@
 import datetime
+from contextlib import suppress
 from unittest.mock import patch
 
 from freezegun import freeze_time
@@ -63,16 +64,12 @@ def test_curve_pools_cache(rotkehlchen_instance):
         )
 
     # delete one of the tokens to check that it is created during the update
-    with GlobalDBHandler().conn.write_ctx() as write_cursor:
-        try:
-            GlobalDBHandler().delete_evm_token(
-                write_cursor=write_cursor,
-                address='0xD71eCFF9342A5Ced620049e616c5035F1dB98620',
-                chain_id=ChainID.ETHEREUM,
-            )
-        except InputError:
-            # token might not exist but we don't care
-            pass
+    with GlobalDBHandler().conn.write_ctx() as write_cursor, suppress(InputError):
+        GlobalDBHandler().delete_evm_token(  # token may not exist but we don't care
+            write_cursor=write_cursor,
+            address='0xD71eCFF9342A5Ced620049e616c5035F1dB98620',
+            chain_id=ChainID.ETHEREUM,
+        )
 
     # check that it was deleted successfully
     token = GlobalDBHandler().get_evm_token(

@@ -231,7 +231,7 @@ def update_curve_registry_pools_cache(
 
         pools_mapping[decoded_lp_token] = (pool_addr, pool_coins, pool_underlying_coins)
 
-    ensure_curve_tokens_existence(ethereum_inquirer=ethereum, pools_mapping=pools_mapping)  # noqa:E501
+    ensure_curve_tokens_existence(ethereum_inquirer=ethereum, pools_mapping=pools_mapping)  # noqa: E501
     save_curve_pools_to_cache(write_cursor=write_cursor, pools_mapping=pools_mapping)
 
 

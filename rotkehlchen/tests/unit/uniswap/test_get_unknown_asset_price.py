@@ -50,8 +50,7 @@ def test_pagination(
             # Second response
             {'tokenDayDatas': []},
         ]
-        for response in responses:
-            yield response
+        yield from responses
 
     @store_call_args
     def mock_response(

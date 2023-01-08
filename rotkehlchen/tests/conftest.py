@@ -4,6 +4,7 @@ import re
 import sys
 import tempfile
 import warnings as test_warnings
+from contextlib import suppress
 from enum import auto
 from pathlib import Path
 
@@ -81,10 +82,8 @@ if sys.platform == 'darwin':
                 return t
 
         TempdirFactory.getbasetemp = getbasetemp
-        try:
+        with suppress(AttributeError):
             delattr(request.config._tmpdirhandler, '_basetemp')
-        except AttributeError:
-            pass
 
     @pytest.fixture
     def tmpdir(request, tmpdir_factory):

@@ -5,7 +5,7 @@ import re
 import shutil
 import tempfile
 from collections import defaultdict
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from pathlib import Path
 from typing import Any, Iterator, Literal, Optional, Sequence, Union, cast, overload
 
@@ -345,12 +345,10 @@ class DBHandler:
         if self.conn_transient:
             transient_version = 0
             cursor = self.conn_transient.cursor()
-            try:
+            with suppress(sqlcipher.DatabaseError):  # not created yet
                 result = cursor.execute('SELECT value FROM settings WHERE name=?', ('version',)).fetchone()  # noqa: E501
                 if result is not None:
                     transient_version = int(result[0])
-            except sqlcipher.DatabaseError:
-                pass   # not created yet
 
             if transient_version != ROTKEHLCHEN_TRANSIENT_DB_VERSION:
                 # "upgrade" transient DB

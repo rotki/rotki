@@ -1,15 +1,14 @@
 import os
 import warnings as test_warnings
+from contextlib import suppress
 
 
 def find_directories_with_missing_init(path: str) -> set[str]:
     package_dirs: set[str] = set()
     py_directories: set[str] = set()
     for root, dirs, files in os.walk(path):
-        try:
+        with suppress(ValueError):
             dirs.remove("__pycache__")
-        except ValueError:
-            pass
 
         for name in files:
             if name == "__init__.py":

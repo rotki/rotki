@@ -217,7 +217,7 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):
                 # get the lps for the address and check if the nft is a LP,
                 # then replace the worth with LP value.
                 uniswap_v3_lps = uniswap_nfts.get(address) if uniswap_nfts is not None else None
-                uniswap_v3_lp = next((entry for entry in uniswap_v3_lps if entry.nft_id == nft.token_identifier), None) if uniswap_v3_lps is not None else None  # noqa:E501
+                uniswap_v3_lp = next((entry for entry in uniswap_v3_lps if entry.nft_id == nft.token_identifier), None) if uniswap_v3_lps is not None else None  # noqa: E501
                 collection_name = nft.collection.name if nft.collection is not None else None
                 if uniswap_v3_lp is not None:
                     db_data.append((nft.token_identifier, nft.name, str(uniswap_v3_lp.user_balance.usd_value), 'USD', False, address, True, nft.image_url, collection_name))  # noqa: E501
