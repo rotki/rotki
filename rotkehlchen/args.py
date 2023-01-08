@@ -1,6 +1,6 @@
 import argparse
 import sys
-from typing import Any, List, Sequence, Union
+from typing import Any, List, Optional, Sequence, Union
 
 from rotkehlchen.constants.misc import (
     DEFAULT_MAX_LOG_BACKUP_FILES,
@@ -25,7 +25,7 @@ class CommandAction(argparse.Action):
             parser: argparse.ArgumentParser,
             namespace: argparse.Namespace,
             values: Union[str, Sequence[Any], None],
-            option_string: str = None,
+            option_string: Optional[str] = None,
     ) -> None:
         # Only command we have at the moment is version
         if values != 'version':
