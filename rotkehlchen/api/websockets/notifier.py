@@ -2,6 +2,7 @@ import json
 import logging
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
+from gevent.lock import Semaphore
 from geventwebsocket import WebSocketApplication
 from geventwebsocket.exceptions import WebSocketError
 from geventwebsocket.websocket import WebSocket
@@ -18,6 +19,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 def _ws_send_impl(
         websocket: WebSocket,
+        lock: Semaphore,
         to_send_msg: str,
         success_callback: Optional[Callable] = None,
         success_callback_args: Optional[dict[str, Any]] = None,
@@ -25,7 +27,8 @@ def _ws_send_impl(
         failure_callback_args: Optional[dict[str, Any]] = None,
 ) -> None:
     try:
-        websocket.send(to_send_msg)
+        with lock:
+            websocket.send(to_send_msg)
     except WebSocketError as e:
         log.error(f'Websocket send with message {to_send_msg} failed due to {str(e)}')
 
@@ -47,12 +50,15 @@ class RotkiNotifier():
     ) -> None:
         self.greenlet_manager = greenlet_manager
         self.subscribers: list[WebSocket] = []
+        self.locks: dict[WebSocket, Semaphore] = {}
 
     def subscribe(self, websocket: WebSocket) -> None:
         log.info(f'Websocket with hash id {hash(websocket)} subscribed to rotki notifier')
         self.subscribers.append(websocket)
+        self.locks[websocket] = Semaphore()
 
     def unsubscribe(self, websocket: WebSocket) -> None:
+        self.locks.pop(websocket, None)
         try:
             self.subscribers.remove(websocket)
             log.info(f'Websocket with hash id {hash(websocket)} unsubscribed from rotki notifier')  # noqa: E501
@@ -83,6 +89,7 @@ class RotkiNotifier():
                 exception_is_error=True,
                 method=_ws_send_impl,
                 websocket=websocket,
+                lock=self.locks[websocket],
                 to_send_msg=message,
                 success_callback=success_callback,
                 success_callback_args=success_callback_args,

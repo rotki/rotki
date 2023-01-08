@@ -13,6 +13,7 @@ from rotkehlchen.assets.converters import (
     asset_from_bitfinex,
 )
 from rotkehlchen.assets.exchanges_mappings.bitfinex import WORLD_TO_BITFINEX
+from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_LINK, A_USD, A_USDT, A_WBTC
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
@@ -28,7 +29,16 @@ from rotkehlchen.exchanges.data_structures import AssetMovement, Trade, TradeTyp
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_GLM, A_NEO
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import AssetAmount, AssetMovementCategory, Fee, Location, Price, Timestamp
+from rotkehlchen.types import (
+    AssetAmount,
+    AssetMovementCategory,
+    ChainID,
+    EvmTokenKind,
+    Fee,
+    Location,
+    Price,
+    Timestamp,
+)
 
 
 def test_name():
@@ -384,6 +394,50 @@ def test_deserialize_trade_sell(mock_bitfinex):
         rate=Price(FVal('187.37')),
         fee=Fee(FVal('0.09868591')),
         fee_currency=A_USD,
+        link='399251013',
+        notes='',
+    )
+    trade = mock_bitfinex._deserialize_trade(raw_result=raw_result)
+    assert trade == expected_trade
+
+
+def test_delisted_pair_trades_work(mock_bitfinex):
+    """A user reported inability to deserialize trades from delisted pairs
+
+    This is a regression test for this. RLC was delisted and as such is no
+    longer in their returned currency maps.
+    """
+    rlc = get_or_create_evm_token(
+        userdb=mock_bitfinex.db,
+        evm_address='0x607F4C5BB672230e8672085532f7e901544a7375',
+        chain_id=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC20,
+    )
+    mock_bitfinex.currency_map = {}
+    mock_bitfinex.pair_bfx_symbols_map = {}
+    raw_result = [
+        399251013,
+        'tRLCETH',
+        1573485493000,
+        33963608932,
+        -0.26334268,
+        187.37,
+        'LIMIT',
+        None,
+        -1,
+        -0.09868591,
+        'RLC',
+    ]
+    expected_trade = Trade(
+        timestamp=Timestamp(1573485493),
+        location=Location.BITFINEX,
+        base_asset=rlc,
+        quote_asset=A_ETH,
+        trade_type=TradeType.SELL,
+        amount=AssetAmount(FVal('0.26334268')),
+        rate=Price(FVal('187.37')),
+        fee=Fee(FVal('0.09868591')),
+        fee_currency=rlc,
         link='399251013',
         notes='',
     )

@@ -2,7 +2,6 @@ from rotkehlchen.assets.exchanges_mappings.common import COMMON_ASSETS_MAPPINGS
 from rotkehlchen.constants.resolver import evm_address_to_identifier, strethaddress_to_identifier
 from rotkehlchen.types import ChainID, EvmTokenKind
 
-
 WORLD_TO_BITFINEX = COMMON_ASSETS_MAPPINGS | {
     'BCH': 'BCHN',
     'CNY': 'CNH',
@@ -75,4 +74,5 @@ WORLD_TO_BITFINEX = COMMON_ASSETS_MAPPINGS | {
     evm_address_to_identifier('0xd1ba9BAC957322D6e8c07a160a3A8dA11A0d2867', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'HMT',  # noqa: E501
     evm_address_to_identifier('0x6F87D756DAf0503d08Eb8993686c7Fc01Dc44fB1', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'TRADE',  # noqa: E501
     evm_address_to_identifier('0x2a3bFF78B79A009976EeA096a51A948a3dC00e34', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'WILD',  # noqa: E501
+    evm_address_to_identifier('0x607F4C5BB672230e8672085532f7e901544a7375', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'RLC',  # noqa: E501
 }
