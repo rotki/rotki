@@ -449,6 +449,9 @@ CREATE TABLE IF NOT EXISTS evm_transactions (
 );
 """
 
+# from/to address/value is also in the primary key of the internal transactions since
+# trace_id, which is returned by etherscan does not guarantee uniqueness. Example:
+# https://api-optimistic.etherscan.io/api?module=account&action=txlistinternal&sort=asc&startBlock=8779092&endBlock=8779092
 DB_CREATE_EVM_INTERNAL_TRANSACTIONS = """
 CREATE TABLE IF NOT EXISTS evm_internal_transactions (
     parent_tx_hash BLOB NOT NULL,
@@ -460,7 +463,7 @@ CREATE TABLE IF NOT EXISTS evm_internal_transactions (
     to_address TEXT,
     value TEXT NOT NULL,
     FOREIGN KEY(parent_tx_hash, chain_id) REFERENCES evm_transactions(tx_hash, chain_id) ON DELETE CASCADE ON UPDATE CASCADE,
-    PRIMARY KEY(parent_tx_hash, chain_id, trace_id)
+    PRIMARY KEY(parent_tx_hash, chain_id, trace_id, from_address, to_address, value)
 );
 """  # noqa: E501
 

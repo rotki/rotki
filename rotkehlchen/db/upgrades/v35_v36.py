@@ -250,7 +250,7 @@ def _rename_eth_to_evm_add_chainid(write_cursor: 'DBCursor') -> None:
             to_address TEXT,
             value TEXT NOT NULL,
             FOREIGN KEY(parent_tx_hash, chain_id) REFERENCES evm_transactions(tx_hash, chain_id) ON DELETE CASCADE ON UPDATE CASCADE,
-            PRIMARY KEY(parent_tx_hash, chain_id, trace_id)
+            PRIMARY KEY(parent_tx_hash, chain_id, trace_id, from_address, to_address, value)
         );""",  # noqa: E501
     )
     write_cursor.executemany(
