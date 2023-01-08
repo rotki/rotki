@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :bug:`-` Transfers of ether between tracked accounts will now have a correct label in the UI.
+* :bug:`-` Trades involving delisted bitfinex pairs will now be properly read by rotki.
 
 
 * :release:`1.26.3 <2022-12-30>`

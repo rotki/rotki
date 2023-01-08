@@ -550,13 +550,20 @@ class Bitfinex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         amount = deserialize_asset_amount(raw_result[4])
         trade_type = TradeType.BUY if amount >= ZERO else TradeType.SELL
         bfx_pair = self._process_bfx_pair(raw_result[1])
-        if bfx_pair not in self.pair_bfx_symbols_map:
-            raise DeserializationError(
-                f'Could not deserialize bitfinex trade pair {raw_result[1]}. '
-                f'Raw trade: {raw_result}',
-            )
+        if bfx_pair in self.pair_bfx_symbols_map:
+            bfx_base_asset_symbol, bfx_quote_asset_symbol = self.pair_bfx_symbols_map[bfx_pair]
+        else:
+            # Could not see it in the listed pairs. Probably delisted. Gotta try and figure it out
+            # TODO: The whole pair logic in bitfinex seems complicated. Simplify!
+            if len(bfx_pair) == 6:
+                bfx_base_asset_symbol = bfx_pair[:3]
+                bfx_quote_asset_symbol = bfx_pair[3:]
+            else:
+                raise DeserializationError(
+                    f'Could not deserialize bitfinex trade pair {raw_result[1]}. '
+                    f'Raw trade: {raw_result}',
+                )
 
-        bfx_base_asset_symbol, bfx_quote_asset_symbol = self.pair_bfx_symbols_map[bfx_pair]
         base_asset = asset_from_bitfinex(
             bitfinex_name=bfx_base_asset_symbol,
             currency_map=self.currency_map,
@@ -691,7 +698,6 @@ class Bitfinex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         was_successful = True
         pairs = []
         response = self._api_query('configs_list_pair_exchange')
-
         if response.status_code != HTTPStatus.OK:
             was_successful = False
             log.error(f'{self.name} exchange pairs list query failed. Check further logs')
