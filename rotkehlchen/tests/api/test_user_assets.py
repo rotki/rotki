@@ -866,10 +866,10 @@ def test_exporting_user_assets_list(rotkehlchen_api_server, globaldb, with_custo
             zip_file = ZipFile(result['file'])
             data = json.loads(zip_file.read('assets.json'))
             assert int(data['version']) == GLOBAL_DB_VERSION
-            # this should be 1 once PETH is added to the packaged GlobalDB.
-            # at that point the get_or_create_evm_token in the SAI Decoder
+            # this should be 1 once PETH, hETH is added to the packaged GlobalDB.
+            # at that point the get_or_create_evm_token in the SAI Decoder, HOP Decoder
             # should be replaced with a constant.Also undo the silly search logic below
-            assert len(data['assets']) == 2
+            assert len(data['assets']) == 3
             for entry in data['assets']:
                 if entry == {
                     'identifier': identifier,

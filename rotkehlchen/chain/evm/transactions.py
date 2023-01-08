@@ -279,6 +279,7 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
                     dbevmtx.add_evm_internal_transactions(
                         write_cursor=cursor,
                         transactions=[internal_tx],
+                        relevant_address=None,  # no need to re-associate address
                     )
 
                     if period.range_type == 'timestamps':
