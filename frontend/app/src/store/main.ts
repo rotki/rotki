@@ -1,3 +1,4 @@
+import { type Ref } from 'vue';
 import { api } from '@/services/rotkehlchen-api';
 import { useUsersApi } from '@/services/session/users.api';
 import { type Version } from '@/store/types';
@@ -7,12 +8,13 @@ import { getDefaultLogLevel, logger, setLevel } from '@/utils/logging';
 
 let intervalId: any = null;
 export const useMainStore = defineStore('main', () => {
-  const newUser = ref(false);
-  const version = ref(defaultVersion());
-  const connected = ref(false);
-  const connectionFailure = ref(false);
-  const dataDirectory = ref('');
-  const logLevel = ref<LogLevel>(getDefaultLogLevel());
+  const newUser: Ref<boolean> = ref(false);
+  const version: Ref<Version> = ref(defaultVersion());
+  const connected: Ref<boolean> = ref(false);
+  const connectionFailure: Ref<boolean> = ref(false);
+  const dataDirectory: Ref<string> = ref('');
+  const logLevel: Ref<LogLevel> = ref(getDefaultLogLevel());
+  const dockerRiskAccepted: Ref<boolean> = ref(true);
 
   const usersApi = useUsersApi();
 
@@ -41,11 +43,14 @@ export const useMainStore = defineStore('main', () => {
   };
 
   const getInfo = async (): Promise<void> => {
-    const { dataDirectory: appDataDirectory, logLevel: level } = await api.info(
-      false
-    );
+    const {
+      dataDirectory: appDataDirectory,
+      logLevel: level,
+      acceptDockerRisk
+    } = await api.info(false);
     set(dataDirectory, appDataDirectory);
     set(logLevel, level);
+    set(dockerRiskAccepted, acceptDockerRisk);
     setLevel(level);
   };
 
@@ -116,6 +121,7 @@ export const useMainStore = defineStore('main', () => {
     connectionFailure,
     dataDirectory,
     updateNeeded,
+    dockerRiskAccepted,
     connect,
     getVersion,
     getInfo,

@@ -17,7 +17,7 @@ const interop = {
   get premiumURL() {
     return premiumURL;
   },
-  get usageGuideURL() {
+  get usageGuideUrl() {
     return `${BASE_DOCS_URL}/en/stable/usage_guide.html`;
   },
   get contributeUrl() {

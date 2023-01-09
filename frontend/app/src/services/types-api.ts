@@ -38,6 +38,7 @@ const BackendVersion = z.object({
 });
 
 export const BackendInfo = z.object({
+  acceptDockerRisk: z.boolean(),
   logLevel: ActiveLogLevel,
   version: BackendVersion,
   dataDirectory: z.string()
