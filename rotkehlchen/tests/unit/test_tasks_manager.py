@@ -226,11 +226,10 @@ def test_maybe_schedule_ethereum_txreceipts(
     except gevent.Timeout as e:
         raise AssertionError(f'receipts query was not completed within {timeout} seconds') from e  # noqa: E501
 
-    with database.user_write() as cursor:
-        receipt1 = eth_transactions.get_or_query_transaction_receipt(cursor, tx_hash_1)
-        assert receipt1 == receipts[0]
-        receipt2 = eth_transactions.get_or_query_transaction_receipt(cursor, tx_hash_2)
-        assert receipt2 == receipts[1]
+    receipt1 = eth_transactions.get_or_query_transaction_receipt(tx_hash_1)
+    assert receipt1 == receipts[0]
+    receipt2 = eth_transactions.get_or_query_transaction_receipt(tx_hash_2)
+    assert receipt2 == receipts[1]
 
 
 @pytest.mark.parametrize('max_tasks_num', [7])

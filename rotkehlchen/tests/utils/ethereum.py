@@ -395,6 +395,5 @@ def get_decoded_events_of_transaction(
     else:
         raise AssertionError('Unsupported chainID at tests')
 
-    with database.user_write() as cursor:
-        transactions.get_or_query_transaction_receipt(cursor, tx_hash=tx_hash)
+    transactions.get_or_query_transaction_receipt(tx_hash=tx_hash)
     return decoder.decode_transaction_hashes(ignore_cache=True, tx_hashes=[tx_hash]), decoder
