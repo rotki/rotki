@@ -335,21 +335,22 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                 for entry in cursor.execute('SELECT tx_hash FROM evm_transactions'):
                     tx_hashes.append(EVMTxHash(entry[0]))
 
-        with self.database.user_write() as cursor:
-            for tx_hash in tx_hashes:
-                try:
-                    receipt = self.transactions.get_or_query_transaction_receipt(cursor, tx_hash)  # noqa: E501
-                except RemoteError as e:
-                    raise InputError(f'{self.evm_inquirer.chain_name} hash {tx_hash.hex()} does not correspond to a transaction') from e  # noqa: E501
+        for tx_hash in tx_hashes:
+            try:
+                receipt = self.transactions.get_or_query_transaction_receipt(tx_hash)
+            except RemoteError as e:
+                raise InputError(f'{self.evm_inquirer.chain_name} hash {tx_hash.hex()} does not correspond to a transaction') from e  # noqa: E501
 
-                # TODO: Change this if transaction filter query can accept multiple hashes
+            # TODO: Change this if transaction filter query can accept multiple hashes
+            with self.database.conn.read_ctx() as cursor:
                 txs = self.dbevmtx.get_evm_transactions(
                     cursor=cursor,
                     filter_=EvmTransactionsFilterQuery.make(tx_hash=tx_hash, chain_id=self.evm_inquirer.chain_id),  # noqa: E501
                     has_premium=True,  # ignore limiting here
                 )
+            with self.database.user_write() as write_cursor:
                 events.extend(self.get_or_decode_transaction_events(
-                    write_cursor=cursor,
+                    write_cursor=write_cursor,
                     transaction=txs[0],
                     tx_receipt=receipt,
                     ignore_cache=ignore_cache,

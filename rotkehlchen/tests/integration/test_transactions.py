@@ -24,8 +24,7 @@ def test_get_transaction_receipt(
         transaction_already_queried=transaction_already_queried,
         one_receipt_in_db=False,
     )
-    with database.user_write() as cursor:
-        receipt = eth_transactions.get_or_query_transaction_receipt(cursor, transactions[0].tx_hash)  # noqa: E501
+    receipt = eth_transactions.get_or_query_transaction_receipt(transactions[0].tx_hash)
     assert receipt == receipts[0]
     filter_query = EvmTransactionsFilterQuery.make(tx_hash=transactions[0].tx_hash)
     eth_transactions.query_chain(filter_query)
