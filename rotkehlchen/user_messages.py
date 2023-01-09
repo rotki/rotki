@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 INFORMATIONAL_MESSAGE_TYPES = {
-    WSMessageType.ETHEREUM_TRANSACTION_STATUS,
+    WSMessageType.EVM_TRANSACTION_STATUS,
     WSMessageType.PREMIUM_STATUS_UPDATE,
     WSMessageType.LOGIN_STATUS,
 }

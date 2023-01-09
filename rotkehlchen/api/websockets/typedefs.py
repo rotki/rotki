@@ -11,7 +11,7 @@ from enum import Enum, auto
 class WSMessageType(Enum):
     LEGACY = auto()
     BALANCE_SNAPSHOT_ERROR = auto()
-    ETHEREUM_TRANSACTION_STATUS = auto()
+    EVM_TRANSACTION_STATUS = auto()
     PREMIUM_STATUS_UPDATE = auto()
     LOGIN_STATUS = auto()
 
@@ -23,7 +23,7 @@ class TransactionStatusStep(Enum):
     QUERYING_TRANSACTIONS_STARTED = auto()
     QUERYING_TRANSACTIONS = auto()
     QUERYING_INTERNAL_TRANSACTIONS = auto()
-    QUERYING_ETHEREUM_TOKENS_TRANSACTIONS = auto()
+    QUERYING_EVM_TOKENS_TRANSACTIONS = auto()
     QUERYING_TRANSACTIONS_FINISHED = auto()
 
     def __str__(self) -> str:

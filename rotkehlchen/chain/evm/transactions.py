@@ -74,13 +74,13 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
         Trueblocks ... we need you.
         """
         lock = self.address_tx_locks[address]
-        serialized_chain = self.evm_inquirer.blockchain.serialize()
+        serialized_chain_id = self.evm_inquirer.chain_id.to_name()
         with lock:
             self.msg_aggregator.add_message(
-                message_type=WSMessageType.ETHEREUM_TRANSACTION_STATUS,
+                message_type=WSMessageType.EVM_TRANSACTION_STATUS,
                 data={
                     'address': address,
-                    'blockchain': serialized_chain,
+                    'evm_chain': serialized_chain_id,
                     'period': [start_ts, end_ts],
                     'status': str(TransactionStatusStep.QUERYING_TRANSACTIONS_STARTED),
                 },
@@ -97,10 +97,10 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
                 end_ts=end_ts,
             )
         self.msg_aggregator.add_message(
-            message_type=WSMessageType.ETHEREUM_TRANSACTION_STATUS,
+            message_type=WSMessageType.EVM_TRANSACTION_STATUS,
             data={
                 'address': address,
-                'blockchain': serialized_chain,
+                'evm_chain': serialized_chain_id,
                 'period': [start_ts, end_ts],
                 'status': str(TransactionStatusStep.QUERYING_TRANSACTIONS_FINISHED),
             },
@@ -172,10 +172,10 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
                     )
 
                     self.msg_aggregator.add_message(
-                        message_type=WSMessageType.ETHEREUM_TRANSACTION_STATUS,
+                        message_type=WSMessageType.EVM_TRANSACTION_STATUS,
                         data={
                             'address': address,
-                            'blockchain': self.evm_inquirer.chain_name,
+                            'evm_chain': self.evm_inquirer.chain_id.to_name(),
                             'period': [period.from_value, new_transactions[-1].timestamp],
                             'status': str(TransactionStatusStep.QUERYING_TRANSACTIONS),
                         },
@@ -293,10 +293,10 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
                         )
 
                         self.msg_aggregator.add_message(
-                            message_type=WSMessageType.ETHEREUM_TRANSACTION_STATUS,
+                            message_type=WSMessageType.EVM_TRANSACTION_STATUS,
                             data={
                                 'address': address,
-                                'blockchain': self.evm_inquirer.chain_name,
+                                'evm_chain': self.evm_inquirer.chain_id.to_name(),
                                 'period': [period.from_value, timestamp],
                                 'status': str(TransactionStatusStep.QUERYING_INTERNAL_TRANSACTIONS),  # noqa: E501
                             },
@@ -407,12 +407,12 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
                             )
 
                             self.msg_aggregator.add_message(
-                                message_type=WSMessageType.ETHEREUM_TRANSACTION_STATUS,
+                                message_type=WSMessageType.EVM_TRANSACTION_STATUS,
                                 data={
                                     'address': address,
-                                    'blockchain': self.evm_inquirer.chain_name,
+                                    'evm_chain': self.evm_inquirer.chain_id.to_name(),
                                     'period': [query_start_ts, timestamp],
-                                    'status': str(TransactionStatusStep.QUERYING_ETHEREUM_TOKENS_TRANSACTIONS),  # noqa: E501
+                                    'status': str(TransactionStatusStep.QUERYING_EVM_TOKENS_TRANSACTIONS),  # noqa: E501
                                 },
                             )
             except RemoteError as e:
