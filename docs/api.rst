@@ -10467,9 +10467,9 @@ Querying general information
       		"log_level": "DEBUG",
       		"accept_docker_risk": false,
       		"backend_default_arguments": {
-      			"max-logfiles-num": 3,
-      			"max-size-in-mb-all-logs": 300,
-      			"sqlite-instructions": 5000
+      			"max_logfiles_num": 3,
+      			"max_size_in_mb_all_logs": 300,
+      			"sqlite_instructions": 5000
       		}
       	},
       	"message": ""
