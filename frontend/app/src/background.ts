@@ -222,9 +222,12 @@ async function createWindow() {
 
 async function closeApp() {
   trayManager?.destroy();
-  await pyHandler.exitPyProc();
-  if (process.platform !== 'win32') {
-    app.exit();
+  try {
+    await pyHandler.exitPyProc();
+  } finally {
+    if (process.platform !== 'win32') {
+      app.exit();
+    }
   }
 }
 

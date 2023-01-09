@@ -1,7 +1,10 @@
 import { type SemiPartial } from '@rotki/common';
 import { type NotificationPayload, Severity } from '@rotki/common/lib/messages';
-import { convertKeys } from '@/services/axios-tranformers';
-import { useTxQueryStatus } from '@/store/history/query-status';
+import {
+  axiosCamelCaseTransformer,
+  convertKeys
+} from '@/services/axios-tranformers';
+import { useTxQueryStatusStore } from '@/store/history/query-status';
 import { useSessionAuthStore } from '@/store/session/auth';
 import {
   BalanceSnapshotError,
@@ -28,8 +31,10 @@ export const handleSnapshotError = (
 export const handleEthereumTransactionStatus = (
   message: WebsocketMessage<SocketMessageType>
 ): void => {
-  const data = EthereumTransactionQueryData.parse(message.data);
-  const { setQueryStatus } = useTxQueryStatus();
+  const data = EthereumTransactionQueryData.parse(
+    axiosCamelCaseTransformer(message.data)
+  );
+  const { setQueryStatus } = useTxQueryStatusStore();
   setQueryStatus(data);
 };
 

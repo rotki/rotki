@@ -1,15 +1,13 @@
 <script setup lang="ts">
 import { type GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { type PropType, type Ref } from 'vue';
+import { type Ref } from 'vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import { useAccountBalancesStore } from '@/store/blockchain/accountbalances';
 import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
 import { type Module } from '@/types/modules';
 
-const props = defineProps({
-  module: { required: true, type: String as PropType<Module> }
-});
+const props = defineProps<{ module: Module }>();
 
 const { module } = toRefs(props);
 const loading = ref(false);
@@ -30,7 +28,10 @@ const setSelectedAccounts = (addresses: string[]): void => {
   set(selectedAccounts, selected);
 };
 
-const added = async (accounts: GeneralAccount[]) => {
+const added = async (accounts: GeneralAccount | GeneralAccount[] | null) => {
+  if (!Array.isArray(accounts)) {
+    return;
+  }
   set(loading, true);
   const selectedModule = get(module);
   const addresses = accounts.map(({ address }) => address);

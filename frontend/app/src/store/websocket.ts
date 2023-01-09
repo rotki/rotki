@@ -38,7 +38,7 @@ export const useWebsocketStore = defineStore('websocket', () => {
       notify(
         handleLegacyMessage(data.value, data.verbosity === MESSAGE_WARNING, tc)
       );
-    } else if (type === SocketMessageType.ETHEREUM_TRANSACTION_STATUS) {
+    } else if (type === SocketMessageType.EVM_TRANSACTION_STATUS) {
       handleEthereumTransactionStatus(message);
     } else if (type === SocketMessageType.PREMIUM_STATUS_UPDATE) {
       const data = PremiumStatusUpdateData.parse(

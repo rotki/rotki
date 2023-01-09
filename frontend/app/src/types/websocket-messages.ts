@@ -22,13 +22,14 @@ export enum EthereumTransactionsQueryStatus {
   QUERYING_TRANSACTIONS = 'querying_transactions',
   QUERYING_TRANSACTIONS_STARTED = 'querying_transactions_started',
   QUERYING_INTERNAL_TRANSACTIONS = 'querying_internal_transactions',
-  QUERYING_ETHEREUM_TOKENS_TRANSACTIONS = 'querying_evm_tokens_transactions',
+  QUERYING_EVM_TOKENS_TRANSACTIONS = 'querying_evm_tokens_transactions',
   QUERYING_TRANSACTIONS_FINISHED = 'querying_transactions_finished'
 }
 
 export const EthereumTransactionQueryData = z.object({
   status: z.nativeEnum(EthereumTransactionsQueryStatus),
   address: z.string(),
+  evmChain: z.string(),
   period: z.array(z.number())
 });
 
@@ -58,7 +59,7 @@ export type LoginStatusData = z.infer<typeof LoginStatusData>;
 export enum SocketMessageType {
   LEGACY = 'legacy',
   BALANCES_SNAPSHOT_ERROR = 'balance_snapshot_error',
-  ETHEREUM_TRANSACTION_STATUS = 'evm_transaction_status',
+  EVM_TRANSACTION_STATUS = 'evm_transaction_status',
   PREMIUM_STATUS_UPDATE = 'premium_status_update',
   LOGIN_STATUS = 'login_status'
 }
@@ -66,7 +67,7 @@ export enum SocketMessageType {
 interface MessageData {
   [SocketMessageType.LEGACY]: LegacyMessageData;
   [SocketMessageType.BALANCES_SNAPSHOT_ERROR]: BalanceSnapshotError;
-  [SocketMessageType.ETHEREUM_TRANSACTION_STATUS]: EthereumTransactionQueryData;
+  [SocketMessageType.EVM_TRANSACTION_STATUS]: EthereumTransactionQueryData;
   [SocketMessageType.PREMIUM_STATUS_UPDATE]: PremiumStatusUpdateData;
   [SocketMessageType.LOGIN_STATUS]: LoginStatusData;
 }

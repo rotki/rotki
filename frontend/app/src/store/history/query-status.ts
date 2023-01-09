@@ -4,14 +4,15 @@ import {
   EthereumTransactionsQueryStatus
 } from '@/types/websocket-messages';
 
-export const useTxQueryStatus = defineStore(
+export const useTxQueryStatusStore = defineStore(
   'history/transactionsQueryStatus',
   () => {
     const queryStatus = ref<Record<string, EthereumTransactionQueryData>>({});
 
     const setQueryStatus = (data: EthereumTransactionQueryData): void => {
       const status = { ...get(queryStatus) };
-      const address = data.address;
+      const { address, evmChain } = data;
+      const key = address + evmChain;
 
       if (data.status === EthereumTransactionsQueryStatus.ACCOUNT_CHANGE) {
         return;
@@ -21,12 +22,12 @@ export const useTxQueryStatus = defineStore(
         data.status ===
         EthereumTransactionsQueryStatus.QUERYING_TRANSACTIONS_STARTED
       ) {
-        status[address] = {
+        status[key] = {
           ...data,
           status: EthereumTransactionsQueryStatus.QUERYING_TRANSACTIONS
         };
       } else {
-        status[address] = data;
+        status[key] = data;
       }
 
       set(queryStatus, status);
@@ -52,9 +53,19 @@ export const useTxQueryStatus = defineStore(
       });
     });
 
+    const queryingLength = computed<number>(
+      () =>
+        Object.values(get(queryStatus)).filter(item => !isStatusFinished(item))
+          .length
+    );
+
+    const length = computed<number>(() => Object.keys(get(queryStatus)).length);
+
     return {
       queryStatus,
       isAllFinished,
+      queryingLength,
+      length,
       isStatusFinished,
       setQueryStatus,
       resetQueryStatus
@@ -63,5 +74,7 @@ export const useTxQueryStatus = defineStore(
 );
 
 if (import.meta.hot) {
-  import.meta.hot.accept(acceptHMRUpdate(useTxQueryStatus, import.meta.hot));
+  import.meta.hot.accept(
+    acceptHMRUpdate(useTxQueryStatusStore, import.meta.hot)
+  );
 }

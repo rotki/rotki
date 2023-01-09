@@ -124,9 +124,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
 
       if (object.type === SocketMessageType.BALANCES_SNAPSHOT_ERROR) {
         notify(handleSnapshotError(object, tc));
-      } else if (
-        object.type === SocketMessageType.ETHEREUM_TRANSACTION_STATUS
-      ) {
+      } else if (object.type === SocketMessageType.EVM_TRANSACTION_STATUS) {
         await handleEthereumTransactionStatus(object);
       } else if (object.type === SocketMessageType.LOGIN_STATUS) {
         await handleLoginStatus(object);

@@ -323,6 +323,7 @@
     "useTooltip": true,
     "useTradeFilters": true,
     "useTransactionFilter": true,
+    "useTransactionQueryStatus": true,
     "useTransition": true,
     "useTrunc": true,
     "useUrlSearchParams": true,

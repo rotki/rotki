@@ -337,8 +337,8 @@ export const transactionEventTypeMapping: Record<
   [HistoryEventType.WITHDRAWAL]: {
     [HistoryEventSubType.NONE]: TransactionEventType.WITHDRAW,
     [HistoryEventSubType.REMOVE_ASSET]: TransactionEventType.WITHDRAW,
-      [HistoryEventSubType.GENERATE_DEBT]: TransactionEventType.BORROW,
-      [HistoryEventSubType.BRIDGE]: TransactionEventType.BRIDGE
+    [HistoryEventSubType.GENERATE_DEBT]: TransactionEventType.BORROW,
+    [HistoryEventSubType.BRIDGE]: TransactionEventType.BRIDGE
   },
   [HistoryEventType.DEPOSIT]: {
     [HistoryEventSubType.NONE]: TransactionEventType.DEPOSIT,
