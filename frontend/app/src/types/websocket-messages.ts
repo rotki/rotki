@@ -22,7 +22,7 @@ export enum EthereumTransactionsQueryStatus {
   QUERYING_TRANSACTIONS = 'querying_transactions',
   QUERYING_TRANSACTIONS_STARTED = 'querying_transactions_started',
   QUERYING_INTERNAL_TRANSACTIONS = 'querying_internal_transactions',
-  QUERYING_ETHEREUM_TOKENS_TRANSACTIONS = 'querying_ethereum_tokens_transactions',
+  QUERYING_ETHEREUM_TOKENS_TRANSACTIONS = 'querying_evm_tokens_transactions',
   QUERYING_TRANSACTIONS_FINISHED = 'querying_transactions_finished'
 }
 
@@ -58,7 +58,7 @@ export type LoginStatusData = z.infer<typeof LoginStatusData>;
 export enum SocketMessageType {
   LEGACY = 'legacy',
   BALANCES_SNAPSHOT_ERROR = 'balance_snapshot_error',
-  ETHEREUM_TRANSACTION_STATUS = 'ethereum_transaction_status',
+  ETHEREUM_TRANSACTION_STATUS = 'evm_transaction_status',
   PREMIUM_STATUS_UPDATE = 'premium_status_update',
   LOGIN_STATUS = 'login_status'
 }
