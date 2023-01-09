@@ -110,16 +110,17 @@ const displayUrl = computed<string>(() => {
 
 const { t } = useI18n();
 const { href, onLinkClick } = useLinks(url);
+
+const { getBlockie } = useBlockie();
 </script>
 
 <template>
   <div class="d-flex flex-row shrink align-center">
-    <!--    TODO: move makeBlockie to local, and make the size adjustable-->
-    <!--    <span>-->
-    <!--      <v-avatar v-if="showIcon && !tx" size="24" class="ml-n2 mr-2">-->
-    <!--        <v-img :src="makeBlockie(displayText)" />-->
-    <!--      </v-avatar>-->
-    <!--    </span>-->
+    <span>
+      <v-avatar v-if="showIcon && !tx" size="24" class="mr-2">
+        <v-img :src="getBlockie(displayText)" />
+      </v-avatar>
+    </span>
     <span v-if="!linkOnly && !buttons">
       <span v-if="fullAddress" :class="{ 'blur-content': !shouldShowAmount }">
         {{ displayText }}

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import makeBlockie from 'ethereum-blockies-base64';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
@@ -96,6 +95,8 @@ watch(v$, ({ $invalid }) => {
 const updateAllChainsState = (enable: boolean) => {
   emit('update:enable-for-all-chains', enable);
 };
+
+const { getBlockie } = useBlockie();
 </script>
 
 <template>
@@ -148,7 +149,7 @@ const updateAllChainsState = (enable: boolean) => {
               <v-avatar size="24" class="mr-2" color="grey">
                 <v-img
                   v-if="value.address && isValidEthAddress(value.address)"
-                  :src="makeBlockie(value.address)"
+                  :src="getBlockie(value.address)"
                 />
               </v-avatar>
             </span>
@@ -156,7 +157,7 @@ const updateAllChainsState = (enable: boolean) => {
           <template #item="{ item }">
             <span v-if="item">
               <v-avatar size="24" class="mr-2">
-                <v-img :src="makeBlockie(item)" />
+                <v-img :src="getBlockie(item)" />
               </v-avatar>
             </span>
             {{ item }}

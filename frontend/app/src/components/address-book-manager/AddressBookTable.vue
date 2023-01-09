@@ -90,7 +90,7 @@ const data = computed<AddressBookEntries>(() => {
 
 const filteredData = computed<AddressBookEntries>(() => {
   const keyword = get(search).toLowerCase();
-  const selectedChain = get(blockchain).toLowerCase();
+  const selectedChain = get(blockchain)?.toLowerCase();
 
   return get(data).filter(
     item =>

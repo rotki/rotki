@@ -51,7 +51,6 @@
     "dayjs": "1.11.7",
     "electron-updater": "5.3.0",
     "electron-window-state": "5.0.3",
-    "ethereum-blockies-base64": "1.0.2",
     "lodash": "4.17.21",
     "loglevel": "1.8.1",
     "pinia": "2.0.28",

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type GeneralAccount } from '@rotki/common/lib/account';
-import makeBlockie from 'ethereum-blockies-base64';
 import { truncateAddress, truncationPoints } from '@/filters';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useSessionSettingsStore } from '@/store/settings/session';
@@ -85,6 +84,8 @@ const label = computed<string>(() => {
 
   return label;
 });
+
+const { getBlockie } = useBlockie();
 </script>
 
 <template>
@@ -99,7 +100,7 @@ const label = computed<string>(() => {
         >
           <v-chip label outlined class="labeled-address-display__chip">
             <v-avatar size="24" class="mr-2">
-              <v-img :src="makeBlockie(address)" />
+              <v-img :src="getBlockie(address)" />
             </v-avatar>
             <template v-if="!!label && !aliasName">
               <span class="text-truncate">

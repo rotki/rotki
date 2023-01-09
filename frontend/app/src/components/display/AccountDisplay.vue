@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import makeBlockie from 'ethereum-blockies-base64';
 import { type GeneralAccount } from '@rotki/common/lib/account';
 import { truncateAddress } from '@/filters';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
@@ -46,6 +45,7 @@ const aliasName = computed<string | null>(() => {
 });
 
 const { tc } = useI18n();
+const { getBlockie } = useBlockie();
 </script>
 
 <template>
@@ -70,7 +70,7 @@ const { tc } = useI18n();
 
         <div>
           <v-avatar size="24" class="mr-2">
-            <v-img :src="makeBlockie(address)" />
+            <v-img :src="getBlockie(address)" />
           </v-avatar>
         </div>
 

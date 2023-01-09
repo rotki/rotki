@@ -88,10 +88,11 @@ const save = async () => {
   if (!get(valid)) return;
   try {
     const formVal = get(formPayload);
+    const enableForAllChainsVal = get(enableForAllChains);
     const payload = {
       address: formVal.address.trim(),
       name: formVal.name,
-      blockchain: get(enableForAllChains) ? null : formVal.blockchain
+      blockchain: enableForAllChainsVal ? null : formVal.blockchain
     };
     const location = formVal.location;
     if (get(editMode)) {
@@ -101,7 +102,7 @@ const save = async () => {
     }
 
     set(tab, location === 'global' ? 0 : 1);
-    set(selectedChain, formVal.blockchain);
+    if (!enableForAllChainsVal) set(selectedChain, formVal.blockchain);
     set(showForm, false);
   } catch (e: any) {
     const values = { message: e.message };

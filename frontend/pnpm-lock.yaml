@@ -68,7 +68,6 @@ importers:
       electron-window-state: 5.0.3
       eslint: 8.31.0
       eslint-plugin-cypress: 2.12.1
-      ethereum-blockies-base64: 1.0.2
       flush-promises: 1.0.2
       lodash: 4.17.21
       loglevel: 1.8.1
@@ -126,7 +125,6 @@ importers:
       dayjs: 1.11.7
       electron-updater: 5.3.0
       electron-window-state: 5.0.3
-      ethereum-blockies-base64: 1.0.2
       lodash: 4.17.21
       loglevel: 1.8.1
       pinia: 2.0.28_vj744rb3neneiaeb3oalctaenu
@@ -5208,12 +5206,6 @@ packages:
     engines: {node: '>= 0.6'}
     dev: false
 
-  /ethereum-blockies-base64/1.0.2:
-    resolution: {integrity: sha512-Vg2HTm7slcWNKaRhCUl/L3b4KrB8ohQXdd5Pu3OI897EcR6tVRvUqdTwAyx+dnmoDzj8e2bwBLDQ50ByFmcz6w==}
-    dependencies:
-      pnglib: 0.0.1
-    dev: false
-
   /event-stream/3.3.4:
     resolution: {integrity: sha512-QHpkERcGsR0T7Qm3HNJSyXKEEj8AHNxkY3PK8TS2KJvQ7NiSHe3DDpwVKKtoYprL/AreyzFBeIkBIWChAqn60g==}
     dependencies:
@@ -7529,10 +7521,6 @@ packages:
   /pluralize/8.0.0:
     resolution: {integrity: sha512-Nc3IT5yHzflTfbjgqWcCPpo7DaKy4FnpB0l/zCAW0Tc7jxAiuqSxHasntB3D7887LSrA93kDJ9IXovxJYxyLCA==}
     engines: {node: '>=4'}
-    dev: false
-
-  /pnglib/0.0.1:
-    resolution: {integrity: sha512-95ChzOoYLOPIyVmL+Y6X+abKGXUJlvOVLkB1QQkyXl7Uczc6FElUy/x01NS7r2GX6GRezloO/ecCX9h4U9KadA==}
     dev: false
 
   /postcss-html/1.5.0:

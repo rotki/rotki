@@ -16,7 +16,7 @@ const { getLabel, getItemTranslationKey } = useTransactionQueryStatus();
       {{ getLabel(item) }}
     </template>
     <template #address>
-      <div class="font-weight-bold px-1 text-no-wrap">
+      <div class="font-weight-bold px-2 text-no-wrap">
         <hash-link :text="item.address" />
       </div>
     </template>

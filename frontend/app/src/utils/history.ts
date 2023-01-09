@@ -1,4 +1,3 @@
-import makeBlockie from 'ethereum-blockies-base64';
 import {
   transactionEventProtocolData,
   transactionEventTypeMapping,
@@ -66,6 +65,8 @@ export const useEventTypeData = createSharedComposable(() => {
   };
 });
 
+const { getBlockie } = useBlockie();
+
 export const getEventCounterpartyData = (
   event: EthTransactionEventEntry
 ): ActionDataEntry | null => {
@@ -108,7 +109,7 @@ export const getEventCounterpartyData = (
   return {
     identifier: '',
     label: counterparty,
-    image: makeBlockie(counterparty)
+    image: getBlockie(counterparty)
   };
 };
 
