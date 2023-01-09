@@ -831,7 +831,6 @@ class GlobalDBHandler():
     def get_evm_tokens(
             chain_id: ChainID,
             exceptions: Optional[list[ChecksumEvmAddress]] = None,
-            except_protocols: Optional[list[str]] = None,
             protocol: Optional[str] = None,
     ) -> list[EvmToken]:
         """Gets all ethereum tokens from the DB
@@ -848,7 +847,7 @@ class GlobalDBHandler():
             'C.identifier = B.identifier WHERE B.chain = ? '
         )
         bindings_list: list[Union[str, int, ChecksumEvmAddress]] = [chain_id.serialize_for_db()]  # noqa: E501
-        if exceptions is not None or protocol is not None or except_protocols is not None:
+        if exceptions is not None or protocol is not None:
             querystr_additions = []
             if exceptions is not None:
                 questionmarks = '?' * len(exceptions)
@@ -857,11 +856,6 @@ class GlobalDBHandler():
             if protocol is not None:
                 querystr_additions.append('B.protocol=? ')
                 bindings_list.append(protocol)
-
-            if except_protocols is not None:
-                questionmarks = '?' * len(except_protocols)
-                querystr_additions.append(f'(B.protocol NOT IN ({",".join(questionmarks)}) OR B.protocol IS NULL) ')  # noqa: E501
-                bindings_list.extend(except_protocols)
 
             querystr += 'AND ' + 'AND '.join(querystr_additions) + ';'
         else:

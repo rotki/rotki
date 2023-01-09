@@ -264,7 +264,6 @@ class EvmTokens(metaclass=ABCMeta):
             all_tokens = GlobalDBHandler().get_evm_tokens(
                 chain_id=self.evm_inquirer.chain_id,
                 exceptions=self._get_token_exceptions(),
-                except_protocols=['balancer'],
             )
             self._detect_tokens(
                 addresses=addresses,
