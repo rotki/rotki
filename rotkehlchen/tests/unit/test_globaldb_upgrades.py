@@ -206,25 +206,27 @@ def test_upgrade_v3_v4(globaldb):
             'SELECT COUNT(*) FROM sqlite_master WHERE type="table" and name IN (?, ?)',
             ('contract_abi', 'contract_data'),
         )
-        expected_contracts_length = 93 - 1 + 1 + 2 + 1  # len(eth_contracts) + 1 in dxdao file -1 by removing multicall1 + 2 the new optimism contracts + by adding liquity staking  # noqa: E501
+        expected_contracts_length = 93 - 1 + 1 + 3 + 1  # len(eth_contracts) + 1 in dxdao file -1 by removing multicall1 + 3 the new optimism contracts + by adding liquity staking  # noqa: E501
         assert cursor.fetchone()[0] == 2
         cursor.execute('SELECT COUNT(*) FROM contract_data')
         assert cursor.fetchone()[0] == expected_contracts_length
 
         groups = [MAKERDAO_ABI_GROUP_1, MAKERDAO_ABI_GROUP_2, MAKERDAO_ABI_GROUP_3, YEARN_ABI_GROUP_1, YEARN_ABI_GROUP_2, YEARN_ABI_GROUP_3, YEARN_ABI_GROUP_4]  # noqa: E501
         cursor.execute('SELECT COUNT(*) FROM contract_abi')
-        assert cursor.fetchone()[0] == (  # len(eth_abi) + contracts_length - uniswap_NFT_MANAGER -2 optimism contracts that share ABI with mainnet - len(7 abi groups) + 7  # noqa: E501
+        assert cursor.fetchone()[0] == (  # len(eth_abi) + contracts_length - uniswap_NFT_MANAGER - 3 optimism contracts that share ABI with mainnet - len(7 abi groups) + 7  # noqa: E501
             15 +
-            expected_contracts_length - 1 - 2 -
+            expected_contracts_length - 1 - 3 -
             sum(len(x) for x in groups) +
             len(groups)
         )
 
-        # check balance scan and multicall are fine and in both chains
+        # check balance scan, multicall and ds proxy registry are fine and in both chains
         cursor.execute('SELECT id from contract_abi WHERE name=?', ('BALANCE_SCAN',))
         balancescan_abi_id = cursor.fetchone()[0]
         cursor.execute('SELECT id from contract_abi WHERE name=?', ('MULTICALL2',))
         multicall_abi_id = cursor.fetchone()[0]
+        cursor.execute('SELECT id from contract_abi WHERE name=?', ('DS_PROXY_REGISTRY',))
+        ds_registry_abi_id = cursor.fetchone()[0]
         result = cursor.execute(
             'SELECT address, chain_id, abi, deployed_block FROM contract_data WHERE name=? ORDER BY chain_id',  # noqa: E501
             ('BALANCE_SCAN',),
@@ -240,6 +242,14 @@ def test_upgrade_v3_v4(globaldb):
         assert result == [
             ('0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696', 1, multicall_abi_id, 12336033),
             ('0x2DC0E2aa608532Da689e89e237dF582B783E552C', 10, multicall_abi_id, 722566),
+        ]
+        result = cursor.execute(
+            'SELECT address, chain_id, abi, deployed_block FROM contract_data WHERE name=? ORDER BY chain_id',  # noqa: E501
+            ('DS_PROXY_REGISTRY',),
+        ).fetchall()
+        assert result == [
+            ('0x4678f0a6958e4D2Bc4F1BAF7Bc52E8F3564f3fE4', 1, ds_registry_abi_id, 5834629),
+            ('0x283Cc5C26e53D66ed2Ea252D986F094B37E6e895', 10, ds_registry_abi_id, 2944824),
         ]
 
         # check that old names are not in there

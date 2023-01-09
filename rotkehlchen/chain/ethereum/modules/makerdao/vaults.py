@@ -12,29 +12,7 @@ from rotkehlchen.chain.ethereum.constants import RAY, RAY_DIGITS
 from rotkehlchen.chain.ethereum.defi.defisaver_proxy import HasDSProxy
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_normalized_value
 from rotkehlchen.constants import ONE, ZERO
-from rotkehlchen.constants.assets import (
-    A_AAVE,
-    A_BAL,
-    A_BAT,
-    A_COMP,
-    A_DAI,
-    A_ETH,
-    A_GUSD,
-    A_KNC,
-    A_LINK,
-    A_LRC,
-    A_MANA,
-    A_MATIC,
-    A_PAX,
-    A_RENBTC,
-    A_TUSD,
-    A_UNI,
-    A_USDC,
-    A_USDT,
-    A_WBTC,
-    A_YFI,
-    A_ZRX,
-)
+from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.constants.timing import YEAR_IN_SECONDS
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -48,7 +26,7 @@ from rotkehlchen.types import ChecksumEvmAddress, EVMTxHash, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import address_to_bytes32, hexstr_to_int, shift_num_right_by, ts_now
 
-from .constants import MAKERDAO_REQUERY_PERIOD, WAD
+from .constants import ALL_COLLATERAL_TYPES_MAPPING, MAKERDAO_REQUERY_PERIOD, WAD
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -61,31 +39,8 @@ log = RotkehlchenLogsAdapter(logger)
 def create_collateral_type_mapping() -> dict[str, CryptoAsset]:
     """Create a mapping with resolved assets for those used as collateral in maker"""
     return {
-        'BAT-A': A_BAT.resolve_to_crypto_asset(),
-        'ETH-A': A_ETH.resolve_to_crypto_asset(),
-        'ETH-B': A_ETH.resolve_to_crypto_asset(),
-        'ETH-C': A_ETH.resolve_to_crypto_asset(),
-        'KNC-A': A_KNC.resolve_to_crypto_asset(),
-        'TUSD-A': A_TUSD.resolve_to_crypto_asset(),
-        'USDC-A': A_USDC.resolve_to_crypto_asset(),
-        'USDC-B': A_USDC.resolve_to_crypto_asset(),
-        'USDT-A': A_USDT.resolve_to_crypto_asset(),
-        'WBTC-A': A_WBTC.resolve_to_crypto_asset(),
-        'WBTC-B': A_WBTC.resolve_to_crypto_asset(),
-        'WBTC-C': A_WBTC.resolve_to_crypto_asset(),
-        'ZRX-A': A_ZRX.resolve_to_crypto_asset(),
-        'MANA-A': A_MANA.resolve_to_crypto_asset(),
-        'PAXUSD-A': A_PAX.resolve_to_crypto_asset(),
-        'COMP-A': A_COMP.resolve_to_crypto_asset(),
-        'LRC-A': A_LRC.resolve_to_crypto_asset(),
-        'LINK-A': A_LINK.resolve_to_crypto_asset(),
-        'BAL-A': A_BAL.resolve_to_crypto_asset(),
-        'YFI-A': A_YFI.resolve_to_crypto_asset(),
-        'GUSD-A': A_GUSD.resolve_to_crypto_asset(),
-        'UNI-A': A_UNI.resolve_to_crypto_asset(),
-        'RENBTC-A': A_RENBTC.resolve_to_crypto_asset(),
-        'AAVE-A': A_AAVE.resolve_to_crypto_asset(),
-        'MATIC-A': A_MATIC.resolve_to_crypto_asset(),
+        collateral_type: asset.resolve_to_crypto_asset()
+        for collateral_type, asset in ALL_COLLATERAL_TYPES_MAPPING.items()
     }
 
 
