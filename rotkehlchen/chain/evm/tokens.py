@@ -96,7 +96,11 @@ def generate_multicall_chunks(
 
 
 class EvmTokens(metaclass=ABCMeta):
-    def __init__(self, database: 'DBHandler', evm_inquirer: 'EvmNodeInquirer'):
+    def __init__(
+            self,
+            database: 'DBHandler',
+            evm_inquirer: 'EvmNodeInquirer',
+    ):
         self.db = database
         self.evm_inquirer = evm_inquirer
 
@@ -201,6 +205,44 @@ class EvmTokens(metaclass=ABCMeta):
             total_token_balances = combine_dicts(total_token_balances, new_token_balances)
         return total_token_balances
 
+    def _compute_detected_tokens_info(self, addresses: list[ChecksumEvmAddress]) -> DetectedTokensType:  # noqa: E501
+        """
+        Generate a structure that contains information about the addresses that tokens
+        were requested for.
+        It generates a dictionary where key is an address and value is
+        either a list of tokens or the timestamp of the last tokens query for that address.
+        """
+        proxies_mapping = self.evm_inquirer.proxies_inquirer.get_accounts_having_proxy()
+        addresses_info = {}
+        with self.db.conn.read_ctx() as cursor:
+            for address in addresses:
+                detected_tokens, last_queried_timestamp = self.db.get_tokens_for_address(
+                    cursor=cursor,
+                    address=address,
+                    blockchain=self.evm_inquirer.blockchain,
+                )
+                if address in proxies_mapping:
+                    proxy_address = proxies_mapping[address]
+                    proxy_detected_tokens, proxy_last_queried_timestamp = self.db.get_tokens_for_address(  # noqa: E501
+                        cursor=cursor,
+                        address=proxy_address,
+                        blockchain=self.evm_inquirer.blockchain,
+                    )
+                    if proxy_detected_tokens is not None:
+                        if detected_tokens is None:
+                            detected_tokens = proxy_detected_tokens
+                        else:
+                            detected_tokens = list(set(detected_tokens + proxy_detected_tokens))
+                    if proxy_last_queried_timestamp is not None:
+                        if last_queried_timestamp is None:
+                            last_queried_timestamp = proxy_last_queried_timestamp
+                        else:
+                            last_queried_timestamp = min(last_queried_timestamp, proxy_last_queried_timestamp)  # noqa: E501
+
+                addresses_info[address] = (detected_tokens, last_queried_timestamp)
+
+        return addresses_info
+
     def detect_tokens(
             self,
             only_cache: bool,
@@ -218,21 +260,25 @@ class EvmTokens(metaclass=ABCMeta):
         - BadFunctionCallOutput if a local node is used and the contract for the
           token has no code. That means the chain is not synced
         """
-        with self.db.conn.read_ctx() as cursor:
-            if only_cache is False:
-                self._detect_tokens(addresses=addresses)
+        if only_cache is False:
+            all_tokens = GlobalDBHandler().get_evm_tokens(
+                chain_id=self.evm_inquirer.chain_id,
+                exceptions=self._get_token_exceptions(),
+                except_protocols=['balancer'],
+            )
+            self._detect_tokens(
+                addresses=addresses,
+                tokens_to_check=all_tokens,
+            )
+            self.maybe_detect_proxies_tokens(addresses)
 
-            addresses_info: DetectedTokensType = {}
-            for address in addresses:
-                addresses_info[address] = self.db.get_tokens_for_address(
-                    cursor=cursor,
-                    address=address,
-                    blockchain=self.evm_inquirer.blockchain,
-                )
+        return self._compute_detected_tokens_info(addresses)
 
-        return addresses_info
-
-    def _detect_tokens(self, addresses: list[ChecksumEvmAddress]) -> None:
+    def _detect_tokens(
+            self,
+            addresses: list[ChecksumEvmAddress],
+            tokens_to_check: list[EvmToken],
+    ) -> None:
         """
         Detect tokens for the given addresses.
 
@@ -242,12 +288,6 @@ class EvmTokens(metaclass=ABCMeta):
         - BadFunctionCallOutput if a local node is used and the contract for the
           token has no code. That means the chain is not synced
         """
-        all_tokens = GlobalDBHandler().get_evm_tokens(
-            chain_id=self.evm_inquirer.chain_id,
-            exceptions=self._get_token_exceptions(),
-            except_protocols=['balancer'],
-        )
-
         if self.evm_inquirer.connected_to_any_web3():
             chunk_size = OTHER_MAX_TOKEN_CHUNK_LENGTH
             # skipping etherscan because chunk size is too big for etherscan
@@ -258,7 +298,7 @@ class EvmTokens(metaclass=ABCMeta):
         for address in addresses:
             token_balances = self._query_chunks(
                 address=address,
-                tokens=all_tokens,
+                tokens=tokens_to_check,
                 chunk_size=chunk_size,
                 call_order=call_order,
             )
@@ -334,3 +374,7 @@ class EvmTokens(metaclass=ABCMeta):
         Each chain needs to implement any chain-specific exceptions here.
         """
         ...
+
+    def maybe_detect_proxies_tokens(self, addresses: list[ChecksumEvmAddress]) -> None:  # pylint: disable=unused-argument  # noqa: E501
+        """Subclasses may implement this method to detect tokens for proxies"""
+        return None

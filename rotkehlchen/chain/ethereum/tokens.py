@@ -1,8 +1,13 @@
 from typing import TYPE_CHECKING
 
 from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.chain.ethereum.modules.makerdao.constants import (
+    UNIQUE_TOKENS_COLLATERAL_TYPES_MAPPING,
+)
 from rotkehlchen.chain.evm.tokens import EvmTokens
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants.assets import A_DAI, A_WETH
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.types import ChainID, ChecksumEvmAddress
 
 if TYPE_CHECKING:
@@ -35,8 +40,28 @@ ETH_TOKEN_EXCEPTIONS = [
 
 class EthereumTokens(EvmTokens):
 
-    def __init__(self, database: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -> None:
-        super().__init__(database=database, evm_inquirer=ethereum_inquirer)
+    def __init__(
+            self,
+            database: 'DBHandler',
+            ethereum_inquirer: 'EthereumInquirer',
+    ) -> None:
+        super().__init__(
+            database=database,
+            evm_inquirer=ethereum_inquirer,
+        )
+        # Add Maker tokens
+        self.tokens_for_proxies = [asset.resolve_to_evm_token() for asset in UNIQUE_TOKENS_COLLATERAL_TYPES_MAPPING.values()]  # noqa: E501
+        self.tokens_for_proxies.append(A_DAI.resolve_to_evm_token())
+        self.tokens_for_proxies.append(A_WETH.resolve_to_evm_token())  # WETH is also used
+        # Add aave tokens
+        self.tokens_for_proxies += GlobalDBHandler().get_evm_tokens(
+            chain_id=ChainID.ETHEREUM,
+            protocol='aave',
+        )
+        self.tokens_for_proxies += GlobalDBHandler().get_evm_tokens(
+            chain_id=ChainID.ETHEREUM,
+            protocol='aave-v2',
+        )
 
     # -- methods that need to be implemented per chain
     def _get_token_exceptions(self) -> list[ChecksumEvmAddress]:
@@ -50,3 +75,12 @@ class EthereumTokens(EvmTokens):
                 exceptions.append(EvmToken(asset.identifier).evm_address)
 
         return exceptions
+
+    def maybe_detect_proxies_tokens(self, addresses: list[ChecksumEvmAddress]) -> None:
+        """Detect tokens for proxies that are owned by the given addresses"""
+        proxies_mapping = self.evm_inquirer.proxies_inquirer.get_accounts_having_proxy()
+        proxies_to_use = {k: v for k, v in proxies_mapping.items() if k in addresses}
+        self._detect_tokens(
+            addresses=list(proxies_to_use.values()),
+            tokens_to_check=self.tokens_for_proxies,
+        )
