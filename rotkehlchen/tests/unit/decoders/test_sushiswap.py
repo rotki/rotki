@@ -19,6 +19,7 @@ from rotkehlchen.types import (
     EvmTransaction,
     Location,
     Timestamp,
+    TimestampMS,
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
@@ -38,7 +39,7 @@ def test_sushiswap_single_swap(database, ethereum_inquirer, eth_transactions):
     transaction = EvmTransaction(
         tx_hash=evmhash,
         chain_id=ChainID.ETHEREUM,
-        timestamp=1646375440,
+        timestamp=Timestamp(1646375440),
         block_number=14351442,
         from_address=ADDY_1,
         to_address='0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F',
@@ -104,7 +105,7 @@ def test_sushiswap_single_swap(database, ethereum_inquirer, eth_transactions):
         HistoryBaseEntry(
             event_identifier=HistoryBaseEntry.deserialize_event_identifier(tx_hex),
             sequence_index=0,
-            timestamp=1646375440000,
+            timestamp=TimestampMS(1646375440000),
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -119,7 +120,7 @@ def test_sushiswap_single_swap(database, ethereum_inquirer, eth_transactions):
         ), HistoryBaseEntry(
             event_identifier=HistoryBaseEntry.deserialize_event_identifier(tx_hex),
             sequence_index=307,
-            timestamp=1646375440000,
+            timestamp=TimestampMS(1646375440000),
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
@@ -131,7 +132,7 @@ def test_sushiswap_single_swap(database, ethereum_inquirer, eth_transactions):
         ), HistoryBaseEntry(
             event_identifier=HistoryBaseEntry.deserialize_event_identifier(tx_hex),
             sequence_index=309,
-            timestamp=1646375440000,
+            timestamp=TimestampMS(1646375440000),
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
@@ -285,14 +286,14 @@ def test_sushiswap_v2_remove_liquidity(database, ethereum_inquirer, eth_transact
     with database.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
         dbevmtx.add_evm_internal_transactions(cursor, [internal_tx], relevant_address=ADDY_2)  # noqa: E501
-        events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
+    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
 
     assert len(events) == 4
     expected_events = [
         HistoryBaseEntry(
             event_identifier=evmhash,
             sequence_index=0,
-            timestamp=1672888271000,
+            timestamp=TimestampMS(1672888271000),
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -304,19 +305,19 @@ def test_sushiswap_v2_remove_liquidity(database, ethereum_inquirer, eth_transact
         ), HistoryBaseEntry(
             event_identifier=evmhash,
             sequence_index=1,
-            timestamp=1672888271000,
+            timestamp=TimestampMS(1672888271000),
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.REMOVE_ASSET,
             asset=A_ETH,
             balance=Balance(amount=FVal('1.122198589808876532')),
             location_label=ADDY_2,
-            notes='Remove 1.122198589808876532 ETH of liquidity from sushiswap-v2 LP 0x06da0fd433C1A5d7a4faa01111c044910A184553',  # noqa: E501
+            notes='Remove 1.122198589808876532 ETH from sushiswap-v2 LP 0x06da0fd433C1A5d7a4faa01111c044910A184553',  # noqa: E501
             counterparty=CPT_SUSHISWAP_V2,
         ), HistoryBaseEntry(
             event_identifier=evmhash,
             sequence_index=23,
-            timestamp=1672888271000,
+            timestamp=TimestampMS(1672888271000),
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.RETURN_WRAPPED,
@@ -328,14 +329,14 @@ def test_sushiswap_v2_remove_liquidity(database, ethereum_inquirer, eth_transact
         ), HistoryBaseEntry(
             event_identifier=evmhash,
             sequence_index=30,
-            timestamp=1672888271000,
+            timestamp=TimestampMS(1672888271000),
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.REMOVE_ASSET,
             asset=A_USDT,
             balance=Balance(amount=FVal('1408.739932')),
             location_label=ADDY_2,
-            notes='Remove 1408.739932 USDT of liquidity from sushiswap-v2 LP 0x06da0fd433C1A5d7a4faa01111c044910A184553',  # noqa: E501
+            notes='Remove 1408.739932 USDT from sushiswap-v2 LP 0x06da0fd433C1A5d7a4faa01111c044910A184553',  # noqa: E501
             counterparty=CPT_SUSHISWAP_V2,
         ),
     ]
@@ -450,14 +451,14 @@ def test_sushiswap_v2_add_liquidity(database, ethereum_inquirer, eth_transaction
     )
     with database.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
-        events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
+    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
 
     assert len(events) == 4
     expected_events = [
         HistoryBaseEntry(
             event_identifier=evmhash,
             sequence_index=0,
-            timestamp=1672893947000,
+            timestamp=TimestampMS(1672893947000),
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -469,38 +470,38 @@ def test_sushiswap_v2_add_liquidity(database, ethereum_inquirer, eth_transaction
         ), HistoryBaseEntry(
             event_identifier=evmhash,
             sequence_index=1,
-            timestamp=1672893947000,
+            timestamp=TimestampMS(1672893947000),
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=A_ETH,
             balance=Balance(amount=FVal('0.000797012710918264')),
             location_label=ADDY_3,
-            notes='Add 0.000797012710918264 ETH of liquidity to sushiswap-v2 LP 0x06da0fd433C1A5d7a4faa01111c044910A184553',  # noqa: E501
+            notes='Deposit 0.000797012710918264 ETH to sushiswap-v2 LP 0x06da0fd433C1A5d7a4faa01111c044910A184553',  # noqa: E501
             counterparty=CPT_SUSHISWAP_V2,
         ), HistoryBaseEntry(
             event_identifier=evmhash,
             sequence_index=218,
-            timestamp=1672893947000,
+            timestamp=TimestampMS(1672893947000),
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=A_USDT,
             balance=Balance(amount=FVal('0.999992')),
             location_label=ADDY_3,
-            notes='Add 0.999992 USDT of liquidity to sushiswap-v2 LP 0x06da0fd433C1A5d7a4faa01111c044910A184553',  # noqa: E501
+            notes='Deposit 0.999992 USDT to sushiswap-v2 LP 0x06da0fd433C1A5d7a4faa01111c044910A184553',  # noqa: E501
             counterparty=CPT_SUSHISWAP_V2,
         ), HistoryBaseEntry(
             event_identifier=evmhash,
             sequence_index=222,
-            timestamp=1672893947000,
+            timestamp=TimestampMS(1672893947000),
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
             asset=Asset('eip155:1/erc20:0x06da0fd433C1A5d7a4faa01111c044910A184553'),
             balance=Balance(amount=FVal('1.7297304741E-8')),
             location_label=ADDY_3,
-            notes='Receive 1.7297304741E-8 SLP from sushiswap-v2 pool',
+            notes='Receive 0.000000017297304741 SLP from sushiswap-v2 pool',
             counterparty=CPT_SUSHISWAP_V2,
         ),
     ]

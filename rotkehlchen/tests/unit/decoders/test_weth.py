@@ -195,7 +195,7 @@ def test_weth_interaction_with_protocols_deposit(database, ethereum_inquirer):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.999999999949533767')),
             location_label='0xC4DdFf531132d32b47eC938AcfA28E354769A806',
-            notes='Add 0.999999999949533767 ETH of liquidity to Uniswap V3 LP position 343053',  # noqa: E501
+            notes='Deposit 0.999999999949533767 ETH to uniswap-v3 LP 343053',
             counterparty=CPT_UNISWAP_V3,
         ), HistoryBaseEntry(
             event_identifier=tx_hash,
@@ -207,7 +207,7 @@ def test_weth_interaction_with_protocols_deposit(database, ethereum_inquirer):
             asset=A_USDC,
             balance=Balance(amount=FVal('294.145955')),
             location_label='0xC4DdFf531132d32b47eC938AcfA28E354769A806',
-            notes='Add 294.145955 USDC of liquidity to Uniswap V3 LP position 343053',  # noqa: E501
+            notes='Deposit 294.145955 USDC to uniswap-v3 LP 343053',
             counterparty=CPT_UNISWAP_V3,
         ),
     ]
@@ -229,7 +229,7 @@ def test_weth_interaction_with_protocols_deposit(database, ethereum_inquirer):
         asset=expected_erc721,
         balance=Balance(amount=ONE),
         location_label='0xC4DdFf531132d32b47eC938AcfA28E354769A806',
-        notes='Create Uniswap V3 LP position with id 343053',
+        notes='Create uniswap-v3 LP with id 343053',
         counterparty=CPT_UNISWAP_V3,
         extra_data={'token_id': 343053, 'token_name': 'Uniswap V3 Positions NFT-V1'},
     )
@@ -277,7 +277,7 @@ def test_weth_interaction_with_protocols_withdrawal(database, ethereum_inquirer)
             asset=A_ETH,
             balance=Balance(amount=FVal('0.764522981784947382')),
             location_label='0xDea6866A866C60d68fFDFc6178C12fCFdb9d0D47',
-            notes='Collect 0.764522981784947382 ETH of liquidity from Uniswap V3 LP position 337559',  # noqa: E501
+            notes='Remove 0.764522981784947382 ETH from uniswap-v3 LP 337559',
             counterparty=CPT_UNISWAP_V3,
         ), HistoryBaseEntry(
             event_identifier=HistoryBaseEntry.deserialize_event_identifier(
@@ -291,7 +291,7 @@ def test_weth_interaction_with_protocols_withdrawal(database, ethereum_inquirer)
             asset=A_USDC,
             balance=Balance(amount=FVal('1028.82092')),
             location_label='0xDea6866A866C60d68fFDFc6178C12fCFdb9d0D47',
-            notes='Collect 1028.82092 USDC of liquidity from Uniswap V3 LP position 337559',  # noqa: E501
+            notes='Remove 1028.82092 USDC from uniswap-v3 LP 337559',
             counterparty=CPT_UNISWAP_V3,
         ),
     ]

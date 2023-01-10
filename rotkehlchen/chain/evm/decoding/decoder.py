@@ -70,7 +70,7 @@ class EventDecoderFunction(Protocol):
             decoded_events: list[HistoryBaseEntry],
             action_items: list[ActionItem],
             all_logs: list[EvmTxReceiptLog],
-    ) -> Optional[HistoryBaseEntry]:
+    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         ...
 
 
@@ -224,13 +224,13 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             decoded_events: list[HistoryBaseEntry],
             action_items: list[ActionItem],
             all_logs: list[EvmTxReceiptLog],
-    ) -> Optional[HistoryBaseEntry]:
+    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         for rule in self.rules.event_rules:
-            event = rule(token=token, tx_log=tx_log, transaction=transaction, decoded_events=decoded_events, action_items=action_items, all_logs=all_logs)  # noqa: E501
-            if event:
-                return event
+            event, new_action_items = rule(token=token, tx_log=tx_log, transaction=transaction, decoded_events=decoded_events, action_items=action_items, all_logs=all_logs)  # noqa: E501
+            if event is not None or len(new_action_items) > 0:
+                return event, new_action_items
 
-        return None
+        return None, []
 
     def decode_by_address_rules(
             self,
@@ -305,7 +305,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                 address=tx_log.address,
                 chain_id=self.evm_inquirer.chain_id,
             )
-            event = self.try_all_rules(
+            event, new_action_items = self.try_all_rules(
                 token=token,
                 tx_log=tx_log,
                 transaction=transaction,
@@ -313,7 +313,8 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                 action_items=action_items,
                 all_logs=tx_receipt.logs,
             )
-            if event:
+            action_items.extend(new_action_items)
+            if event is not None:
                 events.append(event)
 
         events = self.run_all_post_decoding_rules(
@@ -519,9 +520,9 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             decoded_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> Optional[HistoryBaseEntry]:
+    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         if tx_log.topics[0] != ERC20_APPROVE or token is None:
-            return None
+            return None, []
 
         if len(tx_log.topics) == 3:
             owner_address = hex_or_bytes_to_address(tx_log.topics[1])
@@ -536,15 +537,15 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                 f'Got an ERC20 approve event with unknown structure '
                 f'in transaction {transaction.tx_hash.hex()}',
             )
-            return None
+            return None, []
 
         if not any(self.base.is_tracked(x) for x in (owner_address, spender_address)):
-            return None
+            return None, []
 
         amount = token_normalized_value(token_amount=amount_raw, token=token)
         prefix = f'Revoke {token.symbol} approval' if amount == ZERO else f'Approve {amount} {token.symbol}'  # noqa: E501
         notes = f'{prefix} of {owner_address} for spending by {spender_address}'
-        return HistoryBaseEntry(
+        event = HistoryBaseEntry(
             event_identifier=transaction.tx_hash,
             sequence_index=self.base.get_sequence_index(tx_log),
             timestamp=ts_sec_to_ms(transaction.timestamp),
@@ -557,6 +558,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             event_subtype=HistoryEventSubType.APPROVE,
             counterparty=spender_address,
         )
+        return event, []
 
     def _maybe_decode_simple_transactions(
             self,
@@ -636,9 +638,9 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             decoded_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
             action_items: list[ActionItem],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> Optional[HistoryBaseEntry]:
+    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         if tx_log.topics[0] != ERC20_OR_ERC721_TRANSFER:
-            return None
+            return None, []
 
         if self._is_non_conformant_erc721(tx_log.address) or len(tx_log.topics) == 4:  # typical ERC721 has 3 indexed args  # noqa: E501
             token_kind = EvmTokenKind.ERC721
@@ -646,7 +648,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             token_kind = EvmTokenKind.ERC20
         else:
             log.debug(f'Failed to decode token with address {tx_log.address} due to inability to match token type')  # noqa: E501
-            return None
+            return None, []
 
         if token is None:
             try:
@@ -658,7 +660,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                     evm_inquirer=self.evm_inquirer,
                 )
             except NotERC20Conformant:
-                return None  # ignore non-ERC20 transfers for now
+                return None, []  # ignore non-ERC20 transfers for now
         else:
             found_token = token
 
@@ -668,13 +670,13 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             transaction=transaction,
         )
         if transfer is None:
-            return None
+            return None, []
 
         for idx, action_item in enumerate(action_items):
             if action_item.asset == found_token and action_item.amount == transfer.balance.amount and action_item.from_event_type == transfer.event_type and action_item.from_event_subtype == transfer.event_subtype:  # noqa: E501
                 if action_item.action == 'skip':
                     action_items.pop(idx)
-                    return None
+                    return None, []
                 if action_item.action == 'skip & keep':
                     # the action item is skipped but kept in the list of action items. Is used
                     # to propagate information between event decoders and enrichers
@@ -717,7 +719,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             action_items=action_items,
             all_logs=all_logs,
         )
-        return transfer
+        return transfer, []
 
     # -- methods to be implemented by child classes --
 

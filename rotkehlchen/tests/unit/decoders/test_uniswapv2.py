@@ -20,6 +20,7 @@ from rotkehlchen.types import (
     EvmTransaction,
     Location,
     Timestamp,
+    TimestampMS,
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
@@ -39,7 +40,7 @@ def test_uniswap_v2_swap(database, ethereum_inquirer, eth_transactions):
     transaction = EvmTransaction(
         tx_hash=evmhash,
         chain_id=ChainID.ETHEREUM,
-        timestamp=1646375440,
+        timestamp=Timestamp(1646375440),
         block_number=14351442,
         from_address=ADDY_1,
         to_address='0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D',
@@ -144,9 +145,9 @@ def test_uniswap_v2_swap(database, ethereum_inquirer, eth_transactions):
     assert len(events) == 3
     expected_events = [
         HistoryBaseEntry(
-            event_identifier=HistoryBaseEntry.deserialize_event_identifier(tx_hex),
+            event_identifier=evmhash,
             sequence_index=0,
-            timestamp=1646375440000,
+            timestamp=TimestampMS(1646375440000),
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -159,9 +160,9 @@ def test_uniswap_v2_swap(database, ethereum_inquirer, eth_transactions):
             notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
-            event_identifier=HistoryBaseEntry.deserialize_event_identifier(tx_hex),
+            event_identifier=evmhash,
             sequence_index=1,
-            timestamp=1646375440000,
+            timestamp=TimestampMS(1646375440000),
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
@@ -171,9 +172,9 @@ def test_uniswap_v2_swap(database, ethereum_inquirer, eth_transactions):
             notes='Swap 0.15 ETH in uniswap-v2 from 0x3CAdf2cA458376a6a5feA2EF3612346037D5A787',
             counterparty=CPT_UNISWAP_V2,
         ), HistoryBaseEntry(
-            event_identifier=HistoryBaseEntry.deserialize_event_identifier(tx_hex),
+            event_identifier=evmhash,
             sequence_index=519,
-            timestamp=1646375440000,
+            timestamp=TimestampMS(1646375440000),
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
@@ -195,7 +196,7 @@ def test_uniswap_v2_swap_eth_returned(database, ethereum_inquirer, eth_transacti
     transaction = EvmTransaction(
         tx_hash=evmhash,
         chain_id=ChainID.ETHEREUM,
-        timestamp=1646375440,
+        timestamp=Timestamp(1646375440),
         block_number=14351442,
         from_address=ADDY_1,
         to_address='0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D',
@@ -272,9 +273,9 @@ def test_uniswap_v2_swap_eth_returned(database, ethereum_inquirer, eth_transacti
     assert len(events) == 4
     expected_events = [
         HistoryBaseEntry(
-            event_identifier=HistoryBaseEntry.deserialize_event_identifier(tx_hex),
+            event_identifier=evmhash,
             sequence_index=0,
-            timestamp=1646375440000,
+            timestamp=TimestampMS(1646375440000),
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -287,9 +288,9 @@ def test_uniswap_v2_swap_eth_returned(database, ethereum_inquirer, eth_transacti
             notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
-            event_identifier=HistoryBaseEntry.deserialize_event_identifier(tx_hex),
+            event_identifier=evmhash,
             sequence_index=1,
-            timestamp=1646375440000,
+            timestamp=TimestampMS(1646375440000),
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.TRANSFER,
             event_subtype=HistoryEventSubType.NONE,
@@ -302,9 +303,9 @@ def test_uniswap_v2_swap_eth_returned(database, ethereum_inquirer, eth_transacti
             notes='Refund of 0.008104374914845978 ETH in uniswap-v2 due to price change',  # noqa: E501
             counterparty=CPT_UNISWAP_V2,
         ), HistoryBaseEntry(
-            event_identifier=HistoryBaseEntry.deserialize_event_identifier(tx_hex),
+            event_identifier=evmhash,
             sequence_index=2,
-            timestamp=1646375440000,
+            timestamp=TimestampMS(1646375440000),
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
@@ -314,9 +315,9 @@ def test_uniswap_v2_swap_eth_returned(database, ethereum_inquirer, eth_transacti
             notes='Swap 1.59134916748576351 ETH in uniswap-v2 from 0x3CAdf2cA458376a6a5feA2EF3612346037D5A787',  # noqa: E501
             counterparty=CPT_UNISWAP_V2,
         ), HistoryBaseEntry(
-            event_identifier=HistoryBaseEntry.deserialize_event_identifier(tx_hex),
+            event_identifier=evmhash,
             sequence_index=310,
-            timestamp=1646375440000,
+            timestamp=TimestampMS(1646375440000),
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
@@ -345,7 +346,7 @@ def test_uniswap_v2_swap_with_approval(database, ethereum_inquirer, ethereum_acc
         HistoryBaseEntry(
             event_identifier=evmhash,
             sequence_index=0,
-            timestamp=Timestamp(1667857559000),
+            timestamp=TimestampMS(1667857559000),
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -357,7 +358,7 @@ def test_uniswap_v2_swap_with_approval(database, ethereum_inquirer, ethereum_acc
         ), HistoryBaseEntry(
             event_identifier=evmhash,
             sequence_index=297,
-            timestamp=Timestamp(1667857559000),
+            timestamp=TimestampMS(1667857559000),
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
@@ -369,7 +370,7 @@ def test_uniswap_v2_swap_with_approval(database, ethereum_inquirer, ethereum_acc
         ), HistoryBaseEntry(
             event_identifier=evmhash,
             sequence_index=300,
-            timestamp=Timestamp(1667857559000),
+            timestamp=TimestampMS(1667857559000),
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
@@ -381,7 +382,7 @@ def test_uniswap_v2_swap_with_approval(database, ethereum_inquirer, ethereum_acc
         ), HistoryBaseEntry(
             event_identifier=evmhash,
             sequence_index=301,
-            timestamp=Timestamp(1667857559000),
+            timestamp=TimestampMS(1667857559000),
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
@@ -407,7 +408,7 @@ def test_uniswap_v2_add_liquidity(database, ethereum_inquirer, eth_transactions)
     transaction = EvmTransaction(
         tx_hash=evmhash,
         chain_id=ChainID.ETHEREUM,
-        timestamp=1672316471,
+        timestamp=Timestamp(1672316471),
         block_number=16293065,
         from_address=ADDY_2,
         to_address='0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D',
@@ -483,14 +484,14 @@ def test_uniswap_v2_add_liquidity(database, ethereum_inquirer, eth_transactions)
     )
     with database.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
-        events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
+    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
 
     assert len(events) == 4
     expected_events = [
         HistoryBaseEntry(
             event_identifier=evmhash,
             sequence_index=0,
-            timestamp=1672316471000,
+            timestamp=TimestampMS(1672316471000),
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -502,31 +503,31 @@ def test_uniswap_v2_add_liquidity(database, ethereum_inquirer, eth_transactions)
         ), HistoryBaseEntry(
             event_identifier=evmhash,
             sequence_index=118,
-            timestamp=1672316471000,
+            timestamp=TimestampMS(1672316471000),
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=A_USDC,
             balance=Balance(amount=FVal('25')),
             location_label=ADDY_2,
-            notes='Add 25 USDC of liquidity to uniswap-v2 LP 0xAE461cA67B15dc8dc81CE7615e0320dA1A9aB8D5',  # noqa: E501
+            notes='Deposit 25 USDC to uniswap-v2 LP 0xAE461cA67B15dc8dc81CE7615e0320dA1A9aB8D5',  # noqa: E501
             counterparty=CPT_UNISWAP_V2,
         ), HistoryBaseEntry(
             event_identifier=evmhash,
             sequence_index=119,
-            timestamp=1672316471000,
+            timestamp=TimestampMS(1672316471000),
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=A_DAI,
             balance=Balance(amount=FVal('24.994824629555601269')),
             location_label=ADDY_2,
-            notes='Add 24.994824629555601269 DAI of liquidity to uniswap-v2 LP 0xAE461cA67B15dc8dc81CE7615e0320dA1A9aB8D5',  # noqa: E501
+            notes='Deposit 24.994824629555601269 DAI to uniswap-v2 LP 0xAE461cA67B15dc8dc81CE7615e0320dA1A9aB8D5',  # noqa: E501
             counterparty=CPT_UNISWAP_V2,
         ), HistoryBaseEntry(
             event_identifier=evmhash,
             sequence_index=120,
-            timestamp=1672316471000,
+            timestamp=TimestampMS(1672316471000),
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
@@ -543,7 +544,7 @@ def test_uniswap_v2_add_liquidity(database, ethereum_inquirer, eth_transactions)
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY_3]])
 def test_uniswap_v2_remove_liquidity(database, ethereum_inquirer, eth_transactions):
     """
-    This checks that adding liquidity to Uniswap V2 pool is decoded properly.
+    This checks that removing liquidity from a Uniswap V2 pool is decoded properly.
 
     Data is taken from:
     https://etherscan.io/tx/0x0936a16e1d3655e832c60bed52040fd5ac0d99d03865d11225b3183dba318f43
@@ -680,14 +681,14 @@ def test_uniswap_v2_remove_liquidity(database, ethereum_inquirer, eth_transactio
     with database.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
         dbevmtx.add_evm_internal_transactions(cursor, [internal_tx], relevant_address=ADDY_3)  # noqa: E501
-        events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
+    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
 
     assert len(events) == 4
     expected_events = [
         HistoryBaseEntry(
             event_identifier=evmhash,
             sequence_index=0,
-            timestamp=1672784687000,
+            timestamp=TimestampMS(1672784687000),
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -699,38 +700,38 @@ def test_uniswap_v2_remove_liquidity(database, ethereum_inquirer, eth_transactio
         ), HistoryBaseEntry(
             event_identifier=evmhash,
             sequence_index=1,
-            timestamp=1672784687000,
+            timestamp=TimestampMS(1672784687000),
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.REMOVE_ASSET,
             asset=A_ETH,
             balance=Balance(amount=FVal('0.005839327781368506')),
             location_label=ADDY_3,
-            notes='Remove 0.005839327781368506 ETH of liquidity from uniswap-v2 LP 0xB4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc',  # noqa: E501
+            notes='Remove 0.005839327781368506 ETH from uniswap-v2 LP 0xB4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc',  # noqa: E501
             counterparty=CPT_UNISWAP_V2,
         ), HistoryBaseEntry(
             event_identifier=evmhash,
             sequence_index=34,
-            timestamp=1672784687000,
+            timestamp=TimestampMS(1672784687000),
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.RETURN_WRAPPED,
             asset=Asset('eip155:1/erc20:0xB4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc'),
             balance=Balance(amount=FVal('9.6176228659E-8')),
             location_label=ADDY_3,
-            notes='Send 9.6176228659E-8 UNI-V2 to uniswap-v2 pool',
+            notes='Send 0.000000096176228659 UNI-V2 to uniswap-v2 pool',
             counterparty=CPT_UNISWAP_V2,
         ), HistoryBaseEntry(
             event_identifier=evmhash,
             sequence_index=40,
-            timestamp=1672784687000,
+            timestamp=TimestampMS(1672784687000),
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.REMOVE_ASSET,
             asset=A_USDC,
             balance=Balance(amount=FVal('7.073493')),
             location_label=ADDY_3,
-            notes='Remove 7.073493 USDC of liquidity from uniswap-v2 LP 0xB4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc',  # noqa: E501
+            notes='Remove 7.073493 USDC from uniswap-v2 LP 0xB4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc',  # noqa: E501
             counterparty=CPT_UNISWAP_V2,
         ),
     ]

@@ -15,7 +15,7 @@ from rotkehlchen.chain.evm.decoding.structures import ActionItem
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.types import EvmTransaction
+from rotkehlchen.types import UNISWAP_PROTOCOL, EvmTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_int
 
 if TYPE_CHECKING:
@@ -52,7 +52,7 @@ class Uniswapv2Decoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             decoded_events: list[HistoryBaseEntry],
-    ) -> None:
+    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         """
         Decodes only basic swap info. Basic swap info includes trying to find approval, spend and
         receive events for this particular swap but doesn't include ensuring order of events if the
@@ -68,7 +68,7 @@ class Uniswapv2Decoder(DecoderInterface):
         if amount_out == ZERO:
             amount_out = amount_out_token_1
 
-        decode_basic_uniswap_info(
+        return decode_basic_uniswap_info(
             amount_sent=amount_in,
             amount_received=amount_out,
             decoded_events=decoded_events,
@@ -84,13 +84,13 @@ class Uniswapv2Decoder(DecoderInterface):
             decoded_events: list[HistoryBaseEntry],
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> None:
+    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         if tx_log.topics[0] == SWAP_SIGNATURE:
             if transaction.to_address == UNISWAP_V2_ROUTER:
                 # If uniswap v2 router is used, then we can decode an entire swap.
                 # Uniswap v2 router is a simple router that always has a single spend and a single
                 # receive event.
-                decode_uniswap_v2_like_swap(
+                return decode_uniswap_v2_like_swap(
                     tx_log=tx_log,
                     decoded_events=decoded_events,
                     transaction=transaction,
@@ -99,10 +99,12 @@ class Uniswapv2Decoder(DecoderInterface):
                     ethereum_inquirer=self.ethereum_inquirer,
                     notify_user=self.notify_user,
                 )
-            else:
-                # Else some aggregator (potentially complex) is used, so we decode only basic info
-                # and other properties should be decoded by the aggregator decoding methods later.
-                self._decode_basic_swap_info(tx_log=tx_log, decoded_events=decoded_events)
+
+            # Else some aggregator (potentially complex) is used, so we decode only basic info
+            # and other properties should be decoded by the aggregator decoding methods later.
+            return self._decode_basic_swap_info(tx_log=tx_log, decoded_events=decoded_events)
+
+        return None, []
 
     def _maybe_decode_v2_liquidity_addition_and_removal(  # pylint: disable=no-self-use
             self,
@@ -110,15 +112,14 @@ class Uniswapv2Decoder(DecoderInterface):
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
             decoded_events: list[HistoryBaseEntry],
-            action_items: list[ActionItem],
+            action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],
-    ) -> None:
+    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         if tx_log.topics[0] == MINT_SIGNATURE:
             return decode_uniswap_like_deposit_and_withdrawals(
                 tx_log=tx_log,
                 decoded_events=decoded_events,
                 all_logs=all_logs,
-                action_items=action_items,
                 event_action_type='addition',
                 counterparty=CPT_UNISWAP_V2,
                 ethereum_inquirer=self.ethereum_inquirer,
@@ -131,7 +132,6 @@ class Uniswapv2Decoder(DecoderInterface):
                 tx_log=tx_log,
                 decoded_events=decoded_events,
                 all_logs=all_logs,
-                action_items=action_items,
                 event_action_type='removal',
                 counterparty=CPT_UNISWAP_V2,
                 ethereum_inquirer=self.ethereum_inquirer,
@@ -139,7 +139,7 @@ class Uniswapv2Decoder(DecoderInterface):
                 factory_address=UNISWAP_V2_FACTORY,
                 init_code_hash=UNISWAP_V2_INIT_CODE_HASH,
             )
-        return None
+        return None, []
 
     @staticmethod
     def _maybe_enrich_lp_tokens_transfers(
@@ -158,7 +158,7 @@ class Uniswapv2Decoder(DecoderInterface):
             action_items=action_items,
             all_logs=all_logs,
             counterparty=CPT_UNISWAP_V2,
-            lp_token_symbol='UNI-V2',
+            lp_token_symbol=UNISWAP_PROTOCOL,
         )
 
     # -- DecoderInterface methods
