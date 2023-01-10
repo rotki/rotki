@@ -65,20 +65,20 @@ class EthereumTransactionDecoder(EVMTransactionDecoder):
             decoded_events: list[HistoryBaseEntry],
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> Optional[HistoryBaseEntry]:
+    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         if tx_log.topics[0] == GTC_CLAIM and tx_log.address == '0xDE3e5a990bCE7fC60a6f017e7c4a95fc4939299E':  # noqa: E501
             for event in decoded_events:
                 if event.asset == A_GTC and event.event_type == HistoryEventType.RECEIVE:
                     event.event_subtype = HistoryEventSubType.AIRDROP
                     event.notes = f'Claim {event.balance.amount} GTC from the GTC airdrop'
-            return None
+            return None, []
 
         if tx_log.topics[0] == ONEINCH_CLAIM and tx_log.address == '0xE295aD71242373C37C5FdA7B57F26f9eA1088AFe':  # noqa: E501
             for event in decoded_events:
                 if event.asset == A_1INCH and event.event_type == HistoryEventType.RECEIVE:
                     event.event_subtype = HistoryEventSubType.AIRDROP
                     event.notes = f'Claim {event.balance.amount} 1INCH from the 1INCH airdrop'  # noqa: E501
-            return None
+            return None, []
 
         if tx_log.topics[0] == GNOSIS_CHAIN_BRIDGE_RECEIVE and tx_log.address == '0x88ad09518695c6c3712AC10a214bE5109a655671':  # noqa: E501
             for event in decoded_events:
@@ -100,7 +100,7 @@ class EthereumTransactionDecoder(EVMTransactionDecoder):
                         f'Bridge {event.balance.amount} {crypto_asset.symbol} from gnosis chain'
                     )
 
-        return None
+        return None, []
 
     def _maybe_decode_governance(  # pylint: disable=no-self-use
             self,
@@ -110,7 +110,7 @@ class EthereumTransactionDecoder(EVMTransactionDecoder):
             decoded_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> Optional[HistoryBaseEntry]:
+    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         if tx_log.topics[0] == GOVERNORALPHA_PROPOSE:
             if tx_log.address == '0xDbD27635A534A3d3169Ef0498beB56Fb9c937489':
                 governance_name = 'Gitcoin'
@@ -121,12 +121,12 @@ class EthereumTransactionDecoder(EVMTransactionDecoder):
                 _, decoded_data = decode_event_data_abi_str(tx_log, GOVERNORALPHA_PROPOSE_ABI)
             except DeserializationError as e:
                 log.debug(f'Failed to decode governor alpha event due to {str(e)}')
-                return None
+                return None, []
 
             proposal_id = decoded_data[0]
             proposal_text = decoded_data[8]
             notes = f'Create {governance_name} proposal {proposal_id}. {proposal_text}'
-            return HistoryBaseEntry(
+            event = HistoryBaseEntry(
                 event_identifier=transaction.tx_hash,
                 sequence_index=self.base.get_sequence_index(tx_log),
                 timestamp=ts_sec_to_ms(transaction.timestamp),
@@ -139,8 +139,9 @@ class EthereumTransactionDecoder(EVMTransactionDecoder):
                 event_subtype=HistoryEventSubType.GOVERNANCE,
                 counterparty=governance_name,
             )
+            return event, []
 
-        return None
+        return None, []
 
     # -- methods that need to be implemented by child classes --
 

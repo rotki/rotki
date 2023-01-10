@@ -1,5 +1,16 @@
 from enum import Enum, auto
-from typing import Any, Callable, Literal, NamedTuple, NewType, Optional, TypeVar, Union, get_args
+from typing import (
+    Any,
+    Callable,
+    Final,
+    Literal,
+    NamedTuple,
+    NewType,
+    Optional,
+    TypeVar,
+    Union,
+    get_args,
+)
 
 from eth_typing import ChecksumAddress
 from hexbytes import HexBytes as Web3HexBytes
@@ -52,7 +63,8 @@ AVAILABLE_MODULES_MAP = {
 DEFAULT_OFF_MODULES = {'makerdao_dsr', 'yearn_vaults'}
 
 
-UNISWAP_PROTOCOL = 'UNI-V2'
+UNISWAP_PROTOCOL: Final = 'UNI-V2'
+SUSHISWAP_PROTOCOL: Final = 'SLP'
 # this variable is used in the decoders and maps to the protocol field used in the database
 # for yearn vaults v1
 YEARN_VAULTS_V1_PROTOCOL = 'yearn_vaults_v1'

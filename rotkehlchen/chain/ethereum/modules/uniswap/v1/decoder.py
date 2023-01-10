@@ -52,7 +52,7 @@ class Uniswapv1Decoder(DecoderInterface):
             decoded_events: list[HistoryBaseEntry],
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> None:
+    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         """Search for both events. Since the order is not guaranteed try reshuffle in both cases"""
         out_event = in_event = None
         if tx_log.topics[0] == TOKEN_PURCHASE:
@@ -92,6 +92,7 @@ class Uniswapv1Decoder(DecoderInterface):
                     out_event = event
 
         maybe_reshuffle_events(out_event=out_event, in_event=in_event)
+        return None, []
 
     # -- DecoderInterface methods
 

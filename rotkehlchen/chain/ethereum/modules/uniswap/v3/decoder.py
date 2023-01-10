@@ -16,6 +16,8 @@ from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_WETH
 from rotkehlchen.constants.misc import ONE, ZERO
+from rotkehlchen.constants.resolver import evm_address_to_identifier
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, EvmTransaction, Location
@@ -38,7 +40,6 @@ SWAP_SIGNATURE = b'\xc4 y\xf9JcP\xd7\xe6#_)\x17I$\xf9(\xcc*\xc8\x18\xebd\xfe\xd8
 INCREASE_LIQUIDITY_SIGNATURE = b'0g\x04\x8b\xee\xe3\x1b%\xb2\xf1h\x1f\x88\xda\xc88\xc8\xbb\xa3j\xf2[\xfb+|\xf7G:XG\xe3_'  # noqa: E501
 COLLECT_LIQUIDITY_SIGNATURE = b"@\xd0\xef\xd1\xa5=`\xec\xbf@\x97\x1b\x9d\xaf}\xc9\x01x\xc3\xaa\xdcz\xab\x17ec'8\xfa\x8b\x8f\x01"  # noqa: E501
 
-
 UNISWAP_V3_NFT_MANAGER = string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88')
 UNISWAP_AUTO_ROUTER_V1 = string_to_evm_address('0xE592427A0AEce92De3Edee1F18E0157C05861564')
 UNISWAP_AUTO_ROUTER_V2 = string_to_evm_address('0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45')
@@ -51,6 +52,12 @@ class SwapData(NamedTuple):
     from_amount: FVal
     to_asset: Optional[Asset]
     to_amount: FVal
+
+
+class CryptoAssetAmount(NamedTuple):
+    """This is used to represent a pair of resolved crypto asset to an amount."""
+    asset: 'CryptoAsset'
+    amount: FVal
 
 
 def _find_from_asset_and_amount(events: list[HistoryBaseEntry]) -> Optional[tuple[Asset, FVal]]:
@@ -126,7 +133,11 @@ class Uniswapv3Decoder(DecoderInterface):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
         )
-        self.uniswap_v3_nft = Asset(f'eip155:1/erc721:{UNISWAP_V3_NFT_MANAGER}')
+        self.uniswap_v3_nft = evm_address_to_identifier(
+            address=UNISWAP_V3_NFT_MANAGER,
+            chain_id=ChainID.ETHEREUM,
+            token_type=EvmTokenKind.ERC721,
+        )
         self.eth = A_ETH.resolve_to_crypto_asset()
         self.base_tools = base_tools
         self.ethereum_inquirer = ethereum_inquirer
@@ -168,14 +179,14 @@ class Uniswapv3Decoder(DecoderInterface):
             decoded_events: list[HistoryBaseEntry],
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> None:
+    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         """
         Detect some basic uniswap v3 events. This method doesn't ensure the order of the events
         and other things, but just labels some of the events as uniswap v3 events.
         The order should be ensured by the post-decoding rules.
         """
         if tx_log.topics[0] != SWAP_SIGNATURE:
-            return
+            return None, []
 
         # Uniswap V3 represents the delta of tokens in the pool with a signed integer
         # for each token. In the transaction we have the difference of tokens in the pool
@@ -193,7 +204,7 @@ class Uniswapv3Decoder(DecoderInterface):
         # multiple spend and multiple receive events that are hard to decode by looking only
         # at a single swap event. Because of that here we decode only basic info, leaving the rest
         # of the work to the router/aggregator-specific decoding methods.
-        decode_basic_uniswap_info(
+        return decode_basic_uniswap_info(
             amount_sent=amount_sent,
             amount_received=amount_received,
             decoded_events=decoded_events,
@@ -380,21 +391,38 @@ class Uniswapv3Decoder(DecoderInterface):
         amount1_raw = hex_or_bytes_to_int(tx_log.data[64:96])
 
         if event_action_type == 'addition':
-            notes = 'Add {} {} of liquidity to Uniswap V3 LP position {}'
+            notes = 'Deposit {amount} {asset} to uniswap-v3 LP {pool_id}'
             from_event_type = (HistoryEventType.SPEND, HistoryEventSubType.NONE)
             to_event_type = (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET)
-        else:
-            notes = 'Collect {} {} of liquidity from Uniswap V3 LP position {}'
+        else:  # can only be 'removal'
+            notes = 'Remove {amount} {asset} from uniswap-v3 LP {pool_id}'
             from_event_type = (HistoryEventType.RECEIVE, HistoryEventSubType.NONE)
             to_event_type = (HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET)
 
-        liquidity_pool_position_info = self.ethereum_inquirer.contracts.contract('UNISWAP_V3_NFT_MANAGER').call(  # noqa: E501
-            node_inquirer=self.ethereum_inquirer,
-            method_name='positions',
-            arguments=[liquidity_pool_id],
-        )
-        # 2 -> first token in the pair
-        # 3 -> second token in the pair
+        try:
+            # Returns a tuple containing information about the state of the LP position.
+            # 0 -> position.nonce,
+            # 1 -> position.operator,
+            # 2 -> poolKey.token0, <--- Used. The first token in the pool
+            # 3 -> poolKey.token1, <--- Used. The second token in the pool
+            # 4 -> poolKey.fee,
+            # 5 -> position.tickLower,
+            # 6 -> position.tickUpper,
+            # 7 -> position.liquidity,
+            # 8 -> position.feeGrowthInside0LastX128,
+            # 9 -> position.feeGrowthInside1LastX128,
+            # 10 -> position.tokensOwed0,
+            # 11 -> position.tokensOwed1
+            liquidity_pool_position_info = self.ethereum_inquirer.contracts.contract('UNISWAP_V3_NFT_MANAGER').call(  # noqa: E501
+                node_inquirer=self.ethereum_inquirer,
+                method_name='positions',
+                arguments=[liquidity_pool_id],
+            )
+        except RemoteError:
+            return None, []
+
+        resolved_assets_and_amounts: list[CryptoAssetAmount] = []
+        # index 2 -> first token in pair; index 3 -> second token in pair
         for token, amount in zip(liquidity_pool_position_info[2:4], (amount0_raw, amount1_raw)):
             token_with_data: 'CryptoAsset' = get_or_create_evm_token(
                 userdb=self.ethereum_inquirer.database,
@@ -404,38 +432,88 @@ class Uniswapv3Decoder(DecoderInterface):
                 evm_inquirer=self.ethereum_inquirer,
             )
             token_with_data = self.eth if token_with_data == A_WETH else token_with_data
-            normalized_amount = asset_normalized_value(amount, token_with_data)
+            resolved_assets_and_amounts.append(CryptoAssetAmount(
+                asset=token_with_data,
+                amount=asset_normalized_value(amount, token_with_data),
+            ))
 
-            found_event = False
-            for event in decoded_events:
-                if (
-                        event.asset == token_with_data and
-                        event.balance.amount == normalized_amount and
-                        event.event_type == from_event_type[0] and
-                        event.event_subtype == from_event_type[1]
-                ):
-                    found_event = True
-                    event.event_type = to_event_type[0]
-                    event.event_subtype = to_event_type[1]
-                    event.counterparty = CPT_UNISWAP_V3
-                    event.notes = notes.format(normalized_amount, token_with_data.symbol, liquidity_pool_id)  # noqa: E501
-                    break
-
-            if found_event is False:
-                new_action_items.append(
-                    ActionItem(
-                        action='transform',
-                        sequence_index=self.base_tools.get_next_sequence_counter(),
-                        from_event_type=from_event_type[0],
-                        from_event_subtype=from_event_type[1],
-                        asset=token_with_data,
-                        amount=normalized_amount,
-                        to_event_type=to_event_type[0],
-                        to_event_subtype=to_event_type[1],
-                        to_notes=notes.format(normalized_amount, token_with_data.symbol, liquidity_pool_id),  # noqa: E501
-                        to_counterparty=CPT_UNISWAP_V3,
-                    ),
+        found_event_for_token0 = found_event_for_token1 = False
+        for event in decoded_events:
+            # search for the event of the first token
+            if (
+                event.asset == resolved_assets_and_amounts[0].asset and
+                event.balance.amount == resolved_assets_and_amounts[0].amount and
+                event.event_type == from_event_type[0] and
+                event.event_subtype == from_event_type[1]
+            ):
+                found_event_for_token0 = True
+                event.event_type = to_event_type[0]
+                event.event_subtype = to_event_type[1]
+                event.counterparty = CPT_UNISWAP_V3
+                event.notes = notes.format(
+                    amount=event.balance.amount,
+                    asset=resolved_assets_and_amounts[0].asset.symbol,
+                    pool_id=liquidity_pool_id,
                 )
+                continue
+
+            # search for the event of the second token
+            if (
+                event.asset == resolved_assets_and_amounts[1].asset and
+                event.balance.amount == resolved_assets_and_amounts[1].amount and
+                event.event_type == from_event_type[0] and
+                event.event_subtype == from_event_type[1]
+            ):
+                found_event_for_token1 = True
+                event.event_type = to_event_type[0]
+                event.event_subtype = to_event_type[1]
+                event.counterparty = CPT_UNISWAP_V3
+                event.notes = notes.format(
+                    amount=event.balance.amount,
+                    asset=resolved_assets_and_amounts[1].asset.symbol,
+                    pool_id=liquidity_pool_id,
+                )
+                continue
+
+        if found_event_for_token0 is False:
+            new_action_items.append(
+                ActionItem(
+                    action='transform',
+                    sequence_index=self.base_tools.get_next_sequence_counter(),
+                    from_event_type=from_event_type[0],
+                    from_event_subtype=from_event_type[1],
+                    asset=resolved_assets_and_amounts[0].asset,
+                    amount=resolved_assets_and_amounts[0].amount,
+                    to_event_type=to_event_type[0],
+                    to_event_subtype=to_event_type[1],
+                    to_notes=notes.format(
+                        amount=resolved_assets_and_amounts[0].amount,
+                        asset=resolved_assets_and_amounts[0].asset.symbol,
+                        pool_id=liquidity_pool_id,
+                    ),
+                    to_counterparty=CPT_UNISWAP_V3,
+                ),
+            )
+
+        if found_event_for_token1 is False:
+            new_action_items.append(
+                ActionItem(
+                    action='transform',
+                    sequence_index=self.base_tools.get_next_sequence_counter(),
+                    from_event_type=from_event_type[0],
+                    from_event_subtype=from_event_type[1],
+                    asset=resolved_assets_and_amounts[1].asset,
+                    amount=resolved_assets_and_amounts[1].amount,
+                    to_event_type=to_event_type[0],
+                    to_event_subtype=to_event_type[1],
+                    to_notes=notes.format(
+                        amount=resolved_assets_and_amounts[1].amount,
+                        asset=resolved_assets_and_amounts[1].asset.symbol,
+                        pool_id=liquidity_pool_id,
+                    ),
+                    to_counterparty=CPT_UNISWAP_V3,
+                ),
+            )
 
         return None, new_action_items
 
@@ -457,7 +535,7 @@ class Uniswapv3Decoder(DecoderInterface):
             event.event_subtype == HistoryEventSubType.NONE
         ):
             event.event_subtype = HistoryEventSubType.NFT
-            event.notes = f'Create Uniswap V3 LP position with id {hex_or_bytes_to_int(tx_log.topics[3])}'  # noqa: E501
+            event.notes = f'Create {CPT_UNISWAP_V3} LP with id {hex_or_bytes_to_int(tx_log.topics[3])}'  # noqa: E501
             event.counterparty = CPT_UNISWAP_V3
             return True
 
