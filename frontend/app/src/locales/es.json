@@ -257,7 +257,7 @@
       },
       "detect_tokens": {
         "task": {
-          "description": "Fetch detected tokens for {address}",
+          "description": "Fetch detected tokens for {address} ({chain})",
           "title": "Fetch detected tokens"
         }
       },

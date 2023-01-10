@@ -24,9 +24,6 @@ import { getSortItems } from '@/utils/assets';
 import { One } from '@/utils/bignumbers';
 import { calculatePercentage } from '@/utils/calculation';
 import { isEvmNativeToken } from '@/types/assets';
-import EvmNativeTokenBreakdown from '@/components/EvmNativeTokenBreakdown.vue';
-import AssetBalances from '@/components/AssetBalances.vue';
-import RowExpander from '@/components/helper/RowExpander.vue';
 
 const props = defineProps({
   loading: { required: false, type: Boolean, default: false },

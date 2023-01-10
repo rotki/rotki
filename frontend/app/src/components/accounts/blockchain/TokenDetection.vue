@@ -9,8 +9,11 @@ const props = defineProps<{
 
 const { address, blockchain } = toRefs(props);
 
-const { detectingTokens, detectedTokens, detectTokensAndQueryBalances } =
-  useTokenDetection(blockchain, address);
+const { detectingTokens, detectedTokens, detectTokens } = useTokenDetection(
+  blockchain,
+  address
+);
+
 const { tc } = useI18n();
 </script>
 
@@ -27,7 +30,7 @@ const { tc } = useI18n();
             icon
             :disabled="detectingTokens || loading"
             v-on="on"
-            @click="detectTokensAndQueryBalances()"
+            @click="detectTokens()"
           >
             <v-progress-circular
               v-if="detectingTokens"

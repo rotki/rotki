@@ -1,6 +1,5 @@
 import { type AssetBalance } from '@rotki/common';
 import { type AssetInfo } from '@rotki/common/lib/data';
-import { Blockchain } from '@rotki/common/lib/blockchain';
 import { assert } from '@/utils/assertions';
 
 const levenshtein = (a: string, b: string): number => {
@@ -142,11 +141,4 @@ export const createEvmIdentifierFromAddress = (
 
 export const getValidSelectorFromEvmAddress = (address: string): string => {
   return address.replace(/[^\da-z]/gi, '');
-};
-
-export const getNativeAsset = (chain: Blockchain) => {
-  if (chain === Blockchain.OPTIMISM) {
-    return 'ETH';
-  }
-  return chain;
 };

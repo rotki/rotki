@@ -320,7 +320,10 @@ const getAssets = async (
         const asset = balance.asset;
 
         return {
-          route: Routes.ASSETS.route.replace(':identifier', asset),
+          route: Routes.ASSETS.route.replace(
+            ':identifier',
+            encodeURIComponent(asset)
+          ),
           texts: [t('common.asset').toString(), map[asset] ?? ''],
           price,
           asset

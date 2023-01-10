@@ -60,7 +60,8 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
       value: 'priceInAsset',
       align: 'end',
       width: '75%',
-      class: 'text-no-wrap'
+      class: 'text-no-wrap',
+      sortable: false
     },
     {
       text: tc('common.price_in_symbol', 0, {
@@ -68,7 +69,8 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
       }),
       value: 'usdPrice',
       align: 'end',
-      class: 'text-no-wrap'
+      class: 'text-no-wrap',
+      sortable: false
     }
   ];
 

@@ -44,11 +44,12 @@ const balanceTable = ref<any>(null);
 
 const { isTaskRunning } = useTasks();
 const { refreshBlockchainBalances } = useRefresh(blockchain);
-const { detectingTokens } = useTokenDetection(blockchain);
+const { detectTokensOfAllAddresses, detectingTokens } =
+  useTokenDetection(blockchain);
 const { show } = useConfirmStore();
 
-const redetectAllTokens = () => {
-  get(balanceTable)?.fetchAllDetectedTokensAndQueryBalance();
+const redetectAllTokens = async () => {
+  await detectTokensOfAllAddresses();
 };
 
 const { tc } = useI18n();

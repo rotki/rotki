@@ -1,14 +1,17 @@
 import { z } from 'zod';
 
 const BasicChainInfo = z.object({
+  id: z.string(),
   name: z.string(),
   type: z.string()
 });
 
 const EvmChainInfo = z.object({
+  id: z.string(),
   name: z.string(),
   type: z.literal('evm'),
-  evmChainName: z.string()
+  evmChainName: z.string(),
+  nativeAsset: z.string().nullish()
 });
 
 export type EvmChainInfo = z.infer<typeof EvmChainInfo>;

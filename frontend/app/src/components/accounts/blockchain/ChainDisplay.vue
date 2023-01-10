@@ -2,24 +2,28 @@
 import { type Blockchain } from '@rotki/common/lib/blockchain';
 import ListItem from '@/components/helper/ListItem.vue';
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
-    item: { symbol: Blockchain; name: string };
+    chain: Blockchain;
     dense?: boolean;
   }>(),
   {
     dense: false
   }
 );
+
+const { chain } = toRefs(props);
+
+const { getChainInfoById } = useSupportedChains();
+const name = computed(() => {
+  const chainVal = get(chain);
+  return get(getChainInfoById(chainVal))?.name || chainVal;
+});
 </script>
 <template>
-  <list-item
-    :dense="dense"
-    :title="item.symbol"
-    :subtitle="dense ? '' : item.name"
-  >
+  <list-item :dense="dense" :title="chain" :subtitle="dense ? '' : name">
     <template #icon>
-      <asset-icon size="26px" :identifier="item.symbol" />
+      <asset-icon size="26px" :identifier="chain" :show-chain="false" />
     </template>
   </list-item>
 </template>
