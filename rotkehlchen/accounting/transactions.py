@@ -3,13 +3,13 @@ from typing import TYPE_CHECKING, Iterator
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
-from rotkehlchen.chain.ethereum.accounting.structures import TxEventSettings, TxMultitakeTreatment
+from rotkehlchen.chain.evm.accounting.structures import TxEventSettings, TxMultitakeTreatment
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Timestamp
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.pot import AccountingPot
-    from rotkehlchen.chain.ethereum.accounting.aggregator import EVMAccountingAggregator
+    from rotkehlchen.chain.evm.accounting.aggregator import EVMAccountingAggregators
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -19,16 +19,16 @@ class TransactionsAccountant():
 
     def __init__(
             self,
-            evm_accounting_aggregator: 'EVMAccountingAggregator',
+            evm_accounting_aggregators: 'EVMAccountingAggregators',
             pot: 'AccountingPot',
     ) -> None:
-        self.evm_accounting_aggregator = evm_accounting_aggregator
+        self.evm_accounting_aggregators = evm_accounting_aggregators
         self.pot = pot
         self.tx_event_settings: dict[str, TxEventSettings] = {}
 
     def reset(self) -> None:
-        self.evm_accounting_aggregator.reset()
-        self.tx_event_settings = self.evm_accounting_aggregator.get_accounting_settings(self.pot)
+        self.evm_accounting_aggregators.reset()
+        self.tx_event_settings = self.evm_accounting_aggregators.get_accounting_settings(self.pot)
 
     def process(
             self,

@@ -7,8 +7,8 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.accounting.types import MissingAcquisition
-from rotkehlchen.chain.ethereum.accounting.structures import TxEventSettings, TxMultitakeTreatment
 from rotkehlchen.chain.ethereum.modules.uniswap.constants import CPT_UNISWAP_V2
+from rotkehlchen.chain.evm.accounting.structures import TxEventSettings, TxMultitakeTreatment
 from rotkehlchen.constants.assets import A_3CRV, A_BTC, A_ETH, A_EUR, A_WETH
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.db.settings import DBSettings

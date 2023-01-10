@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.pot import AccountingPot
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.user_messages import MessagesAggregator
 
     from .structures import TxEventSettings
@@ -13,10 +13,10 @@ class ModuleAccountantInterface(metaclass=ABCMeta):
 
     def __init__(
             self,
-            ethereum_manager: 'EthereumManager',  # pylint: disable=unused-argument
+            node_inquirer: 'EvmNodeInquirer',  # pylint: disable=unused-argument
             msg_aggregator: 'MessagesAggregator',  # pylint: disable=unused-argument
     ) -> None:
-        """This is the ethereum module accountant interface. All module accountants
+        """This is the evm module accountant interface. All module accountants
         should implement it
 
         To have smaller objects and since few decoders use most of the given objects

@@ -21,7 +21,7 @@ from rotkehlchen.types import Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.accounting.aggregator import EVMAccountingAggregator
+    from rotkehlchen.chain.evm.accounting.aggregator import EVMAccountingAggregators
     from rotkehlchen.db.dbhandler import DBHandler
 
 
@@ -35,7 +35,7 @@ class Accountant():
             self,
             db: 'DBHandler',
             msg_aggregator: MessagesAggregator,
-            evm_accounting_aggregator: 'EVMAccountingAggregator',
+            evm_accounting_aggregators: 'EVMAccountingAggregators',
             premium: Optional[Premium],
     ) -> None:
         self.db = db
@@ -45,7 +45,7 @@ class Accountant():
         self.pots = [
             AccountingPot(
                 database=db,
-                evm_accounting_aggregator=evm_accounting_aggregator,
+                evm_accounting_aggregators=evm_accounting_aggregators,
                 msg_aggregator=msg_aggregator,
             ),
         ]

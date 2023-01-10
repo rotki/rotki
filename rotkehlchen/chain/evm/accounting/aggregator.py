@@ -15,7 +15,7 @@ from .structures import TxEventSettings
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.pot import AccountingPot
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
 
     from .interfaces import ModuleAccountantInterface
 
@@ -25,13 +25,19 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 class EVMAccountingAggregator():
+    """This is a class meant to aggregate accountants for modules of EVM decoders
 
+    It's supposed to be subclassed for each different evm network. The reason for
+    subclassing is to allow custom functionality for each chain. This is not yet
+    implemented/used but it was thought good to start like that as changing later
+    would be a hassle.
+    """
     def __init__(
             self,
-            ethereum_manager: 'EthereumManager',
+            node_inquirer: 'EvmNodeInquirer',
             msg_aggregator: MessagesAggregator,
     ) -> None:
-        self.ethereum_manager = ethereum_manager
+        self.node_inquirer = node_inquirer
         self.msg_aggregator = msg_aggregator
         self.accountants: dict[str, 'ModuleAccountantInterface'] = {}
         self.initialize_all_accountants()
@@ -55,7 +61,7 @@ class EVMAccountingAggregator():
                     if class_name in self.accountants:
                         raise ModuleLoadingError(f'Accountant with name {class_name} already loaded')  # noqa: E501
                     self.accountants[class_name] = submodule_accountant(
-                        ethereum_manager=self.ethereum_manager,
+                        node_inquirer=self.node_inquirer,
                         msg_aggregator=self.msg_aggregator,
                     )
 
@@ -66,10 +72,39 @@ class EVMAccountingAggregator():
         self._recursively_initialize_accountants(MODULES_PACKAGE)
 
     def get_accounting_settings(self, pot: 'AccountingPot') -> dict[str, TxEventSettings]:
-        """Iterate through loaded accountants and get accounting settings for each event type"""
+        """Iterate through loaded accountants and get accounting settings for each event type
+
+        This does not contain the default built-in settings.
+        """
         result = {}
         for accountant in self.accountants.values():
             result.update(accountant.event_settings(pot))
+
+        return result
+
+    def reset(self) -> None:
+        """Reset the state of all initialized submodule accountants"""
+        for accountant in self.accountants.values():
+            accountant.reset()
+
+
+class EVMAccountingAggregators():
+    """
+    This is just a convenience class to group together AccountingAggregators from multiple chains
+    """
+
+    def __init__(self, aggregators: list[EVMAccountingAggregator]) -> None:
+        self.aggregators = aggregators
+
+    def get_accounting_settings(self, pot: 'AccountingPot') -> dict[str, TxEventSettings]:
+        """
+        Iterate through loaded accountants and get accounting settings for each event type
+
+        This also contains the default built-in settings.
+        """
+        result = {}
+        for aggregator in self.aggregators:
+            result.update(aggregator.get_accounting_settings(pot))
 
         # Also add the default settings
         gas_key = str(HistoryEventType.SPEND) + '__' + str(HistoryEventSubType.FEE) + '__' + CPT_GAS  # noqa: E501
@@ -116,5 +151,5 @@ class EVMAccountingAggregator():
 
     def reset(self) -> None:
         """Reset the state of all initialized submodule accountants"""
-        for accountant in self.accountants.values():
-            accountant.reset()
+        for aggregator in self.aggregators:
+            aggregator.reset()

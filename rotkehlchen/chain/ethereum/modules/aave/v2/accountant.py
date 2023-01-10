@@ -1,12 +1,12 @@
 from collections import defaultdict
 from typing import TYPE_CHECKING
-from rotkehlchen.accounting.mixins.event import AccountingEventType
 
+from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry, get_tx_event_type_identifier
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.chain.ethereum.accounting.interfaces import ModuleAccountantInterface
-from rotkehlchen.chain.ethereum.accounting.structures import TxEventSettings
+from rotkehlchen.chain.evm.accounting.interfaces import ModuleAccountantInterface
+from rotkehlchen.chain.evm.accounting.structures import TxEventSettings
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
