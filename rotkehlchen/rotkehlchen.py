@@ -23,11 +23,13 @@ from rotkehlchen.balances.manual import (
 from rotkehlchen.chain.accounts import SingleBlockchainAccountData
 from rotkehlchen.chain.aggregator import ChainsAggregator
 from rotkehlchen.chain.avalanche.manager import AvalancheManager
-from rotkehlchen.chain.ethereum.accounting.aggregator import EVMAccountingAggregator
+from rotkehlchen.chain.ethereum.accountant import EthereumAccountingAggregator
 from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.ethereum.oracles.saddle import SaddleOracle
 from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
+from rotkehlchen.chain.evm.accounting.aggregator import EVMAccountingAggregators
+from rotkehlchen.chain.optimism.accountant import OptimismAccountingAggregator
 from rotkehlchen.chain.optimism.manager import OptimismManager
 from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
 from rotkehlchen.chain.substrate.manager import SubstrateManager
@@ -348,14 +350,17 @@ class Rotkehlchen():
             beaconchain=self.beaconchain,
             btc_derivation_gap_limit=settings.btc_derivation_gap_limit,
         )
-        self.evm_accounting_aggregator = EVMAccountingAggregator(
-            ethereum_manager=ethereum_manager,
-            msg_aggregator=self.msg_aggregator,
-        )
+
+        ethereum_accountant = EthereumAccountingAggregator(node_inquirer=ethereum_inquirer, msg_aggregator=self.msg_aggregator)  # noqa: E501
+        optimism_accountant = OptimismAccountingAggregator(node_inquirer=optimism_inquirer, msg_aggregator=self.msg_aggregator)  # noqa: E501
+        evm_accounting_aggregators = EVMAccountingAggregators(aggregators=[
+            ethereum_accountant,
+            optimism_accountant,
+        ])
         self.accountant = Accountant(
             db=self.data.db,
             msg_aggregator=self.msg_aggregator,
-            evm_accounting_aggregator=self.evm_accounting_aggregator,
+            evm_accounting_aggregators=evm_accounting_aggregators,
             premium=self.premium,
         )
         self.events_historian = EventsHistorian(
