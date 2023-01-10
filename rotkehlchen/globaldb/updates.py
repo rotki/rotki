@@ -4,9 +4,10 @@ import re
 import sqlite3
 import sys
 from contextlib import suppress
+from enum import Enum, auto
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any, Literal, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Optional, Union
 
 import requests
 
@@ -14,7 +15,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import AssetData, AssetType
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
-from rotkehlchen.db.drivers.gevent import DBConnection, DBCursor
+from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -25,10 +26,22 @@ from rotkehlchen.user_messages import MessagesAggregator
 
 from .handler import GlobalDBHandler, initialize_globaldb
 
+if TYPE_CHECKING:
+    from rotkehlchen.db.drivers.gevent import DBConnection
+
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 ASSETS_VERSION_KEY = 'assets_version'
+ASSETS_UPDATES_URL = 'https://raw.githubusercontent.com/rotki/assets/{branch}/updates/{version}/updates.sql'  # noqa: E501
+ASSET_COLLECTIONS_UPDATES_URL = 'https://raw.githubusercontent.com/rotki/assets/{branch}/updates/{version}/asset_collections_updates.sql'  # noqa: E501
+ASSET_COLLECTIONS_MAPPINGS_UPDATES_URL = 'https://raw.githubusercontent.com/rotki/assets/{branch}/updates/{version}/asset_collections_mappings_updates.sql'  # noqa: E501
+
+
+class UpdateFileType(Enum):
+    ASSETS = auto()
+    ASSET_COLLECTIONS = auto()
+    ASSET_COLLECTIONS_MAPPINGS = auto()
 
 
 def executeall(cursor: DBCursor, statements: str) -> None:
@@ -44,7 +57,7 @@ def executeall(cursor: DBCursor, statements: str) -> None:
 
 
 def _replace_assets_from_db(
-        connection: DBConnection,
+        connection: 'DBConnection',
         sourcedb_path: Path,
 ) -> None:
     cursor = connection.cursor()
@@ -55,10 +68,14 @@ def _replace_assets_from_db(
     DELETE FROM evm_tokens;
     DELETE FROM underlying_tokens_list;
     DELETE FROM common_asset_details;
+    DELETE FROM asset_collections;
+    DELETE FROM multiasset_mappings;
     INSERT INTO assets SELECT * FROM other_db.assets;
     INSERT INTO evm_tokens SELECT * FROM other_db.evm_tokens;
     INSERT INTO underlying_tokens_list SELECT * FROM other_db.underlying_tokens_list;
     INSERT INTO common_asset_details SELECT * FROM other_db.common_asset_details;
+    INSERT INTO asset_collections SELECT * FROM other_db.asset_collections;
+    INSERT INTO multiasset_mappings SELECT * FROM other_db.multiasset_mappings;
     INSERT OR REPLACE INTO settings(name, value) VALUES("{ASSETS_VERSION_KEY}",
     (SELECT value FROM other_db.settings WHERE name="{ASSETS_VERSION_KEY}")
     );
@@ -67,7 +84,7 @@ def _replace_assets_from_db(
     """)
 
 
-def _force_remote(cursor: DBCursor, local_asset: Asset, full_insert: str) -> None:
+def _force_remote_asset(cursor: DBCursor, local_asset: Asset, full_insert: str) -> None:
     """Force the remote entry into the database by deleting old one and doing the full insert.
 
     May raise an sqlite3 error if something fails.
@@ -79,6 +96,28 @@ def _force_remote(cursor: DBCursor, local_asset: Asset, full_insert: str) -> Non
     # Insert new entry. Since identifiers are the same, no foreign key constrains should break
     executeall(cursor, full_insert)
     AssetResolver().clean_memory_cache(local_asset.identifier.lower())
+
+
+def _query_file_or_rollback(url: str, connection: 'DBConnection') -> str:
+    """
+    Query the given url or rollback the connection if it was not possible to download it.
+    May raise:
+    - RemoteError if it was not possible to query GitHub
+    """
+    try:
+        response = requests.get(url=url, timeout=DEFAULT_TIMEOUT_TUPLE)
+    except requests.exceptions.RequestException as e:
+        connection.rollback()
+        raise RemoteError(f'Failed to query Github for {url} during assets update: {str(e)}') from e  # noqa: E501
+
+    if response.status_code != 200:
+        connection.rollback()
+        raise RemoteError(
+            f'Github query for {url} failed with status code '
+            f'{response.status_code} and text: {response.text}',
+        )
+
+    return response.text
 
 
 class ParsedAssetData(NamedTuple):
@@ -103,6 +142,8 @@ class AssetsUpdater():
         self.assets_re = re.compile(r'.*INSERT +INTO +assets\( *identifier *, *name *, *type *\) +VALUES\(([^\)]*?),([^\)]*?),([^\)]*?)\).*?')  # noqa: E501
         self.ethereum_tokens_re = re.compile(r'.*INSERT +INTO +evm_tokens\( *identifier *, *token_kind *, *chain *, *address *, *decimals *, *protocol *\) +VALUES\(([^\)]*?),([^\)]*?),([^\)]*?),([^\)]*?),([^\)]*?),([^\)]*?)\).*')  # noqa: E501
         self.common_asset_details_re = re.compile(r'.*INSERT +INTO +common_asset_details\( *identifier *, *symbol *, *coingecko *, *cryptocompare *, *forked *, *started *, *swapped_for *\) +VALUES\((.*?),(.*?),(.*?),(.*?),(.*?),([^\)]*?),([^\)]*?)\).*')  # noqa: E501
+        self.assets_collection_re = re.compile(r'.*INSERT +INTO +asset_collections\( *id *, *name *, *symbol *\) +VALUES +\(([^\)]*?),([^\)]*?),([^\)]*?)\).*?')  # noqa: E501
+        self.multiasset_mappings_re = re.compile(r'.*INSERT +INTO +multiasset_mappings\( *collection_id *, *asset *\) +VALUES +\(([^\)]*?), *"([^\)]+?)"\).*?')  # noqa: E501
         self.string_re = re.compile(r'.*"(.*?)".*')
         self.branch = 'master'
         if not getattr(sys, 'frozen', False):
@@ -269,7 +310,7 @@ class AssetsUpdater():
             token_kind,
         )
 
-    def _parse_full_insert(self, insert_text: str) -> AssetData:
+    def _parse_full_insert_assets(self, insert_text: str) -> AssetData:
         """Parses full insert line for an asset to give information for the conflict to the user
 
         Note: In the future this needs to be different for each version
@@ -300,74 +341,233 @@ class AssetsUpdater():
             protocol=protocol,
         )
 
-    def _apply_single_version_update(
+    def _process_asset_collection(
             self,
-            connection: DBConnection,
-            version: int,
-            text: str,
-            conflicts: Optional[dict[Asset, Literal['remote', 'local']]],
+            connection: 'DBConnection',
+            action: str,
+            full_insert: str,
     ) -> None:
-        lines = text.splitlines()
-        for action, full_insert in zip(*[iter(lines)] * 2):
-            if full_insert == '*':
-                full_insert = action
+        """Process the insertion of a new asset_collection"""
+        collection_match = self.assets_collection_re.match(full_insert)
+        if collection_match is None:
+            log.error(f'Failed to match asset collection {full_insert}')
+            raise DeserializationError(
+                f'At asset DB update could not parse asset collection data out of {action}',
+            )
 
-            try:
-                remote_asset_data = self._parse_full_insert(full_insert)
-            except DeserializationError as e:
-                self.msg_aggregator.add_warning(
-                    f'Skipping entry during assets update to v{version} due '
-                    f'to a deserialization error. {str(e)}',
-                )
-                continue
+        groups = collection_match.groups()
+        if len(groups) != 3:
+            log.error(f'Asset collection {full_insert} does not have the expected elements')
+            raise DeserializationError(
+                f'At asset DB update could not parse asset collection data out of {action}',
+            )
 
-            local_asset: Optional[Asset] = None
-            with suppress(UnknownAsset):
-                local_asset = Asset(remote_asset_data.identifier).check_existence()
-
+        try:
+            with connection.savepoint_ctx() as cursor:
+                cursor.execute(action)
+        except sqlite3.Error:
             try:
                 with connection.savepoint_ctx() as cursor:
-                    executeall(cursor, action)
+                    cursor.execute(full_insert)
+            except sqlite3.Error as e:
+                log.error(
+                    f'Failed to edit or add asset collection with name {groups[1]} and id '
+                    f'{groups[0]}. {action}. Error: {str(e)}',
+                )
+
+    def _process_multiasset_mapping(
+            self,
+            connection: 'DBConnection',
+            action: str,
+            full_insert: str,
+    ) -> None:
+        """
+        Process the insertion of a new asset_collection mapping
+        May raise:
+        - DeserializationError
+        - UnknownAsset
+        """
+        mapping_match = self.multiasset_mappings_re.match(full_insert)
+        if mapping_match is None:
+            log.error(f'Failed to match asset collection mapping {full_insert}')
+            raise DeserializationError(
+                f'At asset DB update could not parse asset collection data out of {action}',
+            )
+
+        groups = mapping_match.groups()
+        if len(groups) != 2:
+            log.error(f'Failed to find all elements in asset collection mapping {full_insert}')
+            raise DeserializationError(
+                f'At asset DB update could not parse asset collection data out of {action}',
+            )
+
+        # check that the asset exists and so does the collection
+        Asset(groups[1]).check_existence()
+        with connection.read_ctx() as cursor:
+            cursor.execute(
+                'SELECT COUNT(*) FROM asset_collections WHERE id=?',
+                (self._parse_value(groups[0]),),
+            )
+            if cursor.fetchone()[0] != 1:
+                raise DeserializationError(
+                    f'Tried to add asset to collection with id {groups[0]} but it does not exist',
+                )
+
+        try:
+            with connection.savepoint_ctx() as cursor:
+                cursor.execute(action)
+        except sqlite3.Error:
+            try:
+                with connection.savepoint_ctx() as cursor:
+                    cursor.execute(full_insert)
+            except sqlite3.Error as e:
+                log.error(
+                    f'Failed to edit asset collection mapping with asset {groups[1]} '
+                    f'and id {groups[0]}. {action}. Error: {str(e)}',
+                )
+
+    def _handle_asset_update(
+            self,
+            connection: 'DBConnection',
+            remote_asset_data: AssetData,
+            assets_conflicts: Optional[dict[Asset, Literal['remote', 'local']]],
+            action: str,
+            full_insert: str,
+            version: int,
+    ) -> None:
+        """
+        Given the already processed information for an asset try to store it in the globaldb
+        and if it is not possible due to conflicts mark it to resolve later.
+        """
+        local_asset: Optional[Asset] = None
+        with suppress(UnknownAsset):
+            local_asset = Asset(remote_asset_data.identifier).check_existence()
+
+        try:
+            with connection.savepoint_ctx() as cursor:
+                executeall(cursor, action)
                 if local_asset is not None:
-                    AssetResolver().clean_memory_cache(local_asset.identifier.lower())
-            except sqlite3.Error:  # https://docs.python.org/3/library/sqlite3.html#exceptions
-                if local_asset is None:
-                    try:  # if asset is not known then simply do an insertion
-                        with connection.savepoint_ctx() as cursor:
-                            executeall(cursor, full_insert)
-                    except sqlite3.Error as e:
-                        self.msg_aggregator.add_warning(
-                            f'Failed to add asset {remote_asset_data.identifier} in the '
-                            f'DB during the v{version} assets update. Skipping entry. '
-                            f'Error: {str(e)}',
-                        )
-                    continue  # fail or succeed continue to next entry
+                    AssetResolver().clean_memory_cache(identifier=local_asset.identifier)
+        except sqlite3.Error:  # https://docs.python.org/3/library/sqlite3.html#exceptions
+            if local_asset is None:
+                try:  # if asset is not known then simply do an insertion
+                    with connection.savepoint_ctx() as cursor:
+                        executeall(cursor, full_insert)
+                except sqlite3.Error as e:
+                    self.msg_aggregator.add_warning(
+                        f'Failed to add asset {remote_asset_data.identifier} in the '
+                        f'DB during the v{version} assets update. Skipping entry. '
+                        f'Error: {str(e)}',
+                    )
+                return  # fail or succeed continue to next entry
 
-                # otherwise asset is known, so it's a conflict. Check if we can resolve
-                resolution = conflicts.get(local_asset) if conflicts else None
-                if resolution == 'local':
-                    # do nothing, keep local
-                    continue
-                if resolution == 'remote':
-                    try:
-                        with connection.savepoint_ctx() as cursor:
-                            _force_remote(cursor, local_asset, full_insert)
-                    except sqlite3.Error as e:
-                        self.msg_aggregator.add_warning(
-                            f'Failed to resolve conflict for {remote_asset_data.identifier} in '
-                            f'the DB during the v{version} assets update. Skipping entry. '
-                            f'Error: {str(e)}',
-                        )
-                    continue  # fail or succeed continue to next entry
+            if local_asset is not None:
+                AssetResolver().clean_memory_cache(local_asset.identifier.lower())
 
-                # else can't resolve. Mark it for the user to resolve.
-                # TODO: When assets refactor is finished, remove the usage of AssetData here
-                local_data = GlobalDBHandler().get_all_asset_data(  # pylint: disable=unsubscriptable-object  # noqa: E501
-                    mapping=False,
-                    serialized=False,
-                    specific_ids=[local_asset.identifier],
-                )[0]
-                self.conflicts.append((local_data, remote_asset_data))
+            # otherwise asset is known, so it's a conflict. Check if we can resolve
+            resolution = assets_conflicts.get(local_asset) if assets_conflicts else None
+            if resolution == 'local':
+                # do nothing, keep local
+                return
+            if resolution == 'remote':
+                try:
+                    with connection.savepoint_ctx() as cursor:
+                        _force_remote_asset(cursor, local_asset, full_insert)
+                except sqlite3.Error as e:
+                    self.msg_aggregator.add_warning(
+                        f'Failed to resolve conflict for {remote_asset_data.identifier} in '
+                        f'the DB during the v{version} assets update. Skipping entry. '
+                        f'Error: {str(e)}',
+                    )
+                return  # fail or succeed continue to next entry
+
+            # else can't resolve. Mark it for the user to resolve.
+            # TODO: When assets refactor is finished, remove the usage of AssetData here
+            local_data = GlobalDBHandler().get_all_asset_data(  # pylint: disable=unsubscriptable-object  # noqa: E501
+                mapping=False,
+                serialized=False,
+                specific_ids=[local_asset.identifier],
+            )[0]
+            self.conflicts.append((local_data, remote_asset_data))
+
+    def _apply_single_version_update(
+            self,
+            connection: 'DBConnection',
+            version: int,
+            text: str,
+            assets_conflicts: Optional[dict[Asset, Literal['remote', 'local']]],
+            update_file_type: UpdateFileType,
+    ) -> None:
+        """
+        Process the queried file and apply special rules depending on the type of file
+        (assets updates, collections updates or mappings updates) set in update_file_type.
+
+        If conflicts appear while processing the assets those are handled. Deserialization
+        errors are catched and the user is warned about them.
+        """
+        lines = text.splitlines()
+        for action, full_insert in zip(*[iter(lines)] * 2):
+            if full_insert.strip() == '*':
+                full_insert = action
+
+            if update_file_type == UpdateFileType.ASSETS:
+                remote_asset_data = None
+                try:
+                    remote_asset_data = self._parse_full_insert_assets(full_insert)
+                except DeserializationError as e:
+                    log.error(
+                        f'Failed to add asset with action {action} during update to v{version}',
+                    )
+                    self.msg_aggregator.add_warning(
+                        f'Skipping entry during assets update to v{version} due '
+                        f'to a deserialization error. {str(e)}',
+                    )
+
+                if remote_asset_data is not None:
+                    self._handle_asset_update(
+                        connection=connection,
+                        remote_asset_data=remote_asset_data,
+                        assets_conflicts=assets_conflicts,
+                        action=action,
+                        full_insert=full_insert,
+                        version=version,
+                    )
+            elif update_file_type == UpdateFileType.ASSET_COLLECTIONS:
+                # if it wasn't an asset let's check if it is an asset collection
+                try:
+                    self._process_asset_collection(
+                        connection=connection,
+                        action=action,
+                        full_insert=full_insert,
+                    )
+                except DeserializationError as e:
+                    self.msg_aggregator.add_warning(
+                        f'Skipping entry during assets collection update to v{version} due '
+                        f'to a deserialization error. {str(e)}',
+                    )
+            elif update_file_type == UpdateFileType.ASSET_COLLECTIONS_MAPPINGS:
+                # try now a new mapping
+                try:
+                    self._process_multiasset_mapping(
+                        connection=connection,
+                        action=action,
+                        full_insert=full_insert,
+                    )
+                except DeserializationError as e:
+                    self.msg_aggregator.add_warning(
+                        f'Skipping entry during assets collection multimapping update to '
+                        f'v{version} due to a deserialization error. {str(e)}',
+                    )
+                except UnknownAsset as e:
+                    self.msg_aggregator.add_warning(
+                        f'Tried to add unknown asset {e.identifier} to collection of assets. {str(e)}. Skipping',  # noqa: E501
+                    )
+            else:
+                log.error(f'Could not process entry {full_insert} during asset update to version {version}')  # noqa: E501
+                self.msg_aggregator.add_warning(
+                    f'Skipping entry during assets update to v{version} due '
+                    f'to a deserialization error. Check logs for more details',
+                )
 
         # at the very end update the current version in the DB
         connection.execute(
@@ -412,7 +612,7 @@ class AssetsUpdater():
                 _replace_assets_from_db(connection, global_db_path)
             self._perform_update(
                 connection=connection,
-                conflicts=conflicts,
+                assets_conflicts=conflicts,
                 local_schema_version=local_schema_version,
                 infojson=infojson,
                 up_to_version=up_to_version,
@@ -435,8 +635,8 @@ class AssetsUpdater():
 
     def _perform_update(
             self,
-            connection: DBConnection,
-            conflicts: Optional[dict[Asset, Literal['remote', 'local']]],
+            connection: 'DBConnection',
+            assets_conflicts: Optional[dict[Asset, Literal['remote', 'local']]],
             local_schema_version: int,
             infojson: dict[str, Any],
             up_to_version: Optional[int],
@@ -477,25 +677,43 @@ class AssetsUpdater():
                 version += 1
                 continue
 
-            try:
-                url = f'https://raw.githubusercontent.com/rotki/assets/{self.branch}/updates/{version}/updates.sql'  # noqa: E501
-                response = requests.get(url=url, timeout=DEFAULT_TIMEOUT_TUPLE)
-            except requests.exceptions.RequestException as e:
-                connection.rollback()
-                raise RemoteError(f'Failed to query Github for {url} during assets update: {str(e)}') from e  # noqa: E501
+            assets_url = ASSETS_UPDATES_URL.format(branch=self.branch, version=version)
+            asset_collections_url = ASSET_COLLECTIONS_UPDATES_URL.format(branch=self.branch, version=version)  # noqa: E501
+            asset_collections_mappings_url = ASSET_COLLECTIONS_MAPPINGS_UPDATES_URL.format(branch=self.branch, version=version)  # noqa: E501
 
-            if response.status_code != 200:
-                connection.rollback()
-                raise RemoteError(
-                    f'Github query for {url} failed with status code '
-                    f'{response.status_code} and text: {response.text}',
-                )
+            assets_file = _query_file_or_rollback(
+                url=assets_url,
+                connection=connection,
+            )
+            asset_collections_file = _query_file_or_rollback(
+                url=asset_collections_url,
+                connection=connection,
+            )
+            asset_collections_mappings_file = _query_file_or_rollback(
+                url=asset_collections_mappings_url,
+                connection=connection,
+            )
 
             self._apply_single_version_update(
                 connection=connection,
                 version=version,
-                text=response.text,
-                conflicts=conflicts,
+                text=assets_file,
+                assets_conflicts=assets_conflicts,
+                update_file_type=UpdateFileType.ASSETS,
+            )
+            self._apply_single_version_update(
+                connection=connection,
+                version=version,
+                text=asset_collections_file,
+                assets_conflicts=None,
+                update_file_type=UpdateFileType.ASSET_COLLECTIONS,
+            )
+            self._apply_single_version_update(
+                connection=connection,
+                version=version,
+                text=asset_collections_mappings_file,
+                assets_conflicts=None,
+                update_file_type=UpdateFileType.ASSET_COLLECTIONS_MAPPINGS,
             )
             version += 1
 

@@ -2,7 +2,7 @@ import json
 import random
 import re
 from http import HTTPStatus
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
@@ -10,6 +10,7 @@ import requests
 
 from rotkehlchen.assets.asset import Asset, CryptoAsset, EvmToken
 from rotkehlchen.assets.types import AssetType
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.globaldb.handler import GLOBAL_DB_VERSION, GlobalDBHandler
@@ -23,7 +24,10 @@ from rotkehlchen.tests.utils.api import (
 )
 from rotkehlchen.tests.utils.constants import A_GLM
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind
+from rotkehlchen.types import ChainID, EvmTokenKind
+
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
 
 
 def count_total_assets() -> int:
@@ -32,7 +36,7 @@ def count_total_assets() -> int:
         return cursor.fetchone()[0]
 
 
-def mock_asset_updates(original_requests_get, latest: int, updates: dict[str, Any], sql_actions: dict[str, str]):  # noqa: E501
+def mock_asset_updates(original_requests_get, latest: int, updates: dict[str, Any], sql_actions: dict[str, dict[str, str]]):  # noqa: E501
 
     def mock_requests_get(url, *args, **kwargs):  # pylint: disable=unused-argument
         if 'github' not in url:
@@ -41,10 +45,17 @@ def mock_asset_updates(original_requests_get, latest: int, updates: dict[str, An
         if 'updates/info.json' in url:
             response = f'{{"latest": {latest}, "updates": {json.dumps(updates)}}}'
         elif 'updates.sql' in url:
-            match = re.search(r'.*/(\d+)/updates.sql', url)
+            match = re.search(r'.*/(\d+)/(.*)?updates.sql', url)
             assert match, f'Couldnt extract version from {url}'
             version = match.group(1)
-            action = sql_actions.get(version)
+            action_set = sql_actions.get(version)
+            assert action_set is not None, f'Could not find SQL set for version {version}'
+            if 'mapping' in url:
+                action = action_set.get('mappings')
+            elif 'collection' in url:
+                action = action_set.get('collections')
+            else:
+                action = action_set.get('assets')
             assert action is not None, f'Could not find SQL action for version {version}'
             response = action
         else:
@@ -56,7 +67,7 @@ def mock_asset_updates(original_requests_get, latest: int, updates: dict[str, An
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_simple_update(rotkehlchen_api_server, globaldb):
+def test_simple_update(rotkehlchen_api_server: 'APIServer', globaldb: GlobalDBHandler) -> None:
     """Test that the happy case of update works.
 
     - Test that up_to_version argument works
@@ -65,54 +76,61 @@ def test_simple_update(rotkehlchen_api_server, globaldb):
     """
     async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    update_4 = """INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0xC2FEC534c461c45533e142f724d0e3930650929c", "AKB token", "C");INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protocol) VALUES("eip155:1/erc20:0xC2FEC534c461c45533e142f724d0e3930650929c", "A", 1, "0xC2FEC534c461c45533e142f724d0e3930650929c", 18, NULL);INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked, started, swapped_for) VALUES("eip155:1/erc20:0xC2FEC534c461c45533e142f724d0e3930650929c", "AKB", NULL, "AIDU", NULL, 123, NULL);
+    update_4_assets = """INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0xC2FEC534c461c45533e142f724d0e3930650929c", "AKB token", "C");INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protocol) VALUES("eip155:1/erc20:0xC2FEC534c461c45533e142f724d0e3930650929c", "A", 1, "0xC2FEC534c461c45533e142f724d0e3930650929c", 18, NULL);INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked, started, swapped_for) VALUES("eip155:1/erc20:0xC2FEC534c461c45533e142f724d0e3930650929c", "AKB", NULL, "AIDU", NULL, 123, NULL);
 *
 INSERT INTO assets(identifier, name, type) VALUES("121-ada-FADS-as", "A name", "F"); INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked, started, swapped_for) VALUES("121-ada-FADS-as", "SYMBOL", "", "", "BTC", NULL, NULL);
 *
 UPDATE assets SET name="Ευρώ" WHERE identifier="EUR";
 INSERT INTO assets(identifier, name, type) VALUES("EUR", "Ευρώ", "A"); INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked, started, swapped_for) VALUES("EUR", "Ευρώ", "EUR", NULL, NULL, NULL, NULL, NULL);
     """  # noqa: E501
+    update_4_collections = """INSERT INTO asset_collections(id, name, symbol) VALUES (99999999, "My custom ETH", "ETHS")
+    *"""  # noqa: E501
+    update_4_mappings = """INSERT INTO multiasset_mappings(collection_id, asset) VALUES (99999999, "ETH");
+    *
+    INSERT INTO multiasset_mappings(collection_id, asset) VALUES (99999999, "eip155:1/erc20:0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84");
+    *"""  # noqa: E501
+    empty_update = {'mappings': '', 'collections': '', 'assets': ''}
     update_patch = mock_asset_updates(
         original_requests_get=requests.get,
         latest=999999996,
         updates={
-            "999999991": {
-                "changes": 1,
-                "min_schema_version": GLOBAL_DB_VERSION,
-                "max_schema_version": GLOBAL_DB_VERSION,
+            '999999991': {
+                'changes': 1,
+                'min_schema_version': GLOBAL_DB_VERSION,
+                'max_schema_version': GLOBAL_DB_VERSION,
             },
-            "999999992": {
-                "changes": 1,
-                "min_schema_version": GLOBAL_DB_VERSION,
-                "max_schema_version": GLOBAL_DB_VERSION,
+            '999999992': {
+                'changes': 1,
+                'min_schema_version': GLOBAL_DB_VERSION,
+                'max_schema_version': GLOBAL_DB_VERSION,
             },
-            "999999993": {
-                "changes": 5,
-                "min_schema_version": GLOBAL_DB_VERSION - 2,
-                "max_schema_version": GLOBAL_DB_VERSION - 1,
+            '999999993': {
+                'changes': 5,
+                'min_schema_version': GLOBAL_DB_VERSION - 2,
+                'max_schema_version': GLOBAL_DB_VERSION - 1,
             },
-            "999999994": {
-                "changes": 3,
-                "min_schema_version": GLOBAL_DB_VERSION,
-                "max_schema_version": GLOBAL_DB_VERSION,
+            '999999994': {
+                'changes': 3,
+                'min_schema_version': GLOBAL_DB_VERSION,
+                'max_schema_version': GLOBAL_DB_VERSION,
             },
-            "999999995": {
-                "changes": 2,
-                "min_schema_version": GLOBAL_DB_VERSION,
-                "max_schema_version": GLOBAL_DB_VERSION,
+            '999999995': {
+                'changes': 2,
+                'min_schema_version': GLOBAL_DB_VERSION,
+                'max_schema_version': GLOBAL_DB_VERSION,
             },
-            "999999996": {
-                "changes": 5,
-                "min_schema_version": GLOBAL_DB_VERSION + 1,
-                "max_schema_version": GLOBAL_DB_VERSION + 2,
+            '999999996': {
+                'changes': 5,
+                'min_schema_version': GLOBAL_DB_VERSION + 1,
+                'max_schema_version': GLOBAL_DB_VERSION + 2,
             },
-            "999999997": {
-                "changes": 5,
-                "min_schema_version": GLOBAL_DB_VERSION + 1,
-                "max_schema_version": GLOBAL_DB_VERSION + 2,
+            '999999997': {
+                'changes': 5,
+                'min_schema_version': GLOBAL_DB_VERSION + 1,
+                'max_schema_version': GLOBAL_DB_VERSION + 2,
             },
         },
-        sql_actions={"999999991": "", "999999992": "", "999999993": "", "999999994": update_4, "999999995": "", "999999996": ""},  # noqa: E501
+        sql_actions={'999999991': empty_update, '999999992': empty_update, '999999993': empty_update, '999999994': {'assets': update_4_assets, 'collections': update_4_collections, 'mappings': update_4_mappings}, '999999995': empty_update, '999999996': empty_update},  # noqa: E501
     )
     globaldb.add_setting_value(ASSETS_VERSION_KEY, 999999992)
     with update_patch:
@@ -164,7 +182,7 @@ INSERT INTO assets(identifier, name, type) VALUES("EUR", "Ευρώ", "A"); INSER
         assert f'Skipping assets update 999999996 since it requires a min schema of {GLOBAL_DB_VERSION + 1}. Please upgrade rotki to get this assets update' in warnings[1]  # noqa: E501
 
         assert result is True
-        assert globaldb.get_setting_value(ASSETS_VERSION_KEY, None) == 999999995
+        assert globaldb.get_setting_value(ASSETS_VERSION_KEY, 0) == 999999995
         new_token = EvmToken('eip155:1/erc20:0xC2FEC534c461c45533e142f724d0e3930650929c')
         assert new_token.identifier == strethaddress_to_identifier('0xC2FEC534c461c45533e142f724d0e3930650929c')  # noqa: E501
         assert new_token.name == 'AKB token'
@@ -179,7 +197,7 @@ INSERT INTO assets(identifier, name, type) VALUES("EUR", "Ευρώ", "A"); INSER
         assert new_token.decimals == 18
         assert new_token.protocol is None
 
-        new_asset = CryptoAsset('121-ada-FADS-as')
+        new_asset = CryptoAsset('121-ada-FADS-as')  # type: ignore[unreachable]
         assert new_asset.identifier == '121-ada-FADS-as'
         assert new_asset.name == 'A name'
         assert new_asset.symbol == 'SYMBOL'
@@ -192,9 +210,15 @@ INSERT INTO assets(identifier, name, type) VALUES("EUR", "Ευρώ", "A"); INSER
 
         assert Asset('EUR').resolve_to_asset_with_name_and_type().name == 'Ευρώ'
 
+        with globaldb.conn.read_ctx() as cursor:
+            cursor.execute('SELECT * FROM asset_collections WHERE id = 99999999')
+            assert cursor.fetchall() == [(99999999, 'My custom ETH', 'ETHS')]
+            cursor.execute('SELECT * FROM multiasset_mappings WHERE collection_id = 99999999')
+            assert cursor.fetchall() == [(99999999, 'ETH'), (99999999, 'eip155:1/erc20:0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84')]  # noqa: E501
+
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_update_conflicts(rotkehlchen_api_server, globaldb):
+def test_update_conflicts(rotkehlchen_api_server: 'APIServer', globaldb: GlobalDBHandler) -> None:
     """Test that conflicts in an asset update are handled properly"""
     async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -211,7 +235,7 @@ INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0x1B175474E890
         asset_id='eip155:1/erc20:0x1B175474E89094C44Da98b954EedeAC495271d0F',
         asset_type=AssetType.EVM_TOKEN,
         data=EvmToken.initialize(
-            address=ChecksumEvmAddress('0x1B175474E89094C44Da98b954EedeAC495271d0F'),
+            address=string_to_evm_address('0x1B175474E89094C44Da98b954EedeAC495271d0F'),
             chain_id=ChainID.ETHEREUM,
             token_kind=EvmTokenKind.ERC20,
             decimals=12,
@@ -229,12 +253,12 @@ INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0x1B175474E890
     update_patch = mock_asset_updates(
         original_requests_get=requests.get,
         latest=999999991,
-        updates={"999999991": {
-            "changes": 3,
-            "min_schema_version": GLOBAL_DB_VERSION,
-            "max_schema_version": GLOBAL_DB_VERSION,
+        updates={'999999991': {
+            'changes': 3,
+            'min_schema_version': GLOBAL_DB_VERSION,
+            'max_schema_version': GLOBAL_DB_VERSION,
         }},
-        sql_actions={"999999991": update_1},
+        sql_actions={'999999991': {'assets': update_1, 'collections': '', 'mappings': ''}},
     )
     globaldb.add_setting_value(ASSETS_VERSION_KEY, 999999990)
     start_assets_num = count_total_assets()
@@ -283,7 +307,7 @@ INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0x1B175474E890
             )
 
         # Make sure that nothing was committed
-        assert globaldb.get_setting_value(ASSETS_VERSION_KEY, None) == 999999990
+        assert globaldb.get_setting_value(ASSETS_VERSION_KEY, 0) == 999999990
         assert count_total_assets() == start_assets_num
         with pytest.raises(UnknownAsset):
             Asset('121-ada-FADS-as').resolve_to_asset_with_name_and_type()
@@ -416,7 +440,7 @@ INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0x1B175474E890
         cursor = globaldb.conn.cursor()
         # check conflicts were solved as per the given choices and new asset also added
         assert result is True
-        assert globaldb.get_setting_value(ASSETS_VERSION_KEY, None) == 999999991
+        assert globaldb.get_setting_value(ASSETS_VERSION_KEY, 0) == 999999991
         errors = rotki.msg_aggregator.consume_errors()
         warnings = rotki.msg_aggregator.consume_warnings()
         assert len(errors) == 0, f'Found errors: {errors}'
@@ -476,13 +500,16 @@ INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0x1B175474E890
         assert ctk.evm_address == '0x1B175474E89094C44Da98b954EedeAC495271d0F'
         assert ctk.decimals == 18
         assert ctk.protocol is None
-        assert cursor.execute('SELECT COUNT(*) from evm_tokens WHERE address="0x1B175474E89094C44Da98b954EedeAC495271d0F";').fetchone()[0] == 1  # noqa: E501
+        assert cursor.execute('SELECT COUNT(*) from evm_tokens WHERE address="0x1B175474E89094C44Da98b954EedeAC495271d0F";').fetchone()[0] == 1  # type: ignore[unreachable]  # noqa: E501
         assert cursor.execute('SELECT COUNT(*) from assets WHERE identifier="eip155:1/erc20:0x1B175474E89094C44Da98b954EedeAC495271d0F";').fetchone()[0] == 1  # noqa: E501
 
 
 @pytest.mark.skip('Broken after changes in the assets. Check #4876')
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_foreignkey_conflict(rotkehlchen_api_server, globaldb):
+def test_foreignkey_conflict(
+        rotkehlchen_api_server: 'APIServer',
+        globaldb: GlobalDBHandler,
+) -> None:
     """Test that when a conflict that's not solvable happens the entry is ignored
 
     One such case is when the update of an asset would violate a foreign key constraint.
@@ -498,12 +525,12 @@ INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0xa74476443119
     update_patch = mock_asset_updates(
         original_requests_get=requests.get,
         latest=999999991,
-        updates={"999999991": {
-            "changes": 2,
-            "min_schema_version": GLOBAL_DB_VERSION,
-            "max_schema_version": GLOBAL_DB_VERSION,
+        updates={'999999991': {
+            'changes': 2,
+            'min_schema_version': GLOBAL_DB_VERSION,
+            'max_schema_version': GLOBAL_DB_VERSION,
         }},
-        sql_actions={"999999991": update_1},
+        sql_actions={'999999991': {'assets': update_1, 'collections': '', 'mappings': ''}},
     )
     globaldb.add_setting_value(ASSETS_VERSION_KEY, 999999990)
     start_assets_num = count_total_assets()
@@ -552,7 +579,7 @@ INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0xa74476443119
             )
 
         # Make sure that nothing was committed
-        assert globaldb.get_setting_value(ASSETS_VERSION_KEY, None) == 999999990
+        assert globaldb.get_setting_value(ASSETS_VERSION_KEY, 0) == 999999990
         assert count_total_assets() == start_assets_num
         with pytest.raises(UnknownAsset):
             Asset('121-ada-FADS-as').resolve_to_asset_with_name_and_type()
@@ -623,7 +650,7 @@ INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0xa74476443119
         # check new asset was added and conflict was ignored with an error due to
         # inability to do anything with the missing swapped_for
         assert result is True
-        assert globaldb.get_setting_value(ASSETS_VERSION_KEY, None) == 999999991
+        assert globaldb.get_setting_value(ASSETS_VERSION_KEY, 0) == 999999991
         gnt = EvmToken('eip155:1/erc20:0xa74476443119A942dE498590Fe1f2454d7D4aC0d')
         assert gnt.identifier == strethaddress_to_identifier('0xa74476443119A942dE498590Fe1f2454d7D4aC0d')  # noqa: E501
         assert gnt.name == 'Golem'
@@ -638,7 +665,7 @@ INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0xa74476443119
         assert gnt.decimals == 18
         assert gnt.protocol is None
 
-        new_asset = CryptoAsset('121-ada-FADS-as')
+        new_asset = CryptoAsset('121-ada-FADS-as')  # type: ignore[unreachable]
         assert new_asset.identifier == '121-ada-FADS-as'
         assert new_asset.name == 'A name'
         assert new_asset.symbol == 'SYMBOL'
@@ -657,7 +684,10 @@ INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0xa74476443119
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_update_from_early_clean_db(rotkehlchen_api_server, globaldb):
+def test_update_from_early_clean_db(
+        rotkehlchen_api_server: 'APIServer',
+        globaldb: GlobalDBHandler,
+) -> None:
     """
     Test that if the asset upgrade happens from a very early DB that has had no assets
     version key set we still upgrade properly and set the assets version properly.
@@ -671,12 +701,12 @@ INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protoco
     update_patch = mock_asset_updates(
         original_requests_get=requests.get,
         latest=1,
-        updates={"1": {
-            "changes": 2,
-            "min_schema_version": GLOBAL_DB_VERSION,
-            "max_schema_version": GLOBAL_DB_VERSION,
+        updates={'1': {
+            'changes': 2,
+            'min_schema_version': GLOBAL_DB_VERSION,
+            'max_schema_version': GLOBAL_DB_VERSION,
         }},
-        sql_actions={"1": update_1},
+        sql_actions={'1': {'assets': update_1, 'collections': '', 'mappings': ''}},
     )
     cursor = globaldb.conn.cursor()
     cursor.execute(f'DELETE FROM settings WHERE name="{ASSETS_VERSION_KEY}"')
@@ -807,7 +837,7 @@ INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protoco
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('start_with_logged_in_user', [False])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_update_no_user_loggedin(rotkehlchen_api_server):
+def test_update_no_user_loggedin(rotkehlchen_api_server: 'APIServer') -> None:
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
