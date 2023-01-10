@@ -3,7 +3,7 @@ import { type GeneralAccount } from '@rotki/common/lib/account';
 import { type ComputedRef, type PropType, type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
 import TransactionEventForm from '@/components/history/TransactionEventForm.vue';
-import { useTxQueryStatus } from '@/store/history/query-status';
+import { useTxQueryStatusStore } from '@/store/history/query-status';
 import { useTransactions } from '@/store/history/transactions';
 import { useTasks } from '@/store/tasks';
 import { type Writeable } from '@/types';
@@ -25,7 +25,6 @@ import { getCollectionData } from '@/utils/collection';
 import { useConfirmStore } from '@/store/confirm';
 import { IgnoreActionType } from '@/types/history/ignored';
 import EvmChainIcon from '@/components/helper/display/icons/EvmChainIcon.vue';
-import { useSupportedChains } from '@/composables/info/chains';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 
 interface PaginationOptions {
@@ -366,7 +365,7 @@ watch(usedAccount, async () => {
 
 const loading = isSectionLoading(Section.TX);
 const eventTaskLoading = isTaskRunning(TaskType.TX_EVENTS);
-const { isAllFinished } = toRefs(useTxQueryStatus());
+const { isAllFinished } = toRefs(useTxQueryStatusStore());
 
 const { pause, resume, isActive } = useIntervalFn(() => fetch(), 10000);
 

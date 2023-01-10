@@ -1,41 +1,43 @@
 <script setup lang="ts">
 import { type GeneralAccount } from '@rotki/common/lib/account';
 import { type Blockchain } from '@rotki/common/lib/blockchain';
+import { type PropType } from 'vue';
 import AccountDisplay from '@/components/display/AccountDisplay.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useAccountBalancesStore } from '@/store/blockchain/accountbalances';
 
-const props = withDefaults(
-  defineProps<{
-    label?: string;
-    hint?: boolean;
-    loading?: boolean;
-    usableAddresses?: string[];
-    multiple?: boolean;
-    value?: GeneralAccount[] | GeneralAccount | null;
-    chains?: Blockchain[];
-    outlined?: boolean;
-    dense?: boolean;
-    noPadding?: boolean;
-    hideOnEmptyUsable?: boolean;
-  }>(),
-  {
-    label: '',
-    hint: false,
-    loading: false,
-    usableAddresses: () => [],
-    multiple: false,
-    value: null,
-    chains: () => [],
-    outlined: false,
-    dense: false,
-    noPadding: false,
-    hideOnEmptyUsable: false
-  }
-);
+type AccountData = GeneralAccount | GeneralAccount[] | null;
 
-const emit = defineEmits(['input']);
+// Rolled back because the inference doesn't work for Object|Array
+// TODO: figure out if there is a way to do defineProps<{}> with a union
+const props = defineProps({
+  label: { required: false, type: String, default: '' },
+  hint: { required: false, type: Boolean, default: false },
+  loading: { required: false, type: Boolean, default: false },
+  usableAddresses: {
+    required: false,
+    type: Array as PropType<string[]>,
+    default: () => []
+  },
+  multiple: { required: false, type: Boolean, default: false },
+  value: {
+    required: false,
+    type: [Object, Array] as PropType<AccountData>,
+    default: null
+  },
+  chains: {
+    required: false,
+    type: Array as PropType<Blockchain[]>,
+    default: () => []
+  },
+  outlined: { required: false, type: Boolean, default: false },
+  dense: { required: false, type: Boolean, default: false },
+  noPadding: { required: false, type: Boolean, default: false },
+  hideOnEmptyUsable: { required: false, type: Boolean, default: false }
+});
+
+const emit = defineEmits<{ (e: 'input', value: AccountData): void }>();
 
 const { t } = useI18n();
 
@@ -91,7 +93,7 @@ const filter = (item: GeneralAccount, queryText: string) => {
   return labelMatches || tagMatches || addressMatches;
 };
 
-const input = (value: string | null) => emit('input', value);
+const input = (value: AccountData) => emit('input', value);
 
 const { dark } = useTheme();
 </script>
@@ -179,7 +181,7 @@ const { dark } = useTheme();
     }
   }
 
-  :deep() {
+  :deep(.v-select) {
     .v-select {
       &__selections {
         input {

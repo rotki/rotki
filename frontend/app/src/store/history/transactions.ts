@@ -5,7 +5,7 @@ import { useHistoryApi } from '@/services/history';
 import { useTransactionsApi } from '@/services/history/transactions';
 import { type PendingTask } from '@/services/types-api';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
-import { useTxQueryStatus } from '@/store/history/query-status';
+import { useTxQueryStatusStore } from '@/store/history/query-status';
 import { useNotificationsStore } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
 import { type ActionStatus } from '@/store/types';
@@ -28,7 +28,6 @@ import {
   mapCollectionResponse
 } from '@/utils/collection';
 import { logger } from '@/utils/logging';
-import { useSupportedChains } from '@/composables/info/chains';
 import { useAccountBalancesStore } from '@/store/blockchain/accountbalances';
 import {
   defaultHistoricPayloadState,
@@ -63,7 +62,7 @@ export const useTransactions = defineStore('history/transactions', () => {
   const { awaitTask, isTaskRunning } = useTasks();
 
   const { fetchAvailableCounterparties } = useHistoryApi();
-  const { resetQueryStatus } = useTxQueryStatus();
+  const { resetQueryStatus } = useTxQueryStatusStore();
 
   const { evmChainNames, getEvmChainName, isEvm } = useSupportedChains();
   const { accounts } = storeToRefs(useAccountBalancesStore());
@@ -135,7 +134,7 @@ export const useTransactions = defineStore('history/transactions', () => {
     try {
       const firstLoad = isFirstLoad();
       const accountsList = get(accounts)
-        .filter(({ chain }) => get(isEvm(chain)))
+        .filter(({ chain }) => get(isEvm(chain)) && chain !== 'AVAX')
         .map(({ address, chain }) => ({
           address,
           evmChain: get(getEvmChainName(chain))!

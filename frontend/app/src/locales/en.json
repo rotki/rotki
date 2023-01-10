@@ -807,17 +807,17 @@
     "transactions": {
       "error": {
         "description": "Failed query for {address}: {error}",
-        "title": "Ethereum Transactions Query"
+        "title": "Evm Transactions Query"
       },
       "task": {
         "description": "Retrieving txns for {address}",
-        "title": "Ethereum Transactions"
+        "title": "Evm Transactions"
       }
     },
     "transactions_events": {
       "task": {
         "description": "Retrieving transactions events",
-        "title": "Ethereum Transactions Events"
+        "title": "Evm Transactions Events"
       }
     },
     "unignore": {
@@ -2877,7 +2877,7 @@
     "history": "History",
     "history_sub": {
       "deposits_withdrawals": "Deposits & Withdrawals",
-      "ethereum_transactions": "Ethereum Transactions",
+      "ethereum_transactions": "Evm Transactions",
       "ledger_actions": "Ledger Actions",
       "trades": "Trades"
     },
@@ -3554,7 +3554,7 @@
     "all_decentralized_exchanges": "All Decentralized Exchanges",
     "all_exchanges": "All Centralized Exchanges",
     "all_modules": "All Modules",
-    "ethereum_transactions": "Ethereum Transactions",
+    "ethereum_transactions": "Evm Transactions",
     "exchange": "Exchange: {name}",
     "label": "Select a data source",
     "module": "Module: {name}",
@@ -3920,23 +3920,23 @@
       "done_end_date": "Done querying all transactions for {address} until {end}",
       "done_group": "Done querying all transactions information for {length} address(es)",
       "end_date": "Querying {status} for {address} until {end}",
-      "group": "Querying ethereum transactions information for {length} address(es)",
+      "group": "Querying evm transactions information for {length} address(es)",
       "latest_period_date_range": "Latest successfully queried period is between {start} and {end}",
       "latest_period_end_date": "Latest successfully queried period is until {end}",
       "statuses": {
-        "querying_ethereum_tokens_transactions": "ethereum tokens transactions",
-        "querying_internal_transactions": "ethereum internal transactions",
-        "querying_transactions": "ethereum transactions"
+        "querying_evm_tokens_transactions": "evm tokens transactions",
+        "querying_internal_transactions": "evm internal transactions",
+        "querying_transactions": "evm transactions"
       },
-      "title": "Ethereum Transaction Query Status"
+      "title": "Evm Transaction Query Status"
     },
     "redecode_events": {
       "all": "All events",
       "this_page": "Only this page",
       "title": "Redecode Events"
     },
-    "refresh_tooltip": "Refresh ethereum transactions",
-    "title": "Ethereum Transactions",
+    "refresh_tooltip": "Refresh evm transactions",
+    "title": "Evm Transactions",
     "unignore": "Unignore Tx in Accounting"
   },
   "underlying_token_manager": {
