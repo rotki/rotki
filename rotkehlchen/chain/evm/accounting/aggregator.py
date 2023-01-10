@@ -36,10 +36,12 @@ class EVMAccountingAggregator():
             self,
             node_inquirer: 'EvmNodeInquirer',
             msg_aggregator: MessagesAggregator,
+            airdrops_list: list[str],
     ) -> None:
         self.node_inquirer = node_inquirer
         self.msg_aggregator = msg_aggregator
         self.accountants: dict[str, 'ModuleAccountantInterface'] = {}
+        self.airdrops_list = airdrops_list
         self.initialize_all_accountants()
 
     def _recursively_initialize_accountants(
@@ -60,9 +62,15 @@ class EVMAccountingAggregator():
                 if submodule_accountant:
                     if class_name in self.accountants:
                         raise ModuleLoadingError(f'Accountant with name {class_name} already loaded')  # noqa: E501
+
+                    kwargs = {}
+                    if class_name == 'airdrops':
+                        kwargs['airdrops_list'] = self.airdrops_list
+
                     self.accountants[class_name] = submodule_accountant(
                         node_inquirer=self.node_inquirer,
                         msg_aggregator=self.msg_aggregator,
+                        **kwargs,
                     )
 
                 self._recursively_initialize_accountants(full_name)

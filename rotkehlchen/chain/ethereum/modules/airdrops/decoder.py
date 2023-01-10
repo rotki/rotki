@@ -17,7 +17,6 @@ from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction, Location
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int, ts_sec_to_ms
 
 from .constants import (
-    AIRDROPS_LIST,
     CPT_BADGER,
     CPT_CONVEX,
     CPT_ELEMENT_FINANCE,
@@ -25,6 +24,7 @@ from .constants import (
     CPT_ONEINCH,
     CPT_SHAPESHIFT,
     CPT_UNISWAP,
+    ETHEREUM_AIRDROPS_LIST,
 )
 
 if TYPE_CHECKING:
@@ -290,4 +290,4 @@ class AirdropsDecoder(DecoderInterface):
         }
 
     def counterparties(self) -> list[str]:
-        return AIRDROPS_LIST
+        return ETHEREUM_AIRDROPS_LIST

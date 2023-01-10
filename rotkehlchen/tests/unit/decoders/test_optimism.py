@@ -4,7 +4,7 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
-from rotkehlchen.chain.optimism.modules.airdrops.constants import CPT_OPTIMISM
+from rotkehlchen.chain.optimism.constants import CPT_OPTIMISM
 from rotkehlchen.constants.assets import A_ETH, A_OP
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
