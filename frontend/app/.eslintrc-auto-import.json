@@ -155,6 +155,7 @@
     "useBase64": true,
     "useBattery": true,
     "useBlockchainAccountsApi": true,
+    "useBlockie": true,
     "useBluetooth": true,
     "useBreakpoints": true,
     "useBroadcastChannel": true,

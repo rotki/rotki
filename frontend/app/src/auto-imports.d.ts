@@ -156,6 +156,7 @@ declare global {
   const useBase64: typeof import('@vueuse/core')['useBase64']
   const useBattery: typeof import('@vueuse/core')['useBattery']
   const useBlockchainAccountsApi: typeof import('./composables/api/accounts')['useBlockchainAccountsApi']
+  const useBlockie: typeof import('./composables/accounts/blockie')['useBlockie']
   const useBluetooth: typeof import('@vueuse/core')['useBluetooth']
   const useBreakpoints: typeof import('@vueuse/core')['useBreakpoints']
   const useBroadcastChannel: typeof import('@vueuse/core')['useBroadcastChannel']
@@ -516,6 +517,7 @@ declare module 'vue' {
     readonly useBase64: UnwrapRef<typeof import('@vueuse/core')['useBase64']>
     readonly useBattery: UnwrapRef<typeof import('@vueuse/core')['useBattery']>
     readonly useBlockchainAccountsApi: UnwrapRef<typeof import('./composables/api/accounts')['useBlockchainAccountsApi']>
+    readonly useBlockie: UnwrapRef<typeof import('./composables/accounts/blockie')['useBlockie']>
     readonly useBluetooth: UnwrapRef<typeof import('@vueuse/core')['useBluetooth']>
     readonly useBreakpoints: UnwrapRef<typeof import('@vueuse/core')['useBreakpoints']>
     readonly useBroadcastChannel: UnwrapRef<typeof import('@vueuse/core')['useBroadcastChannel']>

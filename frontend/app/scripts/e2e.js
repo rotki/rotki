@@ -32,7 +32,7 @@ const services = [
   }
 ];
 
-const testCmd = ci ? 'pnpm run cypress:run' : 'pnpm run cypress:open';
+const testCmd = ci ? 'npm run cypress:run' : 'npm run cypress:open';
 
 let test = testCmd;
 if (spec) {

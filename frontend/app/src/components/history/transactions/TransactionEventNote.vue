@@ -149,7 +149,7 @@ const formatNotes = (
 <style lang="scss" module>
 .address {
   background: var(--v-rotki-light-grey-darken1);
-  padding: 0 0.25rem 0 0.5rem;
+  padding-right: 0.25rem;
   border-radius: 3rem;
   margin: 2px;
 }
