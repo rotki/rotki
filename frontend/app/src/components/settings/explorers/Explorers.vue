@@ -2,6 +2,7 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { explorerUrls } from '@/types/asset-urls';
+import { getNativeAsset } from '@/utils/assets';
 
 const ETC = 'ETC' as const;
 
@@ -100,10 +101,10 @@ const { t } = useI18n();
       @change="onChange"
     >
       <template #item="{ item }">
-        <asset-details :asset="item" />
+        <asset-details :asset="getNativeAsset(item)" is-collection-parent />
       </template>
       <template #selection="{ item }">
-        <asset-details :asset="item" />
+        <asset-details :asset="getNativeAsset(item)" is-collection-parent />
       </template>
     </v-select>
 

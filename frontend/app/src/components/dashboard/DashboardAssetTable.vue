@@ -23,6 +23,10 @@ import { TableColumn } from '@/types/table-column';
 import { getSortItems } from '@/utils/assets';
 import { One } from '@/utils/bignumbers';
 import { calculatePercentage } from '@/utils/calculation';
+import { isEvmNativeToken } from '@/types/assets';
+import EvmNativeTokenBreakdown from '@/components/EvmNativeTokenBreakdown.vue';
+import AssetBalances from '@/components/AssetBalances.vue';
+import RowExpander from '@/components/helper/RowExpander.vue';
 
 const props = defineProps({
   loading: { required: false, type: Boolean, default: false },
@@ -283,12 +287,21 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
       </template>
       <template #expanded-item="{ item }">
         <table-expand-container visible :colspan="tableHeaders.length">
-          <asset-balances v-bind="props" :balances="item.breakdown" />
+          <evm-native-token-breakdown
+            v-if="isEvmNativeToken(item.asset)"
+            :identifier="item.asset"
+          />
+          <asset-balances
+            v-else
+            hide-total
+            v-bind="props"
+            :balances="item.breakdown"
+          />
         </table-expand-container>
       </template>
       <template #item.expand="{ item }">
         <row-expander
-          v-if="item.breakdown"
+          v-if="item.breakdown || isEvmNativeToken(item.asset)"
           :expanded="expanded.includes(item)"
           @click="expanded = expanded.includes(item) ? [] : [item]"
         />
