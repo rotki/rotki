@@ -20,6 +20,15 @@ const { isPremiumDialogVisible } = usePremiumReminder();
 const { connectionFailure, connected, dockerRiskAccepted } = storeToRefs(
   useMainStore()
 );
+
+const isDocker = import.meta.env.VITE_DOCKER;
+const hasAcceptedDockerRisk = logicAnd(dockerRiskAccepted, isDocker);
+const loginIfConnected = logicOr(
+  isPackaged,
+  hasAcceptedDockerRisk,
+  logicNot(isDocker)
+);
+const displayRouter = logicAnd(connected, loginIfConnected);
 </script>
 
 <template>
@@ -33,16 +42,13 @@ const { connectionFailure, connected, dockerRiskAccepted } = storeToRefs(
           data-cy="account-management"
         >
           <login-header />
-          <docker-warning v-if="!dockerRiskAccepted && !isPackaged" />
+          <docker-warning v-if="!dockerRiskAccepted && isDocker" />
           <connection-loading
             v-else-if="!connectionFailure"
             :connected="connected && !autolog"
           />
           <connection-failure-message v-else />
-          <div
-            v-if="connected && (isPackaged || dockerRiskAccepted)"
-            data-cy="account-management-forms"
-          >
+          <div v-if="displayRouter" data-cy="account-management-forms">
             <router-view />
           </div>
         </v-card>
