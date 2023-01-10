@@ -5,7 +5,7 @@ import {
   type BigNumber,
   type HasBalance
 } from '@rotki/common';
-import { Blockchain } from '@rotki/common/lib/blockchain';
+import { type Blockchain } from '@rotki/common/lib/blockchain';
 import { type MaybeRef } from '@vueuse/core';
 import { type ComputedRef } from 'vue';
 import { groupBy } from 'lodash';
@@ -29,6 +29,7 @@ import { assetSum, balanceSum } from '@/utils/calculation';
 import { getTags } from '@/utils/tags';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useAssetCacheStore } from '@/store/assets/asset-cache';
+import { getNativeAsset } from '@/utils/assets';
 
 export const removeZeroAssets = (entries: AssetBalances): AssetBalances => {
   const balances = { ...entries };
@@ -196,13 +197,6 @@ export const toSortedAssetBalanceArray = (
     usdValue: ownedAssets[asset].usdValue
   }));
 
-const getNativeAsset = (chain: Blockchain) => {
-  if (chain === Blockchain.OPTIMISM) {
-    return 'eip155:10/erc20:0x4200000000000000000000000000000000000042';
-  }
-  return chain;
-};
-
 export const accountsWithBalances = (
   accounts: GeneralAccountData[],
   balances: BlockchainAssetBalances,
@@ -303,7 +297,7 @@ export const getBlockchainBreakdown = (
   for (const address in balances) {
     const balance = balances[address];
     const assetBalance = balance.assets[asset];
-    if (!assetBalance) {
+    if (!assetBalance || assetBalance.usdValue.isZero()) {
       continue;
     }
     const tags = getTags(accounts, address);

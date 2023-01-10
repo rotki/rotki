@@ -127,3 +127,8 @@ export const defaultCustomAssetPagination = (
 });
 
 export type IgnoredAssetsHandlingType = 'none' | 'exclude' | 'show_only';
+
+export const EvmNativeToken = ['ETH'];
+export const isEvmNativeToken = (asset: string) => {
+  return EvmNativeToken.includes(asset);
+};

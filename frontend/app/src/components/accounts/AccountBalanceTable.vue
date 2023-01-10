@@ -312,10 +312,11 @@ const groupBy = (
 
 const asset: ComputedRef<string> = computed(() => {
   const chain = get(blockchain);
-  if (chain === Blockchain.ETH2 && get(treatEth2AsEth)) {
+  if (
+    (chain === Blockchain.ETH2 && get(treatEth2AsEth)) ||
+    chain === Blockchain.OPTIMISM
+  ) {
     return 'ETH';
-  } else if (chain === Blockchain.OPTIMISM) {
-    return 'OP';
   }
 
   return chain;
