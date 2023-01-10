@@ -12,8 +12,13 @@ const parser = new ArgumentParser({
 parser.add_argument('--web', { action: 'store_true' });
 parser.add_argument('--remote-debugging-port', { type: 'int' });
 parser.add_argument('--mode', { help: 'mode docker', default: 'development' });
+parser.add_argument('--port', {
+  help: 'listeing port',
+  default: 8080,
+  type: 'int'
+});
 const args = parser.parse_args();
-const { web, remote_debugging_port, mode } = args;
+const { web, remote_debugging_port, mode, port } = args;
 
 /** Messages on stderr that match any of the contained patterns will be stripped from output */
 const stderrFilterPatterns = [
@@ -110,7 +115,10 @@ const setupPreloadPackageWatcher = ({ ws }) =>
     const viteDevServer = await createServer({
       ...sharedConfig,
       mode: process.env.CI && process.env.VITE_TEST ? 'production' : mode,
-      configFile: 'vite.config.ts'
+      configFile: 'vite.config.ts',
+      server: {
+        port
+      }
     });
 
     await viteDevServer.listen();

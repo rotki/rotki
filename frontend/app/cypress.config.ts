@@ -5,7 +5,7 @@ const group = process.env.GROUP ? `${process.env.GROUP}/` : '';
 
 export default defineConfig({
   e2e: {
-    baseUrl: 'http://localhost:8080',
+    baseUrl: 'http://localhost:22230',
     fixturesFolder: 'tests/e2e/fixtures',
     specPattern: `tests/e2e/specs/${group}**/*.spec.ts`,
     screenshotsFolder: 'tests/e2e/screenshots',

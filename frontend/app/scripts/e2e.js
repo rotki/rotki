@@ -18,28 +18,39 @@ require('dotenv').config({
   path: path.join(process.cwd(), '.env.e2e')
 });
 
+const frontendPort = 22230;
+
 // pnpm will cause the commands to exit with
 // ELIFECYCLE Command failed.
 // If we find away around this we should change to pnpm.
 const services = [
   {
-    start: 'npm run serve:backend',
+    start: 'node scripts/start-backend.js',
     url: 'http://localhost:22221/api/1/ping'
   },
   {
-    start: 'npm run serve',
-    url: 'http://localhost:8080'
+    start: `node scripts/serve.js --web --port ${frontendPort}`,
+    url: `http://localhost:${frontendPort}`
   }
 ];
 
-const testCmd = ci ? 'npm run cypress:run' : 'npm run cypress:open';
+const testCmd = ci ? 'pnpm run cypress:run' : 'pnpm run cypress:open';
 
 let test = testCmd;
 if (spec) {
   test += ` --spec **/${spec}`;
 }
+
 startAndTest({
   services,
   test,
   namedArguments: { expect: 200 }
-});
+})
+  .then(() => {
+    console.info('Execution completed successfully');
+    process.exit(0);
+  })
+  .catch(() => {
+    console.error('Command execution failed');
+    process.exit(1);
+  });
