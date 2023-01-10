@@ -16,3 +16,5 @@ OPTIMISM_ETHERSCAN_NODE = WeightedNode(
 )
 
 OPTIMISM_BEGIN = Timestamp(1611071500)
+
+CPT_OPTIMISM = 'optimism'

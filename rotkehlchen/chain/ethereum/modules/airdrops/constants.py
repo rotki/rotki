@@ -6,7 +6,7 @@ CPT_CONVEX = 'convex'
 CPT_SHAPESHIFT = 'shapeshift'
 CPT_ELEMENT_FINANCE = 'element-finance'
 
-AIRDROPS_LIST = [
+ETHEREUM_AIRDROPS_LIST = [
     CPT_BADGER,
     CPT_UNISWAP,
     CPT_ONEINCH,
