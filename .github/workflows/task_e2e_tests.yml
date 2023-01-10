@@ -7,7 +7,6 @@ jobs:
     env:
       CI: true
       GROUP: ${{ matrix.group }}
-    environment: test
     runs-on: ubuntu-latest
     strategy:
       matrix:
