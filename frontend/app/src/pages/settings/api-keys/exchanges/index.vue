@@ -47,7 +47,7 @@ const { nonSyncingExchanges: current } = storeToRefs(useGeneralSettingsStore());
 const { update } = useSettingsStore();
 
 const { tc } = useI18n();
-const { usageGuideURL } = useInterop();
+const { usageGuideUrl } = useInterop();
 
 const findNonSyncExchangeIndex = (exchange: Exchange) => {
   return get(nonSyncingExchanges).findIndex((item: Exchange) => {
@@ -218,7 +218,7 @@ const showRemoveConfirmation = (item: Exchange) => {
         <i18n path="exchange_settings.subtitle" tag="div">
           <base-external-link
             :text="tc('exchange_settings.usage_guide')"
-            :href="usageGuideURL + '#adding-an-exchange'"
+            :href="usageGuideUrl + '#adding-an-exchange'"
           />
         </i18n>
       </template>

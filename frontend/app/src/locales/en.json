@@ -1742,6 +1742,11 @@
     "selected": "{count} item(s) selected",
     "title": "Deposits & Withdrawals"
   },
+  "docker_warning": {
+    "action": "Yes, I understand",
+    "documentation": "documentation",
+    "title": "You are running rotki in docker. Make sure you have read our {0} and understand the potential risk that may happens by running rotki this way."
+  },
   "ens_names": {
     "task": {
       "title": "Querying ENS names"

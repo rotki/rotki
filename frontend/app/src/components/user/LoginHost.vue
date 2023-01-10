@@ -10,13 +10,16 @@ import LoginHeader from '@/components/user/LoginHeader.vue';
 import LoginIcon from '@/components/user/LoginIcon.vue';
 import LoginOverlay from '@/components/user/LoginOverlay.vue';
 import { useMainStore } from '@/store/main';
+import DockerWarning from '@/components/account-management/DockerWarning.vue';
 
 const css = useCssModule();
 
 const { autolog } = useAutoLogin();
 const { isPackaged } = useInterop();
 const { isPremiumDialogVisible } = usePremiumReminder();
-const { connectionFailure, connected } = storeToRefs(useMainStore());
+const { connectionFailure, connected, dockerRiskAccepted } = storeToRefs(
+  useMainStore()
+);
 </script>
 
 <template>
@@ -30,12 +33,16 @@ const { connectionFailure, connected } = storeToRefs(useMainStore());
           data-cy="account-management"
         >
           <login-header />
+          <docker-warning v-if="!dockerRiskAccepted && !isPackaged" />
           <connection-loading
-            v-if="!connectionFailure"
+            v-else-if="!connectionFailure"
             :connected="connected && !autolog"
           />
           <connection-failure-message v-else />
-          <div v-if="connected" data-cy="account-management-forms">
+          <div
+            v-if="connected && (isPackaged || dockerRiskAccepted)"
+            data-cy="account-management-forms"
+          >
             <router-view />
           </div>
         </v-card>
