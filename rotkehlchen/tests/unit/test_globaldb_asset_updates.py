@@ -1,10 +1,12 @@
+from typing import Optional
 import pytest
 
 from rotkehlchen.assets.types import AssetData, AssetType
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.globaldb.updates import AssetsUpdater
+from rotkehlchen.globaldb.updates import AssetsUpdater, UpdateFileType
 from rotkehlchen.types import ChainID, EvmTokenKind, Timestamp
 
 
@@ -287,18 +289,23 @@ def fixture_assets_updater(messages_aggregator):
         'At asset DB update could not parse common asset details data out of',
     ),
 ])
-def test_parse_full_insert(assets_updater, text, expected_data, error_msg):
+def test_parse_full_insert_assets(
+        assets_updater: AssetsUpdater,
+        text: str,
+        expected_data: Optional[AssetData],
+        error_msg: str,
+) -> None:
     text = text.replace('\n', '')
     if expected_data is not None:
-        assert expected_data == assets_updater._parse_full_insert(text)
+        assert expected_data == assets_updater._parse_full_insert_assets(text)
     else:
         with pytest.raises(DeserializationError) as excinfo:
-            assets_updater._parse_full_insert(text)
+            assets_updater._parse_full_insert_assets(text)
 
         assert error_msg in str(excinfo.value)
 
 
-def test_some_updates_are_malformed(assets_updater):
+def test_some_updates_are_malformed(assets_updater: AssetsUpdater) -> None:
     """
     Checks the folowing cases:
     1. If some of the updates are broken, others are not affected.
@@ -324,7 +331,8 @@ INSERT INTO assets(identifier, name, type) VALUES("NEW-ASSET-2", "name4", "B"); 
         connection=connection,
         version=999,  # doesn't matter
         text=update_text,
-        conflicts={'ETH': 'remote', 'BTC': 'remote'},
+        assets_conflicts={A_ETH: 'remote', A_BTC: 'remote'},
+        update_file_type=UpdateFileType.ASSETS,
     )
 
     # Should have stayed unchanged since one of the insertions was incorrect
@@ -338,3 +346,84 @@ INSERT INTO assets(identifier, name, type) VALUES("NEW-ASSET-2", "name4", "B"); 
     # NEW-ASSET-2 should have been added since the insertions were correct
     assert connection.execute('SELECT name FROM assets WHERE identifier="NEW-ASSET-2"').fetchone()[0] == 'name4'  # noqa: E501
     assert connection.execute('SELECT symbol FROM common_asset_details WHERE identifier="NEW-ASSET-2"').fetchone()[0] == 'symbol4'  # noqa: E501
+
+
+def test_updates_assets_collections(assets_updater: AssetsUpdater) -> None:
+    """
+    Check that assets collections can be created and edited correctly
+    """
+    update_text_asset_collections = """INSERT INTO asset_collections(id, name, symbol) VALUES (99999999, "My custom ETH", "ETHS")
+    *
+    """  # noqa: E501
+    update_text_mappings = """INSERT INTO multiasset_mappings(collection_id, asset) VALUES (99999999, "ETH");
+    *
+    INSERT INTO multiasset_mappings(collection_id, asset) VALUES (99999999, "eip155:1/erc20:0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84");
+    *
+    """  # noqa: E501
+
+    connection = GlobalDBHandler().conn
+    assets_updater._apply_single_version_update(
+        connection=connection,
+        version=999,  # doesn't matter
+        text=update_text_asset_collections,
+        assets_conflicts={},
+        update_file_type=UpdateFileType.ASSET_COLLECTIONS,
+    )
+    assets_updater._apply_single_version_update(
+        connection=connection,
+        version=999,  # doesn't matter
+        text=update_text_mappings,
+        assets_conflicts={},
+        update_file_type=UpdateFileType.ASSET_COLLECTIONS_MAPPINGS,
+    )
+    with connection.read_ctx() as cursor:
+        cursor.execute('SELECT * FROM asset_collections WHERE id = 99999999')
+        assert cursor.fetchall() == [(99999999, 'My custom ETH', 'ETHS')]
+        cursor.execute('SELECT * FROM multiasset_mappings WHERE collection_id = 99999999')
+        assert cursor.fetchall() == [(99999999, 'ETH'), (99999999, 'eip155:1/erc20:0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84')]  # noqa: E501
+
+
+def test_updates_assets_collections_errors(assets_updater: AssetsUpdater):
+    """
+    Check that assets collections can be created and edited correctly.
+
+    - Try to create a collection with missing fields
+    - Try to add an Unknown asset
+    - Try to add to a collection that doesn't exists
+    """
+    update_text_collection = """INSERT INTO asset_collections(id, name) VALUES (99999999, "My custom ETH")
+    *
+    """  # noqa: E501
+    update_mapping_collection = """INSERT INTO multiasset_mappings(collection_id, asset) VALUES (1, "ETH99999");
+    *
+    INSERT INTO multiasset_mappings(collection_id, asset) VALUES (99999999, "eip155:1/erc20:0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84");
+    *
+    """  # noqa: E501
+
+    # consume warnings to remove any warning that might have been kept in the object
+    assets_updater.msg_aggregator.consume_warnings()
+    connection = GlobalDBHandler().conn
+    assets_updater._apply_single_version_update(
+        connection=connection,
+        version=999,  # doesn't matter
+        text=update_text_collection,
+        assets_conflicts={},
+        update_file_type=UpdateFileType.ASSET_COLLECTIONS,
+    )
+    assets_updater._apply_single_version_update(
+        connection=connection,
+        version=999,  # doesn't matter
+        text=update_mapping_collection,
+        assets_conflicts={},
+        update_file_type=UpdateFileType.ASSET_COLLECTIONS_MAPPINGS,
+    )
+    with connection.read_ctx() as cursor:
+        cursor.execute('SELECT COUNT(*) FROM asset_collections WHERE id = 99999999')
+        assert cursor.fetchone()[0] == 0
+
+    warnings = assets_updater.msg_aggregator.consume_warnings()
+    assert warnings == [
+        'Skipping entry during assets collection update to v999 due to a deserialization error. At asset DB update could not parse asset collection data out of INSERT INTO asset_collections(id, name) VALUES (99999999, "My custom ETH")',  # noqa: E501
+        'Tried to add unknown asset ETH99999 to collection of assets. Unknown asset ETH99999 provided.. Skipping',  # noqa: E501
+        'Skipping entry during assets collection multimapping update to v999 due to a deserialization error. Tried to add asset to collection with id 99999999 but it does not exist',  # noqa: E501
+    ]
