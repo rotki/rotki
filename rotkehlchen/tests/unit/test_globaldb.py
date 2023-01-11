@@ -166,12 +166,10 @@ def test_add_edit_token_with_wrong_swapped_for(globaldb):
         data=token_to_delete,
     )
     asset_to_delete = Asset(token_to_delete_id)
-    with globaldb.conn.write_ctx() as cursor:
-        assert globaldb.delete_evm_token(
-            write_cursor=cursor,
-            address=address_to_delete,
-            chain_id=ChainID.ETHEREUM,
-        ) == token_to_delete_id
+    assert globaldb.delete_evm_token(
+        address=address_to_delete,
+        chain_id=ChainID.ETHEREUM,
+    ) == token_to_delete_id
 
     # now try to add a new token with swapped_for pointing to a non existing token in the DB
     with pytest.raises(InputError):
@@ -610,9 +608,9 @@ def test_global_db_restore(globaldb, database):
         },
     )
 
-    with database.user_write() as cursor:
-        database.add_asset_identifiers(cursor, '1')
-        database.add_asset_identifiers(cursor, '2')
+    with database.user_write() as write_cursor:
+        database.add_asset_identifiers(write_cursor, '1')
+        database.add_asset_identifiers(write_cursor, '2')
 
     # Try to reset DB it if we have a trade that uses a custom asset
     buy_asset = symbol_to_asset_or_token('LOLZ2')
@@ -634,12 +632,13 @@ def test_global_db_restore(globaldb, database):
         notes="",
     )
 
-    with database.user_write() as cursor:
-        database.add_trades(cursor, [trade])
-        status, _ = GlobalDBHandler().hard_reset_assets_list(database)
-        assert status is False
+    with database.user_write() as write_cursor:
+        database.add_trades(write_cursor, [trade])
+    status, _ = GlobalDBHandler().hard_reset_assets_list(database)
+    assert status is False
+    with database.user_write() as write_cursor:
         # Now do it without the trade
-        database.delete_trades(cursor, [trade.identifier])
+        database.delete_trades(write_cursor, [trade.identifier])
     status, msg = GlobalDBHandler().hard_reset_assets_list(database, True)
     assert status, msg
     cursor = globaldb.conn.cursor()
@@ -941,12 +940,10 @@ def test_asset_deletion(globaldb):
     )
 
     # Then delete this token
-    with GlobalDBHandler().conn.write_ctx() as write_cursor:
-        GlobalDBHandler().delete_evm_token(
-            write_cursor=write_cursor,
-            address=token_data.evm_address,
-            chain_id=ChainID.ETHEREUM,
-        )
+    GlobalDBHandler().delete_evm_token(
+        address=token_data.evm_address,
+        chain_id=ChainID.ETHEREUM,
+    )
     # Check that it was deleted
     check_tables(
         asset_id=token_data.identifier,

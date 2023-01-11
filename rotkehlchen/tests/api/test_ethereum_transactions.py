@@ -1186,7 +1186,7 @@ def test_query_transactions_check_decoded_events(
     tx4_events[0]['entry']['identifier'] = result['identifier']
 
     # Now let's check DB tables to see they will get modified at purging
-    with rotki.data.db.user_write() as cursor:
+    with rotki.data.db.conn.read_ctx() as cursor:
         for name, count in (
                 ('evm_transactions', 4), ('evm_internal_transactions', 0),
                 ('evmtx_receipts', 4), ('evmtx_receipt_log_topics', 6),
@@ -1194,11 +1194,14 @@ def test_query_transactions_check_decoded_events(
                 ('history_events_mappings', 9),
         ):
             assert cursor.execute(f'SELECT COUNT(*) from {name}').fetchone()[0] == count
-        # Now purge all transactions of this address and see data is deleted BUT that
-        # the edited/added event and all it's tied to is not
-        dbevmtx = DBEvmTx(rotki.data.db)
-        dbevmtx.delete_transactions(cursor, ethereum_accounts[0], SupportedBlockchain.ETHEREUM)
 
+    # Now purge all transactions of this address and see data is deleted BUT that
+    # the edited/added event and all it's tied to is not
+    dbevmtx = DBEvmTx(rotki.data.db)
+    with rotki.data.db.user_write() as write_cursor:
+        dbevmtx.delete_transactions(write_cursor, ethereum_accounts[0], SupportedBlockchain.ETHEREUM)  # noqa: E501
+
+    with rotki.data.db.conn.read_ctx() as cursor:
         for name, count in (
                 ('evm_transactions', 2), ('evm_internal_transactions', 0),
                 ('evmtx_receipts', 2), ('evmtx_receipt_log_topics', 6),
@@ -1207,23 +1210,27 @@ def test_query_transactions_check_decoded_events(
         ):
             assert cursor.execute(f'SELECT COUNT(*) from {name}').fetchone()[0] == count
         customized_events = dbevents.get_history_events(cursor, HistoryEventFilterQuery.make(), True)  # noqa: E501
-        assert customized_events[0].serialize_without_extra_data() == tx4_events[0]['entry']  # pylint: disable=unsubscriptable-object  # noqa: E501
-        assert customized_events[1].serialize_without_extra_data() == tx2_events[1]['entry']
 
-        # requery all transactions and events. Assert they are the same (different event id though)
-        result = query_transactions(rotki)
-        entries = result['entries']
-        assert len(entries) == 4
+    assert customized_events[0].serialize_without_extra_data() == tx4_events[0]['entry']  # pylint: disable=unsubscriptable-object  # noqa: E501
+    assert customized_events[1].serialize_without_extra_data() == tx2_events[1]['entry']
+    # requery all transactions and events. Assert they are the same (different event id though)
+    result = query_transactions(rotki)
+    entries = result['entries']
+    assert len(entries) == 4
 
-        assert_serialized_lists_equal(entries[0]['decoded_events'], tx1_events, ignore_keys='identifier')  # noqa: E501
-        assert_serialized_lists_equal(entries[1]['decoded_events'], tx2_events, ignore_keys='identifier')  # noqa: E501
-        assert_serialized_lists_equal(entries[2]['decoded_events'], tx3_events, ignore_keys='identifier')  # noqa: E501
-        assert_serialized_lists_equal(entries[3]['decoded_events'], tx4_events, ignore_keys='identifier')  # noqa: E501
+    assert_serialized_lists_equal(entries[0]['decoded_events'], tx1_events, ignore_keys='identifier')  # noqa: E501
+    assert_serialized_lists_equal(entries[1]['decoded_events'], tx2_events, ignore_keys='identifier')  # noqa: E501
+    assert_serialized_lists_equal(entries[2]['decoded_events'], tx3_events, ignore_keys='identifier')  # noqa: E501
+    assert_serialized_lists_equal(entries[3]['decoded_events'], tx4_events, ignore_keys='identifier')  # noqa: E501
 
-        # explicitly delete the customized (added/edited) transactions
-        dbevents.delete_history_events_by_identifier([x.identifier for x in customized_events])  # noqa: E501
+    # explicitly delete the customized (added/edited) transactions
+    dbevents.delete_history_events_by_identifier([x.identifier for x in customized_events])  # noqa: E501
+
+    with rotki.data.db.user_write() as write_cursor:
         # and now purge all transactions again and see everything is deleted
-        dbevmtx.delete_transactions(cursor, ethereum_accounts[0], SupportedBlockchain.ETHEREUM)
+        dbevmtx.delete_transactions(write_cursor, ethereum_accounts[0], SupportedBlockchain.ETHEREUM)  # noqa: E501
+
+    with rotki.data.db.conn.read_ctx() as cursor:
         for name in (
                 'evm_transactions', 'evm_internal_transactions',
                 'evmtx_receipts', 'evmtx_receipt_log_topics',

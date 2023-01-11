@@ -99,12 +99,12 @@ def test_uniswap_v3_swap(database, ethereum_inquirer, eth_transactions):
     dbevmtx = DBEvmTx(database)
     with database.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
-        decoder = EthereumTransactionDecoder(
-            database=database,
-            ethereum_inquirer=ethereum_inquirer,
-            transactions=eth_transactions,
-        )
-        events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
+    decoder = EthereumTransactionDecoder(
+        database=database,
+        ethereum_inquirer=ethereum_inquirer,
+        transactions=eth_transactions,
+    )
+    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
 
     assert len(events) == 3
     expected_events = [
@@ -230,12 +230,12 @@ def test_uniswap_v3_swap_received_token2(database, ethereum_inquirer, eth_transa
     with database.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
         dbevmtx.add_evm_internal_transactions(cursor, [internal_tx], relevant_address='0xeB312F4921aEbbE99faCaCFE92f22b942Cbd7599')  # noqa: E501
-        decoder = EthereumTransactionDecoder(
-            database=database,
-            ethereum_inquirer=ethereum_inquirer,
-            transactions=eth_transactions,
-        )
-        events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
+    decoder = EthereumTransactionDecoder(
+        database=database,
+        ethereum_inquirer=ethereum_inquirer,
+        transactions=eth_transactions,
+    )
+    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
 
     assert len(events) == 3
     expected_events = [
@@ -441,15 +441,15 @@ def test_uniswap_v3_swap_by_aggregator(database, ethereum_inquirer, eth_transact
         value=FVal('0.738572737905232914') * EXP18,
     )
     dbevmtx = DBEvmTx(database)
-    with database.user_write() as cursor:
-        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
-        dbevmtx.add_evm_internal_transactions(cursor, [internal_tx], relevant_address='0xdD84Ce1aDcb3A4908Db61A1dFA3353C3974c5a2B')  # noqa: E501
-        decoder = EthereumTransactionDecoder(
-            database=database,
-            ethereum_inquirer=ethereum_inquirer,
-            transactions=eth_transactions,
-        )
-        events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
+    with database.user_write() as write_cursor:
+        dbevmtx.add_evm_transactions(write_cursor, [transaction], relevant_address=None)
+        dbevmtx.add_evm_internal_transactions(write_cursor, [internal_tx], relevant_address='0xdD84Ce1aDcb3A4908Db61A1dFA3353C3974c5a2B')  # noqa: E501
+    decoder = EthereumTransactionDecoder(
+        database=database,
+        ethereum_inquirer=ethereum_inquirer,
+        transactions=eth_transactions,
+    )
+    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         HistoryBaseEntry(
             event_identifier=evmhash,

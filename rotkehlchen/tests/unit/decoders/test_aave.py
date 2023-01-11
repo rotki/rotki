@@ -276,8 +276,7 @@ def test_aave_v2_enable_collateral(database, ethereum_inquirer, eth_transactions
         ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
     )
-    with dbevmtx.db.user_write() as cursor:
-        events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
+    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         HistoryBaseEntry(
             event_identifier=evmhash,
@@ -363,8 +362,7 @@ def test_aave_v2_disable_collateral(database, ethereum_inquirer, eth_transaction
         ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
     )
-    with dbevmtx.db.user_write() as cursor:
-        events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
+    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         HistoryBaseEntry(
             event_identifier=evmhash,
@@ -471,8 +469,7 @@ def test_aave_v2_deposit(database, ethereum_inquirer, eth_transactions):
         ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
     )
-    with dbevmtx.db.user_write() as cursor:
-        events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
+    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         HistoryBaseEntry(
             event_identifier=evmhash,
@@ -596,8 +593,7 @@ def test_aave_v2_withdraw(database, ethereum_inquirer, eth_transactions):
         ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
     )
-    with dbevmtx.db.user_write() as cursor:
-        events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
+    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         HistoryBaseEntry(
             event_identifier=evmhash,
@@ -718,8 +714,7 @@ def test_aave_v2_borrow(database, ethereum_inquirer, eth_transactions):
         ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
     )
-    with dbevmtx.db.user_write() as cursor:
-        events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
+    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         HistoryBaseEntry(
             event_identifier=evmhash,
@@ -840,8 +835,7 @@ def test_aave_v2_repay(database, ethereum_inquirer, eth_transactions):
         ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
     )
-    with dbevmtx.db.user_write() as cursor:
-        events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
+    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         HistoryBaseEntry(
             event_identifier=evmhash,

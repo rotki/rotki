@@ -82,12 +82,12 @@ def test_sushiswap_single_swap(database, ethereum_inquirer, eth_transactions):
     dbevmtx = DBEvmTx(database)
     with database.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
-        decoder = EthereumTransactionDecoder(
-            database=database,
-            ethereum_inquirer=ethereum_inquirer,
-            transactions=eth_transactions,
-        )
-        events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
+    decoder = EthereumTransactionDecoder(
+        database=database,
+        ethereum_inquirer=ethereum_inquirer,
+        transactions=eth_transactions,
+    )
+    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
 
     expected_events = [
         HistoryBaseEntry(

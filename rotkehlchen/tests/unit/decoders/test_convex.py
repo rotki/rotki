@@ -141,8 +141,7 @@ def test_booster_deposit(database, ethereum_inquirer, eth_transactions):
         ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
     )
-    with dbevmtx.db.user_write() as cursor:
-        events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
+    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         HistoryBaseEntry(
             event_identifier=evmhash,
@@ -244,8 +243,7 @@ def test_booster_withdraw(database, ethereum_inquirer, eth_transactions):
         ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
     )
-    with dbevmtx.db.user_write() as cursor:
-        events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
+    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         HistoryBaseEntry(
             event_identifier=evmhash,
@@ -379,8 +377,7 @@ def test_cvxcrv_get_reward(database, ethereum_inquirer, eth_transactions):
         ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
     )
-    with dbevmtx.db.user_write() as cursor:
-        events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
+    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         HistoryBaseEntry(
             event_identifier=evmhash,
@@ -509,8 +506,7 @@ def test_cvxcrv_withdraw(database, ethereum_inquirer, eth_transactions):
         transactions=eth_transactions,
 
     )
-    with dbevmtx.db.user_write() as cursor:
-        events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
+    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         HistoryBaseEntry(
             event_identifier=evmhash,
@@ -612,8 +608,7 @@ def test_cvxcrv_stake(database, ethereum_inquirer, eth_transactions):
         transactions=eth_transactions,
 
     )
-    with dbevmtx.db.user_write() as cursor:
-        events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
+    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         HistoryBaseEntry(
             event_identifier=evmhash,
@@ -729,8 +724,7 @@ def test_cvx_stake(database, ethereum_inquirer, eth_transactions):
         transactions=eth_transactions,
 
     )
-    with dbevmtx.db.user_write() as cursor:
-        events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
+    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         HistoryBaseEntry(
             event_identifier=evmhash,
@@ -876,8 +870,7 @@ def test_cvx_get_reward(database, ethereum_inquirer, eth_transactions):
         transactions=eth_transactions,
 
     )
-    with dbevmtx.db.user_write() as cursor:
-        events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
+    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         HistoryBaseEntry(
             event_identifier=evmhash,
@@ -969,8 +962,7 @@ def test_cvx_withdraw(database, ethereum_inquirer, eth_transactions):
         transactions=eth_transactions,
 
     )
-    with dbevmtx.db.user_write() as cursor:
-        events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
+    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         HistoryBaseEntry(
             event_identifier=evmhash,
@@ -1053,8 +1045,7 @@ def test_claimzap_abracadabras(database, ethereum_inquirer, eth_transactions):
         transactions=eth_transactions,
 
     )
-    with dbevmtx.db.user_write() as cursor:
-        events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
+    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         HistoryBaseEntry(
             event_identifier=evmhash,
@@ -1146,8 +1137,7 @@ def test_claimzap_cvx_locker(database, ethereum_inquirer, eth_transactions):
         ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
     )
-    with dbevmtx.db.user_write() as cursor:
-        events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
+    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         HistoryBaseEntry(
             event_identifier=evmhash,

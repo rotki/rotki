@@ -40,60 +40,68 @@ def fixture_load_remote_premium_data() -> bytes:
 ])
 def test_upload_data_to_server(rotkehlchen_instance, username, db_password, db_settings):
     """Test our side of uploading data to the server"""
-    with rotkehlchen_instance.data.db.user_write() as cursor:
+    with rotkehlchen_instance.data.db.conn.read_ctx() as cursor:
         last_ts = rotkehlchen_instance.data.db.get_setting(cursor, name='last_data_upload_ts')
         assert last_ts == 0
 
+    with rotkehlchen_instance.data.db.user_write() as write_cursor:
         # Write anything in the DB to set a non-zero last_write_ts
-        rotkehlchen_instance.data.db.set_settings(cursor, ModifiableDBSettings(main_currency=A_GBP))  # noqa: E501
+        rotkehlchen_instance.data.db.set_settings(write_cursor, ModifiableDBSettings(main_currency=A_GBP))  # noqa: E501
+
+    with rotkehlchen_instance.data.db.conn.read_ctx() as cursor:
         last_write_ts = rotkehlchen_instance.data.db.get_setting(cursor, name='last_write_ts')
-        _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(db_password)
-        remote_hash = get_different_hash(our_hash)
 
-        def mock_succesfull_upload_data_to_server(
-                url,  # pylint: disable=unused-argument
-                data,
-                timeout,  # pylint: disable=unused-argument
-        ):
-            # Can't compare data blobs as they are encrypted and as such can be
-            # different each time
-            assert 'data_blob' in data
-            assert data['original_hash'] == our_hash
-            assert data['last_modify_ts'] == last_write_ts
-            assert 'index' in data
-            assert len(data['data_blob']) == data['length']
-            assert 'nonce' in data
-            assert data['compression'] == 'zlib'
+    _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(db_password)
+    remote_hash = get_different_hash(our_hash)
 
-            return MockResponse(200, '{"success": true}')
+    def mock_succesfull_upload_data_to_server(
+            url,  # pylint: disable=unused-argument
+            data,
+            timeout,  # pylint: disable=unused-argument
+    ):
+        # Can't compare data blobs as they are encrypted and as such can be
+        # different each time
+        assert 'data_blob' in data
+        assert data['original_hash'] == our_hash
+        assert data['last_modify_ts'] == last_write_ts
+        assert 'index' in data
+        assert len(data['data_blob']) == data['length']
+        assert 'nonce' in data
+        assert data['compression'] == 'zlib'
 
-        patched_put = patch.object(
-            rotkehlchen_instance.premium.session,
-            'put',
-            side_effect=mock_succesfull_upload_data_to_server,
-        )
-        patched_get = create_patched_requests_get_for_premium(
-            session=rotkehlchen_instance.premium.session,
-            metadata_last_modify_ts=0,
-            metadata_data_hash=remote_hash,
-            # Smaller Remote DB size
-            metadata_data_size=2,
-            saved_data='foo',
-        )
+        return MockResponse(200, '{"success": true}')
 
+    patched_put = patch.object(
+        rotkehlchen_instance.premium.session,
+        'put',
+        side_effect=mock_succesfull_upload_data_to_server,
+    )
+    patched_get = create_patched_requests_get_for_premium(
+        session=rotkehlchen_instance.premium.session,
+        metadata_last_modify_ts=0,
+        metadata_data_hash=remote_hash,
+        # Smaller Remote DB size
+        metadata_data_size=2,
+        saved_data='foo',
+    )
+
+    with rotkehlchen_instance.data.db.conn.read_ctx() as cursor:
         assert rotkehlchen_instance.data.db.get_setting(cursor, name='last_data_upload_ts') == 0
-        now = ts_now()
-        with patched_get, patched_put:
-            tasks = rotkehlchen_instance.task_manager._maybe_schedule_db_upload()
-            if tasks is not None:
-                gevent.wait(tasks)
+
+    now = ts_now()
+    with patched_get, patched_put:
+        tasks = rotkehlchen_instance.task_manager._maybe_schedule_db_upload()
+        if tasks is not None:
+            gevent.wait(tasks)
 
         if db_settings['premium_should_sync'] is False:
-            assert rotkehlchen_instance.data.db.get_setting(cursor, name='last_data_upload_ts') == 0  # noqa: E501
+            with rotkehlchen_instance.data.db.conn.read_ctx() as cursor:
+                assert rotkehlchen_instance.data.db.get_setting(cursor, name='last_data_upload_ts') == 0  # noqa: E501
             assert rotkehlchen_instance.premium_sync_manager.last_data_upload_ts == 0
             return
 
-        last_ts = rotkehlchen_instance.data.db.get_setting(cursor, name='last_data_upload_ts')
+        with rotkehlchen_instance.data.db.conn.read_ctx() as cursor:
+            last_ts = rotkehlchen_instance.data.db.get_setting(cursor, name='last_data_upload_ts')
         msg = 'The last data upload timestamp should have been saved in the db as now'
         assert last_ts >= now and last_ts - now < 50, msg
         last_ts = rotkehlchen_instance.premium_sync_manager.last_data_upload_ts
@@ -111,11 +119,14 @@ def test_upload_data_to_server(rotkehlchen_instance, username, db_password, db_s
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_upload_data_to_server_same_hash(rotkehlchen_instance, db_password):
     """Test that if the server has same data hash as we no upload happens"""
-    with rotkehlchen_instance.data.db.user_write() as cursor:
+    with rotkehlchen_instance.data.db.conn.read_ctx() as cursor:
         last_ts = rotkehlchen_instance.data.db.get_setting(cursor, name='last_data_upload_ts')
-        assert last_ts == 0
+
+    assert last_ts == 0
+    with rotkehlchen_instance.data.db.user_write() as write_cursor:
         # Write anything in the DB to set a non-zero last_write_ts
-        rotkehlchen_instance.data.db.set_settings(cursor, ModifiableDBSettings(main_currency=A_EUR))  # noqa: E501
+        rotkehlchen_instance.data.db.set_settings(write_cursor, ModifiableDBSettings(main_currency=A_EUR))  # noqa: E501
+
     _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(db_password)
     remote_hash = our_hash
 

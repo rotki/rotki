@@ -61,12 +61,14 @@ def copy_ethereum_rpc_endpoint(write_cursor: 'DBCursor') -> None:
     write_cursor.execute('DELETE FROM settings WHERE name="eth_rpc_endpoint"')
 
 
-def data_migration_4(write_cursor: 'DBCursor', rotki: 'Rotkehlchen') -> None:
+def data_migration_4(rotki: 'Rotkehlchen') -> None:
     """
     - Add ethereum nodes to connect to the database in 1.25
     """
-    read_and_write_nodes_in_database(write_cursor=write_cursor)
+    with rotki.data.db.user_write() as write_cursor:
+        read_and_write_nodes_in_database(write_cursor=write_cursor)
     # Connect to the nodes since the migration happens after the ethereum manager initialization
     nodes_to_connect = rotki.data.db.get_rpc_nodes(blockchain=SupportedBlockchain.ETHEREUM, only_active=True)  # noqa: E501
     rotki.chains_aggregator.ethereum.node_inquirer.connect_to_multiple_nodes(nodes_to_connect)
-    copy_ethereum_rpc_endpoint(write_cursor=write_cursor)
+    with rotki.data.db.user_write() as write_cursor:
+        copy_ethereum_rpc_endpoint(write_cursor=write_cursor)

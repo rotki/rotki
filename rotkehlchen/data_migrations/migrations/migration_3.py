@@ -9,7 +9,6 @@ from rotkehlchen.icons import ALLOWED_ICON_EXTENSIONS
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.drivers.gevent import DBCursor
     from rotkehlchen.rotkehlchen import IconManager, Rotkehlchen
 
 logger = logging.getLogger(__name__)
@@ -30,14 +29,14 @@ def _validate_asset_icons(icon_manager: 'IconManager') -> None:
                 icon_entry.unlink()
 
 
-def data_migration_3(write_cursor: 'DBCursor', rotki: 'Rotkehlchen') -> None:
+def data_migration_3(rotki: 'Rotkehlchen') -> None:
     """
     Migration created in 1.24
     - Update the list of ignored assets with tokens from cryptoscamdb.
     - Delete malformed assets icons.
     """
     try:
-        update_spam_assets(write_cursor=write_cursor, db=rotki.data.db, make_remote_query=True)
+        update_spam_assets(db=rotki.data.db, make_remote_query=True)
     except RemoteError as e:
         log.error(f'Failed to update the list of ignored assets during db migration. {str(e)}')
 

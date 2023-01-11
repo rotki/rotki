@@ -226,9 +226,9 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):
 
         # Update DB cache
         fresh_nfts_identifiers = [x[0] for x in db_data]
-        with self.db.user_write() as cursor:
+        with self.db.user_write() as write_cursor:
             # Remove NFTs that the user no longer owns from the DB cache
-            cursor.execute(
+            write_cursor.execute(
                 f'DELETE FROM nfts WHERE owner_address IN '
                 f'({",".join("?"*len(addresses))}) AND identifier NOT IN '
                 f'({",".join("?"*len(fresh_nfts_identifiers))})',
@@ -236,11 +236,11 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):
             )
 
             # Add new NFTs to the DB cache
-            cursor.executemany(
+            write_cursor.executemany(
                 'INSERT OR IGNORE INTO assets(identifier) VALUES(?)',
                 [(x,) for x in fresh_nfts_identifiers],
             )
-            cursor.executemany(
+            write_cursor.executemany(
                 'INSERT OR IGNORE INTO nfts('
                 'identifier, name, last_price, last_price_asset, manual_price, owner_address, is_lp, image_url, collection_name'  # noqa: E501
                 ') VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)',
@@ -248,14 +248,14 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):
             )
 
             # Update NFTs that already exist in the cache. First, update everything except price
-            cursor.executemany(
+            write_cursor.executemany(
                 'UPDATE nfts SET name=?, owner_address=?, image_url=?, collection_name=? '
                 'WHERE identifier=?',
                 [(x[1], x[5], x[7], x[8], x[0]) for x in db_data],
             )
             # Then, update price where it was not manually input.
             # To preserve user manually input price
-            cursor.executemany(
+            write_cursor.executemany(
                 'UPDATE nfts SET last_price=?, last_price_asset=? '
                 'WHERE identifier=? AND manual_price=0',
                 [(x[2], x[3], x[0]) for x in db_data],

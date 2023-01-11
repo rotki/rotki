@@ -98,12 +98,12 @@ def test_liquity_trove_adjust(database, ethereum_inquirer, eth_transactions):
     dbevmtx = DBEvmTx(database)
     with database.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
-        decoder = EthereumTransactionDecoder(
-            database=database,
-            ethereum_inquirer=ethereum_inquirer,
-            transactions=eth_transactions,
-        )
-        events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
+    decoder = EthereumTransactionDecoder(
+        database=database,
+        ethereum_inquirer=ethereum_inquirer,
+        transactions=eth_transactions,
+    )
+    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
 
     assert len(events) == 3
     expected_events = [
@@ -215,12 +215,12 @@ def test_liquity_trove_deposit_lusd(database, ethereum_inquirer, eth_transaction
     dbevmtx = DBEvmTx(database)
     with database.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
-        decoder = EthereumTransactionDecoder(
-            database=database,
-            ethereum_inquirer=ethereum_inquirer,
-            transactions=eth_transactions,
-        )
-        events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
+    decoder = EthereumTransactionDecoder(
+        database=database,
+        ethereum_inquirer=ethereum_inquirer,
+        transactions=eth_transactions,
+    )
+    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     assert len(events) == 2
     expected_events = [
         HistoryBaseEntry(
@@ -330,12 +330,12 @@ def test_liquity_trove_remove_eth(database, ethereum_inquirer, eth_transactions)
     with database.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
         dbevmtx.add_evm_internal_transactions(cursor, [internal_tx], relevant_address=user_address)  # noqa: E501
-        decoder = EthereumTransactionDecoder(
-            database=database,
-            ethereum_inquirer=ethereum_inquirer,
-            transactions=eth_transactions,
-        )
-        events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
+    decoder = EthereumTransactionDecoder(
+        database=database,
+        ethereum_inquirer=ethereum_inquirer,
+        transactions=eth_transactions,
+    )
+    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     assert len(events) == 3
     expected_events = [
         HistoryBaseEntry(
@@ -436,12 +436,12 @@ def test_liquity_pool_deposit(database, ethereum_inquirer, eth_transactions):
     dbevmtx = DBEvmTx(database)
     with database.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
-        decoder = EthereumTransactionDecoder(
-            database=database,
-            ethereum_inquirer=ethereum_inquirer,
-            transactions=eth_transactions,
-        )
-        events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
+    decoder = EthereumTransactionDecoder(
+        database=database,
+        ethereum_inquirer=ethereum_inquirer,
+        transactions=eth_transactions,
+    )
+    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     assert len(events) == 2
     expected_events = [
         HistoryBaseEntry(
@@ -562,12 +562,12 @@ def test_liquity_pool_remove_deposits(database, ethereum_inquirer, eth_transacti
     with database.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
         dbevmtx.add_evm_internal_transactions(cursor, [internal_tx], relevant_address=user_address)  # noqa: E501
-        decoder = EthereumTransactionDecoder(
-            database=database,
-            ethereum_inquirer=ethereum_inquirer,
-            transactions=eth_transactions,
-        )
-        events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
+    decoder = EthereumTransactionDecoder(
+        database=database,
+        ethereum_inquirer=ethereum_inquirer,
+        transactions=eth_transactions,
+    )
+    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
 
     assert len(events) == 3
     expected_events = [
@@ -708,12 +708,12 @@ def test_increase_liquity_staking(database, ethereum_inquirer, eth_transactions)
     with database.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
         dbevmtx.add_evm_internal_transactions(cursor, [internal_tx], relevant_address=user_address)  # noqa: E501
-        decoder = EthereumTransactionDecoder(
-            database=database,
-            ethereum_inquirer=ethereum_inquirer,
-            transactions=eth_transactions,
-        )
-        events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
+    decoder = EthereumTransactionDecoder(
+        database=database,
+        ethereum_inquirer=ethereum_inquirer,
+        transactions=eth_transactions,
+    )
+    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
 
     assert len(events) == 4
     expected_events = [
@@ -867,12 +867,12 @@ def test_remove_liquity_staking(database, ethereum_inquirer, eth_transactions):
     with database.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
         dbevmtx.add_evm_internal_transactions(cursor, [internal_tx], relevant_address=user_address)  # noqa: E501
-        decoder = EthereumTransactionDecoder(
-            database=database,
-            ethereum_inquirer=ethereum_inquirer,
-            transactions=eth_transactions,
-        )
-        events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
+    decoder = EthereumTransactionDecoder(
+        database=database,
+        ethereum_inquirer=ethereum_inquirer,
+        transactions=eth_transactions,
+    )
+    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
 
     assert len(events) == 4
     expected_events = [

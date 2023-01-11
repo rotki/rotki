@@ -274,18 +274,20 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
     data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
     data.unlock(username, '123', create_new=True)
 
-    with data.db.user_write() as cursor:
+    with data.db.user_write() as write_cursor:
         data.db.add_blockchain_accounts(
-            cursor,
+            write_cursor,
             [BlockchainAccountData(chain=SupportedBlockchain.BITCOIN, address='1CB7Pbji3tquDtMRp8mBkerimkFzWRkovS')],  # noqa: E501
         )
         data.db.add_blockchain_accounts(
-            cursor,
+            write_cursor,
             [
                 BlockchainAccountData(chain=SupportedBlockchain.ETHEREUM, address='0xd36029d76af6fE4A356528e4Dc66B2C18123597D'),  # noqa: E501
                 BlockchainAccountData(chain=SupportedBlockchain.ETHEREUM, address='0x80B369799104a47e98A553f3329812a44A7FaCDc'),  # noqa: E501
             ],
         )
+
+    with data.db.conn.read_ctx() as cursor:
         accounts = data.db.get_blockchain_accounts(cursor)
         assert isinstance(accounts, BlockchainAccounts)
         assert accounts.btc == ['1CB7Pbji3tquDtMRp8mBkerimkFzWRkovS']
@@ -294,34 +296,36 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
             '0xd36029d76af6fE4A356528e4Dc66B2C18123597D',
             '0x80B369799104a47e98A553f3329812a44A7FaCDc',
         }
+
+    with data.db.user_write() as write_cursor:
         # Add existing account should fail
         with pytest.raises(InputError):  # pylint: disable=no-member
             data.db.add_blockchain_accounts(
-                cursor,
+                write_cursor,
                 [BlockchainAccountData(chain=SupportedBlockchain.ETHEREUM, address='0xd36029d76af6fE4A356528e4Dc66B2C18123597D')],  # noqa: E501
             )
         # Remove non-existing account
         with pytest.raises(InputError):
             data.db.remove_single_blockchain_accounts(
-                cursor,
+                write_cursor,
                 SupportedBlockchain.ETHEREUM,
                 ['0x136029d76af6fE4A356528e4Dc66B2C18123597D'],
             )
         # Remove existing account
         data.db.remove_single_blockchain_accounts(
-            cursor,
+            write_cursor,
             SupportedBlockchain.ETHEREUM,
             ['0xd36029d76af6fE4A356528e4Dc66B2C18123597D'],
         )
-        accounts = data.db.get_blockchain_accounts(cursor)
+        accounts = data.db.get_blockchain_accounts(write_cursor)
         assert accounts.eth == ['0x80B369799104a47e98A553f3329812a44A7FaCDc']
 
-        result, _ = data.add_ignored_assets([A_DAO])
-        assert result
-        result, _ = data.add_ignored_assets([A_DOGE])
-        assert result
-        result, _ = data.add_ignored_assets([A_DOGE])
-        assert result is None
+    result, _ = data.add_ignored_assets([A_DAO])
+    assert result
+    result, _ = data.add_ignored_assets([A_DOGE])
+    assert result
+    result, _ = data.add_ignored_assets([A_DOGE])
+    assert result is None
 
     with data.db.conn.read_ctx() as cursor:
         ignored_assets = data.db.get_ignored_assets(cursor)
@@ -1356,12 +1360,13 @@ def test_remove_queried_address_on_account_remove(data_dir, username, sql_vm_ins
     data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
     data.unlock(username, '123', create_new=True)
 
-    with data.db.user_write() as cursor:
+    with data.db.user_write() as write_cursor:
         data.db.add_blockchain_accounts(
-            cursor,
+            write_cursor,
             [BlockchainAccountData(chain=SupportedBlockchain.ETHEREUM, address='0xd36029d76af6fE4A356528e4Dc66B2C18123597D')],  # noqa: E501
         )
 
+    with data.db.conn.read_ctx() as cursor:
         queried_addresses = QueriedAddresses(data.db)
         queried_addresses.add_queried_address_for_module(
             'makerdao_vaults',
@@ -1370,13 +1375,15 @@ def test_remove_queried_address_on_account_remove(data_dir, username, sql_vm_ins
         addresses = queried_addresses.get_queried_addresses_for_module(cursor, 'makerdao_vaults')
         assert '0xd36029d76af6fE4A356528e4Dc66B2C18123597D' in addresses
 
+    with data.db.user_write() as write_cursor:
         data.db.remove_single_blockchain_accounts(
-            cursor,
+            write_cursor,
             SupportedBlockchain.ETHEREUM,
             ['0xd36029d76af6fE4A356528e4Dc66B2C18123597D'],
         )
 
-    addresses = queried_addresses.get_queried_addresses_for_module(cursor, 'makerdao_vaults')
+    with data.db.conn.read_ctx() as cursor:
+        addresses = queried_addresses.get_queried_addresses_for_module(cursor, 'makerdao_vaults')
     assert not addresses
 
 
@@ -1480,14 +1487,14 @@ def test_binance_pairs(user_data_dir, sql_vm_instructions_cb):
 
     binance_api_key = ApiKey('binance_api_key')
     binance_api_secret = ApiSecret(b'binance_api_secret')
-    with db.user_write() as cursor:
-        db.add_exchange('binance', Location.BINANCE, binance_api_key, binance_api_secret)
+    db.add_exchange('binance', Location.BINANCE, binance_api_key, binance_api_secret)
 
-        db.set_binance_pairs(cursor, 'binance', ['ETHUSDC', 'ETHBTC', 'BNBBTC'], Location.BINANCE)
+    with db.user_write() as write_cursor:
+        db.set_binance_pairs(write_cursor, 'binance', ['ETHUSDC', 'ETHBTC', 'BNBBTC'], Location.BINANCE)  # noqa: E501
         query = db.get_binance_pairs('binance', Location.BINANCE)
         assert query == ['ETHUSDC', 'ETHBTC', 'BNBBTC']
 
-        db.set_binance_pairs(cursor, 'binance', [], Location.BINANCE)
+        db.set_binance_pairs(write_cursor, 'binance', [], Location.BINANCE)
         query = db.get_binance_pairs('binance', Location.BINANCE)
     assert query == []
 

@@ -146,11 +146,10 @@ def test_text_changed(ethereum_transaction_decoder, ethereum_accounts):
     dbevmtx = DBEvmTx(ethereum_transaction_decoder.database)
     with dbevmtx.db.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
-        events = ethereum_transaction_decoder.decode_transaction(
-            write_cursor=cursor,
-            transaction=transaction,
-            tx_receipt=receipt,
-        )
+    events = ethereum_transaction_decoder.decode_transaction(
+        transaction=transaction,
+        tx_receipt=receipt,
+    )
     expected_events = [
         HistoryBaseEntry(
             event_identifier=tx_hash,
@@ -253,11 +252,10 @@ def test_set_resolver(ethereum_transaction_decoder, ethereum_accounts):
     dbevmtx = DBEvmTx(ethereum_transaction_decoder.database)
     with dbevmtx.db.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
-        events = ethereum_transaction_decoder.decode_transaction(
-            write_cursor=cursor,
-            transaction=transaction,
-            tx_receipt=receipt,
-        )
+    events = ethereum_transaction_decoder.decode_transaction(
+        transaction=transaction,
+        tx_receipt=receipt,
+    )
 
     expected_events = [
         HistoryBaseEntry(

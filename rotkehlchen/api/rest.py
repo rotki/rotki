@@ -852,14 +852,15 @@ class RestAPI():
         )
         with self.rotkehlchen.data.db.user_write() as cursor:
             result, msg = self.rotkehlchen.data.db.edit_trade(cursor, old_trade_id=trade_id, trade=trade)  # noqa: E501
-            if not result:
-                return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
 
-            # For the outside world we should also add the trade identifier
-            result_dict = self.trade_schema.dump(trade)
-            result_dict['trade_id'] = trade.identifier
-            result_dict = _wrap_in_ok_result(result_dict)
-            return api_response(result_dict, status_code=HTTPStatus.OK)
+        if not result:
+            return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
+
+        # For the outside world we should also add the trade identifier
+        result_dict = self.trade_schema.dump(trade)
+        result_dict['trade_id'] = trade.identifier
+        result_dict = _wrap_in_ok_result(result_dict)
+        return api_response(result_dict, status_code=HTTPStatus.OK)
 
     def delete_trades(self, trades_ids: list[str]) -> Response:
         try:
@@ -1517,11 +1518,14 @@ class RestAPI():
 
     def delete_asset(self, identifier: str) -> Response:
         try:
-            with self.rotkehlchen.data.db.user_write() as write_cursor:
+
+            with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
                 # Before deleting, also make sure we have up to date global DB owned data
-                self.rotkehlchen.data.db.update_owned_assets_in_globaldb(write_cursor)
+                self.rotkehlchen.data.db.update_owned_assets_in_globaldb(cursor)
+            with self.rotkehlchen.data.db.user_write() as write_cursor:
                 self.rotkehlchen.data.db.delete_asset_identifier(write_cursor, identifier)
-                GlobalDBHandler().delete_asset_by_identifier(identifier)
+
+            GlobalDBHandler().delete_asset_by_identifier(identifier)
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
@@ -1607,7 +1611,7 @@ class RestAPI():
             chain_id: ChainID,
     ) -> Response:
         try:
-            with self.rotkehlchen.data.db.user_write() as cursor:
+            with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
                 # Before deleting, also make sure we have up to date global DB owned data
                 self.rotkehlchen.data.db.update_owned_assets_in_globaldb(cursor)
                 identifier = evm_address_to_identifier(
@@ -1615,9 +1619,10 @@ class RestAPI():
                     chain_id=chain_id,
                     token_type=EvmTokenKind.ERC20,
                 )
-                self.rotkehlchen.data.db.delete_asset_identifier(cursor, identifier)
-                with GlobalDBHandler().conn.write_ctx() as gcursor:
-                    identifier = GlobalDBHandler().delete_evm_token(write_cursor=gcursor, address=address, chain_id=chain_id)  # noqa: E501
+
+            with self.rotkehlchen.data.db.user_write() as write_cursor:
+                self.rotkehlchen.data.db.delete_asset_identifier(write_cursor, identifier)
+                identifier = GlobalDBHandler().delete_evm_token(address=address, chain_id=chain_id)
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
@@ -1953,8 +1958,8 @@ class RestAPI():
         return api_response(process_result(result_dict), status_code=status_code)
 
     def _delete_xpub(
-        self,
-        xpub_data: 'XpubData',
+            self,
+            xpub_data: 'XpubData',
     ) -> dict[str, Any]:
         try:
             with self.rotkehlchen.data.db.user_write() as cursor:
@@ -1996,11 +2001,12 @@ class RestAPI():
         xpub_data: 'XpubData',
     ) -> Response:
         try:
-            with self.rotkehlchen.data.db.user_write() as cursor:
+            with self.rotkehlchen.data.db.user_write() as write_cursor:
                 XpubManager(self.rotkehlchen.chains_aggregator).edit_bitcoin_xpub(
-                    write_cursor=cursor,
+                    write_cursor=write_cursor,
                     xpub_data=xpub_data,
                 )
+            with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
                 data = self.rotkehlchen.get_blockchain_account_data(cursor, xpub_data.blockchain)
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)  # noqa: E501
@@ -2173,12 +2179,13 @@ class RestAPI():
             account_data: list[SingleBlockchainAccountData],
     ) -> Response:
         try:
-            with self.rotkehlchen.data.db.user_write() as cursor:
+            with self.rotkehlchen.data.db.user_write() as write_cursor:
                 self.rotkehlchen.edit_single_blockchain_accounts(
-                    cursor,
+                    write_cursor=write_cursor,
                     blockchain=blockchain,
                     account_data=account_data,
                 )
+            with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
                 # success
                 data = self.rotkehlchen.get_blockchain_account_data(cursor, blockchain)
         except TagConstraintError as e:
@@ -4620,9 +4627,9 @@ class RestAPI():
             msg_aggregator=self.rotkehlchen.msg_aggregator,
         )
         try:
-            with self.rotkehlchen.data.db.user_write() as cursor:
+            with self.rotkehlchen.data.db.user_write() as write_cursor:
                 dbsnapshot.delete(
-                    write_cursor=cursor,
+                    write_cursor=write_cursor,
                     timestamp=timestamp,
                 )
         except InputError as e:
@@ -4686,9 +4693,9 @@ class RestAPI():
                 status_code=HTTPStatus.CONFLICT,
             )
         try:
-            with self.rotkehlchen.data.db.user_write() as cursor:
+            with self.rotkehlchen.data.db.user_write() as write_cursor:
                 dbsnapshot.import_snapshot(
-                    write_cursor=cursor,
+                    write_cursor=write_cursor,
                     processed_balances_list=processed_balances,
                     processed_location_data_list=processed_location_data,
                 )
@@ -4698,8 +4705,10 @@ class RestAPI():
 
     def _pull_spam_assets(self) -> dict[str, Any]:
         try:
-            with self.rotkehlchen.data.db.user_write() as cursor:
-                assets_updated = update_spam_assets(write_cursor=cursor, db=self.rotkehlchen.data.db, make_remote_query=True)  # noqa: E501
+            assets_updated = update_spam_assets(
+                db=self.rotkehlchen.data.db,
+                make_remote_query=True,
+            )
         except RemoteError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
         return {'result': assets_updated, 'message': '', 'status_code': HTTPStatus.OK}

@@ -553,20 +553,22 @@ class Rotkehlchen():
           there is a problem with its query.
         """
         account_data_map: dict[ChecksumEvmAddress, SingleBlockchainAccountData[ChecksumEvmAddress]] = {x.address: x for x in account_data}  # noqa: E501
-        with self.data.db.user_write() as cursor:
+        with self.data.db.conn.read_ctx() as cursor:
             self.data.db.ensure_tags_exist(
                 cursor=cursor,
                 given_data=account_data,
                 action='adding',
                 data_type='blockchain accounts',
             )
-            added_accounts = self.chains_aggregator.add_accounts_to_all_evm(
-                accounts=[entry.address for entry in account_data],
-            )
+
+        added_accounts = self.chains_aggregator.add_accounts_to_all_evm(
+            accounts=[entry.address for entry in account_data],
+        )
+        with self.data.db.user_write() as write_cursor:
             for chain, address in added_accounts:
                 account_data_entry = account_data_map[address]
                 self.data.db.add_blockchain_accounts(
-                    cursor,
+                    write_cursor=write_cursor,
                     account_data=[account_data_entry.to_blockchain_account_data(chain)],
                 )
 
@@ -623,20 +625,21 @@ class Rotkehlchen():
         if len(account_data) == 0:
             raise InputError('Empty list of blockchain accounts to add was given')
 
-        with self.data.db.user_write() as cursor:
+        with self.data.db.conn.read_ctx() as cursor:
             self.data.db.ensure_tags_exist(
-                cursor,
+                cursor=cursor,
                 given_data=account_data,
                 action='adding',
                 data_type='blockchain accounts',
             )
-            self.chains_aggregator.modify_blockchain_accounts(
-                blockchain=chain,
-                accounts=[entry.address for entry in account_data],
-                append_or_remove='append',
-            )
+        self.chains_aggregator.modify_blockchain_accounts(
+            blockchain=chain,
+            accounts=[entry.address for entry in account_data],
+            append_or_remove='append',
+        )
+        with self.data.db.user_write() as write_cursor:
             self.data.db.add_blockchain_accounts(
-                write_cursor=cursor,
+                write_cursor=write_cursor,
                 account_data=[x.to_blockchain_account_data(chain) for x in account_data],
             )
 
@@ -694,13 +697,13 @@ class Rotkehlchen():
         )
         eth_addresses: list[ChecksumEvmAddress] = cast(list[ChecksumEvmAddress], accounts) if blockchain == SupportedBlockchain.ETHEREUM else []  # noqa: E501
         with contextlib.ExitStack() as stack:
-            cursor = stack.enter_context(self.data.db.user_write())
             if blockchain == SupportedBlockchain.ETHEREUM:
                 ethereum = self.chains_aggregator.get_chain_manager(SupportedBlockchain.ETHEREUM)
                 stack.enter_context(ethereum.transactions.wait_until_no_query_for(eth_addresses))
                 stack.enter_context(ethereum.transactions.missing_receipts_lock)
                 stack.enter_context(ethereum.transactions_decoder.undecoded_tx_query_lock)
-            self.data.db.remove_single_blockchain_accounts(cursor, blockchain, accounts)
+            write_cursor = stack.enter_context(self.data.db.user_write())
+            self.data.db.remove_single_blockchain_accounts(write_cursor, blockchain, accounts)
 
     def get_history_query_status(self) -> dict[str, str]:
         if self.events_historian.progress < FVal('100'):
@@ -907,12 +910,17 @@ class Rotkehlchen():
             'location': location_stats,
             'net_usd': net_usd,
         }
-        with self.data.db.user_write() as cursor:
+        with self.data.db.conn.read_ctx() as cursor:
             allowed_to_save = requested_save_data or self.data.db.should_save_balances(cursor)
             if (problem_free or save_despite_errors) and allowed_to_save:
                 if not timestamp:
                     timestamp = Timestamp(int(time.time()))
-                self.data.db.save_balances_data(cursor, data=result_dict, timestamp=timestamp)
+                with self.data.db.user_write() as write_cursor:
+                    self.data.db.save_balances_data(
+                        write_cursor=write_cursor,
+                        data=result_dict,
+                        timestamp=timestamp,
+                    )
                 log.debug('query_balances data saved')
             else:
                 log.debug(
@@ -1001,11 +1009,11 @@ class Rotkehlchen():
 
         self.exchange_manager.delete_exchange(name=name, location=location)
         # Success, remove it also from the DB
-        with self.data.db.user_write() as cursor:
-            self.data.db.remove_exchange(write_cursor=cursor, name=name, location=location)
+        with self.data.db.user_write() as write_cursor:
+            self.data.db.remove_exchange(write_cursor=write_cursor, name=name, location=location)
             if self.exchange_manager.connected_exchanges.get(location) is None:
                 # was last exchange of the location type. Delete used query ranges
-                self.data.db.delete_used_query_range_for_exchange(write_cursor=cursor, location=location)  # noqa: E501
+                self.data.db.delete_used_query_range_for_exchange(write_cursor=write_cursor, location=location)  # noqa: E501
         return True, ''
 
     def query_periodic_data(self) -> dict[str, Union[bool, list[str], Timestamp]]:
