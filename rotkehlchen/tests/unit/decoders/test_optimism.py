@@ -53,3 +53,45 @@ def test_optimism_airdrop_claim(database, optimism_inquirer):
             counterparty=CPT_OPTIMISM,
         )]
     assert expected_events == events
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
+def test_optimism_delegate_change(database, optimism_inquirer):
+    """Data taken from
+    https://optimistic.etherscan.io/tx/0xe0b31814f787385ab9f680c2ecf7e20e6dd2f880d979a44487768add26faa594
+    """
+    # TODO: For faster tests hard-code the transaction and the logs here so no remote query needed
+    tx_hash = deserialize_evm_tx_hash('0xe0b31814f787385ab9f680c2ecf7e20e6dd2f880d979a44487768add26faa594')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=optimism_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp = Timestamp(1673338011000)
+    expected_events = [
+        HistoryBaseEntry(
+            event_identifier=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.BLOCKCHAIN,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal('0.000000028936')),
+            location_label=ADDY,
+            notes='Burned 0.000000028936 ETH for gas',
+            counterparty=CPT_GAS,
+        ), HistoryBaseEntry(
+            event_identifier=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.BLOCKCHAIN,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.GOVERNANCE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=ADDY,
+            notes=f'Change OP Delegate from {ADDY} to {ADDY}',
+            counterparty=CPT_OPTIMISM,
+        )]
+    assert expected_events == events

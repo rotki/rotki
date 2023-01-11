@@ -149,10 +149,8 @@ export const useHistoryEventTypeData = createSharedComposable(() => {
         label: tc('transactions.events.history_event_subtype.bridge')
       },
       {
-        identifier: HistoryEventSubType.GOVERNANCE_PROPOSE,
-        label: tc(
-          'transactions.events.history_event_subtype.governance_propose'
-        )
+        identifier: HistoryEventSubType.GOVERNANCE,
+        label: tc('transactions.events.history_event_subtype.governance')
       },
       {
         identifier: HistoryEventSubType.GENERATE_DEBT,
@@ -257,8 +255,8 @@ export const useTransactionEventTypeData = createSharedComposable(() => {
         icon: 'mdi-bridge'
       },
       {
-        identifier: TransactionEventType.GOVERNANCE_PROPOSE,
-        label: tc('transactions.events.type.governance_propose'),
+        identifier: TransactionEventType.GOVERNANCE,
+        label: tc('transactions.events.type.governance'),
         icon: 'mdi-bank'
       },
       {
@@ -321,8 +319,7 @@ export const transactionEventTypeMapping: Record<
   },
   [HistoryEventType.INFORMATIONAL]: {
     [HistoryEventSubType.APPROVE]: TransactionEventType.APPROVAL,
-    [HistoryEventSubType.GOVERNANCE_PROPOSE]:
-      TransactionEventType.GOVERNANCE_PROPOSE,
+    [HistoryEventSubType.GOVERNANCE]: TransactionEventType.GOVERNANCE,
     [HistoryEventSubType.DEPLOY]: TransactionEventType.DEPLOY,
     [HistoryEventSubType.REMOVE_ASSET]: TransactionEventType.WITHDRAW,
     [HistoryEventSubType.PLACE_ORDER]: TransactionEventType.PLACE_ORDER

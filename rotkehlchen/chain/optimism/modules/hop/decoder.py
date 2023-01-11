@@ -25,13 +25,12 @@ TRANSFER_FROM_L1_COMPLETED = b'2\tX\x17i0\x80N\xb6l#C\xc74?\xc06}\xc1bIY\x0c\x0f
 
 class HopDecoder(DecoderInterface):
 
-    def __init__(
+    def __init__(  # pylint: disable=super-init-not-called
             self,
-            optimism_inquirer: 'OptimismInquirer',
+            optimism_inquirer: 'OptimismInquirer',  # pylint: disable=unused-argument
             base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',
     ) -> None:
-        super().__init__(optimism_inquirer, base_tools, msg_aggregator)
         self.base_tools = base_tools
         self.weth = get_or_create_evm_token(
             userdb=base_tools.database,
