@@ -244,7 +244,9 @@ export const useTransactions = defineStore('history/transactions', () => {
     try {
       const taskType = TaskType.TX_EVENTS;
       const { taskId } = await reDecodeMissingTransactionEvents<PendingTask>(
-        get(evmChainNames).map(evmChain => ({ evmChain }))
+        get(evmChainNames)
+          .filter(c => c !== 'avalanche')
+          .map(evmChain => ({ evmChain }))
       );
 
       const taskMeta = {
