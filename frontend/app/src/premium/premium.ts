@@ -157,10 +157,6 @@ export const Sushi = () => {
   return createFactory(load('Sushi'));
 };
 
-export const LiquityTroveEvents = () => {
-  return createFactory(load('LiquityTroveEvents'));
-};
-
 declare global {
   interface Window {
     Vue: any;

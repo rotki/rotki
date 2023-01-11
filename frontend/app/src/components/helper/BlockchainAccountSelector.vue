@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { type GeneralAccount } from '@rotki/common/lib/account';
 import { type Blockchain } from '@rotki/common/lib/blockchain';
+import { type ComputedRef } from 'vue';
 import AccountDisplay from '@/components/display/AccountDisplay.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
@@ -56,7 +57,7 @@ const mappedValue = computed(() => {
   return accounts;
 });
 
-const selectableAccounts = computed(() => {
+const selectableAccounts: ComputedRef<GeneralAccount[]> = computed(() => {
   const filteredChains = get(chains);
   const blockchainAccounts = get(accounts);
   if (filteredChains.length === 0) {
@@ -77,7 +78,7 @@ const hintText = computed(() => {
   return selection ? '1' : all;
 });
 
-const displayedAccounts = computed(() => {
+const displayedAccounts: ComputedRef<GeneralAccount[]> = computed(() => {
   const addresses = get(usableAddresses);
   const accounts = get(selectableAccounts);
   if (addresses.length > 0) {
@@ -89,7 +90,9 @@ const displayedAccounts = computed(() => {
 const { addressNameSelector } = useAddressesNamesStore();
 
 const filter = (item: GeneralAccount, queryText: string) => {
-  const text = (get(addressNameSelector(item.address)) ?? '').toLowerCase();
+  const text = (
+    get(addressNameSelector(item.address, item.chain)) ?? ''
+  ).toLowerCase();
   const address = item.address.toLocaleLowerCase();
   const query = queryText.toLocaleLowerCase();
 
@@ -113,6 +116,8 @@ const input = (value: null | GeneralAccount | GeneralAccount[]) => {
 };
 
 const { dark } = useTheme();
+
+const getItemKey = (item: GeneralAccount) => item.address + item.chain;
 </script>
 
 <template>
@@ -136,7 +141,7 @@ const { dark } = useTheme();
         clearable
         :dense="dense"
         :outlined="outlined"
-        item-text="address"
+        :item-text="getItemKey"
         :open-on-clear="false"
         :label="label ? label : t('blockchain_account_selector.default_label')"
         :class="outlined ? 'blockchain-account-selector--outlined' : null"

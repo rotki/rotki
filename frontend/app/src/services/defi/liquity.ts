@@ -8,11 +8,6 @@ export const useLiquityApi = () => {
     return fetchExternalAsync(api.instance, url);
   };
 
-  const fetchLiquityTroveEvents = async (): Promise<PendingTask> => {
-    const url = 'blockchains/ETH/modules/liquity/events/trove';
-    return fetchExternalAsync(api.instance, url);
-  };
-
   const fetchLiquityStaking = async (): Promise<PendingTask> => {
     const url = 'blockchains/ETH/modules/liquity/staking';
     return fetchExternalAsync(api.instance, url);
@@ -25,7 +20,6 @@ export const useLiquityApi = () => {
 
   return {
     fetchLiquityBalances,
-    fetchLiquityTroveEvents,
     fetchLiquityStaking,
     fetchLiquityStakingPools
   };

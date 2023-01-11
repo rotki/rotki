@@ -141,9 +141,7 @@ const { showDeleteConfirmation } = addressBookDeletion(location);
         <account-display
           :account="{
             address: item.address,
-            chain: item.blockchain,
-            label: '',
-            tags: []
+            chain: item.blockchain
           }"
           :use-alias-name="false"
           :truncate="false"

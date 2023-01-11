@@ -28,6 +28,6 @@ onBeforeMount(async () => {
     {{ t('transactions.loading_subtitle') }}
   </progress-screen>
   <div v-else>
-    <transaction-content @fetch="fetchTransactions" />
+    <transaction-content />
   </div>
 </template>

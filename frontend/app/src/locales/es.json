@@ -426,15 +426,6 @@
           "title": "Liquity Balances"
         }
       },
-      "liquity_events": {
-        "error": {
-          "description": "Failed to retrieve Liquity events: {message}",
-          "title": "Liquity Events"
-        },
-        "task": {
-          "title": "Querying Liquity Events"
-        }
-      },
       "liquity_pools": {
         "error": {
           "description": "Failed to query Liquity Pools: {message}",
@@ -3104,15 +3095,6 @@
         "pnl": "PnL",
         "total_pnl": "Total PnL"
       }
-    },
-    "liquity": {
-      "headers": {
-        "collateral": "Collateral",
-        "debt": "Debt",
-        "operation": "Operation"
-      },
-      "stake_events": "Stake Events",
-      "trove_events": "Trove Events"
     },
     "staking": {
       "balance_overview": "Balance Overview",
