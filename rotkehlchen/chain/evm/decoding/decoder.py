@@ -148,8 +148,8 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         self.decoders: dict[str, 'DecoderInterface'] = {}
         # Recursively check all submodules to get all decoder address mappings and rules
         rules = self._recursively_initialize_decoders(self.chain_modules_root)
-        # Sort post decoding rules by priority (which is the first element of the tuple)
         self.rules += rules
+        # Sort post decoding rules by priority (which is the first element of the tuple)
         self.rules.post_decoding_rules.sort(key=lambda x: x[0], reverse=True)
         self.undecoded_tx_query_lock = Semaphore()
 
