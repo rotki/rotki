@@ -220,8 +220,8 @@ def test_add_and_query_manually_tracked_balances(
     assert assets['BTC']['amount'] == '1.425'
     assert assets['XMR']['amount'] == '50.315'
     assert assets[A_BNB.identifier]['amount'] == '155'
-    assert assets['ETH']['amount'] == '3E-12'  # from ethereum on-chain balances
-    assert assets[A_RDN.identifier]['amount'] == '4E-12'  # from ethereum on-chain balances
+    assert assets['ETH']['amount'] == '0.000000000003'  # from ethereum on-chain balances
+    assert assets[A_RDN.identifier]['amount'] == '0.000000000004'  # ethereum on-chain balances
     liabilities = result['liabilities']
     assert len(liabilities) == 2
     assert liabilities['ETH']['amount'] == '2'

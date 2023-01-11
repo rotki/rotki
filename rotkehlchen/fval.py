@@ -46,7 +46,7 @@ class FVal():
             ) from e
 
     def __str__(self) -> str:
-        return str(self.num)
+        return f'{self.num:f}'
 
     def __repr__(self) -> str:
         return 'FVal({})'.format(str(self.num))

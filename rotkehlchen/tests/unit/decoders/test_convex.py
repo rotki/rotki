@@ -653,7 +653,7 @@ def test_cvxcrv_stake(database, ethereum_inquirer, eth_transactions):
             asset=EvmToken('eip155:1/erc20:0x62B9c7356A2Dc64a1969e19C23e4f579F9810Aa7'),
             balance=Balance(amount=FVal('1.157920892373161954235709850E+59'), usd_value=ZERO),
             location_label='0x2AcEcBF2Ee5BFc8eed599D58835EE9A7c45F3E2c',
-            notes='Approve 1.157920892373161954235709850E+59 cvxCRV of 0x2AcEcBF2Ee5BFc8eed599D58835EE9A7c45F3E2c for spending by 0x3Fe65692bfCD0e6CF84cB1E7d24108E434A7587e',  # noqa: E501
+            notes='Approve 115792089237316195423570985000000000000000000000000000000000 cvxCRV of 0x2AcEcBF2Ee5BFc8eed599D58835EE9A7c45F3E2c for spending by 0x3Fe65692bfCD0e6CF84cB1E7d24108E434A7587e',  # noqa: E501
             counterparty='0x3Fe65692bfCD0e6CF84cB1E7d24108E434A7587e',
             identifier=None,
             extra_data=None,
@@ -770,7 +770,7 @@ def test_cvx_stake(database, ethereum_inquirer, eth_transactions):
             asset=A_CVX,
             balance=Balance(amount=FVal('1.157920892373161954235709850E+59'), usd_value=ZERO),
             location_label='0x5B186c93A50D3CB435fE2933427d36E6Dc688e4b',
-            notes='Approve 1.157920892373161954235709850E+59 CVX of 0x5B186c93A50D3CB435fE2933427d36E6Dc688e4b for spending by 0xCF50b810E57Ac33B91dCF525C6ddd9881B139332',  # noqa: E501
+            notes='Approve 115792089237316195423570985000000000000000000000000000000000 CVX of 0x5B186c93A50D3CB435fE2933427d36E6Dc688e4b for spending by 0xCF50b810E57Ac33B91dCF525C6ddd9881B139332',  # noqa: E501
             counterparty='0xCF50b810E57Ac33B91dCF525C6ddd9881B139332',
             identifier=None,
             extra_data=None,

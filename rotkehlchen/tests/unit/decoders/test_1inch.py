@@ -158,7 +158,7 @@ def test_1inchv2_swap_for_eth(database, ethereum_inquirer):
             asset=A_PAN,
             balance=Balance(amount=FVal('1.157920892373161954235709850E+59')),
             location_label=ADDY,
-            notes=f'Approve 1.157920892373161954235709850E+59 PAN of {ADDY} for spending by {oneinch_v2_addy}',  # noqa: E501
+            notes=f'Approve 115792089237316195423570985000000000000000000000000000000000 PAN of {ADDY} for spending by {oneinch_v2_addy}',  # noqa: E501
             counterparty=oneinch_v2_addy,
         ),
     ]

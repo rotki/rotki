@@ -328,7 +328,7 @@ def test_curve_deposit_eth(database, ethereum_transaction_decoder):
             asset=EvmToken('eip155:1/erc20:0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84'),
             balance=Balance(amount=FVal('1.157920892373161954235709850E+59'), usd_value=ZERO),
             location_label=location_label,
-            notes='Approve 1.157920892373161954235709850E+59 stETH of 0x767B35b9F06F6e28e5ed05eE7C27bDf992eba5d2 for spending by 0xDC24316b9AE028F1497c275EB9192a3Ea0f67022',  # noqa: E501
+            notes='Approve 115792089237316195423570985000000000000000000000000000000000 stETH of 0x767B35b9F06F6e28e5ed05eE7C27bDf992eba5d2 for spending by 0xDC24316b9AE028F1497c275EB9192a3Ea0f67022',  # noqa: E501
             counterparty='0xDC24316b9AE028F1497c275EB9192a3Ea0f67022',
         ), HistoryBaseEntry(
             event_identifier=evmhash,
