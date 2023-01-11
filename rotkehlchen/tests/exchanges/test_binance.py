@@ -626,7 +626,7 @@ def test_binance_query_deposits_withdrawals_gte_90_days(function_scope_binance):
     `test_binance_query_deposits_withdrawals`, we only assert the number of
     movements.
 
-    NB: this test implementation must mock 4 requests instead of 2.
+    NB: this test implementation must mock 8 requests instead of 4.
     """
     start_ts = 0  # Defaults to BINANCE_LAUNCH_TS
     end_ts = BINANCE_LAUNCH_TS + API_TIME_INTERVAL_CONSTRAINT_TS  # eq 90 days after
@@ -647,11 +647,17 @@ def test_binance_query_deposits_withdrawals_gte_90_days(function_scope_binance):
         yield from results
 
     def get_fiat_deposit_result():
-        results = ['[]']
+        results = [
+            '[]',
+            BINANCE_FIATDEPOSITS_RESPONSE,
+        ]
         yield from results
 
     def get_fiat_withdraw_result():
-        results = ['[]']
+        results = [
+            BINANCE_FIATWITHDRAWS_RESPONSE,
+            '[]',
+        ]
         yield from results
 
     def mock_get_deposit_withdrawal(url, **kwargs):  # pylint: disable=unused-argument
@@ -661,9 +667,9 @@ def test_binance_query_deposits_withdrawals_gte_90_days(function_scope_binance):
             response_str = next(get_withdraw_result)
         elif 'fiat/orders' in url:
             if 'transactionType=0' in url:
-                response_str = next(get_fiat_deposit_result())
+                response_str = next(get_fiat_deposit_result)
             elif 'transactionType=1' in url:
-                response_str = next(get_fiat_withdraw_result())
+                response_str = next(get_fiat_withdraw_result)
             else:
                 raise AssertionError('Unexpected binance request in test')
 
@@ -674,6 +680,8 @@ def test_binance_query_deposits_withdrawals_gte_90_days(function_scope_binance):
 
     get_deposit_result = get_time_delta_deposit_result()
     get_withdraw_result = get_time_delta_withdraw_result()
+    get_fiat_deposit_result = get_fiat_deposit_result()
+    get_fiat_withdraw_result = get_fiat_withdraw_result()
 
     with patch.object(binance.session, 'get', side_effect=mock_get_deposit_withdrawal):
         movements = binance.query_online_deposits_withdrawals(
@@ -686,7 +694,7 @@ def test_binance_query_deposits_withdrawals_gte_90_days(function_scope_binance):
     assert len(errors) == 0
     assert len(warnings) == 0
 
-    assert len(movements) == 4
+    assert len(movements) == 6
 
 
 @pytest.mark.freeze_time(datetime(2020, 11, 24, 3, 14, 15))
@@ -737,41 +745,55 @@ def test_api_query_list_calls_with_time_delta(function_scope_binance):
                 'endTime': 1507777200000,
             },
         ),
+        call(
+            'sapi',
+            'fiat/orders',
+            options={
+                'timestamp': now_ts_ms,
+                'startTime': 1500001200000,
+                'endTime': 1507777199999,
+                'transactionType': 0,
+            },
+        ),
+        call(
+            'sapi',
+            'fiat/orders',
+            options={
+                'timestamp': now_ts_ms,
+                'startTime': 1507777200000,
+                'endTime': 1507777200000,
+                'transactionType': 0,
+            },
+        ),
+        call(
+            'sapi',
+            'fiat/orders',
+            options={
+                'timestamp': now_ts_ms,
+                'startTime': 1500001200000,
+                'endTime': 1507777199999,
+                'transactionType': 1,
+            },
+        ),
+        call(
+            'sapi',
+            'fiat/orders',
+            options={
+                'timestamp': now_ts_ms,
+                'startTime': 1507777200000,
+                'endTime': 1507777200000,
+                'transactionType': 1,
+            },
+        ),
     ]
     binance = function_scope_binance
 
-    def get_time_delta_deposit_result():
-        results = [
-            BINANCE_DEPOSITS_HISTORY_RESPONSE,
-            '[]',
-        ]
-        yield from results
-
-    def get_time_delta_withdraw_result():
-        results = [
-            '[]',
-            BINANCE_WITHDRAWALS_HISTORY_RESPONSE,
-        ]
-        yield from results
-
-    def mock_get_deposit_withdrawal(url, **kwargs):  # pylint: disable=unused-argument
-        if 'deposit' in url:
-            response_str = next(get_deposit_result)
-        else:
-            response_str = next(get_withdraw_result)
-
-        return MockResponse(200, response_str)
-
-    get_deposit_result = get_time_delta_deposit_result()
-    get_withdraw_result = get_time_delta_withdraw_result()
-
-    with patch.object(binance.session, 'get', side_effect=mock_get_deposit_withdrawal), patch.object(binance, 'api_query_list') as mock_api_query_list:  # noqa: E501
+    with patch.object(binance, 'api_query_list') as mock_api_query_list:
         binance.query_online_deposits_withdrawals(
             start_ts=Timestamp(start_ts),
             end_ts=Timestamp(end_ts),
         )
-        # TODO: Fix this test to deal with fiat deposits too
-        assert mock_api_query_list.call_args_list[:4] == expected_calls
+        assert mock_api_query_list.call_args_list == expected_calls
 
 
 @pytest.mark.freeze_time(datetime(2020, 11, 24, 3, 14, 15))
