@@ -668,7 +668,13 @@ class RestAPI():
     def get_supported_chains(self) -> Response:
         result = []
         for blockchain in SupportedBlockchain:
-            data = {'name': blockchain.value, 'type': blockchain.get_chain_type()}
+            data = {
+                'id': blockchain.value,
+                'name': str(blockchain),
+                'type': blockchain.get_chain_type(),
+            }
+            if blockchain == SupportedBlockchain.OPTIMISM:
+                data['native_asset'] = A_ETH.serialize()
             if blockchain.is_evm() is True:
                 data['evm_chain_name'] = blockchain.to_chain_id().to_name()
             result.append(data)

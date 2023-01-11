@@ -8,6 +8,7 @@ import pytest
 import requests
 
 from rotkehlchen.chain.ethereum.constants import ETHEREUM_ETHERSCAN_NODE_NAME
+from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import DEFAULT_MAX_LOG_BACKUP_FILES, DEFAULT_SQL_VM_INSTRUCTIONS_CB
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
@@ -387,9 +388,17 @@ def test_query_supported_chains(rotkehlchen_api_server):
     result = assert_proper_response_with_result(response)
     for entry in SupportedBlockchain:
         for result_entry in result:
-            if entry.value == result_entry['name'] and entry.get_chain_type() == result_entry['type']:  # noqa: E501
+            if (
+                entry.value == result_entry['id'] and
+                str(entry) == result_entry['name'] and
+                entry.get_chain_type() == result_entry['type']
+            ):
                 if entry.is_evm() is True:
                     assert result_entry['evm_chain_name'] == entry.to_chain_id().to_name()
+                if entry == SupportedBlockchain.OPTIMISM:
+                    assert result_entry['native_asset'] == A_ETH.serialize()
+                else:
+                    assert 'native_asset' not in result_entry
 
                 break  # found
         else:  # internal for loop found nothing

@@ -2041,19 +2041,19 @@ Getting all supported chains
 
         {
             "result": [
-                {"name": "ETH", "type": "evm", "evm_chain_name": "ethereum"},
-                {"name": "OPTIMISM", "type": "evm", "evm_chain_name": "optimism"},
-                {"name": "AVAX", "type": "evm", "evm_chain_name": "avalanche"},
-                {"name": "ETH2", "type": "eth2"},
-                {"name": "DOT", "type": "substrate"},
-                {"name": "KSM", "type": "substrate"},
-                {"name": "BTC", "type": "bitcoin"},
-                {"name": "BCH", "type": "bitcoin"}
+                {"id": "ETH", "name": "ethereum", "type": "evm", "evm_chain_name": "ethereum"},
+                {"id": "OPTIMISM", "name": "optimism", "type": "evm", "evm_chain_name": "optimism", "native_asset": "ETH"},
+                {"id": "AVAX", "name": "avalanche", "type": "evm", "evm_chain_name": "avalanche"},
+                {"id": "ETH2", "name": "ethereum beaconchain", "type": "eth2"},
+                {"id": "DOT", "name": "polkadot", "type": "substrate"},
+                {"id": "KSM", "name": "kusama", "type": "substrate"},
+                {"id": "BTC", "name": "bitcoin", "type": "bitcoin"},
+                {"id": "BCH", "name": "bitcoin cash", "type": "bitcoin"}
             ]
             "message": ""
         }
 
-    :resjson object result: Contains all supported chains, their types and if it is an EVM chain its EVM chain name.
+    :resjson object result: Contains all supported chains' ID, name, type, EVM chain name (if applicable) and native asset identifier (if different from ID).
     :statuscode 200: Success
     :statuscode 500: Internal rotki error
 
