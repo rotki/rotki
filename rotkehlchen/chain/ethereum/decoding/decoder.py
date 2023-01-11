@@ -154,7 +154,7 @@ class EthereumTransactionDecoder(EVMTransactionDecoder):
             action_items: list[ActionItem],
             all_logs: list[EvmTxReceiptLog],
     ) -> None:
-        for enrich_call in self.token_enricher_rules:
+        for enrich_call in self.rules.token_enricher_rules:
             try:
                 transfer_enriched = enrich_call(
                     token=token,

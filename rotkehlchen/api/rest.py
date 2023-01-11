@@ -4709,7 +4709,7 @@ class RestAPI():
         return api_response(
             result={
                 # Converting to list since set is not json serializable
-                'result': list(self.rotkehlchen.chains_aggregator.ethereum.transactions_decoder.all_counterparties),  # noqa: E501
+                'result': list(self.rotkehlchen.chains_aggregator.ethereum.transactions_decoder.rules.all_counterparties),  # noqa: E501
                 'message': '',
             },
         )

@@ -74,7 +74,7 @@ class EthereumManager(EvmManager, LockableQueryMixIn):
                 'Please open an issue on github.com/rotki/rotki/issues if you saw this.',
             ) from e
         new_mappings = curve_decoder.reload()
-        tx_decoder.address_mappings.update(new_mappings)
+        tx_decoder.rules.address_mappings.update(new_mappings)
 
     @protect_with_lock()
     def curve_protocol_cache_is_queried(

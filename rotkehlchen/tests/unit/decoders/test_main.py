@@ -45,7 +45,7 @@ def test_decoders_initialization(ethereum_transaction_decoder):
         'Yearn',
     }
 
-    assert ethereum_transaction_decoder.all_counterparties == {
+    assert ethereum_transaction_decoder.rules.all_counterparties == {
         'kyber legacy',
         'element-finance',
         'badger',
