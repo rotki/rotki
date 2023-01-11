@@ -458,10 +458,12 @@ def upgrade_v34_to_v35(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         progress_handler.new_step()
         _add_manual_current_price_oracle(write_cursor)
         progress_handler.new_step()
-        update_spam_assets(write_cursor=write_cursor, db=db, make_remote_query=False)
-        progress_handler.new_step()
         _add_defillama_to_all_oracles(write_cursor=write_cursor)
         progress_handler.new_step()
         _reset_decoded_events(db=db, write_cursor=write_cursor)
         progress_handler.new_step()
+
+    # needs to be out of the write context as it also tries to open one underneath
+    update_spam_assets(db=db, make_remote_query=False)
+    progress_handler.new_step()
     log.debug('Finished userdb v34->v35 upgrade')

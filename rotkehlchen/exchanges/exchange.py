@@ -287,13 +287,13 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
                 )
 
                 # make sure to add them to the DB
-                with self.db.user_write() as cursor:
+                with self.db.user_write() as write_cursor:
                     if new_trades != []:
-                        self.db.add_trades(write_cursor=cursor, trades=new_trades)
+                        self.db.add_trades(write_cursor=write_cursor, trades=new_trades)
 
                     # and also set the used queried timestamp range for the exchange
                     ranges.update_used_query_range(
-                        write_cursor=cursor,
+                        write_cursor=write_cursor,
                         location_string=location_string,
                         queried_ranges=[queried_range],
                     )
@@ -338,29 +338,29 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
                 end_ts=end_ts,
             )
 
-        with self.db.user_write() as cursor:
-            for query_start_ts, query_end_ts in ranges_to_query:
-                log.debug(
-                    f'Querying online margin history for {self.name} between '
-                    f'{query_start_ts} and {query_end_ts}',
-                )
-                new_positions = self.query_online_margin_history(
-                    start_ts=query_start_ts,
-                    end_ts=query_end_ts,
-                )
+        for query_start_ts, query_end_ts in ranges_to_query:
+            log.debug(
+                f'Querying online margin history for {self.name} between '
+                f'{query_start_ts} and {query_end_ts}',
+            )
+            new_positions = self.query_online_margin_history(
+                start_ts=query_start_ts,
+                end_ts=query_end_ts,
+            )
 
-                # make sure to add them to the DB
+            # make sure to add them to the DB
+            with self.db.user_write() as write_cursor:
                 if len(new_positions) != 0:
-                    self.db.add_margin_positions(cursor, new_positions)
+                    self.db.add_margin_positions(write_cursor, new_positions)
 
                 # and also set the last queried timestamp for the exchange
                 ranges.update_used_query_range(
-                    write_cursor=cursor,
+                    write_cursor=write_cursor,
                     location_string=location_string,
                     queried_ranges=[(query_start_ts, query_end_ts)],
                 )
-                # finally append them to the already returned DB margin positions
-                margin_positions.extend(new_positions)
+            # finally append them to the already returned DB margin positions
+            margin_positions.extend(new_positions)
 
         return margin_positions
 
@@ -400,26 +400,25 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
                 end_ts=end_ts,
             )
 
-        with self.db.user_write() as cursor:
-            for query_start_ts, query_end_ts in ranges_to_query:
-                log.debug(
-                    f'Querying online deposits/withdrawals for {self.name} between '
-                    f'{query_start_ts} and {query_end_ts}',
-                )
-                new_movements = self.query_online_deposits_withdrawals(
-                    start_ts=query_start_ts,
-                    end_ts=query_end_ts,
-                )
+        for query_start_ts, query_end_ts in ranges_to_query:
+            log.debug(
+                f'Querying online deposits/withdrawals for {self.name} between '
+                f'{query_start_ts} and {query_end_ts}',
+            )
+            new_movements = self.query_online_deposits_withdrawals(
+                start_ts=query_start_ts,
+                end_ts=query_end_ts,
+            )
 
+            with self.db.user_write() as write_cursor:
                 if len(new_movements) != 0:
-                    self.db.add_asset_movements(cursor, new_movements)
-
+                    self.db.add_asset_movements(write_cursor, new_movements)
                 ranges.update_used_query_range(
-                    write_cursor=cursor,
+                    write_cursor=write_cursor,
                     location_string=location_string,
                     queried_ranges=[(query_start_ts, query_end_ts)],
                 )
-                asset_movements.extend(new_movements)
+            asset_movements.extend(new_movements)
 
         return asset_movements
 
@@ -457,21 +456,20 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
                 end_ts=end_ts,
             )
 
-        with self.db.user_write() as cursor:
-            for query_start_ts, query_end_ts in ranges_to_query:
-                new_ledger_actions = self.query_online_income_loss_expense(
-                    start_ts=query_start_ts,
-                    end_ts=query_end_ts,
-                )
+        for query_start_ts, query_end_ts in ranges_to_query:
+            new_ledger_actions = self.query_online_income_loss_expense(
+                start_ts=query_start_ts,
+                end_ts=query_end_ts,
+            )
+            with self.db.user_write() as write_cursor:
                 if len(new_ledger_actions) != 0:
-                    db.add_ledger_actions(cursor, new_ledger_actions)
-
+                    db.add_ledger_actions(write_cursor, new_ledger_actions)
                 ranges.update_used_query_range(
-                    write_cursor=cursor,
+                    write_cursor=write_cursor,
                     location_string=location_string,
                     queried_ranges=[(query_start_ts, query_end_ts)],
                 )
-                ledger_actions.extend(new_ledger_actions)
+            ledger_actions.extend(new_ledger_actions)
 
         return ledger_actions
 

@@ -86,12 +86,12 @@ def test_kyber_legacy_old_contract(database, ethereum_inquirer, eth_transactions
     with database.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
         dbevmtx.add_evm_internal_transactions(cursor, [internal_tx], relevant_address='0x6d379cb5BA04c09293b21Bf314E7aba3FfEAaF5b')  # noqa: E501
-        decoder = EthereumTransactionDecoder(
-            database=database,
-            ethereum_inquirer=ethereum_inquirer,
-            transactions=eth_transactions,
-        )
-        events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
+    decoder = EthereumTransactionDecoder(
+        database=database,
+        ethereum_inquirer=ethereum_inquirer,
+        transactions=eth_transactions,
+    )
+    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
 
     assert len(events) == 3
     expected_events = [
@@ -213,12 +213,12 @@ def test_kyber_legacy_new_contract(database, ethereum_inquirer, eth_transactions
     dbevmtx = DBEvmTx(database)
     with database.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
-        decoder = EthereumTransactionDecoder(
-            database=database,
-            ethereum_inquirer=ethereum_inquirer,
-            transactions=eth_transactions,
-        )
-        events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
+    decoder = EthereumTransactionDecoder(
+        database=database,
+        ethereum_inquirer=ethereum_inquirer,
+        transactions=eth_transactions,
+    )
+    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
 
     assert len(events) == 3
     expected_events = [

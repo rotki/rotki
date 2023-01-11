@@ -94,7 +94,7 @@ def test_balancer_v2_swap(database, ethereum_manager, eth_transactions):
             ethereum_inquirer=ethereum_manager.node_inquirer,
             transactions=eth_transactions,
         )
-        events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
+    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
 
     assert events == [
         HistoryBaseEntry(
@@ -225,7 +225,7 @@ def test_balancer_v1_join(database, ethereum_manager, eth_transactions):
             ethereum_inquirer=ethereum_manager.node_inquirer,
             transactions=eth_transactions,
         )
-        events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
+    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
 
     assert events == [
         HistoryBaseEntry(
@@ -366,7 +366,7 @@ def test_balancer_v1_exit(database, ethereum_manager, eth_transactions):
             ethereum_inquirer=ethereum_manager.node_inquirer,
             transactions=eth_transactions,
         )
-        events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
+    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
 
     assert events == [
         HistoryBaseEntry(

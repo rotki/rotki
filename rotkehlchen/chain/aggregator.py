@@ -1213,13 +1213,11 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         eth2 = self.get_module('eth2')
         if eth2 is None:
             raise ModuleInactive('Cant add eth2 validator since eth2 module is not active')
-        with self.database.user_write() as cursor:
-            eth2.add_validator(
-                write_cursor=cursor,
-                validator_index=validator_index,
-                public_key=public_key,
-                ownership_proportion=ownership_proportion,
-            )
+        eth2.add_validator(
+            validator_index=validator_index,
+            public_key=public_key,
+            ownership_proportion=ownership_proportion,
+        )
         self.flush_cache('get_eth2_staking_deposits')
         self.flush_cache('get_eth2_staking_details')
         self.flush_cache('get_eth2_history_events')

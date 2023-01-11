@@ -176,41 +176,42 @@ def test_get_events_history_filtering_by_timestamp(
         btc_accounts=None,
         original_queries=['zerion', 'logs', 'blocknobytime'],
     )
-    with rotki.data.db.user_write() as cursor:
+    with rotki.data.db.user_write() as write_cursor:
         # Force insert address' last used query range, for avoiding query all
         rotki.data.db.update_used_query_range(
-            write_cursor=cursor,
+            write_cursor=write_cursor,
             name=f'{SUSHISWAP_EVENTS_PREFIX}_{TEST_EVENTS_ADDRESS_1}',
             start_ts=Timestamp(0),
             end_ts=from_timestamp,
         )
-        with ExitStack() as stack:
-            # patch ethereum/etherscan to not autodetect tokens
-            setup.enter_ethereum_patches(stack)
-            response = requests.get(
-                api_url_for(
-                    rotkehlchen_api_server,
-                    'sushiswapeventshistoryresource',
-                ),
-                json={
-                    'async_query': async_query,
-                    'from_timestamp': from_timestamp,
-                    'to_timestamp': to_timestamp,
-                },
-            )
-            if async_query:
-                task_id = assert_ok_async_response(response)
-                outcome = wait_for_async_task(rotkehlchen_api_server, task_id, timeout=120)
-                assert outcome['message'] == ''
-                result = outcome['result']
-            else:
-                result = assert_proper_response_with_result(response)
+    with ExitStack() as stack:
+        # patch ethereum/etherscan to not autodetect tokens
+        setup.enter_ethereum_patches(stack)
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server,
+                'sushiswapeventshistoryresource',
+            ),
+            json={
+                'async_query': async_query,
+                'from_timestamp': from_timestamp,
+                'to_timestamp': to_timestamp,
+            },
+        )
+        if async_query:
+            task_id = assert_ok_async_response(response)
+            outcome = wait_for_async_task(rotkehlchen_api_server, task_id, timeout=120)
+            assert outcome['message'] == ''
+            result = outcome['result']
+        else:
+            result = assert_proper_response_with_result(response)
 
-        events_balances = result[TEST_EVENTS_ADDRESS_1]
+    events_balances = result[TEST_EVENTS_ADDRESS_1]
 
-        assert len(events_balances) == 1
-        assert expected_events_balances_1[0].serialize() == events_balances[0]
+    assert len(events_balances) == 1
+    assert expected_events_balances_1[0].serialize() == events_balances[0]
 
+    with rotki.data.db.conn.read_ctx() as cursor:
         # Make sure they end up in the DB
         events = rotki.data.db.get_amm_events(cursor, [EventType.MINT_SUSHISWAP, EventType.BURN_SUSHISWAP])  # noqa: E501
         assert len(events) != 0

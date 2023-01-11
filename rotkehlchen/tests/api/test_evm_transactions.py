@@ -68,29 +68,24 @@ def test_query_transactions(rotkehlchen_api_server: 'APIServer'):
     assert result['entries_limit'] == -1
 
     # After querying make sure pagination and only_cache work properly for multiple chains
-    response = requests.get(
-        api_url_for(
-            rotkehlchen_api_server,
-            'evmtransactionsresource',
-        ), json={
-            'async_query': False,
-            'limit': 20,
-            'offset': 0,
-            'ascending': [False],
-            'order_by_attributes': ['timestamp'],
-        },
-    )
-    result = assert_proper_response_with_result(response)
-    last_ts = result['entries'][0]['entry']['timestamp']
-    ethereum_found = False
-    optimism_found = False
-    for entry in result['entries']:
-        assert entry['entry']['timestamp'] <= last_ts
-        last_ts = entry['entry']['timestamp']
-        if entry['entry']['evm_chain'] == 'ethereum':
-            ethereum_found = True
-        elif entry['entry']['evm_chain'] == 'optimism':
-            optimism_found = True
-
-    assert optimism_found is True
-    assert ethereum_found is True
+    for evm_chain in ('ethereum', 'optimism'):
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server,
+                'evmtransactionsresource',
+            ), json={
+                'async_query': False,
+                'limit': 10,
+                'offset': 0,
+                'ascending': [False],
+                'only_cache': True,
+                'order_by_attributes': ['timestamp'],
+                'evm_chain': evm_chain,
+            },
+        )
+        result = assert_proper_response_with_result(response)
+        assert len(result['entries']) != 0, f'Should have had {evm_chain} transactions'
+        last_ts = result['entries'][0]['entry']['timestamp']
+        for entry in result['entries']:
+            assert entry['entry']['timestamp'] <= last_ts
+            last_ts = entry['entry']['timestamp']

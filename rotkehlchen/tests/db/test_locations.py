@@ -135,22 +135,23 @@ def test_associated_locations(database):
     )]
 
     # Add multiple entries for same exchange + connected exchange
-    with database.user_write() as cursor:
-        database.add_trades(cursor, trades)
-        kraken_api_key1 = ApiKey('kraken_api_key')
-        kraken_api_secret1 = ApiSecret(b'kraken_api_secret')
-        kraken_api_key2 = ApiKey('kraken_api_key2')
-        kraken_api_secret2 = ApiSecret(b'kraken_api_secret2')
-        binance_api_key = ApiKey('binance_api_key')
-        binance_api_secret = ApiSecret(b'binance_api_secret')
+    with database.user_write() as write_cursor:
+        database.add_trades(write_cursor, trades)
 
-        # add mock kraken and binance
-        database.add_exchange('kraken1', Location.KRAKEN, kraken_api_key1, kraken_api_secret1)
-        database.add_exchange('kraken2', Location.KRAKEN, kraken_api_key2, kraken_api_secret2)
-        database.add_exchange('binance', Location.BINANCE, binance_api_key, binance_api_secret)
+    kraken_api_key1 = ApiKey('kraken_api_key')
+    kraken_api_secret1 = ApiSecret(b'kraken_api_secret')
+    kraken_api_key2 = ApiKey('kraken_api_key2')
+    kraken_api_secret2 = ApiSecret(b'kraken_api_secret2')
+    binance_api_key = ApiKey('binance_api_key')
+    binance_api_secret = ApiSecret(b'binance_api_secret')
+    # add mock kraken and binance
+    database.add_exchange('kraken1', Location.KRAKEN, kraken_api_key1, kraken_api_secret1)
+    database.add_exchange('kraken2', Location.KRAKEN, kraken_api_key2, kraken_api_secret2)
+    database.add_exchange('binance', Location.BINANCE, binance_api_key, binance_api_secret)
 
+    with database.user_write() as write_cursor:
         # Add uniswap and sushiswap events
-        database.add_amm_events(cursor, [
+        database.add_amm_events(write_cursor, [
             LiquidityPoolEvent(
                 tx_hash=deserialize_evm_tx_hash(
                     '0x47ea26957ce09e84a51b51dfdab6a4ac1c3672a372eef77b15ef7677174ac847',
@@ -169,7 +170,7 @@ def test_associated_locations(database):
             ),
         ])
         add_balancer_events(
-            cursor,
+            write_cursor,
             [
                 BalancerEvent(
                     tx_hash='0xa54bf4c68d435e3c8f432fd7e62b7f8aca497a831a3d3fca305a954484ddd7b3',

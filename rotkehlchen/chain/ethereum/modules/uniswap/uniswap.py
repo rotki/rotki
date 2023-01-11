@@ -138,7 +138,6 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
 
     def _get_events_balances(
             self,
-            write_cursor: 'DBCursor',
             addresses: list[ChecksumEvmAddress],
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
@@ -158,7 +157,8 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
         # Get addresses' last used query range for Uniswap events
         for address in addresses:
             entry_name = f'{UNISWAP_EVENTS_PREFIX}_{address}'
-            events_range = self.database.get_used_query_range(cursor=write_cursor, name=entry_name)
+            with self.database.conn.read_ctx() as cursor:
+                events_range = self.database.get_used_query_range(cursor=cursor, name=entry_name)
 
             if not events_range:
                 new_addresses.append(address)
@@ -180,13 +180,14 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
                     if new_address_events:
                         address_events[address].extend(new_address_events)
 
-                # Insert new address' last used query range
-                self.database.update_used_query_range(
-                    write_cursor=write_cursor,
-                    name=f'{UNISWAP_EVENTS_PREFIX}_{address}',
-                    start_ts=start_ts,
-                    end_ts=to_timestamp,
-                )
+                with self.database.user_write() as write_cursor:
+                    # Insert new address' last used query range
+                    self.database.update_used_query_range(
+                        write_cursor=write_cursor,
+                        name=f'{UNISWAP_EVENTS_PREFIX}_{address}',
+                        start_ts=start_ts,
+                        end_ts=to_timestamp,
+                    )
 
         # Request existing DB addresses' events
         if existing_addresses and to_timestamp > min_end_ts:
@@ -201,34 +202,36 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
                     if address_new_events:
                         address_events[address].extend(address_new_events)
 
-                # Update existing address' last used query range
-                self.database.update_used_query_range(
-                    write_cursor=write_cursor,
-                    name=f'{UNISWAP_EVENTS_PREFIX}_{address}',
-                    start_ts=min_end_ts,
-                    end_ts=to_timestamp,
-                )
+                with self.database.user_write() as write_cursor:
+                    # Update existing address' last used query range
+                    self.database.update_used_query_range(
+                        write_cursor=write_cursor,
+                        name=f'{UNISWAP_EVENTS_PREFIX}_{address}',
+                        start_ts=min_end_ts,
+                        end_ts=to_timestamp,
+                    )
 
         # Insert requested events in DB
         all_events = []
         for address in filter(lambda x: x in address_events, addresses):
             all_events.extend(address_events[address])
+        with self.database.user_write() as write_cursor:
+            self.database.add_amm_events(write_cursor, all_events)
 
-        self.database.add_amm_events(write_cursor, all_events)
-
-        # Fetch all DB events within the time range
-        for address in addresses:
-            db_events = self.database.get_amm_events(
-                cursor=write_cursor,
-                events=[EventType.MINT_UNISWAP, EventType.BURN_UNISWAP],
-                from_ts=from_timestamp,
-                to_ts=to_timestamp,
-                address=address,
-            )
-            if db_events:
-                # return events with the oldest first
-                db_events.sort(key=lambda event: (event.timestamp, event.log_index))
-                db_address_events[address] = db_events
+        with self.database.conn.read_ctx() as cursor:
+            # Fetch all DB events within the time range
+            for address in addresses:
+                db_events = self.database.get_amm_events(
+                    cursor=cursor,
+                    events=[EventType.MINT_UNISWAP, EventType.BURN_UNISWAP],
+                    from_ts=from_timestamp,
+                    to_ts=to_timestamp,
+                    address=address,
+                )
+                if db_events:
+                    # return events with the oldest first
+                    db_events.sort(key=lambda event: (event.timestamp, event.log_index))
+                    db_address_events[address] = db_events
 
         # Request addresses' current balances (UNI-V2s and underlying tokens)
         # if there is no specific time range in this endpoint call (i.e. all

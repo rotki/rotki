@@ -2472,9 +2472,13 @@ class DBHandler:
 
     def add_globaldb_assetids(self, write_cursor: 'DBCursor') -> None:
         """Makes sure that all the GlobalDB asset identifiers are mirrored in the user DB"""
-        cursor = GlobalDBHandler().conn.cursor()  # after succesfull update add all asset ids
-        query = cursor.execute('SELECT identifier from assets;')
-        self.add_asset_identifiers(write_cursor, [x[0] for x in query])
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            # after succesfull update add all asset ids
+            cursor.execute('SELECT identifier from assets;')
+            self.add_asset_identifiers(
+                write_cursor=write_cursor,
+                asset_identifiers=[x[0] for x in cursor],
+            )
 
     def delete_asset_identifier(self, write_cursor: 'DBCursor', asset_id: str) -> None:
         """Deletes an asset identifier from the user db asset identifier table

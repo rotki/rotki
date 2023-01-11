@@ -77,8 +77,7 @@ def test_votium_claim(database, ethereum_inquirer, eth_transactions):
         ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
     )
-    with database.user_write() as cursor:
-        events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
+    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     assert len(events) == 2
     expected_events = [
         HistoryBaseEntry(

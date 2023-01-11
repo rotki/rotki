@@ -157,11 +157,10 @@ def save_curve_pools_to_cache(
 
 
 def update_curve_registry_pools_cache(
-        write_cursor: DBCursor,
         ethereum: 'EthereumInquirer',
         curve_address_provider: EvmContract,
 ) -> None:
-    """Query pools from curve registry.
+    """Query pools from curve registry and update the DB cache.
     May raise:
     - RemoteError if failed to query etherscan or node
     - NotERC20Conformant if failed to query info while calling get_or_create_evm_token
@@ -232,15 +231,15 @@ def update_curve_registry_pools_cache(
         pools_mapping[decoded_lp_token] = (pool_addr, pool_coins, pool_underlying_coins)
 
     ensure_curve_tokens_existence(ethereum_inquirer=ethereum, pools_mapping=pools_mapping)  # noqa: E501
-    save_curve_pools_to_cache(write_cursor=write_cursor, pools_mapping=pools_mapping)
+    with GlobalDBHandler().conn.savepoint_ctx() as savepoint_cursor:
+        save_curve_pools_to_cache(write_cursor=savepoint_cursor, pools_mapping=pools_mapping)
 
 
 def update_curve_metapools_cache(
-        write_cursor: DBCursor,
         ethereum: 'EthereumInquirer',
         curve_address_provider: EvmContract,
 ) -> None:
-    """Query pools from curve metapool factory.
+    """Query pools from curve metapool factory and updates the DB.
     May raise:
     - RemoteError if failed to query etherscan or node
     - NotERC20Conformant if failed to query info while calling get_or_create_evm_token
@@ -293,4 +292,5 @@ def update_curve_metapools_cache(
         pools_mapping[pool_addr] = (pool_addr, pool_coins, None)
 
     ensure_curve_tokens_existence(ethereum_inquirer=ethereum, pools_mapping=pools_mapping)
-    save_curve_pools_to_cache(write_cursor=write_cursor, pools_mapping=pools_mapping)
+    with GlobalDBHandler().conn.savepoint_ctx() as savepoint_cursor:
+        save_curve_pools_to_cache(write_cursor=savepoint_cursor, pools_mapping=pools_mapping)

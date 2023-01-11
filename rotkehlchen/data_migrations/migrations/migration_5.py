@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.drivers.gevent import DBCursor
     from rotkehlchen.rotkehlchen import Rotkehlchen
 
 logger = logging.getLogger(__name__)
@@ -28,7 +27,7 @@ def _rename_icons(rotki: 'Rotkehlchen') -> None:
             log.debug(f'Skipping {old_name} because {new_name} already exists')
 
 
-def data_migration_5(write_cursor: 'DBCursor', rotki: 'Rotkehlchen') -> None:  # pylint: disable=unused-argument # noqa: E501
+def data_migration_5(rotki: 'Rotkehlchen') -> None:  # pylint: disable=unused-argument
     """
     - Rename icons after modifying the identifiers in 1.26
     """

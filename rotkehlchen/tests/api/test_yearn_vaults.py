@@ -519,7 +519,7 @@ def test_query_yearn_vault_history(rotkehlchen_api_server, ethereum_accounts):
 
     async_query = random.choice([True, False])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    yearn_ycrv_vault = rotki.chain.ethereum.contracts.contract('YEARN_YCRV_VAULT')
+    yearn_ycrv_vault = rotki.chains_aggregator.ethereum.node_inquirer.contracts.contract('YEARN_YCRV_VAULT')  # noqa: E501
     setup = setup_balances(
         rotki,
         ethereum_accounts=ethereum_accounts,

@@ -1015,7 +1015,6 @@ class GlobalDBHandler():
 
     @staticmethod
     def delete_evm_token(
-            write_cursor: DBCursor,
             address: ChecksumEvmAddress,
             chain_id: ChainID,
     ) -> str:
@@ -1023,12 +1022,13 @@ class GlobalDBHandler():
 
         May raise InputError if the token does not exist in the DB.
         """
-        # first get the identifier for the asset
-        write_cursor.execute(
-            'SELECT identifier from evm_tokens WHERE address=? AND chain=?',
-            (address, chain_id.serialize_for_db()),
-        )
-        result = write_cursor.fetchone()
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            # first get the identifier for the asset
+            cursor.execute(
+                'SELECT identifier from evm_tokens WHERE address=? AND chain=?',
+                (address, chain_id.serialize_for_db()),
+            )
+            result = cursor.fetchone()
         if result is None:
             raise InputError(
                 f'Tried to delete EVM token with address {address} at chain {chain_id} '
@@ -1634,8 +1634,8 @@ class GlobalDBHandler():
 
     @staticmethod
     def hard_reset_assets_list(
-        user_db: 'DBHandler',
-        force: bool = False,
+            user_db: 'DBHandler',
+            force: bool = False,
     ) -> tuple[bool, str]:
         """
         Delete all custom asset entries and repopulate from the last
@@ -1643,53 +1643,54 @@ class GlobalDBHandler():
         """
         detach_database = 'DETACH DATABASE "clean_db";'
 
-        with user_db.user_write() as user_db_cursor:
-            root_dir = Path(__file__).resolve().parent.parent
-            builtin_database = root_dir / 'data' / 'global.db'
+        root_dir = Path(__file__).resolve().parent.parent
+        builtin_database = root_dir / 'data' / 'global.db'
+        # Update owned assets
+        with user_db.conn.read_ctx() as cursor:
+            user_db.update_owned_assets_in_globaldb(cursor)
 
-            # Update owned assets
-            user_db.update_owned_assets_in_globaldb(user_db_cursor)
-
-            try:
-                with GlobalDBHandler().conn.read_ctx() as read_cursor:
-                    # First check that the operation can be made. If the difference is not the
-                    # empty set the operation is dangerous and the user should be notified.
+        try:
+            with GlobalDBHandler().conn.read_ctx() as read_cursor:
+                # First check that the operation can be made. If the difference is not the
+                # empty set the operation is dangerous and the user should be notified.
+                with user_db.user_write() as user_db_cursor:
                     diff_ids = GlobalDBHandler().get_user_added_assets(
                         cursor=read_cursor,
                         user_db_write_cursor=user_db_cursor,
                         user_db=user_db,
                         only_owned=True,
                     )
-                    if len(diff_ids) != 0 and not force:
-                        msg = 'There are assets that can not be deleted. Check logs for more details.'  # noqa: E501
-                        return False, msg
-                    read_cursor.execute(f'ATTACH DATABASE "{builtin_database}" AS clean_db;')
-                    # Check that versions match
-                    query = read_cursor.execute('SELECT value from clean_db.settings WHERE name="version";')  # noqa: E501
-                    version = query.fetchone()
-                    if version is None or int(version[0]) != globaldb_get_setting_value(read_cursor, 'version', GLOBAL_DB_VERSION):  # noqa: E501
-                        read_cursor.execute(detach_database)
-                        msg = (
-                            'Failed to restore assets. Global database is not '
-                            'updated to the latest version'
-                        )
-                        return False, msg
+                if len(diff_ids) != 0 and not force:
+                    msg = 'There are assets that can not be deleted. Check logs for more details.'  # noqa: E501
+                    return False, msg
+                read_cursor.execute(f'ATTACH DATABASE "{builtin_database}" AS clean_db;')
+                # Check that versions match
+                query = read_cursor.execute('SELECT value from clean_db.settings WHERE name="version";')  # noqa: E501
+                version = query.fetchone()
+                if version is None or int(version[0]) != globaldb_get_setting_value(read_cursor, 'version', GLOBAL_DB_VERSION):  # noqa: E501
+                    read_cursor.execute(detach_database)
+                    msg = (
+                        'Failed to restore assets. Global database is not '
+                        'updated to the latest version'
+                    )
+                    return False, msg
 
-                with GlobalDBHandler().conn.write_ctx() as write_cursor:
-                    # If versions match drop tables
-                    write_cursor.execute('DELETE FROM assets')
-                    write_cursor.execute('DELETE FROM asset_collections')
-                    # Copy assets
-                    write_cursor.switch_foreign_keys('OFF')
-                    write_cursor.execute('INSERT INTO assets SELECT * FROM clean_db.assets;')
-                    write_cursor.execute('INSERT INTO evm_tokens SELECT * FROM clean_db.evm_tokens;')  # noqa: E501
-                    write_cursor.execute('INSERT INTO underlying_tokens_list SELECT * FROM clean_db.underlying_tokens_list;')  # noqa: E501
-                    write_cursor.execute('INSERT INTO common_asset_details SELECT * FROM clean_db.common_asset_details;')  # noqa: E501
-                    write_cursor.execute('INSERT INTO asset_collections SELECT * FROM clean_db.asset_collections')  # noqa: E501
-                    write_cursor.execute('INSERT INTO multiasset_mappings SELECT * FROM clean_db.multiasset_mappings')  # noqa: E501
-                    # Don't copy custom_assets since there are no custom assets in clean_db
-                    write_cursor.switch_foreign_keys('ON')
+            with GlobalDBHandler().conn.write_ctx() as write_cursor:
+                # If versions match drop tables
+                write_cursor.execute('DELETE FROM assets')
+                write_cursor.execute('DELETE FROM asset_collections')
+                # Copy assets
+                write_cursor.switch_foreign_keys('OFF')
+                write_cursor.execute('INSERT INTO assets SELECT * FROM clean_db.assets;')
+                write_cursor.execute('INSERT INTO evm_tokens SELECT * FROM clean_db.evm_tokens;')  # noqa: E501
+                write_cursor.execute('INSERT INTO underlying_tokens_list SELECT * FROM clean_db.underlying_tokens_list;')  # noqa: E501
+                write_cursor.execute('INSERT INTO common_asset_details SELECT * FROM clean_db.common_asset_details;')  # noqa: E501
+                write_cursor.execute('INSERT INTO asset_collections SELECT * FROM clean_db.asset_collections')  # noqa: E501
+                write_cursor.execute('INSERT INTO multiasset_mappings SELECT * FROM clean_db.multiasset_mappings')  # noqa: E501
+                # Don't copy custom_assets since there are no custom assets in clean_db
+                write_cursor.switch_foreign_keys('ON')
 
+                with user_db.user_write() as user_db_cursor:
                     user_db_cursor.switch_foreign_keys('OFF')
                     user_db_cursor.execute('DELETE FROM assets;')
                     # Get ids for assets to insert them in the user db
@@ -1698,13 +1699,16 @@ class GlobalDBHandler():
                     ids_proccesed = ", ".join([f'("{id[0]}")' for id in ids])
                     user_db_cursor.execute(f'INSERT INTO assets(identifier) VALUES {ids_proccesed};')  # noqa: E501
                     user_db_cursor.switch_foreign_keys('ON')
-                    # Update the owned assets table
-                    user_db.update_owned_assets_in_globaldb(user_db_cursor)
-            except sqlite3.Error as e:
-                with GlobalDBHandler().conn.read_ctx() as read_cursor:
-                    read_cursor.execute(detach_database)
-                log.error(f'Failed to restore assets in globaldb due to {str(e)}')
-                return False, 'Failed to restore assets. Read logs to get more information.'
+
+            with user_db.conn.read_ctx() as cursor:
+                # Update the owned assets table
+                user_db.update_owned_assets_in_globaldb(cursor)
+
+        except sqlite3.Error as e:
+            with GlobalDBHandler().conn.read_ctx() as read_cursor:
+                read_cursor.execute(detach_database)
+            log.error(f'Failed to restore assets in globaldb due to {str(e)}')
+            return False, 'Failed to restore assets. Read logs to get more information.'
 
         with GlobalDBHandler().conn.read_ctx() as read_cursor:
             read_cursor.execute(detach_database)

@@ -402,20 +402,21 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryMixIn):
         of the response does not match expectations or if there is no account id.
         """
         db = DBLoopring(self.db)  # type: ignore # we always know self.db is not None
-        with self.db.user_write() as cursor:  # type: ignore # we always know self.db is not None
-            account_id = db.get_accountid_mapping(cursor, l1_address)
-            if account_id:
-                return account_id
+        with self.db.conn.read_ctx() as cursor:  # type: ignore # self.db is not None here
+            account_id = db.get_accountid_mapping(cursor=cursor, address=l1_address)
+        if account_id:
+            return account_id
 
-            response = self._api_query('account', {'owner': l1_address})
-            account_id = response.get('accountId', None)
-            if account_id is None:
-                raise RemoteError(
-                    f'The loopring api account response {response} did not contain '
-                    f'the account_id key',
-                )
+        response = self._api_query('account', {'owner': l1_address})
+        account_id = response.get('accountId', None)
+        if account_id is None:
+            raise RemoteError(
+                f'The loopring api account response {response} did not contain '
+                f'the account_id key',
+            )
 
-            db.add_accountid_mapping(cursor, address=l1_address, account_id=account_id)
+        with self.db.user_write() as write_cursor:  # type: ignore # self.db is not None here
+            db.add_accountid_mapping(write_cursor=write_cursor, address=l1_address, account_id=account_id)  # noqa: E501
 
         return account_id
 
@@ -532,5 +533,5 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryMixIn):
 
     def deactivate(self) -> None:
         assert self.db, 'loopring must have DB initialized'
-        with self.db.user_write() as cursor:
-            self.db.delete_loopring_data(cursor)
+        with self.db.user_write() as write_cursor:
+            self.db.delete_loopring_data(write_cursor)

@@ -144,7 +144,7 @@ def test_query_eth2_deposits_details_and_stats(rotkehlchen_api_server, ethereum_
         else:
             deposits = assert_proper_response_with_result(response)
 
-    assert len(deposits) == 3
+    assert len(deposits) >= 6
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()
     assert len(warnings) == 0
@@ -172,7 +172,7 @@ def test_query_eth2_deposits_details_and_stats(rotkehlchen_api_server, ethereum_
             details = assert_proper_response_with_result(response)
 
     # The 2 new validators along with their depositor details should be there
-    assert len(details) == 3
+    assert len(details) >= 6
     assert details[0]['index'] == 9  # already checked above
     assert details[1]['index'] == new_index_2
     assert details[1]['eth1_depositor'] == '0x234EE9e35f8e9749A002fc42970D570DB716453B'

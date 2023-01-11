@@ -749,17 +749,17 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
     result = assert_proper_response_with_result(response)
     assert len(result['events']) == 0
 
-    with rotki.data.db.user_write() as cursor:
-        rotki.data.db.purge_exchange_data(cursor, Location.KRAKEN)
-        target = 'rotkehlchen.tests.utils.kraken.KRAKEN_GENERAL_LEDGER_RESPONSE'
-        kraken = try_get_first_exchange(rotki.exchange_manager, Location.KRAKEN)
-        kraken.random_ledgers_data = False
-        with patch(target, new=input_ledger):
-            kraken.query_kraken_ledgers(
-                cursor=cursor,
-                start_ts=1458984441,
-                end_ts=1736738550,
-            )
+    with rotki.data.db.user_write() as write_cursor:
+        rotki.data.db.purge_exchange_data(write_cursor, Location.KRAKEN)
+    target = 'rotkehlchen.tests.utils.kraken.KRAKEN_GENERAL_LEDGER_RESPONSE'
+    kraken = try_get_first_exchange(rotki.exchange_manager, Location.KRAKEN)
+    kraken.random_ledgers_data = False
+    with patch(target, new=input_ledger), rotki.data.db.conn.read_ctx() as cursor:
+        kraken.query_kraken_ledgers(
+            cursor=cursor,
+            start_ts=1458984441,
+            end_ts=1736738550,
+        )
 
     response = requests.post(
         api_url_for(
@@ -767,8 +767,8 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
             'stakingresource',
         ),
         json={
-            "from_timestamp": 1636538550,
-            "to_timestamp": 1640493378,
+            'from_timestamp': 1636538550,
+            'to_timestamp': 1640493378,
         },
     )
 

@@ -44,7 +44,6 @@ CURVE_EXPECTED_POOL_COINS = {
 
 def test_curve_pools_cache(rotkehlchen_instance):
     """Test curve pools fetching mechanism"""
-
     # Set initial cache data to check that it is gone after the cache update
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
         GlobalDBHandler().set_general_cache_values(
@@ -64,9 +63,8 @@ def test_curve_pools_cache(rotkehlchen_instance):
         )
 
     # delete one of the tokens to check that it is created during the update
-    with GlobalDBHandler().conn.write_ctx() as write_cursor, suppress(InputError):
+    with suppress(InputError):
         GlobalDBHandler().delete_evm_token(  # token may not exist but we don't care
-            write_cursor=write_cursor,
             address='0xD71eCFF9342A5Ced620049e616c5035F1dB98620',
             chain_id=ChainID.ETHEREUM,
         )

@@ -36,29 +36,30 @@ def find_ens_mappings(
     """
     dbens = DBEns(ethereum_inquirer.database)
     ens_mappings: dict[ChecksumEvmAddress, str] = {}
-    with dbens.db.user_write() as cursor:
-        if ignore_cache:
-            addresses_to_query = addresses
-        else:
-            addresses_to_query = []
-            cached_data = dbens.get_reverse_ens(cursor, addresses)
-            cur_time = ts_now()
-            for address, cached_value in cached_data.items():
-                has_name = isinstance(cached_value, EnsMapping)
-                last_update: Timestamp = cached_value.last_update if has_name else cached_value  # type: ignore  # mypy doesn't see `isinstance` check  # noqa: E501
-                if cur_time - last_update > ENS_UPDATE_INTERVAL:
-                    addresses_to_query.append(address)
-                elif has_name:
-                    ens_mappings[cached_value.address] = cached_value.name  # type: ignore
-            addresses_to_query += list(set(addresses) - set(cached_data.keys()))
+    if ignore_cache:
+        addresses_to_query = addresses
+    else:
+        addresses_to_query = []
+        with dbens.db.conn.read_ctx() as cursor:
+            cached_data = dbens.get_reverse_ens(cursor=cursor, addresses=addresses)
+        cur_time = ts_now()
+        for address, cached_value in cached_data.items():
+            has_name = isinstance(cached_value, EnsMapping)
+            last_update: Timestamp = cached_value.last_update if has_name else cached_value  # type: ignore  # mypy doesn't see `isinstance` check  # noqa: E501
+            if cur_time - last_update > ENS_UPDATE_INTERVAL:
+                addresses_to_query.append(address)
+            elif has_name:
+                ens_mappings[cached_value.address] = cached_value.name  # type: ignore
+        addresses_to_query += list(set(addresses) - set(cached_data.keys()))
 
-        try:
-            query_results = ethereum_inquirer.ens_reverse_lookup(addresses_to_query)
-        except (RemoteError, BlockchainQueryError) as e:
-            raise RemoteError(f'Error occurred while querying ens names: {str(e)}') from e
+    try:
+        query_results = ethereum_inquirer.ens_reverse_lookup(addresses_to_query)
+    except (RemoteError, BlockchainQueryError) as e:
+        raise RemoteError(f'Error occurred while querying ens names: {str(e)}') from e
 
+    with dbens.db.user_write() as write_cursor:
         ens_mappings = dbens.update_values(
-            write_cursor=cursor,
+            write_cursor=write_cursor,
             ens_lookup_results=query_results,
             mappings_to_send=ens_mappings,
         )

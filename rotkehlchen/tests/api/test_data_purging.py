@@ -29,7 +29,7 @@ def test_purge_all_exchange_data(rotkehlchen_api_server_with_exchanges, added_ex
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server_with_exchanges,
-            "exchangesdataresource",
+            'exchangesdataresource',
         ),
     )
     assert_simple_ok_response(response)
@@ -45,7 +45,7 @@ def test_purge_single_exchange_data(rotkehlchen_api_server_with_exchanges, added
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server_with_exchanges,
-            "named_exchanges_data_resource",
+            'named_exchanges_data_resource',
             location=target_exchange,
         ),
     )
@@ -58,15 +58,15 @@ def test_purge_ethereum_transaction_data(rotkehlchen_api_server):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     addr1 = make_evm_address()
     db = DBEvmTx(rotki.data.db)
-    with rotki.data.db.user_write() as cursor:
+    with rotki.data.db.user_write() as write_cursor:
         rotki.data.db.add_blockchain_accounts(
-            write_cursor=cursor,
+            write_cursor=write_cursor,
             account_data=[
                 BlockchainAccountData(chain=SupportedBlockchain.ETHEREUM, address=addr1),
             ],
         )
         db.add_evm_transactions(
-            cursor,
+            write_cursor,
             [EvmTransaction(
                 tx_hash=make_evm_tx_hash(b''),
                 chain_id=ChainID.ETHEREUM,
@@ -83,8 +83,10 @@ def test_purge_ethereum_transaction_data(rotkehlchen_api_server):
             )],
             relevant_address=addr1,
         )
-        filter_ = EvmTransactionsFilterQuery.make(chain_id=ChainID.ETHEREUM)
 
+    filter_ = EvmTransactionsFilterQuery.make(chain_id=ChainID.ETHEREUM)
+
+    with rotki.data.db.conn.read_ctx() as cursor:
         result, filter_count = db.get_evm_transactions_and_limit_info(cursor, filter_, True)
         assert len(result) == 1
         assert filter_count == 1

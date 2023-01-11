@@ -282,7 +282,6 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
 
     def decode_transaction(
             self,
-            write_cursor: 'DBCursor',
             transaction: EvmTransaction,
             tx_receipt: EvmTxReceipt,
     ) -> list[HistoryBaseEntry]:
@@ -324,15 +323,16 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         if len(events) == 0 and (eth_event := self._get_eth_transfer_event(transaction)) is not None:  # noqa: E501
             events = [eth_event]
 
-        self.dbevents.add_history_events(
-            write_cursor=write_cursor,
-            history=events,
-            chain_id=self.evm_inquirer.chain_id,
-        )
-        write_cursor.execute(
-            'INSERT OR IGNORE INTO evm_tx_mappings(tx_hash, chain_id, value) VALUES(?, ?, ?)',
-            (transaction.tx_hash, self.evm_inquirer.chain_id.serialize_for_db(), HISTORY_MAPPING_STATE_DECODED),  # noqa: E501
-        )
+        with self.database.user_write() as write_cursor:
+            self.dbevents.add_history_events(
+                write_cursor=write_cursor,
+                history=events,
+                chain_id=self.evm_inquirer.chain_id,
+            )
+            write_cursor.execute(
+                'INSERT OR IGNORE INTO evm_tx_mappings(tx_hash, chain_id, value) VALUES(?, ?, ?)',
+                (transaction.tx_hash, self.evm_inquirer.chain_id.serialize_for_db(), HISTORY_MAPPING_STATE_DECODED),  # noqa: E501
+            )
 
         return sorted(events, key=lambda x: x.sequence_index, reverse=False)
 
@@ -390,19 +390,16 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                     filter_=EvmTransactionsFilterQuery.make(tx_hash=tx_hash, chain_id=self.evm_inquirer.chain_id),  # noqa: E501
                     has_premium=True,  # ignore limiting here
                 )
-            with self.database.user_write() as write_cursor:
-                events.extend(self.get_or_decode_transaction_events(
-                    write_cursor=write_cursor,
-                    transaction=txs[0],
-                    tx_receipt=receipt,
-                    ignore_cache=ignore_cache,
-                ))
+            events.extend(self.get_or_decode_transaction_events(
+                transaction=txs[0],
+                tx_receipt=receipt,
+                ignore_cache=ignore_cache,
+            ))
 
         return events
 
     def get_or_decode_transaction_events(
             self,
-            write_cursor: 'DBCursor',
             transaction: EvmTransaction,
             tx_receipt: EvmTxReceipt,
             ignore_cache: bool,
@@ -410,32 +407,34 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         """Get a transaction's events if existing in the DB or decode them"""
         serialized_chain_id = self.evm_inquirer.chain_id.serialize_for_db()
         if ignore_cache is True:  # delete all decoded events
-            self.dbevents.delete_events_by_tx_hash(
-                write_cursor=write_cursor,
-                tx_hashes=[transaction.tx_hash],
-                chain_id=self.evm_inquirer.chain_id,
-            )
-            write_cursor.execute(
-                'DELETE from evm_tx_mappings WHERE tx_hash=? AND chain_id=? AND value=?',
-                (transaction.tx_hash, serialized_chain_id, HISTORY_MAPPING_STATE_DECODED),
-            )
-        else:  # see if events are already decoded and return them
-            write_cursor.execute(
-                'SELECT COUNT(*) from evm_tx_mappings WHERE tx_hash=? AND chain_id=? AND value=?',  # noqa: E501
-                (transaction.tx_hash, serialized_chain_id, HISTORY_MAPPING_STATE_DECODED),
-            )
-            if write_cursor.fetchone()[0] != 0:  # already decoded and in the DB
-                events = self.dbevents.get_history_events(
-                    cursor=write_cursor,
-                    filter_query=HistoryEventFilterQuery.make(
-                        event_identifiers=[transaction.tx_hash],
-                    ),
-                    has_premium=True,  # for this function we don't limit anything
+            with self.database.user_write() as write_cursor:
+                self.dbevents.delete_events_by_tx_hash(
+                    write_cursor=write_cursor,
+                    tx_hashes=[transaction.tx_hash],
+                    chain_id=self.evm_inquirer.chain_id,
                 )
-                return events
+                write_cursor.execute(
+                    'DELETE from evm_tx_mappings WHERE tx_hash=? AND chain_id=? AND value=?',
+                    (transaction.tx_hash, serialized_chain_id, HISTORY_MAPPING_STATE_DECODED),
+                )
+        else:  # see if events are already decoded and return them
+            with self.database.conn.read_ctx() as cursor:
+                cursor.execute(
+                    'SELECT COUNT(*) from evm_tx_mappings WHERE tx_hash=? AND chain_id=? AND value=?',  # noqa: E501
+                    (transaction.tx_hash, serialized_chain_id, HISTORY_MAPPING_STATE_DECODED),
+                )
+                if cursor.fetchone()[0] != 0:  # already decoded and in the DB
+                    events = self.dbevents.get_history_events(
+                        cursor=cursor,
+                        filter_query=HistoryEventFilterQuery.make(
+                            event_identifiers=[transaction.tx_hash],
+                        ),
+                        has_premium=True,  # for this function we don't limit anything
+                    )
+                    return events
 
         # else we should decode now
-        events = self.decode_transaction(write_cursor, transaction, tx_receipt)
+        events = self.decode_transaction(transaction, tx_receipt)
         return events
 
     def _maybe_decode_internal_transactions(

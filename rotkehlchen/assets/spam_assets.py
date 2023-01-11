@@ -18,7 +18,6 @@ from rotkehlchen.types import SPAM_PROTOCOL, ChainID, ChecksumEvmAddress
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -840,7 +839,7 @@ def query_token_spam_list(db: 'DBHandler', make_remote_query: bool) -> set[EvmTo
     return tokens_to_ignore
 
 
-def update_spam_assets(write_cursor: 'DBCursor', db: 'DBHandler', make_remote_query: bool) -> int:
+def update_spam_assets(db: 'DBHandler', make_remote_query: bool) -> int:
     """
     Update the list of ignored assets using query_token_spam_list and avoiding
     the addition of duplicates. It returns the amount of assets that were added
@@ -857,6 +856,7 @@ def update_spam_assets(write_cursor: 'DBCursor', db: 'DBHandler', make_remote_qu
         if token.identifier in ignored_assets:
             continue
 
-        db.add_to_ignored_assets(write_cursor=write_cursor, asset=token)
+        with db.user_write() as write_cursor:
+            db.add_to_ignored_assets(write_cursor=write_cursor, asset=token)
         assets_added += 1
     return assets_added

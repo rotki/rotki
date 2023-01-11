@@ -318,9 +318,9 @@ class Balancer(EthereumModule):
             end_ts=to_timestamp,
             event_type=BalancerInvestEventType.REMOVE_LIQUIDITY,
         )
-        with self.database.user_write() as cursor:
+        with self.database.user_write() as write_cursor:
             self._update_used_query_range(
-                write_cursor=cursor,
+                write_cursor=write_cursor,
                 addresses=addresses,
                 prefix='balancer_events',
                 from_timestamp=from_timestamp,
@@ -459,12 +459,12 @@ class Balancer(EthereumModule):
 
     def _get_address_to_pool_events_balances(
             self,
-            write_cursor: 'DBCursor',
             addresses: list[ChecksumEvmAddress],
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
     ) -> AddressToPoolEventsBalances:
-        """Get a mapping of addresses to pool events balance for a given time range
+        """Get a mapping of addresses to pool events balance for a given time range.
+         Also writes them to the DB.
 
         May raise RemoteError
         """
@@ -475,7 +475,8 @@ class Balancer(EthereumModule):
         # Get the events last used query range of the addresses
         for address in addresses:
             entry_name = f'{BALANCER_EVENTS_PREFIX}_{address}'
-            trades_range = self.database.get_used_query_range(cursor=write_cursor, name=entry_name)
+            with self.database.conn.read_ctx() as cursor:
+                trades_range = self.database.get_used_query_range(cursor=cursor, name=entry_name)
 
             if not trades_range:
                 new_addresses.append(address)
@@ -507,24 +508,26 @@ class Balancer(EthereumModule):
             balancer_events = self._get_balancer_aggregated_events_data(
                 address_to_events_data=address_to_events_data,
             )
-            add_balancer_events(write_cursor, balancer_events, self.msg_aggregator)
+            with self.database.user_write() as write_cursor:
+                add_balancer_events(write_cursor, balancer_events, self.msg_aggregator)
 
         # Calculate the balance of the events per pool at the given timestamp per address.
         # NB: take into account the current balances of each address in the protocol
         db_address_to_events: AddressToEvents = {}
         db_pool_addresses: set[EvmToken] = set()
-        for address in addresses:
-            db_events = get_balancer_events(
-                cursor=write_cursor,
-                msg_aggregator=self.msg_aggregator,
-                from_timestamp=from_timestamp,
-                to_timestamp=to_timestamp,
-                address=address,
-            )
-            if db_events:
-                db_events.sort(key=lambda event: (event.timestamp, event.log_index))
-                db_address_to_events[address] = db_events
-                db_pool_addresses.union({db_event.pool_address_token for db_event in db_events})
+        with self.database.conn.read_ctx() as cursor:
+            for address in addresses:
+                db_events = get_balancer_events(
+                    cursor=cursor,
+                    msg_aggregator=self.msg_aggregator,
+                    from_timestamp=from_timestamp,
+                    to_timestamp=to_timestamp,
+                    address=address,
+                )
+                if db_events:
+                    db_events.sort(key=lambda event: (event.timestamp, event.log_index))
+                    db_address_to_events[address] = db_events
+                    db_pool_addresses.union({db_event.pool_address_token for db_event in db_events})  # noqa: E501
 
         address_to_pool_events_balances: AddressToPoolEventsBalances = {}
         if len(db_address_to_events) == 0:
@@ -1097,12 +1100,12 @@ class Balancer(EthereumModule):
 
         May raise RemoteError
         """
-        with self.trades_lock, self.database.user_write() as cursor:
+        with self.trades_lock:
             if reset_db_data is True:
-                self.database.delete_balancer_events_data(cursor)
+                with self.database.user_write() as write_cursor:
+                    self.database.delete_balancer_events_data(write_cursor)
 
             address_to_pool_events_balances = self._get_address_to_pool_events_balances(
-                write_cursor=cursor,
                 addresses=addresses,
                 from_timestamp=from_timestamp,
                 to_timestamp=to_timestamp,
@@ -1117,5 +1120,5 @@ class Balancer(EthereumModule):
         pass
 
     def deactivate(self) -> None:
-        with self.database.user_write() as cursor:
-            self.database.delete_balancer_events_data(cursor)
+        with self.database.user_write() as write_cursor:
+            self.database.delete_balancer_events_data(write_cursor)

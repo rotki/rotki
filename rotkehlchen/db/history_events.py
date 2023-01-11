@@ -132,8 +132,8 @@ class DBHistoryEvents():
         If any identifier is missing the entire call fails and an error message
         is returned. Otherwise None is returned.
         """
-        with self.db.user_write() as cursor:
-            for identifier in identifiers:
+        for identifier in identifiers:
+            with self.db.conn.read_ctx() as cursor:
                 cursor.execute(
                     'SELECT COUNT(*) FROM history_events WHERE event_identifier=('
                     'SELECT event_identifier FROM history_events WHERE identifier=?)',
@@ -145,16 +145,17 @@ class DBHistoryEvents():
                         f'which was the last event of a transaction'
                     )
 
-                cursor.execute(
+            with self.db.user_write() as write_cursor:
+                write_cursor.execute(
                     'DELETE FROM history_events WHERE identifier=?', (identifier,),
                 )
-                affected_rows = cursor.rowcount
-                if affected_rows != 1:
-                    return (
-                        f'Tried to remove history event with id {identifier} which does not exist'
-                    )
+                affected_rows = write_cursor.rowcount
+            if affected_rows != 1:
+                return (
+                    f'Tried to remove history event with id {identifier} which does not exist'
+                )
 
-            return None
+        return None
 
     def delete_events_by_tx_hash(
             self,

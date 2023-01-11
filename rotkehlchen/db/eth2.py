@@ -121,10 +121,10 @@ class DBEth2():
 
     def add_validator_daily_stats(self, stats: list[ValidatorDailyStats]) -> None:
         """Adds given daily stats for validator in the DB. If an entry exists it's skipped"""
-        with self.db.user_write() as cursor:
-            for entry in stats:  # not doing executemany to just ignore existing entry
-                try:
-                    cursor.execute(
+        for entry in stats:  # not doing executemany to just ignore existing entry
+            try:
+                with self.db.user_write() as write_cursor:
+                    write_cursor.execute(
                         'INSERT INTO eth2_daily_staking_details('
                         '    validator_index,'
                         '    timestamp,'
@@ -144,11 +144,11 @@ class DBEth2():
                         '    amount_deposited) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
                         entry.to_db_tuple(),
                     )
-                except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
-                    log.debug(
-                        f'Cant insert Eth2 staking detail entry {str(entry)} to the DB '
-                        f'due to {str(e)}. Skipping ...',
-                    )
+            except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
+                log.debug(
+                    f'Cant insert Eth2 staking detail entry {str(entry)} to the DB '
+                    f'due to {str(e)}. Skipping ...',
+                )
 
     def get_validator_daily_stats_and_limit_info(
             self,

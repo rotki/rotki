@@ -11,7 +11,6 @@ from rotkehlchen.data_migrations.migrations.migration_7 import data_migration_7
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.drivers.gevent import DBCursor
     from rotkehlchen.rotkehlchen import Rotkehlchen
 
 logger = logging.getLogger(__name__)
@@ -20,7 +19,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 class MigrationRecord(NamedTuple):
     version: int
-    function: Callable[['DBCursor', 'Rotkehlchen'], None]
+    function: Callable[['Rotkehlchen'], None]
     kwargs: Optional[dict[str, Any]] = None
 
 
@@ -47,22 +46,22 @@ class DataMigrationManager:
         current_migration = settings.last_data_migration
         for migration in MIGRATION_LIST:
             if current_migration < migration.version:
-                with self.rotki.data.db.user_write() as cursor:
-                    if self._perform_migration(cursor, migration) is False:
-                        break  # a migration failed -- no point continuing
+                if self._perform_migration(migration) is False:
+                    break  # a migration failed -- no point continuing
 
-                    current_migration += 1
-                    log.debug(f'Successfuly applied migration {current_migration}')
-                    cursor.execute(
+                current_migration += 1
+                log.debug(f'Successfuly applied migration {current_migration}')
+                with self.rotki.data.db.user_write() as write_cursor:
+                    write_cursor.execute(
                         'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
                         ('last_data_migration', current_migration),
                     )
 
-    def _perform_migration(self, write_cursor: 'DBCursor', migration: MigrationRecord) -> bool:
+    def _perform_migration(self, migration: MigrationRecord) -> bool:
         """Performs a single data migration and returns boolean for success/failure"""
         try:
             kwargs = migration.kwargs if migration.kwargs is not None else {}
-            migration.function(write_cursor, self.rotki, **kwargs)
+            migration.function(self.rotki, **kwargs)
         except BaseException as e:
             error = f'Failed to run soft data migration to version {migration.version} due to {str(e)}'  # noqa: E501
             self.rotki.msg_aggregator.add_error(error)

@@ -32,19 +32,20 @@ def _maybe_add_llamanode(write_cursor: 'DBCursor') -> None:
     )
 
 
-def data_migration_7(write_cursor: 'DBCursor', rotki: 'Rotkehlchen') -> None:
+def data_migration_7(rotki: 'Rotkehlchen') -> None:
     """
     - Add llamanode to the web3 nodes in 1.26.3
     """
     log.debug('Enter data_migration_7')
-    _maybe_add_llamanode(write_cursor=write_cursor)
-    # Rebalance the nodes
-    rotki.data.db.rebalance_rpc_nodes_weights(
-        write_cursor=write_cursor,
-        proportion_to_share=ONE,
-        exclude_identifier=None,
-        blockchain=SupportedBlockchain.ETHEREUM,
-    )
+    with rotki.data.db.user_write() as write_cursor:
+        _maybe_add_llamanode(write_cursor=write_cursor)
+        # Rebalance the nodes
+        rotki.data.db.rebalance_rpc_nodes_weights(
+            write_cursor=write_cursor,
+            proportion_to_share=ONE,
+            exclude_identifier=None,
+            blockchain=SupportedBlockchain.ETHEREUM,
+        )
     # Connect to the nodes since the migration happens after the ethereum manager initialization
     nodes_to_connect = rotki.data.db.get_rpc_nodes(blockchain=SupportedBlockchain.ETHEREUM, only_active=True)  # noqa: E501
     # when we sync a remote database the migrations are executed but the chain_manager
