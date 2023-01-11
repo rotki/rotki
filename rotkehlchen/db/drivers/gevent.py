@@ -241,6 +241,7 @@ class DBConnection:
         CONNECTION_MAP[connection_type] = self
         self._conn: UnderlyingConnection
         self.in_callback = gevent.lock.Semaphore()
+        self.transaction_lock = gevent.lock.Semaphore()
         self.connection_type = connection_type
         self.sql_vm_instructions_cb = sql_vm_instructions_cb
         # We need an ordered set. Python doesn't have such thing as a standalone object, but has
@@ -329,32 +330,35 @@ class DBConnection:
 
     @contextmanager
     def write_ctx(self, commit_ts: bool = False) -> Generator['DBCursor', None, None]:
-        with self.critical_section():
+        """Opens a transaction to the database. This should be used kept open for
+        as little time as possible.
+
+        It's possible that a write transaction tries to be opened when savepoints are being used.
+        In order for savepoints to work then, we will need to open a savepoint instead of a write
+        transaction in that case. This should be used sparingly.
+        """
+        if len(self.savepoints) != 0:
+            with self.savepoint_ctx() as cursor:
+                yield cursor
+                return
+        # else
+        with self.critical_section(), self.transaction_lock:
             cursor = self.cursor()
-            if self._conn.in_transaction is True:
-                with self.savepoint_ctx() as cursor:
-                    yield cursor
-                    return
+            cursor.execute('BEGIN TRANSACTION')
+            try:
+                yield cursor
+            except Exception:
+                self._conn.rollback()
+                raise
             else:
-                cursor.execute('BEGIN TRANSACTION')
-                try:
-                    yield cursor
-                except Exception:
-                    while len(self.savepoints) != 0:
-                        gevent.sleep(CONTEXT_SWITCH_WAIT)
-                    self._conn.rollback()
-                    raise
-                else:
-                    while len(self.savepoints) != 0:
-                        gevent.sleep(CONTEXT_SWITCH_WAIT)
-                    if commit_ts is True:
-                        cursor.execute(
-                            'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
-                            ('last_write_ts', str(ts_now())),
-                        )
-                    self._conn.commit()
-                finally:
-                    cursor.close()
+                if commit_ts is True:
+                    cursor.execute(
+                        'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+                        ('last_write_ts', str(ts_now())),
+                    )
+                self._conn.commit()
+            finally:
+                cursor.close()
 
     @contextmanager
     def savepoint_ctx(
