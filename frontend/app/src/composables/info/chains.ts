@@ -1,7 +1,11 @@
 import { type Blockchain } from '@rotki/common/lib/blockchain';
 import { type MaybeRef } from '@vueuse/core';
 import { type ComputedRef } from 'vue';
-import { type ChainInfo } from '@/types/api/chains';
+import { type ChainInfo, type EvmChainInfo } from '@/types/api/chains';
+
+const isEvmChain = (info: ChainInfo): info is EvmChainInfo => {
+  return info.type === 'evm';
+};
 
 export const useSupportedChains = createSharedComposable(() => {
   const { fetchSupportedChains } = useSupportedChainsApi();
@@ -10,39 +14,44 @@ export const useSupportedChains = createSharedComposable(() => {
     lazy: true
   });
 
-  const evmChainsData: ComputedRef<ChainInfo[]> = computed(() => {
-    return get(supportedChains).filter(
-      x => x.type === 'evm' && !!x.evmChainName
-    );
+  const evmChainsData: ComputedRef<EvmChainInfo[]> = computed(() => {
+    // isEvmChain guard does not work the same with useArrayFilter
+    return get(supportedChains).filter(isEvmChain);
   });
 
-  const evmChains: ComputedRef<string[]> = computed(() => {
-    return get(evmChainsData).map(x => x.name!);
-  });
+  const txEvmChains: ComputedRef<EvmChainInfo[]> = useArrayFilter(
+    evmChainsData,
+    x => x.name !== 'AVAX'
+  );
 
-  const evmChainNames: ComputedRef<string[]> = computed(() => {
-    return get(evmChainsData).map(x => x.evmChainName!);
-  });
+  const evmChains: ComputedRef<string[]> = useArrayMap(
+    evmChainsData,
+    x => x.name
+  );
+
+  const evmChainNames: ComputedRef<string[]> = useArrayMap(
+    evmChainsData,
+    x => x.evmChainName
+  );
 
   const isEvm = (chain: MaybeRef<Blockchain>) =>
-    computed(() => {
-      const blockchain = get(chain);
-      return get(evmChains).includes(blockchain);
-    });
+    useArrayInclude(evmChains, chain);
 
-  const getEvmChainName = (
-    chain: MaybeRef<Blockchain>
-  ): ComputedRef<string | null> =>
-    computed(() => {
-      return (
-        get(evmChainsData).find(x => x.name === chain)?.evmChainName || null
-      );
-    });
+  const supportsTransactions = (chain: MaybeRef<Blockchain>): boolean => {
+    const chains = get(txEvmChains);
+    const selectedChain = get(chain);
+    return chains.some(x => x.name === selectedChain);
+  };
+
+  const getEvmChainName = (chain: Blockchain): string | null =>
+    get(evmChainsData).find(x => x.name === chain)?.evmChainName || null;
 
   return {
     evmChains,
     evmChainNames,
+    txEvmChains,
     getEvmChainName,
-    isEvm
+    isEvm,
+    supportsTransactions
   };
 });

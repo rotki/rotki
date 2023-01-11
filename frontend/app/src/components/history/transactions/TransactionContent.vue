@@ -306,7 +306,7 @@ const updatePayloadHandler = async () => {
   if (usedAccountVal) {
     filterAddress = {
       address: usedAccountVal!.address,
-      evmChain: get(getEvmChainName(usedAccountVal.chain))
+      evmChain: getEvmChainName(usedAccountVal.chain)
     };
   }
 
