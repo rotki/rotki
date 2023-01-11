@@ -3,11 +3,9 @@ import { type GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import {
   type LiquityPoolDetail,
-  type LiquityPoolDetails,
-  type LiquityStakingDetail,
-  type LiquityStakingDetails
+  type LiquityStakingDetail
 } from '@rotki/common/lib/liquity';
-import { type ComputedRef } from 'vue';
+import { type ComputedRef, type Ref } from 'vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import TransactionContent from '@/components/history/transactions/TransactionContent.vue';
 import LiquityPools from '@/components/staking/liquity/LiquityPools.vue';
@@ -23,7 +21,7 @@ import {
 import { balanceSum } from '@/utils/calculation';
 import { uniqueStrings } from '@/utils/data';
 
-const selectedAccount = ref<GeneralAccount | null>(null);
+const selectedAccount: Ref<GeneralAccount | null> = ref(null);
 const liquityStore = useLiquityStore();
 const { staking, stakingPools } = toRefs(liquityStore);
 const { fetchStaking, fetchPools } = liquityStore;
@@ -35,7 +33,7 @@ const { tc } = useI18n();
 
 const aggregatedStake: ComputedRef<LiquityStakingDetail | null> = computed(
   () => {
-    const allStakes = get(staking) as LiquityStakingDetails;
+    const allStakes = get(staking);
     let stakes: LiquityStakingDetail | null = null;
 
     for (const address in allStakes) {
@@ -67,7 +65,7 @@ const aggregatedStake: ComputedRef<LiquityStakingDetail | null> = computed(
 
 const aggregatedStakingPool: ComputedRef<LiquityPoolDetail | null> = computed(
   () => {
-    const allPools = get(stakingPools) as LiquityPoolDetails;
+    const allPools = get(stakingPools);
     let pools: LiquityPoolDetail | null = null;
 
     for (const address in allPools) {

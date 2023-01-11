@@ -189,7 +189,7 @@ export const useBalancerStore = defineStore('defi/balancer', () => {
         },
         state: {
           isPremium,
-          activeModules: activeModules as Ref<string[]>
+          activeModules
         },
         refresh
       },
@@ -227,7 +227,7 @@ export const useBalancerStore = defineStore('defi/balancer', () => {
         },
         state: {
           isPremium,
-          activeModules: activeModules as Ref<string[]>
+          activeModules
         },
         refresh
       },

@@ -3,7 +3,7 @@ import { type Balance } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import isEqual from 'lodash/isEqual';
 import sortBy from 'lodash/sortBy';
-import { type ComputedRef, type PropType, useListeners } from 'vue';
+import { type ComputedRef, useListeners } from 'vue';
 import { type DataTableHeader } from 'vuetify';
 import AccountGroupHeader from '@/components/accounts/AccountGroupHeader.vue';
 import AccountBalanceDetails from '@/components/accounts/balances/AccountBalanceDetails.vue';
@@ -30,16 +30,18 @@ import { assert } from '@/utils/assertions';
 import { Zero, zeroBalance } from '@/utils/bignumbers';
 import { isTokenChain } from '@/types/blockchain/chains';
 
-const props = defineProps({
-  balances: {
-    required: true,
-    type: Array as PropType<BlockchainAccountWithBalance[]>
-  },
-  blockchain: { required: true, type: String as PropType<Blockchain> },
-  visibleTags: { required: true, type: Array as PropType<string[]> },
-  selected: { required: true, type: Array as PropType<string[]> },
-  loopring: { required: false, type: Boolean, default: false }
-});
+const props = withDefaults(
+  defineProps<{
+    balances: BlockchainAccountWithBalance[];
+    blockchain: Blockchain;
+    visibleTags: string[];
+    selected: string[];
+    loopring?: boolean;
+  }>(),
+  {
+    loopring: false
+  }
+);
 
 const emit = defineEmits<{
   (e: 'edit-click', account: BlockchainAccountWithBalance): void;
@@ -289,7 +291,7 @@ const groupBy = (
   items: BlockchainAccountWithBalance[],
   groupBy: Properties<BlockchainAccountWithBalance, any>[]
 ) => {
-  const record = {} as Record<string, BlockchainAccountWithBalance[]>;
+  const record: Record<string, BlockchainAccountWithBalance[]> = {};
 
   for (const item of items) {
     const key =

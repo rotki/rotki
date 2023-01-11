@@ -86,7 +86,7 @@ export const useTrades = defineStore('history/trades', () => {
         const result = await getTrades(payload);
         return mapCollectionEntriesWithMeta<Trade>(
           mapCollectionResponse(result)
-        ) as Collection<TradeEntry>;
+        );
       }
 
       const { taskId } = await getTradesTask(payload);
@@ -114,7 +114,7 @@ export const useTrades = defineStore('history/trades', () => {
       const parsedResult = TradeCollectionResponse.parse(result);
       return mapCollectionEntriesWithMeta<Trade>(
         mapCollectionResponse(parsedResult)
-      ) as Collection<TradeEntry>;
+      );
     };
 
     try {

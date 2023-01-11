@@ -127,7 +127,7 @@ export const useSessionStore = defineStore('session', () => {
         if (message && 'remoteLastModified' in result) {
           set(syncConflict, {
             message,
-            payload: result as SyncConflictPayload
+            payload: result
           });
           return { success: false, message: '' };
         }

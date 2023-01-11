@@ -1,3 +1,4 @@
+import { type ComputedRef, type Ref } from 'vue';
 import { useKrakenApi } from '@/services/staking/kraken';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useNotificationsStore } from '@/store/notifications';
@@ -33,16 +34,18 @@ const defaultEventState = (): KrakenStakingEvents => ({
 });
 
 export const useKrakenStakingStore = defineStore('staking/kraken', () => {
-  const pagination = ref(defaultPagination());
-  const rawEvents = ref<KrakenStakingEvents>(defaultEventState());
+  const pagination: Ref<KrakenStakingPagination> = ref(defaultPagination());
+  const rawEvents: Ref<KrakenStakingEvents> = ref(
+    defaultEventState()
+  ) as Ref<KrakenStakingEvents>;
 
   const api = useKrakenApi();
 
   const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
   const { t } = useI18n();
 
-  const events = computed<KrakenStakingEvents>(() => {
-    const eventsValue = get(rawEvents) as KrakenStakingEvents;
+  const events: ComputedRef<KrakenStakingEvents> = computed(() => {
+    const eventsValue = get(rawEvents);
     const received = eventsValue.received;
 
     const receivedAssets: Record<string, ReceivedAmount> = {};
