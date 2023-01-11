@@ -52,7 +52,7 @@ class HistoryEventSubType(SerializableEnumMixin):
     DEPLOY = auto()
     AIRDROP = auto()
     BRIDGE = auto()
-    GOVERNANCE_PROPOSE = auto()
+    GOVERNANCE = auto()
     NONE = auto()  # Have a value for None to not get into NULL/None comparison hell
     GENERATE_DEBT = auto()
     PAYBACK_DEBT = auto()

@@ -132,12 +132,11 @@ class EthereumTransactionDecoder(EVMTransactionDecoder):
                 timestamp=ts_sec_to_ms(transaction.timestamp),
                 location=Location.BLOCKCHAIN,
                 location_label=transaction.from_address,
-                # TODO: This should be null for proposals and other informational events
                 asset=A_ETH,
                 balance=Balance(),
                 notes=notes,
                 event_type=HistoryEventType.INFORMATIONAL,
-                event_subtype=HistoryEventSubType.GOVERNANCE_PROPOSE,
+                event_subtype=HistoryEventSubType.GOVERNANCE,
                 counterparty=governance_name,
             )
 
