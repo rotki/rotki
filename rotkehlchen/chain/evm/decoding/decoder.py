@@ -2,6 +2,7 @@ import importlib
 import logging
 import pkgutil
 from abc import ABCMeta, abstractmethod
+from dataclasses import dataclass
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Callable, Optional, Protocol, Union
 
@@ -73,6 +74,28 @@ class EventDecoderFunction(Protocol):
         ...
 
 
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
+class DecodingRules():
+    address_mappings: dict[ChecksumEvmAddress, tuple[Any, ...]]
+    event_rules: list[EventDecoderFunction]
+    token_enricher_rules: list[Callable]  # enrichers to run for token transfers
+    post_decoding_rules: list[tuple[int, Callable]]  # rules to run after the main decoding loop
+    all_counterparties: set[str]
+
+    def __add__(self, other: 'DecodingRules') -> 'DecodingRules':
+        if not isinstance(other, DecodingRules):
+            raise TypeError(
+                f'Can only add DecodingRules to DecodingRules. Got {type(other)}',
+            )
+        return DecodingRules(
+            address_mappings={**self.address_mappings, **other.address_mappings},
+            event_rules=self.event_rules + other.event_rules,
+            token_enricher_rules=self.token_enricher_rules + other.token_enricher_rules,
+            post_decoding_rules=self.post_decoding_rules + other.post_decoding_rules,
+            all_counterparties=self.all_counterparties | other.all_counterparties,
+        )
+
+
 class EVMTransactionDecoder(metaclass=ABCMeta):
 
     def __init__(
@@ -98,7 +121,6 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         """
         self.database = database
         self.misc_counterparties = [CPT_GAS] + misc_counterparties
-        self.all_counterparties: set[str] = set()
         self.evm_inquirer = evm_inquirer
         self.transactions = transactions
         self.msg_aggregator = database.msg_aggregator
@@ -111,29 +133,41 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             is_non_conformant_erc721_fn=self._is_non_conformant_erc721,
             address_is_exchange_fn=self._address_is_exchange,
         )
-        self.event_rules = [
-            self._maybe_decode_erc20_approve,
-            self._maybe_decode_erc20_721_transfer,
-        ]
-        self.event_rules.extend(event_rules)
-        self.token_enricher_rules: list[Callable] = []  # enrichers to run for token transfers
+        self.rules = DecodingRules(
+            address_mappings={},
+            event_rules=[
+                self._maybe_decode_erc20_approve,
+                self._maybe_decode_erc20_721_transfer,
+            ],
+            token_enricher_rules=[],
+            post_decoding_rules=[],
+            all_counterparties=set(self.misc_counterparties),
+        )
+        self.rules.event_rules.extend(event_rules)
         self.value_asset = value_asset
-        self.initialize_all_decoders()
+        self.decoders: dict[str, 'DecoderInterface'] = {}
+        # Recursively check all submodules to get all decoder address mappings and rules
+        rules = self._recursively_initialize_decoders(self.chain_modules_root)
+        # Sort post decoding rules by priority (which is the first element of the tuple)
+        self.rules += rules
+        self.rules.post_decoding_rules.sort(key=lambda x: x[0], reverse=True)
         self.undecoded_tx_query_lock = Semaphore()
 
     def _recursively_initialize_decoders(
             self,
             package: Union[str, ModuleType],
-    ) -> tuple[
-            dict[ChecksumEvmAddress, tuple[Any, ...]],
-            list[Callable],
-            list[Callable],
-    ]:
+    ) -> DecodingRules:
         if isinstance(package, str):
             package = importlib.import_module(package)
-        address_results = {}
-        rules_results = []
-        enricher_results = []
+
+        results = DecodingRules(
+            address_mappings={},
+            event_rules=[],
+            token_enricher_rules=[],
+            post_decoding_rules=[],
+            all_counterparties=set(),
+        )
+
         for _, name, is_pkg in pkgutil.walk_packages(package.__path__):
             full_name = package.__name__ + '.' + name
             if full_name == __name__:
@@ -164,28 +198,16 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                         )
                         continue
 
-                    address_results.update(self.decoders[class_name].addresses_to_decoders())
-                    rules_results.extend(self.decoders[class_name].decoding_rules())
-                    enricher_results.extend(self.decoders[class_name].enricher_rules())
-                    self.all_counterparties.update(self.decoders[class_name].counterparties())
+                    results.address_mappings.update(self.decoders[class_name].addresses_to_decoders())  # noqa: E501
+                    results.event_rules.extend(self.decoders[class_name].decoding_rules())
+                    results.token_enricher_rules.extend(self.decoders[class_name].enricher_rules())
+                    results.post_decoding_rules.extend(self.decoders[class_name].post_decoding_rules())  # noqa: E501
+                    results.all_counterparties.update(self.decoders[class_name].counterparties())
 
-                recursive_addrs, recursive_rules, recurisve_enricher_results = self._recursively_initialize_decoders(full_name)  # noqa: E501
-                address_results.update(recursive_addrs)
-                rules_results.extend(recursive_rules)
-                enricher_results.extend(recurisve_enricher_results)
+                recursive_results = self._recursively_initialize_decoders(full_name)
+                results += recursive_results
 
-        return address_results, rules_results, enricher_results
-
-    def initialize_all_decoders(self) -> None:
-        """Recursively check all submodules to get all decoder address mappings and rules
-        """
-        self.decoders: dict[str, 'DecoderInterface'] = {}
-        address_result, rules_result, enrichers_result = self._recursively_initialize_decoders(self.chain_modules_root)  # noqa: E501
-        self.address_mappings = address_result
-        self.event_rules.extend(rules_result)
-        self.token_enricher_rules.extend(enrichers_result)
-        # update with counterparties not in any module
-        self.all_counterparties.update(self.misc_counterparties)
+        return results
 
     def reload_from_db(self, cursor: 'DBCursor') -> None:
         """Reload all related settings from DB so that decoding happens with latest"""
@@ -203,7 +225,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             action_items: list[ActionItem],
             all_logs: list[EvmTxReceiptLog],
     ) -> Optional[HistoryBaseEntry]:
-        for rule in self.event_rules:
+        for rule in self.rules.event_rules:
             event = rule(token=token, tx_log=tx_log, transaction=transaction, decoded_events=decoded_events, action_items=action_items, all_logs=all_logs)  # noqa: E501
             if event:
                 return event
@@ -226,7 +248,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         - ConversionError
         - UnknownAsset
         """
-        mapping_result = self.address_mappings.get(tx_log.address)
+        mapping_result = self.rules.address_mappings.get(tx_log.address)
         if mapping_result is None:
             return None, []
         method = mapping_result[0]
@@ -243,6 +265,20 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             return None, []
 
         return result
+
+    def run_all_post_decoding_rules(
+            self,
+            transaction: EvmTransaction,
+            decoded_events: list[HistoryBaseEntry],
+            all_logs: list[EvmTxReceiptLog],
+    ) -> None:
+        """
+        Runs all post-decoding rules from self.rules.post_decoding_rules.
+        The post-decoding rules list consists of tuples (priority, rule) and must be sorted by
+        priority in ascending order. The higher the priority number the later the rule is run.
+        """
+        for (_, rule) in self.rules.post_decoding_rules:
+            rule(transaction=transaction, decoded_events=decoded_events, all_logs=all_logs)  # noqa: E501
 
     def decode_transaction(
             self,
@@ -278,6 +314,12 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             )
             if event:
                 events.append(event)
+
+        self.run_all_post_decoding_rules(
+            transaction=transaction,
+            decoded_events=events,
+            all_logs=tx_receipt.logs,
+        )
 
         if len(events) == 0 and (eth_event := self._get_eth_transfer_event(transaction)) is not None:  # noqa: E501
             events = [eth_event]

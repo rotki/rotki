@@ -53,6 +53,17 @@ class DecoderInterface(metaclass=ABCMeta):
         """
         return []
 
+    def post_decoding_rules(self) -> list[tuple[int, Callable]]:
+        """
+        Subclasses may implement this to add post processing of the decoded events.
+        This will run after the normal decoding step and will only process decoded history events.
+
+        This function should return a list of tuples where the first element is the priority of
+        a function and the second element is the function to run. The higher the priority number
+        the later the function will be run.
+        """
+        return []
+
     def reload(self) -> Mapping[ChecksumEvmAddress, tuple[Any, ...]]:  # pylint: disable=no-self-use  # noqa: E501
         """Subclasses may implement this to be able to reload some of the decoder's properties
         Returns only new mappings of addresses to decode functions

@@ -53,7 +53,7 @@ def _populate_curve_pools(evm_tx_decoder):
 
     curve_decoder = evm_tx_decoder.decoders['Curve']
     new_mappings = curve_decoder.reload()
-    evm_tx_decoder.address_mappings.update(new_mappings)
+    evm_tx_decoder.rules.address_mappings.update(new_mappings)
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x57bF3B0f29E37619623994071C9e12091919675c']])  # noqa: E501
