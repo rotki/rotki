@@ -64,7 +64,8 @@ export const useTransactions = defineStore('history/transactions', () => {
   const { fetchAvailableCounterparties } = useHistoryApi();
   const { resetQueryStatus } = useTxQueryStatusStore();
 
-  const { evmChainNames, getEvmChainName, isEvm } = useSupportedChains();
+  const { txEvmChains, getEvmChainName, supportsTransactions } =
+    useSupportedChains();
   const { accounts } = storeToRefs(useAccountBalancesStore());
 
   const fetchTransactions = async (refresh = false): Promise<void> => {
@@ -134,10 +135,10 @@ export const useTransactions = defineStore('history/transactions', () => {
     try {
       const firstLoad = isFirstLoad();
       const accountsList = get(accounts)
-        .filter(({ chain }) => get(isEvm(chain)) && chain !== 'AVAX')
+        .filter(({ chain }) => supportsTransactions(chain))
         .map(({ address, chain }) => ({
           address,
-          evmChain: get(getEvmChainName(chain))!
+          evmChain: getEvmChainName(chain)!
         }));
       const accountsUpdated = !isEqual(accountsList, get(fetchedTxAccounts));
       const onlyCache = firstLoad || accountsUpdated ? false : !refresh;
@@ -244,9 +245,7 @@ export const useTransactions = defineStore('history/transactions', () => {
     try {
       const taskType = TaskType.TX_EVENTS;
       const { taskId } = await reDecodeMissingTransactionEvents<PendingTask>(
-        get(evmChainNames)
-          .filter(c => c !== 'avalanche')
-          .map(evmChain => ({ evmChain }))
+        get(txEvmChains).map(chain => ({ evmChain: chain.evmChainName }))
       );
 
       const taskMeta = {
@@ -276,7 +275,9 @@ export const useTransactions = defineStore('history/transactions', () => {
     let payload: TransactionHashAndEvmChainPayload[] = [];
 
     if (isFetchAll) {
-      payload = get(evmChainNames).map(evmChain => ({ evmChain }));
+      payload = get(txEvmChains).map(chain => ({
+        evmChain: chain.evmChainName
+      }));
     } else {
       if (transactions.length === 0) return;
       const mapped = transactions.map(({ evmChain, txHash }) => ({

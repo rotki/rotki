@@ -1,10 +1,19 @@
 import { z } from 'zod';
 
-export const ChainInfo = z.object({
+const BasicChainInfo = z.object({
   name: z.string(),
-  type: z.string(),
-  evmChainName: z.string().nullish()
+  type: z.string()
 });
+
+const EvmChainInfo = z.object({
+  name: z.string(),
+  type: z.literal('evm'),
+  evmChainName: z.string()
+});
+
+export type EvmChainInfo = z.infer<typeof EvmChainInfo>;
+
+export const ChainInfo = EvmChainInfo.or(BasicChainInfo);
 
 export type ChainInfo = z.infer<typeof ChainInfo>;
 

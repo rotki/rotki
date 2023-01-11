@@ -31,7 +31,7 @@ export const useTransactionFilter = (disableProtocols: boolean) => {
 
   const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
   const { counterparties } = storeToRefs(useTransactions());
-  const { evmChainNames } = useSupportedChains();
+  const { txEvmChains } = useSupportedChains();
   const { assetSearch } = useAssetInfoApi();
   const { tc } = useI18n();
 
@@ -98,7 +98,7 @@ export const useTransactionFilter = (disableProtocols: boolean) => {
           keyValue: TransactionFilterValueKeys.EVM_CHAIN,
           description: tc('transactions.filter.chain'),
           string: true,
-          suggestions: () => get(evmChainNames),
+          suggestions: () => get(txEvmChains).map(x => x.evmChainName),
           validate: (chain: string) => !!chain
         }
       );

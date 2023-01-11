@@ -139,6 +139,7 @@
     "useArrayFilter": true,
     "useArrayFind": true,
     "useArrayFindIndex": true,
+    "useArrayInclude": true,
     "useArrayJoin": true,
     "useArrayMap": true,
     "useArrayReduce": true,
