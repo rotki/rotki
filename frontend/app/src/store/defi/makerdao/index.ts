@@ -43,9 +43,7 @@ type MakerDAOProtocol =
 
 export const useMakerDaoStore = defineStore('defi/makerDao', () => {
   const dsrHistory: Ref<DSRHistory> = ref({});
-  const dsrBalances: Ref<DSRBalances> = ref(
-    defaultDsrBalances()
-  ) as Ref<DSRBalances>;
+  const dsrBalances: Ref<DSRBalances> = ref(defaultDsrBalances());
   const makerDAOVaults: Ref<MakerDAOVault[]> = ref([]);
   const makerDAOVaultDetails: Ref<MakerDAOVaultDetails> = ref([]);
 

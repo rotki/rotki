@@ -95,6 +95,7 @@
     "refAutoReset": true,
     "refDebounced": true,
     "refDefault": true,
+    "refIsTruthy": true,
     "refThrottled": true,
     "refWithControl": true,
     "resolveComponent": true,

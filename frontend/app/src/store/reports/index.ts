@@ -81,9 +81,7 @@ const defaultProgress = (): Progress => ({
 });
 
 export const useReports = defineStore('reports', () => {
-  const report: Ref<SelectedReport> = ref(
-    defaultReport()
-  ) as Ref<SelectedReport>;
+  const report: Ref<SelectedReport> = ref(defaultReport());
   const reports: Ref<Reports> = ref(defaultReports());
   const accountingSettings: Ref<AccountingSettings | null> = ref(null);
   const loaded = ref(false);

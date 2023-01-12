@@ -31,9 +31,9 @@ import {
 } from '@/utils/history';
 
 export const useTrades = defineStore('history/trades', () => {
-  const trades = ref(defaultCollectionState<TradeEntry>()) as Ref<
-    Collection<TradeEntry>
-  >;
+  const trades: Ref<Collection<TradeEntry>> = ref(
+    defaultCollectionState<TradeEntry>()
+  );
 
   const tradesPayload: Ref<Partial<TradeRequestPayload>> = ref(
     defaultHistoricPayloadState<Trade>()

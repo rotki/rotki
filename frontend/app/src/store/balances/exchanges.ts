@@ -299,7 +299,7 @@ export const useExchangeBalancesStore = defineStore(
         await fetchExchangeBalances({
           location: exchange.location,
           ignoreCache: refresh
-        } as ExchangeBalancePayload);
+        });
       }
     };
 

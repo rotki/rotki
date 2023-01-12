@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { type Ref } from 'vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import Fragment from '@/components/helper/Fragment';
 import UserNoteForm from '@/components/UserNoteForm.vue';
@@ -77,9 +76,7 @@ const page = computed<number>(() => {
   return offset / itemsPerPage + 1;
 });
 
-const { limit, found, total } = getCollectionData<UserNote>(
-  notes as Ref<Collection<UserNote>>
-);
+const { limit, found, total } = getCollectionData<UserNote>(notes);
 
 const { showUpgradeRow } = setupEntryLimit(limit, found, total);
 

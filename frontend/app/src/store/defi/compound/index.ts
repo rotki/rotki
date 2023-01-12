@@ -22,9 +22,7 @@ export const defaultCompoundHistory = (): CompoundHistory => ({
 
 export const useCompoundStore = defineStore('defi/compound', () => {
   const balances: Ref<CompoundBalances> = ref({});
-  const history: Ref<CompoundHistory> = ref(
-    defaultCompoundHistory()
-  ) as Ref<CompoundHistory>;
+  const history: Ref<CompoundHistory> = ref(defaultCompoundHistory());
 
   const { resetStatus } = useStatusUpdater(Section.DEFI_COMPOUND_BALANCES);
   const { awaitTask } = useTasks();
