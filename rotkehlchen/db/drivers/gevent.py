@@ -18,6 +18,7 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 from rotkehlchen.db.minimized_schema import MINIMIZED_USER_DB_SCHEMA
 from rotkehlchen.errors.misc import DBSchemaError
 from rotkehlchen.globaldb.minimized_schema import MINIMIZED_GLOBAL_DB_SCHEMA
+from rotkehlchen.greenlets.utils import get_greenlet_name
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -247,6 +248,10 @@ class DBConnection:
         # We need an ordered set. Python doesn't have such thing as a standalone object, but has
         # `dict` which preserves the order of its keys. So we use dict with None values.
         self.savepoints: dict[str, None] = {}
+        # These will hold the id of the greenlet where write tx/savepoints are active
+        # https://www.gevent.org/api/gevent.greenlet.html#gevent.Greenlet.minimal_ident
+        self.savepoint_greenlet_id: Optional[str] = None
+        self.write_greenlet_id: Optional[str] = None
         if connection_type == DBConnectionType.GLOBAL:
             self._conn = sqlite3.connect(
                 database=path,
@@ -338,12 +343,20 @@ class DBConnection:
         transaction in that case. This should be used sparingly.
         """
         if len(self.savepoints) != 0:
-            with self.savepoint_ctx() as cursor:
-                yield cursor
-                return
+            current_id = get_greenlet_name(gevent.getcurrent())
+            if current_id != self.savepoint_greenlet_id:
+                # savepoint exists but in other greenlet. Wait till it's done.
+                while self.savepoint_greenlet_id is not None:
+                    gevent.sleep(CONTEXT_SWITCH_WAIT)
+                # and now continue with the normal write context logic
+            else:  # open another savepoint instead of a write transaction
+                with self.savepoint_ctx() as cursor:
+                    yield cursor
+                    return
         # else
         with self.critical_section(), self.transaction_lock:
             cursor = self.cursor()
+            self.write_greenlet_id = get_greenlet_name(gevent.getcurrent())
             cursor.execute('BEGIN TRANSACTION')
             try:
                 yield cursor
@@ -359,6 +372,7 @@ class DBConnection:
                 self._conn.commit()
             finally:
                 cursor.close()
+                self.write_greenlet_id = None
 
     @contextmanager
     def savepoint_ctx(
@@ -370,18 +384,13 @@ class DBConnection:
         rolls back this savepoint, otherwise releases it (aka forgets it -- this is not commited to the DB).
         Savepoints work like nested transactions, more information here: https://www.sqlite.org/lang_savepoint.html
         """    # noqa: E501
-        savepoints_length_before = len(self.savepoints)
         cursor, savepoint_name = self._enter_savepoint(savepoint_name)
         try:
             yield cursor
         except Exception:
-            while len(self.savepoints) > savepoints_length_before + 1:
-                gevent.sleep(CONTEXT_SWITCH_WAIT)
             self.rollback_savepoint(savepoint_name)
             raise
         else:
-            while len(self.savepoints) > savepoints_length_before + 1:
-                gevent.sleep(CONTEXT_SWITCH_WAIT)
             self.release_savepoint(savepoint_name)
         finally:
             cursor.close()
@@ -399,6 +408,17 @@ class DBConnection:
         """
         if savepoint_name is None:
             savepoint_name = str(uuid4())
+
+        current_id = get_greenlet_name(gevent.getcurrent())
+        if self._conn.in_transaction is True and self.write_greenlet_id != current_id:
+            # a transaction is open in a different greenlet
+            while self.write_greenlet_id is not None:
+                gevent.sleep(CONTEXT_SWITCH_WAIT)  # wait until that transaction ends
+
+        if self.savepoint_greenlet_id is not None:
+            # savepoints exist but in other greenlet
+            while self.savepoint_greenlet_id is not None and current_id != self.savepoint_greenlet_id:  # noqa: E501
+                gevent.sleep(CONTEXT_SWITCH_WAIT)  # wait until no other savepoint exists
         if savepoint_name in self.savepoints:
             raise ContextError(
                 f'Wanted to enter savepoint {savepoint_name} but a savepoint with the same name '
@@ -407,6 +427,7 @@ class DBConnection:
         cursor = self.cursor()
         cursor.execute(f'SAVEPOINT "{savepoint_name}"')
         self.savepoints[savepoint_name] = None
+        self.savepoint_greenlet_id = current_id
         return cursor, savepoint_name
 
     def _modify_savepoint(
@@ -431,6 +452,8 @@ class DBConnection:
 
         # Rollback all savepoints until, and including, the one with name `savepoint_name`
         self.savepoints = dict.fromkeys(list_savepoints[:list_savepoints.index(savepoint_name)])
+        if len(self.savepoints) == 0:  # mark if we are out of all savepoints
+            self.savepoint_greenlet_id = None
 
     def rollback_savepoint(self, savepoint_name: Optional[str] = None) -> None:
         """

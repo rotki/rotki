@@ -8,7 +8,7 @@ from geventwebsocket import WebSocketApplication
 from geventwebsocket.exceptions import WebSocketError
 from geventwebsocket.websocket import WebSocket
 
-from rotkehlchen.greenlets import GreenletManager
+from rotkehlchen.greenlets.manager import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:

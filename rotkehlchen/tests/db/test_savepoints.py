@@ -1,3 +1,6 @@
+from contextlib import suppress
+
+import gevent
 import pytest
 
 from rotkehlchen.db.drivers.gevent import ContextError, DBConnection, DBConnectionType
@@ -44,3 +47,174 @@ def test_savepoint_errors():
 
     with pytest.raises(ContextError):
         conn.rollback_savepoint('abc')
+
+
+def test_write_transaction_with_savepoint():
+    """Test that opening a savepoint within a write transaction in the
+    same greenlet is okay"""
+    conn = DBConnection(
+        path=':memory:',
+        connection_type=DBConnectionType.GLOBAL,
+        sql_vm_instructions_cb=0,
+    )
+    conn.execute('CREATE TABLE a(b INTEGER PRIMARY KEY)')
+    with conn.write_ctx() as write_cursor:
+        write_cursor.execute('INSERT INTO a VALUES (1)')
+        with conn.savepoint_ctx() as savepoint_cursor:
+            savepoint_cursor.execute('INSERT INTO a VALUES (2)')
+
+    with conn.read_ctx() as cursor:
+        assert cursor.execute('SELECT b from a').fetchall() == [(1,), (2,)]
+
+
+def test_write_transaction_with_savepoint_other_context():
+    """Test that opening a savepoint from a different greenlet while a write
+    transaction is already open from another greenlet waits for the original to finish"""
+    def other_context(conn, first_run) -> None:
+        with conn.savepoint_ctx() as savepoint1_cursor:
+            values = (2,) if first_run else (4,)
+            savepoint1_cursor.execute('INSERT INTO a VALUES (?)', values)
+            if first_run:
+                return
+            with suppress(ValueError), conn.savepoint_ctx() as savepoint2_cursor:
+                savepoint2_cursor.execute('INSERT INTO a VALUES (5)')
+                raise ValueError('Test rollback')
+
+    conn = DBConnection(
+        path=':memory:',
+        connection_type=DBConnectionType.GLOBAL,
+        sql_vm_instructions_cb=0,
+    )
+    conn.execute('CREATE TABLE a(b INTEGER PRIMARY KEY)')
+    with conn.write_ctx() as write_cursor:
+        write_cursor.execute('INSERT INTO a VALUES (1)')
+        greenlet1 = gevent.spawn(other_context, conn, True)
+        gevent.sleep(.3)  # context switch for a bit to let the other greenlet run
+        assert greenlet1.exception is None
+        assert greenlet1.dead is False, 'the other greenlet should still run'
+
+    with conn.read_ctx() as cursor:
+        assert cursor.execute('SELECT b from a').fetchall() == [(1,)], 'other greenlet should not have written to the DB'  # noqa: E501
+
+    gevent.joinall([greenlet1])  # wait till the other greenlet finishes
+    with conn.read_ctx() as cursor:  # make sure it wrote in the DB
+        assert cursor.execute('SELECT b from a').fetchall() == [(1,), (2,)], 'other greenlet should write to the DB'  # noqa: E501
+
+    # now let's try with the other greenlet also rolling back part of the savepoint
+    with conn.write_ctx() as write_cursor:
+        write_cursor.execute('INSERT INTO a VALUES (3)')
+        greenlet1 = gevent.spawn(other_context, conn, False)
+        gevent.sleep(.3)  # context switch for a bit to let the other greenlet run
+        assert greenlet1.exception is None
+        assert greenlet1.dead is False, 'the other greenlet should still run'
+
+    with conn.read_ctx() as cursor:
+        assert cursor.execute('SELECT b from a').fetchall() == [(1,), (2,), (3,)], 'other greenlet should not have written to the DB'  # noqa: E501
+
+    gevent.joinall([greenlet1])  # wait till the other greenlet finishes
+    with conn.read_ctx() as cursor:  # make sure it wrote in the DB but not the last one
+        assert cursor.execute('SELECT b from a').fetchall() == [(1,), (2,), (3,), (4,)], 'other greenlet should write to the DB'  # noqa: E501
+
+
+def test_savepoint_with_write_transaction():
+    """Test that a write transaction under a savepoint can still happen by
+    switching to a savepoint instead"""
+    conn = DBConnection(
+        path=':memory:',
+        connection_type=DBConnectionType.GLOBAL,
+        sql_vm_instructions_cb=0,
+    )
+    conn.execute('CREATE TABLE a(b INTEGER PRIMARY KEY)')
+    with conn.savepoint_ctx() as savepoint_cursor:
+        savepoint_cursor.execute('INSERT INTO a VALUES (1)')
+        with conn.write_ctx() as write_cursor:
+            write_cursor.execute('INSERT INTO a VALUES (2)')
+
+    with conn.read_ctx() as cursor:
+        assert cursor.execute('SELECT b from a').fetchall() == [(1,), (2,)]
+
+    with suppress(ValueError), conn.savepoint_ctx() as savepoint_cursor:
+        savepoint_cursor.execute('INSERT INTO a VALUES (3)')
+        with conn.write_ctx() as write_cursor:
+            write_cursor.execute('INSERT INTO a VALUES (4)')
+            raise ValueError('Test rollback')
+
+    with conn.read_ctx() as cursor:
+        assert cursor.execute('SELECT b from a').fetchall() == [(1,), (2,)]
+
+
+def test_savepoint_with_write_transaction_other_context():
+    """Test that a write transaction after a savepoint but in a different greenlet
+    does not continue the savepoint but instead waits"""
+    def other_context(conn) -> None:
+        with conn.write_ctx() as write_cursor:
+            write_cursor.execute('INSERT INTO a VALUES (4)')
+
+    conn = DBConnection(
+        path=':memory:',
+        connection_type=DBConnectionType.GLOBAL,
+        sql_vm_instructions_cb=0,
+    )
+    conn.execute('CREATE TABLE a(b INTEGER PRIMARY KEY)')
+    with conn.savepoint_ctx() as savepoint_cursor:
+        savepoint_cursor.execute('INSERT INTO a VALUES (1)')
+        greenlet1 = gevent.spawn(other_context, conn)
+        gevent.sleep(.3)  # context switch for a bit to let the other greenlet run
+        assert greenlet1.exception is None
+        assert greenlet1.dead is False, 'the other greenlet should still run'
+
+    with conn.read_ctx() as cursor:
+        assert cursor.execute('SELECT b from a').fetchall() == [(1,)], 'other greenlet should not have written to the DB'  # noqa: E501
+
+    gevent.joinall([greenlet1])  # wait till the other greenlet finishes
+    with conn.read_ctx() as cursor:  # make sure it wrote in the DB
+        assert cursor.execute('SELECT b from a').fetchall() == [(1,), (4,)], 'other greenlet should write to the DB'  # noqa: E501
+
+
+def test_open_savepoint_with_savepoint_other_context():
+    """Test that opening a savepoint while a savepoint queue is already open in
+    another greenlet waits until the first one is completely done"""
+    def other_context(conn, first_run) -> None:
+        with conn.savepoint_ctx() as savepoint1_cursor:
+            values = (2,) if first_run else (4,)
+            savepoint1_cursor.execute('INSERT INTO a VALUES (?)', values)
+            if first_run:
+                return
+            with suppress(ValueError), conn.savepoint_ctx() as savepoint2_cursor:
+                savepoint2_cursor.execute('INSERT INTO a VALUES (5)')
+                raise ValueError('Test rollback')
+
+    conn = DBConnection(
+        path=':memory:',
+        connection_type=DBConnectionType.GLOBAL,
+        sql_vm_instructions_cb=0,
+    )
+    conn.execute('CREATE TABLE a(b INTEGER PRIMARY KEY)')
+    with conn.savepoint_ctx() as savepoint_cursor:
+        savepoint_cursor.execute('INSERT INTO a VALUES (1)')
+        greenlet1 = gevent.spawn(other_context, conn, True)
+        gevent.sleep(.3)  # context switch for a bit to let the other greenlet run
+        assert greenlet1.exception is None
+        assert greenlet1.dead is False, 'the other greenlet should still run'
+
+    with conn.read_ctx() as cursor:
+        assert cursor.execute('SELECT b from a').fetchall() == [(1,)], 'other greenlet should not have written to the DB'  # noqa: E501
+
+    gevent.joinall([greenlet1])  # wait till the other greenlet finishes
+    with conn.read_ctx() as cursor:  # make sure it wrote in the DB
+        assert cursor.execute('SELECT b from a').fetchall() == [(1,), (2,)], 'other greenlet should write to the DB'  # noqa: E501
+
+    # now let's try with the other greenlet also rolling back part of the savepoint
+    with conn.savepoint_ctx() as savepoint_cursor:
+        savepoint_cursor.execute('INSERT INTO a VALUES (3)')
+        greenlet1 = gevent.spawn(other_context, conn, False)
+        gevent.sleep(.3)  # context switch for a bit to let the other greenlet run
+        assert greenlet1.exception is None
+        assert greenlet1.dead is False, 'the other greenlet should still run'
+
+    with conn.read_ctx() as cursor:
+        assert cursor.execute('SELECT b from a').fetchall() == [(1,), (2,), (3,)], 'other greenlet should not have written to the DB'  # noqa: E501
+
+    gevent.joinall([greenlet1])  # wait till the other greenlet finishes
+    with conn.read_ctx() as cursor:  # make sure it wrote in the DB but not the last one
+        assert cursor.execute('SELECT b from a').fetchall() == [(1,), (2,), (3,), (4,)], 'other greenlet should write to the DB'  # noqa: E501

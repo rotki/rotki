@@ -57,7 +57,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.manual_price_oracles import ManualCurrentOracle
 from rotkehlchen.globaldb.updates import AssetsUpdater
-from rotkehlchen.greenlets import GreenletManager
+from rotkehlchen.greenlets.manager import GreenletManager
 from rotkehlchen.history.events import EventsHistorian
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.types import HistoricalPriceOracle
