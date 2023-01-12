@@ -71,11 +71,7 @@ const balanceBlockchainRoute = Routes.ACCOUNTS_BALANCES_BLOCKCHAIN;
       :to="`${balanceBlockchainRoute}#blockchain-balances-${total.chain}`"
     >
       <v-list-item-avatar tile class="blockchain-balance-box__icon">
-        <asset-icon
-          size="24px"
-          :identifier="chain"
-          :show-chain="false"
-        />
+        <asset-icon size="24px" :identifier="chain" :show-chain="false" />
       </v-list-item-avatar>
       <v-list-item-content>
         <div class="d-flex flex-row">

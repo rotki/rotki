@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { toCapitalCase } from '@/utils/text';
 
 const BasicChainInfo = z.object({
   id: z.string(),
@@ -16,7 +17,10 @@ const EvmChainInfo = z.object({
 
 export type EvmChainInfo = z.infer<typeof EvmChainInfo>;
 
-export const ChainInfo = EvmChainInfo.or(BasicChainInfo);
+export const ChainInfo = EvmChainInfo.or(BasicChainInfo).transform(obj => ({
+  ...obj,
+  name: toCapitalCase(obj.name)
+}));
 
 export type ChainInfo = z.infer<typeof ChainInfo>;
 
