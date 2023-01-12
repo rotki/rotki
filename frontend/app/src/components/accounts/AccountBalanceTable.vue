@@ -3,7 +3,7 @@ import { type Balance } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import isEqual from 'lodash/isEqual';
 import sortBy from 'lodash/sortBy';
-import { type ComputedRef, useListeners } from 'vue';
+import { type ComputedRef, type Ref, useListeners } from 'vue';
 import { type DataTableHeader } from 'vuetify';
 import AccountGroupHeader from '@/components/accounts/AccountGroupHeader.vue';
 import AccountBalanceDetails from '@/components/accounts/balances/AccountBalanceDetails.vue';
@@ -29,6 +29,7 @@ import { TaskType } from '@/types/task-type';
 import { assert } from '@/utils/assertions';
 import { Zero, zeroBalance } from '@/utils/bignumbers';
 import { isTokenChain } from '@/types/blockchain/chains';
+import { balanceSum } from '@/utils/calculation';
 
 const props = withDefaults(
   defineProps<{
@@ -97,8 +98,8 @@ const loading = computed<boolean>(() => {
   return useStatusUpdater(get(section)).loading();
 });
 
-const expanded = ref<BlockchainAccountWithBalance[]>([]);
-const collapsedXpubs = ref<XpubAccountWithBalance[]>([]);
+const expanded: Ref<BlockchainAccountWithBalance[]> = ref([]);
+const collapsedXpubs: Ref<XpubAccountWithBalance[]> = ref([]);
 
 const isEth = computed<boolean>(() => get(blockchain) === Blockchain.ETH);
 const isEth2 = computed<boolean>(() => get(blockchain) === Blockchain.ETH2);
@@ -184,7 +185,7 @@ const nonExpandedBalances = computed<BlockchainAccountWithBalance[]>(() => {
 
 const visibleBalances = computed<BlockchainAccountWithBalance[]>(() => {
   const balances = get(nonExpandedBalances).map(item => {
-    if (!get(isEth) || get(loopring)) return item;
+    if (!isTokenChain(get(blockchain)) || get(loopring)) return item;
     const detected = get(getEthDetectedTokensInfo(blockchain, item.address));
     return {
       ...item,
@@ -207,10 +208,8 @@ const collapsedXpubBalances = computed<Balance>(() => {
   return get(collapsedXpubs)
     .filter(({ tags }) => get(visibleTags).every(tag => tags.includes(tag)))
     .reduce(
-      (previousValue, currentValue) => ({
-        amount: previousValue.amount.plus(currentValue.balance.amount),
-        usdValue: previousValue.usdValue.plus(currentValue.balance.usdValue)
-      }),
+      (previousValue, currentValue) =>
+        balanceSum(previousValue, currentValue.balance),
       balance
     );
 });
@@ -327,7 +326,7 @@ const asset: ComputedRef<string> = computed(() => {
 const tableHeaders = computed<DataTableHeader[]>(() => {
   const currency = { symbol: get(currencySymbol) };
 
-  const currencyHeader = get(isEth)
+  const currencyHeader = isTokenChain(get(blockchain))
     ? tc('account_balances.headers.usd_value_eth', 0, currency)
     : tc('account_balances.headers.usd_value', 0, currency);
 
@@ -337,7 +336,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
 
   const headers: DataTableHeader[] = [
     { text: '', value: 'accountSelection', width: '34px', sortable: false },
-    { text: accountHeader, value: 'label' },
+    { text: accountHeader, value: 'label', sortable: false },
     {
       text: get(asset),
       value: 'balance.amount',

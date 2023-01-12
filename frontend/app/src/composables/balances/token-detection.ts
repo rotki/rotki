@@ -1,50 +1,62 @@
 import { type MaybeRef } from '@vueuse/core';
-import { type Blockchain } from '@rotki/common/lib/blockchain';
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type Ref } from 'vue';
-import { useBlockchainBalancesStore } from '@/store/blockchain/balances';
 import { useBlockchainTokensStore } from '@/store/blockchain/tokens';
 import { useTasks } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 import { assert } from '@/utils/assertions';
 import { isTokenChain } from '@/types/blockchain/chains';
+import { useEthAccountsStore } from '@/store/blockchain/accounts/eth';
+import { useChainsAccountsStore } from '@/store/blockchain/accounts/chains';
 
 export const useTokenDetection = (
   chain: Ref<Blockchain>,
   accountAddress: MaybeRef<string | null> = null
 ) => {
   const { isTaskRunning } = useTasks();
-  const { fetchBlockchainBalances } = useBlockchainBalancesStore();
-  const { getEthDetectedTokensInfo, fetchDetectedTokens } =
-    useBlockchainTokensStore();
+  const {
+    getEthDetectedTokensInfo,
+    fetchDetectedTokens: fetchDetectedTokensCaller
+  } = useBlockchainTokensStore();
+
+  const { ethAddresses } = storeToRefs(useEthAccountsStore());
+  const { optimismAddresses } = storeToRefs(useChainsAccountsStore());
 
   const detectingTokens = computed<boolean>(() => {
     const address = get(accountAddress);
+    const blockchain = get(chain);
     return get(
-      isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, address ? { address } : {})
+      isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, {
+        chain: blockchain,
+        ...(address ? { address } : {})
+      })
     );
   });
 
   const detectedTokens = getEthDetectedTokensInfo(chain, accountAddress);
 
-  const fetchDetectedTokensAndQueryBalance = async (address: string) => {
+  const fetchDetectedTokens = async (address: string) => {
     const blockchain = get(chain);
     assert(isTokenChain(blockchain));
-    await fetchDetectedTokens(blockchain, address);
-    await fetchBlockchainBalances({
-      blockchain,
-      ignoreCache: true
-    });
+    await fetchDetectedTokensCaller(blockchain, address);
   };
 
-  const detectTokensAndQueryBalances = async (addresses: string[] = []) => {
+  const detectTokens = async (addresses: string[] = []) => {
     const address = get(accountAddress);
     assert(address || addresses.length > 0);
     if (address) {
-      await fetchDetectedTokensAndQueryBalance(address);
+      await fetchDetectedTokens(address);
     } else {
-      await Promise.allSettled(
-        addresses.map(fetchDetectedTokensAndQueryBalance)
-      );
+      await Promise.allSettled(addresses.map(fetchDetectedTokens));
+    }
+  };
+
+  const detectTokensOfAllAddresses = async () => {
+    const blockchain = get(chain);
+    if (blockchain === Blockchain.OPTIMISM) {
+      await detectTokens(get(optimismAddresses));
+    } else if (blockchain === Blockchain.ETH) {
+      await detectTokens(get(ethAddresses));
     }
   };
 
@@ -52,6 +64,7 @@ export const useTokenDetection = (
     detectingTokens,
     detectedTokens,
     getEthDetectedTokensInfo,
-    detectTokensAndQueryBalances
+    detectTokens,
+    detectTokensOfAllAddresses
   };
 };

@@ -62,10 +62,12 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
             'actions.balances.detect_tokens.task.description',
             0,
             {
-              address
+              address,
+              chain
             }
           ),
-          address
+          address,
+          chain
         };
 
         await awaitTask<EvmTokensRecord, TaskMeta>(
@@ -132,14 +134,27 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
   });
 
   const { isTaskRunning } = useTasks();
-  const isDetecting = isTaskRunning(TaskType.FETCH_DETECTED_TOKENS);
+  const isEthDetecting = isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, {
+    chain: Blockchain.ETH
+  });
+  const isOptimismDetecting = isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, {
+    chain: Blockchain.OPTIMISM
+  });
 
   const { fetchBlockchainBalances } = useBlockchainBalancesStore();
 
-  watch(isDetecting, async (isDetecting, wasDetecting) => {
+  watch(isEthDetecting, async (isDetecting, wasDetecting) => {
     if (wasDetecting && !isDetecting) {
       await fetchBlockchainBalances({
         blockchain: Blockchain.ETH,
+        ignoreCache: true
+      });
+    }
+  });
+  watch(isOptimismDetecting, async (isDetecting, wasDetecting) => {
+    if (wasDetecting && !isDetecting) {
+      await fetchBlockchainBalances({
+        blockchain: Blockchain.OPTIMISM,
         ignoreCache: true
       });
     }

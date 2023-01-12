@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
+import { getIdentifierFromSymbolMap } from '@rotki/common/lib/data';
+import { type ComputedRef } from 'vue';
 import TokenPlaceholder from '@/components/svgs/TokenPlaceholder.vue';
 import { useAssetIconApi } from '@/services/assets/icon-api';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
@@ -43,8 +45,12 @@ const css = useCssModule();
 
 const { currencies } = useCurrencies();
 
+const mappedIdentifier: ComputedRef<string> = computed(() => {
+  return getIdentifierFromSymbolMap(get(identifier));
+});
+
 const currency = computed<string | undefined>(() => {
-  const id = get(identifier);
+  const id = get(mappedIdentifier);
   if ([Blockchain.BTC, Blockchain.ETH].includes(id as Blockchain)) {
     return undefined;
   }
@@ -56,7 +62,7 @@ const currency = computed<string | undefined>(() => {
 const { assetInfo } = useAssetInfoRetrieval();
 const { assetImageUrl } = useAssetIconApi();
 
-const asset = assetInfo(identifier, enableAssociation);
+const asset = assetInfo(mappedIdentifier, enableAssociation);
 const isCustomAsset = computed(() => get(asset)?.isCustomAsset);
 const chain = computed(() => get(asset)?.evmChain);
 const symbol = computed(() => get(asset)?.symbol);
@@ -66,7 +72,7 @@ const displayAsset = computed<string>(() => {
   const currencySymbol = get(currency);
   if (currencySymbol) return currencySymbol;
 
-  return get(symbol) ?? get(name) ?? get(identifier) ?? '';
+  return get(symbol) ?? get(name) ?? get(mappedIdentifier) ?? '';
 });
 
 const tooltip = computed(() => {
@@ -84,14 +90,12 @@ const tooltip = computed(() => {
 });
 
 const url = computed<string>(() => {
-  const id = get(identifier);
+  const id = get(mappedIdentifier);
   if (get(symbol) === 'WETH') {
     return `./assets/images/defi/weth.svg`;
-  } else if (id === Blockchain.OPTIMISM) {
-    return `./assets/images/chains/optimism.svg`;
   }
-  const currentTimestamp = get(timestamp) || Date.now();
 
+  const currentTimestamp = get(timestamp) || Date.now();
   return assetImageUrl(id, get(changeable) ? currentTimestamp : undefined);
 });
 

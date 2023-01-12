@@ -82,7 +82,8 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
     text: tc('common.price_in_symbol', 0, { symbol: get(currencySymbol) }),
     value: 'usdPrice',
     align: 'end',
-    class: 'text-no-wrap'
+    class: 'text-no-wrap',
+    sortable: false
   },
   {
     text: tc('non_fungible_balances.column.custom_price'),

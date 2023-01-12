@@ -58,6 +58,7 @@ const { getBlockie } = useBlockie();
               v-if="account.chain"
               size="24px"
               :identifier="account.chain"
+              :show-chain="false"
             />
             <v-tooltip v-else top>
               <template #activator="{ childOn }">

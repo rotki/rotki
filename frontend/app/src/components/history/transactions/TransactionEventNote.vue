@@ -129,7 +129,10 @@ const formatNotes = (
         class="d-inline-flex"
       >
         <hash-link
-          :class="$style['address']"
+          :class="{
+            [$style.address]: true,
+            'pl-2': note.type === 'tx'
+          }"
           :text="note.address"
           :tx="note.type === 'tx'"
         />

@@ -2,13 +2,12 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { explorerUrls } from '@/types/asset-urls';
-import { getNativeAsset } from '@/utils/assets';
+import ChainDisplay from '@/components/accounts/blockchain/ChainDisplay.vue';
 
-const ETC = 'ETC' as const;
+const additional = ['ETC'] as const;
+const supportedExplorers = [...Object.values(Blockchain), ...additional];
 
-const supportedExplorers = [...Object.values(Blockchain), ETC];
-
-const selection = ref<Blockchain | typeof ETC>(Blockchain.ETH);
+const selection = ref<Blockchain | typeof additional[number]>(Blockchain.ETH);
 const store = useFrontendSettingsStore();
 const { explorers } = storeToRefs(store);
 
@@ -101,10 +100,12 @@ const { t } = useI18n();
       @change="onChange"
     >
       <template #item="{ item }">
-        <asset-details :asset="getNativeAsset(item)" is-collection-parent />
+        <chain-display v-if="!additional.includes(item)" :chain="item" />
+        <asset-details v-else :asset="item" />
       </template>
       <template #selection="{ item }">
-        <asset-details :asset="getNativeAsset(item)" is-collection-parent />
+        <chain-display v-if="!additional.includes(item)" :chain="item" />
+        <asset-details v-else :asset="item" />
       </template>
     </v-select>
 

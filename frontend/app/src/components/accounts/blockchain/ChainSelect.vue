@@ -3,48 +3,6 @@ import { Blockchain } from '@rotki/common/lib/blockchain';
 import ChainDisplay from '@/components/accounts/blockchain/ChainDisplay.vue';
 import { Module } from '@/types/modules';
 
-interface SupportedChain {
-  symbol: Blockchain;
-  name: string;
-  icon?: string;
-}
-
-const chains: SupportedChain[] = [
-  {
-    symbol: Blockchain.ETH,
-    name: 'Ethereum'
-  },
-  {
-    symbol: Blockchain.ETH2,
-    name: 'Beacon chain validator'
-  },
-  {
-    symbol: Blockchain.BTC,
-    name: 'Bitcoin'
-  },
-  {
-    symbol: Blockchain.BCH,
-    name: 'Bitcoin Cash'
-  },
-  {
-    symbol: Blockchain.OPTIMISM,
-    name: 'Optimism',
-    icon: './assets/images/chains/optimism.svg'
-  },
-  {
-    symbol: Blockchain.KSM,
-    name: 'Kusama'
-  },
-  {
-    symbol: Blockchain.DOT,
-    name: 'Polkadot'
-  },
-  {
-    symbol: Blockchain.AVAX,
-    name: 'Avalanche'
-  }
-];
-
 const props = withDefaults(
   defineProps<{
     modelValue?: Blockchain | null;
@@ -74,19 +32,19 @@ const { evmOnly } = toRefs(props);
 
 const { isModuleEnabled } = useModules();
 
-const { isEvm } = useSupportedChains();
+const { isEvm, supportedChains } = useSupportedChains();
 
 const items = computed(() => {
   const isEth2Enabled = get(isModuleEnabled(Module.ETH2));
 
-  let data = chains;
+  let data = get(supportedChains).map(({ id }) => id);
 
   if (!isEth2Enabled) {
-    data = data.filter(({ symbol }) => symbol !== Blockchain.ETH2);
+    data = data.filter(symbol => symbol !== Blockchain.ETH2);
   }
 
   if (get(evmOnly)) {
-    data = data.filter(({ symbol }) => get(isEvm(symbol)));
+    data = data.filter(symbol => get(isEvm(symbol as Blockchain)));
   }
 
   return data;
@@ -104,16 +62,15 @@ const { t } = useI18n();
     :items="items"
     :label="t('account_form.labels.blockchain')"
     :disabled="disabled"
-    item-value="symbol"
     :dense="dense"
     v-bind="rootAttrs"
     @change="updateBlockchain"
   >
     <template #selection="{ item }">
-      <chain-display :item="item" :dense="dense" />
+      <chain-display :chain="item" :dense="dense" />
     </template>
     <template #item="{ item }">
-      <chain-display :item="item" />
+      <chain-display :chain="item" />
     </template>
   </v-select>
 </template>

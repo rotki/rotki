@@ -29,7 +29,7 @@ import { assetSum, balanceSum } from '@/utils/calculation';
 import { getTags } from '@/utils/tags';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useAssetCacheStore } from '@/store/assets/asset-cache';
-import { getNativeAsset } from '@/utils/assets';
+import { useSupportedChains } from '@/composables/info/chains';
 
 export const removeZeroAssets = (entries: AssetBalances): AssetBalances => {
   const balances = { ...entries };
@@ -203,9 +203,12 @@ export const accountsWithBalances = (
   blockchain: Exclude<Blockchain, 'BTC'>
 ): AccountWithBalance[] => {
   const data: AccountWithBalance[] = [];
+  const { getNativeAsset } = useSupportedChains();
+
+  const nativeAsset = get(getNativeAsset(blockchain));
+
   for (const account of accounts) {
     const accountAssets = balances[account.address];
-    const nativeAsset = getNativeAsset(blockchain);
 
     const balance: Balance = accountAssets
       ? {

@@ -14,7 +14,7 @@ const props = defineProps({
   noPadding: { required: false, type: Boolean, default: false }
 });
 
-const { size } = toRefs(props);
+const { item, size } = toRefs(props);
 const iconStyle = computed(() => ({
   fontSize: get(size)
 }));
@@ -46,7 +46,11 @@ const iconStyle = computed(() => ({
         {{ item.icon }}
       </v-icon>
     </adaptive-wrapper>
-    <span v-if="!icon" :class="horizontal ? 'ml-3' : null">
+    <span
+      v-if="!icon"
+      class="text-capitalize"
+      :class="horizontal ? 'ml-3' : null"
+    >
       {{ item.name }}
     </span>
   </span>
