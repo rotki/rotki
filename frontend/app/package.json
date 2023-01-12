@@ -18,7 +18,7 @@
     "i18n:report": "vue-i18n-extract report --vueFiles './src/**/*.?(ts|js|vue)' --languageFiles './src/locales/**/*.json'",
     "lint:style": "stylelint 'src/**/*.{vue,scss}'",
     "lint:style:fix": "stylelint --fix 'src/**/*.{vue,scss}'",
-    "postinstall": "electron-builder install-app-deps",
+    "postinstall": "electron-builder install-app-deps && node scripts/modify.bn.js",
     "postuninstall": "electron-builder install-app-deps",
     "serve": "node scripts/serve.js --web",
     "serve:backend": "node scripts/start-backend.js",

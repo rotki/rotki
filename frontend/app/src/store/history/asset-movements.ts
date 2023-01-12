@@ -30,9 +30,9 @@ import {
 } from '@/utils/history';
 
 export const useAssetMovements = defineStore('history/assetMovements', () => {
-  const assetMovements = ref(
+  const assetMovements: Ref<Collection<AssetMovementEntry>> = ref(
     defaultCollectionState<AssetMovementEntry>()
-  ) as Ref<Collection<AssetMovementEntry>>;
+  );
 
   const assetMovementsPayload: Ref<Partial<AssetMovementRequestPayload>> = ref(
     defaultHistoricPayloadState<AssetMovement>()

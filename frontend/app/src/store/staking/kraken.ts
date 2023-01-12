@@ -35,9 +35,7 @@ const defaultEventState = (): KrakenStakingEvents => ({
 
 export const useKrakenStakingStore = defineStore('staking/kraken', () => {
   const pagination: Ref<KrakenStakingPagination> = ref(defaultPagination());
-  const rawEvents: Ref<KrakenStakingEvents> = ref(
-    defaultEventState()
-  ) as Ref<KrakenStakingEvents>;
+  const rawEvents: Ref<KrakenStakingEvents> = ref(defaultEventState());
 
   const api = useKrakenApi();
 

@@ -3,7 +3,7 @@ import { BigNumber } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
 import dayjs from 'dayjs';
-import { type PropType, type Ref } from 'vue';
+import { type PropType } from 'vue';
 import { convertKeys } from '@/services/axios-tranformers';
 import { deserializeApiErrorMessage } from '@/services/converters';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
@@ -105,13 +105,13 @@ const rules = {
   fee: {
     required: helpers.withMessage(
       t('external_trade_form.validation.non_empty_fee').toString(),
-      requiredIf(feeCurrency as unknown as Ref<boolean>)
+      requiredIf(refIsTruthy(feeCurrency))
     )
   },
   feeCurrency: {
     required: helpers.withMessage(
       t('external_trade_form.validation.non_empty_fee_currency').toString(),
-      requiredIf(fee as unknown as Ref<boolean>)
+      requiredIf(refIsTruthy(fee))
     )
   }
 };
@@ -608,7 +608,7 @@ onMounted(() => {
     position: relative;
     margin-bottom: 30px;
 
-    :deep() {
+    :deep(.v-input) {
       .v-input {
         position: static;
 
@@ -668,7 +668,7 @@ onMounted(() => {
     }
   }
 
-  :deep() {
+  :deep(.v-select) {
     .v-select.v-text-field--outlined:not(.v-text-field--single-line) {
       .v-select__selections {
         padding: 0 !important;
@@ -681,7 +681,7 @@ onMounted(() => {
   &--dark {
     .external-trade-form {
       &__grouped-amount-input {
-        :deep() {
+        :deep(.v-input) {
           .v-input {
             &__slot {
               &::before {

@@ -7,7 +7,6 @@ import { useTxQueryStatusStore } from '@/store/history/query-status';
 import { useTransactions } from '@/store/history/transactions';
 import { useTasks } from '@/store/tasks';
 import { type Writeable } from '@/types';
-import { type Collection } from '@/types/collection';
 import {
   type EthTransaction,
   type EthTransactionEntry,
@@ -123,9 +122,7 @@ const {
   deleteTransactionEvent
 } = transactionStore;
 
-const { data } = getCollectionData<EthTransactionEntry>(
-  transactions as Ref<Collection<EthTransactionEntry>>
-);
+const { data } = getCollectionData<EthTransactionEntry>(transactions);
 
 watchDebounced(
   data,

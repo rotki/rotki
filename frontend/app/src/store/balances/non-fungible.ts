@@ -41,9 +41,9 @@ export const useNonFungibleBalancesStore = defineStore(
       defaultRequestPayload()
     );
 
-    const balances = ref(defaultCollectionState<NonFungibleBalance>()) as Ref<
-      Collection<NonFungibleBalance>
-    >;
+    const balances: Ref<Collection<NonFungibleBalance>> = ref(
+      defaultCollectionState<NonFungibleBalance>()
+    );
 
     const nonFungibleTotalValue = ref<BigNumber>(Zero);
 

@@ -31,9 +31,9 @@ import {
 } from '@/utils/history';
 
 export const useLedgerActions = defineStore('history/ledgerActions', () => {
-  const ledgerActions = ref(defaultCollectionState<LedgerActionEntry>()) as Ref<
-    Collection<LedgerActionEntry>
-  >;
+  const ledgerActions: Ref<Collection<LedgerActionEntry>> = ref(
+    defaultCollectionState<LedgerActionEntry>()
+  );
 
   const ledgerActionsPayload: Ref<Partial<LedgerActionRequestPayload>> = ref(
     defaultHistoricPayloadState<LedgerAction>()
@@ -84,7 +84,7 @@ export const useLedgerActions = defineStore('history/ledgerActions', () => {
         const result = await getLedgerActions(payload);
         return mapCollectionEntriesWithMeta<LedgerAction>(
           mapCollectionResponse(result)
-        ) as Collection<LedgerActionEntry>;
+        );
       }
 
       const { taskId } = await getLedgerActionsTask(payload);
@@ -112,7 +112,7 @@ export const useLedgerActions = defineStore('history/ledgerActions', () => {
       const parsedResult = LedgerActionCollectionResponse.parse(result);
       return mapCollectionEntriesWithMeta<LedgerAction>(
         mapCollectionResponse(parsedResult)
-      ) as Collection<LedgerActionEntry>;
+      );
     };
 
     try {

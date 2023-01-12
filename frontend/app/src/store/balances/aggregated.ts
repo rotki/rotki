@@ -97,9 +97,9 @@ export const useAggregatedBalancesStore = defineStore(
     ): ComputedRef<AssetPriceInfo> => {
       return computed(() => {
         const id = get(identifier);
-        const assetValue = (
-          get(balances(true, get(groupMultiChain))) as AssetBalanceWithPrice[]
-        ).find((value: AssetBalanceWithPrice) => value.asset === id);
+        const assetValue = get(balances(true, get(groupMultiChain))).find(
+          (value: AssetBalanceWithPrice) => value.asset === id
+        );
 
         return {
           usdPrice: assetValue?.usdPrice ?? Zero,

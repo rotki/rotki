@@ -32,11 +32,11 @@ export const useBlockchainBalancesStore = defineStore(
     const { tc } = useI18n();
 
     const fetch = async (
-      chain: Blockchain,
+      blockchain: Blockchain,
       ignoreCache = false
     ): Promise<void> => {
       const { loading, setStatus, resetStatus, isFirstLoad } = useStatusUpdater(
-        chainSection[chain]
+        chainSection[blockchain]
       );
 
       if (loading()) {
@@ -46,7 +46,10 @@ export const useBlockchainBalancesStore = defineStore(
       try {
         setStatus(isFirstLoad() ? Status.LOADING : Status.REFRESHING);
 
-        const { taskId } = await queryBlockchainBalances(ignoreCache, chain);
+        const { taskId } = await queryBlockchainBalances(
+          ignoreCache,
+          blockchain
+        );
         const taskType = TaskType.QUERY_BLOCKCHAIN_BALANCES;
         const { result } = await awaitTask<
           BlockchainBalances,
@@ -55,11 +58,11 @@ export const useBlockchainBalancesStore = defineStore(
           taskId,
           taskType,
           {
-            chain,
+            blockchain,
             title: tc('actions.balances.blockchain.task.title', 0, {
-              chain
+              chain: blockchain
             })
-          } as BlockchainMetadata,
+          },
           true
         );
         const balances = BlockchainBalances.parse(result);
@@ -69,9 +72,9 @@ export const useBlockchainBalancesStore = defineStore(
           const addresses = [...Object.keys(ethBalances)];
           await fetchEnsNames(addresses, ignoreCache);
         }
-        updateEth(chain, balances);
-        updateBtc(chain, balances);
-        updateChains(chain, balances);
+        updateEth(blockchain, balances);
+        updateBtc(blockchain, balances);
+        updateChains(blockchain, balances);
         setStatus(Status.LOADED);
       } catch (e: any) {
         logger.error(e);

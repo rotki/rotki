@@ -13,7 +13,6 @@ import { useNonFungibleBalancesStore } from '@/store/balances/non-fungible';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatisticsStore } from '@/store/statistics';
-import { type Collection } from '@/types/collection';
 import { DashboardTableType } from '@/types/frontend-settings';
 import {
   type NonFungibleBalance,
@@ -103,9 +102,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
   return headers;
 });
 
-const { totalUsdValue } = getCollectionData<NonFungibleBalance>(
-  balances as Ref<Collection<NonFungibleBalance>>
-);
+const { totalUsdValue } = getCollectionData<NonFungibleBalance>(balances);
 
 const percentageOfTotalNetValue = (value: BigNumber) => {
   return calculatePercentage(value, get(totalNetWorthUsd) as BigNumber);

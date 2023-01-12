@@ -383,7 +383,7 @@ export const useDefiSupportedProtocolsStore = defineStore(
         }
 
         if (loan.protocol === DefiProtocol.MAKERDAO_VAULTS) {
-          const makerVaults = get(makerDAOVaults) as MakerDAOVaultModel[];
+          const makerVaults: MakerDAOVaultModel[] = get(makerDAOVaults);
           const vault = makerVaults.find(
             vault => vault.identifier.toString().toLocaleLowerCase() === id
           );
@@ -681,7 +681,7 @@ export const useDefiSupportedProtocolsStore = defineStore(
         }
 
         if (showAll || protocols.includes(DefiProtocol.COMPOUND)) {
-          const compBalances = get(compoundBalances) as CompoundBalances;
+          const compBalances: CompoundBalances = get(compoundBalances);
           for (const address of Object.keys(compBalances)) {
             if (!allAddresses && !addresses.includes(address)) {
               continue;

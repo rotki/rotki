@@ -23,9 +23,7 @@ const router = useRouter();
 const route = useRoute();
 let firstPage = true;
 
-const selectedReport: ComputedRef<SelectedReport> = computed(
-  () => get(report) as SelectedReport
-);
+const selectedReport: ComputedRef<SelectedReport> = computed(() => get(report));
 const settings = computed(() => get(selectedReport).settings);
 
 const initialOpenReportActionable = ref<boolean>(false);

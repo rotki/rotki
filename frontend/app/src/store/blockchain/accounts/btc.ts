@@ -40,7 +40,7 @@ export const useBtcAccountsStore = defineStore(
             xpub: payload.xpub
           }),
           blockchain: payload.blockchain
-        } as BlockchainMetadata);
+        });
       } catch (e: any) {
         logger.error(e);
         const title = tc('actions.balances.xpub_removal.error.title');

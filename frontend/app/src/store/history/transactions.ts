@@ -36,9 +36,9 @@ import {
 } from '@/utils/history';
 
 export const useTransactions = defineStore('history/transactions', () => {
-  const transactions = ref(
+  const transactions: Ref<Collection<EthTransactionEntry>> = ref(
     defaultCollectionState<EthTransactionEntry>()
-  ) as Ref<Collection<EthTransactionEntry>>;
+  );
 
   const transactionsPayload: Ref<Partial<TransactionRequestPayload>> = ref(
     defaultHistoricPayloadState<EthTransaction>()
@@ -129,7 +129,7 @@ export const useTransactions = defineStore('history/transactions', () => {
       const parsedResult = EthTransactionCollectionResponse.parse(result);
       return mapCollectionEntriesWithMeta<EthTransaction>(
         mapCollectionResponse(parsedResult)
-      ) as Collection<EthTransactionEntry>;
+      );
     };
 
     try {
