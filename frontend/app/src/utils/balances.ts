@@ -204,8 +204,7 @@ export const accountsWithBalances = (
 ): AccountWithBalance[] => {
   const data: AccountWithBalance[] = [];
   const { getNativeAsset } = useSupportedChains();
-
-  const nativeAsset = get(getNativeAsset(blockchain));
+  const nativeAsset = getNativeAsset(blockchain);
 
   for (const account of accounts) {
     const accountAssets = balances[account.address];

@@ -13,24 +13,16 @@ const props = withDefaults(defineProps<Props>(), {
 
 const { chain } = toRefs(props);
 
-const { evmChainNames } = useSupportedChains();
-
 const getImageUrl = (evmChain: string): string => {
   return `./assets/images/chains/${evmChain}.svg`;
 };
 
 const chainData = computed(() => {
-  const names = get(evmChainNames);
   const chainProp = get(chain);
-  const evmChain = names.find(x => x === chainProp);
-
-  if (!evmChain) {
-    return null;
-  }
 
   return {
-    label: toCapitalCase(evmChain),
-    image: getImageUrl(evmChain)
+    label: toCapitalCase(chainProp),
+    image: getImageUrl(chainProp)
   };
 });
 
