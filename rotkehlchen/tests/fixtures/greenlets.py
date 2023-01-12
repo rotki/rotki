@@ -1,6 +1,6 @@
 import pytest
 
-from rotkehlchen.greenlets import GreenletManager
+from rotkehlchen.greenlets.manager import GreenletManager
 
 
 @pytest.fixture(scope='session')

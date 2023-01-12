@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, MutableMapping, Optional
 
 import gevent
 
+from rotkehlchen.greenlets.utils import get_greenlet_name
 from rotkehlchen.utils.misc import timestamp_to_date, ts_now
 
 PYWSGI_RE = re.compile(r'\[(.*)\] ')
@@ -94,14 +95,7 @@ class RotkehlchenLogsAdapter(logging.LoggerAdapter):
         """
         msg = str(given_msg)
         greenlet = gevent.getcurrent()
-        if greenlet.parent is None:
-            greenlet_name = 'Main Greenlet'
-        else:
-            try:
-                greenlet_name = greenlet.name
-            except AttributeError:  # means it's a raw greenlet
-                greenlet_name = f'Greenlet with id {id(greenlet)}'
-
+        greenlet_name = get_greenlet_name(greenlet)
         msg = greenlet_name + ': ' + msg + ','.join(' {}={}'.format(a[0], a[1]) for a in kwargs.items())  # noqa: E501
         return msg, {}
 

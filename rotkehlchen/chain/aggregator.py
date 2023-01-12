@@ -71,7 +71,7 @@ from rotkehlchen.errors.misc import (
     ModuleInitializationFailure,
 )
 from rotkehlchen.fval import FVal
-from rotkehlchen.greenlets import GreenletManager
+from rotkehlchen.greenlets.manager import GreenletManager
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
