@@ -14,10 +14,10 @@ import { fetchDataAsync } from '@/utils/fetch-async';
 import { useLiquityApi } from '@/services/defi/liquity';
 
 export const useLiquityStore = defineStore('defi/liquity', () => {
-  const balances = ref<LiquityBalances>({}) as Ref<LiquityBalances>;
-  const events = ref<TroveEvents>({}) as Ref<TroveEvents>;
-  const staking = ref<LiquityStakingDetails>({}) as Ref<LiquityStakingDetails>;
-  const stakingPools = ref<LiquityPoolDetails>({}) as Ref<LiquityPoolDetails>;
+  const balances: Ref<LiquityBalances> = ref({});
+  const events: Ref<TroveEvents> = ref({});
+  const staking: Ref<LiquityStakingDetails> = ref({});
+  const stakingPools: Ref<LiquityPoolDetails> = ref({});
 
   const isPremium = usePremium();
   const { activeModules } = useModules();

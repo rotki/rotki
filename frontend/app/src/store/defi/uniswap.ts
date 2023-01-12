@@ -23,9 +23,9 @@ import { fetchDataAsync } from '@/utils/fetch-async';
 import { useUniswapApi } from '@/services/defi/uniswap';
 
 export const useUniswapStore = defineStore('defi/uniswap', () => {
-  const v2Balances = ref<XswapBalances>({}) as Ref<XswapBalances>;
-  const v3Balances = ref<XswapBalances>({}) as Ref<XswapBalances>;
-  const events = ref<XswapEvents>({}) as Ref<XswapEvents>;
+  const v2Balances: Ref<XswapBalances> = ref<XswapBalances>({});
+  const v3Balances: Ref<XswapBalances> = ref<XswapBalances>({});
+  const events: Ref<XswapEvents> = ref<XswapEvents>({});
 
   const { activeModules } = storeToRefs(useGeneralSettingsStore());
   const isPremium = usePremium();

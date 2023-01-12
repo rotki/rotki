@@ -8,7 +8,6 @@ import { useTasks } from '@/store/tasks';
 import { CURRENCY_USD } from '@/types/currencies';
 import {
   ProfitLossEventTypeEnum,
-  type ProfitLossEvents,
   type ProfitLossReportDebugPayload,
   type ProfitLossReportPeriod,
   type ReportActionableItem,
@@ -45,7 +44,7 @@ const emptyError = (): ReportError => ({
 });
 
 const defaultReport = (): SelectedReport => ({
-  entries: [] as ProfitLossEvents,
+  entries: [],
   entriesLimit: 0,
   entriesFound: 0,
   start: 0,

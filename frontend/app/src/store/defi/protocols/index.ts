@@ -2,9 +2,7 @@ import { type Balance, BigNumber } from '@rotki/common';
 import { DefiProtocol } from '@rotki/common/lib/blockchain';
 import { assetSymbolToIdentifierMap } from '@rotki/common/lib/data';
 import {
-  type AaveBalances,
   AaveBorrowingEventType,
-  type AaveHistory,
   type AaveHistoryEvents,
   type AaveHistoryTotal,
   type AaveLending,
@@ -39,11 +37,7 @@ import {
   type CompoundBalances,
   type CompoundLoan
 } from '@/types/defi/compound';
-import {
-  type DSRBalances,
-  type DSRHistory,
-  type MakerDAOVaultModel
-} from '@/types/defi/maker';
+import { type MakerDAOVaultModel } from '@/types/defi/maker';
 import { type YearnVaultsHistory } from '@/types/defi/yearn';
 import { Section, Status } from '@/types/status';
 import { assert } from '@/utils/assertions';
@@ -97,7 +91,7 @@ export const useDefiSupportedProtocolsStore = defineStore(
         let id = 1;
 
         if (showAll || protocols.includes(DefiProtocol.MAKERDAO_DSR)) {
-          const makerDsrHistory = get(dsrHistory) as DSRHistory;
+          const makerDsrHistory = get(dsrHistory);
           for (const address of Object.keys(makerDsrHistory)) {
             if (!allAddresses && !addresses.includes(address)) {
               continue;
@@ -125,7 +119,7 @@ export const useDefiSupportedProtocolsStore = defineStore(
         }
 
         if (showAll || protocols.includes(DefiProtocol.AAVE)) {
-          const perAddressAaveHistory = get(aaveHistory) as AaveHistory;
+          const perAddressAaveHistory = get(aaveHistory);
           for (const address of Object.keys(perAddressAaveHistory)) {
             if (!allAddresses && !addresses.includes(address)) {
               continue;
@@ -150,7 +144,7 @@ export const useDefiSupportedProtocolsStore = defineStore(
                 timestamp: event.timestamp,
                 txHash: event.txHash,
                 extras: {}
-              } as DefiLendingHistory<typeof DefiProtocol.AAVE>;
+              } satisfies DefiLendingHistory<typeof DefiProtocol.AAVE>;
               defiLendingHistory.push(items);
             }
           }
@@ -254,7 +248,7 @@ export const useDefiSupportedProtocolsStore = defineStore(
                 ({
                   identifier: `${value.identifier}`,
                   protocol: DefiProtocol.MAKERDAO_VAULTS
-                } as DefiLoan)
+                } satisfies DefiLoan)
             )
           );
         }
@@ -281,7 +275,7 @@ export const useDefiSupportedProtocolsStore = defineStore(
             }
           }
 
-          const perAddressAaveHistory = get(aaveHistory) as AaveHistory;
+          const perAddressAaveHistory = get(aaveHistory);
           for (const address in perAddressAaveHistory) {
             const { events } = perAddressAaveHistory[address];
             const borrowEvents: string[] = Object.values(
@@ -413,8 +407,8 @@ export const useDefiSupportedProtocolsStore = defineStore(
         }
 
         if (loan.protocol === DefiProtocol.AAVE) {
-          const perAddressAaveBalances = get(aaveBalances) as AaveBalances;
-          const perAddressAaveHistory = get(aaveHistory) as AaveHistory;
+          const perAddressAaveBalances = get(aaveBalances);
+          const perAddressAaveHistory = get(aaveHistory);
           const owner = loan.owner ?? '';
           const asset = loan.asset ?? '';
 
@@ -505,7 +499,7 @@ export const useDefiSupportedProtocolsStore = defineStore(
             totalLost: lost,
             liquidationEarned,
             events
-          } as AaveLoan;
+          } satisfies AaveLoan;
         }
 
         if (loan.protocol === DefiProtocol.COMPOUND) {
@@ -514,9 +508,9 @@ export const useDefiSupportedProtocolsStore = defineStore(
 
           let apy = '0%';
           let debt: Balance = zeroBalance();
-          let collateral: Collateral<string>[] = [];
+          let collateral: Collateral[] = [];
 
-          const compBalances = get(compoundBalances) as CompoundBalances;
+          const compBalances = get(compoundBalances);
           if (compBalances[owner]) {
             const { borrowing, lending } = compBalances[owner];
             const selectedLoan = borrowing[asset];
@@ -564,7 +558,7 @@ export const useDefiSupportedProtocolsStore = defineStore(
             protocol: loan.protocol,
             balance: balances[owner],
             events: events[owner] ?? []
-          } as LiquityLoan;
+          } satisfies LiquityLoan;
         }
 
         return null;
@@ -595,7 +589,7 @@ export const useDefiSupportedProtocolsStore = defineStore(
         }
 
         if (showAll || protocols.includes(DefiProtocol.AAVE)) {
-          const perAddressAaveBalances = get(aaveBalances) as AaveBalances;
+          const perAddressAaveBalances = get(aaveBalances);
           for (const address of Object.keys(perAddressAaveBalances)) {
             const { borrowing, lending } = perAddressAaveBalances[address];
             totalCollateralUsd = balanceUsdValueSum(
@@ -609,7 +603,7 @@ export const useDefiSupportedProtocolsStore = defineStore(
         }
 
         if (showAll || protocols.includes(DefiProtocol.COMPOUND)) {
-          const compBalances = get(compoundBalances) as CompoundBalances;
+          const compBalances = get(compoundBalances);
           for (const address of Object.keys(compBalances)) {
             const { borrowing, lending } = compBalances[address];
             totalCollateralUsd = balanceUsdValueSum(
@@ -645,7 +639,7 @@ export const useDefiSupportedProtocolsStore = defineStore(
         const allAddresses = addresses.length === 0;
 
         if (showAll || protocols.includes(DefiProtocol.MAKERDAO_DSR)) {
-          const makerDsrBalances = get(dsrBalances) as DSRBalances;
+          const makerDsrBalances = get(dsrBalances);
           for (const address of Object.keys(makerDsrBalances.balances)) {
             if (!allAddresses && !addresses.includes(address)) {
               continue;
@@ -666,7 +660,7 @@ export const useDefiSupportedProtocolsStore = defineStore(
         }
 
         if (showAll || protocols.includes(DefiProtocol.AAVE)) {
-          const perAddressAaveBalances = get(aaveBalances) as AaveBalances;
+          const perAddressAaveBalances = get(aaveBalances);
           for (const address of Object.keys(perAddressAaveBalances)) {
             if (!allAddresses && !addresses.includes(address)) {
               continue;
@@ -913,7 +907,7 @@ export const useDefiSupportedProtocolsStore = defineStore(
         const allAddresses = addresses.length === 0;
 
         if (showAll || protocols.includes(DefiProtocol.MAKERDAO_DSR)) {
-          const history = get(dsrHistory) as DSRHistory;
+          const history = get(dsrHistory);
           for (const address of Object.keys(history)) {
             if (!allAddresses && !addresses.includes(address)) {
               continue;
@@ -971,15 +965,11 @@ export const useDefiSupportedProtocolsStore = defineStore(
         }
 
         if (showAll || protocols.includes(DefiProtocol.YEARN_VAULTS)) {
-          total = total.plus(
-            yearnTotalEarned(get(yearnV1History) as YearnVaultsHistory)
-          );
+          total = total.plus(yearnTotalEarned(get(yearnV1History)));
         }
 
         if (showAll || protocols.includes(DefiProtocol.YEARN_VAULTS_V2)) {
-          total = total.plus(
-            yearnTotalEarned(get(yearnV2History) as YearnVaultsHistory)
-          );
+          total = total.plus(yearnTotalEarned(get(yearnV2History)));
         }
         return total;
       });

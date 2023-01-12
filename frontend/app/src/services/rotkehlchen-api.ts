@@ -171,7 +171,7 @@ export class RotkehlchenApi {
 
     if (outcome) {
       if (statusCode === 300) {
-        const { result, message } = outcome as ActionResult<T>;
+        const { result, message } = outcome;
         throw new SyncConflictError(message, SyncConflictPayload.parse(result));
       }
       return outcome;

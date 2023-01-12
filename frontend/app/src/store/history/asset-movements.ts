@@ -78,9 +78,10 @@ export const useAssetMovements = defineStore('history/assetMovements', () => {
       const { fetchEnsNames } = useAddressesNamesStore();
       if (onlyCache) {
         const result = await getAssetMovements(payload);
-        const mapped = mapCollectionEntriesWithMeta<AssetMovement>(
-          mapCollectionResponse(result)
-        ) as Collection<AssetMovementEntry>;
+        const mapped: Collection<AssetMovementEntry> =
+          mapCollectionEntriesWithMeta<AssetMovement>(
+            mapCollectionResponse(result)
+          );
 
         const addresses: string[] = [];
         result.entries.forEach(item => {
@@ -117,9 +118,10 @@ export const useAssetMovements = defineStore('history/assetMovements', () => {
       );
 
       const parsedResult = AssetMovementCollectionResponse.parse(result);
-      const mapped = mapCollectionEntriesWithMeta<AssetMovement>(
-        mapCollectionResponse(parsedResult)
-      ) as Collection<AssetMovementEntry>;
+      const mapped: Collection<AssetMovementEntry> =
+        mapCollectionEntriesWithMeta<AssetMovement>(
+          mapCollectionResponse(parsedResult)
+        );
 
       const addresses: string[] = [];
       result.entries.forEach(item => {

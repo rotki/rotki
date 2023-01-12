@@ -347,7 +347,7 @@ export const useExchangeBalancesStore = defineStore(
     };
 
     const updatePrices = (prices: MaybeRef<AssetPrices>) => {
-      const exchanges = { ...(get(exchangeBalances) as ExchangeData) };
+      const exchanges = { ...get(exchangeBalances) };
       for (const exchange in exchanges) {
         exchanges[exchange] = updateBalancesPrices(exchanges[exchange], prices);
       }

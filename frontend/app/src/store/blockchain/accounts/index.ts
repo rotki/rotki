@@ -76,7 +76,7 @@ export const useBlockchainAccountsStore = defineStore(
             { address }
           ),
           blockchain
-        } as BlockchainMetadata,
+        },
         true
       );
 
@@ -88,7 +88,7 @@ export const useBlockchainAccountsStore = defineStore(
     ): Promise<BtcAccountData | GeneralAccountData[]> => {
       const { blockchain } = payload;
 
-      return [Blockchain.BTC, Blockchain.BCH].includes(blockchain)
+      return isBtcChain(blockchain)
         ? await editBtcAccount(payload)
         : await editBlockchainAccount(payload);
     };
@@ -116,7 +116,7 @@ export const useBlockchainAccountsStore = defineStore(
               { count: accounts.length }
             ),
             blockchain
-          } as BlockchainMetadata
+          }
         );
       } catch (e: any) {
         logger.error(e);
