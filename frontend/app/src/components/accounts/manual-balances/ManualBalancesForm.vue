@@ -20,7 +20,6 @@ import { bigNumberify } from '@/utils/bignumbers';
 import { toMessages } from '@/utils/validation-errors';
 import CustomAssetForm from '@/components/asset-manager/CustomAssetForm.vue';
 import { useAssetManagementApi } from '@/services/assets/management-api';
-import { emptyArrayToNull } from '@/utils/data';
 
 const props = defineProps({
   edit: {
@@ -103,7 +102,7 @@ const save = async () => {
   const balance: Omit<ManualBalance, 'id' | 'asset'> = {
     amount: bigNumberify(get(amount)),
     label: get(label),
-    tags: emptyArrayToNull(get(tags)),
+    tags: get(tags),
     location: get(location),
     balanceType: get(balanceType)
   };
@@ -358,7 +357,7 @@ defineExpose({
       @cancel="showCustomAssetForm = false"
     >
       <custom-asset-form
-        :ref="customAssetFormRef"
+        ref="customAssetFormRef"
         :types="customAssetTypes"
         :edit="false"
         @valid="customAssetFormValid = $event"

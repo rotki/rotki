@@ -512,7 +512,7 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
 
     <div class="my-4">
       <asset-icon-form
-        :ref="assetIconFormRef"
+        ref="assetIconFormRef"
         :identifier="identifier"
         refreshable
       />

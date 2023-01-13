@@ -73,6 +73,17 @@ onMounted(() => {
     })
   );
 });
+
+const focus = () => {
+  const inputWrapper = get(textInput) as any;
+  if (inputWrapper) {
+    inputWrapper.focus();
+  }
+};
+
+defineExpose({
+  focus
+});
 </script>
 
 <template>

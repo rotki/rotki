@@ -139,7 +139,7 @@ export const useBlockchainAccountsApi = () => {
 
     const response = await api.instance.patch<ActionResult<BtcAccountData>>(
       url,
-      axiosSnakeCaseTransformer(data),
+      axiosSnakeCaseTransformer(nonNullProperties(data)),
       {
         validateStatus: validWithParamsSessionAndExternalService
       }
@@ -158,9 +158,13 @@ export const useBlockchainAccountsApi = () => {
     );
     const response = await api.instance.patch<
       ActionResult<GeneralAccountData[]>
-    >(`/blockchains/${blockchain}/accounts`, payloadToData(payload), {
-      validateStatus: validWithParamsSessionAndExternalService
-    });
+    >(
+      `/blockchains/${blockchain}/accounts`,
+      nonNullProperties(payloadToData(payload)),
+      {
+        validateStatus: validWithParamsSessionAndExternalService
+      }
+    );
 
     return handleResponse(response);
   };

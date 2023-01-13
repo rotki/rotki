@@ -6,6 +6,7 @@ import {
   type EvmChainInfo,
   type SupportedChains
 } from '@/types/api/chains';
+import { useMainStore } from '@/store/main';
 
 const isEvmChain = (info: ChainInfo): info is EvmChainInfo => {
   return info.type === 'evm';
@@ -14,8 +15,13 @@ const isEvmChain = (info: ChainInfo): info is EvmChainInfo => {
 export const useSupportedChains = createSharedComposable(() => {
   const { fetchSupportedChains } = useSupportedChainsApi();
 
+  const { connected } = toRefs(useMainStore());
+
   const supportedChains: Ref<SupportedChains> = asyncComputed<SupportedChains>(
-    () => fetchSupportedChains(),
+    () => {
+      if (get(connected)) return fetchSupportedChains();
+      return [];
+    },
     [],
     {
       lazy: true

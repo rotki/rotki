@@ -95,6 +95,7 @@ const saveIcon = (identifier: string) => {
 
 const { setMessage } = useMessageStore();
 const { editCustomAsset, addCustomAsset } = useAssetManagementApi();
+
 const save = async () => {
   const data = get(formData);
   let success = false;
@@ -174,7 +175,7 @@ defineExpose({
 
     <div class="my-4">
       <asset-icon-form
-        :ref="assetIconFormRef"
+        ref="assetIconFormRef"
         :identifier="formData.identifier"
       />
     </div>
