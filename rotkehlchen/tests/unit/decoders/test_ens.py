@@ -25,12 +25,12 @@ from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 ADDY = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
 
 
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
 def test_mint_ens_name(database, ethereum_inquirer):
     """Data taken from
     https://etherscan.io/tx/0x74e72600c6cd5a1f0170a3ca38ecbf7d59edeb8ceb48adab2ed9b85d12cc2b99
     """
-    # TODO: For faster tests hard-code the transaction and the logs here so no remote query needed
     tx_hash = deserialize_evm_tx_hash('0x74e72600c6cd5a1f0170a3ca38ecbf7d59edeb8ceb48adab2ed9b85d12cc2b99')  # noqa: E501
     events, decoder = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,

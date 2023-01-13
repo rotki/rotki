@@ -7,8 +7,9 @@ pytest-cov==4.0.0
 coverage==6.5.0
 psutil==5.9.4
 pytest-freezegun==0.4.2
-pytest-deadfixtures==2.2.1
+git+https://github.com/rotki/pytest-deadfixtures@87d2be8#egg=pytest-deadfixtures # temporarily due to false positive
 pytest-socket==0.5.1
+pytest-recording==0.12.1
 freezegun==1.2.2
 flaky==3.7.0
 

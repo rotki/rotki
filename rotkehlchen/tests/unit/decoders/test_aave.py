@@ -22,12 +22,12 @@ ADDY = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
 ADDY2 = '0x5727c0481b90a129554395937612d8b9301D6c7b'
 
 
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
 def test_aave_deposit_v1(database, ethereum_inquirer):
     """Data taken from
     https://etherscan.io/tx/0x930879d66d13c37edf25cdbb2d2e85b65c3b2a026529ff4085146bb7a5398410
     """
-    # TODO: For faster tests hard-code the transaction and the logs here so no remote query needed
     tx_hash = deserialize_evm_tx_hash('0x930879d66d13c37edf25cdbb2d2e85b65c3b2a026529ff4085146bb7a5398410')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
@@ -89,12 +89,12 @@ def test_aave_deposit_v1(database, ethereum_inquirer):
     assert expected_events == events
 
 
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
 def test_aave_withdraw_v1(database, ethereum_inquirer):
     """Data taken from
     https://etherscan.io/tx/0x4fed67963375a3f90916f0cf7cb9e4d12644629e36233025b36060494ffba486
     """
-    # TODO: For faster tests hard-code the transaction and the logs here so no remote query needed
     tx_hash = deserialize_evm_tx_hash('0x4fed67963375a3f90916f0cf7cb9e4d12644629e36233025b36060494ffba486')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
@@ -157,12 +157,12 @@ def test_aave_withdraw_v1(database, ethereum_inquirer):
     assert expected_events == events
 
 
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY2]])
 def test_aave_eth_withdraw_v1(database, ethereum_inquirer):
     """Data taken from
     https://etherscan.io/tx/0xbd333bdd5784c10630aac5683e63f703e660a78d06f95b2ff2a8788a8dade787
     """
-    # TODO: For faster tests hard-code the transaction and the logs here so no remote query needed
     tx_hash = deserialize_evm_tx_hash('0xbd333bdd5784c10630aac5683e63f703e660a78d06f95b2ff2a8788a8dade787')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
