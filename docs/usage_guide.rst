@@ -60,6 +60,11 @@ If you have a premium subscription and you want to create a new local account th
 See the section :ref:`sync-data-with-rotki-server` to know more about how the premium subscription will behave with multiple accounts/devices and how to sync your data with Roki Server (this option is disabled by default).
 
 
+Use an account from a different installation
+=============================================
+
+If you want to move your data to another system or want to restore it then you will need to do some manual steps. First identify the :ref:`rotki_data_directory` in both the source and the destination system. Then move the entire data directory from the source system to the destination system and make sure that the same rotki version is used in both systems.
+
 Sign-in
 =========
 
@@ -650,7 +655,7 @@ Once finished click on save.
 Adding an external service API Key
 =====================================
 
-rotki relies on various external services for data such as historical crypto prices or ethereum transactions. To get that data some of these services require API keys. So you should go to their webpage, create a free account and generate an API key. Once this is done you can enter the API key in the section of the API keys page.
+rotki relies on various external services for data such as historical crypto prices or EVM transactions. To get that data some of these services require API keys. So you should go to their webpage, create a free account and generate an API key. Once this is done you can enter the API key in the section of the API keys page.
 
 .. image:: images/add_external_service.png
    :alt: Add API keys for an external service
@@ -775,11 +780,6 @@ A list of supported locations in Rotki are ``"external"``, ``"kraken"``, ``"polo
 **NOTE**: In the columns where an asset is expected you will need to use the identifier that such asset has in rotki otherwise the row won't be read.
 **NOTE**: If at any point, you're confused as regards the csv format, feel free to send us a message on `Discord <https://discord.gg/aGCxHG7>`_.
 
-Moving data to another system
-=====================================
-
-If you want to move your data to another system then you will need to do some manual steps. First identify the :ref:`rotki_data_directory` in both the source and the destination system. Then move the entire data directory from the source system to the destination system and make sure that the same rotki version is used in both systems.
-
 .. _track_balances:
 
 Tracking accounts and balances
@@ -856,19 +856,19 @@ For every ethereum address it is possible to trigger the process of detecting to
    :align: center
 
 
-Ethereum Transactions
+EVM Transactions
 =====================
 
-rotki is capable of getting and decoding (understand what is happening) your ethereum transactions. When you visit the ``Ethereum Transactions`` section the process to obtain all the information will start. You will be able to check the status in an informative breakdown per address.
+rotki is capable of getting and decoding (understand what is happening) your EVM transactions. When you visit the ``EVM Transactions`` section the process to obtain all the information will start. You will be able to check the status in an informative breakdown per address. Free users are limited to the 100 latest transactions.
 
 .. image:: images/eth_tx_query_process.png
-   :alt: Ethereum transactions query status breakdown
+   :alt: EVM transactions query status breakdown
    :align: center
 
-It is possible that you need to redecode some transactions if the set of decoding rules is modified. To redecode a transaction you have two possibilities. The first of them is to click on the three dots to display the options for an ethereum transaction and click on ``Redecode events``. This will start the process to read the transaction's events again and try to understand what happened in them.
+It is possible that you need to redecode some transactions if the set of decoding rules is modified. To redecode a transaction you have two possibilities. The first of them is to click on the three dots to display the options for an EVM transaction and click on ``Redecode events``. This will start the process to read the transaction's events again and try to understand what happened in them.
 
 .. image:: images/redecode_events.png
-   :alt: Menu to redecode events for an ethereum transaction
+   :alt: Menu to redecode events for an EVM transaction
    :align: center
 
 The second option is to redecode all the transactions in one page or all the transactions that have been queried. To do so you need to click on ``REDECODE EVENTS`` at the top of the page. This will allow to select between ``Only this page`` and ``All events``.
@@ -880,7 +880,7 @@ The second option is to redecode all the transactions in one page or all the tra
 Events in a transaction might need to be edited if they were not properly decoded or if they have a special meaning to you (like OTC trades, transfers between accounts...). To edit one event click on the pencil icon and a menu will appear.
 
 .. image:: images/edit_eth_event.png
-   :alt: Menu to edit ethereum events
+   :alt: Menu to edit EVM events
    :align: center
 
 Here the non obvious fields are:
@@ -915,7 +915,7 @@ Events that have been modified will appear marked in the UI.
    :align: center
 
 
-Ethereum transactions can be filtered by account and by:
+EVM transactions can be filtered by account and by:
 
 - Time range
 - Asset involved in the transaction
