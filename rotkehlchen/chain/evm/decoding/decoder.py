@@ -316,7 +316,6 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             if event:
                 events.append(event)
 
-        events.sort(key=lambda x: x.sequence_index, reverse=False)
         events = self.run_all_post_decoding_rules(
             transaction=transaction,
             decoded_events=events,
@@ -337,7 +336,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                 (transaction.tx_hash, self.evm_inquirer.chain_id.serialize_for_db(), HISTORY_MAPPING_STATE_DECODED),  # noqa: E501
             )
 
-        return events
+        return sorted(events, key=lambda x: x.sequence_index, reverse=False)
 
     def get_and_decode_undecoded_transactions(
             self,

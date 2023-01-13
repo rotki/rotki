@@ -15,6 +15,7 @@ Changelog
 * :bug:`-` Trades involving delisted bitfinex pairs will now be properly read by rotki.
 * :bug:`5390` Profit for ethereum validators will now be handled correctly if the deposit was made on beacon chain genesis.
 * :feature:`784` Add support for OKX exchange
+* :feature:`-` Swaps made via uniswap v3 auto routers (both v1 and v2) will now be decoded correctly.
 
 * :release:`1.26.3 <2022-12-30>`
 * :bug:`5315` Fix issue where balance is not fully refreshed after detect tokens button pressed.
