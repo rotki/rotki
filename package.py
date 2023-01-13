@@ -340,7 +340,7 @@ class WindowsPackaging:
 
         build_dir = self.__storage.build_directory
         os.chdir(build_dir)
-        zip_path = build_dir / miniupnc 
+        zip_path = build_dir / miniupnc
         extraction_dir = build_dir / 'miniupnpc'
         extraction_dir.mkdir(exist_ok=True)
 
