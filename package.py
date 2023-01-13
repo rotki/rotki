@@ -8,12 +8,11 @@ import shutil
 import stat
 import subprocess
 import sys
+import urllib.request
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Any, Callable, Literal, Optional
 from zipfile import ZipFile
-
-import requests
 
 from packaging import version
 
@@ -65,18 +64,6 @@ def log_group(name: str) -> Callable:
 
         return wrapper
     return decorate
-
-
-class Downloader:
-    @staticmethod
-    def download(url: str) -> str:
-        filename = url.split('/')[-1]
-        with requests.get(url, stream=True) as r:
-            r.raise_for_status()
-            with open(filename, 'wb') as f:
-                for chunk in r.iter_content(chunk_size=8192):
-                    f.write(chunk)
-        return filename
 
 
 class Environment:
@@ -353,11 +340,13 @@ class WindowsPackaging:
 
         build_dir = self.__storage.build_directory
         os.chdir(build_dir)
-        url = f'https://github.com/mrx23dot/miniupnp/releases/download/miniupnpd_2_2_24/{miniupnc}'
-        zip_filename = Downloader.download(url)
-        zip_path = build_dir / zip_filename
+        zip_path = build_dir / miniupnc 
         extraction_dir = build_dir / 'miniupnpc'
         extraction_dir.mkdir(exist_ok=True)
+
+        url = f'https://github.com/mrx23dot/miniupnp/releases/download/miniupnpd_2_2_24/{miniupnc}'
+        urllib.request.urlretrieve(url, zip_path)
+
         with ZipFile(zip_path, 'r') as zip_ref:
             zip_ref.extractall(extraction_dir)
 
@@ -493,17 +482,14 @@ class MacPackaging:
         :return:
         """
         pip_wheel = 'pip-22.1.2-py3-none-any.whl'
-        response = requests.get(f'https://github.com/rotki/rotki-build/raw/main/{pip_wheel}')
-        if response.status_code == 200:
-            temporary_directory = self.__storage.temporary_directory
-            temporary_directory.mkdir(exist_ok=True)
-            wheel_file = temporary_directory / pip_wheel
-            with open(wheel_file, 'wb') as file:
-                file.write(response.content)
-            return wheel_file
-
-        logger.error(f'pip failed to download {pip_wheel}')
-        raise Exception(f'{pip_wheel} download failed')
+        temporary_directory = self.__storage.temporary_directory
+        temporary_directory.mkdir(exist_ok=True)
+        wheel_file = temporary_directory / pip_wheel
+        urllib.request.urlretrieve(
+            url=f'https://github.com/rotki/rotki-build/raw/main/{pip_wheel}',
+            filename=wheel_file,
+        )
+        return Path(wheel_file)
 
     def __get_versions(self, packages: list[str]) -> dict[str, str]:
         """

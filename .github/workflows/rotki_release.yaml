@@ -148,7 +148,7 @@ jobs:
         run: |
           echo "::group::packaging dependencies"
           pip3 install --upgrade pip==${{ env.PIP_VERSION }}
-          pip3 install packaging requests wheel
+          pip3 install packaging wheel
           echo "::endgroup::"
           ./package.py --build full
       - name: Upload to release
@@ -263,7 +263,7 @@ jobs:
           pip3 install virtualenv
           python3 -m virtualenv ~/venv
           source ~/venv/bin/activate
-          pip3 install packaging requests wheel
+          pip3 install packaging wheel
           echo "::endgroup::"
           ./package.py --build full
         env:
@@ -343,7 +343,7 @@ jobs:
         run: |
           echo ::group::"packaging dependencies"
           pip3 install --upgrade pip==${{ env.PIP_VERSION }}
-          pip3 install packaging requests wheel
+          pip3 install packaging wheel
           echo ::endgroup::
           python .\package.py --build full
         shell: powershell
