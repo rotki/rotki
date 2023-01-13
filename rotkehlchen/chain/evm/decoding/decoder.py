@@ -271,14 +271,16 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             transaction: EvmTransaction,
             decoded_events: list[HistoryBaseEntry],
             all_logs: list[EvmTxReceiptLog],
-    ) -> None:
+    ) -> list[HistoryBaseEntry]:
         """
         Runs all post-decoding rules from self.rules.post_decoding_rules.
         The post-decoding rules list consists of tuples (priority, rule) and must be sorted by
         priority in ascending order. The higher the priority number the later the rule is run.
         """
         for (_, rule) in self.rules.post_decoding_rules:
-            rule(transaction=transaction, decoded_events=decoded_events, all_logs=all_logs)  # noqa: E501
+            decoded_events = rule(transaction=transaction, decoded_events=decoded_events, all_logs=all_logs)  # noqa: E501
+
+        return decoded_events
 
     def decode_transaction(
             self,
@@ -314,7 +316,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             if event:
                 events.append(event)
 
-        self.run_all_post_decoding_rules(
+        events = self.run_all_post_decoding_rules(
             transaction=transaction,
             decoded_events=events,
             all_logs=tx_receipt.logs,
