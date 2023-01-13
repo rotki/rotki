@@ -141,7 +141,8 @@ def generate_tx_entries_response(
         decoded_events = []
         for event in events:
             decoded_events.append({
-                'entry': event.serialize(),
+                'entry': event.serialize_without_extra_data(),
+                'has_details': False,
                 'customized': False,
             })
         result.append({

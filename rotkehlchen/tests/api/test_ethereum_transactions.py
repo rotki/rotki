@@ -1036,97 +1036,115 @@ def test_query_transactions_check_decoded_events(
     result = query_transactions(rotki)
     entries = result['entries']
     assert len(entries) == 4
-    tx1_events = [{'entry': {
-        'identifier': 4,
-        'asset': 'ETH',
-        'balance': {'amount': '0.00863351371344', 'usd_value': '0'},
-        'counterparty': CPT_GAS,
-        'event_identifier': '0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',
-        'event_subtype': 'fee',
-        'event_type': 'spend',
-        'location': 'blockchain',
-        'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
-        'notes': 'Burned 0.00863351371344 ETH for gas',
-        'sequence_index': 0,
-        'timestamp': 1642802807,
-        'extra_data': None,
-    }, 'customized': False}, {'entry': {
-        'identifier': 5,
-        'asset': 'ETH',
-        'balance': {'amount': '0.096809163374771208', 'usd_value': '0'},
-        'counterparty': '0xA090e606E30bD747d4E6245a1517EbE430F0057e',
-        'event_identifier': '0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',
-        'event_subtype': None,
-        'event_type': 'spend',
-        'location': 'blockchain',
-        'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
-        'notes': 'Send 0.096809163374771208 ETH to 0xA090e606E30bD747d4E6245a1517EbE430F0057e',  # noqa: E501
-        'sequence_index': 1,
-        'timestamp': 1642802807,
-        'extra_data': None,
-    }, 'customized': False}]
+    tx1_events = [{
+        'entry': {
+            'identifier': 4,
+            'asset': 'ETH',
+            'balance': {'amount': '0.00863351371344', 'usd_value': '0'},
+            'counterparty': CPT_GAS,
+            'event_identifier': '0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',  # noqa: E501
+            'event_subtype': 'fee',
+            'event_type': 'spend',
+            'location': 'blockchain',
+            'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
+            'notes': 'Burned 0.00863351371344 ETH for gas',
+            'sequence_index': 0,
+            'timestamp': 1642802807,
+        },
+        'customized': False,
+        'has_details': False,
+    }, {
+        'entry': {
+            'identifier': 5,
+            'asset': 'ETH',
+            'balance': {'amount': '0.096809163374771208', 'usd_value': '0'},
+            'counterparty': '0xA090e606E30bD747d4E6245a1517EbE430F0057e',
+            'event_identifier': '0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',  # noqa: E501
+            'event_subtype': None,
+            'event_type': 'spend',
+            'location': 'blockchain',
+            'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
+            'notes': 'Send 0.096809163374771208 ETH to 0xA090e606E30bD747d4E6245a1517EbE430F0057e',  # noqa: E501
+            'sequence_index': 1,
+            'timestamp': 1642802807,
+        },
+        'customized': False,
+        'has_details': False,
+    }]
     assert entries[0]['decoded_events'] == tx1_events
-    tx2_events = [{'entry': {
-        'identifier': 1,
-        'asset': 'ETH',
-        'balance': {'amount': '0.017690836625228792', 'usd_value': '0'},
-        'counterparty': CPT_GAS,
-        'event_identifier': '0x38ed9c2d4f0855f2d88823d502f8794b993d28741da48724b7dfb559de520602',
-        'event_subtype': 'fee',
-        'event_type': 'spend',
-        'location': 'blockchain',
-        'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
-        'notes': 'Burned 0.017690836625228792 ETH for gas',
-        'sequence_index': 0,
-        'timestamp': 1642802735,
-        'extra_data': None,
-    }, 'customized': False}, {'entry': {
-        'identifier': 2,
-        'asset': A_USDT.identifier,
-        'balance': {'amount': '1166', 'usd_value': '0'},
-        'counterparty': '0xb5d85CBf7cB3EE0D56b3bB207D5Fc4B82f43F511',
-        'event_identifier': '0x38ed9c2d4f0855f2d88823d502f8794b993d28741da48724b7dfb559de520602',
-        'event_subtype': None,
-        'event_type': 'spend',
-        'location': 'blockchain',
-        'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
-        'notes': 'Send 1166 USDT from 0x6e15887E2CEC81434C16D587709f64603b39b545 to 0xb5d85CBf7cB3EE0D56b3bB207D5Fc4B82f43F511',  # noqa: E501
-        'sequence_index': 308,
-        'timestamp': 1642802735,
-        'extra_data': None,
-    }, 'customized': False}]
+    tx2_events = [{
+        'entry': {
+            'identifier': 1,
+            'asset': 'ETH',
+            'balance': {'amount': '0.017690836625228792', 'usd_value': '0'},
+            'counterparty': CPT_GAS,
+            'event_identifier': '0x38ed9c2d4f0855f2d88823d502f8794b993d28741da48724b7dfb559de520602',  # noqa: E501
+            'event_subtype': 'fee',
+            'event_type': 'spend',
+            'location': 'blockchain',
+            'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
+            'notes': 'Burned 0.017690836625228792 ETH for gas',
+            'sequence_index': 0,
+            'timestamp': 1642802735,
+        },
+        'customized': False,
+        'has_details': False,
+    }, {
+        'entry': {
+            'identifier': 2,
+            'asset': A_USDT.identifier,
+            'balance': {'amount': '1166', 'usd_value': '0'},
+            'counterparty': '0xb5d85CBf7cB3EE0D56b3bB207D5Fc4B82f43F511',
+            'event_identifier': '0x38ed9c2d4f0855f2d88823d502f8794b993d28741da48724b7dfb559de520602',  # noqa: E501
+            'event_subtype': None,
+            'event_type': 'spend',
+            'location': 'blockchain',
+            'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
+            'notes': 'Send 1166 USDT from 0x6e15887E2CEC81434C16D587709f64603b39b545 to 0xb5d85CBf7cB3EE0D56b3bB207D5Fc4B82f43F511',  # noqa: E501
+            'sequence_index': 308,
+            'timestamp': 1642802735,
+        },
+        'customized': False,
+        'has_details': False,
+    }]
     assert entries[1]['decoded_events'] == tx2_events
-    tx3_events = [{'entry': {
-        'identifier': 3,
-        'asset': 'ETH',
-        'balance': {'amount': '0.125', 'usd_value': '0'},
-        'counterparty': '0xeB2629a2734e272Bcc07BDA959863f316F4bD4Cf',
-        'event_identifier': '0x6c27ea39e5046646aaf24e1bb451caf466058278685102d89979197fdb89d007',
-        'event_subtype': None,
-        'event_type': 'receive',
-        'location': 'blockchain',
-        'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
-        'notes': 'Receive 0.125 ETH from 0xeB2629a2734e272Bcc07BDA959863f316F4bD4Cf',
-        'sequence_index': 0,
-        'timestamp': 1642802651,
-        'extra_data': None,
-    }, 'customized': False}]
+    tx3_events = [{
+        'entry': {
+            'identifier': 3,
+            'asset': 'ETH',
+            'balance': {'amount': '0.125', 'usd_value': '0'},
+            'counterparty': '0xeB2629a2734e272Bcc07BDA959863f316F4bD4Cf',
+            'event_identifier': '0x6c27ea39e5046646aaf24e1bb451caf466058278685102d89979197fdb89d007',  # noqa: E501
+            'event_subtype': None,
+            'event_type': 'receive',
+            'location': 'blockchain',
+            'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
+            'notes': 'Receive 0.125 ETH from 0xeB2629a2734e272Bcc07BDA959863f316F4bD4Cf',
+            'sequence_index': 0,
+            'timestamp': 1642802651,
+        },
+        'customized': False,
+        'has_details': False,
+    }]
     assert entries[2]['decoded_events'] == tx3_events
-    tx4_events = [{'entry': {
-        'identifier': 6,
-        'asset': A_USDT.identifier,
-        'balance': {'amount': '1166', 'usd_value': '0'},
-        'counterparty': '0xE21c192cD270286DBBb0fBa10a8B8D9957d431E5',
-        'event_identifier': '0xccb6a445e136492b242d1c2c0221dc4afd4447c96601e88c156ec4d52e993b8f',
-        'event_subtype': None,
-        'event_type': 'receive',
-        'location': 'blockchain',
-        'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
-        'notes': 'Receive 1166 USDT from 0xE21c192cD270286DBBb0fBa10a8B8D9957d431E5 to 0x6e15887E2CEC81434C16D587709f64603b39b545',  # noqa: E501
-        'sequence_index': 385,
-        'timestamp': 1642802286,
-        'extra_data': None,
-    }, 'customized': False}]
+    tx4_events = [{
+        'entry': {
+            'identifier': 6,
+            'asset': A_USDT.identifier,
+            'balance': {'amount': '1166', 'usd_value': '0'},
+            'counterparty': '0xE21c192cD270286DBBb0fBa10a8B8D9957d431E5',
+            'event_identifier': '0xccb6a445e136492b242d1c2c0221dc4afd4447c96601e88c156ec4d52e993b8f',  # noqa: E501
+            'event_subtype': None,
+            'event_type': 'receive',
+            'location': 'blockchain',
+            'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
+            'notes': 'Receive 1166 USDT from 0xE21c192cD270286DBBb0fBa10a8B8D9957d431E5 to 0x6e15887E2CEC81434C16D587709f64603b39b545',  # noqa: E501
+            'sequence_index': 385,
+            'timestamp': 1642802286,
+        },
+        'customized': False,
+        'has_details': False,
+    }]
     assert entries[3]['decoded_events'] == tx4_events
 
     # Now let's edit 1 event and add another one
@@ -1143,20 +1161,23 @@ def test_query_transactions_check_decoded_events(
     )
     assert_simple_ok_response(response)
 
-    tx4_events.insert(0, {'entry': {
-        'asset': 'ETH',
-        'balance': {'amount': '1', 'usd_value': '1500.1'},
-        'counterparty': '0xE21c192cD270286DBBb0fBa10a8B8D9957d431E5',
-        'event_identifier': '0xccb6a445e136492b242d1c2c0221dc4afd4447c96601e88c156ec4d52e993b8f',
-        'event_subtype': 'deposit asset',
-        'event_type': 'spend',
-        'location': 'blockchain',
-        'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
-        'notes': 'Some kind of deposit',
-        'sequence_index': 1,
-        'timestamp': 1642802286,
-        'extra_data': None,
-    }, 'customized': True})
+    tx4_events.insert(0, {
+        'entry': {
+            'asset': 'ETH',
+            'balance': {'amount': '1', 'usd_value': '1500.1'},
+            'counterparty': '0xE21c192cD270286DBBb0fBa10a8B8D9957d431E5',
+            'event_identifier': '0xccb6a445e136492b242d1c2c0221dc4afd4447c96601e88c156ec4d52e993b8f',  # noqa: E501
+            'event_subtype': 'deposit asset',
+            'event_type': 'spend',
+            'location': 'blockchain',
+            'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
+            'notes': 'Some kind of deposit',
+            'sequence_index': 1,
+            'timestamp': 1642802286,
+        },
+        'customized': True,
+        'has_details': False,
+    })
     response = requests.put(
         api_url_for(rotkehlchen_api_server, 'historybaseentryresource'),
         json={key: value for key, value in tx4_events[0]['entry'].items() if key != 'extra_data'},
@@ -1186,8 +1207,8 @@ def test_query_transactions_check_decoded_events(
         ):
             assert cursor.execute(f'SELECT COUNT(*) from {name}').fetchone()[0] == count
         customized_events = dbevents.get_history_events(cursor, HistoryEventFilterQuery.make(), True)  # noqa: E501
-        assert customized_events[0].serialize() == tx4_events[0]['entry']  # pylint: disable=unsubscriptable-object  # noqa: E501
-        assert customized_events[1].serialize() == tx2_events[1]['entry']
+        assert customized_events[0].serialize_without_extra_data() == tx4_events[0]['entry']  # pylint: disable=unsubscriptable-object  # noqa: E501
+        assert customized_events[1].serialize_without_extra_data() == tx2_events[1]['entry']
 
         # requery all transactions and events. Assert they are the same (different event id though)
         result = query_transactions(rotki)
@@ -1420,47 +1441,6 @@ def test_ignored_assets(rotkehlchen_api_server, ethereum_accounts):
     assert result['entries_found'] == 2
     assert result['entries_total'] == 3
     assert result['entries_limit'] == FREE_ETH_TX_LIMIT
-
-
-@pytest.mark.parametrize('should_mock_price_queries', [True])
-@pytest.mark.parametrize('default_mock_price_value', [ONE])
-def test_extra_data_serialization(rotkehlchen_api_server, ethereum_accounts):
-    """Assert decoded transactions correctly include the extra_data key"""
-    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    db = rotki.data.db
-    dbevmtx = DBEvmTx(db)
-    dbevents = DBHistoryEvents(db)
-    tx1 = make_ethereum_transaction()
-    tx2 = make_ethereum_transaction()
-    event1 = make_ethereum_event(tx_hash=tx1.tx_hash, index=1, asset=A_ETH)
-    event2 = make_ethereum_event(tx_hash=tx2.tx_hash, index=2, asset=A_DAI)
-    extra_data = {'new_staked': str(FVal(1.2344)), 'staked_asset': A_MKR.identifier}
-    event1.extra_data = extra_data
-    with db.user_write() as cursor:
-        dbevmtx.add_evm_transactions(cursor, [tx1, tx2, tx2], relevant_address=ethereum_accounts[0])  # noqa: E501
-        dbevents.add_history_events(cursor, [event1, event2])
-
-    response = requests.get(
-        api_url_for(
-            rotkehlchen_api_server,
-            'evmtransactionsresource',
-        ),
-        json={
-            'evm_chain': 'ethereum',
-            'only_cache': True,  # only deal with the DB
-            'exclude_ignored_assets': False,
-        },
-    )
-    result = assert_proper_response_with_result(response)
-    expected = generate_tx_entries_response(data=[
-        (tx1, [event1]),
-        (tx2, [event2]),
-    ])
-    assert result['entries'] == expected
-    # explicit verification that extra_data is present to avoid future errors if any of the
-    # logic used to generate the output changes
-    assert result['entries'][0]['decoded_events'][0]['entry']['extra_data'] == extra_data
-    assert result['entries'][1]['decoded_events'][0]['entry']['extra_data'] is None
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x59ABf3837Fa962d6853b4Cc0a19513AA031fd32b']])  # noqa: E501

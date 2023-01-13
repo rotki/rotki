@@ -71,6 +71,14 @@ HISTORY_EVENT_DB_TUPLE_WRITE = tuple[
     Optional[str],  # extra_data
 ]
 
+SUB_SWAPS_DETAILS = 'sub-swaps'
+LIQUITY_STAKING_DETAILS = 'liquity-staking'
+
+ALL_DETAILS_KEYS = {
+    SUB_SWAPS_DETAILS,
+    LIQUITY_STAKING_DETAILS,
+}
+
 
 def get_tx_event_type_identifier(event_type: HistoryEventType, event_subtype: HistoryEventSubType, counterparty: str) -> str:  # noqa: E501
     return str(event_type) + '__' + str(event_subtype) + '__' + counterparty
@@ -203,6 +211,11 @@ class HistoryBaseEntry(AccountingEventMixin):
             'extra_data': self.extra_data,
         }
 
+    def serialize_without_extra_data(self) -> dict[str, Any]:
+        result = self.serialize()
+        result.pop('extra_data')
+        return result
+
     @classmethod
     def deserialize(cls, data: dict[str, Any]) -> 'HistoryBaseEntry':
         """Deserializes a dict history base entry to HistoryBaseEntry object.
@@ -276,6 +289,18 @@ class HistoryBaseEntry(AccountingEventMixin):
 
     def get_assets(self) -> list[Asset]:
         return [self.asset]
+
+    def has_details(self) -> bool:
+        if self.extra_data is None:
+            return False
+        return len(self.extra_data.keys() & ALL_DETAILS_KEYS) > 0
+
+    def get_details(self) -> Optional[dict[str, Any]]:
+        if self.extra_data is None:
+            return None
+
+        details = {k: v for k, v in self.extra_data.items() if k in ALL_DETAILS_KEYS}
+        return details if len(details) > 0 else None
 
     def process(
             self,

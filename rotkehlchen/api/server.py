@@ -68,6 +68,7 @@ from rotkehlchen.api.v1.resources import (
     EthereumAssetsResource,
     EthereumModuleDataResource,
     EthereumModuleResource,
+    EventDetailsResource,
     EvmAccountsResource,
     EvmPendingTransactionsDecodingResource,
     EvmTransactionsResource,
@@ -205,6 +206,7 @@ URLS_V1: URLS = [
     ('/history/export', HistoryExportingResource),
     ('/history/download', HistoryDownloadingResource),
     ('/history/events', HistoryBaseEntryResource),
+    ('/history/events/details', EventDetailsResource),
     ('/history/actionable_items', HistoryActionableItemsResource),
     ('/reports', AccountingReportsResource),
     (

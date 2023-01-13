@@ -62,6 +62,7 @@ from rotkehlchen.api.v1.schemas import (
     Eth2ValidatorDeleteSchema,
     Eth2ValidatorPatchSchema,
     Eth2ValidatorPutSchema,
+    EventDetailsQuerySchema,
     EvmAccountsPutSchema,
     EvmPendingTransactionDecodingSchema,
     EvmTransactionDecodingSchema,
@@ -2785,3 +2786,12 @@ class CustomAssetsTypesResource(BaseMethodView):
     @require_loggedin_user()
     def get(self) -> Response:
         return self.rest_api.get_custom_asset_types()
+
+
+class EventDetailsResource(BaseMethodView):
+    get_schema = EventDetailsQuerySchema()
+
+    @require_loggedin_user()
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(self, identifier: int) -> Response:
+        return self.rest_api.get_event_details(identifier=identifier)

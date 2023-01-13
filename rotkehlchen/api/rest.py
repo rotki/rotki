@@ -3348,7 +3348,8 @@ class RestAPI():
                         'entry': entry.serialize(),
                         'decoded_events': [
                             {
-                                'entry': x.serialize(),
+                                'entry': x.serialize_without_extra_data(),
+                                'has_details': x.has_details(),
                                 'customized': x.identifier in customized_event_ids,
                             } for x in events
                         ],
@@ -4951,3 +4952,15 @@ class RestAPI():
         db_custom_assets = DBCustomAssets(db_handler=self.rotkehlchen.data.db)
         custom_asset_types = db_custom_assets.get_custom_asset_types()
         return api_response(_wrap_in_ok_result(custom_asset_types), status_code=HTTPStatus.OK)
+
+    def get_event_details(self, identifier: int) -> Response:
+        dbevents = DBHistoryEvents(self.rotkehlchen.data.db)
+        event = dbevents.get_history_event_by_identifier(identifier=identifier)
+        if event is None:
+            return api_response(wrap_in_fail_result('No event found'), status_code=HTTPStatus.NOT_FOUND)  # noqa: E501
+
+        details = event.get_details()
+        if details is None:
+            return api_response(wrap_in_fail_result('No details found'), status_code=HTTPStatus.NOT_FOUND)  # noqa: E501
+
+        return api_response(_wrap_in_ok_result(details), status_code=HTTPStatus.OK)
