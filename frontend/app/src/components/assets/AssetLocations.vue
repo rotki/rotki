@@ -187,16 +187,6 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
 </template>
 
 <style scoped lang="scss">
-:deep() {
-  th {
-    &:first-child {
-      span {
-        padding-left: 16px;
-      }
-    }
-  }
-}
-
 .asset-locations-table {
   &__tag {
     margin-right: 8px;

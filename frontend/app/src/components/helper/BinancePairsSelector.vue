@@ -151,25 +151,18 @@ watch(search, search => {
 <style scoped lang="scss">
 .binance-market-selector {
   &--outlined {
-    :deep() {
-      /* stylelint-disable */
-      .v-label:not(.v-label--active) {
-        /* stylelint-enable */
+    /* stylelint-disable selector-class-pattern,selector-nested-pattern */
+
+    :deep(.v-label) {
+      &:not(.v-label--active) {
         top: 24px;
       }
-
-      .v-input {
-        &__icon {
-          &--clear {
-            margin-top: 6px;
-          }
-
-          &--append {
-            margin-top: 6px;
-          }
-        }
-      }
     }
+
+    :deep(.v-input__icon) {
+      margin-top: 6px;
+    }
+    /* stylelint-enable selector-class-pattern,selector-nested-pattern */
   }
 }
 </style>

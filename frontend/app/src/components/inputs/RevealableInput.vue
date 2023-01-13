@@ -44,6 +44,11 @@ defineProps({
     required: false,
     type: [String, Array],
     default: ''
+  },
+  sensitiveKey: {
+    required: false,
+    type: Boolean,
+    default: false
   }
 });
 
@@ -62,6 +67,9 @@ const input = (value: string | null) => {
     :prepend-icon="outlined ? null : prependIcon"
     :prepend-inner-icon="outlined ? prependIcon : null"
     :type="revealed ? 'text' : 'password'"
+    :class="{
+      'sensitive-key': sensitiveKey
+    }"
     :label="label"
     :hint="hint"
     :disabled="disabled"
@@ -82,3 +90,16 @@ const input = (value: string | null) => {
     </template>
   </v-text-field>
 </template>
+
+<style scoped lang="scss">
+.sensitive-key {
+  &.v-input {
+    &--is-disabled {
+      :deep(.v-icon),
+      :deep(.v-label) {
+        color: green !important;
+      }
+    }
+  }
+}
+</style>

@@ -244,9 +244,10 @@ watch(v$, ({ $invalid }) => {
       </v-tooltip>
     </div>
 
-    <div class="exchange-keys-form__keys">
+    <div>
       <revealable-input
         outlined
+        sensitive-key
         :disabled="edit && !editKeys"
         :value="exchange.apiKey"
         :error-messages="v$.apiKey.$errors.map(e => e.$message)"
@@ -259,6 +260,7 @@ watch(v$, ({ $invalid }) => {
       <revealable-input
         v-if="exchange.location !== 'bitpanda'"
         outlined
+        sensitive-key
         :disabled="edit && !editKeys"
         :value="exchange.apiSecret"
         :error-messages="v$.apiSecret.$errors.map(e => e.$message)"
@@ -273,6 +275,7 @@ watch(v$, ({ $invalid }) => {
         v-if="requiresPassphrase"
         :disabled="edit && !editKeys"
         outlined
+        sensitive-key
         :value="exchange.passphrase"
         :error-messages="v$.passphrase.$errors.map(e => e.$message)"
         prepend-icon="mdi-key-plus"
@@ -310,20 +313,3 @@ watch(v$, ({ $invalid }) => {
     />
   </v-form>
 </template>
-
-<style lang="scss" scoped>
-:deep() {
-  .exchange-keys-form {
-    &__keys {
-      .v-input {
-        &--is-disabled {
-          .v-icon,
-          .v-label {
-            color: green !important;
-          }
-        }
-      }
-    }
-  }
-}
-</style>

@@ -156,23 +156,11 @@ const { t } = useI18n();
 
 <style scoped lang="scss">
 .explorers {
-  :deep() {
-    .v-select {
-      &__slot {
-        height: 76px;
-
-        /* stylelint-disable */
-        .v-label:not(.v-label--active) {
-          /* stylelint-enable */
-          top: 26px;
-        }
-      }
-    }
-
+  :deep(.v-input) {
     .v-input {
       &__icon {
         &--append {
-          padding-top: 16px;
+          padding-top: 1rem;
         }
       }
     }

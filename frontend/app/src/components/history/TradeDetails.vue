@@ -77,14 +77,3 @@ const { href, hasLink, onLinkClick } = useLinks(link);
     <notes-display :notes="item.notes" />
   </table-expand-container>
 </template>
-<style scoped lang="scss">
-:deep() {
-  th {
-    &:nth-child(2) {
-      span {
-        padding-left: 16px;
-      }
-    }
-  }
-}
-</style>

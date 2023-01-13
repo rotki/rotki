@@ -183,7 +183,7 @@ const values = computed<Tag[]>(() => {
       </template>
       <template #append-outer>
         <v-btn
-          class="tag-input__manage-tags"
+          class="tag-input__manage-tags mt-n2"
           icon
           text
           color="primary"
@@ -198,6 +198,7 @@ const values = computed<Tag[]>(() => {
       :value="!!manageTags"
       max-width="800"
       class="tag-input__tag-manager"
+      content-class="fill-height"
       @input="manageTags = false"
     >
       <tag-manager v-if="!!manageTags" dialog @close="manageTags = false" />
@@ -206,24 +207,6 @@ const values = computed<Tag[]>(() => {
 </template>
 
 <style scoped lang="scss">
-:deep() {
-  .v-dialog {
-    &--active {
-      height: 100%;
-    }
-  }
-
-  .v-text-field {
-    &--outlined {
-      .v-btn {
-        &--icon {
-          margin-top: -8px;
-        }
-      }
-    }
-  }
-}
-
 .tag-input {
   &__tag {
     &__description {

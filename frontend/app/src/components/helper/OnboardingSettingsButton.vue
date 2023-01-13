@@ -33,11 +33,9 @@ const { t } = useI18n();
 </template>
 
 <style scoped lang="scss">
-:deep() {
-  .v-card {
-    border-bottom-left-radius: 0 !important;
-    border-bottom-right-radius: 0 !important;
-  }
+:deep(.v-card) {
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
 }
 
 .backend-settings-button {

@@ -392,14 +392,14 @@ const cancel = () => {
 <style lang="scss" scoped>
 .watcher-dialog {
   &__body {
-    :deep() {
+    /* stylelint-disable selector-class-pattern,selector-nested-pattern */
+
+    :deep(.v-text-field--filled) {
+      /* stylelint-enable selector-class-pattern,selector-nested-pattern */
+
       .v-text-field {
-        &--filled {
-          .v-text-field {
-            &__suffix {
-              margin-top: 0;
-            }
-          }
+        &__suffix {
+          margin-top: 0;
         }
       }
     }

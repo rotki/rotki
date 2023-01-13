@@ -283,26 +283,3 @@ const showRemoveConfirmation = (item: Exchange) => {
     </big-dialog>
   </div>
 </template>
-
-<style scoped lang="scss">
-.exchange-settings {
-  &__connected-exchanges {
-    display: flex;
-    flex-direction: row;
-    justify-content: flex-start;
-    padding: 8px;
-  }
-
-  &__fields {
-    &__exchange {
-      :deep() {
-        .v-select {
-          &__selections {
-            height: 36px;
-          }
-        }
-      }
-    }
-  }
-}
-</style>

@@ -212,7 +212,7 @@ const close = () => {
   }
 }
 
-:deep() {
+:deep(.labeled-address-display) {
   .labeled-address-display {
     &__chip {
       max-width: 241px;

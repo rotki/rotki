@@ -66,12 +66,6 @@ const { t } = useI18n();
 
 <style scoped lang="scss">
 .timeframe-selector {
-  :deep() {
-    .v-chip {
-      cursor: pointer;
-    }
-  }
-
   &--active {
     color: white !important;
     background-color: var(--v-primary-base) !important;

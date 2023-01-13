@@ -84,37 +84,11 @@ const isRouterVisible = (route: string, tab: TabContent) => {
 
 .tab-navigation {
   &__tabs {
-    :deep() {
-      .v-tabs-bar {
-        background-color: var(--v-rotki-light-grey-base) !important;
-      }
-
-      /* stylelint-disable scss/selector-nest-combinators,selector-class-pattern,selector-nested-pattern, rule-empty-line-before */
-      .theme {
-        &--dark {
-          &.v-tabs-bar {
-            background-color: transparent !important;
-          }
-          .tab-navigation__tabs__tab:not(.tab-navigation__tabs__tab--active) {
-            background: var(--v-dark-base) !important;
-          }
-        }
-      }
-      /* stylelint-enable scss/selector-nest-combinators,selector-class-pattern,selector-nested-pattern, rule-empty-line-before */
-
-      .v-tabs-items {
-        background-color: transparent !important;
-        overflow: visible;
-      }
-    }
-
     &__tab-item {
       &--content-margin {
         margin-top: 36px;
       }
     }
-
-    /* stylelint-disable no-descending-specificity */
 
     &__tab {
       background-color: white;
@@ -134,6 +108,8 @@ const isRouterVisible = (route: string, tab: TabContent) => {
         background-color: var(--v-primary-base) !important;
       }
 
+      /* stylelint-disable no-descending-specificity */
+
       &:first-of-type {
         &:hover {
           @include start();
@@ -149,14 +125,40 @@ const isRouterVisible = (route: string, tab: TabContent) => {
 
         @include end();
       }
-
-      /* stylelint-enable no-descending-specificity */
     }
 
     .v-tab {
       &:hover {
         &::before {
           border-radius: inherit;
+        }
+      }
+    }
+  }
+}
+
+:deep(.v-tabs) {
+  .v-tabs {
+    &-bar {
+      background: transparent !important;
+    }
+
+    &-items {
+      background-color: transparent !important;
+      overflow: visible;
+    }
+  }
+}
+
+.theme {
+  &--dark {
+    .tab-navigation {
+      &__tabs {
+        &__tab {
+          &:not(&--active) {
+            /* stylelint-enable no-descending-specificity */
+            background: var(--v-dark-base) !important;
+          }
         }
       }
     }

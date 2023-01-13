@@ -114,14 +114,14 @@ const { t } = useI18n();
 <style scoped lang="scss">
 .defi-wizard {
   &__address-selector {
-    :deep() {
-      .v-stepper {
-        &__content {
-          margin: auto !important;
-          border-left: none !important;
-        }
-      }
+    /* stylelint-disable selector-class-pattern,selector-nested-pattern */
+
+    :deep(.v-stepper__content) {
+      margin: auto !important;
+      border-left: none !important;
     }
+
+    /* stylelint-enable selector-class-pattern,selector-nested-pattern */
   }
 }
 </style>

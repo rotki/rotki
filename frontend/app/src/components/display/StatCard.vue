@@ -59,13 +59,13 @@ defineProps({
     z-index: 1;
   }
 
-  :deep() {
-    .v-card {
-      &__text {
-        font-size: 1em;
-      }
-    }
+  /* stylelint-disable selector-class-pattern,selector-nested-pattern */
+
+  :deep(.v-card__text) {
+    font-size: 1em;
   }
+
+  /* stylelint-enable selector-class-pattern,selector-nested-pattern */
 
   &__border {
     width: 48px;

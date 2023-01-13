@@ -231,26 +231,12 @@ const navItems: MenuItem[] = [
 </template>
 
 <style scoped lang="scss">
-:deep() {
-  .v-list-item {
+:deep(.v-list-item) {
+  border-radius: 0.5rem;
+  padding: 0 0.75rem;
+
+  &:before {
     border-radius: 0.5rem;
-    padding: 0 0.75rem;
-
-    &:before {
-      border-radius: 0.5rem;
-    }
-  }
-
-  .v-list-group {
-    &__header {
-      &__append-icon {
-        margin-left: -18px !important;
-      }
-
-      .v-list-item {
-        padding-left: 0 !important;
-      }
-    }
   }
 }
 
@@ -260,11 +246,9 @@ const navItems: MenuItem[] = [
       background-color: var(--v-primary-base);
       color: white !important;
 
-      :deep() {
-        .nav-icon {
-          opacity: 1 !important;
-          filter: brightness(0) invert(100%);
-        }
+      :deep(.nav-icon) {
+        opacity: 1 !important;
+        filter: brightness(0) invert(100%);
       }
     }
   }
@@ -272,11 +256,11 @@ const navItems: MenuItem[] = [
   &--mini {
     padding: 0;
 
-    :deep() {
-      .v-list-item {
-        padding-left: 28px;
-        justify-content: center;
+    :deep(.v-list-item) {
+      padding-left: 28px;
+      justify-content: center;
 
+      .v-list-item {
         &__content {
           display: none !important;
         }
@@ -296,13 +280,12 @@ const navItems: MenuItem[] = [
 
 .theme {
   &--dark {
-    :deep() {
-      .navigation-submenu {
-        &--mini {
-          background: var(--v-secondary-lighten1);
-        }
-      }
+    /* stylelint-disable selector-class-pattern,selector-nested-pattern */
+
+    :deep(.navigation-submenu--mini) {
+      background: var(--v-secondary-lighten1);
     }
+    /* stylelint-enable selector-class-pattern,selector-nested-pattern */
   }
 }
 </style>

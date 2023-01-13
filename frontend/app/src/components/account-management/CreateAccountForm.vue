@@ -405,14 +405,12 @@ const back = () => {
     line-height: 1rem;
   }
 
-  :deep() {
-    .v-stepper {
-      box-shadow: none !important;
-      -webkit-box-shadow: none !important;
+  :deep(.v-stepper) {
+    box-shadow: none !important;
 
+    .v-stepper {
       &__header {
         box-shadow: none !important;
-        -webkit-box-shadow: none !important;
       }
 
       &__content {

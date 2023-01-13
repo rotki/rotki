@@ -31,8 +31,8 @@ const { privacyModeIcon, privacyMode, togglePrivacyMode, changePrivacyMode } =
   <div class="privacy-mode-dropdown">
     <v-menu
       offset-y
-      :max-width="300"
-      :min-width="300"
+      :max-width="280"
+      :min-width="280"
       :close-on-content-click="false"
       content-class="privacy-mode-dropdown__menu"
     >
@@ -95,15 +95,11 @@ const { privacyModeIcon, privacyMode, togglePrivacyMode, changePrivacyMode } =
 
     .slider-wrapper {
       .v-input {
-        :deep() {
+        :deep(.v-slider) {
           .v-slider {
-            width: 210px;
-
             &__track-container {
               width: 4px;
-              right: auto !important;
               left: 0;
-              transform: translateX(-50%) !important;
             }
 
             &__track-background {
@@ -113,9 +109,7 @@ const { privacyModeIcon, privacyMode, togglePrivacyMode, changePrivacyMode } =
             }
 
             &__ticks-container {
-              right: auto !important;
               left: 0;
-              transform: translateX(-50%) !important;
             }
 
             &__tick {
@@ -147,7 +141,8 @@ const { privacyModeIcon, privacyMode, togglePrivacyMode, changePrivacyMode } =
                 &:nth-child(#{$i}) {
                   bottom: calc(150% - (50% * #{$i}) - 5px) !important;
 
-                  /* stylelint-disable selector-class-pattern, rule-empty-line-before */
+                  /* stylelint-disable selector-class-pattern */
+
                   .v-slider {
                     &__tick-label {
                       &::after {
@@ -155,7 +150,7 @@ const { privacyModeIcon, privacyMode, togglePrivacyMode, changePrivacyMode } =
                       }
                     }
                   }
-                  /* stylelint-enable selector-class-pattern, rule-empty-line-before */
+                  /* stylelint-enable selector-class-pattern */
                 }
               }
             }
@@ -173,10 +168,10 @@ const { privacyModeIcon, privacyMode, togglePrivacyMode, changePrivacyMode } =
           }
         }
 
-        /* stylelint-disable plugin/stylelint-bem-namics, rule-empty-line-before */
+        /* stylelint-disable plugin/stylelint-bem-namics */
         @for $i from 0 through 2 {
           &.selected-#{$i} {
-            :deep() {
+            :deep(.v-slider) {
               .v-slider {
                 &__tick {
                   @for $j from 3 - $i through 3 {
@@ -189,7 +184,7 @@ const { privacyModeIcon, privacyMode, togglePrivacyMode, changePrivacyMode } =
             }
           }
         }
-        /* stylelint-enable plugin/stylelint-bem-namics, rule-empty-line-before */
+        /* stylelint-enable plugin/stylelint-bem-namics */
       }
     }
   }
@@ -206,7 +201,7 @@ const { privacyModeIcon, privacyMode, togglePrivacyMode, changePrivacyMode } =
       &__menu {
         .slider-wrapper {
           .v-input {
-            :deep() {
+            :deep(.v-slider) {
               .v-slider {
                 &__tick {
                   --color: var(--v-secondary-lighten2);

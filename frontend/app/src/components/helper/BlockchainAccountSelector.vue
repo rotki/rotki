@@ -119,6 +119,7 @@ const { dark } = useTheme();
         clearable
         :dense="dense"
         :outlined="outlined"
+        item-text="address"
         :open-on-clear="false"
         :label="label ? label : t('blockchain_account_selector.default_label')"
         :class="outlined ? 'blockchain-account-selector--outlined' : null"

@@ -3648,11 +3648,6 @@
     "external": "External",
     "real_estate": "Real Estate"
   },
-  "trade_location_selector": {
-    "label": "Filter location",
-    "selection_none": "Showing results across all locations",
-    "selection_single": "Showing results for {location}"
-  },
   "transactions": {
     "actions": {
       "add_event": "Add a new event",

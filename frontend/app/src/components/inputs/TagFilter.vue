@@ -83,12 +83,12 @@ const remove = (tag: string) => {
     margin-top: -4px;
   }
 
-  :deep() {
-    .v-select {
-      &__slot {
-        min-height: 40px;
-      }
-    }
+  /* stylelint-disable selector-class-pattern,selector-nested-pattern */
+
+  :deep(.v-select__slot) {
+    min-height: 40px;
   }
+
+  /* stylelint-enable selector-class-pattern,selector-nested-pattern */
 }
 </style>

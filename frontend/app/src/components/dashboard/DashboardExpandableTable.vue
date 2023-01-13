@@ -45,23 +45,24 @@ const panel = computed<number>(() => {
   </card>
 </template>
 <style scoped lang="scss">
-:deep() {
-  .v-expansion-panel {
-    &::before {
-      box-shadow: none;
-    }
+:deep(.v-expansion-panel) {
+  &::before {
+    box-shadow: none;
+  }
 
+  .v-expansion-panel {
     &-content {
       &__wrap {
         padding: 0 !important;
       }
     }
   }
-
-  .v-card {
-    &__text {
-      padding-bottom: 0 !important;
-    }
-  }
 }
+
+/* stylelint-disable selector-class-pattern,selector-nested-pattern */
+
+:deep(.v-card__text) {
+  padding-bottom: 0 !important;
+}
+/* stylelint-enable selector-class-pattern,selector-nested-pattern */
 </style>
