@@ -52,7 +52,7 @@ def test_1inchv1_swap(database, ethereum_inquirer):
             asset=A_USDC,
             balance=Balance(amount=FVal('138.75')),
             location_label=ADDY,
-            notes=f'Swap 138.75 USDC in uniswap-v2 from {ADDY}',
+            notes=f'Swap 138.75 USDC in {CPT_UNISWAP_V2}',
             counterparty=CPT_UNISWAP_V2,
         ), HistoryBaseEntry(
             event_identifier=tx_hash,

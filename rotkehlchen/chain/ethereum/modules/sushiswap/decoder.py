@@ -3,7 +3,10 @@ from typing import TYPE_CHECKING, Callable, Optional
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.modules.sushiswap.constants import CPT_SUSHISWAP_V2
-from rotkehlchen.chain.ethereum.modules.uniswap.v2.common import decode_uniswap_v2_like_swap
+from rotkehlchen.chain.ethereum.modules.uniswap.v2.common import (
+    SUSHISWAP_ROUTER,
+    decode_uniswap_v2_like_swap,
+)
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import ActionItem
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
@@ -42,7 +45,7 @@ class SushiswapDecoder(DecoderInterface):
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
     ) -> None:
-        if tx_log.topics[0] == SWAP_SIGNATURE:
+        if tx_log.topics[0] == SWAP_SIGNATURE and transaction.to_address == SUSHISWAP_ROUTER:
             decode_uniswap_v2_like_swap(
                 tx_log=tx_log,
                 decoded_events=decoded_events,

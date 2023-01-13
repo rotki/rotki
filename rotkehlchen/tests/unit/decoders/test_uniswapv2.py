@@ -3,7 +3,7 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
 from rotkehlchen.chain.ethereum.modules.uniswap.constants import CPT_UNISWAP_V2
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
@@ -13,6 +13,7 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import EXP18, ZERO
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
+from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
     ChainID,
     EvmInternalTransaction,
@@ -323,3 +324,67 @@ def test_uniswap_v2_swap_eth_returned(database, ethereum_inquirer, eth_transacti
         ),
     ]
     assert events == expected_events
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('ethereum_accounts', [['0xa931b486F661540c6D709aE6DfC8BcEF347ea437']])
+def test_uniswap_v2_swap_with_approval(database, ethereum_inquirer, ethereum_accounts):
+    tx_hex = deserialize_evm_tx_hash('0xcbe558177f62ccdb77f59b6be11e60b0a3fed1d224d5ce28d2bb6dff59447d3b')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    user_address = ethereum_accounts[0]
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hex,
+    )
+    assert events == [
+        HistoryBaseEntry(
+            event_identifier=evmhash,
+            sequence_index=0,
+            timestamp=Timestamp(1667857559000),
+            location=Location.BLOCKCHAIN,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=Asset('ETH'),
+            balance=Balance(amount=FVal('0.003227029072809172')),
+            location_label=user_address,
+            notes='Burned 0.003227029072809172 ETH for gas',
+            counterparty='gas',
+        ), HistoryBaseEntry(
+            event_identifier=evmhash,
+            sequence_index=297,
+            timestamp=Timestamp(1667857559000),
+            location=Location.BLOCKCHAIN,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=Asset('eip155:1/erc20:0x33349B282065b0284d756F0577FB39c158F935e6'),
+            balance=Balance(amount=FVal('115792089237316195423570985000000000000000000000000000000000')),  # noqa: E501
+            location_label=user_address,
+            notes='Approve 115792089237316195423570985000000000000000000000000000000000 MPL of 0xa931b486F661540c6D709aE6DfC8BcEF347ea437 for spending by 0x617Dee16B86534a5d792A4d7A62FB491B544111E',  # noqa: E501
+            counterparty='0x617Dee16B86534a5d792A4d7A62FB491B544111E',
+        ), HistoryBaseEntry(
+            event_identifier=evmhash,
+            sequence_index=300,
+            timestamp=Timestamp(1667857559000),
+            location=Location.BLOCKCHAIN,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=Asset('eip155:1/erc20:0x33349B282065b0284d756F0577FB39c158F935e6'),
+            balance=Balance(amount=FVal('20.653429896')),
+            location_label=user_address,
+            notes='Swap 20.653429896 MPL in uniswap-v2',
+            counterparty='uniswap-v2',
+        ), HistoryBaseEntry(
+            event_identifier=evmhash,
+            sequence_index=301,
+            timestamp=Timestamp(1667857559000),
+            location=Location.BLOCKCHAIN,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=Asset('eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
+            balance=Balance(amount=FVal('273.798721')),
+            location_label=user_address,
+            notes=f'Receive 273.798721 USDC as a result of a {CPT_UNISWAP_V2} swap',
+            counterparty='uniswap-v2',
+        ),
+    ]
