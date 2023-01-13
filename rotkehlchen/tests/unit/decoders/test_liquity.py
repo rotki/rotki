@@ -1,7 +1,7 @@
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.base import LIQUITY_STAKING_DETAILS, HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
@@ -756,7 +756,7 @@ def test_increase_liquity_staking(database, ethereum_inquirer, eth_transactions)
             location_label=user_address,
             notes='Stake 89.99999999999997 LQTY in the Liquity protocol',
             counterparty='liquity',
-            extra_data={'staked_amount': '171.95999999999998', 'asset': A_LQTY},
+            extra_data={LIQUITY_STAKING_DETAILS: {'staked_amount': '171.95999999999998', 'asset': A_LQTY}},  # noqa: E501
         ), HistoryBaseEntry(
             event_identifier=evmhash,
             sequence_index=180,
@@ -915,7 +915,7 @@ def test_remove_liquity_staking(database, ethereum_inquirer, eth_transactions):
             location_label=user_address,
             notes='Unstake 372.883717436930835121 LQTY from the Liquity protocol',
             counterparty='liquity',
-            extra_data={'staked_amount': '0', 'asset': A_LQTY},
+            extra_data={LIQUITY_STAKING_DETAILS: {'staked_amount': '0', 'asset': A_LQTY}},
         ), HistoryBaseEntry(
             event_identifier=evmhash,
             sequence_index=122,

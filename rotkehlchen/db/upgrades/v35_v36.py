@@ -1,14 +1,17 @@
 import json
 import logging
 from typing import TYPE_CHECKING
+from rotkehlchen.accounting.structures.base import LIQUITY_STAKING_DETAILS
 
+from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.chain.ethereum.modules.liquity.constants import CPT_LIQUITY
 from rotkehlchen.db.settings import DEFAULT_ACTIVE_MODULES
 from rotkehlchen.db.utils import table_exists
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.gevent import DBConnection, DBCursor
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 logger = logging.getLogger(__name__)
@@ -542,6 +545,36 @@ def _add_okx(write_cursor: 'DBCursor') -> None:
     log.debug('Exit _add_okx')
 
 
+def _upgrade_liquity_staking_events(write_cursor: 'DBCursor', conn: 'DBConnection') -> None:
+    """
+    Since we changed the format of `extra_data`, we have to upgrade the liquity staking events.
+    In this upgrade function we make sure that the staking data is stored under the
+    appropriate key (LIQUITY_STAKING_DETAILS).
+    """
+    log.debug('Enter _upgrade_liquity_staking_events')
+    upgraded_data_tuples = []
+    with conn.read_ctx() as read_cursor:
+        read_cursor.execute(
+            'SELECT identifier, extra_data FROM history_events WHERE type=? AND subtype IN (?, ?) AND counterparty=? AND extra_data IS NOT NULL',  # noqa: E501
+            (
+                HistoryEventType.STAKING.serialize(),
+                HistoryEventSubType.DEPOSIT_ASSET.serialize(),
+                HistoryEventSubType.REMOVE_ASSET.serialize(),
+                CPT_LIQUITY,
+            ),
+        )
+        for (identifier, serialized_extra_data) in read_cursor:
+            extra_data = json.loads(serialized_extra_data)
+            upgraded_extra_data = {LIQUITY_STAKING_DETAILS: extra_data}
+            upgraded_data_tuples.append((json.dumps(upgraded_extra_data), identifier))
+
+    write_cursor.executemany(
+        'UPDATE history_events SET extra_data=? WHERE identifier=?',
+        upgraded_data_tuples,
+    )
+    log.debug('Exit _upgrade_liquity_staking_events')
+
+
 def upgrade_v35_to_v36(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v35 to v36
 
@@ -555,7 +588,7 @@ def upgrade_v35_to_v36(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - rename web3_nodes to rpc_nodes
     """
     log.debug('Entered userdb v35->v36 upgrade')
-    progress_handler.set_total_steps(10)
+    progress_handler.set_total_steps(11)
     with db.user_write() as write_cursor:
         _remove_adex(write_cursor)
         progress_handler.new_step()
@@ -576,6 +609,8 @@ def upgrade_v35_to_v36(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         _upgrade_address_book_table(write_cursor)
         progress_handler.new_step()
         _add_okx(write_cursor)
+        progress_handler.new_step()
+        _upgrade_liquity_staking_events(write_cursor, db.conn)
         progress_handler.new_step()
 
     log.debug('Finished userdb v35->v36 upgrade')

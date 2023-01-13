@@ -1030,7 +1030,7 @@ def test_upgrade_db_35_to_36(user_data_dir):  # pylint: disable=unused-argument
         else:
             raise AssertionError(f'Unexpected type {entry[2]} in accounts_details')
     transactions_result = cursor.execute('SELECT * from ethereum_transactions').fetchall()
-    assert len(transactions_result) == 305
+    assert len(transactions_result) == 306
     internal_transactions_result = cursor.execute('SELECT * from ethereum_internal_transactions').fetchall()  # noqa: E501
     assert len(internal_transactions_result) == 8
     tx_receipts_result = cursor.execute('SELECT * from ethtx_receipts').fetchall()
@@ -1043,7 +1043,7 @@ def test_upgrade_db_35_to_36(user_data_dir):  # pylint: disable=unused-argument
     assert len(tx_address_mappings_result) == 305
     tx_mappings_result = cursor.execute('SELECT * from evm_tx_mappings').fetchall()
     assert len(tx_mappings_result) == 305
-    assert cursor.execute('SELECT COUNT(*) from history_events').fetchone()[0] == 558
+    assert cursor.execute('SELECT COUNT(*) from history_events').fetchone()[0] == 562
     assert table_exists(cursor, 'web3_nodes')
     assert table_exists(cursor, 'rpc_nodes') is False
     results = cursor.execute(
@@ -1097,6 +1097,12 @@ def test_upgrade_db_35_to_36(user_data_dir):  # pylint: disable=unused-argument
         ('0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 'ETH', 'yabir secret account'),
         ('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', 'ETH', 'lefteris GTC'),
     ]
+    cursor.execute('SELECT extra_data FROM history_events WHERE counterparty="liquity"')
+    assert cursor.fetchall() == [
+        (None,),
+        ('{"staked_amount": "0", "asset": "eip155:1/erc20:0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D"}',),  # noqa: E501
+        (None,),
+    ]
 
     db_v35.logout()
     # Execute upgrade
@@ -1130,7 +1136,7 @@ def test_upgrade_db_35_to_36(user_data_dir):  # pylint: disable=unused-argument
         assert entry[2] == accounts_details_result[idx][2]
         assert entry[3] == accounts_details_result[idx][3]
     new_transactions_result = cursor.execute('SELECT * from evm_transactions').fetchall()
-    assert len(new_transactions_result) == 305
+    assert len(new_transactions_result) == 306
     for idx, entry in enumerate(new_transactions_result):
         for i in range(12):
             if i == 0:
@@ -1204,7 +1210,7 @@ def test_upgrade_db_35_to_36(user_data_dir):  # pylint: disable=unused-argument
                     assert tx_mappings_result[idx][i] == 'customized'
                 else:
                     raise AssertionError(f'Unexpected value {entry[i]} in evm_tx_mappings')
-    assert cursor.execute('SELECT COUNT(*) from history_events').fetchone()[0] == 558
+    assert cursor.execute('SELECT COUNT(*) from history_events').fetchone()[0] == 562
     assert table_exists(cursor, 'web3_nodes') is False
     assert table_exists(cursor, 'rpc_nodes') is True
     upgraded_nodes_results = [(x[0], x[1], x[2], x[3], str(x[4]), x[5]) for x in old_nodes_results]
@@ -1268,6 +1274,12 @@ def test_upgrade_db_35_to_36(user_data_dir):  # pylint: disable=unused-argument
         ('0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 'ETH', 'yabir secret account'),
         ('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', 'ETH', 'lefteris GTC'),
         ('0xc37b40ABdB939635068d3c5f13E7faF686F03B65', None, 'yabir everywhere'),
+    ]
+    cursor.execute('SELECT extra_data FROM history_events WHERE counterparty="liquity"')
+    assert cursor.fetchall() == [
+        (None,),
+        ('{"liquity-staking": {"staked_amount": "0", "asset": "eip155:1/erc20:0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D"}}',),  # noqa: E501
+        (None,),
     ]
 
 

@@ -2854,3 +2854,7 @@ class NFTFilterQuerySchema(
             'ignore_cache': data['ignore_cache'],
             'filter_query': filter_query,
         }
+
+
+class EventDetailsQuerySchema(Schema):
+    identifier = fields.Integer(required=True)

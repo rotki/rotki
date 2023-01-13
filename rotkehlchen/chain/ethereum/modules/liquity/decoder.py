@@ -1,7 +1,7 @@
 import logging
 from typing import TYPE_CHECKING, Any, Optional
 
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.base import LIQUITY_STAKING_DETAILS, HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
@@ -169,7 +169,12 @@ class LiquityDecoder(DecoderInterface):
                 tx_log.topics[0] == STAKING_LQTY_CHANGE and
                 event.asset == A_LQTY
             ):
-                extra_data = {'staked_amount': str(lqty_amount), 'asset': self.lqty.identifier}
+                extra_data = {
+                    LIQUITY_STAKING_DETAILS: {
+                        'staked_amount': str(lqty_amount),
+                        'asset': self.lqty.identifier,
+                    },
+                }
                 if event.location_label == user and event.event_type == HistoryEventType.SPEND:
                     event.event_type = HistoryEventType.STAKING
                     event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET

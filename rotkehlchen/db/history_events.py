@@ -201,6 +201,22 @@ class DBHistoryEvents():
 
         return [x[0] for x in cursor]
 
+    def get_history_event_by_identifier(self, identifier: int) -> Optional[HistoryBaseEntry]:
+        """Returns the history event with the given identifier"""
+        with self.db.conn.read_ctx() as cursor:
+            cursor.execute('SELECT * FROM history_events WHERE identifier=?', (identifier,))
+            entry = cursor.fetchone()
+            if entry is None:
+                return None
+
+        try:
+            deserialized = HistoryBaseEntry.deserialize_from_db(entry)
+        except (DeserializationError, UnknownAsset) as e:
+            log.debug(f'Failed to deserialize history event {entry} due to {str(e)}')
+            return None
+
+        return deserialized
+
     def get_history_events(
             self,
             cursor: 'DBCursor',

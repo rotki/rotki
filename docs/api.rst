@@ -2361,9 +2361,9 @@ Querying evm transactions
                 "notes": "Burned 0.00863351371344 ETH for gas",
                 "sequence_index": 0,
                 "timestamp": 1642802807,
-                "extra_data": null
               },
-              "customized": false
+              "customized": false,
+              "has_details": false
             }, {
               "entry": {
                 "tx_hash": "0x867119d6c66cab26561ccc5775c9cd215389efb2e3832e54baed2a0a34498c4b",
@@ -2397,9 +2397,9 @@ Querying evm transactions
                     "location_label": "0xF2Eb18a344b2a9dC769b1914ad035Cbb614Fd238",
                     "notes": "Receive reward of 0.002916189466526136 ETH from Liquity's staking",
                     "counterparty": "liquity",
-                    "extra_data": null
                   },
-                  "customized": false
+                  "customized": false,
+                  "has_details": true
                 },
                 {
                   "entry": {
@@ -2418,12 +2418,9 @@ Querying evm transactions
                     "location_label": "0xF2Eb18a344b2a9dC769b1914ad035Cbb614Fd238",
                     "notes": "Stake 408.16397184365102401 LQTY in the Liquity protocol",
                     "counterparty": "liquity",
-                    "extra_data": {
-                      "staked_amount": "1477.541875499512958985",
-                      "asset": "eip155:1/erc20:0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D"
-                    }
                   },
-                  "customized": false
+                  "customized": false,
+                  "has_details": false
                 },
                 {
                   "entry": {
@@ -2442,9 +2439,9 @@ Querying evm transactions
                     "location_label": "0xF2Eb18a344b2a9dC769b1914ad035Cbb614Fd238",
                     "notes": "Receive reward of 21.405502592141755289 LUSD from Liquity's staking",
                     "counterparty": "liquity",
-                    "extra_data": null
                   },
-                  "customized": false
+                  "customized": false,
+                  "has_details": false
                 }
               ],
               "ignored_in_accounting": false
@@ -2462,9 +2459,9 @@ Querying evm transactions
                 "notes": "Send 0.096809163374771208 ETH 0x6e15887E2CEC81434C16D587709f64603b39b545 -> 0xA090e606E30bD747d4E6245a1517EbE430F0057e",
                 "sequence_index": 1,
                 "timestamp": 1642802807,
-                "extra_data": null
               },
-              "customized": true
+              "customized": true,
+              "has_details": false
             }]
           }, {
             "entry": {
@@ -2496,9 +2493,9 @@ Querying evm transactions
                 "notes": "Burned 0.00863351371344 ETH for gas",
                 "sequence_index": 0,
                 "timestamp": 1642802807,
-                "extra_data": null
               },
-              "customized": false
+              "customized": false,
+              "has_details": false
             }]
           }],
           "entries_found": 95,
@@ -2512,7 +2509,7 @@ Querying evm transactions
    :resjson object result: A list of transaction entries to return for the given filter.
    :resjson object entry: A single transaction entry
    :resjson bool ignored_in_accounting: A boolean indicating whether this transaction should be ignored in accounting or not
-   :resjson list decoded_events: A list of decoded events for the given transaction. Each even is an object comprised of the event entry and a boolean denoting if the event has been customized by the user or not.
+   :resjson list decoded_events: A list of decoded events for the given transaction. Each event is an object comprised of the event entry and a boolean denoting if the event has been customized by the user or not. Each entry also has a `has_details` flag. If `has_details` is true, then it is possible to call /history/events/details endpoint to retrieve some extra information about the event.
    :resjson int entries_found: The number of entries found for the current filter. Ignores pagination.
    :resjson int entries_limit: The limit of entries if free version. -1 for premium.
    :resjson int entries_total: The number of total entries ignoring all filters.
@@ -12121,4 +12118,51 @@ Custom Assets
 
    :statuscode 200: Custom asset types retrieved successfully.
    :statuscode 409: No user is currently logged in. Check error message.
+   :statuscode 500: Internal rotki error.
+
+
+Events Details
+================
+
+.. http:get:: /api/(version)/history/events/details
+
+   Doing a GET on this endpoint will return the details of a history event.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/history/events/details HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"identifier": 137}
+
+   :reqjson int identifier: The identifier of the event to be queried.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "sub-swaps": [
+                  {"from_amount": "100.0", "to_amount": "0.084", "from_asset": "eip155:1/erc20:0x6B3595068778DD592e39A122f4f5a5cF09C90fE2", "to_asset": "ETH"},
+                  {"from_amount": "0.084", "to_amount": "98.2", "from_asset": "ETH", "to_asset": "eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7"}
+              ]
+          },
+          "message": ""
+      }
+
+   :resjson object result: A dictionary with the details. It may contain one of the following amount of details.
+   :resjson list sub-swaps: A list with the details of each sub-swap. Each entry contains the following keys: from_amount, to_amount, from_asset, to_asset.
+   :resjson dict liquity-staking: Information about assets that were staked in liquity in this event.
+
+   :statuscode 200: The details were returned successfully.
+   :statuscode 400: Provided JSON is in some way malformed.
+   :statuscode 404: There is no event with the provided identifier or the event has no details to be returned.
+   :statuscode 409: No user is currently logged in.
    :statuscode 500: Internal rotki error.

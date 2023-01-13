@@ -5,11 +5,14 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.base import SUB_SWAPS_DETAILS, HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.api.server import APIServer
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
-from rotkehlchen.constants.assets import A_DAI, A_ETH, A_USDT
+from rotkehlchen.constants.assets import A_DAI, A_ETH, A_SUSHI, A_USDT
+from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
@@ -19,15 +22,22 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response_with_result,
     assert_simple_ok_response,
 )
-from rotkehlchen.types import Location, TimestampMS
+from rotkehlchen.types import (
+    ChainID,
+    EvmTransaction,
+    Location,
+    Timestamp,
+    TimestampMS,
+    deserialize_evm_tx_hash,
+)
+from rotkehlchen.utils.misc import ts_sec_to_ms
 
 
 def entry_to_input_dict(entry: HistoryBaseEntry, include_identifier: bool) -> dict[str, Any]:
-    serialized = entry.serialize()
+    serialized = entry.serialize_without_extra_data()
     if include_identifier:
         assert entry.identifier is not None
         serialized['identifier'] = entry.identifier
-    serialized.pop('extra_data')
     return serialized
 
 
@@ -220,3 +230,115 @@ def test_add_edit_delete_entries(rotkehlchen_api_server):
         )
         saved_events = db.get_history_events(cursor, HistoryEventFilterQuery.make(), True)
         assert saved_events == [entries[0], entries[3], entry]
+
+
+def test_event_with_details(rotkehlchen_api_server: 'APIServer'):
+    """Checks that if some events have details this is handled correctly."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    db = rotki.data.db
+
+    transaction = EvmTransaction(
+        tx_hash=deserialize_evm_tx_hash('0x66e3d2686193e01a4fbf0f598872236402edfe2f4efad84c4f6cdc753b8c78e3'),  # noqa: E501
+        chain_id=ChainID.ETHEREUM,
+        timestamp=Timestamp(1672580821),
+        block_number=16383832,
+        from_address=string_to_evm_address('0x0D268FE4F4BB33d092F098147646275241668A08'),
+        to_address=string_to_evm_address('0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45'),
+        value=0,
+        gas=21000,
+        gas_price=1000000000,
+        gas_used=21000,
+        input_data=b'',
+        nonce=26,
+    )
+    event1 = HistoryBaseEntry(
+        event_identifier=transaction.tx_hash,
+        sequence_index=221,
+        timestamp=ts_sec_to_ms(transaction.timestamp),
+        location=Location.BLOCKCHAIN,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_SUSHI,
+        balance=Balance(amount=FVal(100)),
+    )
+    event2 = HistoryBaseEntry(
+        event_identifier=transaction.tx_hash,
+        sequence_index=222,
+        timestamp=ts_sec_to_ms(transaction.timestamp),
+        location=Location.BLOCKCHAIN,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_USDT,
+        balance=Balance(amount=FVal(98.2)),
+        extra_data={
+            SUB_SWAPS_DETAILS: [
+                {'amount_in': '100.0', 'amount_out': '0.084', 'from_asset': A_SUSHI.identifier, 'to_asset': A_ETH.identifier},  # noqa: E501
+                {'amount_in': '0.084', 'amount_out': '98.2', 'from_asset': A_ETH.identifier, 'to_asset': A_USDT.identifier},  # noqa: E501
+            ],
+            'some-internal-data': 'some data',  # this data shouldn't be returned to the frontend
+        },
+    )
+
+    dbevmtx = DBEvmTx(db)
+    with db.user_write() as write_cursor:
+        dbevmtx.add_evm_transactions(
+            write_cursor=write_cursor,
+            evm_transactions=[transaction],
+            relevant_address=None,
+        )
+    dbevents = DBHistoryEvents(db)
+    with db.user_write() as write_cursor:
+        dbevents.add_history_events(
+            write_cursor=write_cursor,
+            history=[event1, event2],
+        )
+
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'evmtransactionsresource',
+        ), json={
+            'async_query': False,
+            'only_cache': True,
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    decoded_events = result['entries'][0]['decoded_events']
+    assert decoded_events[0]['has_details'] is False
+    assert decoded_events[1]['has_details'] is True
+
+    # Check that if an event is not in the db, an error is returned
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'eventdetailsresource',
+        ), json={'identifier': 100},  # doesn't exist
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='No event found',
+        status_code=HTTPStatus.NOT_FOUND,
+    )
+
+    # Check that if an event is in the db, but has no details, an error is returned
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'eventdetailsresource',
+        ), json={'identifier': decoded_events[0]['entry']['identifier']},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='No details found',
+        status_code=HTTPStatus.NOT_FOUND,
+    )
+
+    # Check that if an event is in the db and has details, the details are returned
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'eventdetailsresource',
+        ), json={'identifier': decoded_events[1]['entry']['identifier']},
+    )
+    result = assert_proper_response_with_result(response)
+    assert result == {SUB_SWAPS_DETAILS: event2.extra_data[SUB_SWAPS_DETAILS]}  # type: ignore[index]  # extra_data is not None here  # noqa: E501
