@@ -1,5 +1,6 @@
 import { expect } from 'vitest';
 import { nonNullProperties } from '@/utils/data';
+import { bigNumberify } from '@/utils/bignumbers';
 
 describe('utils/data', () => {
   test('returns a partial object without the null properties', async () => {
@@ -48,5 +49,16 @@ describe('utils/data', () => {
         }
       })
     ).toStrictEqual({ a: { d: ['a', 'b'] } });
+  });
+
+  test('do not transform BigNumber', () => {
+    const number = bigNumberify(10);
+    expect(
+      nonNullProperties({
+        a: {
+          number
+        }
+      })
+    ).toStrictEqual({ a: { number } });
   });
 });

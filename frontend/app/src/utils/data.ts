@@ -1,3 +1,5 @@
+import { BigNumber } from '@rotki/common';
+
 export function chunkArray<T>(myArray: T[], size: number): T[][] {
   const results: T[][] = [];
 
@@ -31,6 +33,9 @@ export const uniqueObjects = <T>(
 export const nonNullProperties = <T extends object>(object: T): Partial<T> => {
   const partial: Partial<T> = {};
   const keys = Object.keys(object);
+  if (object instanceof BigNumber) {
+    return object;
+  }
   for (const obKey of keys) {
     const key = obKey as keyof T;
     const val = object[key];
@@ -77,10 +82,4 @@ export function randomHex(characters = 40): string {
     hex += randByte;
   }
   return `0x${hex}ff`;
-}
-
-export function emptyArrayToNull<T>(data: T | null): T | null {
-  if (Array.isArray(data) && data.length === 0) return null;
-
-  return data;
 }
