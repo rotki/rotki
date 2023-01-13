@@ -12,12 +12,12 @@ from rotkehlchen.types import Location, deserialize_evm_tx_hash
 ADDY = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
 
 
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
 def test_hop_l2_deposit(database, ethereum_inquirer):
     """Data taken from
     https://etherscan.io/tx/0xd46640417a686b399b2f2a920b0c58a35095759365cbe7b795bddec34b8c5eee
     """
-    # TODO: For faster tests hard-code the transaction and the logs here so no remote query needed
     tx_hash = deserialize_evm_tx_hash('0xd46640417a686b399b2f2a920b0c58a35095759365cbe7b795bddec34b8c5eee')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
@@ -53,12 +53,12 @@ def test_hop_l2_deposit(database, ethereum_inquirer):
     assert expected_events == events
 
 
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
 def test_hop_optimism_eth_receive(database, optimism_inquirer):
     """Data taken from
     https://optimistic.etherscan.io/tx/0x8394c39e1f030a04aa8359f0322257632282a7dfa419b3c9ffc8ab61205a815d
     """
-    # TODO: For faster tests hard-code the transaction and the logs here so no remote query needed
     tx_hash = deserialize_evm_tx_hash('0x8394c39e1f030a04aa8359f0322257632282a7dfa419b3c9ffc8ab61205a815d')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=optimism_inquirer,

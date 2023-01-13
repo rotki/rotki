@@ -15,12 +15,12 @@ ADDY = '0x5727c0481b90a129554395937612d8b9301D6c7b'
 ADDY2 = '0x87Dd56068Af560B0D8472C4EF41CB902FCbF5ebE'
 
 
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
 def test_compound_ether_deposit(database, ethereum_inquirer):
     """Data taken from:
     https://etherscan.io/tx/0x06a8b9f758b0471886186c2a48dea189b3044916c7f94ee7f559026fefd91c39
     """
-    # TODO: For faster tests hard-code the transaction and the logs here so no remote query needed
     tx_hash = deserialize_evm_tx_hash('0x06a8b9f758b0471886186c2a48dea189b3044916c7f94ee7f559026fefd91c39')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
@@ -68,12 +68,12 @@ def test_compound_ether_deposit(database, ethereum_inquirer):
     assert events == expected_events
 
 
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
 def test_compound_ether_withdraw(database, ethereum_inquirer):
     """Data taken from:
     https://etherscan.io/tx/0x024bd402420c3ba2f95b875f55ce2a762338d2a14dac4887b78174254c9ab807
     """
-    # TODO: For faster tests hard-code the transaction and the logs here so no remote query needed
     tx_hash = deserialize_evm_tx_hash('0x024bd402420c3ba2f95b875f55ce2a762338d2a14dac4887b78174254c9ab807')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
@@ -121,6 +121,7 @@ def test_compound_ether_withdraw(database, ethereum_inquirer):
     assert events == expected_events
 
 
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY2]])
 def test_compound_deposit_with_comp_claim(
         database,
@@ -129,7 +130,6 @@ def test_compound_deposit_with_comp_claim(
     """Data taken from:
     https://etherscan.io/tx/0xfdbfe6e9ce822bd988054945c86f2dff1fac6a12b4acb0b68c8805b5aa3b30ba
     """
-    # TODO: For faster tests hard-code the transaction and the logs here so no remote query needed
     tx_hash = deserialize_evm_tx_hash('0xfdbfe6e9ce822bd988054945c86f2dff1fac6a12b4acb0b68c8805b5aa3b30ba')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,

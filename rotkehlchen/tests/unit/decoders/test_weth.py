@@ -13,6 +13,7 @@ from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import ChainID, EvmTokenKind, Location, deserialize_evm_tx_hash
 
 
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x4B078a6A7026C32D2D6Aff763E2F37336cf552Dd']])  # noqa: E501
 def test_weth_deposit(database, ethereum_inquirer):
     """
@@ -84,6 +85,7 @@ def test_weth_deposit(database, ethereum_inquirer):
     assert events == expected_events
 
 
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x4b2975AfF4DeF34D3Cd4f4759b45faF738D790D3']])  # noqa: E501
 def test_weth_withdrawal(database, ethereum_inquirer):
     """
@@ -149,6 +151,7 @@ def test_weth_withdrawal(database, ethereum_inquirer):
     assert events == expected_events
 
 
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xC4DdFf531132d32b47eC938AcfA28E354769A806']])  # noqa: E501
 def test_weth_interaction_with_protocols_deposit(database, ethereum_inquirer):
     """
@@ -231,6 +234,7 @@ def test_weth_interaction_with_protocols_deposit(database, ethereum_inquirer):
     )
 
 
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xDea6866A866C60d68fFDFc6178C12fCFdb9d0D47']])  # noqa: E501
 def test_weth_interaction_with_protocols_withdrawal(database, ethereum_inquirer):
     """
@@ -293,6 +297,7 @@ def test_weth_interaction_with_protocols_withdrawal(database, ethereum_inquirer)
     assert events == expected_events
 
 
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xF5f5C8924db9aa5E70Bdf7842473Ee8C7F1F4c9d']])  # noqa: E501
 def test_weth_interaction_errors(database, ethereum_inquirer):
     # check that if no out event occurs, an in event should not be created for deposit event
