@@ -1239,6 +1239,7 @@ class StatisticsNetvalueResource(BaseMethodView):
 
     get_schema = StatisticsNetValueSchema()
 
+    @require_loggedin_user()
     @use_kwargs(get_schema, location='json_and_query')
     def get(self, include_nfts: bool) -> Response:
         return self.rest_api.query_netvalue_data(include_nfts)
