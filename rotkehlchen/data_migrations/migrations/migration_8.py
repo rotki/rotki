@@ -1,0 +1,52 @@
+import logging
+from typing import TYPE_CHECKING
+
+from rotkehlchen.chain.accounts import BlockchainAccountData
+from rotkehlchen.errors.misc import InputError
+from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.types import SupportedBlockchain
+
+if TYPE_CHECKING:
+    from rotkehlchen.rotkehlchen import Rotkehlchen
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
+
+
+def data_migration_8(rotki: 'Rotkehlchen') -> None:
+    """
+    - Introduced at optimism addition.
+    This migration duplicates accounts if active at optimism or avalanche.
+    """
+    log.debug('Enter data_migration_8')
+    with rotki.data.db.conn.read_ctx() as cursor:
+        accounts = rotki.data.db.get_blockchain_accounts(cursor)
+
+    filtered_result = rotki.chains_aggregator.filter_active_evm_addresses(accounts.eth)
+    to_add_accounts = []
+    for chain, account in filtered_result:  # add them to chain aggregator
+        if chain == SupportedBlockchain.ETHEREUM:
+            continue
+
+        try:
+            rotki.chains_aggregator.modify_blockchain_accounts(
+                blockchain=chain,
+                accounts=[account],
+                append_or_remove='append',
+            )
+        except InputError:
+            log.debug(f'Not adding {account} to {chain} since it already exists')
+            continue
+        to_add_accounts.append((chain, account))
+
+    with rotki.data.db.user_write() as write_cursor:
+        for chain, account in to_add_accounts:  # add them to the DB
+            rotki.data.db.add_blockchain_accounts(
+                write_cursor=write_cursor,
+                account_data=[BlockchainAccountData(
+                    chain=chain,
+                    address=account,
+                )],  # not duplicating label and tags as it's chain specific
+            )
+
+    log.debug('Exit data_migration_8')

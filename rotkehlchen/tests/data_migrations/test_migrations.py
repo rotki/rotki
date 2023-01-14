@@ -1,4 +1,5 @@
 import json
+from contextlib import ExitStack
 from pathlib import Path
 from typing import TYPE_CHECKING
 from unittest.mock import patch
@@ -13,7 +14,9 @@ from rotkehlchen.data_migrations.manager import (
     MigrationRecord,
 )
 from rotkehlchen.fval import FVal
+from rotkehlchen.tests.utils.blockchain import setup_filter_active_evm_addresses_mock
 from rotkehlchen.tests.utils.exchanges import check_saved_events_for_exchange
+from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import Location, SupportedBlockchain, TradeType
 
 if TYPE_CHECKING:
@@ -458,3 +461,42 @@ def test_migration_7_nodes(rotkehlchen_api_server: 'APIServer'):
             llama_node_in_db = True
             break
     assert llama_node_in_db is True
+
+
+@pytest.mark.parametrize('data_migration_version', [None])
+@pytest.mark.parametrize('perform_migrations_at_unlock', [False])
+@pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('ethereum_accounts', [[make_evm_address(), make_evm_address(), make_evm_address(), make_evm_address()]])  # noqa: E501
+def test_migration_8(rotkehlchen_api_server, ethereum_accounts):
+    """
+    Test that accounts are properly duplicated from ethereum to optimism and avalanche
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    migration_patch = patch(
+        'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
+        new=MIGRATION_LIST[7:],
+    )
+    avalanche_addresses = [ethereum_accounts[1], ethereum_accounts[3]]
+    optimism_addresses = [ethereum_accounts[2], ethereum_accounts[3]]
+
+    with ExitStack() as stack:
+        setup_filter_active_evm_addresses_mock(
+            stack=stack,
+            chains_aggregator=rotki.chains_aggregator,
+            contract_addresses=[ethereum_accounts[0]],
+            avalanche_addresses=avalanche_addresses,
+            optimism_addresses=optimism_addresses,
+        )
+        stack.enter_context(migration_patch)
+        DataMigrationManager(rotki).maybe_migrate_data()
+
+    with rotki.data.db.conn.read_ctx() as cursor:  # make sure DB is also written
+        accounts = rotki.data.db.get_blockchain_accounts(cursor)
+
+    assert set(accounts.eth) == set(ethereum_accounts)
+    assert set(rotki.chains_aggregator.accounts.eth) == set(ethereum_accounts)
+    assert set(accounts.avax) == set(avalanche_addresses)
+    assert set(rotki.chains_aggregator.accounts.avax) == set(avalanche_addresses)
+    assert set(accounts.optimism) == set(optimism_addresses)
+    assert set(rotki.chains_aggregator.accounts.optimism) == set(optimism_addresses)

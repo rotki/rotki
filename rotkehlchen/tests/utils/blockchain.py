@@ -603,3 +603,53 @@ def set_web3_in_inquirer(ethereum_inquirer: 'EthereumInquirer', web3: Web3) -> N
         blockchain=SupportedBlockchain.ETHEREUM,
     )
     ethereum_inquirer.web3_mapping[node_name] = web3
+
+
+def setup_filter_active_evm_addresses_mock(
+        stack,
+        chains_aggregator,
+        contract_addresses,
+        avalanche_addresses,
+        optimism_addresses,
+):
+    def mock_ethereum_get_code(account):
+        if account in contract_addresses:
+            return '0xsomecode'
+        return '0x'
+
+    def mock_avax_get_tx_count(account):
+        if account in avalanche_addresses:
+            return 1
+        return 0
+
+    def mock_avax_balance(account):
+        if account in avalanche_addresses:
+            return FVal(1)
+        return ZERO
+
+    def mock_optimism_has_activity(account):
+        if account in optimism_addresses:
+            return True
+        return False
+
+    stack.enter_context(patch.object(
+        chains_aggregator.ethereum.node_inquirer,
+        'get_code',
+        side_effect=mock_ethereum_get_code,
+    ))
+    stack.enter_context(patch.object(
+        chains_aggregator.avalanche.w3.eth,
+        'get_transaction_count',
+        side_effect=mock_avax_get_tx_count,
+    ))
+    stack.enter_context(patch.object(
+        chains_aggregator.avalanche,
+        'get_avax_balance',
+        side_effect=mock_avax_balance,
+    ))
+    stack.enter_context(patch.object(
+        chains_aggregator.optimism.node_inquirer.etherscan,
+        'has_activity',
+        side_effect=mock_optimism_has_activity,
+    ))
+    return stack

@@ -1,11 +1,9 @@
 from contextlib import ExitStack
-from unittest.mock import patch
 
 import pytest
 
 from rotkehlchen.chain.aggregator import _module_name_to_class
-from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.fval import FVal
+from rotkehlchen.tests.utils.blockchain import setup_filter_active_evm_addresses_mock
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import AVAILABLE_MODULES_MAP, SupportedBlockchain
 
@@ -35,48 +33,14 @@ def test_filter_active_evm_addresses(blockchain):
     optimism_addy = make_evm_address()
     avalanche_addy = make_evm_address()
 
-    def mock_ethereum_get_code(account):
-        if account == contract_addy:
-            return '0xsomecode'
-        return '0x'
-
-    def mock_avax_get_tx_count(account):
-        if account in (all_addy, avalanche_addy):
-            return 1
-        return 0
-
-    def mock_avax_balance(account):
-        if account in (all_addy, avalanche_addy):
-            return FVal(1)
-        return ZERO
-
-    def mock_optimism_has_activity(account):
-        if account in (all_addy, optimism_addy):
-            return True
-        return False
-
     with ExitStack() as stack:
-        stack.enter_context(patch.object(
-            blockchain.ethereum.node_inquirer,
-            'get_code',
-            side_effect=mock_ethereum_get_code,
-        ))
-        stack.enter_context(patch.object(
-            blockchain.avalanche.w3.eth,
-            'get_transaction_count',
-            side_effect=mock_avax_get_tx_count,
-        ))
-        stack.enter_context(patch.object(
-            blockchain.avalanche,
-            'get_avax_balance',
-            side_effect=mock_avax_balance,
-        ))
-        stack.enter_context(patch.object(
-            blockchain.optimism.node_inquirer.etherscan,
-            'has_activity',
-            side_effect=mock_optimism_has_activity,
-        ))
-
+        setup_filter_active_evm_addresses_mock(
+            stack=stack,
+            chains_aggregator=blockchain,
+            contract_addresses=[contract_addy],
+            avalanche_addresses=[avalanche_addy, all_addy],
+            optimism_addresses=[optimism_addy, all_addy],
+        )
         assert set(blockchain.filter_active_evm_addresses([contract_addy])) == {
             (SupportedBlockchain.ETHEREUM, contract_addy),
         }
