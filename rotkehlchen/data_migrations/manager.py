@@ -8,6 +8,7 @@ from rotkehlchen.data_migrations.migrations.migration_4 import data_migration_4
 from rotkehlchen.data_migrations.migrations.migration_5 import data_migration_5
 from rotkehlchen.data_migrations.migrations.migration_6 import data_migration_6
 from rotkehlchen.data_migrations.migrations.migration_7 import data_migration_7
+from rotkehlchen.data_migrations.migrations.migration_8 import data_migration_8
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:
@@ -31,6 +32,7 @@ MIGRATION_LIST = [
     MigrationRecord(version=5, function=data_migration_5),
     MigrationRecord(version=6, function=data_migration_6),
     MigrationRecord(version=7, function=data_migration_7),
+    MigrationRecord(version=8, function=data_migration_8),
 ]
 LAST_DATA_MIGRATION = len(MIGRATION_LIST)
 

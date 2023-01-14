@@ -14,6 +14,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response_with_result,
 )
 from rotkehlchen.tests.utils.avalanche import AVALANCHE_ACC1_AVAX_ADDR
+from rotkehlchen.tests.utils.blockchain import setup_filter_active_evm_addresses_mock
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.types import SupportedBlockchain
 
@@ -192,11 +193,13 @@ def test_adding_editing_ens_account_works(rotkehlchen_api_server):
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
+@pytest.mark.parametrize('web3_mock_data', [{'covalent_balances': 'test_avalanche/covalent_query_transactions.json'}])  # noqa: E501
 def test_add_multievm_accounts(rotkehlchen_api_server):
     """Test that adding accounts to multiple evm chains works fine
 
     TODO: Needs mocking with the data at the time of test writing
     """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     common_account = '0x9531C059098e3d194fF87FebB587aB07B30B1306'
     contract_account = '0x9008D19f58AAbD9eD0D60971565AA8510560ab41'
 
@@ -214,20 +217,31 @@ def test_add_multievm_accounts(rotkehlchen_api_server):
         ), json=tag1,
     )
     assert_proper_response(response)
-    # add two addresses for all evm chains, one with tag
-    label = 'rotki account'
-    request_data = {
-        'accounts': [{
-            'address': common_account,
-            'label': label,
-            'tags': ['metamask'],
-        }, {
-            'address': contract_account,
-        }]}
-    response = requests.put(api_url_for(
-        rotkehlchen_api_server,
-        'evmaccountsresource',
-    ), json=request_data)
+
+    with ExitStack() as stack:
+        setup_filter_active_evm_addresses_mock(
+            stack=stack,
+            chains_aggregator=rotki.chains_aggregator,
+            contract_addresses=[contract_account],
+            avalanche_addresses=[common_account],
+            optimism_addresses=[common_account],
+        )
+
+        # add two addresses for all evm chains, one with tag
+        label = 'rotki account'
+        request_data = {
+            'accounts': [{
+                'address': common_account,
+                'label': label,
+                'tags': ['metamask'],
+            }, {
+                'address': contract_account,
+            }]}
+        response = requests.put(api_url_for(
+            rotkehlchen_api_server,
+            'evmaccountsresource',
+        ), json=request_data)
+
     result = assert_proper_response_with_result(response)
     assert result == {
         'ETH': [common_account, contract_account],
