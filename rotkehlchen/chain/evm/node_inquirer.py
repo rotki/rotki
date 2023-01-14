@@ -20,6 +20,7 @@ from web3.exceptions import (
     BlockNotFound,
     TransactionNotFound,
 )
+from web3.middleware import geth_poa_middleware
 from web3.types import BlockIdentifier, FilterParams
 
 from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
@@ -44,6 +45,7 @@ from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.types import (
     SUPPORTED_CHAIN_IDS,
     SUPPORTED_EVM_CHAINS,
+    ChainID,
     ChecksumEvmAddress,
     EvmTokenKind,
     EvmTransaction,
@@ -346,6 +348,9 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             log.warning(message)
             return False, message
 
+        if self.chain_id == ChainID.OPTIMISM:  # for now only optimism needs this
+            # https://web3py.readthedocs.io/en/stable/middleware.html#why-is-geth-poa-middleware-necessary
+            web3.middleware_onion.inject(geth_poa_middleware, layer=0)
         try:
             is_connected = web3.isConnected()
         except AssertionError:
