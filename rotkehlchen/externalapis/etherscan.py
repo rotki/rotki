@@ -388,6 +388,21 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
 
         yield _hashes_tuple_to_list(hashes)
 
+    def has_activity(self, account: ChecksumEvmAddress) -> bool:
+        """Queries transactions, internal_txs and tokentx for an address with limit=1
+        just to quickly determine if the account has had any activity in the chain"""
+        options = {'address': str(account), 'page': 1, 'offset': 1}
+        result = self._query(module='account', action='txlist', options=options)
+        if len(result) != 0:
+            return True
+        result = self._query(module='account', action='txlistinternal', options=options)
+        if len(result) != 0:
+            return True
+        result = self._query(module='account', action='tokentx', options=options)
+        if len(result) != 0:
+            return True
+        return False
+
     def get_latest_block_number(self) -> int:
         """Gets the latest block number
 

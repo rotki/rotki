@@ -542,7 +542,8 @@ class Rotkehlchen():
         """Adds each account for all evm addresses
 
         Counting ethereum mainnet as the main chain we check if the account is a contract
-        in mainnet. If not we add it for all other chains.
+        in mainnet. If not we check if there is any transactions/activity in that chain for
+        the address and if yes we add it too.
         If it's already added in a chain we just ignore that chain.
 
         Returns a list of tuples of the address and the chain it was added in

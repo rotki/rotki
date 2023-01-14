@@ -1285,19 +1285,18 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
     ) -> 'EvmManager':  # type ignore below due to inability to understand limitation
         return self.get_chain_manager(chain_id.to_blockchain())  # type: ignore[arg-type]
 
-    def add_accounts_to_all_evm(
+    def filter_active_evm_addresses(
             self,
             accounts: list[ChecksumEvmAddress],
     ) -> list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]]:
-        """Adds each account for all evm addresses
-
-        Counting ethereum mainnet as the main chain we check if the account is a contract
-        in mainnet. If not we add it for all other chains. If yes we just keep mainnet.
-        If it's already added in a chain we just ignore that chain.
-
-        Returns a list of tuples of the address and the chain it was added in
         """
-        added_accounts = []
+        Counting ethereum mainnet as the main chain we check if the account is a contract
+        in mainnet. If not, for all supported evm chains we check if there is any
+        transactions/activity for the account in the chain.
+
+        Returns a list of tuples of the address and the chain it was active in
+        """
+        filtered_accounts = []
         for account in accounts:
             chains: list[SUPPORTED_EVM_CHAINS]
             if self.ethereum.node_inquirer.get_code(account) != '0x':
@@ -1307,15 +1306,42 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 chains = get_args(SUPPORTED_EVM_CHAINS)  # type: ignore[assignment]
 
             for chain in chains:
-                try:
-                    self.modify_blockchain_accounts(
-                        blockchain=chain,
-                        accounts=[account],
-                        append_or_remove='append',
+                chain_manager = self.get_chain_manager(chain)
+                if chain == SupportedBlockchain.AVALANCHE:
+                    # just check balance and nonce in avalanche
+                    has_activity = (
+                        chain_manager.w3.eth.get_transaction_count(account) != 0 or
+                        chain_manager.get_avax_balance(account) != ZERO
                     )
-                except InputError:
-                    log.debug(f'Not adding {account} to {chain} since it already exists')
+                    if has_activity is False:
+                        continue
+                elif chain == SupportedBlockchain.OPTIMISM and chain_manager.node_inquirer.etherscan.has_activity(account) is False:  # noqa: E501
                     continue
-                added_accounts.append((chain, account))
+                # else can only be ethereum so add it unconditionally
+                filtered_accounts.append((chain, account))
+
+        return filtered_accounts
+
+    def add_accounts_to_all_evm(
+            self,
+            accounts: list[ChecksumEvmAddress],
+    ) -> list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]]:
+        """Adds each account for all evm chains depending on our filter.
+
+        Returns a list of tuples of the address and the chain it was added in.
+        """
+        filtered_accounts = self.filter_active_evm_addresses(accounts)
+        added_accounts = []
+        for chain, account in filtered_accounts:
+            try:
+                self.modify_blockchain_accounts(
+                    blockchain=chain,
+                    accounts=[account],
+                    append_or_remove='append',
+                )
+            except InputError:
+                log.debug(f'Not adding {account} to {chain} since it already exists')
+                continue
+            added_accounts.append((chain, account))
 
         return added_accounts
