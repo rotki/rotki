@@ -5,6 +5,7 @@ ISORT_PARAMS = --ignore-whitespace --skip-glob '*/node_modules/*' $(ALL_LINT_PAT
 ISORT_CHECK_PARAMS = --diff --check-only
 
 lint:
+	double-indent --dry-run $(ALL_LINT_PATHS)
 	isort $(ISORT_PARAMS) $(ISORT_CHECK_PARAMS)
 	ruff $(ALL_LINT_PATHS)
 	flake8 $(ALL_LINT_PATHS)
@@ -15,6 +16,7 @@ lint:
 format:
 	ruff $(ALL_LINT_PATHS) --fix
 	isort $(ISORT_PARAMS)
+	double-indent $(ALL_LINT_PATHS)
 
 
 clean:
